@@ -143,6 +143,7 @@ The possibilities are only limited by the developer's imagination. Akka's compos
 There are a variety of shared data (memory) use cases within an agentic system.
 
 [cols="1,1,3", options="header"]
+[.compact]
 |===
 |Use Case |Provided by |Description
 |Short-term
