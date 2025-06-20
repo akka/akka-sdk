@@ -10,7 +10,6 @@ import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.SpiAgent
 
 import java.util.Optional
-import scala.concurrent.ExecutionContext
 
 /**
  * INTERNAL API
@@ -19,22 +18,9 @@ import scala.concurrent.ExecutionContext
 class ToolExecutor(functionTools: Map[String, FunctionToolInvoker], serializer: JsonSerializer) {
 
   /**
-   * Executes a tool call command synchronously. We use this method in AgentImpl, and the execution context used is the
-   * one provided by the AgentImpl which is the sdkExecutionContext. The goal is to execute the tool call in the
-   * sdkExecutionContext.
+   * Executes a tool call command synchronously.g
    */
-  def executeAsync(request: SpiAgent.ToolCallCommand)(implicit
-      ex: ExecutionContext): scala.concurrent.Future[String] = {
-    scala.concurrent.Future {
-      execute(request)
-    }
-  }
-
-  /**
-   * Executes a tool call command synchronously. This method is used in the ToolExecutorSpec - no need to go async
-   * there.
-   */
-  private[javasdk] def execute(request: SpiAgent.ToolCallCommand): String = {
+  def execute(request: SpiAgent.ToolCallCommand): String = {
 
     val toolInvoker =
       functionTools.getOrElse(request.name, throw new IllegalArgumentException(s"Unknown tool ${request.name}"))

@@ -187,7 +187,7 @@ private[impl] final class AgentImpl[A <: Agent](
               userMessage = req.userMessage,
               additionalContext = additionalContext,
               toolDescriptors = toolDescriptors,
-              callToolFunction = request => toolExecutor.executeAsync(request)(sdkExecutionContext),
+              callToolFunction = request => Future(toolExecutor.execute(request))(sdkExecutionContext),
               mcpClientDescriptors = mcpToolEndpoints,
               responseType = req.responseType,
               responseMapping = req.responseMapping,
