@@ -18,7 +18,7 @@ You implement orchestration by creating an Akka service with the xref:java:workf
 
 You implement an agent by creating an Akka service with the xref:java:agents.adoc[Agent] component.
 
-You implement an embedded tool within the xref:java:agents.adoc[Agent] component.
+You implement a tool in a regular Java class or embedded within the xref:java:agents.adoc[Agent] component.
 
 You implement an MCP server with the xref:java:mcp-endpoints.adoc[MCP Endpoint] component.
 
