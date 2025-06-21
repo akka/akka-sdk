@@ -4,25 +4,25 @@
 
 package akkajavasdk.components.agent;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+
 import akka.actor.testkit.typed.javadsl.LoggingTestKit;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
+import akka.javasdk.testkit.TestModelProvider.AiResponse;
+import akka.javasdk.testkit.TestModelProvider.ToolInvocationRequest;
 import akka.stream.javadsl.Sink;
 import akkajavasdk.Junit5LogCapturing;
-import com.typesafe.config.ConfigFactory;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith(Junit5LogCapturing.class)
 public class AgentIntegrationTest extends TestKitSupport {
@@ -31,15 +31,17 @@ public class AgentIntegrationTest extends TestKitSupport {
 
   @Override
   protected TestKit.Settings testKitSettings() {
-    var depsProvider = new DependencyProvider() {
-      @Override
-      public <T> T getDependency(Class<T> clazz) {
-        if (clazz.isAssignableFrom(SomeAgentWithTool.TrafficService.class)) {
-          return (T ) new SomeAgentWithTool.TrafficService();
-        }
-        return null;
-      }
-    };
+    var depsProvider =
+        new DependencyProvider() {
+          @Override
+          @SuppressWarnings("unchecked")
+          public <T> T getDependency(Class<T> clazz) {
+            if (clazz.isAssignableFrom(SomeAgentWithTool.TrafficService.class)) {
+              return (T) new SomeAgentWithTool.TrafficService();
+            }
+            return null;
+          }
+        };
 
     return TestKit.Settings.DEFAULT
         .withModelProvider(SomeAgent.class, testModelProvider)
@@ -64,8 +66,10 @@ public class AgentIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldMapStringResponse() {
-    //given
-    testModelProvider.mockResponse(s -> s.equals("hello"), "123456");
+    // given
+    testModelProvider
+      .whenMessage(s -> s.equals("hello"))
+      .reply("123456");
 
     //when
     SomeAgent.SomeResponse result = componentClient.forAgent().inSession(newSessionId())
@@ -78,8 +82,10 @@ public class AgentIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldMapStructuredResponse() {
-    //given
-    testModelProvider.mockResponse(s -> s.equals("structured"), "{\"response\": \"123456\"}");
+    // given
+    testModelProvider
+        .whenMessage(s -> s.equals("structured"))
+        .reply("{\"response\": \"123456\"}");
 
     //when
     SomeStructureResponseAgent.SomeResponse result = componentClient.forAgent().inSession(newSessionId())
@@ -92,8 +98,10 @@ public class AgentIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldMapFailedJsonParsingResponse() {
-    //given
-    testModelProvider.mockResponse(s -> s.equals("structured"), "{\"corrupted json: \"123456\"}");
+    // given
+    testModelProvider
+        .whenMessage(s -> s.equals("structured"))
+        .reply("{\"corrupted json: \"123456\"}");
 
     //when
     SomeStructureResponseAgent.SomeResponse result = componentClient.forAgent().inSession(newSessionId())
@@ -110,32 +118,24 @@ public class AgentIntegrationTest extends TestKitSupport {
 
     var userQuestion = "How is the weather today in Leuven?";
 
-    //when asking for the weather, it first look up for today's date
-    testModelProvider.mockResponse(
-      s -> s.equals(userQuestion),
-      new TestModelProvider.AiResponse(
-        new TestModelProvider.ToolInvocationRequest("SomeAgentWithTool_getDateOfToday", "")));
+    // when asking for the weather, it first look up for today's date
+    testModelProvider
+        .whenMessage(s -> s.equals(userQuestion))
+        .reply(new ToolInvocationRequest("SomeAgentWithTool_getDateOfToday", ""));
 
     // when receiving the date back, model asks for calling getWeather
-    testModelProvider.mockResponseToToolResult(
-      result -> result.content().equals("2025-01-01"),
-      result -> {
-        var args = """
-          {
-           "location" : "Leuven",
-           "date" : "2025-01-01"
-          }
-          """;
-        return new TestModelProvider.AiResponse(
-          new TestModelProvider.ToolInvocationRequest("WeatherService_getWeather", args));
-      }
-      );
+    testModelProvider
+        .whenToolResult(result -> result.content().equals("2025-01-01"))
+        .reply(
+            new ToolInvocationRequest(
+                "WeatherService_getWeather",
+                """
+                { "location" : "Leuven", "date" : "2025-01-01" }"""));
 
     // receives weather info
-    testModelProvider.mockResponseToToolResult(
-      result -> result.content().startsWith("The weather is"),
-      result -> new TestModelProvider.AiResponse(result.content())
-    );
+    testModelProvider
+        .whenToolResult(result -> result.content().startsWith("The weather is"))
+        .thenReply(result -> new AiResponse(result.content()));
 
     //when
     var response = componentClient.forAgent().inSession(newSessionId())
@@ -152,22 +152,20 @@ public class AgentIntegrationTest extends TestKitSupport {
 
     var userQuestion = "How is the traffic today in Leuven?";
 
-    var args = """
-          {
-           "location" : "Leuven"
-          }
-          """;
     // when asking for the traffic, call the traffic service
 
-    testModelProvider.mockToolInvocationRequest(
-      msg -> msg.content().equals(userQuestion),
-        new TestModelProvider.ToolInvocationRequest("TrafficService_getTrafficNow", args));
+    testModelProvider
+        .whenUserMessage(msg -> msg.content().equals(userQuestion))
+        .reply(
+            new ToolInvocationRequest(
+                "TrafficService_getTrafficNow",
+                """
+          { "location" : "Leuven" }"""));
 
     // receives the traffic info as the final answer
-    testModelProvider.mockResponseToToolResult(
-      result -> result.content().startsWith("There is traffic jam"),
-      result -> new TestModelProvider.AiResponse(result.content())
-    );
+    testModelProvider
+        .whenToolResult(result -> result.content().startsWith("There is traffic jam"))
+        .thenReply(result -> new AiResponse(result.content()));
 
     //when
     var response = componentClient.forAgent().inSession(newSessionId())
@@ -201,9 +199,9 @@ public class AgentIntegrationTest extends TestKitSupport {
 
     var userQuestion = "How is the traffic today in Leuven?";
 
-    testModelProvider.mockToolInvocationRequest(
-      msg -> msg.content().equals(userQuestion),
-      new TestModelProvider.ToolInvocationRequest("getNonStaticTrafficNow", ""));
+    testModelProvider
+        .whenUserMessage(msg -> msg.content().equals(userQuestion))
+        .reply(new ToolInvocationRequest("TrafficService_getTrafficNow", ""));
 
     try {
       componentClient.forAgent().inSession(newSessionId())
@@ -219,8 +217,8 @@ public class AgentIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldStreamResponse() throws Exception {
-    //given
-    testModelProvider.mockResponse(s -> s.equals("hello"), "Hi mate, how are you today?");
+    // given
+    testModelProvider.whenMessage(s -> s.equals("hello")).reply("Hi mate, how are you today?");
 
     //when
     var source = componentClient.forAgent().inSession(newSessionId())
@@ -257,7 +255,7 @@ public class AgentIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldSupportDynamicCall() {
-    testModelProvider.mockResponse(s -> s.equals("hello"), "123456");
+    testModelProvider.whenMessage(s -> s.equals("hello")).reply("123456");
 
     var obj = componentClient.forAgent().inSession(newSessionId())
         .dynamicCall("some-agent")
@@ -269,17 +267,18 @@ public class AgentIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldDetectWrongArityOfDynamicCall() {
-    testModelProvider.mockResponse(s -> s.equals("hello"), "123456");
+    testModelProvider.whenMessage(s -> s.equals("hello")).reply("123456");
 
     try {
       LoggingTestKit.warn("requires a parameter, but was invoked without parameter")
           .expect(
               testKit.getActorSystem(),
-              () -> {
-                return componentClient.forAgent().inSession(newSessionId())
-                    .dynamicCall("some-agent")
-                    .invoke();
-              });
+              () ->
+                  componentClient
+                      .forAgent()
+                      .inSession(newSessionId())
+                      .dynamicCall("some-agent")
+                      .invoke());
 
       fail("Expected exception");
     } catch (RuntimeException e) {
@@ -289,7 +288,7 @@ public class AgentIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldDetectWrongParameterTypeOfDynamicCall() {
-    testModelProvider.mockResponse(s -> s.equals("hello"), "123456");
+    testModelProvider.whenMessage(s -> s.equals("hello")).reply("123456");
 
     try {
       componentClient.forAgent().inSession(newSessionId())
