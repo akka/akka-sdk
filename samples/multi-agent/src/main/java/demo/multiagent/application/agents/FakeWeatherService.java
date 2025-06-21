@@ -3,14 +3,22 @@ package demo.multiagent.application.agents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Optional;
+
 public class FakeWeatherService implements WeatherService {
 
 
-  private final Logger logger = LoggerFactory.getLogger(WeatherServiceImpl.class);
+  private final Logger logger = LoggerFactory.getLogger(FakeWeatherService.class);
 
   @Override
-  public String getWeather(String location, String date) {
+  public String getWeather(String location, Optional<String> dateOptional) {
     logger.warn("Weather API Key not set, using a fake weather forecast");
+
+    var date = dateOptional
+      .orElse(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE));
+
     return "It's always sunny %s at %s.".formatted(date, location);
   }
 }
