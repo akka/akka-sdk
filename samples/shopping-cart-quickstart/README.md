@@ -78,12 +78,16 @@ akka local console
 This will start a Docker container running the local console:
 
 ```
-> Local Console is running at:             http://localhost:3000
-- shopping-cart-quickstart is running at: localhost:9000
---------------------
+───────────────────────────────────────────────────────────────────────
+│ SERVICE                      │ STATE    │ ADDRESS                   |
+───────────────────────────────────────────────────────────────────────
+│ shopping-cart-quickstart     │ Running  │ localhost:9001            │
+───────────────────────────────────────────────────────────────────────
+Local console: http://localhost:9889
+(use Ctrl+C to quit)
 ```
 
-You can open http://localhost:3000/ to see your local service in action.
+You can open http://localhost:9889/ to see your local service in action.
 
 ## Deploy to akka.io
 

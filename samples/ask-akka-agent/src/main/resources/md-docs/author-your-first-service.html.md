@@ -271,26 +271,29 @@ akka help
 
 ### [](about:blank#_start_the_local_console) Start the local console
 
-1. Start the local console. It will launch a Docker container:  
+1. Start the local console.  
 
 
 ```bash
 akka local console
 
-Pulling local console image, please wait...
 ```
-2. Once the console is running, you will see a message like this:  
+2. When the console is running, you will see a message like this:  
 
 
 ```bash
-- helloworld is running at: localhost:9000
------------------------------------------------------
+───────────────────────────────────────────────────────────────────────
+│ SERVICE                      │ STATE    │ ADDRESS                   |
+───────────────────────────────────────────────────────────────────────
+│ helloworld                   │ Running  │ localhost:9000            │
+───────────────────────────────────────────────────────────────────────
+Local console: http://localhost:9889
 (use Ctrl+C to quit)
 ```
 3. You can then access the local console in your browser at:  
 
-[  http://localhost:3000](http://localhost:3000/)
-4. Navigate to your service’s Endpoint, which will be available[  here](http://localhost:3000/services/akka-javasdk-archetype/components/io.akka.api.HelloWorldEndpoint)  .
+[  http://localhost:9889](http://localhost:9889/)
+4. Navigate to your service’s Endpoint, which will be available[  here](http://localhost:9889/services/akka-javasdk-archetype/components/io.akka.api.HelloWorldEndpoint)  .
 
 ![hello world local console](_images/hello-world-local-console.png)
 

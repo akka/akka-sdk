@@ -243,7 +243,7 @@ Local console: http://localhost:9889
 ───────────────────────────────────────────────────────────────────────
 │ SERVICE                      │ STATE    │ ADDRESS                   |
 ───────────────────────────────────────────────────────────────────────
-│ customer-registry-subscriber │ Running  │ localhost:9001            │
+│ helloworld-agent             │ Running  │ localhost:9001            │
 ───────────────────────────────────────────────────────────────────────
 Local console: http://localhost:9889
 (use Ctrl+C to quit)
