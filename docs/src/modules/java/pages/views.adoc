@@ -139,9 +139,9 @@ Defining a view that consumes from an Event Sourced Entity is very similar to th
 Every time an event is processed by the view, the state of the view can be updated. You can do this with the `updateRow` method, which is available through the `effects()` API. Below you can see how the View is updated:
 
 [source,java]
-.{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/application/CustomerByNameView.java[CustomerByNameView.java]
+.{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/application/CustomersByNameView.java[CustomersByNameView.java]
 ----
-include::example$event-sourced-customer-registry/src/main/java/customer/application/CustomerByNameView.java[tags=class]
+include::example$event-sourced-customer-registry/src/main/java/customer/application/CustomersByNameView.java[tags=class]
 ----
 <1> Defines a component id for the view.
 <2> Declares a `TableUpdater` of type `CustomerRow`.
