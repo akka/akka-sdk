@@ -165,9 +165,9 @@ To delete from the View you can use the `deleteRow()` effect from an event trans
 The source of a View can be also a Workflow state changes. It works the same way as shown in <<event-sourced-entity>> or <<value-entity>>, but you define it with `@Consume.FromWorkflow` instead.
 
 [source,java]
-.{sample-base-url}/transfer-workflow/src/main/java/com/example/transfer/application/TransferView.java[TransferView.java]
+.{sample-base-url}/transfer-workflow/src/main/java/com/example/transfer/application/TransfersView.java[TransfersView.java]
 ----
-include::example$transfer-workflow/src/main/java/com/example/transfer/application/TransferView.java[tag=view-from-workflow]
+include::example$transfer-workflow/src/main/java/com/example/transfer/application/TransfersView.java[tag=view-from-workflow]
 ----
 <1> Uses `@Consume.FromWorkflow` annotation to set the source Workflow.
 <2> Transforms the Workflow state `TransferState` into a View `TransferEntry`.
