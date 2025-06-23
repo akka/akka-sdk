@@ -18,7 +18,7 @@ import java.util.Optional
 class ToolExecutor(functionTools: Map[String, FunctionToolInvoker], serializer: JsonSerializer) {
 
   /**
-   * Executes a tool call command synchronously.g
+   * Executes a tool call command synchronously.
    */
   def execute(request: SpiAgent.ToolCallCommand): String = {
 
