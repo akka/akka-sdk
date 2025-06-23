@@ -1,17 +1,18 @@
-= Implementing Agents
+= Implementing agents
 
 include::ROOT:partial$include.adoc[]
 
 image:ROOT:agent.png[Agent,width=100,float=left]An Agent interacts with an AI model to perform a specific task. It is typically backed by a large language model (LLM). It maintains contextual history in a session memory, which may be shared between multiple agents that are collaborating on the same goal. It may provide function tools and call them as requested by the model.
 
-== Identify the Agent
-Interacting with Agents in Akka requires some identifying information. Like other components, we need to provide a **component ID** and we also need a **session ID**
+== Identify the agent
+Every component in Akka needs to be identifiable by the rest of the system. This usually involves two different forms of identification: a **component ID** an **instance ID**. We use component IDs as a way to identify the component _class_ and distinguish it from others. Instance identifiers are, as the name implies, unique identifiers for an instance of a component.
 
-* **Component ID** is a unique identifier for all agents of a given type. To define the component ID, we use the `@ComponentId` annotation and supply a string. 
-* **Session ID** is, as the name implies, unique _per session_. You can choose to have your agent have its own unique session or you can have multiple agents collaborate on a single session. As you'll see, the session stores communication history. You aren't restricted to just UUIDs when creating session IDs.
+As with all other components, we supply an identifier for the component class using the `@ComponentId` annotation.
+
+In the case of agents, we don't supply a unique identifier for the instance of the agent. Instead, we supply an identifier for the _session_ to which the agent is bound. This lets you have multiple components with different component IDs all performing various agentic tasks within the same shared session.
 
 [#_effect_api]
-== Agent's Effect API
+== Agent's effect API
 
 Effects are declarative in nature. When components handle commands, they can return an `Effect`. Some components can produce only a few effects while others, such as the Agent, can produce a wide variety.
 
@@ -49,7 +50,7 @@ Command handlers in Akka may take one or no parameters as input. If you need mul
 There can only be one command handler because the agent is supposed to perform one single well-defined task.
 
 [#model]
-== Configuring the Model
+== Configuring the model
 
 Akka provides integration with several backend AI models, and you have to select which model to use. You can define a default model in `application.conf`:
 
@@ -99,7 +100,7 @@ Each model provider may have different settings and those are described in xref:
 
 It is also possible to plug in a custom model by implementing the link:_attachments/api/akka/javasdk/agent/ModelProvider.Custom.html[`ModelProvider.Custom`] interface and use it with `ModelProvider.custom`.
 
-== Choosing the Prompt
+== Choosing the prompt
 
 The prompt consists of essential instructions to the model.
 
@@ -119,7 +120,7 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 
 Keep in mind that some models have preferences in how you wrap or label user input within the system prompt and you'll need to take that into account when defining your system message.
 
-=== Using Dynamic Prompts with Templates
+=== Using dynamic prompts with templates
 
 As an alternative to hard-coded prompts, there is a built-in prompt template entity. The advantage of using the prompt template entity is that you can change the prompts at runtime without restarting or redeploying the service. Because the prompt template is managed as an entity, you retain full change history.
 
@@ -182,7 +183,7 @@ You can use a new random UUID for each call if the agent doesn't collaborate wit
 
 For more details about the `ComponentClient`, see xref:component-and-service-calls.adoc[].
 
-== Drive the Agent from a workflow
+== Drive the agent from a workflow
 
 Agents make external calls to the AI model and possibly other services, and therefore it is important to have solid error handling and durable execution steps when calling agents. In many cases it is a good recommendation to call agents from a xref:workflows.adoc[Workflow]. The workflow will automatically execute the steps in a reliable and durable way. This means that if a call in a step fails, it will be retried until it succeeds or the retry limit of the recovery strategy is reached and separate error handling can be performed. The state machine of the workflow is durable, which means that if the workflow is restarted for some reason it will continue from where it left off, i.e. execute the current non-completed step again.
 
@@ -231,7 +232,7 @@ You often need a human-in-the-loop to integrate human oversight into the AI's de
 See xref:workflows.adoc#_pausing_workflow[how to pause a workflow].
 
 [#session_memory]
-== Managing Session memory
+== Managing session memory
 
 Session Memory provides a history mechanism that enables agents to maintain context across multiple interactions. This feature is essential for building agents that can remember previous exchanges with users, understand context, and provide coherent responses over time.
 
@@ -244,7 +245,7 @@ The session memory is:
 * Persisted as an event-sourced entity
 * Automatically managed by the Agent
 
-=== Session Memory Configuration
+=== Session memory configuration
 
 By default, session memory is enabled for all agents. You can configure it globally in your `application.conf`:
 
@@ -285,7 +286,7 @@ The link:_attachments/api/akka/javasdk/agent/MemoryProvider.html[`MemoryProvider
   ** Limit the amount of messages used as context in each interaction, i.e. use only the last N number of messages for context (good for token usage control).
 * `MemoryProvider.custom()` - Allows you to provide a custom implementation for the `SessionMemory` interface and store the session memory externally in a database / service of your preference.
 
-=== Accessing Session Memory
+=== Accessing session memory
 
 The default implementation of Session Memory is backed by a regular xref:java:event-sourced-entities.adoc[Event Sourced Entity] called `SessionMemoryEntity`, which allows you to interact directly with it as you would do with any other entities in your application. This includes the possibility to directly modify or access it through the `ComponentClient` but also the ability to subscribe to changes in the session memory, as shown below:
 
@@ -423,7 +424,6 @@ When you pass a `Class` instead of an instance, the class is only instantiated w
 
 For this approach to work, you must register the class with a xref:setup-and-dependency-injection.adoc#_custom_dependency_injection[DependencyProvider] in your service setup. The DependencyProvider is responsible for creating and managing instances of these classes when they're needed. This gives you complete control over how tool dependencies are instantiated and managed throughout your application.
 
-
 === Using tools from remote MCP servers ===
 
 xref:mcp-endpoints.adoc[Akka MCP endpoints] declared in other services, or third party MCP services can be added to
@@ -460,7 +460,7 @@ By default, this value is set to 100. You can adjust this in your configuration:
 akka.javasdk.agent.max-tool-call-steps = 150
 ----
 
-== Use ComponentClient in an Agent
+== Use ComponentClient in an agent
 
 xref:java:setup-and-dependency-injection.adoc#_dependency_injection[Dependency injection] can be used in an
 Agent. For example, injecting the `ComponentClient` to be able to enrich the request to the AI model with
@@ -479,7 +479,7 @@ This also illustrates the important point that the context of the request to the
 
 The ability to reach into the rest of a distributed Akka application to _augment_ requests makes behavior like Retrieval Augmented Generation (RAG) simple and less error prone than doing things manually without Akka.
 
-== Streaming Responses
+== Streaming responses
 
 In AI chat applications, you've seen how responses are displayed word by word as they are generated. There are a few reasons for this. The first is that LLMs are _prediction_ engines. Each time a token (usually a word) is streamed to the response, the LLM will attempt to _predict_ the next word in the output. This causes the small delays between words.
 
@@ -517,11 +517,11 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 NOTE: Token streams are designed for direct agent calls from an endpoint. You can't use a token stream when you have an intermediate workflow between the endpoint and the agent.
 
 [#multi_agent]
-== Orchestrating Multiple Agents
+== Orchestrating multiple agents
 
 A single agent performs one well-defined task. Several agents can collaborate to achieve a common goal. The agents should be orchestrated from a predefined workflow or a dynamically created plan.
 
-=== Using a Predefined Workflow
+=== Using a predefined workflow
 
 Let's first look at how to define a workflow that orchestrates several agents in a predefined steps. This is similar to the xref:#_drive_the_agent_from_a_workflow[`ActivitiesAgentManager`] that was illustrated above, but it uses both the `WeatherAgent` and the `ActivitiesAgent`. First it retrieves the weather forecast and then it finds suitable activities.
 
@@ -539,7 +539,7 @@ In image:concepts:steps-4.svg[width=20] we explicitly include the forecast in th
 
 The workflow will automatically execute the steps in a reliable and durable way. This means that if a call in a step fails, it will be retried until it succeeds or the retry limit of the recovery strategy is reached and separate error handling can be performed. The state machine of the workflow is durable, which means that if the workflow is restarted for some reason it will continue from where it left off, i.e. execute the current non-completed step again.
 
-=== Creating Dynamic Plans
+=== Creating dynamic plans
 
 To create a more flexible and autonomous agentic system you want to analyze the problem and dynamically come up with a plan. The agentic system should identify the tasks to achieve the goal by itself. Decide which agents to use and in which order to execute them. Coordinate input and output between agents and adjust the plan along the way.
 
@@ -623,7 +623,7 @@ include::example$multi-agent/src/main/java/demo/multiagent/application/AgentTeam
 
 You find the full source code for this multi-agent sample in the link:https://github.com/akka-samples/multi-agent[akka-samples/multi-agent Github Repository].
 
-== Testing the Agent
+== Testing the agent
 
 Testing agents built with Generative AI involves two complementary approaches: evaluating the quality of the non-deterministic model behavior and writing deterministic unit tests for the agent's  and surrounding components' logic.
 
@@ -656,3 +656,4 @@ include::example$multi-agent/src/test/java/demo/multiagent/application/AgentTeam
 <4> For simple tests, define a single, fixed response that the mock model will always return.
 <5> For more complex scenarios, define a response that is only returned if the user message matches a specific condition. This is useful for testing different logic paths within your agent.
 <6> Call the components with the `componentClient`.
+
