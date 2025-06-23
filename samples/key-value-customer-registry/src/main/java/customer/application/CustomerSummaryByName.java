@@ -8,7 +8,7 @@ import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.view.View;
 
-@ComponentId("customers-by-name")
+@ComponentId("customer-summary-by-name")
 public class CustomerSummaryByName extends View {
 
   public record CustomerSummary(String id, String name) { }

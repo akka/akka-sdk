@@ -7,7 +7,7 @@ import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.view.View;
 
-@ComponentId("customer-list-by-name")
+@ComponentId("customers-list-by-name")
 // tag::class[]
 public class CustomersListByName extends View {
 
