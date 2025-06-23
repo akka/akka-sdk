@@ -30,6 +30,7 @@ Add agents and other components step-by-step. The final application will consist
 | Tutorial | Level
 | xref:planner-agent/index.adoc[Part 1: The activity agent] | Beginner
 | xref:planner-agent/preferences.adoc[Part 2: User preferences] | Beginner
+| xref:planner-agent/weather.adoc[Part 3: Weather agent] | Beginner
 |=======================
 
 === Build a shopping cart system

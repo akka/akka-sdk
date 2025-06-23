@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-**1: The activity agent** > xref:planner-agent/preferences.adoc[2: User preferences]
+**1: The activity agent** > xref:planner-agent/preferences.adoc[2: User preferences] > xref:planner-agent/weather.adoc[3: Weather agent]
 
 include::ROOT:partial$new-to-akka-start-here.adoc[]
 

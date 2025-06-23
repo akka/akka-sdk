@@ -19,6 +19,6 @@ public class FakeWeatherService implements WeatherService {
     var date = dateOptional
       .orElse(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE));
 
-    return "It's always sunny %s at %s.".formatted(date, location);
+    return "It's always sunny %s in %s.".formatted(date, location);
   }
 }
