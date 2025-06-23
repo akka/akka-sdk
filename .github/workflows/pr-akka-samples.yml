@@ -76,7 +76,8 @@ jobs:
           repository: ${{ matrix.sampleRepo }}
           path: akka-samples-${{ matrix.sample }}
           token: ${{ secrets.AKKA_SAMPLES_RW_ACCESS_TOKEN }}
-          ref: main
+          # Use the same branch/commit as the original workflow when triggered by workflow_run
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref }}
 
       - name: Open PR with changes
         env:
