@@ -81,6 +81,7 @@ Available model providers for hosted models are:
 
 | Anthropic | link:https://www.anthropic.com/[anthropic.com]
 | GoogleAIGemini | link:https://gemini.google.com/[gemini.google.com]
+| Hugging Face | link:https://huggingface.co[huggingface.co]
 | OpenAi | link:https://openai.com/[openai.com]
 
 |===

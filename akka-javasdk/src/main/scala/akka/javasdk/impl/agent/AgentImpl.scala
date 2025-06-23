@@ -349,6 +349,14 @@ private[impl] final class AgentImpl[A <: Agent](
           p.temperature(),
           p.topP(),
           p.maxOutputTokens())
+      case p: ModelProvider.HuggingFace =>
+        new SpiAgent.ModelProvider.HuggingFace(
+          p.accessToken(),
+          p.modelId(),
+          p.baseUrl(),
+          p.temperature(),
+          p.topP(),
+          p.maxNewTokens())
       case p: ModelProvider.LocalAI =>
         new SpiAgent.ModelProvider.LocalAI(p.baseUrl(), p.modelName(), p.temperature(), p.topP(), p.maxTokens())
       case p: ModelProvider.Ollama =>
@@ -391,8 +399,10 @@ private[impl] final class AgentImpl[A <: Agent](
       providerConfig.getString("provider") match {
         case "anthropic"       => ModelProvider.Anthropic.fromConfig(providerConfig)
         case "googleai-gemini" => ModelProvider.GoogleAIGemini.fromConfig(providerConfig)
+        case "hugging-face"    => ModelProvider.HuggingFace.fromConfig(providerConfig)
         case "ollama"          => ModelProvider.Ollama.fromConfig(providerConfig)
         case "openai"          => ModelProvider.OpenAi.fromConfig(providerConfig)
+        case "local-ai"        => ModelProvider.LocalAI.fromConfig(providerConfig)
         case other =>
           throw new IllegalArgumentException(s"Unknown model provider [$other] in config [$resolvedConfigPath]")
       }
