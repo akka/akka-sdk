@@ -81,7 +81,7 @@ This will start a Docker container running the local console:
 ───────────────────────────────────────────────────────────────────────
 │ SERVICE                      │ STATE    │ ADDRESS                   |
 ───────────────────────────────────────────────────────────────────────
-│ shopping-cart-quickstart     │ Running  │ localhost:9001            │
+│ shopping-cart-quickstart     │ Running  │ localhost:9000            │
 ───────────────────────────────────────────────────────────────────────
 Local console: http://localhost:9889
 (use Ctrl+C to quit)
