@@ -10,7 +10,7 @@ In this step of the guide, you'll add some endpoints to provide a client-friendl
 
 == Prerequisites
 
-include::ROOT:partial$cloud-dev-prerequisites.adoc[]
+include::ROOT:partial$local-dev-prerequisites.adoc[]
 * https://platform.openai.com/api-keys[OpenAI API key, window="new"]
 
 You will need to have your MongoDB Atlas database URL and your Open AI API key available, as they are required to run the Ask Akka service.

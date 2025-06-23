@@ -13,7 +13,7 @@ Populating the vector database by creating embeddings is the _indexing_ step. In
 
 == Prerequisites
 
-include::ROOT:partial$cloud-dev-prerequisites.adoc[]
+include::ROOT:partial$local-dev-prerequisites.adoc[]
 * https://platform.openai.com/api-keys[OpenAI API key, window="new"]
 
 You will also need a link:https://www.mongodb.com/atlas[Mongo DB Atlas] account. We'll be using the vector indexing capability of this database for the retrieval portion of the RAG flow. You can do all of the indexing necessary for this sample with a free account. Once you've created the account, make note of the secure connection string as you'll need it later.

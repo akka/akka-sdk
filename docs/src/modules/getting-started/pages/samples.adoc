@@ -6,6 +6,15 @@ include::ROOT:partial$new-to-akka-start-here.adoc[]
 
 Samples are available that demonstrate important patterns and abstractions. These can be cloned from their respective repositories. Please refer to the `README` file in each repository for setup and usage instructions.
 
+AI multi-agent system that that suggests real-world activities::
+
+Demonstrating how to build a multi-agent system using Akka and an LLM model. A workflow manages the user query process, handling the sequential steps of agent selection, plan creation, execution, and summarization.
++
+xref:getting-started:planner-agent/index.adoc[Step-by-step guide]
++
+link:https://github.com/akka-samples/multi-agent[Github Repository, window="new"],
+Level: Intermediate
+
 AI agent that performs a RAG workflow::
 
 Illustrates how to create embeddings for vector databases, how to consume LLMs and maintain conversation history, use RAG to add knowledge to fixed LLMs, and expose it all as a streaming service. It uses MongoDB Atlas and OpenAI.
@@ -46,11 +55,6 @@ Trip booking agent using tools::
 This app represents an agency that searches for flights and accommodations. It's composed by an LLM (Anthropic) using Spring AI and tools to find flights, accommodations and sending mails.
 +
 link:https://github.com/akka-samples/trip-agent[Github Repository, window="new"], Level: Intermediate
-
-Multi-agent, weather-aware travel agent and activity planner::
-Demonstrating how to build a multi-agent system using Akka and an LLM model. A workflow manages the user query process, handling the sequential steps of agent selection, plan creation, execution, and summarization.
-+
-link:https://github.com/akka-samples/multi-agent[Github Repository, window="new"], Level: Advanced
 
 Analyze sensor data by an agent::
 AI agent that uses an LLM to analyze data from fitness trackers, medical records and other sensors. Integration with Fitbit and MongoDB Atlas.
