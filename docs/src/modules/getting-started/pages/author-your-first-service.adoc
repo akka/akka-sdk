@@ -208,41 +208,52 @@ create an intimidating aura! Arrr!
 
 == Explore the local console
 
-The Akka local console is a web-based tool that provides a convenient way to view and interact with your running service.
+The Akka local console is a web-based tool that comes bundled with the Akka CLI. It provides a convenient way to view and interact with your running service.
 
 === Install the Akka CLI
 
-Starting the local console requires using the Akka CLI and Docker.
+Starting the local console requires using the Akka CLI.
 
 include::ROOT:partial$cli-install-short.adoc[]
 
 
 === Start the local console
 
-. Start the local console. It will launch a Docker container:
+. Start the local console.
 +
 [source,bash]
 ----
 akka local console
+----
++
+[source,bash]
+----
+⠸ Waiting for services to come online...
 
-Pulling local console image, please wait...
+────────────────────────────────────────────────────────────
+Local console: http://localhost:9889
+(use Ctrl+C to quit)
 ----
 
-. Once the console is running, you will see a message like this:
+. Once the console and service is running, you will see a message like this:
 
 +
 [source,bash]
 ----
-- helloworld is running at: localhost:9000
------------------------------------------------------
+───────────────────────────────────────────────────────────────────────
+│ SERVICE                      │ STATE    │ ADDRESS                   |
+───────────────────────────────────────────────────────────────────────
+│ customer-registry-subscriber │ Running  │ localhost:9001            │
+───────────────────────────────────────────────────────────────────────
+Local console: http://localhost:9889
 (use Ctrl+C to quit)
 ----
 
 . You can then access the local console in your browser at:
 +
-http://localhost:3000[window="new"]
+http://localhost:9889[window="new"]
 
-. Navigate to your service's Endpoint, which will be available http://localhost:3000/services/helloworld-agent/components/com.example.api.HelloWorldEndpoint[here, window="new"].
+. Navigate to your service's Endpoint, which will be available http://localhost:9889/services/helloworld-agent/components/com.example.api.HelloWorldEndpoint[here, window="new"].
 
 image:hello-world-local-console.png[]
 
