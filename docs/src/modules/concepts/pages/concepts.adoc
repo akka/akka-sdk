@@ -122,13 +122,45 @@ Akka provides a basket of interoperable components that can be used to design an
 
 == Component interoperability
 
-Akka components can communicate seamlessly, regardless of physical location. Location transparency ensures efficient message routing and runtime efficiency, even across network boundaries.
+Akka components are able to interoperate with one another regardless of where the component may be executing. While you create systems that define the relationships between each of the components in code, at runtime instances of each component can run on different nodes. The Akka runtime provides location transparency, automating the routing of a call from one component to another even if they reside in different locations on different networks.
 
-There are two main modes of inter-component communication in Akka:
+There are two ways to achieve interoperability between Akka components and the outside world.
 
-1. **ComponentClient**: Asynchronous, non-blocking invocations. Components return immediately after dispatching a message, regardless of destination.
 
-2. **Events**: Components emit events that others may subscribe to. This pattern enables decoupled, brokerless messaging similar to pub/sub systems. Akka components may also subscribe to events from external sources (e.g., APIs, brokers).
+[cols="1,3", options="header"]
+[.compact]
+|===
+|Client Type |Description
+
+|xref:java:component-and-service-calls.adoc[ComponentClient]
+|One component can directly invoke another component. Akka treats these direct invocations as non-blocking, asynchronous messages, meaning that the invoking component immediately returns after making the invocation and can invoke any component regardless of its location.
+
+For example, a Workflow component handling a long-running business transaction can invoke an Agent component to perform a task, and the Workflow can continue processing without waiting for the Agent to complete its work.
+
+|Events
+|Components can emit events that can be subscribed to by other components. For example, an entity can emit an event when its state is updated. Other components can subscribe to this event, similar to how clients subscribe to Kafka topics. Events are propagated transparently between components through reliable, brokerless messaging.
+
+Components can also subscribe to events that are incoming from external sources, which can be 3rd party brokers, APIs, or real-time streams of data.
+|===
+
+Akka is designed so that components remain loosely coupled and can communicate with each other regardless of where they run. Inter-component communication runs on virtual threads managed by the Akka runtime. These threads are lightweight and isolated in a way that ensures system resources remain available for other tasks. This allows components to interact without interfering with each other or affecting overall responsiveness. This basic behavior is one reason why Akka services, whether stateful or stateless, can scale to 10M transaction per second (TPS).
+
+[cols="2,3", options="header"]
+[.compact]
+|===
+| Example Interoperability | Description
+
+| Endpoint → Workflow → Agent + 
+  Endpoint → Entity → View     | A user triggers an HTTP request to start a long-running Workflow. The Workflow manages file processing and passes relevant data or control to an Agent, which will later use it for answering questions. Meanwhile, another Endpoint saves user interaction history into an Entity. A View component then reads from that Entity to reconstruct the user’s conversation history for display or retrieval.
+
+| Endpoint → Agent → Entity → View +
+  Endpoint → Workflow → Entity       | A user sends a query to an Endpoint. An Agent processes the query and stores the interaction in an Entity. A View then reads this data to reconstruct the conversation history for that user. Meanwhile, an Endpoint starts a Workflow. The Workflow processes input data and stores results into an Entity.
+
+
+| Stream → Consumer → Entity +
+  Agent → Endpoint → Entity        | A data stream is received by a Consumer, which writes the structured data to an Entity for long-term storage and future retrieval. Meanwhile, an Agent invokes some logic exposed by an Endpoint, and persists the result in an Entity.
+
+|===
 
 == Packaging flexibility
 
