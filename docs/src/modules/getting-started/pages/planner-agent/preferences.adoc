@@ -73,7 +73,7 @@ To update the preferences, we add another method to the endpoint:
 include::java:example$doc-snippets/src/main/java/agent_guide/part2/ActivityEndpoint.java[tag=addPreference]
 ----
 <1> Add a method to add a preference.
-<2> Call the `PreferenceEntity` for the the given user id.
+<2> Call the `PreferenceEntity` for the given user id.
 
 == Running the service
 
