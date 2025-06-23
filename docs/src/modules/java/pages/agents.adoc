@@ -381,6 +381,7 @@ include::example$multi-agent/src/main/java/demo/multiagent/application/agents/We
 
 <1> Annotate method with `@FunctionTool` and provide a clear description of what it does.
 <2> Parameters can be documented with the `@Description` annotation to help the LLM understand how to use them.
+<3> The date parameter is optional. The LLM may call `getCurrentDate` first or call this method without a date, depending on the user query.
 
 
 [NOTE]
