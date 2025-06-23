@@ -7,12 +7,12 @@ import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.view.View;
 
-@ComponentId("customers_by_name_2")
+@ComponentId("customers-list-by-name")
 // tag::class[]
-public class CustomersResponseByName extends View {
+public class CustomersListByName extends View {
 
   @Consume.FromKeyValueEntity(CustomerEntity.class)
-  public static class Customers extends TableUpdater<Customer> { } // <1>
+  public static class CustomersByNameUpdater extends TableUpdater<Customer> { } // <1>
 
   @Query("""
     SELECT * AS customers

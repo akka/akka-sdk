@@ -11,7 +11,7 @@ import customer.domain.Customer;
 
 import java.util.Collection;
 
-@ComponentId("customers_by_name")
+@ComponentId("customers-by-name")
 public class CustomersByName extends View {
 
   // tag::row[]
@@ -19,7 +19,7 @@ public class CustomersByName extends View {
   // end::row[]
 
   @Consume.FromKeyValueEntity(CustomerEntity.class)
-  public static class CustomerByNameUpdater extends TableUpdater<CustomerSummary> { // <1>
+  public static class CustomersByNameUpdater extends TableUpdater<CustomerSummary> { // <1>
     public Effect<CustomerSummary> onUpdate(Customer customer) { // <2>
       return effects()
           .updateRow(new CustomerSummary(updateContext().eventSubject().get(), customer.name(), customer.email())); // <3>
@@ -32,10 +32,10 @@ public class CustomersByName extends View {
   }
   // end::class[]
 
-  public record Customers(Collection<CustomerSummary> customers) { } // <6>
+  public record CustomerSummaries(Collection<CustomerSummary> customers) { } // <6>
 
   @Query("SELECT * AS customers FROM customers_by_name WHERE name = :name") // <7>
-  public QueryEffect<Customers> getCustomers(String name) {
+  public QueryEffect<CustomerSummaries> getCustomers(String name) {
     return queryResult(); // <8>
   }
 

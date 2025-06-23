@@ -23,7 +23,7 @@ public class JoinedCustomerOrdersView extends View {
 
   @Table("customers") // <2>
   @Consume.FromEventSourcedEntity(CustomerEntity.class)
-  public static class Customers extends TableUpdater<Customer> {
+  public static class CustomersUpdater extends TableUpdater<Customer> {
     public Effect<Customer> onEvent(CustomerEvent event) {
       return switch (event) {
         case CustomerEvent.CustomerCreated created -> {
@@ -43,7 +43,7 @@ public class JoinedCustomerOrdersView extends View {
 
   @Table("products") // <2>
   @Consume.FromEventSourcedEntity(ProductEntity.class)
-  public static class Products extends TableUpdater<Product> {
+  public static class ProductsUpdater extends TableUpdater<Product> {
     public Effect<Product> onEvent(ProductEvent event) {
       return switch (event) {
         case ProductEvent.ProductCreated created -> {
@@ -62,7 +62,7 @@ public class JoinedCustomerOrdersView extends View {
 
   @Table("orders") // <2>
   @Consume.FromKeyValueEntity(OrderEntity.class)
-  public static class Orders extends TableUpdater<Order> {
+  public static class OrdersUpdater extends TableUpdater<Order> {
   }
 
   public record JoinedCustomerOrders(List<CustomerOrder> orders) { }

@@ -23,7 +23,7 @@ import customer.application.CustomerSummaryByName;
 import customer.application.CustomersByCity;
 import customer.application.CustomersByEmail;
 import customer.application.CustomersByName;
-import customer.application.CustomersResponseByName;
+import customer.application.CustomersListByName;
 import customer.domain.Address;
 import customer.domain.Customer;
 
@@ -186,7 +186,7 @@ public class CustomerEndpoint {
   @Get("/by-name/{name}")
   public CustomerList getByName(String name) {
     return componentClient.forView()
-        .method(CustomersResponseByName::getCustomers)
+        .method(CustomersListByName::getCustomers)
         .invoke(name);
   }
 

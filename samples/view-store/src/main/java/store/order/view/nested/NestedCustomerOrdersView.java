@@ -35,7 +35,7 @@ public class NestedCustomerOrdersView extends View {
 
   @Table("customers")
   @Consume.FromEventSourcedEntity(CustomerEntity.class)
-  public static class Customers extends TableUpdater<Customer> {
+  public static class CustomersUpdater extends TableUpdater<Customer> {
     public Effect<Customer> onEvent(CustomerEvent event) {
       return switch (event) {
         case CustomerEvent.CustomerCreated created -> {
@@ -55,7 +55,7 @@ public class NestedCustomerOrdersView extends View {
 
   @Table("products")
   @Consume.FromEventSourcedEntity(ProductEntity.class)
-  public static class Products extends TableUpdater<Product> {
+  public static class ProductsUpdater extends TableUpdater<Product> {
     public Effect<Product> onEvent(ProductEvent event) {
       return switch (event) {
         case ProductEvent.ProductCreated created -> {
@@ -74,5 +74,5 @@ public class NestedCustomerOrdersView extends View {
 
   @Table("orders")
   @Consume.FromKeyValueEntity(OrderEntity.class)
-  public static class Orders extends TableUpdater<Order> { }
+  public static class OrdersUpdater extends TableUpdater<Order> { }
 }

@@ -11,7 +11,7 @@ import java.util.Collection;
 
 // tag::view-from-workflow[]
 @ComponentId("transfer-view")
-public class TransferView extends View {
+public class TransfersView extends View {
 
   public record TransferEntry(String id, String status) {}
 
@@ -23,7 +23,7 @@ public class TransferView extends View {
   }
 
   @Consume.FromWorkflow(TransferWorkflow.class) // <1>
-  public static class TransferUpdater extends TableUpdater<TransferEntry> {
+  public static class TransfersUpdater extends TableUpdater<TransferEntry> {
 
     public Effect<TransferEntry> onUpdate(TransferState transferState) { // <2>
       var id = updateContext().eventSubject().orElse("");

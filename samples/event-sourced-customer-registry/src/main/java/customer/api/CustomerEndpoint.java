@@ -9,12 +9,12 @@ import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpException;
 import akka.javasdk.http.HttpResponses;
-import customer.application.CustomerByEmailView;
-import customer.application.CustomerByNameView;
+import customer.application.CustomersByEmailView;
+import customer.application.CustomersByNameView;
 import customer.application.CustomerEntity;
 import customer.domain.Address;
 import customer.domain.Customer;
-import customer.domain.CustomersList;
+import customer.domain.CustomerEntries;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,16 +76,16 @@ public class CustomerEndpoint {
   }
 
   @Get("/by-name/{name}")
-  public CustomersList customerByName(String name) {
+  public CustomerEntries customerByName(String name) {
     return componentClient.forView()
-      .method(CustomerByNameView::getCustomers)
+      .method(CustomersByNameView::getCustomers)
       .invoke(name);
   }
 
   @Get("/by-email/{email}")
-  public CustomersList customerByEmail(String email) {
+  public CustomerEntries customerByEmail(String email) {
     return componentClient.forView()
-      .method(CustomerByEmailView::getCustomers)
+      .method(CustomersByEmailView::getCustomers)
       .invoke(email);
   }
 }

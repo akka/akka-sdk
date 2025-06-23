@@ -1,11 +1,11 @@
 package customer.api;
 
-import customer.domain.Customer;
+import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
+import akka.javasdk.testkit.TestKit;
 import customer.application.CustomerPublicEvent.Created;
 import customer.application.CustomersByEmailView;
 import customer.application.CustomersByNameView;
-import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
-import akka.javasdk.testkit.TestKit;
+import customer.domain.CustomerEntry;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
@@ -17,8 +17,8 @@ public class CustomersByNameViewIntegrationTest extends CustomerRegistryIntegrat
 
   @Override
   protected TestKit.Settings testKitSettings() {
-      return super.testKitSettings()
-              .withStreamIncomingMessages("customer-registry", "customer_events");
+    return super.testKitSettings()
+      .withStreamIncomingMessages("customer-registry", "customer_events");
   }
 
   @Test
@@ -38,22 +38,19 @@ public class CustomersByNameViewIntegrationTest extends CustomerRegistryIntegrat
       .pollInterval(1, TimeUnit.SECONDS)
       .untilAsserted(() -> {
 
-        Customer customer =
-            componentClient.forView()
-              .method(CustomersByNameView::findByName)
-              .invoke(created1.name())
-          .customers().stream().findFirst().get();
+          CustomerEntry customer = componentClient.forView()
+            .method(CustomersByNameView::findByName)
+            .invoke(created1.name())
+            .customers().stream().findFirst().get();
 
-        assertThat(customer).isEqualTo(new Customer("b", created1.email(), created1.name()));
+          assertThat(customer).isEqualTo(new CustomerEntry("b", created1.email(), created1.name()));
 
-        Customer customer2 =
+          CustomerEntry customer2 = componentClient.forView()
+            .method(CustomersByEmailView::findByEmail)
+            .invoke(created2.email())
+            .customers().stream().findFirst().get();
 
-            componentClient.forView()
-              .method(CustomersByEmailView::findByEmail)
-              .invoke(created2.email())
-          .customers().stream().findFirst().get();
-
-        assertThat(customer2).isEqualTo(new Customer("a", created2.email(), created2.name()));
+          assertThat(customer2).isEqualTo(new CustomerEntry("a", created2.email(), created2.name()));
 
         }
       );
