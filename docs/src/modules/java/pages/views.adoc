@@ -232,9 +232,9 @@ include::example$key-value-customer-registry/src/main/java/customer/application/
 ----
 
 [source,java,indent=0]
-.{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomersResponseByName.java[CustomersResponseByName.java]
+.{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomersListByName.java[CustomersListByName.java]
 ----
-include::example$key-value-customer-registry/src/main/java/customer/application/CustomersResponseByName.java[tag=class]
+include::example$key-value-customer-registry/src/main/java/customer/application/CustomersListByName.java[tag=class]
 ----
 <1> Table updater type is the original `Customer` as shown at the beginning of this section.
 <2> Note the use of `* AS customers` so records are matched to `customers` field in `CustomersList`.
