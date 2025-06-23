@@ -20,6 +20,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
 
 class TestModelProviderTest {
 
@@ -110,8 +111,14 @@ class TestModelProviderTest {
 
   @Test
   void testMockResponseWithPredicate() {
-    testModelProvider.mockResponse(text -> text.contains("hello"), "Hello response");
-    testModelProvider.mockResponse(text -> text.contains("goodbye"), "Goodbye response");
+
+    testModelProvider
+      .whenMessage(text -> text.contains("hello"))
+      .reply("Hello response");
+
+    testModelProvider
+      .whenMessage(text -> text.contains("goodbye"))
+      .reply("Goodbye response");
 
     ChatModel chatModel = (ChatModel) testModelProvider.createChatModel();
 
@@ -131,8 +138,55 @@ class TestModelProviderTest {
   }
 
   @Test
+  void testFailWhenActionIsMissing() {
+
+    var whenClause =
+    testModelProvider
+      .whenMessage("hello");
+
+    ChatModel chatModel = (ChatModel) testModelProvider.createChatModel();
+    ChatRequest helloRequest = ChatRequest.builder()
+      .messages(List.of(new UserMessage("hello")))
+      .build();
+
+    try {
+      chatModel.doChat(helloRequest);
+      fail("Should have failed");
+    } catch (RuntimeException e) {
+      assertThat(e.getMessage()).startsWith("A matching predicate was defined for");
+      return;
+    }
+
+    // adding a reply replaces the catcher for MissingModelResponseException
+    whenClause.reply("Hello response");
+    ChatResponse helloResponse = chatModel.doChat(helloRequest);
+    assertThat(helloResponse.aiMessage().text()).isEqualTo("Hello response");
+  }
+
+  @Test
+  void testFailure() {
+
+    testModelProvider.whenMessage("hello").failWith(new RuntimeException("I can't handle this"));
+
+    ChatModel chatModel = (ChatModel) testModelProvider.createChatModel();
+    ChatRequest helloRequest = ChatRequest.builder()
+      .messages(List.of(new UserMessage("hello")))
+      .build();
+    try {
+      chatModel.doChat(helloRequest);
+      fail("Should have failed");
+    } catch (RuntimeException e) {
+      assertThat(e.getMessage()).isEqualTo("I can't handle this");
+      return;
+    }
+
+  }
+
+  @Test
   void testMockResponseNoMatch() {
-    testModelProvider.mockResponse(text -> text.contains("specific"), "Specific response");
+    testModelProvider
+      .whenMessage(text -> text.contains("specific"))
+      .reply("Specific response");
 
     ChatModel chatModel = (ChatModel) testModelProvider.createChatModel();
     ChatRequest request = ChatRequest.builder()
@@ -205,8 +259,13 @@ class TestModelProviderTest {
 
   @Test
   void testMultipleResponsePredicatesFirstMatch() {
-    testModelProvider.mockResponse(text -> text.contains("first"), "First response");
-    testModelProvider.mockResponse(text -> text.contains("first"), "Second response");
+    testModelProvider
+      .whenMessage(text -> text.contains("first"))
+      .reply("First response");
+
+    testModelProvider
+      .whenMessage(text -> text.contains("first"))
+      .reply("Second response");
 
     ChatModel chatModel = (ChatModel) testModelProvider.createChatModel();
     ChatRequest request = ChatRequest.builder()

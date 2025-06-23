@@ -1,5 +1,8 @@
 package demo.multiagent.application;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import akka.javasdk.JsonSupport;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
@@ -13,14 +16,10 @@ import demo.multiagent.domain.AgentResponse;
 import demo.multiagent.domain.AgentSelection;
 import demo.multiagent.domain.Plan;
 import demo.multiagent.domain.PlanStep;
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.Test;
-
 import java.util.List;
 import java.util.UUID;
-
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.assertj.core.api.Assertions.assertThat;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Test;
 
 // tag::class[]
 public class AgentTeamTest extends TestKitSupport { // <1>
@@ -54,15 +53,20 @@ public class AgentTeamTest extends TestKitSupport { // <1>
         new PlanStep("activity-agent", activityQuery)));
     plannerModel.fixedResponse(JsonSupport.encodeToString(plan));
 
-    weatherModel.mockResponse(req -> req.equals(weatherQuery), // <5>
-        JsonSupport.encodeToString(
-            new AgentResponse("The weather in Stockholm is sunny.", null)));
+    weatherModel
+        .whenMessage(req -> req.equals(weatherQuery)) // <5>
+        .reply(
+            JsonSupport.encodeToString(
+                new AgentResponse("The weather in Stockholm is sunny.", null)));
 
-    activitiesModel.mockResponse(req -> req.equals(activityQuery),
-        JsonSupport.encodeToString(
-            new AgentResponse(
-                "You can take a bike tour around Djurgården Park, " +
-                    "visit the Vasa Museum, explore Gamla Stan (Old Town)...", null)));
+    activitiesModel
+        .whenMessage(req -> req.equals(activityQuery))
+        .reply(
+            JsonSupport.encodeToString(
+                new AgentResponse(
+                    "You can take a bike tour around Djurgården Park, "
+                        + "visit the Vasa Museum, explore Gamla Stan (Old Town)...",
+                    null)));
 
     summaryModel.fixedResponse("The weather in Stockholm is sunny, so you can enjoy " +
         "outdoor activities like a bike tour around Djurgården Park, visiting the Vasa Museum, " +
