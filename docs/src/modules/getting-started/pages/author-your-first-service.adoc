@@ -265,6 +265,4 @@ This is a simple Hello World service, so there isn't much to see here yet. Howev
 
 == Next steps
 
-Now that you have a basic service running, it's time to learn more about building real services in Akka. See xref:getting-started:build-and-deploy-shopping-cart.adoc[] to build a more realistic application and learn how to deploy it to https://console.akka.io[akka.io].
-
-ifdef::todo[TODO: Change next step to the new guide]
+Now that you have a basic service running, it's time to learn more about building real services in Akka. See xref:getting-started:planner-agent/index.adoc[multi-agent activity planner] to build a more realistic application.

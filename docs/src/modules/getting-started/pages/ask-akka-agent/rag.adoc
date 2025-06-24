@@ -11,7 +11,8 @@ In this step of the guide to building the _Ask Akka_ application, you'll be crea
 
 == Prerequisites
 
-include::ROOT:partial$cloud-dev-prerequisites.adoc[]
+include::ROOT:partial$local-dev-prerequisites.adoc[]
+* https://platform.openai.com/api-keys[OpenAI API key, window="new"]
 
 include::ROOT:partial$recommend-ai-video.adoc[]
 

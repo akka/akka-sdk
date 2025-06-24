@@ -21,6 +21,17 @@ A good first step for learning how services are structured and how Akka processe
 | xref:getting-started:author-your-first-service.adoc[Create and run your first agentic Hello World service] | Beginner
 |=======================
 
+=== Build a multi-agent system
+
+Add agents and other components step-by-step. The final application will consist of dynamic orchestration of multiple agents. A workflow manages the user query process, handling the sequential steps of agent selection, plan creation, execution, and summarization.
+
+[options="header", cols="2,1"]
+|=======================
+| Tutorial | Level
+| xref:planner-agent/index.adoc[Part 1: The activity agent] | Beginner
+| xref:planner-agent/preferences.adoc[Part 2: User preferences] | Beginner
+|=======================
+
 === Build a shopping cart system
 
 Explore a complete e-commerce service and learn key Akka concepts by implementing a real-world system. These lessons walk you through defining agents, handling state, processing commands, and responding to user-specific queries.
