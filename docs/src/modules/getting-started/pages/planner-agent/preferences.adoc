@@ -2,8 +2,6 @@
 
 include::ROOT:partial$include.adoc[]
 
-xref:planner-agent/index.adoc[1: The activity agent] > **2: User preferences**
-
 include::ROOT:partial$new-to-akka-start-here.adoc[]
 
 == Overview
