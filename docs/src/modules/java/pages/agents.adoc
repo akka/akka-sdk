@@ -203,7 +203,7 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 <4> This workflow only has two command handler methods. One that starts the workflow with the initial user request,
 <5> and one to retrieve the final answer.
 <6> Define the steps of the workflow.
-<7> The step that calls the `ActivitiesAgent`
+<7> The step that calls the `ActivityAgent`
 <8> Call the agent with the `ComponentClient`
 <9> Store the result from the agent.
 <10> The workflow corresponds to an agent session.
@@ -524,7 +524,7 @@ A single agent performs one well-defined task. Several agents can collaborate to
 
 === Using a predefined workflow
 
-Let's first look at how to define a workflow that orchestrates several agents in a predefined steps. This is similar to the xref:#_drive_the_agent_from_a_workflow[`ActivitiesAgentManager`] that was illustrated above, but it uses both the `WeatherAgent` and the `ActivitiesAgent`. First it retrieves the weather forecast and then it finds suitable activities.
+Let's first look at how to define a workflow that orchestrates several agents in a predefined steps. This is similar to the xref:#_drive_the_agent_from_a_workflow[`ActivityAgentManager`] that was illustrated above, but it uses both the `WeatherAgent` and the `ActivityAgent`. First it retrieves the weather forecast and then it finds suitable activities.
 
 [source,java]
 ----
@@ -533,10 +533,10 @@ include::example$doc-snippets/src/main/java/com/example/application/AgentTeam.ja
 <1> The workflow starts by asking for the weather forecast.
 <2> Weather forecast is retrieved by the `WeatherAgent`, which must extract the location and date from the user query.
 <3> The forecast is stored in the state of the workflow.
-<4> The forecast is included in the request to the `ActivitiesAgent`.
+<4> The forecast is included in the request to the `ActivityAgent`.
 <5> The final result is stored in the workflow state.
 
-In image:concepts:steps-4.svg[width=20] we explicitly include the forecast in the request to the `ActivitiesAgent`. That is not strictly necessary because the agents share the same session memory and thereby the `ActivitiesAgent` will already have the weather forecast in the context that is sent to the AI model.
+In image:concepts:steps-4.svg[width=20] we explicitly include the forecast in the request to the `ActivityAgent`. That is not strictly necessary because the agents share the same session memory and thereby the `ActivityAgent` will already have the weather forecast in the context that is sent to the AI model.
 
 The workflow will automatically execute the steps in a reliable and durable way. This means that if a call in a step fails, it will be retried until it succeeds or the retry limit of the recovery strategy is reached and separate error handling can be performed. The state machine of the workflow is durable, which means that if the workflow is restarted for some reason it will continue from where it left off, i.e. execute the current non-completed step again.
 

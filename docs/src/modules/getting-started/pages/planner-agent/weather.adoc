@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-xref:planner-agent/index.adoc[1: The activity agent] > xref:planner-agent/preferences.adoc[2: User preferences] > **Weather agent**
+xref:planner-agent/index.adoc[1: The activity agent] > xref:planner-agent/preferences.adoc[2: User preferences] > **Weather agent** > xref:planner-agent/team.adoc[4: Orchestrate the agents]
 
 include::ROOT:partial$new-to-akka-start-here.adoc[]
 
@@ -54,7 +54,7 @@ We could make a request to the `WeatherAgent` from the endpoint before calling t
 
 Before introducing the workflow we would like to see that the `WeatherAgent` works in isolation.
 
-To use the preferences from the `ActivitiesAgent` we need to inject the component client and retrieve the preferences for a given user id.
+To use the preferences from the `ActivityAgent` we need to inject the component client and retrieve the preferences for a given user id.
 
 [source,java]
 .ActivityAgent.java
@@ -94,7 +94,5 @@ mvn verify
 
 == Next steps
 
-Introduce a workflow that orchestrates the calls between the agents.
-
-ifdef::todo[TODO: Continue]
+Introduce a workflow that orchestrates the calls between the agents. Continue with xref:planner-agent/team.adoc[Part 4: Orchestrate the agents]
 
