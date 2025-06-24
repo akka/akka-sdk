@@ -4,6 +4,12 @@ include::ROOT:partial$include.adoc[]
 
 include::ROOT:partial$concepts-intro.adoc[]
 
+== Delegation with effects
+
+include::ROOT:partial$effect-behavior-and-execution.adoc[]
+
+include::ROOT:partial$declaring-behavior.adoc[]
+
 == Akka’s design goals
 
 Akka’s design principles are influenced by decades of distributed systems research.
@@ -43,7 +49,7 @@ The Akka Agentic Platform contains an SDK for development, the Akka runtime for 
 |Recover from any failure, whether hardware, network, or hallucination.
 
 |Interoperable
-|Across all Akka components, any 3rd party system, protocol, broker, or Application Programming Interface (API).
+|Across all Akka components, any 3rd party system, protocol, broker, or API.
 
 |Composable
 |Akka services and components can be combined to create systems of any complexity.
