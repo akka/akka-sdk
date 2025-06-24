@@ -39,6 +39,15 @@ public class CustomersByCity extends View {
   }
   // end::continuous-stream[]
 
+  // tag::by-name-and-city[]
+  public record QueryParams(String customerName, String city) {} // <1>
+
+  @Query(value = "SELECT * FROM customers_by_city WHERE name = :customerName AND address.city = :city") // <2>
+  public QueryEffect<Customer> getCustomersByCityAndName(QueryParams queryParams) {
+    return queryResult();
+  }
+  // end::by-name-and-city[]
+
 
 }
 // end::view-test[]
