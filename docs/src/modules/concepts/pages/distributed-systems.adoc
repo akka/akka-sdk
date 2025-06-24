@@ -1,4 +1,4 @@
-= A foundation of fundamental distributed systems principles and patterns
+= Computer Science
 
 include::ROOT:partial$include.adoc[]
 
