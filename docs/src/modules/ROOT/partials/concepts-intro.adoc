@@ -44,6 +44,8 @@ You create a continuous incoming stream of events with the xref:java:http-endpoi
 You create a stream processor to analyze and act against a stream of data with the xref:java:consuming-producing.adoc[Consumer] component.
 |===
 
+== Composability
+
 The services you build with Akka components are composable, which can be combined to design agentic, transactional, analytics, edge, and digital twin systems. You can create services with one component or many. Let Akka unlock your distributed systems artistry!
 
 image:concepts:component-composition.png[Akka Agentic Platform]
