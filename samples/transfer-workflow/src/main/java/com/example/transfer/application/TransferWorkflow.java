@@ -31,39 +31,43 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
   final private ComponentClient componentClient;
 
   public TransferWorkflow(ComponentClient componentClient) {
-    this.componentClient = componentClient; // <2>
+    this.componentClient = componentClient;
   }
 
   @Override
   public WorkflowDef<TransferState> definition() {
-    Step withdraw =
-      step("withdraw") // <1>
-        .call(Withdraw.class, cmd ->
-          componentClient.forEventSourcedEntity(cmd.from) // <2>
-            .method(WalletEntity::withdraw)
-            .invoke(cmd.amount)) // <3>
-        .andThen(Done.class, __ -> {
-          Deposit depositInput = new Deposit(currentState().transfer().to(), currentState().transfer().amount());
-          return effects()
-            .updateState(currentState().withStatus(WITHDRAW_SUCCEED))
-            .transitionTo("deposit", depositInput); // <4>
-        });
+    return workflow() // <1>
+      .addStep(withdrawStep())
+      .addStep(depositStep());
+  }
 
-    Step deposit =
-      step("deposit") // <5>
-        .call(Deposit.class, cmd ->
-          componentClient.forEventSourcedEntity(cmd.to)
-            .method(WalletEntity::deposit)
-            .invoke(cmd.amount))
-        .andThen(Done.class, __ -> {
-          return effects()
-            .updateState(currentState().withStatus(COMPLETED))
-            .end(); // <6>
-        });
+  private Step withdrawStep() {
+    return
+        step("withdraw") // <2>
+            .call(Withdraw.class, cmd ->
+                componentClient.forEventSourcedEntity(cmd.from) // <3>
+                    .method(WalletEntity::withdraw)
+                    .invoke(cmd.amount)) // <4>
+            .andThen(Done.class, __ -> {
+              Deposit depositInput = new Deposit(currentState().transfer().to(), currentState().transfer().amount());
+              return effects()
+                  .updateState(currentState().withStatus(WITHDRAW_SUCCEED))
+                  .transitionTo("deposit", depositInput); // <5>
+            });
+  }
 
-    return workflow() // <7>
-      .addStep(withdraw)
-      .addStep(deposit);
+  private Step depositStep() {
+    return
+        step("deposit") // <6>
+            .call(Deposit.class, cmd ->
+                componentClient.forEventSourcedEntity(cmd.to)
+                    .method(WalletEntity::deposit)
+                    .invoke(cmd.amount))
+            .andThen(Done.class, __ -> {
+              return effects()
+                  .updateState(currentState().withStatus(COMPLETED))
+                  .end(); // <7>
+            });
   }
   // end::definition[]
 
