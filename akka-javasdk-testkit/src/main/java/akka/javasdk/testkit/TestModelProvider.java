@@ -175,7 +175,7 @@ public class TestModelProvider implements ModelProvider.Custom {
     }
 
     /**
-     * Configures a reply with a custom handler for tool result messages.
+     * Configures a reply with a custom handler for a tool result message.
      */
     public void thenReply(Function<ToolResult, AiResponse> handler) {
       // safe to cast because predicate ensures the type
@@ -300,7 +300,9 @@ public class TestModelProvider implements ModelProvider.Custom {
   }
 
   /**
-   * Configures to respond when the given string predicate matches an input message.
+   * Configures to respond when the passed string predicate matches the content of an {@link InputMessage}.
+   * The predicate is applied to content of {@link UserMessage} or {@link ToolResult}.
+   * <p>
    * Note that to finish the configuration, you must call one of the reply methods.
    */
   public WhenClause whenMessage(Predicate<String> predicate) {
@@ -311,7 +313,8 @@ public class TestModelProvider implements ModelProvider.Custom {
   }
 
   /**
-   * Configures to respond when the input message is an exact match of {@code message}.
+   * Configures to respond when the content of an {@link InputMessage} is an exact match of the passed {@code message}.
+   * <p>
    * Note that to finish the configuration, you must call one of the reply methods.
    */
   public WhenClause whenMessage(String message) {
@@ -321,7 +324,9 @@ public class TestModelProvider implements ModelProvider.Custom {
   }
 
   /**
-   * Configures to respond when the given UserMessage predicate matches an input message.
+   * Configures to respond when the given predicate matches a {@link UserMessage}.
+   * The predicate is applied to {@link UserMessage} instances only.
+   * <p>
    * Note that to finish the configuration, you must call one of the reply methods.
    */
   public WhenClause whenUserMessage(Predicate<UserMessage> predicate) {
@@ -333,7 +338,8 @@ public class TestModelProvider implements ModelProvider.Custom {
   }
 
   /**
-   * Configures to respond when the input message is an exact match of {@code userMessage}.
+   * Configures to respond when an {@link UserMessage} is an exact match of {@code userMessage}.
+   * <p>
    * Note that to finish the configuration, you must call one of the reply methods.
    */
   public WhenClause whenUserMessage(UserMessage userMessage) {
@@ -344,8 +350,11 @@ public class TestModelProvider implements ModelProvider.Custom {
     return new WhenClause(this, messagePredicate);
   }
 
+
   /**
-   * Configures to respond when the given ToolResult predicate matches a tool result.
+   * Configures to respond when the given predicate matches a {@link ToolResult}.
+   * The predicate is applied to {@link ToolResult} instances only.
+   * <p>
    * Note that to finish the configuration, you must call one of the reply methods.
    */
   public WhenToolReplyClause whenToolResult(Predicate<ToolResult> predicate){
@@ -357,7 +366,8 @@ public class TestModelProvider implements ModelProvider.Custom {
   }
 
   /**
-   * Configures to respond when the input message is an exact match of {@code toolResult}.
+   * Configures to respond when an {@link ToolResult} is an exact match of {@code toolResult}.
+   * <p>
    * Note that to finish the configuration, you must call one of the reply methods.
    */
   public WhenToolReplyClause whenToolResult(ToolResult toolResult){
