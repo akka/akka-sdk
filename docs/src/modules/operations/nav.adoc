@@ -1,8 +1,8 @@
 // Operating Services
 
 ** xref:operations:index.adoc[Operating]
-*** xref:operations:configuring.adoc[In a self-managed environment]
-*** xref:operations:akka-platform.adoc[On Akka Platform]
+*** xref:operations:configuring.adoc[Self-managed operations]
+*** xref:operations:akka-platform.adoc[Akka Automated Operations]
 
 **** xref:operations:organizations/index.adoc[]
 ***** xref:operations:organizations/manage-users.adoc[Manage users]

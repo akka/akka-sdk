@@ -8,14 +8,14 @@ Akka applications are distributed by design. Although you can run many complex s
 
 Akka provides three ways to run services:
 
-- Fully-automated regions on Akka Platform (at https://console.akka.io[akka.io], optionally running in your cloud infrastructure)
-- Self-managed nodes (in your infrastructure, or any cloud service)
+- Fully-automated regions with Akka Automated Operations (at https://console.akka.io[akka.io], optionally running in your cloud infrastructure)
+- Self-managed operations (in your infrastructure, or any cloud service)
 - Akka SDK development and testing (on the developer's machine)
 
 Akka services run in all three modes **without** code modifications and leverage the fundamental underpinnings of Akka such as clustering. While standalone deployments enable running Akka on any infrastructure, some environments limit network access thus prohibit Akka clustering.
 
-=== Fully-automated regions on Akka Platform
-image:concepts:deployment-model_akka-platform.png[Deployment model: Akka Platform]
+=== Fully-automated regions with Akka Automated Operations
+image:concepts:deployment-model_akka-platform.png[Deployment model: Akka Automated Operations]
 
 Full automation across multiple cloud provider regions and multiple cloud providers is available through Akka's fully-managed platform. You choose to run your Akka services in
 
@@ -23,10 +23,10 @@ Full automation across multiple cloud provider regions and multiple cloud provid
 - private regions in your VPC (managed by Akka), or
 - self-hosted regions (managed by you).
 
-Akka platform manages the fully-automated regions running your Akka services and takes responsibility for SLAs tied to elasticity, agility, and resilience of your Akka services.
+Akka Automated Operations manages the fully-automated regions running your Akka services and takes responsibility for SLAs tied to elasticity, agility, and resilience of your Akka services.
 
 === Self-managed nodes
-image:concepts:deployment-model_self-managed.png[Deployment model: self-managed nodes]
+image:concepts:deployment-model_self-managed.png[Deployment model: self-managed operations]
 
 For organizations that want control over how Akka services are installed, updated, and maintained. Akka services are packaged into standalone binaries with Akka clustering for scaling and deploy to self-managed nodes. You are responsible for separately managing secure connectivity, routes, installation, deployment, and persistence.
 
