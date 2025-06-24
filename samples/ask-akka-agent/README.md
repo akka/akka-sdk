@@ -59,7 +59,7 @@ Results are streamed using SSE.
 You can use the [Akka Console](https://console.akka.io) to create a project and see the status of your service.
 
 Before deploying the service we need to modify MongoDB configuration to allow external connections from
-the Akka platform. For experimentation purposes, go to "Network Access" and allow access from anywhere.
+the Akka Automated Operations. For experimentation purposes, go to "Network Access" and allow access from anywhere.
 For production use cases, you should restrict access to only trusted IP addresses.
 Contact support to know which IPs to allow.
 

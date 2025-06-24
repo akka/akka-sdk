@@ -119,7 +119,7 @@ See xref:operations:projects/container-registries.adoc[container registries] for
 [#_deploy]
 == Deploy
 
-After testing locally, deploy your service to Akka Platform (akka.io) using the CLI or the Console.
+After testing locally, deploy your service to Akka Automated Operations (akka.io) using the CLI or the Console.
 
 The following pages provide information about deployment:
 

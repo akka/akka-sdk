@@ -215,7 +215,7 @@ Here, you can view not only the http://localhost:9889/services/shopping-cart-qui
 
 == Deploy to akka.io
 
-Now that you've built and started the shopping cart service locally, it's time to run it on the Akka platform without having to change any code.
+Now that you've built and started the shopping cart service locally, it's time to run it on the Akka Agentic Platform without having to change any code.
 
 . If you have not already done so, xref:operations:cli/installation.adoc[install the Akka CLI].
 

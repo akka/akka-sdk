@@ -4,16 +4,16 @@ include::ROOT:partial$include.adoc[]
 
 Akka offers two distinct operational models:
 
-* *Akka Platform* – A fully-managed experience with automation, observability, and scalability built-in.
-* *Self-managed nodes* – A flexible approach for teams that want full control over infrastructure and operations.
+* *Akka Automated Operations* – A fully-managed experience with automation, observability, and scalability built-in.
+* *Self-managed operations* – A flexible approach for teams that want full control over infrastructure and operations.
 
-== Akka Platform: Fully-automated operations
+== Akka Automated Operations
 
-Akka Platform provides a Kubernetes-based control and execution plane for deploying and managing Akka services with high elasticity and resilience. It enables full automation, built-in observability, and project-wide operations across regions.
+Akka Automated Operations provides a Kubernetes-based control and execution plane for deploying and managing Akka services with high elasticity and resilience. It enables full automation, built-in observability, and project-wide operations across regions.
 
 === Key Capabilities
 
-* xref:platform-features.adoc[] – Overview of the Akka Platform’s operational automation features.
+* xref:platform-features.adoc[] – Overview of the Akka Automated Operations features.
 * xref:concepts:deployment-model.adoc[] – Background on Akka's deployment models.
 
 === Core Operations
@@ -69,7 +69,7 @@ For organizations that require full control over deployment and infrastructure, 
 * Routing and service discovery  
 * Persistent storage configuration  
 
-Akka services are shipped as standalone binaries and support seamless migration between self-managed environments and Akka Platform.
+Akka services are shipped as standalone binaries and support seamless migration between self-managed environments and Akka Automated Operations.
 
 === Self-managed Guidance
 
@@ -99,14 +99,14 @@ When using platforms with limited cluster support (e.g., Fly.io, Heroku), config
 | Use Case | Recommended Approach
 
 | Need for full automation, resilience, and scalability
-| *Akka Platform*
+| *Akka Automated Operations*
 
 | Preference for custom infrastructure and deployment control
-| *Self-managed nodes*
+| *Self-managed operations*
 
 | Running across global regions with built-in replication
-| *Akka Platform*
+| *Akka Automated Operations*
 
 | Simple, single-node deployments or edge cases
-| *Self-managed nodes*
+| *Self-managed operations*
 |===

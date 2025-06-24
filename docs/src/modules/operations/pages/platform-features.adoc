@@ -1,8 +1,8 @@
-= Akka Platform features
+= Akka Automated Operations features
 
 include::ROOT:partial$include.adoc[]
 
-Akka Platform is based on a Kubernetes-based control plane and application plane for executing Akka services with fully-automated operations to enable elasticity, agility and resilience.
+Akka Automated Operations are based on a Kubernetes-based control plane and application plane for executing Akka services with fully-automated operations to enable elasticity, agility and resilience.
 
 The fully-automated regions provide a broad set of functionality provided through Akka's control plane and infrastructure automation:
 
