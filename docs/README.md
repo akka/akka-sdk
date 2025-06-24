@@ -69,4 +69,4 @@ To modify or extend the theme, clone the [`antora-ui-default`](https://github.co
 
 ## Graphical assets
 
-The [akka-graphical-design-and-images](https://github.com/akka/akka-graphical-design-and-images) repository stores diagrams, icons, and other visual assets used in the documentation. It enables collaboration on editable source files (e.g. SVG, Illustrator) and to make future updates easier.
+The [akka-graphical-design-and-images](https://github.com/lightbend/akka-graphical-design-and-images) repository stores diagrams, icons, and other visual assets used in the documentation. It enables collaboration on editable source files (e.g. SVG, Illustrator) and to make future updates easier.
