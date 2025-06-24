@@ -205,37 +205,6 @@ Akka is designed so that components remain loosely coupled and can communicate w
 
 |===
 
-== Packaging flexibility
-
-Akka provides flexibility in how services are assembled and deployed. Whether you start with a small proof of concept or a larger system, you can choose the structure that fits your needs.
-
-image:concepts:packed-services.png[Akka Packaging]
-
-It is possible to package a single service with one component, or combine multiple services, each composed of several components, into a single deployable binary.
-
-This approach makes it easy to co-locate logic where it makes sense, while still keeping services modular in design. You are free to choose what to group together without being locked into a single pattern.
-
-Once packaged, you can run any number of instances of the binary. These instances operate in a variety of environments, including containers, virtual machines, Kubernetes, or edge deployments. They automatically discover each other and form a cluster without requiring additional configuration.
-
-This packaging supports a range of operational models:
-
-[cols="1,3", options="header"]
-[.compact]
-|===
-| Operational model | Description
-
-| Local development
-| Run one or more instances using Docker Compose or Kubernetes. Useful for testing full system behavior locally.
-
-| Self-managed
-| Operate on your own infrastructure with full control over networking, persistence, and deployment routines.
-
-| Akka Cloud
-| A managed environment that handles scaling, clustering, persistence, and operational automation.
-|===
-
-This flexibility allows teams to start simply, with everything in one place, and evolve naturally as needs change. Services remain modular in code, even when packaged together, resulting in a system prepared for scale.
-
 == Agentic runtimes
 
 Autonomous AI systems require three types of runtimes:
@@ -279,6 +248,14 @@ Akka handles all state as event sourced. Events are recorded sequentially and du
 
 The runtime scales memory across millions of nodes and regions. Failover is supported with replication and low recovery times, typically under 200ms.
 
-== Service clustering
+== Service packaging
 
-Akka supports horizontal scaling across clustered services. Multiple instances can be launched as needed. Operational tasks are automated by Akka Platform, or may be performed manually in a self-managed environment if desired.
+The services you build with Akka components are composable, which can be combined to design agentic, transactional, analytics, edge, and digital twin systems. You can create services with one component or many.
+
+Your services are packed into a single binary. You create instances of Akka that you can operate on any infrastructure: Platform as a Service (PaaS), Kubernetes, Docker Compose, virtual machines (VMs), bare metal, or edge. 
+
+Akka services self-cluster without you needing to install a service mesh. Akka clustering provides elasticity and resilience to your agentic services. In addition to data sharding, data rebalancing, and traffic routing, Akka clustering has built-in support for addressing split brain networking disruptions.
+
+Optionally, you can deploy your agentic services into Akka Cloud, which provides a global control plane, multi-tenancy, multi-region operations (for compliance data pinning, failover, and disaster recovery), auto-elasticity based upon traffic load, and persistence management (memory auto-scaling).
+
+image:concepts:packed-services.png[Akka Packaging]
