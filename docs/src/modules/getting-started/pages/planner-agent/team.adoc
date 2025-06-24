@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-xref:planner-agent/index.adoc[1: The activity agent] > xref:planner-agent/preferences.adoc[2: User preferences] > xref:planner-agent/weather.adoc[3: Weather agent] > **4: Orchestrate the agents**
+xref:planner-agent/index.adoc[1: The activity agent] > xref:planner-agent/preferences.adoc[2: User preferences] > xref:planner-agent/weather.adoc[3: Weather agent] > **4: Orchestrate the agents** > xref:planner-agent/list.adoc[5: List by user]
 
 include::ROOT:partial$new-to-akka-start-here.adoc[]
 
@@ -91,5 +91,5 @@ Does it take the current weather forecast into account? You should see the `Weat
 
 == Next steps
 
-ifdef::todo[TODO: Continue]
+It would be nice to see all previous suggestions for a user. Continue with > xref:planner-agent/list.adoc[Part 5: List by user]
 
