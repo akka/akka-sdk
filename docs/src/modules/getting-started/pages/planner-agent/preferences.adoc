@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-xref:planner-agent/index.adoc[1: The activity agent] > **2: User preferences** > xref:planner-agent/weather.adoc[3: Weather agent]
+xref:planner-agent/index.adoc[1: The activity agent] > **2: User preferences** > xref:planner-agent/weather.adoc[3: Weather agent] > xref:planner-agent/team.adoc[4: Orchestrate the agents]
 
 include::ROOT:partial$new-to-akka-start-here.adoc[]
 
@@ -40,7 +40,7 @@ Here we use plain text for the preferences, but it could be more structured info
 
 == Use from the agent
 
-To use the preferences from the `ActivitiesAgent` we need to inject the component client and retrieve the preferences for a given user id.
+To use the preferences from the `ActivityAgent` we need to inject the component client and retrieve the preferences for a given user id.
 
 [source,java]
 .ActivityAgent.java
