@@ -35,7 +35,7 @@ public class ActivityAgent extends Agent {
     var userMessage = request.message() +
         "\nPreferences:\n" +
         allPreferences.preferences().stream()
-            .collect(Collectors.joining("\n", "- ", "")); // <4>
+            .collect(Collectors.joining("'\n", "- ", ""));
 
     return effects()
         .systemMessage(SYSTEM_MESSAGE)

@@ -4,9 +4,9 @@ package agent_guide.part1;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.ComponentId;
 
-@ComponentId("activity-agent") // <2>
-public class ActivityAgent extends Agent { // <1>
-  private static final String SYSTEM_MESSAGE = // <4>
+@ComponentId("activity-agent") // <1>
+public class ActivityAgent extends Agent { // <2>
+  private static final String SYSTEM_MESSAGE =
       """
       You are an activity agent. Your job is to suggest activities in the
       real world. Like for example, a team building activity, sports, an
