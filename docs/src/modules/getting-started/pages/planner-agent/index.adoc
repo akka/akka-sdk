@@ -59,7 +59,7 @@ Add a new file `ActivityEndpoint.java` to `src/main/java/com/example/api/`
 include::java:example$doc-snippets/src/main/java/agent_guide/part1/ActivityEndpoint.java[tag=class]
 ----
 <1> Inject the `ComponentClient`, which is used to call the agent.
-<2> Call the `AskAkkaAgent created in the previous step
+<2> Call the `ActivityAgent` created in the previous step
 
 
 == Running the service
