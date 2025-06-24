@@ -359,6 +359,49 @@ public abstract class Agent {
       OnSuccessBuilder userMessage(String message);
 
       /**
+       * Adds one or more tool instances or classes that the AI model can use.
+       * <p>
+       * Each argument can be either an object instance or a {@link Class} object. If a {@link Class} is provided,
+       * it will be instantiated at runtime using the configured {@link DependencyProvider}.
+       * <p>
+       * Each instance or class must have at least one public method annotated with {@link FunctionTool}.
+       * If no such method is found, an {@link IllegalArgumentException} will be thrown.
+       * These methods will be available as tools for the AI model to invoke.
+       *
+       * @return this builder for method chaining
+       */
+      Builder tools(Object tool, Object... otherTools);
+
+      /**
+       * Adds one or more tool instances or classes that the AI model can use.
+       * <p>
+       * Each element in the list can be either an object instance or a {@link Class} object. If a {@link Class} is provided,
+       * it will be instantiated at runtime using the configured {@link DependencyProvider}.
+       * <p>
+       * Each instance or class must have at least one public method annotated with {@link FunctionTool}.
+       * If no such method is found, an {@link IllegalArgumentException} will be thrown.
+       * These methods will be available as tools for the AI model to invoke.
+       *
+       * @param toolInstancesOrClasses one or more objects or classes exposing tool methods
+       * @return this builder for method chaining
+       */
+      Builder tools(List<Object> toolInstancesOrClasses);
+
+      /**
+       * Adds tools from one or more remote MCP servers.
+       * <p>
+       * Construct instances using {@link RemoteMcpTools#fromServer(String)}
+       */
+      Builder mcpTools(RemoteMcpTools tools, RemoteMcpTools... moreTools);
+
+      /**
+       * Adds tools from one or more remote MCP servers.
+       * <p>
+       * Construct instances using {@link RemoteMcpTools#fromServer(String)}
+       */
+      Builder mcpTools(List<RemoteMcpTools> tools);
+
+      /**
        * Create a message reply without calling the model.
        *
        * @param message The payload of the reply.
