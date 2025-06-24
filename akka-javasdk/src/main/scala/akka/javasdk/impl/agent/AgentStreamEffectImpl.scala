@@ -9,10 +9,13 @@ import akka.javasdk.Metadata
 import akka.javasdk.agent.Agent.StreamEffect
 import akka.javasdk.agent.MemoryProvider
 import akka.javasdk.agent.ModelProvider
+import akka.javasdk.agent.RemoteMcpTools
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
 import akka.javasdk.impl.effect.SecondaryEffectImpl
+
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 /**
  * INTERNAL API
@@ -85,6 +88,26 @@ private[javasdk] final class AgentStreamEffectImpl
 
   override def memory(provider: MemoryProvider): StreamEffect.Builder = {
     updateRequestModel(_.withMemory(provider))
+    this
+  }
+
+  override def mcpTools(tools: RemoteMcpTools, moreTools: RemoteMcpTools*): StreamEffect.Builder = {
+    updateRequestModel(_.addMcpTools(tools +: moreTools))
+    this
+  }
+
+  override def mcpTools(tools: java.util.List[RemoteMcpTools]): StreamEffect.Builder = {
+    updateRequestModel(_.addMcpTools(tools.asScala.toSeq))
+    this
+  }
+
+  override def tools(tool: AnyRef, tools: AnyRef*): StreamEffect.Builder = {
+    updateRequestModel(_.addTool(tool).addTools(tools))
+    this
+  }
+
+  override def tools(toolInstancesOrClasses: java.util.List[AnyRef]): StreamEffect.Builder = {
+    updateRequestModel(_.addTools(toolInstancesOrClasses.asScala.toSeq))
     this
   }
 
