@@ -1,17 +1,10 @@
-package demo.multiagent.application;
+package agent_guide.part6;
 
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.client.DynamicMethodRef;
 import akka.javasdk.workflow.Workflow;
-import demo.multiagent.application.agents.Planner;
-import demo.multiagent.application.agents.Selector;
-import demo.multiagent.application.agents.Summarizer;
-import demo.multiagent.domain.AgentResponse;
-import demo.multiagent.domain.AgentSelection;
-import demo.multiagent.domain.Plan;
-import demo.multiagent.domain.PlanStep;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,10 +12,8 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
-import static demo.multiagent.application.AgentTeam.Status.*;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
-// tag::all[]
 // tag::plan[]
 @ComponentId("agent-team")
 public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
@@ -41,7 +32,7 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
                       Status status) {
 
     public static State init(String query) {
-      return new State(query, new Plan(), "", new HashMap<>(), STARTED);
+      return new State(query, new Plan(), "", new HashMap<>(), Status.STARTED);
     }
 
 
@@ -66,15 +57,15 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
     }
 
     public State withPlan(Plan plan) {
-      return new State(userQuery, plan, finalAnswer, agentResponses, STARTED);
+      return new State(userQuery, plan, finalAnswer, agentResponses, Status.STARTED);
     }
 
     public State complete() {
-      return new State(userQuery, plan, finalAnswer, agentResponses, COMPLETED);
+      return new State(userQuery, plan, finalAnswer, agentResponses, Status.COMPLETED);
     }
 
     public State failed() {
-      return new State(userQuery, plan, finalAnswer, agentResponses, FAILED);
+      return new State(userQuery, plan, finalAnswer, agentResponses, Status.FAILED);
     }
 
   }
@@ -228,7 +219,7 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
 
   private static final String INTERRUPT = "interrupt";
 
-  private Workflow.Step interrupt() {
+  private Step interrupt() {
     return step(INTERRUPT)
       .call(() -> {
         logger.debug("Interrupting workflow");
@@ -243,4 +234,3 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
   // tag::plan[]
 }
 // end::plan[]
-// end::all[]

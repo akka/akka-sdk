@@ -33,6 +33,7 @@ Add agents and other components step-by-step. The final application will consist
 | xref:planner-agent/weather.adoc[Part 3: Weather agent] | Beginner
 | xref:planner-agent/team.adoc[Part 4: Orchestrate the agents] | Intermediate
 | xref:planner-agent/list.adoc[Part 5: List by user] | Beginner
+| xref:planner-agent/dynamic-team.adoc[Part 6: Dynamic orchestration] | Advanced
 |=======================
 
 === Build a shopping cart system

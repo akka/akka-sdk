@@ -1,14 +1,12 @@
-package demo.multiagent.application.agents;
+package agent_guide.part6;
 
 import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
-import demo.multiagent.domain.AgentResponse;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-// tag::all[]
 @ComponentId("summarizer-agent")
 @AgentDescription(
     name = "Summarizer",
@@ -31,7 +29,7 @@ public class Summarizer extends Agent {
       """.formatted(userQuery);
   }
 
-  public Agent.Effect<String> summarize(Request request) {
+  public Effect<String> summarize(Request request) {
     var allResponses = request.agentsResponses.stream()
         .map(AgentResponse::response)
         .filter(response -> response != null && !response.isEmpty())
@@ -44,4 +42,3 @@ public class Summarizer extends Agent {
   }
 
 }
-// end::all[]
