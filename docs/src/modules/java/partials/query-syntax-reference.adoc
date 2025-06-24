@@ -1,3 +1,5 @@
+include::ROOT:partial$include.adoc[]
+
 == Query syntax reference
 
 Define View queries in a language that is similar to SQL. The following examples are added to illustrate the syntax. 
@@ -28,6 +30,15 @@ SELECT * FROM customers WHERE name = :customerName
 ----
 SELECT * FROM customers WHERE name = :customerName AND address.city = :city
 ----
+View query methods accept only a single parameter. Passing more than one argument to your query requires to wrap them in a query record, for example:
++
+[source,java]
+.{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomersByCity.java[CustomersByCity.java]
+----
+include::example$key-value-customer-registry/src/main/java/customer/application/CustomersByCity.java[tag=by-name-and-city]
+----
+<1> Group query arguments in a record class.
+<2> Use record field names in the query syntax.
 
 * Customers in a city matching a literal value:
 +
