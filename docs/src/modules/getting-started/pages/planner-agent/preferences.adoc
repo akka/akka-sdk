@@ -40,7 +40,7 @@ Here we use plain text for the preferences, but it could be more structured info
 
 == Use from the agent
 
-To use the preferences from the `ActivitiesAgent` we need to inject the component client and retrieve the preferences for a given user id.
+To use the preferences in the `ActivityAgent` we need to inject the component client and retrieve the preferences for a given user id.
 
 [source,java]
 .ActivityAgent.java
@@ -57,7 +57,7 @@ include::java:example$doc-snippets/src/main/java/agent_guide/part2/ActivityAgent
 We need to add the user id to the HTTP request.
 
 [source, java]
-.ActivityEndpoint.java]
+.ActivityEndpoint.java
 ----
 include::java:example$doc-snippets/src/main/java/agent_guide/part2/ActivityEndpoint.java[tag=userId]
 ----
@@ -68,7 +68,7 @@ include::java:example$doc-snippets/src/main/java/agent_guide/part2/ActivityEndpo
 
 To update the preferences, we add another method to the endpoint:
 [source, java]
-.ActivityEndpoint.java]
+.ActivityEndpoint.java
 ----
 include::java:example$doc-snippets/src/main/java/agent_guide/part2/ActivityEndpoint.java[tag=addPreference]
 ----
