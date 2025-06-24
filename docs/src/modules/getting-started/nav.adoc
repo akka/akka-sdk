@@ -1,4 +1,6 @@
 //  Getting Started
 * xref:getting-started:index.adoc[]
 ** xref:getting-started:author-your-first-service.adoc[]
+** xref:getting-started:planner-agent/index.adoc[]
+** xref:getting-started:planner-agent/preferences.adoc[]
 ** xref:getting-started:samples.adoc[]

@@ -17,7 +17,7 @@ In this part of the guide you will:
 
 == Prerequisites
 
-include::ROOT:partial$cloud-dev-prerequisites.adoc[]
+include::ROOT:partial$local-dev-prerequisites.adoc[]
 * https://platform.openai.com/api-keys[OpenAI API key, window="new"]
 
 include::ROOT:partial$recommend-ai-video.adoc[]
