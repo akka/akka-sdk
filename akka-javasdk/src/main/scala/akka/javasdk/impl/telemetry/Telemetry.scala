@@ -4,8 +4,17 @@
 
 package akka.javasdk.impl.telemetry
 
+import java.lang
+import java.util.Collections
+
+import scala.collection.mutable
+import scala.jdk.OptionConverters._
+
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
+import akka.runtime.sdk.spi.SpiEntity
+import akka.runtime.sdk.spi.SpiMetadata
+import akka.runtime.sdk.spi.SpiMetadataEntry
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanKind
@@ -17,15 +26,6 @@ import io.opentelemetry.context.propagation.TextMapSetter
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.lang
-import java.util.Collections
-
-import scala.collection.mutable
-import scala.jdk.OptionConverters._
-
-import akka.runtime.sdk.spi.SpiEntity
-import akka.runtime.sdk.spi.SpiMetadata
-import akka.runtime.sdk.spi.SpiMetadataEntry
 
 /**
  * INTERNAL API
@@ -65,6 +65,22 @@ case object EventSourcedEntityCategory extends ComponentCategory {
 @InternalApi
 case object KeyValueEntityCategory extends ComponentCategory {
   def name = "Key Value Entity"
+}
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+case object AgentCategory extends ComponentCategory {
+  def name = "Agent"
+}
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+case object WorkflowCategory extends ComponentCategory {
+  def name = "Workflow"
 }
 
 /**
@@ -144,11 +160,22 @@ private[akka] final class TraceInstrumentation(
       componentId: String,
       entityId: String,
       command: SpiEntity.Command): Option[Span] =
-    if (enabled) internalBuildSpan(componentType, componentId, Some(command.name), command.metadata, Some(entityId))
+    buildEntityCommandSpan(componentType, componentId, entityId, command.name, command.metadata)
+
+  /**
+   * Creates a span if tracing enabled, and it finds a trace parent in the command's metadata
+   */
+  def buildEntityCommandSpan(
+      componentType: String,
+      componentId: String,
+      entityId: String,
+      commandName: String,
+      metadata: SpiMetadata): Option[Span] =
+    if (enabled) internalBuildSpan(componentType, componentId, Some(commandName), metadata, Some(entityId))
     else None
 
   /**
-   * Creates a span if tracing enabled and if it finds a trace parent in the command's metadata
+   * Creates a span if tracing enabled, and if it finds a trace parent in the command's metadata
    */
   def buildSpan(
       componentType: String,

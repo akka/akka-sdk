@@ -10,8 +10,9 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.workflow.Workflow
-
 import java.lang.reflect.Method
+
+import akka.javasdk.agent.Agent
 
 /**
  * INTERNAL API
@@ -24,7 +25,8 @@ private[impl] object ViewCallValidator {
     if (classOf[TimedAction].isAssignableFrom(declaringClass)
       || classOf[KeyValueEntity[_]].isAssignableFrom(declaringClass)
       || classOf[EventSourcedEntity[_, _]].isAssignableFrom(declaringClass)
-      || classOf[Workflow[_]].isAssignableFrom(declaringClass)) {
+      || classOf[Workflow[_]].isAssignableFrom(declaringClass)
+      || classOf[Agent].isAssignableFrom(declaringClass)) {
       throw new IllegalStateException(
         "Use dedicated builder for calling " + declaringClass.getSuperclass.getSimpleName
         + " component method " + declaringClass.getSimpleName + "::" + method.getName + ". This builder is meant for View component calls.")

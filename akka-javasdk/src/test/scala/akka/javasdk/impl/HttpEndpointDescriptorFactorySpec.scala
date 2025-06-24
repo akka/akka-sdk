@@ -13,13 +13,42 @@ import akka.javasdk.impl.http.TestEndpoints.TestEndpointJwtOnlyMethodLevel
 import akka.runtime.sdk.spi.All
 import akka.runtime.sdk.spi.ClaimPattern
 import akka.runtime.sdk.spi.ClaimValues
+import akka.runtime.sdk.spi.HttpEndpointMethodSpec
 import akka.runtime.sdk.spi.Internet
 import akka.runtime.sdk.spi.ServiceNamePattern
+import akka.runtime.sdk.spi.SpiJsonSchema
 import akka.runtime.sdk.spi.StaticClaim
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
+object HttpEndpointDescriptorFactorySpec {
+  object Spec {
+    val empty = Spec()
+
+    def apply(
+        parameters: Seq[HttpEndpointMethodSpec.Parameter] = Seq.empty,
+        requestBody: Option[HttpEndpointMethodSpec.RequestBody] = None): HttpEndpointMethodSpec =
+      new HttpEndpointMethodSpec(parameters, requestBody)
+
+    def parameter(name: String, schema: SpiJsonSchema.JsonSchemaDataType): HttpEndpointMethodSpec.Parameter =
+      new HttpEndpointMethodSpec.PathParameter(name, schema)
+
+    def jsonBody(schema: SpiJsonSchema.JsonSchemaDataType): Option[HttpEndpointMethodSpec.RequestBody] =
+      Some(new HttpEndpointMethodSpec.JsonRequestBody(schema))
+
+    def textBody(description: String = null): Option[HttpEndpointMethodSpec.RequestBody] =
+      Some(new HttpEndpointMethodSpec.TextRequestBody(Option(description)))
+
+    def lowLevelBody(
+        description: String = null,
+        required: Boolean = false): Option[HttpEndpointMethodSpec.RequestBody] =
+      Some(new HttpEndpointMethodSpec.LowLevelRequestBody(Option(description), required))
+  }
+}
+
 class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
+  import HttpEndpointDescriptorFactorySpec._
+  import JsonSchemaSpec._
 
   "The HttpEndpointDescriptorFactory" should {
     "parse annotations on an endpoint class into a descriptor" in {
@@ -31,25 +60,114 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
       descriptor.componentOptions.aclOpt shouldBe empty
       descriptor.componentOptions.jwtOpt shouldBe empty
 
+      val itParameter = Spec.parameter("it", Schema.string())
+      val aThingJsonBody = Spec.jsonBody(
+        Schema.jsonObject(properties = Map("someProperty" -> Schema.string()), required = Seq("someProperty")))
+
       val list = byMethodName("list")
       list.pathExpression should ===("/")
       list.httpMethod should ===(HttpMethods.GET)
+      list.methodSpec should ===(Spec.empty)
 
       val get = byMethodName("get")
       get.pathExpression should ===("/{it}")
       get.httpMethod should ===(HttpMethods.GET)
+      get.methodSpec should ===(Spec(parameters = Seq(itParameter)))
+
+      val create = byMethodName("create")
+      create.pathExpression should ===("/{it}")
+      create.httpMethod should ===(HttpMethods.POST)
+      create.methodSpec should ===(Spec(parameters = Seq(itParameter), requestBody = aThingJsonBody))
 
       val delete = byMethodName("delete")
       delete.pathExpression should ===("/{it}")
       delete.httpMethod should ===(HttpMethods.DELETE)
+      delete.methodSpec should ===(Spec(parameters = Seq(itParameter)))
 
       val update = byMethodName("update")
       update.pathExpression should ===("/{it}")
       update.httpMethod should ===(HttpMethods.PUT)
+      update.methodSpec should ===(Spec(parameters = Seq(itParameter), requestBody = aThingJsonBody))
 
       val patch = byMethodName("patch")
       patch.pathExpression should ===("/{it}")
       patch.httpMethod should ===(HttpMethods.PATCH)
+      patch.methodSpec should ===(Spec(parameters = Seq(itParameter), requestBody = aThingJsonBody))
+    }
+
+    "create endpoint method specs" in {
+      val descriptor = HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.TestEndpointSpecs], _ => null)
+      val byMethodName = descriptor.methods.map(md => md.userMethod.getName -> md).toMap
+
+      descriptor.mainPath shouldBe Some("test-specs")
+      descriptor.methods should have size 9
+
+      val parametersOnly = byMethodName("parametersOnly")
+      parametersOnly.pathExpression shouldBe "/parameters-only/{someString}/and/{someInt}"
+      parametersOnly.httpMethod shouldBe HttpMethods.GET
+      parametersOnly.methodSpec shouldBe Spec(parameters = Seq(
+        Spec.parameter("someString", Schema.string("some string")),
+        Spec.parameter("someInt", Schema.integer("some int"))))
+
+      def someObjectBody(description: String = null): Option[HttpEndpointMethodSpec.RequestBody] =
+        Spec.jsonBody(
+          Schema.jsonObject(
+            description = description,
+            properties = Map(
+              "someString" -> Schema.string("some string"),
+              "optionalString" -> Schema.string(),
+              "someBoolean" -> Schema.boolean(),
+              "someInt" -> Schema.integer(),
+              "optionalDouble" -> Schema.number("optional double")),
+            required = Seq("someBoolean", "someInt", "someString")))
+
+      val parametersAndBody = byMethodName("parametersAndBody")
+      parametersAndBody.pathExpression shouldBe "/parameters-and-body/{someString}/and/{someDouble}"
+      parametersAndBody.httpMethod shouldBe HttpMethods.POST
+      parametersAndBody.methodSpec shouldBe Spec(
+        parameters = Seq(Spec.parameter("someString", Schema.string()), Spec.parameter("someDouble", Schema.number())),
+        requestBody = someObjectBody())
+
+      val bodyOnly = byMethodName("bodyOnly")
+      bodyOnly.pathExpression shouldBe "/body-only"
+      bodyOnly.httpMethod shouldBe HttpMethods.POST
+      bodyOnly.methodSpec shouldBe Spec(requestBody = someObjectBody("some body"))
+
+      val parametersAndTextBody = byMethodName("parametersAndTextBody")
+      parametersAndTextBody.pathExpression shouldBe "/parameters-and-text-body/{someInt}"
+      parametersAndTextBody.httpMethod shouldBe HttpMethods.POST
+      parametersAndTextBody.methodSpec shouldBe Spec(
+        parameters = Seq(Spec.parameter("someInt", Schema.integer())),
+        requestBody = Spec.textBody("some body"))
+
+      val textBodyOnly = byMethodName("textBodyOnly")
+      textBodyOnly.pathExpression shouldBe "/text-body-only"
+      textBodyOnly.httpMethod shouldBe HttpMethods.POST
+      textBodyOnly.methodSpec shouldBe Spec(requestBody = Spec.textBody("some body"))
+
+      val parametersAndArrayBody = byMethodName("parametersAndArrayBody")
+      parametersAndArrayBody.pathExpression shouldBe "/parameters-and-array-body/{someString}/and/{someInt}"
+      parametersAndArrayBody.httpMethod shouldBe HttpMethods.POST
+      parametersAndArrayBody.methodSpec shouldBe Spec(
+        parameters = Seq(Spec.parameter("someString", Schema.string()), Spec.parameter("someInt", Schema.integer())),
+        requestBody = Spec.jsonBody(Schema.array(Schema.string())))
+
+      val arrayBodyOnly = byMethodName("arrayBodyOnly")
+      arrayBodyOnly.pathExpression shouldBe "/array-body-only"
+      arrayBodyOnly.httpMethod shouldBe HttpMethods.POST
+      arrayBodyOnly.methodSpec shouldBe Spec(requestBody = Spec.jsonBody(Schema.array(Schema.number(), "some body")))
+
+      val parametersAndLowLevelBody = byMethodName("parametersAndLowLevelBody")
+      parametersAndLowLevelBody.pathExpression shouldBe "/parameters-and-low-level-body/{someBoolean}"
+      parametersAndLowLevelBody.httpMethod shouldBe HttpMethods.POST
+      parametersAndLowLevelBody.methodSpec shouldBe Spec(
+        parameters = Seq(Spec.parameter("someBoolean", Schema.boolean("some boolean"))),
+        requestBody = Spec.lowLevelBody("some body", required = true))
+
+      val lowLevelBodyOnly = byMethodName("lowLevelBodyOnly")
+      lowLevelBodyOnly.pathExpression shouldBe "/low-level-body-only"
+      lowLevelBodyOnly.httpMethod shouldBe HttpMethods.POST
+      lowLevelBodyOnly.methodSpec shouldBe Spec(requestBody = Spec.lowLevelBody())
     }
 
     "fail when path expression does not match parameters" in {

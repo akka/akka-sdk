@@ -1,5 +1,0 @@
-// Security
-** xref:security:index.adoc[]
-*** xref:security:acls.adoc[Access Control Lists (ACLs)]
-*** xref:security:tls-certificates.adoc[TLS certificates]
-*** xref:security:jwts.adoc[JSON Web Tokens (JWTs)]

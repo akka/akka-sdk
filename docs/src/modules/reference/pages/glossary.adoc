@@ -1,13 +1,15 @@
-= Glossary of Terms
+ Glossary of Terms
 include::ROOT:partial$include.adoc[]
 
 [glossary]
 
+[[agent]]Agent::A component that interacts with an AI model to perform a specific task. It is typically backed by a large language model (LLM). It maintains contextual history in a session memory, which may be shared between multiple agents that are collaborating on the same goal. It may provide function tools and call them as requested by the model.
+
 [[CICD]]CI/CD:: You can deploy <<service>>s using a Continuous Integration/Continuous Delivery service. See xref:operations:integrating-cicd/index.adoc[] for instructions.
 
-[[component]]Component:: The SDK supports <<endpoint>>, <<key_value_entity>>, <<event_sourced_entity>>, <<workflow>>, <<consumer>>, <<view>> and <<timed_action>> components. These components enable you to implement your business logic.
+[[component]]Component:: The SDK supports <<agent>>, <<endpoint>>, <<key_value_entity>>, <<event_sourced_entity>>, <<workflow>>, <<consumer>>, <<view>> and <<timed_action>> components. These components enable you to implement your business logic.
 
-[[consumer]]Consumer:: A component used to consume or produce stream of changes.
+[[consumer]]Consumer:: A component used to consume or produce a stream of changes.
 
 [[component_client]]Component client:: It's utility to call Akka components without knowing where they are located.
 
@@ -39,7 +41,7 @@ An _event handler_ is the only piece of code that is allowed to _update_ the sta
 
 [[key_value_entity]]Key Value Entity:: A Key Value Entity stores state in an update-in-place model, similar to a Key-Value store that supports CRUD (Create, Read, Update, Delete) operations. In Domain Driven Design (DDD) terms, a Value Entity is an "Entity." In contrast with "Value Objects," you reference Entities by an identifier and the value associated with that identifier can change (be updated) over time. These are discussed in more detail in xref:concepts:state-model.adoc#_the_key_value_state_model[Key Value state model].
 
-[[opendid-connect]]OpenID Connect:: Akka supports user management with Single Sign-On via OpenID Connect. For details see xref:security:index.adoc[].
+[[opendid-connect]]OpenID Connect:: Akka supports user management with Single Sign-On via OpenID Connect.
 
 [[project]]Project:: A project is the root of one or more <<service>>s that are meant to be deployed and run together. The project is a logical container for these services and provides common management capabilities.
 

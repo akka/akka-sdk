@@ -43,7 +43,7 @@ The Akka SDK provides injection of types related to capabilities the SDK provide
 
 Injection is done as constructor parameters for the component implementation class.
 
-The following types can be injected in Service Setup, HTTP Endpoints, gRPC Endpoints, Consumers, Timed Actions, and Workflows:
+The following types can be injected in Service Setup, HTTP Endpoints, gRPC Endpoints, Agents, Consumers, Timed Actions, and Workflows:
 
 [options="header" cols="1,1"]
 |===
@@ -52,6 +52,8 @@ The following types can be injected in Service Setup, HTTP Endpoints, gRPC Endpo
 
 |`akka.javasdk.client.ComponentClient`
 | for interaction between components, see xref:component-and-service-calls.adoc[]
+|`akka.javasdk.agent.AgentRegistry`
+| contains information about all agents, see xref:agents.adoc[]
 | `akka.javasdk.http.HttpClientProvider`
 | for creating clients to make calls between Akka services and also to other HTTP servers, see xref:component-and-service-calls.adoc[]
 | `akka.javasdk.grpc.GrpcClientProvider`
@@ -75,8 +77,10 @@ Furthermore, the following component specific types can also be injected:
 | Component Type
 | Injectable classes
 
+| Agent
+|`akka.javasdk.agent.AgentContext` for access to the session id that the agent participate in
 | Endpoint
-|`akka.javasdk.http.RequestContext` with access to request related things.
+|`akka.javasdk.http.RequestContext` with access to request related things
 |Workflow
 |`akka.javasdk.workflow.WorkflowContext` for access to the workflow id
 |Event Sourced Entity

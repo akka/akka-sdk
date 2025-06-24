@@ -23,6 +23,7 @@ object Dependencies {
   // https://github.com/akka/akka/blob/main/project/Dependencies.scala#L31
   val JacksonVersion = "2.19.0"
   val JacksonDatabindVersion = JacksonVersion
+  val Langchain4jVersion = "1.0.0"
   val LogbackVersion = "1.5.18"
   val LogbackContribVersion = "0.1.5"
   val JUnitVersion = "4.13.2"
@@ -54,6 +55,8 @@ object Dependencies {
   val jacksonJsr310 = "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % JacksonVersion
   val jacksonParameterNames = "com.fasterxml.jackson.module" % "jackson-module-parameter-names" % JacksonVersion
   val jacksonScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % JacksonVersion
+
+  val langchain4j = "dev.langchain4j" % "langchain4j" % Langchain4jVersion
 
   val scalaTest = "org.scalatest" %% "scalatest" % ScalaTestVersion
   val munit = "org.scalameta" %% "munit" % MunitVersion
@@ -95,7 +98,9 @@ object Dependencies {
     jacksonDatabind,
     jacksonJdk8,
     jacksonJsr310,
-    jacksonParameterNames)
+    jacksonParameterNames,
+    jacksonScala,
+    langchain4j)
 
   // Important: be careful when adding dependencies here, unless provided, runtime or test they will also be packaged in the user project
   //            binaries/artifacts unless explicitly excluded in the akka-javasdk-parent assembly descriptor

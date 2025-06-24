@@ -3,6 +3,8 @@ package com.example;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.ServiceSetup;
 import akka.javasdk.annotations.Setup;
+import com.example.application.ActivityAgentMore;
+import com.example.application.MyAgentMore;
 import com.example.application.MyComponent;
 import com.typesafe.config.Config;
 
@@ -41,6 +43,16 @@ public class MyAppSetup implements ServiceSetup {
   // tag::disable-components[]
   @Override
   public Set<Class<?>> disabledComponents() { // <1>
+    // end::disable-components[]
+    // to be able to run, otherwise duplicate components
+    if (true) {
+      return Set.of(ActivityAgentMore.ActivityAgent.class, ActivityAgentMore.StreamingActivityAgent.class,
+          ActivityAgentMore.ActivityAgentStructuredResponse.class, ActivityAgentMore.ActivityAgentWithTemplate.class,
+          ActivityAgentMore.ActivityHttpEndpoint.class, ActivityAgentMore.UserProfileEntity.class,
+          MyAgentMore.MyAgentNoMemory.class, MyAgentMore.MyAgentReadLastMemory.class,
+          MyAgentMore.MyAgentWithModel.class);
+    } else
+    // tag::disable-components[]
     if (appConfig.getString("my-app.environment").equals("prod")) {
       return Set.of(MyComponent.class); // <2>
     } else {

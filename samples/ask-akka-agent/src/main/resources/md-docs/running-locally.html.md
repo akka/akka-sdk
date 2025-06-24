@@ -75,17 +75,26 @@ The local console gives you insights of the services that you are running locall
 
 To run the console you need to install:
 
-- [  Docker Engine](https://docs.docker.com/get-started/get-docker/)   27 or later
 - [  Akka CLI](../operations/cli/installation.html)
 
 Start the console with the following command from a separate terminal window:
 
-
 ```command
 akka local console
 ```
+When the console is running, you will see a message like this:
 
-Open [http://localhost:3000/](http://localhost:3000/)
+```bash
+───────────────────────────────────────────────────────────────────────
+│ SERVICE                      │ STATE    │ ADDRESS                   |
+───────────────────────────────────────────────────────────────────────
+│ shopping-cart-quickstart     │ Running  │ localhost:9000            │
+───────────────────────────────────────────────────────────────────────
+Local console: http://localhost:9889
+(use Ctrl+C to quit)
+```
+
+Open [http://localhost:9889/](http://localhost:9889/)
 
 Start one or more services as described in [Starting your service](about:blank#_starting_your_service) and they will show up in the console. You can restart the services without restarting the console.
 

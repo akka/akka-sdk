@@ -2,6 +2,7 @@ Ack
 ACLs
 ACRs
 Adoptium
+[Aa]gentic
 Agrona
 Aiven
 [Aa]kka
@@ -12,6 +13,8 @@ allowOrigins
 [Aa]rchitecting
 artifactId
 async
+[Aa]uditability
+auditable
 [Aa]utoscaling
 Avro
 [Bb]ackoffice
@@ -27,6 +30,8 @@ Cembaluk
 classname
 clientCertificate
 codegen
+[Cc]omposable
+[Cc]omposability
 config
 configs
 corsPolicy
@@ -47,6 +52,7 @@ Dmitry
 downscaling
 DTDs
 [Ee]mptyState
+evolvability
 facto
 effectful
 enum
@@ -54,6 +60,7 @@ env
 exfiltration
 failover
 fanout
+getOptional
 [Gg]itHub
 googleCloud
 groupId
@@ -66,6 +73,7 @@ hasPrefix
 hasSuffix
 hyperscaler
 hyperscalers
+hoc
 hostname
 hostnames
 Hotari
@@ -92,6 +100,7 @@ Lagom
 LLM
 LLMs
 lmdbjava
+lookups
 matchers
 materializer
 maxInstances
@@ -105,8 +114,12 @@ newname
 npx
 npm
 nullable
+O'Reilly
+OAuth
 Okta
+[Oo]llama
 onboarding
+operationalized
 (?i)OpenID
 (?i)OSGi
 (?i)OTLP
@@ -122,6 +135,7 @@ preconfigured
 prepended
 prepending
 [Pp]rometheus
+[Pp]ropagations
 proto
 [Pp]rotobuf
 Qodo
@@ -138,8 +152,10 @@ remoting
 Remoting
 regionalization
 repartitions
+replayability
 replicatedRead
 reshard
+[Rr]eusability
 RNGs
 runtimes
 runtime's
@@ -165,6 +181,7 @@ sourceType
 src
 SREs
 [Ss]tackdriver
+[Ss]treamable
 subcommand
 subjectMatches
 subpage
@@ -195,7 +212,9 @@ upserting
 url
 userid
 valueFrom
+VMs
 volumeMounts
+[Ww]alkthrough
 Yugabyte
 Zolotko
 [Zz]sh
@@ -204,4 +223,4 @@ classpath
 kubectl
 dns
 DNS
-
+Fitbit

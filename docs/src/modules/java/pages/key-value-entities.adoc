@@ -1,4 +1,4 @@
-= Implementing Key Value Entities
+= Implementing key value entities
 
 include::ROOT:partial$include.adoc[]
 
@@ -21,7 +21,7 @@ The steps necessary to implement a Key Value Entity include:
 
 The following sections walk through these steps using a counter service as an example.
 
-== Modeling the Entity
+== Modeling the entity
 
 As mentioned above, to help us illustrate a Key Value Entity, you will be implementing a Counter service. For such service, you will want to be able to set the initial counter value but also to increase the counter modifying its state. The state will be a simple `Integer` but you will use a wrapper class `Counter` as the domain model, as shown below:
 
@@ -36,7 +36,7 @@ NOTE: Above we are taking advantage of the Java `record` to reduce the amount of
 include::partial$entity-ids.adoc[]
 
 [#_effect_api]
-== Key Value Entity's Effect API
+== Key value entity's effect API
 
 The Key Value Entity's Effect defines the operations that Akka should perform when an incoming command is handled by a Key Value Entity.
 
@@ -129,11 +129,11 @@ Note that xref:views.adoc#ve_delete[deleting View state] must be handled explici
 [#_replication]
 include::partial$mutli-region-replication.adoc[]
 
-== Side Effects
+== Side effects
 
 An entity doesn't perform any external side effects aside from persisting state changes and replying to the request. Side effects can be handled from the Workflow, Consumer, or Endpoint components that are calling the entity.
 
-== Testing the Entity
+== Testing the entity
 
 include::partial$testing-entity.adoc[]
 
@@ -156,7 +156,7 @@ NOTE: The `KeyValueEntityTestKit` is stateful, and it holds the state of a singl
 
 === Integration tests
 
-The skeleton of an Integration Test is generated for you if you use the archetype to start your Akka service. Let's see what it could look like to test our Counter Entity:
+The skeleton of an Integration Test is included in the xref:getting-started:author-your-first-service.adoc[getting started sample]. Let's see what it could look like to test our Counter Entity:
 
 [source,java,indent=0]
 .{sample-base-url}/key-value-counter/src/test/java/com/example/CounterIntegrationTest.java[CounterIntegrationTest.java]
@@ -170,3 +170,4 @@ include::example$key-value-counter/src/test/java/com/example/CounterIntegrationT
 <5> Explicitly request current value of `bar`. It should be `1`.
 
 NOTE: The integration tests in samples can be run using `mvn verify`.
+

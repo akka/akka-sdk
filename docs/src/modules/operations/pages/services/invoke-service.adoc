@@ -188,7 +188,7 @@ akka route update acme-ecommerce --cors-origin https://www.acme.org --cors-metho
 
 ==== Securing routes
 
-All routes are served with TLS certificates. In addition, you can also enable client certificate authentication, also known as Mutual TLS (mTLS), and customise the certificates it is provisioned with. Instructions for doing this can be found in xref:security:tls-certificates.adoc[].
+All routes are served with TLS certificates. In addition, you can also enable client certificate authentication, also known as Mutual TLS (mTLS), and customise the certificates it is provisioned with. Instructions for doing this can be found in xref:operations:tls-certificates.adoc[].
 
 [#_http_basic_authentication]
 ==== HTTP Basic authentication

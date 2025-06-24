@@ -376,6 +376,8 @@ jobs:
           - { sample: transfer-workflow-compensation, it: true }
 
           - { sample: ask-akka-agent, it: false }
+          - { sample: multi-agent, it: false, test: true }
+          - { sample: helloworld-agent, it: false, test: true }
 
     steps:
       - name: Checkout
@@ -443,6 +445,9 @@ jobs:
           export SDK_VERSION=$(cat ~/akka-javasdk-version.txt)
           ./updateSdkVersions.sh java samples/${DIR}
           cd samples/${DIR}
+          if [ true == '${{matrix.test}}' ]; then
+            mvn test --no-transfer-progress
+          fi
           if [ true == '${{matrix.verify}}' ]; then
             mvn verify --no-transfer-progress
           fi

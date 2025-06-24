@@ -9,6 +9,7 @@ import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
 
 import akka.annotation.InternalApi
+import akka.javasdk.agent.Agent
 import akka.javasdk.annotations.Acl
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.Consume.FromEventSourcedEntity
@@ -21,6 +22,7 @@ import akka.javasdk.annotations.Produce.ServiceStream
 import akka.javasdk.annotations.Produce.ToTopic
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
+import akka.javasdk.impl.agent.AgentDescriptorFactory
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.keyvalueentity.KeyValueEntity
@@ -51,7 +53,7 @@ private[impl] object ComponentDescriptorFactory {
     clazz.isPublic && clazz.hasAnnotation[FromEventSourcedEntity]
 
   def streamSubscription(clazz: Class[_]): Option[FromServiceStream] =
-    clazz.getAnnotationOption[FromServiceStream]
+    clazz.annotationOption[FromServiceStream]
 
   def hasSubscription(clazz: Class[_]): Boolean = {
     hasKeyValueEntitySubscription(clazz) ||
@@ -62,7 +64,7 @@ private[impl] object ComponentDescriptorFactory {
   }
 
   def eventSourcedEntitySubscription(clazz: Class[_]): Option[FromEventSourcedEntity] =
-    clazz.getAnnotationOption[FromEventSourcedEntity]
+    clazz.annotationOption[FromEventSourcedEntity]
 
   def hasConsumerOutput(javaMethod: Method): Boolean = {
     if (javaMethod.isPublic) {
@@ -92,6 +94,12 @@ private[impl] object ComponentDescriptorFactory {
     javaMethod.isPublic &&
     (javaMethod.getReturnType == classOf[KeyValueEntity.Effect[_]]
     || javaMethod.getReturnType == classOf[KeyValueEntity.ReadOnlyEffect[_]])
+  }
+
+  def hasAgentEffectOutput(javaMethod: Method): Boolean = {
+    javaMethod.isPublic &&
+    (javaMethod.getReturnType == classOf[Agent.Effect[_]] ||
+    javaMethod.getReturnType == classOf[Agent.StreamEffect])
   }
 
   def hasTimedActionEffectOutput(javaMethod: Method): Boolean = {
@@ -251,6 +259,8 @@ private[impl] object ComponentDescriptorFactory {
       EntityDescriptorFactory
     else if (Reflect.isConsumer(component))
       ConsumerDescriptorFactory
+    else if (Reflect.isAgent(component))
+      AgentDescriptorFactory
     else
       TimedActionDescriptorFactory
   }

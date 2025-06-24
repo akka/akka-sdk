@@ -16,13 +16,14 @@ private[javasdk] object DocLinks {
 
   val MessageBrokersPage = "operations/message-brokers.html"
 
-  private val errorCodes = Map(
+  private[javasdk] val errorCodes = Map(
     "AK-00112" -> "java/views.html#changing",
-    "AK-00415" -> "java/consuming-producing.html#consume-from-event-sourced-entity",
     "AK-00406" -> MessageBrokersPage,
-    "AK-00416" -> MessageBrokersPage)
+    "AK-00415" -> "java/consuming-producing.html#consume-from-event-sourced-entity",
+    "AK-00416" -> MessageBrokersPage,
+    "AK-01206" -> "java/agents.html#configuring_tool_call_limits")
 
-  // fallback if not defined in errorCodes
+  // fallback if isn't defined in errorCodes
   private val errorCodeCategories = Map(
     "AK-001" -> "java/views.html",
     "AK-002" -> "java/key-value-entities.html",
@@ -31,7 +32,8 @@ private[javasdk] object DocLinks {
     "AK-007" -> "java/using-jwts.html",
     "AK-008" -> "java/timed-actions.html",
     "AK-009" -> "java/access-control.html",
-    "AK-010" -> "java/workflows.html")
+    "AK-010" -> "java/workflows.html",
+    "AK-012" -> "java/agents.html")
 
   def forErrorCode(code: String): Option[String] = {
     val page = errorCodes.get(code).orElse(errorCodeCategories.get(code.take("AK-000".length)))

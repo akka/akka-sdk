@@ -5,6 +5,7 @@
 package akka.javasdk.workflow;
 
 import akka.javasdk.Context;
+import akka.javasdk.Tracing;
 
 public interface WorkflowContext extends Context {
   /**
@@ -13,4 +14,7 @@ public interface WorkflowContext extends Context {
    * @return The workflow id.
    */
   String workflowId();
+
+  /** Access to tracing for custom app specific tracing. */
+  Tracing tracing();
 }

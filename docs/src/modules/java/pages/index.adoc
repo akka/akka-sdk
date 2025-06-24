@@ -2,6 +2,8 @@
 
 include::ROOT:partial$include.adoc[]
 
+include::ROOT:partial$new-to-akka-start-here.adoc[]
+
 The Akka SDK provides you proven design patterns that enable your apps to remain responsive to change. It frees you from infrastructure concerns and lets you focus on the application logic.
 
 With its few, concise components, the Akka SDK is easy to learn, and you can develop services in quick, iterative steps by running your code locally with full insight through Akka's console.
@@ -23,14 +25,16 @@ include::ROOT:partial$local-dev-prerequisites.adoc[]
 
 == Getting Started
 
-Follow xref:java:author-your-first-service.adoc[] to implement your first service. If you prefer to first explore working example code, you can check out the xref:shopping-cart/quickstart.adoc[] or our other xref:samples.adoc[samples].
+Follow xref:getting-started:author-your-first-service.adoc[] to implement your first agentic service. If you prefer to first explore working example code, you can check out xref:getting-started:build-and-deploy-shopping-cart.adoc[] or our other xref:getting-started:samples.adoc[samples].
 
 On the other hand, if you would rather spend some time exploring our documentation, here are some main features you will find in this section:
 
+* xref:agents.adoc[Agents]
 * xref:event-sourced-entities.adoc[Event Sourced Entities]
 * xref:key-value-entities.adoc[Key Value Entities]
 * xref:http-endpoints.adoc[HTTP Endpoints]
 * xref:grpc-endpoints.adoc[gRPC Endpoints]
+* xref:mcp-endpoints.adoc[MCP Endpoints]
 * xref:views.adoc[Views]
 * xref:workflows.adoc[Workflows]
 * xref:timed-actions.adoc[Timed Actions]

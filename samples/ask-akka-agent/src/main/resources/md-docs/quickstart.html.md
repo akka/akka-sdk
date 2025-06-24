@@ -345,24 +345,26 @@ curl localhost:9000/carts/123
 1. To get a clear view of your locally running service,[  install the Akka CLI](../../operations/cli/installation.html)   . It provides a local web-based management console.
 2. Start the local console:  
 
-
 ```command
 akka local console
 ```
 
-  This will start a Docker container running the local console:  
-
+When the console is running, you will see a message like this:
 
 ```none
-> Local Console is running at:             http://localhost:3000
- - shopping-cart-quickstart is running at: localhost:9000
---------------------
+───────────────────────────────────────────────────────────────────────
+│ SERVICE                      │ STATE    │ ADDRESS                   |
+───────────────────────────────────────────────────────────────────────
+│ shopping-cart-quickstart     │ Running  │ localhost:9000            │
+───────────────────────────────────────────────────────────────────────
+Local console: http://localhost:9889
+(use Ctrl+C to quit)
 ```
-3. Open[  http://localhost:3000/](http://localhost:3000/)   to see your local service in action:
+3. Open[  http://localhost:9889/](http://localhost:9889/)   to see your local service in action:
 
 ![local console first app events](../_images/local-console-first-app-events.png)
 
-Here, you can view not only the [current state of the cart](http://localhost:3000/services/shopping-cart-quickstart/components/shoppingcart.application.ShoppingCartEntity) , but also <a href="http://localhost:3000/services/shopping-cart-quickstart/components/shoppingcart.application.ShoppingCartEntity/eventlog/123">**a detailed log of events**</a> , and the corresponding state changes that occurred along the way.
+Here, you can view not only the [current state of the cart](http://localhost:9889/services/shopping-cart-quickstart/components/shoppingcart.application.ShoppingCartEntity) , but also <a href="http://localhost:9889/services/shopping-cart-quickstart/components/shoppingcart.application.ShoppingCartEntity/eventlog/123">**a detailed log of events**</a> , and the corresponding state changes that occurred along the way.
 
 If you don’t see anything in your console, or the console doesn’t start, check to make sure that Docker is installed and configured properly and that you don’t have other applications using ports `3000` or `9000`.
 

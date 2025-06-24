@@ -12,7 +12,7 @@ include::ROOT:partial$local-dev-prerequisites.adoc[]
 [[_starting_your_service]]
 == Starting your service
 
-As an example, we will use the xref:shopping-cart/quickstart.adoc[Shopping Cart] sample.
+As an example, we will use the xref:getting-started:build-and-deploy-shopping-cart.adoc[Shopping Cart] sample.
 
 To start your service locally, run the following command from the root of your project:
 
@@ -49,7 +49,7 @@ Use `Ctrl+c` to shut down the service.
 
 == Run from IntelliJ
 
-The samples and archetype include a run configuration for IntelliJ. In the toolbar you should see:
+The xref:getting-started:author-your-first-service.adoc[getting started sample] and other samples include a run configuration for IntelliJ. In the toolbar you should see:
 
 image:run-intellij.png[]
 
@@ -61,7 +61,6 @@ The local console gives you insights of the services that you are running locall
 
 To run the console you need to install:
 
-* https://docs.docker.com/get-started/get-docker/[Docker Engine, window="new"] {minimum_docker_version} or later
 * xref:operations:cli/installation.adoc[Akka CLI]
 
 Start the console with the following command from a separate terminal window:
@@ -71,7 +70,7 @@ Start the console with the following command from a separate terminal window:
 akka local console
 ----
 
-Open http://localhost:3000/[window="new"]
+Open http://localhost:9889/[window="new"]
 
 Start one or more services as described in <<_starting_your_service>> and they will show up in the console. You can restart the services without restarting the console.
 
