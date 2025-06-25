@@ -44,6 +44,8 @@ include::example$doc-snippets/src/main/java/com/example/application/TransferWork
 <7> The workflow has methods that can be called with the component client.
 <8> Those methods return an effect, which can be instructions to update the state and transition to a certain step.
 
+There must be at least one command handler method, which returns `Effect`. It is the command handler methods that can be called with the component client from other components, such as an endpoint. The workflow is started by the first command, which will transition to the initial step.
+
 == Modeling state
 
 We want to build a simple workflow that transfers funds between two wallets. Before that, we will create a wallet subdomain with some basic functionalities that we could use later. A `WalletEntity` is implemented as an xref:event-sourced-entities.adoc[Event Sourced Entity], which is a better choice than a Key Value Entity for implementing a wallet, because a ledger of all transactions is usually required by the business.
