@@ -37,7 +37,14 @@ public class PreferencesEntity
   }
 
   public Effect<AllPreferences> getPreferences() { // <4>
-    return effects().reply(new AllPreferences(currentState().preferences()));
+    List<String> prefs;
+    if (currentState() == null) {
+      prefs = new ArrayList<>();
+    } else {
+      prefs = currentState().preferences();
+    }
+
+    return effects().reply(new AllPreferences(prefs));
   }
 
   @Override

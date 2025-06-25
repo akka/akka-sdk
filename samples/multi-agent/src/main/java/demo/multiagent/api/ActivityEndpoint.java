@@ -44,7 +44,7 @@ public class ActivityEndpoint {
   }
 
   @Get("/activities/{userId}/{sessionId}")
-  public HttpResponse getAnswer(String sessionId) {
+  public HttpResponse getAnswer(String userId, String sessionId) {
       var res =
         componentClient
           .forWorkflow(sessionId)

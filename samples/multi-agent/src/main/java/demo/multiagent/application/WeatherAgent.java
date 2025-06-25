@@ -5,7 +5,6 @@ import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.FunctionTool;
 import demo.multiagent.domain.AgentRequest;
-import demo.multiagent.domain.AgentResponse;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -32,7 +31,12 @@ public class WeatherAgent extends Agent {
       The responses from the weather services are in json format. You need to digest
       it into human language. Be aware that Celsius temperature is in temp_c field.
       Fahrenheit temperature is in temp_f field.
-    """.stripIndent() + AgentResponse.FORMAT_INSTRUCTIONS;
+
+      IMPORTANT:
+      You return an error if the asked question is outside your domain of expertise,
+      if it's invalid or if you cannot provide a response for any other reason.
+      Start the error response with ERROR.
+    """.stripIndent();
 
 
   // tag::function-tool[]
@@ -42,12 +46,11 @@ public class WeatherAgent extends Agent {
     this.weatherService = weatherService; // <1>
   }
 
-  public Effect<AgentResponse> query(AgentRequest request) {
+  public Effect<String> query(AgentRequest request) {
     return effects()
         .systemMessage(SYSTEM_MESSAGE)
         .tools(weatherService) // <2>
         .userMessage(request.message())
-        .responseAs(AgentResponse.class)
         .thenReply();
   }
 

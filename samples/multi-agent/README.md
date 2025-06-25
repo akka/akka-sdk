@@ -106,7 +106,7 @@ With the application running, you can test the system using the following endpoi
 
 * Start a new session:
 ```shell
-curl -i -XPOST --location "http://localhost:9000/activities" \
+curl -i -XPOST --location "http://localhost:9000/activities/alice" \
   --header "Content-Type: application/json" \
   --data '{"message": "I do not work tomorrow. I am in Madrid. What should I do? Beware of the weather"}'
 ```
@@ -115,7 +115,7 @@ The system will process the query, select the appropriate agents, and return a r
 
 * Retrieve the response for a specific session:
 ```shell
-curl -i -XGET --location "http://localhost:9000/activities/{sessionId}"
+curl -i -XGET --location "http://localhost:9000/activities/alice/{sessionId}"
 ```
 
 Replace `{sessionId}` with the ID returned when the session was created. Example:

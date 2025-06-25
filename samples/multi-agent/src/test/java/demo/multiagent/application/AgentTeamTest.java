@@ -7,7 +7,6 @@ import akka.javasdk.JsonSupport;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
-import demo.multiagent.domain.AgentResponse;
 import demo.multiagent.domain.AgentSelection;
 import demo.multiagent.domain.Plan;
 import demo.multiagent.domain.PlanStep;
@@ -50,18 +49,12 @@ public class AgentTeamTest extends TestKitSupport { // <1>
 
     weatherModel
         .whenMessage(req -> req.equals(weatherQuery)) // <5>
-        .reply(
-            JsonSupport.encodeToString(
-                new AgentResponse("The weather in Stockholm is sunny.", null)));
+        .reply("The weather in Stockholm is sunny.");
 
     activitiesModel
         .whenMessage(req -> req.equals(activityQuery))
-        .reply(
-            JsonSupport.encodeToString(
-                new AgentResponse(
-                    "You can take a bike tour around Djurgården Park, "
-                        + "visit the Vasa Museum, explore Gamla Stan (Old Town)...",
-                    null)));
+        .reply("You can take a bike tour around Djurgården Park, " +
+            "visit the Vasa Museum, explore Gamla Stan (Old Town)...");
 
     summaryModel.fixedResponse("The weather in Stockholm is sunny, so you can enjoy " +
         "outdoor activities like a bike tour around Djurgården Park, visiting the Vasa Museum, " +

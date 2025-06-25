@@ -32,10 +32,15 @@ public class ActivityAgent extends Agent {
           .method(PreferencesEntity::getPreferences)
           .invoke(); // <3>
 
-    var userMessage = request.message() +
-        "\nPreferences:\n" +
-        allPreferences.preferences().stream()
-            .collect(Collectors.joining("'\n", "- ", ""));
+    String userMessage;
+    if (allPreferences.preferences().isEmpty()) {
+      userMessage = request.message();
+    } else {
+      userMessage = request.message() +
+          "\nPreferences:\n" +
+          allPreferences.preferences().stream()
+              .collect(Collectors.joining("'\n", "- ", ""));
+    }
 
     return effects()
         .systemMessage(SYSTEM_MESSAGE)

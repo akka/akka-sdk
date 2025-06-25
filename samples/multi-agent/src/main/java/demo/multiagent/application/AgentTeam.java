@@ -5,7 +5,7 @@ import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.client.DynamicMethodRef;
 import akka.javasdk.workflow.Workflow;
-import demo.multiagent.domain.AgentResponse;
+import demo.multiagent.domain.AgentRequest;
 import demo.multiagent.domain.AgentSelection;
 import demo.multiagent.domain.Plan;
 import demo.multiagent.domain.PlanStep;
@@ -38,7 +38,7 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
       String userQuery,
       Plan plan,
       String finalAnswer,
-      Map<String, AgentResponse> agentResponses,
+      Map<String, String> agentResponses,
       Status status) {
 
     public static State init(String userId, String query) {
@@ -50,7 +50,7 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
       return new State(userId, userQuery, plan, answer, agentResponses, status);
     }
 
-    public State addAgentResponse(AgentResponse response) {
+    public State addAgentResponse(String response) {
       // when we add a response, we always do it for the agent at the head of the plan queue
       // therefore we remove it from the queue and proceed
       var agentId = plan.steps().removeFirst().agentId();
@@ -175,15 +175,15 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
         var stepPlan = currentState().nextStepPlan(); // <8>
         logger.debug("Executing plan step (agent:{}), asking {}", stepPlan.agentId(), stepPlan.query());
         var agentResponse = callAgent(stepPlan.agentId(), stepPlan.query()); // <9>
-        if (agentResponse.isValid()) {
+        if (agentResponse.startsWith("ERROR")) {
+          throw new RuntimeException("Agent '" + stepPlan.agentId() + "' responded with error: " + agentResponse);
+        } else {
           logger.debug("Response from [agent:{}]: '{}'", stepPlan.agentId(), agentResponse);
           return agentResponse;
-        } else {
-          throw new RuntimeException("Agent '" + stepPlan.agentId() + "' responded with error: " + agentResponse.error());
         }
 
       })
-      .andThen(AgentResponse.class, answer -> {
+      .andThen(String.class, answer -> {
           var newState = currentState().addAgentResponse(answer);
 
           if (newState.hasMoreSteps()) {
@@ -199,17 +199,18 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
   }
 
   // tag::dynamicCall[]
-  private AgentResponse callAgent(String agentId, String query) {
+  private String callAgent(String agentId, String query) {
     // We know the id of the agent to call, but not the agent class.
     // Could be WeatherAgent or ActivityAgent.
     // We can still invoke the agent based on its id, given that we know that it
-    // takes a String parameter and returns AgentResponse.
-    DynamicMethodRef<String, AgentResponse> call =
+    // takes a AgentRequest parameter and returns String.
+    var request = new AgentRequest(currentState().userId(), query);
+    DynamicMethodRef<AgentRequest, String> call =
         componentClient
             .forAgent()
             .inSession(sessionId())
             .dynamicCall(agentId); // <9>
-    return call.invoke(query);
+    return call.invoke(request);
   }
   // end::dynamicCall[]
   // end::plan[]
