@@ -5,9 +5,9 @@ import akka.javasdk.ServiceSetup;
 import akka.javasdk.annotations.Setup;
 import akka.javasdk.http.HttpClientProvider;
 import com.typesafe.config.Config;
-import demo.multiagent.application.agents.FakeWeatherService;
-import demo.multiagent.application.agents.WeatherService;
-import demo.multiagent.application.agents.WeatherServiceImpl;
+import demo.multiagent.application.FakeWeatherService;
+import demo.multiagent.application.WeatherService;
+import demo.multiagent.application.WeatherServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

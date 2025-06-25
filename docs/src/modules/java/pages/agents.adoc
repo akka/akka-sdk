@@ -362,9 +362,9 @@ NOTE: A class (either the agent itself or an external tool class) can have multi
 You can use either approach independently or combine them based on your needs. Let's look at a complete example showing both approaches:
 
 [source,java]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/agents/WeatherAgent.java[WeatherAgent.java]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/WeatherAgent.java[WeatherAgent.java]
 ----
-include::example$multi-agent/src/main/java/demo/multiagent/application/agents/WeatherAgent.java[tag=function-tool]
+include::example$multi-agent/src/main/java/demo/multiagent/application/WeatherAgent.java[tag=function-tool]
 ----
 <1> The `WeatherService` providing a function tool is injected into the agent (see
 xref:setup-and-dependency-injection.adoc#_custom_dependency_injection[DependencyProvider]).
@@ -373,13 +373,13 @@ xref:setup-and-dependency-injection.adoc#_custom_dependency_injection[Dependency
 <3> We define a simple tool directly in the agent class using the `@FunctionTool` annotation, which is implicitly registered. Note that since this method is defined in the agent itself, it can even be a private method.
 
 The `WeatherService` is an interface with a method annotated with `@FunctionTool`. A concrete implementation of this
-interface is provided by `{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/agents/WeatherServiceImpl.java[WeatherServiceImpl]` class.
+interface is provided by `{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/WeatherServiceImpl.java[WeatherServiceImpl]` class.
 This class is made available for injection in the service setup using a xref:setup-and-dependency-injection.adoc#_custom_dependency_injection[DependencyProvider].
 
 [source,java]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/agents/WeatherService.java[WeatherService.java]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/WeatherService.java[WeatherService.java]
 ----
-include::example$multi-agent/src/main/java/demo/multiagent/application/agents/WeatherService.java[tag=function-tool]
+include::example$multi-agent/src/main/java/demo/multiagent/application/WeatherService.java[tag=function-tool]
 ----
 
 <1> Annotate method with `@FunctionTool` and provide a clear description of what it does.
@@ -529,7 +529,7 @@ Let's first look at how to define a workflow that orchestrates several agents in
 
 [source,java]
 ----
-include::example$doc-snippets/src/main/java/com/example/application/AgentTeam.java[tag=all]
+include::example$doc-snippets/src/main/java/com/example/application/AgentTeamWorkflow.java[tag=all]
 ----
 <1> The workflow starts by asking for the weather forecast.
 <2> Weather forecast is retrieved by the `WeatherAgent`, which must extract the location and date from the user query.
@@ -552,12 +552,12 @@ We split the planning into two steps and use two separate agents for these tasks
 . Select agents that are useful for a certain problem.
 . Decide in which order to use the agents and give each agent precise instructions for its task.
 
-The `Selector` agent decides which agents to use:
+The `SelectorAgent` decides which agents to use:
 
 [source,java]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/agents/Selector.java[Selector.java]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/SelectorAgent.java[SelectorAgent.java]
 ----
-include::example$multi-agent/src/main/java/demo/multiagent/application/agents/Selector.java[tag=all]
+include::example$multi-agent/src/main/java/demo/multiagent/application/SelectorAgent.java[tag=all]
 ----
 <1> The `AgentRegistry` contains information about all agents.
 <2> Select the agents with the role `"worker"`.
@@ -567,16 +567,16 @@ The information about the agents in the `AgentRegistry` comes from the `@Compone
 
 The `WeatherAgent` has:
 [source,java]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/agents/WeatherAgent.java[WeatherAgent.java]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/WeatherAgent.java[WeatherAgent.java]
 ----
-include::example$multi-agent/src/main/java/demo/multiagent/application/agents/WeatherAgent.java[tag=description]
+include::example$multi-agent/src/main/java/demo/multiagent/application/WeatherAgent.java[tag=description]
 ----
 
 The `ActivityAgent` has:
 [source,java]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/agents/ActivityAgent.java[ActivityAgent.java]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/ActivityAgent.java[ActivityAgent.java]
 ----
-include::example$multi-agent/src/main/java/demo/multiagent/application/agents/ActivityAgent.java[tag=description]
+include::example$multi-agent/src/main/java/demo/multiagent/application/ActivityAgent.java[tag=description]
 ----
 
 Note that in image:concepts:steps-2.svg[width=20] of the `Selector` we retrieve a subset of the agents with a certain role. This role is also defined in the `@AgentDescription` annotation.
@@ -588,29 +588,29 @@ The result from the `Selector` is a list of agent ids:
 include::example$multi-agent/src/main/java/demo/multiagent/domain/AgentSelection.java[tag=all]
 ----
 
-After selecting agents, we use a `Planner` agent to decide in which order to use the agents and what precise request that each agent should receive to perform its single task.
+After selecting agents, we use a `PlannerAgent` to decide in which order to use the agents and what precise request that each agent should receive to perform its single task.
 
 [source,java]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/agents/Planner.java[Planner.java]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/PlannerAgent.java[PlannerAgent.java]
 ----
-include::example$multi-agent/src/main/java/demo/multiagent/application/agents/Planner.java[tag=all]
+include::example$multi-agent/src/main/java/demo/multiagent/application/PlannerAgent.java[tag=all]
 ----
 <1> Lookup the agent information for the selected agents from the `AgentRegistry.
 <2> Detailed instructions and include descriptions (as json) of the agents.
 
-That's the two agents that perform the planning, but we also need to connect them and execute the plan. This orchestration is the job of a workflow, called `AgentTeam`.
+That's the two agents that perform the planning, but we also need to connect them and execute the plan. This orchestration is the job of a workflow, called `AgentTeamWorkflow`.
 
 [source,java]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/AgentTeam.java[AgentTeam.java]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[AgentTeamWorkflow.java]
 ----
-include::example$multi-agent/src/main/java/demo/multiagent/application/AgentTeam.java[tag=plan]
+include::example$multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[tag=plan]
 ----
 <1> It's a workflow, with reliable and durable execution.
 <2> The steps are select - plan - execute - summarize.
-<3> The workflow starts by selecting agents
-<4> which is performed by the `Selector` agent.
+<3> The workflow starts by selecting agents.
+<4> which is performed by the `SelectorAgent`.
 <5> Continue with making the actual plan
-<6> which is performed by the `Planner` agent, using the selection from the previous step.
+<6> which is performed by the `PlannerAgent`, using the selection from the previous step.
 <7> Continue with executing the plan.
 <8> Take the next task in the plan.
 <9> Call the agent for the task.
@@ -620,7 +620,7 @@ When executing the plan and calling the agents we know the id of the agent to ca
 
 [source,java]
 ----
-include::example$multi-agent/src/main/java/demo/multiagent/application/AgentTeam.java[tag=dynamicCall]
+include::example$multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[tag=dynamicCall]
 ----
 
 You find the full source code for this multi-agent sample in the link:https://github.com/akka-samples/multi-agent[akka-samples/multi-agent Github Repository].
@@ -648,9 +648,9 @@ For predictable and repeatable tests of your agent's business logic and componen
 Use the `TestKitSupport` and the `CoponentClient` to call the components from the test. The `ModelProvider` of the agents can be replaced with link:_attachments/testkit/akka/javasdk/testkit/TestModelProvider.html[TestModelProvider], which provides ways to mock the responses without using the real AI model.
 
 [source,java]
-.{sample-base-url}/multi-agent/src/test/java/demo/multiagent/application/AgentTeamTest.java[AgentTeamTest.java]
+.{sample-base-url}/multi-agent/src/test/java/demo/multiagent/application/AgentTeamWorkflowTest.java[AgentTeamWorkflowTest.java]
 ----
-include::example$multi-agent/src/test/java/demo/multiagent/application/AgentTeamTest.java[tag=class]
+include::example$multi-agent/src/test/java/demo/multiagent/application/AgentTeamWorkflowTest.java[tag=class]
 ----
 <1> Extend `TestKitSupport` to gain access to testing utilities for Akka components.
 <2> Create one or more `TestModelProvider`. Using one per agent allows for distinct mock behaviors, while sharing one is useful for testing general responses.

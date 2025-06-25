@@ -1,4 +1,4 @@
-package demo.multiagent.application.agents;
+package demo.multiagent.application;
 
 import akka.javasdk.JsonSupport;
 import akka.javasdk.agent.Agent;
@@ -16,11 +16,11 @@ import demo.multiagent.domain.AgentSelection;
       answering the request.
     """
 )
-public class Selector extends Agent {
+public class SelectorAgent extends Agent {
 
   private final String systemMessage;
 
-  public Selector(AgentRegistry agentsRegistry) { // <1>
+  public SelectorAgent(AgentRegistry agentsRegistry) { // <1>
 
     var agents = agentsRegistry.agentsWithRole("worker"); // <2>
 

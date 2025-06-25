@@ -17,7 +17,7 @@ This sample leverages specific Akka components:
 
 - **Workflow**: Manages the user query process, handling the sequential steps of agent selection, plan creation, execution, and summarization.
 - **EventSourced Entity**: Maintains the session memory, storing the sequence of interactions between the user and the system.
-- **HTTP Endpoint**: Serves the application endpoints for interacting with the multi-agent system (`/chat`).
+- **HTTP Endpoint**: Serves the application endpoints for interacting with the multi-agent system (`/activities`).
 
 ### Other
 
@@ -36,10 +36,10 @@ sequenceDiagram
     participant ActivityAgent as Activity Agent
     participant Summarizer as Summarizer
 
-    User->>HTTPEndpoint: "I do not work today.. I am in Madrid. What should I do? Beware of the weather"
+    User->>HTTPEndpoint: "I do not work today. I am in Madrid. What should I do? Beware of the weather"
     HTTPEndpoint->>Workflow: Create new workflow instance
     Note over Workflow: Initialize multi-agent query process
-    HTTPEndpoint-->>User: Return chat id for follow up 
+    HTTPEndpoint-->>User: Return activity id for follow up 
 
     Workflow->>Selector: Select appropriate agents
     Selector-->>Workflow: Return selected agents (e.g., WeatherAgent, ActivityAgent)
@@ -58,7 +58,7 @@ sequenceDiagram
     Workflow->>Summarizer: Summarize responses
     Summarizer-->>Workflow: "The weather in Madrid is rainy today, so you might want to explore indoor attractions..."
 
-    User->>HTTPEndpoint: Send query by chat id
+    User->>HTTPEndpoint: Send query by session id
     HTTPEndpoint->>Workflow: Request result from workflow
     Workflow-->>HTTPEndpoint: Return result
     HTTPEndpoint-->>User: Deliver response
@@ -104,26 +104,43 @@ mvn compile exec:java
 
 With the application running, you can test the system using the following endpoints:
 
-* Start a new chat session:
+* Start a new session:
 ```shell
-curl -i -XPOST --location "http://localhost:9000/chat" \
+curl -i -XPOST --location "http://localhost:9000/activities/alice" \
   --header "Content-Type: application/json" \
   --data '{"message": "I do not work tomorrow. I am in Madrid. What should I do? Beware of the weather"}'
 ```
 
 The system will process the query, select the appropriate agents, and return a response.
 
-* Retrieve the response for a specific chat session:
+* Retrieve the response for a specific session:
 ```shell
-curl -i -XGET --location "http://localhost:9000/chat/{chatId}"
+curl -i -XGET --location "http://localhost:9000/activities/alice/{sessionId}"
 ```
 
-Replace `{chatId}` with the ID returned when the session was created. Example:
+Replace `{sessionId}` with the ID returned when the session was created. Example:
 
 ```shell
-$ curl "http://localhost:9000/chat/c1219e5a-abae-44c0-959b-ff76aa22cb2e"
+$ curl "http://localhost:9000/activities/alice/c1219e5a-abae-44c0-959b-ff76aa22cb2e"
 
-The weather in Madrid is rainy tomorrow, so you might want to explore indoor attractions like the Prado Museum or Reina Sofia Museum. Alternatively, you can visit local cafes and food markets, such as Mercado de San Miguel, to enjoy some culinary delights without getting wet. If you're up for something more active, you could also consider visiting an escape room or an indoor sports facility.% 
+The weather in Madrid is rainy tomorrow, so you might want to explore indoor attractions like the Prado Museum or Reina Sofia Museum. Alternatively, you can visit local cafes and food markets, such as Mercado de San Miguel, to enjoy some culinary delights without getting wet. If you're up for something more active, you could also consider visiting an escape room or an indoor sports facility. 
+```
+
+You can also retrieve for all previous suggestions for a user:
+
+```shell
+curl -i -XGET --location "http://localhost:9000/activities/alice"
+```
+
+Preferences can be added with:
+
+```shell
+curl -i localhost:9000/preferences/alice \
+  --header "Content-Type: application/json" \
+  -XPOST \
+  --data '{
+    "preference": "I like outdoor activities.",
+  }'
 ```
 
 ## Deployment

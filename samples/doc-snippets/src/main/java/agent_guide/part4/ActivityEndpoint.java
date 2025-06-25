@@ -13,7 +13,7 @@ import java.util.UUID;
 // Opened up for access from the public internet to make the service easy to try out.
 // For actual services meant for production this must be carefully considered, and often set more limited
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
-@HttpEndpoint("")
+@HttpEndpoint()
 public class ActivityEndpoint {
   public record Request(String message) {
   }
@@ -32,8 +32,8 @@ public class ActivityEndpoint {
     var res =
       componentClient
       .forWorkflow(sessionId)
-        .method(AgentTeam::start) // <1>
-        .invoke(new AgentTeam.Request(userId, request.message()));
+        .method(AgentTeamWorkflow::start) // <1>
+        .invoke(new AgentTeamWorkflow.Request(userId, request.message()));
 
     return HttpResponses.created(res, "/activities/ " + userId + "/" + sessionId); // <2>
   }
@@ -45,7 +45,7 @@ public class ActivityEndpoint {
     var res =
         componentClient
             .forWorkflow(sessionId)
-            .method(AgentTeam::getAnswer)
+            .method(AgentTeamWorkflow::getAnswer)
             .invoke();
 
     if (res.isEmpty())

@@ -5,10 +5,7 @@ import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.client.DynamicMethodRef;
 import akka.javasdk.workflow.Workflow;
-import demo.multiagent.application.agents.Planner;
-import demo.multiagent.application.agents.Selector;
-import demo.multiagent.application.agents.Summarizer;
-import demo.multiagent.domain.AgentResponse;
+import demo.multiagent.domain.AgentRequest;
 import demo.multiagent.domain.AgentSelection;
 import demo.multiagent.domain.Plan;
 import demo.multiagent.domain.PlanStep;
@@ -19,13 +16,15 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
-import static demo.multiagent.application.AgentTeam.Status.*;
+import static demo.multiagent.application.AgentTeamWorkflow.Status.*;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 // tag::all[]
 // tag::plan[]
 @ComponentId("agent-team")
-public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
+public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1>
+  public record Request(String userId, String message) {}
+
   // end::plan[]
 
   enum Status {
@@ -34,22 +33,24 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
     FAILED,
   }
 
-  public record State(String userQuery,
-                      Plan plan,
-                      String finalAnswer,
-                      Map<String, AgentResponse> agentResponses,
-                      Status status) {
+  public record State(
+      String userId,
+      String userQuery,
+      Plan plan,
+      String finalAnswer,
+      Map<String, String> agentResponses,
+      Status status) {
 
-    public static State init(String query) {
-      return new State(query, new Plan(), "", new HashMap<>(), STARTED);
+    public static State init(String userId, String query) {
+      return new State(userId, query, new Plan(), "", new HashMap<>(), STARTED);
     }
 
 
     public State withFinalAnswer(String answer) {
-      return new State(userQuery, plan, answer, agentResponses, status);
+      return new State(userId, userQuery, plan, answer, agentResponses, status);
     }
 
-    public State addAgentResponse(AgentResponse response) {
+    public State addAgentResponse(String response) {
       // when we add a response, we always do it for the agent at the head of the plan queue
       // therefore we remove it from the queue and proceed
       var agentId = plan.steps().removeFirst().agentId();
@@ -66,24 +67,24 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
     }
 
     public State withPlan(Plan plan) {
-      return new State(userQuery, plan, finalAnswer, agentResponses, STARTED);
+      return new State(userId, userQuery, plan, finalAnswer, agentResponses, STARTED);
     }
 
     public State complete() {
-      return new State(userQuery, plan, finalAnswer, agentResponses, COMPLETED);
+      return new State(userId, userQuery, plan, finalAnswer, agentResponses, COMPLETED);
     }
 
     public State failed() {
-      return new State(userQuery, plan, finalAnswer, agentResponses, FAILED);
+      return new State(userId, userQuery, plan, finalAnswer, agentResponses, FAILED);
     }
 
   }
 
-  private static final Logger logger = LoggerFactory.getLogger(AgentTeam.class);
+  private static final Logger logger = LoggerFactory.getLogger(AgentTeamWorkflow.class);
 
   private final ComponentClient componentClient;
 
-  public AgentTeam(ComponentClient componentClient) {
+  public AgentTeamWorkflow(ComponentClient componentClient) {
     this.componentClient = componentClient;
   }
 
@@ -93,17 +94,17 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
     return workflow()
       .defaultStepRecoverStrategy(maxRetries(1).failoverTo(INTERRUPT))
       .defaultStepTimeout(Duration.of(30, SECONDS))
-      .addStep(selectAgent()) // <2>
-      .addStep(plan())
-      .addStep(executePlan())
-      .addStep(summarize())
-      .addStep(interrupt());
+      .addStep(selectAgentsStep()) // <2>
+      .addStep(planStep())
+      .addStep(executePlanStep())
+      .addStep(summarizeStep())
+      .addStep(interruptStep());
   }
 
-  public Effect<Done> start(String query) {
+  public Effect<Done> start(Request request) {
     if (currentState() == null) {
       return effects()
-        .updateState(State.init(query))
+        .updateState(State.init(request.userId(), request.message()))
         .transitionTo(SELECT_AGENTS) // <3>
         .thenReply(Done.getInstance());
     } else {
@@ -123,10 +124,10 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
   // tag::plan[]
   private static final String SELECT_AGENTS = "select-agents";
 
-  private Step selectAgent() {
+  private Step selectAgentsStep() {
     return step(SELECT_AGENTS)
       .call(() ->
-          componentClient.forAgent().inSession(sessionId()).method(Selector::selectAgents)
+          componentClient.forAgent().inSession(sessionId()).method(SelectorAgent::selectAgents)
               .invoke(currentState().userQuery)) // <4>
       .andThen(AgentSelection.class, selection -> {
         logger.debug("Selected agents: {}", selection.agents());
@@ -145,7 +146,7 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
 
   private static final String CREATE_PLAN = "create-plan";
 
-  private Step plan() {
+  private Step planStep() {
     return step(CREATE_PLAN)
       .call(AgentSelection.class, agentSelection -> {
         logger.debug(
@@ -153,8 +154,8 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
             currentState().userQuery,
             agentSelection.agents());
 
-          return componentClient.forAgent().inSession(sessionId()).method(Planner::createPlan)
-              .invoke(new Planner.Request(currentState().userQuery, agentSelection)); // <6>
+          return componentClient.forAgent().inSession(sessionId()).method(PlannerAgent::createPlan)
+              .invoke(new PlannerAgent.Request(currentState().userQuery, agentSelection)); // <6>
         }
       )
       .andThen(Plan.class, plan -> {
@@ -168,21 +169,21 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
 
   private static final String EXECUTE_PLAN = "execute-plan";
 
-  private Step executePlan() {
+  private Step executePlanStep() {
     return step(EXECUTE_PLAN)
       .call(() -> {
         var stepPlan = currentState().nextStepPlan(); // <8>
         logger.debug("Executing plan step (agent:{}), asking {}", stepPlan.agentId(), stepPlan.query());
         var agentResponse = callAgent(stepPlan.agentId(), stepPlan.query()); // <9>
-        if (agentResponse.isValid()) {
+        if (agentResponse.startsWith("ERROR")) {
+          throw new RuntimeException("Agent '" + stepPlan.agentId() + "' responded with error: " + agentResponse);
+        } else {
           logger.debug("Response from [agent:{}]: '{}'", stepPlan.agentId(), agentResponse);
           return agentResponse;
-        } else {
-          throw new RuntimeException("Agent '" + stepPlan.agentId() + "' responded with error: " + agentResponse.error());
         }
 
       })
-      .andThen(AgentResponse.class, answer -> {
+      .andThen(String.class, answer -> {
           var newState = currentState().addAgentResponse(answer);
 
           if (newState.hasMoreSteps()) {
@@ -198,29 +199,30 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
   }
 
   // tag::dynamicCall[]
-  private AgentResponse callAgent(String agentId, String query) {
+  private String callAgent(String agentId, String query) {
     // We know the id of the agent to call, but not the agent class.
     // Could be WeatherAgent or ActivityAgent.
     // We can still invoke the agent based on its id, given that we know that it
-    // takes a String parameter and returns AgentResponse.
-    DynamicMethodRef<String, AgentResponse> call =
+    // takes a AgentRequest parameter and returns String.
+    var request = new AgentRequest(currentState().userId(), query);
+    DynamicMethodRef<AgentRequest, String> call =
         componentClient
             .forAgent()
             .inSession(sessionId())
             .dynamicCall(agentId); // <9>
-    return call.invoke(query);
+    return call.invoke(request);
   }
   // end::dynamicCall[]
   // end::plan[]
 
   private static final String SUMMARIZE = "summarize";
 
-  private Step summarize() {
+  private Step summarizeStep() {
     return step(SUMMARIZE)
       .call(() -> {
         var agentsAnswers = currentState().agentResponses.values();
-        return componentClient.forAgent().inSession(sessionId()).method(Summarizer::summarize)
-                .invoke(new Summarizer.Request(currentState().userQuery, agentsAnswers));
+        return componentClient.forAgent().inSession(sessionId()).method(SummarizerAgent::summarize)
+                .invoke(new SummarizerAgent.Request(currentState().userQuery, agentsAnswers));
       })
       .andThen(String.class, finalAnswer ->
         effects().updateState(currentState().withFinalAnswer(finalAnswer).complete()).end());
@@ -228,7 +230,7 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
 
   private static final String INTERRUPT = "interrupt";
 
-  private Workflow.Step interrupt() {
+  private Workflow.Step interruptStep() {
     return step(INTERRUPT)
       .call(() -> {
         logger.debug("Interrupting workflow");

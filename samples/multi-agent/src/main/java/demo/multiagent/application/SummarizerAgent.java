@@ -1,9 +1,8 @@
-package demo.multiagent.application.agents;
+package demo.multiagent.application;
 
 import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
-import demo.multiagent.domain.AgentResponse;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -13,8 +12,8 @@ import java.util.stream.Collectors;
 @AgentDescription(
     name = "Summarizer",
     description = "An agent that creates a summary from responses provided by other agents")
-public class Summarizer extends Agent {
-  public record Request(String originalQuery, Collection<AgentResponse> agentsResponses) {}
+public class SummarizerAgent extends Agent {
+  public record Request(String originalQuery, Collection<String> agentsResponses) {}
 
   private String buildSystemMessage(String userQuery) {
     return  """
@@ -33,8 +32,7 @@ public class Summarizer extends Agent {
 
   public Agent.Effect<String> summarize(Request request) {
     var allResponses = request.agentsResponses.stream()
-        .map(AgentResponse::response)
-        .filter(response -> response != null && !response.isEmpty())
+        .filter(response -> !response.startsWith("ERROR"))
         .collect(Collectors.joining(" "));
 
     return effects()

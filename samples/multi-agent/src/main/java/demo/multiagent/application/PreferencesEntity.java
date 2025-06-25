@@ -1,25 +1,26 @@
-package agent_guide.part2;
+package demo.multiagent.application;
 
-// tag::class[]
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
+import demo.multiagent.domain.Preferences;
+import demo.multiagent.domain.PreferencesEvent;
 
 import java.util.List;
 
-@ComponentId("preferences") // <2>
+@ComponentId("preferences")
 public class PreferencesEntity
-    extends EventSourcedEntity<Preferences, PreferencesEvent> { // <1>
+    extends EventSourcedEntity<Preferences, PreferencesEvent> {
 
   public record AddPreference(String preference) {}
 
-  public Effect<Done> addPreference(AddPreference command) { // <3>
+  public Effect<Done> addPreference(AddPreference command) {
     return effects()
         .persist(new PreferencesEvent.PreferenceAdded(command.preference()))
         .thenReply(__ -> Done.done());
   }
 
-  public Effect<Preferences> getPreferences() { // <4>
+  public Effect<Preferences> getPreferences() {
     List<String> prefs;
     if (currentState() == null) {
       return effects().reply(new Preferences(List.of()));
@@ -29,11 +30,10 @@ public class PreferencesEntity
   }
 
   @Override
-  public Preferences applyEvent(PreferencesEvent event) { // <5>
+  public Preferences applyEvent(PreferencesEvent event) {
     return switch (event) {
       case PreferencesEvent.PreferenceAdded evt -> currentState().addPreference(evt.preference());
     };
   }
 
 }
-// end::class[]

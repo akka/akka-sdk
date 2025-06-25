@@ -1,4 +1,4 @@
-package demo.multiagent.application.agents;
+package demo.multiagent.application;
 
 import akka.javasdk.JsonSupport;
 import akka.javasdk.agent.Agent;
@@ -19,13 +19,13 @@ import java.util.List;
         An agent that analyzes the user request and available agents to plan the tasks
         to produce a suitable answer.
         """)
-public class Planner extends Agent {
+public class PlannerAgent extends Agent {
 
   public record Request(String message, AgentSelection agentSelection) {}
 
   private final AgentRegistry agentsRegistry;
 
-  public Planner(AgentRegistry agentsRegistry) {
+  public PlannerAgent(AgentRegistry agentsRegistry) {
     this.agentsRegistry = agentsRegistry;
   }
 

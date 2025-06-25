@@ -1,7 +1,5 @@
-package agent_guide.part5;
+package demo.multiagent.application;
 
-// tag::class[]
-import agent_guide.part4.AgentTeamWorkflow;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.DeleteHandler;
@@ -17,12 +15,12 @@ public class ActivityView extends View {
 
   public record ActivityEntry(String userId, String userQuestion, String finalAnswer) {}
 
-  @Query("SELECT * FROM activities WHERE userId = :userId") // <1>
+  @Query("SELECT * as entries FROM activities WHERE userId = :userId")
   public QueryEffect<ActivityEntries> getActivities(String userId) {
     return queryResult();
   }
 
-  @Consume.FromWorkflow(AgentTeamWorkflow.class) // <2>
+  @Consume.FromWorkflow(AgentTeamWorkflow.class)
   public static class Updater extends TableUpdater<ActivityEntry> {
     public Effect<ActivityEntry> onStateChange(AgentTeamWorkflow.State state) {
       return effects()
@@ -36,4 +34,3 @@ public class ActivityView extends View {
   }
 
 }
-// end::class[]

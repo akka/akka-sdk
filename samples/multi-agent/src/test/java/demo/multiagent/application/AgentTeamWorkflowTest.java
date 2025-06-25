@@ -7,12 +7,6 @@ import akka.javasdk.JsonSupport;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
-import demo.multiagent.application.agents.ActivityAgent;
-import demo.multiagent.application.agents.Planner;
-import demo.multiagent.application.agents.Selector;
-import demo.multiagent.application.agents.Summarizer;
-import demo.multiagent.application.agents.WeatherAgent;
-import demo.multiagent.domain.AgentResponse;
 import demo.multiagent.domain.AgentSelection;
 import demo.multiagent.domain.Plan;
 import demo.multiagent.domain.PlanStep;
@@ -22,7 +16,7 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 // tag::class[]
-public class AgentTeamTest extends TestKitSupport { // <1>
+public class AgentTeamWorkflowTest extends TestKitSupport { // <1>
 
   private final TestModelProvider selectorModel = new TestModelProvider(); // <2>
   private final TestModelProvider plannerModel = new TestModelProvider();
@@ -34,11 +28,11 @@ public class AgentTeamTest extends TestKitSupport { // <1>
   protected TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT
         .withAdditionalConfig("akka.javasdk.agent.openai.api-key = n/a")
-        .withModelProvider(Selector.class, selectorModel) // <3>
-        .withModelProvider(Planner.class, plannerModel)
+        .withModelProvider(SelectorAgent.class, selectorModel) // <3>
+        .withModelProvider(PlannerAgent.class, plannerModel)
         .withModelProvider(ActivityAgent.class, activitiesModel)
         .withModelProvider(WeatherAgent.class, weatherModel)
-        .withModelProvider(Summarizer.class, summaryModel);
+        .withModelProvider(SummarizerAgent.class, summaryModel);
   }
 
   @Test
@@ -55,18 +49,12 @@ public class AgentTeamTest extends TestKitSupport { // <1>
 
     weatherModel
         .whenMessage(req -> req.equals(weatherQuery)) // <5>
-        .reply(
-            JsonSupport.encodeToString(
-                new AgentResponse("The weather in Stockholm is sunny.", null)));
+        .reply("The weather in Stockholm is sunny.");
 
     activitiesModel
         .whenMessage(req -> req.equals(activityQuery))
-        .reply(
-            JsonSupport.encodeToString(
-                new AgentResponse(
-                    "You can take a bike tour around Djurgården Park, "
-                        + "visit the Vasa Museum, explore Gamla Stan (Old Town)...",
-                    null)));
+        .reply("You can take a bike tour around Djurgården Park, " +
+            "visit the Vasa Museum, explore Gamla Stan (Old Town)...");
 
     summaryModel.fixedResponse("The weather in Stockholm is sunny, so you can enjoy " +
         "outdoor activities like a bike tour around Djurgården Park, visiting the Vasa Museum, " +
@@ -75,13 +63,14 @@ public class AgentTeamTest extends TestKitSupport { // <1>
     var query = "I am in Stockholm. What should I do? Beware of the weather";
 
     var sessionId = UUID.randomUUID().toString();
-    componentClient.forWorkflow(sessionId).method(AgentTeam::start).invoke(query); // <6>
+    var request = new AgentTeamWorkflow.Request("alice", query);
+    componentClient.forWorkflow(sessionId).method(AgentTeamWorkflow::start).invoke(request); // <6>
 
     Awaitility.await()
         .ignoreExceptions()
         .atMost(10, SECONDS)
         .untilAsserted(() -> {
-          var answer = componentClient.forWorkflow(sessionId).method(AgentTeam::getAnswer).invoke();
+          var answer = componentClient.forWorkflow(sessionId).method(AgentTeamWorkflow::getAnswer).invoke();
           assertThat(answer).isNotBlank();
           assertThat(answer).contains("Stockholm");
           assertThat(answer).contains("sunny");
