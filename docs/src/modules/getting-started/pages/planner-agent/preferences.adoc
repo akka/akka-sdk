@@ -10,7 +10,7 @@ To make the activity suggestions more personalized, we will add user preferences
 
 In this part of the guide you will:
 
-* Create a entity for the preferences
+* Create an entity for the preferences
 * Use the preferences from the agent
 * Include a user id in the endpoint
 
@@ -117,5 +117,5 @@ Does it take your preferences into account for the suggestions?
 
 == Next steps
 
-ifdef::todo[TODO: Continue]
+Activities may depend on the weather forecast. Continue with xref:planner-agent/weather.adoc[Part 3: Weather agent]
 

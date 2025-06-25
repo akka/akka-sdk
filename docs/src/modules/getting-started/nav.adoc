@@ -3,4 +3,7 @@
 ** xref:getting-started:author-your-first-service.adoc[]
 ** xref:getting-started:planner-agent/index.adoc[]
 ** xref:getting-started:planner-agent/preferences.adoc[]
+** xref:getting-started:planner-agent/weather.adoc[]
+** xref:getting-started:planner-agent/team.adoc[]
+** xref:getting-started:planner-agent/list.adoc[]
 ** xref:getting-started:samples.adoc[]

@@ -1,0 +1,88 @@
+= AI Planner Part 5: List by user
+
+include::ROOT:partial$include.adoc[]
+
+xref:planner-agent/index.adoc[1: The activity agent] > xref:planner-agent/preferences.adoc[2: User preferences] > xref:planner-agent/weather.adoc[3: Weather agent] > xref:planner-agent/team.adoc[4: Orchestrate the agents] > **5: List by user**
+
+include::ROOT:partial$new-to-akka-start-here.adoc[]
+
+== Overview
+
+We can retrieve the result of an individual user query directly from the workflow, using the session id that corresponds to the workflow id. It would be nice to list the historical result by user id.
+
+In this part of the guide you will:
+
+* Add a view to be able to query all activity suggestions for a user
+* Add a method in the endpoint to use the view
+
+== Prerequisites
+
+include::ROOT:partial$local-dev-prerequisites.adoc[]
+* https://platform.openai.com/api-keys[OpenAI API key, window="new"]
+
+== Add a view
+
+Add a new file `ActivityView.java` to `src/main/java/com/example/application/`
+
+[source,java]
+.ActivityView.java
+----
+include::java:example$doc-snippets/src/main/java/agent_guide/part5/ActivityView.java[tag=class]
+----
+<1> The query selects all rows for a given user id.
+<2> The view is updated from the state changes of the workflow.
+
+== Expose in the endpoint
+
+Add a new method that asks the view for a given user id.
+
+[source,java]
+----
+include::java:example$doc-snippets/src/main/java/agent_guide/part5/ActivityEndpoint.java[tag=list]
+----
+
+== Running the service
+
+Start your service locally:
+
+[source,command line]
+----
+mvn compile exec:java
+----
+
+Ask for activities.
+
+[source, command line]
+----
+curl -i -XPOST --location "http://localhost:9000/activities/alice" \
+  --header "Content-Type: application/json" \
+  --data '{"message": "I am in Madrid. What should I do?"}'
+----
+
+Retrieve the suggested activities with the new list method:
+
+[source, command line]
+----
+curl -i -XGET --location "http://localhost:9000/activities/alice"
+----
+
+Make another request for activities:
+
+[source, command line]
+----
+curl -i -XPOST --location "http://localhost:9000/activities/alice" \
+  --header "Content-Type: application/json" \
+  --data '{"message": "I am in Stockholm. What should I do?"}'
+----
+
+The list should include suggested activities for both Madrid and Stockholm:
+
+[source, command line]
+----
+curl -i -XGET --location "http://localhost:9000/activities/alice"
+----
+
+== Next steps
+
+ifdef::todo[TODO: Continue]
+
