@@ -9,10 +9,19 @@ Current versions
 * xref:java:index.adoc[Akka SDK {akka-javasdk-version}]
 * Akka CLI {akka-cli-version}
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
+
 == June 2025
 
 [sidebar]
 ****
+
+**Agent component**
+
+AI agents integrate with AI to perceive their environment, make decisions, and take actions toward a specific goal. Agents can have varying degrees of human intervention from none (completely autonomous) to requiring a human to approve each action the agent takes.
+
+The new xref:java:agents.adoc[Agent] component is typically backed by a large language model (LLM). It maintains contextual history in a session memory, which may be shared between multiple agents that are collaborating on the same goal. It may provide function tools and call them as requested by the model.
+
+Several agents can collaborate to achieve a common goal, and they can be orchestrated from a predefined workflow or a dynamically created plan.
 
 **Akka's local console more lightweight**
 
@@ -25,6 +34,17 @@ A new course is now available in Akkademy: https://akkademy.akka.io/learn/course
 This short, self-paced course introduces the foundational concepts of the Akka SDK. It is organized into brief lessons with coding exercises that run directly in the browser, requiring no installation. The course is ideal for developers who are new to the Akka SDK and want a structured, guided approach to building services.
 
 ****
+
+* https://github.com/akka/akka-sdk/releases/tag/v3.4.0[Akka SDK 3.4.0]
+  - Agent component
+  - Agent session memory
+  - Agent function tools
+  - Agent prompt template
+  - MCP server and client support
+  - New getting started guides
+  - Many samples with AI agents
+  - Agent and workflow tracing
+  - Documentation updates
 
 * Akka CLI 3.0.22
   - Akka's local console is now built-in -- runs quickly and doesn't require Docker anymore!
