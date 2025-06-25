@@ -34,7 +34,7 @@ include::java:example$doc-snippets/src/main/java/agent_guide/part3/WeatherAgent.
 
 Methods annotated with `@FunctionTool` in the agent will automatically be made available to the AI model, which will extract the location from the original query and request to execute the tool to retrieve the forecast.
 
-If you don't want to use the real weather service, you can change the implementation to return a hardcoded weather, such as `"It's always sunny"`.
+If you don't want to use the real weather service, you can change the implementation to return a hard-coded weather, such as `"It's always sunny"`.
 
 We could make a request to the `WeatherAgent` from the endpoint before calling the `ActivityAgent` but a better approach is to introduce a workflow that orchestrates the calls between the agents.
 
