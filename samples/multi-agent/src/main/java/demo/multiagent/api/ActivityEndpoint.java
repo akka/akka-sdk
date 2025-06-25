@@ -11,42 +11,44 @@ import demo.multiagent.application.AgentTeam;
 
 import java.util.UUID;
 
-
+// Opened up for access from the public internet to make the service easy to try out.
+// For actual services meant for production this must be carefully considered, and often set more limited
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
-@HttpEndpoint("/chat")
-public class MultiAgentEndpoint {
+@HttpEndpoint("")
+public class ActivityEndpoint {
 
   public record Request(String message) {
   }
 
   private final ComponentClient componentClient;
 
-  public MultiAgentEndpoint(ComponentClient componentClient) {
+  public ActivityEndpoint(ComponentClient componentClient) {
     this.componentClient = componentClient;
   }
 
-  @Post()
-  public HttpResponse handleRequest( Request request) {
-    var chatId = UUID.randomUUID().toString();
+  @Post("/activities")
+  public HttpResponse suggestActivities( Request request) {
+    var sessionId = UUID.randomUUID().toString();
+
     var res =
       componentClient
-      .forWorkflow(chatId)
+      .forWorkflow(sessionId)
         .method(AgentTeam::start)
         .invoke(request.message);
 
-    return HttpResponses.created(res, "/chat/" + chatId);
+    return HttpResponses.created(res, "/activities/" + sessionId);
   }
 
-  @Get("/{chatId}")
-  public HttpResponse getAnswer(String chatId) {
+  @Get("/activities/{sessionId}")
+  public HttpResponse getAnswer(String sessionId) {
       var res =
         componentClient
-          .forWorkflow(chatId)
+          .forWorkflow(sessionId)
           .method(AgentTeam::getAnswer)
           .invoke();
 
       if (res.isEmpty())
-        return HttpResponses.notFound("Answer for '" + chatId + "' not available (yet)");
+        return HttpResponses.notFound("Answer for '" + sessionId + "' not available (yet)");
       else
         return HttpResponses.ok(res);
   }
