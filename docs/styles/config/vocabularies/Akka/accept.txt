@@ -224,3 +224,4 @@ kubectl
 dns
 DNS
 Fitbit
+[Ll]amda
