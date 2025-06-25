@@ -48,7 +48,7 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
                 componentClient.forEventSourcedEntity(cmd.from) // <3>
                     .method(WalletEntity::withdraw)
                     .invoke(cmd.amount)) // <4>
-            .andThen(Done.class, __ -> {
+            .andThen(() -> {
               Deposit depositInput = new Deposit(currentState().transfer().to(), currentState().transfer().amount());
               return effects()
                   .updateState(currentState().withStatus(WITHDRAW_SUCCEED))
@@ -63,7 +63,7 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
                 componentClient.forEventSourcedEntity(cmd.to)
                     .method(WalletEntity::deposit)
                     .invoke(cmd.amount))
-            .andThen(Done.class, __ -> {
+            .andThen(() -> {
               return effects()
                   .updateState(currentState().withStatus(COMPLETED))
                   .end(); // <7>

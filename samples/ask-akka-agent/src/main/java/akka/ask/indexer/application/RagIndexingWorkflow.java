@@ -151,9 +151,8 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
           if (currentState().hasFilesToProcess()) {
             indexFile(currentState().head().get());
           }
-          return done();
         })
-        .andThen(Done.class, __ -> {
+        .andThen(() -> {
           // we need to check if it hasFilesToProcess, before moving the head
           // because if workflow is aborted, the state is cleared, and we won't have
           // anything in the list

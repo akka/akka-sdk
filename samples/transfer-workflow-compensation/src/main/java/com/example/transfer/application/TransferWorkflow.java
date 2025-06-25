@@ -1,6 +1,5 @@
 package com.example.transfer.application;
 
-import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
@@ -12,7 +11,6 @@ import com.example.wallet.application.WalletEntity.WalletResult.Failure;
 import com.example.wallet.application.WalletEntity.WalletResult.Success;
 import com.example.wallet.domain.WalletCommand.Deposit;
 import com.example.wallet.domain.WalletCommand.Withdraw;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -168,9 +166,8 @@ public class TransferWorkflow extends Workflow<TransferState> {
                   componentClient.forWorkflow(transferId)
                       .method(TransferWorkflow::acceptationTimeout)
                       .deferred()); // <1>
-              return Done.done();
             })
-            .andThen(Done.class, __ ->
+            .andThen(() ->
                 effects().pause()); // <2>
     return waitForAcceptation;
   }
