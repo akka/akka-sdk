@@ -15,7 +15,7 @@ public class ActivityEndpoint {
   // tag::list[]
   public record ActivitiesList(List<Suggestion> suggestions) {
     static ActivitiesList fromView(ActivityView.ActivityEntries entries) {
-      return new ActivitiesList(rows.entries().stream().map(Suggestion::fromView).toList());
+      return new ActivitiesList(entries.entries().stream().map(Suggestion::fromView).toList());
     }
   }
 
