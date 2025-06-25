@@ -8,7 +8,7 @@ include::ROOT:partial$new-to-akka-start-here.adoc[]
 
 == Overview
 
-We have used a workflow with predefined steps to call the `WeatherAgent` followed by the `ActivityAgent`. In a larger system there can be many agents, and it can be would be cumbersome to define a single workflow that would handle all types of requests. A more flexible approach is to let the AI model come up with a plan of which agents to use and in which order to achieve the goal of the request.
+We have used a workflow with predefined steps to call the `WeatherAgent` followed by the `ActivityAgent`. In a larger system there can be many agents, and it would be cumbersome to define a single workflow that would handle all types of requests. A more flexible approach is to let the AI model come up with a plan of which agents to use and in which order to achieve the goal of the request.
 
 In this part of the guide you will:
 
@@ -63,7 +63,7 @@ The result from the `Selector` is a list of agent ids. Add a new file `AgentSele
 include::java:example$multi-agent/src/main/java/demo/multiagent/domain/AgentSelection.java[tag=all]
 ----
 
-After selecting agents, we use a `Planner` agent to decide in which order to use the agents and what precise request that each agent should receive to perform its single task. Add a new file `Planner.java` to `src/main/java/com/example/application/`
+After selecting agents, we use a `Planner` agent to decide in which order to use the agents and the precise request each agent should receive to perform its single task. Add a new file `Planner.java` to `src/main/java/com/example/application/`
 
 [source,java]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/agents/Planner.java[Planner.java]
@@ -75,7 +75,7 @@ include::java:example$multi-agent/src/main/java/demo/multiagent/application/agen
 
 == Common signature of worker agents
 
-We will call the selected agents according to the plan, and we want to do that without explicitly knowing which agent to call. For this, the worker agents, `WeatherAgent` and `ActivityAgent` must have the same shape. Adjust the `ActivityAgent` to have this method signature:
+We will call the selected agents according to the plan, and we want to do that without explicitly knowing which agent to call. For this, the worker agents (`WeatherAgent` and `ActivityAgent`) must have the same shape. Adjust the `ActivityAgent` to have this method signature:
 
 [source,java]
 .ActivityAgent.java
@@ -144,7 +144,7 @@ Start your service locally:
 mvn compile exec:java
 ----
 
-Ask for activities.
+Ask for activities:
 
 [source, command line]
 ----
