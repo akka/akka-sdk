@@ -40,7 +40,7 @@ link:https://github.com/akka-samples/medical-tagging-agent[Github Repository, wi
 
 Ai agent that monitors IoT sensors::
 
-A temperature monitoring system that collects, aggregates, and analyzes temperature data from IoT sensors. The system uses AI to generate insights about temperature trends and anomalies across different locations. Collects and aggregates temperature data using Key Value Entities. Aagent using OpenAI LLM to analyze temperature patterns and detect anomalies.
+A temperature monitoring system that collects, aggregates, and analyzes temperature data from IoT sensors. The system uses AI to generate insights about temperature trends and anomalies across different locations. Collects and aggregates temperature data using Key Value Entities. Agent using OpenAI LLM to analyze temperature patterns and detect anomalies.
 
 link:https://github.com/akka-samples/temperature-monitoring-agent[Github Repository, window="new"], Level: Intermediate
 
