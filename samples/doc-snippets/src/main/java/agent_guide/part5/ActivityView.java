@@ -13,24 +13,24 @@ import java.util.List;
 
 @ComponentId("activity-view")
 public class ActivityView extends View {
-  public record Rows(List<Row> entries) {}
+  public record ActivityEntries(List<ActivityEntry> entries) {}
 
-  public record Row(String userId, String userQuestion, String finalAnswer) {}
+  public record ActivityEntry(String userId, String userQuestion, String finalAnswer) {}
 
   @Query("SELECT * FROM activities WHERE userId = :userId") // <1>
-  public QueryEffect<Rows> getActivities(String userId) {
+  public QueryEffect<ActivityEntries> getActivities(String userId) {
     return queryResult();
   }
 
   @Consume.FromWorkflow(AgentTeam.class) // <2>
-  public static class Updater extends TableUpdater<Row> {
-    public Effect<Row> onStateChange(AgentTeam.State state) {
+  public static class Updater extends TableUpdater<ActivityEntry> {
+    public Effect<ActivityEntry> onStateChange(AgentTeam.State state) {
       return effects()
-          .updateRow(new Row(state.userId(), state.userQuery(), state.finalAnswer()));
+          .updateRow(new ActivityEntry(state.userId(), state.userQuery(), state.finalAnswer()));
     }
 
     @DeleteHandler
-    public Effect<Row> onDelete() {
+    public Effect<ActivityEntry> onDelete() {
       return effects().deleteRow();
     }
   }

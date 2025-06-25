@@ -27,14 +27,14 @@ public class ActivityEndpoint {
   }
 
   public record ActivitiesList(List<Suggestion> suggestions) {
-    static ActivitiesList fromView(ActivityView.Rows rows) {
-      return new ActivitiesList(rows.entries().stream().map(Suggestion::fromView).toList());
+    static ActivitiesList fromView(ActivityView.ActivityEntries entries) {
+      return new ActivitiesList(entries.entries().stream().map(Suggestion::fromView).toList());
     }
   }
 
   public record Suggestion(String userQuestion, String answer) {
-    static Suggestion fromView(ActivityView.Row row) {
-      return new Suggestion(row.userQuestion(), row.finalAnswer());
+    static Suggestion fromView(ActivityView.ActivityEntry entry) {
+      return new Suggestion(entry.userQuestion(), entry.finalAnswer());
     }
   }
 
