@@ -1,4 +1,4 @@
-package demo.multiagent.application.agents;
+package demo.multiagent.application;
 
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.http.HttpClientProvider;
