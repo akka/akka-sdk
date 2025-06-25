@@ -33,12 +33,12 @@ public class ActivityAgent extends Agent {
           .invoke(); // <3>
 
     String userMessage;
-    if (allPreferences.preferences().isEmpty()) {
+    if (allPreferences.entries().isEmpty()) {
       userMessage = request.message();
     } else {
       userMessage = request.message() +
           "\nPreferences:\n" +
-          allPreferences.preferences().stream()
+          allPreferences.entries().stream()
               .collect(Collectors.joining("'\n", "- ", ""));
     }
 

@@ -2,54 +2,37 @@ package demo.multiagent.application;
 
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
-import akka.javasdk.annotations.TypeName;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
+import demo.multiagent.domain.Preferences;
+import demo.multiagent.domain.PreferencesEvent;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @ComponentId("preferences")
 public class PreferencesEntity
-    extends EventSourcedEntity<PreferencesEntity.State, PreferencesEntity.Event> {
-
-  public record State(List<String> preferences) {
-    State addPreference(String preference) {
-      var newPreferences = new ArrayList<>(preferences);
-      newPreferences.add(preference);
-      return new State(newPreferences);
-    }
-  }
+    extends EventSourcedEntity<Preferences, PreferencesEvent> {
 
   public record AddPreference(String preference) {}
 
-  public record AllPreferences(List<String> preferences) {}
-
-  public sealed interface Event {
-    @TypeName("preference-added")
-    record PreferenceAdded(String preference) implements Event{}
-  }
-
   public Effect<Done> addPreference(AddPreference command) {
     return effects()
-        .persist(new Event.PreferenceAdded(command.preference()))
+        .persist(new PreferencesEvent.PreferenceAdded(command.preference()))
         .thenReply(__ -> Done.done());
   }
 
-  public Effect<AllPreferences> getPreferences() {
+  public Effect<Preferences> getPreferences() {
     List<String> prefs;
     if (currentState() == null) {
-      prefs = new ArrayList<>();
+      return effects().reply(new Preferences(List.of()));
     } else {
-      prefs = currentState().preferences();
+      return effects().reply(currentState());
     }
-
-    return effects().reply(new AllPreferences(prefs));
   }
 
   @Override
-  public State applyEvent(Event event) {
+  public Preferences applyEvent(PreferencesEvent event) {
     return switch (event) {
-      case Event.PreferenceAdded evt -> currentState().addPreference(evt.preference());
+      case PreferencesEvent.PreferenceAdded evt -> currentState().addPreference(evt.preference());
     };
   }
 
