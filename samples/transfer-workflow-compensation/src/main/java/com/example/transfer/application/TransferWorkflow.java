@@ -122,7 +122,6 @@ public class TransferWorkflow extends Workflow<TransferState> {
               }
             });
   }
-  // end::compensation[]
 
   private Step compensateWithdrawStep() {
     return
@@ -153,6 +152,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
               }
             });
   }
+  // end::compensation[]
 
   // tag::pausing[]
   private Step waitForAcceptationStep() {
