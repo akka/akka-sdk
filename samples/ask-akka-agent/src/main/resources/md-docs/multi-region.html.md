@@ -1,16 +1,9 @@
+<!-- <nav> -->
+- [Akka](../index.html)
+- [Understanding](index.html)
+- [Multi-region operations](multi-region.html)
 
-
-<-nav->
-
-- [  Akka](../index.html)
-- [  Understanding](index.html)
-- [  Multi-region operations](multi-region.html)
-
-
-
-</-nav->
-
-
+<!-- </nav> -->
 
 # Multi-region operations
 
@@ -27,12 +20,11 @@ Multi-region operations are ideal for:
 - Geo-homing of data for low latency access
 - Low latency global reads
 - Low latency global writes
-
 Akka has two replication modes: replicated reads and replicated writes.
 
-## [](about:blank#_replicated_reads) Replicated reads
+## <a href="about:blank#_replicated_reads"></a> Replicated reads
 
-Akka’s replicated reads offers full data replication across regions and even cloud providers, without any changes to the service implementation: an entity has its "home" in one *primary region* , while being replicated to multiple other regions.
+Akka’s replicated reads offers full data replication across regions and even cloud providers, without any changes to the service implementation: an entity has its "home" in one *primary region*, while being replicated to multiple other regions.
 
 Read requests are always handled locally within the region where they occur.
 
@@ -50,41 +42,86 @@ This is useful for scenarios where you want to have the primary region for your 
 
 The Operating section explains more details about [configuring the primary selection mode](../operations/regions/index.html#selecting-primary).
 
-### [](about:blank#_illustrating_entities_with_pinned_region_selection) Illustrating entities with pinned region selection
+### <a href="about:blank#_illustrating_entities_with_pinned_region_selection"></a> Illustrating entities with pinned region selection
 
 ![Geo data replication](_images/geo-a.svg)
 
-In the image above, the entity representing Alice has its primary region in Los Angeles. When a user A in the primary region performs a read request![steps 1](_images/steps-1.svg) , the request is handled locally, and the response sent straight back![steps 2](_images/steps-2.svg).
 
-When the user in the primary region performs a write request![steps 1](_images/steps-1.svg) , that request is also handled locally, and a response sent directly back![steps 2](_images/steps-2.svg) . After that write request completes, that write is replicated to other regions![steps 3](_images/steps-3.svg) , such as in London (UK).
+In the image above, the entity representing Alice has its primary region in Los Angeles. When a user A in the primary region performs a read request
+![steps 1](_images/steps-1.svg)
+, the request is handled locally, and the response sent straight back
+![steps 2](_images/steps-2.svg)
+.
 
-A user B in London, when they perform a read![steps 4](_images/steps-4.svg) , that read operation will happen locally, and a response sent immediately back![steps 5](_images/steps-5.svg).
+When the user in the primary region performs a write request
+![steps 1](_images/steps-1.svg)
+, that request is also handled locally, and a response sent directly back
+![steps 2](_images/steps-2.svg)
+. After that write request completes, that write is replicated to other regions
+![steps 3](_images/steps-3.svg)
+, such as in London (UK).
+
+A user B in London, when they perform a read
+![steps 4](_images/steps-4.svg)
+, that read operation will happen locally, and a response sent immediately back
+![steps 5](_images/steps-5.svg)
+.
 
 A user can also perform write operations on entities in non-primary regions.
 
 ![Geo data replication](_images/geo-b.svg)
 
-In this scenario, the user B in London (UK) is performing a write operation on the Alice entity![steps 1](_images/steps-1.svg) . Since London is not the primary region for the Alice entity, Akka will automatically forward that request to the primary region![steps 2](_images/steps-2.svg) , in this case, Los Angeles (USA). That request will be handled in the USA, and a response sent directly back to the user![steps 3](_images/steps-3.svg).
+
+In this scenario, the user B in London (UK) is performing a write operation on the Alice entity
+![steps 1](_images/steps-1.svg)
+. Since London is not the primary region for the Alice entity, Akka will automatically forward that request to the primary region
+![steps 2](_images/steps-2.svg)
+, in this case, Los Angeles (USA). That request will be handled in the USA, and a response sent directly back to the user
+![steps 3](_images/steps-3.svg)
+.
 
 ![Geo data replication](_images/geo-c.svg)
 
-When Bob makes a request in the UK on his data![steps 1](_images/steps-1.svg) , that request is handled locally![steps 2](_images/steps-2.svg) , and replicated to the US![steps 3](_images/steps-3.svg) . Exactly the same as Alice’s requests in the USA with her data are handled locally in the USA, and replicated to the UK.
+
+When Bob makes a request in the UK on his data
+![steps 1](_images/steps-1.svg)
+, that request is handled locally
+![steps 2](_images/steps-2.svg)
+, and replicated to the US
+![steps 3](_images/steps-3.svg)
+. Exactly the same as Alice’s requests in the USA with her data are handled locally in the USA, and replicated to the UK.
 
 The data however is still available in all regions. If Bob travels to the USA, he can access his data in the Los Angeles region.
 
 ![Geo data replication](_images/geo-d.svg)
 
-When Bob travels to the USA, read requests that Bob makes on his data are handled locally![steps 1](_images/steps-1.svg) and getting an immediate reply![steps 3](_images/steps-3.svg) . Write requests, on the other hand, are forwarded to the UK![steps 2](_images/steps-2.svg) , before the reply is sent![steps 3](_images/steps-3.svg).
+
+When Bob travels to the USA, read requests that Bob makes on his data are handled locally
+![steps 1](_images/steps-1.svg)
+and getting an immediate reply
+![steps 3](_images/steps-3.svg)
+. Write requests, on the other hand, are forwarded to the UK
+![steps 2](_images/steps-2.svg)
+, before the reply is sent
+![steps 3](_images/steps-3.svg)
+.
 
 ![Geo data replication](_images/geo-e.svg)
 
-Meanwhile, all requests made by Alice on her data are handled locally![steps 1](_images/steps-1.svg) and get an immediate reply![steps 2](_images/steps-2.svg) . The write operations are being replicated to the UK![steps 3](_images/steps-3.svg).
 
-## [](about:blank#_replicated_writes) Replicated writes
+Meanwhile, all requests made by Alice on her data are handled locally
+![steps 1](_images/steps-1.svg)
+and get an immediate reply
+![steps 2](_images/steps-2.svg)
+. The write operations are being replicated to the UK
+![steps 3](_images/steps-3.svg)
+.
+
+## <a href="about:blank#_replicated_writes"></a> Replicated writes
 
 The replicated write replication strategy allows every region to be capable of handling writes for all entities. This is done through the use of CRDTs, which can be modified concurrently in different regions, and their changes safely merged without conflict.
 
-## [](about:blank#_replication_guarantees) Replication Guarantees
+## <a href="about:blank#_replication_guarantees"></a> Replication Guarantees
 
 Akka guarantees that all events created within one region are eventually replicated to all other regions in the project.
 
@@ -94,21 +131,13 @@ Each event has a sequence number that is validated on the receiving side to guar
 
 Events are delivered to other regions over a brokerless, streaming gRPC transport. The entity instance that needs to receive replicated events is a consumer and the entity that generated the events is the producer. Events flow from the producing region to the consuming region. An offset of the replication stream is stored on the consumer side, which will start from the previously stored offset when it initiates the replication stream. The producer side will publish events onto the replication stream directly while writing an entity or from reading the event journal after a failure. Duplicate events are detected and filtered out by the sequence numbers of the events. These replication streams can be sharded over many nodes to support high throughput.
 
-
-
-<-footer->
-
-
-<-nav->
+<!-- <footer> -->
+<!-- <nav> -->
 [Entity state models](state-model.html) [Saga patterns](saga-patterns.html)
+<!-- </nav> -->
 
-</-nav->
+<!-- </footer> -->
 
+<!-- <aside> -->
 
-</-footer->
-
-
-<-aside->
-
-
-</-aside->
+<!-- </aside> -->

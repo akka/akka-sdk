@@ -1,26 +1,20 @@
+<!-- <nav> -->
+- [Akka](../index.html)
+- [Developing](index.html)
+- [Components](components/index.html)
+- [HTTP Endpoints](http-endpoints.html)
 
+<!-- </nav> -->
 
-<-nav->
+# Designing HTTP endpoints
 
-- [  Akka](../index.html)
-- [  Developing](index.html)
-- [  Components](components/index.html)
-- [  HTTP Endpoints](http-endpoints.html)
-
-
-
-</-nav->
-
-
-
-# Designing HTTP Endpoints
-
-![Endpoint](../_images/endpoint.png) An Endpoint is a component that creates an externally accessible API. Endpoints are how you expose your services to the outside world. Two different types of endpoints are available: HTTP endpoints and gRPC endpoints. In this page, we will focus on HTTP endpoints.
+![Endpoint](../_images/endpoint.png)
+An Endpoint is a component that creates an externally accessible API. Endpoints are how you expose your services to the outside world. Two different types of endpoints are available: HTTP endpoints and gRPC endpoints. In this page, we will focus on HTTP endpoints.
 
 HTTP Endpoint components make it possible to conveniently define such APIs accepting and responding in JSON,
 or dropping down to lower level APIs for ultimate flexibility in what types of data is accepted and returned.
 
-## [](about:blank#_basics) Basics
+## <a href="about:blank#_basics"></a> Basics
 
 To define an HTTP Endpoint component, create a public class and annotate it with `@HttpEndpoint("/path-prefix")`.
 
@@ -47,14 +41,14 @@ public class ExampleEndpoint extends AbstractHttpEndpoint { // (1)
   }
 ```
 
-| **  1** | Common path prefix for all methods in the same class `/example`  . |
-| **  2** | ACL configuration allowing any client to access the endpoint. |
-| **  3** | `GET`   endpoint path is combined with the prefix and becomes available at `/example/hello` |
-| **  4** | Return value, is turned into an `200 Ok`   response, with content type `text/plain`   and the specified string as body. |
+| **1** | Common path prefix for all methods in the same class `/example`. |
+| **2** | ACL configuration allowing any client to access the endpoint. |
+| **3** | `GET` endpoint path is combined with the prefix and becomes available at `/example/hello` |
+| **4** | Return value, is turned into an `200 Ok` response, with content type `text/plain` and the specified string as body. |
 
-|  | Without an ACL annotation no client is allowed to access the endpoint. For more details on how ACLs can be configured, see[  Access Control Lists (ACLs)](access-control.html) |
+|  | Without an ACL annotation no client is allowed to access the endpoint. For more details on how ACLs can be configured, see [Access Control Lists (ACLs)](access-control.html) |
 
-### [](about:blank#_path_parameters) Path parameters
+### <a href="about:blank#_path_parameters"></a> Path parameters
 
 The path can also contain one or more parameters, which are extracted and passed to the method:
 
@@ -71,15 +65,14 @@ The path can also contain one or more parameters, which are extracted and passed
   }
 ```
 
-| **  1** | Path parameter `name`   in expression. |
-| **  2** | Method parameter named as the one in the expression |
-| **  3** | When there are multiple parameters |
-| **  4** | The method must accept all the same names in the same order as in the path expression. |
-
+| **1** | Path parameter `name` in expression. |
+| **2** | Method parameter named as the one in the expression |
+| **3** | When there are multiple parameters |
+| **4** | The method must accept all the same names in the same order as in the path expression. |
 Path parameter can be of types `String`, `int`, `long`, `boolean`, `float`, `double`, `short` and `char` as well
 as their `java.lang` class counterparts.
 
-### [](about:blank#_request_body) Request body
+### <a href="about:blank#_request_body"></a> Request body
 
 To accept an HTTP JSON body, specify a parameter that is a class that [Jackson](https://github.com/FasterXML/jackson?tab=readme-ov-file#what-is-jackson) can deserialize:
 
@@ -100,21 +93,20 @@ public record GreetingRequest(String name, int age) {} // (1)
   }
 ```
 
-| **  1** | A class that Jackson can serialize and deserialize to JSON |
-| **  2** | A parameter of the request body type |
-| **  3** | When combining request body with path variables |
-| **  4** | The body must come last in the parameter list |
-
+| **1** | A class that Jackson can serialize and deserialize to JSON |
+| **2** | A parameter of the request body type |
+| **3** | When combining request body with path variables |
+| **4** | The body must come last in the parameter list |
 Additionally, the request body parameter can be of the following types:
 
-- `String`   for any request with a text content type, the body decoded into a string
-- `java.util.List<T>`   where `T`   is a type Jackson can deserialize, accepts a JSON array.
-- `akka.http.javadsl.model.HttpEntity.Strict`   for the entire request body as bytes together with the content type for
+- `String` for any request with a text content type, the body decoded into a string
+- `java.util.List<T>` where `T` is a type Jackson can deserialize, accepts a JSON array.
+- `akka.http.javadsl.model.HttpEntity.Strict` for the entire request body as bytes together with the content type for
 arbitrary payload handling.
-- `akka.http.javadsl.model.HttpRequest`   for a low level, streaming representation of the entire request
-including headers. See[  Low level requests](about:blank#_low_level_requests)   below for more details
+- `akka.http.javadsl.model.HttpRequest` for a low level, streaming representation of the entire request
+including headers. See [Low level requests](about:blank#_low_level_requests) below for more details
 
-### [](about:blank#_request_headers) Request headers
+### <a href="about:blank#_request_headers"></a> Request headers
 
 Accessing request headers is done through the [RequestContext](_attachments/api/akka/javasdk/http/RequestContext.html) methods `requestHeader(String headerName)` and `allRequestHeaders()`.
 
@@ -135,12 +127,12 @@ public class ExampleEndpoint extends AbstractHttpEndpoint { // (1)
 }
 ```
 
-| **  1** | Extend `AbstractHttpEndpoint`   class. |
-| **  2** | `requestHeader(headerName)`   returns an `Optional`   which is empty if the header was not present. |
+| **1** | Extend `AbstractHttpEndpoint` class. |
+| **2** | `requestHeader(headerName)` returns an `Optional` which is empty if the header was not present. |
 
-### [](about:blank#_query_parameters) Query parameters
+### <a href="about:blank#_query_parameters"></a> Query parameters
 
-Accessing query parameter is done through the `requestContext()` , inherited from [AbstractHttpEndpoint](_attachments/api/akka/javasdk/http/AbstractHttpEndpoint.html).
+Accessing query parameter is done through the `requestContext()`, inherited from [AbstractHttpEndpoint](_attachments/api/akka/javasdk/http/AbstractHttpEndpoint.html).
 
 [ExampleEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java)
 ```java
@@ -151,9 +143,9 @@ Accessing query parameter is done through the `requestContext()` , inherited fro
   }
 ```
 
-| **  1** | `queryParams().get("name")`   returns an `Optional`   which is empty if the query parameter is not present. |
+| **1** | `queryParams().get("name")` returns an `Optional` which is empty if the query parameter is not present. |
 
-### [](about:blank#_response_body) Response body
+### <a href="about:blank#_response_body"></a> Response body
 
 To return response with JSON, the return value can be a class that Jackson can serialize:
 
@@ -167,22 +159,21 @@ public record MyResponse(String name, int age) {}
   }
 ```
 
-| **  1** | Returning an object that Jackson can serialize into JSON |
-
+| **1** | Returning an object that Jackson can serialize into JSON |
 In addition to an object that can be turned to JSON, a request handler can return the following:
 
-- `null`   or `void`   to return an empty body.
-- `String`   to return a UTF-8 encoded `text/plain`   HTTP response.
+- `null` or `void` to return an empty body.
+- `String` to return a UTF-8 encoded `text/plain` HTTP response.
 - A record or other class that can be serialized to JSON.
-- `CompletionStage<T>`   to respond based on an asynchronous result.  
+- `CompletionStage<T>` to respond based on an asynchronous result.
 
-  - When the completion stage is completed with a `T`     it is
+  - When the completion stage is completed with a `T` it is
 turned into a response.
   - If it is instead failed, the failure leads to an error response according to
-the error handling explained in[    error responses](about:blank#_error_responses)    .
-- `akka.http.javadsl.model.HttpResponse`   for complete control over the response, see[  Low level responses](about:blank#_low_level_responses)   below
+the error handling explained in [error responses](about:blank#_error_responses).
+- `akka.http.javadsl.model.HttpResponse` for complete control over the response, see [Low level responses](about:blank#_low_level_responses) below
 
-### [](about:blank#_error_responses) Error responses
+### <a href="about:blank#_error_responses"></a> Error responses
 
 The HTTP protocol has several status codes to signal that something went wrong with a request, for
 example HTTP `400 Bad request` to signal that the incoming request was not valid.
@@ -200,22 +191,30 @@ Responding with an error can be done by throwing one of the exceptions available
   }
 ```
 
-| **  1** | Throw one of the exceptions created through factory methods provided by `HttpException`   to respond with a HTTP error |
-| **  2** | Return non-error |
-
+| **1** | Throw one of the exceptions created through factory methods provided by `HttpException` to respond with a HTTP error |
+| **2** | Return non-error |
 In addition to the special `HttpException`s, exceptions are handled like this:
 
-- `IllegalArgumentException`   is turned into a `400 Bad request`
-- Any other exception is turned into a `500 Internal server error`  .  
+- `IllegalArgumentException` is turned into a `400 Bad request`
+- Any other exception is turned into a `500 Internal server error`.
 
   - In production the error is logged together with a correlation
 id and the response message only includes the correlation id to not leak service internals to an untrusted client.
   - In local development and integration tests the full exception is returned as response body.
 
-## [](about:blank#_interacting_with_other_components) Interacting with other components
+## <a href="about:blank#_securing_http_endpoints"></a> Securing HTTP endpoints
+
+Akka’s HTTP endpoints can be secured by multiple approaches:
+
+1. [Access Control Lists (ACLs)](access-control.html)
+2. [JSON Web Tokens (JWTs)](../reference/jwts.html)
+3. [TLS certificates](../operations/tls-certificates.html)
+4. [HTTP Basic authentication](../operations/services/invoke-service.html#_http_basic_authentication)
+
+## <a href="about:blank#_interacting_with_other_components"></a> Interacting with other components
 
 The most common use case for endpoints is to interact with other components in a service. This is done through
-the `akka.javasdk.client.ComponentClient` . If the constructor of the endpoint class has a parameter of this type,
+the `akka.javasdk.client.ComponentClient`. If the constructor of the endpoint class has a parameter of this type,
 it will be injected by the SDK.
 
 [ShoppingCartEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java)
@@ -252,17 +251,16 @@ public class ShoppingCartEndpoint {
   }
 ```
 
-| **  1** | Common path prefix for all methods in the same class `/carts`  . |
-| **  2** | Accept the `ComponentClient`   and keep it in a field. |
-| **  3** | GET endpoint path is combined with a path parameter name, e.g. `/carts/123`  . |
-| **  4** | The component client can be used to interact with other components. |
-| **  5** | Result of a request to a component is the Effect’s reply type. |
-| **  6** | Use path parameter `{cartId}`   in combination with request body `ShoppingCart.LineItem`  . |
-| **  7** | Result of request mapped to a more suitable response, in this case, `200 Ok`   with an empty body. |
-
+| **1** | Common path prefix for all methods in the same class `/carts`. |
+| **2** | Accept the `ComponentClient` and keep it in a field. |
+| **3** | GET endpoint path is combined with a path parameter name, e.g. `/carts/123`. |
+| **4** | The component client can be used to interact with other components. |
+| **5** | Result of a request to a component is the Effect’s reply type. |
+| **6** | Use path parameter `{cartId}` in combination with request body `ShoppingCart.LineItem`. |
+| **7** | Result of request mapped to a more suitable response, in this case, `200 Ok` with an empty body. |
 For more details see [Component and service calls](component-and-service-calls.html)
 
-## [](about:blank#_interacting_with_other_http_services) Interacting with other HTTP services
+## <a href="about:blank#_interacting_with_other_http_services"></a> Interacting with other HTTP services
 
 It is also possible to interact with other services over HTTP. This is done through the `akka.javasdk.http.HttpClientProvider`.
 
@@ -308,24 +306,23 @@ public class CustomerRegistryEndpoint {
   }
 ```
 
-| **  1** | Accept the `HttpClientProvider` |
-| **  2** | Use it to create a client for the service `customer-registry` |
-| **  3** | Issue an HTTP POST request to the service |
-| **  4** | Turn the response it into our own response |
+| **1** | Accept the `HttpClientProvider` |
+| **2** | Use it to create a client for the service `customer-registry` |
+| **3** | Issue an HTTP POST request to the service |
+| **4** | Turn the response it into our own response |
 
-|  | If you’re looking to test this locally, you will likely need to run the 2 services with different ports. For more details, consult[  Running multiple services](running-locally.html#multiple_services)  . |
-
-It is also possible to interact with arbitrary non-Akka services using the `HttpClientProvider` , for such use,
+|  | If you’re looking to test this locally, you will likely need to run the 2 services with different ports. For more details, consult [Running multiple services](running-locally.html#multiple_services). |
+It is also possible to interact with arbitrary non-Akka services using the `HttpClientProvider`, for such use,
 pass a string with `https://example.com` or `http://example.com` instead of a service name.
 
 For more details see [Component and service calls](component-and-service-calls.html)
 
-## [](about:blank#_advanced_http_requests_and_responses) Advanced HTTP requests and responses
+## <a href="about:blank#_advanced_http_requests_and_responses"></a> Advanced HTTP requests and responses
 
 For more control over the request and responses it is also possible to use the more
 low-level Akka HTTP model APIs.
 
-### [](about:blank#_low_level_responses) Low level responses
+### <a href="about:blank#_low_level_responses"></a> Low level responses
 
 Returning `akka.http.javadsl.model.HttpResponse` makes it possible to do more flexible and advanced responses.
 
@@ -347,10 +344,9 @@ record HelloResponse(String greeting) {}
   }
 ```
 
-| **  1** | Declare the return type as `akka.http.javadsl.model.HttpResponse` |
-| **  2** | Return a bad request response |
-| **  3** | Return an ok response, you can still use arbitrary objects and get them serialized to JSON |
-
+| **1** | Declare the return type as `akka.http.javadsl.model.HttpResponse` |
+| **2** | Return a bad request response |
+| **3** | Return an ok response, you can still use arbitrary objects and get them serialized to JSON |
 `akka.javasdk.http.HttpResponses` provides convenient factories for common response message types without
 having to reach for the Akka HTTP model APIs directly:
 
@@ -367,10 +363,9 @@ record HelloResponse(String greeting) {}
   }
 ```
 
-| **  1** | Declare the return type as `akka.http.javadsl.model.HttpResponse` |
-| **  2** | Return a bad request response |
-| **  3** | Return an ok response |
-
+| **1** | Declare the return type as `akka.http.javadsl.model.HttpResponse` |
+| **2** | Return a bad request response |
+| **3** | Return an ok response |
 Dropping all the way down to the Akka HTTP API:
 
 [ExampleEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java)
@@ -389,11 +384,11 @@ Dropping all the way down to the Akka HTTP API:
   }
 ```
 
-| **  1** | At this level there is no convenience, the response object must manually be rendered into JSON bytes |
-| **  2** | The response returned by `HttpResponse.create`   is `200 Ok` |
-| **  3** | Pass the response body bytes and the `ContentType`   to describe what they contain |
+| **1** | At this level there is no convenience, the response object must manually be rendered into JSON bytes |
+| **2** | The response returned by `HttpResponse.create` is `200 Ok` |
+| **3** | Pass the response body bytes and the `ContentType` to describe what they contain |
 
-### [](about:blank#_low_level_requests) Low level requests
+### <a href="about:blank#_low_level_requests"></a> Low level requests
 
 Accepting `HttpEntity.Strict` will collect all request entity bytes into memory for processing (up to 8Mb),
 for example to handle uploads of a custom media type:
@@ -411,9 +406,8 @@ private final static ContentType IMAGE_JPEG = ContentTypes.create(MediaTypes.IMA
   }
 ```
 
-| **  1** | `HttpEntity.Strict`   gives access to the request body content type |
-| **  2** | as well as the actual bytes, in a `akka.util.ByteString` |
-
+| **1** | `HttpEntity.Strict` gives access to the request body content type |
+| **2** | as well as the actual bytes, in a `akka.util.ByteString` |
 Accepting `akka.http.javadsl.model.HttpRequest` makes it possible to do more flexible and advanced request handling
 but at the cost of quite a bit more complex request handling.
 
@@ -422,7 +416,7 @@ This way of handling requests should only be used for advanced use cases when th
 In such a method it is paramount that the streaming request body is always handled, for example by discarding it
 or collecting it all into memory, if not it will stall the incoming HTTP connection.
 
-Handling the streaming request will require a `akka.stream.Materializer` , to get access to a materializer, define a
+Handling the streaming request will require a `akka.stream.Materializer`, to get access to a materializer, define a
 constructor parameter of this type to have it injected by the SDK.
 
 [ExampleEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java)
@@ -452,11 +446,11 @@ public class ExampleEndpoint extends AbstractHttpEndpoint { // (1)
   }
 ```
 
-| **  1** | Accept the materializer and keep it in a field |
-| **  2** | Make sure to discard the request body when failing |
-| **  3** | Or collect the bytes into memory |
+| **1** | Accept the materializer and keep it in a field |
+| **2** | Make sure to discard the request body when failing |
+| **3** | Or collect the bytes into memory |
 
-### [](about:blank#_serving_static_content) Serving static content
+### <a href="about:blank#_serving_static_content"></a> Serving static content
 
 Static resources such as HTML, CSS files can be packaged together with the service. This is done
 by placing the resource files in `src/main/resources/static-resources` and returning them from an endpoint
@@ -478,11 +472,10 @@ This can be done for a single filename:
   }
 ```
 
-| **  1** | The specific path `/` |
-| **  2** | Load a specific file placed in `src/main/resources/static-resources/index.html` |
-| **  3** | Another specific path `/favicon.ico` |
-| **  4** | The specific resource to serve |
-
+| **1** | The specific path `/` |
+| **2** | Load a specific file placed in `src/main/resources/static-resources/index.html` |
+| **3** | Another specific path `/favicon.ico` |
+| **4** | The specific resource to serve |
 It is also possible to map an entire path subtree using `**` as a wildcard at the end of the path:
 
 [StaticResourcesEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/StaticResourcesEndpoint.java)
@@ -493,14 +486,14 @@ It is also possible to map an entire path subtree using `**` as a wildcard at th
   }
 ```
 
-| **  1** | Endpoint method for any path under `/static/` |
-| **  2** | Accept `akka.http.javadsl.model.HttpRequest`   for further inspection of the actual path. |
-| **  3** | Load any available file under `static-resources`   after first removing `/static`   from the request path. The request path `/static/images/example.png`   is resolved to the file `src/main/resources/static-resources/images/style.css`   from the project. |
+| **1** | Endpoint method for any path under `/static/` |
+| **2** | Accept `akka.http.javadsl.model.HttpRequest` for further inspection of the actual path. |
+| **3** | Load any available file under `static-resources` after first removing `/static` from the request path. The request path `/static/images/example.png` is resolved to the file `src/main/resources/static-resources/images/example.png` from the project. |
 
 |  | This is convenient for service documentation or small self-contained services with web user interface but is not intended
  for production, where coupling of the service lifecycle with the user interface would mean that a new service version would need to be deployed for any changes in the user interface. |
 
-### [](about:blank#sse) Streaming responses with server-sent events
+### <a href="about:blank#sse"></a> Streaming responses with server-sent events
 
 [Server-sent events (SSE)](https://html.spec.whatwg.org/multipage/server-sent-events.html#server-sent-events) is a way to push a stream of elements through a single HTTP response
 that the client can see one by one rather than have to wait for the entire response to complete.
@@ -521,10 +514,9 @@ to make sure the response stream is kept alive through proxies and firewalls.
   }
 ```
 
-| **  1** | `Source.tick`   emits the element `"tick"`   immediately (after `Duration.ZERO`   ) and then every 5 seconds |
-| **  2** | Every time a tick is seen, we turn it into a system clock timestamp |
-| **  3** | Passing the `Source`   to `serverSentEvents`   returns a `HttpResponse`   for the endpoint method. |
-
+| **1** | `Source.tick` emits the element `"tick"` immediately (after `Duration.ZERO`) and then every 5 seconds |
+| **2** | Every time a tick is seen, we turn it into a system clock timestamp |
+| **3** | Passing the `Source` to `serverSentEvents` returns a `HttpResponse` for the endpoint method. |
 A more realistic use case would be to stream the changes from a view, using the [stream view updates view
 feature](views.html#_streaming_view_updates).
 
@@ -541,9 +533,8 @@ feature](views.html#_streaming_view_updates).
   }
 ```
 
-| **  1** | The view is annotated with `@Query(value = [a query], streamUpdates = true)`   to keep polling the database after the initial result is returned and return updates matching the query filter |
-| **  2** | The stream of view entries and then updates are turned into an SSE response. |
-
+| **1** | The view is annotated with `@Query(value = [a query], streamUpdates = true)` to keep polling the database after the initial result is returned and return updates matching the query filter |
+| **2** | The stream of view entries and then updates are turned into an SSE response. |
 Another realistic example is to periodically poll an entity for its state,
 but only emit an element over SSE when the state changes:
 
@@ -595,33 +586,26 @@ private record CustomerStreamState(Optional<Customer> customer, boolean isSame) 
   }
 ```
 
-| **  1** | Right away, and then every 5 seconds, use the `ComponentClient`   to call `CustomerEntity#getCustomer`   to get the current state. |
-| **  2** | Use `scan`   to filter out updates where the state did not change |
-| **  3** | Transform the internal customer domain type to a public API representation |
-| **  4** | Turn the stream to a SSE response |
-
+| **1** | Right away, and then every 5 seconds, use the `ComponentClient` to call `CustomerEntity#getCustomer` to get the current state. |
+| **2** | Use `scan` to filter out updates where the state did not change |
+| **3** | Transform the internal customer domain type to a public API representation |
+| **4** | Turn the stream to a SSE response |
 This uses more advanced Akka stream operators, you can find more details of those in the [Akka libraries documentation](https://doc.akka.io/libraries/akka-core/current/stream/operators/index.html).
 
-## [](about:blank#_see_also) See also
+## <a href="about:blank#_see_also"></a> See also
 
-- [  Access Control Lists (ACLs)](access-control.html)
-- [  TLS certificates](../security/tls-certificates.html)
+- [Access Control Lists (ACLs)](access-control.html)
+- [JSON Web Tokens (JWTs)](../reference/jwts.html)
+- [TLS certificates](../operations/tls-certificates.html)
+- [HTTP Basic authentication](../operations/services/invoke-service.html#_http_basic_authentication)
 
-
-
-<-footer->
-
-
-<-nav->
+<!-- <footer> -->
+<!-- <nav> -->
 [Key Value Entities](key-value-entities.html) [gRPC Endpoints](grpc-endpoints.html)
+<!-- </nav> -->
 
-</-nav->
+<!-- </footer> -->
 
+<!-- <aside> -->
 
-</-footer->
-
-
-<-aside->
-
-
-</-aside->
+<!-- </aside> -->
