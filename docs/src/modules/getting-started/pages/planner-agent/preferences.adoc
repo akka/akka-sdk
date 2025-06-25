@@ -117,5 +117,6 @@ Does it take your preferences into account for the suggestions?
 
 == Next steps
 
-Activities may depend on the weather forecast. Continue with xref:planner-agent/weather.adoc[Part 3: Weather agent]
+* Activities may depend on the weather forecast. Continue with xref:planner-agent/weather.adoc[Part 3: Weather agent] that will make use of agent function tools.
+* Learn more about the xref:java:event-sourced-entities.adoc[`EventSourceEntity` component].
 

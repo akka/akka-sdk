@@ -164,6 +164,6 @@ curl -i -XGET --location "http://localhost:9000/activities/alice/{sessionId}"
 
 Congratulations, you have completed the tour of building a multi-agent system. Now you can take your Akka skills to the next level:
 
-. *Expand on your own*: Learn more details of the xref:java:components/index.adoc[Akka components] to enhance your application with additional features.
-. *Explore other Akka samples*: Discover more about Akka by exploring xref:samples.adoc[different use cases] for inspiration.
+* *Expand on your own*: Learn more details of the xref:java:components/index.adoc[Akka components] to enhance your application with additional features.
+* *Explore other Akka samples*: Discover more about Akka by exploring xref:samples.adoc[different use cases] for inspiration.
 
