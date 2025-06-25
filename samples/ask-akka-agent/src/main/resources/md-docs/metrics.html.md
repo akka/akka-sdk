@@ -1,59 +1,33 @@
+<!-- <nav> -->
+- [Akka](../../index.html)
+- [Operating](../index.html)
+- [Akka Automated Operations](../akka-platform.html)
+- [Observability and monitoring](index.html)
+- [View metrics](metrics.html)
 
-
-<-nav->
-
-- [  Akka](../../index.html)
-- [  Operating - Akka Platform](../index.html)
-- [  Observability and monitoring](index.html)
-- [  View metrics](metrics.html)
-
-
-
-</-nav->
-
-
+<!-- </nav> -->
 
 # View metrics
 
-Akka projects have this dashboard built-in as part of the Control Tower in the Akka Console. This is available out-of-the-box. You can see metrics such as requests per second, replicas of a service or commands received by a component. The data is grouped into seven categories: Services, Event Sourced Entities, Key Value Entities, Endpoints, Views, Workflows, and Consumers. This is an example of a section within the dashboard.
+Akka projects have a built-in dashboard as part of the Control Tower in the Akka console. You can see metrics such as requests per second, replicas of a service, or commands received by a component. Data is grouped into categories: Services, Event Sourced Entities, Key Value Entities, Endpoints, Views, Workflows, Consumers, and Replication. The following shows a section of the dashboard.
+The content of the panels can be filtered using the filters at the top.
 
 ![dashboard control tower metrics screenshot](../_images/dashboard-control-tower-metrics-screenshot.png)
 
-There are two filters located at the top of the dashboard that allow filtering by service or endpoint.![dashboard control tower metrics filters screenshot](../_images/dashboard-control-tower-metrics-filters-screenshot.png)
 
-When filtering by "Service" you are left with only the selected service(s) in the Service and component sections. On top of that, the second filter is reloaded with only the "Endpoints/Methods" belonging to the selected service(s).
+## <a href="about:blank#_categories"></a> Categories
 
-"Endpoints/Methods" refers to one thing viewed from different perspectives. An endpoint is created by defining a method inside your service. With an Akka protobuf service via an `rcp` description and with an Akka Java service via `@PostRequest`, `@PatchRequest` or equivalent. The values in "Endpoints/Methods" filter come from the name of your protobuf definition or Java  method.
-For example, the following class defines and endpoint with the method `increaseBy`:
+### <a href="about:blank#_services"></a> Services
 
+**Successful Requests:** Rate of successful requests per second (reqs/s) over time, by endpoint.
 
-```java
-public class ... {
+**Failed Requests:** Rate of requests (reqs/s) that raised an error when processing the request, over time, by endpoint.
 
-  @PostMapping("/counter/{counter_id}/increase")
-  public Effect<Number> increaseBy(@RequestBody Number increaseBy) {
-    ...
-  }
-}
-```
+**Processing time distribution(seconds):** Number of requests grouped by processing duration, by endpoint.
 
-This creates an entry `increaseBy` in the filter `Endpoint/Method`.
+**Processing time 99p:** 99th percentile of processing time, over time, by endpoint.
 
-Filtering by  "Endpoint/Method" only affect the "Services" Category.
-
-## [](about:blank#_categories) Categories
-
-### [](about:blank#_services) Services
-
-**Successful Requests:** Rate of successful requests per second (reqs/s) over time, by endpoint. This is calculated with [irate](https://prometheus.io/docs/prometheus/latest/querying/functions/#irate).
-
-**Failed Requests:** Rate of requests (reqs/s) that raised an error when processing the request, over time, by endpoint. This is calculated with [irate](https://prometheus.io/docs/prometheus/latest/querying/functions/#irate).
-
-**Processing time distribution(seconds):** Number of requests grouped by processing duration, by endpoint. This duration only includes processing inside the Akka service.
-
-Example on how this gauge gets populated: A call that has a duration of 0.05 seconds will increase the counter of the bucket  '0.05' and any other bucket with a greater duration.
-
-**Processing time distribution:** Number of calls that fall into each processing time bucket over time, by endpoint i.e., a histogram of processing time, over time.
+**Processing time histogram:** Number of calls that fall into each processing time bucket over time, by endpoint i.e., a histogram of processing time, over time.
 
 **Instances:** Number of running instances of the service.
 
@@ -61,68 +35,77 @@ Example on how this gauge gets populated: A call that has a duration of 0.05 sec
 
 **Data ops (read/writes):** Total number of reads from the DB by any Akka component of the service(s) and endpoint(s)/method(s) selected. Total number of writes by any Akka component of the selected service(s) and endpoint(s)/method(s) selected.
 
-### [](about:blank#_event_sourced_entities) Event Sourced Entities
+### <a href="about:blank#_event_sourced_entities"></a> Event Sourced Entities
 
 **Commands received:** Rate of commands received per second over time.
 
-**Stored events:** Total number of events stored per second, over time.
+**Stored events:** Total number of events stored per second over time.
 
 **Data ops(reads/writes):** Total number of reads when loading from the DB the latest snapshot and the events afterward. Total number of writes when persisting the events or the snapshots generated by the entity.
 
-**Processing time quantiles:** Quantiles (50, 95 and 99) for the processing time of the commands by the entity.
+**Processing time percentiles:** 50th, 95th, and 99th percentiles for the processing time of the commands.
 
-### [](about:blank#_key_value_entities) Key Value Entities
+### <a href="about:blank#_key_value_entities"></a> Key Value Entities
 
-**Commands received:** Number of commands per second over time.
+**Commands received:** Rate of commands per second over time.
 
-**Data ops(reads/writes):** Total number of reads when loading its state from the DB.
+**Data ops(reads/writes):** Total number of reads when loading its state from the DB. Total number of writes when persisting its state in the DB.
 
-Total number of writes when persisting its state in the DB.
-Processing time distribution(seconds): Idem.
+**Processing time percentiles:** 50th, 95th, and 99th percentiles for the processing time of the commands.
 
-**Processing time quantiles:** Quantiles (50, 95 and 99) for the processing time of the commands the entity.
+### <a href="about:blank#_endpoints"></a> Endpoints
 
-### [](about:blank#_endpoints) Endpoints
+**Messages received:** Number of messages per second over time
 
-**Message received:** Number of messages per second over time.
+**Processing time percentiles:** 50th, 95th, and 99th percentiles for the processing time of the messages.
 
-**Processing time quantiles:** Quantiles (50, 95 and 99) for the processing time of the messages by the endpoint.
+### <a href="about:blank#_views"></a> Views
 
-### [](about:blank#_views) Views
+**Rows updated:** Number of rows updated per second over time.
 
-**Data ops(reads/writes):** Total number of reads when loading the rows of the view from DB. Total number of writes when upserting the rows of the view on DB.
+**Query request received:** Number of query requests received per second over time.
 
-### [](about:blank#_workflows) Workflows
+**Average update size:** Average size of each update. Calculated by dividing the total size of the update by the number of rows.
 
-**Commands received:** Number of commands per second over time.
+**Average query result size:** The average size of a query. Calculated by dividing the total size of the queries by the number of queries requested.
+
+### <a href="about:blank#_workflows"></a> Workflows
+
+**Commands received:** Rate of commands per second over time.
 
 **Data ops(reads/writes):** Total number of reads when loading from the DB the latest snapshot and the events afterward. Total number of writes, by workflow, when persisting the events or the snapshots generated by the workflow.
 
-**Processing time quantiles:** Quantiles (50, 95 and 99) for processing duration by the workflow.
+**Processing time quantiles:** 50th, 95th, and 99th percentiles for processing time of the command.
 
-### [](about:blank#_consumers) Consumers
+### <a href="about:blank#_consumers"></a> Consumers
 
-**Events consumption lag:** Quantiles (50, 95, and 95) over time of the consumption of the events produced by a subscription. It can be a subscription to an entity, or to a topic and therefore is grouped by entity or topic.
+**Events consumed:** The processing rate of events consumed by a subscription.
 
-**Instances:** Number of running instances of the subscription.
+**Subscriptions failed:** Failures consuming events from a Consumer or a View.
 
-**Events consumed:** The processing rate of events consumed by a subscription. This is calculated with [irate](https://prometheus.io/docs/prometheus/latest/querying/functions/#irate).
+**Events consumption lag - average:** Average delay in consumption of events by a Consumer or a View.
 
+**Events consumption lag:** 50th, 95th, and 99th percentiles on the delay in consumption of events by a Consumer or a View. Measured in wall-clock time.
 
+**Events processing time - average:** Average duration for event processing (including user service and persist) by a Consumer or a View.
 
-<-footer->
+**Events processing time:** 50th, 95th, and 99th percentiles of the duration it takes a Consumer or a View to process events, including user service and persist.
 
+### <a href="about:blank#_replication"></a> Replication
 
-<-nav->
+**Replicated events:** The rate of multi-region event replication.
+
+**Replication lag - average:** Average lag for multi-region event replication.
+
+**Replication failures:** Failure rate for multi-region replication.
+
+<!-- <footer> -->
+<!-- <nav> -->
 [View logs](view-logs.html) [View traces](traces.html)
+<!-- </nav> -->
 
-</-nav->
+<!-- </footer> -->
 
+<!-- <aside> -->
 
-</-footer->
-
-
-<-aside->
-
-
-</-aside->
+<!-- </aside> -->

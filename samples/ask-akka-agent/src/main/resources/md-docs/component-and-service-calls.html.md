@@ -1,29 +1,22 @@
+<!-- <nav> -->
+- [Akka](../index.html)
+- [Developing](index.html)
+- [Integrations](integrations/index.html)
+- [Component and service calls](component-and-service-calls.html)
 
-
-<-nav->
-
-- [  Akka](../index.html)
-- [  Developing](index.html)
-- [  Integrations](integrations/index.html)
-- [  Component and service calls](component-and-service-calls.html)
-
-
-
-</-nav->
-
-
+<!-- </nav> -->
 
 # Component and service calls
 
 An Akka service comprises many components. Such components might depend on one another, on other Akka services or even external services. This section describes how to call other components and services from within an Akka service.
 
-## [](about:blank#_akka_components) Akka components
+## <a href="about:blank#_akka_components"></a> Akka components
 
 Since Akka is an auto-scaling solution, components can be distributed across many nodes within the same service. That’s why calls between Akka components is done via a client rather than through normal method calls, the receiving component instance may be on the same node, but it may also be on a different node.
 
 Requests and responses are always serialized to JSON between the client and the component.
 
-### [](about:blank#_component_client) Component Client
+### <a href="about:blank#_component_client"></a> Component Client
 
 The `akka.javasdk.client.ComponentClient` is a utility for making calls between components in a type-safe way. To use the `ComponentClient` you need to inject it into your component via the constructor:
 
@@ -57,16 +50,15 @@ public class CounterEndpoint {
 }
 ```
 
-| **  1** | Accept the `ComponentClient`   as a constructor argument, keep it in a field. |
-| **  2** | Use a specific request builder for the component you want to call |
-| **  3** | Invoking the method returns the `T`   that the component eventually returns. |
-| **  4** | Adapt the response rather than returning it as is. In this case discarding the response value, and respond OK without a response body. |
-
+| **1** | Accept the `ComponentClient` as a constructor argument, keep it in a field. |
+| **2** | Use a specific request builder for the component you want to call |
+| **3** | Invoking the method returns the `T` that the component eventually returns. |
+| **4** | Adapt the response rather than returning it as is. In this case discarding the response value, and respond OK without a response body. |
 The component client can call command handlers on Event Sourced Entities, Key Value Entities, Workflows, Timed Actions, and query methods on Views.
 
-The component client is available for injection only in Service Setup, Endpoints, Consumers, Timed Actions, and Workflows. For more information, see [dependency injection](setup-and-dependency-injection.html#_dependency_injection).
+The component client is available for injection only in Service Setup, Agents, Endpoints, Consumers, Timed Actions, and Workflows. For more information, see [dependency injection](setup-and-dependency-injection.html#_dependency_injection).
 
-It’s also possible to make calls without waiting for them to complete by using `ComponentClient.invokeAsync` , which returns a `CompletionStage<T>` . This allows you to trigger multiple calls concurrently, enabling parallel processing.
+It’s also possible to make calls without waiting for them to complete by using `ComponentClient.invokeAsync`, which returns a `CompletionStage<T>`. This allows you to trigger multiple calls concurrently, enabling parallel processing.
 
 [CounterEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java)
 ```java
@@ -86,20 +78,20 @@ public HttpResponse increaseMultiple(IncreaseAllThese increaseAllThese) throws E
 }
 ```
 
-| **  1** | Call `invokeAsync()`   and collect each `CompletionStage<T>` |
-| **  2** | When all tasks has been started, wait for all tasks to complete |
-| **  3** | When all tasks responses has successfully completed we can respond |
+| **1** | Call `invokeAsync()` and collect each `CompletionStage<T>` |
+| **2** | When all tasks has been started, wait for all tasks to complete |
+| **3** | When all tasks responses has successfully completed we can respond |
 
-## [](about:blank#_akka_services) Akka services
+## <a href="about:blank#_akka_services"></a> Akka services
 
 Calling other Akka services in the same project is done by invoking them using an HTTP or a GRPC client depending on what type
 of endpoints the service provides.
 
-### [](about:blank#_over_http) Over HTTP
+### <a href="about:blank#_over_http"></a> Over HTTP
 
 The service is identified by the name it has been deployed. Akka takes care of routing requests to the service and keeping the data safe by encrypting the connection and handling authentication for you.
 
-In the follow snippet, we have an endpoint component that calls another service named `"counter"` . It makes use of SDK-provided `akka.javasdk.http.HttpClientProvider` which return HTTP client instances for calling other Akka services.
+In the follow snippet, we have an endpoint component that calls another service named `"counter"`. It makes use of SDK-provided `akka.javasdk.http.HttpClientProvider` which return HTTP client instances for calling other Akka services.
 
 In our delegating service implementation:
 
@@ -137,17 +129,17 @@ public class DelegatingServiceEndpoint {
 }
 ```
 
-| **  1** | Accept a `HttpClientProvider`   parameter for the constructor |
-| **  2** | Use it to look up a client for the `counter`   service |
-| **  3** | Use the `HttpClient`   to prepare a REST call to the**  counter**   service endpoint |
-| **  4** | Invoking the call will return a `StrictResponse<T>`   with details about the result as well as the deserialized response body. |
-| **  5** | Handle the response, which may be successful, or an error |
+| **1** | Accept a `HttpClientProvider` parameter for the constructor |
+| **2** | Use it to look up a client for the `counter` service |
+| **3** | Use the `HttpClient` to prepare a REST call to the **counter** service endpoint |
+| **4** | Invoking the call will return a `StrictResponse<T>` with details about the result as well as the deserialized response body. |
+| **5** | Handle the response, which may be successful, or an error |
 
 |  | The HTTP client provider is only available for injection in the following types of components: HTTP Endpoints, gRPC Endpoints, Workflows, Consumers and Timed Actions. |
 
-### [](about:blank#_external_http_services) External HTTP services
+### <a href="about:blank#_external_http_services"></a> External HTTP services
 
-Calling HTTP services deployed on **different** Akka projects or any other external HTTP server is also done with the `HttpClientProvider` . Instead of a service name, the protocol and full server name is used when calling `httpClientFor` . For example `https://example.com` or `http://example.com`.
+Calling HTTP services deployed on **different** Akka projects or any other external HTTP server is also done with the `HttpClientProvider`. Instead of a service name, the protocol and full server name is used when calling `httpClientFor`. For example `https://example.com` or `http://example.com`.
 
 [CallExternalServiceEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/callanotherservice/CallExternalServiceEndpoint.java)
 ```java
@@ -195,14 +187,14 @@ public class CallExternalServiceEndpoint {
 }
 ```
 
-| **  1** | Accept a `HttpClientProvider`   parameter for the constructor |
-| **  2** | Look up a `HttpClient`   for a service using `http`   protocol and server name. |
-| **  3** | Issue a GET call to the path `/astros.json`   on the server |
-| **  4** | Specify a class to parse the response body into |
-| **  5** | Once the call completes, handle the response. |
-| **  6** | Return an adapted result object which will be turned into a JSON response. |
+| **1** | Accept a `HttpClientProvider` parameter for the constructor |
+| **2** | Look up a `HttpClient` for a service using `http` protocol and server name. |
+| **3** | Issue a GET call to the path `/astros.json` on the server |
+| **4** | Specify a class to parse the response body into |
+| **5** | Once the call completes, handle the response. |
+| **6** | Return an adapted result object which will be turned into a JSON response. |
 
-### [](about:blank#_over_grpc) Over gRPC
+### <a href="about:blank#_over_grpc"></a> Over gRPC
 
 The service is identified by the name it has been deployed. Akka takes care of routing requests to the service and keeping the data safe by encrypting the connection and handling authentication for you.
 
@@ -215,7 +207,6 @@ triggers generation of a client interface and Java classes for all the message t
 methods in the service.
 
 |  | Since the service protobuf descriptors need to be shared between the provider service and the consuming service, one simple option could be to copy the service descriptions to each service that needs them. It is also possible to use a shared library with the protobuf descriptors. |
-
 In our delegating service implementation:
 
 [DelegateCustomerGrpcEndpointImpl.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-customer-registry-subscriber/src/main/java/customer/api/DelegateCustomerGrpcEndpointImpl.java)
@@ -248,10 +239,9 @@ public class DelegateCustomerGrpcEndpointImpl implements DelegateCustomerGrpcEnd
 }
 ```
 
-| **  1** | Accept a `GrpcClientProvider`   parameter for the constructor |
-| **  2** | Use the generated gRPC client interface for the service `CustomerGrpcEndpointClient.class`   and the service name `customer-registry`   to look up a client. |
-| **  3** | Use the client to call the other service and return a `CompletionStage<CreateCustomerResponse>` |
-
+| **1** | Accept a `GrpcClientProvider` parameter for the constructor |
+| **2** | Use the generated gRPC client interface for the service `CustomerGrpcEndpointClient.class` and the service name `customer-registry` to look up a client. |
+| **3** | Use the client to call the other service and return a `CompletionStage<CreateCustomerResponse>` |
 Since the called service and the `DelegateCustomerGrpcEndpoint` share request and response protocol, no further transformation
 of the request or response is needed here.
 
@@ -260,9 +250,9 @@ when deployed such configuration is ignored.
 
 |  | The gRPC client provider is only available for injection in the following types of components: HTTP Endpoints, gRPC endpoints, Workflows, Consumers and Timed Actions. |
 
-### [](about:blank#_external_grpc_services) External gRPC services
+### <a href="about:blank#_external_grpc_services"></a> External gRPC services
 
-Calling gRPC services deployed on **different** Akka projects or any other external gRPC server is also done with the `GrpcClientProvider` . Instead of a service name, the protocol and fully qualified DNS name of the service is used when calling `grpcClientFor` . For example `hellogrpc.example.com`.
+Calling gRPC services deployed on **different** Akka projects or any other external gRPC server is also done with the `GrpcClientProvider`. Instead of a service name, the protocol and fully qualified DNS name of the service is used when calling `grpcClientFor`. For example `hellogrpc.example.com`.
 
 [CallExternalGrpcEndpointImpl.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/callanotherservice/CallExternalGrpcEndpointImpl.java)
 ```java
@@ -282,10 +272,9 @@ public class CallExternalGrpcEndpointImpl implements CallExternalGrpcEndpoint {
 }
 ```
 
-| **  1** | Accept a `GrpcClientProvider`   parameter for the constructor |
-| **  2** | Use the generated gRPC client interface for the service `ExampleGrpcEndpointClient.class`   and the service name `doc-snippets`   to look up a client. `ExampleGrpcEndpointClient.class`  . |
-| **  3** | Use the client to call the other service and return a `CompletionStage<HelloReply>` |
-
+| **1** | Accept a `GrpcClientProvider` parameter for the constructor |
+| **2** | Use the generated gRPC client interface for the service `ExampleGrpcEndpointClient.class` and the service name `doc-snippets` to look up a client. `ExampleGrpcEndpointClient.class`. |
+| **3** | Use the client to call the other service and return a `CompletionStage<HelloReply>` |
 Since the called service and the `DelegatingGrpcEndpoint` share request and response protocol, no further transformation
 of the request or response is needed here.
 
@@ -302,21 +291,13 @@ akka.javasdk.grpc.client."hellogrpc.example.com" {
 }
 ```
 
-
-
-<-footer->
-
-
-<-nav->
+<!-- <footer> -->
+<!-- <nav> -->
 [Integrations](integrations/index.html) [Message broker integrations](message-brokers.html)
+<!-- </nav> -->
 
-</-nav->
+<!-- </footer> -->
 
+<!-- <aside> -->
 
-</-footer->
-
-
-<-aside->
-
-
-</-aside->
+<!-- </aside> -->

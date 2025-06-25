@@ -1,23 +1,16 @@
+<!-- <nav> -->
+- [Akka](../index.html)
+- [Developing](index.html)
+- [Setup and configuration](setup-and-configuration/index.html)
+- [Errors and failures](errors-and-failures.html)
 
-
-<-nav->
-
-- [  Akka](../index.html)
-- [  Developing](index.html)
-- [  Setup and configuration](setup-and-configuration/index.html)
-- [  Errors and failures](errors-and-failures.html)
-
-
-
-</-nav->
-
-
+<!-- </nav> -->
 
 # Errors and failures
 
 The Akka SDK provides several mechanisms dealing with validation or when something is going wrong.
 
-## [](about:blank#_errors) Errors
+## <a href="about:blank#_errors"></a> Errors
 
 The first line of the defense is the validation of the incoming data on the `Endpoint` level. Already described is details in the [request and response](http-endpoints.html#_advanced_http_requests_and_responses) section. This is a basic request validation, which doesn’t require domain state. It’s better to handle it as soon as possible, since it will reduce the load on the system. The logic can reject the request before it reaches the entity.
 
@@ -35,9 +28,8 @@ public Effect<Integer> increaseWithError(Integer value) {
 }
 ```
 
-| **  1** | Return an error effect with a description if the validation fails. |
-
-The `effects().error` is later transformed into a `IllegalArgumentException` . This exception can be caught by the caller and transformed into a proper HTTP error. The default behavior is to return an HTTP 400 error with the error message as a response body.
+| **1** | Return an error effect with a description if the validation fails. |
+The `effects().error` is later transformed into a `IllegalArgumentException`. This exception can be caught by the caller and transformed into a proper HTTP error. The default behavior is to return an HTTP 400 error with the error message as a response body.
 
 [CounterEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java)
 ```java
@@ -49,8 +41,7 @@ public Integer increaseWithError(String counterId, Integer value) {
 }
 ```
 
-| **  1** | Calling component method without additional exception handling. |
-
+| **1** | Calling component method without additional exception handling. |
 Calling such endpoint with an invalid request will return:
 
 HTTP/1.1 400 Bad Request
@@ -61,7 +52,7 @@ Content-Type: text/plain; charset=UTF-8
 Content-Length: 28
 
 Increasing counter above 10000 is blocked
-## [](about:blank#_errors_as_reply_types) Errors as reply types
+## <a href="about:blank#_errors_as_reply_types"></a> Errors as reply types
 
 To have a full and type-safe control over the errors, another approach would be to encode them as a part of reply protocol.
 
@@ -90,11 +81,10 @@ public Effect<CounterResult> increaseWithResult(Integer value) {
 }
 ```
 
-| **  1** | Additional Jackson annotations are required to serialize a polymorphic `CounterResult`   type. |
-| **  2** | Sealed trait groups all possible results of the command handling. |
-| **  3** | Instead of returning an error effect, we reply with a specific result type. |
-| **  4** | A `CounterResult.Success`   reply returns the updated counter value. |
-
+| **1** | Additional Jackson annotations are required to serialize a polymorphic `CounterResult` type. |
+| **2** | Sealed trait groups all possible results of the command handling. |
+| **3** | Instead of returning an error effect, we reply with a specific result type. |
+| **4** | A `CounterResult.Success` reply returns the updated counter value. |
 Handling the response in the client is straightforward.
 
 [CounterEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java)
@@ -112,38 +102,27 @@ public HttpResponse increaseWithResult(String counterId, Integer value) {
 }
 ```
 
-| **  1** | Match all the possible results and transform them into HTTP responses. |
-
+| **1** | Match all the possible results and transform them into HTTP responses. |
 This approach is more explicit and type-safe, but it requires more boilerplate code. It is recommended to use this approach when the error handling is more complex and requires more than just a simple message.
 
 |  | Make sure that you are familiar with the Jackson serialization library and how to use it with sealed interfaces and generic types. Schema evolution and compatibility aspects in terms of response types should be considered. Especially in the context of using Workflows, where step action results are persisted and will be deserialized in the future. |
 
-## [](about:blank#_failures) Failures
+## <a href="about:blank#_failures"></a> Failures
 
 All unexpected exception thrown be the user code are transformed into an HTTP 500 error. When running the service locally in dev mode, a stack trace is will be a part of the HTTP response. In production, this information is hidden, to not leak internal details about the service to a client. The client will receive a non-descriptive message with a correlation ID, like below.
-
 
 ```none
 Unexpected error [2c74bdfb-3130-464c-8852-cf9c3c2180ad]
 ```
+That same correlation ID `2c74bdfb-3130-464c-8852-cf9c3c2180ad` is included in the log entry for the error as an MDC value with the key `correlationID`. This makes it possible to find the specific error in the logs using `akka logs` or by querying your configured logging backend for the service.
 
-That same correlation ID `2c74bdfb-3130-464c-8852-cf9c3c2180ad` is included in the log entry for the error as an MDC value with the key `correlationID` . This makes it possible to find the specific error in the logs using `akka logs` or by querying your configured logging backend for the service.
-
-
-
-<-footer->
-
-
-<-nav->
+<!-- <footer> -->
+<!-- <nav> -->
 [Serialization](serialization.html) [Access Control Lists (ACLs)](access-control.html)
+<!-- </nav> -->
 
-</-nav->
+<!-- </footer> -->
 
+<!-- <aside> -->
 
-</-footer->
-
-
-<-aside->
-
-
-</-aside->
+<!-- </aside> -->
