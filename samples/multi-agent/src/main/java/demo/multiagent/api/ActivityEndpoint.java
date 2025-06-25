@@ -7,9 +7,11 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpResponses;
+import demo.multiagent.application.ActivityView;
 import demo.multiagent.application.AgentTeam;
 import demo.multiagent.application.PreferencesEntity;
 
+import java.util.List;
 import java.util.UUID;
 
 // Opened up for access from the public internet to make the service easy to try out.
@@ -22,6 +24,18 @@ public class ActivityEndpoint {
   }
 
   public record AddPreference(String preference) {
+  }
+
+  public record ActivitiesList(List<Suggestion> suggestions) {
+    static ActivitiesList fromView(ActivityView.Rows rows) {
+      return new ActivitiesList(rows.entries().stream().map(Suggestion::fromView).toList());
+    }
+  }
+
+  public record Suggestion(String userQuestion, String answer) {
+    static Suggestion fromView(ActivityView.Row row) {
+      return new Suggestion(row.userQuestion(), row.finalAnswer());
+    }
   }
 
   private final ComponentClient componentClient;
@@ -55,6 +69,16 @@ public class ActivityEndpoint {
         return HttpResponses.notFound("Answer for '" + sessionId + "' not available (yet)");
       else
         return HttpResponses.ok(res);
+  }
+
+  @Get("/activities/{userId}")
+  public ActivitiesList listActivities(String userId) {
+    var viewResult =  componentClient
+        .forView()
+        .method(ActivityView::getActivities)
+        .invoke(userId);
+
+    return ActivitiesList.fromView(viewResult);
   }
 
   @Post("/preferences/{userId}")

@@ -18,7 +18,7 @@ public class AgentTeam extends Workflow<AgentTeam.State> {
 
   public record Request(String userId, String message) {}
 
-  public record State(String userId, String userQuery, String answer) {
+  public record State(String userId, String userQuery, String finalAnswer) {
     State withAnswer(String a) {
       return new State(userId, userQuery, a);
     }
@@ -38,10 +38,10 @@ public class AgentTeam extends Workflow<AgentTeam.State> {
   }
 
   public Effect<String> getAnswer() {
-    if (currentState() == null || currentState().answer.isEmpty()) {
+    if (currentState() == null || currentState().finalAnswer.isEmpty()) {
       return effects().error("Workflow '" + commandContext().workflowId() + "' not started, or not completed");
     } else {
-      return effects().reply(currentState().answer);
+      return effects().reply(currentState().finalAnswer);
     }
   }
 

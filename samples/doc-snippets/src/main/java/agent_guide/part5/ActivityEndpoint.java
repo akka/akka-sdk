@@ -21,7 +21,7 @@ public class ActivityEndpoint {
 
   public record Suggestion(String userQuestion, String answer) {
     static Suggestion fromView(ActivityView.Row row) {
-      return new Suggestion(row.userQuestion(), row.answer());
+      return new Suggestion(row.userQuestion(), row.finalAnswer());
     }
   }
 

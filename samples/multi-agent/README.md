@@ -121,9 +121,26 @@ curl -i -XGET --location "http://localhost:9000/activities/alice/{sessionId}"
 Replace `{sessionId}` with the ID returned when the session was created. Example:
 
 ```shell
-$ curl "http://localhost:9000/activities/c1219e5a-abae-44c0-959b-ff76aa22cb2e"
+$ curl "http://localhost:9000/activities/alice/c1219e5a-abae-44c0-959b-ff76aa22cb2e"
 
 The weather in Madrid is rainy tomorrow, so you might want to explore indoor attractions like the Prado Museum or Reina Sofia Museum. Alternatively, you can visit local cafes and food markets, such as Mercado de San Miguel, to enjoy some culinary delights without getting wet. If you're up for something more active, you could also consider visiting an escape room or an indoor sports facility. 
+```
+
+You can also retrieve for all previous suggestions for a user:
+
+```shell
+curl -i -XGET --location "http://localhost:9000/activities/alice"
+```
+
+Preferences can be added with:
+
+```shell
+curl -i localhost:9000/preferences/alice \
+  --header "Content-Type: application/json" \
+  -XPOST \
+  --data '{
+    "preference": "I like outdoor activities.",
+  }'
 ```
 
 ## Deployment
