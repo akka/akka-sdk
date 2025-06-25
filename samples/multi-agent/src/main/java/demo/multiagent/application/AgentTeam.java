@@ -94,11 +94,11 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
     return workflow()
       .defaultStepRecoverStrategy(maxRetries(1).failoverTo(INTERRUPT))
       .defaultStepTimeout(Duration.of(30, SECONDS))
-      .addStep(selectAgent()) // <2>
-      .addStep(plan())
-      .addStep(executePlan())
-      .addStep(summarize())
-      .addStep(interrupt());
+      .addStep(selectAgentsStep()) // <2>
+      .addStep(planStep())
+      .addStep(executePlanStep())
+      .addStep(summarizeStep())
+      .addStep(interruptStep());
   }
 
   public Effect<Done> start(Request request) {
@@ -124,7 +124,7 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
   // tag::plan[]
   private static final String SELECT_AGENTS = "select-agents";
 
-  private Step selectAgent() {
+  private Step selectAgentsStep() {
     return step(SELECT_AGENTS)
       .call(() ->
           componentClient.forAgent().inSession(sessionId()).method(SelectorAgent::selectAgents)
@@ -146,7 +146,7 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
 
   private static final String CREATE_PLAN = "create-plan";
 
-  private Step plan() {
+  private Step planStep() {
     return step(CREATE_PLAN)
       .call(AgentSelection.class, agentSelection -> {
         logger.debug(
@@ -169,7 +169,7 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
 
   private static final String EXECUTE_PLAN = "execute-plan";
 
-  private Step executePlan() {
+  private Step executePlanStep() {
     return step(EXECUTE_PLAN)
       .call(() -> {
         var stepPlan = currentState().nextStepPlan(); // <8>
@@ -217,7 +217,7 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
 
   private static final String SUMMARIZE = "summarize";
 
-  private Step summarize() {
+  private Step summarizeStep() {
     return step(SUMMARIZE)
       .call(() -> {
         var agentsAnswers = currentState().agentResponses.values();
@@ -230,7 +230,7 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
 
   private static final String INTERRUPT = "interrupt";
 
-  private Workflow.Step interrupt() {
+  private Workflow.Step interruptStep() {
     return step(INTERRUPT)
       .call(() -> {
         logger.debug("Interrupting workflow");
