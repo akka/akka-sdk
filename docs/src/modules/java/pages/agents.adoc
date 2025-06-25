@@ -647,9 +647,9 @@ For predictable and repeatable tests of your agent's business logic and componen
 Use the `TestKitSupport` and the `CoponentClient` to call the components from the test. The `ModelProvider` of the agents can be replaced with link:_attachments/testkit/akka/javasdk/testkit/TestModelProvider.html[TestModelProvider], which provides ways to mock the responses without using the real AI model.
 
 [source,java]
-.{sample-base-url}/multi-agent/src/test/java/demo/multiagent/application/AgentTeamTest.java[AgentTeamTest.java]
+.{sample-base-url}/multi-agent/src/test/java/demo/multiagent/application/AgentTeamWorkflowTest.java[AgentTeamWorkflowTest.java]
 ----
-include::example$multi-agent/src/test/java/demo/multiagent/application/AgentTeamTest.java[tag=class]
+include::example$multi-agent/src/test/java/demo/multiagent/application/AgentTeamWorkflowTest.java[tag=class]
 ----
 <1> Extend `TestKitSupport` to gain access to testing utilities for Akka components.
 <2> Create one or more `TestModelProvider`. Using one per agent allows for distinct mock behaviors, while sharing one is useful for testing general responses.
