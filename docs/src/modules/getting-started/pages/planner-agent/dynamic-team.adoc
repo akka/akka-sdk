@@ -133,6 +133,7 @@ This also ends the workflow by creating a summary of the results from the involv
 include::java:example$multi-agent/src/main/java/demo/multiagent/application/agents/Summarizer.java[tag=all]
 ----
 
+We still only have the two worker agents `WeatherAgent` and `ActivityAgent`, but you can add more agents to this structure of dynamic planning and execution, and it will be able to solve other types of problems without changing the orchestration engine.
 
 == Running the service
 
@@ -161,5 +162,8 @@ curl -i -XGET --location "http://localhost:9000/activities/alice/{sessionId}"
 
 == Next steps
 
-ifdef::todo[TODO: Continue]
+Congratulations, you have completed the tour of building a multi-agent system. Now you can take your Akka skills to the next level:
+
+. *Expand on your own*: Learn more details of the xref::java:components/index.adoc[Akka components] to enhance your application with additional features.
+. *Explore other Akka samples*: Discover more about Akka by exploring xref:samples.adoc[different use cases] for inspiration.
 
