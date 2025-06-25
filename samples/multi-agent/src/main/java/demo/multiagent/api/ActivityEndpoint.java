@@ -8,6 +8,7 @@ import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpResponses;
 import demo.multiagent.application.AgentTeam;
+import demo.multiagent.application.PreferencesEntity;
 
 import java.util.UUID;
 
@@ -20,26 +21,29 @@ public class ActivityEndpoint {
   public record Request(String message) {
   }
 
+  public record AddPreference(String preference) {
+  }
+
   private final ComponentClient componentClient;
 
   public ActivityEndpoint(ComponentClient componentClient) {
     this.componentClient = componentClient;
   }
 
-  @Post("/activities")
-  public HttpResponse suggestActivities( Request request) {
+  @Post("/activities/{userId}")
+  public HttpResponse suggestActivities(String userId, Request request) {
     var sessionId = UUID.randomUUID().toString();
 
     var res =
       componentClient
       .forWorkflow(sessionId)
         .method(AgentTeam::start)
-        .invoke(request.message);
+        .invoke(new AgentTeam.Request(userId, request.message()));
 
-    return HttpResponses.created(res, "/activities/" + sessionId);
+    return HttpResponses.created(res, "/activities/ " + userId + "/" + sessionId);
   }
 
-  @Get("/activities/{sessionId}")
+  @Get("/activities/{userId}/{sessionId}")
   public HttpResponse getAnswer(String sessionId) {
       var res =
         componentClient
@@ -51,5 +55,15 @@ public class ActivityEndpoint {
         return HttpResponses.notFound("Answer for '" + sessionId + "' not available (yet)");
       else
         return HttpResponses.ok(res);
+  }
+
+  @Post("/preferences/{userId}")
+  public HttpResponse addPreference(String userId, AddPreference request) {
+    componentClient
+        .forEventSourcedEntity(userId)
+        .method(PreferencesEntity::addPreference)
+        .invoke(new PreferencesEntity.AddPreference(request.preference()));
+
+    return HttpResponses.created();
   }
 }

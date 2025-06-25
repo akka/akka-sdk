@@ -4,6 +4,7 @@ import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.FunctionTool;
+import demo.multiagent.domain.AgentRequest;
 import demo.multiagent.domain.AgentResponse;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -41,11 +42,11 @@ public class WeatherAgent extends Agent {
     this.weatherService = weatherService; // <1>
   }
 
-  public Agent.Effect<AgentResponse> query(String message) {
+  public Effect<AgentResponse> query(AgentRequest request) {
     return effects()
         .systemMessage(SYSTEM_MESSAGE)
         .tools(weatherService) // <2>
-        .userMessage(message)
+        .userMessage(request.message())
         .responseAs(AgentResponse.class)
         .thenReply();
   }

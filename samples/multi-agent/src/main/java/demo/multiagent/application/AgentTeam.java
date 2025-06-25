@@ -23,6 +23,8 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 // tag::plan[]
 @ComponentId("agent-team")
 public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
+  public record Request(String userId, String message) {}
+
   // end::plan[]
 
   enum Status {
@@ -31,19 +33,21 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
     FAILED,
   }
 
-  public record State(String userQuery,
-                      Plan plan,
-                      String finalAnswer,
-                      Map<String, AgentResponse> agentResponses,
-                      Status status) {
+  public record State(
+      String userId,
+      String userQuery,
+      Plan plan,
+      String finalAnswer,
+      Map<String, AgentResponse> agentResponses,
+      Status status) {
 
-    public static State init(String query) {
-      return new State(query, new Plan(), "", new HashMap<>(), STARTED);
+    public static State init(String userId, String query) {
+      return new State(userId, query, new Plan(), "", new HashMap<>(), STARTED);
     }
 
 
     public State withFinalAnswer(String answer) {
-      return new State(userQuery, plan, answer, agentResponses, status);
+      return new State(userId, userQuery, plan, answer, agentResponses, status);
     }
 
     public State addAgentResponse(AgentResponse response) {
@@ -63,15 +67,15 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
     }
 
     public State withPlan(Plan plan) {
-      return new State(userQuery, plan, finalAnswer, agentResponses, STARTED);
+      return new State(userId, userQuery, plan, finalAnswer, agentResponses, STARTED);
     }
 
     public State complete() {
-      return new State(userQuery, plan, finalAnswer, agentResponses, COMPLETED);
+      return new State(userId, userQuery, plan, finalAnswer, agentResponses, COMPLETED);
     }
 
     public State failed() {
-      return new State(userQuery, plan, finalAnswer, agentResponses, FAILED);
+      return new State(userId, userQuery, plan, finalAnswer, agentResponses, FAILED);
     }
 
   }
@@ -97,10 +101,10 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
       .addStep(interrupt());
   }
 
-  public Effect<Done> start(String query) {
+  public Effect<Done> start(Request request) {
     if (currentState() == null) {
       return effects()
-        .updateState(State.init(query))
+        .updateState(State.init(request.userId(), request.message()))
         .transitionTo(SELECT_AGENTS) // <3>
         .thenReply(Done.getInstance());
     } else {

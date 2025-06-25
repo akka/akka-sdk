@@ -70,7 +70,8 @@ public class AgentTeamTest extends TestKitSupport { // <1>
     var query = "I am in Stockholm. What should I do? Beware of the weather";
 
     var sessionId = UUID.randomUUID().toString();
-    componentClient.forWorkflow(sessionId).method(AgentTeam::start).invoke(query); // <6>
+    var request = new AgentTeam.Request("alice", query);
+    componentClient.forWorkflow(sessionId).method(AgentTeam::start).invoke(request); // <6>
 
     Awaitility.await()
         .ignoreExceptions()
