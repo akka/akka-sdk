@@ -123,7 +123,7 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
   private Step selectAgent() {
     return step(SELECT_AGENTS)
       .call(() ->
-          componentClient.forAgent().inSession(sessionId()).method(Selector::selectAgents)
+          componentClient.forAgent().inSession(sessionId()).method(SelectorAgent::selectAgents)
               .invoke(currentState().userQuery)) // <4>
       .andThen(AgentSelection.class, selection -> {
         logger.debug("Selected agents: {}", selection.agents());
@@ -150,8 +150,8 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
             currentState().userQuery,
             agentSelection.agents());
 
-          return componentClient.forAgent().inSession(sessionId()).method(Planner::createPlan)
-              .invoke(new Planner.Request(currentState().userQuery, agentSelection)); // <6>
+          return componentClient.forAgent().inSession(sessionId()).method(PlannerAgent::createPlan)
+              .invoke(new PlannerAgent.Request(currentState().userQuery, agentSelection)); // <6>
         }
       )
       .andThen(Plan.class, plan -> {
@@ -216,8 +216,8 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
     return step(SUMMARIZE)
       .call(() -> {
         var agentsAnswers = currentState().agentResponses.values();
-        return componentClient.forAgent().inSession(sessionId()).method(Summarizer::summarize)
-                .invoke(new Summarizer.Request(currentState().userQuery, agentsAnswers));
+        return componentClient.forAgent().inSession(sessionId()).method(SummarizerAgent::summarize)
+                .invoke(new SummarizerAgent.Request(currentState().userQuery, agentsAnswers));
       })
       .andThen(String.class, finalAnswer ->
         effects().updateState(currentState().withFinalAnswer(finalAnswer).complete()).end());

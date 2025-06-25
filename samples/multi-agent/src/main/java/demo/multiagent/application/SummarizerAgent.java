@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 @AgentDescription(
     name = "Summarizer",
     description = "An agent that creates a summary from responses provided by other agents")
-public class Summarizer extends Agent {
+public class SummarizerAgent extends Agent {
   public record Request(String originalQuery, Collection<AgentResponse> agentsResponses) {}
 
   private String buildSystemMessage(String userQuery) {

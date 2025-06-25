@@ -29,11 +29,11 @@ public class AgentTeamTest extends TestKitSupport { // <1>
   protected TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT
         .withAdditionalConfig("akka.javasdk.agent.openai.api-key = n/a")
-        .withModelProvider(Selector.class, selectorModel) // <3>
-        .withModelProvider(Planner.class, plannerModel)
+        .withModelProvider(SelectorAgent.class, selectorModel) // <3>
+        .withModelProvider(PlannerAgent.class, plannerModel)
         .withModelProvider(ActivityAgent.class, activitiesModel)
         .withModelProvider(WeatherAgent.class, weatherModel)
-        .withModelProvider(Summarizer.class, summaryModel);
+        .withModelProvider(SummarizerAgent.class, summaryModel);
   }
 
   @Test
