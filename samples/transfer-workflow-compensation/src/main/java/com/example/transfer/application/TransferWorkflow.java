@@ -21,7 +21,7 @@ import static com.example.transfer.domain.TransferState.TransferStatus.REQUIRES_
 import static com.example.transfer.domain.TransferState.TransferStatus.TRANSFER_ACCEPTATION_TIMED_OUT;
 import static com.example.transfer.domain.TransferState.TransferStatus.WAITING_FOR_ACCEPTATION;
 import static com.example.transfer.domain.TransferState.TransferStatus.WITHDRAW_FAILED;
-import static com.example.transfer.domain.TransferState.TransferStatus.WITHDRAW_SUCCEED;
+import static com.example.transfer.domain.TransferState.TransferStatus.WITHDRAW_SUCCEEDED;
 import static java.time.Duration.ofHours;
 import static java.time.Duration.ofSeconds;
 
@@ -78,7 +78,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
                 case Success __ -> {
                   Deposit depositInput = new Deposit(currentState().depositId(), currentState().transfer().amount());
                   return effects()
-                      .updateState(currentState().withStatus(WITHDRAW_SUCCEED))
+                      .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
                       .transitionTo("deposit", depositInput);
                 }
                 case Failure failure -> {

@@ -8,7 +8,7 @@ import com.example.domain.TransferState.Transfer;
 
 import static akka.Done.done;
 import static com.example.domain.TransferState.TransferStatus.COMPLETED;
-import static com.example.domain.TransferState.TransferStatus.WITHDRAW_SUCCEED;
+import static com.example.domain.TransferState.TransferStatus.WITHDRAW_SUCCEEDED;
 
 // tag::class[]
 @ComponentId("transfer") // <1>
@@ -31,7 +31,7 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
             })
             .andThen(() -> { // <6>
               return effects()
-                  .updateState(currentState().withStatus(WITHDRAW_SUCCEED))
+                  .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
                   .transitionTo("deposit");
             });
   }

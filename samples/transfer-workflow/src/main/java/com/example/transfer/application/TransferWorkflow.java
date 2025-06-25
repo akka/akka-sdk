@@ -10,7 +10,7 @@ import com.example.wallet.application.WalletEntity;
 
 import static akka.Done.done;
 import static com.example.transfer.domain.TransferState.TransferStatus.COMPLETED;
-import static com.example.transfer.domain.TransferState.TransferStatus.WITHDRAW_SUCCEED;
+import static com.example.transfer.domain.TransferState.TransferStatus.WITHDRAW_SUCCEEDED;
 
 // tag::class[]
 @ComponentId("transfer") // <1>
@@ -51,7 +51,7 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
             .andThen(() -> {
               Deposit depositInput = new Deposit(currentState().transfer().to(), currentState().transfer().amount());
               return effects()
-                  .updateState(currentState().withStatus(WITHDRAW_SUCCEED))
+                  .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
                   .transitionTo("deposit", depositInput); // <5>
             });
   }
