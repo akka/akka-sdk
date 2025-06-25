@@ -1,7 +1,7 @@
 package com.example.transfer.application;
 
 import akka.javasdk.testkit.TestKitSupport;
-import com.example.transfer.application.TransferView.TransferEntries;
+import com.example.transfer.application.TransfersView.TransferEntries;
 import com.example.transfer.domain.TransferState.Transfer;
 import com.example.wallet.application.WalletEntity;
 import org.awaitility.Awaitility;
@@ -45,8 +45,8 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
         assertThat(balance1).isEqualTo(90);
         assertThat(balance2).isEqualTo(110);
 
-        TransferEntries result = componentClient.forView().method(TransferView::getAllCompleted).invoke();
-        assertThat(result.entries()).contains(new TransferView.TransferEntry(transferId, "COMPLETED"));
+        TransferEntries result = componentClient.forView().method(TransfersView::getAllCompleted).invoke();
+        assertThat(result.entries()).contains(new TransfersView.TransferEntry(transferId, "COMPLETED"));
       });
   }
 

@@ -20,9 +20,10 @@ class EntitiesAndViewsDescriptorSpec extends AnyWordSpec with Matchers {
       keyValueComponents should contain("com.example.HierarchyKvEntity")
 
       val eventSourcedComponents = config.getStringList("akka.javasdk.components.event-sourced-entity")
-      eventSourcedComponents.size() shouldBe 2
+      eventSourcedComponents.size() shouldBe 3
       eventSourcedComponents should contain("com.example.SimpleEventSourcedEntity")
       eventSourcedComponents should contain("com.example.HierarchyEsEntity")
+      eventSourcedComponents should contain("com.example.Outer$NestedEventSourcedEntity")
 
       val viewComponents = config.getStringList("akka.javasdk.components.view")
       viewComponents.size() shouldBe 3

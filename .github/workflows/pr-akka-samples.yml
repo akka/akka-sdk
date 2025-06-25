@@ -27,6 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - { sample: "helloworld-agent", sampleRepo: "akka-samples/helloworld-agent" }
           - { sample: "choreography-saga-quickstart", sampleRepo: "akka-samples/choreography-saga-quickstart" }
           - { sample: "endpoint-jwt", sampleRepo: "akka-samples/endpoint-jwt" }
           - { sample: "event-sourced-counter-brokers", sampleRepo: "akka-samples/event-sourced-counter-brokers" }
@@ -36,6 +37,7 @@ jobs:
           - { sample: "transfer-workflow", sampleRepo: "akka-samples/transfer-workflow" }
           - { sample: "transfer-workflow-compensation", sampleRepo: "akka-samples/transfer-workflow-compensation" }
           - { sample: "ask-akka-agent", sampleRepo: "akka-samples/ask-akka-agent" }
+          - { sample: "multi-agent", sampleRepo: "akka-samples/multi-agent" }
 
     steps:
       - name: Checkout
@@ -87,6 +89,7 @@ jobs:
           git config user.email "lightbend-tools-secure@lightbend.com"
           BRANCH=update-sdk-$sdk_version
           git checkout -b $BRANCH
+          rm -rf ./src/*
           rsync -a ../docs/build/bundle/${{ matrix.sample }}/ ./
           rm -f .bundleignore
           git add -f .idea/runConfigurations/Run_locally.xml
@@ -111,7 +114,8 @@ jobs:
           - { sample: "travel-agent", sampleRepo: "akka-samples/travel-agent" }
           - { sample: "trip-agency", sampleRepo: "akka-samples/trip-agency" }
           - { sample: "real-estate-cs-agent", sampleRepo: "akka-samples/real-estate-cs-agent" }
-          - { sample: "multi-agent", sampleRepo: "akka-samples/multi-agent" }
+          - { sample: "healthcare-agent", sampleRepo: "akka-samples/healthcare-agent" }
+          - { sample: "temperature-monitoring-agent", sampleRepo: "akka-samples/temperature-monitoring-agent" }
 
     steps:
       - name: Checkout

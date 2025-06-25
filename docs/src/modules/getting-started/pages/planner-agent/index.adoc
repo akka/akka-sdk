@@ -1,0 +1,107 @@
+= AI Planner Part 1: The activity agent
+
+include::ROOT:partial$include.adoc[]
+
+include::ROOT:partial$new-to-akka-start-here.adoc[]
+
+== Overview
+
+This guide starts with creating an agent that suggests real-world activities. We will incorporate more components in the next parts of the guide, and at the end we will have a multi-agent system with dynamic planning and orchestration capabilities.
+
+In this part of the guide you will:
+
+* Create a new, empty Akka project
+* Create an `Agent`
+* Create an HTTP endpoint to expose the agent
+
+== Prerequisites
+
+include::ROOT:partial$local-dev-prerequisites.adoc[]
+* https://platform.openai.com/api-keys[OpenAI API key, window="new"]
+
+== Create the empty project
+
+You already learned how to create an empty Akka project when you went through the guide to xref:getting-started:author-your-first-service.adoc#clone_sample[author your first service].
+
+[NOTE]
+====
+This guide is written assuming you will follow it as a tutorial to walk through all of the components, building them on your own. If at any time you want to compare your solution with the official sample, check out the link:https://github.com/akka-samples/multi-agent[Github Repository, window="new"].
+====
+
+== Add the Agent
+
+We will add an agent that suggests real-world activities. Add a new file `ActivityAgent.java` to `src/main/java/com/example/application/`
+
+[source,java]
+.ActivityAgent.java
+----
+include::java:example$doc-snippets/src/main/java/agent_guide/part1/ActivityAgent.java[tag=class]
+----
+<1> Annotate the class with `@ComponentId` and pass a unique identifier for this agent type.
+<2> Class extends `Agent`.
+<3> Define the command handler method.
+<4> Define the system message as a constant, and use the system message in the effect builder.
+<5> Define the user message for the specific request, and use in the effect builder.
+
+The system message provides system-level instructions to the AI model that defines its behavior and context. The system message acts as a foundational prompt that establishes the AI's role, constraints, and operational parameters. It is processed before user messages and helps maintain consistent behavior throughout the interactions.
+
+The user message represents the specific query, instruction, or input that will be processed by the model to generate a response.
+
+== Add an Endpoint
+
+Add a new file `ActivityEndpoint.java` to `src/main/java/com/example/api/`
+
+[source, java]
+.ActivityEndpoint.java]
+----
+include::java:example$doc-snippets/src/main/java/agent_guide/part1/ActivityEndpoint.java[tag=class]
+----
+<1> Inject the `ComponentClient`, which is used to call the agent.
+<2> Call the `ActivityAgent` created in the previous step
+
+
+== Running the service
+
+Akka has support for many AI providers, and this sample is using OpenAI. This is the configuration:
+
+[source, java]
+.application.conf
+----
+include::java:example$doc-snippets/src/main/resources/application.conf[tag=agent-model-config]
+----
+
+Set your https://platform.openai.com/api-keys[OpenAI API key, window="new"] as an environment variable:
+
+include::ROOT:partial$openai-api-key-env-vars.adoc[]
+
+Start your service locally:
+
+[source,command line]
+----
+mvn compile exec:java
+----
+
+Once successfully started, any defined Endpoints become available at `localhost:9000` and you will see an INFO message that the Akka Runtime has started.
+
+In another shell, you can now use `curl` to send requests to this Endpoint.
+[source, command line]
+----
+curl -i -XPOST --location "http://localhost:9000/activities" \
+  --header "Content-Type: application/json" \
+  --data '{"message": "I am in Madrid. What should I do?"}'
+----
+
+The AI response might look something like this...
+
+[source]
+----
+In Madrid, you can visit historic sites like the Royal Palace, stroll in Retiro Park, explore
+the Prado and Reina Sofia art museums, savor local cuisine at Mercado de San Miguel, or take a
+guided walking tour through lively neighborhoods such as Malasaña and Chueca.
+----
+
+== Next steps
+
+* To make the activity suggestions more personalized, we will add user preferences that the `ActivityAgent` will use. Continue with xref:planner-agent/preferences.adoc[Part 2: User preferences].
+* Learn more about the xref:java:agents.adoc[`Agent` component].
+

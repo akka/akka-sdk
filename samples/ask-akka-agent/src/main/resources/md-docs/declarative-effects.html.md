@@ -1,16 +1,9 @@
+<!-- <nav> -->
+- [Akka](../index.html)
+- [Understanding](index.html)
+- [Declarative effects](declarative-effects.html)
 
-
-<-nav->
-
-- [  Akka](../index.html)
-- [  Understanding](index.html)
-- [  Declarative effects](declarative-effects.html)
-
-
-
-</-nav->
-
-
+<!-- </nav> -->
 
 # Declarative effects
 
@@ -26,28 +19,21 @@ For details on the specific Effect types, refer to the documentation for each co
 
 | Component | Available Effects |
 | --- | --- |
-| [  Event Sourced Entities](../java/event-sourced-entities.html#_effect_api) | Persist Events, Reply, Delete Entity, Error |
-| [  Key Value Entities](../java/key-value-entities.html#_effect_api) | Update State, Reply, Delete State, Error |
-| [  Views](../java/views.html#_effect_api) | Update State, Delete State, Ignore |
-| [  Workflows](../java/workflows.html#_effect_api) | Update State, Transition, Pause, End, Reject Command, Reply |
-| [  Timers](../java/timed-actions.html#_effect_api) | Confirm Scheduled Call, Error |
-| [  Consumers](../java/consuming-producing.html#_effect_api) | Publish to Topic, Confirm Message, Ignore |
+| [Agents](../java/agents.html#_effect_api) | Model, Memory, Tools, System and User Message,  Reply, Error |
+| [Event Sourced Entities](../java/event-sourced-entities.html#_effect_api) | Persist Events, Reply, Delete Entity, Error |
+| [Key Value Entities](../java/key-value-entities.html#_effect_api) | Update State, Reply, Delete State, Error |
+| [Views](../java/views.html#_effect_api) | Update State, Delete State, Ignore |
+| [Workflows](../java/workflows.html#_effect_api) | Update State, Transition, Pause, End, Reject Command, Reply |
+| [Timers](../java/timed-actions.html#_effect_api) | Confirm Scheduled Call, Error |
+| [Consumers](../java/consuming-producing.html#_effect_api) | Publish to Topic, Confirm Message, Ignore |
 
-
-
-<-footer->
-
-
-<-nav->
+<!-- <footer> -->
+<!-- <nav> -->
 [Development process](development-process.html) [Entity state models](state-model.html)
+<!-- </nav> -->
 
-</-nav->
+<!-- </footer> -->
 
+<!-- <aside> -->
 
-</-footer->
-
-
-<-aside->
-
-
-</-aside->
+<!-- </aside> -->

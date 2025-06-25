@@ -1,0 +1,85 @@
+= AI Planner Part 3: Weather agent
+
+include::ROOT:partial$include.adoc[]
+
+include::ROOT:partial$new-to-akka-start-here.adoc[]
+
+== Overview
+
+Activities may depend on the weather, so let's add an agent that retrieves a weather forecast.
+
+In this part of the guide you will:
+
+* Create an agent for the weather forecast that uses an external service as a function tool
+
+== Prerequisites
+
+include::ROOT:partial$local-dev-prerequisites.adoc[]
+* https://platform.openai.com/api-keys[OpenAI API key, window="new"]
+
+== Add the agent
+
+Add a new file `WeatherAgent.java` to `src/main/java/com/example/application/`
+
+[source,java]
+.WeatherAgent.java
+----
+include::java:example$doc-snippets/src/main/java/agent_guide/part3/WeatherAgent.java[tag=class]
+----
+<1> Instructions for the weather agent.
+<2> Inject the `HttpClientProvider`.
+<3> Provide the weather forecast as a function tool.
+
+Methods annotated with `@FunctionTool` in the agent will automatically be made available to the AI model, which will extract the location from the original query and request to execute the tool to retrieve the forecast.
+
+If you don't want to use the real weather service, you can change the implementation to return a hard-coded weather, such as `"It's always sunny"`.
+
+We could make a request to the `WeatherAgent` from the endpoint before calling the `ActivityAgent` but a better approach is to introduce a workflow that orchestrates the calls between the agents.
+
+== Test the agent
+
+Before introducing the workflow we would like to see that the `WeatherAgent` works in isolation.
+
+To use the preferences from the `ActivityAgent` we need to inject the component client and retrieve the preferences for a given user id.
+
+[source,java]
+.ActivityAgent.java
+----
+include::java:example$doc-snippets/src/test/java/agent_guide/part3/WeatherAgentIntegrationTest.java[tag=class]
+----
+<1> Extend `TestKitSupport`.
+<2> Use the component client to call the agent.
+<3> Not much we can assert, since the weather is different every day, but at least we can see the result and that it doesn't fail.
+
+You can sign up for a free API for the weather service at link:https://www.weatherapi.com[window="new"] and then expose it as an environment variable:
+
+[.tabset]
+Linux or macOS::
++
+--
+[source,command window]
+----
+export WEATHER_API_KEY=your-openai-api-key
+----
+--
+Windows 10+::
++
+--
+[source,command window]
+----
+set WEATHER_API_KEY=your-openai-api-key
+----
+--
+
+Run the test with
+
+[source,command line]
+----
+mvn verify
+----
+
+== Next steps
+
+* Introduce a workflow that orchestrates the calls between the agents. Continue with xref:planner-agent/team.adoc[Part 4: Orchestrate the agents]
+* Learn more about more possibilities of xref:java:agents.adoc#tools[extending agents with function tools].
+

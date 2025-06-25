@@ -12,7 +12,7 @@ import akka.javasdk.http.HttpClientProvider;
 import akka.javasdk.http.HttpException;
 import akka.javasdk.http.HttpResponses;
 import customer.application.CustomersByNameView;
-import customer.domain.CustomersList;
+import customer.domain.CustomerEntries;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,8 +57,8 @@ public class CustomerRegistryEndpoint {
   }
   // end::cross-service-call[]
   
-  @Get("/by_name/{name}")
-  public CustomersList findByName(String name) {
+  @Get("/by-name/{name}")
+  public CustomerEntries findByName(String name) {
     return componentClient.forView().method(CustomersByNameView::findByName).invoke(name);
   }
 }

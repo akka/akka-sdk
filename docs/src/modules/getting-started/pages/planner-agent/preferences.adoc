@@ -1,0 +1,122 @@
+= AI Planner Part 2: User preferences
+
+include::ROOT:partial$include.adoc[]
+
+include::ROOT:partial$new-to-akka-start-here.adoc[]
+
+== Overview
+
+To make the activity suggestions more personalized, we will add user preferences that the `ActivityAgent` will use.
+
+In this part of the guide you will:
+
+* Create an entity for the preferences
+* Use the preferences from the agent
+* Include a user id in the endpoint
+
+== Prerequisites
+
+include::ROOT:partial$local-dev-prerequisites.adoc[]
+* https://platform.openai.com/api-keys[OpenAI API key, window="new"]
+
+== Add the entity for preferences
+
+Add a new file `PreferencesEntity.java` to `src/main/java/com/example/application/`
+
+[source,java]
+.PreferencesEntity.java
+----
+include::java:example$doc-snippets/src/main/java/agent_guide/part2/PreferencesEntity.java[tag=class]
+----
+<1> Extend `EventSourcedEntity`, with the type of state this entity represents, and the interface for the events it persists.
+<2> Annotate the class so Akka can identify it as an event-sourced entity.
+<3> Define the command handler method to add a preference text.
+<4> Define another command handler to retrieve all preferences.
+<5> Updates of the `State` is performed from the persisted events.
+
+Here we use plain text for the preferences, but it could be more structured information.
+
+== Use from the agent
+
+To use the preferences in the `ActivityAgent` we need to inject the component client and retrieve the preferences for a given user id.
+
+[source,java]
+.ActivityAgent.java
+----
+include::java:example$doc-snippets/src/main/java/agent_guide/part2/ActivityAgent.java[tag=class]
+----
+<1> Inject `ComponentClient`.
+<2> Include user id in the request to the agent.
+<3> Retrieve the preferences for the given user id.
+<4> In addition to the original message, include the preferences in the user message to the LLM.
+
+== User id in endpoint
+
+We need to add the user id to the HTTP request.
+
+[source, java]
+.ActivityEndpoint.java
+----
+include::java:example$doc-snippets/src/main/java/agent_guide/part2/ActivityEndpoint.java[tag=userId]
+----
+<1> Add `userId` as a path parameter.
+<2> Call the agent with the `userId`.
+
+== Update preferences from endpoint
+
+To update the preferences, we add another method to the endpoint:
+[source, java]
+.ActivityEndpoint.java
+----
+include::java:example$doc-snippets/src/main/java/agent_guide/part2/ActivityEndpoint.java[tag=addPreference]
+----
+<1> Add a method to add a preference.
+<2> Call the `PreferenceEntity` for the given user id.
+
+== Running the service
+
+Start your service locally:
+
+[source,command line]
+----
+mvn compile exec:java
+----
+
+Pick a user id, here `alice`, and add some preferences:
+
+[source, command line]
+----
+curl -i localhost:9000/preferences/alice \
+  --header "Content-Type: application/json" \
+  -XPOST \
+  --data '{
+    "preference": "I like outdoor activities.",
+  }'
+----
+
+[source, command line]
+----
+curl -i localhost:9000/preferences/alice \
+  --header "Content-Type: application/json" \
+  -XPOST \
+  --data '{
+    "preference": "I dislike museums.",
+  }'
+----
+
+Ask for activities.
+
+[source, command line]
+----
+curl -i -XPOST --location "http://localhost:9000/activities/alice" \
+  --header "Content-Type: application/json" \
+  --data '{"message": "I am in Madrid. What should I do?"}'
+----
+
+Does it take your preferences into account for the suggestions?
+
+== Next steps
+
+* Activities may depend on the weather forecast. Continue with xref:planner-agent/weather.adoc[Part 3: Weather agent] that will make use of agent function tools.
+* Learn more about the xref:java:event-sourced-entities.adoc[`EventSourceEntity` component].
+

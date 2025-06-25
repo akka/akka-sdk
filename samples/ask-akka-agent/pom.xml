@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.akka</groupId>
         <artifactId>akka-javasdk-parent</artifactId>
-        <version>3.3.2</version>
+        <version>3.4.0</version>
     </parent>
 
     <groupId>akka.ask</groupId>
@@ -15,7 +15,7 @@
 
     <name>ask-akka</name>
     <properties>
-        <langchain4j.version>1.0.0-beta1</langchain4j.version>
+        <langchain4j.version>1.0.0</langchain4j.version>
     </properties>
     <dependencies>
         <dependency>
@@ -25,13 +25,8 @@
         </dependency>
         <dependency>
             <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j</artifactId>
-            <version>${langchain4j.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-mongodb-atlas</artifactId>
-            <version>${langchain4j.version}</version>
+            <version>1.0.0-beta5</version>
         </dependency>
     </dependencies>
 </project>

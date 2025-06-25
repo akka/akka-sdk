@@ -30,7 +30,7 @@ public interface ServiceSetup {
   /**
    * The on startup hook is called every time a service instance boots up. This can happen for very
    * different reasons: restarting / redeploying the service, scaling up to more instances or even
-   * without any user-driven action (e.g. Runtime versions being rolled out, infrastructure-related
+   * without any user-driven action (e.g.: Runtime versions being rolled out, infrastructure-related
    * incidents, etc.). Therefore, one should carefully consider how to use this hook and its
    * implementation.
    *
@@ -39,7 +39,7 @@ public interface ServiceSetup {
   default void onStartup() {}
 
   /**
-   * Invoked once before service is started, to create a dependency provider. It is not possible to
+   * Invoked once before the service is started, to create a dependency provider. It is not possible to
    * interact with components in this method.
    *
    * <p>This hook is called before {@link #onStartup()}.

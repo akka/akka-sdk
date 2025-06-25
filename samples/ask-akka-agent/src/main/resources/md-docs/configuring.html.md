@@ -1,38 +1,29 @@
+<!-- <nav> -->
+- [Akka](../index.html)
+- [Operating](index.html)
+- [Self-managed operations](configuring.html)
 
+<!-- </nav> -->
 
-<-nav->
-
-- [  Akka](../index.html)
-- [  Operating - Self-managed nodes](index.html)
-- [  Configuring self-managed nodes](configuring.html)
-
-
-
-</-nav->
-
-
-
-# Configuring self-managed nodes
+# Operate Akka in a self-managed environment
 
 For organizations that want control over how Akka services are installed, updated, and maintained. Akka services are packaged into standalone binaries with Akka clustering for scaling. You are responsible for separately managing secure connectivity, routes, installation, deployment, and persistence.
 
-## [](about:blank#_license_key) License key
+## <a href="about:blank#_license_key"></a> License key
 
 You can retrieve a free license key from [akka.io/key](https://account.akka.io/key).
 
 Define the key in your `application.conf`:
 
-
 ```none
 akka.license-key = "<your key>"
 ```
 
-## [](about:blank#_database) Database
+## <a href="about:blank#_database"></a> Database
 
 Akka requires a Postgres database. The tables will be created automatically, but you need to create the database and the credentials to connect to the database.
 
 You define a connection configuration in your `application.conf` or use the predefined environment variables.
-
 
 ```none
 akka.persistence.r2dbc {
@@ -49,39 +40,34 @@ akka.persistence.r2dbc {
   }
 }
 ```
-
 Supported environment variables:
 
 - DB_HOST
 - DB_PORT
 - DB_DATABASE
 - DB_USER
-- DB_SSL_ENABLED - `true`   to enable SSL
+- DB_SSL_ENABLED - `true` to enable SSL
 - DB_SSL_MODE - allow, prefer, require, verify-ca, verify-full, tunnel
 - DB_SSL_ROOT_CERT - Server root certificate. Can point to either a resource within the classpath or a file.
 - DB_SSL_CERT - Client certificate. Can point to either a resource within the classpath or a file.
 - DB_SSL_KEY - Key for client certificate. Can point to either a resource within the classpath or a file.
 - DB_SSL_PASSWORD - Password for client key.
-
 You find more configuration options in [reference documentation](https://doc.akka.io/libraries/akka-persistence-r2dbc/current/config.html).
 
-## [](about:blank#_build_a_container_image) Build a container image
+## <a href="about:blank#_build_a_container_image"></a> Build a container image
 
 Build a container image of the service for standalone use by activating the `standalone` maven profile:
-
 
 ```command
 mvn clean install -DskipTests -Pstandalone
 ```
-
 Push the image to your container registry.
 
-## [](about:blank#_try_it_locally) Try it locally
+## <a href="about:blank#_try_it_locally"></a> Try it locally
 
 You can try running the image locally with docker compose:
 
-1. docker-compose.yml  
-
+1. docker-compose.yml
 
 ```yml
 version: "3"
@@ -120,24 +106,21 @@ services:
       DB_HOST:
         "postgres-db"
 ```
-
 Update the `image:` of the `shopping-cart-service` in the `docker-compose.yml` with the specific image name and version you installed.
 
 Run with:
-
 
 ```command
 docker compose -f docker-compose.yml up
 ```
 
-## [](about:blank#_deploy_to_kubernetes) Deploy to Kubernetes
+## <a href="about:blank#_deploy_to_kubernetes"></a> Deploy to Kubernetes
 
 You need to create and operate the Kubernetes cluster yourself. Cloud and on-premises Kubernetes are supported.
 
 You need the following Kubernetes files:
 
-1. namespace.yml  
-
+1. namespace.yml
 
 ```yml
 apiVersion: v1
@@ -145,10 +128,9 @@ kind: Namespace
 metadata:
   name: shopping-cart-namespace
 ```
-2. rbac.yml  
+2. rbac.yml
 
-  For Akka Cluster bootstrap and rolling updates we need to define role based access control.  
-
+For Akka Cluster bootstrap and rolling updates we need to define role based access control.
 
 ```yaml
 kind: Role
@@ -200,8 +182,7 @@ roleRef:
   name: pod-patcher
   apiGroup: rbac.authorization.k8s.io
 ```
-3. deployment.yml  
-
+3. deployment.yml
 
 ```yaml
 apiVersion: apps/v1
@@ -296,10 +277,8 @@ spec:
                   key: DB_PASSWORD
                   optional: true
 ```
-
-  Update the `image:`   in the `deployment.yml`   with the specific image version and location you published.
-4. service.yml  
-
+Update the `image:` in the `deployment.yml` with the specific image version and location you published.
+4. service.yml
 
 ```yaml
 apiVersion: v1
@@ -315,13 +294,11 @@ spec:
       port: 9000
       targetPort: 9000
 ```
-
 Update all `shopping-cart` naming to your own names.
 
-### [](about:blank#_apply_with_kubectl) Apply with kubectl
+### <a href="about:blank#_apply_with_kubectl"></a> Apply with kubectl
 
 Deploy to Kubernetes with:
-
 
 ```shell
 kubectl apply -f namespace.yml
@@ -333,17 +310,14 @@ kubectl apply -f service.yml
 # all should be in ready state
 kubectl get pods
 ```
-
 As a first test you can create a port forward with:
-
 
 ```shell
 kubectl port-forward svc/shopping-cart-service-svc 9000:9000
 ```
-
 Then you can access the endpoints at `http:localhost:9000/`.
 
-## [](about:blank#_deploy_to_any_other_container_image_platform) Deploy to any other container image platform
+## <a href="about:blank#_deploy_to_any_other_container_image_platform"></a> Deploy to any other container image platform
 
 The standalone image can be run in most container image platforms.
 
@@ -351,30 +325,26 @@ When running more than one instance of the service they must form an Akka cluste
 
 If clustering is not an option in your environment you can run it as a single instance by defining the following configuration in your `application.conf`:
 
-
 ```none
 akka.runtime.standalone.single-node = true
 ```
-
 Make sure that there is only one instance running at the same time, for example rolling updates would not be supported.
 
-## [](about:blank#_configuration) Configuration
+## <a href="about:blank#_configuration"></a> Configuration
 
-### [](about:blank#_endpoint_configuration) Endpoint configuration
+### <a href="about:blank#_endpoint_configuration"></a> Endpoint configuration
 
 The port that the HTTP server binds to can be configured with environment variable `HTTP_PORT` or:
-
 
 ```none
 kalix.proxy.http-port = 9000
 ```
 
-### [](about:blank#_service_to_service_eventing_configuration) Service to Service Eventing configuration
+### <a href="about:blank#_service_to_service_eventing_configuration"></a> Service to Service Eventing configuration
 
 By default, the service name defined in `@Consume.FromServiceStream` is used as the host name when connecting to the producing service. That can be logical dns name such as a Kubernetes service name.
 
-You can define gRPC client configuration for a service name in the `application.conf` , such as:
-
+You can define gRPC client configuration for a service name in the `application.conf`, such as:
 
 ```none
 akka.grpc.client {
@@ -385,15 +355,13 @@ akka.grpc.client {
   }
 }
 ```
-
 Note that you are responsible for setting up access control and TLS between services.
 
 You find more configuration options in [reference documentation](https://doc.akka.io/libraries/akka-grpc/current/client/configuration.html#by-configuration).
 
-### [](about:blank#_kafka_message_broker_configuration) Kafka message broker configuration
+### <a href="about:blank#_kafka_message_broker_configuration"></a> Kafka message broker configuration
 
 If you use Kafka as message broker the configuration can be defined in your `application.conf`:
-
 
 ```none
 akka.runtime.message-broker {
@@ -428,15 +396,14 @@ akka.runtime.message-broker {
    }
 }
 ```
-
 You find more configuration options in reference documentation:
 
-- [  producer settings](https://doc.akka.io/libraries/alpakka-kafka/current/producer.html#settings)
-- [  consumer settings](https://doc.akka.io/libraries/alpakka-kafka/current/consumer.html#settings)
+- [producer settings](https://doc.akka.io/libraries/alpakka-kafka/current/producer.html#settings)
+- [consumer settings](https://doc.akka.io/libraries/alpakka-kafka/current/consumer.html#settings)
 
-### [](about:blank#_more_advanced_configuration) More advanced configuration
+### <a href="about:blank#_more_advanced_configuration"></a> More advanced configuration
 
-There are many things that can be configured to control the Akka runtime behavior. Please [ask support](https://akka.io/contact-us) .  and we will guide you to the right way to adjust the configuration for what you need.
+There are many things that can be configured to control the Akka runtime behavior. Please [ask support](https://akka.io/contact-us).  and we will guide you to the right way to adjust the configuration for what you need.
 
 A few examples of things that can be configured:
 
@@ -446,21 +413,13 @@ A few examples of things that can be configured:
 - TLS for communication between services
 - Metrics
 
+<!-- <footer> -->
+<!-- <nav> -->
+[Operating](index.html) [Akka Automated Operations](akka-platform.html)
+<!-- </nav> -->
 
+<!-- </footer> -->
 
-<-footer->
+<!-- <aside> -->
 
-
-<-nav->
-[Operating - Self-managed nodes](index.html) [Operating - Akka Platform](../operations/index.html)
-
-</-nav->
-
-
-</-footer->
-
-
-<-aside->
-
-
-</-aside->
+<!-- </aside> -->

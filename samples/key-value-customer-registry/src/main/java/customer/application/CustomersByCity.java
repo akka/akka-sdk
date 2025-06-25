@@ -9,12 +9,12 @@ import akka.javasdk.view.View;
 
 import java.util.List;
 
-@ComponentId("customers_by_city")
+@ComponentId("customers-by-city")
 // tag::view-test[]
 public class CustomersByCity extends View {
 
   @Consume.FromKeyValueEntity(CustomerEntity.class)
-  public static class Customers extends TableUpdater<Customer> {}
+  public static class CustomerUpdater extends TableUpdater<Customer> {}
 
   @Query("""
     SELECT * AS customers
@@ -38,6 +38,15 @@ public class CustomersByCity extends View {
     return queryStreamResult();
   }
   // end::continuous-stream[]
+
+  // tag::by-name-and-city[]
+  public record QueryParams(String customerName, String city) {} // <1>
+
+  @Query(value = "SELECT * FROM customers_by_city WHERE name = :customerName AND address.city = :city") // <2>
+  public QueryEffect<Customer> getCustomersByCityAndName(QueryParams queryParams) {
+    return queryResult();
+  }
+  // end::by-name-and-city[]
 
 
 }

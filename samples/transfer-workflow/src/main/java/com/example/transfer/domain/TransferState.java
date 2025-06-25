@@ -9,7 +9,7 @@ public record TransferState(Transfer transfer, TransferStatus status) {
   }
 
   public enum TransferStatus { // <2>
-    STARTED, WITHDRAW_SUCCEED, COMPLETED
+    STARTED, WITHDRAW_SUCCEEDED, COMPLETED
   }
 
   public TransferState(Transfer transfer) {

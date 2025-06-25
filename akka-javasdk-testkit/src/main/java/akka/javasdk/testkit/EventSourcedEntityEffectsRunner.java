@@ -80,7 +80,8 @@ abstract class EventSourcedEntityEffectsRunner<S, E> {
    */
   protected <R> EventSourcedResult<R> interpretEffects(
       Supplier<EventSourcedEntity.Effect<R>> effect, String entityId, Metadata metadata, Optional<Type> returnType) {
-    var commandContext = new TestKitEventSourcedEntityCommandContext(entityId, metadata);
+    var sequenceNumber = this.events.size();
+    var commandContext = new TestKitEventSourcedEntityCommandContext(entityId, metadata, sequenceNumber);
     EventSourcedEntity.Effect<R> effectExecuted;
     try {
       entity._internalSetCommandContext(Optional.of(commandContext));
@@ -92,7 +93,7 @@ abstract class EventSourcedEntityEffectsRunner<S, E> {
     }
 
     playEventsForEntity(EventSourcedResultImpl.eventsOf(effectExecuted));
-    deleted = EventSourcedResultImpl.checkIfDeleted(effectExecuted);
+    deleted = EventSourcedResultImpl.checkIfDeleted(effectExecuted, this.deleted);
 
     EventSourcedResult<R> result;
     try {

@@ -14,8 +14,9 @@ import java.util.concurrent.CompletionStage;
  * Zero argument component call representation, not executed until invoked or by some mechanism
  * using the deferred call (like a timer executing it later for example)
  *
+ * <p>Not for user extension or instantiation, returned by the SDK component client
+ *
  * @param <R> The type of value returned by executing the call
- *     <p>Not for user extension or instantiation, returned by the SDK component client
  */
 @DoNotInherit
 public interface ComponentMethodRef<R> extends ComponentDeferredMethodRef<R> {

@@ -1,263 +1,186 @@
+<!-- <nav> -->
+- [Akka](../../index.html)
+- [AI RAG agent part 3: Executing RAG queries](rag.html)
 
+<!-- </nav> -->
 
-<-nav->
+# AI RAG agent part 3: Executing RAG queries
 
-- [  Akka](../../index.html)
-- [  Developing](../index.html)
-- [  Samples](../samples.html)
-- [  AI RAG Agent](index.html)
-- [  Executing RAG queries](rag.html)
+|  | **New to Akka? Start here:**
 
+Use the [Author your first agentic service](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
 
-
-</-nav->
-
-
-
-# Executing RAG queries
-
-## [](about:blank#_overview) Overview
+## <a href="about:blank#_overview"></a> Overview
 
 In this step of the guide to building the *Ask Akka* application, you’ll be creating a class that wraps the OpenAI API and the MongoDB client API. It’s this class that will provide the abstraction for the rest of the application to use when making RAG queries. You’ll use Akka’s `@Setup` to configure the dependency injection for this class.
 
-## [](about:blank#_prerequisites) Prerequisites
+## <a href="about:blank#_prerequisites"></a> Prerequisites
 
-- Java 21, we recommend[  Eclipse Adoptium](https://adoptium.net/marketplace/)
-- [  Apache Maven](https://maven.apache.org/install.html)   version 3.9 or later
-- <a href="https://curl.se/download.html"> `curl`   command-line tool</a>
-- An[  Akka account](https://console.akka.io/register)
-- [  Docker Engine](https://docs.docker.com/get-started/get-docker/)   27 or later
+- Java 21, we recommend [Eclipse Adoptium](https://adoptium.net/marketplace/)
+- [Apache Maven](https://maven.apache.org/install.html) version 3.9 or later
+- <a href="https://curl.se/download.html">`curl` command-line tool</a>
+- [OpenAI API key](https://platform.openai.com/api-keys)
 
-## [](about:blank#_updating_the_bootstrap) Updating the bootstrap
+## <a href="about:blank#_unfamiliar_with_concepts_like_vectors_embeddings_or_rag"></a> Unfamiliar with concepts like vectors, embeddings or RAG?
 
-In the previous section we created a bootstrap class that set up dependency injection for the MongoDB client. This client needs to be injected into the indexing workflow to use MongoDB as the vector store. We can just add a few lines to the `createDependencyProvider` method to also create an instance of the class we’ll build next, `AskAkkaAgent`
+We recommend reviewing our [foundational explainer on AI concepts](../../concepts/ai-concepts-video.html). It offers helpful background that will deepen your understanding of the technologies and patterns used throughout this tutorial.
+
+## <a href="about:blank#_creating_the_knowledge_class"></a> Creating the Knowledge class
+
+We’re going to add a utility that will retrieve content from MongoDB that is related to the user’s query.
+
+The following is the basic RAG-specific code that you can add to a new file `Knowledge.java` in `src/main/java/akka/ask/agent/application/`.
+
+[Knowledge.java](https://github.com/akka/akka-sdk/blob/main/samples/ask-akka-agent/src/main/java/akka/ask/agent/application/Knowledge.java)
+```java
+import akka.ask.common.MongoDbUtils;
+import akka.ask.common.OpenAiUtils;
+import com.mongodb.client.MongoClient;
+import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.rag.AugmentationRequest;
+import dev.langchain4j.rag.DefaultRetrievalAugmentor;
+import dev.langchain4j.rag.RetrievalAugmentor;
+import dev.langchain4j.rag.content.injector.ContentInjector;
+import dev.langchain4j.rag.content.injector.DefaultContentInjector;
+import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
+import dev.langchain4j.rag.query.Metadata;
+
+public class Knowledge {
+  private final RetrievalAugmentor retrievalAugmentor;
+  private final ContentInjector contentInjector = new DefaultContentInjector();
+
+  public Knowledge(MongoClient mongoClient) {
+    var contentRetriever = EmbeddingStoreContentRetriever.builder() // (1)
+        .embeddingStore(MongoDbUtils.embeddingStore(mongoClient))
+        .embeddingModel(OpenAiUtils.embeddingModel())
+        .maxResults// (10)
+        .minScore(0.1)
+        .build();
+
+    this.retrievalAugmentor = DefaultRetrievalAugmentor.builder() // (2)
+        .contentRetriever(contentRetriever)
+        .build();
+  }
+
+  public String addKnowledge(String question) {
+    var chatMessage = new UserMessage(question); // (3)
+    var metadata = Metadata.from(chatMessage, null, null);
+    var augmentationRequest = new AugmentationRequest(chatMessage, metadata);
+
+    var result = retrievalAugmentor.augment(augmentationRequest); // (4)
+    UserMessage augmented = (UserMessage) contentInjector
+        .inject(result.contents(), chatMessage); // (5)
+    return augmented.singleText();
+  }
+
+}
+```
+
+| **1** | We use the RAG support from Langchain4j, which consist of a `ContentRetriever` |
+| **2** | and a `RetrievalAugmentor`. |
+| **3** | Create a request from the user question. |
+| **4** | Augment the request with relevant content. |
+| **5** | Construct the new user message that includes the retrieved content. |
+
+## <a href="about:blank#_use_the_knowledge_in_the_agent"></a> Use the knowledge in the agent
+
+[AskAkkaAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/ask-akka-agent/src/main/java/akka/ask/agent/application/AskAkkaAgent.java)
+```java
+@ComponentId("ask-akka-agent")
+@AgentDescription(name = "Ask Akka", description = "Expert in Akka")
+public class AskAkkaAgent extends Agent {
+  private final Knowledge knowledge;
+
+  private static final String SYSTEM_MESSAGE =
+      """
+      You are a very enthusiastic Akka representative who loves to help people!
+      Given the following sections from the Akka SDK documentation, answer the question
+      using only that information, outputted in markdown format.
+      If you are unsure and the text is not explicitly written in the documentation, say:
+      Sorry, I don't know how to help with that.
+      """.stripIndent(); // (1)
+
+  public AskAkkaAgent(Knowledge knowledge) { // (2)
+    this.knowledge = knowledge;
+  }
+
+  public StreamEffect ask(String question) {
+    var enrichedQuestion = knowledge.addKnowledge(question); // (3)
+
+    return streamEffects()
+        .systemMessage(SYSTEM_MESSAGE)
+        .userMessage(enrichedQuestion) // (4)
+        .thenReply();
+  }
+
+}
+```
+
+| **1** | System message including instructions about the included Akka documentation. |
+| **2** | Inject the `Knowledge`. |
+| **3** | Retrieve relevant content and augment the question. |
+| **4** | Use the question and retrieved content in the request to the LLM. |
+To be able to inject the `Knowledge` we need to add it to the `Bootstrap`:
 
 [Bootstrap.java](https://github.com/akka/akka-sdk/blob/main/samples/ask-akka-agent/src/main/java/akka/ask/Bootstrap.java)
 ```java
-if (cls.equals(AskAkkaAgent.class)) {
-  return (T) new AskAkkaAgent(componentClient, mongoClient);
-}
-```
+@Setup
+public class Bootstrap implements ServiceSetup {
 
-## [](about:blank#_creating_the_akka_agent_class) Creating the Akka Agent class
+  @Override
+  public DependencyProvider createDependencyProvider() {
+    MongoClient mongoClient = MongoClients.create(KeyUtils.readMongoDbUri());
 
-We know we’re going to be writing a utility that interacts with the LLM for us. Here the choice of how to accomplish this is far more subjective and based more on people’s Java preferences than their knowledge of Akka. In this case, we’ve opted to put the logic behind the `AskAkkaAgent` class and supporting utilities.
+    Knowledge knowledge = new Knowledge(mongoClient);
 
-The following is the basic shell of the class before we add RAG-specific code to it.
+    return new DependencyProvider() {
+      @Override
+      public <T> T getDependency(Class<T> cls) {
+        if (cls.equals(MongoClient.class)) {
+          return (T) mongoClient;
+        }
 
-[AskAkkaAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/ask-akka-agent/src/main/java/akka/ask/agent/application/AskAkkaAgent.java)
-```java
-public class AskAkkaAgent {
+        if (cls.equals(Knowledge.class)) {
+          return (T) knowledge;
+        }
 
-  private final static Logger logger = LoggerFactory.getLogger(AskAkkaAgent.class);
-  private final ComponentClient componentClient;
-  private final MongoClient mongoClient;
-
-  private final String sysMessage = """
-      You are a very enthusiastic Akka representative who loves to help people!
-      Given the following sections from the Akka SDK documentation, answer the question using only that information, outputted in markdown format.
-      If you are unsure and the text is not explicitly written in the documentation, say:
-      Sorry, I don't know how to help with that.
-      """; // (1)
-
-  // this langchain4j Assistant emits the response as a stream
-  // check AkkaStreamUtils.toAkkaSource to see how this stream is converted to an
-  // Akka Source
-  interface Assistant {
-    TokenStream chat(String message);
-  }
-
-  public AskAkkaAgent(ComponentClient componentClient, MongoClient mongoClient) { // (2)
-    this.componentClient = componentClient;
-    this.mongoClient = mongoClient;
-
-  }
-
-  private CompletionStage<Done> addExchange(String compositeEntityId,
-      SessionEntity.Exchange conversation) { // (3)
-    return componentClient
-        .forEventSourcedEntity(compositeEntityId)
-        .method(SessionEntity::addExchange)
-        .invokeAsync(conversation);
-  }
-
-  /**
-   * Fetches the history of the conversation for a given sessionId.
-   */
-  private List<ChatMessage> fetchHistory(String entityId) {
-    var messages = componentClient
-        .forEventSourcedEntity(entityId)
-        .method(SessionEntity::getHistory).invoke();
-    return messages.messages().stream().map(this::toChatMessage).toList();
-  }
-
-  private ChatMessage toChatMessage(SessionEntity.Message msg) {
-    return switch (msg.type()) {
-      case AI -> new AiMessage(msg.content());
-      case USER -> new UserMessage(msg.content());
+        return null;
+      }
     };
   }
-
 }
 ```
 
-| **  1** | This is the*  system prompt*   . This will be sent along with context and history for each LLM call |
-| **  2** | The `MongoClient`   instance will be injected by the boot strap setup class |
-| **  3** | This function gets called after each LLM output stream finishes |
+## <a href="about:blank#_running_the_service"></a> Running the service
 
-Next we add the `createAssistant` method. This is almost entirely made up of `langchain4j` code and not specific to Akka. The purpose of this function is to use langchain4j’s `AiServices` builder class to set up retrieval augmentation (MongoDB) and the chat model (Open AI).
+Start your service locally:
 
-[AskAkkaAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/ask-akka-agent/src/main/java/akka/ask/agent/application/AskAkkaAgent.java)
-```java
-private Assistant createAssistant(String sessionId, List<ChatMessage> messages) {
+```command
+mvn compile exec:java
+```
+In another shell, you can now use `curl` to send requests to this Endpoint.
 
-  var chatLanguageModel = OpenAiUtils.streamingChatModel();
+```command
+curl localhost:9000/api/ask --header "Content-Type: application/json" -XPOST \
+--data '{ "userId": "001", "sessionId": "foo", "question":"What are the core components of Akka?"}'
+```
+In the first part of this guide, the AI model couldn’t answer that question meaningfully, but now it will answer something like:
 
-  var contentRetriever = EmbeddingStoreContentRetriever.builder()
-      .embeddingStore(MongoDbUtils.embeddingStore(mongoClient))
-      .embeddingModel(OpenAiUtils.embeddingModel()) // (1)
-      .maxResults// (10)
-      .minScore(0.1)
-      .build();
-
-  var retrievalAugmentor = DefaultRetrievalAugmentor.builder()
-      .contentRetriever(contentRetriever)
-      .build();
-
-  var chatMemoryStore = new InMemoryChatMemoryStore();
-  chatMemoryStore.updateMessages(sessionId, messages); // (2)
-
-  var chatMemory = MessageWindowChatMemory.builder()
-      .maxMessages// (2000)
-      .chatMemoryStore(chatMemoryStore)
-      .build();
-
-  return AiServices.builder(Assistant.class)
-      .streamingChatLanguageModel(chatLanguageModel)
-      .chatMemory(chatMemory)
-      .retrievalAugmentor(retrievalAugmentor)
-      .systemMessageProvider(__ -> sysMessage)
-      .build(); // (3)
-}
-
-/**
- * The 'ask' method takes the user question run it through the RAG agent and
- * returns the response as a stream.
- */
-public Source<StreamedResponse, NotUsed> ask(String userId, String sessionId, String userQuestion) {
-
-  // we want the SessionEntity id to be unique for each user session,
-  // therefore we use a composite key of userId and sessionId
-  var compositeEntityId = userId + ":" + sessionId;
-
-  // we fetch the history (if any) and create the assistant
-  var messages = fetchHistory(sessionId);
-  var assistant = createAssistant(sessionId, messages);
-
-  // below we take the assistant future and build a Source to stream out the
-  // response
-  return AkkaStreamUtils.toAkkaSource(assistant.chat(userQuestion))
-      .mapAsync(1, res -> {
-
-        if (res.finished()) {// is the last message?
-          logger.debug("Exchange finished. Total input tokens {}, total output tokens {}", res.inputTokens(),
-              res.outputTokens());
-
-          // when we have a finished response, we are ready to save the exchange to the
-          // SessionEntity
-          // note that the exchange is saved atomically in a single command
-          // since the pair question/answer belong together
-          var exchange = new SessionEntity.Exchange(
-              userId,
-              sessionId,
-              userQuestion, res.inputTokens(),
-              res.content(), res.outputTokens()); // (4)
-
-          // since the full response has already been streamed,
-          // the last message can be transformed to an empty message
-          return addExchange(compositeEntityId, exchange)
-              .thenApply(__ -> StreamedResponse.empty());
-        } else {
-          logger.debug("partial message '{}'", res.content());
-          // other messages are streamed out to the caller
-          // (those are the responseTokensCount emitted by the llm)
-          return CompletableFuture.completedFuture(res); // (5)
-        }
-      });
-}
+```none
+1. Event Sourced Entities ...
+2. Key Value Entities ...
+3. HTTP Endpoints ...
+...
 ```
 
-| **  1** | Use the Open AI embedding model with MongoDB Atlas as the embedding store |
-| **  2** | Set the message history for this instance |
-| **  3** | Plug everything together using `AiServices`   from langchain4j |
-| **  4** | We’ve received the full output stream from the LLM, so tell the session entity about it |
-| **  5** | This is just a part of the stream so keep streaming to the original caller |
+## <a href="about:blank#_next_steps"></a> Next steps
 
-Next we need a utility to form a bridge between langchain4j and Akka.
+Next we’ll create [UI endpoints](endpoints.html).
 
-## [](about:blank#_creating_a_streaming_source) Creating a streaming source
+<!-- <footer> -->
 
-In the preceding code, we call `AkkaStreamUtils.toAkkaSource` on the result of `assistant.chat(userQuestion)` . This is a utility method that converts the stream of tokens returned by langchain4j’s `chat` method into an Akka stream *source* . We do that so that any endpoint component (shown in the next guide) can stream meaningful results. The tokens get converted into meaningful results via an asynchronous *map*.
+<!-- </footer> -->
 
-The code for this method delves into a bit of advanced Akka code in order to create a stream from a langchain4j object, but it’s only a few lines of code without comments.
+<!-- <aside> -->
 
-[AkkaStreamUtils.java](https://github.com/akka/akka-sdk/blob/main/samples/ask-akka-agent/src/main/java/akka/ask/agent/application/AkkaStreamUtils.java)
-```java
-public static Source<StreamedResponse, NotUsed> toAkkaSource(TokenStream tokenStream) { // (1)
-  return Source
-      .<StreamedResponse>queue// (10000) // (2)
-      .mapMaterializedValue(queue -> {
-        // responseTokensCount emitted by tokenStream are passed to the queue
-        // that ultimately feeds the Akka Source
-        tokenStream
-            // the partial responses are the tokens that are streamed out as the response
-            .onPartialResponse(msg -> queue.offer(StreamedResponse.partial(msg))) // (3)
-            // on completion, we receive a ChatResponse that contains the full response text
-            // + token usage
-            // we emit this last message so we can easily add it to the SessionEntity and
-            // store the exchange
-            .onCompleteResponse(res -> {
-              queue.offer(
-                  StreamedResponse.lastMessage(
-                      res.aiMessage().text(),
-                      res.tokenUsage().inputTokenCount(),
-                      res.tokenUsage().outputTokenCount())); // (4)
-              queue.complete();
-            })
-            .onError(queue::fail)
-            .start();
-
-        return NotUsed.getInstance();
-      });
-}
-```
-
-| **  1** | Input is a langchain4j token stream, output is an Akka stream source |
-| **  2** | `Source.queue`   builds a new source backed by a queue, this one has a max length of 10,000 |
-| **  3** | If we get tokens before we finish, we add them to the stream (via `offer`   ) |
-| **  4** | If the token stream is finished, then we `offer`   and then `complete` |
-
-## [](about:blank#_next_steps) Next steps
-
-Next we’ll create streaming endpoints that provide clients with real-time access to LLM output.
-
-|  | **  Coming soon!**   We are actively working on building and vetting this content. We will announce more content as it arrives. |
-
-
-
-<-footer->
-
-
-<-nav->
-[Knowledge indexing with a workflow](indexer.html) [Operating - Self-managed nodes](../../self-managed/index.html)
-
-</-nav->
-
-
-</-footer->
-
-
-<-aside->
-
-
-</-aside->
+<!-- </aside> -->

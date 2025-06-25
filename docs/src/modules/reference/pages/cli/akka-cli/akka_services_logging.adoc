@@ -1,6 +1,6 @@
 = akka services logging
 
-Change the log level configration of a service.
+Change the log level configuration of a service.
 
 == Options
 

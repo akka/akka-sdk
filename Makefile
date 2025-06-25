@@ -44,7 +44,7 @@ attributes: prepare
 		> "${managed_partials}/attributes.adoc"
 	docs/bin/version.sh | xargs -0  printf ":akka-javasdk-version: %s" \
 		> "${managed_partials}/attributes.adoc"
-	echo ":akka-cli-version: 3.0.20" >> "${managed_partials}/attributes.adoc"
+	echo ":akka-cli-version: 3.0.22" >> "${managed_partials}/attributes.adoc"
 	echo ":akka-cli-min-version: 3.0.4" >> "${managed_partials}/attributes.adoc"
 	# see https://adoptium.net/marketplace/
 	echo ":java-version: 21" \
@@ -66,6 +66,7 @@ apidocs: prepare
 examples: prepare
 	mkdir -p "${java_managed_examples}"
 	rsync -a --exclude-from=docs/.examplesignore samples/* "${java_managed_examples}/"
+	rsync -a akka-javasdk/src/main/resources "${java_managed_examples}/"
 
 bundles:
 	./docs/bin/bundle.sh --zip "${java_managed_attachments}/shopping-cart-quickstart.zip" samples/shopping-cart-quickstart

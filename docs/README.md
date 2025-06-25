@@ -47,6 +47,12 @@ Example path:
 open ../target/site/index.html
 ```
 
+## Maintaining `llms.txt` for AI coding assistants
+
+To help AI coding assistants like Cursor and Qodo make use of the documentation, we publish the docs in a markdown format that is easier to process. The index file is published to https://doc.akka.io/llms.txt.
+
+When documentation pages are added, renamed or removed, it’s good practice to update the `llms.txt` [source file](https://github.com/akka/akka-sdk/blob/main/docs/src/modules/ROOT/pages/llms.txt) accordingly.
+
 ## Deploying the docs
 
 ### Deploying Work In Progress (WIP) to doc.akka.io/snapshots
@@ -60,3 +66,7 @@ The WIP documentation will be published and available for viewing at [https://do
 The [`antora-ui-default`](https://github.com/lightbend/antora-ui-default) repository contains the source files used to build the `akka-theme-ui-002-bundle.zip` bundle. This repository is based on the [Antora Default UI](https://gitlab.com/antora/antora-ui-default) and has been customized for Akka documentation needs.  
 
 To modify or extend the theme, clone the [`antora-ui-default`](https://github.com/lightbend/antora-ui-default) repository, make the necessary changes, and build a new bundle.
+
+## Graphical assets
+
+The [akka-graphical-design-and-images](https://github.com/lightbend/akka-graphical-design-and-images) repository stores diagrams, icons, and other visual assets used in the documentation. It enables collaboration on editable source files (e.g. SVG, Illustrator) and to make future updates easier.

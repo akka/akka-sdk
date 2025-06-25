@@ -8,14 +8,14 @@ import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.view.View;
 
-@ComponentId("summary_customer_by_name")
+@ComponentId("customer-summary-by-name")
 public class CustomerSummaryByName extends View {
 
   public record CustomerSummary(String id, String name) { }
 
   // tag::delete[]
   @Consume.FromKeyValueEntity(value = CustomerEntity.class)
-  public static class Customers extends TableUpdater<CustomerSummary> { // <1>
+  public static class CustomersUpdater extends TableUpdater<CustomerSummary> { // <1>
     public Effect<CustomerSummary> onUpdate(Customer customer) {
       return effects()
           .updateRow(new CustomerSummary(updateContext().eventSubject().get(), customer.name()));

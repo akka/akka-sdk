@@ -19,6 +19,7 @@
 - [Architecture model](https://doc.akka.io/concepts/architecture-model.html.md): Key architectural patterns and principles used in Akka.
 - [Developing](https://doc.akka.io/java/index.html.md): Overview of the development process with the Akka SDK.
 - [Components](https://doc.akka.io/java/components/index.html.md): Introduction to Akka's core building blocks and their usage.
+- [Implementing Agents](https://doc.akka.io/java/agents.html.md): How to create agents that interact with an AI model.
 - [Implementing Event Sourced Entities](https://doc.akka.io/java/event-sourced-entities.html.md): How to create entities that store their state as a sequence of events.
 - [Implementing Key Value Entities](https://doc.akka.io/java/key-value-entities.html.md): Guide to implementing entities that store their state directly.
 - [Implementing Workflows](https://doc.akka.io/java/workflows.html.md): Creating and managing long-running business processes with Akka workflows.
@@ -26,6 +27,7 @@
 - [Implementing Views](https://doc.akka.io/java/views.html.md): Building read-optimized projections of your entity data.
 - [Designing HTTP Endpoints](https://doc.akka.io/java/http-endpoints.html.md): Creating REST APIs with Akka's HTTP endpoints.
 - [Designing gRPC Endpoints](https://doc.akka.io/java/grpc-endpoints.html.md): Building high-performance APIs with gRPC support.
+- [Designing MCP Endpoints](https://doc.akka.io/java/mcp-endpoints.html.md): MCP Endpoints allow you to expose a services to MCP clients such as LLM chat agent desktop applications and agents running on other services.
 - [Timers](https://doc.akka.io/java/timed-actions.html.md): Implementing scheduled and delayed actions in Akka services.
 - [Declarative effects](https://doc.akka.io/concepts/declarative-effects.html.md): Understanding how Akka's effect system enables composable, testable side effects.
 - [Component and service calls](https://doc.akka.io/java/component-and-service-calls.html.md): Making calls between components and to external services.
@@ -33,17 +35,17 @@
 - [Setup and configuration](https://doc.akka.io/java/setup-and-configuration/index.html.md): Configuring and initializing Akka services.
 - [Setup and dependency injection](https://doc.akka.io/java/setup-and-dependency-injection.html.md): Integrating dependency injection with Akka services.
 - [Serialization](https://doc.akka.io/java/serialization.html.md): Configuring and customizing serialization for entity data and messages.
+- [Retrieval-Augmented Generation (RAG)](https://doc.akka.io/java/rag.html.md): Performing semantic search on a vector database to find relevant content and enrich the request to the AI model.
 
 ## Tutorials
 
-- [Author your first Akka service](https://doc.akka.io/java/author-your-first-service.html.md): Step-by-step guide to creating your first complete Akka service from scratch.
-- [Shopping Cart](https://doc.akka.io/java/shopping-cart/index.html.md): Overview of the shopping cart tutorial series that demonstrates core Akka SDK concepts.
-- [Shopping Cart - Quickstart](https://doc.akka.io/java/shopping-cart/quickstart.html.md): Get a shopping cart application up and running with event sourced entities.
-- [Shopping Cart - Adding a view](https://doc.akka.io/java/shopping-cart/addview.html.md): Extending the shopping cart application with a read-optimized view.
-- [AI RAG Agent](https://doc.akka.io/java/ask-akka/index.html.md): Introduction to building a Retrieval Augmented Generation (RAG) agent with Akka.
-- [AI RAG Agent - Knowledge indexing with a workflow](https://doc.akka.io/java/ask-akka/indexer.html.md): Implementing the knowledge indexing process for a RAG agent using Akka workflows.
-- [AI RAG Agent - Modeling the agent session](https://doc.akka.io/java/ask-akka/session.html.md): Creating a stateful, conversational AI agent using event sourced entities.
-- [AI RAG Agent - Executing RAG queries](https://doc.akka.io/java/ask-akka/rag.html.md): Performing contextual information retrieval and generating responses with a large language model.
+- [Author your first agentic service](https://doc.akka.io/getting-started/author-your-first-service.html.md): Step-by-step guide to creating your first agentic Akka service from scratch.
+- [AI RAG Agent](https://doc.akka.io/getting-started/ask-akka-agent.html.md): Introduction to building a Retrieval Augmented Generation (RAG) agent with Akka.
+- [AI RAG Agent - Knowledge indexing with a workflow](https://doc.akka.io/getting-started/indexer.html.md): Implementing the knowledge indexing process for a RAG agent using Akka workflows.
+- [AI RAG Agent - Executing RAG queries](https://doc.akka.io/getting-started/rag.html.md): Performing contextual information retrieval and generating responses with a large language model.
+- [AI RAG Agent - Adding UI endpoints](https://doc.akka.io/getting-started/endpoints.html.md): Add some endpoints to provide a client-friendly API in front of all of the RAG components.
+- [Shopping Cart - Quickstart](https://doc.akka.io/getting-started/build-and-deploy-shopping-cart.html.md): Get a shopping cart application up and running with event sourced entities.
+- [Shopping Cart - Adding a view](https://doc.akka.io/getting-started/addview.html.md): Extending the shopping cart application with a read-optimized view.
 
 ## Optional
 
@@ -100,11 +102,18 @@
 
 ### Examples
 
-- [ask-akka-agent](https://raw.githubusercontent.com/akka-samples/ask-akka-agent/refs/heads/main/README.md) AI agent that creates personalized travel itineraries. Illustrates reliable interaction with a LLM using Langchain4J and a workflow. Entities are used for durable state of user preferences and generated trips.
-- [medical-tagging-agent](https://raw.githubusercontent.com/akka-samples/medical-tagging-agent/refs/heads/main/README.md) AI agent that leverages a LLM to process medical discharge summaries and assign tags, while also enabling human verification and comparative analysis. Interactions with OpenAI LLM using the OpenAI Java SDK and a workflow.
-- [changelog-agent](https://raw.githubusercontent.com/akka-samples/changelog-agent/refs/heads/main/README.md) AI agent that creates release notes summaries, every time there is a release from set up GitHub repositories. Interactions with Anthropic Claude is using the Anthropic Java SDK. Using tools to retrieve detailed information from GitHub. Entities are used for storing release summaries. Timed action looks for new releases periodically and creates the summary using the LLM.
-- [shopping-cart](https://raw.githubusercontent.com/akka-samples/shopping-cart-quickstart/refs/heads/main/README.md) Build a shopping cart
-- [customer-registry](https://raw.githubusercontent.com/akka-samples/event-sourced-customer-registry/refs/heads/main/README.md) A customer registry with query capabilities
-- [transfer-workflow](https://raw.githubusercontent.com/akka-samples/transfer-workflow-compensation/refs/heads/main/README.md) A funds transfer workflow between two wallets
-- [choreography-saga](https://raw.githubusercontent.com/akka-samples/choreography-saga-quickstart/refs/heads/main/README.md) A user registration service implemented as a Choreography Saga
-- [akka-chess](https://raw.githubusercontent.com/akka-samples/akka-chess/refs/heads/main/README.md) Akka Chess is a sample application that illustrates building a complete, resilient, automatically scalable, event-sourced application using the Akka SDK.
+- [helloworld-agent](https://raw.githubusercontent.com/akka-samples/helloworld-agent/refs/heads/main/README.md): Uses an agent and LLM to generate greetings in different languages. It illustrates how the agent maintains contextual history in a session memory.
+- [ask-akka-agent](https://raw.githubusercontent.com/akka-samples/ask-akka-agent/refs/heads/main/README.md): Illustrates how to create embeddings for vector databases, how to consume LLMs and maintain conversation history, use RAG to add knowledge to fixed LLMs, and expose it all as a streaming service. It uses MongoDB Atlas and OpenAI.
+- [travel-agent](https://raw.githubusercontent.com/akka-samples/travel-agent/refs/heads/main/README.md): AI agent that creates personalized travel itineraries. Illustrates reliable interaction with an LLM using a workflow. Entities are used for durable state of user preferences and generated trips.
+- [temperature-monitoring-agent](https://raw.githubusercontent.com/akka-samples/temperature-monitoring-agent/refs/heads/main/README.md): A temperature monitoring system that collects, aggregates, and analyzes temperature data from IoT sensors. The system uses AI to generate insights about temperature trends and anomalies across different locations. Collects and aggregates temperature data using Key Value Entities. Agent using OpenAI LLM to analyze temperature patterns and detect anomalies.
+- [medical-tagging-agent](https://raw.githubusercontent.com/akka-samples/medical-tagging-agent/refs/heads/main/README.md): AI agent that leverages an LLM to process medical discharge summaries and assign tags, while also enabling human verification and comparative analysis. Interactions from a workflow with an agent using OpenAI LLM.
+- [changelog-agent](https://raw.githubusercontent.com/akka-samples/changelog-agent/refs/heads/main/README.md): AI agent that creates release notes summaries, every time there is a release from set up GitHub repositories. Interactions with Anthropic Claude from an agent and using tools to retrieve detailed information from GitHub. Entities are used for storing release summaries. Timed action looks for new releases periodically and creates the summary using the LLM.
+- [real-estate-cs-agent](https://raw.githubusercontent.com/akka-samples/real-estate-cs-agent/refs/heads/main/README.md): The real-estate customer service agent is demonstrating how to combine Akka features with an LLM model. It illustrates an agentic workflow for customer service. It processes incoming real-estate inquiries, analyzes the content to extract details, provides follow-up when needed and saves the collected information for future reference.
+- [trip-agent](https://raw.githubusercontent.com/akka-samples/trip-agent/refs/heads/main/README.md): This app represents an agency that searches for flights and accommodations. It's composed by an LLM (Anthropic) using Spring AI and tools to find flights, accommodations and sending mails.
+- [multi-agent](https://raw.githubusercontent.com/akka-samples/multi-agent/refs/heads/main/README.md): Demonstrating how to build a multi-agent system using Akka and an LLM model. A workflow manages the user query process, handling the sequential steps of agent selection, plan creation, execution, and summarization.
+- [healthcare-agent](https://raw.githubusercontent.com/akka-samples/healthcare-agent/refs/heads/main/README.md): AI agent that uses an LLM to analyze data from fitness trackers, medical records and other sensors. Integration with Fitbit and MongoDB Atlas.
+- [shopping-cart](https://raw.githubusercontent.com/akka-samples/shopping-cart-quickstart/refs/heads/main/README.md): Build a shopping cart
+- [customer-registry](https://raw.githubusercontent.com/akka-samples/event-sourced-customer-registry/refs/heads/main/README.md): A customer registry with query capabilities
+- [transfer-workflow](https://raw.githubusercontent.com/akka-samples/transfer-workflow-compensation/refs/heads/main/README.md): A funds transfer workflow between two wallets
+- [choreography-saga](https://raw.githubusercontent.com/akka-samples/choreography-saga-quickstart/refs/heads/main/README.md): A user registration service implemented as a Choreography Saga
+- [akka-chess](https://raw.githubusercontent.com/akka-samples/akka-chess/refs/heads/main/README.md): Akka Chess is a sample application that illustrates building a complete, resilient, automatically scalable, event-sourced application using the Akka SDK.

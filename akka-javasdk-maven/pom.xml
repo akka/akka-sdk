@@ -5,7 +5,7 @@
 
   <groupId>io.akka</groupId>
   <artifactId>akka-javasdk-maven</artifactId>
-  <version>3.3.2</version>
+  <version>3.4.0</version>
   <packaging>pom</packaging>
 
   <name>Akka SDK for Java Maven</name>
@@ -134,6 +134,5 @@
 
   <modules>
     <module>akka-javasdk-parent</module>
-    <module>akka-javasdk-archetype</module>
   </modules>
 </project>

@@ -22,7 +22,7 @@ At the center is the _Domain Model_ which encapsulates your business logic. The 
 [#_application_layer]
 ==== Application
 
-The middle layer is the _Application layer_. This layer uses the domain model and coordinates domain objects. This layer is where your Akka components will live. In this sense, an Akka Component acts as the glue between your domain model and the Akka runtime. This package should be called `application` and only contains Akka components like Entities and Views.
+The middle layer is the _Application layer_. This layer uses the domain model and coordinates domain objects. This layer is where your Akka components will live. In this sense, an Akka Component acts as the glue between your domain model and the Akka runtime. This package should be called `application` and only contains Akka components like Agents, Entities and Views.
 
 ==== API
 
@@ -44,7 +44,7 @@ Much of the inner loop of the developer experience will be spent here. Using Jav
 
 The application layer is where Akka becomes a first class participant as the glue between your domain code and the runtime. Most classes in this layer will extend an Akka component class (e.g., within the `akka.javasdk` package), making them event-based and actor-based behind the scenes, while abstracting those details from you.
 
-These components include xref:java:event-sourced-entities.adoc[Event Sourced Entities], xref:java:key-value-entities.adoc[Key Value Entities],  xref:java:views.adoc[Views], xref:java:workflows.adoc[Workflows], xref:java:timed-actions.adoc[Timers] and xref:java:consuming-producing.adoc[Consumers]. Each component type provides specific functionalities to handle state, events, and interactions efficiently.
+These components include xref:java:agents.adoc[Agents], xref:java:event-sourced-entities.adoc[Event Sourced Entities], xref:java:key-value-entities.adoc[Key Value Entities],  xref:java:views.adoc[Views], xref:java:workflows.adoc[Workflows], xref:java:timed-actions.adoc[Timers] and xref:java:consuming-producing.adoc[Consumers]. Each component type provides specific functionalities to handle state, events, and interactions efficiently.
 
 === API
 
@@ -64,6 +64,10 @@ The API layer also uses other annotations to xref:java:access-control.adoc[contr
 You use xref:reference:glossary.adoc#component[Akka _Components_] to build your application. These Components are crucial for ensuring responsiveness. Here is a brief overview of each. Except endpoints, Akka components will live in your `application` package.
 
 Akka components are marked with a `@ComponentId` or `@HttpEndpoint` annotation to identify them to the runtime.
+
+=== Agents
+
+image:ROOT:agent.png[Agent,width=100,float=left]An _Agent_ interacts with an AI model to perform a specific task. It is typically backed by a large language model (LLM). It maintains contextual history in a session memory, which may be shared between multiple agents that are collaborating on the same goal. It may provide function tools and call them as requested by the model.
 
 === Entities
 

@@ -1,9 +1,0 @@
-= Support
-
-include::ROOT:partial$include.adoc[]
-
-Reach out to our support team through the support dialog in the https://console.akka.io/support[Akka console].
-
-* https://console.akka.io/support[Akka console, support]
-* xref:support:platform-status.adoc[]
-* xref:support:request-a-demo.adoc[]

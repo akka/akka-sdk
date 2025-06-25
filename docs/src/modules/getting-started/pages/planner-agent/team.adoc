@@ -1,0 +1,94 @@
+= AI Planner Part 4: Orchestrate the agents
+
+include::ROOT:partial$include.adoc[]
+
+include::ROOT:partial$new-to-akka-start-here.adoc[]
+
+== Overview
+
+We have two agents, the `ActivityAgent` and the `WeatherAgent`. We could make a request to the `WeatherAgent` from the endpoint before calling the `ActivityAgent` but a better approach is to introduce a workflow that orchestrates the calls between the agents.
+
+In this part of the guide you will:
+
+* Create a workflow that calls the agents
+* Adjust the endpoint to use the workflow
+
+== Prerequisites
+
+include::ROOT:partial$local-dev-prerequisites.adoc[]
+* https://platform.openai.com/api-keys[OpenAI API key, window="new"]
+
+== Orchestrate the agents
+
+Agents make external calls to the AI model and possibly other services, and therefore it is important to have solid error handling and durable execution steps when calling agents. In many cases it is a good recommendation to call agents from a workflow. The workflow will automatically execute the steps in a reliable and durable way. This means that if a call in a step fails, it will be retried until it succeeds or the retry limit of the recovery strategy is reached and separate error handling can be performed. The state machine of the workflow is durable, which means that if the workflow is restarted for some reason it will continue from where it left off, i.e. execute the current non-completed step again.
+
+Our workflow should first retrieve the weather forecast and then find suitable activities. Add a new file `AgentTeamWorkflow.java` to `src/main/java/com/example/application/`
+
+[source,java]
+.AgentTeamWorkflow.java
+----
+include::java:example$doc-snippets/src/main/java/agent_guide/part4/AgentTeamWorkflow.java[tag=class]
+----
+<1> The workflow starts, and keeps track of the user id and original query in the state of the workflow.
+<2> First step is for the weather forecast.
+<3> Weather forecast is retrieved by the `WeatherAgent`, which must extract the location from the user query.
+<4> Next step is to find activities.
+<5> Request to the `ActivityAgent`.
+<6> The final result is stored in the workflow state.
+
+You might have noticed that we don't pass the forecast as a parameter to the `ActivityAgent`. How would it then know about the weather? The `WeatherAgent` and `Activity agents share the same session memory and thereby the `ActivityAgent` will have the weather forecast in the context that is sent to the AI model.
+
+== Adjust the endpoint
+
+Let's modify the endpoint to use the `AgentTeamWorkflow` workflow instead of calling the agent directly.
+
+[source,java]
+.ActivityEndpoint.java
+----
+include::java:example$doc-snippets/src/main/java/agent_guide/part4/ActivityEndpoint.java[tag=workflow]
+----
+<1> Spawn the workflow by calling the `start` method.
+<2> Since the workflow is running in the background we can't wait for the final answer, but instead reply with a HTTP `CREATED` status code.
+
+This is returning `akka.http.javadsl.model.HttpResponse`, which is created with `akka.javasdk.http.HttpResponses`.
+
+We need another method to retrieve the actual answer:
+
+[source,java]
+.ActivityEndpoint.java
+----
+include::java:example$doc-snippets/src/main/java/agent_guide/part4/ActivityEndpoint.java[tag=get]
+----
+
+== Running the service
+
+Start your service locally:
+
+[source,command line]
+----
+mvn compile exec:java
+----
+
+Ask for activities.
+
+[source, command line]
+----
+curl -i -XPOST --location "http://localhost:9000/activities/alice" \
+  --header "Content-Type: application/json" \
+  --data '{"message": "I am in Madrid. What should I do?"}'
+----
+
+Retrieve the suggested activities with the `sessionId` from the previous response:
+
+[source, command line]
+----
+curl -i -XGET --location "http://localhost:9000/activities/alice/{sessionId}"
+----
+
+Does it take the current weather forecast into account? You should see the `Weather forecast` in the logs of the service.
+
+== Next steps
+
+* It would be nice to see all previous suggestions for a user. Continue with > xref:planner-agent/list.adoc[Part 5: List by user]
+* Learn more about the xref:java:workflows.adoc[`Workflow` component].
+

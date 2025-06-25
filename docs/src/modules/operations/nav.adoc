@@ -1,47 +1,49 @@
 // Operating Services
 
-** xref:operations:index.adoc[]
+** xref:operations:index.adoc[Operating]
+*** xref:operations:configuring.adoc[Self-managed operations]
+*** xref:operations:akka-platform.adoc[Akka Automated Operations]
+
+**** xref:operations:organizations/index.adoc[]
+***** xref:operations:organizations/manage-users.adoc[Manage users]
+***** xref:operations:organizations/regions.adoc[]
+***** xref:operations:organizations/billing.adoc[]
+
+**** xref:operations:projects/index.adoc[]
+***** xref:operations:projects/create-project.adoc[Create]
+***** xref:operations:projects/manage-project-access.adoc[Manage users]
+***** xref:operations:projects/container-registries.adoc[]
+****** xref:operations:projects/external-container-registries.adoc[]
+***** xref:operations:projects/message-brokers.adoc[]
+****** xref:operations:projects/broker-google-pubsub.adoc[Google Pub/Sub]
+****** xref:operations:projects/broker-confluent.adoc[Confluent Cloud]
+****** xref:operations:projects/broker-aws-msk.adoc[AWS MSK Kafka]
+****** xref:operations:projects/broker-aiven.adoc[Aiven for Kafka]
+***** xref:operations:projects/secrets.adoc[]
+
+**** xref:operations:services/index.adoc[]
+***** xref:operations:services/deploy-service.adoc[]
+***** xref:operations:services/invoke-service.adoc[]
+***** xref:operations:services/view-data.adoc[]
+***** xref:operations:services/data-management.adoc[]
+
+**** xref:operations:regions/index.adoc[]
+
+**** xref:operations:tls-certificates.adoc[]
+
+**** xref:operations:observability-and-monitoring/index.adoc[]
+***** xref:operations:observability-and-monitoring/view-logs.adoc[]
+***** xref:operations:observability-and-monitoring/metrics.adoc[]
+***** xref:operations:observability-and-monitoring/traces.adoc[]
+***** xref:operations:observability-and-monitoring/observability-exports.adoc[]
+
+**** xref:operations:integrating-cicd/index.adoc[]
+***** xref:operations:integrating-cicd/github-actions.adoc[]
+
+**** xref:operations:cli/index.adoc[]
+***** xref:operations:cli/installation.adoc[]
+***** xref:operations:cli/using-cli.adoc[]
+***** xref:operations:cli/command-completion.adoc[]
 
 *** xref:operations:platform-features.adoc[]
-
-*** xref:operations:organizations/index.adoc[]
-**** xref:operations:organizations/manage-users.adoc[Manage users]
-**** xref:operations:organizations/regions.adoc[]
-**** xref:operations:organizations/billing.adoc[]
-
-
-*** xref:operations:projects/index.adoc[]
-**** xref:operations:projects/create-project.adoc[Create]
-**** xref:operations:projects/manage-project-access.adoc[Manage users]
-**** xref:operations:projects/container-registries.adoc[]
-***** xref:operations:projects/external-container-registries.adoc[]
-**** xref:operations:projects/message-brokers.adoc[]
-***** xref:operations:projects/broker-google-pubsub.adoc[Google Pub/Sub]
-***** xref:operations:projects/broker-confluent.adoc[Confluent Cloud]
-***** xref:operations:projects/broker-aws-msk.adoc[AWS MSK Kafka]
-***** xref:operations:projects/broker-aiven.adoc[Aiven for Kafka]
-**** xref:operations:projects/secrets.adoc[]
-
-*** xref:operations:services/index.adoc[]
-**** xref:operations:services/deploy-service.adoc[]
-**** xref:operations:services/invoke-service.adoc[]
-**** xref:operations:services/view-data.adoc[]
-**** xref:operations:services/data-management.adoc[]
-
-*** xref:operations:regions/index.adoc[]
-
-*** xref:operations:observability-and-monitoring/index.adoc[]
-**** xref:operations:observability-and-monitoring/view-logs.adoc[]
-**** xref:operations:observability-and-monitoring/metrics.adoc[]
-**** xref:operations:observability-and-monitoring/traces.adoc[]
-**** xref:operations:observability-and-monitoring/observability-exports.adoc[]
-
-*** xref:operations:integrating-cicd/index.adoc[]
-**** xref:operations:integrating-cicd/github-actions.adoc[]
-
 *** xref:operations:operator-best-practices.adoc[]
-
-*** xref:operations:cli/index.adoc[]
-**** xref:operations:cli/installation.adoc[]
-**** xref:operations:cli/using-cli.adoc[]
-**** xref:operations:cli/command-completion.adoc[]
