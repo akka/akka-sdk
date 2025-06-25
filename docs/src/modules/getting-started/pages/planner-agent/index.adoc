@@ -6,7 +6,7 @@ include::ROOT:partial$new-to-akka-start-here.adoc[]
 
 == Overview
 
-This guide starts with creating an agent that suggests real-world activities. We will incorporate more components in the next steps.
+This guide starts with creating an agent that suggests real-world activities. We will incorporate more components in the next parts of the guide, and at the end we will have a multi-agent system with dynamic planning and orchestration capabilities.
 
 In this part of the guide you will:
 
@@ -102,5 +102,6 @@ guided walking tour through lively neighborhoods such as Malasaña and Chueca.
 
 == Next steps
 
-To make the activity suggestions more personalized, we will add user preferences that the `ActivityAgent` will use. Continue with xref:planner-agent/preferences.adoc[Part 2: User preferences].
+* To make the activity suggestions more personalized, we will add user preferences that the `ActivityAgent` will use. Continue with xref:planner-agent/preferences.adoc[Part 2: User preferences].
+* Learn more about the xref:java:agents.adoc[`Agent` component].
 

@@ -91,5 +91,6 @@ Does it take the current weather forecast into account? You should see the `Weat
 
 == Next steps
 
-It would be nice to see all previous suggestions for a user. Continue with > xref:planner-agent/list.adoc[Part 5: List by user]
+* It would be nice to see all previous suggestions for a user. Continue with > xref:planner-agent/list.adoc[Part 5: List by user]
+* Learn more about the xref:java:workflows.adoc[`Workflow` component].
 
