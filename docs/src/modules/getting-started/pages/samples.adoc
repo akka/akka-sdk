@@ -1,4 +1,4 @@
-= Samples
+= Additional Samples
 :page-aliases: java:samples.adoc
 include::ROOT:partial$include.adoc[]
 
@@ -6,100 +6,123 @@ include::ROOT:partial$new-to-akka-start-here.adoc[]
 
 Samples are available that demonstrate important patterns and abstractions. These can be cloned from their respective repositories. Please refer to the `README` file in each repository for setup and usage instructions.
 
-AI multi-agent system that suggests real-world activities::
+== Multi-agent AI activity suggestion system
 
-Demonstrating how to build a multi-agent system using Akka and an LLM model. A workflow manages the user query process, handling the sequential steps of agent selection, plan creation, execution, and summarization.
-+
+This sample demonstrates how to build a multi-agent system using Akka and an LLM model. A workflow manages the user query process, handling the sequential steps of agent selection, plan creation, execution, and summarization.
+
+[%hardbreaks]
+**Concepts**: _Agent_, _Workflow_, _Multi-agent_, _LLM_
+**Level**: _Intermediate_
 xref:getting-started:planner-agent/index.adoc[Step-by-step guide]
-+
-link:https://github.com/akka-samples/multi-agent[Github Repository, window="new"],
-Level: Intermediate
+link:https://github.com/akka-samples/multi-agent[Github Repository, window="new"]
 
-AI agent that performs a RAG workflow::
+== RAG workflow AI agent
 
-Illustrates how to create embeddings for vector databases, how to consume LLMs and maintain conversation history, use RAG to add knowledge to fixed LLMs, and expose it all as a streaming service. It uses MongoDB Atlas and OpenAI.
-+
+This sample illustrates how to create embeddings for vector databases, how to consume LLMs and maintain conversation history, use RAG to add knowledge to fixed LLMs, and expose it all as a streaming service. It uses MongoDB Atlas and OpenAI.
+
+[%hardbreaks]
+**Concepts**: _Agent_, _RAG_, _Vector database_
+**Level**: _Intermediate_
 xref:getting-started:ask-akka-agent/index.adoc[Step-by-step guide]
-+
-link:https://github.com/akka-samples/ask-akka-agent[Github Repository, window="new"],
-Level: Intermediate
+link:https://github.com/akka-samples/ask-akka-agent[Github Repository, window="new"]
 
+== Personalized travel itinerary creation agent
 
-AI agent that creates personalized travel itineraries::
+This sample illustrates reliable interaction with an LLM using a workflow. Entities are used for durable state of user preferences and generated trips.
 
-Illustrates reliable interaction with an LLM using a workflow. Entities are used for durable state of user preferences and generated trips.
-+
-link:https://github.com/akka-samples/travel-agent[Github Repository, window="new"],
-Level: Beginner
+[%hardbreaks]
+**Concepts**: _Agent_, _Agent Memory_, _Workflow_, _Entity_
+**Level**: _Beginniner_
+link:https://github.com/akka-samples/travel-agent[Github Repository, window="new"]
 
-AI agent that leverages an LLM to process medical discharge summaries::
+== Medical discharge summarizing agent
+This sample illustrate the use of LLMs and prompts to summarize activities. It assigns tags to the medical discharge summaries, while also enabling human verification and comparative analysis. Interactions are from a workflow with an agent using the OpenAI API with configurable model choice.
 
-It assigns tags to the summaries, while also enabling human verification and comparative analysis. Interactions from a workflow with an agent using OpenAI LLM.
-+
-link:https://github.com/akka-samples/medical-tagging-agent[Github Repository, window="new"], Level: Intermediate
+[%hardbreaks]
+**Concepts**: _Agent_, _Summarization_, _Workflow_, _Entity_, _OpenAI_, _Human in the loop_
+**Level**: _Intermediate_
+link:https://github.com/akka-samples/medical-tagging-agent[Github Repository, window="new"]
 
-Ai agent that monitors IoT sensors::
+== IoT sensor monitoring agent
+This sample is a temperature monitoring system that collects, aggregates, and analyzes temperature data from IoT sensors. The system uses AI to generate insights about temperature trends and anomalies across different locations. Collects and aggregates temperature data using Key Value Entities. OpenAI is used for anomaly and trend detection.
 
-A temperature monitoring system that collects, aggregates, and analyzes temperature data from IoT sensors. The system uses AI to generate insights about temperature trends and anomalies across different locations. Collects and aggregates temperature data using Key Value Entities. Agent using OpenAI LLM to analyze temperature patterns and detect anomalies.
+[%hardbreaks]
+**Concepts**: _Agent_, _IoT_, _Trend analysis_, _Anomaly detection_, _Entity_, _OpenAI_
+**Level**: _Intermediate_
+link:https://github.com/akka-samples/temperature-monitoring-agent[Github Repository, window="new"]
 
-link:https://github.com/akka-samples/temperature-monitoring-agent[Github Repository, window="new"], Level: Intermediate
+== Release note summary generation agent
+This sample is designed to run every time there is a release from configured GitHub repositories. It interacts with Anthropic Claude from an agent and uses tools to retrieve detailed information from GitHub. Entities are used for storing release summaries. A timed action looks for new releases periodically and creates the summary using the LLM.
 
-AI agent that creates release notes summaries::
+[%hardbreaks]
+**Concepts**: _Agent_, _Entity_, _Timed Action_, _Anthropic Claude_, _Tools_, _Summarization_
+**Level**: _Intermediate_
+link:https://github.com/akka-samples/changelog-agent[Github Repository, window="new"]
 
-Every time there is a release from set up GitHub repositories. Interactions with Anthropic Claude from an agent and using tools to retrieve detailed information from GitHub. Entities are used for storing release summaries. Timed action looks for new releases periodically and creates the summary using the LLM.
-+
-link:https://github.com/akka-samples/changelog-agent[Github Repository, window="new"], Level: Intermediate
+== Agentic customer service workflow
+The real-estate customer service agent demonstrates how to combine Akka features with an LLM model. It illustrates an agentic workflow for customer service. It processes incoming real-estate inquiries, analyzes the content to extract details, provides follow-up when needed and saves the collected information for future reference.
 
-Agentic workflow for customer service::
+[%hardbreaks]
+**Concepts**: _Agent_, _Workflow_, _Analysis_, _Detail extraction_, _Human in the loop_, _Agent Memory_
+**Level**: _Intermediate_
+link:https://github.com/akka-samples/real-estate-cs-agent[Github Repository, window="new"]
 
-The real-estate customer service agent is demonstrating how to combine Akka features with an LLM model. It illustrates an agentic workflow for customer service. It processes incoming real-estate inquiries, analyzes the content to extract details, provides follow-up when needed and saves the collected information for future reference.
-+
-link:https://github.com/akka-samples/real-estate-cs-agent[Github Repository, window="new"], Level: Intermediate
+== Tool using trip booking agent
+This app represents a travel agency that searches for flights and accommodations. It's composed by an LLM (Anthropic) using Spring AI and AI tools to find flights, accommodations and sending mails.
 
-Trip booking agent using tools::
-This app represents an agency that searches for flights and accommodations. It's composed by an LLM (Anthropic) using Spring AI and tools to find flights, accommodations and sending mails.
-+
-link:https://github.com/akka-samples/trip-agent[Github Repository, window="new"], Level: Intermediate
+[%hardbreaks]
+**Concepts**: _Agent_, _Tools_, _Anthropic_, _Spring AI_, _Workflow_
+link:https://github.com/akka-samples/trip-agent[Github Repository, window="new"]
 
-Analyze sensor data by an agent::
-AI agent that uses an LLM to analyze data from fitness trackers, medical records and other sensors. Integration with Fitbit and MongoDB Atlas.
-+
-link:https://github.com/akka-samples/healthcare-agent[Github Repository, window="new"], Level: Intermediate
+== Agent sensor data analysis
+This sample illustrates an AI agent that uses an LLM to analyze data from fitness trackers, medical records and other sensors. It integrates with Fitbit and MongoDB Atlas.
 
-Shopping cart microservice::
+[%hardbreaks]
+**Concepts**: _Agent_, _Analysis_, _Integrations_, _Vector database_
+**Level**: _Intermediate_
+link:https://github.com/akka-samples/healthcare-agent[Github Repository, window="new"]
 
-Shows a very simple microservice implementing a shopping cart with an event-sourced entity.
-+
+== Shopping cart microservice
+This sample shows a very simple microservice implementing a shopping cart with an event-sourced entity.
+
+[%hardbreaks]
+**Concepts**: _Entity_, _Events_, _HTTP Endpoint_
+**Level**: _Beginner_
 xref:getting-started:build-and-deploy-shopping-cart.adoc[Step-by-step guide]
-+
-link:https://github.com/akka-samples/shopping-cart-quickstart[Github Repository, window="new"], Level: Beginner
+link:https://github.com/akka-samples/shopping-cart-quickstart[Github Repository, window="new"]
+
+== Customer registry microservice
+This sample illustrates the use of entities and query capabilities with a view. This example shows a simple set of traditional queries and data mutations through events.
+
+[%hardbreaks]
+**Concepts**: _Entity_, _View_, _HTTP Endpoint_
+**Level**: Intermediate
+link:../java/_attachments/customer-registry-quickstart.zip[customer-registry-quickstart.zip]
 
 
-A customer registry microservice::
+== Multiple Entity orchestration with a Worfklow
+This example illustrates a funds transfer workflow between two wallets.
 
-Shows Entities and query capabilities with a View.
-link:../java/_attachments/customer-registry-quickstart.zip[customer-registry-quickstart.zip], Level: Intermediate
+[%hardbreaks]
+**Concepts**: _Transactions_, _Workflow_, _Entity_
+**Level**: _Intermediate_
+link:https://github.com/akka-samples/transfer-workflow-compensation[Github Repository, window="new"]
 
+== User registration with a choreography saga
+This example is a user registration service implemented as a choreography saga.
 
-Involve multiple Entities in a transaction through a Workflow::
+[%hardbreaks]
+**Concepts**: _Choreography_, _Saga_, _Workflow_
+**Level**: _Advanced_
+link:https://github.com/akka-samples/choreography-saga-quickstart[Github Repository, window="new"]
 
-A funds transfer workflow between two wallets.
-+
-link:https://github.com/akka-samples/transfer-workflow-compensation[Github Repository, window="new"], Level: Intermediate
+== Akka Chess
+This example represents a complete, resilient, automatically scalable, event-sourced chess game.
 
-
-A choreography saga for user registration::
-A user registration service implemented as a Choreography Saga.
-+
-link:https://github.com/akka-samples/choreography-saga-quickstart[Github Repository, window="new"], Level: Advanced
-
-
-Akka Chess::
-
-a complete, resilient, automatically scalable, event-sourced chess game
-+
-link:https://github.com/akka-samples/akka-chess[Github Repository, window="new"], Level: Advanced
-
+[%hardbreaks]
+**Concepts**: _Embedded UI_, _Entity_, _Workflow_, _View_, _Timed Action_
+**Level**: _Advanced_
+link:https://github.com/akka-samples/akka-chess[Github Repository, window="new"]
 
 [sidebar]
 It is also possible to deploy a pre-built sample project in https://console.akka.io[the Akka console, window="new"], eliminating the need for local development.
