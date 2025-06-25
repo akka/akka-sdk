@@ -273,6 +273,6 @@ Your services are packed into a single binary. You create instances of Akka that
 
 Akka services self-cluster without you needing to install a service mesh. Akka clustering provides elasticity and resilience to your agentic services. In addition to data sharding, data rebalancing, and traffic routing, Akka clustering has built-in support for addressing split brain networking disruptions.
 
-Optionally, you can deploy your agentic services into Akka Cloud, which provides a global control plane, multi-tenancy, multi-region operations (for compliance data pinning, failover, and disaster recovery), auto-elasticity based upon traffic load, and persistence management (memory auto-scaling).
+Optionally, you can deploy your agentic services into Akka Automated Operations, which provides a global control plane, multi-tenancy, multi-region operations (for compliance data pinning, failover, and disaster recovery), auto-elasticity based upon traffic load, and persistence management (memory auto-scaling).
 
 image:concepts:packed-services.png[Akka Packaging]
