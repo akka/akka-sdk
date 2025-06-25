@@ -40,7 +40,7 @@ public class WeatherAgent extends Agent {
   }
 
   @FunctionTool(description = "Returns the current weather forecast for a given city.")
-  String getCurrentWeather( // <3>
+  private String getCurrentWeather( // <3>
       @Description("A location or city name.")
       String location) {
 
