@@ -13,8 +13,8 @@ import java.time.Duration;
 
 // tag::class[]
 @ComponentId("agent-team")
-public class AgentTeam extends Workflow<AgentTeam.State> {
-  private static final Logger logger = LoggerFactory.getLogger(AgentTeam.class);
+public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
+  private static final Logger logger = LoggerFactory.getLogger(AgentTeamWorkflow.class);
 
   public record Request(String userId, String message) {}
 
@@ -26,7 +26,7 @@ public class AgentTeam extends Workflow<AgentTeam.State> {
 
   private final ComponentClient componentClient;
 
-  public AgentTeam(ComponentClient componentClient) {
+  public AgentTeamWorkflow(ComponentClient componentClient) {
     this.componentClient = componentClient;
   }
 

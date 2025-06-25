@@ -8,7 +8,7 @@ import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpResponses;
 import demo.multiagent.application.ActivityView;
-import demo.multiagent.application.AgentTeam;
+import demo.multiagent.application.AgentTeamWorkflow;
 import demo.multiagent.application.PreferencesEntity;
 
 import java.util.List;
@@ -51,8 +51,8 @@ public class ActivityEndpoint {
     var res =
       componentClient
       .forWorkflow(sessionId)
-        .method(AgentTeam::start)
-        .invoke(new AgentTeam.Request(userId, request.message()));
+        .method(AgentTeamWorkflow::start)
+        .invoke(new AgentTeamWorkflow.Request(userId, request.message()));
 
     return HttpResponses.created(res, "/activities/ " + userId + "/" + sessionId);
   }
@@ -62,7 +62,7 @@ public class ActivityEndpoint {
       var res =
         componentClient
           .forWorkflow(sessionId)
-          .method(AgentTeam::getAnswer)
+          .method(AgentTeamWorkflow::getAnswer)
           .invoke();
 
       if (res.isEmpty())

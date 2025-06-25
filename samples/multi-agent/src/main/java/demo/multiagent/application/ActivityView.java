@@ -20,9 +20,9 @@ public class ActivityView extends View {
     return queryResult();
   }
 
-  @Consume.FromWorkflow(AgentTeam.class)
+  @Consume.FromWorkflow(AgentTeamWorkflow.class)
   public static class Updater extends TableUpdater<ActivityEntry> {
-    public Effect<ActivityEntry> onStateChange(AgentTeam.State state) {
+    public Effect<ActivityEntry> onStateChange(AgentTeamWorkflow.State state) {
       return effects()
           .updateRow(new ActivityEntry(state.userId(), state.userQuery(), state.finalAnswer()));
     }

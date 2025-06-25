@@ -528,7 +528,7 @@ Let's first look at how to define a workflow that orchestrates several agents in
 
 [source,java]
 ----
-include::example$doc-snippets/src/main/java/com/example/application/AgentTeam.java[tag=all]
+include::example$doc-snippets/src/main/java/com/example/application/AgentTeamWorkflow.java[tag=all]
 ----
 <1> The workflow starts by asking for the weather forecast.
 <2> Weather forecast is retrieved by the `WeatherAgent`, which must extract the location and date from the user query.
@@ -597,12 +597,12 @@ include::example$multi-agent/src/main/java/demo/multiagent/application/PlannerAg
 <1> Lookup the agent information for the selected agents from the `AgentRegistry.
 <2> Detailed instructions and include descriptions (as json) of the agents.
 
-That's the two agents that perform the planning, but we also need to connect them and execute the plan. This orchestration is the job of a workflow, called `AgentTeam`.
+That's the two agents that perform the planning, but we also need to connect them and execute the plan. This orchestration is the job of a workflow, called `AgentTeamWorkflow`.
 
 [source,java]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/AgentTeam.java[AgentTeam.java]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[AgentTeamWorkflow.java]
 ----
-include::example$multi-agent/src/main/java/demo/multiagent/application/AgentTeam.java[tag=plan]
+include::example$multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[tag=plan]
 ----
 <1> It's a workflow, with reliable and durable execution.
 <2> The steps are select - plan - execute - summarize.
@@ -619,7 +619,7 @@ When executing the plan and calling the agents we know the id of the agent to ca
 
 [source,java]
 ----
-include::example$multi-agent/src/main/java/demo/multiagent/application/AgentTeam.java[tag=dynamicCall]
+include::example$multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[tag=dynamicCall]
 ----
 
 You find the full source code for this multi-agent sample in the link:https://github.com/akka-samples/multi-agent[akka-samples/multi-agent Github Repository].

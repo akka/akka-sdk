@@ -16,13 +16,13 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
-import static demo.multiagent.application.AgentTeam.Status.*;
+import static demo.multiagent.application.AgentTeamWorkflow.Status.*;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 // tag::all[]
 // tag::plan[]
 @ComponentId("agent-team")
-public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
+public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1>
   public record Request(String userId, String message) {}
 
   // end::plan[]
@@ -80,11 +80,11 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
 
   }
 
-  private static final Logger logger = LoggerFactory.getLogger(AgentTeam.class);
+  private static final Logger logger = LoggerFactory.getLogger(AgentTeamWorkflow.class);
 
   private final ComponentClient componentClient;
 
-  public AgentTeam(ComponentClient componentClient) {
+  public AgentTeamWorkflow(ComponentClient componentClient) {
     this.componentClient = componentClient;
   }
 

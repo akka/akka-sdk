@@ -22,12 +22,12 @@ include::ROOT:partial$local-dev-prerequisites.adoc[]
 
 Agents make external calls to the AI model and possibly other services, and therefore it is important to have solid error handling and durable execution steps when calling agents. In many cases it is a good recommendation to call agents from a workflow. The workflow will automatically execute the steps in a reliable and durable way. This means that if a call in a step fails, it will be retried until it succeeds or the retry limit of the recovery strategy is reached and separate error handling can be performed. The state machine of the workflow is durable, which means that if the workflow is restarted for some reason it will continue from where it left off, i.e. execute the current non-completed step again.
 
-Our workflow should first retrieve the weather forecast and then find suitable activities. Add a new file `AgentTeam.java` to `src/main/java/com/example/application/`
+Our workflow should first retrieve the weather forecast and then find suitable activities. Add a new file `AgentTeamWorkflow.java` to `src/main/java/com/example/application/`
 
 [source,java]
-.AgentTeam.java
+.AgentTeamWorkflow.java
 ----
-include::java:example$doc-snippets/src/main/java/agent_guide/part4/AgentTeam.java[tag=class]
+include::java:example$doc-snippets/src/main/java/agent_guide/part4/AgentTeamWorkflow.java[tag=class]
 ----
 <1> The workflow starts, and keeps track of the user id and original query in the state of the workflow.
 <2> First step is for the weather forecast.
@@ -40,7 +40,7 @@ You might have noticed that we don't pass the forecast as a parameter to the `Ac
 
 == Adjust the endpoint
 
-Let's modify the endpoint to use the `AgentTeam` workflow instead of calling the agent directly.
+Let's modify the endpoint to use the `AgentTeamWorkflow` workflow instead of calling the agent directly.
 
 [source,java]
 .ActivityEndpoint.java

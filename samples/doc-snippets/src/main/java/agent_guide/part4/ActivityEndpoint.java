@@ -32,8 +32,8 @@ public class ActivityEndpoint {
     var res =
       componentClient
       .forWorkflow(sessionId)
-        .method(AgentTeam::start) // <1>
-        .invoke(new AgentTeam.Request(userId, request.message()));
+        .method(AgentTeamWorkflow::start) // <1>
+        .invoke(new AgentTeamWorkflow.Request(userId, request.message()));
 
     return HttpResponses.created(res, "/activities/ " + userId + "/" + sessionId); // <2>
   }
@@ -45,7 +45,7 @@ public class ActivityEndpoint {
     var res =
         componentClient
             .forWorkflow(sessionId)
-            .method(AgentTeam::getAnswer)
+            .method(AgentTeamWorkflow::getAnswer)
             .invoke();
 
     if (res.isEmpty())

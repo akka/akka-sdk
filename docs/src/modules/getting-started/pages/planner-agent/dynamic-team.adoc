@@ -97,12 +97,12 @@ Make the same changes to the `WeatherAgent`. Use the same method signature and u
 
 `SelectorAgent` and `PlannerAgent` are the two agents that perform the planning, but we also need to connect them and execute the plan. This orchestration is the job of the workflow.
 
-Update the `AgentTeam` to this:
+Update the `AgentTeamWorkflow` to this:
 
 [source,java]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/AgentTeam.java[AgentTeam.java]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[AgentTeamWorkflow.java]
 ----
-include::java:example$multi-agent/src/main/java/demo/multiagent/application/AgentTeam.java[tag=all]
+include::java:example$multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[tag=all]
 ----
 <1> It's a workflow, with reliable and durable execution.
 <2> The steps are select - plan - execute - summarize.

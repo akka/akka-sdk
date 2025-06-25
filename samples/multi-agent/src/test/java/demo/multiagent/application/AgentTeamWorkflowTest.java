@@ -16,7 +16,7 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 // tag::class[]
-public class AgentTeamTest extends TestKitSupport { // <1>
+public class AgentTeamWorkflowTest extends TestKitSupport { // <1>
 
   private final TestModelProvider selectorModel = new TestModelProvider(); // <2>
   private final TestModelProvider plannerModel = new TestModelProvider();
@@ -63,14 +63,14 @@ public class AgentTeamTest extends TestKitSupport { // <1>
     var query = "I am in Stockholm. What should I do? Beware of the weather";
 
     var sessionId = UUID.randomUUID().toString();
-    var request = new AgentTeam.Request("alice", query);
-    componentClient.forWorkflow(sessionId).method(AgentTeam::start).invoke(request); // <6>
+    var request = new AgentTeamWorkflow.Request("alice", query);
+    componentClient.forWorkflow(sessionId).method(AgentTeamWorkflow::start).invoke(request); // <6>
 
     Awaitility.await()
         .ignoreExceptions()
         .atMost(10, SECONDS)
         .untilAsserted(() -> {
-          var answer = componentClient.forWorkflow(sessionId).method(AgentTeam::getAnswer).invoke();
+          var answer = componentClient.forWorkflow(sessionId).method(AgentTeamWorkflow::getAnswer).invoke();
           assertThat(answer).isNotBlank();
           assertThat(answer).contains("Stockholm");
           assertThat(answer).contains("sunny");
