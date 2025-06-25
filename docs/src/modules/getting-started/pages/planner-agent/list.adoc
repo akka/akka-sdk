@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-xref:planner-agent/index.adoc[1: The activity agent] > xref:planner-agent/preferences.adoc[2: User preferences] > xref:planner-agent/weather.adoc[3: Weather agent] > xref:planner-agent/team.adoc[4: Orchestrate the agents] > **5: List by user**
+xref:planner-agent/index.adoc[1: The activity agent] > xref:planner-agent/preferences.adoc[2: User preferences] > xref:planner-agent/weather.adoc[3: Weather agent] > xref:planner-agent/team.adoc[4: Orchestrate the agents] > **5: List by user** > xref:planner-agent/dynamic-team.adoc[6: Dynamic orchestration]
 
 include::ROOT:partial$new-to-akka-start-here.adoc[]
 
@@ -84,5 +84,5 @@ curl -i -XGET --location "http://localhost:9000/activities/alice"
 
 == Next steps
 
-ifdef::todo[TODO: Continue]
+In a larger system with more agents, we could benefit from letting the AI model come up with a plan of which agents to use and in which order to execute. Continue with > xref:planner-agent/dynamic-team.adoc[Part 6: Dynamic orchestration]
 

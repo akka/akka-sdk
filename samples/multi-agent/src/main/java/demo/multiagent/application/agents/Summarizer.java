@@ -8,6 +8,7 @@ import demo.multiagent.domain.AgentResponse;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
+// tag::all[]
 @ComponentId("summarizer-agent")
 @AgentDescription(
     name = "Summarizer",
@@ -43,3 +44,4 @@ public class Summarizer extends Agent {
   }
 
 }
+// end::all[]

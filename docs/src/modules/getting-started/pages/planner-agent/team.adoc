@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-xref:planner-agent/index.adoc[1: The activity agent] > xref:planner-agent/preferences.adoc[2: User preferences] > xref:planner-agent/weather.adoc[3: Weather agent] > **4: Orchestrate the agents** > xref:planner-agent/list.adoc[5: List by user]
+xref:planner-agent/index.adoc[1: The activity agent] > xref:planner-agent/preferences.adoc[2: User preferences] > xref:planner-agent/weather.adoc[3: Weather agent] > **4: Orchestrate the agents** > xref:planner-agent/list.adoc[5: List by user] > > xref:planner-agent/dynamic-team.adoc[6: Dynamic orchestration]
 
 include::ROOT:partial$new-to-akka-start-here.adoc[]
 

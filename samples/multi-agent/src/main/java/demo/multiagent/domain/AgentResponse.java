@@ -1,5 +1,6 @@
 package demo.multiagent.domain;
 
+// tag::all[]
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public record AgentResponse(String response, String error) {
@@ -44,3 +45,4 @@ public record AgentResponse(String response, String error) {
     return response != null && !response.isEmpty();
   }
 }
+// end::all[]

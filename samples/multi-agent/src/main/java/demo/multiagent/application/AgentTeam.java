@@ -22,6 +22,7 @@ import java.util.Map;
 import static demo.multiagent.application.AgentTeam.Status.*;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
+// tag::all[]
 // tag::plan[]
 @ComponentId("agent-team")
 public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
@@ -242,3 +243,4 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
   // tag::plan[]
 }
 // end::plan[]
+// end::all[]

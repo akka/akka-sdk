@@ -18,11 +18,13 @@ import demo.multiagent.domain.AgentResponse;
 public class ActivityAgent extends Agent {
 // end::description[]
 
+  // tag::system_message[]
   private static final String SYSTEM_MESSAGE = ("""
       You are an activity agent. Your job is to suggest activities in the real world.
       Like for example, a team building activity, sports, an indoor or outdoor game,
       board games, a city trip, etc.
     """.stripIndent() + AgentResponse.FORMAT_INSTRUCTIONS);
+  // end::system_message[]
 
 public Effect<AgentResponse> query(String message) {
   return effects()

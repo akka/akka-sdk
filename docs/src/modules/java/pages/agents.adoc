@@ -571,7 +571,7 @@ The `WeatherAgent` has:
 include::example$multi-agent/src/main/java/demo/multiagent/application/agents/WeatherAgent.java[tag=description]
 ----
 
-The `WeatherAgent` has:
+The `ActivityAgent` has:
 [source,java]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/agents/ActivityAgent.java[ActivityAgent.java]
 ----
