@@ -24,8 +24,27 @@ A Workflow Effect can either:
 * fail the step or reject a command by returning an error
 * reply to incoming commands
 
-
 For additional details, refer to xref:concepts:declarative-effects.adoc[Declarative Effects].
+
+== Skeleton
+
+A Workflow implementation has the following code structure.
+
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/TransferWorkflow.java[TransferWorkflow.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/TransferWorkflow.java[tag=class]
+----
+<1> Annotate the class with `@ComponentId` and pass a unique identifier for this workflow type.
+<2> Class that extends `Workflow`.
+<3> Define the workflow steps.
+<4> Each step has a name.
+<5> The step consists of a call, which is a lambda that will be called to execute the step.
+<6> When the call has completed successfully the `andThen` lambda is called, and here you can update the state and transition to next step.
+<7> The workflow has methods that can be called with the component client.
+<8> Those methods return an effect, which can be instructions to update the state and transition to a certain step.
+
+There must be at least one command handler method, which returns `Effect`. It is the command handler methods that can be called with the component client from other components, such as an endpoint. The workflow is started by the first command, which will transition to the initial step.
 
 == Modeling state
 
@@ -109,13 +128,19 @@ ifdef::todo[TODO: add some diagram or sth]
 ----
 include::example$transfer-workflow/src/main/java/com/example/transfer/application/TransferWorkflow.java[tag=definition]
 ----
-<1> Each step should have a unique name.
-<2> Using the xref:component-and-service-calls.adoc#_component_client[ComponentClient], which is injected in the constructor.
-<3> We instruct Akka to run a given call to withdraw funds from a wallet.
-<4> After successful withdrawal we return an `Effect` that will update the workflow state and move to the next step called "deposit." An input parameter for this step is a `Deposit` record.
-<5> Another workflow step action to deposit funds to a given wallet.
-<6> This time we return an effect that will stop workflow processing, by using the special `end` method.
-<7> We collect all steps to form a workflow definition.
+<1> We collect all steps to form a workflow definition.
+<2> Each step should have a unique name.
+<3> Using the xref:component-and-service-calls.adoc#_component_client[ComponentClient], which is injected in the constructor.
+<4> We instruct Akka to run a given call to withdraw funds from a wallet.
+<5> After successful withdrawal we return an `Effect` that will update the workflow state and move to the next step called "deposit." An input parameter for this step is a `Deposit` record.
+<6> Another workflow step action to deposit funds to a given wallet.
+<7> This time we return an effect that will stop workflow processing, by using the special `end` method.
+
+The step consists of two parts, a lambda that is called to execute the step, and a second lambda that is run when the call has completed successfully. In the `call` lamda you implement what should be executed in the step, and this may be retried until successful. In the `andThen` lambda you can update the state and decide (based on the `call` result) what the next step should be.
+
+The workflow will automatically execute the steps in a reliable and durable way. This means that if a call in a step fails, it will be retried until it succeeds or the retry limit of the recovery strategy is reached and separate error handling can be performed. The state machine of the workflow is durable, which means that if the workflow is restarted for some reason it will continue from where it left off, i.e. execute the current non-completed step again.
+
+It is possible to pass input from `transitionTo` to the call in the next step. It's also possible to pass the result from the call to the `andThen`. These inputs and outputs are optional, and you can use supplier lambdas without parameter, e.g. `call(() -> {})`. The state of the workflow can be accessed with `currentState()` from both the `call` and the `andThen` lambdas, but it can only be updated from `andThen`.
 
 IMPORTANT: In the following example all `WalletEntity` interactions are not idempotent. It means that if the workflow step retries, it will make the deposit or withdraw again. In a real-world scenario, you should consider making all interactions idempotent with a proper deduplication mechanism. A very basic example of handling retries for workflows can be found in https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow-compensation/src/main/java/com/example/wallet/domain/Wallet.java[this] sample.
 
