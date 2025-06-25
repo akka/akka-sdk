@@ -14,19 +14,20 @@ include::ROOT:partial$declaring-behavior.adoc[]
 
 Akka’s design principles are influenced by decades of distributed systems research.
 
-[cols="1,3", options="header"]
+[cols="1,~", options="header"]
 [.compact]
 |===
 |Research |Publications
 
-|Patterns
-|link:https://www.oreilly.com/library/view/principles-and-patterns/9781098181260/[Principles and Patterns for Distributed Application Architecture, window="new"]
+|Approach
+|link:https://www.reactivemanifesto.org/[The Reactive Manifesto, window="new"]: Defines the four fundamental high-level traits of a well-architected distributed system - responsiveness, elasticity, resilience, and message-driven. 
 
 |Principles
-|link:https://www.reactiveprinciples.org/[The Reactive Principles, window="new"]
+|link:https://www.reactiveprinciples.org/[The Reactive Principles, window="new"]: Distills the four traits into a set of foundational guiding principles for great distributed systems design.
 
-|Approach
-|link:https://www.reactivemanifesto.org/[The Reactive Manifesto, window="new"]
+|Patterns
+|link:https://www.oreilly.com/library/view/principles-and-patterns/9781098181260/[O’Reilly Principles and Patterns for Distributed Application Architecture, window="new"]: This guide outlines architectural patterns that are essential for building robust systems, including how to leverage event-sourcing, CQRS, message-driven communications, consistency boundaries, location transparency, stateful services with temporal guarantees, backpressure, flow control, and failure supervision.  
+
 |===
 
 The Akka Agentic Platform contains an SDK for development, the Akka runtime for scalable and resilient execution, and multiple operating modes. The platform, from development to production, has its own design goals.
