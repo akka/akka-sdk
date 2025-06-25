@@ -88,7 +88,7 @@ Where `AgentRequest` is a new record. Add a new file `AgentRequest.java` to `src
 [source,java]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/domain/AgentRequest.java[AgentRequest.java]
 ----
-include::java:example$multi-agent/src/main/java/demo/multiagent/domain/AgentResponse.java[tag=all]
+include::java:example$multi-agent/src/main/java/demo/multiagent/domain/AgentRequest.java[tag=all]
 ----
 
 Remove the previous `ActivityAgent.Request`, and update all references to use the new `AgentRequest` instead.
