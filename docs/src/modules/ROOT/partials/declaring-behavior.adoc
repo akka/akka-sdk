@@ -1,0 +1,13 @@
+Your services define the _what_ using `Effects`, which are Application Programming Interfaces (APIs) provided by each Akka component. When you write a component method, you return an `Effect<...>` object that describes, in a declarative way, what you want Akka to do. 
+
+For example, when using Akka's Agent component, you might return an `Effect` that tells the runtime to execute the agent with a system message, a user message, and then send the AI model’s response back to the requester:
+
+[source,java]
+----
+  public Effect<String> query(String question) {
+    return effects()
+      .systemMessage("You are a helpful...")
+      .userMessage(question)
+      .thenReply();
+  }
+----
