@@ -1,17 +1,27 @@
-[#_declarative_effects]
-= Declarative effects
+= Delegation with Effects
 
-Effects are declarative APIs that describes the actions the Akka runtime needs to perform. It is inherently lazy, acting as a blueprint of operations to be executed. Once passed to the Akka runtime, the Effect is executed, resulting in the requested system changes. Effect APIs are essential for implementing components, bridging your application logic with the Akka runtime.
+include::ROOT:partial$effect-behavior-and-execution.adoc[]
 
-Each xref:architecture-model.adoc#_application_layer[application layer component] defines its own Effect API offering predefined operations tailored to the component specific semantics. For example, xref:java:event-sourced-entities.adoc[Event Sourced Entities] provide an `Effect` for persisting events, while a xref:java:workflows.adoc[Workflow] Effect defines both what needs to be executed and how to handle the result to transition to the next step.
+image:concepts:component-effects.png[Akka Agentic Platform]
 
-Think of it as a dialogue between your application components and the Akka runtime. The component implementation processes incoming commands, executes the necessary business logic, and returns a description of what needs to be done. The Akka runtime then executes the effect and manages all necessary operations to ensure responsiveness and resilience.
+include::ROOT:partial$declaring-behavior.adoc[]
+
+Each component defines its own Effect API offering predefined operations tailored to the component’s specific semantics. For example, xref:java:event-sourced-entities.adoc[Event Sourced Entities] provide an Effect for persisting events, while a xref:java:workflows.adoc[Workflow] Effect defines both what needs to be executed and how to handle the result to transition to the next step.
 
 This model simplifies development by removing the need to handle persistence, distribution, serialization, cache management, replication, and other distributed system concerns. Developers can focus on business logic — defining what needs to be persisted, how to respond to the caller, transitioning to different steps, rejecting commands, and more — while the Akka runtime takes care of the rest.
 
+For example, with our Workflow component at the end of each step, you return an Effect that indicates how the Workflow should persist the call stack and which stage it should transition to next.
+
+[source,java]
+----
+  return effects()
+   .updateState(currentState().withStatus(WITHDRAW_SUCCEED))
+   .transitionTo("deposit", depositInput); 
+----
+
 For details on the specific Effect types, refer to the documentation for each component.
 
-[cols="1,3", width=85%]
+[cols="1,3"]
 |===
 | Component | Available Effects
 
@@ -24,7 +34,3 @@ For details on the specific Effect types, refer to the documentation for each co
 | xref:java:consuming-producing.adoc#_effect_api[Consumers] | Publish to Topic, Confirm Message, Ignore
 
 |===
-
-
-
-
