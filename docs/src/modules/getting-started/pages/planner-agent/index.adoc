@@ -1,4 +1,4 @@
-= AI multi-agent planner guide
+= Build an AI multi-agent planner
 
 include::ROOT:partial$include.adoc[]
 
@@ -6,9 +6,9 @@ include::ROOT:partial$new-to-akka-start-here.adoc[]
 
 This guide starts with creating an agent that suggests real-world activities. We will incorporate more components in separate parts of the guide, and at the end we will have a multi-agent system with dynamic planning and orchestration capabilities.
 
-* xref:planner-agent/index.adoc[Part 1: Activity agent] — An Agent that suggests real-world activities using an LLM.
-* xref:planner-agent/preferences.adoc[Part 2: User preferences] — An Entity to make the activity suggestions more personalized.
-* xref:planner-agent/weather.adoc[Part 3: Weather agent] — An Agent for the weather forecast that uses an external service as a function tool.
-* xref:planner-agent/team.adoc[Part 4: Orchestrate the agents] — A Workflow that orchestrates the calls to the agents.
-* xref:planner-agent/list.adoc[Part 5: List by user] — A View lists all activity suggestions for a user.
-* xref:planner-agent/dynamic-team.adoc[Part 6: Dynamic orchestration] — An Agent that creates a dynamic plan using an LLM, and a Workflow that executes the plan.
+. xref:planner-agent/activity.adoc[] — An Agent that suggests real-world activities using an LLM.
+. xref:planner-agent/preferences.adoc[] — An Entity to make the activity suggestions more personalized.
+. xref:planner-agent/weather.adoc[] — An Agent for the weather forecast that uses an external service as a function tool.
+. xref:planner-agent/team.adoc[] — A Workflow that orchestrates the calls to the agents.
+. xref:planner-agent/list.adoc[] — A View lists all activity suggestions for a user.
+. xref:planner-agent/dynamic-team.adoc[] — An Agent that creates a dynamic plan using an LLM, and a Workflow that executes the plan.

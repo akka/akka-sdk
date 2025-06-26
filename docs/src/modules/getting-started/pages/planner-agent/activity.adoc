@@ -1,4 +1,4 @@
-= AI planner part 1: Activity agent
+= Activity agent
 
 include::ROOT:partial$include.adoc[]
 
@@ -102,6 +102,6 @@ guided walking tour through lively neighborhoods such as Malasaña and Chueca.
 
 == Next steps
 
-* To make the activity suggestions more personalized, we will add user preferences that the `ActivityAgent` will use. Continue with xref:planner-agent/preferences.adoc[Part 2: User preferences].
+* To make the activity suggestions more personalized, we will add user preferences that the `ActivityAgent` will use. Continue with xref:planner-agent/preferences.adoc[].
 * Learn more about the xref:java:agents.adoc[`Agent` component].
 

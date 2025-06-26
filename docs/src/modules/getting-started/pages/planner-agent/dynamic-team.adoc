@@ -1,4 +1,4 @@
-= AI planner part 6: Dynamic orchestration
+= Dynamic orchestration
 
 include::ROOT:partial$include.adoc[]
 
