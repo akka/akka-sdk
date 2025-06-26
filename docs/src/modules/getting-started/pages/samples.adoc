@@ -32,7 +32,7 @@ This sample illustrates reliable interaction with an LLM using a workflow. Entit
 
 [%hardbreaks]
 **Concepts**: _Agent_, _Agent Memory_, _Workflow_, _Entity_
-**Level**: _Beginniner_
+**Level**: _Beginner_
 link:https://github.com/akka-samples/travel-agent[Github Repository, window="new"]
 
 == Medical discharge summarizing agent
@@ -100,7 +100,7 @@ This sample illustrates the use of entities and query capabilities with a view. 
 link:../java/_attachments/customer-registry-quickstart.zip[customer-registry-quickstart.zip]
 
 
-== Multiple Entity orchestration with a Worfklow
+== Multiple Entity orchestration with a Workflow
 This example illustrates a funds transfer workflow between two wallets.
 
 [%hardbreaks]
