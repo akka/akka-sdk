@@ -29,14 +29,7 @@ You can see the Akka Runtime version on prod [on grafana](https://grafana.sre.ka
     - Note that the PR will be pretty big normally, not only involving documentation files.
 
 ### Update samples
-- [ ] Merge auto-PR in https://github.com/akka-samples/choreography-saga-quickstart/pulls?q=is%3Apr+is%3Aopen+auto+pr+
-- [ ] Merge auto-PR in https://github.com/akka-samples/event-sourced-counter-brokers/pulls?q=is%3Apr+is%3Aopen+auto+pr+
-- [ ] Merge auto-PR in https://github.com/akka-samples/event-sourced-customer-registry/pulls?q=is%3Apr+is%3Aopen+auto+pr+
-- [ ] Merge auto-PR in https://github.com/akka-samples/shopping-cart-quickstart/pulls?q=is%3Apr+is%3Aopen+auto+pr+
-- [ ] Merge auto-PR in https://github.com/akka-samples/transfer-workflow/pulls?q=is%3Apr+is%3Aopen+auto+pr+
-- [ ] Merge auto-PR in https://github.com/akka-samples/transfer-workflow-compensation/pulls?q=is%3Apr+is%3Aopen+auto+pr+
-- [ ] Merge auto-PR in https://github.com/akka-samples/endpoint-jwt/pulls?q=is%3Apr+is%3Aopen+auto+pr+
-- [ ] Update other samples that are maintained in https://github.com/akka-samples/
+- [ ] Merge auto-PRs in akka-samples https://github.com/orgs/akka-samples/repositories?q=sort%3Aname-asc
  
 ### Announcements
 
