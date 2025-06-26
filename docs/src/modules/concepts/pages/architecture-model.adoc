@@ -1,62 +1,70 @@
-= Architecture model
+= Service structure and layers
 
 include::ROOT:partial$include.adoc[]
 
-Akka simplifies application development by allowing developers to focus on their domain models and APIs without worrying about how the data is stored. The architectural model is the key to making this work.
+Akka allows developers to focus on domain modeling and Application Programming Interfaces (APIs) without needing to manage low-level persistence or concurrency concerns. The organization of an Akka service into clear layers makes this possible.
 
-[#_architecture]
-== Architecture
+== Layered structure
 
-Akka applications are built with an _Onion Architecture_, where services are organized in concentric layers. The core of the application is at the center, with additional layers surrounding it. Each layer has a specific role.
+Akka services follow a layered model where each layer has a distinct role. The layers are arranged concentrically, like an onion. The innermost layer holds business logic. Outer layers coordinate and expose that logic to the outside world.
 
-image:docs-onion_architecture-v1.min.svg[Service Onion Architecture, width=400]
+image::docs-onion_architecture-v1.min.svg[Layered Structure of a Service, width=400]
 
-=== Layers in the architecture
+Each layer should live in its own package:
 
-The layers of the Akka programming architecture are outlined below.
+* `domain`: for the domain model
+* `application`: for Akka components
+* `api`: for external-facing endpoints
 
-==== Domain
+Layers only call inward. The outermost layer may call the application layer. The application layer may use the domain layer. Direct calls from outer layers into domain objects are avoided.
 
-At the center is the _Domain Model_ which encapsulates your business logic. The domain should be mostly pure Java: that is not Akka components. In Akka projects and samples, this should be a package called `domain`.
-
-[#_application_layer]
-==== Application
-
-The middle layer is the _Application layer_. This layer uses the domain model and coordinates domain objects. This layer is where your Akka components will live. In this sense, an Akka Component acts as the glue between your domain model and the Akka runtime. This package should be called `application` and only contains Akka components like Agents, Entities and Views.
-
-==== API
-
-The outermost layer is the _API layer_, which connects your application to the outside world. This is the layer where you will define endpoints that expose your application layer. This package should be called `api`.
-
-== Mechanics of each layer
-
-Like most onion architectures, each layer only calls to the layers directly inside of it. This means an endpoint (API) will not directly call a domain object. It also means the outside world should never directly call domain objects or application components. If you want to call an Akka component like an entity or view, do so through an endpoint (`HttpEndpoint` or `GrpcEndpoint`). This separation is meant to contain the inner implementation and makes it easier to evolve applications over time.
-
-These layers should be implemented as the three packages outlined above: `domain`, `application`, `api`. The mechanics of these layers are as follows.
+== Layer overview
 
 === Domain
 
-Domain objects are independent of the other layers. As these are pure Java objects they are the place for implementing business logic. Examples of business logic include checking credit limits for a loan or return policy enforcement. You should write unit tests for this code that tests the business logic. 
+This layer contains business rules and domain concepts. It does not depend on Akka or other runtime concerns. These are plain Java classes, often using `record` to reduce boilerplate. Examples include logic to enforce limits, compute totals, or apply rules.
 
-Much of the inner loop of the developer experience will be spent here. Using Java's `record` type declaration simplifies the amount of ceremony involved in creating domain objects that are understood and used by Akka. This keeps your domain model clean and free of any dependencies - including Akka. 
+You can write unit tests for this layer without needing to start Akka or the runtime. The domain package remains isolated, focused, and easy to change.
 
 === Application
 
-The application layer is where Akka becomes a first class participant as the glue between your domain code and the runtime. Most classes in this layer will extend an Akka component class (e.g., within the `akka.javasdk` package), making them event-based and actor-based behind the scenes, while abstracting those details from you.
+This layer connects the domain model to the Akka runtime. It contains the components that handle persistence, coordination, and external interaction. These components follow event-driven patterns and manage state in a way that supports consistency and responsiveness.
 
-These components include xref:java:agents.adoc[Agents], xref:java:event-sourced-entities.adoc[Event Sourced Entities], xref:java:key-value-entities.adoc[Key Value Entities],  xref:java:views.adoc[Views], xref:java:workflows.adoc[Workflows], xref:java:timed-actions.adoc[Timers] and xref:java:consuming-producing.adoc[Consumers]. Each component type provides specific functionalities to handle state, events, and interactions efficiently.
+Most classes in this layer are based on Akka-provided building blocks. The domain logic remains in the inner layer. This layer makes it operational.
 
 === API
 
-The outermost layer is the API layer which is how the outside world interacts with your application or service. In this layer, you define endpoints that expose your application. Each HTTP endpoint is marked with an `@HttpEndpoint` annotation, which allows the runtime to build the appropriate endpoint URLs for uniquely identifying the components. Each public method on the endpoint that is annotated with method `@Get`, `@Post`, `@Put`, `@Patch` or `@Delete` serves those respective HTTP methods.
+This layer connects your service to the outside world. It defines endpoints using annotations like `@HttpEndpoint`, `@Get`, `@Post`, and others. These map to HTTP or gRPC interfaces.
 
-A strict API specification is required for gRPC endpoints enabling a protocol-first approach. Akka translates the gRPC description into classes and methods that provide the gRPC endpoints for implementation.
+Endpoints use xref:java:component-and-service-calls.adoc#_component_client[`ComponentClient`] to call Akka components in the application layer. This maintains separation of concerns and ensures runtime boundaries are respected.
 
-Having received requests, the `api` layer interacts with the `application` layer through the xref:java:component-and-service-calls.adoc#_component_client[`ComponentClient`] which makes calls in a type safe way. This is the layer boundary that keeps the isolation necessary to remain resilient that is core to an Akka application.
+The API layer may also expose public event models over Kafka or other channels. External systems should interact with your service only through this layer.
 
-Additionally, this layer is the place for a public event model that a service exposes, often via Kafka or other messaging capabilities. This allows the event driven nature of Akka to be easily integrated into the rest of your information space. In Akka you don't reach into the database to get state, you use the event stream itself.
+Access control and request validation also belong here. For HTTP-specific guidance, see xref:java:http-endpoints.adoc[Designing HTTP Endpoints].
 
-The API layer also uses other annotations to xref:java:access-control.adoc[control access]. For more information on endpoints see xref:java:http-endpoints.adoc[Designing HTTP Endpoints].
+== Mapping layers to project structure
+
+Each layer described above corresponds to a distinct package in the source tree. This structure helps reinforce separation of concerns and makes it easy to locate different types of logic in a project.
+
+A typical Akka service might have a layout like the following:
+
+[source,txt]
+----
+src/
+ └── main/
+     └── java/com/example/
+         ├── domain/        # Business logic
+         ├── application/   # Akka components
+         └── api/           # External endpoints
+----
+
+- The `domain` directory holds plain Java classes that represent business rules and models. These are free of Akka-specific concerns.
+
+- The `application` directory contains the building blocks provided by Akka. This is where components such as entities, views, workflows, and consumers are defined.
+
+- The `api` directory exposes functionality to the outside world. This includes HTTP or gRPC endpoints that delegate to components in the application layer.
+
+By keeping these directories distinct, the codebase becomes easier to navigate and evolve over time. This layering also supports clear testing strategies and runtime isolation.
 
 [#_akka_components]
 == Akka components
@@ -114,16 +122,15 @@ image:ROOT:endpoint.png[Endpoints,width=100,float=left] _Endpoints_ are defined 
 
 == Akka Services
 
-image:ROOT:service.png[Services,width=100,float=left] A _Service_ is the base deployment unit in Akka. It includes the layers and packages described above. _Services_ are deployed to _Projects_. A project can contain multiple services, which can be deployed to one or more regions. For more about multi-region operations, see xref:multi-region.adoc[].
+image:ROOT:service.png[Services,width=100,float=left] A _Project_ may contain multiple _Services_. Projects can be deployed to one or more regions to achieve geographic resilience. For details, see xref:multi-region.adoc[].
 
 == Next steps
 
-Now that you understand the overall architecture of Akka you are ready to learn more about the xref:deployment-model.adoc[Akka Deployment Model]. 
+Once familiar with the layered structure, continue with:
 
-The following topics may also be of interest.
-
+- xref:deployment-model.adoc[Akka Deployment Model]
 - xref:development-process.adoc[Development process]
 - xref:state-model.adoc[State model]
-- xref:java:dev-best-practices.adoc[]
+- xref:java:dev-best-practices.adoc[Development best practices]
 
-Start building your own Akka Service using the xref:java:index.adoc[Akka SDK].
+You may also begin development right away using the xref:java:index.adoc[Akka SDK].
