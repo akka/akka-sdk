@@ -6,7 +6,9 @@ package akka.javasdk.impl;
 
 import akka.javasdk.annotations.Description;
 
+import java.time.*;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 interface SomeToolInput {
@@ -24,7 +26,9 @@ interface SomeToolInput {
       Long boxedLong,
       Double boxedDouble,
       Float boxedFloat,
-      Byte boxedByte) {}
+      Byte boxedByte,
+      boolean[] primitiveBooleanArray,
+      Boolean[] boxedBooleanArray) {}
 
   record SomeToolInput2(@Description("some strings") List<String> listOfStrings) {}
 
@@ -36,4 +40,9 @@ interface SomeToolInput {
       @Description("some tool input") SomeToolInput1 input1,
       SomeToolInput2 input2,
       SomeToolInput3 input3);
+
+  record CommonStdlibTypes(Instant instant, Map<String, String> map, LocalDate localDate, LocalDateTime localDateTime, LocalTime localTime, ZonedDateTime zonedDateTime, Duration duration) {}
+
+  record ClassWithRecursiveFields(String regular, ClassWithRecursiveFields recursive, NestedRecursiveClass nested) {}
+  record NestedRecursiveClass(ClassWithRecursiveFields recursive) {}
 }

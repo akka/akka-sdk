@@ -53,7 +53,7 @@ private[impl] object JsonSchema {
   }
 
   def jsonSchemaFor(value: Class[_]): JsonSchemaObject = {
-    jsonSchemaTypeFor(value, None)._1.asInstanceOf[JsonSchemaObject]
+    jsonSchemaTypeFor(value, None, Set.empty)._1.asInstanceOf[JsonSchemaObject]
   }
 
   def typedParametersFor(method: Method): Seq[TypedParameter] = {
@@ -72,7 +72,7 @@ private[impl] object JsonSchema {
       annotations: Array[Annotation],
       genericType: Type): TypedParameter = {
     val description = annotations.collectFirst { case annotation: Description => annotation.value() }
-    val (schemaType, required) = jsonSchemaTypeFor(genericType, description)
+    val (schemaType, required) = jsonSchemaTypeFor(genericType, description, Set.empty)
     TypedParameter(parameter.getName, genericType, schemaType, required)
   }
 
@@ -98,11 +98,24 @@ private[impl] object JsonSchema {
     "java.lang.Float" -> number,
     "java.lang.Boolean" -> boolean)
 
+  private final val typesWithStringJsonRepresentation = Set[Class[_]](
+    classOf[String], // obviously
+    classOf[java.time.Instant], // time and date types rendered as string in json
+    classOf[java.time.LocalTime],
+    classOf[java.time.LocalDate],
+    classOf[java.time.LocalDateTime],
+    classOf[java.time.ZonedDateTime],
+    classOf[java.time.Duration] // example Jackson output "PT72H"
+  )
+
   private def emptyObject(description: Option[String]) =
     new JsonSchemaObject(description, properties = Map.empty, required = Seq.empty)
 
   // Note: we don't support recursive types, not quite sure if we should though
-  private def jsonSchemaTypeFor(genericFieldType: Type, description: Option[String]): (JsonSchemaDataType, Boolean) = {
+  private def jsonSchemaTypeFor(
+      genericFieldType: Type,
+      description: Option[String],
+      seenTypes: Set[Class[_]]): (JsonSchemaDataType, Boolean) = {
     typeNameMap.get(genericFieldType.getTypeName) match {
       case Some(jsTypeFactory) => (jsTypeFactory(description), true)
       case None =>
@@ -115,13 +128,21 @@ private[impl] object JsonSchema {
             (emptyObject(description), false) // unknown if body is required
           case _ if clazz == classOf[HttpEntity.Strict] => // for body parameter
             (emptyObject(description), true)
-          case _ if clazz == classOf[String] =>
+          case _ if seenTypes.contains(clazz) =>
+            (emptyObject(description), true) // avoid infinite recursion
+          case _ if typesWithStringJsonRepresentation.contains(clazz) =>
             (new JsonSchemaString(description), true)
+          case _ if clazz.isArray =>
+            (new JsonSchemaArray(jsonSchemaTypeFor(clazz.getComponentType, None, seenTypes)._1, None), true)
           case p: ParameterizedType if clazz == classOf[Optional[_]] =>
-            val (jsonFieldType, _) = jsonSchemaTypeFor(p.getActualTypeArguments.head, description)
+            val (jsonFieldType, _) = jsonSchemaTypeFor(p.getActualTypeArguments.head, description, seenTypes)
             (jsonFieldType, false)
           case p: ParameterizedType if classOf[java.util.Collection[_]].isAssignableFrom(clazz) =>
-            (new JsonSchemaArray(items = jsonSchemaTypeFor(p.getActualTypeArguments.head, None)._1, description), true)
+            (
+              new JsonSchemaArray(
+                items = jsonSchemaTypeFor(p.getActualTypeArguments.head, None, seenTypes)._1,
+                description),
+              true)
           case _ =>
             // Note: for now the top level can only be a class
             val properties = clazz.getDeclaredFields.toVector.map { field: Field =>
@@ -130,7 +151,7 @@ private[impl] object JsonSchema {
                 case annotation => Some(annotation.value())
               }
 
-              field.getName -> jsonSchemaTypeFor(field.getGenericType, description)
+              field.getName -> jsonSchemaTypeFor(field.getGenericType, description, seenTypes + clazz)
             }.toMap
 
             val jsObjectSchema = new JsonSchemaObject(
