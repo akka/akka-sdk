@@ -41,8 +41,17 @@ interface SomeToolInput {
       SomeToolInput2 input2,
       SomeToolInput3 input3);
 
-  record CommonStdlibTypes(Instant instant, Map<String, String> map, LocalDate localDate, LocalDateTime localDateTime, LocalTime localTime, ZonedDateTime zonedDateTime, Duration duration) {}
+  record CommonStdlibTypes(
+      Instant instant,
+      Map<String, String> map,
+      LocalDate localDate,
+      LocalDateTime localDateTime,
+      LocalTime localTime,
+      ZonedDateTime zonedDateTime,
+      Duration duration) {}
 
-  record ClassWithRecursiveFields(String regular, ClassWithRecursiveFields recursive, NestedRecursiveClass nested) {}
+  record ClassWithRecursiveFields(
+      String regular, ClassWithRecursiveFields recursive, NestedRecursiveClass nested) {}
+
   record NestedRecursiveClass(ClassWithRecursiveFields recursive) {}
 }
