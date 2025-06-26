@@ -1,9 +1,9 @@
 /*
- * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
  */
 
 /*
- * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package akkajavasdk.components.views.hierarchy;
