@@ -35,7 +35,7 @@ public class ActivityEndpoint {
         .method(AgentTeamWorkflow::start) // <1>
         .invoke(new AgentTeamWorkflow.Request(userId, request.message()));
 
-    return HttpResponses.created(res, "/activities/ " + userId + "/" + sessionId); // <2>
+    return HttpResponses.created(res, "/activities/" + userId + "/" + sessionId); // <2>
   }
   // end::workflow[]
 
