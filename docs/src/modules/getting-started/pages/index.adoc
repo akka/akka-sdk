@@ -28,12 +28,12 @@ Add agents and other components step-by-step. The final application will consist
 [options="header", cols="2,1"]
 |=======================
 | Tutorial | Level
-| xref:planner-agent/index.adoc[Part 1: The activity agent] | Beginner
-| xref:planner-agent/preferences.adoc[Part 2: User preferences] | Beginner
-| xref:planner-agent/weather.adoc[Part 3: Weather agent] | Beginner
-| xref:planner-agent/team.adoc[Part 4: Orchestrate the agents] | Intermediate
-| xref:planner-agent/list.adoc[Part 5: List by user] | Beginner
-| xref:planner-agent/dynamic-team.adoc[Part 6: Dynamic orchestration] | Advanced
+| xref:planner-agent/activity.adoc[Part 1: Activity agent] — An Agent that suggests real-world activities using an LLM. | Beginner
+| xref:planner-agent/preferences.adoc[Part 2: User preferences] — An Entity to make the activity suggestions more personalized. | Beginner
+| xref:planner-agent/weather.adoc[Part 3: Weather agent] — An Agent for the weather forecast that uses an external service as a function tool. | Beginner
+| xref:planner-agent/team.adoc[Part 4: Orchestrate the agents] — A Workflow that orchestrates the calls to the agents. | Intermediate
+| xref:planner-agent/list.adoc[Part 5: List by user] — A View lists all activity suggestions for a user. | Beginner
+| xref:planner-agent/dynamic-team.adoc[Part 6: Dynamic orchestration] — An Agent that creates a dynamic plan using an LLM, and a Workflow that executes the plan. | Advanced
 |=======================
 
 === Build a shopping cart system

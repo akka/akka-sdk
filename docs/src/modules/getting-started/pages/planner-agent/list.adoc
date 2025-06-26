@@ -1,4 +1,4 @@
-= AI Planner Part 5: List by user
+= List by user
 
 include::ROOT:partial$include.adoc[]
 
@@ -82,6 +82,6 @@ curl -i -XGET --location "http://localhost:9000/activities/alice"
 
 == Next steps
 
-* In a larger system with more agents, we could benefit from letting the AI model come up with a plan of which agents to use and in which order to execute. Continue with > xref:planner-agent/dynamic-team.adoc[Part 6: Dynamic orchestration]
+* In a larger system with more agents, we could benefit from letting the AI model come up with a plan of which agents to use and in which order to execute. Continue with xref:planner-agent/dynamic-team.adoc[]
 * Learn more about the xref:java:views.adoc[`View` component].
 
