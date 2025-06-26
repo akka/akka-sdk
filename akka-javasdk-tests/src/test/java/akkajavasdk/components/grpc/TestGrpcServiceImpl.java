@@ -22,6 +22,7 @@ public class TestGrpcServiceImpl implements TestGrpcService {
 
   private final GrpcClientProvider grpcClientProvider;
   private final GrpcRequestContext requestContext;
+  private boolean constructedOnVt = Thread.currentThread().isVirtual();
 
   public TestGrpcServiceImpl(GrpcClientProvider grpcClientProvider, GrpcRequestContext requestContext) {
     this.grpcClientProvider = grpcClientProvider;
@@ -41,7 +42,7 @@ public class TestGrpcServiceImpl implements TestGrpcService {
     logDetailsIfNotVt();
     return TestGrpcServiceOuterClass.Out.newBuilder()
         .setData(in.getData())
-        .setWasOnVirtualThread(Thread.currentThread().isVirtual())
+        .setWasOnVirtualThread(Thread.currentThread().isVirtual() && constructedOnVt)
         .build();
   }
 

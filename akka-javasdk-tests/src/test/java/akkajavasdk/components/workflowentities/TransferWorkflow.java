@@ -27,6 +27,8 @@ public class TransferWorkflow extends Workflow<TransferState> {
 
   private ComponentClient componentClient;
 
+  private boolean constructedOnVt = Thread.currentThread().isVirtual();
+
   public TransferWorkflow(ComponentClient componentClient) {
     this.componentClient = componentClient;
   }
@@ -97,7 +99,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
   }
 
   public Effect<Boolean> commandHandlerIsOnVirtualThread() {
-    return effects().reply(Thread.currentThread().isVirtual());
+    return effects().reply(Thread.currentThread().isVirtual() && constructedOnVt);
   }
 
   public Effect<Message> genericStringsCall(List<String> primitives) {

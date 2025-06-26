@@ -300,4 +300,15 @@ public class AgentIntegrationTest extends TestKitSupport {
       assertThat(e.getMessage()).startsWith("Unexpected error");
     }
   }
+
+  @Test
+  public void shouldBeConstructedOnVirtualThread() {
+    var result = componentClient.forAgent()
+        .inSession(newSessionId())
+        .method(SomeAgentWithTool::query)
+        .invoke("Running on virtual thread?");
+
+    assertThat(result.response()).isEqualTo("Query on vt: true, constructed on vt: true");
+  }
+
 }

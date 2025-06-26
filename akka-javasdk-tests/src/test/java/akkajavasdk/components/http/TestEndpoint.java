@@ -16,6 +16,8 @@ import java.util.List;
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 public class TestEndpoint extends AbstractHttpEndpoint {
 
+  private boolean constructedOnVt = Thread.currentThread().isVirtual();
+
   @Get("/query/{name}")
   public String getQueryParams(String name) {
     String a = requestContext().queryParams().getString("a").get();
@@ -33,7 +35,7 @@ public class TestEndpoint extends AbstractHttpEndpoint {
 
   @Get("/on-virtual")
   public String getOnVirtual() {
-    if (Thread.currentThread().isVirtual()) return "ok";
+    if (Thread.currentThread().isVirtual() && constructedOnVt) return "ok";
     else throw new RuntimeException("Endpoint not executing on virtual thread");
   }
 }
