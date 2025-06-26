@@ -1,4 +1,4 @@
-= AI Planner Part 5: List by user
+= AI planner part 5: List by user
 
 include::ROOT:partial$include.adoc[]
 

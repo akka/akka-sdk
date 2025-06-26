@@ -1,4 +1,4 @@
-= AI Planner Part 2: User preferences
+= AI planner part 2: User preferences
 
 include::ROOT:partial$include.adoc[]
 

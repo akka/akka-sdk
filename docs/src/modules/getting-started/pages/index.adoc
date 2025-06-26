@@ -28,7 +28,7 @@ Add agents and other components step-by-step. The final application will consist
 [options="header", cols="2,1"]
 |=======================
 | Tutorial | Level
-| xref:planner-agent/index.adoc[Part 1: The activity agent] | Beginner
+| xref:planner-agent/index.adoc[Part 1: Activity agent] | Beginner
 | xref:planner-agent/preferences.adoc[Part 2: User preferences] | Beginner
 | xref:planner-agent/weather.adoc[Part 3: Weather agent] | Beginner
 | xref:planner-agent/team.adoc[Part 4: Orchestrate the agents] | Intermediate

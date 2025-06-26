@@ -6,6 +6,9 @@ include::ROOT:partial$new-to-akka-start-here.adoc[]
 
 Samples are available that demonstrate important patterns and abstractions. These can be cloned from their respective repositories. Please refer to the `README` file in each repository for setup and usage instructions.
 
+[sidebar]
+It is also possible to deploy a pre-built sample project in https://console.akka.io[the Akka console, window="new"], eliminating the need for local development.
+
 == Multi-agent AI activity suggestion system
 
 This sample demonstrates how to build a multi-agent system using Akka and an LLM model. A workflow manages the user query process, handling the sequential steps of agent selection, plan creation, execution, and summarization.
@@ -123,6 +126,3 @@ This example represents a complete, resilient, automatically scalable, event-sou
 **Concepts**: _Embedded UI_, _Entity_, _Workflow_, _View_, _Timed Action_
 **Level**: _Advanced_
 link:https://github.com/akka-samples/akka-chess[Github Repository, window="new"]
-
-[sidebar]
-It is also possible to deploy a pre-built sample project in https://console.akka.io[the Akka console, window="new"], eliminating the need for local development.

@@ -1,4 +1,4 @@
-= AI Planner Part 3: Weather agent
+= AI planner part 3: Weather agent
 
 include::ROOT:partial$include.adoc[]
 

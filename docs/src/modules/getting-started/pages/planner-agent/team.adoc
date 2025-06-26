@@ -1,4 +1,4 @@
-= AI Planner Part 4: Orchestrate the agents
+= AI planner part 4: Orchestrate the agents
 
 include::ROOT:partial$include.adoc[]
 
