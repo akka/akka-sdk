@@ -1,0 +1,124 @@
+{
+  "repositories": [
+    {
+      "title": "Hello world agent",
+      "description": "This sample uses an agent and LLM to generate greetings in different languages. It illustrates how the agent maintains contextual history in a session memory.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/helloworld-agent"
+    },
+    {
+      "title": "Temperature Monitoring Agent",
+      "description": "A temperature monitoring system that collects, aggregates, and analyzes temperature data from IoT sensors. The system uses AI to generate insights about temperature trends and anomalies across different locations.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/temperature-monitoring-agent"
+    },
+    {
+      "title": "Order Reconciliation Agent Sample",
+      "description": "This sample implements a ReAct agent using the Akka SDK that streamlines this process by autonomously reasoning through reconciliation logic, invoking relevant data sources and APIs, identifying inconsistencies, and recommending or executing corrective actions.",
+      "language": "java / javascript",
+      "url": "https://github.com/akka-samples/order-reconciliation-agent"
+    },
+    {
+      "title": "Real Estate Customer Service Agent",
+      "description": "A sample application demonstrating how to build a customer service agent for real estate inquiries, by combining Akka features and an LLM model.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/real-estate-cs-agent"
+    },
+    {
+      "title": "Healthcare Agent",
+      "description": "Personal Health Agent with data from fitness trackers, medical records and other sensors.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/healthcare-agent"
+    },
+    {
+      "title": "Akka Chess",
+      "description": "Akka Chess is a sample application that illustrates building a complete, resilient, automatically scalable, event-sourced application using the Akka SDK.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/akka-chess"
+    },
+    {
+      "title": "Choreography Saga",
+      "description": "User Registration Service Using a Choreography Saga in Akka.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/choreography-saga-quickstart"
+    },
+    {
+      "title": "Customer Registry with Query Capabilities",
+      "description": "This guide will walk you through the process of creating, retrieving, and updating information from a customer registry service.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/event-sourced-customer-registry"
+    },
+    {
+      "title": "Funds Transfer Workflow Between Two Wallets",
+      "description": "This guide demonstrates how to create a simple workflow for transferring funds between two wallets. It includes a compensation mechanism that handles scenarios where a deposit fails during a transfer, ensuring the system maintains consistency.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/transfer-workflow-compensation"
+    },
+    {
+      "title": "Shopping Cart",
+      "description": "How to build this Shopping Cart service step by step.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/shopping-cart-quickstart"
+    },
+    {
+      "title": "Shopping Cart With a View",
+      "description": "How to build this Shopping Cart service step by step. This example adds features to the previous Shopping Cart example, such as a view that allows querying.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/shopping-cart-with-view"
+    },
+    {
+      "title": "Medical Discharge Summary Tagging System",
+      "description": "This experiment investigates whether an AI Agentic System can automatically tag medical discharge summaries based on the necessity of hospitalization.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/medical-tagging-agent"
+    },
+    {
+      "title": "Multi Agent System",
+      "description": "A sample application demonstrating how to build a multi-agent system using Akka and an LLM model.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/multi-agent"
+    },
+    {
+      "title": "Event Sourced Counter with Broker Integration",
+      "description": "This project demonstrates the use of an Event Sourced Entity and the different ways to consume and produce from/to a broker.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/event-sourced-counter-brokers"
+    },
+    {
+      "title": "JWT HTTP Endpoint",
+      "description": "This project demonstrates the use of JWT in a HTTP Endpoint.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/endpoint-jwt"
+    },
+    {
+      "title": "Travel Agent",
+      "description": "The Travel Planner Agent is an AI-powered application built on the Akka SDK that helps users create personalized travel itineraries.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/travel-agent"
+    },
+    {
+      "title": "Ask Akka Agent",
+      "description": "This sample illustrates how to build an AI agent that performs a RAG workflow.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/ask-akka-agent"
+    },
+    {
+      "title": "GitHub changelog summarizer",
+      "description": "This showcases an AI assistent implemented with the Akka SDK that observes GitHub releases to automatically summarizes the release contents.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/changelog-agent"
+    },
+    {
+      "title": "Trip Agent",
+      "description": "This app represents an agency that searches for flights and accommodations via the prompt from the user through a HTTP call.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/trip-agent"
+    },
+    {
+      "title": "Hello World Agent",
+      "description": "This sample uses an agent and LLM to generate greetings in different languages. It illustrates how the agent maintains contextual history in a session memory.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/helloworld-agent"
+    }
+  ]
+}
