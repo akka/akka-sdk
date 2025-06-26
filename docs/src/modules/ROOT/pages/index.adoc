@@ -1,6 +1,6 @@
 = Welcome to Akka
 
-Akka Agentic Platform is a platform for building, running and evaluating both transactional and agentic AI services. At its core is a mature, actor-based runtime that is widely adopted in the industry. Akka supports high-throughput, stateful services that are resilient, elastic and responsive. It runs reliably on any infrastructure: public cloud, private cloud or on-premises.
+Akka is a platform for building, running and evaluating agentic systems. It includes a framework, runtime, streaming engine, and memory store for creating any kind of agentic system: AI, autonomous, real-time, adaptive, transactional, analytical, or edge. The Akka Runtime is the most widely adopted actor-based runtime in the world, enabling high-throughput, stateful services that are resilient, elastic and responsive. Akka runs on any infrastructure: public cloud, private cloud or on-premises.
 
 [discrete]
 == xref:getting-started:index.adoc[Getting Started]
