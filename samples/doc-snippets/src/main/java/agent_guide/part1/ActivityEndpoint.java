@@ -1,6 +1,6 @@
 package agent_guide.part1;
 
-// tag::class[]
+// tag::all[]
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
@@ -32,4 +32,4 @@ public class ActivityEndpoint {
         .invoke(request.message());
   }
 }
-// end::class[]
+// end::all[]

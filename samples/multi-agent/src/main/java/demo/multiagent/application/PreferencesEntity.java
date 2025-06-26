@@ -14,6 +14,11 @@ public class PreferencesEntity
 
   public record AddPreference(String preference) {}
 
+  @Override
+  public Preferences emptyState() {
+    return new Preferences(List.of());
+  }
+
   public Effect<Done> addPreference(AddPreference command) {
     return effects()
         .persist(new PreferencesEvent.PreferenceAdded(command.preference()))
@@ -21,12 +26,7 @@ public class PreferencesEntity
   }
 
   public Effect<Preferences> getPreferences() {
-    List<String> prefs;
-    if (currentState() == null) {
-      return effects().reply(new Preferences(List.of()));
-    } else {
-      return effects().reply(currentState());
-    }
+    return effects().reply(currentState());
   }
 
   @Override

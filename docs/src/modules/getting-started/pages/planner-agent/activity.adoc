@@ -35,7 +35,7 @@ We will add an agent that suggests real-world activities. Add a new file `Activi
 [source,java]
 .ActivityAgent.java
 ----
-include::java:example$doc-snippets/src/main/java/agent_guide/part1/ActivityAgent.java[tag=class]
+include::java:example$doc-snippets/src/main/java/agent_guide/part1/ActivityAgent.java[tag=all]
 ----
 <1> Annotate the class with `@ComponentId` and pass a unique identifier for this agent type.
 <2> Class extends `Agent`.
@@ -54,7 +54,7 @@ Add a new file `ActivityEndpoint.java` to `src/main/java/com/example/api/`
 [source, java]
 .ActivityEndpoint.java]
 ----
-include::java:example$doc-snippets/src/main/java/agent_guide/part1/ActivityEndpoint.java[tag=class]
+include::java:example$doc-snippets/src/main/java/agent_guide/part1/ActivityEndpoint.java[tag=all]
 ----
 <1> Inject the `ComponentClient`, which is used to call the agent.
 <2> Call the `ActivityAgent` created in the previous step
@@ -99,6 +99,11 @@ In Madrid, you can visit historic sites like the Royal Palace, stroll in Retiro 
 the Prado and Reina Sofia art museums, savor local cuisine at Mercado de San Miguel, or take a
 guided walking tour through lively neighborhoods such as Malasaña and Chueca.
 ----
+
+[NOTE]
+====
+It may take 10s of seconds for the AI model to respond.
+====
 
 == Next steps
 

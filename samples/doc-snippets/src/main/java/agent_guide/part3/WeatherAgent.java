@@ -1,6 +1,6 @@
 package agent_guide.part3;
 
-// tag::class[]
+// tag::all[]
 import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Description;
@@ -57,4 +57,4 @@ public class WeatherAgent extends Agent {
     return httpClient.GET(url).invoke().body().utf8String();
   }
 }
-// end::class[]
+// end::all[]

@@ -1,6 +1,7 @@
 
 package demo.multiagent.domain;
 
+// tag::all[]
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,3 +17,4 @@ public record Plan(List<PlanStep> steps) {
     this(new ArrayList<>());
   }
 }
+// end::all[]
