@@ -119,7 +119,7 @@ object CommonHeaderSettings extends AutoPlugin {
 
   override def projectSettings = AutomateHeaderPlugin.projectSettings ++ Seq(
     headerLicense := Some(
-      HeaderLicense.Custom("""Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>""")),
+      HeaderLicense.Custom("""Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>""")),
     headerMappings += FileType("proto") -> HeaderCommentStyle.cppStyleLineComment,
     headerSources / excludeFilter := (headerSources / excludeFilter).value || "package-info.java",
     // exclude source files in resources
