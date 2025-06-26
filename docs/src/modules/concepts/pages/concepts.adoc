@@ -246,7 +246,7 @@ There are a variety of shared data (memory) use cases within an agentic system.
 |===
 |Use Case |Provided by |Description
 |Short-term
-|Agent component
+|xref:java:agents.adoc[Agent] component
 |Also called “episodic” and “traced” memory, this memory is an auditable record of each input and output that occurs between an agent and its client throughout a single “user” session. Agent clients may or may not be human.
 
 Akka also captures the input and output of every interaction between an agent and an LLM in a single enrichment loop, sometimes called “traced” memory. A single invocation of an agent from a client may cause that agent to invoke an LLM, function tools, or MCP tools many times. Akka’s short-term memory captures all of these interactions in an event log.
@@ -254,12 +254,12 @@ Akka also captures the input and output of every interaction between an agent an
 Short-term memory is also automatically included when you create xref:java:agents.adoc[an agent]. Short-term memory can be compressed, optimized, replicated, and audited.
 
 |Long-term
-|Entity component
+|xref:java:event-sourced-entities.adoc[Entity] component
 |Also called “shared” and “external” memory, this memory is an auditable record of state that is available to multiple agents, sessions, users, or Akka components.
 
 Use long-term memory to capture the history (often summarized or aggregated) of interactions for a single user across many sessions.
 
-Shared state is represented through an xref:concepts:state-model.adoc[Entity] component. Entities are event-sourced, making all of their changes published through an event stream and accessible by xref:java:agents.adoc[Agents], xref:concepts:grpc-vs-http-endpoints.adoc[Endpoints], xref:java:workflows.adoc[Workflows] or xref:java:views.adoc[Views].
+Shared state is represented through an xref:java:event-sourced-entities.adoc[Entity] component. Entities are event-sourced, making all of their changes published through an event stream and accessible by xref:java:agents.adoc[Agents], xref:concepts:grpc-vs-http-endpoints.adoc[Endpoints], xref:java:workflows.adoc[Workflows] or xref:java:views.adoc[Views].
 |===
 
 Akka treats all stateful memory as event-sourced objects. Event sourcing is a technique to capture sequential state changes. Akka’s persistence engine transparently persists each event into a durable store. Since all state is represented as an event, Akka’s event engine enables transparent import, export, broadcast, subscription, replication, and replay of events. These behaviors enable Akka to offer a resilience guarantee and multi-region replication, which enables real-time failover with a Recovery Time Objective (RTO) of <200ms.

@@ -2,7 +2,7 @@ Akka is a framework, runtime, and memory store for autonomous, adaptive agentic 
 
 image:concepts:akka-agentic-platform.png[Akka Agentic Platform]
 
-Developers create services built with Akka components that - when deployed - become agentic systems. Services can be tested locally or within a Continuous Integration/Continuous Delivery (CI/CD) practice using a Testkit that is available with each Akka component. Your services are compiled into a binary that includes the Akka Runtime which enables your services to self-cluster for scale and resilience. Akka clusters are able to execute on any infrastructure whether bare metal, Kubernetes, Docker or edge. Optionally, add Akka Automated Operations to gain multi-region failover, auto-elasticity, persistence oversight, multi-tenant services, and certificate rotation. Akka Automated Operations has two deployment options: our serverless cloud or your virtual private cloud (VPC).
+Developers create services built with _Akka components_ that - when deployed - become agentic systems. Services can be tested locally or within a Continuous Integration/Continuous Delivery (CI/CD) practice using a _Testkit_ that is available with each Akka component. Your services are compiled into a binary that includes the _Akka Runtime_ which enables your services to self-cluster for scale and resilience. _Akka clusters_ are able to execute on any infrastructure whether bare metal, Kubernetes, Docker or edge. Optionally, add _Akka Automated Operations_ to gain multi-region failover, auto-elasticity, persistence oversight, multi-tenant services, and certificate rotation. _Akka Automated Operations_ has two deployment options: our serverless cloud or your virtual private cloud (VPC).
 
 [cols="1,3", options="header"]
 [.compact]
