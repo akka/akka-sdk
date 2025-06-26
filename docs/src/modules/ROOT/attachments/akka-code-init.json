@@ -1,7 +1,7 @@
 {
   "repositories": [
     {
-      "title": "Hello world agent",
+      "title": "Hello World Agent",
       "description": "This sample uses an agent and LLM to generate greetings in different languages. It illustrates how the agent maintains contextual history in a session memory.",
       "language": "java",
       "url": "https://github.com/akka-samples/helloworld-agent"
@@ -113,12 +113,6 @@
       "description": "This app represents an agency that searches for flights and accommodations via the prompt from the user through a HTTP call.",
       "language": "java",
       "url": "https://github.com/akka-samples/trip-agent"
-    },
-    {
-      "title": "Hello World Agent",
-      "description": "This sample uses an agent and LLM to generate greetings in different languages. It illustrates how the agent maintains contextual history in a session memory.",
-      "language": "java",
-      "url": "https://github.com/akka-samples/helloworld-agent"
     }
   ]
 }
