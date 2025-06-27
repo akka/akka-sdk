@@ -1,17 +1,19 @@
 package demo.multiagent.application;
 
+import demo.multiagent.domain.AgentSelection;
+import demo.multiagent.domain.Plan;
+import demo.multiagent.domain.PlanStep;
+
+// tag::all[]
 import akka.javasdk.JsonSupport;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
-import demo.multiagent.domain.AgentSelection;
-import demo.multiagent.domain.Plan;
-import demo.multiagent.domain.PlanStep;
 
 import java.util.List;
 
-// tag::all[]
+// tag::class[]
 @ComponentId("planner-agent")
 @AgentDescription(
     name = "Planner",
@@ -81,4 +83,5 @@ public class PlannerAgent extends Agent {
       }
   }
 }
+// end::class[]
 // end::all[]

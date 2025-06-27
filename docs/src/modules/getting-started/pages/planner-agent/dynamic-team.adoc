@@ -1,4 +1,4 @@
-= AI Planner Part 6: Dynamic orchestration
+= Dynamic orchestration
 
 include::ROOT:partial$include.adoc[]
 
@@ -36,6 +36,13 @@ include::java:example$multi-agent/src/main/java/demo/multiagent/application/Sele
 <2> Select the agents with the role `"worker"`.
 <3> Detailed instructions and include descriptions (as json) of the agents.
 
+The result from the `SelectorAgent` is a list of agent ids. Add a new file `AgentSelection.java` to `src/main/java/com/example/domain/`
+[source,java]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/domain/AgentSelection.java[AgentSelection.java]
+----
+include::java:example$multi-agent/src/main/java/demo/multiagent/domain/AgentSelection.java[tag=all]
+----
+
 The information about the agents in the `AgentRegistry` comes from the `@ComponentId` and `@AgentDescription` annotations. When using it for planning like this it is important that the agents define those descriptions that the LLM can use to come up with a good plan.
 
 Add the `@AgentDescription` to the `WeatherAgent`:
@@ -54,13 +61,6 @@ include::java:example$multi-agent/src/main/java/demo/multiagent/application/Acti
 
 Note that in image:concepts:steps-2.svg[width=20] of the `SelectorAgent` we retrieve a subset of the agents with a certain role. This role is also defined in the `@AgentDescription` annotation.
 
-The result from the `SelectorAgent` is a list of agent ids. Add a new file `AgentSelection.java` to `src/main/java/com/example/domain/`
-[source,java]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/domain/AgentSelection.java[AgentSelection.java]
-----
-include::java:example$multi-agent/src/main/java/demo/multiagent/domain/AgentSelection.java[tag=all]
-----
-
 After selecting agents, we use a `PlannerAgent` to decide in which order to use the agents and the precise request each agent should receive to perform its single task. Add a new file `PlannerAgent.java` to `src/main/java/com/example/application/`
 
 [source,java]
@@ -71,9 +71,25 @@ include::java:example$multi-agent/src/main/java/demo/multiagent/application/Plan
 <1> Lookup the agent information for the selected agents from the `AgentRegistry.
 <2> Detailed instructions and include descriptions (as json) of the agents.
 
+The result from the `PlannerAgent` is a `Plan` with a list of `PlanStep`.
+
+Add a new file `Plan.java` to `src/main/java/com/example/domain/`
+[source,java]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/domain/Plan.java[Plan.java]
+----
+include::java:example$multi-agent/src/main/java/demo/multiagent/domain/Plan.java[tag=all]
+----
+
+and a new file `PlanStep.java` to `src/main/java/com/example/domain/`
+[source,java]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/domain/PlanStep.java[PlanStep.java]
+----
+include::java:example$multi-agent/src/main/java/demo/multiagent/domain/PlanStep.java[tag=all]
+----
+
 == Common signature of worker agents
 
-We will call the selected agents according to the plan, and we want to do that without explicitly knowing which agent to call. For this, the worker agents (`WeatherAgent` and `ActivityAgent`) must have the same shape. Adjust the `ActivityAgent` to have this method signature:
+We will call the selected agents according to the plan, and we want to do that without explicitly knowing which agent it is. For this, the worker agents (`WeatherAgent` and `ActivityAgent`) must have the same shape. Adjust the `ActivityAgent` to have this method signature:
 
 [source,java]
 .ActivityAgent.java
@@ -115,6 +131,13 @@ include::java:example$multi-agent/src/main/java/demo/multiagent/application/Agen
 <9> Call the agent for the task.
 <10> Continue executing the plan until no tasks are remaining.
 
+You can add the imports:
+[source, java]
+----
+import static com.example.application.AgentTeamWorkflow.Status.*;
+import com.example.domain.*;
+----
+
 When executing the plan and calling the agents we know the id of the agent to call, but not the agent class. It can be the `WeatherAgent` or `ActivityAgent`. Therefore, we can't use the ordinary `method` of the `ComponentClient. Instead, we use the `dynamicCall` with the id of the agent. This is the reason why we had to align the method signatures of the worker agents.
 
 This also ends the workflow by creating a summary of the results from the involved agent. Add a new file `SummarizerAgent.java` to `src/main/java/com/example/application/`
@@ -123,6 +146,13 @@ This also ends the workflow by creating a summary of the results from the involv
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/SummarizerAgent.java[SummarizerAgent.java]
 ----
 include::java:example$multi-agent/src/main/java/demo/multiagent/application/SummarizerAgent.java[tag=all]
+----
+
+Fix any compilation errors, such as missing imports.
+
+[source,command line]
+----
+mvn compile
 ----
 
 We still only have the two worker agents `WeatherAgent` and `ActivityAgent`, but you can add more agents to this structure of dynamic planning and execution, and it will be able to solve other types of problems without changing the orchestration engine.
@@ -151,6 +181,8 @@ Retrieve the suggested activities with the `sessionId` from the previous respons
 ----
 curl -i -XGET --location "http://localhost:9000/activities/alice/{sessionId}"
 ----
+
+Inspect the logs and notice the difference if you include "Beware of the weather" in the request or not.
 
 == Next steps
 

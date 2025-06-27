@@ -1,5 +1,6 @@
 package agent_guide.part2;
 
+// tag::all[]
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,3 +11,4 @@ public record Preferences(List<String> entries) {
     return new Preferences(newEntries);
   }
 }
+// end::all[]

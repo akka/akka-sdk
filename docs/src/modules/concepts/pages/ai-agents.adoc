@@ -1,4 +1,5 @@
-= AI Agents
+= Building AI agents
+:page-aliases: concepts:ai-concepts-video.adoc
 
 include::ROOT:partial$include.adoc[]
 
@@ -12,7 +13,7 @@ If your agent is consuming an LLM as a service, then you could be paying some am
 
 == Different types of AI
 
-LLMs are everywhere these days and it is impossible to escape all of their related news. It would be easy to assume that all agents interact with LLMs whether they are self-hosted or provided as an external service. This idea does a disservice to the rest of machine learning and AI in particular. 
+LLMs are everywhere these days and it is impossible to escape all of their related news. It would be easy to assume that all agents interact with LLMs whether they are self-hosted or provided as an external service. This idea does a disservice to the rest of machine learning and AI in particular.
 
 As you develop your teams of collaborative agents, keep in mind that not everything needs to be an LLM and look for opportunities to use smaller, more efficient, task-specific models. This can not only save you money, but can improve the overall performance of your application.
 
@@ -48,7 +49,7 @@ The context in the preceding prompt is how agents can augment the knowledge of a
 
 Each agent should do _one thing_. Agents should have a single goal and they can use any form of knowledge and model inference to accomplish that goal. However, we rarely ever build applications that only do one thing. One of the super powers of agents is in _collaboration_.
 
-There are protocols and standards rapidly evolving for ways agents can communicate with each other directly, but agents also benefit from indirect communication. 
+There are protocols and standards rapidly evolving for ways agents can communicate with each other directly, but agents also benefit from indirect communication.
 
 Whether you have 1 agent or 50, you still need to be able to do things like recover from network failure, handle timeouts, deal with failure responses, broken streams, and much more. Just for individual agents you will need an orchestrator if you want that agent to be resilient at scale. With dozens of agents working together with shared and isolated sessions, they will need to be managed by supervisors.
 
@@ -60,3 +61,20 @@ You submit the prompt to the model and get an answer back. Then, we can use _ano
 
 Rather than a unit test, we often have entire suites of evaluation runs where we submit a large number of prompts, derive analytics and metrics from the replies, and then score the model-generated data as a whole. This is tricky because you can very easily have an evaluation run that has a high confidence score but still somehow manages to contain link:https://www.ibm.com/think/topics/ai-hallucinations[hallucinations].
 
+== Foundational AI Concepts (video)
+
+Vectors, embeddings, and Retrieval-Augmented Generation (RAG) are core concepts behind modern AI systems, especially those involving large language models (LLMs). Whether you're just beginning your journey into AI or brushing up on terminology that's increasingly appearing in development workflows, this is a great place to start.
+
+The following video is an informal walkthrough of foundational AI concepts that underpin tools like ChatGPT, RAG, and semantic search.
+
+video::mWpCnptTTPQ[youtube,width=560,height=315]
+
+Topics covered in the video include:
+
+- What vectors are and why they’re foundational to AI
+- How embeddings turn human input into machine-readable vectors
+- The role of vector distance and similarity metrics (e.g., Euclidean vs. cosine)
+- How vector databases support semantic search
+- The RAG pattern for enriching LLM prompts
+- Why prompt structure, token count, and caching all matter
+- How concepts like agency and stateful workflows connect to agentic AI and Akka

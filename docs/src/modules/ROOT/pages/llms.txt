@@ -99,6 +99,7 @@
 - [Deployment model](https://doc.akka.io/concepts/deployment-model.html.md): Understanding how Akka services are packaged and deployed.
 - [Saga patterns](https://doc.akka.io/concepts/saga-patterns.html.md): Implementing distributed transactions using the saga pattern in Akka.
 - [AI coding assistant](https://doc.akka.io/java/ai-coding-assistant.html.md): How to setup AI coding assistant tools with Akka.
+- [Building AI Agents](https://doc.akka.io/concepts/ai-agents.html.md): How to design, orchestrate and evaluate AI agents powered by LLMs.
 
 ### Examples
 

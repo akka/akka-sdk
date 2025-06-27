@@ -1,4 +1,4 @@
-= AI Planner Part 3: Weather agent
+= Weather agent
 
 include::ROOT:partial$include.adoc[]
 
@@ -11,6 +11,7 @@ Activities may depend on the weather, so let's add an agent that retrieves a wea
 In this part of the guide you will:
 
 * Create an agent for the weather forecast that uses an external service as a function tool
+* Make a request to the external `api.weatherapi.com` service
 
 == Prerequisites
 
@@ -24,7 +25,7 @@ Add a new file `WeatherAgent.java` to `src/main/java/com/example/application/`
 [source,java]
 .WeatherAgent.java
 ----
-include::java:example$doc-snippets/src/main/java/agent_guide/part3/WeatherAgent.java[tag=class]
+include::java:example$doc-snippets/src/main/java/agent_guide/part3/WeatherAgent.java[tag=all]
 ----
 <1> Instructions for the weather agent.
 <2> Inject the `HttpClientProvider`.
@@ -40,12 +41,12 @@ We could make a request to the `WeatherAgent` from the endpoint before calling t
 
 Before introducing the workflow we would like to see that the `WeatherAgent` works in isolation.
 
-To use the preferences from the `ActivityAgent` we need to inject the component client and retrieve the preferences for a given user id.
+Add a new file `WeatherAgentIntegrationTest.java` to `src/main/test/com/example/application/`
 
 [source,java]
-.ActivityAgent.java
+.WeatherAgentIntegrationTest.java
 ----
-include::java:example$doc-snippets/src/test/java/agent_guide/part3/WeatherAgentIntegrationTest.java[tag=class]
+include::java:example$doc-snippets/src/test/java/agent_guide/part3/WeatherAgentIntegrationTest.java[tag=all]
 ----
 <1> Extend `TestKitSupport`.
 <2> Use the component client to call the agent.
@@ -80,6 +81,6 @@ mvn verify
 
 == Next steps
 
-* Introduce a workflow that orchestrates the calls between the agents. Continue with xref:planner-agent/team.adoc[Part 4: Orchestrate the agents]
+* Introduce a workflow that orchestrates the calls between the agents. Continue with xref:planner-agent/team.adoc[]
 * Learn more about more possibilities of xref:java:agents.adoc#tools[extending agents with function tools].
 
