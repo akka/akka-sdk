@@ -358,12 +358,14 @@ private[impl] final class AgentImpl[A <: Agent](
             case UnsupportedFeatureFailure => new UnsupportedFeatureException(exc.getMessage)
             case InternalFailure           => new InternalServerException(exc.getMessage)
 
-            case OutputParsingFailure        => exc.cause // this is expected to be a JsonParsingException
             case ToolCallLimitReachedFailure => new ToolCallLimitReachedException(exc.getMessage)
             case reason: ToolCallExecutionFailure =>
               new ToolCallExecutionException(exc.getMessage, reason.toolName, exc.cause)
             case reason: McpToolCallExecutionFailure =>
               new McpToolCallExecutionException(exc.getMessage, reason.toolName, reason.endpoint, exc.cause)
+
+            // this is expected to be a JsonParsingException, we give it as is to users
+            case OutputParsingFailure => exc.cause
           }
         } catch {
           case _: MatchError =>
