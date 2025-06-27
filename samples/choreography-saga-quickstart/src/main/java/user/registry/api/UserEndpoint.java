@@ -40,6 +40,14 @@ public class UserEndpoint {
     this.client = client;
   }
 
+  /**
+   * External API representation of a user record
+   */
+  public record User(String name, String country, String email) {
+  }
+
+  public record ChangeEmail(String newEmail) {
+  }
 
   /**
    * External API representation of an email record
@@ -62,21 +70,21 @@ public class UserEndpoint {
    * If we succeed in reserving the email address, we move forward and create the user.
    */
   @Post("/{userId}")
-  public HttpResponse createUser(String userId, User.Create cmd) {
+  public HttpResponse createUser(String userId, User user) {
 
-    var createUniqueEmail = new UniqueEmail.ReserveEmail(cmd.email(), userId);
+    var createUniqueEmail = new UniqueEmail.ReserveEmail(user.email(), userId);
 
     // try reserving the email address
     // we want to execute this call in other to check its result
     // and decide if we can continue with the user creation
-    reserveEmail(userId, cmd.email());
+    reserveEmail(userId, user.email());
 
     // on successful email reservation, we create the user and return the result
     logger.info("Creating user '{}'", userId);
     var createResult = client
       .forEventSourcedEntity(userId)
       .method(UserEntity::createUser)
-      .invoke(cmd);
+      .invoke(new UserEntity.Create(user.name(), user.country(), user.email()));
 
     return switch (createResult) {
       case UserEntity.Result.Success s -> HttpResponses.ok();
@@ -90,7 +98,7 @@ public class UserEndpoint {
 
 
   @Put("/{userId}/email")
-  public HttpResponse changeEmail(String userId, User.ChangeEmail cmd) {
+  public HttpResponse changeEmail(String userId, ChangeEmail cmd) {
 
     var createUniqueEmail = new UniqueEmail.ReserveEmail(cmd.newEmail(), userId);
 
@@ -104,7 +112,7 @@ public class UserEndpoint {
     client
       .forEventSourcedEntity(userId)
       .method(UserEntity::changeEmail)
-      .invoke(cmd);
+      .invoke(new UserEntity.ChangeEmail(cmd.newEmail()));
 
     return HttpResponses.ok();
   }

@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import user.registry.domain.User;
 import user.registry.domain.UserEvent;
 
+import java.util.List;
+
 import static akka.Done.done;
 
 /**
@@ -31,6 +33,12 @@ import static akka.Done.done;
 @ComponentId("user")
 public class UserEntity extends EventSourcedEntity<User, UserEvent> {
 
+  public record Create(String name, String country, String email) {
+  }
+
+  public record ChangeEmail(String newEmail) {
+  }
+
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
@@ -48,7 +56,7 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
 
   }
 
-  public Effect<Result> createUser(User.Create cmd) {
+  public Effect<Result> createUser(Create cmd) {
 
     // since the user creation depends on the email address reservation, a better place to valid an incoming command
     // would be in the ApplicationController where we coordinate the two operations.
@@ -65,17 +73,37 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
 
     logger.info("Creating user {}", cmd);
     return effects()
-      .persist(User.onCommand(cmd))
+      .persist(new UserEvent.UserWasCreated(cmd.name, cmd.country, cmd.email))
       .thenReply(__ -> new Result.Success());
   }
 
-  public Effect<Done> changeEmail(User.ChangeEmail cmd) {
+
+  /**
+   * Persists EmailAssigned and EmailUnassigned event.
+   * Persists nothing if 'changing' to the same email address.
+   * <p>
+   * When changing the email address, we need to persist two events:
+   * one to assign the new email address and one to un-assign the old email address.
+   * <p>
+   * Later the UserEventsSubscriber will react to these events and update the UniqueEmailEntity accordingly.
+   * The newly assigned email will be confirmed and the old email will be marked as not-in-use.
+   */
+  public Effect<Done> changeEmail(ChangeEmail cmd) {
     if (currentState() == null) {
       return effects().error("User not found");
     }
-    return effects()
-      .persistAll(currentState().onCommand(cmd))
-      .thenReply(__ -> done());
+
+    if (cmd.newEmail().equals(currentState().email())) {
+      return effects().reply(done());
+    } else {
+      var events = List.of(
+          new UserEvent.EmailAssigned(cmd.newEmail),
+          new UserEvent.EmailUnassigned(currentState().email()));
+
+      return effects()
+          .persistAll(events)
+          .thenReply(__ -> done());
+    }
   }
 
   public ReadOnlyEffect<User> getState() {
@@ -89,8 +117,8 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
   @Override
   public User applyEvent(UserEvent event) {
     return switch (event) {
-      case UserEvent.UserWasCreated evt -> User.onEvent(evt);
-      case UserEvent.EmailAssigned evt -> currentState().onEvent(evt);
+      case UserEvent.UserWasCreated evt -> new User(evt.name(), evt.country(), evt.email());
+      case UserEvent.EmailAssigned evt -> currentState().withEmail(evt.newEmail());
       case UserEvent.EmailUnassigned evt -> currentState();
     };
   }
