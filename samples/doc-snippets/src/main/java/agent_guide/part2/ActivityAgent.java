@@ -39,7 +39,7 @@ public class ActivityAgent extends Agent {
       userMessage = request.message() +
           "\nPreferences:\n" +
           allPreferences.entries().stream()
-              .collect(Collectors.joining("'\n", "- ", ""));
+              .collect(Collectors.joining("\n", "- ", ""));
     }
 
     return effects()
