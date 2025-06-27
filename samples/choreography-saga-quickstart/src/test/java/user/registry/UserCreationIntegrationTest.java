@@ -31,7 +31,7 @@ public class UserCreationIntegrationTest extends TestKitSupport {
     assertThat(emailInfoResponse.body().status()).isEqualTo("NOT_USED");
 
     httpClient.POST("/api/users/001")
-            .withRequestBody(new User.Create("John Doe", "US", "doe@acme.com"))
+            .withRequestBody(new UserEndpoint.User("John Doe", "US", "doe@acme.com"))
             .invoke();
 
     // get email again and check it's eventually confirmed
@@ -65,7 +65,7 @@ public class UserCreationIntegrationTest extends TestKitSupport {
     var createUserResponse =
             httpClient.POST("/api/users/002")
                     // this user creation will fail because user's name is not provided
-                    .withRequestBody(new User.Create(null, "US", "invalid@acme.com"))
+                    .withRequestBody(new UserEndpoint.User(null, "US", "invalid@acme.com"))
                     .invoke();
 
     assertThat(createUserResponse.httpResponse().status()).isEqualTo(StatusCodes.BAD_REQUEST);

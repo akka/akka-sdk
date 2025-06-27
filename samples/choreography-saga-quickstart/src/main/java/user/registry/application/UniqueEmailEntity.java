@@ -52,19 +52,13 @@ public class UniqueEmailEntity extends KeyValueEntity<UniqueEmail> {
     this.address = context.entityId();
   }
 
-  public enum Status {
-    NOT_USED,
-    RESERVED,
-    CONFIRMED
-  }
-
   /**
    * This is the initial state of the entity.
    * When the entity is created, it is not used.
    * It can be reverted to this state by calling the delete() method.
    */
   private UniqueEmail notInUse() {
-    return new UniqueEmail(address, Status.NOT_USED, Optional.empty());
+    return new UniqueEmail(address, UniqueEmail.Status.NOT_USED, Optional.empty());
   }
 
   /**
@@ -96,7 +90,7 @@ public class UniqueEmailEntity extends KeyValueEntity<UniqueEmail> {
 
     logger.info("Reserving email address '{}'", cmd.address());
     return effects()
-      .updateState(new UniqueEmail(cmd.address(), Status.RESERVED, Optional.of(cmd.ownerId())))
+      .updateState(new UniqueEmail(cmd.address(), UniqueEmail.Status.RESERVED, Optional.of(cmd.ownerId())))
       .thenReply(new Result.Success());
   }
 
