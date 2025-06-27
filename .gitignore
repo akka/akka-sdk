@@ -58,3 +58,4 @@ sdk-version.txt
 .settings/
 
 .qodo
+akka-context/

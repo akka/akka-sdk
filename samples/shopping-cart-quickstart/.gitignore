@@ -24,3 +24,5 @@ effective-pom.xml
 
 #local db
 db.mv.db
+
+akka-context/
