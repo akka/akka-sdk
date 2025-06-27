@@ -10,6 +10,5 @@
 *** xref:concepts:multi-region.adoc[]
 *** xref:concepts:saga-patterns.adoc[]
 *** xref:concepts:grpc-vs-http-endpoints.adoc[]
-*** xref:concepts:ai-concepts-video.adoc[]
 *** xref:concepts:ai-agents.adoc[]
 *** xref:concepts:acls.adoc[]
