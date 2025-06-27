@@ -20,7 +20,7 @@ All services and applications start as a Java project. Akka has a getting starte
 [#_specify_service_interface_and_domain_model]
 == Specify service interface and domain model
 
-Creating services in Akka follows the architecture outlined in xref:concepts:architecture-model.adoc#_architecture[Akka Architecture]. You start with your domain model, which models your business domain in plain old Java objects. Then you will create Akka components to coordinate them.
+Creating services in Akka follows the model described in xref:concepts:architecture-model.adoc#_architecture[]. You start with your domain model, which models your business domain in plain old Java objects. Then you will create Akka components to coordinate them.
 
 The main components of an Akka service are:
 

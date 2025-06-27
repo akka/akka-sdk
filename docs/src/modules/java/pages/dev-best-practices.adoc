@@ -11,21 +11,21 @@ Akka is ideally suited for the creation of _Microservices_. Microservices genera
 [sidebar]
 Domain-driven design (DDD) is the concept that the structure and language of software code (class names, class methods, class variables) should match the business domain. For example, if a software processes loan applications, it might have classes such as LoanApplication and Customer, and methods such as AcceptOffer and Withdraw. &mdash; https://en.wikipedia.org/wiki/Domain-driven_design[Wikipedia, window="new"]
 
-Akka makes it easy and fast to build services using the concepts of Domain Driven Design (DDD). While it's not necessary to understand all the ins and outs of Domain Driven Design, you'll find a few of the concepts that make building services even more straightforward below. See xref:concepts:architecture-model.adoc[Akka architecture model] for more information on the role of your domain model in Akka and how Akka layers your architecture. Akkademy provides a free course on https://akkademy.akka.io/learn/courses/6/reactive-architecture2-domain-driven-design[Domain Driven Design, window="new"].
+Akka makes it easy and fast to build services using the concepts of Domain Driven Design (DDD). While it's not necessary to understand all the ins and outs of Domain Driven Design, you'll find a few of the concepts that make building services even more straightforward below. See xref:concepts:architecture-model.adoc[] for more information on the role of your domain model in Akka. Akkademy provides a free course on https://akkademy.akka.io/learn/courses/6/reactive-architecture2-domain-driven-design[Domain Driven Design, window="new"].
 
 [[bounded-context]]
 === Bounded context
 
 https://martinfowler.com/bliki/BoundedContext.html[Bounded context, window="new"] is a concept that divides large domain models into smaller groups that are explicit about their interrelationships. Normally a microservice is a bounded context. You _may_ choose to have multiple bounded contexts in a microservice.
 
-Each of these contexts will have autonomy to evolve the models it owns. Keeping each model within strict boundaries allows different modelling for entities that look similar but have slightly different meaning in each of the contexts. Each bounded context should have its own domain, application, and API layers as described in xref:concepts:architecture-model.adoc[Akka architecture model].
+Each of these contexts will have autonomy to evolve the models it owns. Keeping each model within strict boundaries allows different modelling for entities that look similar but have slightly different meaning in each of the contexts. Each bounded context should have its own domain, application, and API layers as described in xref:concepts:architecture-model.adoc[].
 
 [.darkmode-white-padded]
 image::bounded-context.svg[Bounded Context]
 
 === Events first
 
-Defining your data structures first, and splitting them into bounded contexts, will also help you think about all the different interactions your data needs to have. These interactions, like `ItemAddedToShoppingCart` or `LightbulbTurnedOn` are the events that are persisted and processed in Akka. Defining your data structures first, makes it easier to think about which events are needed and where they fit into your design. These data structures and events will live in your domain model layer as described in xref:concepts:architecture-model.adoc[Akka architecture model].
+Defining your data structures first, and splitting them into bounded contexts, will also help you think about all the different interactions your data needs to have. These interactions, like `ItemAddedToShoppingCart` or `LightbulbTurnedOn` are the events that are persisted and processed in Akka. Defining your data structures first, makes it easier to think about which events are needed and where they fit into your design. These data structures and events will live in your domain model layer as described in xref:concepts:architecture-model.adoc[].
 
 === Message migration
 
