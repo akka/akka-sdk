@@ -3,6 +3,9 @@ package com.example.application;
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.JsonParsingException;
+import akka.javasdk.agent.ModelTimeoutException;
+import akka.javasdk.agent.RateLimitException;
+import akka.javasdk.agent.ToolCallExecutionException;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.TypeName;
@@ -59,7 +62,7 @@ public interface ActivityAgentMore {
        .userMessage(message)
        .responseAs(Activity.class) // <3>
        .onFailure(throwable -> { // <4>
-        if (throwable instanceof JsonParsingException jsonParsingException) {
+        if (throwable instanceof JsonParsingException) {
          return DEFAULT_ACTIVITY;
         } else {
          throw new RuntimeException(throwable);
@@ -195,6 +198,37 @@ public interface ActivityAgentMore {
  }
  // end::stream-endpoint[]
 
+ @ComponentId("activity-agent")
+ public class ActivityAgentWithErrorHandling extends Agent {
+     
+     private static final String SYSTEM_MESSAGE =
+     """
+        You are an activity agent. Your job is to suggest activities in the
+        real world. Like for example, a team building activity, sports, an
+        indoor or outdoor game, board games, a city trip, etc.
+        """.stripIndent();
+        
+        // tag::error-handling[]
+        public Effect<String> query(String message) {
+            return effects()
+            .systemMessage(SYSTEM_MESSAGE)
+            .userMessage(message)
+            .onFailure(exception -> {
+                // Handle different types of exceptions with appropriate fallback responses
+                return switch (exception) {
+                  case RateLimitException exc ->
+                    "Rate limit exceeded: please try again later";
+                  case ModelTimeoutException exc ->
+                    "Request timeout: the service is experiencing delays";
+                  case ToolCallExecutionException exc ->
+                    "Tool error: unable to execute required tool " + exc.getToolName();
+                  default -> "Service unavailable: please try again";
+                };
+            })
+       .thenReply();
+       // end::error-handling[]
+  }
+ }
 
 }
 

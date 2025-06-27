@@ -339,6 +339,40 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 <3> Use the `responseAs` method to specify the expected response type.
 <4> Sometimes the model may not return a valid JSON, so you can use `onFailure` to provide a fallback value in case of parsing exception.
 
+== Handling failures
+
+The `onFailure` method in the agent's effect API provides comprehensive error handling capabilities for various types of failures that can occur during model processing. This allows you to implement robust fallback strategies and provide meaningful responses even when things go wrong.
+
+=== Types of exceptions handled
+
+The `onFailure` method can handle the following types of exceptions:
+
+* **Model-related exceptions:**
+  ** `ModelException` - General model processing failures
+  ** `RateLimitException` - API rate limiting exceeded
+  ** `ModelTimeoutException` - Model request timeout
+  ** `UnsupportedFeatureException` - Unsupported model features
+  ** `InternalServerException` - Internal service errors
+
+* **Tool execution exceptions:**
+  ** `ToolCallExecutionException` - Function tool execution errors
+  ** `McpToolCallExecutionException` - MCP tool execution errors
+  ** `ToolCallLimitReachedException` - Tool call limit exceeded
+
+* **Response processing exceptions:**
+  ** `JsonParsingException` - Response parsing failures (as shown in structured responses)
+
+=== Implementing fallback strategies
+
+You can use the `onFailure` method to implement different recovery strategies based on the type of exception:
+
+[source,java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgentMore.java[tag=onFailure-only]
+----
+
+This approach ensures your agents remain resilient and can provide meaningful responses even when encountering various types of failures during model interaction.
+
 [#tools]
 == Extending agents with function tools
 
