@@ -34,7 +34,7 @@ You can run this sample without an OpenAI API key, but it will be more fun if yo
 +
 [source, command line]
 ----
-git clone https://github.com/akka-samples/helloworld-agent.git
+git clone https://github.com/akka-samples/helloworld-agent.git --depth 1
 ----
 
 . Navigate to the new project directory.
