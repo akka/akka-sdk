@@ -2,15 +2,13 @@
 
 include::ROOT:partial$include.adoc[]
 
-Don't generate any code yet, but remember the following guidelines and use them when writing code in this project.
+If you are using an AI coding assistant, don't generate any code yet, but please make sure that you refer to these guidelines when generating Akka code later.
 
 _Patterns and conventions for consistency, maintainability, and legibility_
 
 The following is a set of guidelines and patterns that will help keep your Akka projects consistent, predictable, and highly readable. While you’re free to choose not to follow these guidelines, they’ve been tried and tested over the years by many teams.
 
 These guidelines apply only to the Akka SDK and do not cover usage of the lower-level Akka libraries.
-
-If you are using an AI coding assistant, please make sure that it refers to these guidelines when generating components.
 
 == General
 
