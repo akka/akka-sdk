@@ -215,14 +215,15 @@ public interface ActivityAgentMore {
             .userMessage(message)
             .onFailure(exception -> {
                 // Handle different types of exceptions with appropriate fallback responses
-                return switch (exception) {
-                  case RateLimitException exc ->
+                return switch (exception) { // <1>
+                  case RateLimitException exc -> // <2>
                     "Rate limit exceeded: please try again later";
                   case ModelTimeoutException exc ->
                     "Request timeout: the service is experiencing delays";
                   case ToolCallExecutionException exc ->
                     "Tool error: unable to execute required tool " + exc.getToolName();
-                  default -> "Service unavailable: please try again";
+                  default -> // <3>
+                    "Unexpected error occurred";
                 };
             })
        .thenReply();

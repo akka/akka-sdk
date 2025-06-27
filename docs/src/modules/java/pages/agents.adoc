@@ -362,6 +362,11 @@ The `onFailure` method can handle the following types of exceptions:
 * **Response processing exceptions:**
   ** `JsonParsingException` - Response parsing failures (as shown in structured responses)
 
+* **Unknown exceptions:**
+  ** `RuntimeException` - For any unexpected errors that don't fall into the above categories
+
+Apart from the listed specific exceptions, users can still encounter `RuntimeException` instances that wrap unexpected errors. Therefore, when handling errors in the `onFailure` method, it's recommended to always include a `default` case to handle any unknown exception types gracefully.
+
 === Implementing fallback strategies
 
 You can use the `onFailure` method to implement different recovery strategies based on the type of exception:
@@ -370,6 +375,9 @@ You can use the `onFailure` method to implement different recovery strategies ba
 ----
 include::example$doc-snippets/src/main/java/com/example/application/ActivityAgentMore.java[tag=error-handling]
 ----
+<1> Use pattern matching to handle different exception types appropriately.
+<2> Handle specific known exceptions with meaningful fallback responses.
+<3> For unknown or unexpected exceptions, define a default matching branch providing a generic fallback response.
 
 This approach ensures your agents remain resilient and can provide meaningful responses even when encountering various types of failures during model interaction.
 
