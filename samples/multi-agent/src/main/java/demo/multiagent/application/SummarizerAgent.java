@@ -30,7 +30,7 @@ public class SummarizerAgent extends Agent {
       """.formatted(userQuery);
   }
 
-  public Agent.Effect<String> summarize(Request request) {
+  public Effect<String> summarize(Request request) {
     var allResponses = request.agentsResponses.stream()
         .filter(response -> !response.startsWith("ERROR"))
         .collect(Collectors.joining(" "));
