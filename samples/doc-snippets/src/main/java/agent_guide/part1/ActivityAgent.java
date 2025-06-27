@@ -1,6 +1,6 @@
 package agent_guide.part1;
 
-// tag::class[]
+// tag::all[]
 import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.ComponentId;
 
@@ -20,4 +20,4 @@ public class ActivityAgent extends Agent { // <2>
         .thenReply();
   }
 }
-// end::class[]
+// end::all[]

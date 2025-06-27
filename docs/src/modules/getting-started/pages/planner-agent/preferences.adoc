@@ -26,15 +26,33 @@ Add a new file `PreferencesEntity.java` to `src/main/java/com/example/applicatio
 [source,java]
 .PreferencesEntity.java
 ----
-include::java:example$doc-snippets/src/main/java/agent_guide/part2/PreferencesEntity.java[tag=class]
+include::java:example$doc-snippets/src/main/java/agent_guide/part2/PreferencesEntity.java[tag=all]
 ----
 <1> Extend `EventSourcedEntity`, with the type of state this entity represents, and the interface for the events it persists.
 <2> Annotate the class so Akka can identify it as an event-sourced entity.
 <3> Define the command handler method to add a preference text.
 <4> Define another command handler to retrieve all preferences.
-<5> Updates of the `State` is performed from the persisted events.
+<5> Updates of the `Preferences` state is performed from the persisted events.
+
+You also need the `Preferences` and the `PreferencesEvent` records.
+
+Add a new file `Preferences.java` to `src/main/java/com/example/domain/`
+
+[source,java]
+.Preferences.java
+----
+include::java:example$doc-snippets/src/main/java/agent_guide/part2/Preferences.java[tag=all]
+----
 
 Here we use plain text for the preferences, but it could be more structured information.
+
+Add a new file `PreferencesEvent.java` to `src/main/java/com/example/domain/`
+
+[source,java]
+.PreferencesEvent.java
+----
+include::java:example$doc-snippets/src/main/java/agent_guide/part2/PreferencesEvent.java[tag=all]
+----
 
 == Use from the agent
 
@@ -43,7 +61,7 @@ To use the preferences in the `ActivityAgent` we need to inject the component cl
 [source,java]
 .ActivityAgent.java
 ----
-include::java:example$doc-snippets/src/main/java/agent_guide/part2/ActivityAgent.java[tag=class]
+include::java:example$doc-snippets/src/main/java/agent_guide/part2/ActivityAgent.java[tag=all]
 ----
 <1> Inject `ComponentClient`.
 <2> Include user id in the request to the agent.
@@ -60,7 +78,7 @@ We need to add the user id to the HTTP request.
 include::java:example$doc-snippets/src/main/java/agent_guide/part2/ActivityEndpoint.java[tag=userId]
 ----
 <1> Add `userId` as a path parameter.
-<2> Call the agent with the `userId`.
+<2> Call the agent with the new `ActivityAgent.Request` record that includes the `userId`.
 
 == Update preferences from endpoint
 
@@ -73,7 +91,17 @@ include::java:example$doc-snippets/src/main/java/agent_guide/part2/ActivityEndpo
 <1> Add a method to add a preference.
 <2> Call the `PreferenceEntity` for the given user id.
 
+Use the imports:
+
+[source, java]
+----
+import akka.http.javadsl.model.HttpResponse;
+import akka.javasdk.http.HttpResponses;
+----
+
 == Running the service
+
+Stop the service with `ctrl-c` if it's still running.
 
 Start your service locally:
 
@@ -90,7 +118,7 @@ curl -i localhost:9000/preferences/alice \
   --header "Content-Type: application/json" \
   -XPOST \
   --data '{
-    "preference": "I like outdoor activities.",
+    "preference": "I like outdoor activities."
   }'
 ----
 
@@ -100,7 +128,7 @@ curl -i localhost:9000/preferences/alice \
   --header "Content-Type: application/json" \
   -XPOST \
   --data '{
-    "preference": "I dislike museums.",
+    "preference": "I dislike museums."
   }'
 ----
 

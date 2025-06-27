@@ -557,7 +557,7 @@ The `SelectorAgent` decides which agents to use:
 [source,java]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/SelectorAgent.java[SelectorAgent.java]
 ----
-include::example$multi-agent/src/main/java/demo/multiagent/application/SelectorAgent.java[tag=all]
+include::example$multi-agent/src/main/java/demo/multiagent/application/SelectorAgent.java[tag=class]
 ----
 <1> The `AgentRegistry` contains information about all agents.
 <2> Select the agents with the role `"worker"`.
@@ -593,7 +593,7 @@ After selecting agents, we use a `PlannerAgent` to decide in which order to use 
 [source,java]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/PlannerAgent.java[PlannerAgent.java]
 ----
-include::example$multi-agent/src/main/java/demo/multiagent/application/PlannerAgent.java[tag=all]
+include::example$multi-agent/src/main/java/demo/multiagent/application/PlannerAgent.java[tag=class]
 ----
 <1> Lookup the agent information for the selected agents from the `AgentRegistry.
 <2> Detailed instructions and include descriptions (as json) of the agents.

@@ -1,7 +1,8 @@
 package agent_guide.part5;
 
-// tag::class[]
 import agent_guide.part4.AgentTeamWorkflow;
+
+// tag::all[]
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.DeleteHandler;
@@ -17,7 +18,7 @@ public class ActivityView extends View {
 
   public record ActivityEntry(String userId, String userQuestion, String finalAnswer) {}
 
-  @Query("SELECT * FROM activities WHERE userId = :userId") // <1>
+  @Query("SELECT * AS entries FROM activities WHERE userId = :userId") // <1>
   public QueryEffect<ActivityEntries> getActivities(String userId) {
     return queryResult();
   }
@@ -36,4 +37,4 @@ public class ActivityView extends View {
   }
 
 }
-// end::class[]
+// end::all[]

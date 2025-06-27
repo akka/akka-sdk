@@ -139,7 +139,7 @@ curl -i localhost:9000/preferences/alice \
   --header "Content-Type: application/json" \
   -XPOST \
   --data '{
-    "preference": "I like outdoor activities.",
+    "preference": "I like outdoor activities."
   }'
 ```
 

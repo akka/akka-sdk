@@ -27,7 +27,7 @@ Our workflow should first retrieve the weather forecast and then find suitable a
 [source,java]
 .AgentTeamWorkflow.java
 ----
-include::java:example$doc-snippets/src/main/java/agent_guide/part4/AgentTeamWorkflow.java[tag=class]
+include::java:example$doc-snippets/src/main/java/agent_guide/part4/AgentTeamWorkflow.java[tag=all]
 ----
 <1> The workflow starts, and keeps track of the user id and original query in the state of the workflow.
 <2> First step is for the weather forecast.
@@ -36,7 +36,7 @@ include::java:example$doc-snippets/src/main/java/agent_guide/part4/AgentTeamWork
 <5> Request to the `ActivityAgent`.
 <6> The final result is stored in the workflow state.
 
-You might have noticed that we don't pass the forecast as a parameter to the `ActivityAgent`. How would it then know about the weather? The `WeatherAgent` and `Activity agents share the same session memory and thereby the `ActivityAgent` will have the weather forecast in the context that is sent to the AI model.
+You might have noticed that we don't pass the forecast as a parameter to the `ActivityAgent`. How would it then know about the weather? The `WeatherAgent` and `Activity` agents share the same session memory and thereby the `ActivityAgent` will have the weather forecast in the context that is sent to the AI model.
 
 == Adjust the endpoint
 
@@ -75,7 +75,7 @@ Ask for activities.
 ----
 curl -i -XPOST --location "http://localhost:9000/activities/alice" \
   --header "Content-Type: application/json" \
-  --data '{"message": "I am in Madrid. What should I do?"}'
+  --data '{"message": "I am in Madrid. What should I do? Beware of the weather."}'
 ----
 
 Retrieve the suggested activities with the `sessionId` from the previous response:

@@ -1,6 +1,6 @@
 package agent_guide.part2;
 
-// tag::class[]
+// tag::all[]
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
@@ -13,6 +13,11 @@ public class PreferencesEntity
 
   public record AddPreference(String preference) {}
 
+  @Override
+  public Preferences emptyState() {
+    return new Preferences(List.of());
+  }
+
   public Effect<Done> addPreference(AddPreference command) { // <3>
     return effects()
         .persist(new PreferencesEvent.PreferenceAdded(command.preference()))
@@ -20,12 +25,7 @@ public class PreferencesEntity
   }
 
   public Effect<Preferences> getPreferences() { // <4>
-    List<String> prefs;
-    if (currentState() == null) {
-      return effects().reply(new Preferences(List.of()));
-    } else {
-      return effects().reply(currentState());
-    }
+    return effects().reply(currentState());
   }
 
   @Override
@@ -36,4 +36,4 @@ public class PreferencesEntity
   }
 
 }
-// end::class[]
+// end::all[]

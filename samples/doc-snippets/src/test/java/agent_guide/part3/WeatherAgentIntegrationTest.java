@@ -1,7 +1,8 @@
 package agent_guide.part3;
 
-// tag::class[]
+// tag::all[]
 import akka.javasdk.testkit.TestKitSupport;
+import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
@@ -9,6 +10,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 public class WeatherAgentIntegrationTest extends TestKitSupport { // <1>
 
+  @Test
   public void testAgent() {
     var sessionId = UUID.randomUUID().toString();
     var message = "I am in Madrid";
@@ -23,4 +25,4 @@ public class WeatherAgentIntegrationTest extends TestKitSupport { // <1>
     assertThat(forecast).isNotBlank();
   }
 }
-// end::class[]
+// end::all[]

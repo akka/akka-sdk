@@ -1,5 +1,6 @@
 package demo.multiagent.application;
 
+// tag::all[]
 import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
@@ -7,7 +8,6 @@ import akka.javasdk.annotations.ComponentId;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-// tag::all[]
 @ComponentId("summarizer-agent")
 @AgentDescription(
     name = "Summarizer",
