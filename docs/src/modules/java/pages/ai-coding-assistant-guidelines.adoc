@@ -81,7 +81,7 @@ If you are using an AI coding assistant, please make sure that it refers to thes
 == HTTP Endpoints
 
 * Implement HTTP endpoints with the `@HttpEndpoint` and path annotations.
-** Omit root path if there is no common path for the endpoint methods.
+** Omit root path in the `@HttpEndpoint` annotation if there is no common path for the endpoint methods.
 * HTTP endpoints should not have a `@ComponentId` annotation.
 * Endpoints should extend `AbstractHttpEndpoint` if they need additional request context such as headers and JWT.
 * Endpoints that are only for internal use should be secured with the `service = *` attribute in the `@Acl` annotation, indicating that any service can call it but the Internet principal is not allowed.
