@@ -368,7 +368,7 @@ You can use the `onFailure` method to implement different recovery strategies ba
 
 [source,java]
 ----
-include::example$doc-snippets/src/main/java/com/example/application/ActivityAgentMore.java[tag=onFailure-only]
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgentMore.java[tag=error-handling]
 ----
 
 This approach ensures your agents remain resilient and can provide meaningful responses even when encountering various types of failures during model interaction.
