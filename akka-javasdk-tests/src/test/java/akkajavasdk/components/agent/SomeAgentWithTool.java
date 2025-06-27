@@ -28,7 +28,13 @@ public class SomeAgentWithTool extends Agent {
   public record SomeResponse(String response) {
   }
 
+  private boolean constructedOnVt = Thread.currentThread().isVirtual();
+
   public Effect<SomeResponse> query(String question) {
+    if (question.equals("Running on virtual thread?")) {
+      return effects().reply(new SomeResponse("Query on vt: " + Thread.currentThread().isVirtual() + ", constructed on vt: " + constructedOnVt));
+    }
+
     return effects()
       .systemMessage("You are a helpful...")
       .tools(new WeatherService(), TrafficService.class)
