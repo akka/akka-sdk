@@ -1,70 +1,81 @@
 {
   "repositories": [
     {
-      "title": "Hello World Agent",
+      "title": "Hello world agent",
       "description": "This sample uses an agent and LLM to generate greetings in different languages. It illustrates how the agent maintains contextual history in a session memory.",
       "language": "java",
-      "url": "https://github.com/akka-samples/helloworld-agent"
+      "url": "https://github.com/akka-samples/helloworld-agent",
+      "level": "Beginner",
     },
     {
-      "title": "Temperature Monitoring Agent",
-      "description": "A temperature monitoring system that collects, aggregates, and analyzes temperature data from IoT sensors. The system uses AI to generate insights about temperature trends and anomalies across different locations.",
+      "title": "IoT sensor monitoring agent",
+      "description": "This sample is a temperature monitoring system that collects, aggregates, and analyzes temperature data from IoT sensors. The system uses AI to generate insights about temperature trends and anomalies across different locations. Collects and aggregates temperature data using Key Value Entities. OpenAI is used for anomaly and trend detection.",
       "language": "java",
-      "url": "https://github.com/akka-samples/temperature-monitoring-agent"
+      "url": "https://github.com/akka-samples/temperature-monitoring-agent",
+      "concepts": "Agent, IoT, Trend analysis, Anomaly detection, Entity, OpenAI",
+      "level": "Intermediate"
     },
     {
       "title": "Order Reconciliation Agent Sample",
       "description": "This sample implements a ReAct agent using the Akka SDK that streamlines this process by autonomously reasoning through reconciliation logic, invoking relevant data sources and APIs, identifying inconsistencies, and recommending or executing corrective actions.",
       "language": "java / javascript",
-      "url": "https://github.com/akka-samples/order-reconciliation-agent"
+      "url": "https://github.com/akka-samples/order-reconciliation-agent",
     },
     {
-      "title": "Real Estate Customer Service Agent",
-      "description": "A sample application demonstrating how to build a customer service agent for real estate inquiries, by combining Akka features and an LLM model.",
+      "title": "Agentic customer service workflow",
+      "description": "The real-estate customer service agent demonstrates how to combine Akka features with an LLM model. It illustrates an agentic workflow for customer service. It processes incoming real-estate inquiries, analyzes the content to extract details, provides follow-up when needed and saves the collected information for future reference.",
       "language": "java",
-      "url": "https://github.com/akka-samples/real-estate-cs-agent"
+      "url": "https://github.com/akka-samples/real-estate-cs-agent",
+      "concepts": "Agent, Workflow, Analysis, Detail extraction, Human in the loop, Agent Memory",
+      "level": "Intermediate"
     },
     {
-      "title": "Healthcare Agent",
-      "description": "Personal Health Agent with data from fitness trackers, medical records and other sensors.",
+      "title": "Agent sensor data analysis",
+      "description": "This sample illustrates an AI agent that uses an LLM to analyze data from fitness trackers, medical records and other sensors. It integrates with Fitbit and MongoDB Atlas.\n\n",
       "language": "java",
-      "url": "https://github.com/akka-samples/healthcare-agent"
+      "url": "https://github.com/akka-samples/healthcare-agent",
+      "concepts": "Agent, Analysis, Integrations, Vector database",
+      "level": "Intermediate"
     },
     {
       "title": "Akka Chess",
-      "description": "Akka Chess is a sample application that illustrates building a complete, resilient, automatically scalable, event-sourced application using the Akka SDK.",
+      "description": "Embedded UI, Entity, Workflow, View, Timed Action",
       "language": "java",
-      "url": "https://github.com/akka-samples/akka-chess"
+      "url": "https://github.com/akka-samples/akka-chess",
+      "concepts": "Entity, Events, HTTP Endpoint, Akka Persistence",
+      "level": "Advanced"
     },
     {
-      "title": "Choreography Saga",
-      "description": "User Registration Service Using a Choreography Saga in Akka.",
+      "title": "User registration with a choreography saga",
+      "description": "This example is a user registration service implemented as a choreography saga.",
       "language": "java",
-      "url": "https://github.com/akka-samples/choreography-saga-quickstart"
+      "url": "https://github.com/akka-samples/choreography-saga-quickstart",
+      "concepts": "Choreography, Saga, Workflow",
+      "level": "Advanced"
     },
     {
-      "title": "Customer Registry with Query Capabilities",
-      "description": "This guide will walk you through the process of creating, retrieving, and updating information from a customer registry service.",
+      "title": "Customer registry microservice",
+      "description": "This sample illustrates the use of entities and query capabilities with a view. This example shows a simple set of traditional queries and data mutations through events.",
       "language": "java",
-      "url": "https://github.com/akka-samples/event-sourced-customer-registry"
+      "url": "https://github.com/akka-samples/event-sourced-customer-registry",
+      "concepts": "Entity, View, HTTP Endpoint",
+      "level": "Beginner"
     },
     {
-      "title": "Funds Transfer Workflow Between Two Wallets",
-      "description": "This guide demonstrates how to create a simple workflow for transferring funds between two wallets. It includes a compensation mechanism that handles scenarios where a deposit fails during a transfer, ensuring the system maintains consistency.",
+      "title": "Customer registry microservice",
+      "description": "This example illustrates a funds transfer workflow between two wallets.",
       "language": "java",
-      "url": "https://github.com/akka-samples/transfer-workflow-compensation"
+      "url": "https://github.com/akka-samples/transfer-workflow-compensation",
+      "concepts": "Transactions, Workflow, Entity",
+      "level": "Intermediate"
     },
     {
       "title": "Shopping Cart",
-      "description": "How to build this Shopping Cart service step by step.",
+      "description": "This sample shows a very simple microservice implementing a shopping cart with an event-sourced entity.",
       "language": "java",
-      "url": "https://github.com/akka-samples/shopping-cart-quickstart"
-    },
-    {
-      "title": "Shopping Cart With a View",
-      "description": "How to build this Shopping Cart service step by step. This example adds features to the previous Shopping Cart example, such as a view that allows querying.",
-      "language": "java",
-      "url": "https://github.com/akka-samples/shopping-cart-with-view"
+      "url": "https://github.com/akka-samples/shopping-cart-quickstart",
+      "concepts": "Entity, Events, HTTP Endpoint",
+      "level": "Beginner"
     },
     {
       "title": "Medical Discharge Summary Tagging System",
@@ -103,16 +114,19 @@
       "url": "https://github.com/akka-samples/ask-akka-agent"
     },
     {
-      "title": "GitHub changelog summarizer",
-      "description": "This showcases an AI assistent implemented with the Akka SDK that observes GitHub releases to automatically summarizes the release contents.",
+      "title": "Release note summary generation agent",
+      "description": "This sample is designed to run every time there is a release from configured GitHub repositories. It interacts with Anthropic Claude from an agent and uses tools to retrieve detailed information from GitHub. Entities are used for storing release summaries. A timed action looks for new releases periodically and creates the summary using the LLM.",
       "language": "java",
-      "url": "https://github.com/akka-samples/changelog-agent"
+      "url": "https://github.com/akka-samples/changelog-agent",
+      "concepts": "Agent, Entity, Timed Action, Anthropic Claude, Tools, Summarization",
+      "level": "intermediate"
     },
     {
-      "title": "Trip Agent",
-      "description": "This app represents an agency that searches for flights and accommodations via the prompt from the user through a HTTP call.",
+      "title": "Tool using trip booking agent",
+      "description": "This app represents a travel agency that searches for flights and accommodations. It’s composed by an LLM (Anthropic) using Spring AI and AI tools to find flights, accommodations and sending mails.",
       "language": "java",
-      "url": "https://github.com/akka-samples/trip-agent"
+      "url": "https://github.com/akka-samples/trip-agent",
+      "concepts": "Agent, Tools, Anthropic, Spring AI, Workflow"
     }
   ]
 }
