@@ -34,7 +34,7 @@ Most classes in this layer are based on Akka-provided building blocks. The domai
 
 === API
 
-This layer connects your service to the outside world. It defines endpoints using annotations like `@HttpEndpoint`, `@Get`, `@Post`, and others. These map to HTTP or gRPC interfaces.
+This layer connects your service to the outside world. It defines endpoints that expose application functionality over HTTP or gRPC. Requests are handled here and passed on to the application layer.
 
 Endpoints use xref:java:component-and-service-calls.adoc#_component_client[`ComponentClient`] to call Akka components in the application layer. This maintains separation of concerns and ensures runtime boundaries are respected.
 
