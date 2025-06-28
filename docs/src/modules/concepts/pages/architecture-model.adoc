@@ -52,7 +52,7 @@ A typical Akka service might have a layout like the following:
 ----
 src/
  └── main/
-     └── java/com/example/
+     └── java/acme/petclinic/
          ├── domain/        # Business logic
          ├── application/   # Akka components
          └── api/           # External endpoints
