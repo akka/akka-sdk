@@ -265,4 +265,8 @@ This is a simple Hello World service, so there isn't much to see here yet. Howev
 
 == Next steps
 
-Now that you have a basic service running, it's time to learn more about building real services in Akka. See xref:getting-started:planner-agent/index.adoc[multi-agent planner] to build a more realistic application.
+Now that you have a basic service running, it's time to learn more about building real services in Akka.
+
+* See xref:getting-started:planner-agent/index.adoc[multi-agent planner] to build a more realistic application.
+* xref:quick-deploy.adoc[]
+
