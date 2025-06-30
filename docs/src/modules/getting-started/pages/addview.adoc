@@ -192,7 +192,7 @@ curl http://localhost:9000/carts/my -H 'Authorization: Bearer eyJhbGciOiJIUzI1Ni
 Now that you've added a view _and_ user authentication to the shopping cart sample, take your Akka skills to the next level:
 
 . *Install and build*: Before moving on, download the code for this sample, compile it, and make sure you can run and utilize the new service.
-. *Expand on your own*: Explore xref:concepts:architecture-model.adoc#_akka_components[other Akka components] to enhance your application with additional features.
+. *Expand on your own*: Explore xref:java:components/index.adoc[other Akka components] to enhance your application with additional features.
 . *Explore other Akka samples*: Discover more about Akka by exploring xref:samples.adoc[different use cases] for inspiration.
 
 

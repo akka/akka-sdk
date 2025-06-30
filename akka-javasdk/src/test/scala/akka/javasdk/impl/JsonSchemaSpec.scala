@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl
 
+import akka.javasdk.impl.SomeToolInput.ClassWithRecursiveFields
+import akka.javasdk.impl.SomeToolInput.CommonStdlibTypes
 import akka.javasdk.impl.SomeToolInput.SomeToolInput1
 import akka.javasdk.impl.SomeToolInput.SomeToolInput2
 import akka.javasdk.impl.SomeToolInput.SomeToolInput3
@@ -64,7 +66,9 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
         "boxedLong" -> Schema.integer(),
         "boxedDouble" -> Schema.number(),
         "boxedFloat" -> Schema.number(),
-        "boxedByte" -> Schema.integer())
+        "boxedByte" -> Schema.integer(),
+        "primitiveBooleanArray" -> Schema.array(items = Schema.boolean()),
+        "boxedBooleanArray" -> Schema.array(items = Schema.boolean()))
 
       result.properties.foreach { case (key, value) =>
         expected(key) shouldEqual value
@@ -83,7 +87,9 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
         "boxedLong",
         "boxedDouble",
         "boxedFloat",
-        "boxedByte")
+        "boxedByte",
+        "primitiveBooleanArray",
+        "boxedBooleanArray")
     }
 
     "extract schema with collection" in {
@@ -112,6 +118,42 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
       result.properties.keys shouldEqual Set("input1", "input2", "input3")
       result.properties("input1").description shouldEqual Some("some tool input")
     }
+
+    "extract schema with recursive types" in {
+      val result = JsonSchema.jsonSchemaFor(classOf[ClassWithRecursiveFields])
+
+      result.properties shouldEqual Map(
+        "regular" -> Schema.string(),
+        "recursive" -> Schema.jsonObject(),
+        "nested" -> Schema.jsonObject(
+          properties = Map("recursive" -> Schema.jsonObject()),
+          required = Seq("recursive")))
+      result.required.toSet shouldEqual Set("regular", "recursive", "nested")
+    }
+
+    "extract schema with common Java stdlib types" in {
+      val result = JsonSchema.jsonSchemaFor(classOf[CommonStdlibTypes])
+
+      result.properties shouldEqual Map(
+        "instant" -> Schema.string(),
+        "map" -> Schema.jsonObject(),
+        "localDate" -> Schema.string(),
+        "localDateTime" -> Schema.string(),
+        "localTime" -> Schema.string(),
+        "zonedDateTime" -> Schema.string(),
+        "duration" -> Schema.string())
+
+      result.required.toSet shouldEqual Set(
+        "instant",
+        "map",
+        "localDate",
+        "localDateTime",
+        "zonedDateTime",
+        "localTime",
+        "duration")
+
+    }
+
   }
 
 }

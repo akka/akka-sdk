@@ -1,10 +1,14 @@
 package user.registry.domain;
 
-import user.registry.application.UniqueEmailEntity;
-
 import java.util.Optional;
 
-public record UniqueEmail(String address, UniqueEmailEntity.Status status, Optional<String> ownerId) {
+public record UniqueEmail(String address, Status status, Optional<String> ownerId) {
+
+  public enum Status {
+    NOT_USED,
+    RESERVED,
+    CONFIRMED
+  }
 
   public record ReserveEmail(String address, String ownerId) {
   }
@@ -18,15 +22,15 @@ public record UniqueEmail(String address, UniqueEmailEntity.Status status, Optio
   }
 
   public UniqueEmail asConfirmed() {
-    return new UniqueEmail(address, UniqueEmailEntity.Status.CONFIRMED, ownerId);
+    return new UniqueEmail(address, Status.CONFIRMED, ownerId);
   }
 
   public boolean isConfirmed() {
-    return status == UniqueEmailEntity.Status.CONFIRMED;
+    return status == Status.CONFIRMED;
   }
 
   public boolean isInUse() {
-    return status != UniqueEmailEntity.Status.NOT_USED;
+    return status != Status.NOT_USED;
   }
 
   public boolean isNotInUse() {
@@ -34,6 +38,6 @@ public record UniqueEmail(String address, UniqueEmailEntity.Status status, Optio
   }
 
   public boolean isReserved() {
-    return status == UniqueEmailEntity.Status.RESERVED;
+    return status == Status.RESERVED;
   }
 }

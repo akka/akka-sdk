@@ -52,7 +52,7 @@ The user message represents the specific query, instruction, or input that will 
 Add a new file `ActivityEndpoint.java` to `src/main/java/com/example/api/`
 
 [source, java]
-.ActivityEndpoint.java]
+.ActivityEndpoint.java
 ----
 include::java:example$doc-snippets/src/main/java/agent_guide/part1/ActivityEndpoint.java[tag=all]
 ----

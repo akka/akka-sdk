@@ -10,7 +10,8 @@ import akka.javasdk.http.HttpResponses;
 import java.util.UUID;
 
 // Opened up for access from the public internet to make the service easy to try out.
-// For actual services meant for production this must be carefully considered, and often set more limited
+// For actual services meant for production this must be carefully considered,
+// and often set more limited
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint()
 public class ActivityEndpoint {

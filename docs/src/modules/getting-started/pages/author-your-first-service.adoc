@@ -10,7 +10,7 @@ include::ROOT:partial$concepts-intro.adoc[]
 In this guide, you will:
 
 * Set up your development environment.
-* Clone a simple project that follows the recommended xref:concepts:architecture-model.adoc#_architecture[onion architecture].
+* Clone a simple project that follows the xref:concepts:architecture-model.adoc[recommended structure].
 * Explore a basic AI Agent that acts as a creative greeter.
 * Explore a basic HTTP Endpoint to interact with the agent.
 * Add a request body to the Endpoint.
@@ -34,7 +34,7 @@ You can run this sample without an OpenAI API key, but it will be more fun if yo
 +
 [source, command line]
 ----
-git clone https://github.com/akka-samples/helloworld-agent.git
+git clone https://github.com/akka-samples/helloworld-agent.git --depth 1
 ----
 
 . Navigate to the new project directory.

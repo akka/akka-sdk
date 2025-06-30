@@ -1,7 +1,7 @@
 = Components
 include::ROOT:partial$include.adoc[]
 
-Akka components form the backbone of the xref:concepts:architecture-model.adoc#_application_layer[application layer] in Akka's Onion Architecture, bridging your domain model with the Akka runtime. They provide specialized ways to handle state, events, and interactions, enabling you to build scalable, event-driven applications while focusing on business logic.
+Akka components form the backbone of the xref:concepts:architecture-model.adoc#_application_layer[application layer], bridging your domain model with the Akka runtime. They provide specialized ways to handle state, events, and interactions, enabling you to build scalable, event-driven applications while focusing on business logic.
 
 The following components are available:
 
