@@ -47,7 +47,9 @@ These guidelines apply only to the Akka SDK and do not cover usage of the lower-
 * Command handlers are to be implemented in the entity and not in the state or domain object. Command handlers should invoke the domain object’s validation methods and methods that encapsulate the core business logic. The entity’s command handler is responsible for choosing the appropriate effect(s) to return. The domain object should not return effects or a list of events. This keeps the domain model clean of infrastructural concerns and makes it easy to unit test in isolation.
 * Command handlers that make updates without returning any information should return `akka.Done` for successful responses and `effects().error()` for validation errors.
 * State of an entity should be in the `domain` package, also known as domain object.
-* The `applyEvent` override should never return null. It should always return the current state as a fall through default case or if something unexpected failed, it should throw an exception.
+* The `applyEvent` override should be a pure function transferring data from the event to the state and nothing else. It should will never fail, because validations should have been made before persisting the event.
+
+never return null. It should always return the current state as a fall through default case or if something unexpected failed, it should throw an exception.
 * Entity events should:
 ** Be defined as records that implement a common sealed interface
 ** Be defined in the `domain` package. While an entity’s events are only ever emitted by that entity, large enough code bases will benefit from having all of the events in an easy-to-find place.
