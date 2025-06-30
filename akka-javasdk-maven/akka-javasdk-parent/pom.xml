@@ -296,6 +296,7 @@
                         </excludes>
                         <systemPropertyVariables>
                             <logback.configurationFile>${logback.configurationFile}</logback.configurationFile>
+                            <akka.javasdk.dev-mode.project-artifact-id>${project.artifactId}</akka.javasdk.dev-mode.project-artifact-id>
                         </systemPropertyVariables>
                     </configuration>
                 </plugin>
