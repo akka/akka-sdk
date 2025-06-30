@@ -12,3 +12,4 @@ This guide starts with creating an agent that suggests real-world activities. We
 . xref:planner-agent/team.adoc[] — A Workflow that orchestrates the calls to the agents.
 . xref:planner-agent/list.adoc[] — A View lists all activity suggestions for a user.
 . xref:planner-agent/dynamic-team.adoc[] — An Agent that creates a dynamic plan using an LLM, and a Workflow that executes the plan.
+. xref:planner-agent/dynamic-team.adoc[] — A Consumer triggers an Agent when the user preferences are changed.

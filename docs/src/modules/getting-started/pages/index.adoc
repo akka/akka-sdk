@@ -34,6 +34,7 @@ Add agents and other components step-by-step. The final application will consist
 | xref:planner-agent/team.adoc[Part 4: Orchestrate the agents] — A Workflow that orchestrates the calls to the agents. | Intermediate
 | xref:planner-agent/list.adoc[Part 5: List by user] — A View lists all activity suggestions for a user. | Beginner
 | xref:planner-agent/dynamic-team.adoc[Part 6: Dynamic orchestration] — An Agent that creates a dynamic plan using an LLM, and a Workflow that executes the plan. | Advanced
+| xref:planner-agent/eval.adoc[Part 7: Evaluation on changes] — A Consumer triggers an Agent when the user preferences are changed. | Intermediate
 |=======================
 
 === Build a shopping cart system

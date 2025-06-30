@@ -186,8 +186,5 @@ Inspect the logs and notice the difference if you include "Beware of the weather
 
 == Next steps
 
-Congratulations, you have completed the tour of building a multi-agent system. Now you can take your Akka skills to the next level:
-
-* *Expand on your own*: Learn more details of the xref:java:components/index.adoc[Akka components] to enhance your application with additional features.
-* *Explore other Akka samples*: Discover more about Akka by exploring xref:samples.adoc[different use cases] for inspiration.
+* Finally, let's use another agent to evaluate the previous suggestions when the user preferences are changed or if new suggestions should be created. Continue with xref:planner-agent/eval.adoc[] that will illustrate the Consumer component and "LLM as judge" pattern.
 

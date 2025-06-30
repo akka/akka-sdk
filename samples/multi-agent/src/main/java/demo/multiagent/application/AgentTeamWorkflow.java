@@ -116,6 +116,19 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
   }
   // end::plan[]
 
+  // tag::runAgain[]
+  public Effect<Done> runAgain() {
+    if (currentState() != null) {
+      return effects()
+          .updateState(State.init(currentState().userId(), currentState().userQuery()))
+          .transitionTo(SELECT_AGENTS) // <3>
+          .thenReply(Done.getInstance());
+    } else {
+      return effects().error("Workflow '" + commandContext().workflowId() + "' has not been started");
+    }
+  }
+  // end::runAgain[]
+
   public ReadOnlyEffect<String> getAnswer() {
     if (currentState() == null) {
       return effects().error("Workflow '" + commandContext().workflowId() + "' not started");
@@ -228,7 +241,7 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
               .invoke(new SummarizerAgent.Request(currentState().userQuery, agentsAnswers));
         })
         .andThen(String.class, finalAnswer ->
-            effects().updateState(currentState().withFinalAnswer(finalAnswer).complete()).end());
+            effects().updateState(currentState().withFinalAnswer(finalAnswer).complete()).pause());
   }
 
   private static final String INTERRUPT = "interrupt";
