@@ -27,7 +27,8 @@ public class EvaluatorAgent extends Agent {
         String feedback
     ) {}
 
-    private static final String SYSTEM_MESSAGE = """ // <1>
+    private static final String SYSTEM_MESSAGE = // <1>
+        """
         You are an evaluator agent that acts as an LLM judge. Your job is to evaluate
         the quality and appropriateness of AI-generated responses.
         
