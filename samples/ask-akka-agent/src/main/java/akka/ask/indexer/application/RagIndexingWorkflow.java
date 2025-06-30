@@ -147,8 +147,8 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
   public WorkflowDef<State> definition() {
     return workflow()
         .addStep(processingFileStep())
-        // the processing step is long-running, so we need to set a big timeout
-        .defaultStepTimeout(Duration.of(20, MINUTES));
+        // the processing step might take a while
+        .defaultStepTimeout(Duration.of(1, MINUTES));
   }
 
   private Step processingFileStep() {
