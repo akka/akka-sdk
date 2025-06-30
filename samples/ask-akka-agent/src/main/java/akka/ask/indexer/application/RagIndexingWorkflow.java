@@ -145,8 +145,14 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
   // tag::def[]
   @Override
   public WorkflowDef<State> definition() {
+    return workflow()
+        .addStep(processingFileStep())
+        // the processing step might take a while
+        .defaultStepTimeout(Duration.of(1, MINUTES));
+  }
 
-    var processing = step(PROCESSING_FILE_STEP) // <1>
+  private Step processingFileStep() {
+    return step(PROCESSING_FILE_STEP) // <1>
         .call(() -> {
           if (currentState().hasFilesToProcess()) {
             indexFile(currentState().head().get());
@@ -164,11 +170,6 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
             return effects().pause(); // <4>
           }
         });
-
-    return workflow()
-        .addStep(processing)
-        // the processing step is long-running, so we need to set a big timeout
-        .defaultStepTimeout(Duration.of(20, MINUTES));
   }
   // end::def[]
 
