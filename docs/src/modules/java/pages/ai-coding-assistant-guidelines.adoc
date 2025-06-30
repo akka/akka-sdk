@@ -13,18 +13,19 @@ These guidelines apply only to the Akka SDK and do not cover usage of the lower-
 == General
 
 * Use the Akka SDK version 3.4 or later.
-* Use the xref:concepts:architecture-model.adoc[Onion Architecture] and follow `[org.application-name].[module-name].[api|application|domain]` package structure. There should be no dependencies from `domain` to `application`, and no dependencies from `application` to `api`. For example, the following are some package structures that follow these guidelines:
+* Use the xref:concepts:architecture-model.adoc[] and follow `[org.application-name].[module-name].[api|application|domain]` package structure. There should be no dependencies from `domain` to `application`, and no dependencies from `application` to `api`. For example, the following are some package structures that follow these guidelines:
 ** `com.northwind.trading.api`
 ** `com.northwind.trading.application.StockEntity`
 ** `com.acme.petclinic.domain.VisitRecord`
 * Wherever possible, favor functional and fluent styles over classical imperative styles. For example, to filter a list of objects, favor `.stream().filter` rather than a mutating `for` loop.
 * Use Java records for the domain model, including events, commands, requests, and responses. Records are more concise and are automatically serializable.
-* Classes should use a suffix on the class name to indicate their respective roles within the application. Suffixes can include (but are not limited to):
+* Component classes should use a suffix on the class name to indicate their respective roles within the application. Domain records should not be suffixed. Suffixes can include (but are not limited to):
 ** Entity
 ** View
 ** Workflow
 ** Consumer
 ** Agent
+** Endpoint
 
 == Domain Model
 
