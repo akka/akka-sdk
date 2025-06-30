@@ -1,0 +1,96 @@
+= Deploy to akka.io
+
+include::ROOT:partial$include.adoc[]
+
+include::ROOT:partial$new-to-akka-start-here.adoc[]
+
+You've built and tried the service locally, it's time to run it on the Akka Agentic Platform without having to change any code.
+
+. If you have not already done so, xref:operations:cli/installation.adoc[install the Akka CLI].
+
+. Authenticate the CLI with your Akka account:
++
+[source, command line]
+----
+akka auth login
+----
+
+. Build a container image of your service:
++
+[source, command line]
+----
+mvn clean install -DskipTests
+----
+
+. Take note of the container name and tag from the last line in the output, for example:
++
+[source, command line]
+----
+DOCKER> Tagging image helloworld-agent:1.0-SNAPSHOT-20250630102843 successful!
+----
+
+. Deploy your service, replacing:
+* `container-name` with the container name from the `mvn install` output in the previous step
+* `tag-name` with the tag name from the `mvn install` output in the previous step
+
++
+[source, command line]
+----
+akka service deploy helloworld-service helloworld-agent:tag-name --push
+----
+Your service named `helloworld-service` will now begin deploying.
+
+. Verify the deployment status of your service:
++
+[source, command line]
+----
+akka service list
+----
++
+A service status can be one of the following:
+
+* *Ready*: All service instances are up-to-date and fully available.
+* *UpdateInProgress*: Service is updating.
+* *Unavailable*: No service instances are available.
+* *PartiallyReady*: Some, but not all, service instances are available.
+Approximately one minute after deploying, your service status should become *Ready*.
+
+. Expose your service to the internet:
++
+[source, command line]
+----
+akka service expose helloworld-service
+----
++
+Should respond with something similar to (the exact address will be unique to your service):
++
+[source, command line]
+----
+Service 'helloworld-service' was successfully exposed at: spring-tooth-3406.gcp-us-east1.akka.services
+----
+
+Congratulations! You have successfully deployed your service. You can now access it using the hostname described in the output of the command above.
+
+== Invoke your deployed service
+
+You can use https://curl.se[cURL, window="new"] to invoke your service, replacing URL with the hostname from the previous step.
+
+Make an HTTP request to the service:
+
+[source, command line]
+----
+curl -i -XPOST --location "https://spring-tooth-3406.gcp-us-east1.akka.services[http://localhost:9000]/hello" \
+    --header "Content-Type: application/json" \
+    --data '{"user": "alice", "text": "Hello, I am Alice"}'
+----
+
+== Explore the console
+
+1. Open the https://console.akka.io[*Akka Console*, window="new"].
+2. Navigate to the *Project* where the Service is deployed.
+3. Click on the *Service* card of the Service. It shows detailed information about the running service.
+
+== Next steps
+
+. Read about other deployment options in xref:operations:index.adoc[]
+. Learn more details about xref:operations:services/deploy-service.adoc[]
