@@ -11,9 +11,14 @@ import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
+import akka.javasdk.agent.InternalServerException
 import akka.javasdk.agent.JsonParsingException
+import akka.javasdk.agent.McpToolCallExecutionException
 import akka.javasdk.agent.MemoryProvider
+import akka.javasdk.agent.ModelException
 import akka.javasdk.agent.ModelProvider
+import akka.javasdk.agent.ModelTimeoutException
+import akka.javasdk.agent.RateLimitException
 import akka.javasdk.agent.RemoteMcpTools
 import akka.javasdk.agent.SessionHistory
 import akka.javasdk.agent.SessionMemory
@@ -22,6 +27,9 @@ import akka.javasdk.agent.SessionMessage.AiMessage
 import akka.javasdk.agent.SessionMessage.ToolCallRequest
 import akka.javasdk.agent.SessionMessage.ToolCallResponse
 import akka.javasdk.agent.SessionMessage.UserMessage
+import akka.javasdk.agent.ToolCallExecutionException
+import akka.javasdk.agent.ToolCallLimitReachedException
+import akka.javasdk.agent.UnsupportedFeatureException
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
@@ -43,6 +51,16 @@ import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAgent.ContextMessage
+import akka.runtime.sdk.spi.SpiAgent.InternalFailure
+import akka.runtime.sdk.spi.SpiAgent.McpToolCallExecutionFailure
+import akka.runtime.sdk.spi.SpiAgent.ModelFailure
+import akka.runtime.sdk.spi.SpiAgent.OutputParsingFailure
+import akka.runtime.sdk.spi.SpiAgent.RateLimitFailure
+import akka.runtime.sdk.spi.SpiAgent.TimeoutFailure
+import akka.runtime.sdk.spi.SpiAgent.ToolCallExecutionFailure
+import akka.runtime.sdk.spi.SpiAgent.ToolCallLimitReachedFailure
+import akka.runtime.sdk.spi.SpiAgent.UnsupportedFeatureFailure
+import akka.runtime.sdk.spi.SpiAgent.{ AgentException => SpiAgentException }
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.util.ByteString
 import com.typesafe.config.Config
@@ -191,7 +209,7 @@ private[impl] final class AgentImpl[A <: Agent](
               mcpClientDescriptors = mcpToolEndpoints,
               responseType = req.responseType,
               responseMapping = req.responseMapping,
-              failureMapping = req.failureMapping,
+              failureMapping = req.failureMapping.map(mapSpiAgentException),
               replyMetadata = metadata,
               onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, results))
 
@@ -326,6 +344,38 @@ private[impl] final class AgentImpl[A <: Agent](
           throw new IllegalStateException("Unsupported message type " + m.getClass.getName)
       }
       .toVector
+  }
+
+  private def mapSpiAgentException(func: Throwable => Any): Throwable => Any = {
+
+    def convert(thw: Throwable): Throwable = thw match {
+      case exc: SpiAgentException =>
+        try {
+          exc.reason match {
+            case ModelFailure              => new ModelException(exc.getMessage)
+            case RateLimitFailure          => new RateLimitException(exc.getMessage)
+            case TimeoutFailure            => new ModelTimeoutException(exc.getMessage)
+            case UnsupportedFeatureFailure => new UnsupportedFeatureException(exc.getMessage)
+            case InternalFailure           => new InternalServerException(exc.getMessage)
+
+            case ToolCallLimitReachedFailure => new ToolCallLimitReachedException(exc.getMessage)
+            case reason: ToolCallExecutionFailure =>
+              new ToolCallExecutionException(exc.getMessage, reason.toolName, exc.cause)
+            case reason: McpToolCallExecutionFailure =>
+              new McpToolCallExecutionException(exc.getMessage, reason.toolName, reason.endpoint, exc.cause)
+
+            // this is expected to be a JsonParsingException, we give it as is to users
+            case OutputParsingFailure => exc.cause
+          }
+        } catch {
+          case _: MatchError =>
+            // to cover SPI evolution, new reasons may not exist in the SDK
+            new RuntimeException(exc.getMessage, exc.cause)
+        }
+      case other => other // unknown and thus unmapped
+    }
+
+    (throwable: Throwable) => func(convert(throwable))
   }
 
   @tailrec
