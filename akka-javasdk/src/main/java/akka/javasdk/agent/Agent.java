@@ -236,8 +236,19 @@ public abstract class Agent {
       <T> MappingResponseBuilder<T> map(Function<String, T> mapper);
 
       /**
-       * Handle the failure of parsing the response from the model.
-       * This method allows to recover from parsing errors and provide a fallback response.
+       * Handle failures that occur during model processing.
+       * This method allows recovery from various types of exceptions including:
+       * <ul>
+       * <li>{@link ModelException} - General model processing failures</li>
+       * <li>{@link RateLimitException} - API rate limiting exceeded</li>
+       * <li>{@link ModelTimeoutException} - Model request timeout</li>
+       * <li>{@link UnsupportedFeatureException} - Unsupported model features</li>
+       * <li>{@link InternalServerException} - Internal service errors</li>
+       * <li>{@link JsonParsingException} - Response parsing failures</li>
+       * <li>{@link ToolCallLimitReachedException} - Tool call limit exceeded</li>
+       * <li>{@link ToolCallExecutionException} - Function tool execution errors</li>
+       * <li>{@link McpToolCallExecutionException} - MCP tool execution errors</li>
+       * </ul>
        */
       FailureBuilder<String> onFailure(Function<Throwable, String> exceptionHandler);
     }
@@ -263,8 +274,19 @@ public abstract class Agent {
       <T> MappingFailureBuilder<T> map(Function<Result, T> mapper);
 
       /**
-       * Handle the failure of parsing the response from the model.
-       * This method allows to recover from parsing errors and provide a fallback response.
+       * Handle failures that occur during model processing.
+       * This method allows recovery from various types of exceptions including:
+       * <ul>
+       * <li>{@link ModelException} - General model processing failures</li>
+       * <li>{@link RateLimitException} - API rate limiting exceeded</li>
+       * <li>{@link ModelTimeoutException} - Model request timeout</li>
+       * <li>{@link UnsupportedFeatureException} - Unsupported model features</li>
+       * <li>{@link InternalServerException} - Internal service errors</li>
+       * <li>{@link JsonParsingException} - Response parsing failures</li>
+       * <li>{@link ToolCallLimitReachedException} - Tool call limit exceeded</li>
+       * <li>{@link ToolCallExecutionException} - Function tool execution errors</li>
+       * <li>{@link McpToolCallExecutionException} - MCP tool execution errors</li>
+       * </ul>
        */
       FailureBuilder<Result> onFailure(Function<Throwable, Result> exceptionHandler);
     }
@@ -285,8 +307,19 @@ public abstract class Agent {
       Agent.Effect<Result> thenReply(Metadata metadata);
 
       /**
-       * Handle the failure of parsing the response from the model.
-       * This method allows to recover from parsing errors and provide a fallback response.
+       * Handle failures that occur during model processing.
+       * This method allows recovery from various types of exceptions including:
+       * <ul>
+       * <li>{@link ModelException} - General model processing failures</li>
+       * <li>{@link RateLimitException} - API rate limiting exceeded</li>
+       * <li>{@link ModelTimeoutException} - Model request timeout</li>
+       * <li>{@link UnsupportedFeatureException} - Unsupported model features</li>
+       * <li>{@link InternalServerException} - Internal service errors</li>
+       * <li>{@link JsonParsingException} - Response parsing failures</li>
+       * <li>{@link ToolCallLimitReachedException} - Tool call limit exceeded</li>
+       * <li>{@link ToolCallExecutionException} - Function tool execution errors</li>
+       * <li>{@link McpToolCallExecutionException} - MCP tool execution errors</li>
+       * </ul>
        */
       FailureBuilder<Result> onFailure(Function<Throwable, Result> exceptionHandler);
     }

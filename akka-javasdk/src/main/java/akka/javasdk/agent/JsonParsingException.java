@@ -12,7 +12,7 @@ package akka.javasdk.agent;
  */
 public class JsonParsingException extends RuntimeException {
 
-  private String rawJson;
+  final private String rawJson;
 
   public JsonParsingException(String message, Throwable cause, String rawJson) {
     super(message, cause);
