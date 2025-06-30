@@ -82,7 +82,7 @@ curl -i -XPOST --location "http://localhost:9000/activities/alice" \
 ----
 curl -i -XPOST --location "http://localhost:9000/activities/alice" \
   --header "Content-Type: application/json" \
-  --data '{"message": "I am Stockholm tomorrow. What should I do?"}'
+  --data '{"message": "I am in Stockholm tomorrow. What should I do?"}'
 ----
 
 Retrieve the suggested activities:
