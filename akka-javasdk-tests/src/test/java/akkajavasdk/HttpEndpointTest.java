@@ -67,6 +67,13 @@ public class HttpEndpointTest extends TestKitSupport {
 
 
   @Test
+  public void resolveSelfServiceNameInIntegrationTest() {
+    var response = testKit.getHttpClientProvider().httpClientFor("sdk-tests").GET("/index.html").invoke();
+    assertThat(response.status()).isEqualTo(StatusCodes.OK);
+  }
+
+
+  @Test
   public void shouldServeWildcardResources() throws Exception {
     var htmlResponse = httpClient.GET("/static/index.html").invoke();
     assertThat(htmlResponse.status()).isEqualTo(StatusCodes.OK);
