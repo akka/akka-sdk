@@ -116,5 +116,6 @@
 - [shopping-cart](https://raw.githubusercontent.com/akka-samples/shopping-cart-quickstart/refs/heads/main/README.md): Build a shopping cart
 - [customer-registry](https://raw.githubusercontent.com/akka-samples/event-sourced-customer-registry/refs/heads/main/README.md): A customer registry with query capabilities
 - [transfer-workflow](https://raw.githubusercontent.com/akka-samples/transfer-workflow-compensation/refs/heads/main/README.md): A funds transfer workflow between two wallets
+- [transfer-workflow-orchestration](https://raw.githubusercontent.com/akka-samples/transfer-workflow-orchestration/refs/heads/main/README.md): A funds transfer workflow between two wallets using external service calls
 - [choreography-saga](https://raw.githubusercontent.com/akka-samples/choreography-saga-quickstart/refs/heads/main/README.md): A user registration service implemented as a Choreography Saga
 - [akka-chess](https://raw.githubusercontent.com/akka-samples/akka-chess/refs/heads/main/README.md): Akka Chess is a sample application that illustrates building a complete, resilient, automatically scalable, event-sourced application using the Akka SDK.

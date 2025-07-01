@@ -45,7 +45,7 @@
       "language": "java",
       "url": "https://github.com/akka-samples/changelog-agent",
       "concepts": "Agent, Entity, Timed Action, Anthropic Claude, Tools, Summarization",
-      "level": "intermediate"
+      "level": "Intermediate"
     },
     {
       "title": "Agentic customer service workflow",
@@ -64,7 +64,7 @@
     },
     {
       "title": "Agent sensor data analysis",
-      "description": "This sample illustrates an AI agent that uses an LLM to analyze data from fitness trackers, medical records and other sensors. It integrates with Fitbit and MongoDB Atlas.\n\n",
+      "description": "This sample illustrates an AI agent that uses an LLM to analyze data from fitness trackers, medical records and other sensors. It integrates with Fitbit and MongoDB Atlas.",
       "language": "java",
       "url": "https://github.com/akka-samples/healthcare-agent",
       "concepts": "Agent, Analysis, Integrations, Vector database",
@@ -92,6 +92,14 @@
       "language": "java",
       "url": "https://github.com/akka-samples/transfer-workflow-compensation",
       "concepts": "Transactions, Workflow, Entity",
+      "level": "Intermediate"
+    },
+    {
+      "title": "External service orchestration with a Workflow",
+      "description": "This example illustrates a funds transfer workflow between two wallets managed by external service.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/transfer-workflow-orchestration",
+      "concepts": "Transactions, Workflow",
       "level": "Intermediate"
     },
     {

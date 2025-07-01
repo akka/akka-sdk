@@ -25,6 +25,7 @@ Welcome to the Akka CLI, for more information on its usage please visit the docu
 == SEE ALSO
 
 * link:akka_auth.html[akka auth]	 - Manage Akka authentication.
+* link:akka_code.html[akka code]	 - Develop Akka services
 * link:akka_completion.html[akka completion]	 - Generate shell completion scripts
 * link:akka_config.html[akka config]	 - Manage configuration and context for the Akka CLI.
 * link:akka_container-registry.html[akka container-registry]	 - Manage and push service images to the Akka Container Registry.
@@ -34,7 +35,6 @@ Welcome to the Akka CLI, for more information on its usage please visit the docu
 * link:akka_logs.html[akka logs]	 - Display the last few lines of logs for a specific service.
 * link:akka_organizations.html[akka organizations]	 - Manage your organizations on Akka
 * link:akka_projects.html[akka projects]	 - Manage your Akka projects.
-* link:akka_quickstart.html[akka quickstart]	 - Akka quickstart project samples.
 * link:akka_regions.html[akka regions]	 - Manage available regions.
 * link:akka_roles.html[akka roles]	 - Manage the user roles for an Akka project.
 * link:akka_routes.html[akka routes]	 - Manage routes for your Akka project.
