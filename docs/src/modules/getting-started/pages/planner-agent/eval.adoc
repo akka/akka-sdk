@@ -1,0 +1,131 @@
+= Evaluation on changes
+
+include::ROOT:partial$include.adoc[]
+
+include::ROOT:partial$new-to-akka-start-here.adoc[]
+
+== Overview
+
+We added xref:getting-started:planner-agent/preferences.adoc[] and those are taken into account when creating the activity suggestions. Now we will use another agent to evaluate if the previous suggestions are still acceptable when the preferences are changed or if new suggestions should be created.
+
+In this part of the guide you will:
+
+* Add an agent that evaluates the quality of the AI answer given the original request and the updated preferences
+* Use a Consumer to trigger evaluation when the preferences are changed
+
+== Prerequisites
+
+include::ROOT:partial$local-dev-prerequisites.adoc[]
+* https://platform.openai.com/api-keys[OpenAI API key, window="new"]
+
+== Evaluator agent
+
+We will use a pattern called "LLM as judge", which will use an agent (AI model) to evaluate the result of other agents.
+
+Add a new file `EvaluatorAgent.java` to `src/main/java/com/example/application/`
+
+[source,java]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/EvaluatorAgent.java[EvaluatorAgent.java]
+----
+include::java:example$multi-agent/src/main/java/demo/multiagent/application/EvaluatorAgent.java[tag=all]
+----
+<1> Detailed instructions of how to evaluate and especially pay attention to the user preferences.
+<2> Retrieve user preferences.
+<3> Structured response.
+
+== Consumer of preference events
+
+The `PreferencesEntity` emits events when the preferences are changed, and we can listen to these events and trigger the `EvaluatorAgent`.
+
+Add a new file `PreferencesConsumer.java` to `src/main/java/com/example/application/`
+
+[source,java]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/PreferencesConsumer.java[PreferencesConsumer.java]
+----
+include::java:example$multi-agent/src/main/java/demo/multiagent/application/PreferencesConsumer.java[tag=all]
+----
+<1> Consume events from the `PreferencesEntity`.
+<2> Extend `Consumer`.
+<3> Retrieve previous activity suggestions for the user from the `ActivityView`.
+<4> Call the `EvaluatorAgent` for each previous suggestion.
+<5> Run the workflow again, using the new preferences when the evaluation score is below 3.
+
+This would probably be improved in a real application by not evaluating all previous suggestions, but only the ones that are still relevant, e.g. last 3 sorted by timestamp. The evaluations could also be made in parallel by using `invokeAsync` and compose the `CompletionStage` results.
+
+Add the new method to the `AgentTeamWorkflow:
+
+[source,java]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[AgentTeamWorkflow.java]
+----
+include::java:example$multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[tag=runAgain]
+----
+
+== Running the service
+
+Start your service locally:
+
+[source,command line]
+----
+mvn compile exec:java
+----
+
+Ask for activities:
+
+[source, command line]
+----
+curl -i -XPOST --location "http://localhost:9000/activities/alice" \
+  --header "Content-Type: application/json" \
+  --data '{"message": "I am in Madrid. What should I do? Beware of the weather."}'
+----
+
+[source, command line]
+----
+curl -i -XPOST --location "http://localhost:9000/activities/alice" \
+  --header "Content-Type: application/json" \
+  --data '{"message": "I am in Stockholm tomorrow. What should I do?"}'
+----
+
+Retrieve the suggested activities:
+
+[source, command line]
+----
+curl http://localhost:9000/activities/alice | jq
+----
+
+If you have don't `jq` installed you can skip the formatting of the json response with:
+
+[source, command line]
+----
+curl http://localhost:9000/activities/alice
+----
+
+Add some preferences:
+
+[source, command line]
+----
+curl -i localhost:9000/preferences/alice \
+  --header "Content-Type: application/json" \
+  -XPOST \
+  --data '{
+    "preference": "I dislike museums."
+  }'
+----
+
+Inspect the log output from the service and see if the preferences triggered the evaluation and suggesting new activities.
+
+Retrieve the updated activities:
+
+[source, command line]
+----
+curl http://localhost:9000/activities/alice | jq
+----
+
+== Next steps
+
+Congratulations, you have completed the tour of building a multi-agent system. Now you can take your Akka skills to the next level:
+
+* Learn more about the xref:java:consuming-producing.adoc[`Consumer` component].
+* xref:quick-deploy.adoc[]
+* *Expand on your own*: Learn more details of the xref:java:components/index.adoc[Akka components] to enhance your application with additional features.
+* *Explore other Akka samples*: Discover more about Akka by exploring xref:samples.adoc[different use cases] for inspiration.
+

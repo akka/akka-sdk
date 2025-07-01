@@ -217,7 +217,7 @@ public class TestKit {
     /**
      * Default settings for testkit.
      */
-    public static Settings DEFAULT = new Settings("self", true, TEST_BROKER, MockedEventing.EMPTY, Optional.empty(), ConfigFactory.empty(), Set.of(), new HashMap<>());
+    public static Settings DEFAULT = new Settings("", true, TEST_BROKER, MockedEventing.EMPTY, Optional.empty(), ConfigFactory.empty(), Set.of(), new HashMap<>());
 
     /**
      * The name of this service when deployed.
@@ -286,7 +286,8 @@ public class TestKit {
     /**
      * Set the name of this service. This will be used by the service when making calls on other
      * services run by the testkit to authenticate itself, allowing those services to apply ACLs
-     * based on that name.
+     * based on that name. If not defined, the value from configuration key
+     * {@code akka.javasdk.dev-mode.service-name} will be used in the test.
      *
      * @param serviceName The name of this service.
      * @return The updated settings.
@@ -434,6 +435,7 @@ public class TestKit {
   private AgentRegistry agentRegistry;
   private int eventingTestKitPort = -1;
   private Config applicationConfig;
+  private String serviceName;
 
   /**
    * Create a new testkit for a service descriptor with the default settings.
@@ -491,7 +493,12 @@ public class TestKit {
           var userConfig = config.withFallback(super.applicationConfig());
           runtimePort = userConfig.getInt("akka.javasdk.testkit.http-port");
 
-          var grpcClientSelfConfigPrefix = "akka.javasdk.grpc.client." + settings.serviceName;
+          if (settings.serviceName.isEmpty())
+            serviceName = userConfig.getString("akka.javasdk.dev-mode.service-name");
+          else
+            serviceName = settings.serviceName;
+
+          var grpcClientSelfConfigPrefix = "akka.javasdk.grpc.client." + serviceName;
           var defaultConfigMap = Map.of(
               "akka.javasdk.dev-mode.enabled", true,
               // used by the gRPC endpoint test client to call itself
@@ -521,14 +528,16 @@ public class TestKit {
           if (s.devMode().isEmpty())
             throw new IllegalStateException("dev-mode must be enabled"); // it's set from overridden applicationConfig method
 
+
           SpiDevModeSettings devModeSettings = new SpiDevModeSettings(
               runtimePort,
               settings.aclEnabled,
               false,
-              settings.serviceName + "-IT-" + System.currentTimeMillis(),
+              serviceName + "-IT-" + System.currentTimeMillis(),
               eventingSettings,
               mockedEventingSettings,
-              true);
+              true,
+              Some.apply(serviceName));
 
           return s.withDevMode(devModeSettings);
         }
@@ -676,7 +685,7 @@ public class TestKit {
    * @param grpcClientClass The generated Akka gRPC client interface for a gRPC endpoint in this service
    */
   public <T extends AkkaGrpcClient> T getGrpcEndpointClient(Class<T> grpcClientClass) {
-    return grpcClientProvider.grpcClientFor(grpcClientClass, settings.serviceName);
+    return grpcClientProvider.grpcClientFor(grpcClientClass, serviceName);
   }
 
   /**
@@ -687,7 +696,7 @@ public class TestKit {
    */
   @SuppressWarnings("unchecked")
   public <T extends AkkaGrpcClient> T getGrpcEndpointClient(Class<T> grpcClientClass, Principal requestPrincipal) {
-    var client = grpcClientProvider.createNewClientFor(grpcClientClass, settings.serviceName, false);
+    var client = grpcClientProvider.createNewClientFor(grpcClientClass, serviceName, false);
     if (requestPrincipal == Principal.SELF) {
       // no need to use this method, but let's allow it
       return getGrpcEndpointClient(grpcClientClass);

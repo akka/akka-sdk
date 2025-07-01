@@ -6,9 +6,10 @@ include::ROOT:partial$new-to-akka-start-here.adoc[]
 
 This guide starts with creating an agent that suggests real-world activities. We will incorporate more components in separate parts of the guide, and at the end we will have a multi-agent system with dynamic planning and orchestration capabilities.
 
-. xref:planner-agent/activity.adoc[] — An Agent that suggests real-world activities using an LLM.
-. xref:planner-agent/preferences.adoc[] — An Entity to make the activity suggestions more personalized.
-. xref:planner-agent/weather.adoc[] — An Agent for the weather forecast that uses an external service as a function tool.
-. xref:planner-agent/team.adoc[] — A Workflow that orchestrates the calls to the agents.
-. xref:planner-agent/list.adoc[] — A View lists all activity suggestions for a user.
+. xref:planner-agent/activity.adoc[] — An Agent (with session memory) that suggests real-world activities using an LLM.
+. xref:planner-agent/preferences.adoc[] — An Entity (long-term memory) to personalize the suggestions.
+. xref:planner-agent/weather.adoc[] — A weather forecasting Agent that uses an external service as an agent tool.
+. xref:planner-agent/team.adoc[] — A Workflow that coordinates long-running calls across the agents.
+. xref:planner-agent/list.adoc[] — A View that creates a read-only projection (i.e. a query) of all activity suggestions for a user.
 . xref:planner-agent/dynamic-team.adoc[] — An Agent that creates a dynamic plan using an LLM, and a Workflow that executes the plan.
+. xref:planner-agent/eval.adoc[] — A Consumer that streams user preference changes to trigger an Agent.

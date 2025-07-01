@@ -172,10 +172,11 @@ Akka provides a basket of interoperable components that can be used to design an
 
 == Component interoperability
 
-Akka components are able to interoperate with one another regardless of where the component may be executing. While you create systems that define the relationships between each of the components in code, at runtime instances of each component can run on different nodes. The Akka runtime provides location transparency, automating the routing of a call from one component to another even if they reside in different locations on different networks.
+Systems often rely on distributed components that need to work together. In Akka, components such as Agents, Workflows and Entities interact in ways that support flexibility, scale, and resilience. The aim is to help you build systems that are easy to reason about and maintain, even when deployed across different environments.
 
-There are two ways to achieve interoperability between Akka components and the outside world.
+In Akka, component relationships are defined in code. At runtime, the platform handles the details. Messages are routed automatically, without requiring you to manage network paths or address resolution. This is known as _location transparency_. It means components can communicate without knowing where the other components are running.
 
+Akka supports two primary ways for components to interact, either with each other or with the outside world.
 
 [cols="1,3", options="header"]
 [.compact]
@@ -183,17 +184,21 @@ There are two ways to achieve interoperability between Akka components and the o
 |Client Type |Description
 
 |xref:java:component-and-service-calls.adoc[ComponentClient]
-|One component can directly invoke another component. Akka treats these direct invocations as non-blocking, asynchronous messages, meaning that the invoking component immediately returns after making the invocation and can invoke any component regardless of its location.
+|One component can invoke another using a direct call. The Akka runtime handles this communication in a non-blocking way using lightweight virtual threads. Although a call may wait for a reply before continuing, the code remains simple and synchronous. There is no need to use futures, callbacks or other asynchronous programming techniques.
 
-For example, a Workflow component handling a long-running business transaction can invoke an Agent component to perform a task, and the Workflow can continue processing without waiting for the Agent to complete its work.
+A common example is a Workflow that invokes an Agent to perform a specific task, then waits for the Agent to finish. The syntax is simple and resembles a regular method call.
 
 |Events
-|Components can emit events that can be subscribed to by other components. For example, an entity can emit an event when its state is updated. Other components can subscribe to this event, similar to how clients subscribe to Kafka topics. Events are propagated transparently between components through reliable, brokerless messaging.
+|Components can emit events to signal that something has occurred. Other components may subscribe to these events. This model resembles traditional publish-subscribe systems but does not require external brokers.
 
-Components can also subscribe to events that are incoming from external sources, which can be 3rd party brokers, APIs, or real-time streams of data.
+For example, when an Entity updates its state, it will emit an event. A View can subscribe to that event to stay in sync. Events can also come from external sources, such as APIs or streaming services.
 |===
 
-Akka is designed so that components remain loosely coupled and can communicate with each other regardless of where they run. Inter-component communication runs on virtual threads managed by the Akka runtime. These threads are lightweight and isolated in a way that ensures system resources remain available for other tasks. This allows components to interact without interfering with each other or affecting overall responsiveness. This basic behavior is one reason why Akka services, whether stateful or stateless, can scale to 10M transaction per second (TPS).
+Akka encourages building systems with loosely coupled components. Communication between them is handled in a way that avoids contention and keeps the system responsive, even under heavy load. Blocking operations are managed in a controlled and efficient way, allowing developers to focus on business logic without worrying about low-level concurrency concerns.
+
+This approach supports systems that need to handle large volumes of traffic. Some production environments have processed up to 10 million transactions per second.
+
+The examples below show common patterns for how components interact in an Akka system.
 
 [cols="2,3", options="header"]
 [.compact]
@@ -201,16 +206,19 @@ Akka is designed so that components remain loosely coupled and can communicate w
 | Example Interoperability | Description
 
 | Endpoint → Workflow → Agent +
-  Endpoint → Entity → View     | A user triggers an HTTP request to start a long-running Workflow. The Workflow manages file processing and passes relevant data or control to an Agent, which will later use it for answering questions. Meanwhile, another Endpoint saves user interaction history into an Entity. A View component then reads from that Entity to reconstruct the user’s conversation history for display or retrieval.
+  Endpoint → Entity → View
+| An HTTP request starts a Workflow to process a file. The Workflow invokes an Agent that will later use the file’s content to answer questions. Another Endpoint records user interaction history into an Entity. A View reads from that Entity to reconstruct the conversation.
 
 | Endpoint → Agent → Entity → View +
-  Endpoint → Workflow → Entity       | A user sends a query to an Endpoint. An Agent processes the query and stores the interaction in an Entity. A View then reads this data to reconstruct the conversation history for that user. Meanwhile, an Endpoint starts a Workflow. The Workflow processes input data and stores results into an Entity.
-
+  Endpoint → Workflow → Entity
+| A user sends a query to an Endpoint. An Agent handles the query and stores the result in an Entity. A View builds the conversation history from that data. Separately, another Endpoint starts a Workflow, which also stores its results in an Entity.
 
 | Stream → Consumer → Entity +
-  Agent → Endpoint → Entity        | A data stream is received by a Consumer, which writes the structured data to an Entity for long-term storage and future retrieval. Meanwhile, an Agent invokes some logic exposed by an Endpoint, and persists the result in an Entity.
-
+  Agent → Endpoint → Entity
+| A stream of data is processed by a Consumer, which writes to an Entity for long-term use. At the same time, an Agent invokes logic through an Endpoint and stores the result in an Entity.
 |===
+
+Akka provides a way to connect components that is simple to use and reliable in production. By relying on message passing, virtual threads, and transparent routing, the platform helps you focus on what the system should do, rather than how its parts should reach each other.
 
 == Agentic runtimes
 
