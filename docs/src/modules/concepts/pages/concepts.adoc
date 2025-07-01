@@ -184,9 +184,9 @@ Akka supports two primary ways for components to interact, either with each othe
 |Client Type |Description
 
 |xref:java:component-and-service-calls.adoc[ComponentClient]
-|One component can invoke another using a direct call. These invocations are non-blocking and asynchronous. The invoking component continues its work without waiting for a reply. This helps maintain responsiveness in the system.
+|One component can invoke another using a direct call. The Akka runtime handles this communication in a non-blocking way using lightweight virtual threads. Although a call may wait for a reply before continuing, the code remains simple and synchronous. There is no need to use futures, callbacks or other asynchronous programming techniques.
 
-A common example is a Workflow that performs a long-running process and invokes an Agent to handle a specific task. The Workflow can move on while the Agent does its work in parallel.
+A common example is a Workflow that invokes an Agent to perform a specific task, then waits for the Agent to finish. The syntax is simple and resembles a regular method call.
 
 |Events
 |Components can emit events to signal that something has occurred. Other components may subscribe to these events. This model resembles traditional publish-subscribe systems but does not require external brokers.
