@@ -45,7 +45,7 @@
       "language": "java",
       "url": "https://github.com/akka-samples/changelog-agent",
       "concepts": "Agent, Entity, Timed Action, Anthropic Claude, Tools, Summarization",
-      "level": "intermediate"
+      "level": "Intermediate"
     },
     {
       "title": "Agentic customer service workflow",
@@ -64,7 +64,7 @@
     },
     {
       "title": "Agent sensor data analysis",
-      "description": "This sample illustrates an AI agent that uses an LLM to analyze data from fitness trackers, medical records and other sensors. It integrates with Fitbit and MongoDB Atlas.\n\n",
+      "description": "This sample illustrates an AI agent that uses an LLM to analyze data from fitness trackers, medical records and other sensors. It integrates with Fitbit and MongoDB Atlas.",
       "language": "java",
       "url": "https://github.com/akka-samples/healthcare-agent",
       "concepts": "Agent, Analysis, Integrations, Vector database",
