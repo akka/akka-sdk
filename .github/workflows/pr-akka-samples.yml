@@ -36,6 +36,7 @@ jobs:
           - { sample: "shopping-cart-with-view", sampleRepo: "akka-samples/shopping-cart-with-view" }
           - { sample: "transfer-workflow", sampleRepo: "akka-samples/transfer-workflow" }
           - { sample: "transfer-workflow-compensation", sampleRepo: "akka-samples/transfer-workflow-compensation" }
+          - { sample: "transfer-workflow-orchestration", sampleRepo: "akka-samples/transfer-workflow-orchestration" }
           - { sample: "ask-akka-agent", sampleRepo: "akka-samples/ask-akka-agent" }
           - { sample: "multi-agent", sampleRepo: "akka-samples/multi-agent" }
 

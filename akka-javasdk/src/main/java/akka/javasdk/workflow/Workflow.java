@@ -119,7 +119,7 @@ public abstract class Workflow<S> {
     // user may call this method inside a command handler and get a null because it's legal
     // to have emptyState set to null.
     if (stateHasBeenSet) return currentState.orElse(null);
-    else throw new IllegalStateException("Current state is only available when handling a command.");
+    else throw new IllegalStateException("Current state is only available when handling a command. Make sure that that you are calling the `currentState` method only in the command handler or step `call`, `andThen` lambda functions.");
   }
 
   /**

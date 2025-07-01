@@ -95,6 +95,14 @@
       "level": "Intermediate"
     },
     {
+      "title": "External service orchestration with a Workflow",
+      "description": "This example illustrates a funds transfer workflow between two wallets managed by external service.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/transfer-workflow-orchestration",
+      "concepts": "Transactions, Workflow",
+      "level": "Intermediate"
+    },
+    {
       "title": "User registration with a choreography saga",
       "description": "This example is a user registration service implemented as a choreography saga.",
       "language": "java",

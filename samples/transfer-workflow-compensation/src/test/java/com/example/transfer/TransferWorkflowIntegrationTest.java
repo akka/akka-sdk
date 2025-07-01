@@ -14,7 +14,8 @@ import java.util.concurrent.TimeUnit;
 import static akka.Done.done;
 import static com.example.transfer.domain.TransferState.TransferStatus.COMPENSATION_COMPLETED;
 import static com.example.transfer.domain.TransferState.TransferStatus.REQUIRES_MANUAL_INTERVENTION;
-import static com.example.transfer.domain.TransferState.TransferStatus.TRANSFER_ACCEPTATION_TIMED_OUT;
+import static com.example.transfer.domain.TransferState.TransferStatus.TRANSFER_ACCEPTANCE_TIMED_OUT;
+import static com.example.transfer.domain.TransferState.TransferStatus.WAITING_FOR_ACCEPTANCE;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -50,7 +51,7 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
   }
 
   @Test
-  public void shouldTransferMoneyWithAcceptation() {
+  public void shouldTransferMoneyWithAcceptance() {
     var walletId1 = randomId();
     var walletId2 = randomId();
     createWallet(walletId1, 2000);
@@ -62,15 +63,16 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
       .forWorkflow(transferId)
       .method(TransferWorkflow::startTransfer)
       .invoke(transfer);
+    assertThat(response).isEqualTo("transfer started");
 
-    assertThat(response).isEqualTo("transfer started, waiting for acceptation");
+    assertThat(getTransferState(transferId).status()).isEqualTo(WAITING_FOR_ACCEPTANCE);
 
-    String acceptationResponse = 
+    String acceptanceResponse =
       componentClient
       .forWorkflow(transferId)
       .method(TransferWorkflow::accept).invoke();
 
-    assertThat(acceptationResponse).isEqualTo("transfer accepted");
+    assertThat(acceptanceResponse).isEqualTo("transfer accepted");
 
     Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
@@ -84,7 +86,7 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
   }
 
   @Test
-  public void shouldTimeoutTransferAcceptation() {
+  public void shouldTimeoutTransferAcceptance() {
     var walletId1 = randomId();
     var walletId2 = randomId();
     createWallet(walletId1, 2000);
@@ -96,20 +98,22 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
       .forWorkflow(transferId)
       .method(TransferWorkflow::startTransfer)
       .invoke(transfer);
-    assertThat(response).isEqualTo("transfer started, waiting for acceptation");
+    assertThat(response).isEqualTo("transfer started");
 
-    String acceptationResponse = componentClient
+    assertThat(getTransferState(transferId).status()).isEqualTo(WAITING_FOR_ACCEPTANCE);
+
+    String acceptanceResponse = componentClient
       .forWorkflow(transferId)
-      .method(TransferWorkflow::acceptationTimeout).invoke();
-    assertThat(acceptationResponse).contains("timed out");
+      .method(TransferWorkflow::acceptanceTimeout)
+      .invoke();
+    assertThat(acceptanceResponse).contains("timed out");
 
     var balance1 = getWalletBalance(walletId1);
     var balance2 = getWalletBalance(walletId2);
     assertThat(balance1).isEqualTo(2000);
     assertThat(balance2).isEqualTo(100);
 
-    TransferState transferState = getTransferState(transferId);
-    assertThat(transferState.status()).isEqualTo(TRANSFER_ACCEPTATION_TIMED_OUT);
+    assertThat(getTransferState(transferId).status()).isEqualTo(TRANSFER_ACCEPTANCE_TIMED_OUT);
   }
 
   @Test
