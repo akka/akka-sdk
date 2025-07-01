@@ -194,11 +194,11 @@ A common example is a Workflow that invokes an Agent to perform a specific task,
 For example, when an Entity updates its state, it will emit an event. A View can subscribe to that event to stay in sync. Events can also come from external sources, such as APIs or streaming services.
 |===
 
-Akka encourages building systems where components are loosely coupled. Communication between them runs on virtual threads, which are lightweight and isolated. This allows each interaction to happen independently, helping to avoid contention and ensuring that system resources are used efficiently.
+Akka encourages building systems with loosely coupled components. Communication between them is handled in a way that avoids contention and keeps the system responsive, even under heavy load. Blocking operations are managed in a controlled and efficient way, allowing developers to focus on business logic without worrying about low-level concurrency concerns.
 
-This model contributes to the scalability of Akka systems. It is suitable for handling high volumes of traffic, including systems that reach 10 million transactions per second.
+This approach supports systems that need to handle large volumes of traffic. Some production environments have processed up to 10 million transactions per second.
 
-The examples below illustrate typical interoperability patterns between components.
+The examples below show common patterns for how components interact in an Akka system.
 
 [cols="2,3", options="header"]
 [.compact]
