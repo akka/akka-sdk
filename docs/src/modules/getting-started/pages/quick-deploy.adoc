@@ -29,6 +29,14 @@ mvn clean install -DskipTests
 DOCKER> Tagging image helloworld-agent:1.0-SNAPSHOT-20250630102843 successful!
 ----
 
+. Set up secret containing the API key:
+
++
+[source, command line]
+----
+akka secret create generic openai-api --literal key=$OPENAI_API_KEY
+----
+
 . Deploy your service, replacing:
 * `container-name` with the container name from the `mvn install` output in the previous step
 * `tag-name` with the tag name from the `mvn install` output in the previous step
@@ -36,7 +44,8 @@ DOCKER> Tagging image helloworld-agent:1.0-SNAPSHOT-20250630102843 successful!
 +
 [source, command line]
 ----
-akka service deploy helloworld-service helloworld-agent:tag-name --push
+akka service deploy helloworld-service helloworld-agent:tag-name --push \
+  --secret-env OPENAI_API_KEY=openai-api/key
 ----
 Your service named `helloworld-service` will now begin deploying.
 
