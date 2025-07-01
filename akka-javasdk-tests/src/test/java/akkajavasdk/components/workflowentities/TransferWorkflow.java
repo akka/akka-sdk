@@ -4,18 +4,19 @@
 
 package akkajavasdk.components.workflowentities;
 
+import static akka.Done.done;
+
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import akkajavasdk.components.actions.echo.Message;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 
-import static akka.Done.done;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ComponentId("transfer-workflow")
 public class TransferWorkflow extends Workflow<TransferState> {
@@ -34,46 +35,10 @@ public class TransferWorkflow extends Workflow<TransferState> {
   }
 
   @Override
-  public WorkflowDef<TransferState> definition() {
-    var withdraw =
-      step(withdrawStepName)
-        .call(Withdraw.class, cmd ->
-          componentClient.forKeyValueEntity(cmd.from)
-            .method(WalletEntity::withdraw).invoke(cmd.amount))
-        .andThen(() -> {
-          var state = currentState().withLastStep("withdrawn").asAccepted();
-
-          var depositInput = new Deposit(currentState().transfer().to(), currentState().transfer().amount());
-
-          return effects()
-            .updateState(state)
-            .transitionTo(depositStepName, depositInput);
-        });
-
-    var deposit =
-      step(depositStepName)
-        .call(Deposit.class, cmd ->
-          componentClient.forKeyValueEntity(cmd.to)
-            .method(WalletEntity::deposit).invoke(cmd.amount))
-        .andThen(() -> {
-          var state = currentState().withLastStep("deposited").asFinished();
-          return effects().updateState(state).transitionTo("logAndStop");
-        });
-
-    // this last step is mainly to ensure that Runnables are properly supported
-    var logAndStop =
-      step("logAndStop")
-        .call(() -> logger.info("Workflow finished"))
-        .andThen(() -> {
-          var state = currentState().withLastStep("logAndStop");
-          return effects().updateState(state).end();
-        });
-
-    return workflow()
+  public Settings settings() {
+    return settingsBuilder()
       .timeout(Duration.ofSeconds(10))
-      .addStep(withdraw)
-      .addStep(deposit)
-      .addStep(logAndStop);
+      .build();
   }
 
   public Effect<Message> startTransfer(Transfer transfer) {
@@ -89,6 +54,53 @@ public class TransferWorkflow extends Workflow<TransferState> {
         return effects().reply(new Message("transfer started already"));
       }
     }
+  }
+
+  private Step withdraw() {
+    return step(withdrawStepName)
+        .call(
+            Withdraw.class,
+            cmd ->
+                componentClient
+                    .forKeyValueEntity(cmd.from)
+                    .method(WalletEntity::withdraw)
+                    .invoke(cmd.amount))
+        .andThen(
+            () -> {
+              var state = currentState().withLastStep("withdrawn").asAccepted();
+
+              var depositInput =
+                  new Deposit(currentState().transfer().to(), currentState().transfer().amount());
+
+              return effects().updateState(state).transitionTo(depositStepName, depositInput);
+            });
+  }
+
+  private Step deposit() {
+    return step(depositStepName)
+        .call(
+            Deposit.class,
+            cmd ->
+                componentClient
+                    .forKeyValueEntity(cmd.to)
+                    .method(WalletEntity::deposit)
+                    .invoke(cmd.amount))
+        .andThen(
+            () -> {
+              var state = currentState().withLastStep("deposited").asFinished();
+              return effects().updateState(state).transitionTo("logAndStop");
+            });
+  }
+
+  private Step logAndStop() {
+    // this last step is mainly to ensure that Runnables are properly supported
+    return step("logAndStop")
+        .call(() -> logger.info("Workflow finished"))
+        .andThen(
+            () -> {
+              var state = currentState().withLastStep("logAndStop");
+              return effects().updateState(state).end();
+            });
   }
 
   public Effect<Done> updateAndDelete(Transfer transfer) {

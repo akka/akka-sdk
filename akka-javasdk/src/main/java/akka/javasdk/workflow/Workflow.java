@@ -9,9 +9,11 @@ import akka.javasdk.Metadata;
 import akka.javasdk.impl.workflow.WorkflowEffectImpl;
 import akka.javasdk.timer.TimerScheduler;
 import akka.javasdk.workflow.Workflow.RecoverStrategy.MaxRetries;
-
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -153,11 +155,30 @@ public abstract class Workflow<S> {
     this.currentState = Optional.ofNullable(state);
   }
 
-
   /**
-   * @return A workflow definition in a form of steps and transitions between them.
+   * @return A workflow definition in the form of steps and transitions between them.
    */
-  public abstract WorkflowDef<S> definition();
+  public WorkflowDef<S> definition() {
+    return new WorkflowDef<>(false);
+  }
+
+  public Settings settings() {
+    var def = definition();
+    if (def.legacy) return new LegacySettings<>(def);
+    else return settingsBuilder().build();
+  }
+
+  public final SettingsBuilder settingsBuilder() {
+    return new SettingsBuilder(
+        this,
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty());
+  }
+
 
   protected final Effect.Builder<S> effects() {
     return WorkflowEffectImpl.apply();
@@ -347,9 +368,9 @@ public abstract class Workflow<S> {
    */
   public interface ReadOnlyEffect<T> extends Effect<T> {
   }
-
   public static class WorkflowDef<S> {
 
+    private final boolean legacy;
     final private List<Step> steps = new ArrayList<>();
     final private List<StepConfig> stepConfigs = new ArrayList<>();
     final private Set<String> uniqueNames = new HashSet<>();
@@ -360,8 +381,8 @@ public abstract class Workflow<S> {
     private Optional<Duration> stepTimeout = Optional.empty();
     private Optional<RecoverStrategy<?>> stepRecoverStrategy = Optional.empty();
 
-
-    private WorkflowDef() {
+    private WorkflowDef(boolean legacy) {
+      this.legacy = legacy;
     }
 
     public Optional<Step> findByName(String name) {
@@ -489,18 +510,226 @@ public abstract class Workflow<S> {
     }
   }
 
+  public sealed interface Settings {
 
-  public WorkflowDef<S> workflow() {
-    return new WorkflowDef<>();
+
+    Optional<Duration> workflowTimeout();
+
+    Optional<Duration> defaultStepTimeout();
+
+    Optional<RecoverStrategy<?>> stepRecoverStrategy();
+
+    Optional<String> failoverStepName();
+
+    Optional<?> failoverStepInput();
+
+    Optional<MaxRetries> failoverMaxRetries();
+
+    List<StepConfig> stepConfigs();
+
+    Optional<Step> findByName(String name);
   }
 
+  private record LegacySettings<S>(WorkflowDef<S> legacyDefinition) implements Settings {
+
+    @Override
+    public Optional<Duration> workflowTimeout() {
+      return legacyDefinition.getWorkflowTimeout();
+    }
+
+    @Override
+    public Optional<RecoverStrategy<?>> stepRecoverStrategy() {
+      return legacyDefinition.getStepRecoverStrategy();
+    }
+
+    @Override
+    public Optional<String> failoverStepName() {
+      return legacyDefinition.getFailoverStepName();
+    }
+
+    @Override
+    public Optional<?> failoverStepInput() {
+      return legacyDefinition.getFailoverStepInput();
+    }
+
+    @Override
+    public Optional<MaxRetries> failoverMaxRetries() {
+      return legacyDefinition.getFailoverMaxRetries();
+    }
+
+    @Override
+    public Optional<Duration> defaultStepTimeout() {
+      return legacyDefinition.getStepTimeout();
+    }
+
+    @Override
+    public List<StepConfig> stepConfigs() {
+      return legacyDefinition.getStepConfigs();
+    }
+
+    @Override
+    public Optional<Step> findByName(String name) {
+      return legacyDefinition.findByName(name);
+    }
+  }
+
+  private record SettingsImpl(
+      Workflow<?> instance,
+      List<StepMethod> stepMethods,
+      List<StepConfig> stepConfigs,
+      Optional<Duration> workflowTimeout,
+      Optional<String> failoverStepName,
+      Optional<?> failoverStepInput,
+      Optional<MaxRetries> failoverMaxRetries,
+      Optional<Duration> defaultStepTimeout,
+      Optional<RecoverStrategy<?>> stepRecoverStrategy)
+      implements Settings {
+
+        private static List<StepConfig> buildStepConfigs(List<StepMethod> stepMethods) {
+          return stepMethods.stream()
+              .map(sm -> new StepConfig(sm.uniqueName, Optional.empty(), Optional.empty()))
+              .toList();
+        }
+
+    public SettingsImpl(
+        Workflow<?> instance,
+        List<StepMethod> stepMethods,
+        Optional<Duration> workflowTimeout,
+        Optional<String> failoverStepName,
+        Optional<?> failoverStepInput,
+        Optional<MaxRetries> failoverMaxRetries,
+        Optional<Duration> defaultStepTimeout,
+        Optional<RecoverStrategy<?>> stepRecoverStrategy) {
+      this(
+          instance,
+          stepMethods,
+          List.of(), // buildStepConfigs(stepMethods),
+          workflowTimeout,
+          failoverStepName,
+          failoverStepInput,
+          failoverMaxRetries,
+          defaultStepTimeout,
+          stepRecoverStrategy);
+        }
+
+
+    @Override
+    public Optional<Step> findByName(String name) {
+
+      return stepMethods.stream()
+          .filter(sm -> sm.uniqueName().equals(name))
+          .findFirst()
+          .map(sm -> sm.invoke(instance));
+    }
+  }
+
+  public record SettingsBuilder(
+      Workflow<?> instance,
+      Optional<Duration> workflowTimeout,
+      Optional<String> failoverStepName,
+      Optional<?> failoverStepInput,
+      Optional<MaxRetries> failoverMaxRetries,
+      Optional<Duration> defaultStepTimeout,
+      Optional<RecoverStrategy<?>> stepRecoverStrategy) {
+
+    public SettingsBuilder timeout(Duration duration) {
+      return new SettingsBuilder(
+          instance,
+          Optional.of(duration),
+          failoverStepName,
+          failoverStepInput,
+          failoverMaxRetries,
+          defaultStepTimeout,
+          stepRecoverStrategy);
+    }
+
+    // TODO: refactor to method ref
+    public SettingsBuilder failoverTo(String stepName, MaxRetries maxRetries) {
+      return new SettingsBuilder(
+          instance,
+          workflowTimeout,
+          Optional.of(stepName),
+          Optional.empty(),
+          Optional.of(maxRetries),
+          defaultStepTimeout,
+          Optional.empty());
+    }
+
+    // TODO: refactor to method ref
+    public <I> SettingsBuilder failoverTo(String stepName, I stepInput, MaxRetries maxRetries) {
+      return new SettingsBuilder(
+          instance,
+          workflowTimeout,
+          Optional.of(stepName),
+          Optional.of(stepInput),
+          Optional.of(maxRetries),
+          defaultStepTimeout,
+          Optional.empty());
+    }
+
+    public SettingsBuilder defaultStepRecoverStrategy(RecoverStrategy<?> recoverStrategy) {
+      return new SettingsBuilder(
+          instance,
+          workflowTimeout,
+          failoverStepName,
+          failoverStepInput,
+          failoverMaxRetries,
+          defaultStepTimeout,
+          Optional.of(recoverStrategy));
+    }
+
+    public SettingsBuilder defaultStepTimeout(Duration timeout) {
+      return new SettingsBuilder(
+          instance,
+          workflowTimeout,
+          failoverStepName,
+          failoverStepInput,
+          failoverMaxRetries,
+          Optional.of(timeout),
+          stepRecoverStrategy);
+    }
+
+    public Settings build() {
+
+      // FIXME: take overloaded methods into account
+      var stepMethods =
+          Arrays.stream(instance.getClass().getDeclaredMethods())
+              // FIXME: support methods returning CompletionStage<Step> as well
+              .filter(m -> Step.class.isAssignableFrom(m.getReturnType()))
+              .map(m -> new StepMethod(m.getName(), m))
+              .toList();
+
+      return new SettingsImpl(
+          instance,
+          stepMethods,
+          workflowTimeout,
+          failoverStepName,
+          failoverStepInput,
+          failoverMaxRetries,
+          defaultStepTimeout,
+          stepRecoverStrategy);
+    }
+  }
+
+  public WorkflowDef<S> workflow() {
+    return new WorkflowDef<>(true);
+  }
 
   public interface Step {
     String name();
 
     Optional<Duration> timeout();
+  }
 
-
+  private record StepMethod(String uniqueName, Method method)  {
+    public Step invoke(Object instance)  {
+      try {
+        method.setAccessible(true);
+        return (Step) method.invoke(instance);
+      } catch (IllegalAccessException | InvocationTargetException e) {
+        throw new RuntimeException(e);
+      }
+    }
   }
 
   public static final class CallStep<CallInput, CallOutput, FailoverInput> implements Step {

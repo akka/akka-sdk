@@ -134,7 +134,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       case None             => null // to meet a signature of supplier expressed as a function
     }
 
-    workflow.definition().findByName(stepName).toScala match {
+    workflow.settings().findByName(stepName).toScala match {
 
       case Some(call: RunnableStep) =>
         Future { // sdkExecutionContext
@@ -195,7 +195,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       }
     }
 
-    workflow.definition().findByName(stepName).toScala match {
+    workflow.settings().findByName(stepName).toScala match {
       case Some(runnableStep: RunnableStep) =>
         val effect = runnableStep.transitionFunc.get()
         TransitionalResult(effect)
