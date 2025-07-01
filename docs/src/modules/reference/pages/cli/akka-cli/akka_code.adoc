@@ -1,15 +1,15 @@
-= akka quickstart
+= akka code
 
-Akka quickstart project samples.
+Develop Akka services
 
 == Synopsis
 
-The `akka quickstart` commands list and download the quickstart project samples for Akka.
+The 'code' command provides tools for developing Akka services, including AI assistance configuration and Akka samples downloading."
 
 == Options
 
 ----
-  -h, --help   help for quickstart
+  -h, --help   help for code
 ----
 
 == Options inherited from parent commands
@@ -30,8 +30,7 @@ The `akka quickstart` commands list and download the quickstart project samples 
 == SEE ALSO
 
 * link:akka.html[akka]	 - Akka control
-* link:akka_quickstart_download.html[akka quickstart download]	 - Download the quickstart sample.
-* link:akka_quickstart_list.html[akka quickstart list]	 - List all quickstart samples.
+* link:akka_code_init.html[akka code init]	 - Initialize a new Akka SDK project.
 
 [discrete]
 
