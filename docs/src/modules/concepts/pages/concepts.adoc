@@ -191,7 +191,7 @@ A common example is a Workflow that invokes an Agent to perform a specific task,
 |Events
 |Components can emit events to signal that something has occurred. Other components may subscribe to these events. This model resembles traditional publish-subscribe systems but does not require external brokers.
 
-For example, when an Entity updates its state, it can emit an event. A View can subscribe to that event to stay in sync. Events can also come from external sources, such as APIs or streaming services.
+For example, when an Entity updates its state, it will emit an event. A View can subscribe to that event to stay in sync. Events can also come from external sources, such as APIs or streaming services.
 |===
 
 Akka encourages building systems where components are loosely coupled. Communication between them runs on virtual threads, which are lightweight and isolated. This allows each interaction to happen independently, helping to avoid contention and ensuring that system resources are used efficiently.
