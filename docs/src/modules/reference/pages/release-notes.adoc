@@ -35,7 +35,7 @@ This short, self-paced course introduces the foundational concepts of the Akka S
 
 ****
 
-* Akka CLI 3.0.33
+* Akka CLI 3.0.23
   - The new `akka code init` command supports kicking off an Akka project easily.
 
 * https://github.com/akka/akka-sdk/releases/tag/v3.4.0[Akka SDK 3.4.0]
