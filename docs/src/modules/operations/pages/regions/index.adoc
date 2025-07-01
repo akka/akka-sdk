@@ -150,10 +150,10 @@ image:dashboard-control-tower-replication.png[]
 
 === Add a region
 
-1. Follow the instructions in <<_adding_a_region_to_a_project>>.
-2. You have to xref:services/deploy-service.adoc[deploy the services] again because the container images don't exist in the container registry of the new region, unless you use a global container registry.
-3. You need to xref:services/invoke-service.adoc[expose the services] in the new region.
-4. Stateful components are automatically replicated to the new region. This may take some time, and you can see progress in the replication section in the Control Tower. The event consumption lag will at first be high and then close to zero when the replication has been completed.
+. Follow the instructions in <<_adding_a_region_to_a_project>>.
+. You have to xref:services/deploy-service.adoc[deploy the services] again because the container images don't exist in the container registry of the new region, unless you use a global container registry.
+. You need to xref:services/invoke-service.adoc[expose the services] in the new region.
+. Stateful components are automatically replicated to the new region. This may take some time, and you can see progress in the replication section in the Control Tower. The event consumption lag will at first be high and then close to zero when the replication has been completed.
 
 === Switch from pinned-region to request-region primary selection mode for stateful components
 
@@ -161,9 +161,9 @@ The default primary selection mode for stateful components is the pinned-region 
 
 Component instances that have already been created will continue to have their primary in the original pinned-region primary region, and will switch primary region when write requests occur in the other region(s).
 
-1. First, change to the `none` primary selection mode. This is a read-only mode for all regions and all write requests will be rejected. The reason for changing to this intermediate mode is to make sure that all events have been replicated without creating new events.
-2. Wait until the deployment of the `none` primary selection mode has been successfully propagated to all regions. Observe in the Akka Console that the rolling update has been completed in all regions. You can also make sure that replicated events reach zero in the replication section in the Control Tower.
-3. Change to `request-region` primary selection mode.
+. First, change to the `none` primary selection mode. This is a read-only mode for all regions and all write requests will be rejected. The reason for changing to this intermediate mode is to make sure that all events have been replicated without creating new events.
+. Wait until the deployment of the `none` primary selection mode has been successfully propagated to all regions. Observe in the Akka Console that the rolling update has been completed in all regions. You can also make sure that replicated events reach zero in the replication section in the Control Tower.
+. Change to `request-region` primary selection mode.
 
 === Switch from request-region to pinned-region primary selection mode for stateful components
 
@@ -171,9 +171,9 @@ pinned-region mode takes precedence over request-region in the sense that a comp
 
 <<selecting-primary>> describes how you change the primary selection mode with a service descriptor.
 
-1. First, change to the `none` primary selection mode. This is a read-only mode for all regions and all write requests will be rejected. The reason for changing to this intermediate mode is to make sure that all events have been replicated without creating new events.
-2. Wait until the deployment of the `none` primary selection mode has been successfully propagated to all regions. Observe in the Akka Console that the rolling update has been completed in all regions. You can also make sure that replicated events reach zero in the replication section in the Control Tower.
-3. Change to `pinned-region` primary selection mode.
+. First, change to the `none` primary selection mode. This is a read-only mode for all regions and all write requests will be rejected. The reason for changing to this intermediate mode is to make sure that all events have been replicated without creating new events.
+. Wait until the deployment of the `none` primary selection mode has been successfully propagated to all regions. Observe in the Akka Console that the rolling update has been completed in all regions. You can also make sure that replicated events reach zero in the replication section in the Control Tower.
+. Change to `pinned-region` primary selection mode.
 
 === Change the pinned-region primary region for stateful components
 
@@ -181,15 +181,44 @@ You might want to change the pinned-region primary for stateful components if yo
 
 <<selecting-primary>> describes how you change the primary selection mode with a service descriptor.
 
-1. First, change to the `none` primary selection mode. This is a read-only mode for all regions and all write requests will be rejected. The reason for changing to this intermediate mode is to make sure that all events have been replicated without creating new events.
-2. Wait until the deployment of the `none` primary selection mode has been successfully propagated to all regions. Observe in the Akka Console that the rolling update has been completed in all regions. You can also make sure that replicated events reach zero in the replication section in the Control Tower.
-3. Follow instructions in <<_setting_the_primary_region_of_a_project>>.
-4. Change to `pinned-region` primary selection mode.
+. First, change to the `none` primary selection mode. This is a read-only mode for all regions and all write requests will be rejected. The reason for changing to this intermediate mode is to make sure that all events have been replicated without creating new events.
+. Wait until the deployment of the `none` primary selection mode has been successfully propagated to all regions. Observe in the Akka Console that the rolling update has been completed in all regions. You can also make sure that replicated events reach zero in the replication section in the Control Tower.
+. Follow instructions in <<_setting_the_primary_region_of_a_project>>.
+. Change to `pinned-region` primary selection mode.
 
 === Change primary region for disaster recovery
 
 If a region is failing you might want to fail over to another region that is working.
 
-1. If the failing region is the primary region, follow instructions in <<_setting_the_primary_region_of_a_project>> and change the primary to a non-failing region.
-2. If you are using `request-region` primary selection you should <<_switch_from_request_region_to_pinned_region_primary_selection_mode_for_stateful_components>>. Depending on how responsive the failing region is this might not be possible to deploy to the failing region, but you should deploy it to the non-failing regions. The reason for this is that otherwise write requests will still be routed to the failing region for component instances that have their primary in the failing region.
-3. Be aware that events that were written in the failing region and had not been replicated to other regions before the hard failover will be replicated when the regions are connected again. There are no guarantees regarding the order of these "old" events and any new events written by the new primary, which could lead to conflicting states across regions.
+. If the failing region is the primary region, follow instructions in <<_setting_the_primary_region_of_a_project>> and change the primary to a non-failing region.
+. If you are using `request-region` primary selection you should <<_switch_from_request_region_to_pinned_region_primary_selection_mode_for_stateful_components>>. Depending on how responsive the failing region is this might not be possible to deploy to the failing region, but you should deploy it to the non-failing regions. The reason for this is that otherwise write requests will still be routed to the failing region for component instances that have their primary in the failing region.
+. Be aware that events that were written in the failing region and had not been replicated to other regions before the hard failover will be replicated when the regions are connected again. There are no guarantees regarding the order of these "old" events and any new events written by the new primary, which could lead to conflicting states across regions.
+
+For faster fail over you can consider the alternative of xref:#_fast_downing_of_region_for_disaster_recovery[], but the drawback is that is more difficult to recover the failed region.
+
+=== Fast downing of region for disaster recovery
+
+If the communication with a region is failing or it is completely unresponsive, you might want to take out the failing region, without re-deploying the services in the healthy regions.
+
+. Use `down-region` from the CLI:
++
+[source, command line]
+----
+akka project settings down-region gcp-us-east1 aws-us-east-2 --region aws-us-east-2
+----
++
+In the above example, `gcp-us-east1` is the failed region that is downed. `aws-us-east-2` is selected as new `pinned-region`, and the CLI command is sent to `aws-us-east-2`.
+. You can send the same command to the failed region, but it will probably not be able to receive it, and that is fine.
++
+[source, command line]
+----
+akka project settings down-region gcp-us-east1 aws-us-east-2 --region gcp-us-east1
+----
+. If you have more than two regions you should send the same command to all other regions using the `--region` flag.
+. You should try to stop the services in the downed region, if they are still running.
++
+[source, command line]
+----
+akka service pause my-service --region gcp-us-east1
+----
+. Contact Akka support for options of how to recover the failed and downed region.
