@@ -1,16 +1,10 @@
 # Akka
 
-> The Akka SDK provides you proven design patterns that enable your apps to remain responsive to change. It frees you from infrastructure concerns and lets you focus on the application logic.
->
-> With its few, concise components, the Akka SDK is easy to learn, and you can develop services in quick, iterative steps by running your code locally with full insight through Akka's console.
->
-> Akka services let you build REST endpoints with flexible access control and multiple ways to expose these endpoints to their consuming systems or applications. Akka is secure by default, and you explicitly express the desired access through code and configuration.
->
-> Akka encapsulates data together with the logic to access and modify it. The data itself is expressed in regular Java records. The same goes for the events that change the data, these are expressed in pure Java to reflect business events that lead to data updates. Akka enables you to build fully event-driven services by combining logic and data into one thing: entities.
-> 
-> Data and changes to it are managed by Akka's runtime without the need to manage database storage. Changes to your data can be automatically replicated to multiple places, not only within a single service, but also across applications and even cloud providers. An SQL-like language lets you design read access that ensures the data is properly indexed for your application needs.
->
-> Integrations with message systems like Kafka are already built-in and the Akka SDK enables message consumers to listen to topics and queues.
+> Akka is a platform for building, running and evaluating agentic systems. It includes a framework, runtime,
+> streaming engine, and memory store for creating any kind of agentic system: AI, autonomous, real-time,
+> adaptive, transactional, analytical, or edge. The Akka Runtime is the most widely adopted actor-based
+> runtime in the world, enabling high-throughput, stateful services that are resilient, elastic and responsive.
+> Akka runs on any infrastructure: public cloud, private cloud or on-premises.
 
 ## Docs
 
