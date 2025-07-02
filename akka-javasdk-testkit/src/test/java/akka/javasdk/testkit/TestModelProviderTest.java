@@ -107,6 +107,15 @@ class TestModelProviderTest {
     assertThat(response.aiMessage().text()).isEqualTo("Test response");
     assertThat(response.modelName()).isEqualTo("test-model");
     assertThat(response.finishReason()).isEqualTo(FinishReason.STOP);
+
+    // should be possible to update
+    testModelProvider.fixedResponse("New response");
+    ChatRequest request2 = ChatRequest.builder()
+        .messages(List.of(new UserMessage("Another question")))
+        .build();
+    ChatResponse response2 = chatModel.doChat(request);
+
+    assertThat(response2.aiMessage().text()).isEqualTo("New response");
   }
 
   @Test
@@ -258,7 +267,7 @@ class TestModelProviderTest {
   }
 
   @Test
-  void testMultipleResponsePredicatesFirstMatch() {
+  void testMultipleResponsePredicatesLastMatch() {
     testModelProvider
       .whenMessage(text -> text.contains("first"))
       .reply("First response");
@@ -273,7 +282,45 @@ class TestModelProviderTest {
         .build();
 
     ChatResponse response = chatModel.doChat(request);
-    assertThat(response.aiMessage().text()).isEqualTo("First response");
+    assertThat(response.aiMessage().text()).isEqualTo("Second response");
+  }
+
+  @Test
+  void testMixOfFixedAndWhen() {
+    ChatModel chatModel = (ChatModel) testModelProvider.createChatModel();
+
+    testModelProvider
+        .whenMessage(text -> text.contains("first"))
+        .reply("First response");
+
+    ChatRequest request1 = ChatRequest.builder()
+        .messages(List.of(new UserMessage("This is the first test")))
+        .build();
+    ChatResponse response1 = chatModel.doChat(request1);
+    assertThat(response1.aiMessage().text()).isEqualTo("First response");
+
+    // changing to a fixed response that will take precedence
+    testModelProvider
+        .fixedResponse("Fixed response");
+    ChatResponse response2 = chatModel.doChat(request1);
+    assertThat(response2.aiMessage().text()).isEqualTo("Fixed response");
+
+    // adding another specific match
+    testModelProvider
+        .whenMessage(text -> text.contains("another"))
+        .reply("Another response");
+    ChatRequest request3 = ChatRequest.builder()
+        .messages(List.of(new UserMessage("This is another test")))
+        .build();
+    ChatResponse response3 = chatModel.doChat(request3);
+    assertThat(response3.aiMessage().text()).isEqualTo("Another response");
+
+    // and the fixed will still catch non-match
+    ChatRequest request4 = ChatRequest.builder()
+        .messages(List.of(new UserMessage("This is something else")))
+        .build();
+    ChatResponse response4 = chatModel.doChat(request4);
+    assertThat(response4.aiMessage().text()).isEqualTo("Fixed response");
   }
 
   @Test
