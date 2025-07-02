@@ -41,10 +41,10 @@
 
 - [Author your first agentic service](https://doc.akka.io/getting-started/author-your-first-service.html.md): Step-by-step guide to creating your first agentic Akka service from scratch.
 - [Build an AI multi-agent planner](https://doc.akka.io/getting-started/planner-agent/index.html.md): Step-by-step guide to creating a multi-agent system with dynamic planning and orchestration capabilities.
-- [AI RAG Agent](https://doc.akka.io/getting-started/ask-akka-agent.html.md): Introduction to building a Retrieval Augmented Generation (RAG) agent with Akka.
-- [AI RAG Agent - Knowledge indexing with a workflow](https://doc.akka.io/getting-started/indexer.html.md): Implementing the knowledge indexing process for a RAG agent using Akka workflows.
-- [AI RAG Agent - Executing RAG queries](https://doc.akka.io/getting-started/rag.html.md): Performing contextual information retrieval and generating responses with a large language model.
-- [AI RAG Agent - Adding UI endpoints](https://doc.akka.io/getting-started/endpoints.html.md): Add some endpoints to provide a client-friendly API in front of all of the RAG components.
+- [AI RAG Agent](https://doc.akka.io/getting-started/ask-akka-agent/index.html.md): Introduction to building a Retrieval Augmented Generation (RAG) agent with Akka.
+- [AI RAG Agent - Knowledge indexing with a workflow](https://doc.akka.io/getting-started/ask-akka-agent/indexer.html.md): Implementing the knowledge indexing process for a RAG agent using Akka workflows.
+- [AI RAG Agent - Executing RAG queries](https://doc.akka.io/getting-started/ask-akka-agent/rag.html.md): Performing contextual information retrieval and generating responses with a large language model.
+- [AI RAG Agent - Adding UI endpoints](https://doc.akka.io/getting-started/ask-akka-agent/endpoints.html.md): Add some endpoints to provide a client-friendly API in front of all of the RAG components.
 - [Shopping Cart - Quickstart](https://doc.akka.io/getting-started/build-and-deploy-shopping-cart.html.md): Get a shopping cart application up and running with event sourced entities.
 - [Shopping Cart - Adding a view](https://doc.akka.io/getting-started/addview.html.md): Extending the shopping cart application with a read-optimized view.
 
