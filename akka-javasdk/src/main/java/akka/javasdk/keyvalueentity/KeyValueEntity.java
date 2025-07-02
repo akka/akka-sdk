@@ -15,7 +15,7 @@ import java.util.Optional;
  * Unlike Event Sourced Entities, only the latest state is stored without access to historical changes.
  * 
  * <p>Key Value Entities provide strong consistency guarantees through entity sharding, where each
- * entity instance is identified by a unique ID and distributed across the service cluster. Only one
+ * entity instance is identified by a unique id and distributed across the service cluster. Only one
  * instance of each entity exists in the cluster at any time, ensuring sequential message processing
  * without concurrency concerns.
  * 
@@ -136,7 +136,7 @@ public abstract class KeyValueEntity<S> {
 
   /**
    * Provides access to additional context and metadata for the current command being processed.
-   * This includes information such as the command name, entity ID, and tracing context.
+   * This includes information such as the command name, entity id, and tracing context.
    *
    * <p>This method can only be called from within a command handler method. Attempting to access
    * it from the constructor or outside of command processing will result in an exception.

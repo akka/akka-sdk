@@ -12,7 +12,7 @@ import akka.javasdk.EntityContext;
  * throughout the entity's lifecycle.
  * 
  * <p>The KeyValueEntityContext is typically injected into the entity constructor and can be
- * used to access the entity ID and other contextual information needed during entity setup.
+ * used to access the entity id and other contextual information needed during entity setup.
  * 
  * <p>Unlike {@link CommandContext}, this context is available during entity construction
  * and is not limited to command processing.
