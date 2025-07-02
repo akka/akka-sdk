@@ -99,7 +99,7 @@ public class TestModelProvider implements ModelProvider.Custom {
   };
 
   private void addPredicateOnly(Predicate<InputMessage> predicate) {
-    responsePredicates.add(new Pair<>(predicate, catchMissingResponse));
+    responsePredicates.addFirst(new Pair<>(predicate, catchMissingResponse));
   }
     
   private void addResponse(Predicate<InputMessage> predicate, Function<InputMessage, AiResponse> response) {
@@ -110,7 +110,7 @@ public class TestModelProvider implements ModelProvider.Custom {
     responsePredicates.removeIf(pair -> pair.equals(catchMissingResponse));
 
     // Add the new predicate-response mapping
-    responsePredicates.add(new Pair<>(predicate, response));
+    responsePredicates.addFirst(new Pair<>(predicate, response));
   }
 
 
