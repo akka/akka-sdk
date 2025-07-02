@@ -240,8 +240,11 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
           return componentClient.forAgent().inSession(sessionId()).method(SummarizerAgent::summarize)
               .invoke(new SummarizerAgent.Request(currentState().userQuery, agentsAnswers));
         })
-        .andThen(String.class, finalAnswer ->
-            effects().updateState(currentState().withFinalAnswer(finalAnswer).complete()).pause());
+        .andThen(String.class, finalAnswer -> {
+          logger.info("Final summarized answer: '{}'", finalAnswer);
+          return effects()
+              .updateState(currentState().withFinalAnswer(finalAnswer).complete()).pause();
+        });
   }
 
   private static final String INTERRUPT = "interrupt";
