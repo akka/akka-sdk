@@ -63,6 +63,7 @@ These guidelines apply only to the Akka SDK and do not cover usage of the lower-
 
 == Agents
 
+* An Agent can only have one single command handler method.
 * Command handlers only ever accept a single parameter and return effects. If a command handler needs to accept more than one parameter, those parameters should be wrapped inside a single command message.
 * The command handler parameter and reply should be defined as inner record of the workflow, but sometimes it makes sense to place them in the `domain` package together with other data transfer and state records. Parameter and reply can also be a plain String, Java primitive or class.
 * Agent classes should be stateless and not have mutable state in itself.
