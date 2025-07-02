@@ -41,6 +41,17 @@ git clone https://github.com/akka-samples/helloworld-agent.git --depth 1
 
 . Open it in your preferred IDE / Editor.
 
+[sidebar]
+****
+Another convenient way to download this and other samples is to use the Akka CLI. See xref:quick-install-cli.adoc[installation instructions].
+
+[source, command line]
+----
+akka code init
+----
+****
+
+
 == Explore the Agent
 
 An _Agent_ interacts with an AI model and maintains contextual history in a session memory.
@@ -215,7 +226,6 @@ The Akka local console is a web-based tool that comes bundled with the Akka CLI.
 Starting the local console requires using the Akka CLI.
 
 include::ROOT:partial$cli-install-short.adoc[]
-
 
 === Start the local console
 
