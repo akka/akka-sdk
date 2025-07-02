@@ -23,14 +23,14 @@ class CustomerStoreUpdaterTest extends TestKitSupport {
   @Override
   protected TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT
-      .withEventSourcedEntityIncomingMessages("customer");
+      .withEventSourcedEntityIncomingMessages(CustomerEntity.class);
   }
 
 
   @BeforeAll
   public void beforeAll() {
     super.beforeAll();
-    consumerEvents = testKit.getEventSourcedEntityIncomingMessages("customer");
+    consumerEvents = testKit.getEventSourcedEntityIncomingMessages(CustomerEntity.class);
     customerStore = getDependency(CustomerStore.class);
   }
 

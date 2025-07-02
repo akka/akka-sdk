@@ -20,12 +20,12 @@ class CustomersByCityIntegrationTest extends TestKitSupport {
   @Override
   protected TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT
-      .withKeyValueEntityIncomingMessages("customer"); // <1>
+      .withKeyValueEntityIncomingMessages(CustomerEntity.class); // <1>
   }
 
   @Test
   public void shouldGetCustomerByCity() {
-    IncomingMessages customerEvents = testKit.getKeyValueEntityIncomingMessages("customer"); // <2>
+    IncomingMessages customerEvents = testKit.getKeyValueEntityIncomingMessages(CustomerEntity.class); // <2>
 
     Customer johanna = new Customer("johanna@example.com", "Johanna",
       new Address("Cool Street", "Porto"));
@@ -57,7 +57,7 @@ class CustomersByCityIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldGetCustomerByCityAndName() {
-    IncomingMessages customerEvents = testKit.getKeyValueEntityIncomingMessages("customer");
+    IncomingMessages customerEvents = testKit.getKeyValueEntityIncomingMessages(CustomerEntity.class);
 
     Customer johanna = new Customer("johanna@example.com", "Johanna",
       new Address("Cool Street", "London"));
