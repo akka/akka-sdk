@@ -103,7 +103,7 @@ public abstract class KeyValueEntity<S> {
    * <p>The default implementation returns {@code null}. Override this method to provide a more
    * meaningful initial state for your entity.
    *
-   * @return the initial state object, or {@code null} if no initial state is needed
+   * @return the initial state object, or {@code null} if no initial state is defined
    */
   public S emptyState() {
     return null;
@@ -166,7 +166,8 @@ public abstract class KeyValueEntity<S> {
    * <p>This method can only be called from within a command handler method. Attempting to access
    * it from the constructor or outside of command processing will result in an exception.
    *
-   * @return the current state of the entity, which may be {@code null} if no state has been set
+   * @return the current state of the entity, which may initially be {@code null} if
+   *   {@link #emptyState} has not been defined
    * @throws IllegalStateException if accessed outside a command handler method
    */
   protected final S currentState() {
