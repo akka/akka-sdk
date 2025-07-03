@@ -89,7 +89,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
   override def configuration: SpiWorkflow.WorkflowConfig = {
     val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, None, tracerFactory)
     val workflow = instanceFactory(workflowContext)
-    val definition = workflow.definition()
+    val settings = workflow.settings()
 
     def toRecovery(sdkRecoverStrategy: SdkRecoverStrategy[_]): SpiWorkflow.RecoverStrategy = {
 
@@ -100,24 +100,24 @@ class WorkflowImpl[S, W <: Workflow[S]](
     }
 
     val stepConfigs =
-      definition.getStepConfigs.asScala.map { config =>
+      settings.stepConfigs.asScala.map { config =>
         val stepTimeout = config.timeout.toScala.map(_.toScala)
         val failoverRecoverStrategy = config.recoverStrategy.toScala.map(toRecovery)
         (config.stepName, new SpiWorkflow.StepConfig(config.stepName, stepTimeout, failoverRecoverStrategy))
       }.toMap
 
-    val defaultStepRecoverStrategy = definition.getStepRecoverStrategy.toScala.map(toRecovery)
+    val defaultStepRecoverStrategy = settings.stepRecoverStrategy.toScala.map(toRecovery)
 
-    val failoverRecoverStrategy = definition.getFailoverStepName.toScala.map(stepName =>
+    val failoverRecoverStrategy = settings.failoverStepName.toScala.map(stepName =>
       //when failoverStepName exists, maxRetries must exist
       new SpiWorkflow.RecoverStrategy(
-        definition.getFailoverMaxRetries.toScala.get.maxRetries,
-        new SpiWorkflow.StepTransition(stepName, definition.getFailoverStepInput.toScala.map(serializer.toBytes))))
+        settings.failoverMaxRetries().toScala.get.maxRetries,
+        new SpiWorkflow.StepTransition(stepName, settings.failoverStepInput.toScala.map(serializer.toBytes))))
 
-    val stepTimeout = definition.getStepTimeout.toScala.map(_.toScala)
+    val stepTimeout = settings.defaultStepTimeout().toScala.map(_.toScala)
 
     new SpiWorkflow.WorkflowConfig(
-      workflowTimeout = definition.getWorkflowTimeout.toScala.map(_.toScala),
+      workflowTimeout = settings.workflowTimeout.toScala.map(_.toScala),
       failoverRecoverStrategy = failoverRecoverStrategy,
       defaultStepTimeout = stepTimeout,
       defaultStepRecoverStrategy = defaultStepRecoverStrategy,
