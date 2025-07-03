@@ -11,7 +11,32 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Define description for an Agent component.
+ * Annotation to provide metadata and description for an Agent component.
+ * <p>
+ * This annotation is essential for multi-agent systems where agents need to be discovered
+ * and selected dynamically. The information provided here is used by the {@link akka.javasdk.agent.AgentRegistry}
+ * for agent selection and planning.
+ * <p>
+ * <strong>Usage in Multi-Agent Systems:</strong>
+ * <pre>{@code
+ * @ComponentId("weather-agent")
+ * @AgentDescription(
+ *     name = "Weather Agent",
+ *     description = "Provides weather information and forecasts for any location",
+ *     role = "worker"
+ * )
+ * public class WeatherAgent extends Agent {
+ *   // Agent implementation
+ * }
+ * }</pre>
+ * <p>
+ * <strong>Agent Selection:</strong>
+ * Planning agents can use this metadata to automatically select appropriate agents for specific tasks.
+ * The description should clearly explain the agent's capabilities and domain of expertise.
+ * <p>
+ * <strong>Role-based Organization:</strong>
+ * The role field allows grouping agents by function (e.g., "worker", "planner", "coordinator")
+ * for easier discovery and organization in complex multi-agent systems.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

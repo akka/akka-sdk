@@ -12,9 +12,37 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 /**
- * Access to tools from one remote MCP server.
- *
- * <p>Not for user extension, create instances using {@link #fromServer(String)}.
+ * Configuration for accessing tools from remote Model Context Protocol (MCP) servers.
+ * <p>
+ * MCP servers provide tools that agents can use to extend their capabilities. This class
+ * allows agents to connect to remote MCP servers and use their tools, including third-party
+ * services and other Akka services with MCP endpoints.
+ * <p>
+ * <strong>Usage in Agents:</strong>
+ * <pre>{@code
+ * public Effect<String> query(String message) {
+ *   return effects()
+ *       .systemMessage("You are a helpful assistant...")
+ *       .mcpTools(
+ *           RemoteMcpTools.fromService("weather-service"),
+ *           RemoteMcpTools.fromServer("https://api.example.com/mcp")
+ *               .withAllowedToolNames("get_weather", "get_forecast")
+ *               .addClientHeader(Authorization.oauth2(token))
+ *       )
+ *       .userMessage(message)
+ *       .thenReply();
+ * }
+ * }</pre>
+ * <p>
+ * <strong>Security:</strong>
+ * When using MCP endpoints in other Akka services, service ACLs apply just like for HTTP and gRPC endpoints.
+ * For third-party MCP servers, use HTTPS and appropriate authentication headers.
+ * <p>
+ * <strong>Tool Filtering:</strong>
+ * You can control which tools from the MCP server are available to the agent using tool name filters
+ * or explicit allow lists.
+ * <p>
+ * Not for user extension, create instances using {@link #fromServer(String)} or {@link #fromService(String)}.
  */
 @DoNotInherit
 public interface RemoteMcpTools {

@@ -11,9 +11,24 @@ package akka.javasdk.agent;
 import java.util.List;
 
 /**
- * Interface for managing session history between users and AI models, using SessionMemory
- * provides functionality to store, retrieve, and manage messages exchanged during conversations in
- * an agent system.
+ * Interface for managing conversational session history between users and AI models.
+ * <p>
+ * SessionMemory provides functionality to store, retrieve, and manage messages exchanged during
+ * conversations in an agent system. It enables agents to maintain context across multiple
+ * interactions within the same session.
+ * <p>
+ * <strong>Default Implementation:</strong>
+ * The default implementation is backed by {@link SessionMemoryEntity}, a built-in Event Sourced Entity
+ * that automatically stores conversation history. This provides durability and allows for session
+ * memory to be shared between multiple agents using the same session ID.
+ * <p>
+ * <strong>Custom Implementation:</strong>
+ * You can provide a custom implementation using {@link MemoryProvider#custom(SessionMemory)} to
+ * store session memory in external databases or services.
+ * <p>
+ * <strong>Memory Management:</strong>
+ * Session memory can be configured to limit the amount of history retained, either by message count
+ * or total size, to control token usage and performance.
  */
 public interface SessionMemory {
 

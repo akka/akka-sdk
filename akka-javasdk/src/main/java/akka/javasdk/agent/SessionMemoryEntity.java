@@ -29,11 +29,42 @@ import java.util.Optional;
 import static akka.Done.done;
 
 /**
- * SessionMemory is an EventSourcedEntity that maintains a limited history of conversation
- * messages in a FIFO (First In, First Out) style.
+ * Built-in Event Sourced Entity that provides persistent session memory for agent conversations.
  * <p>
- * The maximum number of entries in the history can be set dynamically with command setLimitedWindow.
- * {@link ComponentClient} can be used to interact directly with this entity.
+ * SessionMemoryEntity maintains a limited history of conversation messages in FIFO (First In, First Out) style,
+ * automatically managing memory size to prevent unbounded growth. It serves as the default implementation
+ * of session memory for agents.
+ * <p>
+ * <strong>Automatic Registration:</strong>
+ * This entity is automatically registered by the Akka runtime when Agent components are detected.
+ * Each session is identified by the entity ID, which corresponds to the agent's session ID.
+ * <p>
+ * <strong>Memory Management:</strong>
+ * <ul>
+ *   <li>Configurable maximum memory size via {@code akka.javasdk.agent.memory.limited-window.max-size}</li>
+ *   <li>Automatic removal of oldest messages when size limit is exceeded</li>
+ *   <li>Orphan message cleanup (removes AI/tool messages when their triggering user message is removed)</li>
+ * </ul>
+ * <p>
+ * <strong>Direct Access:</strong>
+ * You can interact directly with session memory using {@link ComponentClient}:
+ * <pre>{@code
+ * // Get session history
+ * SessionHistory history = componentClient
+ *     .forEventSourcedEntity(sessionId)
+ *     .method(SessionMemoryEntity::getHistory)
+ *     .invoke(new GetHistoryCmd(Optional.empty()));
+ * 
+ * // Compact session history
+ * componentClient
+ *     .forEventSourcedEntity(sessionId)
+ *     .method(SessionMemoryEntity::compactHistory)
+ *     .invoke(new CompactionCmd(userMsg, aiMsg, sequenceNumber));
+ * }</pre>
+ * <p>
+ * <strong>Event Subscription:</strong>
+ * You can subscribe to session memory events using a Consumer to monitor conversation activity,
+ * implement custom analytics, or trigger compaction when memory usage exceeds thresholds.
  */
 @ComponentId("akka-session-memory")
 public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> {

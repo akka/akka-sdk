@@ -14,15 +14,49 @@ import java.util.Optional;
 import static akka.Done.done;
 
 /**
- * Prompt template is an ordinary event sourced entity that stores a prompt template with the history of updates.
+ * A built-in Event Sourced Entity for managing dynamic prompt templates with change history.
  * <p>
- * Akka runtime will automatically register this entity when it detects an {@link Agent} component.
+ * PromptTemplate allows you to change agent prompts at runtime without restarting or redeploying
+ * the service. Since it's managed as an entity, you retain full change history and can subscribe
+ * to prompt changes.
  * <p>
- * Use {@link akka.javasdk.client.ComponentClient} to:
- * - initialize the prompt template
- * - update the prompt template
- * - delete the prompt template
- * - get the prompt template
+ * <strong>Automatic Registration:</strong>
+ * The Akka runtime automatically registers this entity when it detects an {@link Agent} component
+ * in your service.
+ * <p>
+ * <strong>Usage in Agents:</strong>
+ * <pre>{@code
+ * public Effect<String> query(String message) {
+ *   return effects()
+ *       .systemMessageFromTemplate("my-agent-prompt")
+ *       .userMessage(message)
+ *       .thenReply();
+ * }
+ * }</pre>
+ * <p>
+ * <strong>Managing Templates:</strong>
+ * Use {@link akka.javasdk.client.ComponentClient} to manage prompt templates:
+ * <pre>{@code
+ * // Initialize or update a prompt template
+ * componentClient
+ *     .forEventSourcedEntity("my-agent-prompt")
+ *     .method(PromptTemplate::update)
+ *     .invoke("You are a helpful assistant...");
+ * 
+ * // Get current prompt value
+ * String prompt = componentClient
+ *     .forEventSourcedEntity("my-agent-prompt")
+ *     .method(PromptTemplate::get)
+ *     .invoke();
+ * }</pre>
+ * <p>
+ * <strong>Template Parameters:</strong>
+ * Templates support Java {@link String#formatted} style parameters when using
+ * {@code systemMessageFromTemplate(templateId, args...)}.
+ * <p>
+ * <strong>Change Monitoring:</strong>
+ * You can subscribe to prompt template changes using a Consumer to build views
+ * or react to prompt updates.
  */
 @ComponentId("akka-prompt-template")
 public final class PromptTemplate extends EventSourcedEntity<PromptTemplate.Prompt, PromptTemplate.Event> {
