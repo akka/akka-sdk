@@ -9,23 +9,24 @@ import akka.javasdk.Tracing;
 
 /**
  * Context information available to Event Sourced Entity command handlers during command processing.
- * Provides access to command metadata, entity identification, sequence information, and tracing capabilities.
- * 
- * <p>This context is automatically provided by the Akka runtime and can be accessed within
- * command handlers using {@link EventSourcedEntity#commandContext()}.
+ * Provides access to command metadata, entity identification, sequence information, and tracing
+ * capabilities.
+ *
+ * <p>This context is automatically provided by the Akka runtime and can be accessed within command
+ * handlers using {@link EventSourcedEntity#commandContext()}.
  */
 public interface CommandContext extends MetadataContext {
   /**
-   * Returns the current sequence number of events in this entity. This represents the number
-   * of events that have been persisted for this entity instance.
+   * Returns the current sequence number of events in this entity. This represents the number of
+   * events that have been persisted for this entity instance.
    *
    * @return the current sequence number of persisted events
    */
   long sequenceNumber();
 
   /**
-   * Returns the name of the command currently being executed. This corresponds to the
-   * method name of the command handler being invoked.
+   * Returns the name of the command currently being executed. This corresponds to the method name
+   * of the command handler being invoked.
    *
    * @return the name of the command being processed
    */
@@ -58,7 +59,7 @@ public interface CommandContext extends MetadataContext {
   /**
    * Provides access to tracing functionality for adding custom application-specific tracing
    * information to the current command processing.
-   * 
+   *
    * @return the tracing context for custom tracing operations
    */
   Tracing tracing();
