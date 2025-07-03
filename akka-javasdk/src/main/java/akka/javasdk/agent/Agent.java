@@ -16,7 +16,8 @@ import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * An AI agent component that interacts with a large language model (LLM) to perform specific tasks.
+ * An AI agent component that interacts with an AI model, such as a large language model (LLM),
+ * to perform specific tasks.
  * <p>
  * An Agent is typically backed by a large language model and maintains contextual history in a session memory,
  * which may be shared between multiple agents collaborating on the same goal. It can provide function tools
@@ -110,7 +111,7 @@ public abstract class Agent {
     interface Builder {
 
       /**
-       * Define the model (LLM) to use.
+       * Define the AI model (LLM) to use.
        * If undefined, the model is defined by the default configuration in
        * {@code akka.javasdk.agent.model-provider}
        */
@@ -371,7 +372,7 @@ public abstract class Agent {
     interface Builder {
 
       /**
-       * Define the model (LLM) to use.
+       * Define the AI model (LLM) to use.
        * If undefined, the model is defined by the default configuration in
        * {@code akka.javasdk.agent.model-provider}
        */
