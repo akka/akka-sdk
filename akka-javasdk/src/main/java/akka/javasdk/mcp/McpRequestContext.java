@@ -16,26 +16,26 @@ import java.util.Optional;
 
 /**
  * Context information available during MCP endpoint request processing.
- * <p>
- * Provides access to request metadata including headers, authentication information, and tracing capabilities
- * for MCP endpoint methods. This context is available during the processing of MCP tool calls, resource
- * requests, and prompt requests.
- * <p>
- * <strong>Access Methods:</strong>
+ *
+ * <p>Provides access to request metadata including headers, authentication information, and tracing
+ * capabilities for MCP endpoint methods. This context is available during the processing of MCP
+ * tool calls, resource requests, and prompt requests.
+ *
+ * <p><strong>Access Methods:</strong>
+ *
  * <ul>
- *   <li>Extend {@link AbstractMcpEndpoint} and use {@code requestContext()}</li>
- *   <li>Inject as constructor parameter into MCP endpoint classes</li>
+ *   <li>Extend {@link AbstractMcpEndpoint} and use {@code requestContext()}
+ *   <li>Inject as constructor parameter into MCP endpoint classes
  * </ul>
- * <p>
- * <strong>Authentication & Authorization:</strong>
- * Use {@link #getPrincipals()} and {@link #getJwtClaims()} to access authentication information
- * for custom authorization logic. MCP endpoints support ACL annotations and JWT validation.
- * <p>
- * <strong>Custom Headers:</strong>
- * Access request headers via {@link #requestHeader(String)} for custom authentication schemes
- * or client-specific metadata.
- * <p>
- * Not for user extension, implementation provided by the SDK.
+ *
+ * <p><strong>Authentication & Authorization:</strong> Use {@link #getPrincipals()} and {@link
+ * #getJwtClaims()} to access authentication information for custom authorization logic. MCP
+ * endpoints support ACL annotations and JWT validation.
+ *
+ * <p><strong>Custom Headers:</strong> Access request headers via {@link #requestHeader(String)} for
+ * custom authentication schemes or client-specific metadata.
+ *
+ * <p>Not for user extension, implementation provided by the SDK.
  */
 @DoNotInherit
 public interface McpRequestContext {

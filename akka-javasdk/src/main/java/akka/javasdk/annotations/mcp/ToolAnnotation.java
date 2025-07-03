@@ -6,27 +6,26 @@ package akka.javasdk.annotations.mcp;
 
 /**
  * Behavioral annotations that describe MCP tool characteristics to clients.
- * <p>
- * These annotations provide hints about tool behavior to help AI models make informed decisions
- * about when and how to use tools. They describe properties like whether a tool modifies data,
- * can be called repeatedly safely, or interacts with external systems.
- * <p>
- * <strong>Usage:</strong>
- * Apply these annotations to {@link McpTool} methods via the {@link McpTool#annotations()} attribute
- * to help clients understand tool behavior patterns.
- * <p>
- * <strong>Security Note:</strong>
- * All values are <strong>hints only</strong> and are not guaranteed to provide a faithful description
- * of actual tool behavior. Clients should never make security-critical tool use decisions based on
- * ToolAnnotations received from untrusted servers.
- * <p>
- * <strong>Annotation Pairs:</strong>
- * Annotations are defined as opposites to allow clear specification in Java annotations:
+ *
+ * <p>These annotations provide hints about tool behavior to help AI models make informed decisions
+ * about when and how to use tools. They describe properties like whether a tool modifies data, can
+ * be called repeatedly safely, or interacts with external systems.
+ *
+ * <p><strong>Usage:</strong> Apply these annotations to {@link McpTool} methods via the {@link
+ * McpTool#annotations()} attribute to help clients understand tool behavior patterns.
+ *
+ * <p><strong>Security Note:</strong> All values are <strong>hints only</strong> and are not
+ * guaranteed to provide a faithful description of actual tool behavior. Clients should never make
+ * security-critical tool use decisions based on ToolAnnotations received from untrusted servers.
+ *
+ * <p><strong>Annotation Pairs:</strong> Annotations are defined as opposites to allow clear
+ * specification in Java annotations:
+ *
  * <ul>
- *   <li>{@link #Destructive} vs {@link #NonDestructive}</li>
- *   <li>{@link #Idempotent} vs {@link #NonIdempotent}</li>
- *   <li>{@link #OpenWorld} vs {@link #ClosedWorld}</li>
- *   <li>{@link #ReadOnly} vs {@link #Mutating}</li>
+ *   <li>{@link #Destructive} vs {@link #NonDestructive}
+ *   <li>{@link #Idempotent} vs {@link #NonIdempotent}
+ *   <li>{@link #OpenWorld} vs {@link #ClosedWorld}
+ *   <li>{@link #ReadOnly} vs {@link #Mutating}
  * </ul>
  */
 public enum ToolAnnotation {
