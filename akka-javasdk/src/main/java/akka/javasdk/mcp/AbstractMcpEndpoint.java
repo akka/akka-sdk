@@ -31,16 +31,6 @@ import akka.annotation.InternalApi;
  *   public String add(@Description("First number") int a, @Description("Second number") int b) {
  *     return String.valueOf(a + b);
  *   }
- * 
- *   @McpResource(uri = "file:///config.json", name = "Configuration")
- *   public String getConfig() {
- *     return "{ \"setting\": \"value\" }";
- *   }
- * 
- *   @McpPrompt(description = "Code review prompt")
- *   public String reviewPrompt(@Description("Code to review") String code) {
- *     return "Please review this code: " + code;
- *   }
  * }
  * }</pre>
  * <p>
