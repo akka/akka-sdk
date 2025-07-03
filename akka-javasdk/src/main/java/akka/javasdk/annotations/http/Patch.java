@@ -35,7 +35,6 @@ import java.lang.annotation.Target;
  * PATCH methods typically return the updated resource, a success confirmation, or 
  * 200 OK responses. Use {@link akka.javasdk.http.HttpResponses#ok()} for standard update responses.
  */
-
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
