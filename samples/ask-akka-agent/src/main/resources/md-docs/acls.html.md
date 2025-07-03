@@ -63,7 +63,7 @@ With ACLs, you can secure your Akka environment and ensure only authorized entit
 
 <!-- <footer> -->
 <!-- <nav> -->
-[AI Agents](ai-agents.html) [Developing](../java/index.html)
+[Building AI agents](ai-agents.html) [Developing](../java/index.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

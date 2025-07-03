@@ -1,13 +1,12 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
 - [Getting Started](../index.html)
-- [AI Planner Part 4: Orchestrate the agents](team.html)
+- [Build an AI multi-agent planner](index.html)
+- [Orchestrate the agents](team.html)
 
 <!-- </nav> -->
 
-# AI Planner Part 4: Orchestrate the agents
-
-[1: The activity agent](index.html) > [2: User preferences](preferences.html) > [3: Weather agent](weather.html) > **4: Orchestrate the agents** > [5: List by user](list.html) > > [6: Dynamic orchestration](dynamic-team.html)
+# Orchestrate the agents
 
 |  | **New to Akka? Start here:**
 
@@ -33,13 +32,22 @@ In this part of the guide you will:
 
 Agents make external calls to the AI model and possibly other services, and therefore it is important to have solid error handling and durable execution steps when calling agents. In many cases it is a good recommendation to call agents from a workflow. The workflow will automatically execute the steps in a reliable and durable way. This means that if a call in a step fails, it will be retried until it succeeds or the retry limit of the recovery strategy is reached and separate error handling can be performed. The state machine of the workflow is durable, which means that if the workflow is restarted for some reason it will continue from where it left off, i.e. execute the current non-completed step again.
 
-Our workflow should first retrieve the weather forecast and then find suitable activities. Add a new file `AgentTeam.java` to `src/main/java/com/example/application/`
+Our workflow should first retrieve the weather forecast and then find suitable activities. Add a new file `AgentTeamWorkflow.java` to `src/main/java/com/example/application/`
 
-AgentTeam.java
+AgentTeamWorkflow.java
 ```java
+import akka.Done;
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.client.ComponentClient;
+import akka.javasdk.workflow.Workflow;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.time.Duration;
+
 @ComponentId("agent-team")
-public class AgentTeam extends Workflow<AgentTeam.State> {
-  private static final Logger logger = LoggerFactory.getLogger(AgentTeam.class);
+public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
+  private static final Logger logger = LoggerFactory.getLogger(AgentTeamWorkflow.class);
 
   public record Request(String userId, String message) {}
 
@@ -51,7 +59,7 @@ public class AgentTeam extends Workflow<AgentTeam.State> {
 
   private final ComponentClient componentClient;
 
-  public AgentTeam(ComponentClient componentClient) {
+  public AgentTeamWorkflow(ComponentClient componentClient) {
     this.componentClient = componentClient;
   }
 
@@ -133,11 +141,11 @@ public class AgentTeam extends Workflow<AgentTeam.State> {
 | **4** | Next step is to find activities. |
 | **5** | Request to the `ActivityAgent`. |
 | **6** | The final result is stored in the workflow state. |
-You might have noticed that we don’t pass the forecast as a parameter to the `ActivityAgent`. How would it then know about the weather? The `WeatherAgent` and `Activity agents share the same session memory and thereby the `ActivityAgent` will have the weather forecast in the context that is sent to the AI model.
+You might have noticed that we don’t pass the forecast as a parameter to the `ActivityAgent`. How would it then know about the weather? The `WeatherAgent` and `Activity` agents share the same session memory and thereby the `ActivityAgent` will have the weather forecast in the context that is sent to the AI model.
 
 ## <a href="about:blank#_adjust_the_endpoint"></a> Adjust the endpoint
 
-Let’s modify the endpoint to use the `AgentTeam` workflow instead of calling the agent directly.
+Let’s modify the endpoint to use the `AgentTeamWorkflow` workflow instead of calling the agent directly.
 
 ActivityEndpoint.java
 ```java
@@ -148,10 +156,10 @@ ActivityEndpoint.java
     var res =
       componentClient
       .forWorkflow(sessionId)
-        .method(AgentTeam::start) // (1)
-        .invoke(new AgentTeam.Request(userId, request.message()));
+        .method(AgentTeamWorkflow::start) // (1)
+        .invoke(new AgentTeamWorkflow.Request(userId, request.message()));
 
-    return HttpResponses.created(res, "/activities/ " + userId + "/" + sessionId); // (2)
+    return HttpResponses.created(res, "/activities/" + userId + "/" + sessionId); // (2)
   }
 ```
 
@@ -168,7 +176,7 @@ ActivityEndpoint.java
     var res =
         componentClient
             .forWorkflow(sessionId)
-            .method(AgentTeam::getAnswer)
+            .method(AgentTeamWorkflow::getAnswer)
             .invoke();
 
     if (res.isEmpty())
@@ -190,7 +198,7 @@ Ask for activities.
 ```command
 curl -i -XPOST --location "http://localhost:9000/activities/alice" \
   --header "Content-Type: application/json" \
-  --data '{"message": "I am in Madrid. What should I do?"}'
+  --data '{"message": "I am in Madrid. What should I do? Beware of the weather."}'
 ```
 Retrieve the suggested activities with the `sessionId` from the previous response:
 
@@ -201,12 +209,12 @@ Does it take the current weather forecast into account? You should see the `Weat
 
 ## <a href="about:blank#_next_steps"></a> Next steps
 
-- It would be nice to see all previous suggestions for a user. Continue with > [Part 5: List by user](list.html)
+- It would be nice to see all previous suggestions for a user. Continue with [List by user](list.html)
 - Learn more about the <a href="../../java/workflows.html">`Workflow` component</a>.
 
 <!-- <footer> -->
 <!-- <nav> -->
-[AI Planner Part 3: Weather agent](weather.html) [AI Planner Part 5: List by user](list.html)
+[Weather agent](weather.html) [List by user](list.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

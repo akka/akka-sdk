@@ -102,7 +102,7 @@ In order to have multi-writer (or write anywhere) capabilities you must implemen
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Declarative effects](declarative-effects.html) [Multi-region operations](multi-region.html)
+[Delegation with Effects](declarative-effects.html) [Multi-region operations](multi-region.html)
 <!-- </nav> -->
 
 <!-- </footer> -->
