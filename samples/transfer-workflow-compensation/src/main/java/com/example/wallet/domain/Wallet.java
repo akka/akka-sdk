@@ -53,7 +53,8 @@ public record Wallet(String id, int balance, LinkedHashSet<String> commandIds) {
   private LinkedHashSet<String> addCommandId(String commandId) {
     // end::deduplication[]
     // To avoid infinite growth of the list with limit the size to 1000.
-    // This implementation is not very efficient, so you might want to use a more dedicated data structure for it.
+    // This implementation is not very efficient, so you might want to use a more dedicated data
+    // structure for it.
     // When using other collections, make sure that the state is serializable and deserializable.
     // Another way to put some constraints on the list size is to remove commandIds based on time
     // e.g. remove commandIds that are older than 1 hour.

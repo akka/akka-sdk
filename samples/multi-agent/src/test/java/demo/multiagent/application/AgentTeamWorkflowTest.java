@@ -70,7 +70,10 @@ public class AgentTeamWorkflowTest extends TestKitSupport { // <1>
         .ignoreExceptions()
         .atMost(10, SECONDS)
         .untilAsserted(() -> {
-          var answer = componentClient.forWorkflow(sessionId).method(AgentTeamWorkflow::getAnswer).invoke();
+          var answer = componentClient
+              .forWorkflow(sessionId)
+              .method(AgentTeamWorkflow::getAnswer)
+              .invoke();
           assertThat(answer).isNotBlank();
           assertThat(answer).contains("Stockholm");
           assertThat(answer).contains("sunny");

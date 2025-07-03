@@ -13,7 +13,11 @@ import java.util.List;
 public class ActivityView extends View {
   public record ActivityEntries(List<ActivityEntry> entries) {}
 
-  public record ActivityEntry(String userId, String sessionId, String userQuestion, String finalAnswer) {}
+  public record ActivityEntry(
+      String userId,
+      String sessionId,
+      String userQuestion,
+      String finalAnswer) {}
 
   @Query("SELECT * as entries FROM activities WHERE userId = :userId")
   public QueryEffect<ActivityEntries> getActivities(String userId) {

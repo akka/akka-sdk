@@ -59,11 +59,13 @@ public class CompactionAgent extends Agent {
                       aiText,
                       // if there are tool requests, also append them to the aiText
                       (acc, req) -> acc +
-                        "\n\tTOOL_CALL_REQUEST: id=" + req.id() + ", name=" + req.name() + ", args=" + req.arguments() + " \n",
+                        "\n\tTOOL_CALL_REQUEST: id=" + req.id() + ", name=" + req.name() +
+                          ", args=" + req.arguments() + " \n",
                       String::concat);
                 }
 
-                case SessionMessage.ToolCallResponse toolRes -> "\n\nTOOL_CALL_RESPONSE:\n" + toolRes.text();
+                case SessionMessage.ToolCallResponse toolRes ->
+                    "\n\nTOOL_CALL_RESPONSE:\n" + toolRes.text();
               };
             })
             .collect(Collectors.joining()); // <3>

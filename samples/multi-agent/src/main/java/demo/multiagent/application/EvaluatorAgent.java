@@ -6,6 +6,7 @@ import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 @ComponentId("evaluator-agent")
@@ -49,7 +50,7 @@ public class EvaluatorAgent extends Agent {
         IMPORTANT:
         - A score of 3 or higher means the answer passes evaluation (acceptable)
         - A score below 3 means the answer fails evaluation (unacceptable)
-        - Any violations of user preferences should result in a failing score (below 3) since 
+        - Any violations of user preferences should result in a failing score (below 3) since
           respecting user preferences is the most important criteria
         
         Your response should be a JSON object with the following structure:
@@ -87,7 +88,10 @@ public class EvaluatorAgent extends Agent {
             .thenReply();
     }
 
-    private String buildEvaluationPrompt(String originalRequest, String finalAnswer, java.util.List<String> preferences) {
+    private String buildEvaluationPrompt(
+        String originalRequest,
+        String finalAnswer,
+        List<String> preferences) {
         StringBuilder prompt = new StringBuilder();
 
         prompt.append("ORIGINAL REQUEST:\n")

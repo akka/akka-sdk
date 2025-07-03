@@ -5,9 +5,9 @@ import akka.javasdk.workflow.Workflow;
 import com.example.transfer.domain.Transfer;
 
 /**
- * The most basic transfer workflow that handles a transfer. Illustrates the basic structure of a workflow
- * and how to orchestrate external services calls.
- *
+ * The most basic transfer workflow that handles a transfer. Illustrates the basic structure of a
+ * workflow and how to orchestrate external services calls.
+ * <p>
  * For a more advanced example, see {@link TransferWorkflow}.
  */
 @ComponentId("basic-transfer-workflow")

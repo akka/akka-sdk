@@ -149,7 +149,8 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
               logger.info("Selected agents: {}", selection.agents());
               if (selection.agents().isEmpty()) {
                 var newState = currentState()
-                    .withFinalAnswer("Couldn't find any agent(s) able to respond to the original query.")
+                    .withFinalAnswer(
+                        "Couldn't find any agent(s) able to respond to the original query.")
                     .failed();
                 return effects().updateState(newState).end(); // terminate workflow
               } else {
@@ -189,10 +190,12 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
     return step(EXECUTE_PLAN)
         .call(() -> {
           var stepPlan = currentState().nextStepPlan(); // <8>
-          logger.info("Executing plan step (agent:{}), asking {}", stepPlan.agentId(), stepPlan.query());
+          logger.info("Executing plan step (agent:{}), asking {}",
+              stepPlan.agentId(), stepPlan.query());
           var agentResponse = callAgent(stepPlan.agentId(), stepPlan.query()); // <9>
           if (agentResponse.startsWith("ERROR")) {
-            throw new RuntimeException("Agent '" + stepPlan.agentId() + "' responded with error: " + agentResponse);
+            throw new RuntimeException("Agent '" + stepPlan.agentId() +
+                "' responded with error: " + agentResponse);
           } else {
             logger.info("Response from [agent:{}]: '{}'", stepPlan.agentId(), agentResponse);
             return agentResponse;

@@ -17,9 +17,11 @@ import static com.example.transfer.domain.TransferState.TransferStatus.WITHDRAW_
 import static java.time.Duration.ofHours;
 
 /**
- * Workflow for handling transfers between wallets. It includes human-in-the-loop aspect for accepting transfers that exceed a certain amount.
- *
- * For other aspects like error handling, retry strategy, compensation @see <a href="https://doc.akka.io/java/workflows.html#_error_handling">documentation</a>.
+ * Workflow for handling transfers between wallets. It includes human-in-the-loop aspect for
+ * accepting transfers that exceed a certain amount.
+ * <p>
+ * For other aspects like error handling, retry strategy, compensation
+ * @see <a href="https://doc.akka.io/java/workflows.html#_error_handling">documentation</a>.
  */
 @ComponentId("transfer-workflow")
 public class TransferWorkflow extends Workflow<TransferState> {
@@ -29,7 +31,11 @@ public class TransferWorkflow extends Workflow<TransferState> {
   private final ComponentClient componentClient;
   private final String transferId;
 
-  public TransferWorkflow(WalletService walletService, FraudDetectionService fraudDetectionService, ComponentClient componentClient, WorkflowContext workflowContext) {
+  public TransferWorkflow(
+      WalletService walletService,
+      FraudDetectionService fraudDetectionService,
+      ComponentClient componentClient,
+      WorkflowContext workflowContext) {
     this.walletService = walletService;
     this.fraudDetectionService = fraudDetectionService;
     this.componentClient = componentClient;

@@ -39,7 +39,8 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
 
   public Effect<String> getAnswer() {
     if (currentState() == null || currentState().answer.isEmpty()) {
-      return effects().error("Workflow '" + commandContext().workflowId() + "' not started, or not completed");
+      return effects().error("Workflow '" + commandContext().workflowId() +
+          "' not started, or not completed");
     } else {
       return effects().reply(currentState().answer);
     }

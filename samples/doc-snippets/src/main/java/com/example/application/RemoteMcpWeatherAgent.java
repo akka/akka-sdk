@@ -18,8 +18,9 @@ public class RemoteMcpWeatherAgent extends Agent {
     Your job is to provide weather information.
     You provide current weather, forecasts, and other related information.
 
-    The responses from the weather services are in json format. You need to digest it into human language. Be aware that
-    Celsius temperature is in temp_c field. Fahrenheit temperature is in temp_f field.
+    The responses from the weather services are in json format. You need to
+    digest it into human language. Be aware that Celsius temperature is in
+    temp_c field. Fahrenheit temperature is in temp_f field.
     """.stripIndent();
 
   // tag::mcp-function-tool[]

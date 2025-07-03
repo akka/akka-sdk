@@ -49,7 +49,8 @@ public class WeatherAgent extends Agent {
     var encodedLocation = java.net.URLEncoder.encode(location, StandardCharsets.UTF_8);
     var apiKey = System.getenv("WEATHER_API_KEY");
     if (apiKey == null || apiKey.isBlank()) {
-      throw new RuntimeException("Make sure you have WEATHER_API_KEY defined as environment variable.");
+      throw new RuntimeException(
+          "Make sure you have WEATHER_API_KEY defined as environment variable.");
     }
 
     String url = String.format("/v1/current.json?&q=%s&aqi=no&key=%s&dt=%s",

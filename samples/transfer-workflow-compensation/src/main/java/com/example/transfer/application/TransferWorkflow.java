@@ -36,7 +36,10 @@ public class TransferWorkflow extends Workflow<TransferState> {
   private final FraudDetectionService fraudDetectionService;
   private final String workflowId;
 
-  public TransferWorkflow(ComponentClient componentClient, FraudDetectionService fraudDetectionService, WorkflowContext workflowContext) {
+  public TransferWorkflow(
+      ComponentClient componentClient,
+      FraudDetectionService fraudDetectionService,
+      WorkflowContext workflowContext) {
     this.componentClient = componentClient;
     this.fraudDetectionService = fraudDetectionService;
     this.workflowId = workflowContext.workflowId();
@@ -120,7 +123,8 @@ public class TransferWorkflow extends Workflow<TransferState> {
         .andThen(WalletResult.class, result -> {
           switch (result) {
             case Success __ -> {
-              Deposit depositInput = new Deposit(currentState().depositId(), currentState().transfer().amount());
+              Deposit depositInput = new Deposit(
+                  currentState().depositId(), currentState().transfer().amount());
               return effects()
                 .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
                 .transitionTo("deposit", depositInput);

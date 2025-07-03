@@ -96,7 +96,8 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
     setupUpdatedModelResponsesForPreference();
 
     var preferenceResponse = httpClient.POST("/preferences/" + userId)
-        .withRequestBody(new ActivityEndpoint.AddPreference("I hate outdoor activities and prefer indoor museums"))
+        .withRequestBody(new ActivityEndpoint.AddPreference(
+            "I hate outdoor activities and prefer indoor museums"))
         .invoke();
 
     assertThat(preferenceResponse.status()).isEqualTo(StatusCodes.CREATED);
@@ -106,7 +107,8 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
         .ignoreExceptions()
         .atMost(20, TimeUnit.SECONDS)
         .untilAsserted(() -> {
-          var updatedAnswerResponse = httpClient.GET("/activities/" + userId + "/" + sessionId)
+          var updatedAnswerResponse = httpClient.GET(
+              "/activities/" + userId + "/" + sessionId)
               .responseBodyAs(String.class)
               .invoke();
           assertThat(updatedAnswerResponse.status()).isEqualTo(StatusCodes.OK);
@@ -167,15 +169,15 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
     // Updated activity suggestion based on preference
     activitiesModel
         .whenMessage(req -> req.contains("hate outdoor activities"))
-        .reply("Based on your preference for indoor activities, I recommend visiting the Vasa Museum, " +
-            "the ABBA Museum, or exploring the Royal Palace indoor exhibitions.");
+        .reply("Based on your preference for indoor activities, I recommend visiting the " +
+            "Vasa Museum, the ABBA Museum, or exploring the Royal Palace indoor exhibitions.");
 
     // Updated summary reflecting preference
     summaryModel.reset(); // FIXME this should not be needed, https://github.com/akka/akka-sdk/pull/730
     summaryModel
         .whenMessage(req -> req.contains("preference for indoor activities"))
-        .reply("Given your preference for indoor activities, Stockholm offers excellent museums like " +
-            "the Vasa Museum and ABBA Museum, perfect for a cultural indoor experience.");
+        .reply("Given your preference for indoor activities, Stockholm offers excellent museums " +
+            "like the Vasa Museum and ABBA Museum, perfect for a cultural indoor experience.");
   }
 
   private String extractSessionIdFromLocation(String locationHeader, String userId) {
