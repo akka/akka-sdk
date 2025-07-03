@@ -37,7 +37,7 @@ import java.util.function.Function;
  * <ul>
  *   <li>Commands validate business rules and persist events representing state changes</li>
  *   <li>Events are applied to update the entity state through the {@link #applyEvent(E)} method</li>
- *   <li>The current state is always derived from the complete sequence of events</li>
+ *   <li>The current state is always derived from the complete sequence of events (and snapshot, if exists)</li>
  * </ul>
  * 
  * <h2>Command Handlers</h2>
