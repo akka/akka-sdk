@@ -58,12 +58,7 @@ import java.util.function.Function;
  * <p>Akka automatically creates snapshots as an optimization to avoid replaying all events during
  * entity recovery. Snapshots are created after a configurable number of events and are handled
  * transparently without requiring specific code.
- * 
- * <h2>Multi-region Replication</h2>
- * Event Sourced Entities support multi-region replication for resilience and performance. Write requests
- * are handled by the primary region, while read requests can be served from any region. Use
- * {@link ReadOnlyEffect} for read-only operations that can be served from replicas.
- * 
+ *
  * <h2>Example Implementation</h2>
  * <pre>{@code
  * @ComponentId("shopping-cart")
@@ -104,6 +99,11 @@ import java.util.function.Function;
  * 
  * <p>Concrete classes must be annotated with {@link akka.javasdk.annotations.ComponentId} with a
  * stable, unique identifier that cannot be changed after production deployment.
+ *
+ * <h2>Multi-region Replication</h2>
+ * Event Sourced Entities support multi-region replication for resilience and performance. Write requests
+ * are handled by the primary region, while read requests can be served from any region. Use
+ * {@link ReadOnlyEffect} for read-only operations that can be served from replicas.
  *
  * <h2>Immutable state record</h2>
  * <p>It is recommended to use immutable state objects, such as Java records, for the entity state.
