@@ -18,7 +18,7 @@ import java.util.function.Function;
  * This approach provides a complete audit trail and enables reliable state replication.
  * 
  * <p>Event Sourced Entities provide strong consistency guarantees through entity sharding, where each
- * entity instance is identified by a unique ID and distributed across the service cluster. Only one
+ * entity instance is identified by a unique id and distributed across the service cluster. Only one
  * instance of each entity exists in the cluster at any time, ensuring sequential message processing
  * without concurrency concerns.
  * 
@@ -159,7 +159,7 @@ public abstract class EventSourcedEntity<S, E> {
 
   /**
    * Provides access to additional context and metadata for the current command being processed.
-   * This includes information such as the command name, entity ID, sequence number, and tracing context.
+   * This includes information such as the command name, entity id, sequence number, and tracing context.
    *
    * <p>This method can only be called from within a command handler method. Attempting to access
    * it from the constructor or inside the {@link #applyEvent(E)} method will result in an exception.
