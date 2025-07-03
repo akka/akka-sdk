@@ -61,7 +61,7 @@
     <pluginRepositories>
         <pluginRepository>
             <id>akka-repository</id>
-            <url>https://repo.akka.io/maven/github_actions</url>
+            <url>https://repo.akka.io/maven</url>
         </pluginRepository>
     </pluginRepositories>
 
@@ -69,7 +69,7 @@
         <repository>
             <id>akka-repository</id>
             <name>Akka repository</name>
-            <url>https://repo.akka.io/maven/github_actions</url>
+            <url>https://repo.akka.io/maven</url>
         </repository>
     </repositories>
 
