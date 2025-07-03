@@ -63,29 +63,33 @@ import java.util.function.Function;
  * <pre>{@code
  * @ComponentId("shopping-cart")
  * public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, ShoppingCartEvent> {
- *   
+ *   private final String entityId;
+ *
  *   public ShoppingCartEntity(EventSourcedEntityContext context) {
- *     // Constructor can accept EventSourcedEntityContext and custom dependency types
+ *     this.entityId = context.entityId();
  *   }
- *   
+ *
  *   @Override
  *   public ShoppingCart emptyState() {
  *     return new ShoppingCart(entityId, Collections.emptyList(), false);
  *   }
- *   
+ *
  *   public Effect<Done> addItem(LineItem item) {
  *     var event = new ShoppingCartEvent.ItemAdded(item);
+ *
  *     return effects()
  *         .persist(event)
  *         .thenReply(newState -> Done.getInstance());
  *   }
- *   
+ *
+ *   public ReadOnlyEffect<ShoppingCart> getCart() {
+ *     return effects().reply(currentState());
+ *   }
  *   @Override
  *   public ShoppingCart applyEvent(ShoppingCartEvent event) {
  *     return switch (event) {
- *       case ShoppingCartEvent.ItemAdded evt -> currentState().onItemAdded(evt);
- *       case ShoppingCartEvent.ItemRemoved evt -> currentState().onItemRemoved(evt);
- *       case ShoppingCartEvent.CheckedOut evt -> currentState().onCheckedOut();
+ *       case ShoppingCartEvent.ItemAdded evt -> currentState().addItem(evt.item());
+ *       // handle all events ...
  *     };
  *   }
  * }
