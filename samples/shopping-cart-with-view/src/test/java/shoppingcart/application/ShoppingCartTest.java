@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import akka.Done;
 import akka.javasdk.testkit.EventSourcedTestKit;
 import shoppingcart.domain.ShoppingCartEvent.ItemAdded;
-import shoppingcart.domain.ShoppingCartState;
+import shoppingcart.domain.ShoppingCart;
 
 public class ShoppingCartTest {
 
@@ -48,7 +48,7 @@ public class ShoppingCartTest {
     }
 
     {
-      var tshirt15 = new ShoppingCartState.LineItem("akka-tshirt", 15);
+      var tshirt15 = new ShoppingCart.LineItem("akka-tshirt", 15);
 
       assertEquals(testKit.getAllEvents().size(), 2);
       var result = testKit.method(ShoppingCartEntity::getCart).invoke();
