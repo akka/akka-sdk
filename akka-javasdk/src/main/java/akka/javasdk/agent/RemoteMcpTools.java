@@ -18,22 +18,6 @@ import java.util.function.Predicate;
  * allows agents to connect to remote MCP servers and use their tools, including third-party
  * services and other Akka services with MCP endpoints.
  * <p>
- * <strong>Usage in Agents:</strong>
- * <pre>{@code
- * public Effect<String> query(String message) {
- *   return effects()
- *       .systemMessage("You are a helpful assistant...")
- *       .mcpTools(
- *           RemoteMcpTools.fromService("weather-service"),
- *           RemoteMcpTools.fromServer("https://api.example.com/mcp")
- *               .withAllowedToolNames("get_weather", "get_forecast")
- *               .addClientHeader(Authorization.oauth2(token))
- *       )
- *       .userMessage(message)
- *       .thenReply();
- * }
- * }</pre>
- * <p>
  * <strong>Security:</strong>
  * When using MCP endpoints in other Akka services, service ACLs apply just like for HTTP and gRPC endpoints.
  * For third-party MCP servers, use HTTPS and appropriate authentication headers.

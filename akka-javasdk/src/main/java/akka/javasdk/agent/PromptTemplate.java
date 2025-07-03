@@ -24,32 +24,6 @@ import static akka.Done.done;
  * The Akka runtime automatically registers this entity when it detects an {@link Agent} component
  * in your service.
  * <p>
- * <strong>Usage in Agents:</strong>
- * <pre>{@code
- * public Effect<String> query(String message) {
- *   return effects()
- *       .systemMessageFromTemplate("my-agent-prompt")
- *       .userMessage(message)
- *       .thenReply();
- * }
- * }</pre>
- * <p>
- * <strong>Managing Templates:</strong>
- * Use {@link akka.javasdk.client.ComponentClient} to manage prompt templates:
- * <pre>{@code
- * // Initialize or update a prompt template
- * componentClient
- *     .forEventSourcedEntity("my-agent-prompt")
- *     .method(PromptTemplate::update)
- *     .invoke("You are a helpful assistant...");
- * 
- * // Get current prompt value
- * String prompt = componentClient
- *     .forEventSourcedEntity("my-agent-prompt")
- *     .method(PromptTemplate::get)
- *     .invoke();
- * }</pre>
- * <p>
  * <strong>Template Parameters:</strong>
  * Templates support Java {@link String#formatted} style parameters when using
  * {@code systemMessageFromTemplate(templateId, args...)}.

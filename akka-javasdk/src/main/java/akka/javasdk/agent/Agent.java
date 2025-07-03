@@ -24,28 +24,15 @@ import java.util.function.Function;
  * <p>
  * <strong>Key Features:</strong>
  * <ul>
- *   <li><strong>Session-based:</strong> Participates in a session with conversational memory</li>
+ *   <li><strong>Session-based:</strong> Participates in a session with contextual memory</li>
  *   <li><strong>Memory Management:</strong> Automatically stores user and AI messages for context</li>
  *   <li><strong>Function Tools:</strong> Can be extended with custom tools for the model to invoke</li>
  *   <li><strong>Model Integration:</strong> Supports multiple AI model providers (OpenAI, Anthropic, etc.)</li>
  *   <li><strong>Streaming Support:</strong> Can stream responses token by token for real-time UX</li>
  * </ul>
  * <p>
- * <strong>Basic Usage:</strong>
- * <pre>{@code
- * @ComponentId("my-agent")
- * public class MyAgent extends Agent {
- *   public Effect<String> query(String question) {
- *     return effects()
- *         .systemMessage("You are a helpful assistant...")
- *         .userMessage(question)
- *         .thenReply();
- *   }
- * }
- * }</pre>
- * <p>
  * <strong>Session Memory:</strong>
- * The agent maintains conversational history in session memory, identified by a session ID accessible
+ * The agent maintains contextual history in session memory, identified by a session ID accessible
  * via {@link Agent#context()}. This memory is persistent and shared between agents using the same session ID.
  * <p>
  * <strong>Component Identification:</strong>

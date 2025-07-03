@@ -14,31 +14,6 @@ import com.typesafe.config.Config;
  * Akka supports multiple model providers including hosted services (OpenAI, Anthropic, Google AI Gemini, 
  * HuggingFace) and locally running models (Ollama, LocalAI).
  * <p>
- * <strong>Configuration-based Setup:</strong>
- * <pre>{@code
- * akka.javasdk {
- *   agent {
- *     model-provider = openai
- *     openai {
- *       model-name = "gpt-4o-mini"
- *       api-key = ${OPENAI_API_KEY}
- *     }
- *   }
- * }
- * }</pre>
- * <p>
- * <strong>Programmatic Setup:</strong>
- * <pre>{@code
- * return effects()
- *     .model(ModelProvider.openAi()
- *         .withApiKey(System.getenv("OPENAI_API_KEY"))
- *         .withModelName("gpt-4o")
- *         .withTemperature(0.6))
- *     .systemMessage("You are a helpful assistant...")
- *     .userMessage(question)
- *     .thenReply();
- * }</pre>
- * <p>
  * Different agents can use different models by specifying the ModelProvider in the agent effect.
  * If no model is specified, the default model from configuration is used.
  */

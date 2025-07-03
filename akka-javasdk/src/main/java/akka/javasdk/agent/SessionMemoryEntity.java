@@ -29,9 +29,9 @@ import java.util.Optional;
 import static akka.Done.done;
 
 /**
- * Built-in Event Sourced Entity that provides persistent session memory for agent conversations.
+ * Built-in Event Sourced Entity that provides persistent session memory for agent interactions with the AI model.
  * <p>
- * SessionMemoryEntity maintains a limited history of conversation messages in FIFO (First In, First Out) style,
+ * SessionMemoryEntity maintains a limited history of contextual messages in FIFO (First In, First Out) style,
  * automatically managing memory size to prevent unbounded growth. It serves as the default implementation
  * of session memory for agents.
  * <p>
@@ -47,24 +47,12 @@ import static akka.Done.done;
  * </ul>
  * <p>
  * <strong>Direct Access:</strong>
- * You can interact directly with session memory using {@link ComponentClient}:
- * <pre>{@code
- * // Get session history
- * SessionHistory history = componentClient
- *     .forEventSourcedEntity(sessionId)
- *     .method(SessionMemoryEntity::getHistory)
- *     .invoke(new GetHistoryCmd(Optional.empty()));
- * 
- * // Compact session history
- * componentClient
- *     .forEventSourcedEntity(sessionId)
- *     .method(SessionMemoryEntity::compactHistory)
- *     .invoke(new CompactionCmd(userMsg, aiMsg, sequenceNumber));
- * }</pre>
+ * You can interact directly with session memory using {@link ComponentClient}.
  * <p>
  * <strong>Event Subscription:</strong>
- * You can subscribe to session memory events using a Consumer to monitor conversation activity,
- * implement custom analytics, or trigger compaction when memory usage exceeds thresholds.
+ * You can subscribe to session memory events using a {@link akka.javasdk.consumer.Consumer} to
+ * monitor session activity, implement custom analytics, or trigger compaction when memory usage
+ * exceeds thresholds.
  */
 @ComponentId("akka-session-memory")
 public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> {

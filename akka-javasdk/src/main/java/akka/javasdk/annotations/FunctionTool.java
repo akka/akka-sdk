@@ -24,17 +24,6 @@ import java.lang.annotation.Target;
  *   <li><strong>External tools:</strong> Methods in separate classes registered via {@code effects().tools()}</li>
  * </ul>
  * <p>
- * <strong>Example Usage:</strong>
- * <pre>{@code
- * @FunctionTool(description = "Get the current weather for a location")
- * public String getWeather(
- *     @Description("The city name") String city,
- *     @Description("Date in yyyy-MM-dd format") Optional<String> date) {
- *   // Implementation
- *   return "Sunny, 22°C";
- * }
- * }</pre>
- * <p>
  * <strong>Best Practices:</strong>
  * <ul>
  *   <li>Provide clear, descriptive tool descriptions</li>

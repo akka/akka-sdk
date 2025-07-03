@@ -17,19 +17,6 @@ import java.lang.annotation.Target;
  * and selected dynamically. The information provided here is used by the {@link akka.javasdk.agent.AgentRegistry}
  * for agent selection and planning.
  * <p>
- * <strong>Usage in Multi-Agent Systems:</strong>
- * <pre>{@code
- * @ComponentId("weather-agent")
- * @AgentDescription(
- *     name = "Weather Agent",
- *     description = "Provides weather information and forecasts for any location",
- *     role = "worker"
- * )
- * public class WeatherAgent extends Agent {
- *   // Agent implementation
- * }
- * }</pre>
- * <p>
  * <strong>Agent Selection:</strong>
  * Planning agents can use this metadata to automatically select appropriate agents for specific tasks.
  * The description should clearly explain the agent's capabilities and domain of expertise.

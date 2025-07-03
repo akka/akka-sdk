@@ -43,12 +43,12 @@ public sealed interface MemoryProvider {
 
 
   /**
-   * Disabled memory provider, which does not store or retrieve conversation history.
+   * Disabled memory provider, which does not store or retrieve contextual history.
    */
   record Disabled() implements MemoryProvider {}
 
   /**
-   * Disabled memory provider, which does not store or retrieve conversation history.
+   * Disabled memory provider, which does not store or retrieve contextual history.
    * @return A memory provider without memory.
    */
   static Disabled none() {

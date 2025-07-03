@@ -11,15 +11,15 @@ package akka.javasdk.agent;
 import java.util.List;
 
 /**
- * Interface for managing conversational session history between users and AI models.
+ * Interface for managing contextual session history between users and AI models.
  * <p>
  * SessionMemory provides functionality to store, retrieve, and manage messages exchanged during
- * conversations in an agent system. It enables agents to maintain context across multiple
+ * interactions in an agent system. It enables agents to maintain context across multiple
  * interactions within the same session.
  * <p>
  * <strong>Default Implementation:</strong>
  * The default implementation is backed by {@link SessionMemoryEntity}, a built-in Event Sourced Entity
- * that automatically stores conversation history. This provides durability and allows for session
+ * that automatically stores contextual history. This provides durability and allows for session
  * memory to be shared between multiple agents using the same session ID.
  * <p>
  * <strong>Custom Implementation:</strong>
@@ -36,7 +36,7 @@ public interface SessionMemory {
    * Adds an interaction between a user and an AI model to the session history for the
    * specified session.
    *
-   * @param sessionId The unique identifier for the conversation session
+   * @param sessionId The unique identifier for the contextual session
    * @param userMessage The content of the user message
    * @param messages All other messages generated during this interaction, typically AiMessage but also Tool Call
    *                 responses.
@@ -47,7 +47,7 @@ public interface SessionMemory {
    * Retrieves the complete session history for the specified session. For very long sessions,
    * this might return a compacted version of the history.
    *
-   * @param sessionId The unique identifier for the conversation session
+   * @param sessionId The unique identifier for the contextual session
    * @return The complete session history containing all messages
    */
   SessionHistory getHistory(String sessionId);
