@@ -12,7 +12,7 @@ Akka is a framework, runtime, and memory store for autonomous, adaptive agentic 
 ![Akka Agentic Platform](_images/akka-agentic-platform.png)
 
 
-Developers create services built with Akka components that - when deployed - become agentic systems. Services can be tested locally or within a Continuous Integration/Continuous Delivery (CI/CD) practice using a Testkit that is available with each Akka component. Your services are compiled into a binary that includes the Akka Runtime which enables your services to self-cluster for scale and resilience. Akka clusters are able to execute on any infrastructure whether bare metal, Kubernetes, Docker or edge. You can optionally deploy your services into an Akka-managed cloud environment which automates most Day 2 concerns. We support Serverless, Bring Your Own Cloud (BYOC), and Self-Hosted cloud-hosted environments.
+Developers create services built with *Akka components* that - when deployed - become agentic systems. Services can be tested locally or within a Continuous Integration/Continuous Delivery (CI/CD) practice using a *Testkit* that is available with each Akka component. Your services are compiled into a binary that includes the *Akka Runtime* which enables your services to self-cluster for scale and resilience. *Akka clusters* are able to execute on any infrastructure whether bare metal, Kubernetes, Docker or edge. Optionally, add *Akka Automated Operations* to gain multi-region failover, auto-elasticity, persistence oversight, multi-tenant services, and certificate rotation. *Akka Automated Operations* has two deployment options: our serverless cloud or your virtual private cloud (VPC).
 
 | Product | Where To Start |
 | --- | --- |
@@ -50,15 +50,34 @@ The services you build with Akka components are composable, which can be combine
 ![Akka Agentic Platform](_images/component-composition.png)
 
 
+## <a href="about:blank#_delegation_with_effects"></a> Delegation with effects
+
+In Akka, the behavior of your services is decoupled from the execution. This decoupling allows Akka to determine how a service is executed without being constrained by how your system’s behavior is defined. Delegation removes you from worrying about distributed systems, persistence, elasticity, or networking. With Akka’s hosted services, we use delegation to enable swapping out new, improved runtimes while your services are running without a recompilation or redeployment!
+
+In Akka, you specify *what* the system should do, while the Akka runtime decides *how* it should be executed. For example, you define an agent by specifying the model it uses, its session memory, and the user prompt. This represents the *what*. The Akka runtime then determines the *how* by managing processes, virtual threads, persistence, and actor-based concurrency.
+
+Your services define the *what* using `Effects`, which are Application Programming Interfaces (APIs) provided by each Akka component. When you write a component method, you return an `Effect<…​>` object that describes, in a declarative way, what you want Akka to do.
+
+For example, when using Akka’s [Agent](../java/agents.html) component, you might return an `Effect` that tells the runtime to execute the agent with a system message, a user message, and then send the AI model’s response back to the requester:
+
+```java
+public Effect<String> query(String question) {
+    return effects()
+      .systemMessage("You are a helpful...")
+      .userMessage(question)
+      .thenReply();
+  }
+```
+
 ## <a href="about:blank#_akkas_design_goals"></a> Akka’s design goals
 
 Akka’s design principles are influenced by decades of distributed systems research.
 
 | Research | Publications |
 | --- | --- |
-| Patterns | [Principles and Patterns for Distributed Application Architecture](https://www.oreilly.com/library/view/principles-and-patterns/9781098181260/) |
-| Principles | [The Reactive Principles](https://www.reactiveprinciples.org/) |
-| Approach | [The Reactive Manifesto](https://www.reactivemanifesto.org/) |
+| Approach | [The Reactive Manifesto](https://www.reactivemanifesto.org/): Defines the four fundamental high-level traits of a well-architected distributed system - responsiveness, elasticity, resilience, and message-driven. |
+| Principles | [The Reactive Principles](https://www.reactiveprinciples.org/): Distills the four traits into a set of foundational guiding principles for great distributed systems design. |
+| Patterns | [O’Reilly Principles and Patterns for Distributed Application Architecture](https://www.oreilly.com/library/view/principles-and-patterns/9781098181260/): This guide outlines architectural patterns that are essential for building robust systems, including how to leverage event-sourcing, CQRS, message-driven communications, consistency boundaries, location transparency, stateful services with temporal guarantees, backpressure, flow control, and failure supervision. |
 The Akka Agentic Platform contains an SDK for development, the Akka runtime for scalable and resilient execution, and multiple operating modes. The platform, from development to production, has its own design goals.
 
 | Property | Our Design Philosophy |
@@ -67,7 +86,7 @@ The Akka Agentic Platform contains an SDK for development, the Akka runtime for 
 | Adaptable | Runtime that adapts to environment or system changes by embracing failure and uncertainty. |
 | Elastic | Scale processing and data (i.e. memory) to any level by distributing compute and state across Akka nodes. |
 | Resilient | Recover from any failure, whether hardware, network, or hallucination. |
-| Interoperable | Across all Akka components, any 3rd party system, protocol, broker, or Application Programming Interface (API). |
+| Interoperable | Across all Akka components, any 3rd party system, protocol, broker, or API. |
 | Composable | Akka services and components can be combined to create systems of any complexity. |
 | Production-ready | Akka services should never require code changes when moving into production. |
 
@@ -137,28 +156,35 @@ Akka provides a basket of interoperable components that can be used to design an
 
 ## <a href="about:blank#_component_interoperability"></a> Component interoperability
 
-Akka components are able to interoperate with one another regardless of where the component may be executing. While you create systems that define the relationships between each of the components in code, at runtime instances of each component can run on different nodes. The Akka runtime provides location transparency, automating the routing of a call from one component to another even if they reside in different locations on different networks.
+Systems often rely on distributed components that need to work together. In Akka, components such as Agents, Workflows and Entities interact in ways that support flexibility, scale, and resilience. The aim is to help you build systems that are easy to reason about and maintain, even when deployed across different environments.
 
-There are two ways to achieve interoperability between Akka components and the outside world.
+In Akka, component relationships are defined in code. At runtime, the platform handles the details. Messages are routed automatically, without requiring you to manage network paths or address resolution. This is known as *location transparency*. It means components can communicate without knowing where the other components are running.
+
+Akka supports two primary ways for components to interact, either with each other or with the outside world.
 
 | Client Type | Description |
 | --- | --- |
-| [ComponentClient](../java/component-and-service-calls.html) | One component can directly invoke another component. Akka treats these direct invocations as non-blocking, asynchronous messages, meaning that the invoking component immediately returns after making the invocation and can invoke any component regardless of its location.
+| [ComponentClient](../java/component-and-service-calls.html) | One component can invoke another using a direct call. The Akka runtime handles this communication in a non-blocking way using lightweight virtual threads. Although a call may wait for a reply before continuing, the code remains simple and synchronous. There is no need to use futures, callbacks or other asynchronous programming techniques.
 
-For example, a Workflow component handling a long-running business transaction can invoke an Agent component to perform a task, and the Workflow can continue processing without waiting for the Agent to complete its work. |
-| Events | Components can emit events that can be subscribed to by other components. For example, an entity can emit an event when its state is updated. Other components can subscribe to this event, similar to how clients subscribe to Kafka topics. Events are propagated transparently between components through reliable, brokerless messaging.
+A common example is a Workflow that invokes an Agent to perform a specific task, then waits for the Agent to finish. The syntax is simple and resembles a regular method call. |
+| Events | Components can emit events to signal that something has occurred. Other components may subscribe to these events. This model resembles traditional publish-subscribe systems but does not require external brokers.
 
-Components can also subscribe to events that are incoming from external sources, which can be 3rd party brokers, APIs, or real-time streams of data. |
-Akka is designed so that components remain loosely coupled and can communicate with each other regardless of where they run. Inter-component communication runs on virtual threads managed by the Akka runtime. These threads are lightweight and isolated in a way that ensures system resources remain available for other tasks. This allows components to interact without interfering with each other or affecting overall responsiveness. This basic behavior is one reason why Akka services, whether stateful or stateless, can scale to 10M transaction per second (TPS).
+For example, when an Entity updates its state, it will emit an event. A View can subscribe to that event to stay in sync. Events can also come from external sources, such as APIs or streaming services. |
+Akka encourages building systems with loosely coupled components. Communication between them is handled in a way that avoids contention and keeps the system responsive, even under heavy load. Blocking operations are managed in a controlled and efficient way, allowing developers to focus on business logic without worrying about low-level concurrency concerns.
+
+This approach supports systems that need to handle large volumes of traffic. Some production environments have processed up to 10 million transactions per second.
+
+The examples below show common patterns for how components interact in an Akka system.
 
 | Example Interoperability | Description |
 | --- | --- |
 | Endpoint → Workflow → Agent
-Endpoint → Entity → View | A user triggers an HTTP request to start a long-running Workflow. The Workflow manages file processing and passes relevant data or control to an Agent, which will later use it for answering questions. Meanwhile, another Endpoint saves user interaction history into an Entity. A View component then reads from that Entity to reconstruct the user’s conversation history for display or retrieval. |
+Endpoint → Entity → View | An HTTP request starts a Workflow to process a file. The Workflow invokes an Agent that will later use the file’s content to answer questions. Another Endpoint records user interaction history into an Entity. A View reads from that Entity to reconstruct the conversation. |
 | Endpoint → Agent → Entity → View
-Endpoint → Workflow → Entity | A user sends a query to an Endpoint. An Agent processes the query and stores the interaction in an Entity. A View then reads this data to reconstruct the conversation history for that user. Meanwhile, an Endpoint starts a Workflow. The Workflow processes input data and stores results into an Entity. |
+Endpoint → Workflow → Entity | A user sends a query to an Endpoint. An Agent handles the query and stores the result in an Entity. A View builds the conversation history from that data. Separately, another Endpoint starts a Workflow, which also stores its results in an Entity. |
 | Stream → Consumer → Entity
-Agent → Endpoint → Entity | A data stream is received by a Consumer, which writes the structured data to an Entity for long-term storage and future retrieval. Meanwhile, an Agent invokes some logic exposed by an Endpoint, and persists the result in an Entity. |
+Agent → Endpoint → Entity | A stream of data is processed by a Consumer, which writes to an Entity for long-term use. At the same time, an Agent invokes logic through an Endpoint and stores the result in an Entity. |
+Akka provides a way to connect components that is simple to use and reliable in production. By relying on message passing, virtual threads, and transparent routing, the platform helps you focus on what the system should do, rather than how its parts should reach each other.
 
 ## <a href="about:blank#_agentic_runtimes"></a> Agentic runtimes
 
@@ -183,16 +209,16 @@ There are a variety of shared data (memory) use cases within an agentic system.
 
 | Use Case | Provided by | Description |
 | --- | --- | --- |
-| Short-term | Agent component | Also called “episodic” and “traced” memory, this memory is an auditable record of each input and output that occurs between an agent and its client throughout a single “user” session. Agent clients may or may not be human.
+| Short-term | [Agent](../java/agents.html) component | Also called “episodic” and “traced” memory, this memory is an auditable record of each input and output that occurs between an agent and its client throughout a single “user” session. Agent clients may or may not be human.
 
 Akka also captures the input and output of every interaction between an agent and an LLM in a single enrichment loop, sometimes called “traced” memory. A single invocation of an agent from a client may cause that agent to invoke an LLM, function tools, or MCP tools many times. Akka’s short-term memory captures all of these interactions in an event log.
 
 Short-term memory is also automatically included when you create [an agent](../java/agents.html). Short-term memory can be compressed, optimized, replicated, and audited. |
-| Long-term | Entity component | Also called “shared” and “external” memory, this memory is an auditable record of state that is available to multiple agents, sessions, users, or Akka components.
+| Long-term | [Entity](../java/event-sourced-entities.html) component | Also called “shared” and “external” memory, this memory is an auditable record of state that is available to multiple agents, sessions, users, or Akka components.
 
 Use long-term memory to capture the history (often summarized or aggregated) of interactions for a single user across many sessions.
 
-Shared state is represented through an [Entity](state-model.html) component. Entities are event-sourced, making all of their changes published through an event stream and accessible by [Agents](../java/agents.html), [Endpoints](grpc-vs-http-endpoints.html), [Workflows](../java/workflows.html) or [Views](../java/views.html). |
+Shared state is represented through an [Entity](../java/event-sourced-entities.html) component. Entities are event-sourced, making all of their changes published through an event stream and accessible by [Agents](../java/agents.html), [Endpoints](grpc-vs-http-endpoints.html), [Workflows](../java/workflows.html) or [Views](../java/views.html). |
 Akka treats all stateful memory as event-sourced objects. Event sourcing is a technique to capture sequential state changes. Akka’s persistence engine transparently persists each event into a durable store. Since all state is represented as an event, Akka’s event engine enables transparent import, export, broadcast, subscription, replication, and replay of events. These behaviors enable Akka to offer a resilience guarantee and multi-region replication, which enables real-time failover with a Recovery Time Objective (RTO) of <200ms.
 
 All events are stored in an event journal which can be inspected, analyzed, and replayed where appropriate.
@@ -212,14 +238,14 @@ Your services are packed into a single binary. You create instances of Akka that
 
 Akka services self-cluster without you needing to install a service mesh. Akka clustering provides elasticity and resilience to your agentic services. In addition to data sharding, data rebalancing, and traffic routing, Akka clustering has built-in support for addressing split brain networking disruptions.
 
-Optionally, you can deploy your agentic services into Akka Cloud, which provides a global control plane, multi-tenancy, multi-region operations (for compliance data pinning, failover, and disaster recovery), auto-elasticity based upon traffic load, and persistence management (memory auto-scaling).
+Optionally, you can deploy your agentic services into [Akka Automated Operations](../operations/akka-platform.html), which provides a global control plane, multi-tenancy, multi-region operations (for compliance data pinning, failover, and disaster recovery), auto-elasticity based upon traffic load, and persistence management (memory auto-scaling).
 
 ![Akka Packaging](_images/packed-services.png)
 
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Understanding](index.html) [A foundation of fundamental distributed systems principles and patterns](distributed-systems.html)
+[Understanding](index.html) [Distributed systems principles](distributed-systems.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

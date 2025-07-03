@@ -19,7 +19,7 @@ In this guide you will:
 
 - Clone a completed shopping cart service repository to examine and run it locally.
 - Be introduced to key Akka concepts including [Event Sourced Entities](../java/event-sourced-entities.html).
-- See how the Akka [Architecture model](../concepts/architecture-model.html) provides a clear separation of concerns in your microservices.
+- See how the [project structure](../concepts/architecture-model.html) provides a clear separation of concerns in your microservices.
 - Run the service locally and explore it with the local Akka console.
 - Deploy the service to [akka.io](https://console.akka.io/).
 
@@ -92,12 +92,11 @@ public sealed interface ShoppingCartEvent { // (1)
 | **2** | Specifying a logical type name, required for serialization. |
 You may notice that there are other events defined as well. This is how the application passes events between the Akka runtime and the domain object.
 
-Jumping back to the `ShoppingCart` domain class, there is also business logic to handle the `ItemAdded` domain event for adding items to the cart:
+Jumping back to the `ShoppingCart` domain class, there is also business logic for adding items to the cart:
 
 [ShoppingCart.java](https://github.com/akka/akka-sdk/blob/main/samples/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java)
 ```java
-public ShoppingCart onItemAdded(ShoppingCartEvent.ItemAdded itemAdded) {
-  var item = itemAdded.item();
+public ShoppingCart addItem(LineItem item) {
   var lineItem = updateItem(item); // (1)
   List<LineItem> lineItems = removeItemByProductId(item.productId()); // (2)
   lineItems.add(lineItem); // (3)
@@ -180,7 +179,7 @@ public Effect<Done> addItem(LineItem item) {
   @Override
   public ShoppingCart applyEvent(ShoppingCartEvent event) {
     return switch (event) {
-      case ShoppingCartEvent.ItemAdded evt -> currentState().onItemAdded(evt); // (5)
+      case ShoppingCartEvent.ItemAdded evt -> currentState().addItem(evt.item()); // (5)
     };
   }
 ```
@@ -428,7 +427,7 @@ curl https://spring-tooth-3406.gcp-us-east1.akka.services/carts/123
 Now that you’ve built and deployed a shopping cart service, take your Akka skills to the next level:
 
 1. **Add a view**: Continue to the [next step](addview.html) in the tour.
-2. **Expand on your own**: Explore [other Akka components](../concepts/architecture-model.html#_akka_components) to enhance your application with additional features.
+2. **Expand on your own**: Explore [other Akka components](../java/components/index.html) to enhance your application with additional features.
 3. **Explore other Akka samples**: Discover more about Akka by exploring [different use cases](samples.html) for inspiration.
 [1](about:blank#_footnoteref_1). Defined as a stateful behavior capable of acting on its own.
 <!-- <footer> -->

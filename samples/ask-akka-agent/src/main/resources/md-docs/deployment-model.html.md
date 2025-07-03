@@ -54,7 +54,7 @@ A project is the root of one or more services that are meant to be deployed and 
 
 ### <a href="about:blank#_services"></a> Service(s)
 
-[Services](../operations/services/index.html) are the core unit of deployment in Akka. They equate to the concept of a microservice and contain all your components and objects as described in the [Akka architecture model](architecture-model.html). A project contains one or more services. Services can be started, stopped, and paused independently. They can also be scaled independently making them also the unit of scale.
+[Services](../operations/services/index.html) are the core unit of deployment in Akka. They equate to the concept of a microservice and contain all your components and objects as described in [Service structure and layers](architecture-model.html). A project contains one or more services. Services can be started, stopped, and paused independently. They can also be scaled independently making them also the unit of scale.
 
 ## <a href="about:blank#_physical_deployment"></a> Physical deployment
 
@@ -64,7 +64,7 @@ Akka services run in a cluster. A cluster is an instance of the Akka runtime whi
 
 [Regions](../operations/organizations/regions.html) are specific clusters running Akka in a specific place. Regions are designed to run independently for greater availability. They are also designed to replicate data asynchronously between each other. Every Akka [project](about:blank#_project) specifies a list of one or more regions in which it runs.
 
-In addition to your services from a project, a region also has endpoints for your API. You define endpoints within the [API layer](architecture-model.html#_architecture) and Akka will expose them. They will be unique to each region. That is they will have unique DNS, much like AWS services S3 and SQS do.
+In addition to your services from a project, a region also has endpoints for your API. You define endpoints within the [API layer](architecture-model.html#_api) and Akka will expose them. They will be unique to each region. That is they will have unique DNS, much like AWS services S3 and SQS do.
 
 [Container registries](../operations/projects/container-registries.html) exist in all Akka.io regions so that the images that are your packaged services are in close proximity to the compute they will run on.
 
@@ -116,11 +116,11 @@ The following topics may also be of interest.
 
 - [State model](state-model.html)
 - [Developer best practices](../java/dev-best-practices.html)
-- [Architecture model](architecture-model.html)
+- [Service structure and layers](architecture-model.html)
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Architecture model](architecture-model.html) [Development process](development-process.html)
+[Service structure and layers](architecture-model.html) [Development process](development-process.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

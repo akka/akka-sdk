@@ -1059,12 +1059,12 @@ class CustomersByCityIntegrationTest extends TestKitSupport {
   @Override
   protected TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT
-      .withKeyValueEntityIncomingMessages("customer"); // (1)
+      .withKeyValueEntityIncomingMessages(CustomerEntity.class); // (1)
   }
 
   @Test
   public void shouldGetCustomerByCity() {
-    IncomingMessages customerEvents = testKit.getKeyValueEntityIncomingMessages("customer"); // (2)
+    IncomingMessages customerEvents = testKit.getKeyValueEntityIncomingMessages(CustomerEntity.class); // (2)
 
     Customer johanna = new Customer("johanna@example.com", "Johanna",
       new Address("Cool Street", "Porto"));
@@ -1096,7 +1096,7 @@ class CustomersByCityIntegrationTest extends TestKitSupport {
 ```
 
 | **1** | Mocks incoming messages from the `customer` Key Value Entity. |
-| **2** | Gets an `IncomingMessages` from the `customer` Key Value Entity. |
+| **2** | Gets an `IncomingMessages` from the `CustomerEntity`. |
 | **3** | Publishes test data. |
 | **4** | Queries the view and asserts the results. |
 

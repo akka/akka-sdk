@@ -633,7 +633,7 @@ Many LLMs support generating outputs in a structured format, typically JSON. You
        .userMessage(message)
        .responseAs(Activity.class) // (3)
        .onFailure(throwable -> { // (4)
-        if (throwable instanceof JsonParsingException jsonParsingException) {
+        if (throwable instanceof JsonParsingException) {
          return DEFAULT_ACTIVITY;
         } else {
          throw new RuntimeException(throwable);
@@ -648,6 +648,64 @@ Many LLMs support generating outputs in a structured format, typically JSON. You
 | **2** | `Activity` record is used to map the JSON response to a Java object. |
 | **3** | Use the `responseAs` method to specify the expected response type. |
 | **4** | Sometimes the model may not return a valid JSON, so you can use `onFailure` to provide a fallback value in case of parsing exception. |
+
+## <a href="about:blank#_handling_failures"></a> Handling failures
+
+The `onFailure` method in the agent’s effect API provides comprehensive error handling capabilities for various types of failures that can occur during model processing. This allows you to implement robust fallback strategies and provide meaningful responses even when things go wrong.
+
+### <a href="about:blank#_types_of_exceptions_handled"></a> Types of exceptions handled
+
+The `onFailure` method can handle the following types of exceptions:
+
+- **Model-related exceptions:**
+
+  - `ModelException` - General model processing failures
+  - `RateLimitException` - API rate limiting exceeded
+  - `ModelTimeoutException` - Model request timeout
+  - `UnsupportedFeatureException` - Unsupported model features
+  - `InternalServerException` - Internal service errors
+- **Tool execution exceptions:**
+
+  - `ToolCallExecutionException` - Function tool execution errors
+  - `McpToolCallExecutionException` - MCP tool execution errors
+  - `ToolCallLimitReachedException` - Tool call limit exceeded
+- **Response processing exceptions:**
+
+  - `JsonParsingException` - Response parsing failures (as shown in structured responses)
+- **Unknown exceptions:**
+
+  - `RuntimeException` - For any unexpected errors that don’t fall into the above categories
+Apart from the listed specific exceptions, users can still encounter `RuntimeException` instances that wrap unexpected errors. Therefore, when handling errors in the `onFailure` method, it’s recommended to always include a `default` case to handle any unknown exception types gracefully.
+
+### <a href="about:blank#_implementing_fallback_strategies"></a> Implementing fallback strategies
+
+You can use the `onFailure` method to implement different recovery strategies based on the type of exception:
+
+```java
+public Effect<String> query(String message) {
+            return effects()
+            .systemMessage(SYSTEM_MESSAGE)
+            .userMessage(message)
+            .onFailure(exception -> {
+                // Handle different types of exceptions with appropriate fallback responses
+                return switch (exception) { // (1)
+                  case RateLimitException exc -> // (2)
+                    "Rate limit exceeded: please try again later";
+                  case ModelTimeoutException exc ->
+                    "Request timeout: the service is experiencing delays";
+                  case ToolCallExecutionException exc ->
+                    "Tool error: unable to execute required tool " + exc.getToolName();
+                  default -> // (3)
+                    "Unexpected error occurred";
+                };
+            })
+       .thenReply();
+```
+
+| **1** | Use pattern matching to handle different exception types appropriately. |
+| **2** | Handle specific known exceptions with meaningful fallback responses. |
+| **3** | For unknown or unexpected exceptions, define a default matching branch providing a generic fallback response. |
+This approach ensures your agents remain resilient and can provide meaningful responses even when encountering various types of failures during model interaction.
 
 ## <a href="about:blank#tools"></a> Extending agents with function tools
 
@@ -704,10 +762,9 @@ public interface WeatherService {
 
   @FunctionTool(description = "Returns the weather forecast for a given city.") // (1)
   String getWeather(
-    @Description("A location or city name.")
-    String location, // (2)
-    @Description("Forecast for a given date, in yyyy-MM-dd format.")
-    Optional<String> date); // (3)
+      @Description("A location or city name.") String location, // (2)
+      @Description("Forecast for a given date, in yyyy-MM-dd format.")
+          Optional<String> date); // (3)
 }
 ```
 
@@ -945,8 +1002,8 @@ Let’s first look at how to define a workflow that orchestrates several agents 
 
 ```java
 @ComponentId("agent-team")
-public class AgentTeam extends Workflow<AgentTeam.State> {
-  private static final Logger logger = LoggerFactory.getLogger(AgentTeam.class);
+public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
+  private static final Logger logger = LoggerFactory.getLogger(AgentTeamWorkflow.class);
 
   public record State(String userQuery, String weatherForecast, String answer) {
     State withWeatherForecast(String f) {
@@ -960,7 +1017,7 @@ public class AgentTeam extends Workflow<AgentTeam.State> {
 
   private final ComponentClient componentClient;
 
-  public AgentTeam(ComponentClient componentClient) {
+  public AgentTeamWorkflow(ComponentClient componentClient) {
     this.componentClient = componentClient;
   }
 
@@ -1248,32 +1305,33 @@ public class PlannerAgent extends Agent {
 
 | **1** | Lookup the agent information for the selected agents from the `AgentRegistry. |
 | **2** | Detailed instructions and include descriptions (as json) of the agents. |
-That’s the two agents that perform the planning, but we also need to connect them and execute the plan. This orchestration is the job of a workflow, called `AgentTeam`.
+That’s the two agents that perform the planning, but we also need to connect them and execute the plan. This orchestration is the job of a workflow, called `AgentTeamWorkflow`.
 
-[AgentTeam.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/AgentTeam.java)
+[AgentTeamWorkflow.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java)
 ```java
 @ComponentId("agent-team")
-public class AgentTeam extends Workflow<AgentTeam.State> { // (1)
-  public record Request(String userId, String message) {}
+public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // (1)
+  public record Request(String userId, String message) {
+  }
 
   @Override
   public WorkflowDef<State> definition() {
     return workflow()
-      .defaultStepRecoverStrategy(maxRetries// (1).failoverTo(INTERRUPT))
-      .defaultStepTimeout(Duration.of(30, SECONDS))
-      .addStep(selectAgentsStep()) // (2)
-      .addStep(planStep())
-      .addStep(executePlanStep())
-      .addStep(summarizeStep())
-      .addStep(interruptStep());
+        .defaultStepRecoverStrategy(maxRetries// (1).failoverTo(INTERRUPT))
+        .defaultStepTimeout(Duration.of(30, SECONDS))
+        .addStep(selectAgentsStep()) // (2)
+        .addStep(planStep())
+        .addStep(executePlanStep())
+        .addStep(summarizeStep())
+        .addStep(interruptStep());
   }
 
   public Effect<Done> start(Request request) {
     if (currentState() == null) {
       return effects()
-        .updateState(State.init(request.userId(), request.message()))
-        .transitionTo(SELECT_AGENTS) // (3)
-        .thenReply(Done.getInstance());
+          .updateState(State.init(request.userId(), request.message()))
+          .transitionTo(SELECT_AGENTS) // (3)
+          .thenReply(Done.getInstance());
     } else {
       return effects().error("Workflow '" + commandContext().workflowId() + "' already started");
     }
@@ -1282,76 +1340,76 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // (1)
 
   private Step selectAgentsStep() {
     return step(SELECT_AGENTS)
-      .call(() ->
-          componentClient.forAgent().inSession(sessionId()).method(SelectorAgent::selectAgents)
-              .invoke(currentState().userQuery)) // (4)
-      .andThen(AgentSelection.class, selection -> {
-        logger.debug("Selected agents: {}", selection.agents());
-          if (selection.agents().isEmpty()) {
-            var newState = currentState()
-              .withFinalAnswer("Couldn't find any agent(s) able to respond to the original query.")
-              .failed();
-            return effects().updateState(newState).end(); // terminate workflow
-          } else {
-            return effects().transitionTo(CREATE_PLAN, selection); // (5)
+        .call(() ->
+            componentClient.forAgent().inSession(sessionId()).method(SelectorAgent::selectAgents)
+                .invoke(currentState().userQuery)) // (4)
+        .andThen(AgentSelection.class, selection -> {
+              logger.info("Selected agents: {}", selection.agents());
+              if (selection.agents().isEmpty()) {
+                var newState = currentState()
+                    .withFinalAnswer("Couldn't find any agent(s) able to respond to the original query.")
+                    .failed();
+                return effects().updateState(newState).end(); // terminate workflow
+              } else {
+                return effects().transitionTo(CREATE_PLAN, selection); // (5)
 
-          }
-        }
-      );
+              }
+            }
+        );
   }
 
   private static final String CREATE_PLAN = "create-plan";
 
   private Step planStep() {
     return step(CREATE_PLAN)
-      .call(AgentSelection.class, agentSelection -> {
-        logger.debug(
-            "Calling planner with: '{}' / {}",
-            currentState().userQuery,
-            agentSelection.agents());
+        .call(AgentSelection.class, agentSelection -> {
+              logger.info(
+                  "Calling planner with: '{}' / {}",
+                  currentState().userQuery,
+                  agentSelection.agents());
 
-          return componentClient.forAgent().inSession(sessionId()).method(PlannerAgent::createPlan)
-              .invoke(new PlannerAgent.Request(currentState().userQuery, agentSelection)); // (6)
-        }
-      )
-      .andThen(Plan.class, plan -> {
-        logger.debug("Execution plan: {}", plan);
-          return effects()
-            .updateState(currentState().withPlan(plan))
-            .transitionTo(EXECUTE_PLAN); // (7)
-        }
-      );
+              return componentClient.forAgent().inSession(sessionId()).method(PlannerAgent::createPlan)
+                  .invoke(new PlannerAgent.Request(currentState().userQuery, agentSelection)); // (6)
+            }
+        )
+        .andThen(Plan.class, plan -> {
+              logger.info("Execution plan: {}", plan);
+              return effects()
+                  .updateState(currentState().withPlan(plan))
+                  .transitionTo(EXECUTE_PLAN); // (7)
+            }
+        );
   }
 
   private static final String EXECUTE_PLAN = "execute-plan";
 
   private Step executePlanStep() {
     return step(EXECUTE_PLAN)
-      .call(() -> {
-        var stepPlan = currentState().nextStepPlan(); // (8)
-        logger.debug("Executing plan step (agent:{}), asking {}", stepPlan.agentId(), stepPlan.query());
-        var agentResponse = callAgent(stepPlan.agentId(), stepPlan.query()); // (9)
-        if (agentResponse.startsWith("ERROR")) {
-          throw new RuntimeException("Agent '" + stepPlan.agentId() + "' responded with error: " + agentResponse);
-        } else {
-          logger.debug("Response from [agent:{}]: '{}'", stepPlan.agentId(), agentResponse);
-          return agentResponse;
-        }
-
-      })
-      .andThen(String.class, answer -> {
-          var newState = currentState().addAgentResponse(answer);
-
-          if (newState.hasMoreSteps()) {
-            logger.debug("Still {} steps to execute.", newState.plan().steps().size());
-            return effects().updateState(newState).transitionTo(EXECUTE_PLAN); // (10)
+        .call(() -> {
+          var stepPlan = currentState().nextStepPlan(); // (8)
+          logger.info("Executing plan step (agent:{}), asking {}", stepPlan.agentId(), stepPlan.query());
+          var agentResponse = callAgent(stepPlan.agentId(), stepPlan.query()); // (9)
+          if (agentResponse.startsWith("ERROR")) {
+            throw new RuntimeException("Agent '" + stepPlan.agentId() + "' responded with error: " + agentResponse);
           } else {
-            logger.debug("No further steps to execute.");
-            return effects().updateState(newState).transitionTo(SUMMARIZE);
+            logger.info("Response from [agent:{}]: '{}'", stepPlan.agentId(), agentResponse);
+            return agentResponse;
           }
 
-        }
-      );
+        })
+        .andThen(String.class, answer -> {
+              var newState = currentState().addAgentResponse(answer);
+
+              if (newState.hasMoreSteps()) {
+                logger.info("Still {} steps to execute.", newState.plan().steps().size());
+                return effects().updateState(newState).transitionTo(EXECUTE_PLAN); // (10)
+              } else {
+                logger.info("No further steps to execute.");
+                return effects().updateState(newState).transitionTo(SUMMARIZE);
+              }
+
+            }
+        );
   }
 
   private String callAgent(String agentId, String query) {
@@ -1421,9 +1479,9 @@ For predictable and repeatable tests of your agent’s business logic and compon
 
 Use the `TestKitSupport` and the `CoponentClient` to call the components from the test. The `ModelProvider` of the agents can be replaced with [TestModelProvider](_attachments/testkit/akka/javasdk/testkit/TestModelProvider.html), which provides ways to mock the responses without using the real AI model.
 
-[AgentTeamTest.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/test/java/demo/multiagent/application/AgentTeamTest.java)
+[AgentTeamWorkflowTest.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/test/java/demo/multiagent/application/AgentTeamWorkflowTest.java)
 ```java
-public class AgentTeamTest extends TestKitSupport { // (1)
+public class AgentTeamWorkflowTest extends TestKitSupport { // (1)
 
   private final TestModelProvider selectorModel = new TestModelProvider(); // (2)
   private final TestModelProvider plannerModel = new TestModelProvider();
@@ -1470,14 +1528,14 @@ public class AgentTeamTest extends TestKitSupport { // (1)
     var query = "I am in Stockholm. What should I do? Beware of the weather";
 
     var sessionId = UUID.randomUUID().toString();
-    var request = new AgentTeam.Request("alice", query);
-    componentClient.forWorkflow(sessionId).method(AgentTeam::start).invoke(request); // (6)
+    var request = new AgentTeamWorkflow.Request("alice", query);
+    componentClient.forWorkflow(sessionId).method(AgentTeamWorkflow::start).invoke(request); // (6)
 
     Awaitility.await()
         .ignoreExceptions()
         .atMost(10, SECONDS)
         .untilAsserted(() -> {
-          var answer = componentClient.forWorkflow(sessionId).method(AgentTeam::getAnswer).invoke();
+          var answer = componentClient.forWorkflow(sessionId).method(AgentTeamWorkflow::getAnswer).invoke();
           assertThat(answer).isNotBlank();
           assertThat(answer).contains("Stockholm");
           assertThat(answer).contains("sunny");
