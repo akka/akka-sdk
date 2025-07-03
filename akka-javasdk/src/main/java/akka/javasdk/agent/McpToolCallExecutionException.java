@@ -5,8 +5,20 @@
 package akka.javasdk.agent;
 
 /**
- * Exception thrown when there is a failure executing an MCP (Model Context Protocol) tool call.
- * This includes the name of the tool and the endpoint that failed.
+ * Exception thrown when an MCP (Model Context Protocol) tool call fails during execution.
+ * <p>
+ * This exception is thrown by agents when they attempt to call MCP tools from remote servers
+ * and the tool execution fails. It provides detailed information about which tool and endpoint
+ * failed to help with debugging and error handling.
+ * <p>
+ * <strong>Context Information:</strong>
+ * The exception includes the tool name and endpoint URL to help identify the source of the failure.
+ * This is particularly useful when agents are using multiple MCP servers or when debugging
+ * tool integration issues.
+ * <p>
+ * <strong>Error Handling:</strong>
+ * Agents can catch this exception in their {@code onFailure} handlers to provide fallback
+ * behavior or alternative responses when MCP tools are unavailable.
  */
 final public class McpToolCallExecutionException extends RuntimeException {
 

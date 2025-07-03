@@ -7,16 +7,37 @@ package akka.javasdk.agent;
 import akka.runtime.sdk.spi.SpiAgent;
 import com.typesafe.config.Config;
 
+/**
+ * Configuration interface for AI model providers used by agents.
+ * <p>
+ * ModelProvider defines which AI model and settings to use for agent interactions.
+ * Akka supports multiple model providers including hosted services (OpenAI, Anthropic, Google AI Gemini, 
+ * HuggingFace) and locally running models (Ollama, LocalAI).
+ * <p>
+ * Different agents can use different models by specifying the ModelProvider in the agent effect.
+ * If no model is specified, the default model from configuration is used.
+ */
 public sealed interface ModelProvider {
+  
   /**
-   * Model provider from configuration defined in {@code akka.javasdk.agent.model-provider}.
+   * Creates a model provider from the default configuration path.
+   * <p>
+   * Reads configuration from {@code akka.javasdk.agent.model-provider}.
+   * 
+   * @return a configuration-based model provider
    */
   static ModelProvider fromConfig() {
     return fromConfig("");
   }
 
   /**
-   * Model provider from configuration defined in the given {@code configPath}.
+   * Creates a model provider from the specified configuration path.
+   * <p>
+   * Allows using different model configurations for different agents by
+   * defining multiple model configurations and referencing them by path.
+   * 
+   * @param configPath the configuration path to read model settings from
+   * @return a configuration-based model provider
    */
   static ModelProvider fromConfig(String configPath) {
     return new FromConfig(configPath);

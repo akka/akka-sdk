@@ -66,12 +66,12 @@ include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/domain
 
 You may notice that there are other events defined as well. This is how the application passes events between the Akka runtime and the domain object.
 
-Jumping back to the `ShoppingCart` domain class, there is also business logic to handle the `ItemAdded` domain event for adding items to the cart:
+Jumping back to the `ShoppingCart` domain class, there is also business logic for adding items to the cart:
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[ShoppingCart.java]
 ----
-include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tag=itemAdded]
+include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tag=addItem]
 ----
 <1> For an existing item, we make sure to sum the existing quantity with the incoming one.
 <2> Returns an updated list of items without the existing item.

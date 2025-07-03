@@ -23,7 +23,7 @@ concurrency:
 jobs:
   checks:
     name: Basic checks
-    runs-on: ubuntu-22.04
+    runs-on: Akka-Default
     steps:
       - name: Checkout
         # https://github.com/actions/checkout/releases
@@ -85,7 +85,7 @@ jobs:
 
   publish-local:
     name: Build and publish artifacts and plugins locally
-    runs-on: ubuntu-22.04
+    runs-on: Akka-Default
     steps:
       - name: Checkout
         # https://github.com/actions/checkout/releases
@@ -165,7 +165,7 @@ jobs:
   sbt-test:
     name: Run sbt test
     needs: [checks, publish-local]
-    runs-on: ubuntu-22.04
+    runs-on: Akka-Default
 
     steps:
       - name: Checkout
@@ -220,7 +220,7 @@ jobs:
   java-sdk-annotation-processor-test:
     name: Run annotation processor tests
     needs: [checks, publish-local]
-    runs-on: ubuntu-22.04
+    runs-on: Akka-Default
 
     steps:
       - name: Checkout
@@ -275,7 +275,7 @@ jobs:
   check-docker-image-contents:
     name: Check service docker image contents
     needs: [ checks, publish-local ] # usually done via now disabled check-samples-in-ci
-    runs-on: ubuntu-22.04
+    runs-on: Akka-Default
 
     steps:
       - name: Checkout
@@ -347,7 +347,7 @@ jobs:
     name: Maven samples
     # needs: check-samples-in-ci
     needs: [checks, publish-local] # usually done via now disabled check-samples-in-ci 
-    runs-on: ubuntu-22.04
+    runs-on: Akka-Default
 
     strategy:
       fail-fast: false

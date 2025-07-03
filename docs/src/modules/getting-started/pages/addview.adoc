@@ -66,9 +66,9 @@ include::java:example$shopping-cart-with-view/src/main/java/shoppingcart/applica
 Next we modify the shape of the internal state used by the entity. To illustrate the different roles of entities and views, we've modified the state so that it doesn't store the `name` or `description` fields, since those aren't needed for decision making during command processing.
 
 [source,java,indent=0]
-.{sample-base-url}/shopping-cart-with-view/src/main/java/shoppingcart/domain/ShoppingCartState.java[ShoppingCartState.java]
+.{sample-base-url}/shopping-cart-with-view/src/main/java/shoppingcart/domain/ShoppingCart.java[ShoppingCart.java]
 ----
-include::java:example$shopping-cart-with-view/src/main/java/shoppingcart/domain/ShoppingCartState.java[tags=domain]
+include::java:example$shopping-cart-with-view/src/main/java/shoppingcart/domain/ShoppingCart.java[tags=domain]
 ----
 
 == Adding a shopping cart view
@@ -102,7 +102,7 @@ The user entity in this sample is quite small (but easily enhanced later). It ma
 include::java:example$shopping-cart-with-view/src/main/java/shoppingcart/application/UserEntity.java[tag=entity]
 ----
 
-Incrementing the cart ID is done simply in the `onCartClosed` function of the `UserState`:
+Incrementing the cart ID is done simply in the `onCartClosed` function of the `User`:
 
 ```java
 public UserState onCartClosed(UserEvent.UserCartClosed closed) {

@@ -345,7 +345,7 @@ An integration test can be implemented as below.
 include::example$key-value-customer-registry/src/test/java/customer/application/CustomersByCityIntegrationTest.java[tag=view-test]
 ----
 <1> Mocks incoming messages from the `customer` Key Value Entity.
-<2> Gets an `IncomingMessages` from the `customer` Key Value Entity.
+<2> Gets an `IncomingMessages` from the `CustomerEntity`.
 <3> Publishes test data.
 <4> Queries the view and asserts the results.
 

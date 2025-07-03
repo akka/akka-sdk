@@ -5,6 +5,13 @@ FIXME contribution guidelines like in other LB projects
 
 # Project tips
 
+## Build Token
+
+To build locally, you need to fetch a token at https://account.akka.io/token that you have to place into `~/.sbt/1.0/akka-commercial.sbt` file like this:
+```
+ThisBuild / resolvers += "lightbend-akka".at("your token resolver here")
+```
+
 ##  Build scripts
 
 1. See `.sh` scripts in the root directory.

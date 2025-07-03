@@ -10,7 +10,7 @@ on:
 jobs:
   debug:
     if: github.event_name != 'workflow_dispatch'
-    runs-on: ubuntu-22.04
+    runs-on: Akka-Default
     steps:
       - name: Debugging
         run: |
@@ -18,7 +18,7 @@ jobs:
           echo "Tag created from `Publish` workflow: ${{ github.ref }}
 
   open-pr-update-sample:
-    runs-on: ubuntu-22.04
+    runs-on: Akka-Default
     # run only when `publish` workflow is successful or this workflow manually triggered
     if: (github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch')
     steps:

@@ -21,14 +21,14 @@ class TransfersViewIntegrationTest extends TestKitSupport {
 
   public TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT
-      .withWorkflowIncomingMessages("transfer");
+      .withWorkflowIncomingMessages(TransferWorkflow.class);
 
   }
 
   @BeforeAll
   public void beforeAll() {
     super.beforeAll();
-    transferStates = testKit.getWorkflowIncomingMessages("transfer");
+    transferStates = testKit.getWorkflowIncomingMessages(TransferWorkflow.class);
   }
 
   @Test

@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-AI coding assistants can increase your productivity when developing Akka services. This guide will give you some practical hints of how to setup Akka knowledge and how to prompt the AI assistant. We are using https://www.qodo.ai[Qodo, window="new"] and https://www.cursor.com[Cursor, window="new"] as examples of such coding assistants, but the techniques are applicable for other tools as well.
+AI coding assistants can increase your productivity when developing Akka services. This guide will give you some practical hints of how to setup Akka knowledge and how to prompt the AI assistant. We are using https://www.qodo.ai[Qodo, window="new"], https://www.cursor.com[Cursor, window="new"] and IntelliJ IDEA as examples of such coding assistants, but the techniques are applicable for other tools as well.
 
 Some key benefits of using an AI coding assistant:
 
@@ -81,6 +81,16 @@ For Qodo you need to download the markdown documentation files and include them 
 NOTE: It would have been more convenient to only download `llms-full.txt`, but currently it seems like Qodo can't handle a large file like that.
 
 In the chat window it is important that you include the Akka documentation as context. Click `Add context` and select `Files and folders` and select `Full project` or the `akka-context` folder.
+
+Make sure that you download the latest documentation regularly to make use of documentation improvements and new features.
+
+== IntelliJ IDEA AI assistant
+
+For the AI assistant in IntelliJ IDEA you need to download the https://doc.akka.io/llms-ctx.txt[llms-ctx.txt, window="new"] file and place it in the root of the project directory. The AI assistant will include relevant information to the LLM.
+
+Add `llms-ctx.txt` to your `.gitignore` file, if you use git.
+
+It is important that you include the Akka documentation as context by enabling `Codebase` in the chat window.
 
 Make sure that you download the latest documentation regularly to make use of documentation improvements and new features.
 

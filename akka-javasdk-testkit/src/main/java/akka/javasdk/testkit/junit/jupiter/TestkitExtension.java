@@ -5,6 +5,9 @@
 package akka.javasdk.testkit.junit.jupiter;
 
 import akka.actor.typed.ActorSystem;
+import akka.javasdk.eventsourcedentity.EventSourcedEntity;
+import akka.javasdk.keyvalueentity.KeyValueEntity;
+import akka.javasdk.workflow.Workflow;
 import akka.stream.Materializer;
 import akka.javasdk.testkit.EventingTestKit;
 import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
@@ -52,18 +55,49 @@ public final class TestkitExtension implements BeforeAllCallback, AfterAllCallba
    * Get incoming messages for ValueEntity.
    *
    * @param typeId @TypeId or entity_type of the ValueEntity (depending on the used SDK)
+   * @deprecated Use {@link #getValueEntityIncomingMessages(Class)} instead.
    */
+  @Deprecated(since = "3.4.2", forRemoval = true)
   public IncomingMessages getValueEntityIncomingMessages(String typeId) {
     return testKit.getKeyValueEntityIncomingMessages(typeId);
+  }
+
+  /**
+   * Get incoming messages for ValueEntity.
+   *
+   * @param keyValueEntityClass class of the KeyValueEntity
+   */
+  public IncomingMessages getValueEntityIncomingMessages(Class<? extends KeyValueEntity<?>> keyValueEntityClass) {
+    return testKit.getKeyValueEntityIncomingMessages(keyValueEntityClass);
   }
 
   /**
    * Get incoming messages for EventSourcedEntity.
    *
    * @param typeId @TypeId or entity_type of the EventSourcedEntity (depending on the used SDK)
+   * @deprecated Use {@link #getEventSourcedEntityIncomingMessages(Class)} instead.
    */
+  @Deprecated(since = "3.4.2", forRemoval = true)
   public IncomingMessages getEventSourcedEntityIncomingMessages(String typeId) {
     return testKit.getEventSourcedEntityIncomingMessages(typeId);
+  }
+
+  /**
+   * Get incoming messages for EventSourcedEntity.
+   *
+   * @param eventSourcedEntityClass class of the EventSourcedEntity
+   */
+  public IncomingMessages getEventSourcedEntityIncomingMessages(Class<? extends EventSourcedEntity<?,?>> eventSourcedEntityClass) {
+    return testKit.getEventSourcedEntityIncomingMessages(eventSourcedEntityClass);
+  }
+
+  /**
+   * Get incoming messages for Workflow.
+   *
+   * @param workflowClass class of the Workflow
+   */
+  public IncomingMessages getWorkflowIncomingMessages(Class<? extends Workflow<?>> workflowClass) {
+    return testKit.getWorkflowIncomingMessages(workflowClass);
   }
 
   /**

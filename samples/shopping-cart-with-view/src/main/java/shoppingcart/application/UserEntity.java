@@ -8,7 +8,7 @@ import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import shoppingcart.domain.UserEvent;
-import shoppingcart.domain.UserState;
+import shoppingcart.domain.User;
 
 /**
  * The user entity's main role in this sample is to maintain a monotonically
@@ -17,7 +17,7 @@ import shoppingcart.domain.UserState;
  */
 // tag::entity[]
 @ComponentId("user")
-public class UserEntity extends EventSourcedEntity<UserState, UserEvent> {
+public class UserEntity extends EventSourcedEntity<User, UserEvent> {
   private final String entityId;
 
   private static final Logger logger = LoggerFactory.getLogger(UserEntity.class);
@@ -40,17 +40,17 @@ public class UserEntity extends EventSourcedEntity<UserState, UserEvent> {
   }
 
   @Override
-  public UserState emptyState() {
+  public User emptyState() {
     int newCartId = 1;
-    return new UserState(entityId, newCartId);
+    return new User(entityId, newCartId);
   }
 
   @Override
-  public UserState applyEvent(UserEvent event) {
+  public User applyEvent(UserEvent event) {
     logger.debug("Applying user event to user id={}", entityId);
 
     return switch (event) {
-      case UserEvent.UserCartClosed closed -> currentState().onCartClosed(closed);
+      case UserEvent.UserCartClosed closed -> currentState().closeCart();
     };
   }
 }

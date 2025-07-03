@@ -20,14 +20,14 @@ class CounterByValueViewTest extends TestKitSupport {
   @Override
   protected TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT
-      .withEventSourcedEntityIncomingMessages("counter");
+      .withEventSourcedEntityIncomingMessages(CounterEntity.class);
   }
 
 
   @BeforeAll
   public void beforeAll() {
     super.beforeAll();
-    counterEvents = testKit.getEventSourcedEntityIncomingMessages("counter");
+    counterEvents = testKit.getEventSourcedEntityIncomingMessages(CounterEntity.class);
   }
 
 
