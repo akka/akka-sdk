@@ -20,11 +20,36 @@ import java.util.Arrays;
 
 
 /**
- * Helper class for creating common HTTP responses.
+ * Factory class for creating common HTTP responses in endpoint methods.
  * <p>
- * Provides factory method for creating HttpResponse object for the most common cases.
+ * HttpResponses provides convenient factory methods for creating {@link akka.http.javadsl.model.HttpResponse}
+ * objects for the most common HTTP status codes and response types. This eliminates the need to work
+ * directly with the lower-level Akka HTTP APIs in most cases.
  * <p>
- * Returned HttpResponses can be enriched with additional headers, status codes, etc.
+ * <strong>Response Types:</strong>
+ * <ul>
+ *   <li><strong>Success responses:</strong> {@link #ok()}, {@link #created()}, {@link #accepted()}, {@link #noContent()}</li>
+ *   <li><strong>Error responses:</strong> {@link #badRequest()}, {@link #notFound()}, {@link #internalServerError()}</li>
+ *   <li><strong>Static content:</strong> {@link #staticResource(String)} for serving files</li>
+ *   <li><strong>Streaming:</strong> {@link #serverSentEvents(Source)} for SSE responses</li>
+ * </ul>
+ * <p>
+ * <strong>Content Types:</strong>
+ * Methods automatically set appropriate content types:
+ * <ul>
+ *   <li>String parameters result in {@code text/plain} responses</li>
+ *   <li>Object parameters are serialized to JSON with {@code application/json}</li>
+ *   <li>Static resources use MIME type detection based on file extension</li>
+ * </ul>
+ * <p>
+ * <strong>Response Customization:</strong>
+ * All returned {@code HttpResponse} objects can be further customized with additional headers,
+ * different status codes, or other modifications using the Akka HTTP API.
+ * <p>
+ * <strong>Static Resources:</strong>
+ * Use {@link #staticResource(String)} to serve files from the {@code src/main/resources/static-resources}
+ * directory. This is convenient for documentation or small web UIs but not recommended for production
+ * where UI and service lifecycles should be decoupled.
  */
 public class HttpResponses {
 

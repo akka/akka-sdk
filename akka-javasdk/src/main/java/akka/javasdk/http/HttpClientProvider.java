@@ -7,7 +7,28 @@ package akka.javasdk.http;
 import akka.annotation.DoNotInherit;
 
 /**
- * Not for user extension, instances are available through injection in selected component types.
+ * Provider for HTTP clients to interact with other services over HTTP.
+ * <p>
+ * HttpClientProvider enables HTTP endpoints and other components to make outbound HTTP calls
+ * to other services, both within the same Akka project and to external services on the internet.
+ * <p>
+ * <strong>Service-to-Service Communication:</strong>
+ * When calling other Akka services deployed in the same project, use the service name without
+ * protocol or domain. The runtime handles routing, encryption, and authentication automatically.
+ * <p>
+ * <strong>External Service Communication:</strong>
+ * For external services, provide full URLs with {@code http://} or {@code https://} protocols.
+ * These calls go over the public internet and require appropriate authentication.
+ * <p>
+ * <strong>Usage in Endpoints:</strong>
+ * Inject HttpClientProvider into endpoint constructors to access HTTP client functionality.
+ * The provider creates configured HTTP clients for specific services or URLs.
+ * <p>
+ * <strong>Security:</strong>
+ * Service-to-service calls within the same project are automatically secured with mutual TLS
+ * and service identity verification. External calls require manual authentication setup.
+ * <p>
+ * Not for user extension, instances provided by the SDK through dependency injection.
  */
 @DoNotInherit
 public interface HttpClientProvider {
