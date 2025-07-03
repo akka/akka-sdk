@@ -32,8 +32,8 @@ import java.util.function.Function;
  * </ul>
  * <p>
  * <strong>Session Memory:</strong>
- * The agent maintains contextual history in session memory, identified by a session ID accessible
- * via {@link Agent#context()}. This memory is persistent and shared between agents using the same session ID.
+ * The agent maintains contextual history in session memory, identified by a session id accessible
+ * via {@link Agent#context()}. This memory is persistent and shared between agents using the same session id.
  * <p>
  * <strong>Component Identification:</strong>
  * The agent must be annotated with {@link akka.javasdk.annotations.ComponentId} to provide a unique

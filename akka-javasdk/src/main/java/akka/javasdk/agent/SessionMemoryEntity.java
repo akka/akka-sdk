@@ -37,7 +37,7 @@ import static akka.Done.done;
  * <p>
  * <strong>Automatic Registration:</strong>
  * This entity is automatically registered by the Akka runtime when Agent components are detected.
- * Each session is identified by the entity ID, which corresponds to the agent's session ID.
+ * Each session is identified by the entity id, which corresponds to the agent's session id.
  * <p>
  * <strong>Memory Management:</strong>
  * <ul>

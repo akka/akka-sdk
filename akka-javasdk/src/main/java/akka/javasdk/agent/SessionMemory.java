@@ -20,7 +20,7 @@ import java.util.List;
  * <strong>Default Implementation:</strong>
  * The default implementation is backed by {@link SessionMemoryEntity}, a built-in Event Sourced Entity
  * that automatically stores contextual history. This provides durability and allows for session
- * memory to be shared between multiple agents using the same session ID.
+ * memory to be shared between multiple agents using the same session id.
  * <p>
  * <strong>Custom Implementation:</strong>
  * You can provide a custom implementation using {@link MemoryProvider#custom(SessionMemory)} to

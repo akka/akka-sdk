@@ -17,8 +17,8 @@ import java.util.Optional;
  * if accessed from the agent constructor.
  * <p>
  * <strong>Session Management:</strong>
- * The session ID identifies the contextual context for the agent. Multiple agents
- * can share the same session ID to collaborate on a common goal, sharing session memory
+ * The session id identifies the contextual context for the agent. Multiple agents
+ * can share the same session id to collaborate on a common goal, sharing session memory
  * and contextual history.
  * <p>
  * <strong>Tracing:</strong>
@@ -30,10 +30,10 @@ public interface AgentContext extends MetadataContext {
    * Returns the session identifier for this agent interaction.
    * <p>
    * The agent participates in a session, which is used for the agent's contextual memory.
-   * Session memory is shared between all agents that use the same session ID, enabling
+   * Session memory is shared between all agents that use the same session id, enabling
    * multi-agent collaboration and maintaining context across interactions.
    * 
-   * @return the session ID for this agent interaction
+   * @return the session id for this agent interaction
    */
   String sessionId();
 
