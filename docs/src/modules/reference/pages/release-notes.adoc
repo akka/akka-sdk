@@ -12,6 +12,11 @@ Current versions
 
 == July 2025
 
+* https://github.com/akka/akka-sdk/releases/tag/v3.4.1[Akka SDK 3.4.1]
+- Improved error handling for AI models and tool exceptions
+- Enhanced JsonSchema creation by supporting recursive types and additional standard library types
+- Self service resolution in integration tests
+
 * https://github.com/akka/akka/releases/tag/v2.10.7[Akka core 2.10.7]
 
 == June 2025
@@ -69,7 +74,6 @@ This short, self-paced course introduces the foundational concepts of the Akka S
   - xref:java:ai-coding-assistant.adoc[AI coding assistant instructions]
   - Support deletion of workflows
   - Validation for missing handler when consuming from Key Value Entity or Workflow
-
 
 * Akka Runtime 1.4.12
   - Akka 25.05.0 dependencies
@@ -164,7 +168,6 @@ xref:concepts:multi-region.adoc[Request-region primary selection mode]: The prim
 **Automatic deduplication for view updates**
 
 When subscribing to entities and service-to-service eventing from a view, updates are now guaranteed to be processed exactly-once. This is not applicable when subscribing to topics. Additionally, a new section describing different xref:java:dev-best-practices.adoc#message-deduplication[message deduplication] strategies has been added to the best practices guide.
-
 
 ****
 
