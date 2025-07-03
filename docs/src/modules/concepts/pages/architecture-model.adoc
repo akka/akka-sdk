@@ -1,24 +1,51 @@
-= Service structure and layers
+= Project structure
 
 include::ROOT:partial$include.adoc[]
 
-Akka allows developers to focus on domain modeling and Application Programming Interfaces (APIs) without needing to manage low-level persistence or concurrency concerns. The organization of an Akka service into clear layers makes this possible.
+Akka encourages a project structure that separates your system’s Application Programming Interfaces (APIs), Akka component logic, and business logic into different directories.
 
-== Layered structure
+This structure supports a clear separation of concerns. It helps enable iterative development, testing in isolation, predictable packaging, and the ability to externalize configuration and static assets.
 
-Akka services follow a layered model where each layer has a distinct role. The layers are arranged concentrically, like an onion. The innermost layer holds business logic. Outer layers coordinate and expose that logic to the outside world.
+== Akka project structure
 
-image::docs-onion_architecture-v1.min.svg[Layered Structure of a Service, width=400]
+A typical Akka project might have a layout like the following:
 
-Each layer should live in its own package:
+[source,txt]
+----
+src/
+ ├── main/
+ │   ├── java/acme/planningagent/
+ │   │   ├── api/           # External MCP, HTTP, gRPC endpoints
+ │   │   ├── application/   # Akka components: Agents, Entities, Views, Consumers, Timers, Workflows
+ │   │   ├── domain/        # Business logic
+ │   │   └── tool/          # MCP or functional tools
+ │   └── resources/
+ └── test/
+----
 
-* `domain`: for the domain model
-* `application`: for Akka components
-* `api`: for external-facing endpoints
+- The `api` directory exposes functionality to the outside world. This includes HTTP, gRPC, or MCP interfaces that forward requests to the application layer.
 
-Try not to expose domain types directly to the outside world. The API layer should not call the domain layer. Inner layers should not depend on or be aware of outer layers.
+- The `application` directory contains the building blocks provided by Akka, implemented by you. It includes components such as `Agent`, `Entity`, `View`, `Workflow`, `Timer`, and `Consumer`.
 
-== Layer overview
+- The `domain` directory holds plain Java classes that describe business rules and domain models. These are not tied to Akka or the runtime. Many use `record` to reduce boilerplate. You can test this logic without starting Akka or the runtime. This keeps the code focused and easier to maintain.
+
+- The `tool` directory contains functional tools that can be invoked by Agents or MCP endpoints. These may also be defined within Agent classes if preferred.
+
+- The `resources` directory includes configuration files and other static content.
+
+- The `test` directory contains unit and integration tests. Its structure mirrors `main` to make it easier to relate tests to the code they verify.
+
+Keeping these areas distinct can help improve clarity and long-term maintainability. It also encourages testing and runtime separation.
+
+== Conceptual layers
+
+The structure above also reflects a conceptual separation of responsibilities. These responsibilities can be thought of as layers. Business logic is central, with supporting code around it to enable runtime behavior and external interaction.
+
+To maintain modularity:
+
+- Avoid exposing domain types directly to the outside world.
+- The API layer should not call the domain layer directly.
+- Inner layers should not depend on or be aware of outer layers.
 
 === Domain
 
@@ -42,91 +69,13 @@ The API layer may also expose public event models over Kafka or other channels. 
 
 Access control and request validation also belong here. For HTTP-specific guidance, see xref:java:http-endpoints.adoc[Designing HTTP Endpoints].
 
-== Mapping layers to project structure
-
-Each layer described above corresponds to a distinct package in the source tree. This structure helps reinforce separation of concerns and makes it easy to locate different types of logic in a project.
-
-A typical Akka service might have a layout like the following:
-
-[source,txt]
-----
-src/
- └── main/
-     └── java/acme/petclinic/
-         ├── domain/        # Business logic
-         ├── application/   # Akka components
-         └── api/           # External endpoints
-----
-
-- The `domain` directory holds plain Java classes that represent business rules and models. These are free of Akka-specific concerns.
-
-- The `application` directory contains the building blocks provided by Akka. This is where components such as entities, views, workflows, and consumers are defined.
-
-- The `api` directory exposes functionality to the outside world. This includes HTTP or gRPC endpoints that delegate to components in the application layer.
-
-By keeping these directories distinct, the codebase becomes easier to navigate and evolve over time. This layering also supports clear testing strategies and runtime isolation.
-
-[#_akka_components]
-== Akka components
-
-You use xref:reference:glossary.adoc#component[Akka _Components_] to build your application. These Components are crucial for ensuring responsiveness. Here is a brief overview of each. Except endpoints, Akka components will live in your `application` package.
-
-Akka components are marked with a `@ComponentId` or `@HttpEndpoint` annotation to identify them to the runtime.
-
-=== Agents
-
-image:ROOT:agent.png[Agent,width=100,float=left]An _Agent_ interacts with an AI model to perform a specific task. It is typically backed by a large language model (LLM). It maintains contextual history in a session memory, which may be shared between multiple agents that are collaborating on the same goal. It may provide function tools and call them as requested by the model.
-
-=== Entities
-
-image:ROOT:entity.png[Entities,width=100,float=left] _Entities_ are the core components of Akka and provide persistence and state management. They map to your https://martinfowler.com/bliki/DDD_Aggregate.html[_domain aggregates_, window="new"]. If you have a "Customer" domain aggregate, you almost certainly will have a `CustomerEntity` component to expose and manipulate it. This separation of concerns allows the domain object to remain purely business logic focused while the Entity handles runtime mechanics. Additionally, you may have other domain objects that are leafs of the domain aggregate. These do not need their own entity if they are just a leaf of the aggregate. An address is a good example.
-
-There are two types of entities in Akka. Their difference lies in how they internally function and are persisted.
-
-==== Key Value Entities
-
-image:ROOT:key-value-entity.png[Key Value Entities,width=100,float=left] _Key Value Entities_ are, as the name implies, an object that is stored and retrieved based on a key - an identifier of some sort. The value is the entire state of the object. Every write to a Key Value Entity persists the entire state of the object. Key Value Entities are similar in some ways to database records. They write and effectively lock the whole row. They still use an underlying event-based architecture so other components can subscribe to the stream of their updates. For more information see xref:java:key-value-entities.adoc[Key Value Entities].
-
-==== Event Sourced Entities
-
-image:ROOT:event-sourced-entity.png[Event Sourced Entities,width=100,float=left] _Event Sourced Entities_ persist events instead of state in the event xref:reference:glossary.adoc#journal[journal]   . The current state of the entity is derived from these events. Readers can access the event journal independently of the active entity instance to create read models, known as xref:java:views.adoc[_Views_], or to perform business actions based on the events via xref:java:consuming-producing.adoc[Consumers]. For more information, see xref:java:event-sourced-entities.adoc[Event Sourced Entities].
-
-=== Views
-
-image:ROOT:view.png[Views,width=100,float=left] _Views_ provide a way to materialize read only state from multiple entities based on a query. You can create views from Key Value Entities, Event Sourced Entities, and by subscribing to a topic. For more information see xref:java:views.adoc[Views].
-
-// break the paragraph to avoid floating "Consumers" on the image above.
-++++
-<br style="clear:both">
-++++
-
-=== Consumers
-
-image:ROOT:consumer.png[Consumers,width=100,float=left] _Consumers_ listen for and process events or messages from various sources, such as Event Sourced Entities, Key Value Entities and external messaging systems. They can also produce messages to topics, facilitating communication and data flow between different services within an application. For more information see xref:java:consuming-producing.adoc[Consuming and producing].
-
-=== Workflows
-
-image:ROOT:workflow.png[Workflows,width=100,float=left] _Workflows_ enable the developer to implement long-running, multi-step business processes while focusing exclusively on domain and business logic. Technical concerns such as delivery guarantees, scaling, error handling and recovery are managed by Akka. For more information see xref:java:workflows.adoc[Workflows].
-
-=== Timed actions
-
-image:ROOT:timer.png[Timed actions,width=100,float=left] _Timed Actions_ allow for scheduling calls in the future. For example, to verify that some process have been completed or not. For more information see xref:java:timed-actions.adoc[Timed actions].
-
-// break the paragraph to avoid floating "Endpoints" on the image above.
-++++
-<br style="clear:both">
-++++
-=== Endpoints
-
-image:ROOT:endpoint.png[Endpoints,width=100,float=left] _Endpoints_ are defined points of interaction for services that allow external clients to communicate via HTTP or gRPC. They facilitate the integration and communication between the other types of internal Akka components. Unlike other Akka components, endpoints will live in your `api` package. For more information see xref:java:http-endpoints.adoc[HTTP Endpoints] and xref:java:grpc-endpoints.adoc[gRPC Endpoints].
-
 == Akka Services
 
 image:ROOT:service.png[Services,width=100,float=left] A _Project_ may contain multiple _Services_. Projects can be deployed to one or more regions to achieve geographic resilience. For details, see xref:multi-region.adoc[].
 
 == Next steps
 
-Once familiar with the layered structure, continue with:
+Once familiar with the project structure, continue with:
 
 - xref:deployment-model.adoc[Akka Deployment Model]
 - xref:development-process.adoc[Development process]
