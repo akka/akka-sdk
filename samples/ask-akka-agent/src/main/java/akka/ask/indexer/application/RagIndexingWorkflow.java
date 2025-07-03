@@ -135,7 +135,8 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
 
   public Effect<Done> abort() {
 
-    logger.debug("Aborting workflow. Current number of pending documents {}", currentState().toProcess.size());
+    logger.debug("Aborting workflow. Current number of pending documents {}",
+        currentState().toProcess.size());
     return effects()
         .updateState(emptyState())
         .pause()
@@ -178,7 +179,8 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
     try (InputStream input = Files.newInputStream(path)) {
       // read file as input stream
       Document doc = new TextDocumentParser().parse(input);
-      var docWithMetadata = new DefaultDocument(doc.text(), Metadata.metadata(srcKey, path.getFileName().toString()));
+      var docWithMetadata = new DefaultDocument(
+          doc.text(), Metadata.metadata(srcKey, path.getFileName().toString()));
 
       var segments = splitter.split(docWithMetadata);
       logger.debug("Created {} segments for document {}", segments.size(), path.getFileName());

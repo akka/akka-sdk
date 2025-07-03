@@ -120,7 +120,8 @@ public class ExampleEndpoint extends AbstractHttpEndpoint { // <1>
           .withStatus(StatusCodes.BAD_REQUEST)
           .withEntity("It is unlikely that you are " + age + " years old");
     else {
-        var jsonBytes = JsonSupport.encodeToAkkaByteString(new HelloResponse("Hello " + name + "!")); // <1>
+        var jsonBytes = JsonSupport.encodeToAkkaByteString(
+            new HelloResponse("Hello " + name + "!")); // <1>
         return HttpResponse.create() // <2>
             .withEntity(ContentTypes.APPLICATION_JSON, jsonBytes); // <3>
     }

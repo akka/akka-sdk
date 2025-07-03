@@ -56,7 +56,9 @@ public class ExampleMcpEndpoint {
       name = "add", // <1>
       description = "Adds the two given numbers and returns the result" // <2>
   )
-  public String add(@Description("The first number") int n1, @Description("The second number") int n2) { // <3>
+  public String add(
+      @Description("The first number") int n1,
+      @Description("The second number") int n2) { // <3>
     var result = n1 + n2;
     return Integer.toString(result);
   }
@@ -91,7 +93,8 @@ public class ExampleMcpEndpoint {
       name = "Background image",
       description = "A background image for Akka sites", mimeType = "image/png")
   public byte[] backgroundImage() { // <2>
-    try (InputStream in = this.getClass().getResourceAsStream("/static-resources/images/background.png")) {
+    try (InputStream in = this.getClass().getResourceAsStream(
+        "/static-resources/images/background.png")) {
       if (in == null) throw new RuntimeException("Could not find background image");
       return in.readAllBytes();
     } catch (IOException e) {
@@ -112,7 +115,8 @@ public class ExampleMcpEndpoint {
       // Important to validate input
       throw new RuntimeException("Invalid image file: " + fileName);
     }
-    try (InputStream in = this.getClass().getResourceAsStream("/static-resources/images/" + fileName)) {
+    try (InputStream in = this.getClass().getResourceAsStream(
+        "/static-resources/images/" + fileName)) {
       if (in == null) throw new RuntimeException("Could not find background image");
       return in.readAllBytes();
     } catch (IOException e) {

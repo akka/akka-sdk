@@ -45,6 +45,7 @@ public class ExampleGrpcEndpointImpl implements ExampleGrpcEndpoint {
 
   @Override
   public Source<HelloReply, NotUsed> streamHellos(Source<HelloRequest, NotUsed> in) {
-    return in.map(streamedHello -> HelloReply.newBuilder().setMessage("Hello " + streamedHello.getName()).build());
+    return in.map(streamedHello -> HelloReply.newBuilder()
+        .setMessage("Hello " + streamedHello.getName()).build());
   }
 }

@@ -19,7 +19,8 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
   private static final Logger logger = LoggerFactory.getLogger(ShoppingCartEntity.class);
 
   // tag::newentityapi[]
-  public record AddLineItemCommand(String userId, String productId, String name, int quantity, String description) {
+  public record AddLineItemCommand(
+      String userId, String productId, String name, int quantity, String description) {
   }
   // end::newentityapi[]
 

@@ -37,7 +37,8 @@ public class ActivityAgentManager extends Workflow<ActivityAgentManager.State> {
 
   public ReadOnlyEffect<String> getAnswer() { // <5>
     if (currentState() == null || currentState().answer.isEmpty()) {
-      return effects().error("Workflow '" + commandContext().workflowId() + "' not started, or not completed");
+      return effects().error("Workflow '" + commandContext().workflowId() +
+          "' not started, or not completed");
     } else {
       return effects().reply(currentState().answer);
     }

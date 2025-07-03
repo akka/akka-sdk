@@ -46,10 +46,15 @@ public class MyAppSetup implements ServiceSetup {
     // end::disable-components[]
     // to be able to run, otherwise duplicate components
     if (true) {
-      return Set.of(ActivityAgentMore.ActivityAgent.class, ActivityAgentMore.StreamingActivityAgent.class,
-          ActivityAgentMore.ActivityAgentStructuredResponse.class, ActivityAgentMore.ActivityAgentWithTemplate.class,
-          ActivityAgentMore.ActivityHttpEndpoint.class, ActivityAgentMore.UserProfileEntity.class,
-          MyAgentMore.MyAgentNoMemory.class, MyAgentMore.MyAgentReadLastMemory.class,
+      return Set.of(
+          ActivityAgentMore.ActivityAgent.class,
+          ActivityAgentMore.StreamingActivityAgent.class,
+          ActivityAgentMore.ActivityAgentStructuredResponse.class,
+          ActivityAgentMore.ActivityAgentWithTemplate.class,
+          ActivityAgentMore.ActivityHttpEndpoint.class,
+          ActivityAgentMore.UserProfileEntity.class,
+          MyAgentMore.MyAgentNoMemory.class,
+          MyAgentMore.MyAgentReadLastMemory.class,
           MyAgentMore.MyAgentWithModel.class);
     } else
     // tag::disable-components[]

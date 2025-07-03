@@ -49,7 +49,8 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
                     .method(WalletEntity::withdraw)
                     .invoke(cmd.amount)) // <4>
             .andThen(() -> {
-              Deposit depositInput = new Deposit(currentState().transfer().to(), currentState().transfer().amount());
+              Deposit depositInput = new Deposit(
+                  currentState().transfer().to(), currentState().transfer().amount());
               return effects()
                   .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
                   .transitionTo("deposit", depositInput); // <5>
