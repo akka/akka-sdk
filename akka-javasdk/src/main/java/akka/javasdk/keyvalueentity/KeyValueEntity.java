@@ -25,8 +25,7 @@ import java.util.Optional;
  * 
  * <h2>Implementation Steps</h2>
  * <ol>
- *   <li>Define the API and model the entity's state</li>
- *   <li>Create and initialize the Entity with {@code @ComponentId}</li>
+ *   <li>Define the entity's state</li>
  *   <li>Implement behavior in command handlers</li>
  * </ol>
  * 
