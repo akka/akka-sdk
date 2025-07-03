@@ -39,12 +39,7 @@ import java.util.Optional;
  *   <li>Return an error message</li>
  *   <li>Delete the entity</li>
  * </ul>
- * 
- * <h2>Multi-region Replication</h2>
- * Key Value Entities support multi-region replication for resilience and performance. Write requests
- * are handled by the primary region, while read requests can be served from any region. Use
- * {@link ReadOnlyEffect} for read-only operations that can be served from replicas.
- * 
+ *
  * <h2>Example Implementation</h2>
  * <pre>{@code
  * @ComponentId("counter")
@@ -80,6 +75,11 @@ import java.util.Optional;
  * 
  * <p>Concrete classes must be annotated with {@link akka.javasdk.annotations.ComponentId} with a
  * stable, unique identifier that cannot be changed after production deployment.
+ *
+ * <h2>Multi-region Replication</h2>
+ * Key Value Entities support multi-region replication for resilience and performance. Write requests
+ * are handled by the primary region, while read requests can be served from any region. Use
+ * {@link ReadOnlyEffect} for read-only operations that can be served from replicas.
  *
  * <h2>Immutable state record</h2>
  * <p>It is recommended to use immutable state objects, such as Java records, for the entity state.
