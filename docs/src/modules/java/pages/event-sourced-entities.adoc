@@ -111,14 +111,14 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application
 <2> From the current incoming `LineItem` we create a new `ItemAdded` event representing the change of the cart.
 <3> We store the event by returning an `Effect` with `effects().persist`.
 <4> The acknowledgment that the command was successfully processed is only sent if the event was successfully stored and applied, otherwise there will be an error reply. The lambda parameter `newState` gives us access to the new state returned by applying such event.
-<5> Event handler returns the updated state after applying the event - the logic for state transition is defined inside the `ShoppingCart` domain model.
+<5> Event handler returns the updated state after applying the event - the logic for updating the state is defined inside the `ShoppingCart` domain model.
 
-As mentioned above, the business logic that allows us to transition between states was placed on the domain model as seen below:
+As mentioned above, the business logic for updating the state was placed on the domain model as seen below:
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[ShoppingCart.java]
 ----
-include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tag=itemAdded]
+include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tag=addItem]
 ----
 <1> For an existing item, we will make sure to sum the existing quantity with the incoming one.
 <2> Returns an update list of items without the existing item.

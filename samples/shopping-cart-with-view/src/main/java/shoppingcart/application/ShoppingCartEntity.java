@@ -10,10 +10,10 @@ import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import shoppingcart.domain.ShoppingCartEvent;
-import shoppingcart.domain.ShoppingCartState;
+import shoppingcart.domain.ShoppingCart;
 
 @ComponentId("shopping-cart")
-public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCartState, ShoppingCartEvent> {
+public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, ShoppingCartEvent> {
   private final String entityId;
 
   private static final Logger logger = LoggerFactory.getLogger(ShoppingCartEntity.class);
@@ -28,8 +28,8 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCartState, Sh
   }
 
   @Override
-  public ShoppingCartState emptyState() {
-    return new ShoppingCartState(entityId, Collections.emptyList(), false);
+  public ShoppingCart emptyState() {
+    return new ShoppingCart(entityId, Collections.emptyList(), false);
   }
 
   public Effect<Done> addItem(AddLineItemCommand item) {
@@ -67,7 +67,7 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCartState, Sh
         .thenReply(newState -> Done.done());
   }
 
-  public ReadOnlyEffect<ShoppingCartState> getCart() {
+  public ReadOnlyEffect<ShoppingCart> getCart() {
     return effects().reply(currentState());
   }
 
@@ -82,10 +82,11 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCartState, Sh
   }
 
   @Override
-  public ShoppingCartState applyEvent(ShoppingCartEvent event) {
+  public ShoppingCart applyEvent(ShoppingCartEvent event) {
     return switch (event) {
-      case ShoppingCartEvent.ItemAdded evt -> currentState().onItemAdded(evt);
-      case ShoppingCartEvent.ItemRemoved evt -> currentState().onItemRemoved(evt);
+      case ShoppingCartEvent.ItemAdded evt ->
+          currentState().onItemAdded(new ShoppingCart.LineItem(evt.productId(), evt.quantity()));
+      case ShoppingCartEvent.ItemRemoved evt -> currentState().removeItem(evt.productId());
       case ShoppingCartEvent.CheckedOut evt -> currentState().onCheckedOut();
     };
   }

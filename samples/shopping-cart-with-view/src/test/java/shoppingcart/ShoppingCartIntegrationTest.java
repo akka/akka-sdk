@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import akka.javasdk.testkit.TestKitSupport;
 import shoppingcart.application.ShoppingCartEntity;
-import shoppingcart.domain.ShoppingCartState;
+import shoppingcart.domain.ShoppingCart;
 
 public class ShoppingCartIntegrationTest extends TestKitSupport {
     @Test
@@ -34,7 +34,7 @@ public class ShoppingCartIntegrationTest extends TestKitSupport {
                 .invoke(item2);
         Assertions.assertNotNull(response2);
 
-        ShoppingCartState cartInfo = componentClient
+        ShoppingCart cartInfo = componentClient
                 .forEventSourcedEntity(userId)
                 .method(ShoppingCartEntity::getCart)
                 .invoke();
@@ -49,12 +49,12 @@ public class ShoppingCartIntegrationTest extends TestKitSupport {
         Assertions.assertNotNull(response3);
 
         // confirming only one product remains
-        ShoppingCartState cartUpdated = componentClient
+        ShoppingCart cartUpdated = componentClient
                 .forEventSourcedEntity(userId)
                 .method(ShoppingCartEntity::getCart)
                 .invoke();
         Assertions.assertEquals(1, cartUpdated.items().size());
-        var t2 = new ShoppingCartState.LineItem("tv-table", 1);
+        var t2 = new ShoppingCart.LineItem("tv-table", 1);
         Assertions.assertEquals(t2, cartUpdated.items().get(0));
     }
 
