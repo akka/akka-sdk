@@ -105,6 +105,31 @@ import java.util.function.Function;
  * <p>Concrete classes must be annotated with {@link akka.javasdk.annotations.ComponentId} with a
  * stable, unique identifier that cannot be changed after production deployment.
  *
+ * <h2>Immutable state record</h2>
+ * <p>It is recommended to use immutable state objects, such as Java records, for the entity state.
+ * Immutable state ensures thread safety and prevents accidental modifications that could lead to
+ * inconsistent state or concurrency issues.
+ *
+ * <p>While mutable state classes are supported, they require careful handling:
+ * <ul>
+ *   <li>Mutable state should not be shared outside the entity</li>
+ *   <li>Mutable state should not be passed to other threads, such as in {@code CompletionStage} operations</li>
+ *   <li>Any modifications to mutable state must be done within the entity's event handler</li>
+ * </ul>
+ *
+ * <p><strong>Collections in State:</strong> Collections (such as {@code List}, {@code Set}, {@code Map}) are
+ * typically mutable even when contained within immutable objects. When updating state that contains collections,
+ * you should create copies of the collections rather than modifying them in place. This ensures that the
+ * previous state remains unchanged and prevents unintended side effects.
+ *
+ * <p><strong>Performance Considerations:</strong> Defensive copying of collections can introduce performance
+ * overhead, especially for large collections or frequent updates. In performance-critical scenarios, this
+ * recommendation can be carefully tuned by using mutable state with strict adherence to the safety guidelines
+ * mentioned above.
+ *
+ * <p>Using immutable records with defensive copying of collections eliminates concurrency concerns and is the
+ * preferred approach for state modeling in most cases.
+ *
  * @param <S> The type of the state for this entity
  * @param <E> The parent type of the event hierarchy for this entity, required to be a sealed interface
  */
