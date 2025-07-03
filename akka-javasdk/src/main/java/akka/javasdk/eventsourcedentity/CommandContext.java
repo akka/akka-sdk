@@ -7,40 +7,59 @@ package akka.javasdk.eventsourcedentity;
 import akka.javasdk.MetadataContext;
 import akka.javasdk.Tracing;
 
-/** An event sourced command context. */
+/**
+ * Context information available to Event Sourced Entity command handlers during command processing.
+ * Provides access to command metadata, entity identification, sequence information, and tracing capabilities.
+ * 
+ * <p>This context is automatically provided by the Akka runtime and can be accessed within
+ * command handlers using {@link EventSourcedEntity#commandContext()}.
+ */
 public interface CommandContext extends MetadataContext {
   /**
-   * The current sequence number of events in this entity.
+   * Returns the current sequence number of events in this entity. This represents the number
+   * of events that have been persisted for this entity instance.
    *
-   * @return The current sequence number.
+   * @return the current sequence number of persisted events
    */
   long sequenceNumber();
 
   /**
-   * The name of the command being executed.
+   * Returns the name of the command currently being executed. This corresponds to the
+   * method name of the command handler being invoked.
    *
-   * @return The name of the command.
+   * @return the name of the command being processed
    */
   String commandName();
 
   /**
-   * The id of the command being executed.
+   * Returns the command ID for the current command.
    *
-   * @return The id of the command.
-   * @deprecated not used anymore
+   * @return the command ID
+   * @deprecated This method is no longer used and will be removed in a future version
    */
   @Deprecated
   long commandId();
 
   /**
-   * The id of the entity that this context is for.
+   * Returns the unique identifier of the entity instance that this command is being executed on.
+   * This is the same ID used when calling the entity through a component client.
    *
-   * @return The entity id.
+   * @return the unique entity ID for this entity instance
    */
   String entityId();
 
+  /**
+   * Returns whether this entity has been marked for deletion.
+   *
+   * @return {@code true} if the entity has been deleted, {@code false} otherwise
+   */
   boolean isDeleted();
 
-  /** Access to tracing for custom app specific tracing. */
+  /**
+   * Provides access to tracing functionality for adding custom application-specific tracing
+   * information to the current command processing.
+   * 
+   * @return the tracing context for custom tracing operations
+   */
   Tracing tracing();
 }

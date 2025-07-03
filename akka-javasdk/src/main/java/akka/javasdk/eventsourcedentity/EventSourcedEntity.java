@@ -13,56 +13,100 @@ import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * The Event Sourced state model captures changes to data by storing events in a journal.
- * The current entity state is derived from the persisted events.
- * <p>
- * When implementing an Event Sourced Entity, you first define what will be its internal state (your domain model),
- * the commands it will handle and the events it will persist to modify its state.
- * <p>
- * Each command is handled by a command handler. Command handlers are methods returning an {@link Effect}.
- * When handling a command, you use the Effect API to:
- * <p>
+ * Event Sourced Entities are stateful components that persist changes as events in a journal rather than
+ * storing the current state directly. The current entity state is derived by replaying all persisted events.
+ * This approach provides a complete audit trail and enables reliable state replication.
+ * 
+ * <p>Event Sourced Entities provide strong consistency guarantees through entity sharding, where each
+ * entity instance is identified by a unique ID and distributed across the service cluster. Only one
+ * instance of each entity exists in the cluster at any time, ensuring sequential message processing
+ * without concurrency concerns.
+ * 
+ * <p>The entity state is kept in memory while active and can serve read requests or command validation
+ * without additional reads from the journal. Inactive entities are passivated and recover their state
+ * by replaying events from the journal when accessed again.
+ * 
+ * <h2>Implementation Steps</h2>
+ * <ol>
+ *   <li>Model the entity's state and its domain events</li>
+ *   <li>Implement behavior in command and event handlers</li>
+ * </ol>
+ * 
+ * <h2>Event Sourcing Model</h2>
+ * <p>Unlike traditional CRUD systems, Event Sourced Entities never update state directly. Instead:
  * <ul>
- *   <li>persist events and build a reply
- *   <li>directly returning to the caller if the command is not requesting any state change
- *   <li>rejected the command by returning an error
- *   <li>instruct the runtime to delete the entity
+ *   <li>Commands validate business rules and persist events representing state changes</li>
+ *   <li>Events are applied to update the entity state through the {@link #applyEvent(E)} method</li>
+ *   <li>The current state is always derived from the complete sequence of events</li>
  * </ul>
- *
- * <p>Each event is handled by the {@link #applyEvent(E)} method.
- * Events are required to inherit from a common sealed interface, and it's recommend to implement the {@link #applyEvent(E)} method using a switch statement.
- * As such, the compiler can check if all existing events are being handled.
- *
- *<pre>
- * {@code
- * // example of sealed event interface with concrete events implementing it
- * public sealed interface Event {
- *   @TypeName("created")
- *   public record UserCreated(String name, String email) implements Event {};
- *   @TypeName("email-updated")
- *   public record EmailUpdated(String newEmail) implements Event {};
- * }
- *
- * // example of applyEvent implementation
- * public User applyEvent(Event event) {
- *    return switch (event) {
- *      case UserCreated userCreated -> new User(userCreated.name, userCreated.email);
- *      case EmailUpdated emailUpdated -> this.copy(email = emailUpdated.newEmail);
- *    }
- * }
- * }
- *</pre>
- * <p>
- * Concrete classes can accept the following types to the constructor:
+ * 
+ * <h2>Command Handlers</h2>
+ * Command handlers are methods that return an {@link Effect} and define how the entity responds to commands.
+ * The Effect API allows you to:
  * <ul>
- *   <li>{@link akka.javasdk.eventsourcedentity.EventSourcedEntityContext}</li>
+ *   <li>Persist events and send a reply to the caller</li>
+ *   <li>Reply directly without persisting events</li>
+ *   <li>Return an error message</li>
+ *   <li>Delete the entity</li>
+ * </ul>
+ * 
+ * <h2>Event Handlers</h2>
+ * <p>Events must inherit from a common sealed interface, and the {@link #applyEvent(E)} method should
+ * be implemented using a switch statement for compile-time completeness checking.
+ * 
+ * <h2>Snapshots</h2>
+ * <p>Akka automatically creates snapshots as an optimization to avoid replaying all events during
+ * entity recovery. Snapshots are created after a configurable number of events and are handled
+ * transparently without requiring specific code.
+ * 
+ * <h2>Multi-region Replication</h2>
+ * Event Sourced Entities support multi-region replication for resilience and performance. Write requests
+ * are handled by the primary region, while read requests can be served from any region. Use
+ * {@link ReadOnlyEffect} for read-only operations that can be served from replicas.
+ * 
+ * <h2>Example Implementation</h2>
+ * <pre>{@code
+ * @ComponentId("shopping-cart")
+ * public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, ShoppingCartEvent> {
+ *   
+ *   public ShoppingCartEntity(EventSourcedEntityContext context) {
+ *     // Constructor can accept EventSourcedEntityContext and custom dependency types
+ *   }
+ *   
+ *   @Override
+ *   public ShoppingCart emptyState() {
+ *     return new ShoppingCart(entityId, Collections.emptyList(), false);
+ *   }
+ *   
+ *   public Effect<Done> addItem(LineItem item) {
+ *     var event = new ShoppingCartEvent.ItemAdded(item);
+ *     return effects()
+ *         .persist(event)
+ *         .thenReply(newState -> Done.getInstance());
+ *   }
+ *   
+ *   @Override
+ *   public ShoppingCart applyEvent(ShoppingCartEvent event) {
+ *     return switch (event) {
+ *       case ShoppingCartEvent.ItemAdded evt -> currentState().onItemAdded(evt);
+ *       case ShoppingCartEvent.ItemRemoved evt -> currentState().onItemRemoved(evt);
+ *       case ShoppingCartEvent.CheckedOut evt -> currentState().onCheckedOut();
+ *     };
+ *   }
+ * }
+ * }</pre>
+ * 
+ * <p>Concrete classes can accept the following types in the constructor:
+ * <ul>
+ *   <li>{@link EventSourcedEntityContext} - provides entity context information</li>
  *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider} from the service setup</li>
  * </ul>
- * <p>
- * Concrete class must be annotated with {@link akka.javasdk.annotations.ComponentId}.
+ * 
+ * <p>Concrete classes must be annotated with {@link akka.javasdk.annotations.ComponentId} with a
+ * stable, unique identifier that cannot be changed after production deployment.
  *
- * @param <S> The type of the state for this entity.
- * @param <E> The parent type of the event hierarchy for this entity. Required to be a sealed interface.
+ * @param <S> The type of the state for this entity
+ * @param <E> The parent type of the event hierarchy for this entity, required to be a sealed interface
  */
 public abstract class EventSourcedEntity<S, E> {
 
@@ -73,23 +117,30 @@ public abstract class EventSourcedEntity<S, E> {
   private boolean handlingCommands = false;
 
   /**
-   * Implement by returning the initial empty state object. This object will be made available
-   * through the {@link #currentState()} method. This method is only called when the entity is initializing and
-   * there isn't yet a known state.
+   * Returns the initial empty state object for this entity. This state is used when the entity
+   * is first created and before any events have been persisted and applied.
    *
-   * <p>Also known as "zero state" or "neutral state".
+   * <p>Also known as "zero state" or "neutral state". This method is called when the entity
+   * is instantiated for the first time or when recovering from the journal without any persisted events.
    *
-   * <p>The default implementation of this method returns {@code null}. It can be overridden to
-   * return a more sensible initial state.
+   * <p>The default implementation returns {@code null}. Override this method to provide a more
+   * meaningful initial state for your entity.
+   *
+   * @return the initial state object, or {@code null} if no initial state is needed
    */
   public S emptyState() {
     return null;
   }
 
   /**
-   * Additional context and metadata for a command handler.
+   * Provides access to additional context and metadata for the current command being processed.
+   * This includes information such as the command name, entity ID, sequence number, and tracing context.
    *
-   * <p>It will throw an exception if accessed from constructor or inside the {@link #applyEvent(E)} method.
+   * <p>This method can only be called from within a command handler method. Attempting to access
+   * it from the constructor or inside the {@link #applyEvent(E)} method will result in an exception.
+   *
+   * @return the command context for the current command
+   * @throws IllegalStateException if accessed outside a command handler method
    */
   protected final CommandContext commandContext() {
     return commandContext.orElseThrow(
@@ -107,9 +158,14 @@ public abstract class EventSourcedEntity<S, E> {
   }
 
   /**
-   * Additional context and metadata when handling an event in the {@link #applyEvent(E)} method.
+   * Provides access to additional context and metadata when handling an event in the {@link #applyEvent(E)} method.
+   * This includes information such as the sequence number of the event being processed.
    *
-   * <p>It will throw an exception if accessed from constructor or command handler.
+   * <p>This method can only be called from within the {@link #applyEvent(E)} method. Attempting to access
+   * it from the constructor or command handler will result in an exception.
+   *
+   * @return the event context for the current event being processed
+   * @throws IllegalStateException if accessed outside the {@link #applyEvent(E)} method
    */
   protected final EventContext eventContext() {
     return eventContext.orElseThrow(
@@ -191,14 +247,18 @@ public abstract class EventSourcedEntity<S, E> {
   public abstract S applyEvent(E event);
 
   /**
-   * Returns the state as currently stored.
+   * Returns the current state of this entity as derived from all persisted events. This represents
+   * the latest state after applying all events in the journal.
    *
-   * <p>Note that modifying the state directly will not update it in storage.
-   * The state can only be updated through the {@link #applyEvent(E)} method.
+   * <p><strong>Important:</strong> Modifying the returned state object directly will not persist
+   * the changes. State can only be updated by persisting events through command handlers, which
+   * are then applied via the {@link #applyEvent(E)} method.
    *
-   * <p>This method can only be called when handling a command or an event. Calling it outside a
-   * method (eg: in the constructor) will raise a IllegalStateException exception.
+   * <p>This method can only be called from within a command handler or event handler method.
+   * Attempting to access it from the constructor or outside of command/event processing will
+   * result in an exception.
    *
+   * @return the current state of the entity, which may be {@code null} if no initial state is defined
    * @throws IllegalStateException if accessed outside a handler method
    */
   protected final S currentState() {
@@ -210,7 +270,15 @@ public abstract class EventSourcedEntity<S, E> {
   }
 
   /**
-   * Returns true if the entity has been deleted.
+   * Returns whether this entity has been marked for deletion. When an entity is deleted using
+   * {@code effects().persist(finalEvent).deleteEntity()}, it will still exist for some time
+   * before being completely removed.
+   *
+   * <p>After deletion, the entity can still handle read requests but no further events can be
+   * persisted. The entity and its events will be completely cleaned up after a default period
+   * of one week to allow downstream consumers time to process all events.
+   *
+   * @return {@code true} if the entity has been deleted, {@code false} otherwise
    */
   protected boolean isDeleted() {
     return deleted;
@@ -221,24 +289,19 @@ public abstract class EventSourcedEntity<S, E> {
   }
 
   /**
-   * An Effect is a description of what the runtime needs to do after the command is handled.
-   * You can think of it as a set of instructions you are passing to the runtime, which will process
-   * the instructions on your behalf.
-   * <p>
-   * Each component defines its own effects, which are a set of predefined
-   * operations that match the capabilities of that component.
-   * <p>
-   * An EventSourcedEntity Effect can either:
-   * <p>
+   * An Effect describes the actions that the Akka runtime should perform after a command handler
+   * completes. Effects are declarative instructions that tell the runtime how to persist events,
+   * send replies, or handle errors.
+   * 
+   * <p>Event Sourced Entity effects can:
    * <ul>
-   *   <li>persist events and send a reply to the caller
-   *   <li>directly reply to the caller if the command is not requesting any state change
-   *   <li>rejected the command by returning an error
-   *   <li>instruct the runtime to delete the entity
+   *   <li>Persist events and send a reply to the caller</li>
+   *   <li>Reply directly to the caller without persisting events</li>
+   *   <li>Return an error message to reject the command</li>
+   *   <li>Delete the entity after persisting a final event</li>
    * </ul>
-   * <p>
    *
-   * @param <T> The type of the message that must be returned by this call.
+   * @param <T> The type of the message that must be returned by this call
    */
   public interface Effect<T> {
 
