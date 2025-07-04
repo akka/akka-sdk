@@ -7,6 +7,8 @@ import demo.multiagent.application.ActivityView.ActivityEntry;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
+import com.typesafe.config.ConfigFactory;
+
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -16,6 +18,9 @@ public class ActivityViewTest extends TestKitSupport {
   @Override
   protected TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT
+         // Bootstrap will check if key exists when running integation tests.
+         // We don't need a real one though.
+        .withAdditionalConfig(ConfigFactory.parseString("akka.javasdk.agent.openai.api-key=fake-key"))
         .withWorkflowIncomingMessages("agent-team");
   }
 
