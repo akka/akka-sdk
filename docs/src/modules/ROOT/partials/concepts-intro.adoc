@@ -46,9 +46,9 @@ You create a stream processor to analyze and act against a stream of data with t
 
 == Components
 
-You use xref:reference:glossary.adoc#component[Akka _Components_] to build your application. These Components are crucial for ensuring responsiveness. Here is a brief overview of each. Except endpoints, Akka components will live in your `application` package.
+You build your application using xref:reference:glossary.adoc#component[Akka _Components_]. These components provide structure and help maintain responsiveness. Below is a brief overview of each.
 
-Akka components are marked with a `@ComponentId` or `@HttpEndpoint` annotation to identify them to the runtime.
+With the exception of endpoints, Akka components are placed in your `application` package. Endpoints live in the `api` package. Components are identified to the runtime with either a `@ComponentId` or `@HttpEndpoint` annotation.
 
 === Agents
 
