@@ -17,7 +17,6 @@ src/
  │   ├── java/acme/planningagent/
  │   │   ├── api/           # External MCP, HTTP, gRPC endpoints
  │   │   ├── application/   # Akka components: Agents, Entities, Views, Consumers, Timers, Workflows
- │   │   │   └── tool/      # MCP or functional tools
  │   │   └── domain/        # Business logic
  │   └── resources/
  └── test/
@@ -25,7 +24,6 @@ src/
 
 * The `api` directory exposes functionality to the outside world. This includes HTTP, gRPC, or MCP interfaces that forward requests to the application layer.
 * The `application` directory contains the building blocks provided by Akka, implemented by you. It includes components such as `Agent`, `Entity`, `View`, `Workflow`, `Timer`, and `Consumer`.
-* A `tool` subdirectory may be included for MCP tools that are used by Agents or made available through endpoints.
 * The `domain` directory holds plain Java classes that describe business rules and domain models. These are not tied to Akka or the runtime. Many use `record` to reduce boilerplate. You can test this logic without starting Akka or the runtime. This keeps the code focused and easier to maintain.
 * The `resources` directory includes configuration files and other static content.
 * The `test` directory contains unit and integration tests. Its structure mirrors `main` to make it easier to relate tests to the code they verify.
