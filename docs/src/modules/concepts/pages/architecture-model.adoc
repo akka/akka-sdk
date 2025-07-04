@@ -16,7 +16,7 @@ src/
  ├── main/
  │   ├── java/acme/planningagent/
  │   │   ├── api/           # External MCP, HTTP, gRPC endpoints
- │   │   ├── application/   # Akka components: Agents, Entities, Views, Consumers, Timers, Workflows
+ │   │   ├── application/   # Akka components: Agents, Workflows, Entities, etc.
  │   │   └── domain/        # Business logic
  │   └── resources/
  └── test/
