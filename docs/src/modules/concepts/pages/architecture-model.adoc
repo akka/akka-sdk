@@ -40,6 +40,8 @@ To maintain modularity:
 - The API layer should not call the domain layer directly.
 - Inner layers should not depend on or be aware of outer layers.
 
+For more on coding structure and practical considerations, see the xref:java:coding-guidelines.adoc[coding guidelines].
+
 === Domain
 
 This layer contains business rules and domain concepts. It does not depend on Akka or other runtime concerns. These are plain Java classes, often using `record` to reduce boilerplate. Examples include logic to enforce limits, compute totals, or apply rules.
