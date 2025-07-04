@@ -78,7 +78,7 @@ image:ROOT:key-value-entity.png[Key Value Entities,width=100,float=left] _Key Va
 
 === Views
 
-image:ROOT:view.png[Views,width=100,float=left] _Views_ provide a way to materialize read only state from multiple entities based on a query. You can create views from Key Value Entities, Event Sourced Entities, and by subscribing to a topic. For more information see xref:java:views.adoc[Views].
+image:ROOT:view.png[Views,width=100,float=left] _Views_ provide a way to materialize read-only state from different parts of the system. A view can be defined from Key Value Entity state changes, Event Sourced Entity events, Workflow state transitions, messages from subscribed broker topics, or events received from another Akka service. For more information see xref:java:views.adoc[Views].
 
 // break the paragraph to avoid floating on the image above.
 ++++
