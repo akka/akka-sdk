@@ -40,7 +40,7 @@ To maintain modularity:
 - The API layer should not call the domain layer directly.
 - Inner layers should not depend on or be aware of outer layers.
 
-For more on coding structure and practical considerations, see the xref:java:coding-guidelines.adoc[coding guidelines].
+For more on coding structure and practical considerations, see the xref:java:ai-coding-assistant-guidelines.adoc[coding guidelines].
 
 === Domain
 
