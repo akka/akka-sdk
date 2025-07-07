@@ -6,14 +6,13 @@ package akka.javasdk.workflow;
 
 import akka.annotation.InternalApi;
 import akka.javasdk.Metadata;
-import akka.javasdk.impl.workflow.WorkflowEffectImpl;
+import akka.javasdk.impl.workflow.WorkflowEffects;
 import akka.javasdk.timer.TimerScheduler;
 import akka.javasdk.workflow.Workflow.RecoverStrategy.MaxRetries;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -171,7 +170,11 @@ public abstract class Workflow<S> {
 
 
   protected final Effect.Builder<S> effects() {
-    return WorkflowEffectImpl.apply();
+    return WorkflowEffects.createEffectBuilder();
+  }
+
+  protected final StepEffect.Builder<S> stepEffects() {
+    return WorkflowEffects.createStepEffectBuilder();
   }
 
   /**
@@ -393,6 +396,7 @@ public abstract class Workflow<S> {
        */
       StepEffect delete();
 
+      StepEffect error(String description);
 
     }
 
@@ -425,6 +429,8 @@ public abstract class Workflow<S> {
        * The actual workflow state deletion is done with a configurable delay to allow downstream consumers to observe that fact.
        */
       StepEffect delete();
+
+      StepEffect error(String description);
     }
 
   }

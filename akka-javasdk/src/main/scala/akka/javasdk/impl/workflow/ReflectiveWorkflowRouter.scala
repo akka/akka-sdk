@@ -12,19 +12,21 @@ import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.WorkflowStepNotFound
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.WorkflowStepNotSupported
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.Delete
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.End
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.ErrorEffectImpl
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.NoPersistence
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.NoReply
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.NoTransition
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.Pause
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.Persistence
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.ReplyValue
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.StepTransition
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.Transition
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.TransitionalEffectImpl
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.UpdateState
+import akka.javasdk.impl.workflow.WorkflowEffects.Delete
+import akka.javasdk.impl.workflow.WorkflowEffects.End
+import akka.javasdk.impl.workflow.WorkflowEffects.NoPersistence
+import akka.javasdk.impl.workflow.WorkflowEffects.NoTransition
+import akka.javasdk.impl.workflow.WorkflowEffects.Pause
+import akka.javasdk.impl.workflow.WorkflowEffects.Persistence
+import akka.javasdk.impl.workflow.WorkflowEffects.StepTransition
+import akka.javasdk.impl.workflow.WorkflowEffects.Transition
+import akka.javasdk.impl.workflow.WorkflowEffects.UpdateState
+import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl
+import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.ErrorEffectImpl
+import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.NoReply
+import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.ReplyValue
+import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.TransitionalEffectImpl
+import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowStepEffectImpl.StepEffectImpl
 import akka.javasdk.timer.TimerScheduler
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
@@ -189,9 +191,8 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     descriptor
       .findStepMethodByName(stepName)
       .map { method =>
-        val effect = method.invoke(workflow)
-        println(effect)
-        ???
+        val effect = Future { method.invoke(workflow) }
+        effect.map(toSpiStepTransitionalEffect)
       }
       // fallback to step call
       .getOrElse(tryCallStep(stepName))
@@ -311,4 +312,11 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       case trEff: TransitionalEffectImpl[_, _] =>
         new SpiWorkflow.TransitionalOnlyEffect(handleState(trEff.persistence), toSpiTransition(trEff.transition))
     }
+
+  private def toSpiStepTransitionalEffect(effect: Workflow.StepEffect): SpiWorkflow.StepTransitionalEffect =
+    effect match {
+      case stepEff: StepEffectImpl[_, _] =>
+        new SpiWorkflow.StepTransitionalEffect(handleState(stepEff.persistence), toSpiTransition(stepEff.transition))
+    }
+
 }
