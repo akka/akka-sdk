@@ -13,7 +13,6 @@ import akka.javasdk.workflow.Workflow;
 import akkajavasdk.components.actions.echo.Message;
 import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +35,8 @@ public class TransferWorkflow extends Workflow<TransferState> {
 
   @Override
   public Settings settings() {
-    return settingsBuilder()
+    return Settings
+      .builder()
       .timeout(Duration.ofSeconds(10))
       .build();
   }

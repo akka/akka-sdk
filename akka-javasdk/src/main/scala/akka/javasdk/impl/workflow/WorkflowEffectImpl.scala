@@ -21,7 +21,6 @@ import akka.javasdk.Metadata
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.Delete
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.ReadOnlyEffectImpl
 import akka.javasdk.workflow.Workflow.Effect
-import akka.javasdk.workflow.Workflow.Effect.Builder
 import akka.javasdk.workflow.Workflow.Effect.PersistenceEffectBuilder
 import akka.javasdk.workflow.Workflow.Effect.TransitionalEffect
 import akka.javasdk.workflow.Workflow.ReadOnlyEffect
@@ -94,7 +93,7 @@ object WorkflowEffectImpl {
  */
 @InternalApi
 case class WorkflowEffectImpl[S, T](persistence: Persistence[S], transition: Transition, reply: Reply[T])
-    extends Builder[S]
+    extends Effect.Builder[S]
     with ReadOnlyEffect[T]
     with Effect[T] {
 
