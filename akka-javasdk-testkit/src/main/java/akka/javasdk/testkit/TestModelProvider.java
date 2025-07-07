@@ -27,7 +27,7 @@ import java.util.stream.Stream;
  * A {@code ModelProvider} implementation for testing purposes that does not use a real AI model.
  * It allows defining mock responses based on input predicates.
  */
-final public class TestModelProvider implements ModelProvider.Custom {
+public final class TestModelProvider implements ModelProvider.Custom {
 
   /**
    * Represents an AI response, which can include a message and/or list of tool invocation requests.
@@ -117,7 +117,7 @@ final public class TestModelProvider implements ModelProvider.Custom {
   /**
    * Base class for building reply configurations for specific input predicates.
    */
-  sealed public static class WhenClause {
+  public static sealed class WhenClause {
 
     final TestModelProvider provider;
     final Predicate<InputMessage> predicate;
@@ -168,7 +168,7 @@ final public class TestModelProvider implements ModelProvider.Custom {
   /**
    * Specialized reply builder for handling tool result messages.
    */
-  final public static class WhenToolReplyClause extends WhenClause  {
+  public static final class WhenToolReplyClause extends WhenClause  {
 
     public WhenToolReplyClause(TestModelProvider provider, Predicate<InputMessage> predicate) {
       super(provider, predicate);
