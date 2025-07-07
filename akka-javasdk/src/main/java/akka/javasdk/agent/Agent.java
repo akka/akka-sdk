@@ -7,12 +7,15 @@ package akka.javasdk.agent;
 import akka.annotation.InternalApi;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.Metadata;
+import akka.javasdk.UserException;
 import akka.javasdk.annotations.FunctionTool;
+import akka.javasdk.client.ComponentClient;
 import akka.javasdk.impl.agent.AgentStreamEffectImpl;
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
 /**
@@ -222,13 +225,23 @@ public abstract class Agent {
       <T> Agent.Effect<T> reply(T message, Metadata metadata);
 
       /**
-       * Create an error reply without calling the model
+       * Create an error reply without calling the model. A short version of {{@code effects().error(new UserException(message))}}.
        *
-       * @param description The description of the error.
+       * @param message The error message.
        * @param <T> The type of the message that must be returned by this call.
        * @return An error reply.
        */
-      <T> Agent.Effect<T> error(String description);
+      <T> Agent.Effect<T> error(String message);
+
+      /**
+       * Create an error reply. {@link UserException} will be serialized and sent to the client.
+       * It's possible to catch it with try-catch statement or {@link CompletionStage} API when using async {@link ComponentClient} API.
+       *
+       * @param userException The user exception to be returned.
+       * @param <T> The type of the message that must be returned by this call.
+       * @return An error reply.
+       */
+      <T> Agent.Effect<T> error(UserException userException);
 
     }
 
@@ -475,12 +488,21 @@ public abstract class Agent {
       Agent.StreamEffect reply(String message, Metadata metadata);
 
       /**
-       * Create an error reply without calling the model
+       * Create an error reply without calling the model. A short version of {{@code streamEffects().error(new UserException(message))}}.
        *
-       * @param description The description of the error.
+       * @param message The error message.
        * @return An error reply.
        */
-      Agent.StreamEffect error(String description);
+      Agent.StreamEffect error(String message);
+
+      /**
+       * Create an error reply. {@link UserException} will be serialized and sent to the client.
+       * It's possible to catch it with try-catch statement.
+       *
+       * @param userException The user exception to be returned.
+       * @return An error reply.
+       */
+      Agent.StreamEffect error(UserException userException);
 
 
       Builder memory(MemoryProvider provider);

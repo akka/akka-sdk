@@ -4,6 +4,7 @@ import static akka.javasdk.http.HttpResponses.badRequest;
 import static akka.javasdk.http.HttpResponses.ok;
 
 import akka.http.javadsl.model.HttpResponse;
+import akka.javasdk.UserException;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
@@ -11,8 +12,7 @@ import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import counter.application.CounterByValueView;
 import counter.application.CounterEntity;
-import counter.application.CounterEntity.CounterResult.ExceedingMaxCounterValue;
-import counter.application.CounterEntity.CounterResult.Success;
+import counter.application.CounterEntity.CounterLimitExceededException;
 import counter.application.CounterTopicView;
 import java.util.List;
 
@@ -58,21 +58,33 @@ public class CounterEndpoint {
 
   //end::increaseWithError[]
 
-  //tag::increaseWithResult[]
-  @Post("/{counterId}/increase-with-result/{value}")
-  public HttpResponse increaseWithResult(String counterId, Integer value) {
-    var counterResult = componentClient
-      .forEventSourcedEntity(counterId)
-      .method(CounterEntity::increaseWithResult)
-      .invoke(value);
-
-    return switch (counterResult) { // <1>
-      case Success success -> ok(success.value());
-      case ExceedingMaxCounterValue e -> badRequest(e.message());
-    };
+  //tag::increaseWithErrorHandling[]
+  @Post("/{counterId}/increase-with-error-handling/{value}")
+  public HttpResponse increaseWithErrorHandling(String counterId, Integer value) {
+    try {
+      var result = componentClient.forEventSourcedEntity(counterId)
+        .method(CounterEntity::increaseWithError)
+        .invoke(value);
+      return ok(result);
+    } catch (UserException e) { // <1>
+      return badRequest("rejected: " + value);
+    }
   }
+  //end::increaseWithErrorHandling[]
 
-  //end::increaseWithResult[]
+  //tag::increaseWithException[]
+  @Post("/{counterId}/increase-with-exception/{value}")
+  public HttpResponse increaseWithException(String counterId, Integer value) {
+    try {
+      var result = componentClient.forEventSourcedEntity(counterId)
+        .method(CounterEntity::increaseWithException)
+        .invoke(value);
+      return ok(result);
+    } catch (CounterLimitExceededException e) { // <1>
+      return badRequest("rejected: " + value);
+    }
+  }
+  //end::increaseWithException[]
 
   @Post("/{counterId}/multiply/{value}")
   public Integer multiply(String counterId, Integer value) {

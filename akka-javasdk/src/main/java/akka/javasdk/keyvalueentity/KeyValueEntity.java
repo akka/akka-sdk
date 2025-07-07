@@ -6,9 +6,12 @@ package akka.javasdk.keyvalueentity;
 
 import akka.annotation.InternalApi;
 import akka.javasdk.Metadata;
+import akka.javasdk.UserException;
+import akka.javasdk.client.ComponentClient;
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityEffectImpl;
 
 import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Key Value Entities are stateful components that persist their complete state on every change.
@@ -290,11 +293,21 @@ public abstract class KeyValueEntity<S> {
        * Creates an error reply to reject the command and inform the caller of the failure.
        * The entity state will not be modified when returning an error.
        *
-       * @param description a description of the error that occurred
+       * @param message the error message.
        * @param <T> the type of the expected reply message
        * @return a read-only effect containing the error
        */
-      <T> ReadOnlyEffect<T> error(String description);
+      <T> ReadOnlyEffect<T> error(String message);
+
+      /**
+       * Create an error reply. {@link UserException} will be serialized and sent to the client.
+       * It's possible to catch it with try-catch statement or {@link CompletionStage} API when using async {@link ComponentClient} API.
+       *
+       * @param userException The user exception to be returned.
+       * @param <T> The type of the message that must be returned by this call.
+       * @return An error reply.
+       */
+      <T> ReadOnlyEffect<T> error(UserException userException);
 
     }
 

@@ -4,9 +4,11 @@
 
 package akkajavasdk.components.keyvalueentities.user;
 
+import akka.javasdk.UserException;
 import akkajavasdk.Ok;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
+import akkajavasdk.components.MyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,5 +73,21 @@ public class UserEntity extends KeyValueEntity<User> {
         currentState());
 
     throw new RuntimeException("Forceful restarting entity!");
+  }
+
+  public Effect<String> run(String errorType) {
+    if ("errorMessage".equals(errorType)) {
+      return effects().error(errorType);
+    } else if ("errorUserException".equals(errorType)) {
+      return effects().error(new UserException(errorType));
+    } else if ("errorMyException".equals(errorType)) {
+      return effects().error(new MyException(errorType, new MyException.SomeData("some data")));
+    } else if ("throwMyException".equals(errorType)) {
+      throw new MyException(errorType, new MyException.SomeData("some data"));
+    } else if ("throwRuntimeException".equals(errorType)) {
+      throw new RuntimeException(errorType);
+    } else {
+      return effects().reply("No error triggered for: " + errorType);
+    }
   }
 }

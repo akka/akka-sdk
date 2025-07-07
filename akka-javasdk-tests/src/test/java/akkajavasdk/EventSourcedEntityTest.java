@@ -4,8 +4,10 @@
 
 package akkajavasdk;
 
+import akka.javasdk.UserException;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
+import akkajavasdk.components.MyException;
 import akkajavasdk.components.eventsourcedentities.counter.Counter;
 import akkajavasdk.components.eventsourcedentities.counter.CounterCommand;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEntity;
@@ -214,6 +216,46 @@ public class EventSourcedEntityTest extends TestKitSupport {
     Awaitility.await().untilAsserted(() ->
         assertThat(StaticTestBuffer.getValue(AbstractTextConsumer.BUFFER_KEY)).isEqualTo("my text")
     );
+  }
+
+  @Test
+  public void shouldTestExceptions() {
+    var exc1 = Assertions.assertThrows(UserException.class, () -> {
+      componentClient.forEventSourcedEntity("1")
+        .method(CounterEntity::run)
+        .invoke("errorMessage");
+    });
+    assertThat(exc1.getMessage()).isEqualTo("errorMessage");
+
+    var exc2 = Assertions.assertThrows(UserException.class, () -> {
+      componentClient.forEventSourcedEntity("1")
+        .method(CounterEntity::run)
+        .invoke("errorUserException");
+    });
+    assertThat(exc2.getMessage()).isEqualTo("errorUserException");
+
+    var exc3 = Assertions.assertThrows(MyException.class, () -> {
+      componentClient.forEventSourcedEntity("1")
+        .method(CounterEntity::run)
+        .invoke("errorMyException");
+    });
+    assertThat(exc3.getMessage()).isEqualTo("errorMyException");
+    assertThat(exc3.getData()).isEqualTo(new MyException.SomeData("some data"));
+
+    var exc4 = Assertions.assertThrows(MyException.class, () -> {
+      componentClient.forEventSourcedEntity("1")
+        .method(CounterEntity::run)
+        .invoke("throwMyException");
+    });
+    assertThat(exc4.getMessage()).isEqualTo("throwMyException");
+    assertThat(exc4.getData()).isEqualTo(new MyException.SomeData("some data"));
+
+    var exc5 = Assertions.assertThrows(RuntimeException.class, () -> {
+      componentClient.forEventSourcedEntity("1")
+        .method(CounterEntity::run)
+        .invoke("throwRuntimeException");
+    });
+    assertThat(exc5.getMessage()).contains("Unexpected error "); //it's not the original message, but the one from the runtime
   }
 
 

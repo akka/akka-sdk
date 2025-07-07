@@ -6,6 +6,7 @@ package akka.javasdk.impl.keyvalueentity
 
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
+import akka.javasdk.UserException
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
@@ -62,8 +63,13 @@ private[javasdk] final class KeyValueEntityEffectImpl[S]
     this.asInstanceOf[KeyValueEntityEffectImpl[T]]
   }
 
-  override def error[T](description: String): KeyValueEntityEffectImpl[T] = {
-    _secondaryEffect = ErrorReplyImpl(description)
+  override def error[T](message: String): KeyValueEntityEffectImpl[T] = {
+    _secondaryEffect = ErrorReplyImpl(new UserException(message))
+    this.asInstanceOf[KeyValueEntityEffectImpl[T]]
+  }
+
+  override def error[T](userException: UserException): KeyValueEntityEffectImpl[T] = {
+    _secondaryEffect = ErrorReplyImpl(userException)
     this.asInstanceOf[KeyValueEntityEffectImpl[T]]
   }
 

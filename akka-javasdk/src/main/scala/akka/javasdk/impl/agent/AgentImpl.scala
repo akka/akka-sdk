@@ -69,13 +69,15 @@ import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
-
 import java.time.Instant
+
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import scala.util.control.NonFatal
+
+import akka.javasdk.UserException
 
 /**
  * INTERNAL API
@@ -151,8 +153,8 @@ private[impl] final class AgentImpl[A <: Agent](
 
       def errorOrReply: Either[SpiAgent.Error, (BytesPayload, SpiMetadata)] = {
         secondaryEffect match {
-          case ErrorReplyImpl(description) =>
-            Left(new SpiAgent.Error(description))
+          case ErrorReplyImpl(userException) =>
+            Left(new SpiAgent.Error(userException.getMessage, Some(serializer.toBytes(userException))))
           case MessageReplyImpl(message, m) =>
             val replyPayload = serializer.toBytes(message)
             val metadata = MetadataImpl.toSpi(m)
@@ -224,10 +226,13 @@ private[impl] final class AgentImpl[A <: Agent](
       Future.successful(spiEffect)
 
     } catch {
+      case e: UserException =>
+        val serializedException = serializer.toBytes(e)
+        Future.successful(new SpiAgent.ErrorEffect(error = new SpiAgent.Error(e.getMessage, Some(serializedException))))
       case e: HandlerNotFoundException =>
         throw AgentException(command.name, e.getMessage, Some(e))
       case BadRequestException(msg) =>
-        Future.successful(new SpiAgent.ErrorEffect(error = new SpiAgent.Error(msg)))
+        Future.successful(new SpiAgent.ErrorEffect(error = new SpiAgent.Error(msg, None)))
       case e: AgentException => throw e
       case NonFatal(error) =>
         throw AgentException(command.name, s"Unexpected failure: $error", Some(error))
