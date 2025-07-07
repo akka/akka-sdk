@@ -22,12 +22,12 @@ It is also possible to deploy a pre-built sample project in https://console.akka
 | <<Customer service chat workflow>>          | ✅ | ✅ | ✅ |
 | <<Trip booking with tools>>                 | ✅ | ✅ | ✅ | ✅ 
 | <<Multi-source health sensor analysis>>     |    | ✅ | ✅ | ✅
+| <<Akka Chess>>                              | 🚧 | 🚧 | 🚧 | 🚧 
 | <<Shopping cart>>                           | ✅ |    |    |
 | <<Customer data store>>                     |    |    |    |
 | <<Wallet transfer>>           | ✅ |    |    |
 | <<Wallet transfer with failure compensation>> | ✅ |  |   |
 | <<Choreographed user signup flow>>          |    |    |    |  
-| <<Akka Chess>>                              | 🚧 | 🚧 | 🚧 | 🚧 
 
 |===
 
