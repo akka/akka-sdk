@@ -13,7 +13,7 @@ content:
 
 ui:
   bundle:
-    url: ./supplemental_ui/bundle/akka-theme-ui-006-bundle.zip
+    url: ./supplemental_ui/bundle/akka-theme-ui-007-bundle.zip
     snapshot: true
   default_layout: notification
   supplemental_files: ./supplemental_ui
