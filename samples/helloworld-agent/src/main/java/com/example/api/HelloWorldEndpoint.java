@@ -1,12 +1,10 @@
 package com.example.api;
 
 import akka.javasdk.annotations.Acl;
-import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import com.example.application.HelloWorldAgent;
-import java.util.UUID;
 
 // tag::class[]
 /**

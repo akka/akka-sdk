@@ -7,6 +7,7 @@ import akka.javasdk.ServiceSetup;
 import akka.javasdk.annotations.Setup;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
+import com.typesafe.config.Config;
 
 // tag::mongodb[]
 // tag::knowledge[]
@@ -14,13 +15,9 @@ import com.mongodb.client.MongoClients;
 public class Bootstrap implements ServiceSetup {
 
   // end::knowledge[]
-  public Bootstrap() {
-    if (!KeyUtils.hasValidKeys()) {
-      throw new IllegalStateException(
-        "No API keys found. Make sure you have OPENAI_API_KEY and MONGODB_ATLAS_URI " +
-        "defined as environment variable."
-      );
-    }
+
+  public Bootstrap(Config config) {
+    KeyUtils.checkKeys(config);
   }
 
   // tag::knowledge[]
