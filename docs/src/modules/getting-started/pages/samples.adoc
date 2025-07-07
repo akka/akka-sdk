@@ -149,7 +149,7 @@ This example is a user registration service where the user's new signup flow imp
 link:https://github.com/akka-samples/choreography-saga-quickstart[Github Repository, window="new"]
 
 == Akka Chess
-This example represents a complete, resilient, automatically scalable, event-sourced chess game. We will be adding a guided tour that will include adding an agent to act as a non-player "brain" that plays chess in realtime against human players.
+This example represents a complete, resilient, automatically scalable, event-sourced chess game. We will be adding a guided tour that will include adding an agent to act as a non-player "brain" that plays chess in real time against human players.
 
 [%hardbreaks]
 **Concepts**: _Embedded UI_, _Entity_, _Workflow_, _View_, _Timed Action_
