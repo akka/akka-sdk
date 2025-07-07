@@ -117,7 +117,7 @@ xref:getting-started:build-and-deploy-shopping-cart.adoc[Step-by-step guide]
 link:https://github.com/akka-samples/shopping-cart-quickstart[Github Repository, window="new"]
 
 == Customer data store
-This sample illustrates the use of entities and query capabilities with a view. It shows a simple set of traditional queries and the standard create, update, and delete mutations mutations through events.
+This sample illustrates the use of entities and query capabilities with a view. It shows a simple set of traditional queries and the standard create, update, and delete mutations through events.
 
 [%hardbreaks]
 **Concepts**: _Entity_, _View_, _HTTP Endpoint_
