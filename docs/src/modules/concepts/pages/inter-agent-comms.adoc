@@ -50,7 +50,7 @@ The real solution to agent-to-agent communication may seem extreme: _never allow
 
 Agents need to do their one thing, and the work of composition, orchestration, and resilience should be left to a supervising workflow.
 
-So how do we actually communicate with other agents and do it the right way?
+How do we actually communicate with other agents and do it the right way?
 
 == Workflow orchestration
 
