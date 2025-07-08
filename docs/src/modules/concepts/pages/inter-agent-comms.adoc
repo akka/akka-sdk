@@ -42,7 +42,7 @@ On the surface this seems like a good idea, and that’s what makes it so danger
 
 The simple weather service can be used by any composition or arrangement of agents because it does one thing, and it does not call any other agents. If one agent relies on communicating with other specific agents, it has more consequences than just enforcing a rigid hierarchy.
 
-LLMs are unpredictable and unreliable, as are network communication and practically everything else in enterprise and cloud software. Real-world scenarios need to deal with low-level failures at the protocol level and high level failures that might require retries, goal adjustments, context queries, and more. Putting this logic all inside an agent can make it near impossible to use, reuse, or compose in different flows.
+Large language models (LLMs) are unpredictable and unreliable, as are network communication and practically everything else in enterprise and cloud software. Real-world scenarios need to deal with low-level failures at the protocol level and high level failures that might require retries, goal adjustments, context queries, and more. Putting this logic all inside an agent can make it near impossible to use, reuse, or compose in different flows.
 
 Agentic flows need to deal with things like timeouts and network partition events, especially when talking to relatively slow, token-streaming LLMs.
 
