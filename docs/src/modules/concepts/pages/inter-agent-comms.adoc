@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Agents can collaborate in many ways from orchestration to direct communication to other patterns like swarms and teams. Many of these communication patterns make for great demos but don’t scale well or run safely and securely in production environments.
+Agents can collaborate in many ways, from orchestration, to direct communication, to other patterns like swarms and teams. Many of these communication patterns make for great demos, but don’t scale well or run safely and securely in production environments.
 
 Further, the emergence of https://modelcontextprotocol.io/introduction[MCP], https://a2aprotocol.ai/[A2A], and https://agentcommunicationprotocol.dev/introduction/welcome[ACP] have made it (perhaps too) easy to enable direct communication between agentic services. This has led to many techniques for agent-to-agent communications: some extremely valuable and some deceptively dangerous. While Akka makes it simple to implement any of these techniques, it is worth exploring each of these patterns and anti-patterns in detail.
 
