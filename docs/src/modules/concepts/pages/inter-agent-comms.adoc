@@ -34,7 +34,7 @@ Endpoint (API) -> Agent | Avoid leveraging protocols such as HTTP, JSON-RPC, gRP
 
 == Why avoid certain inter-agent patterns
 
-Well-architected agents are built to do one thing; accomplish one overarching goal. Most agent frameworks, including Akka, make it simple to create multi-agent systems where one agent invokes another directly. These approaches often violate the “do one thing” rule.
+Well-architected agents are built to do one thing: accomplish one overarching goal. Most agent frameworks, including Akka, make it simple to create multi-agent systems where one agent invokes another directly. These approaches often violate the “do one thing” rule.
 
 Consider the example of a travel planning agent. This agent that makes travel recommendations might utilize other agents like an airline reservation agent, a weather agent, a traffic agent, and may optionally make use of half a dozen or more agents.
 
@@ -42,7 +42,7 @@ On the surface this seems like a good idea, and that’s what makes it so danger
 
 The simple weather service can be used by any composition or arrangement of agents because it does one thing, and it does not call any other agents. If one agent relies on communicating with other specific agents, it has more consequences than just enforcing a rigid hierarchy.
 
-LLMs are unpredictable and unreliable, as are network communication and practically everything else in enterprise and cloud software. Real-world scenarios need to deal with low-level failures at the protocol level and high level failures that might require retries, goal adjustments, context queries, and more. Putting this logic all inside an agent can make it near impossible to use, reuse, or compose in different flows.
+Large language models (LLMs) are unpredictable and unreliable, as are network communication and practically everything else in enterprise and cloud software. Real-world scenarios need to deal with low-level failures at the protocol level and high level failures that might require retries, goal adjustments, context queries, and more. Putting this logic all inside an agent can make it near impossible to use, reuse, or compose in different flows.
 
 Agentic flows need to deal with things like timeouts and network partition events, especially when talking to relatively slow, token-streaming LLMs.
 
@@ -54,11 +54,11 @@ How do we actually communicate with other agents and do it the right way?
 
 == Workflow orchestration
 
-The structure, sequence, scale, and resilience of multi-agent collaborations should be done through the use of Akka workflows. See the https://doc.akka.io/java/workflows.html[official documentation] for guides on general workflow use as well as how to build agentic workflows with sequential, parallel, state-transition, and event-driven logic. Implement Workflows across long-running processes with an unknown stop time by incorporating retries and failure logic within the orchestration. 
+The structure, sequence, scale, and resilience of multi-agent collaborations should be done through the Akka https://doc.akka.io/java/workflows.html[Workflow] component. See the https://doc.akka.io/java/workflows.html[official documentation] for guides on general Workflow use as well as how to build agentic workflows with sequential, parallel, state-transition, and event-driven logic. Implement Workflows across long-running processes with an unknown stop time by incorporating retries and failure logic within the orchestration. 
 
 == Component client
 
-There is an Akka component client for all of the Akka platform’s components, including agents. While an agent should not use this to talk to other agents, endpoints and workflows will use this to trigger and orchestrate agents.
+There is an Akka component client for all Akka components, including Agents. While an Agent should not use this to talk to other Agents, Endpoints and Workflows will use this to trigger and orchestrate Agents.
 
 The component client only works to communicate with components within the same service. Outside the service you'll need to use service-to-service eventing or standard protocols like HTTP, gRPC, or even MCP.
 
