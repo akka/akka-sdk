@@ -2,96 +2,79 @@
 
 include::ROOT:partial$include.adoc[]
 
-Akka applications are distributed by design. Although you can run many complex services on a single machine, they are meant to be distributed. This guide explains deployment and distribution in Akka.
+Akka services are distributed by design. You may run them locally, but they are built to operate across nodes without requiring changes to your code.
 
-== Deployment alternatives
+== Service packaging
 
-Akka provides three ways to run services:
+Services created with Akka components are composable. They can support agentic, transactional, analytics, edge, and digital twin systems. You may create a service with a single component or many.
 
-- Fully-automated regions with Akka Automated Operations (at https://console.akka.io[akka.io], optionally running in your cloud infrastructure)
-- Self-managed operations (in your infrastructure, or any cloud service)
-- Akka SDK development and testing (on the developer's machine)
+Services are packed into a single binary. You can deploy it to various infrastructures including Platform as a Service (PaaS), Kubernetes, Docker Compose, virtual machines, bare metal, or edge computing environments.
 
-Akka services run in all three modes **without** code modifications and leverage the fundamental underpinnings of Akka such as clustering. While standalone deployments enable running Akka on any infrastructure, some environments limit network access thus prohibit Akka clustering.
+Akka services cluster on their own. You do not need a service mesh. The clustering offers elasticity and resilience. Built-in features include data sharding, data rebalancing, traffic routing, and support for handling network partitions.
 
-=== Fully-automated regions with Akka Automated Operations
-image:concepts:deployment-model_akka-platform.png[Deployment model: Akka Automated Operations]
+== Deployment choices
 
-Full automation across multiple cloud provider regions and multiple cloud providers is available through Akka's fully-managed platform. You choose to run your Akka services in
+Akka supports three deployment models. Behaviour remains consistent across them, and code changes are not needed when switching modes.
 
-- multi-tenant clusters (for simplicity),
-- private regions in your VPC (managed by Akka), or
-- self-hosted regions (managed by you).
+[cols="1,3", options="header"]
+|===
+|Deployment Model |Description
 
-Akka Automated Operations manages the fully-automated regions running your Akka services and takes responsibility for SLAs tied to elasticity, agility, and resilience of your Akka services.
+|Development
+|Developers can build, run, and test multi-service projects locally without needing cloud infrastructure. The Akka SDK provides persistence, clustering, service discovery, and integration features. This is the default when any service using Akka SDK is built. You may also xref:java:running-locally.adoc#_local_console[run the local console] for tracing and debugging.
 
-=== Self-managed nodes
-image:concepts:deployment-model_self-managed.png[Deployment model: self-managed operations]
+|Self-managed Operations
+|Akka clusters xref:concepts:concepts.adoc#_service_packaging[can be run on your infrastructure]: virtual machines, containers, Platform as a Service (PaaS), edge, unikernels, or Kubernetes. You will need to configure routing, certificates, networking, and persistence yourself. Some PaaS systems may block network access, affecting clustering. In those cases, single-node operation is possible. Observability is available through the Akka console or by xref:operations:observability-and-monitoring/observability-exports.adoc[exporting logs, metrics, and traces].
 
-For organizations that want control over how Akka services are installed, updated, and maintained. Akka services are packaged into standalone binaries with Akka clustering for scaling and deploy to self-managed nodes. You are responsible for separately managing secure connectivity, routes, installation, deployment, and persistence.
+|Akka Automated Operations (AAO)
+|This optional product helps automate day 2 operations. It provides a global control plane for managing federated regions, along with an application plane for running services in a secure way. Services can be deployed from the Akka CLI to either Akka’s serverless cloud or a privately managed VPC region.
 
-=== Akka SDK development and testing
-image:concepts:deployment-model_akka-sdk.png[Deployment model: development and testing]
+AAO supports multi-region setups, including replication of durable state, failover arrangements, and data pinning for compliance needs. It provides elasticity based on observed traffic, memory auto-scaling, rolling upgrades without downtime, and access control at the organizational level. Observability is available through the https://console.akka.io[Akka console, window="new"] or by xref:operations:observability-and-monitoring/observability-exports.adoc[exporting logs, metrics, and traces].
 
-During development, Akka services run directly on the developers' machines, enabling fast iteration cycles without the hassle of shared infrastructure.
+AAO monitors traffic and system conditions and adjusts deployments to meet targets for availability and performance.
+|===
 
-== Logical deployment
+image:concepts:akka-automated-operations.png[Akka Automated Operations]
 
-In Akka the logical unit of deployment is a Service. A service contains your components, and it deploys into a project. The hierarchy is described below.
+== Logical deployment model
 
-=== Project
-A project is the root of one or more services that are meant to be deployed and run together. The project is a logical container for these services and provides some common management capabilities. Projects contain a list of xref:concepts:deployment-model.adoc#_region[regions] that they deploy to. One of the regions will always be the *primary region* which acts as the source of resources to replicate between regions. This will be the first region that deployments roll out to. By default, the primary region is the first region specified when xref:operations:projects/create-project.adoc[creating a project]. More detail on regions is covered below in xref:concepts:deployment-model.adoc#_physical_deployment[physical deployment].
+=== Services
 
-=== Service(s)
-xref:operations:services/index.adoc[] are the core unit of deployment in Akka. They equate to the concept of a microservice and contain all your components and objects as described in  xref:concepts:architecture-model.adoc[]. A project contains one or more services. Services can be started, stopped, and paused independently. They can also be scaled independently making them also the unit of scale.
+A xref:operations:services/index.adoc[service] is the main unit of deployment. It includes all components as described in xref:concepts:architecture-model.adoc[project structure] and is packaged into a binary. Services may be started, stopped, paused, or scaled independently.
 
-== Physical deployment 
+=== Projects
 
-Akka services run in a cluster. A cluster is an instance of the Akka runtime which is spread over multiple machines in a given geographical place, also known as an Akka cluster. We call that place a xref:concepts:deployment-model.adoc#_region[region]. In our cloud service a region corresponds to a region from a cloud infrastructure provider such as AWS, Azure, or Google Cloud. "US East" is an AWS region that contains multiple Availability Zones: for Akka this is just a region. By default, Akka spans availability zones in our cloud.
+A project contains one or more services intended to be deployed together. It provides shared management capabilities. In AAO, projects also specify regions for deployment. The first region listed becomes the primary and initial deployment target when xref:operations:projects/create-project.adoc[creating a project].
 
-=== Region
-xref:operations:organizations/regions.adoc[] are specific clusters running Akka in a specific place. Regions are designed to run independently for greater availability. They are also designed to replicate data asynchronously between each other. Every Akka xref:concepts:deployment-model.adoc#_project[project] specifies a list of one or more regions in which it runs.
+== Physical deployment model
 
-In addition to your services from a project, a region also has endpoints for your API. You define endpoints within the xref:concepts:architecture-model.adoc#_api[API layer] and Akka will expose them. They will be unique to each region. That is they will have unique DNS, much like AWS services S3 and SQS do.
+Akka services run in clusters. A cluster is a single Akka runtime spanning multiple machines in a geographical location called a region.
 
-xref:operations:projects/container-registries.adoc[Container registries] exist in all Akka.io regions so that the images that are your packaged services are in close proximity to the compute they will run on.
+With self-managed operations, a region maps to one cluster. With AAO, you can have multiple regions, each with its own clusters. These may be federated through a global control plane. This enables service replication across regions and simplifies service discovery.
 
-A given cloud provider region _may_ have many Akka regions within it. In this way Akka can scale past any upper bound limits of the infrastructure on which it runs.
+== Regions in Akka Automated Operations
 
-=== Multiple region by design
-Stateful components in Akka have a concept of location, that is region, and are designed to span regions and replicate their data across regions. This is outlined in xref:concepts:state-model.adoc[state model] and xref:concepts:multi-region.adoc[multi-region operations]. These components call the region where they can be updated their *primary region* and keep track of it throughout their lifetime. This allows Akka to simplify some aspects of distributed computing.
-
-In Akka projects, regional choices are made at deployment time, not development time, allowing you to change your regions over time and even change your primary region. You can also control if your service is in *pinned-region* or *request-region* mode of regionalization, which impacts where the primary copy of component data resides. For more information see xref:concepts:multi-region.adoc[multi-region operations].
-
-By default, most entities will only allow their primary region to change their state, to make this easier Akka will also automatically route state changing operations to the primary region. This gives you a read anywhere model out of the box that automatically routes writes appropriately.
-
-NOTE: Primary region is also a concept in the context of a project. All projects have a primary region.
-
-If you use more sophisticated state models you can have a write anywhere model. See xref:concepts:state-model.adoc[state model] for more details.
-
-== Managing physical deployment
-
-You manage a project as a single unit and Akka does all the work to manage each specific region that it spans. When you deploy a service to a project with multiple regions Akka will deploy the service to all of the regions on your behalf. You execute one command, but many are taking place behind the scenes. 
-
-=== Operating regions within a project
-Regions can be added to or removed from an Akka project while it is running. There is no need to stop the services within the project to do this. 
-
-==== Adding regions
-You can add regions to an Akka project and Akka will deploy the services in that project to the new region and expose endpoints. It will also begin replication of all data. This replication time will depend on the size of the dataset (state) being replicated and the distance between the regions. Adding regions is a graceful behavior. The new region will be available to serve traffic after being added, but it may take some time until the initial replication is complete. You can monitor replication by monitoring Consumer Lag.
-
-==== Removing regions
-There are two ways to remove regions from a project: *graceful* and *emergency*. Their names imply their function. Graceful remove takes time, it marks the region as read-only, and starts to move the origin for all the entities out of the region. This is the preferred way to remove regions as there is no risk of data corruption, even for entities that haven't implemented conflict resolution strategies.
-
-Emergency region removal is for emergency scenarios such as the rare times when an infrastructure provider's region becomes unavailable. Executing an emergency region removal fast ejects the region and reassigns the origin for all entities to the remaining regions. If there are writes in progress for non-CRDT types (i.e. entities that do not implement conflict resolutions) they _could_ be lost or overwritten.
+A region corresponds to a cloud provider’s location, such as AWS "US East." Akka spans availability zones and can scale multiple hyperscaler clouds. Projects specify the regions where they run. Each region receives a unique endpoint with region-specific DNS, much like services such as S3 or SQS. xref:operations:projects/container-registries.adoc[Container registries] exist in all regions to reduce latency.
 
 == About Akka clustering
 
-Akka clustering is the heart of how Akka systems take responsibility for their own outcomes. Akka services cluster from within, forming and managing a cluster from within the Akka runtime that is running alongside your Akka service within the JVM. When Akka services boot, they discover one another and automatically form an Akka cluster. An Akka service instance only needs to connect to one other node in order to join an existing cluster.
+Clustering is integral to how Akka systems manage themselves. Services discover each other at startup and form clusters without manual setup. A connection to a single node is enough to join an existing cluster.
 
-Akka clustering provides numerous services to facilitate elastic scaling, failover, traffic steering, communications and security. The Akka runtime has its own discovery, consensus, split brain, zero trust,
-request routing, scheduling, conflict-free replication, fan out/in compute, and point-to-point brokerless messaging between services within a cluster.
+image:concepts:akka-clustering.png[Akka clustering]
 
-Akka leverages these capabilities to enable large scale resilience for stateful systems which includes failover, data sharding, data rebalancing, and routing end user traffic to the right data. This effectively allows Akka services to act as their own orchestrator and in-memory cache, that also happen to be durable and resilient.
+Clustering provides support for:
+
+* Elastic scaling
+* Failover
+* Traffic steering
+* Built-in discovery
+* Consensus and split-brain handling
+* Zero trust communication
+* Request routing and scheduling
+* Conflict-free replication
+* Point-to-point messaging
+
+These capabilities enable stateful services to be resilient, durable, and capable of acting as their own orchestrators and in-memory caches.
 
 == Next steps
 
