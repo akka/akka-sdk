@@ -58,7 +58,7 @@ The structure, sequence, scale, and resilience of multi-agent collaborations sho
 
 == Component client
 
-There is an Akka component client for all of the Akka platform’s components, including agents. While an agent should not use this to talk to other agents, endpoints and workflows will use this to trigger and orchestrate agents.
+There is an Akka component client for all Akka components, including Agents. While an Agent should not use this to talk to other Agents, Endpoints and Workflows will use this to trigger and orchestrate Agents.
 
 The component client only works to communicate with components within the same service. Outside the service you'll need to use service-to-service eventing or standard protocols like HTTP, gRPC, or even MCP.
 
