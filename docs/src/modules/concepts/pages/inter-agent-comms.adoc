@@ -26,7 +26,7 @@ Event-driven architectures are promoted for their scale and autonomy, but create
 |⛔| Agent -> Agent +
 Endpoint (API) -> Agent | Avoid leveraging protocols such as HTTP, JSON-RPC, gRPC, A2A, and ACP that enable direct communication and invocation of one agent to another. 
 
-|⛔| Agent -> MCP Server -> Agent | Avoid leveraging agent’s innate ability to make invocations to tools that include which can then be used to perform remote communication directly with other agents.
+|⛔| Agent -> MCP Server -> Agent | It is best to avoid using an agent’s ability to call tools or services as a way to reach other agents. This creates indirect connections that reduce clarity and make the system harder to reason about.
 
 |⛔| Endpoint (API) -> Endpoint (API) | Avoid having the microservice that is backing one API invoke another API directly over whatever protocol is supported by both APIs.
 
