@@ -6,7 +6,7 @@ Agents can collaborate in many ways, from orchestration, to direct communication
 
 Further, the emergence of https://modelcontextprotocol.io/introduction[MCP, window="new"], https://a2aprotocol.ai/[A2A, window="new"], and https://agentcommunicationprotocol.dev/introduction/welcome[ACP, window="new"] have made it (perhaps too) easy to enable direct communication between agentic services. This has led to many techniques for agent-to-agent communications: some extremely valuable and some deceptively dangerous. While Akka makes it simple to implement any of these techniques, it is worth exploring each of these patterns and anti-patterns in detail.
 
-The following table provides a quick reference as to which communication paths a preferred patterns versus ones you should avoid. Additional details are provided thereafter.
+The following table provides a quick reference as to which communication paths are preferred patterns versus ones you should avoid. Additional details are provided thereafter.
 
 [cols="1,3m,6"]
 |===
