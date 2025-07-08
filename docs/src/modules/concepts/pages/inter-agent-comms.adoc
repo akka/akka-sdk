@@ -34,7 +34,7 @@ Endpoint (API) -> Agent | Avoid leveraging protocols such as HTTP, JSON-RPC, gRP
 
 == Why avoid certain inter-agent patterns
 
-Well-architected agents are built to do one thing; accomplish one overarching goal. Most agent frameworks, including Akka, make it simple to create multi-agent systems where one agent invokes another directly. These approaches often violate the “do one thing” rule.
+Well-architected agents are built to do one thing: accomplish one overarching goal. Most agent frameworks, including Akka, make it simple to create multi-agent systems where one agent invokes another directly. These approaches often violate the “do one thing” rule.
 
 Consider the example of a travel planning agent. This agent that makes travel recommendations might utilize other agents like an airline reservation agent, a weather agent, a traffic agent, and may optionally make use of half a dozen or more agents.
 
