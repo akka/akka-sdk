@@ -30,7 +30,7 @@ For additional details, refer to xref:concepts:declarative-effects.adoc[Declarat
 
 A Workflow implementation has the following code structure.
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/application/TransferWorkflow.java[TransferWorkflow.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/application/TransferWorkflow.java[tag=class]

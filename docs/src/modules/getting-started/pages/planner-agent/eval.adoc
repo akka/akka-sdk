@@ -24,7 +24,7 @@ We will use a pattern called "LLM as judge", which will use an agent (AI model) 
 
 Add a new file `EvaluatorAgent.java` to `src/main/java/com/example/application/`
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/EvaluatorAgent.java[EvaluatorAgent.java]
 ----
 include::java:example$multi-agent/src/main/java/demo/multiagent/application/EvaluatorAgent.java[tag=all]
@@ -39,7 +39,7 @@ The `PreferencesEntity` emits events when the preferences are changed, and we ca
 
 Add a new file `PreferencesConsumer.java` to `src/main/java/com/example/application/`
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/PreferencesConsumer.java[PreferencesConsumer.java]
 ----
 include::java:example$multi-agent/src/main/java/demo/multiagent/application/PreferencesConsumer.java[tag=all]
@@ -54,7 +54,7 @@ This would probably be improved in a real application by not evaluating all prev
 
 Add the new method to the `AgentTeamWorkflow:
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[AgentTeamWorkflow.java]
 ----
 include::java:example$multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[tag=runAgain]

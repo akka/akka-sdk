@@ -38,7 +38,7 @@ In your code, add a new empty Java file at `src/main/java/akka/ask/indexer/appli
 
 Let's start with the outer shell of the workflow class (this won't compile yet as we haven't included the workflow definition).
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[RagIndexingWorkflow.java]
 ----
 include::java:example$ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[tag=shell]
@@ -47,7 +47,7 @@ include::java:example$ask-akka-agent/src/main/java/akka/ask/indexer/application/
 <2> We treat the list of files as a queue
 
 The workflow definition for the document indexer is surprisingly simple:
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[RagIndexingWorkflow.java]
 ----
 include::java:example$ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[tag=def]
@@ -61,7 +61,7 @@ Because this workflow only ever transitions to and from the same state, it might
 
 The actual work of doing the indexing is in the `indexFile` function:
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[RagIndexingWorkflow.java]
 ----
 include::java:example$ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[tag=index]
@@ -69,7 +69,7 @@ include::java:example$ask-akka-agent/src/main/java/akka/ask/indexer/application/
 
 and the `addSegment` function which calls `add` on the embedding store, committing the segment (aka _chunk_) to MongoDB Atlas:
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[RagIndexingWorkflow.java]
 ----
 include::java:example$ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[tag=add]
@@ -78,7 +78,7 @@ include::java:example$ask-akka-agent/src/main/java/akka/ask/indexer/application/
 
 Everything that we've done so far has been completely asynchronous. When the workflow starts (shown below), it builds the list of pending documents by walking the documents directory and adding each markdown (`*.md`) file it finds. You can find all of these documents in the sample folder `src/main/resources/md-docs`.
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[RagIndexingWorkflow.java]
 ----
 include::java:example$ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[tag=start]
@@ -88,7 +88,7 @@ include::java:example$ask-akka-agent/src/main/java/akka/ask/indexer/application/
 == Injecting the MongoDB client
 
 If you've been following along, then you might be wondering how we inject an `embeddingStore` field into this workflow. This field is of type `MongoDbEmbeddingStore`, and to create an instance of that we need to inject a `MongoClient` to the workflow's constructor:
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[RagIndexingWorkflow.java]
 ----
 include::java:example$ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[tag=cons]
@@ -96,7 +96,7 @@ include::java:example$ask-akka-agent/src/main/java/akka/ask/indexer/application/
 <1> Tweaking the parameters to the document splitter can affect the quality of semantic search results
 
 The API endpoint to start the indexer creates an instance of the workflow through the standard `ComponentClient` function `forWorkflow`. To make the `MongoClient` instance available, we can use a bootstrap class that uses Akka's `@Setup` annotation:
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/Bootstrap.java[Bootstrap.java]
 ----
 include::java:example$ask-akka-agent/src/main/java/akka/ask/Bootstrap.java[tag=mongodb]
@@ -106,7 +106,7 @@ include::java:example$ask-akka-agent/src/main/java/akka/ask/Bootstrap.java[tag=m
 
 Add an HTTP endpoint to be able to start the indexing workflow.
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/indexer/api/IndexerEndpoint.java[IndexerEndpoint.java]
 ----
 include::java:example$ask-akka-agent/src/main/java/akka/ask/indexer/api/IndexerEndpoint.java[tag=class]

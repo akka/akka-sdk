@@ -23,7 +23,7 @@ We're going to add a utility that will retrieve content from MongoDB that is rel
 The following is the basic RAG-specific code that you can add to a new file `Knowledge.java` in `src/main/java/akka/ask/agent/application/`.
 
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/application/Knowledge.java[Knowledge.java]
 ----
 include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/application/Knowledge.java[tag=class]
@@ -36,7 +36,7 @@ include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/application/Kn
 
 == Use the knowledge in the agent
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/application/AskAkkaAgent.java[AskAkkaAgent.java]
 ----
 include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/application/AskAkkaAgent.java[tag=class]
@@ -48,7 +48,7 @@ include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/application/As
 
 To be able to inject the `Knowledge` we need to add it to the `Bootstrap`:
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/Bootstrap.java[Bootstrap.java]
 ----
 include::java:example$ask-akka-agent/src/main/java/akka/ask/Bootstrap.java[tag=knowledge]

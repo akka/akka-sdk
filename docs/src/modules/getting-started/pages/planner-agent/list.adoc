@@ -22,7 +22,7 @@ include::ROOT:partial$local-dev-prerequisites.adoc[]
 
 Add a new file `ActivityView.java` to `src/main/java/com/example/application/`
 
-[source,java]
+[source,java,indent=0]
 .ActivityView.java
 ----
 include::java:example$doc-snippets/src/main/java/agent_guide/part5/ActivityView.java[tag=all]
@@ -34,7 +34,7 @@ include::java:example$doc-snippets/src/main/java/agent_guide/part5/ActivityView.
 
 Add a new method that asks the view for a given user id.
 
-[source,java]
+[source,java,indent=0]
 ----
 include::java:example$doc-snippets/src/main/java/agent_guide/part5/ActivityEndpoint.java[tag=list]
 ----

@@ -12,7 +12,7 @@ This model simplifies development by removing the need to handle persistence, di
 
 For example, with our Workflow component at the end of each step, you return an Effect that indicates how the Workflow should persist the call stack and which stage it should transition to next.
 
-[source,java]
+[source,java,indent=0]
 ----
   return effects()
    .updateState(currentState().withStatus(WITHDRAW_SUCCEED))

@@ -82,7 +82,7 @@ include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/domain
 
 To go with our domain data and our events, we have an entity named `ShoppingCartEntity` in package `shoppingcart.application`. This class is located in the `src/main/java/shoppingcart/application/` directory and named `ShoppingCartEntity.java`. The class signature looks like this:
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
 ----
 include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tags=top;class]
@@ -92,7 +92,7 @@ include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/applic
 
 Inside `ShoppingCartEntity`, we define an `addItem` command handler to generate an `ItemAdded` event, and an event handler to process the event and update internal state:
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
 ----
 include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tag=addItem]
