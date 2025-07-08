@@ -64,7 +64,7 @@ The component client only works to communicate with components within the same s
 
 == Message brokers
 
-Communication between Akka components and external entities can be done with message brokers. The Akka SDK currently supports Google Cloud Pubsub and Kafka. We typically use message brokers like this to provide input and output integration with other services on other infrastructure that might not be running Akka.
+Communication between Akka components and external entities can be done with message brokers. The Akka SDK currently supports Google Cloud PubSub and Kafka. We typically use message brokers like this to provide input and output integration with other services on other infrastructure that might not be running Akka.
 
 Consumers and Workflows within the agent’s service can react to messages as well as publish them to external brokers.
 
@@ -82,7 +82,7 @@ MCP, the Model Context Protocol, is a protocol that allows agents to use LLMs to
 
 AI assistants modify their system prompts so that they include a list of tool calls exposed by configured MCP servers. It’s very tempting to put calls to other agents inside these tool callbacks, but that too is dangerous.
 
-There is no automatic failover or retry or timeout system for when an agent invokes a tool via MCP. This means any agent-to-agent communication done inside of an MCP tool is inherently unreliable and brittle. So, be mindful about using MCP for agent-to-agent calls.
+There is no automatic failover or retry or timeout system for when an agent invokes a tool via MCP. This means any agent-to-agent communication done inside of an MCP tool is inherently unreliable and brittle. Be mindful about using MCP for agent-to-agent calls.
 
 Typically the LLM will identify the MCP servers to use from prompt and context and will, if possible, gather the appropriate tool call parameters from that same prompt.
 
