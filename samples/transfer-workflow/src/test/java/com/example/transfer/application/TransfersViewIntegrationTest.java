@@ -47,8 +47,7 @@ class TransfersViewIntegrationTest extends TestKitSupport {
     transferStates.publish(messageBuilder.of(state2, "t2"));
 
     //then
-    Awaitility
-      .await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         TransferEntries result = componentClient

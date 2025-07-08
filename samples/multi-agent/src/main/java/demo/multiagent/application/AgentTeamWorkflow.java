@@ -141,60 +141,52 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
 
   private Step selectAgentsStep() {
     return step(SELECT_AGENTS)
-      .call(() ->
-        componentClient
-          .forAgent()
-          .inSession(sessionId())
-          .method(SelectorAgent::selectAgents)
-          .invoke(currentState().userQuery)
+      .call(
+        () ->
+          componentClient
+            .forAgent()
+            .inSession(sessionId())
+            .method(SelectorAgent::selectAgents)
+            .invoke(currentState().userQuery)
       ) // <4>
-      .andThen(
-        AgentSelection.class,
-        selection -> {
-          logger.info("Selected agents: {}", selection.agents());
-          if (selection.agents().isEmpty()) {
-            var newState = currentState()
-              .withFinalAnswer(
-                "Couldn't find any agent(s) able to respond to the original query."
-              )
-              .failed();
-            return effects().updateState(newState).end(); // terminate workflow
-          } else {
-            return effects().transitionTo(CREATE_PLAN, selection); // <5>
-          }
+      .andThen(AgentSelection.class, selection -> {
+        logger.info("Selected agents: {}", selection.agents());
+        if (selection.agents().isEmpty()) {
+          var newState = currentState()
+            .withFinalAnswer(
+              "Couldn't find any agent(s) able to respond to the original query."
+            )
+            .failed();
+          return effects().updateState(newState).end(); // terminate workflow
+        } else {
+          return effects().transitionTo(CREATE_PLAN, selection); // <5>
         }
-      );
+      });
   }
 
   private static final String CREATE_PLAN = "create-plan";
 
   private Step planStep() {
     return step(CREATE_PLAN)
-      .call(
-        AgentSelection.class,
-        agentSelection -> {
-          logger.info(
-            "Calling planner with: '{}' / {}",
-            currentState().userQuery,
-            agentSelection.agents()
-          );
+      .call(AgentSelection.class, agentSelection -> {
+        logger.info(
+          "Calling planner with: '{}' / {}",
+          currentState().userQuery,
+          agentSelection.agents()
+        );
 
-          return componentClient
-            .forAgent()
-            .inSession(sessionId())
-            .method(PlannerAgent::createPlan)
-            .invoke(new PlannerAgent.Request(currentState().userQuery, agentSelection)); // <6>
-        }
-      )
-      .andThen(
-        Plan.class,
-        plan -> {
-          logger.info("Execution plan: {}", plan);
-          return effects()
-            .updateState(currentState().withPlan(plan))
-            .transitionTo(EXECUTE_PLAN); // <7>
-        }
-      );
+        return componentClient
+          .forAgent()
+          .inSession(sessionId())
+          .method(PlannerAgent::createPlan)
+          .invoke(new PlannerAgent.Request(currentState().userQuery, agentSelection)); // <6>
+      })
+      .andThen(Plan.class, plan -> {
+        logger.info("Execution plan: {}", plan);
+        return effects()
+          .updateState(currentState().withPlan(plan))
+          .transitionTo(EXECUTE_PLAN); // <7>
+      });
   }
 
   private static final String EXECUTE_PLAN = "execute-plan";
@@ -218,20 +210,17 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
           return agentResponse;
         }
       })
-      .andThen(
-        String.class,
-        answer -> {
-          var newState = currentState().addAgentResponse(answer);
+      .andThen(String.class, answer -> {
+        var newState = currentState().addAgentResponse(answer);
 
-          if (newState.hasMoreSteps()) {
-            logger.info("Still {} steps to execute.", newState.plan().steps().size());
-            return effects().updateState(newState).transitionTo(EXECUTE_PLAN); // <10>
-          } else {
-            logger.info("No further steps to execute.");
-            return effects().updateState(newState).transitionTo(SUMMARIZE);
-          }
+        if (newState.hasMoreSteps()) {
+          logger.info("Still {} steps to execute.", newState.plan().steps().size());
+          return effects().updateState(newState).transitionTo(EXECUTE_PLAN); // <10>
+        } else {
+          logger.info("No further steps to execute.");
+          return effects().updateState(newState).transitionTo(SUMMARIZE);
         }
-      );
+      });
   }
 
   // tag::dynamicCall[]
@@ -263,15 +252,12 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
           .method(SummarizerAgent::summarize)
           .invoke(new SummarizerAgent.Request(currentState().userQuery, agentsAnswers));
       })
-      .andThen(
-        String.class,
-        finalAnswer -> {
-          logger.info("Final summarized answer: '{}'", finalAnswer);
-          return effects()
-            .updateState(currentState().withFinalAnswer(finalAnswer).complete())
-            .pause();
-        }
-      );
+      .andThen(String.class, finalAnswer -> {
+        logger.info("Final summarized answer: '{}'", finalAnswer);
+        return effects()
+          .updateState(currentState().withFinalAnswer(finalAnswer).complete())
+          .pause();
+      });
   }
 
   private static final String INTERRUPT = "interrupt";

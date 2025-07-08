@@ -36,8 +36,7 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
 
     assertThat(response).isEqualTo("transfer started");
 
-    Awaitility
-      .await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var balance1 = getWalletBalance(walletId1);
@@ -72,8 +71,7 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
 
     assertThat(acceptanceResponse).isEqualTo("transfer accepted");
 
-    Awaitility
-      .await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var balance1 = getWalletBalance(walletId1);
@@ -112,8 +110,9 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
     assertThat(balance1).isEqualTo(2000);
     assertThat(balance2).isEqualTo(100);
 
-    assertThat(getTransferState(transferId).status())
-      .isEqualTo(TRANSFER_ACCEPTANCE_TIMED_OUT);
+    assertThat(getTransferState(transferId).status()).isEqualTo(
+      TRANSFER_ACCEPTANCE_TIMED_OUT
+    );
   }
 
   @Test
@@ -131,8 +130,7 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
 
     assertThat(response).isEqualTo("transfer started");
 
-    Awaitility
-      .await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .ignoreExceptions()
       .untilAsserted(() -> {
@@ -159,8 +157,7 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
 
     assertThat(response).isEqualTo("transfer started");
 
-    Awaitility
-      .await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .ignoreExceptions()
       .untilAsserted(() -> {

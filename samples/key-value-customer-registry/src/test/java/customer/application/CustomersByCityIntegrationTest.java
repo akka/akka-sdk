@@ -17,15 +17,14 @@ import org.junit.jupiter.api.Test;
 class CustomersByCityIntegrationTest extends TestKitSupport {
 
   @Override
-  protected TestKit.Settings testKitSettings() {
-    return TestKit.Settings.DEFAULT.withKeyValueEntityIncomingMessages(CustomerEntity.class); // <1>
+  protected TestKit.Settings testKitSettings() { // <1>
+    return TestKit.Settings.DEFAULT.withKeyValueEntityIncomingMessages(CustomerEntity.class);
   }
 
   @Test
   public void shouldGetCustomerByCity() {
-    IncomingMessages customerEvents = testKit.getKeyValueEntityIncomingMessages(
-      CustomerEntity.class
-    ); // <2>
+    IncomingMessages customerEvents = // <2>
+      testKit.getKeyValueEntityIncomingMessages(CustomerEntity.class);
 
     Customer johanna = new Customer(
       "johanna@example.com",
@@ -47,8 +46,7 @@ class CustomersByCityIntegrationTest extends TestKitSupport {
     customerEvents.publish(bob, "2");
     customerEvents.publish(alice, "3");
 
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(() -> {
@@ -89,8 +87,7 @@ class CustomersByCityIntegrationTest extends TestKitSupport {
     customerEvents.publish(bob, "2");
     customerEvents.publish(alice, "3");
 
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(() -> {

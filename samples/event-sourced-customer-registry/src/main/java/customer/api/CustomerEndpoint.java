@@ -62,7 +62,8 @@ public class CustomerEndpoint {
     } catch (Exception ex) {
       if (
         ex.getMessage().contains("No customer found for id")
-      ) throw HttpException.notFound(); else throw new RuntimeException(ex);
+      ) throw HttpException.notFound();
+      else throw new RuntimeException(ex);
     }
   }
 

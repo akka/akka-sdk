@@ -81,113 +81,97 @@ public class TransferWorkflow extends Workflow<TransferState> {
         // tag::detect-frauds[]
         return fraudDetectionService.detectFrauds(currentState().transfer());
       })
-      .andThen(
-        FraudDetectionResult.class,
-        result -> {
-          var transfer = currentState().transfer();
-          return switch (result) {
-            case ACCEPTED -> { // <2>
-              // end::detect-frauds[]
-              logger.info("Running: " + transfer);
-              // tag::detect-frauds[]
-              TransferState initialState = TransferState.create(workflowId, transfer);
-              Withdraw withdrawInput = new Withdraw(
-                initialState.withdrawId(),
-                transfer.amount()
-              );
-              yield effects()
-                .updateState(initialState)
-                .transitionTo("withdraw", withdrawInput);
-            }
-            case MANUAL_ACCEPTANCE_REQUIRED -> { // <3>
-              // end::detect-frauds[]
-              logger.info("Waiting for acceptance: " + transfer);
-              // tag::detect-frauds[]
-              TransferState waitingForAcceptanceState = TransferState
-                .create(workflowId, transfer)
-                .withStatus(WAITING_FOR_ACCEPTANCE);
-              yield effects()
-                .updateState(waitingForAcceptanceState)
-                .transitionTo("wait-for-acceptance");
-            }
-          };
-        }
-      );
+      .andThen(FraudDetectionResult.class, result -> {
+        var transfer = currentState().transfer();
+        return switch (result) {
+          case ACCEPTED -> { // <2>
+            // end::detect-frauds[]
+            logger.info("Running: " + transfer);
+            // tag::detect-frauds[]
+            TransferState initialState = TransferState.create(workflowId, transfer);
+            Withdraw withdrawInput = new Withdraw(
+              initialState.withdrawId(),
+              transfer.amount()
+            );
+            yield effects().updateState(initialState).transitionTo("withdraw", withdrawInput);
+          }
+          case MANUAL_ACCEPTANCE_REQUIRED -> { // <3>
+            // end::detect-frauds[]
+            logger.info("Waiting for acceptance: " + transfer);
+            // tag::detect-frauds[]
+            TransferState waitingForAcceptanceState = TransferState.create(
+              workflowId,
+              transfer
+            ).withStatus(WAITING_FOR_ACCEPTANCE);
+            yield effects()
+              .updateState(waitingForAcceptanceState)
+              .transitionTo("wait-for-acceptance");
+          }
+        };
+      });
   }
 
   // end::detect-frauds[]
 
   private Step withdrawStep() {
     return step("withdraw")
-      .call(
-        Withdraw.class,
-        cmd -> {
-          logger.info("Running withdraw: {}", cmd);
+      .call(Withdraw.class, cmd -> {
+        logger.info("Running withdraw: {}", cmd);
 
-          // cancelling the timer in case it was scheduled
-          timers().delete("acceptanceTimout-" + currentState().transferId());
+        // cancelling the timer in case it was scheduled
+        timers().delete("acceptanceTimout-" + currentState().transferId());
 
-          return componentClient
-            .forEventSourcedEntity(currentState().transfer().from())
-            .method(WalletEntity::withdraw)
-            .invoke(cmd);
-        }
-      )
-      .andThen(
-        WalletResult.class,
-        result -> {
-          switch (result) {
-            case Success __ -> {
-              Deposit depositInput = new Deposit(
-                currentState().depositId(),
-                currentState().transfer().amount()
-              );
-              return effects()
-                .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
-                .transitionTo("deposit", depositInput);
-            }
-            case Failure failure -> {
-              logger.warn("Withdraw failed with msg: {}", failure.errorMsg());
-              return effects().updateState(currentState().withStatus(WITHDRAW_FAILED)).end();
-            }
+        return componentClient
+          .forEventSourcedEntity(currentState().transfer().from())
+          .method(WalletEntity::withdraw)
+          .invoke(cmd);
+      })
+      .andThen(WalletResult.class, result -> {
+        switch (result) {
+          case Success __ -> {
+            Deposit depositInput = new Deposit(
+              currentState().depositId(),
+              currentState().transfer().amount()
+            );
+            return effects()
+              .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
+              .transitionTo("deposit", depositInput);
+          }
+          case Failure failure -> {
+            logger.warn("Withdraw failed with msg: {}", failure.errorMsg());
+            return effects().updateState(currentState().withStatus(WITHDRAW_FAILED)).end();
           }
         }
-      );
+      });
   }
 
   // tag::compensation[]
   private Step depositStep() {
     return step("deposit")
-      .call(
-        Deposit.class,
-        cmd -> {
-          // end::compensation[]
-          logger.info("Running deposit: {}", cmd);
-          // tag::compensation[]
-          return componentClient
-            .forEventSourcedEntity(currentState().transfer().to())
-            .method(WalletEntity::deposit)
-            .invoke(cmd);
-        }
-      )
-      .andThen(
-        WalletResult.class,
-        result -> { // <1>
-          switch (result) {
-            case Success __ -> {
-              return effects().updateState(currentState().withStatus(COMPLETED)).end(); // <2>
-            }
-            case Failure failure -> {
-              // end::compensation[]
-              logger.warn("Deposit failed with msg: {}", failure.errorMsg());
-              // tag::compensation[]
-              return effects()
-                .updateState(currentState().withStatus(DEPOSIT_FAILED))
-                .transitionTo("compensate-withdraw"); // <3>
-            }
+      .call(Deposit.class, cmd -> {
+        // end::compensation[]
+        logger.info("Running deposit: {}", cmd);
+        // tag::compensation[]
+        return componentClient
+          .forEventSourcedEntity(currentState().transfer().to())
+          .method(WalletEntity::deposit)
+          .invoke(cmd);
+      })
+      .andThen(WalletResult.class, result -> { // <1>
+        switch (result) {
+          case Success __ -> {
+            return effects().updateState(currentState().withStatus(COMPLETED)).end(); // <2>
+          }
+          case Failure failure -> {
+            // end::compensation[]
+            logger.warn("Deposit failed with msg: {}", failure.errorMsg());
+            // tag::compensation[]
+            return effects()
+              .updateState(currentState().withStatus(DEPOSIT_FAILED))
+              .transitionTo("compensate-withdraw"); // <3>
           }
         }
-      );
+      });
   }
 
   private Step compensateWithdrawStep() {
@@ -206,23 +190,20 @@ public class TransferWorkflow extends Workflow<TransferState> {
           .method(WalletEntity::deposit)
           .invoke(new Deposit(commandId, transfer.amount()));
       })
-      .andThen(
-        WalletResult.class,
-        result -> {
-          switch (result) {
-            case Success __ -> {
-              return effects()
-                .updateState(currentState().withStatus(COMPENSATION_COMPLETED))
-                .end(); // <5>
-            }
-            case Failure __ -> { // <6>
-              throw new IllegalStateException(
-                "Expecting succeed operation but received: " + result
-              );
-            }
+      .andThen(WalletResult.class, result -> {
+        switch (result) {
+          case Success __ -> {
+            return effects()
+              .updateState(currentState().withStatus(COMPENSATION_COMPLETED))
+              .end(); // <5>
+          }
+          case Failure __ -> { // <6>
+            throw new IllegalStateException(
+              "Expecting succeed operation but received: " + result
+            );
           }
         }
-      );
+      });
   }
 
   // end::compensation[]

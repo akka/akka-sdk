@@ -15,13 +15,10 @@ public class ActivityViewTest extends TestKitSupport {
 
   @Override
   protected TestKit.Settings testKitSettings() {
-    return TestKit.Settings.DEFAULT
-      // Bootstrap will check if key exists when running integation tests.
-      // We don't need a real one though.
-      .withAdditionalConfig(
-        ConfigFactory.parseString("akka.javasdk.agent.openai.api-key=fake-key")
-      )
-      .withWorkflowIncomingMessages("agent-team");
+    return TestKit.Settings.DEFAULT// We don't need a real one though. // Bootstrap will check if key exists when running integation tests.
+    .withAdditionalConfig(
+      ConfigFactory.parseString("akka.javasdk.agent.openai.api-key=fake-key")
+    ).withWorkflowIncomingMessages("agent-team");
   }
 
   @Test
@@ -61,8 +58,7 @@ public class ActivityViewTest extends TestKitSupport {
     workflowMessages.publish(workflowState2, sessionId2);
 
     // Wait for view to be updated and verify both activities
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(() -> {
@@ -131,8 +127,7 @@ public class ActivityViewTest extends TestKitSupport {
     workflowMessages.publish(charlieState, "charlie-session");
 
     // Verify bob only sees her activities
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(() -> {
@@ -147,8 +142,7 @@ public class ActivityViewTest extends TestKitSupport {
       });
 
     // Verify charlie only sees his activities
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(() -> {
@@ -159,8 +153,9 @@ public class ActivityViewTest extends TestKitSupport {
 
         assertThat(charlieActivities.entries()).hasSize(1);
         assertThat(charlieActivities.entries().get(0).userId()).isEqualTo("charlie");
-        assertThat(charlieActivities.entries().get(0).userQuestion())
-          .isEqualTo("Charlie's query");
+        assertThat(charlieActivities.entries().get(0).userQuestion()).isEqualTo(
+          "Charlie's query"
+        );
       });
   }
 }

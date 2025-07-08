@@ -13,13 +13,14 @@ public class JwtIntegrationTest extends TestKitSupport {
   // tag::bearer-token-claims-test[]
   private String bearerTokenWith(Map<String, String> claims) throws JsonProcessingException {
     // setting algorithm to none
-    String alg = Base64
-      .getEncoder()
-      .encodeToString("""
+    String alg = Base64.getEncoder()
+      .encodeToString(
+        """
         {
           "alg": "none"
         }
-        """.getBytes()); // <3>
+        """.getBytes()
+      ); // <3>
     byte[] jsonClaims = new ObjectMapper().writeValueAsBytes(claims);
 
     // no validation is done for integration tests, thus no valid signature required

@@ -12,12 +12,10 @@ public class CustomerGrpcIntegrationTest extends TestKitSupport {
   public void createCustomerCart() {
     var client = getGrpcEndpointClient(CustomerGrpcEndpointClient.class);
 
-    var customerRequest = customer.api.proto.CreateCustomerRequest
-      .newBuilder()
+    var customerRequest = customer.api.proto.CreateCustomerRequest.newBuilder()
       .setCustomerId("customer-abc")
       .setCustomer(
-        customer.api.proto.Customer
-          .newBuilder()
+        customer.api.proto.Customer.newBuilder()
           .setEmail("abc@email.com")
           .setName("John Doe")
           .build()

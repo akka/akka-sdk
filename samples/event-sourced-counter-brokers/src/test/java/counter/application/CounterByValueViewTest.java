@@ -53,8 +53,7 @@ class CounterByValueViewTest extends TestKitSupport {
     counterEvents.publish(messageBuilder.of(event1, event1Metadata));
     counterEvents.publish(messageBuilder.of(event2, event2Metadata));
 
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, SECONDS)
       .untilAsserted(() -> {
@@ -63,16 +62,16 @@ class CounterByValueViewTest extends TestKitSupport {
           .method(CounterByValueView::findAll)
           .invoke();
 
-        assertThat(result.counters())
-          .containsOnly(new CounterByValueView.CounterByValue("c123", 6));
+        assertThat(result.counters()).containsOnly(
+          new CounterByValueView.CounterByValue("c123", 6)
+        );
       });
 
     // sending the same events again
     counterEvents.publish(messageBuilder.of(event1, event1Metadata));
     counterEvents.publish(messageBuilder.of(event2, event2Metadata));
 
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .during(3, SECONDS)
       .untilAsserted(() -> {
@@ -82,8 +81,9 @@ class CounterByValueViewTest extends TestKitSupport {
           .invoke();
 
         //view state should be the same as before
-        assertThat(result.counters())
-          .containsOnly(new CounterByValueView.CounterByValue("c123", 6));
+        assertThat(result.counters()).containsOnly(
+          new CounterByValueView.CounterByValue("c123", 6)
+        );
       });
   }
 }

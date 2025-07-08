@@ -125,15 +125,14 @@ public class ExampleEndpoint extends AbstractHttpEndpoint { // <1>
   // tag::even-lower-level-response[]
   @Get("/hello-lower-level-response/{name}/{age}")
   public HttpResponse lowerLevelResponseHello(String name, int age) {
-    if (age > 130) return HttpResponse
-      .create()
+    if (age > 130) return HttpResponse.create()
       .withStatus(StatusCodes.BAD_REQUEST)
-      .withEntity("It is unlikely that you are " + age + " years old"); else {
+      .withEntity("It is unlikely that you are " + age + " years old");
+    else {
       var jsonBytes = JsonSupport.encodeToAkkaByteString(
         new HelloResponse("Hello " + name + "!")
       ); // <1>
-      return HttpResponse
-        .create() // <2>
+      return HttpResponse.create() // <2>
         .withEntity(ContentTypes.APPLICATION_JSON, jsonBytes); // <3>
     }
   }
@@ -147,7 +146,8 @@ public class ExampleEndpoint extends AbstractHttpEndpoint { // <1>
   public String lowLevelRequestHello(String name, HttpEntity.Strict strictRequestBody) {
     if (
       !strictRequestBody.getContentType().equals(IMAGE_JPEG)
-    ) throw HttpException.badRequest("This service only accepts " + IMAGE_JPEG); else { // <1>
+    ) throw HttpException.badRequest("This service only accepts " + IMAGE_JPEG);
+    else { // <1>
       return "Got " + strictRequestBody.getData().size() + " bytes for image name " + name; // <2>
     }
   }
@@ -176,8 +176,7 @@ public class ExampleEndpoint extends AbstractHttpEndpoint { // <1>
           strictRequestBody.getData().size() +
           " bytes " +
           "of type " +
-          strictRequestBody.getContentType()
-        );
+          strictRequestBody.getContentType());
     }
   }
 
@@ -189,7 +188,8 @@ public class ExampleEndpoint extends AbstractHttpEndpoint { // <1>
     var name = requestContext()
       .requestHeader("X-my-special-header") // <2>
       .map(HttpHeader::value)
-      .orElseThrow(() -> new IllegalArgumentException("Request is missing my special header")
+      .orElseThrow(
+        () -> new IllegalArgumentException("Request is missing my special header")
       );
 
     return "Hello " + name + "!";
@@ -209,9 +209,11 @@ public class ExampleEndpoint extends AbstractHttpEndpoint { // <1>
   // tag::basic-sse[]
   @Get("/current-time")
   public HttpResponse streamCurrentTime() {
-    Source<Long, Cancellable> timeSource = Source
-      .tick(Duration.ZERO, Duration.ofSeconds(5), "tick") // <1>
-      .map(__ -> System.currentTimeMillis()); // <2>
+    Source<Long, Cancellable> timeSource = Source.tick(
+      Duration.ZERO,
+      Duration.ofSeconds(5),
+      "tick"
+    ).map(__ -> System.currentTimeMillis()); // <1> // <2>
 
     return HttpResponses.serverSentEvents(timeSource); // <3>
   }

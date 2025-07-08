@@ -12,9 +12,10 @@ import java.util.stream.Collectors;
 @AgentDescription(
   name = "Activity Agent",
   description = """
-      An agent that suggests activities in the real world. Like for example,
-      a team building activity, sports, an indoor or outdoor game, board games, a city trip, etc.
-    """,
+    An agent that suggests activities in the real world. Like for example,
+    a team building activity, sports, an indoor or outdoor game,
+    board games, a city trip, etc.
+  """,
   role = "worker"
 )
 public class ActivityAgent extends Agent {
@@ -51,10 +52,9 @@ public class ActivityAgent extends Agent {
     if (allPreferences.entries().isEmpty()) {
       userMessage = request.message();
     } else {
-      userMessage =
-        request.message() +
-        "\nPreferences:\n" +
-        allPreferences.entries().stream().collect(Collectors.joining("\n", "- ", ""));
+      userMessage = request.message() +
+      "\nPreferences:\n" +
+      allPreferences.entries().stream().collect(Collectors.joining("\n", "- ", ""));
     }
 
     return effects().systemMessage(SYSTEM_MESSAGE).userMessage(userMessage).thenReply();

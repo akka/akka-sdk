@@ -11,10 +11,10 @@ public class ActivityAgent extends Agent {
 
   private static final String SYSTEM_MESSAGE = // <1>
     """
-      You are an activity agent. Your job is to suggest activities in the
-      real world. Like for example, a team building activity, sports, an
-      indoor or outdoor game, board games, a city trip, etc.
-      """.stripIndent();
+    You are an activity agent. Your job is to suggest activities in the
+    real world. Like for example, a team building activity, sports, an
+    indoor or outdoor game, board games, a city trip, etc.
+    """.stripIndent();
 
   public Effect<String> query(String message) {
     return effects()

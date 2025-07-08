@@ -32,8 +32,7 @@ class TransferWorkflowIntegrationTest extends TestKitSupport {
 
     assertThat(response).isEqualTo("transfer started");
 
-    Awaitility
-      .await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var wallet1Balance = walletService.getBalance(walletId1);
@@ -71,8 +70,7 @@ class TransferWorkflowIntegrationTest extends TestKitSupport {
 
     componentClient.forWorkflow(transferId).method(TransferWorkflow::accept).invoke();
 
-    Awaitility
-      .await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var wallet1Balance = walletService.getBalance(walletId1);

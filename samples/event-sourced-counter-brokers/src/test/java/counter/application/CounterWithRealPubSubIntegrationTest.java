@@ -32,7 +32,8 @@ public class CounterWithRealPubSubIntegrationTest extends TestKitSupport { // <1
     // with a pubsub container since the container preserves state
     var counterId = UUID.randomUUID().toString();
 
-    var msg = """
+    var msg =
+      """
         { "counterId": "%s", "value":20 }
       """.formatted(counterId);
 
@@ -44,8 +45,7 @@ public class CounterWithRealPubSubIntegrationTest extends TestKitSupport { // <1
     var pubSubClient = testKit.getHttpClientProvider().httpClientFor("http://localhost:8085");
 
     // Make sure we wait for the topic to be created by the runtime
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(Duration.ofSeconds(15))
       .untilAsserted(() -> {
@@ -66,15 +66,17 @@ public class CounterWithRealPubSubIntegrationTest extends TestKitSupport { // <1
 
     assertThat(response.httpResponse().status()).isEqualTo(StatusCodes.OK);
 
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(30, TimeUnit.SECONDS)
-      .untilAsserted(() ->
-        assertThat(
-          componentClient.forEventSourcedEntity(counterId).method(CounterEntity::get).invoke()
-        )
-          .isEqualTo(20)
+      .untilAsserted(
+        () ->
+          assertThat(
+            componentClient
+              .forEventSourcedEntity(counterId)
+              .method(CounterEntity::get)
+              .invoke()
+          ).isEqualTo(20)
       );
   }
 
@@ -83,21 +85,18 @@ public class CounterWithRealPubSubIntegrationTest extends TestKitSupport { // <1
     var data = Base64.getEncoder().encodeToString(jsonMsg.getBytes());
 
     return """
-      {
-          "messages": [
-              {
-                  "data": "%s",
-                  "attributes": {
-                      "Content-Type": "application/json",
-                      "ce-specversion": "1.0",
-                      "ce-type": "%s"
-                  }
-              }
-          ]
-      }
-      """.formatted(
-        data,
-        ceType
-      );
+    {
+        "messages": [
+            {
+                "data": "%s",
+                "attributes": {
+                    "Content-Type": "application/json",
+                    "ce-specversion": "1.0",
+                    "ce-type": "%s"
+                }
+            }
+        ]
+    }
+    """.formatted(data, ceType);
   }
 }

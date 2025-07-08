@@ -74,10 +74,11 @@ public class TransferWorkflow extends Workflow<TransferState> {
         var amount = currentState().transfer().amount();
         walletService.withdraw(fromWalletId, amount);
       })
-      .andThen(() ->
-        effects()
-          .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
-          .transitionTo("deposit")
+      .andThen(
+        () ->
+          effects()
+            .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
+            .transitionTo("deposit")
       );
   }
 

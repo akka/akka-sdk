@@ -21,9 +21,8 @@ public class CustomerEntityTest {
 
   @Test
   public void testCustomerNameChange() {
-    EventSourcedTestKit<Customer, CustomerEvent, CustomerEntity> testKit = EventSourcedTestKit.of(
-      CustomerEntity::new
-    );
+    EventSourcedTestKit<Customer, CustomerEvent, CustomerEntity> testKit =
+      EventSourcedTestKit.of(CustomerEntity::new);
     {
       EventSourcedResult<Done> result = testKit
         .method(CustomerEntity::create)
@@ -43,9 +42,8 @@ public class CustomerEntityTest {
 
   @Test
   public void testCustomerAddressChange() {
-    EventSourcedTestKit<Customer, CustomerEvent, CustomerEntity> testKit = EventSourcedTestKit.of(
-      CustomerEntity::new
-    );
+    EventSourcedTestKit<Customer, CustomerEvent, CustomerEntity> testKit =
+      EventSourcedTestKit.of(CustomerEntity::new);
     {
       EventSourcedResult<Done> result = testKit
         .method(CustomerEntity::create)

@@ -24,8 +24,10 @@ public class DelegateCustomerGrpcEndpointImpl implements DelegateCustomerGrpcEnd
   private CustomerGrpcEndpointClient customerService;
 
   public DelegateCustomerGrpcEndpointImpl(GrpcClientProvider clientProvider) { // <1>
-    customerService =
-      clientProvider.grpcClientFor(CustomerGrpcEndpointClient.class, "customer-registry"); // <2>
+    customerService = clientProvider.grpcClientFor(
+      CustomerGrpcEndpointClient.class,
+      "customer-registry"
+    ); // <2>
   }
 
   @Override

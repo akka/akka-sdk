@@ -76,8 +76,12 @@ public class ShoppingCartView extends View {
     private Effect<Cart> addItem(ShoppingCartEvent.ItemAdded added) {
       return effects()
         .updateRow(
-          rowStateOrNew(added.userId()) // <5>
-            .addItem(added.productId(), added.name(), added.quantity(), added.description())
+          rowStateOrNew(added.userId()).addItem( // <5>
+            added.productId(),
+            added.name(),
+            added.quantity(),
+            added.description()
+          )
         );
     }
 

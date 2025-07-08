@@ -82,7 +82,8 @@ public class ConversationHistoryView extends View {
     }
 
     private Session rowStateOrNew(String userId, String sessionId) { // <3>
-      if (rowState() != null) return rowState(); else return new Session(
+      if (rowState() != null) return rowState();
+      else return new Session(
         userId,
         sessionId,
         Instant.now().toEpochMilli(),

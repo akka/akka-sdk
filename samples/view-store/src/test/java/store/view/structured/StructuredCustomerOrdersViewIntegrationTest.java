@@ -102,8 +102,7 @@ public class StructuredCustomerOrdersViewIntegrationTest extends StoreViewIntegr
     String customerId,
     Function<StructuredCustomerOrders, Boolean> condition
   ) {
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       .until(() -> condition.apply(getCustomerOrders(customerId)));

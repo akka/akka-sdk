@@ -36,8 +36,7 @@ public class UserCreationIntegrationTest extends TestKitSupport {
       .invoke();
 
     // get email again and check it's eventually confirmed
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(timeout)
       .untilAsserted(() -> {
@@ -74,8 +73,7 @@ public class UserCreationIntegrationTest extends TestKitSupport {
     assertThat(createUserResponse.httpResponse().status()).isEqualTo(StatusCodes.BAD_REQUEST);
 
     // email will be reserved for a while, then it will be released
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(timeout)
       .untilAsserted(() -> {
@@ -88,8 +86,7 @@ public class UserCreationIntegrationTest extends TestKitSupport {
         assertThat(emailInfoResponseAfter.body().status()).isEqualTo("RESERVED");
       });
 
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .timeout(Duration.ofSeconds(10)) //3 seconds for the projection lag + 3 seconds for the timer to fire
       .untilAsserted(() -> {

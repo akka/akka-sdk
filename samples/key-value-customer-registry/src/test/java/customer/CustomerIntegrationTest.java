@@ -110,8 +110,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
     createCustomer(newUniqueId(), joe);
     createCustomer(newUniqueId(), jane);
 
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
@@ -132,8 +131,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
     );
 
     // the view is eventually updated
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       .until(
@@ -160,8 +158,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
     );
 
     // the view is eventually updated
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       .untilAsserted(() -> {

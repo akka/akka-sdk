@@ -15,26 +15,28 @@ public class CompactionAgent extends Agent {
 
   private static final String SYSTEM_MESSAGE =
     """
-      You can compact an interaction history with an LLM. From the given
-      USER, TOOL_CALL_RESPONSE and AI messages you create one single user message and one single
-      ai message.
-      
-      The interaction history starts with USER: followed by the user message.
-      For each user message there is a corresponding response for AI that starts with AI:
-      Keep the original style of user question and AI answer in the summary.
-      
-      Note that AI messages may contain TOOL_CALL_REQUEST(S) and be followed by TOOL_CALL_RESPONSE(S).
-      Make sure to keep this information in the generated ai message.
-      Do not keep it as structured tool calls, but make sure to extract the relevant context.
-      
-      Your response should follow a strict json schema as defined bellow.
-      {
-        "userMessage": "<the user message summary>",
-        "aiMessage: "<the AI message summary>",
-      }
-      
-      Do not include any explanations or text outside of the JSON structure.
-      """.stripIndent(); // <1>
+    You can compact an interaction history with an LLM. From the given
+    USER, TOOL_CALL_RESPONSE and AI messages you create one single
+    user message and one single ai message.
+
+    The interaction history starts with USER: followed by the user message.
+    For each user message there is a corresponding response for AI that starts with AI:
+    Keep the original style of user question and AI answer in the summary.
+
+    Note that AI messages may contain TOOL_CALL_REQUEST(S) and
+    be followed by TOOL_CALL_RESPONSE(S).
+    Make sure to keep this information in the generated ai message.
+    Do not keep it as structured tool calls, but make sure to extract
+    the relevant context.
+
+    Your response should follow a strict json schema as defined bellow.
+    {
+      "userMessage": "<the user message summary>",
+      "aiMessage: "<the AI message summary>",
+    }
+
+    Do not include any explanations or text outside of the JSON structure.
+    """.stripIndent(); // <1>
 
   public record Result(String userMessage, String aiMessage) {}
 
@@ -80,8 +82,7 @@ public class CompactionAgent extends Agent {
     return effects()
       .memory(MemoryProvider.none()) // <4>
       .model(
-        ModelProvider
-          .openAi()
+        ModelProvider.openAi()
           .withModelName("gpt-4o-mini")
           .withApiKey(System.getenv("OPENAI_API_KEY"))
           .withMaxTokens(1000)

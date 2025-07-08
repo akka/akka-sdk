@@ -37,8 +37,7 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
 
     // call our own endpoint service (why not call the other endpoint directly here?) which will in turn call the endpoint of the other service
     // try until it succeeds
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .pollInterval(1, TimeUnit.SECONDS)
       .atMost(10, TimeUnit.SECONDS)
@@ -53,8 +52,7 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
 
     // the view is eventually updated
     // on this service (updated via s2s streaming)
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .pollInterval(1, TimeUnit.SECONDS)
       .atMost(60, TimeUnit.SECONDS)
@@ -78,8 +76,7 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
 
     // wait until customer service is up
     try {
-      Awaitility
-        .await()
+      Awaitility.await()
         .ignoreExceptions()
         .pollInterval(1, TimeUnit.SECONDS)
         .atMost(5, TimeUnit.MINUTES)

@@ -21,13 +21,13 @@ public class NestedCustomerOrdersView extends View {
   // tag::query[]
   @Query( // <1>
     """
-      SELECT customers.*, (orders.*, products.*) AS orders
-      FROM customers
-      JOIN orders ON customers.customerId = orders.customerId
-      JOIN products ON products.productId = orders.productId
-      WHERE customers.customerId = :customerId
-      ORDER BY orders.createdTimestamp
-      """
+    SELECT customers.*, (orders.*, products.*) AS orders
+    FROM customers
+    JOIN orders ON customers.customerId = orders.customerId
+    JOIN products ON products.productId = orders.productId
+    WHERE customers.customerId = :customerId
+    ORDER BY orders.createdTimestamp
+    """
   )
   public QueryEffect<NestedCustomerOrders> get(String customerId) { // <2>
     return queryResult();

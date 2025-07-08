@@ -13,9 +13,9 @@ import java.time.format.DateTimeFormatter;
 @AgentDescription(
   name = "Weather Agent",
   description = """
-      An agent that provides weather information. It can provide current weather, forecasts, and other
-      related information.
-    """,
+    An agent that provides weather information. It can provide current weather,
+    forecasts, and other related information.
+  """,
   role = "worker"
 )
 // tag::function-tool[]

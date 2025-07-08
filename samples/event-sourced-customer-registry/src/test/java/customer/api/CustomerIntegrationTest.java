@@ -100,8 +100,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
     );
 
     // the view is eventually updated
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       .untilAsserted(() -> {
@@ -135,8 +134,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
     Assertions.assertEquals(done(), response);
 
     // the view is eventually updated
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       .untilAsserted(() -> {

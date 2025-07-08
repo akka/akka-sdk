@@ -44,9 +44,11 @@ public class MyAppSetup implements ServiceSetup {
   // tag::disable-components[]
   @Override
   public Set<Class<?>> disabledComponents() { // <1>
-    // end::disable-components[]
-    // to be able to run, otherwise duplicate components
-    if (true) {
+    if (appConfig.getString("my-app.environment").equals("prod")) {
+      return Set.of(MyComponent.class); // <2>
+      // end::disable-components[]
+    } else if (true) {
+      // to be able to run, otherwise duplicate components
       return Set.of(
         ActivityAgentMore.ActivityAgent.class,
         ActivityAgentMore.StreamingActivityAgent.class,
@@ -58,9 +60,7 @@ public class MyAppSetup implements ServiceSetup {
         MyAgentMore.MyAgentReadLastMemory.class,
         MyAgentMore.MyAgentWithModel.class
       );
-    } else // tag::disable-components[]
-    if (appConfig.getString("my-app.environment").equals("prod")) {
-      return Set.of(MyComponent.class); // <2>
+      // tag::disable-components[]
     } else {
       return Set.of(); // <2>
     }

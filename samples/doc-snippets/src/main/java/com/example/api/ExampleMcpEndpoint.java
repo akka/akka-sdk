@@ -28,20 +28,20 @@ public class ExampleMcpEndpoint {
     name = "echo",
     description = "Echoes back whatever string is thrown at it",
     inputSchema = """
-      {
-        "type":"object",
-        "properties": {
-          "input": {
-            "type": "object",
-            "properties": {
-              "message": {"type":"string", "description":"A string to echo"}
-            },
-            "required": ["message"]
-          }
-         },
-         "required": ["input"]
-      }
-      """ // <1>
+    {
+      "type":"object",
+      "properties": {
+        "input": {
+          "type": "object",
+          "properties": {
+            "message": {"type":"string", "description":"A string to echo"}
+          },
+          "required": ["message"]
+        }
+       },
+       "required": ["input"]
+    }
+    """ // <1>
   )
   public String echo(EchoToolRequest input) {
     return input.message;
@@ -67,8 +67,7 @@ public class ExampleMcpEndpoint {
   // tag::tool-with-class[]
   // example of reflectively deduced input schema, still needs descriptions
   public record EchoToolRequest2(
-    @Description("The first number") // <1>
-    int n1,
+    @Description("The first number") int n1, // <1>
     @Description("The second number") int n2,
     @Description("An optional third number") Optional<Integer> n3
   ) {}
@@ -94,8 +93,8 @@ public class ExampleMcpEndpoint {
   )
   public byte[] backgroundImage() { // <2>
     try (
-      InputStream in = this.getClass()
-        .getResourceAsStream("/static-resources/images/background.png")
+      InputStream in =
+        this.getClass().getResourceAsStream("/static-resources/images/background.png")
     ) {
       if (in == null) throw new RuntimeException("Could not find background image");
       return in.readAllBytes();
@@ -111,7 +110,8 @@ public class ExampleMcpEndpoint {
     uriTemplate = "file:///images/{fileName}", // <1>
     name = "Dynamic file",
     description = "Fetch a specific image file",
-    // Note: there is no way to dynamically return a mime type, it has to be the same for all files
+    // Note: there is no way to dynamically return a mime type,
+    // it has to be the same for all files
     mimeType = "image/png"
   )
   public byte[] dynamicResource(String fileName) { // <2>
@@ -120,8 +120,8 @@ public class ExampleMcpEndpoint {
       throw new RuntimeException("Invalid image file: " + fileName);
     }
     try (
-      InputStream in = this.getClass()
-        .getResourceAsStream("/static-resources/images/" + fileName)
+      InputStream in =
+        this.getClass().getResourceAsStream("/static-resources/images/" + fileName)
     ) {
       if (in == null) throw new RuntimeException("Could not find background image");
       return in.readAllBytes();

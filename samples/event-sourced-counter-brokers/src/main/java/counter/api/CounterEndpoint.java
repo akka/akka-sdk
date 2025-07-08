@@ -111,12 +111,13 @@ public class CounterEndpoint {
     var triggeredTasks = increaseAllThese
       .counterIds()
       .stream()
-      .map(counterId ->
-        componentClient
-          .forEventSourcedEntity(counterId)
-          .method(CounterEntity::increase)
-          .invokeAsync(increaseAllThese.value) // <1>
-      )
+      .map(
+        counterId ->
+          componentClient
+            .forEventSourcedEntity(counterId)
+            .method(CounterEntity::increase)
+            .invokeAsync(increaseAllThese.value)
+      ) // <1>
       .toList();
 
     for (var task : triggeredTasks) {

@@ -65,7 +65,8 @@ public class ActivityEndpoint {
 
     if (res.isEmpty()) return HttpResponses.notFound(
       "Answer for '" + sessionId + "' not available (yet)"
-    ); else return HttpResponses.ok(res);
+    );
+    else return HttpResponses.ok(res);
   }
 
   @Get("/activities/{userId}")

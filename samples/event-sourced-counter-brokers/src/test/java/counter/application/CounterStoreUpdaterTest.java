@@ -56,8 +56,7 @@ class CounterStoreUpdaterTest extends TestKitSupport {
     counterEvents.publish(messageBuilder.of(event1, event1Metadata));
     counterEvents.publish(messageBuilder.of(event2, event2Metadata));
 
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, SECONDS)
       .untilAsserted(() -> {
@@ -69,8 +68,7 @@ class CounterStoreUpdaterTest extends TestKitSupport {
     counterEvents.publish(messageBuilder.of(event1, event1Metadata));
     counterEvents.publish(messageBuilder.of(event2, event2Metadata));
 
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .during(3, SECONDS)
       .untilAsserted(() -> {

@@ -16,8 +16,10 @@ public class DelegatingGrpcEndpointImpl implements DelegatingGrpcEndpoint {
   private final ExampleGrpcEndpointClient akkaService;
 
   public DelegatingGrpcEndpointImpl(GrpcClientProvider clientProvider) { // <1>
-    akkaService =
-      clientProvider.grpcClientFor(ExampleGrpcEndpointClient.class, "doc-snippets"); // <2>
+    akkaService = clientProvider.grpcClientFor(
+      ExampleGrpcEndpointClient.class,
+      "doc-snippets"
+    ); // <2>
   }
 
   @Override

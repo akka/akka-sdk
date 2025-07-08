@@ -27,8 +27,7 @@ public class CounterEventsConsumer extends Consumer { // <3>
     );
     // tag::ese-consumer[]
     return switch (event) {
-      case ValueIncreased valueIncreased -> //processing value increased event
-      effects().done(); // <5>
+      case ValueIncreased valueIncreased -> effects().done(); // <5>
       case ValueMultiplied valueMultiplied -> effects().ignore(); // <6>
     };
   }

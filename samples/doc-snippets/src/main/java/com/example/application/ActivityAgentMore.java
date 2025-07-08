@@ -40,13 +40,13 @@ public interface ActivityAgentMore {
       You are an activity agent. Your job is to suggest activities in the
       real world. Like for example, a team building activity, sports, an
       indoor or outdoor game, board games, a city trip, etc.
-      
+
       Your response should be a JSON object with the following structure:
       {
         "name": "Name of the activity",
         "description": "Description of the activity"
       }
-      
+
       Do not include any explanations or text outside of the JSON structure.
       """.stripIndent();
 
@@ -204,10 +204,10 @@ public interface ActivityAgentMore {
 
     private static final String SYSTEM_MESSAGE =
       """
-        You are an activity agent. Your job is to suggest activities in the
-        real world. Like for example, a team building activity, sports, an
-        indoor or outdoor game, board games, a city trip, etc.
-        """.stripIndent();
+      You are an activity agent. Your job is to suggest activities in the
+      real world. Like for example, a team building activity, sports, an
+      indoor or outdoor game, board games, a city trip, etc.
+      """.stripIndent();
 
     // tag::error-handling[]
     public Effect<String> query(String message) {
@@ -217,10 +217,9 @@ public interface ActivityAgentMore {
         .onFailure(exception -> {
           // Handle different types of exceptions with appropriate fallback responses
           return switch (exception) { // <1>
-            case RateLimitException exc -> "Rate limit exceeded: please try again later"; // <2>
-            case ModelTimeoutException exc -> "Request timeout: the service is experiencing delays";
-            case ToolCallExecutionException exc -> "Tool error: unable to execute required tool " +
-            exc.getToolName();
+            case RateLimitException exc -> "Rate limit exceeded, try again later"; // <2>
+            case ModelTimeoutException exc -> "Request timeout, service is delayed";
+            case ToolCallExecutionException exc -> "Tool error: " + exc.getToolName();
             default -> "Unexpected error occurred"; // <3>
           };
         })

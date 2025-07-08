@@ -55,9 +55,8 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
     }
 
     public Optional<Path> head() { // <2>
-      if (toProcess.isEmpty()) return Optional.empty(); else return Optional.of(
-        toProcess.getFirst()
-      );
+      if (toProcess.isEmpty()) return Optional.empty();
+      else return Optional.of(toProcess.getFirst());
     }
 
     public State headProcessed() {
@@ -94,15 +93,13 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
   // tag::cons[]
   public RagIndexingWorkflow(MongoClient mongoClient) {
     this.embeddingModel = OpenAiUtils.embeddingModel();
-    this.embeddingStore =
-      MongoDbEmbeddingStore
-        .builder()
-        .fromClient(mongoClient)
-        .databaseName("akka-docs")
-        .collectionName("embeddings")
-        .indexName("default")
-        .createIndex(true)
-        .build();
+    this.embeddingStore = MongoDbEmbeddingStore.builder()
+      .fromClient(mongoClient)
+      .databaseName("akka-docs")
+      .collectionName("embeddings")
+      .indexName("default")
+      .createIndex(true)
+      .build();
 
     this.splitter = new DocumentByCharacterSplitter(500, 50); // <1>
   }
@@ -121,11 +118,10 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
         .getPath();
 
       try (Stream<Path> paths = Files.walk(Paths.get(documentsDirectoryPath))) {
-        documents =
-          paths
-            .filter(Files::isRegularFile)
-            .filter(path -> path.toString().endsWith(".md"))
-            .toList();
+        documents = paths
+          .filter(Files::isRegularFile)
+          .filter(path -> path.toString().endsWith(".md"))
+          .toList();
       } catch (IOException e) {
         throw new RuntimeException(e);
       }

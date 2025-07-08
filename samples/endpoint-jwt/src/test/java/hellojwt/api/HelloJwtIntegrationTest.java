@@ -28,13 +28,14 @@ public class HelloJwtIntegrationTest extends TestKitSupport {
 
   private String bearerTokenWith(Map<String, String> claims) throws JsonProcessingException {
     // setting algorithm to none
-    String header = Base64
-      .getEncoder()
-      .encodeToString("""
+    String header = Base64.getEncoder()
+      .encodeToString(
+        """
         {
           "alg": "none"
         }
-        """.getBytes()); // <3>
+        """.getBytes()
+      ); // <3>
     byte[] jsonClaims = JsonSupport.getObjectMapper().writeValueAsBytes(claims);
     String payload = Base64.getEncoder().encodeToString(jsonClaims);
 

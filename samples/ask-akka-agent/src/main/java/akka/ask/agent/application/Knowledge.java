@@ -19,19 +19,16 @@ public class Knowledge {
   private final ContentInjector contentInjector = new DefaultContentInjector();
 
   public Knowledge(MongoClient mongoClient) {
-    var contentRetriever = EmbeddingStoreContentRetriever
-      .builder() // <1>
+    var contentRetriever = EmbeddingStoreContentRetriever.builder() // <1>
       .embeddingStore(MongoDbUtils.embeddingStore(mongoClient))
       .embeddingModel(OpenAiUtils.embeddingModel())
       .maxResults(10)
       .minScore(0.1)
       .build();
 
-    this.retrievalAugmentor =
-      DefaultRetrievalAugmentor
-        .builder() // <2>
-        .contentRetriever(contentRetriever)
-        .build();
+    this.retrievalAugmentor = DefaultRetrievalAugmentor.builder() // <2>
+      .contentRetriever(contentRetriever)
+      .build();
   }
 
   public String addKnowledge(String question) {

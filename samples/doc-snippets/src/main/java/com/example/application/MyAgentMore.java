@@ -13,8 +13,7 @@ public interface MyAgentMore {
     public Effect<String> query(String question) {
       return effects()
         .model(
-          ModelProvider // <1>
-            .openAi()
+          ModelProvider.openAi() // <1>
             .withApiKey(System.getenv("OPENAI_API_KEY"))
             .withModelName("gpt-4o")
             .withTemperature(0.6)

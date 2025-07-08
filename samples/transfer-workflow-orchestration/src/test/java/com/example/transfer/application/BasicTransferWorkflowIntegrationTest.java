@@ -29,8 +29,7 @@ public class BasicTransferWorkflowIntegrationTest extends TestKitSupport {
 
     assertThat(response).isEqualTo("transfer started");
 
-    Awaitility
-      .await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var wallet1Balance = walletService.getBalance(walletId1);

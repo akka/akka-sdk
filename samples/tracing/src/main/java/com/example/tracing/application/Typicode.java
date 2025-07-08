@@ -66,16 +66,15 @@ public class Typicode {
 
     @Override
     public HttpResponse.BodySubscriber<T> apply(HttpResponse.ResponseInfo responseInfo) {
-      return HttpResponse.BodySubscribers.mapping(
-        HttpResponse.BodySubscribers.ofString(Charsets.UTF_8),
-        responseBody -> {
+      return HttpResponse.BodySubscribers.mapping(HttpResponse.BodySubscribers.ofString(
+          Charsets.UTF_8
+        ), responseBody -> {
           try {
             return new ObjectMapper().readValue(responseBody, responseType);
           } catch (IOException e) {
             throw new RuntimeException("Failed to parse JSON");
           }
-        }
-      );
+        });
     }
   }
 }

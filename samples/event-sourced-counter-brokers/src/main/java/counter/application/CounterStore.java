@@ -22,8 +22,9 @@ public class CounterStore {
   }
 
   public CompletionStage<Done> save(CounterEntry counterEntry) {
-    return completedFuture(store.put(counterEntry.counterId(), counterEntry))
-      .thenApply(__ -> done());
+    return completedFuture(store.put(counterEntry.counterId(), counterEntry)).thenApply(
+      __ -> done()
+    );
   }
 
   public CompletionStage<Collection<CounterEntry>> getAll() {

@@ -59,47 +59,43 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
 
   private Step askWeather() { // <2>
     return step("weather")
-      .call(() ->
-        componentClient
-          .forAgent()
-          .inSession(sessionId())
-          .method(WeatherAgent::query)
-          .invoke(currentState().userQuery)
+      .call(
+        () ->
+          componentClient
+            .forAgent()
+            .inSession(sessionId())
+            .method(WeatherAgent::query)
+            .invoke(currentState().userQuery)
       )
-      .andThen(
-        String.class,
-        forecast -> {
-          logger.info("Weather forecast: {}", forecast);
+      .andThen(String.class, forecast -> {
+        logger.info("Weather forecast: {}", forecast);
 
-          return effects()
-            .updateState(currentState().withWeatherForecast(forecast)) // <3>
-            .transitionTo("activities");
-        }
-      )
+        return effects()
+          .updateState(currentState().withWeatherForecast(forecast)) // <3>
+          .transitionTo("activities");
+      })
       .timeout(Duration.ofSeconds(60));
   }
 
   private Step suggestActivities() {
     return step("activities")
       .call(() -> {
-        String request =
-          currentState().userQuery + "\nWeather forecast: " + currentState().weatherForecast; // <4>
+        String request = // <4>
+          currentState().userQuery + "\nWeather forecast: " + currentState().weatherForecast;
+
         return componentClient
           .forAgent()
           .inSession(sessionId())
           .method(ActivityAgent::query)
           .invoke(request);
       })
-      .andThen(
-        String.class,
-        suggestion -> {
-          logger.info("Activities: {}", suggestion);
+      .andThen(String.class, suggestion -> {
+        logger.info("Activities: {}", suggestion);
 
-          return effects()
-            .updateState(currentState().withAnswer(suggestion)) // <5>
-            .end();
-        }
-      )
+        return effects()
+          .updateState(currentState().withAnswer(suggestion)) // <5>
+          .end();
+      })
       .timeout(Duration.ofSeconds(60));
   }
 

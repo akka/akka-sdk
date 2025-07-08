@@ -101,8 +101,7 @@ public class NestedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
     String customerId,
     Function<NestedCustomerOrders, Boolean> condition
   ) {
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       .until(() -> condition.apply(getCustomerOrders(customerId)));

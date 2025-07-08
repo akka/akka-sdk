@@ -65,13 +65,13 @@ public class JoinedCustomerOrdersView extends View {
 
   @Query( // <3>
     """
-        SELECT * AS orders
-        FROM customers
-        JOIN orders ON customers.customerId = orders.customerId
-        JOIN products ON products.productId = orders.productId
-        WHERE customers.customerId = :customerId
-        ORDER BY orders.createdTimestamp
-        """
+    SELECT * AS orders
+    FROM customers
+    JOIN orders ON customers.customerId = orders.customerId
+    JOIN products ON products.productId = orders.productId
+    WHERE customers.customerId = :customerId
+    ORDER BY orders.createdTimestamp
+    """
   )
   public QueryEffect<JoinedCustomerOrders> get(String customerId) { // <4>
     return queryResult();

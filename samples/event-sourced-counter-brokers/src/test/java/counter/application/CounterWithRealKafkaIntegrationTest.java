@@ -51,8 +51,7 @@ public class CounterWithRealKafkaIntegrationTest extends TestKitSupport { // <1>
     try (KafkaConsumer<String, byte[]> consumer = buildStringKafkaConsumer()) {
       consumer.subscribe(Collections.singletonList("counter-events-with-meta"));
 
-      Awaitility
-        .await()
+      Awaitility.await()
         .ignoreExceptions()
         .atMost(ofSeconds(30))
         .untilAsserted(() -> {

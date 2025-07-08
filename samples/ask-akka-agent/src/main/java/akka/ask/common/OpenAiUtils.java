@@ -9,8 +9,7 @@ public class OpenAiUtils {
     OpenAiEmbeddingModelName.TEXT_EMBEDDING_3_SMALL;
 
   public static OpenAiEmbeddingModel embeddingModel() {
-    return OpenAiEmbeddingModel
-      .builder()
+    return OpenAiEmbeddingModel.builder()
       .apiKey(KeyUtils.readOpenAiKey())
       .modelName(embeddingModelName)
       .build();

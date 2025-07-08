@@ -25,8 +25,7 @@ public class OrderEndpointIntegrationTest extends TestKitSupport {
     String orderId = placeOrder(orderReq);
     assertThat(orderId).isNotEmpty();
 
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
@@ -38,8 +37,7 @@ public class OrderEndpointIntegrationTest extends TestKitSupport {
     var confirmResp = confirmOrder(orderId);
     assertThat(confirmResp.status()).isEqualTo(StatusCodes.OK);
 
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.of(SECONDS))
       .until(() -> getOrderStatus(orderId), OrderStatus::confirmed);
@@ -55,8 +53,7 @@ public class OrderEndpointIntegrationTest extends TestKitSupport {
     var methodRef = componentClient.forKeyValueEntity(orderId).method(OrderEntity::status);
 
     // After the default timeout, status changed to not placed as order is reverted
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.of(SECONDS))
       .until(() -> methodRef.invoke(), status -> !status.confirmed());

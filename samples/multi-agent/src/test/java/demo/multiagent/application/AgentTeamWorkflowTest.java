@@ -26,8 +26,9 @@ public class AgentTeamWorkflowTest extends TestKitSupport { // <1>
 
   @Override
   protected TestKit.Settings testKitSettings() {
-    return TestKit.Settings.DEFAULT
-      .withAdditionalConfig("akka.javasdk.agent.openai.api-key = n/a")
+    return TestKit.Settings.DEFAULT.withAdditionalConfig(
+      "akka.javasdk.agent.openai.api-key = n/a"
+    )
       .withModelProvider(SelectorAgent.class, selectorModel) // <3>
       .withModelProvider(PlannerAgent.class, plannerModel)
       .withModelProvider(ActivityAgent.class, activitiesModel)
@@ -64,18 +65,21 @@ public class AgentTeamWorkflowTest extends TestKitSupport { // <1>
 
     summaryModel.fixedResponse(
       "The weather in Stockholm is sunny, so you can enjoy " +
-      "outdoor activities like a bike tour around Djurgården Park, visiting the Vasa Museum, " +
-      "exploring Gamla Stan (Old Town)"
+      "outdoor activities like a bike tour around Djurgården Park, " +
+      "visiting the Vasa Museum, exploring Gamla Stan (Old Town)"
     );
 
     var query = "I am in Stockholm. What should I do? Beware of the weather";
 
     var sessionId = UUID.randomUUID().toString();
     var request = new AgentTeamWorkflow.Request("alice", query);
-    componentClient.forWorkflow(sessionId).method(AgentTeamWorkflow::start).invoke(request); // <6>
 
-    Awaitility
-      .await()
+    componentClient
+      .forWorkflow(sessionId)
+      .method(AgentTeamWorkflow::start) // <6>
+      .invoke(request);
+
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(10, SECONDS)
       .untilAsserted(() -> {

@@ -13,10 +13,10 @@ public class ActivityAgent extends Agent {
 
   private static final String SYSTEM_MESSAGE =
     """
-      You are an activity agent. Your job is to suggest activities in the
-      real world. Like for example, a team building activity, sports, an
-      indoor or outdoor game, board games, a city trip, etc.
-      """.stripIndent();
+    You are an activity agent. Your job is to suggest activities in the
+    real world. Like for example, a team building activity, sports, an
+    indoor or outdoor game, board games, a city trip, etc.
+    """.stripIndent();
 
   private final ComponentClient componentClient;
 
@@ -34,10 +34,9 @@ public class ActivityAgent extends Agent {
     if (allPreferences.entries().isEmpty()) {
       userMessage = request.message();
     } else {
-      userMessage =
-        request.message() +
-        "\nPreferences:\n" +
-        allPreferences.entries().stream().collect(Collectors.joining("\n", "- ", ""));
+      userMessage = request.message() +
+      "\nPreferences:\n" +
+      allPreferences.entries().stream().collect(Collectors.joining("\n", "- ", ""));
     }
 
     return effects()

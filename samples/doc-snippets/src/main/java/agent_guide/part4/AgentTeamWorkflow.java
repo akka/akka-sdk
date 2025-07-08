@@ -59,21 +59,19 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
 
   private Step askWeather() { // <3>
     return step("weather")
-      .call(() ->
-        componentClient
-          .forAgent()
-          .inSession(sessionId())
-          .method(WeatherAgent::query)
-          .invoke(currentState().userQuery)
+      .call(
+        () ->
+          componentClient
+            .forAgent()
+            .inSession(sessionId())
+            .method(WeatherAgent::query)
+            .invoke(currentState().userQuery)
       )
-      .andThen(
-        String.class,
-        forecast -> {
-          logger.info("Weather forecast: {}", forecast);
+      .andThen(String.class, forecast -> {
+        logger.info("Weather forecast: {}", forecast);
 
-          return effects().transitionTo("activities"); // <4>
-        }
-      )
+        return effects().transitionTo("activities"); // <4>
+      })
       .timeout(Duration.ofSeconds(60));
   }
 
@@ -86,18 +84,14 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
           .method(ActivityAgent::query) // <5>
           .invoke(
             new ActivityAgent.Request(currentState().userId(), currentState().userQuery())
-          )
-      )
-      .andThen(
-        String.class,
-        suggestion -> {
-          logger.info("Activities: {}", suggestion);
+          ))
+      .andThen(String.class, suggestion -> {
+        logger.info("Activities: {}", suggestion);
 
-          return effects()
-            .updateState(currentState().withAnswer(suggestion)) // <6>
-            .end();
-        }
-      )
+        return effects()
+          .updateState(currentState().withAnswer(suggestion)) // <6>
+          .end();
+      })
       .timeout(Duration.ofSeconds(60));
   }
 

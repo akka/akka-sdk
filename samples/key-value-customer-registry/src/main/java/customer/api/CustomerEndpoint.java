@@ -108,22 +108,21 @@ public class CustomerEndpoint {
       .stream(CustomersByName::getCustomerSummaryStream)
       .source(name);
 
-    Source<ByteString, NotUsed> csvByteChunkStream = Source
-      .single("id,name,email\n")
+    Source<ByteString, NotUsed> csvByteChunkStream = Source.single("id,name,email\n")
       .concat(
-        customerSummarySource.map(customerSummary ->
-          customerSummary.customerId() +
-          "," +
-          customerSummary.name() +
-          "," +
-          customerSummary.email() +
-          "\n"
+        customerSummarySource.map(
+          customerSummary ->
+            customerSummary.customerId() +
+            "," +
+            customerSummary.name() +
+            "," +
+            customerSummary.email() +
+            "\n"
         )
       )
       .map(ByteString::fromString);
 
-    return HttpResponse
-      .create()
+    return HttpResponse.create()
       .withStatus(StatusCodes.OK)
       .withEntity(HttpEntities.create(ContentTypes.TEXT_CSV_UTF8, csvByteChunkStream));
   }
@@ -149,8 +148,7 @@ public class CustomerEndpoint {
   public HttpResponse streamCustomerChanges(String customerId) {
     Source<Customer, Cancellable> stateEvery5Seconds =
       // stream of ticks, one immediately, then one every five seconds
-      Source
-        .tick(Duration.ZERO, Duration.ofSeconds(5), "tick") // <1>
+      Source.tick(Duration.ZERO, Duration.ofSeconds(5), "tick") // <1>
         // for each tick, request the entity state
         .mapAsync(
           1,
@@ -165,7 +163,8 @@ public class CustomerEndpoint {
                   return Optional.of(customer);
                 } else if (error instanceof IllegalArgumentException) {
                   // calling getCustomer throws IllegalArgument if the customer does not exist
-                  // we want the stream to continue polling in that case, so turn it into an empty optional
+                  // we want the stream to continue polling in that case,
+                  // so turn it into an empty optional
                   return Optional.<Customer>empty();
                 } else {
                   throw new RuntimeException(
@@ -175,8 +174,8 @@ public class CustomerEndpoint {
                 }
               })
         )
-        // then filter out the empty optionals and return the actual customer states for nonempty
-        // so that the stream contains only Customer elements
+        // then filter out the empty optionals and return the actual
+        // customer states for nonempty so that the stream contains only Customer elements
         .filter(Optional::isPresent)
         .map(Optional::get);
 
@@ -195,9 +194,8 @@ public class CustomerEndpoint {
 
     // now turn each changed internal state representation into public API representation,
     // just like get endpoint above
-    Source<ApiCustomer, Cancellable> streamOfChangesAsApiType = streamOfChanges.map(customer -> // <3>
-      toApiCustomer(customerId, customer)
-    );
+    Source<ApiCustomer, Cancellable> streamOfChangesAsApiType = // <3>
+      streamOfChanges.map(customer -> toApiCustomer(customerId, customer));
 
     // turn into server sent event response
     return HttpResponses.serverSentEvents(streamOfChangesAsApiType); // <4>

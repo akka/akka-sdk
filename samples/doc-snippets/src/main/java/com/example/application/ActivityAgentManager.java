@@ -62,18 +62,14 @@ public class ActivityAgentManager extends Workflow<ActivityAgentManager.State> {
           .forAgent()
           .inSession(sessionId())
           .method(ActivityAgent::query) // <8>
-          .invoke(currentState().userQuery)
-      )
-      .andThen(
-        String.class,
-        suggestion -> {
-          logger.info("Activities: {}", suggestion);
+          .invoke(currentState().userQuery))
+      .andThen(String.class, suggestion -> {
+        logger.info("Activities: {}", suggestion);
 
-          return effects()
-            .updateState(currentState().withAnswer(suggestion)) // <9>
-            .end();
-        }
-      )
+        return effects()
+          .updateState(currentState().withAnswer(suggestion)) // <9>
+          .end();
+      })
       .timeout(Duration.ofSeconds(60));
   }
 

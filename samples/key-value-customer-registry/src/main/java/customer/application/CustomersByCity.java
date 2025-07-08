@@ -49,8 +49,10 @@ public class CustomersByCity extends View {
   public record QueryParams(String customerName, String city) {} // <1>
 
   @Query(
-    value = "SELECT * FROM customers_by_city WHERE name = :customerName AND address.city = :city"
-  ) // <2>
+    """
+    SELECT * FROM customers_by_city
+    WHERE name = :customerName AND address.city = :city"""
+  ) // <2>mvn
   public QueryEffect<Customer> getCustomersByCityAndName(QueryParams queryParams) {
     return queryResult();
   }

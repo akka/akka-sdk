@@ -25,10 +25,8 @@ public class TracingAction extends TimedAction {
 
     maybeSpan.ifPresent(span -> span.setAttribute("post", postID));
 
-    CompletionStage<HttpResponse<Typicode.TypicodePost>> asyncResult = typicode.callAsyncService(
-      postID,
-      maybeSpan
-    );
+    CompletionStage<HttpResponse<Typicode.TypicodePost>> asyncResult =
+      typicode.callAsyncService(postID, maybeSpan);
 
     maybeSpan.ifPresent(span ->
       asyncResult.whenComplete((response, ex) -> {
@@ -37,8 +35,7 @@ public class TracingAction extends TimedAction {
         } else {
           span.setAttribute("response-status", response.statusCode()).end();
         }
-      })
-    );
+      }));
 
     return effects().asyncEffect(asyncResult.thenApply(__ -> effects().done()));
   }

@@ -32,8 +32,7 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
 
     assertThat(response).isEqualTo(done());
 
-    Awaitility
-      .await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var balance1 = getWalletBalance(walletId1);
@@ -46,8 +45,9 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
           .forView()
           .method(TransfersView::getAllCompleted)
           .invoke();
-        assertThat(result.entries())
-          .contains(new TransfersView.TransferEntry(transferId, "COMPLETED"));
+        assertThat(result.entries()).contains(
+          new TransfersView.TransferEntry(transferId, "COMPLETED")
+        );
       });
   }
 

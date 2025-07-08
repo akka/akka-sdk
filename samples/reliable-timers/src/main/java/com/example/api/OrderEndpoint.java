@@ -46,7 +46,10 @@ public class OrderEndpoint {
     timerScheduler.createSingleTimer( // <3>
       timerName(orderId), // <4>
       Duration.ofSeconds(10), // <5>
-      componentClient.forTimedAction().method(OrderTimedAction::expireOrder).deferred(orderId) // <6>
+      componentClient
+        .forTimedAction()
+        .method(OrderTimedAction::expireOrder) // <6>
+        .deferred(orderId)
     );
 
     // end::place-order[]

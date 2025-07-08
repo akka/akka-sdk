@@ -63,8 +63,7 @@ class CustomerStoreUpdaterTest extends TestKitSupport {
       new Address("street1", "city1")
     );
 
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, SECONDS)
       .untilAsserted(() -> {
@@ -76,8 +75,7 @@ class CustomerStoreUpdaterTest extends TestKitSupport {
     consumerEvents.publish(messageBuilder.of(event1, event1Metadata));
     consumerEvents.publish(messageBuilder.of(event2, event2Metadata));
 
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .during(3, SECONDS)
       .untilAsserted(() -> {

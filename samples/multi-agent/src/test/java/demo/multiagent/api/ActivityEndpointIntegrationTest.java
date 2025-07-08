@@ -27,8 +27,9 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
 
   @Override
   protected TestKit.Settings testKitSettings() {
-    return TestKit.Settings.DEFAULT
-      .withAdditionalConfig("akka.javasdk.agent.openai.api-key = n/a")
+    return TestKit.Settings.DEFAULT.withAdditionalConfig(
+      "akka.javasdk.agent.openai.api-key = n/a"
+    )
       .withModelProvider(SelectorAgent.class, selectorModel)
       .withModelProvider(PlannerAgent.class, plannerModel)
       .withModelProvider(ActivityAgent.class, activitiesModel)
@@ -62,8 +63,7 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
     var sessionId = extractSessionIdFromLocation(locationHeader, userId);
 
     // 2. Retrieve answer using the sessionId
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(15, TimeUnit.SECONDS)
       .untilAsserted(() -> {
@@ -81,8 +81,7 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
       });
 
     // 3. Retrieve via listActivities
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(() -> {
@@ -115,8 +114,7 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
     assertThat(preferenceResponse.status()).isEqualTo(StatusCodes.CREATED);
 
     // Wait for preference to be processed and new suggestion generated
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       .untilAsserted(() -> {
@@ -162,18 +160,18 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
 
     summaryModel.fixedResponse(
       "The weather in Stockholm is sunny, so you can enjoy " +
-      "outdoor activities like a bike tour around Djurgården Park, visiting the Vasa Museum, " +
-      "exploring Gamla Stan (Old Town)"
+      "outdoor activities like a bike tour around Djurgården Park, " +
+      "visiting the Vasa Museum, exploring Gamla Stan (Old Town)"
     );
 
     // Initial evaluator response (no preference conflict)
     evaluatorModel.fixedResponse(
       """
-            {
-              "score": 5,
-              "feedback": "The suggestion is appropriate for the user."
-            }
-            """
+      {
+        "score": 5,
+        "feedback": "The suggestion is appropriate for the user."
+      }
+      """
     );
   }
 
@@ -184,11 +182,11 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
       .whenMessage(req -> req.contains("hate outdoor activities"))
       .reply(
         """
-            {
-              "score": 1,
-              "feedback": "The previous suggestion conflicts with user preferences for indoor activities. Outdoor bike tours are not suitable."
-            }
-            """
+        {
+          "score": 1,
+          "feedback": "The previous suggestion conflicts with user preferences for indoor activities. Outdoor bike tours are not suitable."
+        }
+        """
       );
 
     // Updated activity suggestion based on preference

@@ -21,24 +21,24 @@ public class StructuredCustomerOrdersView extends View {
   // tag::query[]
   @Query( // <1>
     """
-      SELECT
-       customers.customerId AS id,
-       (name,
-        address.street AS address1,
-        address.city AS address2,
-        email AS contactEmail) AS shipping,
-       (products.productId AS id,
-        productName AS name,
-        quantity,
-        (price.currency, price.units, price.cents) AS value,
-        orderId,
-        createdTimestamp AS orderCreatedTimestamp) AS orders
-      FROM customers
-      JOIN orders ON orders.customerId = customers.customerId
-      JOIN products ON products.productId = orders.productId
-      WHERE customers.customerId = :customerId
-      ORDER BY orders.createdTimestamp
-      """
+    SELECT
+     customers.customerId AS id,
+     (name,
+      address.street AS address1,
+      address.city AS address2,
+      email AS contactEmail) AS shipping,
+     (products.productId AS id,
+      productName AS name,
+      quantity,
+      (price.currency, price.units, price.cents) AS value,
+      orderId,
+      createdTimestamp AS orderCreatedTimestamp) AS orders
+    FROM customers
+    JOIN orders ON orders.customerId = customers.customerId
+    JOIN products ON products.productId = orders.productId
+    WHERE customers.customerId = :customerId
+    ORDER BY orders.createdTimestamp
+    """
   )
   public QueryEffect<StructuredCustomerOrders> get(String customerId) {
     return queryResult();

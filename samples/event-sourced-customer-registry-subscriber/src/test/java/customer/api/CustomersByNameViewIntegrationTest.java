@@ -16,8 +16,7 @@ public class CustomersByNameViewIntegrationTest extends CustomerRegistryIntegrat
 
   @Override
   protected TestKit.Settings testKitSettings() {
-    return super
-      .testKitSettings()
+    return super.testKitSettings()
       .withStreamIncomingMessages("customer-registry", "customer_events");
   }
 
@@ -35,8 +34,7 @@ public class CustomersByNameViewIntegrationTest extends CustomerRegistryIntegrat
     customerEvents.publish(created1, "b");
     customerEvents.publish(created2, "a");
 
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       .pollInterval(1, TimeUnit.SECONDS)
@@ -50,8 +48,9 @@ public class CustomersByNameViewIntegrationTest extends CustomerRegistryIntegrat
           .findFirst()
           .get();
 
-        assertThat(customer)
-          .isEqualTo(new CustomerEntry("b", created1.email(), created1.name()));
+        assertThat(customer).isEqualTo(
+          new CustomerEntry("b", created1.email(), created1.name())
+        );
 
         CustomerEntry customer2 = componentClient
           .forView()
@@ -62,8 +61,9 @@ public class CustomersByNameViewIntegrationTest extends CustomerRegistryIntegrat
           .findFirst()
           .get();
 
-        assertThat(customer2)
-          .isEqualTo(new CustomerEntry("a", created2.email(), created2.name()));
+        assertThat(customer2).isEqualTo(
+          new CustomerEntry("a", created2.email(), created2.name())
+        );
       });
   }
 }

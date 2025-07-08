@@ -68,7 +68,8 @@ public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
     } catch (Exception ex) {
       if (
         ex.getMessage().contains("No customer found for id")
-      ) throw new GrpcServiceException(Status.NOT_FOUND); else throw new RuntimeException(ex);
+      ) throw new GrpcServiceException(Status.NOT_FOUND);
+      else throw new RuntimeException(ex);
     }
   }
 
@@ -140,8 +141,8 @@ public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
       .stream(CustomersByEmailView::getCustomersStream)
       .source(in.getEmail());
 
-    return customerSummarySource.map(c ->
-      CustomerSummary.newBuilder().setName(c.name()).setEmail(c.email()).build()
+    return customerSummarySource.map(
+      c -> CustomerSummary.newBuilder().setName(c.name()).setEmail(c.email()).build()
     );
   }
 
@@ -158,7 +159,8 @@ public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
   }
 
   private customer.domain.Address apiToDomain(Address protoAddress) {
-    if (protoAddress == null) return null; else {
+    if (protoAddress == null) return null;
+    else {
       return new customer.domain.Address(protoAddress.getStreet(), protoAddress.getCity());
     }
   }
@@ -166,8 +168,7 @@ public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
   // tag::endpoint-component-interaction[]
 
   private Customer domainToApi(customer.domain.Customer domainCustomer) {
-    return Customer
-      .newBuilder()
+    return Customer.newBuilder()
       .setName(domainCustomer.name())
       .setEmail(domainCustomer.email())
       .setAddress(domainToApi(domainCustomer.address()))
@@ -175,9 +176,9 @@ public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
   }
 
   private Address domainToApi(customer.domain.Address domainAddress) {
-    if (domainAddress == null) return null; else {
-      return Address
-        .newBuilder()
+    if (domainAddress == null) return null;
+    else {
+      return Address.newBuilder()
         .setCity(domainAddress.city())
         .setStreet(domainAddress.street())
         .build();
@@ -187,8 +188,7 @@ public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
   // end::endpoint-component-interaction[]
 
   private Customer domainToApi(CustomerEntry domainRow) {
-    return Customer
-      .newBuilder()
+    return Customer.newBuilder()
       .setName(domainRow.name())
       .setEmail(domainRow.email())
       .setAddress(domainToApi(domainRow.address()))

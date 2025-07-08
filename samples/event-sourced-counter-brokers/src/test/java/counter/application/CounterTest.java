@@ -15,9 +15,8 @@ public class CounterTest {
 
   @Test
   public void testIncrease() {
-    EventSourcedTestKit<Integer, CounterEvent, CounterEntity> testKit = EventSourcedTestKit.of(
-      CounterEntity::new
-    );
+    EventSourcedTestKit<Integer, CounterEvent, CounterEntity> testKit =
+      EventSourcedTestKit.of(CounterEntity::new);
     EventSourcedResult<Integer> result = testKit.method(CounterEntity::increase).invoke(10);
 
     assertTrue(result.isReply());
@@ -29,9 +28,8 @@ public class CounterTest {
 
   @Test
   public void testMultiply() {
-    EventSourcedTestKit<Integer, CounterEvent, CounterEntity> testKit = EventSourcedTestKit.of(
-      CounterEntity::new
-    );
+    EventSourcedTestKit<Integer, CounterEvent, CounterEntity> testKit =
+      EventSourcedTestKit.of(CounterEntity::new);
     // set initial value to 2
     testKit.method(CounterEntity::increase).invoke(2);
 

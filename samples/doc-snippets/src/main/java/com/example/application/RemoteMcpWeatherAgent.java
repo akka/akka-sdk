@@ -29,8 +29,7 @@ public class RemoteMcpWeatherAgent extends Agent {
       .systemMessage(SYSTEM_MESSAGE)
       .mcpTools(
         RemoteMcpTools.fromService("weather-service"), // <1>
-        RemoteMcpTools
-          .fromServer("https://weather.example.com/mcp") // <2>
+        RemoteMcpTools.fromServer("https://weather.example.com/mcp") // <2>
           .addClientHeader(Authorization.oauth2(System.getenv("WEATHER_API_TOKEN"))) // <3>
           .withAllowedToolNames(Set.of("get_weather")) // <4>
       )

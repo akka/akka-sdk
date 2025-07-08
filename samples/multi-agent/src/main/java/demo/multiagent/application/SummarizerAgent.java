@@ -18,19 +18,17 @@ public class SummarizerAgent extends Agent {
 
   private String buildSystemMessage(String userQuery) {
     return """
-        You will receive the original query and a message generate by different other agents.
-      
-        Your task is to build a new message using the message provided by the other agents.
-        You are not allowed to add any new information, you should only re-phrase it to make
-        them part of coherent message.
-      
-        The message to summarize will be provided between single quotes.
-      
-        ORIGINAL USER QUERY:
-        %s
-      """.formatted(
-        userQuery
-      );
+      You will receive the original query and a message generate by different other agents.
+
+      Your task is to build a new message using the message provided by the other agents.
+      You are not allowed to add any new information, you should only re-phrase it to make
+      them part of coherent message.
+
+      The message to summarize will be provided between single quotes.
+
+      ORIGINAL USER QUERY:
+      %s
+    """.formatted(userQuery);
   }
 
   public Effect<String> summarize(Request request) {

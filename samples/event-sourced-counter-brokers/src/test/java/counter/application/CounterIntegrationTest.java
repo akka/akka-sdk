@@ -25,8 +25,7 @@ public class CounterIntegrationTest extends TestKitSupport { // <1>
   // tag::eventing-config[]
   @Override
   protected TestKit.Settings testKitSettings() {
-    return TestKit.Settings.DEFAULT
-      .withTopicIncomingMessages("counter-commands") // <1>
+    return TestKit.Settings.DEFAULT.withTopicIncomingMessages("counter-commands") // <1>
       .withTopicOutgoingMessages("counter-events") // <2>
       // end::eventing-config[]
       .withTopicOutgoingMessages("counter-events-with-meta");
@@ -123,12 +122,11 @@ public class CounterIntegrationTest extends TestKitSupport { // <1>
     var counterId = "test-topic-metadata";
     var increaseCmd = new IncreaseCounter(counterId, 10);
 
-    var metadata = CloudEvent
-      .of( // <1>
-        "cmd1",
-        URI.create("CounterTopicIntegrationTest"),
-        increaseCmd.getClass().getName()
-      )
+    var metadata = CloudEvent.of( // <1>
+      "cmd1",
+      URI.create("CounterTopicIntegrationTest"),
+      increaseCmd.getClass().getName()
+    )
       .withSubject(counterId) // <2>
       .asMetadata()
       .add("Content-Type", "application/json"); // <3>

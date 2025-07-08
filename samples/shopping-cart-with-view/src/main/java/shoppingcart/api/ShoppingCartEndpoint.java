@@ -78,7 +78,8 @@ public class ShoppingCartEndpoint extends AbstractHttpEndpoint {
       .method(ShoppingCartView::getUserCart) // <1>
       .invoke(userId);
 
-    return result.orElseThrow(() -> HttpException.error(StatusCodes.NOT_FOUND, "no such cart")
+    return result.orElseThrow(
+      () -> HttpException.error(StatusCodes.NOT_FOUND, "no such cart")
     );
   }
 

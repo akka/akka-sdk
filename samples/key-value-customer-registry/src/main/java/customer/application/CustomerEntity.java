@@ -28,9 +28,8 @@ public class CustomerEntity extends KeyValueEntity<Customer> { // <4>
 
   public ReadOnlyEffect<Customer> getCustomer() {
     if (currentState() == null) return effects()
-      .error(
-        "No customer found for id '" + commandContext().entityId() + "'"
-      ); else return effects().reply(currentState());
+      .error("No customer found for id '" + commandContext().entityId() + "'");
+    else return effects().reply(currentState());
   }
 
   public Effect<Done> changeName(String newName) {

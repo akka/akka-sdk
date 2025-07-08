@@ -113,8 +113,7 @@ public class JoinedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
     String customerId,
     Function<List<CustomerOrder>, Boolean> condition
   ) {
-    Awaitility
-      .await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       .until(() -> condition.apply(getCustomerOrders(customerId)));
