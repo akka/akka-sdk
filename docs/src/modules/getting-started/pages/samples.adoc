@@ -113,7 +113,7 @@ This sample illustrates the basics of building a shopping cart with entities, vi
 [%hardbreaks]
 **Concepts**: _Entity_, _Events_, _HTTP Endpoint_
 **Level**: _Beginner_
-xref:getting-started:build-and-deploy-shopping-cart.adoc[Step-by-step guide]
+xref:getting-started:shopping-cart/build-and-deploy-shopping-cart.adoc[Step-by-step guide]
 link:https://github.com/akka-samples/shopping-cart-quickstart[Github Repository, window="new"]
 
 == Customer data store

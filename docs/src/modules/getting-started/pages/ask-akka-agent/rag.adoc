@@ -1,4 +1,4 @@
-= AI RAG agent part 3: Executing RAG queries
+= Executing RAG queries
 :page-aliases: java:ask-akka/rag.adoc
 
 include::ROOT:partial$include.adoc[]

@@ -1,4 +1,4 @@
-= AI RAG agent part 2: Knowledge indexing with a workflow
+= Knowledge indexing with a workflow
 :page-aliases: java:ask-akka/indexer.adoc
 
 include::ROOT:partial$include.adoc[]
