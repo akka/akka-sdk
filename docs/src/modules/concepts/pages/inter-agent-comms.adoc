@@ -1,4 +1,4 @@
-= Inter-agent Communications
+= Inter-agent communications
 
 include::ROOT:partial$include.adoc[]
 
