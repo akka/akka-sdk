@@ -28,7 +28,7 @@ Endpoint (API) -> Agent | Avoid leveraging protocols such as HTTP, JSON-RPC, gRP
 
 |⛔| Agent -> MCP Server -> Agent | It is best to avoid using an agent’s ability to call tools or services as a way to reach other agents. This creates indirect connections that reduce clarity and make the system harder to reason about.
 
-|⛔| Endpoint (API) -> Endpoint (API) | Avoid having an endpoint call functions directly on another endpoint. This can create side effects that aren't captured by any of the durable event flows and can bypass the resiliency and scalability provided by workflows.
+|⛔| Endpoint (API) -> Endpoint (API) | Avoid having an endpoint call functions directly on another endpoint. This can create side effects that aren't captured by any of the durable event flows and can bypass the resiliency and scalability provided by Workflows.
 
 |===
 
