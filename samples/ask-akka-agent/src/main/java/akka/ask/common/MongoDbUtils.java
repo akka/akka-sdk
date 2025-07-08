@@ -8,7 +8,8 @@ import dev.langchain4j.store.embedding.mongodb.MongoDbEmbeddingStore;
 public class MongoDbUtils {
 
   public static EmbeddingStore<TextSegment> embeddingStore(MongoClient mongoClient) {
-    return MongoDbEmbeddingStore.builder()
+    return MongoDbEmbeddingStore
+      .builder()
       .fromClient(mongoClient)
       // TODO: make db name, collection name and index name configurable
       .databaseName("akka-docs")

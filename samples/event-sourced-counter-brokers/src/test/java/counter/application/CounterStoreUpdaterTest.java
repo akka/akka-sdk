@@ -1,19 +1,18 @@
 package counter.application;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import akka.javasdk.Metadata;
 import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import counter.application.CounterStore.CounterEntry;
 import counter.domain.CounterEvent;
+import java.util.Collection;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import java.util.Collection;
-
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.assertj.core.api.Assertions.assertThat;
 
 class CounterStoreUpdaterTest extends TestKitSupport {
 
@@ -22,10 +21,10 @@ class CounterStoreUpdaterTest extends TestKitSupport {
 
   @Override
   protected TestKit.Settings testKitSettings() {
-    return TestKit.Settings.DEFAULT
-      .withEventSourcedEntityIncomingMessages(CounterEntity.class);
+    return TestKit.Settings.DEFAULT.withEventSourcedEntityIncomingMessages(
+      CounterEntity.class
+    );
   }
-
 
   @BeforeAll
   public void beforeAll() {
@@ -33,7 +32,6 @@ class CounterStoreUpdaterTest extends TestKitSupport {
     counterEvents = testKit.getEventSourcedEntityIncomingMessages(CounterEntity.class);
     counterStore = getDependency(CounterStore.class);
   }
-
 
   @Test
   public void verifyBuildInDeduplication() {
@@ -43,16 +41,23 @@ class CounterStoreUpdaterTest extends TestKitSupport {
     var event2 = new CounterEvent.ValueIncreased(5, 6);
 
     // preparing metadata with sequence numbers
-    Metadata event1Metadata = messageBuilder.defaultMetadata(event1, "c123").asCloudEvent()
-      .withSequence("1").asMetadata();
-    Metadata event2Metadata = messageBuilder.defaultMetadata(event2, "c123").asCloudEvent()
-      .withSequence("2").asMetadata();
+    Metadata event1Metadata = messageBuilder
+      .defaultMetadata(event1, "c123")
+      .asCloudEvent()
+      .withSequence("1")
+      .asMetadata();
+    Metadata event2Metadata = messageBuilder
+      .defaultMetadata(event2, "c123")
+      .asCloudEvent()
+      .withSequence("2")
+      .asMetadata();
 
     // sending predefined events
     counterEvents.publish(messageBuilder.of(event1, event1Metadata));
     counterEvents.publish(messageBuilder.of(event2, event2Metadata));
 
-    Awaitility.await()
+    Awaitility
+      .await()
       .ignoreExceptions()
       .atMost(20, SECONDS)
       .untilAsserted(() -> {
@@ -64,14 +69,13 @@ class CounterStoreUpdaterTest extends TestKitSupport {
     counterEvents.publish(messageBuilder.of(event1, event1Metadata));
     counterEvents.publish(messageBuilder.of(event2, event2Metadata));
 
-    Awaitility.await()
+    Awaitility
+      .await()
       .ignoreExceptions()
       .during(3, SECONDS)
       .untilAsserted(() -> {
         Collection<CounterEntry> result = await(counterStore.getAll());
         assertThat(result).containsOnly(new CounterEntry("c123", 6, 2));
       });
-
-
   }
 }

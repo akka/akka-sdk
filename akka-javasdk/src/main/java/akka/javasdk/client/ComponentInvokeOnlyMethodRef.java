@@ -5,9 +5,8 @@
 package akka.javasdk.client;
 
 import akka.annotation.DoNotInherit;
-
-import java.util.concurrent.CompletionStage;
 import akka.javasdk.Metadata;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Zero argument component call representation, not executed until invoked. Used for component

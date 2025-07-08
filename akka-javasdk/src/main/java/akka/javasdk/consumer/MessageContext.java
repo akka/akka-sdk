@@ -8,7 +8,6 @@ import akka.javasdk.CloudEvent;
 import akka.javasdk.MetadataContext;
 import akka.javasdk.OriginAwareContext;
 import akka.javasdk.Tracing;
-
 import java.util.Optional;
 
 /** Context for an incoming message. */

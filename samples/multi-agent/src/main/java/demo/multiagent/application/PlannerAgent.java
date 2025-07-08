@@ -1,26 +1,25 @@
 package demo.multiagent.application;
 
-import demo.multiagent.domain.AgentSelection;
-import demo.multiagent.domain.Plan;
-import demo.multiagent.domain.PlanStep;
-
 // tag::all[]
 import akka.javasdk.JsonSupport;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
-
+import demo.multiagent.domain.AgentSelection;
+import demo.multiagent.domain.Plan;
+import demo.multiagent.domain.PlanStep;
 import java.util.List;
 
 // tag::class[]
 @ComponentId("planner-agent")
 @AgentDescription(
-    name = "Planner",
-    description = """
+  name = "Planner",
+  description = """
         An agent that analyzes the user request and available agents to plan the tasks
         to produce a suitable answer.
-        """)
+        """
+)
 public class PlannerAgent extends Agent {
 
   public record Request(String message, AgentSelection agentSelection) {}
@@ -80,7 +79,7 @@ public class PlannerAgent extends Agent {
         .userMessage(request.message())
         .responseAs(Plan.class)
         .thenReply();
-      }
+    }
   }
 }
 // end::class[]

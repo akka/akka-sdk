@@ -1,24 +1,22 @@
 package user.registry.api;
 
-
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
-import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Get;
+import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.annotations.http.Put;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpException;
 import akka.javasdk.http.HttpResponses;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import user.registry.application.UniqueEmailEntity;
 import user.registry.application.UserEntity;
+import user.registry.application.UsersByCountryView;
 import user.registry.domain.UniqueEmail;
 import user.registry.domain.User;
-import user.registry.application.UsersByCountryView;
-
-import java.util.Optional;
 
 /**
  * Controller for the user registry application.
@@ -43,23 +41,19 @@ public class UserEndpoint {
   /**
    * External API representation of a user record
    */
-  public record User(String name, String country, String email) {
-  }
+  public record User(String name, String country, String email) {}
 
-  public record ChangeEmail(String newEmail) {
-  }
+  public record ChangeEmail(String newEmail) {}
 
   /**
    * External API representation of an email record
    */
-  public record EmailInfo(String address, String status, Optional<String> ownerId) {
-  }
+  public record EmailInfo(String address, String status, Optional<String> ownerId) {}
 
   /**
    * External API representation of a User
    */
-  public record UserInfo(String id, String name, String country, String email) {
-  }
+  public record UserInfo(String id, String name, String country, String email) {}
 
   /**
    * This is the main entry point for creating a new user.
@@ -71,7 +65,6 @@ public class UserEndpoint {
    */
   @Post("/{userId}")
   public HttpResponse createUser(String userId, User user) {
-
     var createUniqueEmail = new UniqueEmail.ReserveEmail(user.email(), userId);
 
     // try reserving the email address
@@ -96,10 +89,8 @@ public class UserEndpoint {
     };
   }
 
-
   @Put("/{userId}/email")
   public HttpResponse changeEmail(String userId, ChangeEmail cmd) {
-
     var createUniqueEmail = new UniqueEmail.ReserveEmail(cmd.newEmail(), userId);
 
     // try reserving the email address
@@ -122,9 +113,9 @@ public class UserEndpoint {
 
     logger.info("Reserving new address '{}'", emailAddress);
     var emailReserved = client
-        .forKeyValueEntity(emailAddress)
-        .method(UniqueEmailEntity::reserve)
-        .invoke(createUniqueEmail);
+      .forKeyValueEntity(emailAddress)
+      .method(UniqueEmailEntity::reserve)
+      .invoke(createUniqueEmail);
 
     if (emailReserved instanceof UniqueEmailEntity.Result.AlreadyReserved e) {
       logger.info("Email is already reserved '{}'", emailAddress);
@@ -132,30 +123,19 @@ public class UserEndpoint {
     }
   }
 
-
   /**
    * This is gives access to the user state.
    */
   @Get("/{userId}")
   public UserInfo getUserInfo(String userId) {
-    var user = client.forEventSourcedEntity(userId)
-      .method(UserEntity::getState)
-      .invoke();
-    var userInfo =
-      new UserInfo(
-        userId,
-          user.name(),
-          user.country(),
-          user.email());
+    var user = client.forEventSourcedEntity(userId).method(UserEntity::getState).invoke();
+    var userInfo = new UserInfo(userId, user.name(), user.country(), user.email());
     logger.info("Getting user info: {}", userInfo);
     return userInfo;
   }
 
-
   @Get("/by-country/{country}")
   public UsersByCountryView.UserEntries getUsersByCountry(String country) {
-    return client.forView()
-        .method(UsersByCountryView::getUserByCountry)
-        .invoke(country);
+    return client.forView().method(UsersByCountryView::getUserByCountry).invoke(country);
   }
 }

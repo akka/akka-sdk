@@ -21,9 +21,7 @@ public class BasicTransferWorkflow extends Workflow<Transfer> {
 
   @Override
   public WorkflowDef<Transfer> definition() {
-    return workflow()
-      .addStep(withdrawStep())
-      .addStep(depositStep());
+    return workflow().addStep(withdrawStep()).addStep(depositStep());
   }
 
   private Step withdrawStep() {

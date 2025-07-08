@@ -5,12 +5,10 @@
 package akka.javasdk.mcp;
 
 import akka.annotation.DoNotInherit;
-import akka.grpc.javadsl.Metadata;
 import akka.http.javadsl.model.HttpHeader;
 import akka.javasdk.JwtClaims;
 import akka.javasdk.Principals;
 import akka.javasdk.Tracing;
-
 import java.util.List;
 import java.util.Optional;
 

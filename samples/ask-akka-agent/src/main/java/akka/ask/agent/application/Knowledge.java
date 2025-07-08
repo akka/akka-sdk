@@ -14,18 +14,22 @@ import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.rag.query.Metadata;
 
 public class Knowledge {
+
   private final RetrievalAugmentor retrievalAugmentor;
   private final ContentInjector contentInjector = new DefaultContentInjector();
 
   public Knowledge(MongoClient mongoClient) {
-    var contentRetriever = EmbeddingStoreContentRetriever.builder() // <1>
-        .embeddingStore(MongoDbUtils.embeddingStore(mongoClient))
-        .embeddingModel(OpenAiUtils.embeddingModel())
-        .maxResults(10)
-        .minScore(0.1)
-        .build();
+    var contentRetriever = EmbeddingStoreContentRetriever
+      .builder() // <1>
+      .embeddingStore(MongoDbUtils.embeddingStore(mongoClient))
+      .embeddingModel(OpenAiUtils.embeddingModel())
+      .maxResults(10)
+      .minScore(0.1)
+      .build();
 
-    this.retrievalAugmentor = DefaultRetrievalAugmentor.builder() // <2>
+    this.retrievalAugmentor =
+      DefaultRetrievalAugmentor
+        .builder() // <2>
         .contentRetriever(contentRetriever)
         .build();
   }
@@ -36,10 +40,11 @@ public class Knowledge {
     var augmentationRequest = new AugmentationRequest(chatMessage, metadata);
 
     var result = retrievalAugmentor.augment(augmentationRequest); // <4>
-    UserMessage augmented = (UserMessage) contentInjector
-        .inject(result.contents(), chatMessage); // <5>
+    UserMessage augmented = (UserMessage) contentInjector.inject(
+      result.contents(),
+      chatMessage
+    ); // <5>
     return augmented.singleText();
   }
-
 }
 // end::class[]

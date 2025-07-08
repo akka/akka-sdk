@@ -4,19 +4,16 @@ import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.DeleteHandler;
 import akka.javasdk.consumer.Consumer;
-
 import java.util.UUID;
 
 @ComponentId("my-consumer")
 @Consume.FromKeyValueEntity(MyComponent.class)
 public class MyConsumer extends Consumer {
 
-  record Event() {
-  }
+  record Event() {}
 
   record SomeService() {
-    public void doSomething(Event event, String token) {
-    }
+    public void doSomething(Event event, String token) {}
   }
 
   private SomeService someService;
@@ -29,6 +26,7 @@ public class MyConsumer extends Consumer {
     someService.doSomething(event, token.toString());
     return effects().done();
   }
+
   // end::deterministic-hashing[]
 
   @DeleteHandler

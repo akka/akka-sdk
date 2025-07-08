@@ -2,32 +2,33 @@ package shoppingcart.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
 import akka.Done;
 import akka.javasdk.testkit.EventSourcedTestKit;
-import shoppingcart.domain.ShoppingCartEvent.ItemAdded;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 import shoppingcart.domain.ShoppingCart;
+import shoppingcart.domain.ShoppingCartEvent.ItemAdded;
 
 public class ShoppingCartTest {
 
   private final ShoppingCartEntity.AddLineItemCommand akkaTshirt = new ShoppingCartEntity.AddLineItemCommand(
-      "user",
-      "akka-tshirt",
-      "Akka Tshirt", 10,
-      "The best t-shirt");
+    "user",
+    "akka-tshirt",
+    "Akka Tshirt",
+    10,
+    "The best t-shirt"
+  );
 
   private final ShoppingCartEntity.AddLineItemCommand akkaTshirt5 = new ShoppingCartEntity.AddLineItemCommand(
-      "user",
-      "akka-tshirt",
-      "Akka Tshirt", 5,
-      "The best t-shirt");
+    "user",
+    "akka-tshirt",
+    "Akka Tshirt",
+    5,
+    "The best t-shirt"
+  );
 
   @Test
   public void testAddLineItem() {
-
     var testKit = EventSourcedTestKit.of(ShoppingCartEntity::new);
 
     {
@@ -52,11 +53,7 @@ public class ShoppingCartTest {
 
       assertEquals(testKit.getAllEvents().size(), 2);
       var result = testKit.method(ShoppingCartEntity::getCart).invoke();
-      assertEquals(
-          List.of(tshirt15),
-          result.getReply().items());
+      assertEquals(List.of(tshirt15), result.getReply().items());
     }
-
   }
-
 }

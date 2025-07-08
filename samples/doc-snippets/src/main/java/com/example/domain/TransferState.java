@@ -1,12 +1,12 @@
 package com.example.domain;
 
 public record TransferState(Transfer transfer, TransferStatus status) {
-
-  public record Transfer(String from, String to, int amount) {
-  }
+  public record Transfer(String from, String to, int amount) {}
 
   public enum TransferStatus {
-    STARTED, WITHDRAW_SUCCEEDED, COMPLETED
+    STARTED,
+    WITHDRAW_SUCCEEDED,
+    COMPLETED,
   }
 
   public TransferState(Transfer transfer) {

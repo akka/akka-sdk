@@ -7,7 +7,6 @@ package akka.javasdk.agent;
 import akka.annotation.DoNotInherit;
 import akka.http.javadsl.model.HttpHeader;
 import akka.javasdk.impl.agent.RemoteMcpToolsImpl;
-
 import java.util.Set;
 import java.util.function.Predicate;
 

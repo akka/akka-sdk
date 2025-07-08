@@ -5,31 +5,31 @@ import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
 @ComponentId("evaluator-agent")
 @AgentDescription(
-    name = "Evaluator Agent",
-    description = """
+  name = "Evaluator Agent",
+  description = """
         An agent that acts as an LLM judge to evaluate the quality of AI responses.
         It assesses whether the final answer is appropriate for the original question
         and checks for any deviations from user preferences.
         """,
-    role = "worker"
+  role = "worker"
 )
 public class EvaluatorAgent extends Agent {
 
-    public record EvaluationRequest(String userId, String originalRequest, String finalAnswer) {}
+  public record EvaluationRequest(
+    String userId,
+    String originalRequest,
+    String finalAnswer
+  ) {}
 
-    public record EvaluationResult(
-        int score,
-        String feedback
-    ) {}
+  public record EvaluationResult(int score, String feedback) {}
 
-    private static final String SYSTEM_MESSAGE = // <1>
-        """
+  private static final String SYSTEM_MESSAGE = // <1>
+    """
         You are an evaluator agent that acts as an LLM judge. Your job is to evaluate
         the quality and appropriateness of AI-generated responses.
         
@@ -62,57 +62,54 @@ public class EvaluatorAgent extends Agent {
         Do not include any explanations or text outside of the JSON structure.
         """.stripIndent();
 
-    private final ComponentClient componentClient;
+  private final ComponentClient componentClient;
 
-    public EvaluatorAgent(ComponentClient componentClient) {
-        this.componentClient = componentClient;
+  public EvaluatorAgent(ComponentClient componentClient) {
+    this.componentClient = componentClient;
+  }
+
+  public Effect<EvaluationResult> evaluate(EvaluationRequest request) {
+    var allPreferences = componentClient
+      .forEventSourcedEntity(request.userId())
+      .method(PreferencesEntity::getPreferences)
+      .invoke(); // <2>
+
+    String evaluationPrompt = buildEvaluationPrompt(
+      request.originalRequest(),
+      request.finalAnswer(),
+      allPreferences.entries()
+    );
+
+    return effects()
+      .systemMessage(SYSTEM_MESSAGE)
+      .userMessage(evaluationPrompt)
+      .responseAs(EvaluationResult.class) // <3>
+      .thenReply();
+  }
+
+  private String buildEvaluationPrompt(
+    String originalRequest,
+    String finalAnswer,
+    List<String> preferences
+  ) {
+    StringBuilder prompt = new StringBuilder();
+
+    prompt.append("ORIGINAL REQUEST:\n").append(originalRequest).append("\n\n");
+
+    prompt.append("FINAL ANSWER TO EVALUATE:\n").append(finalAnswer).append("\n\n");
+
+    if (!preferences.isEmpty()) {
+      prompt
+        .append("USER PREFERENCES:\n")
+        .append(preferences.stream().collect(Collectors.joining("\n", "- ", "")))
+        .append("\n\n");
     }
 
-    public Effect<EvaluationResult> evaluate(EvaluationRequest request) {
-        var allPreferences =
-            componentClient
-                .forEventSourcedEntity(request.userId())
-                .method(PreferencesEntity::getPreferences)
-                .invoke(); // <2>
+    prompt
+      .append("Please evaluate the final answer against the original request")
+      .append(preferences.isEmpty() ? "." : " and user preferences.");
 
-        String evaluationPrompt = buildEvaluationPrompt(
-            request.originalRequest(),
-            request.finalAnswer(),
-            allPreferences.entries()
-        );
-
-        return effects()
-            .systemMessage(SYSTEM_MESSAGE)
-            .userMessage(evaluationPrompt)
-            .responseAs(EvaluationResult.class) // <3>
-            .thenReply();
-    }
-
-    private String buildEvaluationPrompt(
-        String originalRequest,
-        String finalAnswer,
-        List<String> preferences) {
-        StringBuilder prompt = new StringBuilder();
-
-        prompt.append("ORIGINAL REQUEST:\n")
-            .append(originalRequest)
-            .append("\n\n");
-
-        prompt.append("FINAL ANSWER TO EVALUATE:\n")
-            .append(finalAnswer)
-            .append("\n\n");
-
-        if (!preferences.isEmpty()) {
-            prompt.append("USER PREFERENCES:\n")
-                .append(preferences.stream()
-                    .collect(Collectors.joining("\n", "- ", "")))
-                .append("\n\n");
-        }
-
-        prompt.append("Please evaluate the final answer against the original request")
-            .append(preferences.isEmpty() ? "." : " and user preferences.");
-
-        return prompt.toString();
-    }
+    return prompt.toString();
+  }
 }
 // end::all[]

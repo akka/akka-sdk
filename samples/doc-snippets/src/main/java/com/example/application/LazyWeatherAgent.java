@@ -9,7 +9,8 @@ import java.time.format.DateTimeFormatter;
 @ComponentId("lazy-weather-agent")
 public class LazyWeatherAgent extends Agent {
 
-  record AgentResponse(){}
+  record AgentResponse() {}
+
   private static final String SYSTEM_MESSAGE =
     """
     You are a weather agent.
@@ -24,11 +25,11 @@ public class LazyWeatherAgent extends Agent {
   // tag::function-tool[]
   public Effect<AgentResponse> query(String message) {
     return effects()
-        .systemMessage(SYSTEM_MESSAGE)
-        .tools(WeatherService.class) // <1>
-        .userMessage(message)
-        .responseAs(AgentResponse.class)
-        .thenReply();
+      .systemMessage(SYSTEM_MESSAGE)
+      .tools(WeatherService.class) // <1>
+      .userMessage(message)
+      .responseAs(AgentResponse.class)
+      .thenReply();
   }
   // end::function-tool[]
 

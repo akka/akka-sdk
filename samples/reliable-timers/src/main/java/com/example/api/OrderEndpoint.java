@@ -10,11 +10,10 @@ import akka.javasdk.timer.TimerScheduler;
 import com.example.application.OrderEntity;
 import com.example.application.OrderTimedAction;
 import com.example.domain.Order;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.time.Duration;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 // Opened up for access from the public internet to make the sample service easy to try out.
 // For actual services meant for production this must be carefully considered, and often set more limited
@@ -22,7 +21,8 @@ import java.util.UUID;
 // tag::timers[]
 @HttpEndpoint("/orders")
 public class OrderEndpoint {
-// end::timers[]
+
+  // end::timers[]
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -41,15 +41,12 @@ public class OrderEndpoint {
 
   @Post
   public Order placeOrder(OrderRequest orderRequest) {
-
     var orderId = UUID.randomUUID().toString(); // <2>
 
     timerScheduler.createSingleTimer( // <3>
       timerName(orderId), // <4>
       Duration.ofSeconds(10), // <5>
-      componentClient.forTimedAction()
-        .method(OrderTimedAction::expireOrder)
-        .deferred(orderId) // <6>
+      componentClient.forTimedAction().method(OrderTimedAction::expireOrder).deferred(orderId) // <6>
     );
 
     // end::place-order[]
@@ -57,15 +54,18 @@ public class OrderEndpoint {
       "Placing order for item {} (quantity {}). Order number '{}'",
       orderRequest.item(),
       orderRequest.quantity(),
-      orderId);
+      orderId
+    );
     // tag::place-order[]
 
-    var order = componentClient.forKeyValueEntity(orderId)
-        .method(OrderEntity::placeOrder)
-        .invoke(orderRequest); // <7>
+    var order = componentClient
+      .forKeyValueEntity(orderId)
+      .method(OrderEntity::placeOrder)
+      .invoke(orderRequest); // <7>
 
     return order;
   }
+
   // end::place-order[]
 
   // tag::confirm-order[]
@@ -76,34 +76,32 @@ public class OrderEndpoint {
     // end::confirm-order[]
     logger.info("Confirming order '{}'", orderId);
     // tag::confirm-order[]
-    var confirmResult = componentClient.forKeyValueEntity(orderId)
-        .method(OrderEntity::confirm).invoke(); // <1>
+    var confirmResult = componentClient
+      .forKeyValueEntity(orderId)
+      .method(OrderEntity::confirm)
+      .invoke(); // <1>
 
     return switch (confirmResult) {
       case OrderEntity.Result.Ok ignored -> {
         timerScheduler.delete(timerName(orderId)); // <2>
         yield HttpResponses.ok();
       }
-      case OrderEntity.Result.NotFound notFound ->
-          HttpResponses.notFound(notFound.message());
-      case OrderEntity.Result.Invalid invalid ->
-          HttpResponses.badRequest(invalid.message());
+      case OrderEntity.Result.NotFound notFound -> HttpResponses.notFound(notFound.message());
+      case OrderEntity.Result.Invalid invalid -> HttpResponses.badRequest(invalid.message());
     };
   }
+
   // end::confirm-order[]
 
   @Post("/{orderId}/cancel")
   public HttpResponse cancel(String orderId) {
     logger.info("Cancelling order '{}'", orderId);
 
-    componentClient.forKeyValueEntity(orderId)
-        .method(OrderEntity::cancel)
-        .invoke();
+    componentClient.forKeyValueEntity(orderId).method(OrderEntity::cancel).invoke();
     timerScheduler.delete(timerName(orderId));
 
     return HttpResponses.ok();
   }
-
-// tag::timers[]
+  // tag::timers[]
 }
 // end::timers[]

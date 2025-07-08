@@ -14,6 +14,6 @@ public record CustomerOrder(
   String email,
   String name,
   Address address,
-  long createdTimestamp) {
-}
+  long createdTimestamp
+) {}
 // end::joined[]

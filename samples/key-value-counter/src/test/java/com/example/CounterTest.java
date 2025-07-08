@@ -1,11 +1,11 @@
 package com.example;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import akka.javasdk.testkit.KeyValueEntityTestKit;
 import com.example.application.CounterEntity;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CounterTest {
 
@@ -34,6 +34,7 @@ public class CounterTest {
 
     assertEquals(11, testKit.getState().value()); // <5>
   }
+
   // end::example[]
 
   @Test

@@ -7,8 +7,8 @@ import akka.javasdk.annotations.ComponentId;
 @ComponentId("hello-world-agent")
 public class HelloWorldAgent extends Agent {
 
- private static final String SYSTEM_MESSAGE =
-     """
+  private static final String SYSTEM_MESSAGE =
+    """
      You are a cheerful AI assistant with a passion for teaching greetings in new language.
      
      Guidelines for your responses:
@@ -24,17 +24,15 @@ public class HelloWorldAgent extends Agent {
      - At the end, append a list of previous greetings
      """.stripIndent();
 
-
   public Effect<String> greet(String userGreeting) {
-    if (System.getenv("OPENAI_API_KEY") == null || System.getenv("OPENAI_API_KEY").isEmpty()) {
+    if (
+      System.getenv("OPENAI_API_KEY") == null || System.getenv("OPENAI_API_KEY").isEmpty()
+    ) {
       return effects()
-          .reply("I have no idea how to respond, someone didn't give me an API key");
+        .reply("I have no idea how to respond, someone didn't give me an API key");
     }
 
-    return effects()
-        .systemMessage(SYSTEM_MESSAGE)
-        .userMessage(userGreeting)
-        .thenReply();
+    return effects().systemMessage(SYSTEM_MESSAGE).userMessage(userGreeting).thenReply();
   }
 }
 // end::class[]

@@ -1,9 +1,4 @@
-
 package akka.ask.agent.application;
-
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 
 import akka.javasdk.agent.SessionMemoryEntity;
 import akka.javasdk.annotations.ComponentId;
@@ -11,28 +6,34 @@ import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 // tag::top[]
 @ComponentId("view_chat_log")
 public class ConversationHistoryView extends View {
 
-  public record ConversationHistory(List<Session> sessions) {
-  }
+  public record ConversationHistory(List<Session> sessions) {}
 
-  public record Message(String message,
-      String origin, long timestamp) { // <1>
-  }
+  public record Message(String message, String origin, long timestamp) {} // <1>
 
-  public record Session(String userId,
-      String sessionId, long creationDate, List<Message> messages) {
+  public record Session(
+    String userId,
+    String sessionId,
+    long creationDate,
+    List<Message> messages
+  ) {
     public Session add(Message message) {
       messages.add(message);
       return this;
     }
   }
 
-  @Query("SELECT collect(*) as sessions FROM view_chat_log " +
-      "WHERE userId = :userId ORDER by creationDate DESC")
+  @Query(
+    "SELECT collect(*) as sessions FROM view_chat_log " +
+    "WHERE userId = :userId ORDER by creationDate DESC"
+  )
   public QueryEffect<ConversationHistory> getSessionsByUser(String userId) { // <2>
     return queryResult();
   }
@@ -49,13 +50,21 @@ public class ConversationHistoryView extends View {
     }
 
     private Effect<Session> aiMessage(SessionMemoryEntity.Event.AiMessageAdded added) {
-      Message newMessage = new Message(added.message(), "ai", added.timestamp().toEpochMilli());
+      Message newMessage = new Message(
+        added.message(),
+        "ai",
+        added.timestamp().toEpochMilli()
+      );
       var rowState = rowStateOrNew(userId(), sessionId());
       return effects().updateRow(rowState.add(newMessage));
     }
 
     private Effect<Session> userMessage(SessionMemoryEntity.Event.UserMessageAdded added) {
-      Message newMessage = new Message(added.message(), "user", added.timestamp().toEpochMilli());
+      Message newMessage = new Message(
+        added.message(),
+        "user",
+        added.timestamp().toEpochMilli()
+      );
       var rowState = rowStateOrNew(userId(), sessionId());
       return effects().updateRow(rowState.add(newMessage));
     }
@@ -69,18 +78,16 @@ public class ConversationHistoryView extends View {
     private String sessionId() {
       var agentSessionId = updateContext().eventSubject().get();
       int i = agentSessionId.indexOf("-");
-      return agentSessionId.substring(i+1);
+      return agentSessionId.substring(i + 1);
     }
 
     private Session rowStateOrNew(String userId, String sessionId) { // <3>
-      if (rowState() != null)
-        return rowState();
-      else
-        return new Session(
-            userId,
-            sessionId,
-            Instant.now().toEpochMilli(),
-            new ArrayList<>());
+      if (rowState() != null) return rowState(); else return new Session(
+        userId,
+        sessionId,
+        Instant.now().toEpochMilli(),
+        new ArrayList<>()
+      );
     }
   }
 }

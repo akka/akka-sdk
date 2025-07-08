@@ -1,16 +1,15 @@
 package store.view.structured;
 
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.Test;
-import store.order.view.structured.StructuredCustomerOrders;
-import store.order.view.structured.ProductOrder;
-import store.order.view.structured.StructuredCustomerOrdersView;
-import store.view.StoreViewIntegrationTest;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Test;
+import store.order.view.structured.ProductOrder;
+import store.order.view.structured.StructuredCustomerOrders;
+import store.order.view.structured.StructuredCustomerOrdersView;
+import store.view.StoreViewIntegrationTest;
 
 public class StructuredCustomerOrdersViewIntegrationTest extends StoreViewIntegrationTest {
 
@@ -18,13 +17,21 @@ public class StructuredCustomerOrdersViewIntegrationTest extends StoreViewIntegr
   public void getCustomerOrders() {
     createProduct("P123", "Super Duper Thingamajig", "USD", 123, 45);
     createProduct("P987", "Awesome Whatchamacallit", "NZD", 987, 65);
-    createCustomer("C001", "someone@example.com", "Some Customer", "123 Some Street", "Some City");
+    createCustomer(
+      "C001",
+      "someone@example.com",
+      "Some Customer",
+      "123 Some Street",
+      "Some City"
+    );
     createOrder("O1234", "P123", "C001", 42);
     createOrder("O5678", "P987", "C001", 7);
 
     {
-      StructuredCustomerOrders customerOrders =
-        awaitCustomerOrders("C001", customer -> customer.orders().size() >= 2);
+      StructuredCustomerOrders customerOrders = awaitCustomerOrders(
+        "C001",
+        customer -> customer.orders().size() >= 2
+      );
 
       assertEquals(2, customerOrders.orders().size());
 
@@ -57,8 +64,10 @@ public class StructuredCustomerOrdersViewIntegrationTest extends StoreViewIntegr
     changeCustomerName("C001", newCustomerName);
 
     {
-      StructuredCustomerOrders customerOrders =
-        awaitCustomerOrders("C001", customer -> newCustomerName.equals(customer.shipping().name()));
+      StructuredCustomerOrders customerOrders = awaitCustomerOrders(
+        "C001",
+        customer -> newCustomerName.equals(customer.shipping().name())
+      );
 
       assertEquals("Some Name", customerOrders.shipping().name());
     }
@@ -67,9 +76,10 @@ public class StructuredCustomerOrdersViewIntegrationTest extends StoreViewIntegr
     changeProductName("P123", newProductName);
 
     {
-      StructuredCustomerOrders customerOrders =
-        awaitCustomerOrders(
-          "C001", customer -> newProductName.equals(customer.orders().get(0).name()));
+      StructuredCustomerOrders customerOrders = awaitCustomerOrders(
+        "C001",
+        customer -> newProductName.equals(customer.orders().get(0).name())
+      );
 
       ProductOrder productOrder1 = customerOrders.orders().get(0);
       assertEquals("O1234", productOrder1.orderId());
@@ -82,15 +92,18 @@ public class StructuredCustomerOrdersViewIntegrationTest extends StoreViewIntegr
   }
 
   private StructuredCustomerOrders getCustomerOrders(String customerId) {
-    return
-      componentClient.forView()
-        .method(StructuredCustomerOrdersView::get)
-        .invoke(customerId);
+    return componentClient
+      .forView()
+      .method(StructuredCustomerOrdersView::get)
+      .invoke(customerId);
   }
 
   private StructuredCustomerOrders awaitCustomerOrders(
-    String customerId, Function<StructuredCustomerOrders, Boolean> condition) {
-    Awaitility.await()
+    String customerId,
+    Function<StructuredCustomerOrders, Boolean> condition
+  ) {
+    Awaitility
+      .await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       .until(() -> condition.apply(getCustomerOrders(customerId)));

@@ -1,16 +1,16 @@
 package store.customer.application;
 
+import static akka.Done.done;
+import static store.customer.domain.CustomerEvent.CustomerAddressChanged;
+import static store.customer.domain.CustomerEvent.CustomerCreated;
+import static store.customer.domain.CustomerEvent.CustomerNameChanged;
+
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import store.customer.domain.Address;
 import store.customer.domain.Customer;
 import store.customer.domain.CustomerEvent;
-
-import static akka.Done.done;
-import static store.customer.domain.CustomerEvent.CustomerAddressChanged;
-import static store.customer.domain.CustomerEvent.CustomerCreated;
-import static store.customer.domain.CustomerEvent.CustomerNameChanged;
 
 @ComponentId("customer")
 public class CustomerEntity extends EventSourcedEntity<Customer, CustomerEvent> {

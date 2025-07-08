@@ -5,7 +5,6 @@ import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import demo.multiagent.domain.AgentRequest;
-
 import java.util.stream.Collectors;
 
 // tag::description[]
@@ -16,13 +15,15 @@ import java.util.stream.Collectors;
       An agent that suggests activities in the real world. Like for example,
       a team building activity, sports, an indoor or outdoor game, board games, a city trip, etc.
     """,
-    role = "worker"
+  role = "worker"
 )
 public class ActivityAgent extends Agent {
-// end::description[]
+
+  // end::description[]
 
   // tag::system_message[]
-  private static final String SYSTEM_MESSAGE = """
+  private static final String SYSTEM_MESSAGE =
+    """
       You are an activity agent. Your job is to suggest activities in the real world.
       Like for example, a team building activity, sports, an indoor or outdoor game,
       board games, a city trip, etc.
@@ -40,29 +41,22 @@ public class ActivityAgent extends Agent {
     this.componentClient = componentClient;
   }
 
-public Effect<String> query(AgentRequest request) {
-  var allPreferences =
-      componentClient
-          .forEventSourcedEntity(request.userId())
-          .method(PreferencesEntity::getPreferences)
-          .invoke();
+  public Effect<String> query(AgentRequest request) {
+    var allPreferences = componentClient
+      .forEventSourcedEntity(request.userId())
+      .method(PreferencesEntity::getPreferences)
+      .invoke();
 
-  String userMessage;
-  if (allPreferences.entries().isEmpty()) {
-    userMessage = request.message();
-  } else {
-    userMessage = request.message() +
+    String userMessage;
+    if (allPreferences.entries().isEmpty()) {
+      userMessage = request.message();
+    } else {
+      userMessage =
+        request.message() +
         "\nPreferences:\n" +
-        allPreferences.entries().stream()
-            .collect(Collectors.joining("\n", "- ", ""));
+        allPreferences.entries().stream().collect(Collectors.joining("\n", "- ", ""));
+    }
+
+    return effects().systemMessage(SYSTEM_MESSAGE).userMessage(userMessage).thenReply();
   }
-
-  return effects()
-      .systemMessage(SYSTEM_MESSAGE)
-      .userMessage(userMessage)
-      .thenReply();
-}
-
-
-
 }

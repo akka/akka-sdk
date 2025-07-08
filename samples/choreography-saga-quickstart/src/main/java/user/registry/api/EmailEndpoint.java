@@ -1,8 +1,8 @@
 package user.registry.api;
 
 import akka.javasdk.annotations.Acl;
-import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Get;
+import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.client.ComponentClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,13 +26,15 @@ public class EmailEndpoint {
    */
   @Get("/emails/{address}")
   public UserEndpoint.EmailInfo getEmailInfo(String address) {
-    var email = client.forKeyValueEntity(address)
-        .method(UniqueEmailEntity::getState).invoke();
-    var emailInfo =
-        new UserEndpoint.EmailInfo(
-            email.address(),
-            email.status().toString(),
-            email.ownerId());
+    var email = client
+      .forKeyValueEntity(address)
+      .method(UniqueEmailEntity::getState)
+      .invoke();
+    var emailInfo = new UserEndpoint.EmailInfo(
+      email.address(),
+      email.status().toString(),
+      email.ownerId()
+    );
 
     logger.info("Getting email info: {}", emailInfo);
     return emailInfo;

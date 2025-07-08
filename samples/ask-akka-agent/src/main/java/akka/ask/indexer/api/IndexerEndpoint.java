@@ -19,23 +19,18 @@ public class IndexerEndpoint {
   private final ComponentClient componentClient;
 
   public IndexerEndpoint(ComponentClient componentClient) {
-
     this.componentClient = componentClient;
   }
 
   @Post("/start")
   public HttpResponse startIndexation() {
-    componentClient.forWorkflow("indexing")
-      .method(RagIndexingWorkflow::start)
-      .invoke();
+    componentClient.forWorkflow("indexing").method(RagIndexingWorkflow::start).invoke();
     return HttpResponses.accepted();
   }
 
   @Post("/abort")
   public HttpResponse abortIndexation() {
-    componentClient.forWorkflow("indexing")
-      .method(RagIndexingWorkflow::abort)
-      .invoke();
+    componentClient.forWorkflow("indexing").method(RagIndexingWorkflow::abort).invoke();
     return HttpResponses.accepted();
   }
 }

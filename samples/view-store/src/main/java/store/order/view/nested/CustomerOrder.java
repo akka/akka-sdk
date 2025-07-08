@@ -10,6 +10,6 @@ public record CustomerOrder(
   String productName,
   Money price,
   int quantity,
-  long createdTimestamp) {
-}
+  long createdTimestamp
+) {}
 // end::nested[]

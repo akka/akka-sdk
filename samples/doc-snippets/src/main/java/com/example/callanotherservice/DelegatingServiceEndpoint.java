@@ -28,10 +28,11 @@ public class DelegatingServiceEndpoint {
 
   @Post("/delegate/counter/{counterId}/increase")
   public String addAndReturn(String counterId, IncreaseRequest request) {
-    var response = httpClient.POST("/counter/" + counterId + "/increase") // <3>
-    .withRequestBody(request)
-    .responseBodyAs(Counter.class)
-    .invoke(); // <4>
+    var response = httpClient
+      .POST("/counter/" + counterId + "/increase") // <3>
+      .withRequestBody(request)
+      .responseBodyAs(Counter.class)
+      .invoke(); // <4>
 
     if (response.status().isSuccess()) { // <5>
       return "New counter vaue: " + response.body().value;

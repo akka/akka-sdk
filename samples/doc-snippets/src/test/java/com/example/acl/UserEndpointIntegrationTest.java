@@ -3,7 +3,6 @@ package com.example.acl;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 
-
 // tag::disable-acl-in-it[]
 public class UserEndpointIntegrationTest extends TestKitSupport {
 
@@ -11,6 +10,5 @@ public class UserEndpointIntegrationTest extends TestKitSupport {
   protected TestKit.Settings testKitSettings() {
     return super.testKitSettings().withAclDisabled();
   }
-
 }
 // end::disable-acl-in-it[]

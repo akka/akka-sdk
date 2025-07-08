@@ -7,7 +7,6 @@ package akka.javasdk.view;
 import akka.javasdk.CloudEvent;
 import akka.javasdk.MetadataContext;
 import akka.javasdk.OriginAwareContext;
-
 import java.util.Optional;
 
 /** Context for view update calls. */

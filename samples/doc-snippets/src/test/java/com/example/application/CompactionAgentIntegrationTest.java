@@ -1,16 +1,15 @@
 package com.example.application;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import akka.javasdk.agent.SessionMemoryEntity;
 import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.testkit.TestKitSupport;
-import org.junit.jupiter.api.Test;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
 
 public class CompactionAgentIntegrationTest extends TestKitSupport {
 
@@ -23,7 +22,7 @@ public class CompactionAgentIntegrationTest extends TestKitSupport {
 
     userMessages.add("What are the core components of Akka?");
     aiMessages.add(
-        """
+      """
         Core Components of Akka
         Akka consists of several key components that are essential for building responsive applications. Here’s a brief overview of these core components:
         
@@ -43,11 +42,12 @@ public class CompactionAgentIntegrationTest extends TestKitSupport {
         Workflows support durable, long-running processes orchestrated through Saga patterns, managing complex business logic and state changes over time.
         
         These components work together within the Akka platform to allow developers to create scalable, resilient, and responsive applications efficiently! 🎉
-        """.stripIndent());
+        """.stripIndent()
+    );
 
     userMessages.add("Explain event sourced entity in more detail");
     aiMessages.add(
-        """
+      """
         Event Sourced Entities
         Overview
         Event Sourced Entities are a fundamental part of the Akka framework, utilizing the Event Sourcing Model to maintain their state. Instead of storing the current state, these entities capture and persist all events that led to the current state in a journal. This model ensures reliable data handling through ACID semantics, facilitates horizontal scaling, and provides isolation from failures.
@@ -79,11 +79,12 @@ public class CompactionAgentIntegrationTest extends TestKitSupport {
         For instance, adding 3 Akka T-shirts would emit an ItemAdded event that is then stored in the journal, subsequently updating the internal state of the shopping cart entity.
         Conclusion
         Event Sourced Entities in Akka provide a powerful mechanism for managing state in a way that exploits the benefits of event sourcing, ensuring persistence, scalability, and fault recovery. By modeling state changes as events, these entities promote a clear separation between state and business logic, enhancing maintainability and scalability.
-        """.stripIndent());
+        """.stripIndent()
+    );
 
     userMessages.add("How is key value entity different?");
     aiMessages.add(
-        """
+      """
         Key Value Entities vs. Event Sourced Entities
         Key Value Entities
         Persistence: Key Value Entities persist the full state of the object on every change. Only the latest state is stored, meaning the history of changes is not accessible.
@@ -98,11 +99,12 @@ public class CompactionAgentIntegrationTest extends TestKitSupport {
         Views and Consumers: Readers can access the event journal independently to create Views or perform business actions via Consumers.
         Summary
         In summary, the main differences lie in how data is persisted (full state vs. event-based), history accessibility, replication capabilities, and the way they handle state updates. Key Value Entities are straightforward and efficient for scenarios where the latest state is all that's needed, while Event Sourced Entities offer rich history and flexibility at the cost of complexity.
-        """.stripIndent());
+        """.stripIndent()
+    );
 
     userMessages.add("When shall I use even sourced vs key value?");
     aiMessages.add(
-        """
+      """
             When to Use Event Sourced vs Key Value
             Event Sourced Entities
             State Changes:
@@ -121,31 +123,31 @@ public class CompactionAgentIntegrationTest extends TestKitSupport {
             Summary
             Opt for Event Sourced Entities when you need to maintain a detailed history of state changes and perform operations based on those events.
             Choose Key Value Entities when you only need the latest state and prefer higher performance with minimal overhead.
-        """.stripIndent());
+        """.stripIndent()
+    );
 
     for (int i = 0; i < userMessages.size(); i++) {
       componentClient
-          .forEventSourcedEntity(sessionId)
-          .method(SessionMemoryEntity::addInteraction)
-          .invoke(new SessionMemoryEntity.AddInteractionCmd(
-              new SessionMessage.UserMessage(Instant.now(), userMessages.get(i), "my-agent"),
-              new SessionMessage.AiMessage(
-                  Instant.now(),
-                aiMessages.get(i),
-                "my-agent")
-          ));
+        .forEventSourcedEntity(sessionId)
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(
+          new SessionMemoryEntity.AddInteractionCmd(
+            new SessionMessage.UserMessage(Instant.now(), userMessages.get(i), "my-agent"),
+            new SessionMessage.AiMessage(Instant.now(), aiMessages.get(i), "my-agent")
+          )
+        );
     }
 
-    var history =
-        componentClient
-          .forEventSourcedEntity(sessionId)
-          .method(SessionMemoryEntity::getHistory)
-          .invoke(new SessionMemoryEntity.GetHistoryCmd(Optional.empty()));
+    var history = componentClient
+      .forEventSourcedEntity(sessionId)
+      .method(SessionMemoryEntity::getHistory)
+      .invoke(new SessionMemoryEntity.GetHistoryCmd(Optional.empty()));
 
-    var summary =
-        componentClient.forAgent().inSession(sessionId)
-            .method(CompactionAgent::summarizeSessionHistory)
-            .invoke(history);
+    var summary = componentClient
+      .forAgent()
+      .inSession(sessionId)
+      .method(CompactionAgent::summarizeSessionHistory)
+      .invoke(history);
 
     // Result may look like this:
     // userMessage=

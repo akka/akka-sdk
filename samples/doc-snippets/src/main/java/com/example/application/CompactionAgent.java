@@ -7,14 +7,14 @@ import akka.javasdk.agent.SessionHistory;
 import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
-
 import java.util.stream.Collectors;
 
 // tag::compaction[]
 @ComponentId("compaction-agent")
 public class CompactionAgent extends Agent {
+
   private static final String SYSTEM_MESSAGE =
-      """
+    """
       You can compact an interaction history with an LLM. From the given
       USER, TOOL_CALL_RESPONSE and AI messages you create one single user message and one single
       ai message.
@@ -36,8 +36,7 @@ public class CompactionAgent extends Agent {
       Do not include any explanations or text outside of the JSON structure.
       """.stripIndent(); // <1>
 
-  public record Result(String userMessage, String aiMessage) {
-  }
+  public record Result(String userMessage, String aiMessage) {}
 
   private final ComponentClient componentClient;
 
@@ -46,44 +45,51 @@ public class CompactionAgent extends Agent {
   }
 
   public Effect<Result> summarizeSessionHistory(SessionHistory history) { // <2>
-    String concatenatedMessages =
-        history.messages().stream().map(msg -> {
-              return switch (msg) {
-                case SessionMessage.UserMessage userMsg -> "\n\nUSER:\n" + userMsg.text(); // <3>
-
-                case SessionMessage.AiMessage aiMessage -> {
-                  var aiText = "\n\nAI:\n" + aiMessage.text();
-                  yield aiMessage.toolCallRequests()
-                    .stream()
-                    .reduce(
-                      aiText,
-                      // if there are tool requests, also append them to the aiText
-                      (acc, req) -> acc +
-                        "\n\tTOOL_CALL_REQUEST: id=" + req.id() + ", name=" + req.name() +
-                          ", args=" + req.arguments() + " \n",
-                      String::concat);
-                }
-
-                case SessionMessage.ToolCallResponse toolRes ->
-                    "\n\nTOOL_CALL_RESPONSE:\n" + toolRes.text();
-              };
-            })
-            .collect(Collectors.joining()); // <3>
+    String concatenatedMessages = history
+      .messages()
+      .stream()
+      .map(msg -> {
+        return switch (msg) {
+          case SessionMessage.UserMessage userMsg -> "\n\nUSER:\n" + userMsg.text(); // <3>
+          case SessionMessage.AiMessage aiMessage -> {
+            var aiText = "\n\nAI:\n" + aiMessage.text();
+            yield aiMessage
+              .toolCallRequests()
+              .stream()
+              .reduce(
+                aiText,
+                // if there are tool requests, also append them to the aiText
+                (acc, req) ->
+                  acc +
+                  "\n\tTOOL_CALL_REQUEST: id=" +
+                  req.id() +
+                  ", name=" +
+                  req.name() +
+                  ", args=" +
+                  req.arguments() +
+                  " \n",
+                String::concat
+              );
+          }
+          case SessionMessage.ToolCallResponse toolRes -> "\n\nTOOL_CALL_RESPONSE:\n" +
+          toolRes.text();
+        };
+      })
+      .collect(Collectors.joining()); // <3>
 
     return effects()
-        .memory(MemoryProvider.none()) // <4>
-        .model(ModelProvider
-            .openAi()
-            .withModelName("gpt-4o-mini")
-            .withApiKey(System.getenv("OPENAI_API_KEY"))
-            .withMaxTokens(1000))
-        .systemMessage(SYSTEM_MESSAGE)
-        .userMessage(concatenatedMessages)
-        .responseAs(Result.class)
-
+      .memory(MemoryProvider.none()) // <4>
+      .model(
+        ModelProvider
+          .openAi()
+          .withModelName("gpt-4o-mini")
+          .withApiKey(System.getenv("OPENAI_API_KEY"))
+          .withMaxTokens(1000)
+      )
+      .systemMessage(SYSTEM_MESSAGE)
+      .userMessage(concatenatedMessages)
+      .responseAs(Result.class)
       .thenReply();
   }
 }
 // end::compaction[]
-
-

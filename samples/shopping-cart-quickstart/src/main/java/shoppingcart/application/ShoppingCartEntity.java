@@ -5,13 +5,12 @@ import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
+import java.util.Collections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import shoppingcart.domain.ShoppingCart;
 import shoppingcart.domain.ShoppingCart.LineItem;
 import shoppingcart.domain.ShoppingCartEvent;
-
-import java.util.Collections;
 
 // end::top[]
 
@@ -19,6 +18,7 @@ import java.util.Collections;
 // tag::class[]
 @ComponentId("shopping-cart") // <2>
 public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, ShoppingCartEvent> { // <1>
+
   // end::class[]
 
   // tag::getCart[]
@@ -45,14 +45,15 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
     }
     if (item.quantity() <= 0) { // <1>
       logger.info("Quantity for item {} must be greater than zero.", item.productId());
-      return effects().error("Quantity for item " + item.productId() + " must be greater than zero.");
+      return effects()
+        .error("Quantity for item " + item.productId() + " must be greater than zero.");
     }
 
     var event = new ShoppingCartEvent.ItemAdded(item); // <2>
 
     return effects()
-        .persist(event) // <3>
-        .thenReply(newState -> Done.getInstance()); // <4>
+      .persist(event) // <3>
+      .thenReply(newState -> Done.getInstance()); // <4>
   }
 
   // end::addItem[]
@@ -64,14 +65,13 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
     }
     if (currentState().findItemByProductId(productId).isEmpty()) {
       logger.info("Cannot remove item {} because it is not in the cart.", productId);
-      return effects().error("Cannot remove item " + productId + " because it is not in the cart.");
+      return effects()
+        .error("Cannot remove item " + productId + " because it is not in the cart.");
     }
 
     var event = new ShoppingCartEvent.ItemRemoved(productId);
 
-    return effects()
-        .persist(event)
-        .thenReply(newState -> Done.getInstance());
+    return effects().persist(event).thenReply(newState -> Done.getInstance());
   }
 
   // tag::getCart[]
@@ -79,19 +79,20 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
   public ReadOnlyEffect<ShoppingCart> getCart() {
     return effects().reply(currentState()); // <3>
   }
+
   // end::read-only[]
   // end::getCart[]
 
   // tag::checkout[]
   public Effect<Done> checkout() {
-    if (currentState().checkedOut())
-      return effects().reply(Done.getInstance());
+    if (currentState().checkedOut()) return effects().reply(Done.getInstance());
 
     return effects()
-        .persist(new ShoppingCartEvent.CheckedOut()) // <1>
-        .deleteEntity() // <2>
-        .thenReply(newState -> Done.getInstance());
+      .persist(new ShoppingCartEvent.CheckedOut()) // <1>
+      .deleteEntity() // <2>
+      .thenReply(newState -> Done.getInstance());
   }
+
   // end::checkout[]
 
   // tag::addItem[]
@@ -106,7 +107,7 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
     };
   }
   // end::addItem[]
-// tag::class[]
+  // tag::class[]
 }
 // end::class[]
 // end::all[]

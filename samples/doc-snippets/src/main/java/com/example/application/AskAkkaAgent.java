@@ -10,7 +10,7 @@ import akka.javasdk.annotations.ComponentId;
 public class AskAkkaAgent extends Agent { // <1>
 
   private static final String SYSTEM_MESSAGE =
-      """
+    """
       You are a very enthusiastic Akka representative who loves to help people!
       Given the following sections from the Akka SDK documentation, answer the question
       using only that information, outputted in markdown format.
@@ -20,10 +20,9 @@ public class AskAkkaAgent extends Agent { // <1>
 
   public StreamEffect ask(String question) { // <3>
     return streamEffects()
-        .systemMessage(SYSTEM_MESSAGE) // <4>
-        .userMessage(question) // <5>
-        .thenReply();
+      .systemMessage(SYSTEM_MESSAGE) // <4>
+      .userMessage(question) // <5>
+      .thenReply();
   }
-
 }
 // end::class[]

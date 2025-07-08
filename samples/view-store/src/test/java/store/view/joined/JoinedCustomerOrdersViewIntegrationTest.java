@@ -1,16 +1,15 @@
 package store.view.joined;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import store.order.view.joined.CustomerOrder;
 import store.order.view.joined.JoinedCustomerOrdersView;
 import store.view.StoreViewIntegrationTest;
-
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class JoinedCustomerOrdersViewIntegrationTest extends StoreViewIntegrationTest {
 
@@ -18,13 +17,21 @@ public class JoinedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
   public void getCustomerOrders() {
     createProduct("P123", "Super Duper Thingamajig", "USD", 123, 45);
     createProduct("P987", "Awesome Whatchamacallit", "NZD", 987, 65);
-    createCustomer("C001", "someone@example.com", "Some Customer", "123 Some Street", "Some City");
+    createCustomer(
+      "C001",
+      "someone@example.com",
+      "Some Customer",
+      "123 Some Street",
+      "Some City"
+    );
     createOrder("O1234", "P123", "C001", 42);
     createOrder("O5678", "P987", "C001", 7);
 
     {
-      List<CustomerOrder> customerOrders =
-        awaitCustomerOrders("C001", orders -> orders.size() >= 2);
+      List<CustomerOrder> customerOrders = awaitCustomerOrders(
+        "C001",
+        orders -> orders.size() >= 2
+      );
 
       assertEquals(2, customerOrders.size());
 
@@ -61,8 +68,10 @@ public class JoinedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
     changeCustomerName("C001", newCustomerName);
 
     {
-      List<CustomerOrder> customerOrders =
-        awaitCustomerOrders("C001", orders -> newCustomerName.equals(orders.get(0).name()));
+      List<CustomerOrder> customerOrders = awaitCustomerOrders(
+        "C001",
+        orders -> newCustomerName.equals(orders.get(0).name())
+      );
 
       CustomerOrder customerOrder1 = customerOrders.get(0);
       assertEquals("O1234", customerOrder1.orderId());
@@ -77,8 +86,10 @@ public class JoinedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
     changeProductName("P123", newProductName);
 
     {
-      List<CustomerOrder> customerOrders =
-        awaitCustomerOrders("C001", orders -> newProductName.equals(orders.get(0).productName()));
+      List<CustomerOrder> customerOrders = awaitCustomerOrders(
+        "C001",
+        orders -> newProductName.equals(orders.get(0).productName())
+      );
 
       CustomerOrder customerOrder1 = customerOrders.get(0);
       assertEquals("O1234", customerOrder1.orderId());
@@ -91,16 +102,19 @@ public class JoinedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
   }
 
   private List<CustomerOrder> getCustomerOrders(String customerId) {
-    return
-      componentClient.forView()
-        .method(JoinedCustomerOrdersView::get)
-        .invoke(customerId).orders();
-
+    return componentClient
+      .forView()
+      .method(JoinedCustomerOrdersView::get)
+      .invoke(customerId)
+      .orders();
   }
 
   private List<CustomerOrder> awaitCustomerOrders(
-    String customerId, Function<List<CustomerOrder>, Boolean> condition) {
-    Awaitility.await()
+    String customerId,
+    Function<List<CustomerOrder>, Boolean> condition
+  ) {
+    Awaitility
+      .await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       .until(() -> condition.apply(getCustomerOrders(customerId)));

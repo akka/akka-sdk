@@ -1,14 +1,13 @@
 package shoppingcart.domain;
 
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 // tag::domain[]
 public record ShoppingCart(String cartId, List<LineItem> items, boolean checkedOut) {
-
   public record LineItem(String productId, int quantity) {
     public LineItem withQuantity(int quantity) {
       return new LineItem(productId, quantity);
@@ -27,14 +26,15 @@ public record ShoppingCart(String cartId, List<LineItem> items, boolean checkedO
 
   private LineItem updateItem(LineItem item) {
     return findItemByProductId(item.productId())
-        .map(li -> li.withQuantity(li.quantity() + item.quantity()))
-        .orElse(item);
+      .map(li -> li.withQuantity(li.quantity() + item.quantity()))
+      .orElse(item);
   }
 
   private List<LineItem> removeItemByProductId(String productId) {
-    return items().stream()
-        .filter(lineItem -> !lineItem.productId().equals(productId))
-        .collect(Collectors.toList());
+    return items()
+      .stream()
+      .filter(lineItem -> !lineItem.productId().equals(productId))
+      .collect(Collectors.toList());
   }
 
   public Optional<LineItem> findItemByProductId(String productId) {

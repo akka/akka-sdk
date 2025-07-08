@@ -10,7 +10,6 @@ import akka.javasdk.Context;
 import akka.javasdk.JwtClaims;
 import akka.javasdk.Principals;
 import akka.javasdk.Tracing;
-
 import java.util.List;
 import java.util.Optional;
 

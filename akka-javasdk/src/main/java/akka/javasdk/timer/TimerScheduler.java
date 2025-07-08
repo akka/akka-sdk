@@ -6,7 +6,6 @@ package akka.javasdk.timer;
 
 import akka.Done;
 import akka.javasdk.DeferredCall;
-
 import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 

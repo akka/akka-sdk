@@ -11,19 +11,21 @@ import java.time.format.DateTimeFormatter;
 // tag::description[]
 @ComponentId("weather-agent")
 @AgentDescription(
-    name = "Weather Agent",
-    description = """
+  name = "Weather Agent",
+  description = """
       An agent that provides weather information. It can provide current weather, forecasts, and other
       related information.
     """,
-    role = "worker"
+  role = "worker"
 )
 // tag::function-tool[]
 public class WeatherAgent extends Agent {
-// end::description[]
-// end::function-tool[]
 
-  private static final String SYSTEM_MESSAGE = """
+  // end::description[]
+  // end::function-tool[]
+
+  private static final String SYSTEM_MESSAGE =
+    """
       You are a weather agent.
       Your job is to provide weather information.
       You provide current weather, forecasts, and other related information.
@@ -38,7 +40,6 @@ public class WeatherAgent extends Agent {
       Start the error response with ERROR.
     """.stripIndent();
 
-
   // tag::function-tool[]
   private final WeatherService weatherService;
 
@@ -48,10 +49,10 @@ public class WeatherAgent extends Agent {
 
   public Effect<String> query(AgentRequest request) {
     return effects()
-        .systemMessage(SYSTEM_MESSAGE)
-        .tools(weatherService) // <2>
-        .userMessage(request.message())
-        .thenReply();
+      .systemMessage(SYSTEM_MESSAGE)
+      .tools(weatherService) // <2>
+      .userMessage(request.message())
+      .thenReply();
   }
 
   @FunctionTool(description = "Return current date in yyyy-MM-dd format") // <3>

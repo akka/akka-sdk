@@ -1,22 +1,24 @@
 package shoppingcart.application;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static shoppingcart.domain.ShoppingCartEvent.ItemAdded;
+
 import akka.Done;
 import akka.javasdk.testkit.EventSourcedTestKit;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import shoppingcart.domain.ShoppingCart;
 
-import java.util.List;
-
-import static shoppingcart.domain.ShoppingCartEvent.ItemAdded;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 public class ShoppingCartTest {
 
-  private final ShoppingCart.LineItem akkaTshirt = new ShoppingCart.LineItem("akka-tshirt", "Akka Tshirt", 10);
+  private final ShoppingCart.LineItem akkaTshirt = new ShoppingCart.LineItem(
+    "akka-tshirt",
+    "Akka Tshirt",
+    10
+  );
 
   @Test
   public void testAddLineItem() {
-
     var testKit = EventSourcedTestKit.of(ShoppingCartEntity::new); // <1>
 
     {
@@ -29,7 +31,9 @@ public class ShoppingCartTest {
 
     // actually we want more akka tshirts
     {
-      var result = testKit.method(ShoppingCartEntity::addItem).invoke(akkaTshirt.withQuantity(5)); // <5>
+      var result = testKit
+        .method(ShoppingCartEntity::addItem)
+        .invoke(akkaTshirt.withQuantity(5)); // <5>
       assertEquals(Done.getInstance(), result.getReply());
 
       var itemAdded = result.getNextEventOfType(ItemAdded.class);
@@ -41,9 +45,8 @@ public class ShoppingCartTest {
       var result = testKit.method(ShoppingCartEntity::getCart).invoke(); // <7>
       assertEquals(
         new ShoppingCart("testkit-entity-id", List.of(akkaTshirt.withQuantity(15)), false),
-        result.getReply());
+        result.getReply()
+      );
     }
-
   }
-
 }

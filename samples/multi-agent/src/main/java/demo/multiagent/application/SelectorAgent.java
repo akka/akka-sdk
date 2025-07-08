@@ -1,19 +1,18 @@
 package demo.multiagent.application;
 
-import demo.multiagent.domain.AgentSelection;
-
 // tag::all[]
 import akka.javasdk.JsonSupport;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
+import demo.multiagent.domain.AgentSelection;
 
 // tag::class[]
 @ComponentId("selector-agent")
 @AgentDescription(
-    name = "Selector Agent",
-    description = """
+  name = "Selector Agent",
+  description = """
       An agent that analyses the user request and selects useful agents for
       answering the request.
     """
@@ -23,10 +22,10 @@ public class SelectorAgent extends Agent {
   private final String systemMessage;
 
   public SelectorAgent(AgentRegistry agentsRegistry) { // <1>
-
     var agents = agentsRegistry.agentsWithRole("worker"); // <2>
 
-    this.systemMessage = """
+    this.systemMessage =
+      """
         Your job is to analyse the user request and select the agents that should be used to answer
         the user. In order to do that, you will receive a list of available agents. Each agent has
         an id, a name and a description of its capabilities.
@@ -54,18 +53,16 @@ public class SelectorAgent extends Agent {
         You can find the list of existing agents below (in JSON format):
         Also important, use the agent id to identify the agents.
         %s
-      """
-        .stripIndent()
+      """.stripIndent()
         .formatted(JsonSupport.encodeToString(agents)); // <3>
   }
 
-
   public Effect<AgentSelection> selectAgents(String message) {
     return effects()
-        .systemMessage(systemMessage)
-        .userMessage(message)
-        .responseAs(AgentSelection.class)
-        .thenReply();
+      .systemMessage(systemMessage)
+      .userMessage(message)
+      .responseAs(AgentSelection.class)
+      .thenReply();
   }
 }
 // end::class[]

@@ -1,20 +1,18 @@
 package com.example.transfer.application;
 
-import akka.javasdk.testkit.TestKitSupport;
-import com.example.transfer.application.TransfersView.TransferEntries;
-import com.example.transfer.domain.TransferState.Transfer;
-import com.example.wallet.application.WalletEntity;
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.Test;
-
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-
 import static akka.Done.done;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import akka.javasdk.testkit.TestKitSupport;
+import com.example.transfer.application.TransfersView.TransferEntries;
+import com.example.transfer.domain.TransferState.Transfer;
+import com.example.wallet.application.WalletEntity;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Test;
 
 public class TransferWorkflowIntegrationTest extends TestKitSupport {
 
@@ -27,16 +25,15 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
     var transferId = randomTransferId();
     var transfer = new Transfer(walletId1, walletId2, 10);
 
-    var response =
-
-        componentClient
-          .forWorkflow(transferId)
-          .method(TransferWorkflow::startTransfer)
-          .invoke(transfer);
+    var response = componentClient
+      .forWorkflow(transferId)
+      .method(TransferWorkflow::startTransfer)
+      .invoke(transfer);
 
     assertThat(response).isEqualTo(done());
 
-    Awaitility.await()
+    Awaitility
+      .await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var balance1 = getWalletBalance(walletId1);
@@ -45,32 +42,29 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
         assertThat(balance1).isEqualTo(90);
         assertThat(balance2).isEqualTo(110);
 
-        TransferEntries result = componentClient.forView().method(TransfersView::getAllCompleted).invoke();
-        assertThat(result.entries()).contains(new TransfersView.TransferEntry(transferId, "COMPLETED"));
+        TransferEntries result = componentClient
+          .forView()
+          .method(TransfersView::getAllCompleted)
+          .invoke();
+        assertThat(result.entries())
+          .contains(new TransfersView.TransferEntry(transferId, "COMPLETED"));
       });
   }
-
 
   private String randomTransferId() {
     return UUID.randomUUID().toString().substring(0, 8);
   }
 
   private void createWallet(String walletId, int amount) {
-    var res =
-
-        componentClient
-          .forEventSourcedEntity(walletId)
-          .method(WalletEntity::create)
-          .invoke(amount);
+    var res = componentClient
+      .forEventSourcedEntity(walletId)
+      .method(WalletEntity::create)
+      .invoke(amount);
 
     assertEquals(done(), res);
   }
 
   private int getWalletBalance(String walletId) {
-    return
-      componentClient
-        .forEventSourcedEntity(walletId)
-        .method(WalletEntity::get).invoke();
+    return componentClient.forEventSourcedEntity(walletId).method(WalletEntity::get).invoke();
   }
-
 }

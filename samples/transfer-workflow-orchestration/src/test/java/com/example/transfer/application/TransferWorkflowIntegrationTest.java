@@ -1,17 +1,16 @@
 package com.example.transfer.application;
 
-import akka.javasdk.testkit.TestKitSupport;
-import com.example.transfer.domain.Transfer;
-import com.example.transfer.domain.TransferState;
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.Test;
-
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-
 import static com.example.transfer.domain.TransferState.TransferStatus.WAITING_FOR_ACCEPTANCE;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+
+import akka.javasdk.testkit.TestKitSupport;
+import com.example.transfer.domain.Transfer;
+import com.example.transfer.domain.TransferState;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Test;
 
 class TransferWorkflowIntegrationTest extends TestKitSupport {
 
@@ -33,7 +32,8 @@ class TransferWorkflowIntegrationTest extends TestKitSupport {
 
     assertThat(response).isEqualTo("transfer started");
 
-    Awaitility.await()
+    Awaitility
+      .await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var wallet1Balance = walletService.getBalance(walletId1);
@@ -62,20 +62,17 @@ class TransferWorkflowIntegrationTest extends TestKitSupport {
 
     assertThat(response).isEqualTo("transfer started");
 
-    TransferState transferState =
-      componentClient
-        .forWorkflow(transferId)
-        .method(TransferWorkflow::get)
-        .invoke();
+    TransferState transferState = componentClient
+      .forWorkflow(transferId)
+      .method(TransferWorkflow::get)
+      .invoke();
 
     assertThat(transferState.status()).isEqualTo(WAITING_FOR_ACCEPTANCE);
 
-    componentClient
-      .forWorkflow(transferId)
-      .method(TransferWorkflow::accept)
-      .invoke();
+    componentClient.forWorkflow(transferId).method(TransferWorkflow::accept).invoke();
 
-    Awaitility.await()
+    Awaitility
+      .await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var wallet1Balance = walletService.getBalance(walletId1);
@@ -89,5 +86,4 @@ class TransferWorkflowIntegrationTest extends TestKitSupport {
   public static String randomId() {
     return UUID.randomUUID().toString().substring(0, 8);
   }
-
 }
