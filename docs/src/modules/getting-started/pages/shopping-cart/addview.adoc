@@ -1,4 +1,4 @@
-= Shopping cart part 2: Authenticated user-specific lookup
+= Authenticated user-specific lookup
 :page-aliases: java:shopping-cart/addview.adoc
 
 include::ROOT:partial$include.adoc[]
