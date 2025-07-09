@@ -6,25 +6,6 @@
     <artifactId>akka-javasdk-parent</artifactId>
     <version>3.4.3</version>
   </parent>
-
-  <repositories>
-    <repository>
-      <id>akka-repository</id>
-      <name>Akka library repository</name>
-      <!-- This only works for Akka's internal CI/CD -->
-      <!-- Please update according to https://account.akka.io/token -->
-      <url>https://repo.akka.io/maven/github_actions</url>
-    </repository>
-  </repositories>
-  <pluginRepositories>
-    <pluginRepository>
-      <id>akka-repository</id>
-      <name>Akka library repository</name>
-      <!-- This only works for Akka's internal CI/CD -->
-      <!-- Please update according to https://account.akka.io/token -->
-      <url>https://repo.akka.io/maven/github_actions</url>
-    </pluginRepository>
-  </pluginRepositories>
   
   <groupId>com.example</groupId>
   <artifactId>helloworld-agent</artifactId>
