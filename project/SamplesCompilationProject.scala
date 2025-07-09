@@ -1,4 +1,6 @@
 import akka.grpc.sbt.AkkaGrpcPlugin
+import com.github.sbt.JavaFormatterPlugin
+import com.github.sbt.JavaFormatterPlugin.autoImport._
 
 import java.io.File
 import de.heikoseeberger.sbtheader.HeaderPlugin
@@ -36,11 +38,13 @@ object SamplesCompilationProject {
           .map { dir =>
             val proj = Project("sample-" + dir.getName, dir)
               .disablePlugins(HeaderPlugin)
-              .enablePlugins(AkkaGrpcPlugin)
+              .enablePlugins(AkkaGrpcPlugin, JavaFormatterPlugin)
               .settings(
                 Test / unmanagedSourceDirectories += baseDirectory.value / "src" / "it" / "java",
                 akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Java),
-                akkaGrpcCodeGeneratorSettings ++= CommonSettings.serviceGrpcGeneratorSettings)
+                akkaGrpcCodeGeneratorSettings ++= CommonSettings.serviceGrpcGeneratorSettings,
+                javafmtOnCompile := false // Enable Java formatting, but not on compile to avoid CI issues
+              )
 
             additionalDeps.get(dir.getName).fold(proj)(deps => proj.settings(libraryDependencies ++= deps))
           }
