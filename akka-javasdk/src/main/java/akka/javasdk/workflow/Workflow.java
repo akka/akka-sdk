@@ -6,14 +6,13 @@ package akka.javasdk.workflow;
 
 import akka.annotation.InternalApi;
 import akka.javasdk.Metadata;
-import akka.javasdk.impl.workflow.WorkflowEffectImpl;
+import akka.javasdk.impl.workflow.WorkflowEffects;
 import akka.javasdk.timer.TimerScheduler;
 import akka.javasdk.workflow.Workflow.RecoverStrategy.MaxRetries;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -165,23 +164,17 @@ public abstract class Workflow<S> {
   public Settings settings() {
     var def = definition();
     if (def.legacy) return new LegacySettings<>(def);
-    else return settingsBuilder().build();
+    else return Settings.builder().build();
   }
 
-  public final SettingsBuilder settingsBuilder() {
-    return new SettingsBuilder(
-        this,
-        Optional.empty(),
-        Optional.empty(),
-        Optional.empty(),
-        Optional.empty(),
-        Optional.empty(),
-        Optional.empty());
-  }
 
 
   protected final Effect.Builder<S> effects() {
-    return WorkflowEffectImpl.apply();
+    return WorkflowEffects.createEffectBuilder();
+  }
+
+  protected final StepEffect.Builder<S> stepEffects() {
+    return WorkflowEffects.createStepEffectBuilder();
   }
 
   /**
@@ -360,6 +353,85 @@ public abstract class Workflow<S> {
       TransitionalEffect<Void> delete();
     }
 
+  }
+
+  public interface StepEffect {
+
+    /**
+     * Construct the step effect that is returned by step method.
+     * <p>
+     * The step effect describes next processing actions, such as updating state and transition to another step.
+     *
+     * @param <S> The type of the state for this workflow.
+     */
+    interface Builder<S> {
+
+      PersistenceEffectBuilder updateState(S newState);
+
+      /**
+       * Pause the workflow execution and wait for an external input, e.g. via command handler.
+       */
+      StepEffect pause();
+
+      /**
+       * Defines the next step to which the workflow should transition to.
+       */
+      <I> StepEffect transitionTo(String stepName, I input);
+
+      /**
+       * Defines the next step to which the workflow should transition to.
+       */
+      StepEffect transitionTo(String stepName);
+
+      /**
+       * Finish the workflow execution.
+       * After transition to {@code end}, no more transitions are allowed.
+       */
+      StepEffect end();
+
+      /**
+       * Finish and delete the workflow execution.
+       * After transition to {@code delete}, no more transitions are allowed.
+       * The actual workflow state deletion is done with a configurable delay to allow downstream consumers to observe that fact.
+       */
+      StepEffect delete();
+
+      StepEffect error(String description);
+
+    }
+
+
+    interface PersistenceEffectBuilder {
+
+      /**
+       * Pause the workflow execution and wait for an external input, e.g. via command handler.
+       */
+      StepEffect pause();
+
+      /**
+       * Defines the next step to which the workflow should transition to.
+      <I> StepEffect transitionTo(String stepName, I input);
+
+      /**
+       * Defines the next step to which the workflow should transition to.
+       */
+      StepEffect transitionTo(String stepName);
+
+      /**
+       * Finish the workflow execution.
+       * After transition to {@code end}, no more transitions are allowed.
+       */
+      StepEffect end();
+
+      /**
+       * Finish and delete the workflow execution.
+       * After transition to {@code delete}, no more transitions are allowed.
+       * The actual workflow state deletion is done with a configurable delay to allow downstream consumers to observe that fact.
+       */
+      StepEffect delete();
+
+      StepEffect error(String description);
+    }
 
   }
 
@@ -513,6 +585,16 @@ public abstract class Workflow<S> {
   public sealed interface Settings {
 
 
+    static SettingsBuilder builder() {
+      return new SettingsBuilder(
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty());
+    }
+
     Optional<Duration> workflowTimeout();
 
     Optional<Duration> defaultStepTimeout();
@@ -527,7 +609,6 @@ public abstract class Workflow<S> {
 
     List<StepConfig> stepConfigs();
 
-    Optional<Step> findByName(String name);
   }
 
   private record LegacySettings<S>(WorkflowDef<S> legacyDefinition) implements Settings {
@@ -567,15 +648,9 @@ public abstract class Workflow<S> {
       return legacyDefinition.getStepConfigs();
     }
 
-    @Override
-    public Optional<Step> findByName(String name) {
-      return legacyDefinition.findByName(name);
-    }
   }
 
   private record SettingsImpl(
-      Workflow<?> instance,
-      List<StepMethod> stepMethods,
       List<StepConfig> stepConfigs,
       Optional<Duration> workflowTimeout,
       Optional<String> failoverStepName,
@@ -592,8 +667,6 @@ public abstract class Workflow<S> {
         }
 
     public SettingsImpl(
-        Workflow<?> instance,
-        List<StepMethod> stepMethods,
         Optional<Duration> workflowTimeout,
         Optional<String> failoverStepName,
         Optional<?> failoverStepInput,
@@ -601,8 +674,6 @@ public abstract class Workflow<S> {
         Optional<Duration> defaultStepTimeout,
         Optional<RecoverStrategy<?>> stepRecoverStrategy) {
       this(
-          instance,
-          stepMethods,
           List.of(), // buildStepConfigs(stepMethods),
           workflowTimeout,
           failoverStepName,
@@ -612,19 +683,9 @@ public abstract class Workflow<S> {
           stepRecoverStrategy);
         }
 
-
-    @Override
-    public Optional<Step> findByName(String name) {
-
-      return stepMethods.stream()
-          .filter(sm -> sm.uniqueName().equals(name))
-          .findFirst()
-          .map(sm -> sm.invoke(instance));
-    }
   }
 
   public record SettingsBuilder(
-      Workflow<?> instance,
       Optional<Duration> workflowTimeout,
       Optional<String> failoverStepName,
       Optional<?> failoverStepInput,
@@ -632,9 +693,9 @@ public abstract class Workflow<S> {
       Optional<Duration> defaultStepTimeout,
       Optional<RecoverStrategy<?>> stepRecoverStrategy) {
 
+
     public SettingsBuilder timeout(Duration duration) {
       return new SettingsBuilder(
-          instance,
           Optional.of(duration),
           failoverStepName,
           failoverStepInput,
@@ -646,7 +707,6 @@ public abstract class Workflow<S> {
     // TODO: refactor to method ref
     public SettingsBuilder failoverTo(String stepName, MaxRetries maxRetries) {
       return new SettingsBuilder(
-          instance,
           workflowTimeout,
           Optional.of(stepName),
           Optional.empty(),
@@ -658,7 +718,6 @@ public abstract class Workflow<S> {
     // TODO: refactor to method ref
     public <I> SettingsBuilder failoverTo(String stepName, I stepInput, MaxRetries maxRetries) {
       return new SettingsBuilder(
-          instance,
           workflowTimeout,
           Optional.of(stepName),
           Optional.of(stepInput),
@@ -669,7 +728,6 @@ public abstract class Workflow<S> {
 
     public SettingsBuilder defaultStepRecoverStrategy(RecoverStrategy<?> recoverStrategy) {
       return new SettingsBuilder(
-          instance,
           workflowTimeout,
           failoverStepName,
           failoverStepInput,
@@ -680,7 +738,6 @@ public abstract class Workflow<S> {
 
     public SettingsBuilder defaultStepTimeout(Duration timeout) {
       return new SettingsBuilder(
-          instance,
           workflowTimeout,
           failoverStepName,
           failoverStepInput,
@@ -691,17 +748,8 @@ public abstract class Workflow<S> {
 
     public Settings build() {
 
-      // FIXME: take overloaded methods into account
-      var stepMethods =
-          Arrays.stream(instance.getClass().getDeclaredMethods())
-              // FIXME: support methods returning CompletionStage<Step> as well
-              .filter(m -> Step.class.isAssignableFrom(m.getReturnType()))
-              .map(m -> new StepMethod(m.getName(), m))
-              .toList();
 
       return new SettingsImpl(
-          instance,
-          stepMethods,
           workflowTimeout,
           failoverStepName,
           failoverStepInput,
@@ -721,11 +769,11 @@ public abstract class Workflow<S> {
     Optional<Duration> timeout();
   }
 
-  private record StepMethod(String uniqueName, Method method)  {
-    public Step invoke(Object instance)  {
+  public record StepMethod(String uniqueName, Method method)  {
+    public StepEffect invoke(Object instance)  {
       try {
         method.setAccessible(true);
-        return (Step) method.invoke(instance);
+        return (StepEffect) method.invoke(instance);
       } catch (IllegalAccessException | InvocationTargetException e) {
         throw new RuntimeException(e);
       }
