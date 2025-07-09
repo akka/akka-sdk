@@ -209,11 +209,11 @@ public class ExampleEndpoint extends AbstractHttpEndpoint { // <1>
   // tag::basic-sse[]
   @Get("/current-time")
   public HttpResponse streamCurrentTime() {
-    Source<Long, Cancellable> timeSource = Source.tick(
+    Source<Long, Cancellable> timeSource = Source.tick( // <1>
       Duration.ZERO,
       Duration.ofSeconds(5),
       "tick"
-    ).map(__ -> System.currentTimeMillis()); // <1> // <2>
+    ).map(__ -> System.currentTimeMillis()); // <2>
 
     return HttpResponses.serverSentEvents(timeSource); // <3>
   }
