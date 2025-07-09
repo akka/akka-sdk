@@ -21,9 +21,13 @@ public class Bootstrap implements ServiceSetup {
   public Bootstrap(Config config, HttpClientProvider httpClientProvider) {
     this.httpClientProvider = httpClientProvider;
 
-    if (config.getString("akka.javasdk.agent.model-provider").equals("openai")
-      && config.getString("akka.javasdk.agent.openai.api-key").isBlank()) {
-      throw new RuntimeException("No API keys found. Make sure you have OPENAI_API_KEY defined as environment variable.");
+    if (
+      config.getString("akka.javasdk.agent.model-provider").equals("openai") &&
+      config.getString("akka.javasdk.agent.openai.api-key").isBlank()
+    ) {
+      throw new RuntimeException(
+        "No API keys found. Make sure you have OPENAI_API_KEY defined as environment variable."
+      );
     }
   }
 

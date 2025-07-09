@@ -17,14 +17,18 @@ public class KeyUtils {
   }
 
   public static void checkKeys(Config config) {
-    if (config.getString("akka.javasdk.agent.model-provider").equals("openai")
-      && readOpenAiKey().isBlank()) {
+    if (
+      config.getString("akka.javasdk.agent.model-provider").equals("openai") &&
+      readOpenAiKey().isBlank()
+    ) {
       throw new IllegalStateException(
-        "No API keys found. Make sure you have OPENAI_API_KEY defined as environment variable, or change the model provider configuration in application.conf to use a different LLM.");
+        "No API keys found. Make sure you have OPENAI_API_KEY defined as environment variable, or change the model provider configuration in application.conf to use a different LLM."
+      );
     }
     if (!hasMongoDbUri()) {
       throw new IllegalStateException(
-        "No API key found. Make sure you have MONGODB_ATLAS_URI defined as environment variable.");
+        "No API key found. Make sure you have MONGODB_ATLAS_URI defined as environment variable."
+      );
     }
   }
 
