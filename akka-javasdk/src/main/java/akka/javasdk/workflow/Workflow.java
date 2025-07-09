@@ -227,7 +227,7 @@ public abstract class Workflow<S> {
        *
        * @param stepName The step name that should be executed next.
        * @param input    The input param for the next step.
-       * @deprecated use {@link Builder#call(akka.japi.function.Function2)} instead.
+       * @deprecated use {@link Builder#transitionTo(akka.japi.function.Function2)} instead.
        */
       @Deprecated
       <I> TransitionalEffect<Void> transitionTo(String stepName, I input);
@@ -239,14 +239,14 @@ public abstract class Workflow<S> {
        * In other words, the next step call (or asyncCall) must have been defined with a {@link Supplier} function.
        *
        * @param stepName The step name that should be executed next.
-       * @deprecated use {@link Builder#call(akka.japi.function.Function)} instead.
+       * @deprecated use {@link Builder#transitionTo(akka.japi.function.Function)} instead.
        */
       @Deprecated
       TransitionalEffect<Void> transitionTo(String stepName);
 
-      <W> TransitionalEffect<Void>  call(akka.japi.function.Function <W, StepEffect> methodRef);
+      <W> TransitionalEffect<Void> transitionTo(akka.japi.function.Function <W, StepEffect> methodRef);
 
-      <W, I> CallWithInput<I, TransitionalEffect<Void> > call(akka.japi.function.Function2<W, I, StepEffect> methodRef);
+      <W, I> CallWithInput<I, TransitionalEffect<Void> > transitionTo(akka.japi.function.Function2<W, I, StepEffect> methodRef);
 
       /**
        * Finish the workflow execution.
@@ -335,7 +335,7 @@ public abstract class Workflow<S> {
        *
        * @param stepName The step name that should be executed next.
        * @param input    The input param for the next step.
-       * @deprecated use {@link PersistenceEffectBuilder#call(akka.japi.function.Function2)} instead.
+       * @deprecated use {@link PersistenceEffectBuilder#transitionTo(akka.japi.function.Function2)} instead.
        */
       @Deprecated
       <I> TransitionalEffect<Void> transitionTo(String stepName, I input);
@@ -347,15 +347,15 @@ public abstract class Workflow<S> {
        * In other words, the next step call (or asyncCall) must have been defined with a {@link Supplier}.
        *
        * @param stepName The step name that should be executed next.
-       * @deprecated use {@link PersistenceEffectBuilder#call(akka.japi.function.Function)} instead.
+       * @deprecated use {@link PersistenceEffectBuilder#transitionTo(akka.japi.function.Function)} instead.
        */
       @Deprecated
       TransitionalEffect<Void> transitionTo(String stepName);
 
 
-      <W>   TransitionalEffect<Void> call(akka.japi.function.Function <W, StepEffect> lambda);
+      <W>   TransitionalEffect<Void> transitionTo(akka.japi.function.Function <W, StepEffect> lambda);
 
-      <W, I> CallWithInput<I, TransitionalEffect<Void> > call(akka.japi.function.Function2<W, I, StepEffect> lambda);
+      <W, I> CallWithInput<I, TransitionalEffect<Void> > transitionTo(akka.japi.function.Function2<W, I, StepEffect> lambda);
 
       /**
        * Finish the workflow execution.
@@ -394,9 +394,9 @@ public abstract class Workflow<S> {
       /**
        * Defines the next step to which the workflow should transition to.
        */
-      <W> StepEffect thenCall(akka.japi.function.Function <W, StepEffect> stepName);
+      <W> StepEffect thenTransitionTo(akka.japi.function.Function <W, StepEffect> stepName);
 
-      <W, I> CallWithInput<I, StepEffect> thenCall(akka.japi.function.Function2<W, I, Workflow.StepEffect> lambda);
+      <W, I> CallWithInput<I, StepEffect> thenTransitionTo(akka.japi.function.Function2<W, I, Workflow.StepEffect> lambda);
 
       /**
        * Finish the workflow execution.
@@ -430,10 +430,10 @@ public abstract class Workflow<S> {
       /**
        * Defines the next step to which the workflow should transition to.
        */
-      <W> StepEffect thenCall(akka.japi.function.Function<W, Workflow.StepEffect> methodRef);
+      <W> StepEffect thenTransitionTo(akka.japi.function.Function<W, Workflow.StepEffect> methodRef);
 
 
-      <W, I> CallWithInput<I, StepEffect> thenCall(akka.japi.function.Function2<W, I, Workflow.StepEffect> methodRef);
+      <W, I> CallWithInput<I, StepEffect> thenTransitionTo(akka.japi.function.Function2<W, I, Workflow.StepEffect> methodRef);
 
       /**
        * Finish the workflow execution.

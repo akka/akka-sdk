@@ -46,7 +46,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
       if (currentState() == null) {
         return effects()
             .updateState(new TransferState(transfer, "started"))
-            .call(TransferWorkflow::withdraw)
+            .transitionTo(TransferWorkflow::withdraw)
             .withInput(new Withdraw(transfer.from(), transfer.amount()))
             .thenReply(new Message("transfer started"));
       } else {
@@ -68,7 +68,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
     var state = currentState().withLastStep("withdrawn").asAccepted();
     return stepEffects()
         .updateState(state)
-        .thenCall(TransferWorkflow::deposit)
+        .thenTransitionTo(TransferWorkflow::deposit)
         .withInput(new Deposit(currentState().transfer().to(), currentState().transfer().amount()));
   }
 
@@ -86,7 +86,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
     var state = currentState().withLastStep("deposited").asFinished();
     return stepEffects()
       .updateState(state)
-      .thenCall(TransferWorkflow::logAndStop);
+      .thenTransitionTo(TransferWorkflow::logAndStop);
   }
 
   private StepEffect logAndStop() {
