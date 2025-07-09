@@ -8,21 +8,28 @@ import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
 import customer.domain.Customer;
-
 import java.util.Collection;
 
 @ComponentId("customers-by-name")
 public class CustomersByName extends View {
 
   // tag::row[]
-  public record CustomerSummary(String customerId, String name, String email) { }
+  public record CustomerSummary(String customerId, String name, String email) {}
+
   // end::row[]
 
   @Consume.FromKeyValueEntity(CustomerEntity.class)
   public static class CustomersByNameUpdater extends TableUpdater<CustomerSummary> { // <1>
+
     public Effect<CustomerSummary> onUpdate(Customer customer) { // <2>
       return effects()
-          .updateRow(new CustomerSummary(updateContext().eventSubject().get(), customer.name(), customer.email())); // <3>
+        .updateRow(
+          new CustomerSummary(
+            updateContext().eventSubject().get(),
+            customer.name(),
+            customer.email()
+          )
+        ); // <3>
     }
   }
 
@@ -30,9 +37,10 @@ public class CustomersByName extends View {
   public QueryEffect<CustomerSummary> getFirstCustomerSummary(String name) { // <5>
     return queryResult();
   }
+
   // end::class[]
 
-  public record CustomerSummaries(Collection<CustomerSummary> customers) { } // <6>
+  public record CustomerSummaries(Collection<CustomerSummary> customers) {} // <6>
 
   @Query("SELECT * AS customers FROM customers_by_name WHERE name = :name") // <7>
   public QueryEffect<CustomerSummaries> getCustomers(String name) {
@@ -46,6 +54,6 @@ public class CustomersByName extends View {
   }
   // end::stream[]
 
-// tag::class[]
+  // tag::class[]
 }
 // end::class[]

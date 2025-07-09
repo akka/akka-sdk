@@ -16,19 +16,42 @@ import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * An AI agent component that is using a (large) language model.
+ * An AI agent component that interacts with an AI model, such as a large language model (LLM),
+ * to perform specific tasks.
  * <p>
- * An agent participates in a session and the session id can be accessed from the {@link Agent#context()}.
- * It has a conversational memory for the session. User and AI messages are stored in the memory, and
- * included as context in subsequent requests to the model.
+ * An Agent is typically backed by a large language model and maintains contextual history in a session memory,
+ * which may be shared between multiple agents collaborating on the same goal. It can provide function tools
+ * and call them as requested by the model.
  * <p>
- * A request to the model always includes a system message and a user message, and may include additional
- * context messages.
+ * <strong>Key Features:</strong>
+ * <ul>
+ *   <li><strong>Session-based:</strong> Participates in a session with contextual memory</li>
+ *   <li><strong>Memory Management:</strong> Automatically stores user and AI messages for context</li>
+ *   <li><strong>Function Tools:</strong> Can be extended with custom tools for the model to invoke</li>
+ *   <li><strong>Model Integration:</strong> Supports multiple AI model providers (OpenAI, Anthropic, etc.)</li>
+ *   <li><strong>Streaming Support:</strong> Can stream responses token by token for real-time UX</li>
+ * </ul>
  * <p>
- * The agent id must be defined with a {@link akka.javasdk.annotations.ComponentId} annotation on the agent class.
+ * <strong>Session Memory:</strong>
+ * The agent maintains contextual history in session memory, identified by a session id accessible
+ * via {@link Agent#context()}. This memory is persistent and shared between agents using the same session id.
  * <p>
- * Additional information about the agent may be defined with the {@link akka.javasdk.annotations.AgentDescription}
- * annotation on the agent class. This is important when using the {@link AgentRegistry}.
+ * <strong>Component Identification:</strong>
+ * The agent must be annotated with {@link akka.javasdk.annotations.ComponentId} to provide a unique
+ * identifier for the component class. For multi-agent systems, use {@link akka.javasdk.annotations.AgentDescription}
+ * to provide metadata for the {@link AgentRegistry}.
+ * <p>
+ * <strong>Calling Agents:</strong>
+ * Agents are typically called from workflows, endpoints, or consumers using the ComponentClient:
+ * <pre>{@code
+ * String response = componentClient
+ *     .forAgent()
+ *     .inSession(sessionId)
+ *     .method(MyAgent::query)
+ *     .invoke("What is the weather like?");
+ * }</pre>
+ * <p>
+ * For reliable execution with error handling and retries, consider calling agents from a {@link akka.javasdk.workflow.Workflow}.
  */
 public abstract class Agent {
 
@@ -88,7 +111,7 @@ public abstract class Agent {
     interface Builder {
 
       /**
-       * Define the model (LLM) to use.
+       * Define the AI model (LLM) to use.
        * If undefined, the model is defined by the default configuration in
        * {@code akka.javasdk.agent.model-provider}
        */
@@ -349,7 +372,7 @@ public abstract class Agent {
     interface Builder {
 
       /**
-       * Define the model (LLM) to use.
+       * Define the AI model (LLM) to use.
        * If undefined, the model is defined by the default configuration in
        * {@code akka.javasdk.agent.model-provider}
        */

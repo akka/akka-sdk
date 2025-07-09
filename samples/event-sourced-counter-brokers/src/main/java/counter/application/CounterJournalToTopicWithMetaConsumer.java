@@ -12,11 +12,13 @@ import org.slf4j.LoggerFactory;
 // tag::class[]
 @ComponentId("counter-journal-to-topic-with-meta")
 @Consume.FromEventSourcedEntity(CounterEntity.class)
-@Produce.ToTopic("counter-events-with-meta")  // <1>
+@Produce.ToTopic("counter-events-with-meta") // <1>
 public class CounterJournalToTopicWithMetaConsumer extends Consumer {
 
   // end::class[]
-  private Logger logger = LoggerFactory.getLogger(CounterJournalToTopicWithMetaConsumer.class);
+  private Logger logger = LoggerFactory.getLogger(
+    CounterJournalToTopicWithMetaConsumer.class
+  );
 
   // tag::class[]
   public Effect onEvent(CounterEvent event) {

@@ -1,16 +1,15 @@
 package customer.application;
 
+import static akka.Done.done;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+
 import akka.Done;
 import customer.domain.Customer;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static akka.Done.done;
-import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
  * A simple customer store implementation used for idempotent updates documentation.
@@ -33,6 +32,7 @@ public class CustomerStore {
     return completedFuture(store.put(customerId, customer)).thenApply(__ -> done());
     // tag::idempotent-update[]
   }
+
   // end::idempotent-update[]
 
   public CompletionStage<Collection<Customer>> getAll() {

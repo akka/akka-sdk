@@ -1,11 +1,12 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
 - [Getting Started](../index.html)
-- [AI Planner Part 2: User preferences](preferences.html)
+- [Build an AI multi-agent planner](index.html)
+- [User preferences](preferences.html)
 
 <!-- </nav> -->
 
-# AI Planner Part 2: User preferences
+# User preferences
 
 |  | **New to Akka? Start here:**
 
@@ -46,6 +47,11 @@ public class PreferencesEntity
 
   public record AddPreference(String preference) {}
 
+  @Override
+  public Preferences emptyState() {
+    return new Preferences(List.of());
+  }
+
   public Effect<Done> addPreference(AddPreference command) { // (3)
     return effects()
         .persist(new PreferencesEvent.PreferenceAdded(command.preference()))
@@ -53,12 +59,7 @@ public class PreferencesEntity
   }
 
   public Effect<Preferences> getPreferences() { // (4)
-    List<String> prefs;
-    if (currentState() == null) {
-      return effects().reply(new Preferences(List.of()));
-    } else {
-      return effects().reply(currentState());
-    }
+    return effects().reply(currentState());
   }
 
   @Override
@@ -75,8 +76,38 @@ public class PreferencesEntity
 | **2** | Annotate the class so Akka can identify it as an event-sourced entity. |
 | **3** | Define the command handler method to add a preference text. |
 | **4** | Define another command handler to retrieve all preferences. |
-| **5** | Updates of the `State` is performed from the persisted events. |
+| **5** | Updates of the `Preferences` state is performed from the persisted events. |
+You also need the `Preferences` and the `PreferencesEvent` records.
+
+Add a new file `Preferences.java` to `src/main/java/com/example/domain/`
+
+Preferences.java
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+public record Preferences(List<String> entries) {
+  public Preferences addPreference(String preference) {
+    var newEntries = new ArrayList<>(entries);
+    newEntries.add(preference);
+    return new Preferences(newEntries);
+  }
+}
+```
 Here we use plain text for the preferences, but it could be more structured information.
+
+Add a new file `PreferencesEvent.java` to `src/main/java/com/example/domain/`
+
+PreferencesEvent.java
+```java
+import akka.javasdk.annotations.TypeName;
+
+public sealed interface PreferencesEvent {
+  @TypeName("preference-added")
+  record PreferenceAdded(String preference) implements PreferencesEvent {
+  }
+}
+```
 
 ## <a href="about:blank#_use_from_the_agent"></a> Use from the agent
 
@@ -122,7 +153,7 @@ public class ActivityAgent extends Agent {
       userMessage = request.message() +
           "\nPreferences:\n" +
           allPreferences.entries().stream()
-              .collect(Collectors.joining("'\n", "- ", ""));
+              .collect(Collectors.joining("\n", "- ", ""));
     }
 
     return effects()
@@ -156,7 +187,7 @@ ActivityEndpoint.java
 ```
 
 | **1** | Add `userId` as a path parameter. |
-| **2** | Call the agent with the `userId`. |
+| **2** | Call the agent with the new `ActivityAgent.Request` record that includes the `userId`. |
 
 ## <a href="about:blank#_update_preferences_from_endpoint"></a> Update preferences from endpoint
 
@@ -180,8 +211,16 @@ public record AddPreference(String preference) {
 
 | **1** | Add a method to add a preference. |
 | **2** | Call the `PreferenceEntity` for the given user id. |
+Use the imports:
+
+```java
+import akka.http.javadsl.model.HttpResponse;
+import akka.javasdk.http.HttpResponses;
+```
 
 ## <a href="about:blank#_running_the_service"></a> Running the service
+
+Stop the service with `ctrl-c` if it’s still running.
 
 Start your service locally:
 
@@ -195,7 +234,7 @@ curl -i localhost:9000/preferences/alice \
   --header "Content-Type: application/json" \
   -XPOST \
   --data '{
-    "preference": "I like outdoor activities.",
+    "preference": "I like outdoor activities."
   }'
 ```
 
@@ -204,7 +243,7 @@ curl -i localhost:9000/preferences/alice \
   --header "Content-Type: application/json" \
   -XPOST \
   --data '{
-    "preference": "I dislike museums.",
+    "preference": "I dislike museums."
   }'
 ```
 Ask for activities.
@@ -218,12 +257,12 @@ Does it take your preferences into account for the suggestions?
 
 ## <a href="about:blank#_next_steps"></a> Next steps
 
-- Activities may depend on the weather forecast. Continue with [Part 3: Weather agent](weather.html) that will make use of agent function tools.
+- Activities may depend on the weather forecast. Continue with [Weather agent](weather.html) that will make use of agent function tools.
 - Learn more about the <a href="../../java/event-sourced-entities.html">`EventSourceEntity` component</a>.
 
 <!-- <footer> -->
 <!-- <nav> -->
-[AI Planner Part 1: The activity agent](index.html) [AI Planner Part 3: Weather agent](weather.html)
+[Activity agent](activity.html) [Weather agent](weather.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

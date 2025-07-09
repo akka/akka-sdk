@@ -28,7 +28,7 @@ If you are following along with each step rather than using the completed soluti
 
 ## <a href="about:blank#_unfamiliar_with_concepts_like_vectors_embeddings_or_rag"></a> Unfamiliar with concepts like vectors, embeddings or RAG?
 
-We recommend reviewing our [foundational explainer on AI concepts](../../concepts/ai-concepts-video.html). It offers helpful background that will deepen your understanding of the technologies and patterns used throughout this tutorial.
+We recommend reviewing our [foundational explainer on AI concepts](../../concepts/ai-agents.html#_foundational_ai_concepts_video). It offers helpful background that will deepen your understanding of the technologies and patterns used throughout this tutorial.
 
 ## <a href="about:blank#_updating_the_pom"></a> Updating the pom
 
@@ -43,7 +43,7 @@ We’re going to use `langchain4j` for this sample, so add those dependencies to
     <parent>
         <groupId>io.akka</groupId>
         <artifactId>akka-javasdk-parent</artifactId>
-        <version>3.4.0-M6</version>
+        <version>3.4.1</version>
     </parent>
 
     <groupId>akka.ask</groupId>
@@ -142,15 +142,20 @@ The workflow definition for the document indexer is surprisingly simple:
 ```java
 @Override
 public WorkflowDef<State> definition() {
+  return workflow()
+      .addStep(processingFileStep())
+      // the processing step might take a while
+      .defaultStepTimeout(Duration.of(1, MINUTES));
+}
 
-  var processing = step(PROCESSING_FILE_STEP) // (1)
+private Step processingFileStep() {
+  return step(PROCESSING_FILE_STEP) // (1)
       .call(() -> {
         if (currentState().hasFilesToProcess()) {
           indexFile(currentState().head().get());
         }
-        return done();
       })
-      .andThen(Done.class, __ -> {
+      .andThen(() -> {
         // we need to check if it hasFilesToProcess, before moving the head
         // because if workflow is aborted, the state is cleared, and we won't have
         // anything in the list
@@ -162,11 +167,6 @@ public WorkflowDef<State> definition() {
           return effects().pause(); // (4)
         }
       });
-
-  return workflow()
-      .addStep(processing)
-      // the processing step is long-running, so we need to set a big timeout
-      .defaultStepTimeout(Duration.of(20, MINUTES));
 }
 ```
 

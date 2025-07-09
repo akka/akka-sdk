@@ -1,12 +1,11 @@
 package user.registry;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 import akka.javasdk.testkit.KeyValueEntityTestKit;
 import org.junit.jupiter.api.Test;
 import user.registry.application.UniqueEmailEntity;
 import user.registry.domain.UniqueEmail;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 public class UniqueEmailEntityTest {
 
@@ -55,7 +54,9 @@ public class UniqueEmailEntityTest {
     markAsNotUsedEmail(emailTestKit);
   }
 
-  private static void confirmEmail(KeyValueEntityTestKit<UniqueEmail, UniqueEmailEntity> emailTestKit) {
+  private static void confirmEmail(
+    KeyValueEntityTestKit<UniqueEmail, UniqueEmailEntity> emailTestKit
+  ) {
     var confirmedRes = emailTestKit.method(UniqueEmailEntity::confirm).invoke();
     assertThat(confirmedRes.isReply()).isTrue();
     assertThat(confirmedRes.stateWasUpdated()).isTrue();
@@ -63,7 +64,11 @@ public class UniqueEmailEntityTest {
     assertThat(state.isConfirmed()).isTrue();
   }
 
-  private static void reserveEmail(KeyValueEntityTestKit<UniqueEmail, UniqueEmailEntity> emailTestKit, String email, String ownerId) {
+  private static void reserveEmail(
+    KeyValueEntityTestKit<UniqueEmail, UniqueEmailEntity> emailTestKit,
+    String email,
+    String ownerId
+  ) {
     var reserveCmd = new UniqueEmail.ReserveEmail(email, ownerId);
     var reservedRes = emailTestKit.method(UniqueEmailEntity::reserve).invoke(reserveCmd);
     assertThat(reservedRes.isReply()).isTrue();
@@ -73,7 +78,9 @@ public class UniqueEmailEntityTest {
     assertThat(state.isReserved()).isTrue();
   }
 
-  private static void markAsNotUsedEmail(KeyValueEntityTestKit<UniqueEmail, UniqueEmailEntity> emailTestKit) {
+  private static void markAsNotUsedEmail(
+    KeyValueEntityTestKit<UniqueEmail, UniqueEmailEntity> emailTestKit
+  ) {
     var reservedRes = emailTestKit.method(UniqueEmailEntity::markAsNotUsed).invoke();
     assertThat(reservedRes.isReply()).isTrue();
     assertThat(reservedRes.stateWasUpdated()).isTrue();
@@ -82,10 +89,10 @@ public class UniqueEmailEntityTest {
     assertThat(state.isNotInUse()).isTrue();
   }
 
-  private static void unreserveEmail(KeyValueEntityTestKit<UniqueEmail, UniqueEmailEntity> emailTestKit) {
+  private static void unreserveEmail(
+    KeyValueEntityTestKit<UniqueEmail, UniqueEmailEntity> emailTestKit
+  ) {
     var reservedRes = emailTestKit.method(UniqueEmailEntity::cancelReservation).invoke();
     assertThat(reservedRes.isReply()).isTrue();
   }
-
-
 }

@@ -12,13 +12,17 @@ import com.mongodb.client.MongoClients;
 // tag::knowledge[]
 @Setup
 public class Bootstrap implements ServiceSetup {
+
   // end::knowledge[]
   public Bootstrap() {
     if (!KeyUtils.hasValidKeys()) {
       throw new IllegalStateException(
-          "No API keys found. Make sure you have OPENAI_API_KEY and MONGODB_ATLAS_URI defined as environment variable.");
+        "No API keys found. Make sure you have OPENAI_API_KEY and MONGODB_ATLAS_URI " +
+        "defined as environment variable."
+      );
     }
   }
+
   // tag::knowledge[]
 
   @Override

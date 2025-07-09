@@ -5,16 +5,36 @@
 package akka.javasdk.mcp;
 
 import akka.annotation.DoNotInherit;
-import akka.grpc.javadsl.Metadata;
 import akka.http.javadsl.model.HttpHeader;
 import akka.javasdk.JwtClaims;
 import akka.javasdk.Principals;
 import akka.javasdk.Tracing;
-
 import java.util.List;
 import java.util.Optional;
 
-/** Not for user extension, can be injected as constructor parameter into MCP endpoint components */
+/**
+ * Context information available during MCP endpoint request processing.
+ *
+ * <p>Provides access to request metadata including headers, authentication information, and tracing
+ * capabilities for MCP endpoint methods. This context is available during the processing of MCP
+ * tool calls, resource requests, and prompt requests.
+ *
+ * <p><strong>Access Methods:</strong>
+ *
+ * <ul>
+ *   <li>Extend {@link AbstractMcpEndpoint} and use {@code requestContext()}
+ *   <li>Inject as constructor parameter into MCP endpoint classes
+ * </ul>
+ *
+ * <p><strong>Authentication & Authorization:</strong> Use {@link #getPrincipals()} and {@link
+ * #getJwtClaims()} to access authentication information for custom authorization logic. MCP
+ * endpoints support ACL annotations and JWT validation.
+ *
+ * <p><strong>Custom Headers:</strong> Access request headers via {@link #requestHeader(String)} for
+ * custom authentication schemes or client-specific metadata.
+ *
+ * <p>Not for user extension, implementation provided by the SDK.
+ */
 @DoNotInherit
 public interface McpRequestContext {
   /**

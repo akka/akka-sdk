@@ -1,5 +1,9 @@
 package store.view.nested;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import store.order.view.nested.CustomerOrder;
@@ -7,25 +11,27 @@ import store.order.view.nested.NestedCustomerOrders;
 import store.order.view.nested.NestedCustomerOrdersView;
 import store.view.StoreViewIntegrationTest;
 
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 public class NestedCustomerOrdersViewIntegrationTest extends StoreViewIntegrationTest {
-
 
   @Test
   public void getCustomerOrders() {
     createProduct("P123", "Super Duper Thingamajig", "USD", 123, 45);
     createProduct("P987", "Awesome Whatchamacallit", "NZD", 987, 65);
-    createCustomer("C001", "someone@example.com", "Some Customer", "123 Some Street", "Some City");
+    createCustomer(
+      "C001",
+      "someone@example.com",
+      "Some Customer",
+      "123 Some Street",
+      "Some City"
+    );
     createOrder("O1234", "P123", "C001", 42);
     createOrder("O5678", "P987", "C001", 7);
 
     {
-      NestedCustomerOrders customerOrders =
-        awaitCustomerOrders("C001", customer -> customer.orders().size() >= 2);
+      NestedCustomerOrders customerOrders = awaitCustomerOrders(
+        "C001",
+        customer -> customer.orders().size() >= 2
+      );
 
       assertEquals(2, customerOrders.orders().size());
 
@@ -60,8 +66,10 @@ public class NestedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
     changeCustomerName("C001", newCustomerName);
 
     {
-      NestedCustomerOrders customerOrders =
-        awaitCustomerOrders("C001", customer -> newCustomerName.equals(customer.name()));
+      NestedCustomerOrders customerOrders = awaitCustomerOrders(
+        "C001",
+        customer -> newCustomerName.equals(customer.name())
+      );
 
       assertEquals("Some Name", customerOrders.name());
     }
@@ -70,9 +78,10 @@ public class NestedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
     changeProductName("P123", newProductName);
 
     {
-      NestedCustomerOrders customerOrders =
-        awaitCustomerOrders(
-          "C001", customer -> newProductName.equals(customer.orders().get(0).productName()));
+      NestedCustomerOrders customerOrders = awaitCustomerOrders(
+        "C001",
+        customer -> newProductName.equals(customer.orders().get(0).productName())
+      );
 
       CustomerOrder customerOrder1 = customerOrders.orders().get(0);
       assertEquals("O1234", customerOrder1.orderId());
@@ -85,14 +94,13 @@ public class NestedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
   }
 
   private NestedCustomerOrders getCustomerOrders(String customerId) {
-    return 
-      componentClient.forView()
-        .method(NestedCustomerOrdersView::get)
-        .invoke(customerId);
+    return componentClient.forView().method(NestedCustomerOrdersView::get).invoke(customerId);
   }
 
   private NestedCustomerOrders awaitCustomerOrders(
-    String customerId, Function<NestedCustomerOrders, Boolean> condition) {
+    String customerId,
+    Function<NestedCustomerOrders, Boolean> condition
+  ) {
     Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)

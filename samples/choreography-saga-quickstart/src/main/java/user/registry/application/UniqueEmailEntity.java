@@ -1,5 +1,6 @@
 package user.registry.application;
 
+import static akka.Done.done;
 
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
@@ -7,13 +8,10 @@ import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.keyvalueentity.KeyValueEntityContext;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import user.registry.domain.UniqueEmail;
-
-import java.util.Optional;
-
-import static akka.Done.done;
 
 /**
  * Entity wrapping a UniqueEmail.
@@ -36,16 +34,16 @@ public class UniqueEmailEntity extends KeyValueEntity<UniqueEmail> {
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
-  @JsonSubTypes({
-    @JsonSubTypes.Type(value = Result.Success.class, name = "Success"),
-    @JsonSubTypes.Type(value = Result.AlreadyReserved.class, name = "AlreadyReserved")})
+  @JsonSubTypes(
+    {
+      @JsonSubTypes.Type(value = Result.Success.class, name = "Success"),
+      @JsonSubTypes.Type(value = Result.AlreadyReserved.class, name = "AlreadyReserved"),
+    }
+  )
   public sealed interface Result {
+    record AlreadyReserved() implements Result {}
 
-    record AlreadyReserved() implements Result {
-    }
-
-    record Success() implements Result {
-    }
+    record Success() implements Result {}
   }
 
   public UniqueEmailEntity(KeyValueEntityContext context) {
@@ -69,7 +67,6 @@ public class UniqueEmailEntity extends KeyValueEntity<UniqueEmail> {
     return notInUse();
   }
 
-
   /**
    * This method reserves an email address.
    * If the email address is already in use (reserved or confirmed) and we are trying to reserve it for a different user,
@@ -90,7 +87,13 @@ public class UniqueEmailEntity extends KeyValueEntity<UniqueEmail> {
 
     logger.info("Reserving email address '{}'", cmd.address());
     return effects()
-      .updateState(new UniqueEmail(cmd.address(), UniqueEmail.Status.RESERVED, Optional.of(cmd.ownerId())))
+      .updateState(
+        new UniqueEmail(
+          cmd.address(),
+          UniqueEmail.Status.RESERVED,
+          Optional.of(cmd.ownerId())
+        )
+      )
       .thenReply(new Result.Success());
   }
 
@@ -101,15 +104,12 @@ public class UniqueEmailEntity extends KeyValueEntity<UniqueEmail> {
   public Effect<Done> confirm() {
     if (currentState().isReserved()) {
       logger.info("Confirming email address '{}'", currentState().address());
-      return effects()
-        .updateState(currentState().asConfirmed())
-        .thenReply(done());
+      return effects().updateState(currentState().asConfirmed()).thenReply(done());
     } else {
       logger.info("Email address status is not reserved. Ignoring confirmation request.");
       return effects().reply(done());
     }
   }
-
 
   /**
    * This method is called when the email address is no longer used.
@@ -122,9 +122,7 @@ public class UniqueEmailEntity extends KeyValueEntity<UniqueEmail> {
     if (currentState().isReserved()) {
       logger.info("Cancelling email address reservation'{}'", currentState().address());
       // when cancelling, we go back to the initial state (not in use)
-      return effects()
-        .updateState(notInUse())
-        .thenReply(done());
+      return effects().updateState(notInUse()).thenReply(done());
     } else {
       return effects().reply(done());
     }
@@ -142,14 +140,10 @@ public class UniqueEmailEntity extends KeyValueEntity<UniqueEmail> {
    */
   public Effect<Done> markAsNotUsed() {
     logger.info("Marking as not used email address '{}'", currentState().address());
-    return effects()
-      .updateState(notInUse())
-      .thenReply(done());
+    return effects().updateState(notInUse()).thenReply(done());
   }
-
 
   public ReadOnlyEffect<UniqueEmail> getState() {
     return effects().reply(currentState());
   }
-
 }

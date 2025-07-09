@@ -1,14 +1,13 @@
 package shoppingcart.application;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import shoppingcart.domain.ShoppingCartEvent;
 
 // tag::view[]
@@ -20,20 +19,15 @@ public class ShoppingCartView extends View {
     return queryResult();
   }
 
-  @Query("SELECT * FROM shopping_carts WHERE " +
-      "userId = :userId AND checkedout = false") // <2>
+  @Query("SELECT * FROM shopping_carts WHERE " + "userId = :userId AND checkedout = false") // <2>
   public QueryEffect<Optional<Cart>> getUserCart(String userId) {
     return queryResult();
   }
 
-  public record Cart(String cartId,
-      String userId,
-      List<Item> items,
-      boolean checkedout) { // <3>
+  public record Cart(String cartId, String userId, List<Item> items, boolean checkedout) { // <3>
     // end::view[]
 
-    public Cart addItem(String itemId, String name,
-        int quantity, String description) {
+    public Cart addItem(String itemId, String name, int quantity, String description) {
       var newItems = items;
       newItems.add(new Item(itemId, name, quantity, description));
 
@@ -55,9 +49,7 @@ public class ShoppingCartView extends View {
       return new Cart(cartId, userId, items, true);
     }
 
-    public record Item(String itemId, String name,
-        int quantity, String description) {
-    }
+    public record Item(String itemId, String name, int quantity, String description) {}
     // tag::view[]
   }
 
@@ -75,21 +67,22 @@ public class ShoppingCartView extends View {
     Cart rowStateOrNew(String userId) {
       if (rowState() == null) {
         var cartId = updateContext().eventSubject().get();
-        return new Cart(
-            cartId,
-            userId,
-            new ArrayList<Cart.Item>(),
-            false);
+        return new Cart(cartId, userId, new ArrayList<Cart.Item>(), false);
       } else {
         return rowState();
       }
     }
 
     private Effect<Cart> addItem(ShoppingCartEvent.ItemAdded added) {
-      return effects().updateRow(
-          rowStateOrNew(added.userId()) // <5>
-              .addItem(added.productId(),
-                  added.name(), added.quantity(), added.description()));
+      return effects()
+        .updateRow(
+          rowStateOrNew(added.userId()).addItem( // <5>
+            added.productId(),
+            added.name(),
+            added.quantity(),
+            added.description()
+          )
+        );
     }
 
     private Effect<Cart> removeItem(ShoppingCartEvent.ItemRemoved removed) {
@@ -99,7 +92,6 @@ public class ShoppingCartView extends View {
     private Effect<Cart> checkout(ShoppingCartEvent.CheckedOut checkedOut) {
       return effects().updateRow(rowState().checkout());
     }
-
   }
 }
 // end::view[]

@@ -30,25 +30,19 @@ public class TransferEndpoint {
   @Post("/transfer/{id}")
   public HttpResponse start(String id, Transfer transfer) {
     log.info("Starting transfer [{}].", transfer);
-    componentClient.forWorkflow(id)
-      .method(TransferWorkflow::start)
-      .invoke(transfer);
+    componentClient.forWorkflow(id).method(TransferWorkflow::start).invoke(transfer);
     return HttpResponses.accepted();
   }
 
   @Post("/transfer/{id}/accept")
   public HttpResponse accept(String id) {
     log.info("Accepting transfer [{}].", id);
-    componentClient.forWorkflow(id)
-      .method(TransferWorkflow::accept)
-      .invoke();
+    componentClient.forWorkflow(id).method(TransferWorkflow::accept).invoke();
     return HttpResponses.accepted();
   }
 
   @Get("/transfer/{id}")
   public TransferState get(String id) {
-    return componentClient.forWorkflow(id)
-      .method(TransferWorkflow::get)
-      .invoke();
+    return componentClient.forWorkflow(id).method(TransferWorkflow::get).invoke();
   }
 }

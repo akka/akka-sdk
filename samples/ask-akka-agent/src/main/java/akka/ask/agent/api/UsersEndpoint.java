@@ -22,10 +22,10 @@ public class UsersEndpoint {
 
   @Get("/users/{userId}/sessions/")
   public ConversationHistoryView.ConversationHistory getSession(String userId) {
-
-    return componentClient.forView()
-        .method(ConversationHistoryView::getSessionsByUser)
-        .invoke(userId);
+    return componentClient
+      .forView()
+      .method(ConversationHistoryView::getSessionsByUser)
+      .invoke(userId);
   }
 }
 // end::endpoint[]

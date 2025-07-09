@@ -27,13 +27,14 @@ public class CustomerRegistryEndpoint {
   private final HttpClient httpClient;
   private final ComponentClient componentClient;
 
-  public record Address(String street, String city) { }
+  public record Address(String street, String city) {}
 
-  public record CreateCustomerRequest(String email, String name, Address address) { }
+  public record CreateCustomerRequest(String email, String name, Address address) {}
 
-
-  public CustomerRegistryEndpoint(HttpClientProvider webClientProvider, // <1>
-                                  ComponentClient componentClient) {
+  public CustomerRegistryEndpoint(
+    HttpClientProvider webClientProvider, // <1>
+    ComponentClient componentClient
+  ) {
     this.httpClient = webClientProvider.httpClientFor("customer-registry"); // <2>
     this.componentClient = componentClient;
   }
@@ -41,22 +42,26 @@ public class CustomerRegistryEndpoint {
   @Post("/{id}")
   public HttpResponse create(String id, CreateCustomerRequest createRequest) {
     log.info("Delegating customer creation to upstream service: {}", createRequest);
-    if (id == null || id.isBlank())
-      throw HttpException.badRequest("No id specified");
+    if (id == null || id.isBlank()) throw HttpException.badRequest("No id specified");
 
     // make call to customer-registry service
-    var response = httpClient.POST("/customer/" + id) // <3>
-        .withRequestBody(createRequest)
-        .invoke();
+    var response = httpClient
+      .POST("/customer/" + id) // <3>
+      .withRequestBody(createRequest)
+      .invoke();
 
     if (response.httpResponse().status() == StatusCodes.CREATED) {
       return HttpResponses.created(); // <4>
     } else {
-      throw new RuntimeException("Delegate call to create upstream customer failed, response status: " + response.httpResponse().status());
+      throw new RuntimeException(
+        "Delegate call to create upstream customer failed, response status: " +
+        response.httpResponse().status()
+      );
     }
   }
+
   // end::cross-service-call[]
-  
+
   @Get("/by-name/{name}")
   public CustomerEntries findByName(String name) {
     return componentClient.forView().method(CustomersByNameView::findByName).invoke(name);

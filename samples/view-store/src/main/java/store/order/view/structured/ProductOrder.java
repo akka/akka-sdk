@@ -7,6 +7,6 @@ public record ProductOrder(
   int quantity,
   ProductValue value,
   String orderId,
-  long orderCreatedTimestamp) {
-}
+  long orderCreatedTimestamp
+) {}
 // end::structured[]

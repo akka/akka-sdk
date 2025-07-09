@@ -1,5 +1,8 @@
 package customer.application;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import akka.javasdk.Metadata;
 import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
 import akka.javasdk.testkit.TestKit;
@@ -12,9 +15,6 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.assertj.core.api.Assertions.assertThat;
-
 class CustomerStoreUpdaterTest extends TestKitSupport {
 
   private IncomingMessages consumerEvents;
@@ -22,18 +22,17 @@ class CustomerStoreUpdaterTest extends TestKitSupport {
 
   @Override
   protected TestKit.Settings testKitSettings() {
-    return TestKit.Settings.DEFAULT
-      .withEventSourcedEntityIncomingMessages("customer");
+    return TestKit.Settings.DEFAULT.withEventSourcedEntityIncomingMessages(
+      CustomerEntity.class
+    );
   }
-
 
   @BeforeAll
   public void beforeAll() {
     super.beforeAll();
-    consumerEvents = testKit.getEventSourcedEntityIncomingMessages("customer");
+    consumerEvents = testKit.getEventSourcedEntityIncomingMessages(CustomerEntity.class);
     customerStore = getDependency(CustomerStore.class);
   }
-
 
   @Test
   public void verifyIdempotencyOfCustomerStoreUpdater() {
@@ -43,16 +42,26 @@ class CustomerStoreUpdaterTest extends TestKitSupport {
     var event2 = new NameChanged("name2");
 
     // preparing metadata with sequence numbers
-    Metadata event1Metadata = messageBuilder.defaultMetadata(event1, "c123").asCloudEvent()
-      .withSequence("1").asMetadata();
-    Metadata event2Metadata = messageBuilder.defaultMetadata(event2, "c123").asCloudEvent()
-      .withSequence("2").asMetadata();
+    Metadata event1Metadata = messageBuilder
+      .defaultMetadata(event1, "c123")
+      .asCloudEvent()
+      .withSequence("1")
+      .asMetadata();
+    Metadata event2Metadata = messageBuilder
+      .defaultMetadata(event2, "c123")
+      .asCloudEvent()
+      .withSequence("2")
+      .asMetadata();
 
     // sending predefined events
     consumerEvents.publish(messageBuilder.of(event1, event1Metadata));
     consumerEvents.publish(messageBuilder.of(event2, event2Metadata));
 
-    Customer expectedCustomer = new Customer("email1", "name2", new Address("street1", "city1"));
+    Customer expectedCustomer = new Customer(
+      "email1",
+      "name2",
+      new Address("street1", "city1")
+    );
 
     Awaitility.await()
       .ignoreExceptions()
@@ -73,7 +82,5 @@ class CustomerStoreUpdaterTest extends TestKitSupport {
         var result = await(customerStore.getAll());
         assertThat(result).containsOnly(expectedCustomer);
       });
-
-
   }
 }

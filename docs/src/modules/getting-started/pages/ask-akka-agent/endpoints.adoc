@@ -1,4 +1,4 @@
-= AI RAG agent part 4: Adding UI endpoints
+= Adding UI endpoints
 :page-aliases: java:ask-akka/endpoints.adoc
 
 include::ROOT:partial$include.adoc[]
@@ -29,7 +29,7 @@ For the user interface we need a way to pull a conversation history for a given 
 
 Add a new file `ConversationHistoryView.java` to `src/main/java/akka/ask/agent/application/`
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/application/ConversationHistoryView.java[ConversationHistoryView.java]
 ----
 include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/application/ConversationHistoryView.java[tag=top]
@@ -42,7 +42,7 @@ include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/application/Co
 
 There is a convenience endpoint that you can use to query the list of sessions for a given user:
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/api/UsersEndpoint.java[UsersEndpoint.java]
 ----
 include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/api/UsersEndpoint.java[tag=endpoint]
@@ -54,7 +54,7 @@ One subtle thing worth pointing out here is that both the streaming RAG endpoint
 == Adding the static UI endpoint
 You can now add an endpoint that serves up the static UI. This is surprisingly simple in Akka, as the HTTP endpoint class has built-in support for serving these kinds of assets.
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/api/UiEndpoint.java[UiEndpoint.java]
 ----
 include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/api/UiEndpoint.java[tag=endpoint]

@@ -15,7 +15,7 @@ Implementing RAG involves two main stages:
 
 There are many libraries that can be used for integrating with vector databases. Here is one concrete example using https://docs.langchain4j.dev/tutorials/rag[Langchain4J, window="new"].
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/application/Knowledge.java[Knowledge.java]
 ----
 include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/application/Knowledge.java[tag=class]
@@ -34,7 +34,7 @@ The guide xref:getting-started:ask-akka-agent/index.adoc[AI agent that performs 
 
 Sometimes a similar retrieval-and-augment approach can be used without a vector database, especially when the required context is structured and can be fetched directly. This follows the same RAG pattern but targets specific data sources like entities or views. It may look like this:
 
-[source,java]
+[source,java,indent=0]
 .ActivityAgent.java
 ----
 include::example$doc-snippets/src/main/java/com/example/application/ActivityAgentMore.java[tag=di]

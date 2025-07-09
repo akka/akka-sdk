@@ -1,6 +1,3 @@
 package com.example.api;
 
-public record OrderRequest(String item,
-                           int quantity) {
-}
-
+public record OrderRequest(String item, int quantity) {}

@@ -2,16 +2,16 @@ package customer.api;
 
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
-import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Get;
+import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Patch;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpException;
 import akka.javasdk.http.HttpResponses;
+import customer.application.CustomerEntity;
 import customer.application.CustomersByEmailView;
 import customer.application.CustomersByNameView;
-import customer.application.CustomerEntity;
 import customer.domain.Address;
 import customer.domain.Customer;
 import customer.domain.CustomerEntries;
@@ -27,7 +27,7 @@ public class CustomerEndpoint {
 
   private static final Logger log = LoggerFactory.getLogger(CustomerEndpoint.class);
 
-  record CreateCustomerRequest(String email, String name, Address address){ }
+  record CreateCustomerRequest(String email, String name, Address address) {}
 
   private final ComponentClient componentClient;
 
@@ -38,9 +38,16 @@ public class CustomerEndpoint {
   @Post("/{customerId}")
   public HttpResponse create(String customerId, CreateCustomerRequest createCustomerRequest) {
     log.info("Request to create customer: {}", createCustomerRequest);
-    componentClient.forEventSourcedEntity(customerId)
+    componentClient
+      .forEventSourcedEntity(customerId)
       .method(CustomerEntity::create)
-      .invoke(new Customer(createCustomerRequest.email, createCustomerRequest.name, createCustomerRequest.address));
+      .invoke(
+        new Customer(
+          createCustomerRequest.email,
+          createCustomerRequest.name,
+          createCustomerRequest.address
+        )
+      );
 
     return HttpResponses.created();
   }
@@ -48,19 +55,23 @@ public class CustomerEndpoint {
   @Get("/{customerId}")
   public Customer getCustomer(String customerId) {
     try {
-      return componentClient.forEventSourcedEntity(customerId)
-          .method(CustomerEntity::getCustomer)
-          .invoke();
+      return componentClient
+        .forEventSourcedEntity(customerId)
+        .method(CustomerEntity::getCustomer)
+        .invoke();
     } catch (Exception ex) {
-      if (ex.getMessage().contains("No customer found for id")) throw HttpException.notFound();
+      if (
+        ex.getMessage().contains("No customer found for id")
+      ) throw HttpException.notFound();
       else throw new RuntimeException(ex);
     }
   }
 
   @Patch("/{customerId}/name/{newName}")
   public HttpResponse changeName(String customerId, String newName) {
-    log.info("Request to change customer [{}] name: {}",customerId, newName);
-    componentClient.forEventSourcedEntity(customerId)
+    log.info("Request to change customer [{}] name: {}", customerId, newName);
+    componentClient
+      .forEventSourcedEntity(customerId)
       .method(CustomerEntity::changeName)
       .invoke(newName);
     return HttpResponses.ok();
@@ -68,8 +79,9 @@ public class CustomerEndpoint {
 
   @Patch("/{customerId}/address")
   public HttpResponse changeAddress(String customerId, Address newAddress) {
-    log.info("Request to change customer [{}] address: {}",customerId, newAddress);
-    componentClient.forEventSourcedEntity(customerId)
+    log.info("Request to change customer [{}] address: {}", customerId, newAddress);
+    componentClient
+      .forEventSourcedEntity(customerId)
       .method(CustomerEntity::changeAddress)
       .invoke(newAddress);
     return HttpResponses.ok();
@@ -77,15 +89,11 @@ public class CustomerEndpoint {
 
   @Get("/by-name/{name}")
   public CustomerEntries customerByName(String name) {
-    return componentClient.forView()
-      .method(CustomersByNameView::getCustomers)
-      .invoke(name);
+    return componentClient.forView().method(CustomersByNameView::getCustomers).invoke(name);
   }
 
   @Get("/by-email/{email}")
   public CustomerEntries customerByEmail(String email) {
-    return componentClient.forView()
-      .method(CustomersByEmailView::getCustomers)
-      .invoke(email);
+    return componentClient.forView().method(CustomersByEmailView::getCustomers).invoke(email);
   }
 }

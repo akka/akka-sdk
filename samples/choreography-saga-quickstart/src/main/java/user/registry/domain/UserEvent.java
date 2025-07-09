@@ -8,14 +8,11 @@ import akka.javasdk.annotations.TypeName;
  */
 public sealed interface UserEvent {
   @TypeName("user-created")
-  record UserWasCreated(String name, String country, String email) implements UserEvent {
-  }
+  record UserWasCreated(String name, String country, String email) implements UserEvent {}
 
   @TypeName("email-assigned")
-  record EmailAssigned(String newEmail) implements UserEvent {
-  }
+  record EmailAssigned(String newEmail) implements UserEvent {}
 
   @TypeName("email-unassigned")
-  record EmailUnassigned(String oldEmail) implements UserEvent {
-  }
+  record EmailUnassigned(String oldEmail) implements UserEvent {}
 }

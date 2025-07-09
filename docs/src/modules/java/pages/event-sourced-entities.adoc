@@ -36,7 +36,7 @@ The following sections walk through these steps using a shopping cart service as
 
 Through our "Shopping Cart" Event Sourced Entity we expect to manage our cart, adding and removing items as we please. Being event-sourced means it will represent changes to state as a series of domain events. Let's have a look at what kind of model we expect to store and the events our entity might generate.
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[ShoppingCart.java]
 ----
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tag=domain]
@@ -48,7 +48,7 @@ NOTE: Above we are taking advantage of the Java `record` to reduce the amount of
 
 Another fundamental aspect of our entity will be its domain events. For now, we will have 3 different events `ItemAdded`, `ItemRemoved` and `CheckedOut`, defined as below:
 
-[source,java]
+[source,java,indent=0]
 .src/main/java/shoppingcart/domain/ShoppingCartEvent.java
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCartEvent.java[ShoppingCartEvent.java]
 ----
@@ -85,7 +85,7 @@ Now that we have our Entity state defined along with its events, the remaining s
 
 The class signature for our shopping cart entity will look like this:
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
 ----
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tag=class]
@@ -102,7 +102,7 @@ Having created the basis of our entity, we will now define how each command is h
 
 IMPORTANT: The **only** way for a command handler to modify the Entity's state is by persisting an event. Any modifications made directly to the state (or instance variables) from the command handler are not persisted. When the Entity is passivated and reloaded, those modifications will not be present.
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
 ----
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tag=addItem]
@@ -111,14 +111,14 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application
 <2> From the current incoming `LineItem` we create a new `ItemAdded` event representing the change of the cart.
 <3> We store the event by returning an `Effect` with `effects().persist`.
 <4> The acknowledgment that the command was successfully processed is only sent if the event was successfully stored and applied, otherwise there will be an error reply. The lambda parameter `newState` gives us access to the new state returned by applying such event.
-<5> Event handler returns the updated state after applying the event - the logic for state transition is defined inside the `ShoppingCart` domain model.
+<5> Event handler returns the updated state after applying the event - the logic for updating the state is defined inside the `ShoppingCart` domain model.
 
-As mentioned above, the business logic that allows us to transition between states was placed on the domain model as seen below:
+As mentioned above, the business logic for updating the state was placed on the domain model as seen below:
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[ShoppingCart.java]
 ----
-include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tag=itemAdded]
+include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tag=addItem]
 ----
 <1> For an existing item, we will make sure to sum the existing quantity with the incoming one.
 <2> Returns an update list of items without the existing item.
@@ -192,7 +192,7 @@ include::partial$testing-entity.adoc[]
 
 The following snippet shows how the `EventSourcedTestKit` is used to test the `ShoppingCartEntity` implementation. Akka provides two main APIs for unit tests, the `EventSourcedTestKit` and the `EventSourcedResult`. The former gives us the overall state of the entity and all the events produced by all the calls to the Entity. While the latter only holds the effects produced for each individual call to the Entity.
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/test/java/shoppingcart/application/ShoppingCartTest.java[ShoppingCartTest.java]
 ----
 include::example$shopping-cart-quickstart/src/test/java/shoppingcart/application/ShoppingCartTest.java[]
@@ -228,7 +228,7 @@ For the above example, this class provides access to all the command handlers of
 
 The skeleton of an Integration Test is included in the xref:getting-started:author-your-first-service.adoc[getting started sample]. Let's see what it could look like to test our `ShoppingCartEntity`:
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/test/java/shoppingcart/ShoppingCartIntegrationTest.java[ShoppingCartIntegrationTest.java]
 ----
 include::example$shopping-cart-quickstart/src/test/java/shoppingcart/ShoppingCartIntegrationTest.java[tag=sample-it]

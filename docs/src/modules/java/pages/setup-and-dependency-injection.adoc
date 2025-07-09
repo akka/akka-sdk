@@ -9,7 +9,7 @@ It is possible to define logic that runs on service instance start up.
 This is done by creating a class implementing `akka.javasdk.ServiceSetup` and annotating it with `akka.javasdk.annotations.Setup`.
 Only one such class may exist in the same service.
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/spring-dependency-injection/src/main/java/com/example/CounterSetup.java[CounterSetup.java]
 ----
 include::example$spring-dependency-injection/src/main/java/com/example/CounterSetup.java[tag=lifecycle]
@@ -27,7 +27,7 @@ individually and independently, for example during a rolling upgrade. Each such 
 
 You can use `ServiceSetup` to disable components by overriding `disabledComponents` and returning a set of component classes to disable.
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/MyAppSetup.java[MyAppSetup.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/MyAppSetup.java[tag=disable-components]
@@ -107,7 +107,7 @@ so should be avoided.
 
 The implementation can be pure Java without any dependencies:
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/MyAppSetup.java[MyAppSetup.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/MyAppSetup.java[tag=pojo-dependency-injection]
@@ -122,7 +122,7 @@ inject the instance provided by the `DependencyProvider`.
 
 Or make use of an existing dependency injection framework, like this example leveraging Spring:
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/spring-dependency-injection/src/main/java/com/example/CounterSetup.java[CounterSetup.java]
 ----
 include::example$spring-dependency-injection/src/main/java/com/example/CounterSetup.java[tag=spring]
@@ -135,7 +135,7 @@ include::example$spring-dependency-injection/src/main/java/com/example/CounterSe
 The TestKit allows providing a custom `DependencyProvider` through `TestKit.Settings#withDependencyProvider(provider)` so
 that mock instances of dependencies can be used in tests.
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/test/java/com/example/MyIntegrationTest.java[MyIntegrationTest.java]
 ----
 include::example$doc-snippets/src/test/java/com/example/MyIntegrationTest.java[tag=test-di-provider]

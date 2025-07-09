@@ -31,4 +31,5 @@ Orchestration use cases are often catered for best by considering _Sagas_ which 
 * xref:concepts:saga-patterns.adoc[]
 * xref:concepts:grpc-vs-http-endpoints.adoc[]
 * xref:concepts:ai-agents.adoc[]
+* xref:concepts:inter-agent-comms.adoc[]
 * xref:concepts:acls.adoc[]

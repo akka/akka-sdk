@@ -1,15 +1,13 @@
 package com.example.transfer.application;
 
-import akka.javasdk.testkit.TestKitSupport;
-import com.example.transfer.domain.Transfer;
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.Test;
-
-import java.util.concurrent.TimeUnit;
-
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import akka.javasdk.testkit.TestKitSupport;
+import com.example.transfer.domain.Transfer;
+import java.util.concurrent.TimeUnit;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Test;
 
 public class BasicTransferWorkflowIntegrationTest extends TestKitSupport {
 
@@ -25,9 +23,9 @@ public class BasicTransferWorkflowIntegrationTest extends TestKitSupport {
     walletService.deposit(walletId2, 100);
 
     var response = componentClient
-          .forWorkflow(transferId)
-          .method(BasicTransferWorkflow::start)
-          .invoke(transfer);
+      .forWorkflow(transferId)
+      .method(BasicTransferWorkflow::start)
+      .invoke(transfer);
 
     assertThat(response).isEqualTo("transfer started");
 
@@ -41,6 +39,4 @@ public class BasicTransferWorkflowIntegrationTest extends TestKitSupport {
         assertThat(wallet2Balance).isEqualTo(110);
       });
   }
-
-
 }

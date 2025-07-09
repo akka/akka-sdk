@@ -6,7 +6,7 @@ However, a built-in HTTP endpoint for the component can be enabled. The primary 
 
 To enable the component's HTTP endpoint you can disable access control checks in `application.conf`:
 
-[source,conf]
+[source,conf,indent=0]
 .src/main/resources/application.conf
 ----
 akka.javasdk.dev-mode.acl.enabled = false
@@ -21,7 +21,7 @@ mvn compile exec:java -Dakka.javasdk.dev-mode.acl.enabled=false
 
 Note that this `acl` configuration is only used when running locally and not in production. To enable component endpoints in production you must add `@Acl` to the component class:
 
-[source,java]
+[source,java,indent=0]
 ----
 // Opened up for access from the public internet.
 // For actual services meant for production this must be carefully considered,

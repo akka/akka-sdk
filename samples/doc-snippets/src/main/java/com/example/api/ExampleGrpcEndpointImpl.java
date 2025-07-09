@@ -9,7 +9,6 @@ import akka.stream.javadsl.Source;
 import com.example.proto.ExampleGrpcEndpoint;
 import com.example.proto.HelloReply;
 import com.example.proto.HelloRequest;
-
 import java.util.concurrent.TimeUnit;
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
@@ -30,9 +29,16 @@ public class ExampleGrpcEndpointImpl implements ExampleGrpcEndpoint {
   @Override
   public HelloReply itKeepsTalking(Source<HelloRequest, NotUsed> in) {
     try {
-      return in.runWith(Sink.head(), materializer).thenApply(firstStreamedHello ->
-          HelloReply.newBuilder().setMessage("Hello " + firstStreamedHello.getName()).build()
-      ).toCompletableFuture().get(3, TimeUnit.SECONDS);
+      return in
+        .runWith(Sink.head(), materializer)
+        .thenApply(
+          firstStreamedHello ->
+            HelloReply.newBuilder()
+              .setMessage("Hello " + firstStreamedHello.getName())
+              .build()
+        )
+        .toCompletableFuture()
+        .get(3, TimeUnit.SECONDS);
     } catch (Exception ex) {
       throw new RuntimeException(ex);
     }
@@ -45,6 +51,9 @@ public class ExampleGrpcEndpointImpl implements ExampleGrpcEndpoint {
 
   @Override
   public Source<HelloReply, NotUsed> streamHellos(Source<HelloRequest, NotUsed> in) {
-    return in.map(streamedHello -> HelloReply.newBuilder().setMessage("Hello " + streamedHello.getName()).build());
+    return in.map(
+      streamedHello ->
+        HelloReply.newBuilder().setMessage("Hello " + streamedHello.getName()).build()
+    );
   }
 }

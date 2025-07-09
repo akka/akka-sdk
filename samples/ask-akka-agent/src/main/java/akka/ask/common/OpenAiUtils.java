@@ -5,7 +5,8 @@ import dev.langchain4j.model.openai.OpenAiEmbeddingModelName;
 
 public class OpenAiUtils {
 
-  final private static OpenAiEmbeddingModelName embeddingModelName = OpenAiEmbeddingModelName.TEXT_EMBEDDING_3_SMALL;
+  private static final OpenAiEmbeddingModelName embeddingModelName =
+    OpenAiEmbeddingModelName.TEXT_EMBEDDING_3_SMALL;
 
   public static OpenAiEmbeddingModel embeddingModel() {
     return OpenAiEmbeddingModel.builder()
@@ -13,5 +14,4 @@ public class OpenAiUtils {
       .modelName(embeddingModelName)
       .build();
   }
-
 }
