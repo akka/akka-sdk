@@ -57,13 +57,10 @@ public class TransferWorkflow extends Workflow<TransferState> {
 
   private StepEffect withdraw(Withdraw withdraw) {
 
-    var fromWallet = currentState().transfer().from();
-    var amount = currentState().transfer().amount();
-
     componentClient
-      .forKeyValueEntity(fromWallet)
+      .forKeyValueEntity(withdraw.from)
       .method(WalletEntity::withdraw)
-      .invoke(amount);
+      .invoke(withdraw.amount);
 
     var state = currentState().withLastStep("withdrawn").asAccepted();
     return stepEffects()
@@ -75,13 +72,10 @@ public class TransferWorkflow extends Workflow<TransferState> {
 
   private StepEffect deposit(Deposit deposit) {
 
-    var toWallet = currentState().transfer().to();
-    var amount = currentState().transfer().amount();
-
     componentClient
-        .forKeyValueEntity(toWallet)
+        .forKeyValueEntity(deposit.to)
         .method(WalletEntity::deposit)
-        .invoke(amount);
+        .invoke(deposit.amount);
 
     var state = currentState().withLastStep("deposited").asFinished();
     return stepEffects()

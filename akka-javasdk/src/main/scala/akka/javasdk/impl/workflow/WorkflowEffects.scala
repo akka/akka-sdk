@@ -166,7 +166,7 @@ object WorkflowEffects {
   private final case class EffectCallWithInputImpl[I, S](persistence: Persistence[S], stepName: String)
       extends CallWithInput[I, TransitionalEffect[Void]] {
     override def withInput(input: I): TransitionalEffect[Void] =
-      TransitionalEffectImpl(persistence, StepTransition(stepName, None))
+      TransitionalEffectImpl(persistence, StepTransition(stepName, Some(input)))
   }
 
   /**
