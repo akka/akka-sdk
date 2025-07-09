@@ -14,7 +14,6 @@
 *** xref:getting-started:ask-akka-agent/indexer.adoc[]
 *** xref:getting-started:ask-akka-agent/rag.adoc[]
 *** xref:getting-started:ask-akka-agent/endpoints.adoc[]
-*** xref:getting-started:planner-agent/eval.adoc[]
 ** xref:getting-started:shopping-cart/index.adoc[]
 *** xref:getting-started:shopping-cart/build-and-deploy-shopping-cart.adoc[]
 *** xref:getting-started:shopping-cart/addview.adoc[]
