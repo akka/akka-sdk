@@ -6,7 +6,7 @@ on:
 
 jobs:
   triage:
-    runs-on: Akka-Default
+    runs-on: Akka-Default-Latest
     if: github.event.repository.fork == false
     permissions:
       contents: read
