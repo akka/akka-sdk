@@ -756,6 +756,11 @@ private final class Sdk(
         Some(
           wiredInstance[ServiceSetup](serviceClassClass.asInstanceOf[Class[ServiceSetup]])(
             sideEffectingComponentInjects(None)))
+
+      case Some(serviceClassClass) =>
+        //just wiring the class
+        wiredInstance[Any](serviceClassClass.asInstanceOf[Class[Any]])(sideEffectingComponentInjects(None))
+        None
       case _ => None
     }
 
