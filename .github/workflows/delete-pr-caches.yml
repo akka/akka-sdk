@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   cleanup:
-    runs-on: Akka-Default-Latest
+    runs-on: Akka-Default
     steps:
       - name: Cleanup
         run: |
