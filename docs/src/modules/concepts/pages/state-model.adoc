@@ -1,6 +1,30 @@
-= Entity state models
+= Memory models
 
 include::ROOT:partial$include.adoc[]
+
+Akka provides an in-memory, durable store for stateful data. This data may be scoped to a single agent or shared across the wider system. It is stored in an embedded event journal that captures changes incrementally. This approach helps the system recover to its most recent state if interrupted.
+
+State is distributed across Akka nodes in a cluster. The platform manages sharding and rebalancing automatically to support scaling up to terabytes of memory. For added resilience, state may also be replicated across regions.
+
+In Akka, memory is implemented as xref:java:event-sourced-entities.adoc[Event Sourced Entities]. Rather than storing the current state directly, Akka records a sequence of immutable events describing how state has changed. This provides a full picture of what has happened. The current state can always be restored by replaying the events. To improve recovery time, snapshots are taken along the way.
+
+image:concepts:memory-event-journal.png[Memory Event Journal]
+
+This model is used throughout Akka. For instance, when a xref:java:workflows.adoc[Workflow] is created, its call stack and internal state are stored as an Event Sourced Entity. This makes execution resilient, even across restarts.
+
+image:concepts:workflow-event-journal.png[Workflow Event Journal]
+
+Tracking state as a stream of events makes it possible to design agentic systems that are also event-driven architectures. Akka offers event subscription, brokerless messaging, and event replication. These features allow services to observe or respond to the state of other services, and also coordinate or synchronize across them.
+
+image:concepts:event-uses.png[Event Uses]
+
+Each xref:java:agents.adoc[Agent] in Akka includes short-term (traced and episodic) memory by default. This is implemented as a session-based, Event Sourced Entity. If you prefer, sessions can be made stateless so that no memory is retained after execution.
+
+Long-term memory is implemented using the xref:java:event-sourced-entities.adoc[Event Sourced Entity] and xref:java:key-value-entities.adoc[Key Value Entity] components.
+
+To propagate state across multiple systems, use the xref:java:views.adoc[View] component. Views are read-optimized projections that follow the Command Query Responsibility Segregation (CQRS) pattern.
+
+== Entity state models
 
 Entities are used to store the data defined in the xref:concepts:architecture-model.adoc#_domain[domain model]. They follow a specific __state model__ chosen by the developer. The state model determines how the data is organized and persisted. Entities have data fields that can be simple or primitive types like numbers, strings, booleans, and characters. The fields can be more complex, which allows custom types to be stored in Akka.
 
@@ -12,11 +36,11 @@ Event Sourced Entities, Key Value Entities and Workflows replicate their state b
 
 To understand more about regions and distribution see xref:deployment-model.adoc#_region[Deployment model].
 
-== Identity
+=== Identity
 
 Each Entity instance has a unique id that distinguishes it from others. The id can have multiple parts, such as an address, serial number, or customer number. Akka handles concurrency for Entity instances by processing requests sequentially, one after the other, within the boundaries of a transaction. Akka proactively manages state, eliminating the need for techniques like lazy loading. For each state model, Akka uses a specific back-end data store, which cannot be configured.
 
-=== Origin
+==== Origin
 
 Stateful entities in Akka have a concept of location, that is region, and are designed to span regions and replicate their data. For more information about regions see xref:concepts:deployment-model.adoc#_region[region] in the Akka deployment model.
 
@@ -24,7 +48,7 @@ Entities call the region they were created in their *origin* and keep track of i
 
 By default, most entities will only allow their origin region to change their state. To make this easier, Akka will automatically route state-changing operations to the origin region. This routing is asynchronous and durable, meaning network partitions will not stop the write from being queued. This gives you a read-anywhere model out of the box that automatically routes writes appropriately.
 
-== The Event Sourced state model
+=== The Event Sourced state model
 
 The Event Sourced state model captures changes to data by storing events in a journal. The current entity state is derived from the events. Interested parties can read the journal and transform the stream of events into read models (Views) or perform business actions based on events. 
 
@@ -40,7 +64,7 @@ The business logic also describes the reply as the commands effect which is pass
 
 NOTE: Event sourced entities express state changes as events that get applied to update the state.
 
-== The Key Value state model
+=== The Key Value state model
 
 In the _Key Value_ state model, only the current state of the Entity is persisted - its value. Akka caches the state to minimize data store access. Interested parties can subscribe to state changes emitted by a Key Value Entity and perform business actions based on those state changes. 
 
@@ -54,7 +78,7 @@ The business logic also describes the reply as the commands effect which is pass
 
 NOTE: Key Value entities capture state as one single unit, they do not express state changes in events.
 
-== State models and replication
+=== State models and replication
 
 Event Sourced entities are replicated between all regions in an Akka project by default. This allows for a multi-reader capability, with writes automatically routed to the correct region based on the origin of the entity.
 
