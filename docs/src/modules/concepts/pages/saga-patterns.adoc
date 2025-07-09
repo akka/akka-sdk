@@ -42,6 +42,7 @@ Use choreography-based Sagas if:
 * You prefer low coupling and high scalability
 * You are comfortable with distributed control and eventual consistency
 * You do not require central tracking of each step
+* You are confident the complexity will be manageable as the system grows
 
 Use orchestrator-based Sagas if:
 
@@ -49,11 +50,12 @@ Use orchestrator-based Sagas if:
 * You need centralized visibility and clear state tracking
 * Retrying, error handling, and compensation must be handled consistently
 * You are fine with introducing a central coordination point
+* You want assurance that complexity will scale more predictably as the system grows
 
 == How to decide
 
-* If your services benefit from independent execution and localized failure logic, choreography is a good fit.
-* If your process requires clear visibility into progress and easier failure recovery, an orchestrator may be more suitable.
+* If your services benefit from independent execution and localized failure logic, choreography is a good fit. Be mindful that as more components participate in the flow, managing event-driven coordination and compensating logic can become more difficult.
+* If your process requires clear visibility into progress and easier failure recovery, an orchestrator may be more suitable. Centralized coordination helps keep complexity manageable as the system evolves.
 
 == Flexibility
 
