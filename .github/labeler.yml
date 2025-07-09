@@ -1,13 +1,18 @@
 # https://github.com/marketplace/actions/labeler
 
-java-sdk:
-- changed-files:
-  - any-glob-to-any-file:
-    - akka-javasdk/**
-    - akka-javasdk-testkit/**
-    - akka-javasdk-annotation-processor/**
-    - akka-javasdk-annotation-processor-tests/**
-    - akka-javasdk-maven/**
+
+#AnyChange:
+#  - changed-files:
+#      - any-glob-to-any-file: '**'
+
+#java-sdk:
+#- changed-files:
+#  - any-glob-to-any-file:
+#    - akka-javasdk/**
+#    - akka-javasdk-testkit/**
+#    - akka-javasdk-annotation-processor/**
+#    - akka-javasdk-annotation-processor-tests/**
+#    - akka-javasdk-maven/**
 
 documentation:
 - changed-files:
