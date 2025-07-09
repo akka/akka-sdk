@@ -45,17 +45,17 @@ public class TransferWorkflow extends Workflow<TransferState> {
     } else {
       if (currentState() == null) {
         return effects()
-          .updateState(new TransferState(transfer, "started"))
-          // FIXME: use method ref and make it typed
-          .transitionTo(withdrawStepName, new Withdraw(transfer.from(), transfer.amount())) 
-          .thenReply(new Message("transfer started"));
+            .updateState(new TransferState(transfer, "started"))
+            .call(TransferWorkflow::withdraw)
+            .withInput(new Withdraw(transfer.from(), transfer.amount()))
+            .thenReply(new Message("transfer started"));
       } else {
         return effects().reply(new Message("transfer started already"));
       }
     }
   }
 
-  private StepEffect withdraw() {
+  private StepEffect withdraw(Withdraw withdraw) {
 
     var fromWallet = currentState().transfer().from();
     var amount = currentState().transfer().amount();
@@ -68,29 +68,31 @@ public class TransferWorkflow extends Workflow<TransferState> {
     var state = currentState().withLastStep("withdrawn").asAccepted();
     return stepEffects()
         .updateState(state)
-        .transitionTo("deposit"); // FIXME: use method ref and make it typed
+        .thenCall(TransferWorkflow::deposit)
+        .withInput(new Deposit(currentState().transfer().to(), currentState().transfer().amount()));
   }
 
-  private StepEffect deposit() {
+
+  private StepEffect deposit(Deposit deposit) {
 
     var toWallet = currentState().transfer().to();
     var amount = currentState().transfer().amount();
 
     componentClient
-      .forKeyValueEntity(toWallet)
-      .method(WalletEntity::deposit)
-      .invoke(amount);
+        .forKeyValueEntity(toWallet)
+        .method(WalletEntity::deposit)
+        .invoke(amount);
 
     var state = currentState().withLastStep("deposited").asFinished();
     return stepEffects()
       .updateState(state)
-      .transitionTo("logAndStop"); // FIXME: use method ref and make it typed
+      .thenCall(TransferWorkflow::logAndStop);
   }
 
   private StepEffect logAndStop() {
     logger.info("Workflow finished");
     var state = currentState().withLastStep("logAndStop");
-    return stepEffects().updateState(state).end();
+    return stepEffects().updateState(state).thenEnd();
   }
 
   public Effect<Done> updateAndDelete(Transfer transfer) {
