@@ -8,11 +8,7 @@ import akka.javasdk.annotations.ComponentId;
 public class MyAgent extends Agent { // <1>
 
   public Effect<String> query(String question) { // <3>
-    return effects()
-        .systemMessage("You are a helpful...")
-        .userMessage(question)
-        .thenReply();
+    return effects().systemMessage("You are a helpful...").userMessage(question).thenReply();
   }
-
 }
 // end::class[]

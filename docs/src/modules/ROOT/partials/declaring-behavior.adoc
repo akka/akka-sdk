@@ -2,7 +2,7 @@ Your services define the _what_ using `Effects`, which are Application Programmi
 
 For example, when using Akka's xref:java:agents.adoc[Agent] component, you might return an `Effect` that tells the runtime to execute the agent with a system message, a user message, and then send the AI model’s response back to the requester:
 
-[source,java]
+[source,java,indent=0]
 ----
   public Effect<String> query(String question) {
     return effects()

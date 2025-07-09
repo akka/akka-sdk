@@ -5,10 +5,10 @@ import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
 // end::top[]
 import akka.javasdk.annotations.http.Delete;
-import akka.javasdk.annotations.http.Post;
+import akka.javasdk.annotations.http.Get;
 // tag::top[]
 import akka.javasdk.annotations.http.HttpEndpoint;
-import akka.javasdk.annotations.http.Get;
+import akka.javasdk.annotations.http.Post;
 import akka.javasdk.annotations.http.Put;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpResponses;
@@ -42,9 +42,10 @@ public class ShoppingCartEndpoint {
   @Get("/{cartId}") // <3>
   public ShoppingCart get(String cartId) {
     logger.info("Get cart id={}", cartId);
-    return componentClient.forEventSourcedEntity(cartId) // <4>
-        .method(ShoppingCartEntity::getCart)
-        .invoke(); // <5>
+    return componentClient
+      .forEventSourcedEntity(cartId) // <4>
+      .method(ShoppingCartEntity::getCart)
+      .invoke(); // <5>
   }
 
   // end::get[]
@@ -53,11 +54,13 @@ public class ShoppingCartEndpoint {
   @Put("/{cartId}/item") // <6>
   public HttpResponse addItem(String cartId, ShoppingCart.LineItem item) {
     logger.info("Adding item to cart id={} item={}", cartId, item);
-    componentClient.forEventSourcedEntity(cartId)
+    componentClient
+      .forEventSourcedEntity(cartId)
       .method(ShoppingCartEntity::addItem)
       .invoke(item);
     return HttpResponses.ok(); // <7>
   }
+
   // end::endpoint-component-interaction[]
 
   // end::addItem[]
@@ -65,7 +68,8 @@ public class ShoppingCartEndpoint {
   @Delete("/{cartId}/item/{productId}")
   public HttpResponse removeItem(String cartId, String productId) {
     logger.info("Removing item from cart id={} item={}", cartId, productId);
-    componentClient.forEventSourcedEntity(cartId)
+    componentClient
+      .forEventSourcedEntity(cartId)
       .method(ShoppingCartEntity::removeItem)
       .invoke(productId);
     return HttpResponses.ok();
@@ -74,12 +78,12 @@ public class ShoppingCartEndpoint {
   @Post("/{cartId}/checkout")
   public HttpResponse checkout(String cartId) {
     logger.info("Checkout cart id={}", cartId);
-    componentClient.forEventSourcedEntity(cartId)
+    componentClient
+      .forEventSourcedEntity(cartId)
       .method(ShoppingCartEntity::checkout)
       .invoke();
     return HttpResponses.ok();
   }
-
   // tag::class[]
 }
 // end::class[]

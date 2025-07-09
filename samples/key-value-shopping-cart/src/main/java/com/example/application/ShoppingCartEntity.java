@@ -4,12 +4,11 @@ import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.keyvalueentity.KeyValueEntityContext;
 import com.example.domain.ShoppingCart;
-
 import java.time.Instant;
-
 
 @ComponentId("shopping-cart")
 public class ShoppingCartEntity extends KeyValueEntity<ShoppingCart> {
+
   @SuppressWarnings("unused")
   private final String entityId;
 
@@ -27,22 +26,20 @@ public class ShoppingCartEntity extends KeyValueEntity<ShoppingCart> {
       return effects().error("Cart was already created");
     } else {
       var newState = currentState().withCreationTimestamp(Instant.now());
-      return effects()
-        .updateState(newState)
-        .thenReply(newState);
+      return effects().updateState(newState).thenReply(newState);
     }
   }
 
   public Effect<ShoppingCart> addItem(ShoppingCart.LineItem addLineItem) {
     if (addLineItem.quantity() <= 0) {
       return effects()
-        .error("Quantity for item " + addLineItem.productId() + " must be greater than zero.");
+        .error(
+          "Quantity for item " + addLineItem.productId() + " must be greater than zero."
+        );
     }
 
     var newState = currentState().withItem(addLineItem);
-    return effects()
-      .updateState(newState)
-      .thenReply(newState);
+    return effects().updateState(newState).thenReply(newState);
   }
 
   public Effect<ShoppingCart> removeItem(String productId) {
@@ -54,9 +51,7 @@ public class ShoppingCartEntity extends KeyValueEntity<ShoppingCart> {
     }
 
     var newState = currentState().withoutItem(lineItemOpt.get());
-    return effects()
-      .updateState(newState)
-      .thenReply(newState);
+    return effects().updateState(newState).thenReply(newState);
   }
 
   public ReadOnlyEffect<ShoppingCart> getCart() {
@@ -72,4 +67,3 @@ public class ShoppingCartEntity extends KeyValueEntity<ShoppingCart> {
     }
   }
 }
-

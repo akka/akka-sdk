@@ -14,6 +14,7 @@ import akka.javasdk.http.HttpResponses;
 @HttpEndpoint
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 public class UiEndpoint {
+
   @Get("/")
   public HttpResponse index() {
     return HttpResponses.staticResource("index.html"); // <1>

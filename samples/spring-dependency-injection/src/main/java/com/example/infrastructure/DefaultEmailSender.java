@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 @Service
 @Profile("prod")
 public class DefaultEmailSender implements EmailSender {
+
   private final Logger logger = LoggerFactory.getLogger(DefaultEmailSender.class);
 
   @Override

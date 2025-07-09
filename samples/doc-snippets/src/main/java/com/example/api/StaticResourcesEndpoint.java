@@ -7,7 +7,6 @@ import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.http.HttpResponses;
 
-
 @HttpEndpoint
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 public class StaticResourcesEndpoint {
@@ -22,8 +21,8 @@ public class StaticResourcesEndpoint {
   @Get("/favicon.ico") // <3>
   public HttpResponse favicon() {
     return HttpResponses.staticResource("favicon.ico"); // <4>
-
   }
+
   // end::single-static-resource-from-classpath[]
 
   // map in all the available packaged static resources under /static

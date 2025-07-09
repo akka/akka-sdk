@@ -23,7 +23,8 @@ public class Bootstrap implements ServiceSetup {
 
     if (config.getString("akka.javasdk.agent.openai.api-key").isBlank()) {
       logger.error(
-        "No API keys found. Make sure you have OPENAI_API_KEY defined as environment variable.");
+        "No API keys found. Make sure you have OPENAI_API_KEY defined as environment variable."
+      );
       throw new RuntimeException("No API keys found.");
     }
   }
@@ -34,9 +35,11 @@ public class Bootstrap implements ServiceSetup {
       @SuppressWarnings("unchecked")
       @Override
       public <T> T getDependency(Class<T> clazz) {
-
         if (clazz == WeatherService.class) {
-          if (System.getenv(WEATHER_API_KEY) != null && !System.getenv(WEATHER_API_KEY).isEmpty()) {
+          if (
+            System.getenv(WEATHER_API_KEY) != null &&
+            !System.getenv(WEATHER_API_KEY).isEmpty()
+          ) {
             return (T) new WeatherServiceImpl(httpClientProvider);
           } else {
             // If the API key is not set, return a fake implementation
@@ -48,4 +51,3 @@ public class Bootstrap implements ServiceSetup {
     };
   }
 }
-

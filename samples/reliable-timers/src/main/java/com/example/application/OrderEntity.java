@@ -1,5 +1,7 @@
 package com.example.application;
 
+import static com.example.application.OrderEntity.Result.Ok.ok;
+
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.keyvalueentity.KeyValueEntityContext;
@@ -11,14 +13,11 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.example.application.OrderEntity.Result.Ok.ok;
-
-
-
 // tag::order[]
 @ComponentId("order")
 public class OrderEntity extends KeyValueEntity<Order> {
-   //...
+
+  //...
   // end::order[]
   private static final Logger logger = LoggerFactory.getLogger(OrderEntity.class);
 
@@ -29,14 +28,14 @@ public class OrderEntity extends KeyValueEntity<Order> {
   }
 
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-  @JsonSubTypes({
-    @JsonSubTypes.Type(value = Result.Ok.class, name = "ok"),
-    @JsonSubTypes.Type(value = Result.NotFound.class, name = "notFound"),
-    @JsonSubTypes.Type(value = Result.Invalid.class, name = "invalid")
-  })
-  
+  @JsonSubTypes(
+    {
+      @JsonSubTypes.Type(value = Result.Ok.class, name = "ok"),
+      @JsonSubTypes.Type(value = Result.NotFound.class, name = "notFound"),
+      @JsonSubTypes.Type(value = Result.Invalid.class, name = "invalid"),
+    }
+  )
   public sealed interface Result {
-
     record Ok() implements Result {
       public static Ok ok = new Ok();
     }
@@ -72,28 +71,25 @@ public class OrderEntity extends KeyValueEntity<Order> {
       confirmed,
       placed, // <2>
       orderRequest.item(),
-      orderRequest.quantity());
+      orderRequest.quantity()
+    );
 
-    return effects()
-      .updateState(newOrder)
-      .thenReply(newOrder);
+    return effects().updateState(newOrder).thenReply(newOrder);
   }
+
   // end::place-order[]
 
   public Effect<Result> confirm() {
     var orderId = commandContext().entityId();
-    
+
     logger.info("Confirming orderId={}", orderId);
-    
+
     if (currentState().placed()) { // <3>
-      return effects()
-        .updateState(currentState().confirm())
-        .thenReply(ok);
+      return effects().updateState(currentState().confirm()).thenReply(ok);
     } else {
       return effects().reply(Result.NotFound.of("No order found for " + orderId)); // <4>
     }
   }
-
 
   // tag::cancel-order[]
   public Effect<Result> cancel() {
@@ -110,18 +106,23 @@ public class OrderEntity extends KeyValueEntity<Order> {
       return effects().updateState(emptyState()).thenReply(ok); // <3>
     }
   }
+
   // end::cancel-order[]
 
   public ReadOnlyEffect<OrderStatus> status() {
     var id = currentState().id();
     if (currentState().placed()) {
-      var orderStatus = new OrderStatus(id, currentState().item(), currentState().quantity(), currentState().confirmed());
+      var orderStatus = new OrderStatus(
+        id,
+        currentState().item(),
+        currentState().quantity(),
+        currentState().confirmed()
+      );
       return effects().reply(orderStatus);
     } else {
       return effects().error("No order found for '" + id + "'");
     }
   }
-
-// tag::order[]
+  // tag::order[]
 }
 // end::order[]

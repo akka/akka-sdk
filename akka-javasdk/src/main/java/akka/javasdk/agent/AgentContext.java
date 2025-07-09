@@ -7,8 +7,6 @@ package akka.javasdk.agent;
 import akka.javasdk.MetadataContext;
 import akka.javasdk.Tracing;
 
-import java.util.Optional;
-
 /**
  * Context information available to an agent during command handling.
  *

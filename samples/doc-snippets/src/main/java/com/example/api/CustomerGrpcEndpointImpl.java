@@ -12,9 +12,9 @@ public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
   public Customer getCustomer(GetCustomerRequest in) {
     // dummy implementation with hardcoded values
     var customer = Customer.newBuilder() // <2>
-        .setName("Alice")
-        .setEmail("alice@email.com")
-        .build();
+      .setName("Alice")
+      .setEmail("alice@email.com")
+      .build();
     return customer; // <3>
   }
 }

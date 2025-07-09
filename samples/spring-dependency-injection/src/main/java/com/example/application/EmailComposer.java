@@ -15,7 +15,8 @@ public class EmailComposer {
   }
 
   public String composeEmail(String counterId) {
-    var currentValue = componentClient.forEventSourcedEntity(counterId)
+    var currentValue = componentClient
+      .forEventSourcedEntity(counterId)
       .method(Counter::get)
       .invoke();
 

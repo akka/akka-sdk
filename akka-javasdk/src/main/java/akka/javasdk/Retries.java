@@ -5,7 +5,6 @@
 package akka.javasdk;
 
 import akka.pattern.RetrySettings;
-
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionStage;
 

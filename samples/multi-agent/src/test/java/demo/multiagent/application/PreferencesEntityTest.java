@@ -1,14 +1,13 @@
 package demo.multiagent.application;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import akka.Done;
 import akka.javasdk.testkit.EventSourcedTestKit;
 import demo.multiagent.domain.Preferences;
 import demo.multiagent.domain.PreferencesEvent;
-import org.junit.jupiter.api.Test;
-
 import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
 
 public class PreferencesEntityTest {
 
@@ -16,8 +15,9 @@ public class PreferencesEntityTest {
   public void testAddPreference() {
     var testKit = EventSourcedTestKit.of("pref-1", PreferencesEntity::new);
 
-    var result = testKit.method(PreferencesEntity::addPreference)
-        .invoke(new PreferencesEntity.AddPreference("coffee"));
+    var result = testKit
+      .method(PreferencesEntity::addPreference)
+      .invoke(new PreferencesEntity.AddPreference("coffee"));
 
     assertThat(result.getReply()).isEqualTo(Done.done());
 
@@ -32,18 +32,21 @@ public class PreferencesEntityTest {
     var testKit = EventSourcedTestKit.of("pref-2", PreferencesEntity::new);
 
     // Add first preference
-    var result1 = testKit.method(PreferencesEntity::addPreference)
-        .invoke(new PreferencesEntity.AddPreference("coffee"));
+    var result1 = testKit
+      .method(PreferencesEntity::addPreference)
+      .invoke(new PreferencesEntity.AddPreference("coffee"));
     assertThat(result1.getReply()).isEqualTo(Done.done());
 
     // Add second preference
-    var result2 = testKit.method(PreferencesEntity::addPreference)
-        .invoke(new PreferencesEntity.AddPreference("tea"));
+    var result2 = testKit
+      .method(PreferencesEntity::addPreference)
+      .invoke(new PreferencesEntity.AddPreference("tea"));
     assertThat(result2.getReply()).isEqualTo(Done.done());
 
     // Add third preference
-    var result3 = testKit.method(PreferencesEntity::addPreference)
-        .invoke(new PreferencesEntity.AddPreference("juice"));
+    var result3 = testKit
+      .method(PreferencesEntity::addPreference)
+      .invoke(new PreferencesEntity.AddPreference("juice"));
     assertThat(result3.getReply()).isEqualTo(Done.done());
 
     // Verify all events were persisted
@@ -62,8 +65,9 @@ public class PreferencesEntityTest {
     assertThat(initialResult.getReply()).isEqualTo(new Preferences(List.of()));
 
     // Add a preference
-    testKit.method(PreferencesEntity::addPreference)
-        .invoke(new PreferencesEntity.AddPreference("chocolate"));
+    testKit
+      .method(PreferencesEntity::addPreference)
+      .invoke(new PreferencesEntity.AddPreference("chocolate"));
 
     // Get preferences after adding
     var result = testKit.method(PreferencesEntity::getPreferences).invoke();

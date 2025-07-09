@@ -1,5 +1,8 @@
 package store.product.api;
 
+import static akka.Done.done;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import akka.Done;
 import akka.javasdk.testkit.EventSourcedResult;
 import akka.javasdk.testkit.EventSourcedTestKit;
@@ -10,14 +13,10 @@ import store.product.domain.Money;
 import store.product.domain.Product;
 import store.product.domain.ProductEvent;
 
-import static akka.Done.done;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 public class ProductEntityTest {
 
   @Test
   public void testProductNameChange() {
-
     EventSourcedTestKit<Product, ProductEvent, ProductEntity> testKit =
       EventSourcedTestKit.of(ProductEntity::new);
 
@@ -32,7 +31,9 @@ public class ProductEntityTest {
 
     {
       String newName = "Thing Supreme";
-      EventSourcedResult<Done> result = testKit.method(ProductEntity::changeName).invoke(newName);
+      EventSourcedResult<Done> result = testKit
+        .method(ProductEntity::changeName)
+        .invoke(newName);
       assertEquals(done(), result.getReply());
       assertEquals(newName, testKit.getState().name());
       result.getNextEventOfType(ProductEvent.ProductNameChanged.class);
@@ -41,7 +42,6 @@ public class ProductEntityTest {
 
   @Test
   public void testProductPriceChange() {
-
     EventSourcedTestKit<Product, ProductEvent, ProductEntity> testKit =
       EventSourcedTestKit.of(ProductEntity::new);
 
@@ -58,7 +58,9 @@ public class ProductEntityTest {
 
     {
       Money newPrice = new Money("USD", 56, 78);
-      EventSourcedResult<Done> result = testKit.method(ProductEntity::changePrice).invoke(newPrice);
+      EventSourcedResult<Done> result = testKit
+        .method(ProductEntity::changePrice)
+        .invoke(newPrice);
       assertEquals(done(), result.getReply());
       assertEquals(newPrice.currency(), testKit.getState().price().currency());
       assertEquals(newPrice.units(), testKit.getState().price().units());

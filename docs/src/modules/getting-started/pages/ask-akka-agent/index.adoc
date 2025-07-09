@@ -35,7 +35,7 @@ This guide is written assuming you will follow it as a tutorial to walk through 
 
 Add a new file `AskAkkaAgent.java` to `src/main/java/akka/ask/agent/application/`
 
-[source,java]
+[source,java,indent=0]
 .AskAkkaAgent.java
 ----
 include::java:example$doc-snippets/src/main/java/com/example/application/AskAkkaAgent.java[tag=class]
@@ -56,7 +56,7 @@ For this agent we want immediate visual feedback, and use the `StreamEffecct` to
 
 Add a new file `AskHttpEndpoint.java` to `src/main/java/akka/ask/agent/api/`
 
-[source, java]
+[source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/api/AskHttpEndpoint.java[AskHttpEndpoint.java]
 ----
 include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/api/AskHttpEndpoint.java[tag=endpoint]
@@ -71,7 +71,7 @@ The `userId` and `sessionId` parameters are required in `QueryRequest` along wit
 
 Akka has support for many AI providers, and this sample is using OpenAI. This is the configuration:
 
-[source, java]
+[source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/resources/application.conf[application.conf]
 ----
 include::java:example$ask-akka-agent/src/main/resources/application.conf[]

@@ -8,7 +8,7 @@ Akka provides integration with several backend AI models, and you have to select
 
 Configuration properties:
 
-[source,hocon]
+[source,hocon,indent=0]
 ----
 include::example$resources/reference.conf[tag=anthropic]
 ----
@@ -19,7 +19,7 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.Anthropic.html[`Model
 
 Configuration properties:
 
-[source,hocon]
+[source,hocon,indent=0]
 ----
 include::example$resources/reference.conf[tag=googleai-gemini]
 ----
@@ -30,7 +30,7 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.GoogleAIGemini.html[`
 
 Configuration properties:
 
-[source,hocon]
+[source,hocon,indent=0]
 ----
 include::example$resources/reference.conf[tag=hugging-face]
 ----
@@ -42,7 +42,7 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.HuggingFace.html[`Mod
 
 Configuration properties:
 
-[source,hocon]
+[source,hocon,indent=0]
 ----
 include::example$resources/reference.conf[tag=local-ai]
 ----
@@ -53,7 +53,7 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.LocalAI.html[`ModelPr
 
 Configuration properties:
 
-[source,hocon]
+[source,hocon,indent=0]
 ----
 include::example$resources/reference.conf[tag=ollama]
 ----
@@ -64,7 +64,7 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.Ollama.html[`ModelPro
 
 Configuration properties:
 
-[source,hocon]
+[source,hocon,indent=0]
 ----
 include::example$resources/reference.conf[tag=openai]
 ----

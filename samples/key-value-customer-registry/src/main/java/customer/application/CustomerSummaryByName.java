@@ -1,24 +1,27 @@
 package customer.application;
 
-import akka.javasdk.view.TableUpdater;
-import akka.javasdk.annotations.DeleteHandler;
-import customer.domain.Customer;
-import akka.javasdk.annotations.Query;
-import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Consume;
+import akka.javasdk.annotations.DeleteHandler;
+import akka.javasdk.annotations.Query;
+import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
+import customer.domain.Customer;
 
 @ComponentId("customer-summary-by-name")
 public class CustomerSummaryByName extends View {
 
-  public record CustomerSummary(String id, String name) { }
+  public record CustomerSummary(String id, String name) {}
 
   // tag::delete[]
   @Consume.FromKeyValueEntity(value = CustomerEntity.class)
   public static class CustomersUpdater extends TableUpdater<CustomerSummary> { // <1>
+
     public Effect<CustomerSummary> onUpdate(Customer customer) {
       return effects()
-          .updateRow(new CustomerSummary(updateContext().eventSubject().get(), customer.name()));
+        .updateRow(
+          new CustomerSummary(updateContext().eventSubject().get(), customer.name())
+        );
     }
 
     // ...
@@ -27,6 +30,7 @@ public class CustomerSummaryByName extends View {
       return effects().deleteRow(); // <3>
     }
   }
+
   // end::delete[]
 
   // tag::projection[]

@@ -1,5 +1,8 @@
 package counter.application;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import akka.javasdk.Metadata;
 import akka.javasdk.testkit.EventingTestKit;
 import akka.javasdk.testkit.TestKit;
@@ -10,26 +13,22 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.assertj.core.api.Assertions.assertThat;
-
 class CounterByValueViewTest extends TestKitSupport {
 
   private EventingTestKit.IncomingMessages counterEvents;
 
   @Override
   protected TestKit.Settings testKitSettings() {
-    return TestKit.Settings.DEFAULT
-      .withEventSourcedEntityIncomingMessages(CounterEntity.class);
+    return TestKit.Settings.DEFAULT.withEventSourcedEntityIncomingMessages(
+      CounterEntity.class
+    );
   }
-
 
   @BeforeAll
   public void beforeAll() {
     super.beforeAll();
     counterEvents = testKit.getEventSourcedEntityIncomingMessages(CounterEntity.class);
   }
-
 
   @Test
   public void verifyBuildInDeduplication() {
@@ -39,10 +38,16 @@ class CounterByValueViewTest extends TestKitSupport {
     var event2 = new ValueIncreased(5, 6);
 
     // preparing metadata with sequence numbers
-    Metadata event1Metadata = messageBuilder.defaultMetadata(event1, "c123").asCloudEvent()
-      .withSequence("1").asMetadata();
-    Metadata event2Metadata = messageBuilder.defaultMetadata(event2, "c123").asCloudEvent()
-      .withSequence("2").asMetadata();
+    Metadata event1Metadata = messageBuilder
+      .defaultMetadata(event1, "c123")
+      .asCloudEvent()
+      .withSequence("1")
+      .asMetadata();
+    Metadata event2Metadata = messageBuilder
+      .defaultMetadata(event2, "c123")
+      .asCloudEvent()
+      .withSequence("2")
+      .asMetadata();
 
     // sending predefined events
     counterEvents.publish(messageBuilder.of(event1, event1Metadata));
@@ -52,7 +57,10 @@ class CounterByValueViewTest extends TestKitSupport {
       .ignoreExceptions()
       .atMost(20, SECONDS)
       .untilAsserted(() -> {
-        CounterByValueList result = componentClient.forView().method(CounterByValueView::findAll).invoke();
+        CounterByValueList result = componentClient
+          .forView()
+          .method(CounterByValueView::findAll)
+          .invoke();
 
         assertThat(result.counters()).containsOnly(
           new CounterByValueView.CounterByValue("c123", 6)
@@ -67,14 +75,15 @@ class CounterByValueViewTest extends TestKitSupport {
       .ignoreExceptions()
       .during(3, SECONDS)
       .untilAsserted(() -> {
-        CounterByValueList result = componentClient.forView().method(CounterByValueView::findAll).invoke();
+        CounterByValueList result = componentClient
+          .forView()
+          .method(CounterByValueView::findAll)
+          .invoke();
 
         //view state should be the same as before
         assertThat(result.counters()).containsOnly(
           new CounterByValueView.CounterByValue("c123", 6)
         );
       });
-
-
   }
 }

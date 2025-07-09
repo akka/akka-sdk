@@ -55,7 +55,7 @@ As well as a Key Value Entity component `CustomerEntity.java` that will produce 
 
 You implement a View by extending `akka.javasdk.view.View` and subscribing to changes from an entity. You specify how to query it by providing one or more methods annotated with `@Query`, which can then be made accessible via an xref:java:http-endpoints.adoc[HTTP Endpoint].
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomersByEmail.java[CustomersByEmail.java]
 ----
 include::example$key-value-customer-registry/src/main/java/customer/application/CustomersByEmail.java[tags=class]
@@ -82,7 +82,7 @@ include::example$key-value-customer-registry/src/main/java/customer/application/
 
 In this scenario, the view state should be of type `CustomerSummary` and you will need to handle and transform the incoming state changes into it, as shown below:
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomersByName.java[CustomersByName.java]
 ----
 include::example$key-value-customer-registry/src/main/java/customer/application/CustomersByName.java[tags=class]
@@ -122,7 +122,7 @@ you have to <<_define_the_view_to_consume_events, define the view to consume eve
 
 This example assumes a Customer equal to the previous example and an Event Sourced Entity that uses this Customer. The Event Sourced Entity is in charge of producing the events that update the View. These events are defined as subtypes of the class `CustomerEvent` using a sealed interface:
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java[CustomerEvent.java]
 ----
 include::example$event-sourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java[tags=class]
@@ -138,7 +138,7 @@ Defining a view that consumes from an Event Sourced Entity is very similar to th
 
 Every time an event is processed by the view, the state of the view can be updated. You can do this with the `updateRow` method, which is available through the `effects()` API. Below you can see how the View is updated:
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/application/CustomersByNameView.java[CustomersByNameView.java]
 ----
 include::example$event-sourced-customer-registry/src/main/java/customer/application/CustomersByNameView.java[tags=class]
@@ -164,7 +164,7 @@ To delete from the View you can use the `deleteRow()` effect from an event trans
 
 The source of a View can be also a Workflow state changes. It works the same way as shown in <<event-sourced-entity>> or <<value-entity>>, but you define it with `@Consume.FromWorkflow` instead.
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/transfer-workflow/src/main/java/com/example/transfer/application/TransfersView.java[TransfersView.java]
 ----
 include::example$transfer-workflow/src/main/java/com/example/transfer/application/TransfersView.java[tag=view-from-workflow]
@@ -179,7 +179,7 @@ The source of a View can be a topic. It works the same way as shown in <<event-s
 
 NOTE: For the messages to be correctly consumed in the view, there must be a `ce-subject` metadata associated with each message. This is required because for each message consumed from the topic there will be a corresponding view row. That view row is selected based on such `ce-subject`. For an example on how to pass such metadata when producing to a topic, see page xref:java:consuming-producing.adoc#_metadata[Metadata].
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/application/CounterTopicView.java[CounterTopicView.java]
 ----
 include::example$event-sourced-counter-brokers/src/main/java/counter/application/CounterTopicView.java[tag=class]
@@ -225,7 +225,7 @@ Oftentimes a query might be designed to return multiple results. In this case, y
 
 To include the results in a `Collection` field in the response object, you can do as below:
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomerList.java[CustomerList.java]
 ----
 include::example$key-value-customer-registry/src/main/java/customer/application/CustomerList.java[tag=class]
@@ -246,7 +246,7 @@ include::example$key-value-customer-registry/src/main/java/customer/application/
 Instead of collecting the query result in memory as a collection before returning it, the entries can be streamed.
 To return the result as a stream, modify the returned type to be `QueryStreamEffect` and use `queryStreamResult()` to return the stream.
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomersByCity.java[CustomersByCity.java]
 ----
 include::example$key-value-customer-registry/src/main/java/customer/application/CustomersByCity.java[tag=stream]
@@ -264,7 +264,7 @@ entries matching the query as they are added to the view. The stream does not co
 To use streaming updates, add `streamUpdates = true` to the `Query` annotation. The returned type of the
 query method must be `QueryStreamEffect`.
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomersByCity.java[CustomersByCity.java]
 ----
 include::example$key-value-customer-registry/src/main/java/customer/application/CustomersByCity.java[tag=continuous-stream]

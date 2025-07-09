@@ -1,7 +1,7 @@
 package com.example;
 
-import org.junit.jupiter.api.Test;
 import akka.javasdk.testkit.TestKitSupport;
+import org.junit.jupiter.api.Test;
 
 /**
  * This is a skeleton for implementing integration tests for an Akka application built with the Akka
