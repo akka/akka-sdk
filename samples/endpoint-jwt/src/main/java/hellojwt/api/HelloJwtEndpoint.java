@@ -3,19 +3,18 @@ package hellojwt.api;
 import akka.javasdk.annotations.Acl;
 // tag::bearer-token[]
 import akka.javasdk.annotations.JWT;
-// end::accessing-claims[]
 // end::bearer-token[]
 
 import akka.javasdk.annotations.http.Get;
+// tag::bearer-token[]
 // tag::accessing-claims[]
 import akka.javasdk.annotations.http.HttpEndpoint;
-// tag::accessing-claims[]
+// end::accessing-claims[]
+// end::bearer-token[]
 import akka.javasdk.http.AbstractHttpEndpoint;
 
-// end::accessing-claims[]
-
 // Opened up for access from the public internet to make the sample service easy to try out.
-// For actual services meant for production this must be carefully considered, and often set more limited
+// For actual services meant for production this must be carefully considered and often set more limited
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 // tag::bearer-token[]
 @HttpEndpoint("/hello")
