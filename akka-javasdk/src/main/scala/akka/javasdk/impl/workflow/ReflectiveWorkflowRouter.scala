@@ -154,6 +154,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     val descriptor = new WorkflowDescriptor(workflow)
 
     // legacy call step
+    @nowarn("msg=deprecated")
     def tryCallStep(stepName: String): Future[SpiWorkflow.StepResult] = {
       descriptor.findStepByName(stepName) match {
 
@@ -208,7 +209,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       .getOrElse(tryCallStep(stepName))
 
   }
-
+  @nowarn("msg=deprecated")
   final def getNextStep(
       stepName: String,
       result: BytesPayload,
@@ -296,7 +297,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
 
         }
 
-      case TransitionalEffectImpl(persistence, transition) =>
+      case TransitionalEffectImpl(_, _) =>
         // Adding for matching completeness can't happen. Typed API blocks this case.
         throw new IllegalArgumentException("Received transitional effect while processing a command")
     }

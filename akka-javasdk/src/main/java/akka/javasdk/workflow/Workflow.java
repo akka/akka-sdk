@@ -155,8 +155,9 @@ public abstract class Workflow<S> {
   }
 
   /**
-   * @return A workflow definition in the form of steps and transitions between them.
+   * @deprecated use {@link Workflow#settings()} instead
    */
+  @Deprecated
   public WorkflowDef<S> definition() {
     return new WorkflowDef<>(false);
   }
@@ -463,6 +464,11 @@ public abstract class Workflow<S> {
   public interface ReadOnlyEffect<T> extends Effect<T> {
   }
 
+
+  /**
+   * @deprecated use {@link Workflow.Settings} instead
+   */
+  @Deprecated
   public static class WorkflowDef<S> {
 
     private final boolean legacy;
@@ -782,10 +788,18 @@ public abstract class Workflow<S> {
     }
   }
 
+  /**
+   * @deprecated use {@link Workflow#settings()} instead
+   */
+  @Deprecated
   public WorkflowDef<S> workflow() {
     return new WorkflowDef<>(true);
   }
 
+  /**
+   * @deprecated use methods returning {@link StepEffect} instead.
+   */
+  @Deprecated
   public interface Step {
     String name();
 
@@ -803,6 +817,10 @@ public abstract class Workflow<S> {
     }
   }
 
+  /**
+   * @deprecated use methods returning {@link StepEffect} instead.
+   */
+  @Deprecated
   public static final class CallStep<CallInput, CallOutput, FailoverInput> implements Step {
 
     final private String _name;
@@ -846,6 +864,10 @@ public abstract class Workflow<S> {
     }
   }
 
+  /**
+   * @deprecated use methods returning {@link StepEffect} instead.
+   */
+  @Deprecated
   public static final class RunnableStep implements Step {
 
     final private String _name;
@@ -883,6 +905,10 @@ public abstract class Workflow<S> {
     }
   }
 
+  /**
+   * @deprecated use methods returning {@link StepEffect} instead.
+   */
+  @Deprecated
   public static class AsyncCallStep<CallInput, CallOutput, FailoverInput> implements Step {
 
     final private String _name;

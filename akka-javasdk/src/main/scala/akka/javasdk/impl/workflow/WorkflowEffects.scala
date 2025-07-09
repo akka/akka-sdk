@@ -182,7 +182,8 @@ object WorkflowEffects {
         val method = MethodRefResolver.resolveMethodRef(lambda)
         WorkflowStepEffectImpl(persistence, StepTransition(method.getName, None))
       }
-      override def thenTransitionTo[W, I](lambda: function.Function2[W, I, StepEffect]): CallWithInput[I, StepEffect] = {
+      override def thenTransitionTo[W, I](
+          lambda: function.Function2[W, I, StepEffect]): CallWithInput[I, StepEffect] = {
         val method = MethodRefResolver.resolveMethodRef(lambda)
         StepEffectCallWithInputImpl(persistence, method.getName)
       }
