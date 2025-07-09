@@ -1,0 +1,10 @@
+= Build a shopping cart
+
+include::ROOT:partial$include.adoc[]
+
+include::ROOT:partial$new-to-akka-start-here.adoc[]
+
+This guide introduces the basics of building a shopping cart service using Akka. In the first part, you will build and deploy a simple event-sourced service with an HTTP API. In the second part, you will extend the model, introduce views, and add user authentication.
+
+. xref:shopping-cart/build-and-deploy-shopping-cart.adoc[] — A simple HTTP-based shopping cart backed by an event-sourced entity.
+. xref:shopping-cart/addview.adoc[] — Add a user-specific cart view, refactor the model, and secure the endpoint with JWT authentication.

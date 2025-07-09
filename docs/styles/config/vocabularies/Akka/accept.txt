@@ -204,6 +204,7 @@ unary
 unencrypted
 updaters
 [Uu]nexpose
+unikernels
 unnested
 unsets
 untrusted

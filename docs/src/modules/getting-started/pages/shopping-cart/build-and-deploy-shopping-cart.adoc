@@ -1,4 +1,4 @@
-= Shopping cart part 1: Build a simple cart service
+= A simple shopping cart service
 :page-aliases: java:shopping-cart-quickstart.adoc
 
 include::ROOT:partial$include.adoc[]
@@ -313,6 +313,6 @@ image:console-first-app-service.png[]
 
 Now that you've built and deployed a shopping cart service, take your Akka skills to the next level:
 
-. *Add a view*: Continue to the xref:addview.adoc[next step] in the tour.
+. *Add a view*: Continue to the xref:shopping-cart/addview.adoc[next step] in the tour.
 . *Expand on your own*: Explore xref:java:components/index.adoc[other Akka components] to enhance your application with additional features.
 . *Explore other Akka samples*: Discover more about Akka by exploring xref:samples.adoc[different use cases] for inspiration.
