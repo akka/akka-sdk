@@ -15,8 +15,9 @@ public class ActivityViewTest extends TestKitSupport {
 
   @Override
   protected TestKit.Settings testKitSettings() {
-    return TestKit.Settings.DEFAULT// We don't need a real one though. // Bootstrap will check if key exists when running integation tests.
-    .withAdditionalConfig(
+    // Bootstrap will check if key exists when running integation tests.
+    // We don't need a real one though.
+    return TestKit.Settings.DEFAULT.withAdditionalConfig(
       ConfigFactory.parseString("akka.javasdk.agent.openai.api-key=fake-key")
     ).withWorkflowIncomingMessages("agent-team");
   }
