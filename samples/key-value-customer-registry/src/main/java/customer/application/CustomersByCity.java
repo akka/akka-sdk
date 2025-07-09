@@ -52,7 +52,7 @@ public class CustomersByCity extends View {
     """
     SELECT * FROM customers_by_city
     WHERE name = :customerName AND address.city = :city"""
-  ) // <2>mvn
+  ) // <2>
   public QueryEffect<Customer> getCustomersByCityAndName(QueryParams queryParams) {
     return queryResult();
   }
