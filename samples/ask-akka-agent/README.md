@@ -20,7 +20,8 @@ To get the OpenAI API key, sign up/log in to find the key at https://platform.op
 ### Start the app
 
 The key and uri needs to be exported as environment variables:
-`OPENAI_API_KEY` and `MONGODB_ATLAS_URI` respectively.
+`OPENAI_API_KEY` and `MONGODB_ATLAS_URI` respectively. 
+If you prefer to use a different LLM model, follow the instructions in `application.conf` to change it.
 
 Then, start the application locally:
 

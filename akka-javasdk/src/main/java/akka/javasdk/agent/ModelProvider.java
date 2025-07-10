@@ -139,6 +139,9 @@ public sealed interface ModelProvider {
     return new GoogleAIGemini("", "", Double.NaN, Double.NaN, -1);
   }
 
+  /**
+   * Settings for the Google AI Gemini Large Language Model provider.
+   */
   record GoogleAIGemini(String apiKey, String modelName, Double temperature, Double topP, int maxOutputTokens) implements ModelProvider {
 
     public static GoogleAIGemini fromConfig(Config config) {
@@ -173,12 +176,15 @@ public sealed interface ModelProvider {
   }
 
   /**
-   * Settings for the Local AI Large Langue Model provider.
+   * Settings for the Local AI Large Language Model provider.
    */
   static LocalAI localAI() {
     return new LocalAI("", "", Double.NaN, Double.NaN, -1);
   }
 
+  /**
+   * Settings for the Local AI Large Language Model provider.
+   */
   record LocalAI(String baseUrl, String modelName, Double temperature, Double topP, int maxTokens) implements ModelProvider {
     public static LocalAI fromConfig(Config config) {
       return new LocalAI(
@@ -248,7 +254,7 @@ public sealed interface ModelProvider {
   }
 
   /**
-   * Settings for the Anthropic Large Language Model provider.
+   * Settings for the OpenAI Large Language Model provider.
    */
   static OpenAi openAi() {
     return new OpenAi(
