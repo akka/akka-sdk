@@ -217,7 +217,7 @@ public abstract class Workflow<S> {
       /**
        * Pause the workflow execution and wait for an external input, e.g. via command handler.
        */
-      TransitionalEffect<Void> pause();
+      Transitional pause();
 
       /**
        * Defines the next step to which the workflow should transition to.
@@ -231,7 +231,7 @@ public abstract class Workflow<S> {
        * @deprecated use {@link Builder#transitionTo(akka.japi.function.Function2)} instead.
        */
       @Deprecated
-      <I> TransitionalEffect<Void> transitionTo(String stepName, I input);
+      <I> Transitional transitionTo(String stepName, I input);
 
       /**
        * Defines the next step to which the workflow should transition to.
@@ -243,24 +243,24 @@ public abstract class Workflow<S> {
        * @deprecated use {@link Builder#transitionTo(akka.japi.function.Function)} instead.
        */
       @Deprecated
-      TransitionalEffect<Void> transitionTo(String stepName);
+      Transitional transitionTo(String stepName);
 
-      <W> TransitionalEffect<Void> transitionTo(akka.japi.function.Function <W, StepEffect> methodRef);
+      <W> Transitional transitionTo(akka.japi.function.Function <W, StepEffect> methodRef);
 
-      <W, I> CallWithInput<I, TransitionalEffect<Void> > transitionTo(akka.japi.function.Function2<W, I, StepEffect> methodRef);
+      <W, I> CallWithInput<I, Transitional> transitionTo(akka.japi.function.Function2<W, I, StepEffect> methodRef);
 
       /**
        * Finish the workflow execution.
        * After transition to {@code end}, no more transitions are allowed.
        */
-      TransitionalEffect<Void> end();
+      Transitional end();
 
       /**
        * Finish and delete the workflow execution.
        * After transition to {@code delete}, no more transitions are allowed.
        * The actual workflow state deletion is done with a configurable delay to allow downstream consumers to observe that fact.
        */
-      TransitionalEffect<Void> delete();
+      Transitional delete();
 
       /**
        * Create a message reply.
@@ -319,13 +319,35 @@ public abstract class Workflow<S> {
       <R> Effect<R> thenReply(R message, Metadata metadata);
     }
 
+    interface Transitional extends TransitionalEffect<Void> {
+
+      /**
+       * Reply after for example {@code updateState}.
+       *
+       * @param message The payload of the reply.
+       * @param <R>     The type of the message that must be returned by this call.
+       * @return A message reply.
+       */
+      <R> Effect<R> thenReply(R message);
+
+      /**
+       * Reply after for example {@code updateState}.
+       *
+       * @param message  The payload of the reply.
+       * @param metadata The metadata for the message.
+       * @param <R>      The type of the message that must be returned by this call.
+       * @return A message reply.
+       */
+      <R> Effect<R> thenReply(R message, Metadata metadata);
+    }
+
 
     interface PersistenceEffectBuilder<T> {
 
       /**
        * Pause the workflow execution and wait for an external input, e.g. via command handler.
        */
-      TransitionalEffect<Void> pause();
+      Transitional pause();
 
       /**
        * Defines the next step to which the workflow should transition to.
@@ -339,7 +361,7 @@ public abstract class Workflow<S> {
        * @deprecated use {@link PersistenceEffectBuilder#transitionTo(akka.japi.function.Function2)} instead.
        */
       @Deprecated
-      <I> TransitionalEffect<Void> transitionTo(String stepName, I input);
+      <I> Transitional transitionTo(String stepName, I input);
 
       /**
        * Defines the next step to which the workflow should transition to.
@@ -351,25 +373,25 @@ public abstract class Workflow<S> {
        * @deprecated use {@link PersistenceEffectBuilder#transitionTo(akka.japi.function.Function)} instead.
        */
       @Deprecated
-      TransitionalEffect<Void> transitionTo(String stepName);
+      Transitional transitionTo(String stepName);
 
 
-      <W>   TransitionalEffect<Void> transitionTo(akka.japi.function.Function <W, StepEffect> lambda);
+      <W> Transitional transitionTo(akka.japi.function.Function <W, StepEffect> lambda);
 
-      <W, I> CallWithInput<I, TransitionalEffect<Void> > transitionTo(akka.japi.function.Function2<W, I, StepEffect> lambda);
+      <W, I> CallWithInput<I, Transitional> transitionTo(akka.japi.function.Function2<W, I, StepEffect> lambda);
 
       /**
        * Finish the workflow execution.
        * After transition to {@code end}, no more transitions are allowed.
        */
-      TransitionalEffect<Void> end();
+      Transitional end();
 
       /**
        * Finish and delete the workflow execution.
        * After transition to {@code delete}, no more transitions are allowed.
        * The actual workflow state deletion is done with a configurable delay to allow downstream consumers to observe that fact.
        */
-      TransitionalEffect<Void> delete();
+      Transitional delete();
     }
 
   }
