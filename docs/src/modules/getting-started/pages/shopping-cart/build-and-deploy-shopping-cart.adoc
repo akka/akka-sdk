@@ -25,7 +25,7 @@ include::ROOT:partial$cloud-dev-prerequisites.adoc[]
 
 == Clone the sample
 
-. Clone the full source code of the Shopping Cart sample from link:https://github.com/akka-samples/shopping-cart-quickstart[Github], or use the Akka CLI command below to download and unzip this quickstart project.
+. Clone the full source code of the Shopping Cart sample from link:https://github.com/akka-samples/shopping-cart-quickstart[GitHub], or use the Akka CLI command below to download and unzip this quickstart project.
 +
 [source,bash]
 ----

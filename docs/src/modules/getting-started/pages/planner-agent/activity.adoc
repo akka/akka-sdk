@@ -25,7 +25,7 @@ You already learned how to create an empty Akka project when you went through th
 
 [NOTE]
 ====
-This guide is written assuming you will follow it as a tutorial to walk through all of the components, building them on your own. If at any time you want to compare your solution with the official sample, check out the link:https://github.com/akka-samples/multi-agent[Github Repository, window="new"].
+This guide is written assuming you will follow it as a tutorial to walk through all of the components, building them on your own. If at any time you want to compare your solution with the official sample, check out the link:https://github.com/akka-samples/multi-agent[GitHub Repository, window="new"].
 ====
 
 == Add the Agent
