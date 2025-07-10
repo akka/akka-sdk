@@ -8,27 +8,39 @@ Further, the emergence of https://modelcontextprotocol.io/introduction[MCP, wind
 
 The following table provides a quick reference as to which communication paths are preferred patterns versus ones you should avoid. Additional details are provided thereafter.
 
-[cols="1,3m,6"]
+[cols="3,6"]
 |===
-| | Path | Description
+| Paths | Description
 
-|✅| Workflow -> Agent(s) +
+| Workflow -> Agent(s) +
 Workflow -> A2A/ACP -> Agents +
-Workflow -> Endpoint (API) | Workflows are engines of orchestration that can ensure the successful outcome of many invocations across agents that are local or remote. Workflows have built-in logic for handling retries and failure for long-running processes. 
+Workflow -> Endpoint (API) | Workflows are engines of orchestration that can ensure the successful outcome of many invocations across agents that are local or remote. Workflows have built-in logic for handling retries and failure for long-running processes. +
+ + 
+✅ **Adopt**
 
-|✅| Agent -> Broker +
+| Agent -> Broker +
 Workflow -> Broker +
 Entity -> Broker | Leverage an event-driven architecture that completely disconnects the awareness of one service that is producing information from those that consume it. However, for agent-to-agent communications where agents are part of a single system working towards a common goal, broker-based architectures eliminate group-based goals, shared state, and system-wide guardians. + 
-Event-driven architectures are promoted for their scale and autonomy, but create separation that makes it harder for autonomous systems to collaborate towards a common goal. 
+Event-driven architectures are promoted for their scale and autonomy, but create separation that makes it harder for autonomous systems to collaborate towards a common goal. +
+ +
+✅ **Adopt**
 
-|✅| Broker -> Consumer -> Agent | Agents can be tasked to execute goals triggered by events that are sent through a broker. Provides independent intelligence and autonomy. Suffers from the same “unable to work towards a broader goal” problem.
+| Broker -> Consumer -> Agent | Agents can be tasked to execute goals triggered by events that are sent through a broker. Provides independent intelligence and autonomy. Suffers from the same “unable to work towards a broader goal” problem. +
+ +
+✅ **Adopt**
 
-|⛔| Agent -> Agent +
-Endpoint (API) -> Agent | Avoid leveraging protocols such as HTTP, JSON-RPC, gRPC, A2A, and ACP that enable direct communication and invocation of one agent to another. 
+| Agent -> Agent +
+Endpoint (API) -> Agent | Avoid leveraging protocols such as HTTP, JSON-RPC, gRPC, A2A, and ACP that enable direct communication and invocation of one agent to another. +
+ +
+⚠️  **Avoid**
 
-|⛔| Agent -> MCP Server -> Agent | It is best to avoid using an agent’s ability to call tools or services as a way to reach other agents. This creates indirect connections that reduce clarity and make the system harder to reason about.
+| Agent -> MCP Server -> Agent | It is best to avoid using an agent’s ability to call tools or services as a way to reach other agents. This creates indirect connections that reduce clarity and make the system harder to reason about. +
+ +
+⚠️  **Avoid**
 
-|⛔| Endpoint (API) -> Endpoint (API) | Avoid having an endpoint call functions directly on another endpoint. This can create side effects that aren't captured by any of the durable event flows and can bypass the resiliency and scalability provided by Workflows.
+| Endpoint (API) -> Endpoint (API) | Avoid having an endpoint call functions directly on another endpoint. This can create side effects that aren't captured by any of the durable event flows and can bypass the resiliency and scalability provided by Workflows. +
+ +
+⚠️  **Avoid**
 
 |===
 
