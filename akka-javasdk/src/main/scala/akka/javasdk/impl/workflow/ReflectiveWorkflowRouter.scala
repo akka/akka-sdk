@@ -320,7 +320,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
 
   private def toSpiTransitionalEffect(effect: Workflow.Effect.TransitionalEffect[_]) =
     effect match {
-      case trEff: TransitionalEffectImpl[_, _] =>
+      case trEff: TransitionalEffectImpl[_] =>
         new SpiWorkflow.TransitionalOnlyEffect(handleState(trEff.persistence), toSpiTransition(trEff.transition))
     }
 
