@@ -176,14 +176,14 @@ public sealed interface ModelProvider {
   }
 
   /**
-   * Settings for the Local AI Large Langue Model provider.
+   * Settings for the Local AI Large Language Model provider.
    */
   static LocalAI localAI() {
     return new LocalAI("", "", Double.NaN, Double.NaN, -1);
   }
 
   /**
-   * Settings for the Local AI Large Langue Model provider.
+   * Settings for the Local AI Large Language Model provider.
    */
   record LocalAI(String baseUrl, String modelName, Double temperature, Double topP, int maxTokens) implements ModelProvider {
     public static LocalAI fromConfig(Config config) {
