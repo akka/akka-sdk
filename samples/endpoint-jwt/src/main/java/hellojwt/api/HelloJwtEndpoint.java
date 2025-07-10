@@ -24,14 +24,12 @@ public class HelloJwtEndpoint extends AbstractHttpEndpoint {
 
   // end::bearer-token[]
   // end::accessing-claims[]
-
   @Get("/")
   public String hello() {
     return "Hello, World!";
   }
 
   // tag::accessing-claims[]
-
   // tag::multiple-bearer-token-issuers[]
   @JWT(
     validate = JWT.JwtMethodMode.BEARER_TOKEN,
@@ -47,7 +45,6 @@ public class HelloJwtEndpoint extends AbstractHttpEndpoint {
     return "issuer: " + issuer + ", subject: " + sub;
   }
   // tag::bearer-token[]
-
 }
 // end::accessing-claims[]
 // end::bearer-token[]

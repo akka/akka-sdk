@@ -101,7 +101,9 @@ public class OrderEntity extends KeyValueEntity<Order> {
     if (!currentState().placed()) {
       return effects().reply(Result.NotFound.of("No order found for " + orderId)); // <1>
     } else if (currentState().confirmed()) {
-      return effects().reply(Result.Invalid.of("Cannot cancel an already confirmed order")); // <2>
+      // prettier-ignore
+      return effects()
+        .reply(Result.Invalid.of("Cannot cancel an already confirmed order")); // <2>
     } else {
       return effects().updateState(emptyState()).thenReply(ok); // <3>
     }

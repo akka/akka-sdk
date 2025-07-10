@@ -38,7 +38,9 @@ public class CounterSetup implements ServiceSetup {
   @Override
   public DependencyProvider createDependencyProvider() {
     try {
-      AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(); // <1>
+      // prettier-ignore
+      AnnotationConfigApplicationContext context =
+        new AnnotationConfigApplicationContext(); // <1>
       ResourcePropertySource resourcePropertySource = new ResourcePropertySource(
         new ClassPathResource("application.properties")
       );
