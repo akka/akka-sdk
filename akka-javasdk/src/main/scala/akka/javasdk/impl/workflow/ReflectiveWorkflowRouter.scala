@@ -26,7 +26,7 @@ import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.ErrorEffect
 import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.NoReply
 import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.ReplyValue
 import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.TransitionalEffectImpl
-import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowStepEffectImpl.StepEffectImpl
+import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowStepEffectImpl
 import akka.javasdk.timer.TimerScheduler
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
@@ -154,6 +154,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     val descriptor = new WorkflowDescriptor(workflow)
 
     // legacy call step
+    @nowarn("msg=deprecated")
     def tryCallStep(stepName: String): Future[SpiWorkflow.StepResult] = {
       descriptor.findStepByName(stepName) match {
 
@@ -190,15 +191,25 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
 
     descriptor
       .findStepMethodByName(stepName)
-      .map { method =>
-        val effect = Future { method.invoke(workflow) }
+      .map { stepMethod =>
+        val effect =
+          if (stepMethod.javaMethod().getParameterCount == 1) {
+            Future {
+              val decodedInput = decodeInputForClass(stepMethod.javaMethod().getParameterTypes()(0))
+              stepMethod.invoke(workflow, decodedInput)
+            }
+          } else {
+            Future {
+              stepMethod.invoke(workflow)
+            }
+          }
         effect.map(toSpiStepTransitionalEffect)
       }
       // fallback to step call
       .getOrElse(tryCallStep(stepName))
 
   }
-
+  @nowarn("msg=deprecated")
   final def getNextStep(
       stepName: String,
       result: BytesPayload,
@@ -286,7 +297,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
 
         }
 
-      case TransitionalEffectImpl(persistence, transition) =>
+      case TransitionalEffectImpl(_, _) =>
         // Adding for matching completeness can't happen. Typed API blocks this case.
         throw new IllegalArgumentException("Received transitional effect while processing a command")
     }
@@ -315,7 +326,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
 
   private def toSpiStepTransitionalEffect(effect: Workflow.StepEffect): SpiWorkflow.StepTransitionalEffect =
     effect match {
-      case stepEff: StepEffectImpl[_, _] =>
+      case stepEff: WorkflowStepEffectImpl[_] =>
         new SpiWorkflow.StepTransitionalEffect(handleState(stepEff.persistence), toSpiTransition(stepEff.transition))
     }
 

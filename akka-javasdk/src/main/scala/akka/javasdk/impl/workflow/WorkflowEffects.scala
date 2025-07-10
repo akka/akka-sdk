@@ -5,7 +5,10 @@
 package akka.javasdk.impl.workflow
 
 import akka.annotation.InternalApi
+import akka.japi.function
+import akka.japi.function.Function
 import akka.javasdk.Metadata
+import akka.javasdk.impl.client.MethodRefResolver
 import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.ErrorEffectImpl
 import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.NoReply
 import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.PersistenceEffectBuilderImpl
@@ -13,6 +16,8 @@ import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.ReadOnlyEff
 import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.Reply
 import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.TransitionalEffectImpl
 import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowStepEffectImpl.ErrorStepEffectImpl
+import akka.javasdk.workflow.Workflow
+import akka.javasdk.workflow.Workflow.CallWithInput
 import akka.javasdk.workflow.Workflow.Effect
 import akka.javasdk.workflow.Workflow.Effect.PersistenceEffectBuilder
 import akka.javasdk.workflow.Workflow.Effect.TransitionalEffect
@@ -59,8 +64,25 @@ object WorkflowEffects {
 
     final case class PersistenceEffectBuilderImpl[S](persistence: Persistence[S]) extends PersistenceEffectBuilder[S] {
 
+      override def transitionTo[W](lambda: Function[W, Workflow.StepEffect]): TransitionalEffect[Void] = {
+        val method = MethodRefResolver.resolveMethodRef(lambda)
+        TransitionalEffectImpl(persistence, StepTransition(method.getName, None))
+      }
+
+      override def transitionTo[W, I](
+          lambda: function.Function2[W, I, Workflow.StepEffect]): CallWithInput[I, TransitionalEffect[Void]] = {
+        val method = MethodRefResolver.resolveMethodRef(lambda)
+        EffectCallWithInputImpl(persistence, method.getName)
+      }
+
       override def pause(): TransitionalEffect[Void] =
         TransitionalEffectImpl(persistence, Pause)
+
+      override def end(): TransitionalEffect[Void] =
+        TransitionalEffectImpl(persistence, End)
+
+      override def delete(): TransitionalEffect[Void] =
+        TransitionalEffectImpl(persistence, Delete)
 
       override def transitionTo[I](stepName: String, input: I): TransitionalEffect[Void] =
         TransitionalEffectImpl(persistence, StepTransition(stepName, Some(input)))
@@ -68,11 +90,6 @@ object WorkflowEffects {
       override def transitionTo(stepName: String): TransitionalEffect[Void] =
         TransitionalEffectImpl(persistence, StepTransition(stepName, None))
 
-      override def end(): TransitionalEffect[Void] =
-        TransitionalEffectImpl(persistence, End)
-
-      override def delete(): TransitionalEffect[Void] =
-        TransitionalEffectImpl(persistence, Delete)
     }
 
     final case class TransitionalEffectImpl[S, T](persistence: Persistence[S], transition: Transition)
@@ -134,6 +151,22 @@ object WorkflowEffects {
     override def error[R](description: String): ReadOnlyEffect[R] =
       ErrorEffectImpl(description, Some(Status.Code.INVALID_ARGUMENT))
 
+    override def transitionTo[W](lambda: Function[W, Workflow.StepEffect]): TransitionalEffect[Void] = {
+      val method = MethodRefResolver.resolveMethodRef(lambda)
+      TransitionalEffectImpl(persistence, StepTransition(method.getName, None))
+    }
+
+    override def transitionTo[W, I](
+        lambda: function.Function2[W, I, Workflow.StepEffect]): CallWithInput[I, TransitionalEffect[Void]] = {
+      val method = MethodRefResolver.resolveMethodRef(lambda)
+      EffectCallWithInputImpl(NoPersistence, method.getName)
+    }
+  }
+
+  private final case class EffectCallWithInputImpl[I, S](persistence: Persistence[S], stepName: String)
+      extends CallWithInput[I, TransitionalEffect[Void]] {
+    override def withInput(input: I): TransitionalEffect[Void] =
+      TransitionalEffectImpl(persistence, StepTransition(stepName, Some(input)))
   }
 
   /**
@@ -142,26 +175,33 @@ object WorkflowEffects {
   @InternalApi
   object WorkflowStepEffectImpl {
 
-    final private case class PersistenceEffectBuilderImpl[S](persistence: Persistence[S])
+    private final case class PersistenceEffectBuilderImpl[S](persistence: Persistence[S])
         extends StepEffect.PersistenceEffectBuilder {
 
-      override def transitionTo(stepName: String): StepEffect =
-        StepEffectImpl(persistence, StepTransition(stepName, None))
+      def thenTransitionTo[W](lambda: Function[W, Workflow.StepEffect]): Workflow.StepEffect = {
+        val method = MethodRefResolver.resolveMethodRef(lambda)
+        WorkflowStepEffectImpl(persistence, StepTransition(method.getName, None))
+      }
+      override def thenTransitionTo[W, I](
+          lambda: function.Function2[W, I, StepEffect]): CallWithInput[I, StepEffect] = {
+        val method = MethodRefResolver.resolveMethodRef(lambda)
+        StepEffectCallWithInputImpl(persistence, method.getName)
+      }
 
-      override def pause(): StepEffect =
-        StepEffectImpl(persistence, Pause)
+      override def thenPause(): StepEffect =
+        WorkflowStepEffectImpl(persistence, Pause)
 
-      override def delete(): StepEffect =
-        StepEffectImpl(persistence, Delete)
+      override def thenDelete(): StepEffect =
+        WorkflowStepEffectImpl(persistence, Delete)
 
-      override def end(): StepEffect =
-        StepEffectImpl(persistence, End)
+      override def thenEnd(): StepEffect =
+        WorkflowStepEffectImpl(persistence, End)
 
       override def error(description: String): StepEffect =
         ErrorStepEffectImpl(description)
+
     }
 
-    final case class StepEffectImpl[S, T](persistence: Persistence[S], transition: Transition) extends StepEffect {}
     final case class ErrorStepEffectImpl[R](description: String) extends StepEffect
   }
 
@@ -176,23 +216,32 @@ object WorkflowEffects {
     override def updateState(newState: S): StepEffect.PersistenceEffectBuilder =
       WorkflowStepEffectImpl.PersistenceEffectBuilderImpl(UpdateState(newState))
 
-    override def pause(): StepEffect =
+    override def thenPause(): StepEffect =
       WorkflowStepEffectImpl(NoPersistence, Pause)
 
-    override def transitionTo[I](stepName: String, input: I): StepEffect =
-      WorkflowStepEffectImpl(NoPersistence, StepTransition(stepName, Some(input)))
+    def thenTransitionTo[W](lambda: Function[W, Workflow.StepEffect]): Workflow.StepEffect = {
+      val method = MethodRefResolver.resolveMethodRef(lambda)
+      WorkflowStepEffectImpl(persistence, StepTransition(method.getName, None))
+    }
 
-    override def transitionTo(stepName: String): StepEffect =
-      WorkflowStepEffectImpl(NoPersistence, StepTransition(stepName, None))
+    override def thenTransitionTo[W, I](lambda: function.Function2[W, I, StepEffect]): CallWithInput[I, StepEffect] = {
+      val method = MethodRefResolver.resolveMethodRef(lambda)
+      StepEffectCallWithInputImpl(persistence, method.getName)
+    }
 
-    override def end(): StepEffect =
+    override def thenEnd(): StepEffect =
       WorkflowStepEffectImpl(NoPersistence, End)
 
-    override def delete(): StepEffect =
+    override def thenDelete(): StepEffect =
       WorkflowStepEffectImpl(NoPersistence, Delete)
 
     override def error(description: String): StepEffect =
       ErrorStepEffectImpl(description)
   }
 
+  private final case class StepEffectCallWithInputImpl[I, S](persistence: Persistence[S], stepName: String)
+      extends CallWithInput[I, StepEffect] {
+    def withInput(input: I): StepEffect =
+      WorkflowStepEffectImpl(persistence, StepTransition(stepName, Some(input)))
+  }
 }

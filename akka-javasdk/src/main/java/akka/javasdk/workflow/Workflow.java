@@ -155,8 +155,9 @@ public abstract class Workflow<S> {
   }
 
   /**
-   * @return A workflow definition in the form of steps and transitions between them.
+   * @deprecated use {@link Workflow#settings()} instead
    */
+  @Deprecated
   public WorkflowDef<S> definition() {
     return new WorkflowDef<>(false);
   }
@@ -227,7 +228,9 @@ public abstract class Workflow<S> {
        *
        * @param stepName The step name that should be executed next.
        * @param input    The input param for the next step.
+       * @deprecated use {@link Builder#transitionTo(akka.japi.function.Function2)} instead.
        */
+      @Deprecated
       <I> TransitionalEffect<Void> transitionTo(String stepName, I input);
 
       /**
@@ -237,8 +240,14 @@ public abstract class Workflow<S> {
        * In other words, the next step call (or asyncCall) must have been defined with a {@link Supplier} function.
        *
        * @param stepName The step name that should be executed next.
+       * @deprecated use {@link Builder#transitionTo(akka.japi.function.Function)} instead.
        */
+      @Deprecated
       TransitionalEffect<Void> transitionTo(String stepName);
+
+      <W> TransitionalEffect<Void> transitionTo(akka.japi.function.Function <W, StepEffect> methodRef);
+
+      <W, I> CallWithInput<I, TransitionalEffect<Void> > transitionTo(akka.japi.function.Function2<W, I, StepEffect> methodRef);
 
       /**
        * Finish the workflow execution.
@@ -310,6 +319,7 @@ public abstract class Workflow<S> {
       <R> Effect<R> thenReply(R message, Metadata metadata);
     }
 
+
     interface PersistenceEffectBuilder<T> {
 
       /**
@@ -326,7 +336,9 @@ public abstract class Workflow<S> {
        *
        * @param stepName The step name that should be executed next.
        * @param input    The input param for the next step.
+       * @deprecated use {@link PersistenceEffectBuilder#transitionTo(akka.japi.function.Function2)} instead.
        */
+      @Deprecated
       <I> TransitionalEffect<Void> transitionTo(String stepName, I input);
 
       /**
@@ -336,8 +348,15 @@ public abstract class Workflow<S> {
        * In other words, the next step call (or asyncCall) must have been defined with a {@link Supplier}.
        *
        * @param stepName The step name that should be executed next.
+       * @deprecated use {@link PersistenceEffectBuilder#transitionTo(akka.japi.function.Function)} instead.
        */
+      @Deprecated
       TransitionalEffect<Void> transitionTo(String stepName);
+
+
+      <W>   TransitionalEffect<Void> transitionTo(akka.japi.function.Function <W, StepEffect> lambda);
+
+      <W, I> CallWithInput<I, TransitionalEffect<Void> > transitionTo(akka.japi.function.Function2<W, I, StepEffect> lambda);
 
       /**
        * Finish the workflow execution.
@@ -371,30 +390,27 @@ public abstract class Workflow<S> {
       /**
        * Pause the workflow execution and wait for an external input, e.g. via command handler.
        */
-      StepEffect pause();
+      StepEffect thenPause();
 
       /**
        * Defines the next step to which the workflow should transition to.
        */
-      <I> StepEffect transitionTo(String stepName, I input);
+      <W> StepEffect thenTransitionTo(akka.japi.function.Function <W, StepEffect> stepName);
 
-      /**
-       * Defines the next step to which the workflow should transition to.
-       */
-      StepEffect transitionTo(String stepName);
+      <W, I> CallWithInput<I, StepEffect> thenTransitionTo(akka.japi.function.Function2<W, I, Workflow.StepEffect> lambda);
 
       /**
        * Finish the workflow execution.
        * After transition to {@code end}, no more transitions are allowed.
        */
-      StepEffect end();
+      StepEffect thenEnd();
 
       /**
        * Finish and delete the workflow execution.
        * After transition to {@code delete}, no more transitions are allowed.
        * The actual workflow state deletion is done with a configurable delay to allow downstream consumers to observe that fact.
        */
-      StepEffect delete();
+      StepEffect thenDelete();
 
       StepEffect error(String description);
 
@@ -406,7 +422,7 @@ public abstract class Workflow<S> {
       /**
        * Pause the workflow execution and wait for an external input, e.g. via command handler.
        */
-      StepEffect pause();
+      StepEffect thenPause();
 
       /**
        * Defines the next step to which the workflow should transition to.
@@ -415,31 +431,44 @@ public abstract class Workflow<S> {
       /**
        * Defines the next step to which the workflow should transition to.
        */
-      StepEffect transitionTo(String stepName);
+      <W> StepEffect thenTransitionTo(akka.japi.function.Function<W, Workflow.StepEffect> methodRef);
+
+
+      <W, I> CallWithInput<I, StepEffect> thenTransitionTo(akka.japi.function.Function2<W, I, Workflow.StepEffect> methodRef);
 
       /**
        * Finish the workflow execution.
        * After transition to {@code end}, no more transitions are allowed.
        */
-      StepEffect end();
+      StepEffect thenEnd();
 
       /**
        * Finish and delete the workflow execution.
        * After transition to {@code delete}, no more transitions are allowed.
        * The actual workflow state deletion is done with a configurable delay to allow downstream consumers to observe that fact.
        */
-      StepEffect delete();
+      StepEffect thenDelete();
 
       StepEffect error(String description);
     }
 
   }
 
+
+  public interface CallWithInput<I, R> {
+    R withInput(I input);
+  }
   /**
    * An effect that is known to be read only and does not update the state of the entity.
    */
   public interface ReadOnlyEffect<T> extends Effect<T> {
   }
+
+
+  /**
+   * @deprecated use {@link Workflow.Settings} instead
+   */
+  @Deprecated
   public static class WorkflowDef<S> {
 
     private final boolean legacy;
@@ -662,7 +691,7 @@ public abstract class Workflow<S> {
 
         private static List<StepConfig> buildStepConfigs(List<StepMethod> stepMethods) {
           return stepMethods.stream()
-              .map(sm -> new StepConfig(sm.uniqueName, Optional.empty(), Optional.empty()))
+              .map(sm -> new StepConfig(sm.methodName, Optional.empty(), Optional.empty()))
               .toList();
         }
 
@@ -759,27 +788,39 @@ public abstract class Workflow<S> {
     }
   }
 
+  /**
+   * @deprecated use {@link Workflow#settings()} instead
+   */
+  @Deprecated
   public WorkflowDef<S> workflow() {
     return new WorkflowDef<>(true);
   }
 
+  /**
+   * @deprecated use methods returning {@link StepEffect} instead.
+   */
+  @Deprecated
   public interface Step {
     String name();
 
     Optional<Duration> timeout();
   }
 
-  public record StepMethod(String uniqueName, Method method)  {
-    public StepEffect invoke(Object instance)  {
+  public record StepMethod(String methodName, Method javaMethod)  {
+    public StepEffect invoke(Object instance, Object... args)  {
       try {
-        method.setAccessible(true);
-        return (StepEffect) method.invoke(instance);
+        javaMethod.setAccessible(true);
+        return (StepEffect) javaMethod.invoke(instance, args);
       } catch (IllegalAccessException | InvocationTargetException e) {
         throw new RuntimeException(e);
       }
     }
   }
 
+  /**
+   * @deprecated use methods returning {@link StepEffect} instead.
+   */
+  @Deprecated
   public static final class CallStep<CallInput, CallOutput, FailoverInput> implements Step {
 
     final private String _name;
@@ -823,6 +864,10 @@ public abstract class Workflow<S> {
     }
   }
 
+  /**
+   * @deprecated use methods returning {@link StepEffect} instead.
+   */
+  @Deprecated
   public static final class RunnableStep implements Step {
 
     final private String _name;
@@ -860,6 +905,10 @@ public abstract class Workflow<S> {
     }
   }
 
+  /**
+   * @deprecated use methods returning {@link StepEffect} instead.
+   */
+  @Deprecated
   public static class AsyncCallStep<CallInput, CallOutput, FailoverInput> implements Step {
 
     final private String _name;
