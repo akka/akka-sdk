@@ -4,6 +4,67 @@ include::ROOT:partial$include.adoc[]
 
 include::ROOT:partial$concepts-intro.adoc[]
 
+== Components
+
+You build your application using xref:reference:glossary.adoc#component[Akka _Components_]. These components provide structure and help maintain responsiveness. Below is a brief overview of each.
+
+With the exception of endpoints, Akka components are placed in your `application` package. Endpoints live in the `api` package. Components are identified to the runtime with either a `@ComponentId` or `@HttpEndpoint` annotation.
+
+=== Agents
+
+image:ROOT:agent.png[Agent,width=100,float=left]An _Agent_ interacts with an AI model to perform a specific task. It is typically backed by a large language model (LLM). It maintains contextual history in a session memory, which may be shared between multiple agents that are collaborating on the same goal. It may provide function tools and call them as requested by the model. For more information see xref:java:agents.adoc[Agents].
+
+=== Endpoints
+
+image:ROOT:endpoint.png[Endpoints,width=100,float=left] _Endpoints_ are defined points of interaction for services that allow external clients to communicate via HTTP or gRPC. They facilitate the integration and communication between the other types of internal Akka components. Unlike other Akka components, endpoints will live in your `api` package. For more information see xref:java:http-endpoints.adoc[HTTP Endpoints] and xref:java:grpc-endpoints.adoc[gRPC Endpoints].
+
+=== Workflows
+
+image:ROOT:workflow.png[Workflows,width=100,float=left] _Workflows_ enable the developer to implement long-running, multi-step business processes while focusing exclusively on domain and business logic. Technical concerns such as delivery guarantees, scaling, error handling and recovery are managed by Akka. For more information see xref:java:workflows.adoc[Workflows].
+
+=== Entities
+
+image:ROOT:entity.png[Entities,width=100,float=left] _Entities_ are the core components of Akka and provide persistence and state management. They map to your https://martinfowler.com/bliki/DDD_Aggregate.html[_domain aggregates_, window="new"]. If you have a "Customer" domain aggregate, you almost certainly will have a `CustomerEntity` component to expose and manipulate it. This separation of concerns allows the domain object to remain purely business logic focused while the Entity handles runtime mechanics. Additionally, you may have other domain objects that are leafs of the domain aggregate. These do not need their own entity if they are just a leaf of the aggregate. An address is a good example.
+
+There are two types of entities in Akka. Their difference lies in how they internally function and are persisted.
+
+==== Event Sourced Entities
+
+image:ROOT:event-sourced-entity.png[Event Sourced Entities,width=100,float=left] _Event Sourced Entities_ persist events instead of state in the event xref:reference:glossary.adoc#journal[journal]   . The current state of the entity is derived from these events. Readers can access the event journal independently of the active entity instance to create read models, known as xref:java:views.adoc[_Views_], or to perform business actions based on the events via xref:java:consuming-producing.adoc[Consumers]. For more information, see xref:java:event-sourced-entities.adoc[Event Sourced Entities].
+
+==== Key Value Entities
+
+image:ROOT:key-value-entity.png[Key Value Entities,width=100,float=left] _Key Value Entities_ are, as the name implies, an object that is stored and retrieved based on a key - an identifier of some sort. The value is the entire state of the object. Every write to a Key Value Entity persists the entire state of the object. Key Value Entities are similar in some ways to database records. They write and effectively lock the whole row. They still use an underlying event-based architecture so other components can subscribe to the stream of their updates. For more information see xref:java:key-value-entities.adoc[Key Value Entities].
+
+=== Views
+
+image:ROOT:view.png[Views,width=100,float=left] _Views_ provide a way to materialize read-only state from different parts of the system. A view can be defined from Key Value Entity state changes, Event Sourced Entity events, Workflow state transitions, messages from subscribed broker topics, or events received from another Akka service. For more information see xref:java:views.adoc[Views].
+
+// break the paragraph to avoid floating on the image above.
+++++
+<br style="clear:both">
+++++
+
+=== Timed actions
+
+image:ROOT:timer.png[Timed actions,width=100,float=left] _Timed Actions_ allow for scheduling calls in the future. For example, to verify that some process have been completed or not. For more information see xref:java:timed-actions.adoc[Timed actions].
+
+// break the paragraph to avoid floating on the image above.
+++++
+<br style="clear:both">
+++++
+
+=== Consumers
+
+image:ROOT:consumer.png[Consumers,width=100,float=left] _Consumers_ listen for and process events or messages from various sources, such as Event Sourced Entities, Key Value Entities and external messaging systems. They can also produce messages to topics, facilitating communication and data flow between different services within an application. For more information see xref:java:consuming-producing.adoc[Consuming and producing].
+
+== Composability
+
+The services you build with Akka components are composable, which can be combined to design agentic, transactional, analytics, edge, and digital twin systems. You can create services with one component or many. Let Akka unlock your distributed systems artistry!
+
+image:concepts:component-composition.png[Akka Agentic Platform]
+
+
 == Delegation with effects
 
 include::ROOT:partial$effect-behavior-and-execution.adoc[]
