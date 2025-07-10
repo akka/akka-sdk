@@ -25,7 +25,11 @@ public class HelloWorldAgent extends Agent {
     """.stripIndent();
 
   public Effect<String> greet(String userGreeting) {
-    return effects().systemMessage(SYSTEM_MESSAGE).userMessage(userGreeting).thenReply();
+    // prettier-ignore
+    return effects()
+      .systemMessage(SYSTEM_MESSAGE)
+      .userMessage(userGreeting)
+      .thenReply();
   }
 }
 // end::class[]

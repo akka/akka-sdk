@@ -10,7 +10,9 @@ import org.junit.jupiter.api.Test;
 // tag::test-di-provider[]
 public class MyIntegrationTest extends TestKitSupport {
 
-  private static final DependencyProvider mockDependencyProvider = new DependencyProvider() { // <1>
+  // prettier-ignore
+  private static final DependencyProvider mockDependencyProvider =
+    new DependencyProvider() { // <1>
     @SuppressWarnings("unchecked")
     @Override
     public <T> T getDependency(Class<T> clazz) {

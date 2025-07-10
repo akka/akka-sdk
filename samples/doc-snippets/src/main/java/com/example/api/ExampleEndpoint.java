@@ -33,7 +33,6 @@ import java.util.concurrent.CompletionStage;
 public class ExampleEndpoint extends AbstractHttpEndpoint { // <1>
 
   // end::header-access[]
-
   // end::basic-endpoint[]
   private final Materializer materializer;
 
@@ -43,7 +42,6 @@ public class ExampleEndpoint extends AbstractHttpEndpoint { // <1>
 
   // end::lower-level-request[]
   // tag::basic-endpoint[]
-
   @Get("/hello") // <3>
   public String hello() {
     return "Hello World"; // <4>
@@ -66,24 +64,19 @@ public class ExampleEndpoint extends AbstractHttpEndpoint { // <1>
   // tag::request-body[]
   public record GreetingRequest(String name, int age) {} // <1>
 
+  // prettier-ignore
   @Post("/hello")
   public String hello(GreetingRequest greetingRequest) { // <2>
-    return (
-      "Hello " + greetingRequest.name + "! " + "You are " + greetingRequest.age + " years old"
-    );
+    return "Hello " + greetingRequest.name + "! " + 
+           "You are " + greetingRequest.age + " years old";
+    
   }
 
+  // prettier-ignore
   @Post("/hello/{number}") // <3>
   public String hello(int number, GreetingRequest greetingRequest) { // <4>
-    return (
-      number +
-      " Hello " +
-      greetingRequest.name +
-      "! " +
-      "You are " +
-      greetingRequest.age +
-      " years old"
-    );
+    return number + " Hello " + greetingRequest.name + "! " +
+           "You are " + greetingRequest.age + " years old";
   }
 
   // end::request-body[]
@@ -101,9 +94,10 @@ public class ExampleEndpoint extends AbstractHttpEndpoint { // <1>
   // tag::error-exceptions[]
   @Get("/hello-code/{name}/{age}")
   public String helloWithValidation(String name, int age) {
-    if (age > 130) throw HttpException.badRequest(
-      "It is unlikely that you are " + age + " years old"
-    ); // <1>
+    // prettier-ignore
+    if (age > 130)
+      throw HttpException
+        .badRequest("It is unlikely that you are " + age + " years old"); // <1>
     else return " Hello " + name + "!"; // <2>
   }
 
@@ -114,9 +108,10 @@ public class ExampleEndpoint extends AbstractHttpEndpoint { // <1>
 
   @Get("/hello-low-level-response/{name}/{age}")
   public HttpResponse lowLevelResponseHello(String name, int age) { // <1>
-    if (age > 130) return HttpResponses.badRequest(
-      "It is unlikely that you are " + age + " years old"
-    ); // <2>
+    // prettier-ignore
+    if (age > 130)
+      return HttpResponses
+        .badRequest("It is unlikely that you are " + age + " years old"); // <2>
     else return HttpResponses.ok(new HelloResponse("Hello " + name + "!")); // <3>
   }
 
