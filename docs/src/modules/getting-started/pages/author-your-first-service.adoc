@@ -30,7 +30,7 @@ You can run this sample without an OpenAI API key, but it will be more fun if yo
 [#clone_sample]
 == Clone the sample project
 
-. From a command line, clone the link:https://github.com/akka-samples/helloworld-agent[Github Repository, window="new"] in a convenient location:
+. From a command line, clone the link:https://github.com/akka-samples/helloworld-agent[GitHub Repository, window="new"] in a convenient location:
 +
 [source, command line]
 ----

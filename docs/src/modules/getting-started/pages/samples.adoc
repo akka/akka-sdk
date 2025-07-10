@@ -39,7 +39,7 @@ This sample models an outdoor activities planner. It demonstrates how to build a
 **Concepts**: _Agent_, _Workflow_, _Multi-agent_, _LLM_
 **Level**: _Intermediate_
 xref:getting-started:planner-agent/index.adoc[Step-by-step guide]
-link:https://github.com/akka-samples/multi-agent[Github Repository, window="new"]
+link:https://github.com/akka-samples/multi-agent[GitHub Repository, window="new"]
 
 == Chat agent with RAG
 
@@ -49,7 +49,7 @@ This sample illustrates how to use a batching workflow to create embeddings for 
 **Concepts**: _Agent_, _RAG_, _Vector database_
 **Level**: _Intermediate_
 xref:getting-started:ask-akka-agent/index.adoc[Step-by-step guide]
-link:https://github.com/akka-samples/ask-akka-agent[Github Repository, window="new"]
+link:https://github.com/akka-samples/ask-akka-agent[GitHub Repository, window="new"]
 
 == Travel planning agent
 
@@ -58,7 +58,7 @@ This sample illustrates reliable interaction with an LLM using a workflow. Entit
 [%hardbreaks]
 **Concepts**: _Agent_, _Agent Memory_, _Workflow_, _Entity_
 **Level**: _Beginner_
-link:https://github.com/akka-samples/travel-agent[Github Repository, window="new"]
+link:https://github.com/akka-samples/travel-agent[GitHub Repository, window="new"]
 
 == Medical discharge summary tagging
 This sample illustrate the use of LLMs and prompts to summarize activities. It assigns tags to the medical discharge summaries, while also enabling human verification and comparative analysis. Interactions are from a workflow with an agent using the OpenAI API with configurable model choice.
@@ -66,7 +66,7 @@ This sample illustrate the use of LLMs and prompts to summarize activities. It a
 [%hardbreaks]
 **Concepts**: _Agent_, _Summarization_, _Workflow_, _Entity_, _OpenAI_, _Human in the loop_
 **Level**: _Intermediate_
-link:https://github.com/akka-samples/medical-tagging-agent[Github Repository, window="new"]
+link:https://github.com/akka-samples/medical-tagging-agent[GitHub Repository, window="new"]
 
 == IoT sensor monitoring
 This sample is a temperature monitoring system that collects, aggregates, and analyzes temperature data from IoT sensors. The system uses AI to generate insights about temperature trends and anomalies across different locations. Collects and aggregates temperature data using Key Value Entities. OpenAI is used for anomaly and trend detection.
@@ -74,7 +74,7 @@ This sample is a temperature monitoring system that collects, aggregates, and an
 [%hardbreaks]
 **Concepts**: _Agent_, _IoT_, _Trend analysis_, _Anomaly detection_, _Entity_, _OpenAI_
 **Level**: _Intermediate_
-link:https://github.com/akka-samples/temperature-monitoring-agent[Github Repository, window="new"]
+link:https://github.com/akka-samples/temperature-monitoring-agent[GitHub Repository, window="new"]
 
 == Release note summarizer
 This sample is designed to run every time there is a release from configured GitHub repositories. It interacts with Anthropic Claude from an agent and uses tools to retrieve detailed information from GitHub. Entities are used for storing release summaries. A timed action looks for new releases periodically and creates the summary using the LLM.
@@ -82,7 +82,7 @@ This sample is designed to run every time there is a release from configured Git
 [%hardbreaks]
 **Concepts**: _Agent_, _Entity_, _Timed Action_, _Anthropic Claude_, _Tools_, _Summarization_
 **Level**: _Intermediate_
-link:https://github.com/akka-samples/changelog-agent[Github Repository, window="new"]
+link:https://github.com/akka-samples/changelog-agent[GitHub Repository, window="new"]
 
 == Customer service chat workflow
 The real-estate customer service agent demonstrates how to combine Akka features with an LLM model. It illustrates an agentic workflow for customer service. It processes incoming real-estate inquiries, analyzes the content to extract details, provides follow-up when needed and saves the collected information for future reference.
@@ -90,14 +90,14 @@ The real-estate customer service agent demonstrates how to combine Akka features
 [%hardbreaks]
 **Concepts**: _Agent_, _Workflow_, _Analysis_, _Detail extraction_, _Human in the loop_, _Agent Memory_
 **Level**: _Intermediate_
-link:https://github.com/akka-samples/real-estate-cs-agent[Github Repository, window="new"]
+link:https://github.com/akka-samples/real-estate-cs-agent[GitHub Repository, window="new"]
 
 == Trip booking with tools
 This app represents a travel agency that searches for flights and accommodations. It's composed by an LLM (Anthropic) using Spring AI and AI tools to find flights, accommodations and sending mails.
 
 [%hardbreaks]
 **Concepts**: _Agent_, _Tools_, _Anthropic_, _Spring AI_, _Workflow_
-link:https://github.com/akka-samples/trip-agent[Github Repository, window="new"]
+link:https://github.com/akka-samples/trip-agent[GitHub Repository, window="new"]
 
 == Multi-source health sensor analysis
 This sample illustrates an AI agent that uses an LLM and multiple tools to analyze data from fitness trackers, medical records and other sensors. It integrates with Fitbit and MongoDB Atlas.
@@ -105,7 +105,7 @@ This sample illustrates an AI agent that uses an LLM and multiple tools to analy
 [%hardbreaks]
 **Concepts**: _Agent_, _Analysis_, _Integrations_, _Vector database_
 **Level**: _Intermediate_
-link:https://github.com/akka-samples/healthcare-agent[Github Repository, window="new"]
+link:https://github.com/akka-samples/healthcare-agent[GitHub Repository, window="new"]
 
 == Shopping cart
 This sample illustrates the basics of building a shopping cart with entities, views, and other core Akka components. There is also a step-by-step guide that gradually adds features to a core cart.
@@ -114,7 +114,7 @@ This sample illustrates the basics of building a shopping cart with entities, vi
 **Concepts**: _Entity_, _Events_, _HTTP Endpoint_
 **Level**: _Beginner_
 xref:getting-started:shopping-cart/build-and-deploy-shopping-cart.adoc[Step-by-step guide]
-link:https://github.com/akka-samples/shopping-cart-quickstart[Github Repository, window="new"]
+link:https://github.com/akka-samples/shopping-cart-quickstart[GitHub Repository, window="new"]
 
 == Customer data store
 This sample illustrates the use of entities and query capabilities with a view. It shows a simple set of traditional queries and the standard create, update, and delete mutations through events.
@@ -122,7 +122,7 @@ This sample illustrates the use of entities and query capabilities with a view. 
 [%hardbreaks]
 **Concepts**: _Entity_, _View_, _HTTP Endpoint_
 **Level**: Intermediate
-link:https://github.com/akka-samples/event-sourced-customer-registry[Github Repository, window="new"]
+link:https://github.com/akka-samples/event-sourced-customer-registry[GitHub Repository, window="new"]
 
 == Wallet transfer
 This example illustrates a funds transfer workflow between two wallets, where the workflow orchestrates the interaction with an external service to perform the transfer.
@@ -130,7 +130,7 @@ This example illustrates a funds transfer workflow between two wallets, where th
 [%hardbreaks]
 **Concepts**: _Transactions_, _Workflow_
 **Level**: _Intermediate_
-link:https://github.com/akka-samples/transfer-workflow-orchestration[Github Repository, window="new"]
+link:https://github.com/akka-samples/transfer-workflow-orchestration[GitHub Repository, window="new"]
 
 == Wallet transfer with failure compensation
 This example illustrates a funds transfer workflow between two wallets. It also illustrates how to set up workflow _compensation_ in order to self-heal work when one or more steps in the workflow fail.
@@ -138,7 +138,7 @@ This example illustrates a funds transfer workflow between two wallets. It also 
 [%hardbreaks]
 **Concepts**: _Transactions_, _Workflow_, _Entity_
 **Level**: _Intermediate_
-link:https://github.com/akka-samples/transfer-workflow-compensation[Github Repository, window="new"]
+link:https://github.com/akka-samples/transfer-workflow-compensation[GitHub Repository, window="new"]
 
 == Choreographed user signup flow
 This example is a user registration service where the user's new signup flow implemented as a choreography saga.
@@ -146,7 +146,7 @@ This example is a user registration service where the user's new signup flow imp
 [%hardbreaks]
 **Concepts**: _Choreography_, _Saga_, _Workflow_
 **Level**: _Advanced_
-link:https://github.com/akka-samples/choreography-saga-quickstart[Github Repository, window="new"]
+link:https://github.com/akka-samples/choreography-saga-quickstart[GitHub Repository, window="new"]
 
 == Akka Chess
 This example represents a complete, resilient, automatically scalable, event-sourced chess game. We will be adding a guided tour that will include adding an agent to act as a non-player "brain" that plays chess in real time against human players.
@@ -154,4 +154,4 @@ This example represents a complete, resilient, automatically scalable, event-sou
 [%hardbreaks]
 **Concepts**: _Embedded UI_, _Entity_, _Workflow_, _View_, _Timed Action_
 **Level**: _Advanced_
-link:https://github.com/akka-samples/akka-chess[Github Repository, window="new"]
+link:https://github.com/akka-samples/akka-chess[GitHub Repository, window="new"]
