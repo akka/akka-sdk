@@ -67,6 +67,7 @@ public class CounterEntity extends EventSourcedEntity<Integer, CounterEvent> {
       .persist(new ValueIncreased(value, currentState() + value))
       .thenReply(identity());
   }
+
   //end::increaseWithException[]
 
   public ReadOnlyEffect<Integer> get() {

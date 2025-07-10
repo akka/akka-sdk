@@ -62,7 +62,8 @@ public class CounterEndpoint {
   @Post("/{counterId}/increase-with-error-handling/{value}")
   public HttpResponse increaseWithErrorHandling(String counterId, Integer value) {
     try {
-      var result = componentClient.forEventSourcedEntity(counterId)
+      var result = componentClient
+        .forEventSourcedEntity(counterId)
         .method(CounterEntity::increaseWithError)
         .invoke(value);
       return ok(result);
@@ -70,13 +71,15 @@ public class CounterEndpoint {
       return badRequest("rejected: " + value);
     }
   }
+
   //end::increaseWithErrorHandling[]
 
   //tag::increaseWithException[]
   @Post("/{counterId}/increase-with-exception/{value}")
   public HttpResponse increaseWithException(String counterId, Integer value) {
     try {
-      var result = componentClient.forEventSourcedEntity(counterId)
+      var result = componentClient
+        .forEventSourcedEntity(counterId)
         .method(CounterEntity::increaseWithException)
         .invoke(value);
       return ok(result);
@@ -84,6 +87,7 @@ public class CounterEndpoint {
       return badRequest("rejected: " + value);
     }
   }
+
   //end::increaseWithException[]
 
   @Post("/{counterId}/multiply/{value}")

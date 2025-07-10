@@ -245,7 +245,7 @@ class JsonSerializationSpec extends AnyWordSpec with Matchers {
       val caught = intercept[IllegalStateException] {
         serializer.exceptionFromBytes(bytesPayload)
       }
-      caught.getMessage shouldBe "Loaded exception class [akka.javasdk.impl.serialization.JsonSerializationSpec$NotUserException] is not a subclass of UserException, cannot deserialize it as a UserException."
+      caught.getMessage shouldBe "Loaded class [akka.javasdk.impl.serialization.JsonSerializationSpec$NotUserException] is not a subclass of UserException, cannot deserialize it as a UserException."
     }
 
     "not deserialize exception that unknown" in {
