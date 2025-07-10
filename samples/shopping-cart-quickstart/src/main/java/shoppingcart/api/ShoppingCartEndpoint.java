@@ -22,7 +22,7 @@ import shoppingcart.domain.ShoppingCart;
 // tag::class[]
 
 // Opened up for access from the public internet to make the sample service easy to try out.
-// For actual services meant for production this must be carefully considered, 
+// For actual services meant for production this must be carefully considered,
 // and often set more limited
 // tag::endpoint-component-interaction[]
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
