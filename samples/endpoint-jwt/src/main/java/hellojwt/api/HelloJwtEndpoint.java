@@ -21,12 +21,14 @@ import akka.javasdk.http.AbstractHttpEndpoint;
 @JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN, bearerTokenIssuers = "my-issuer") // <1>
 // tag::accessing-claims[]
 public class HelloJwtEndpoint extends AbstractHttpEndpoint {
+
   // end::bearer-token[]
   // end::accessing-claims[]
   @Get("/")
   public String hello() {
     return "Hello, World!";
   }
+
   // tag::accessing-claims[]
   // tag::multiple-bearer-token-issuers[]
   @JWT(
