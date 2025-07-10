@@ -121,9 +121,9 @@ curl -i -XPOST --location "http://localhost:9000/hello" \
 Which will reply with an AI-generated greeting, such as:
 [source]
 ----
-Hello (English)! So great to meet you, Alice! I'm here to add some zest to our conversation with
-greetings from around the world. Let's have some fun learning them together! Feel free to ask about
-anything else too!
+Hello (English)! So great to meet you, Alice! I'm here to add some zest to our conversation 
+with greetings from around the world. Let's have some fun learning them together! 
+Feel free to ask about anything else too!
 
 Previous greetings:
 - Hello (English)
@@ -141,9 +141,9 @@ curl -i -XPOST --location "http://localhost:9000/hello" \
 The AI-generated reply might be:
 [source]
 ----
-Bonjour (French)! Ah, New York, the city that never sleeps! It's almost like you need a coffee the
-size of the Eiffel Tower to keep up with it. What's your favorite thing about living in such a vibrant
-city?
+Bonjour (French)! Ah, New York, the city that never sleeps! It's almost like you need a
+coffee the size of the Eiffel Tower to keep up with it. 
+What's your favorite thing about living in such a vibrant city?
 
 Previous greetings:
 - Hello (English)
@@ -159,9 +159,9 @@ curl -i -XPOST --location "http://localhost:9000/hello" \
 
 [source]
 ----
-¡Hola (Spanish)! The botanical garden in New York must be a refreshing oasis amidst the hustle and
-bustle of the city. It's like taking a nature-themed vacation with just a subway ride! Do you have
-a favorite plant or flower that you like to see there?
+¡Hola (Spanish)! The botanical garden in New York must be a refreshing oasis amidst the
+hustle and bustle of the city. It's like taking a nature-themed vacation with just
+subway ride! Do you have a favorite plant or flower that you like to see there?
 
 Previous greetings:
 - Hello (English)
