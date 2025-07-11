@@ -4,10 +4,6 @@
 
 package akkajavasdk;
 
-import static akkajavasdk.components.workflowentities.TransferConsumer.TRANSFER_CONSUMER_STORE;
-import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.assertj.core.api.Assertions.assertThat;
-
 import akka.javasdk.testkit.TestKitSupport;
 import akkajavasdk.components.actions.echo.Message;
 import akkajavasdk.components.views.TransferView;
@@ -26,14 +22,18 @@ import akkajavasdk.components.workflowentities.WorkflowWithTimeout;
 import akkajavasdk.components.workflowentities.WorkflowWithTimer;
 import akkajavasdk.components.workflowentities.WorkflowWithoutInitialState;
 import akkajavasdk.components.workflowentities.hierarchy.TextWorkflow;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+
+import static akkajavasdk.components.workflowentities.TransferConsumer.TRANSFER_CONSUMER_STORE;
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(Junit5LogCapturing.class)
 public class WorkflowTest extends TestKitSupport {
@@ -523,18 +523,21 @@ public class WorkflowTest extends TestKitSupport {
       });
   }
 
-  // FIXME: type hierarchy is not working with new StepEffect API
-  @Test @Disabled
+  @Test
   public void shouldAllowHierarchyWorkflow() {
     var workflowId = randomId();
     componentClient.forWorkflow(workflowId)
       .method(TextWorkflow::setText).invoke("some text");
 
+    Awaitility.await()
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
+      .untilAsserted(() -> {
 
-    var result = componentClient.forWorkflow(workflowId)
-      .method(TextWorkflow::getText).invoke();
-
-    assertThat(result).isEqualTo(Optional.of("some text"));
+        var result = componentClient.forWorkflow(workflowId)
+          .method(TextWorkflow::getText).invoke();
+        assertThat(result).isEqualTo(Optional.of("some text"));
+      });
   }
 
   @Test
