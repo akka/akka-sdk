@@ -596,7 +596,7 @@ public abstract class Workflow<S> {
     /**
      * Define a default step recovery strategy. Can be overridden with step configuration.
      */
-    public WorkflowDef<S> defaultStepRecoverStrategy(RecoverStrategy recoverStrategy) {
+    public WorkflowDef<S> defaultStepRecoverStrategy(RecoverStrategy<?> recoverStrategy) {
       this.stepRecoverStrategy = Optional.of(recoverStrategy);
       return this;
     }
@@ -706,12 +706,6 @@ public abstract class Workflow<S> {
       Optional<Duration> defaultStepTimeout,
       Optional<RecoverStrategy<?>> stepRecoverStrategy)
       implements Settings {
-
-        private static List<StepConfig> buildStepConfigs(List<StepMethod> stepMethods) {
-          return stepMethods.stream()
-              .map(sm -> new StepConfig(sm.methodName, Optional.empty(), Optional.empty()))
-              .toList();
-        }
 
     public SettingsImpl(
         Optional<Duration> workflowTimeout,
@@ -974,16 +968,7 @@ public abstract class Workflow<S> {
     }
   }
 
-  public static class StepConfig {
-    public final String stepName;
-    public final Optional<Duration> timeout;
-    public final Optional<RecoverStrategy<?>> recoverStrategy;
-
-    public StepConfig(String stepName, Optional<Duration> timeout, Optional<RecoverStrategy<?>> recoverStrategy) {
-      this.stepName = stepName;
-      this.timeout = timeout;
-      this.recoverStrategy = recoverStrategy;
-    }
+  public record StepConfig(String stepName, Optional<Duration> timeout, Optional<RecoverStrategy<?>> recoverStrategy) {
   }
 
   /**
@@ -996,17 +981,7 @@ public abstract class Workflow<S> {
     return RecoverStrategy.maxRetries(maxRetries);
   }
 
-  public static class RecoverStrategy<T> {
-
-    public final int maxRetries;
-    public final String failoverStepName;
-    public final Optional<T> failoverStepInput;
-
-    public RecoverStrategy(int maxRetries, String failoverStepName, Optional<T> failoverStepInput) {
-      this.maxRetries = maxRetries;
-      this.failoverStepName = failoverStepName;
-      this.failoverStepInput = failoverStepInput;
-    }
+  public record RecoverStrategy<T>(int maxRetries, String failoverStepName, Optional<T> failoverStepInput) {
 
     public record FailoverInput<I>(int maxRetries, String stepName) {
       public RecoverStrategy<I> withInput(I input) {
@@ -1017,15 +992,10 @@ public abstract class Workflow<S> {
     /**
      * Retry strategy without failover configuration
      */
-    public static class MaxRetries {
-      public final int maxRetries;
-
-      public MaxRetries(int maxRetries) {
-        this.maxRetries = maxRetries;
-      }
+    public record MaxRetries(int maxRetries) {
 
       /**
-       * Once max retries is exceeded, transition to a given step name.
+       * Once max retries are exceeded, transition to a given step name.
        */
       public RecoverStrategy<?> failoverTo(String stepName) {
         return new RecoverStrategy<>(maxRetries, stepName, Optional.<Void>empty());
@@ -1037,7 +1007,7 @@ public abstract class Workflow<S> {
       }
 
       /**
-       * Once max retries is exceeded, transition to a given step name with the input parameter.
+       * Once max retries are exceeded, transition to a given step name with the input parameter.
        */
       public <T> RecoverStrategy<T> failoverTo(String stepName, T input) {
         return new RecoverStrategy<>(maxRetries, stepName, Optional.of(input));
@@ -1046,10 +1016,6 @@ public abstract class Workflow<S> {
       public <W, I> FailoverInput<I> failoverTo(akka.japi.function.Function2<W, I, StepEffect> lambda) {
         var method = MethodRefResolver.resolveMethodRef(lambda);
         return new FailoverInput<>(maxRetries, method.getName());
-      }
-
-      public int getMaxRetries() {
-        return maxRetries;
       }
     }
 
