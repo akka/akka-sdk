@@ -11,6 +11,7 @@ import akka.javasdk.workflow.Workflow;
 
 import static java.time.Duration.ofSeconds;
 
+// TODO: refactor new StepEffect API
 @ComponentId("workflow-with-default-recover-strategy")
 public class WorkflowWithDefaultRecoverStrategy extends Workflow<FailingCounterState> {
 

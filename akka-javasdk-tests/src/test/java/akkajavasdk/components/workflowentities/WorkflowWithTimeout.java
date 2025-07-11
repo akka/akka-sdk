@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 import static java.time.Duration.ofMillis;
 import static java.time.Duration.ofSeconds;
 
+// TODO: refactor new StepEffect API
 @ComponentId("workflow-with-timeout")
 public class WorkflowWithTimeout extends Workflow<FailingCounterState> {
 
