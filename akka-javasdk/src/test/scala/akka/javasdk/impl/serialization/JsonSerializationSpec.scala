@@ -248,7 +248,7 @@ class JsonSerializationSpec extends AnyWordSpec with Matchers {
       caught.getMessage shouldBe "Loaded class [akka.javasdk.impl.serialization.JsonSerializationSpec$NotUserException] is not a subclass of UserException, cannot deserialize it as a UserException."
     }
 
-    "not deserialize exception that unknown" in {
+    "not deserialize unknown exception" in {
       val bytesPayload = new BytesPayload(
         ByteString("rawPayload"),
         "json.akka.io/akka.javasdk.impl.serialization.JsonSerializationSpec$UnknownException")
