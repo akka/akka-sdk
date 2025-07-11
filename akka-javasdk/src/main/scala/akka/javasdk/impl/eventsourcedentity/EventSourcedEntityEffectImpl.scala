@@ -15,6 +15,7 @@ import java.util.function.{ Function => JFunction }
 
 import scala.jdk.CollectionConverters._
 
+import akka.javasdk.UserException
 import akka.javasdk.eventsourcedentity.EventSourcedEntity.Effect
 import akka.javasdk.eventsourcedentity.EventSourcedEntity.Effect.Builder
 import akka.javasdk.eventsourcedentity.EventSourcedEntity.Effect.OnSuccessBuilder
@@ -91,8 +92,12 @@ private[javasdk] class EventSourcedEntityEffectImpl[S, E]
     this.asInstanceOf[EventSourcedEntityEffectImpl[T, E]]
   }
 
-  override def error[T](description: String): EventSourcedEntityEffectImpl[T, E] = {
-    _secondaryEffect = ErrorReplyImpl(description)
+  override def error[T](message: String): EventSourcedEntityEffectImpl[T, E] = {
+    error(new UserException(message))
+  }
+
+  override def error[T](userException: UserException): EventSourcedEntityEffectImpl[T, E] = {
+    _secondaryEffect = ErrorReplyImpl(userException)
     this.asInstanceOf[EventSourcedEntityEffectImpl[T, E]]
   }
 

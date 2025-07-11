@@ -36,7 +36,7 @@ private[akka] final class KeyValueEntityResultImpl[R](effect: KeyValueEntityEffe
   override def isError(): Boolean = effect.secondaryEffect.isInstanceOf[ErrorReplyImpl]
 
   override def getError(): String = effect.secondaryEffect match {
-    case error: ErrorReplyImpl => error.description
+    case error: ErrorReplyImpl => error.userException.getMessage
     case _ => throw new IllegalStateException(s"The effect was not an error but [$secondaryEffectName]")
   }
 

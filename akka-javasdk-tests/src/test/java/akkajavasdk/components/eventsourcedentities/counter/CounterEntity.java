@@ -5,10 +5,11 @@
 package akkajavasdk.components.eventsourcedentities.counter;
 
 import akka.Done;
-import akka.javasdk.annotations.Acl;
+import akka.javasdk.UserException;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akkajavasdk.Result;
+import akkajavasdk.components.MyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,14 +21,15 @@ import static java.util.function.Function.identity;
 @ComponentId("counter-entity")
 public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
 
-  public enum Error{
+  public enum Error {
     TOO_HIGH, TOO_LOW
   }
 
   private Integer errorCounter = 0;
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
-  public record DoIncrease(int amount) {}
+  public record DoIncrease(int amount) {
+  }
 
   @Override
   public Counter emptyState() {
@@ -55,11 +57,11 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
   }
 
   public Effect<Result<Error, Counter>> increaseWithResult(Integer value) {
-    if (value <= 0){
+    if (value <= 0) {
       return effects().reply(new Result.Error<>(CounterEntity.Error.TOO_LOW));
     } else if (value > 10000) {
       return effects().reply(new Result.Error<>(CounterEntity.Error.TOO_HIGH));
-    }else {
+    } else {
       return effects()
         .persist(new CounterEvent.ValueIncreased(value))
         .thenReply(Result.Success::new);
@@ -67,11 +69,11 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
   }
 
   public Effect<Counter> increaseWithError(Integer value) {
-    if (value <= 0){
+    if (value <= 0) {
       return effects().error("Value must be greater than 0");
     } else if (value > 10000) {
       return effects().error("Value must be less than 10000");
-    }else {
+    } else {
       return effects()
         .persist(new CounterEvent.ValueIncreased(value))
         .thenReply(identity());
@@ -88,7 +90,7 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
   }
 
   public Effect<Integer> handle(CounterCommand counterCommand) {
-    return switch (counterCommand){
+    return switch (counterCommand) {
       case CounterCommand.Increase(var value) ->
         effects().persist(new CounterEvent.ValueIncreased(value)).thenReply(Counter::value);
 
@@ -142,6 +144,22 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
 
   public Effect<Done> delete() {
     return effects().persist(new CounterEvent.ValueSet(0)).deleteEntity().thenReply(__ -> done());
+  }
+
+  public Effect<String> run(String errorType) {
+    if ("errorMessage".equals(errorType)) {
+      return effects().error(errorType);
+    } else if ("errorUserException".equals(errorType)) {
+      return effects().error(new UserException(errorType));
+    } else if ("errorMyException".equals(errorType)) {
+      return effects().error(new MyException(errorType, new MyException.SomeData("some data")));
+    } else if ("throwMyException".equals(errorType)) {
+      throw new MyException(errorType, new MyException.SomeData("some data"));
+    } else if ("throwRuntimeException".equals(errorType)) {
+      throw new RuntimeException(errorType);
+    } else {
+      return effects().reply("No error triggered for: " + errorType);
+    }
   }
 
   @Override
