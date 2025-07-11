@@ -15,7 +15,7 @@ The following are a few definitions that might not be familiar to you. Not all m
 A value from 0.0 to 1.0 that indicates the amount of randomness in the model output. Often described as controlling how "creative" a model can get. The lower the value, the more precise and strict you want the model to behave. The higher the value, the more you expect it to improvise and the less deterministic it will be.
 
 === top-p
-This property refers to the "Nucleus sampling parameter". Controls text generation by only considering the most likely tokens whose cumulative probability
+This property refers to the "Nucleus sampling parameter." Controls text generation by only considering the most likely tokens whose cumulative probability
 exceeds the threshold value. It helps balance between diversity and
 quality of outputs—lower values (like 0.3) produce more focused,
 predictable text while higher values (like 0.9) allow more creativity
@@ -54,7 +54,7 @@ The following is a list of all natively supported model configurations. Remember
 
 | base-url
 | Url
-| Optional override to the base URL for the API
+| Optional override to the base URL of the API
 
 | temperature
 | Float
@@ -70,7 +70,7 @@ The following is a list of all natively supported model configurations. Remember
 
 | max-tokens
 | Integer
-| Max token quota. Leave as -1 for model default
+| Max token quota. Leave as –1 for model default
 
 |===
 
@@ -97,7 +97,7 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.Anthropic.html[`Model
 
 | base-url
 | Url
-| Optional override to the base URL for the API
+| Optional override to the base URL of the API
 
 | temperature
 | Float
@@ -109,7 +109,7 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.Anthropic.html[`Model
 
 | max-output-tokens
 | Integer
-| Max token _output_ quota. Leave as -1 for model default
+| Max token _output_ quota. Leave as –1 for model default
 
 |===
 
@@ -135,7 +135,7 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.GoogleAIGemini.html[`
 
 | base-url
 | Url
-| Optional override to the base URL for the API
+| Optional override to the base URL of the API
 
 | temperature
 | Float
@@ -147,7 +147,7 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.GoogleAIGemini.html[`
 
 | max-new-tokens
 | Integer
-| Max number of tokens to generate (-1 for model default)
+| Max number of tokens to generate (–1 for model default)
 
 |===
 
@@ -169,7 +169,7 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.HuggingFace.html[`Mod
 
 | base-url
 | Url
-| Optional override to the base URL for the API (default `http://localhost:8080/v1`)
+| Optional override to the base URL of the API (default `http://localhost:8080/v1`)
 
 | temperature
 | Float
@@ -181,7 +181,7 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.HuggingFace.html[`Mod
 
 | max-tokens
 | Integer
-| Max number of tokens to generate (-1 for model default)
+| Max number of tokens to generate (–1 for model default)
 
 |===
 
@@ -203,7 +203,7 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.LocalAI.html[`ModelPr
 
 | base-url
 | Url
-| Optional override to the base URL for the API (default `http://localhost:11434`)
+| Optional override to the base URL of the API (default `http://localhost:11434`)
 
 | temperature
 | Float
@@ -237,7 +237,7 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.Ollama.html[`ModelPro
 
 | base-url
 | Url
-| Optional override to the base URL for the API
+| Optional override to the base URL of the API
 
 | temperature
 | Float
@@ -249,7 +249,7 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.Ollama.html[`ModelPro
 
 | max-tokens
 | Integer
-| Max token quota. Leave as -1 for model default
+| Max token quota. Leave as –1 for model default
 
 |===
 
