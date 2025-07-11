@@ -299,7 +299,7 @@ final class JsonSerializer(val objectMapper: ObjectMapper) {
   private def jsonProcessingException[T](valueClass: Class[T], contentType: String, e: JsonProcessingException) =
     new IllegalArgumentException(
       s"JSON with contentType [$contentType] could not be decoded into a " +
-      s"[${valueClass.getName}]: ${e.getMessage}. When  changing the schema, make sure that changes are backwards compatible or apply a @Migration " +
+      s"[${valueClass.getName}]: ${e.getMessage}. When changing the schema, make sure that changes are backwards compatible or apply a @Migration " +
       "mechanism (https://doc.akka.io/java/serialization.html#_schema_evolution).",
       e)
 
