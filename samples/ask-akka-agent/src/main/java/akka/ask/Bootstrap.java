@@ -14,18 +14,20 @@ import com.typesafe.config.Config;
 @Setup
 public class Bootstrap implements ServiceSetup {
 
+  private Config config;
   // end::knowledge[]
 
   public Bootstrap(Config config) {
+    this.config = config;
+    // end::mongodb[]
     KeyUtils.checkKeys(config);
+    // tag::mongodb[]
   }
-
   // tag::knowledge[]
 
   @Override
   public DependencyProvider createDependencyProvider() {
-    MongoClient mongoClient = MongoClients.create(KeyUtils.readMongoDbUri());
-
+    MongoClient mongoClient = MongoClients.create(config.getString("mongodb.uri"));
     // end::mongodb[]
     Knowledge knowledge = new Knowledge(mongoClient);
     // tag::mongodb[]
@@ -36,7 +38,6 @@ public class Bootstrap implements ServiceSetup {
         if (cls.equals(MongoClient.class)) {
           return (T) mongoClient;
         }
-
         // end::mongodb[]
         if (cls.equals(Knowledge.class)) {
           return (T) knowledge;

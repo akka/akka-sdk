@@ -120,6 +120,8 @@ For now, we suggest that you play around with indexing and the kind of results y
 
 Use the connection URL provided to you by MongoDB Atlas and set the `MONGODB_ATLAS_URI` environment variable to that connection string.
 
+NOTE: As an alternative, you can run MongoDB locally using Docker with `docker compose up -d`. See example {sample-base-url}/ask-akka-agent/docker-compose.yml[docker-compose.yml].
+
 Start your service locally:
 
 [source,command line]
