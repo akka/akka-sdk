@@ -67,6 +67,8 @@ examples: prepare
 	mkdir -p "${java_managed_examples}"
 	rsync -a --exclude-from=docs/.examplesignore samples/* "${java_managed_examples}/"
 	rsync -a akka-javasdk/src/main/resources "${java_managed_examples}/"
+	# Remove prettier-ignore comments from copied examples
+	docs/bin/remove-prettier-ignore.sh "${java_managed_examples}"
 
 bundles:
 	./docs/bin/bundle.sh --zip "${java_managed_attachments}/shopping-cart-quickstart.zip" samples/shopping-cart-quickstart

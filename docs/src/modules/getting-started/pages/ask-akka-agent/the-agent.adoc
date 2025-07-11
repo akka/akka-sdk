@@ -28,7 +28,7 @@ You already learned how to create an empty Akka project when you went through th
 
 [NOTE]
 ====
-This guide is written assuming you will follow it as a tutorial to walk through all of the components, building them on your own. If at any time you want to compare your solution with the official sample, check out the link:https://github.com/akka-samples/ask-akka-agent[Github Repository, window="new"].
+This guide is written assuming you will follow it as a tutorial to walk through all of the components, building them on your own. If at any time you want to compare your solution with the official sample, check out the link:https://github.com/akka-samples/ask-akka-agent[GitHub Repository, window="new"].
 ====
 
 == Add the Agent
@@ -94,14 +94,16 @@ In another shell, you can now use `curl` to send requests to this Endpoint.
 [source, command line]
 ----
 curl localhost:9000/api/ask --header "Content-Type: application/json" -XPOST \
---data '{ "userId": "001", "sessionId": "foo", "question":"What are the core components of Akka?"}'
+--data '{ "userId": "001", "sessionId": "foo", \
+          "question":"What are the core components of Akka?"}'
 ----
 
 The AI response will look something like this...
 
 [source]
 ----
-Akka is a toolkit for building highly concurrent, distributed, and resilient message-driven applications...
+Akka is a toolkit for building highly concurrent, distributed, 
+and resilient message-driven applications...
 1. Actor System ...
 2. Actors ...
 ...

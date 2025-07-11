@@ -17,7 +17,7 @@ include::ROOT:partial$cloud-dev-prerequisites.adoc[]
 
 == Clone the sample
 
-. Clone the full source code of the Shopping Cart (with View) sample from link:https://github.com/akka-samples/shopping-cart-with-view[Github].
+. Clone the full source code of the Shopping Cart (with View) sample from link:https://github.com/akka-samples/shopping-cart-with-view[GitHub].
 
 == Re-evaluating the shopping cart structure
 

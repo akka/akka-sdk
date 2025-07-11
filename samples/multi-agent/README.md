@@ -75,7 +75,7 @@ Note that the agents selected depend on the user's query and the available agent
 ### Build and run
 
 To run the application, you need to provide the following environment variables:
-- `OPENAI_API_KEY`: Your OpenAI API key
+- `OPENAI_API_KEY`: Your OpenAI API key. If you prefer to use a different LLM model, follow the instructions in `application.conf` to change it.
 - `WEATHER_API_KEY`: (Optional) API key for the weather service
 
 Set the environment variables:
