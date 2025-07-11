@@ -23,11 +23,11 @@ public class WorkflowWithDefaultRecoverStrategy extends Workflow<FailingCounterS
 
 
   @Override
-  public Settings settings() {
-    return Settings.builder()
-      .timeout(ofSeconds(30))
+  public WorkflowConfig configuration() {
+    return WorkflowConfig.builder()
+      .workflowTimeout(ofSeconds(30))
       .defaultStepTimeout(ofSeconds(10))
-      .defaultStepRecoverStrategy(
+      .defaultStepRecovery(
         maxRetries(1)
           .failoverTo(WorkflowWithDefaultRecoverStrategy::counterStepFailover)
       )

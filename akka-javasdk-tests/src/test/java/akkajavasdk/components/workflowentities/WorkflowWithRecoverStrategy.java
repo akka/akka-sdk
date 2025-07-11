@@ -4,21 +4,17 @@
 
 package akkajavasdk.components.workflowentities;
 
-import akkajavasdk.components.actions.echo.Message;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
+import akkajavasdk.components.actions.echo.Message;
 
 import static java.time.Duration.ofSeconds;
 
-// TODO: refactor new StepEffect API
 @ComponentId("workflow-with-recover-strategy")
 public class WorkflowWithRecoverStrategy extends Workflow<FailingCounterState> {
 
-  private final String counterStepName = "counter";
-  private final String counterFailoverStepName = "counter-failover";
-
-  private ComponentClient componentClient;
+  private final ComponentClient componentClient;
 
   public WorkflowWithRecoverStrategy(ComponentClient componentClient) {
     this.componentClient = componentClient;
@@ -26,42 +22,39 @@ public class WorkflowWithRecoverStrategy extends Workflow<FailingCounterState> {
 
 
   @Override
-  public WorkflowDef<FailingCounterState> definition() {
-    var counterInc =
-        step(counterStepName)
-            .call(() -> {
-              var nextValue = currentState().value() + 1;
-              return componentClient
-                  .forEventSourcedEntity(currentState().counterId())
-                  .method(FailingCounterEntity::increase)
-                  .invoke(nextValue);
-            })
-            .andThen(Integer.class, __ -> effects()
-                .updateState(currentState().asFinished())
-                .end());
-
-    var counterIncFailover =
-        step(counterFailoverStepName)
-            .call(() -> "nothing")
-            .andThen(String.class, __ ->
-                effects()
-                    .updateState(currentState().inc())
-                    .transitionTo(counterStepName)
-            );
-
-
-    return workflow()
-        .timeout(ofSeconds(30))
-        .defaultStepTimeout(ofSeconds(10))
-        .addStep(counterInc, maxRetries(1).failoverTo(counterFailoverStepName))
-        .addStep(counterIncFailover);
+  public WorkflowConfig configuration() {
+    return WorkflowConfig.builder()
+      .workflowTimeout(ofSeconds(30))
+      .defaultStepTimeout(ofSeconds(10))
+      .stepConfig(
+        WorkflowWithRecoverStrategy::counterStep,
+        maxRetries(1).failoverTo(WorkflowWithRecoverStrategy::counterStepFailover))
+      .build();
   }
 
   public Effect<Message> startFailingCounter(String counterId) {
     return effects()
         .updateState(new FailingCounterState(counterId, 0, false))
-        .transitionTo(counterStepName)
+        .transitionTo(WorkflowWithRecoverStrategy::counterStep)
         .thenReply(new Message("workflow started"));
+  }
+
+  private StepEffect counterStep() {
+    var nextValue = currentState().value() + 1;
+     componentClient
+      .forEventSourcedEntity(currentState().counterId())
+      .method(FailingCounterEntity::increase)
+      .invoke(nextValue);
+
+     return stepEffects()
+      .updateState(currentState().asFinished())
+      .thenEnd();
+  }
+
+  private StepEffect counterStepFailover() {
+    return stepEffects()
+      .updateState(currentState().inc())
+      .thenTransitionTo(WorkflowWithRecoverStrategy::counterStep);
   }
 
   public Effect<FailingCounterState> get(){
