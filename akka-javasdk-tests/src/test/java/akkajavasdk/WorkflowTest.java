@@ -380,7 +380,7 @@ public class WorkflowTest extends TestKitSupport {
   }
 
 
-  @Test 
+  @Test
   public void shouldRecoverWorkflowTimeout() {
     //given
     var counterId = randomId();
