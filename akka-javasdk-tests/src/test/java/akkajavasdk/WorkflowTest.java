@@ -526,8 +526,10 @@ public class WorkflowTest extends TestKitSupport {
   @Test
   public void shouldAllowHierarchyWorkflow() {
     var workflowId = randomId();
+
+
     componentClient.forWorkflow(workflowId)
-      .method(TextWorkflow::setText).invoke("some text");
+      .method(TextWorkflow::setText).invoke("text");
 
     Awaitility.await()
       .ignoreExceptions()
@@ -536,7 +538,7 @@ public class WorkflowTest extends TestKitSupport {
 
         var result = componentClient.forWorkflow(workflowId)
           .method(TextWorkflow::getText).invoke();
-        assertThat(result).isEqualTo(Optional.of("some text"));
+        assertThat(result).isEqualTo(Optional.of("text[concrete][abstract][interface]"));
       });
   }
 
