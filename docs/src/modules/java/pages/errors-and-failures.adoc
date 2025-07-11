@@ -57,7 +57,7 @@ Using the `effects().error(userException)` method or simply throwing a `UserExce
 ----
 include::example$event-sourced-counter-brokers/src/main/java/counter/application/CounterEntity.java[tag=increaseWithException]
 ----
-<1> Define a custom exception that extends `UserException`.
+<1> Define a custom exception that extends `UserException`. Inner classes must be static to be serializable.
 <2> Throw the `CounterLimitExceededException`.
 
 This way the client can match them by the type instead of the message.

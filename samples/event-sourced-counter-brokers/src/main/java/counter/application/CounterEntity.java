@@ -46,13 +46,17 @@ public class CounterEntity extends EventSourcedEntity<Integer, CounterEvent> {
   //end::increaseWithError[]
 
   //tag::increaseWithException[]
-  public class CounterLimitExceededException extends UserException { // <1>
+  public static class CounterLimitExceededException extends UserException { // <1>
 
     private final Integer value;
 
     public CounterLimitExceededException(Integer value) {
       super("Increasing the counter above 10000 is blocked");
       this.value = value;
+    }
+
+    public Integer getValue() {
+      return value;
     }
   }
 

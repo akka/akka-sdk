@@ -84,7 +84,7 @@ public class CounterEndpoint {
         .invoke(value);
       return ok(result);
     } catch (CounterLimitExceededException e) { // <1>
-      return badRequest("rejected: " + value);
+      return badRequest("rejected: " + e.getValue());
     }
   }
 
