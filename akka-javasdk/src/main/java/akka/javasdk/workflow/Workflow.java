@@ -6,9 +6,11 @@ package akka.javasdk.workflow;
 
 import akka.annotation.InternalApi;
 import akka.javasdk.Metadata;
+import akka.javasdk.impl.client.MethodRefResolver;
 import akka.javasdk.impl.workflow.WorkflowEffects;
 import akka.javasdk.timer.TimerScheduler;
 import akka.javasdk.workflow.Workflow.RecoverStrategy.MaxRetries;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.Duration;
@@ -637,13 +639,7 @@ public abstract class Workflow<S> {
 
 
     static SettingsBuilder builder() {
-      return new SettingsBuilder(
-        Optional.empty(),
-        Optional.empty(),
-        Optional.empty(),
-        Optional.empty(),
-        Optional.empty(),
-        Optional.empty());
+      return SettingsBuilder.newBuilder();
     }
 
     Optional<Duration> workflowTimeout();
@@ -744,6 +740,10 @@ public abstract class Workflow<S> {
       Optional<Duration> defaultStepTimeout,
       Optional<RecoverStrategy<?>> stepRecoverStrategy) {
 
+    public static SettingsBuilder newBuilder() {
+      return new SettingsBuilder(Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+        Optional.empty());
+    }
 
     public SettingsBuilder timeout(Duration duration) {
       return new SettingsBuilder(
@@ -1008,6 +1008,12 @@ public abstract class Workflow<S> {
       this.failoverStepInput = failoverStepInput;
     }
 
+    public record FailoverInput<I>(int maxRetries, String stepName) {
+      public RecoverStrategy<I> withInput(I input) {
+        return new RecoverStrategy<>(maxRetries, stepName, Optional.of(input));
+      }
+    }
+
     /**
      * Retry strategy without failover configuration
      */
@@ -1025,11 +1031,21 @@ public abstract class Workflow<S> {
         return new RecoverStrategy<>(maxRetries, stepName, Optional.<Void>empty());
       }
 
+      public <W> RecoverStrategy<Void> failoverTo(akka.japi.function.Function<W, StepEffect> lambda) {
+        var method = MethodRefResolver.resolveMethodRef(lambda);
+        return new RecoverStrategy<>(maxRetries, method.getName(), Optional.<Void>empty());
+      }
+
       /**
        * Once max retries is exceeded, transition to a given step name with the input parameter.
        */
       public <T> RecoverStrategy<T> failoverTo(String stepName, T input) {
         return new RecoverStrategy<>(maxRetries, stepName, Optional.of(input));
+      }
+
+      public <W, I> FailoverInput<I> failoverTo(akka.japi.function.Function2<W, I, StepEffect> lambda) {
+        var method = MethodRefResolver.resolveMethodRef(lambda);
+        return new FailoverInput<>(maxRetries, method.getName());
       }
 
       public int getMaxRetries() {
