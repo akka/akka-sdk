@@ -11,16 +11,16 @@ import java.util.concurrent.CompletableFuture;
 
 @ComponentId("hierarchy-workflow")
 public class TextWorkflow extends AbstractTextKvWorkflow {
-  @Override
-  public WorkflowDef<State> definition() {
-    return workflow().addStep(step("dummy-step")
-        .call(() -> "step completed")
-        .andThen(String.class, result -> effects().end()));
 
+  private StepEffect dummyStep(String text) {
+    return stepEffects()
+      .thenTransitionTo(TextWorkflow::dummyAfterStep).withInput(text);
   }
 
   public Effect<String> setText(String text) {
-    return effects().updateState(new State(text)).transitionTo("dummy-step").thenReply("ok");
+    return effects()
+      .transitionTo(TextWorkflow::dummyStep).withInput(text)
+      .thenReply("ok");
   }
 
   public Effect<Optional<String>> getText() {

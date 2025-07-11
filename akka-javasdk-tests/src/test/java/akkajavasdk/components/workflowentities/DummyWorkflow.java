@@ -10,11 +10,6 @@ import akka.javasdk.workflow.Workflow;
 @ComponentId("dummy-workflow")
 public class DummyWorkflow extends Workflow<Integer> {
 
-  @Override
-  public WorkflowDef<Integer> definition() {
-    return workflow();
-  }
-
   public Effect<String> startAndFinish() {
     return effects().updateState(10).end().thenReply("ok");
   }

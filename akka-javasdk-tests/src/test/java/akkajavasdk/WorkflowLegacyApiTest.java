@@ -4,40 +4,31 @@
 
 package akkajavasdk;
 
-import static akkajavasdk.components.workflowentities.TransferConsumer.TRANSFER_CONSUMER_STORE;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.javasdk.testkit.TestKitSupport;
 import akkajavasdk.components.actions.echo.Message;
-import akkajavasdk.components.views.TransferView;
-import akkajavasdk.components.workflowentities.DummyTransferStore;
-import akkajavasdk.components.workflowentities.DummyWorkflow;
 import akkajavasdk.components.workflowentities.FailingCounterEntity;
 import akkajavasdk.components.workflowentities.Transfer;
-import akkajavasdk.components.workflowentities.TransferState;
-import akkajavasdk.components.workflowentities.TransferWorkflow;
-import akkajavasdk.components.workflowentities.TransferWorkflowWithFraudDetection;
 import akkajavasdk.components.workflowentities.WalletEntity;
-import akkajavasdk.components.workflowentities.WorkflowWithDefaultRecoverStrategy;
-import akkajavasdk.components.workflowentities.WorkflowWithRecoverStrategy;
-import akkajavasdk.components.workflowentities.WorkflowWithStepTimeout;
-import akkajavasdk.components.workflowentities.WorkflowWithTimeout;
-import akkajavasdk.components.workflowentities.WorkflowWithTimer;
-import akkajavasdk.components.workflowentities.WorkflowWithoutInitialState;
-import akkajavasdk.components.workflowentities.hierarchy.TextWorkflow;
+import akkajavasdk.components.workflowentities.legacy.TransferWorkflow;
+import akkajavasdk.components.workflowentities.legacy.TransferWorkflowWithFraudDetection;
+import akkajavasdk.components.workflowentities.legacy.TransferWorkflowWithoutInputs;
+import akkajavasdk.components.workflowentities.legacy.WorkflowWithDefaultRecoverStrategy;
+import akkajavasdk.components.workflowentities.legacy.WorkflowWithRecoverStrategy;
+import akkajavasdk.components.workflowentities.legacy.WorkflowWithRecoverStrategyAndAsyncCall;
+import akkajavasdk.components.workflowentities.legacy.WorkflowWithStepTimeout;
+import akkajavasdk.components.workflowentities.legacy.WorkflowWithTimeout;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith(Junit5LogCapturing.class)
-public class WorkflowTest extends TestKitSupport {
-
+public class WorkflowLegacyApiTest extends TestKitSupport {
 
   @Test
   public void shouldNotStartTransferForWithNegativeAmount() {
@@ -127,61 +118,61 @@ public class WorkflowTest extends TestKitSupport {
   }
 
   @Test
-  public void shouldVerifyWorkflowSubscriptions() {
+  public void shouldTransferMoneyWithoutStepInputs() {
     var walletId1 = "1";
     var walletId2 = "2";
     createWallet(walletId1, 100);
     createWallet(walletId2, 100);
-    var transferId1 = randomTransferId();
-    var transferId2 = randomTransferId();
-    var transfer1 = new Transfer(walletId1, walletId2, 10);
-    var transfer2 = new Transfer(walletId1, walletId2, 20);
+    var transferId = randomTransferId();
+    var transfer = new Transfer(walletId1, walletId2, 10);
 
-    componentClient.forWorkflow(transferId1)
-      .method(TransferWorkflow::startTransfer)
-      .invoke(transfer1);
-    componentClient.forWorkflow(transferId2)
-      .method(TransferWorkflow::startTransfer)
-      .invoke(transfer2);
+    Message response =
+      componentClient.forWorkflow(transferId)
+        .method(TransferWorkflowWithoutInputs::startTransfer)
+        .invoke(transfer);
+
+    assertThat(response.text()).contains("transfer started");
 
     Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
-        var transferState1 = DummyTransferStore.get(TRANSFER_CONSUMER_STORE, transferId1);
-        var transferState2 = DummyTransferStore.get(TRANSFER_CONSUMER_STORE, transferId2);
+        var balance1 = getWalletBalance(walletId1);
+        var balance2 = getWalletBalance(walletId2);
 
-        assertThat(transferState1.transfer()).isEqualTo(transfer1);
-        assertThat(transferState2.transfer()).isEqualTo(transfer2);
-
-        var result = componentClient.forView().method(TransferView::getAll).invoke();
-        assertThat(result.entries()).contains(
-          new TransferView.TransferEntry(transferId1, true),
-          new TransferView.TransferEntry(transferId2, true));
-      });
-
-    componentClient.forWorkflow(transferId1)
-      .method(TransferWorkflow::delete)
-      .invoke();
-
-    var state = componentClient.forWorkflow(transferId1)
-      .method(TransferWorkflow::get)
-      .invoke();
-    assertThat(state).isEqualTo(TransferState.EMPTY);
-
-    Awaitility.await()
-      .ignoreExceptions()
-      .atMost(20, TimeUnit.of(SECONDS))
-      .untilAsserted(() -> {
-        var transferState1 = DummyTransferStore.get(TRANSFER_CONSUMER_STORE, transferId1);
-        assertThat(transferState1).isNull();
-
-        var result = componentClient.forView().method(TransferView::getAll).invoke();
-        assertThat(result.entries()).containsOnly(
-          new TransferView.TransferEntry(transferId2, true));
+        assertThat(balance1).isEqualTo(90);
+        assertThat(balance2).isEqualTo(110);
       });
   }
 
+  @Test
+  public void shouldTransferAsyncMoneyWithoutStepInputs() {
+    var walletId1 = "1";
+    var walletId2 = "2";
+    createWallet(walletId1, 100);
+    createWallet(walletId2, 100);
+    var transferId = randomTransferId();
+    var transfer = new Transfer(walletId1, walletId2, 10);
+
+
+    Message response =
+      componentClient.forWorkflow(transferId)
+        .method(TransferWorkflowWithoutInputs::startTransferAsync)
+        .invoke(transfer);
+
+    assertThat(response.text()).contains("transfer started");
+
+    Awaitility.await()
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
+      .untilAsserted(() -> {
+        var balance1 = getWalletBalance(walletId1);
+        var balance2 = getWalletBalance(walletId2);
+
+        assertThat(balance1).isEqualTo(90);
+        assertThat(balance2).isEqualTo(110);
+      });
+  }
 
   @Test
   public void shouldTransferMoneyWithFraudDetection() {
@@ -379,6 +370,40 @@ public class WorkflowTest extends TestKitSupport {
       });
   }
 
+  @Test
+  public void shouldRecoverFailingCounterWorkflowWithRecoverStrategyAndAsyncCall() {
+    //given
+    var counterId = randomId();
+    var workflowId = randomId();
+
+    //when
+    Message response =
+      componentClient.forWorkflow(workflowId)
+        .method(WorkflowWithRecoverStrategyAndAsyncCall::startFailingCounter)
+        .invoke(counterId);
+
+    assertThat(response.text()).isEqualTo("workflow started");
+
+    //then
+    Awaitility.await()
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
+      .untilAsserted(() -> {
+        Integer counterValue = getFailingCounterValue(counterId);
+        assertThat(counterValue).isEqualTo(3);
+      });
+
+    Awaitility.await()
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
+      .untilAsserted(() -> {
+        var state = await(
+          componentClient.forWorkflow(workflowId)
+            .method(WorkflowWithRecoverStrategyAndAsyncCall::get)
+            .invokeAsync());
+        assertThat(state.finished()).isTrue();
+      });
+  }
 
   @Test
   public void shouldRecoverWorkflowTimeout() {
@@ -444,98 +469,7 @@ public class WorkflowTest extends TestKitSupport {
       });
   }
 
-  @Test
-  public void shouldUseTimerInWorkflowDefinition() {
-    //given
-    var counterId = randomId();
-    var workflowId = randomId();
 
-    //when
-    Message response =
-      componentClient.forWorkflow(workflowId)
-        .method(WorkflowWithTimer::startFailingCounter)
-        .invoke(counterId);
-
-    assertThat(response.text()).isEqualTo("workflow started");
-
-    //then
-    Awaitility.await()
-      .ignoreExceptions()
-      .atMost(20, TimeUnit.of(SECONDS))
-      .untilAsserted(() -> {
-        var state =
-          componentClient.forWorkflow(workflowId)
-            .method(WorkflowWithTimer::get)
-            .invoke();
-
-        assertThat(state.finished()).isTrue();
-        assertThat(state.value()).isEqualTo(12);
-      });
-  }
-
-
-  @Test
-  public void shouldNotUpdateWorkflowStateAfterEndTransition() {
-    //given
-    var workflowId = randomId();
-      componentClient.forWorkflow(workflowId)
-        .method(DummyWorkflow::startAndFinish)
-        .invoke();
-
-    assertThat(
-      componentClient.forWorkflow(workflowId)
-        .method(DummyWorkflow::get)
-        .invoke()).isEqualTo(10);
-
-    //when
-    try {
-
-        componentClient.forWorkflow(workflowId)
-          .method(DummyWorkflow::update).invoke();
-    } catch (RuntimeException exception) {
-      // ignore "500 Internal Server Error" exception from the proxy
-    }
-
-    //then
-    assertThat(
-      componentClient.forWorkflow(workflowId)
-        .method(DummyWorkflow::get).invoke()).isEqualTo(10);
-  }
-
-  @Test
-  public void shouldRunWorkflowStepWithoutInitialState() {
-    //given
-    var workflowId = randomId();
-
-    //when
-    String response = componentClient.forWorkflow(workflowId)
-      .method(WorkflowWithoutInitialState::start).invoke();
-
-    assertThat(response).contains("ok");
-
-    //then
-    Awaitility.await()
-      .ignoreExceptions()
-      .atMost(20, TimeUnit.of(SECONDS))
-      .untilAsserted(() -> {
-        var state = componentClient.forWorkflow(workflowId).method(WorkflowWithoutInitialState::get).invoke();
-        assertThat(state).contains("success");
-      });
-  }
-
-  // FIXME: type hierarchy is not working with new StepEffect API
-  @Test @Disabled
-  public void shouldAllowHierarchyWorkflow() {
-    var workflowId = randomId();
-    componentClient.forWorkflow(workflowId)
-      .method(TextWorkflow::setText).invoke("some text");
-
-
-    var result = componentClient.forWorkflow(workflowId)
-      .method(TextWorkflow::getText).invoke();
-
-    assertThat(result).isEqualTo(Optional.of("some text"));
-  }
 
   @Test
   public void shouldBeCallableWithGenericParameter() {
