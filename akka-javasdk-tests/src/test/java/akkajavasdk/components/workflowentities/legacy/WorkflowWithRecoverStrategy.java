@@ -2,27 +2,29 @@
  * Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akkajavasdk.components.workflowentities;
-
-import akkajavasdk.components.actions.echo.Message;
-import akka.javasdk.annotations.ComponentId;
-import akka.javasdk.client.ComponentClient;
-import akka.javasdk.workflow.Workflow;
+package akkajavasdk.components.workflowentities.legacy;
 
 import static java.time.Duration.ofSeconds;
 
-// TODO: refactor new StepEffect API
-@ComponentId("workflow-with-default-recover-strategy")
-public class WorkflowWithDefaultRecoverStrategy extends Workflow<FailingCounterState> {
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.client.ComponentClient;
+import akka.javasdk.workflow.Workflow;
+import akkajavasdk.components.actions.echo.Message;
+import akkajavasdk.components.workflowentities.FailingCounterEntity;
+import akkajavasdk.components.workflowentities.FailingCounterState;
+
+@ComponentId("workflow-with-recover-strategy-legacy")
+public class WorkflowWithRecoverStrategy extends Workflow<FailingCounterState> {
 
   private final String counterStepName = "counter";
   private final String counterFailoverStepName = "counter-failover";
 
   private ComponentClient componentClient;
 
-  public WorkflowWithDefaultRecoverStrategy(ComponentClient componentClient) {
+  public WorkflowWithRecoverStrategy(ComponentClient componentClient) {
     this.componentClient = componentClient;
   }
+
 
   @Override
   public WorkflowDef<FailingCounterState> definition() {
@@ -52,8 +54,7 @@ public class WorkflowWithDefaultRecoverStrategy extends Workflow<FailingCounterS
     return workflow()
         .timeout(ofSeconds(30))
         .defaultStepTimeout(ofSeconds(10))
-        .defaultStepRecoverStrategy(maxRetries(1).failoverTo(counterFailoverStepName))
-        .addStep(counterInc)
+        .addStep(counterInc, maxRetries(1).failoverTo(counterFailoverStepName))
         .addStep(counterIncFailover);
   }
 
@@ -65,6 +66,10 @@ public class WorkflowWithDefaultRecoverStrategy extends Workflow<FailingCounterS
   }
 
   public Effect<FailingCounterState> get(){
-    return effects().reply(currentState());
+    if (currentState() != null) {
+      return effects().reply(currentState());
+    } else {
+      return effects().error("transfer not started");
+    }
   }
 }

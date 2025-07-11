@@ -11,4 +11,9 @@ public abstract class AbstractTextKvWorkflow extends Workflow<AbstractTextKvWork
   public record State(String value) {}
 
 
+  protected StepEffect dummyAfterStep(String text) {
+    return stepEffects()
+      .updateState(new State(text))
+      .thenEnd();
+  }
 }

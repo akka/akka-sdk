@@ -2,23 +2,22 @@
  * Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akkajavasdk.components.workflowentities;
-
-import akkajavasdk.components.actions.echo.Message;
-import akka.javasdk.annotations.ComponentId;
-import akka.javasdk.workflow.Workflow;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
+package akkajavasdk.components.workflowentities.legacy;
 
 import static java.time.Duration.ofMillis;
 import static java.time.Duration.ofSeconds;
 
-// TODO: refactor new StepEffect API
-@ComponentId("workflow-with-step-timeout")
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.workflow.Workflow;
+import akkajavasdk.components.actions.echo.Message;
+import akkajavasdk.components.workflowentities.FailingCounterState;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+@ComponentId("workflow-with-step-timeout-legacy")
 public class WorkflowWithStepTimeout extends Workflow<FailingCounterState> {
 
   private Logger logger = LoggerFactory.getLogger(getClass());

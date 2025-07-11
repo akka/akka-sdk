@@ -2,23 +2,23 @@
  * Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akkajavasdk.components.workflowentities;
+package akkajavasdk.components.workflowentities.legacy;
 
-import akkajavasdk.components.actions.echo.Message;
+import static java.time.Duration.ofMillis;
+import static java.time.Duration.ofSeconds;
+
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
-
+import akkajavasdk.components.actions.echo.Message;
+import akkajavasdk.components.workflowentities.FailingCounterEntity;
+import akkajavasdk.components.workflowentities.FailingCounterState;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
-import static java.time.Duration.ofMillis;
-import static java.time.Duration.ofSeconds;
-
-// TODO: refactor new StepEffect API
-@ComponentId("workflow-with-timeout")
+@ComponentId("workflow-with-timeout-legacy")
 public class WorkflowWithTimeout extends Workflow<FailingCounterState> {
 
   private final String counterStepName = "counter";

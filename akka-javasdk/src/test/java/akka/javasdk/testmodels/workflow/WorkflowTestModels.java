@@ -13,15 +13,10 @@ public class WorkflowTestModels {
 
   @ComponentId("transfer-workflow")
   public static class TransferWorkflow extends Workflow<WorkflowState> {
-    @Override
-    public WorkflowDef<WorkflowState> definition() {
-      return null;
-    }
 
     public Effect<String> startTransfer(StartWorkflow startWorkflow) {
       return null;
     }
-
     public Effect<WorkflowState> getState() {
       return null;
     }
@@ -29,10 +24,6 @@ public class WorkflowTestModels {
 
   @ComponentId("transfer-workflow")
   public static class WorkflowWithMethodLevelJWT extends Workflow<WorkflowState> {
-    @Override
-    public WorkflowDef<WorkflowState> definition() {
-      return null;
-    }
 
     @JWT(
         validate = JWT.JwtMethodMode.BEARER_TOKEN,
@@ -55,10 +46,6 @@ public class WorkflowTestModels {
         @JWT.StaticClaim(claim = "aud", values = "${ENV}")
     })
   public static class WorkflowWithServiceLevelJWT extends Workflow<WorkflowState> {
-    @Override
-    public WorkflowDef<WorkflowState> definition() {
-      return null;
-    }
 
     public Effect<String> startTransfer(StartWorkflow startWorkflow) {
       return null;
@@ -69,19 +56,10 @@ public class WorkflowTestModels {
   @Acl(allow = @Acl.Matcher(service = "test"))
   public static class WorkflowWithAcl extends Workflow<WorkflowState> {
 
-    @Override
-    public WorkflowDef<WorkflowState> definition() {
-      return null;
-    }
   }
 
   @ComponentId("transfer-workflow")
   public static class WorkflowWithMethodLevelAcl extends Workflow<WorkflowState> {
-
-    @Override
-    public WorkflowDef<WorkflowState> definition() {
-      return null;
-    }
 
     @Acl(allow = @Acl.Matcher(service = "test"))
     public Effect<String> startTransfer(StartWorkflow startWorkflow) {
