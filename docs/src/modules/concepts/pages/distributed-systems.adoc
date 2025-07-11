@@ -73,7 +73,7 @@ These constructs are operationalized in Akka’s runtime through xref:java:agent
 
 == Designed for multi-agent AI 
 
-Multi-agent AI systems combine the inherent _nondeterminism_ of distributed systems with the _stochastic_ behavior of AI models, , particularly those based on large language models (LLMs). This dual complexity means traditional software design, development, and operations approaches are insufficient. 
+Multi-agent AI systems combine the inherent _nondeterminism_ of distributed systems with the _stochastic_ behavior of AI models, particularly those based on large language models (LLMs). This dual complexity means traditional software design, development, and operations approaches are insufficient. 
 
 The demands of multi-agent AI systems—which involve large numbers of autonomous, stateful, and often long-lived agents—require managing complexity around orchestration, streaming, memory, and temporal behaviors while being able to reason about the system as a whole and embrace its stochastic and non-deterministic nature. Akka’s approach to multi-agent architectures includes:
 
