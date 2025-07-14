@@ -76,7 +76,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
   override def configuration: SpiWorkflow.WorkflowConfig = {
     val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, None, tracerFactory)
     val workflow = instanceFactory(workflowContext)
-    val settings = workflow.settings()
+    val workflowConfig = workflow.configuration()
 
     def toRecovery(sdkRecoverStrategy: SdkRecoverStrategy[_]): SpiWorkflow.RecoverStrategy = {
 
@@ -87,26 +87,22 @@ class WorkflowImpl[S, W <: Workflow[S]](
     }
 
     val stepConfigs =
-      settings.stepConfigs.asScala.map { config =>
+      workflowConfig.stepConfigs.asScala.map { config =>
         val stepTimeout = config.timeout.toScala.map(_.toScala)
-        val failoverRecoverStrategy = config.recoverStrategy.toScala.map(toRecovery)
+        val failoverRecoverStrategy = config.recovery.toScala.map(toRecovery)
         (config.stepName, new SpiWorkflow.StepConfig(config.stepName, stepTimeout, failoverRecoverStrategy))
       }.toMap
 
-    val defaultStepRecoverStrategy = settings.stepRecoverStrategy.toScala.map(toRecovery)
+    val workflowTimeout = workflowConfig.workflowTimeout.toScala.map(_.toScala)
+    val workflowRecoverStrategy = workflowConfig.workflowRecoverStrategy().toScala.map(toRecovery)
 
-    val failoverRecoverStrategy = settings.failoverStepName.toScala.map(stepName =>
-      //when failoverStepName exists, maxRetries must exist
-      new SpiWorkflow.RecoverStrategy(
-        settings.failoverMaxRetries().toScala.get.maxRetries,
-        new SpiWorkflow.StepTransition(stepName, settings.failoverStepInput.toScala.map(serializer.toBytes))))
-
-    val stepTimeout = settings.defaultStepTimeout().toScala.map(_.toScala)
+    val defaultStepTimeout = workflowConfig.defaultStepTimeout().toScala.map(_.toScala)
+    val defaultStepRecoverStrategy = workflowConfig.defaultStepRecoverStrategy.toScala.map(toRecovery)
 
     new SpiWorkflow.WorkflowConfig(
-      workflowTimeout = settings.workflowTimeout.toScala.map(_.toScala),
-      failoverRecoverStrategy = failoverRecoverStrategy,
-      defaultStepTimeout = stepTimeout,
+      workflowTimeout = workflowTimeout,
+      failoverRecoverStrategy = workflowRecoverStrategy,
+      defaultStepTimeout = defaultStepTimeout,
       defaultStepRecoverStrategy = defaultStepRecoverStrategy,
       stepConfigs = stepConfigs)
   }

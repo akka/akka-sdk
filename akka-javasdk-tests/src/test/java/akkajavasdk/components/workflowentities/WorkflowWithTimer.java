@@ -26,8 +26,8 @@ public class WorkflowWithTimer extends Workflow<FailingCounterState> {
 
 
   @Override
-  public Settings settings() {
-    return Settings.builder()
+  public WorkflowConfig configuration() {
+    return WorkflowConfig.builder()
       .defaultStepTimeout(Duration.ofMillis(50))
       .build();
   }

@@ -32,10 +32,10 @@ public class TransferWorkflow extends Workflow<TransferState> {
   }
 
   @Override
-  public Settings settings() {
-    return Settings
+  public WorkflowConfig configuration() {
+    return WorkflowConfig
       .builder()
-      .timeout(Duration.ofSeconds(10))
+      .workflowTimeout(Duration.ofSeconds(10))
       .build();
   }
 

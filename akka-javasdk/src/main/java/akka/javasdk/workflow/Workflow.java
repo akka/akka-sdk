@@ -6,9 +6,11 @@ package akka.javasdk.workflow;
 
 import akka.annotation.InternalApi;
 import akka.javasdk.Metadata;
+import akka.javasdk.impl.client.MethodRefResolver;
 import akka.javasdk.impl.workflow.WorkflowEffects;
 import akka.javasdk.timer.TimerScheduler;
 import akka.javasdk.workflow.Workflow.RecoverStrategy.MaxRetries;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.Duration;
@@ -67,7 +69,9 @@ public abstract class Workflow<S> {
    *
    * @param name Step name.
    * @return Step builder.
+   * @deprecated use methods returning {@link StepEffect} instead.
    */
+  @Deprecated
   public StepBuilder step(String name) {
     return new StepBuilder(name);
   }
@@ -155,17 +159,17 @@ public abstract class Workflow<S> {
   }
 
   /**
-   * @deprecated use {@link Workflow#settings()} instead
+   * @deprecated use {@link Workflow#configuration()} instead
    */
   @Deprecated
   public WorkflowDef<S> definition() {
     return new WorkflowDef<>(false);
   }
 
-  public Settings settings() {
+  public WorkflowConfig configuration() {
     var def = definition();
-    if (def.legacy) return new LegacySettings<>(def);
-    else return Settings.builder().build();
+    if (def.legacy) return new LegacyWorkflowConfig<>(def);
+    else return WorkflowConfig.builder().build();
   }
 
 
@@ -245,9 +249,28 @@ public abstract class Workflow<S> {
       @Deprecated
       Transitional transitionTo(String stepName);
 
-      <W> Transitional transitionTo(akka.japi.function.Function <W, StepEffect> methodRef);
+      /**
+       * Defines the next step to which the workflow should transition to.
+       * <p>
+       * The step is identified by a method reference that accepts no input parameters.
+       *
+       * @param methodRef Reference to the step method
+       * @param <W>       The workflow type containing the step method
+       * @return A transitional effect
+       */
+      <W> Transitional transitionTo(akka.japi.function.Function<W, StepEffect> methodRef);
 
-      <W, I> CallWithInput<I, Transitional> transitionTo(akka.japi.function.Function2<W, I, StepEffect> methodRef);
+      /**
+       * Defines the next step to which the workflow should transition to.
+       * <p>
+       * The step is identified by a method reference that accepts an input parameter.
+       *
+       * @param methodRef Reference to the step method
+       * @param <W>       The workflow type containing the step method
+       * @param <I>       The input parameter type for the step
+       * @return A builder to provide the input parameter
+       */
+      <W, I> WithInput<I, Transitional> transitionTo(akka.japi.function.Function2<W, I, StepEffect> methodRef);
 
       /**
        * Finish the workflow execution.
@@ -296,7 +319,10 @@ public abstract class Workflow<S> {
     /**
      * A workflow effect type that contains information about the transition to the next step.
      * This could be also a special transition to pause or end the workflow.
+     *
+     * @deprecated Use {@link Effect.Transitional} instead.
      */
+    @Deprecated
     interface TransitionalEffect<T> extends Effect<T> {
 
       /**
@@ -376,9 +402,28 @@ public abstract class Workflow<S> {
       Transitional transitionTo(String stepName);
 
 
-      <W> Transitional transitionTo(akka.japi.function.Function <W, StepEffect> lambda);
+      /**
+       * Defines the next step to which the workflow should transition to.
+       * <p>
+       * The step is identified by a method reference that accepts no input parameters.
+       *
+       * @param lambda Reference to the step method
+       * @param <W>    The workflow type containing the step method
+       * @return A transitional effect
+       */
+      <W> Transitional transitionTo(akka.japi.function.Function<W, StepEffect> lambda);
 
-      <W, I> CallWithInput<I, Transitional> transitionTo(akka.japi.function.Function2<W, I, StepEffect> lambda);
+      /**
+       * Defines the next step to which the workflow should transition to.
+       * <p>
+       * The step is identified by a method reference that accepts an input parameter.
+       *
+       * @param lambda Reference to the step method
+       * @param <W>    The workflow type containing the step method
+       * @param <I>    The input parameter type for the step
+       * @return A builder to provide the input parameter
+       */
+      <W, I> WithInput<I, Transitional> transitionTo(akka.japi.function.Function2<W, I, StepEffect> lambda);
 
       /**
        * Finish the workflow execution.
@@ -416,10 +461,26 @@ public abstract class Workflow<S> {
 
       /**
        * Defines the next step to which the workflow should transition to.
+       * <p>
+       * The step is identified by a method reference that accepts no input parameters.
+       *
+       * @param stepName Reference to the step method
+       * @param <W> The workflow type containing the step method
+       * @return A step effect
        */
-      <W> StepEffect thenTransitionTo(akka.japi.function.Function <W, StepEffect> stepName);
+      <W> StepEffect thenTransitionTo(akka.japi.function.Function<W, StepEffect> stepName);
 
-      <W, I> CallWithInput<I, StepEffect> thenTransitionTo(akka.japi.function.Function2<W, I, Workflow.StepEffect> lambda);
+      /**
+       * Defines the next step to which the workflow should transition to.
+       * <p>
+       * The step is identified by a method reference that accepts an input parameter.
+       *
+       * @param lambda Reference to the step method
+       * @param <W>    The workflow type containing the step method
+       * @param <I>    The input parameter type for the step
+       * @return A builder to provide the input parameter
+       */
+      <W, I> WithInput<I, StepEffect> thenTransitionTo(akka.japi.function.Function2<W, I, Workflow.StepEffect> lambda);
 
       /**
        * Finish the workflow execution.
@@ -448,15 +509,26 @@ public abstract class Workflow<S> {
 
       /**
        * Defines the next step to which the workflow should transition to.
-      <I> StepEffect transitionTo(String stepName, I input);
-
-      /**
-       * Defines the next step to which the workflow should transition to.
+       * <p>
+       * The step is identified by a method reference that accepts no input parameters.
+       *
+       * @param methodRef Reference to the step method
+       * @param <W> The workflow type containing the step method
+       * @return A step effect
        */
       <W> StepEffect thenTransitionTo(akka.japi.function.Function<W, Workflow.StepEffect> methodRef);
 
-
-      <W, I> CallWithInput<I, StepEffect> thenTransitionTo(akka.japi.function.Function2<W, I, Workflow.StepEffect> methodRef);
+      /**
+       * Defines the next step to which the workflow should transition to.
+       * <p>
+       * The step is identified by a method reference that accepts an input parameter.
+       *
+       * @param methodRef Reference to the step method
+       * @param <W>       The workflow type containing the step method
+       * @param <I>       The input parameter type for the step
+       * @return A builder to provide the input parameter
+       */
+      <W, I> WithInput<I, StepEffect> thenTransitionTo(akka.japi.function.Function2<W, I, Workflow.StepEffect> methodRef);
 
       /**
        * Finish the workflow execution.
@@ -477,18 +549,23 @@ public abstract class Workflow<S> {
   }
 
 
-  public interface CallWithInput<I, R> {
+  /**
+   * Represents an operation that accepts an input of type I and produces a result of type R.
+   * This is used by internal builders accepting {@link akka.japi.function.Function2}
+   */
+  public interface WithInput<I, R> {
     R withInput(I input);
   }
+
   /**
-   * An effect that is known to be read only and does not update the state of the entity.
+   * An effect that is known to be read-only and does not update the state of the entity.
    */
   public interface ReadOnlyEffect<T> extends Effect<T> {
   }
 
 
   /**
-   * @deprecated use {@link Workflow.Settings} instead
+   * @deprecated use {@link WorkflowConfig} instead
    */
   @Deprecated
   public static class WorkflowDef<S> {
@@ -594,7 +671,7 @@ public abstract class Workflow<S> {
     /**
      * Define a default step recovery strategy. Can be overridden with step configuration.
      */
-    public WorkflowDef<S> defaultStepRecoverStrategy(RecoverStrategy recoverStrategy) {
+    public WorkflowDef<S> defaultStepRecoverStrategy(RecoverStrategy<?> recoverStrategy) {
       this.stepRecoverStrategy = Optional.of(recoverStrategy);
       return this;
     }
@@ -633,36 +710,25 @@ public abstract class Workflow<S> {
     }
   }
 
-  public sealed interface Settings {
+  public sealed interface WorkflowConfig {
 
-
-    static SettingsBuilder builder() {
-      return new SettingsBuilder(
-        Optional.empty(),
-        Optional.empty(),
-        Optional.empty(),
-        Optional.empty(),
-        Optional.empty(),
-        Optional.empty());
+    static WorkflowConfigBuilder builder() {
+      return WorkflowConfigBuilder.newBuilder();
     }
 
     Optional<Duration> workflowTimeout();
 
+    Optional<RecoverStrategy<?>> workflowRecoverStrategy();
+
     Optional<Duration> defaultStepTimeout();
 
-    Optional<RecoverStrategy<?>> stepRecoverStrategy();
-
-    Optional<String> failoverStepName();
-
-    Optional<?> failoverStepInput();
-
-    Optional<MaxRetries> failoverMaxRetries();
+    Optional<RecoverStrategy<?>> defaultStepRecoverStrategy();
 
     List<StepConfig> stepConfigs();
 
   }
 
-  private record LegacySettings<S>(WorkflowDef<S> legacyDefinition) implements Settings {
+  private record LegacyWorkflowConfig<S>(WorkflowDef<S> legacyDefinition) implements WorkflowConfig {
 
     @Override
     public Optional<Duration> workflowTimeout() {
@@ -670,23 +736,18 @@ public abstract class Workflow<S> {
     }
 
     @Override
-    public Optional<RecoverStrategy<?>> stepRecoverStrategy() {
+    public Optional<RecoverStrategy<?>> workflowRecoverStrategy() {
+      return legacyDefinition.getFailoverStepName().map(stepName -> {
+          //when failoverStepName exists, maxRetries must exist
+          var maxRetries = legacyDefinition.getFailoverMaxRetries().get().maxRetries;
+          var failoverStepInput = legacyDefinition.getFailoverStepInput();
+          return new RecoverStrategy<>(maxRetries, stepName, failoverStepInput);
+        });
+    }
+
+    @Override
+    public Optional<RecoverStrategy<?>> defaultStepRecoverStrategy() {
       return legacyDefinition.getStepRecoverStrategy();
-    }
-
-    @Override
-    public Optional<String> failoverStepName() {
-      return legacyDefinition.getFailoverStepName();
-    }
-
-    @Override
-    public Optional<?> failoverStepInput() {
-      return legacyDefinition.getFailoverStepInput();
-    }
-
-    @Override
-    public Optional<MaxRetries> failoverMaxRetries() {
-      return legacyDefinition.getFailoverMaxRetries();
     }
 
     @Override
@@ -701,117 +762,195 @@ public abstract class Workflow<S> {
 
   }
 
-  private record SettingsImpl(
-      List<StepConfig> stepConfigs,
+  private record WorkflowConfigImpl(
       Optional<Duration> workflowTimeout,
-      Optional<String> failoverStepName,
-      Optional<?> failoverStepInput,
-      Optional<MaxRetries> failoverMaxRetries,
+      Optional<RecoverStrategy<?>> workflowRecoverStrategy,
       Optional<Duration> defaultStepTimeout,
-      Optional<RecoverStrategy<?>> stepRecoverStrategy)
-      implements Settings {
-
-        private static List<StepConfig> buildStepConfigs(List<StepMethod> stepMethods) {
-          return stepMethods.stream()
-              .map(sm -> new StepConfig(sm.methodName, Optional.empty(), Optional.empty()))
-              .toList();
-        }
-
-    public SettingsImpl(
-        Optional<Duration> workflowTimeout,
-        Optional<String> failoverStepName,
-        Optional<?> failoverStepInput,
-        Optional<MaxRetries> failoverMaxRetries,
-        Optional<Duration> defaultStepTimeout,
-        Optional<RecoverStrategy<?>> stepRecoverStrategy) {
-      this(
-          List.of(), // buildStepConfigs(stepMethods),
-          workflowTimeout,
-          failoverStepName,
-          failoverStepInput,
-          failoverMaxRetries,
-          defaultStepTimeout,
-          stepRecoverStrategy);
-        }
+      Optional<RecoverStrategy<?>> defaultStepRecoverStrategy,
+      List<StepConfig> stepConfigs)
+    implements WorkflowConfig {
 
   }
 
-  public record SettingsBuilder(
-      Optional<Duration> workflowTimeout,
-      Optional<String> failoverStepName,
-      Optional<?> failoverStepInput,
-      Optional<MaxRetries> failoverMaxRetries,
-      Optional<Duration> defaultStepTimeout,
-      Optional<RecoverStrategy<?>> stepRecoverStrategy) {
+  public static class WorkflowConfigBuilder {
 
+    private final Optional<Duration> workflowTimeout;
+    private final Optional<RecoverStrategy<?>> workflowRecoverStrategy;
+    private final Optional<Duration> defaultStepTimeout;
+    private final Optional<RecoverStrategy<?>> defaultStepRecoverStrategy;
+    private final List<StepConfig> stepConfigs;
 
-    public SettingsBuilder timeout(Duration duration) {
-      return new SettingsBuilder(
-          Optional.of(duration),
-          failoverStepName,
-          failoverStepInput,
-          failoverMaxRetries,
-          defaultStepTimeout,
-          stepRecoverStrategy);
+    public WorkflowConfigBuilder(Optional<Duration> workflowTimeout, Optional<RecoverStrategy<?>> workflowRecoverStrategy, Optional<Duration> defaultStepTimeout, Optional<RecoverStrategy<?>> defaultStepRecoverStrategy, List<StepConfig> stepConfigs) {
+      this.workflowTimeout = workflowTimeout;
+      this.workflowRecoverStrategy = workflowRecoverStrategy;
+      this.defaultStepTimeout = defaultStepTimeout;
+      this.defaultStepRecoverStrategy = defaultStepRecoverStrategy;
+      this.stepConfigs = stepConfigs;
     }
 
-    // TODO: refactor to method ref
-    public SettingsBuilder failoverTo(String stepName, MaxRetries maxRetries) {
-      return new SettingsBuilder(
-          workflowTimeout,
-          Optional.of(stepName),
-          Optional.empty(),
-          Optional.of(maxRetries),
-          defaultStepTimeout,
-          Optional.empty());
+    public static WorkflowConfigBuilder newBuilder() {
+      return new WorkflowConfigBuilder(Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), List.of());
     }
 
-    // TODO: refactor to method ref
-    public <I> SettingsBuilder failoverTo(String stepName, I stepInput, MaxRetries maxRetries) {
-      return new SettingsBuilder(
-          workflowTimeout,
-          Optional.of(stepName),
-          Optional.of(stepInput),
-          Optional.of(maxRetries),
-          defaultStepTimeout,
-          Optional.empty());
+
+    /**
+     * Define a timeout for the duration of the entire workflow.
+     */
+    public WorkflowConfigBuilder workflowTimeout(Duration duration) {
+      return new WorkflowConfigBuilder(
+        Optional.of(duration),
+        workflowRecoverStrategy,
+        defaultStepTimeout,
+        defaultStepRecoverStrategy,
+        stepConfigs);
     }
 
-    public SettingsBuilder defaultStepRecoverStrategy(RecoverStrategy<?> recoverStrategy) {
-      return new SettingsBuilder(
-          workflowTimeout,
-          failoverStepName,
-          failoverStepInput,
-          failoverMaxRetries,
-          defaultStepTimeout,
-          Optional.of(recoverStrategy));
+    /**
+     * Define a recovery strategy for the entire workflow in case of timeout.
+     */
+    public WorkflowConfigBuilder workflowRecovery(RecoverStrategy<?> recoverStrategy) {
+      return new WorkflowConfigBuilder(
+        workflowTimeout,
+        Optional.of(recoverStrategy),
+        defaultStepTimeout,
+        defaultStepRecoverStrategy,
+        stepConfigs);
     }
 
-    public SettingsBuilder defaultStepTimeout(Duration timeout) {
-      return new SettingsBuilder(
-          workflowTimeout,
-          failoverStepName,
-          failoverStepInput,
-          failoverMaxRetries,
-          Optional.of(timeout),
-          stepRecoverStrategy);
+    /**
+     * Define a default timeout duration for all steps. Can be overridden per step.
+     */
+    public WorkflowConfigBuilder defaultStepTimeout(Duration timeout) {
+      return new WorkflowConfigBuilder(
+        workflowTimeout,
+        workflowRecoverStrategy,
+        Optional.of(timeout),
+        defaultStepRecoverStrategy,
+        stepConfigs);
     }
 
-    public Settings build() {
+    /**
+     * Define a default recovery strategy for all steps. Can be overridden per step.
+     */
+    public WorkflowConfigBuilder defaultStepRecovery(RecoverStrategy<?> recoverStrategy) {
+      return new WorkflowConfigBuilder(
+        workflowTimeout,
+        workflowRecoverStrategy,
+        defaultStepTimeout,
+        Optional.of(recoverStrategy),
+        stepConfigs);
+    }
 
+    /**
+     * Configure a specific step with a timeout.
+     *
+     * @param lambda  Reference to the step method
+     * @param timeout Timeout duration for this step
+     */
+    public <W> WorkflowConfigBuilder stepConfig(akka.japi.function.Function<W, StepEffect> lambda,
+                                                Duration timeout) {
+      var method = MethodRefResolver.resolveMethodRef(lambda);
+      return addStepConfig(method.getName(), Optional.of(timeout), Optional.empty());
+    }
 
-      return new SettingsImpl(
-          workflowTimeout,
-          failoverStepName,
-          failoverStepInput,
-          failoverMaxRetries,
-          defaultStepTimeout,
-          stepRecoverStrategy);
+    /**
+     * Configure a specific step with a timeout.
+     *
+     * @param lambda  Reference to the step method
+     * @param timeout Timeout duration for this step
+     */
+    public <W, I> WorkflowConfigBuilder stepConfig(akka.japi.function.Function2<W, I, StepEffect> lambda,
+                                                   Duration timeout) {
+      var method = MethodRefResolver.resolveMethodRef(lambda);
+      return addStepConfig(method.getName(), Optional.of(timeout), Optional.empty());
+    }
+
+    /**
+     * Configure a specific step with a recovery strategy.
+     *
+     * @param lambda   Reference to the step method
+     * @param recovery Recovery strategy for this step
+     */
+    public <W> WorkflowConfigBuilder stepConfig(akka.japi.function.Function<W, StepEffect> lambda,
+                                                RecoverStrategy<?> recovery) {
+      var method = MethodRefResolver.resolveMethodRef(lambda);
+      return addStepConfig(method.getName(), Optional.empty(), Optional.of(recovery));
+    }
+
+    /**
+     * Configure a specific step with a recovery strategy.
+     *
+     * @param lambda   Reference to the step method
+     * @param recovery Recovery strategy for this step
+     */
+    public <W, I> WorkflowConfigBuilder stepConfig(akka.japi.function.Function2<W, I, StepEffect> lambda,
+                                                   RecoverStrategy<?> recovery) {
+      var method = MethodRefResolver.resolveMethodRef(lambda);
+      return addStepConfig(method.getName(), Optional.empty(), Optional.of(recovery));
+    }
+
+    /**
+     * Configure a specific step with both timeout and recovery strategy.
+     *
+     * @param lambda   Reference to the step method
+     * @param timeout  Timeout duration for this step
+     * @param recovery Recovery strategy for this step
+     */
+    public <W> WorkflowConfigBuilder stepConfig(akka.japi.function.Function<W, StepEffect> lambda,
+                                                Duration timeout,
+                                                RecoverStrategy<?> recovery) {
+      var method = MethodRefResolver.resolveMethodRef(lambda);
+      return addStepConfig(method.getName(), Optional.of(timeout), Optional.of(recovery));
+    }
+
+    /**
+     * Configure a specific step with both timeout and recovery strategy.
+     *
+     * @param lambda   Reference to the step method
+     * @param timeout  Timeout duration for this step
+     * @param recovery Recovery strategy for this step
+     */
+    public <W, I> WorkflowConfigBuilder stepConfig(akka.japi.function.Function2<W, I, StepEffect> lambda,
+                                                   Duration timeout,
+                                                   RecoverStrategy<?> recovery) {
+      var method = MethodRefResolver.resolveMethodRef(lambda);
+      return addStepConfig(method.getName(), Optional.of(timeout), Optional.of(recovery));
+    }
+
+    private WorkflowConfigBuilder addStepConfig(String stepName,
+                                                Optional<Duration> timeout,
+                                                Optional<RecoverStrategy<?>> recovery) {
+
+      var stepConfig = new StepConfig(stepName, timeout, recovery);
+
+      var newStepConfigs = new ArrayList<>(stepConfigs);
+      newStepConfigs.add(stepConfig);
+
+      return new WorkflowConfigBuilder(
+        workflowTimeout,
+        workflowRecoverStrategy,
+        defaultStepTimeout,
+        defaultStepRecoverStrategy,
+        List.copyOf(newStepConfigs));
+    }
+
+    /**
+     * Creates the final workflow configuration from this builder.
+     *
+     * @return The complete workflow configuration
+     */
+    public WorkflowConfig build() {
+      return new WorkflowConfigImpl(
+        workflowTimeout,
+        workflowRecoverStrategy,
+        defaultStepTimeout,
+        defaultStepRecoverStrategy,
+        stepConfigs);
     }
   }
 
   /**
-   * @deprecated use {@link Workflow#settings()} instead
+   * @deprecated use {@link Workflow#configuration()} instead
    */
   @Deprecated
   public WorkflowDef<S> workflow() {
@@ -974,16 +1113,7 @@ public abstract class Workflow<S> {
     }
   }
 
-  public static class StepConfig {
-    public final String stepName;
-    public final Optional<Duration> timeout;
-    public final Optional<RecoverStrategy<?>> recoverStrategy;
-
-    public StepConfig(String stepName, Optional<Duration> timeout, Optional<RecoverStrategy<?>> recoverStrategy) {
-      this.stepName = stepName;
-      this.timeout = timeout;
-      this.recoverStrategy = recoverStrategy;
-    }
+  public record StepConfig(String stepName, Optional<Duration> timeout, Optional<RecoverStrategy<?>> recovery) {
   }
 
   /**
@@ -996,66 +1126,108 @@ public abstract class Workflow<S> {
     return RecoverStrategy.maxRetries(maxRetries);
   }
 
-  public static class RecoverStrategy<T> {
+  public record RecoverStrategy<T>(int maxRetries, String failoverStepName, Optional<T> failoverStepInput) {
 
-    public final int maxRetries;
-    public final String failoverStepName;
-    public final Optional<T> failoverStepInput;
-
-    public RecoverStrategy(int maxRetries, String failoverStepName, Optional<T> failoverStepInput) {
-      this.maxRetries = maxRetries;
-      this.failoverStepName = failoverStepName;
-      this.failoverStepInput = failoverStepInput;
+    public record RecoveryInput<I>(int maxRetries, String stepName) implements WithInput<I,RecoverStrategy<I>> {
+      public RecoverStrategy<I> withInput(I input) {
+        return new RecoverStrategy<>(maxRetries, stepName, Optional.of(input));
+      }
     }
 
     /**
      * Retry strategy without failover configuration
      */
-    public static class MaxRetries {
-      public final int maxRetries;
-
-      public MaxRetries(int maxRetries) {
-        this.maxRetries = maxRetries;
-      }
+    public record MaxRetries(int maxRetries) {
 
       /**
-       * Once max retries is exceeded, transition to a given step name.
+       * @deprecated use {@link MaxRetries#failoverTo(akka.japi.function.Function)} instead.
        */
+      @Deprecated
       public RecoverStrategy<?> failoverTo(String stepName) {
         return new RecoverStrategy<>(maxRetries, stepName, Optional.<Void>empty());
       }
 
       /**
-       * Once max retries is exceeded, transition to a given step name with the input parameter.
+       * Once max retries are exceeded, transition to a given step method.
+       *
+       * @param lambda Reference to the step method to transition to
+       * @param <W>    The workflow type containing the step method
+       * @return A recovery strategy transitioning to the specified step
        */
+      public <W> RecoverStrategy<Void> failoverTo(akka.japi.function.Function<W, StepEffect> lambda) {
+        var method = MethodRefResolver.resolveMethodRef(lambda);
+        return new RecoverStrategy<>(maxRetries, method.getName(), Optional.<Void>empty());
+      }
+
+      /**
+       * @deprecated use {@link MaxRetries#failoverTo(akka.japi.function.Function2)} instead.
+       */
+      @Deprecated
       public <T> RecoverStrategy<T> failoverTo(String stepName, T input) {
         return new RecoverStrategy<>(maxRetries, stepName, Optional.of(input));
       }
 
-      public int getMaxRetries() {
-        return maxRetries;
+      /**
+       * Once max retries are exceeded, transition to a given step method with input parameter.
+       *
+       * @param lambda Reference to the step method to transition to
+       * @param <W>    The workflow type containing the step method
+       * @param <I>    The input parameter type for the step
+       * @return A builder to provide the input parameter for the recovery strategy
+       */
+      public <W, I> RecoveryInput<I> failoverTo(akka.japi.function.Function2<W, I, StepEffect> lambda) {
+        var method = MethodRefResolver.resolveMethodRef(lambda);
+        return new RecoveryInput<>(maxRetries, method.getName());
       }
     }
 
     /**
-     * Set the number of retires for a failed step, {@code maxRetries} equals 0 means that the step won't retry in case of failure.
+     * Set the number of retries for a failed step,
+     * {@code maxRetries} equals 0 means that the step won't retry in case of failure.
      */
     public static MaxRetries maxRetries(int maxRetries) {
       return new MaxRetries(maxRetries);
     }
 
     /**
-     * In case of a step failure don't retry but transition to a given step name.
+     * @deprecated use {@link RecoverStrategy#failoverTo(akka.japi.function.Function)} instead.
      */
+    @Deprecated
     public static RecoverStrategy<?> failoverTo(String stepName) {
       return new RecoverStrategy<>(0, stepName, Optional.<Void>empty());
     }
 
     /**
-     * In case of a step failure don't retry but transition to a given step name with the input parameter.
+     * In case of a step fails, don't retry but transition to a given step method.
+     *
+     * @param lambda Reference to the step method to transition to
+     * @param <W>    The workflow type containing the step method
+     * @return A recovery strategy transitioning to the specified step
      */
+    public static <W> RecoverStrategy<Void> failoverTo(akka.japi.function.Function<W, StepEffect> lambda) {
+      var method = MethodRefResolver.resolveMethodRef(lambda);
+      return new RecoverStrategy<>(0, method.getName(), Optional.<Void>empty());
+    }
+
+    /**
+     * @deprecated use {@link RecoverStrategy#failoverTo(akka.japi.function.Function2)} instead.
+     */
+    @Deprecated
     public static <T> RecoverStrategy<T> failoverTo(String stepName, T input) {
       return new RecoverStrategy<>(0, stepName, Optional.of(input));
+    }
+
+    /**
+     * In case of a step fails, don't retry but transition to a given step method with input parameter.
+     *
+     * @param lambda Reference to the step method to transition to
+     * @param <W>    The workflow type containing the step method
+     * @param <I>    The input parameter type for the step
+     * @return A builder to provide the input parameter for the recovery strategy
+     */
+    public static <W, I> RecoveryInput<I> failoverTo(akka.japi.function.Function2<W, I, StepEffect> lambda) {
+      var method = MethodRefResolver.resolveMethodRef(lambda);
+      return new RecoveryInput<>(0, method.getName());
     }
   }
 

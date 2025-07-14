@@ -19,6 +19,10 @@ public class StepBuilder {
     this.name = name;
   }
 
+  /**
+   * @deprecated use methods returning {@link Workflow.StepEffect} instead.
+   */
+  @Deprecated
   public StepBuilder step(String stepName) {
     return new StepBuilder(stepName);
   }

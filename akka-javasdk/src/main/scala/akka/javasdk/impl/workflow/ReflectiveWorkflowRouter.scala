@@ -318,6 +318,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       case Delete       => SpiWorkflow.Delete
     }
 
+  @nowarn("msg=deprecated")
   private def toSpiTransitionalEffect(effect: Workflow.Effect.TransitionalEffect[_]) =
     effect match {
       case trEff: TransitionalEffectImpl[_] =>
