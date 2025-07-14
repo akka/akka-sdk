@@ -15,6 +15,7 @@ import com.typesafe.config.Config;
 public class Bootstrap implements ServiceSetup {
 
   private Config config;
+
   // end::knowledge[]
 
   public Bootstrap(Config config) {
@@ -23,6 +24,7 @@ public class Bootstrap implements ServiceSetup {
     KeyUtils.checkKeys(config);
     // tag::mongodb[]
   }
+
   // tag::knowledge[]
 
   @Override

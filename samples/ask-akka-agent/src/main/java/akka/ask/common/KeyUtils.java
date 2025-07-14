@@ -15,7 +15,7 @@ public class KeyUtils {
   public static void checkKeys(Config config) {
     if (
       config.getString("akka.javasdk.agent.model-provider").equals("openai") &&
-      readOpenAiKey().isBlank()
+      (readOpenAiKey() == null || readOpenAiKey().isBlank())
     ) {
       throw new IllegalStateException(
         "No API keys found. Make sure you have OPENAI_API_KEY defined as environment variable, or change the model provider configuration in application.conf to use a different LLM."
@@ -23,7 +23,9 @@ public class KeyUtils {
     }
 
     if (System.getenv("MONGODB_ATLAS_URI") == null) {
-      logger.warn("MONGODB_ATLAS_URI environment variable is not set. Using local MongoDB URI.");
+      logger.warn(
+        "MONGODB_ATLAS_URI environment variable is not set. Using local MongoDB URI."
+      );
     }
   }
 }
