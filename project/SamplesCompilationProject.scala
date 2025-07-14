@@ -13,13 +13,13 @@ import sbt.Test
 
 object SamplesCompilationProject {
 
-  private val LangChain4JVersion = "1.0.0-beta1"
+  private val LangChain4JVersion = "1.1.0"
   private val additionalDeps = Map(
     "spring-dependency-injection" -> Seq("org.springframework" % "spring-context" % "6.2.8"),
     "ask-akka-agent" -> Seq(
       "dev.langchain4j" % "langchain4j-open-ai" % LangChain4JVersion,
       "dev.langchain4j" % "langchain4j" % LangChain4JVersion,
-      "dev.langchain4j" % "langchain4j-mongodb-atlas" % LangChain4JVersion))
+      "dev.langchain4j" % "langchain4j-mongodb-atlas" % "1.1.0-beta7"))
 
   def compilationProject(configureFunc: Project => Project): CompositeProject = {
     val pathToSample = "samples"
