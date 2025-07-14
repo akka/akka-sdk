@@ -13,8 +13,7 @@ import java.lang.annotation.*;
  * Mark a class as a central configuration point for an entire service.
  * Note that a service will also work without any such config point.
  * <p>
- * The class can optionally implement {@link ServiceSetup} for customizing various service setup
- * level aspects.
+ * The class must implement {@link ServiceSetup} with a predefined lifecycle hooks.
  * <p>
  * May only be used on one class per service.
  */
