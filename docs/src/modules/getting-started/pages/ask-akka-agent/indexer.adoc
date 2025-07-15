@@ -7,7 +7,7 @@ include::ROOT:partial$new-to-akka-start-here.adoc[]
 
 == Overview
 
-The first step in building a RAG agent is _indexing_. Each time a user submits a query or prompt to the agent, the agent _retrieves_ relevant documents by performing a semantic search on a vector database. Before we can perform that search, we need to populate the vector database with all of the knowledge that we want to make available to the agent.
+The first step in building a RAG agent is _indexing_. Each time a user submits a query or prompt to the agent, the agent _retrieves_ relevant documents by performing a semantic search on a vector database. Before we can perform that search, we need to populate the vector database with all the knowledge that we want to make available to the agent.
 
 Populating the vector database by creating embeddings is the _indexing_ step. In this guide we're going to use an Akka workflow to manage the indexing of a large number of documents as a long-running process.
 
@@ -16,7 +16,7 @@ Populating the vector database by creating embeddings is the _indexing_ step. In
 include::ROOT:partial$local-dev-prerequisites.adoc[]
 * https://platform.openai.com/api-keys[OpenAI API key, window="new"]
 
-You will also need a link:https://www.mongodb.com/atlas[Mongo DB Atlas] account. We'll be using the vector indexing capability of this database for the retrieval portion of the RAG flow. You can do all of the indexing necessary for this sample with a free account. Once you've created the account, make note of the secure connection string as you'll need it later.
+You can either create a link:https://www.mongodb.com/atlas[Mongo DB Atlas] account or run MongoDB locally using Docker. We'll be using the vector indexing capability of this database for the retrieval portion of the RAG flow. You can do all the indexing necessary for this sample with a free account if you choose so. Once you've created the account, make note of the secure connection string as you'll need it later. If you choose to run a local instance, further instructions are provided in <<Running the service>>.
 
 If you are following along with each step rather than using the completed solution, then you'll need the code you wrote in the previous step.
 
@@ -119,6 +119,8 @@ As you'll see in the next step in this guide, we'll add the indexed knowledge to
 For now, we suggest that you play around with indexing and the kind of results you see in MongoDB. Parameters like the size of chunks can sometimes impact the reliability or quality of the semantic search results. There are also several other types of document splitters. Explore those and see how it impacts the index.
 
 Use the connection URL provided to you by MongoDB Atlas and set the `MONGODB_ATLAS_URI` environment variable to that connection string.
+
+NOTE: As an alternative, you can run MongoDB locally using Docker with `docker compose up -d`. See example {sample-base-url}/ask-akka-agent/docker-compose.yml[docker-compose.yml].
 
 Start your service locally:
 

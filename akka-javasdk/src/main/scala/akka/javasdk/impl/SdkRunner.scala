@@ -331,6 +331,10 @@ private object ComponentLocator {
       val serviceSetupClassName = descriptorConfig.getString(DescriptorServiceSetupEntryPath)
       val serviceSetup = system.dynamicAccess.getClassFor[AnyRef](serviceSetupClassName).get
       if (serviceSetup.hasAnnotation[Setup]) {
+        if (!classOf[ServiceSetup].isAssignableFrom(serviceSetup)) {
+          throw new IllegalStateException(
+            "A class [" + serviceSetup + "] annotated with @Setup must implement [akka.javasdk.ServiceSetup] interface")
+        }
         logger.debug("Found and loaded service class setup: [{}]", serviceSetup)
       } else {
         logger.warn("Ignoring service class [{}] as it does not have the @Setup annotation", serviceSetup)
@@ -756,6 +760,11 @@ private final class Sdk(
         Some(
           wiredInstance[ServiceSetup](serviceClassClass.asInstanceOf[Class[ServiceSetup]])(
             sideEffectingComponentInjects(None)))
+
+      case Some(serviceClassClass) =>
+        //just wiring the class
+        wiredInstance[Any](serviceClassClass.asInstanceOf[Class[Any]])(sideEffectingComponentInjects(None))
+        None
       case _ => None
     }
 
