@@ -74,7 +74,7 @@ Once familiar with the project structure, continue with:
 
 - xref:deployment-model.adoc[Akka Deployment Model]
 - xref:development-process.adoc[Development process]
-- xref:state-model.adoc[State model]
+- xref:state-model.adoc[]
 - xref:java:dev-best-practices.adoc[Development best practices]
 
 You may also begin development right away using the xref:java:index.adoc[Akka SDK].
