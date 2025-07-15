@@ -378,7 +378,7 @@ jobs:
           - { sample: transfer-workflow-orchestration, it: true }
 
           - { sample: ask-akka-agent, it: false }
-          - { sample: multi-agent, it: false, test: true }
+          - { sample: multi-agent, it: true, test: true }
           - { sample: helloworld-agent, it: false, test: true }
 
     steps:
