@@ -379,7 +379,7 @@ jobs:
 
           - { sample: ask-akka-agent, it: false }
           - { sample: multi-agent, it: true, test: true }
-          - { sample: helloworld-agent, it: false, test: true }
+          - { sample: helloworld-agent, it: true, test: true }
 
     steps:
       - name: Checkout
