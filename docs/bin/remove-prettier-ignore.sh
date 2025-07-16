@@ -12,7 +12,19 @@ fi
 
 echo "Removing prettier-ignore lines from Java files in: $TARGET_DIR"
 
+
+OS_NAME="$(uname)"
+
+# Detect OS for sed compatibility,
+# Syntax (-i '') is specific to macOS (BSD sed).
+# On Linux (GNU sed), this will cause an error, because it interprets '' as the name of a backup file.
+if [[ "$OS_NAME" == "Darwin" ]]; then
+    SED_INPLACE=("sed" "-i" "")
+else
+    SED_INPLACE=("sed" "-i")
+fi
+
 # Find all Java files and remove lines containing prettier-ignore
-find "$TARGET_DIR" -type f -name "*.java" -exec sed -i '' '/prettier-ignore/d' {} \;
+find "$TARGET_DIR" -type f -name "*.java" -exec "${SED_INPLACE[@]}" '/prettier-ignore/d' {} \;
 
 echo "Removed prettier-ignore lines from Java files in $TARGET_DIR"
