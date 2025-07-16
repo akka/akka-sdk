@@ -5,9 +5,11 @@
 package akkajavasdk.components.workflowentities;
 
 import akka.Done;
+import akka.javasdk.UserException;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
+import akkajavasdk.components.MyException;
 import akkajavasdk.components.actions.echo.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -131,5 +133,21 @@ public class TransferWorkflow extends Workflow<TransferState> {
 
   public Effect<Message> genericCall(List<SomeClass> objects) {
     return effects().reply(new Message("genericCall ok"));
+  }
+
+  public Effect<String> run(String errorType) {
+    if ("errorMessage".equals(errorType)) {
+      return effects().error(errorType);
+    } else if ("errorUserException".equals(errorType)) {
+      return effects().error(new UserException(errorType));
+    } else if ("errorMyException".equals(errorType)) {
+      return effects().error(new MyException(errorType, new MyException.SomeData("some data")));
+    } else if ("throwMyException".equals(errorType)) {
+      throw new MyException(errorType, new MyException.SomeData("some data"));
+    } else if ("throwRuntimeException".equals(errorType)) {
+      throw new RuntimeException(errorType);
+    } else {
+      return effects().reply("No error triggered for: " + errorType);
+    }
   }
 }
