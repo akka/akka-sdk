@@ -90,4 +90,4 @@ jobs:
         run: |-
           cd samples/shopping-cart-quickstart
           echo "${{ secrets.PUBLISH_PASSWORD }}" | docker login --username "${{ secrets.PUBLISH_USER }}" --password-stdin registry.akka.io
-          mvn --batch-mode deploy docker:push -DskipTests -Ddocker.image=registry.akka.io/shopping-cart-quickstart
+          mvn -s ../../.github/settings.xml --batch-mode deploy docker:push -DskipTests -Ddocker.image=registry.akka.io/shopping-cart-quickstart

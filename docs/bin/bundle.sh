@@ -35,7 +35,10 @@ function _set_sdk_version {
   local -r dir="$1"
   export SDK_VERSION=$sdk_version
   # we only want to update the first occurrence of <version>, the one belonging the parent-pom
+  cat $dir/pom.xml | grep 'version'
   awk '/<version>[^<]*<\/version>/ && !subyet {sub("<version>[^<]*<\/version>", "<version>"ENVIRON["SDK_VERSION"]"</version>"); subyet=1} 1' $dir/pom.xml > temp && mv temp $dir/pom.xml
+  echo "Updated SDK_VERSION in $dir/pom.xml to $SDK_VERSION"
+  cat $dir/pom.xml | grep 'version'
 }
 
 function _bundle {
