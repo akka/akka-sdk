@@ -52,6 +52,22 @@ cat <<EOF >~/.m2/settings.xml
   <profiles>
     <profile>
       <id>central</id>
+      <repositories>
+        <repository>
+            <id>akka-repository</id>
+            <name>Akka library repository</name>
+            <!-- This only works for Akka's internal CI/CD -->
+            <url>https://repo.akka.io/maven/github_actions</url>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+          <pluginRepository>
+              <id>akka-repository</id>
+              <name>Akka library repository</name>
+              <!-- This only works for Akka's internal CI/CD -->
+              <url>https://repo.akka.io/maven/github_actions</url>
+          </pluginRepository>
+      </pluginRepositories>
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
