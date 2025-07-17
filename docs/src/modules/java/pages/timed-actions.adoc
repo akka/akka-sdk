@@ -78,6 +78,8 @@ include::example$reliable-timers/src/main/java/com/example/application/OrderEnti
 <1> The `placeOrder` method initiates an order.
 <2> Sets the `placed` field to `true`.
 
+NOTE: Timers are unique by name across the entire cluster, so scheduling another timer will replace an existing one of the same name. 
+
 == Handling the timer call
 
 Now let’s examine the `OrderTimedAction.expireOrder` method.
