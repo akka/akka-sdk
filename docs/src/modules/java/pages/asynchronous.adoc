@@ -19,7 +19,7 @@ public String hello() {
 }
 ----
 
-Aside from the route annotation, this is just regular, synchronous Java code. With many other frameworks, to use some other component in the service, you would have to create a future and manually wait for it. With Akka, we can juse use `invoke()` and get synchronous results from components:
+Aside from the route annotation, this is just regular, synchronous Java code. With many other frameworks, to use some other component in the service, you would have to create a future and manually wait for it. With Akka, we can just use `invoke()` and get synchronous results from components:
 
 [source,java]
 ----
