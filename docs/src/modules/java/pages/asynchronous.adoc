@@ -1,0 +1,73 @@
+= Asynchronous execution
+
+include::ROOT:partial$include.adoc[]
+
+If you are not familiar with Java or with Java's use of threads and futures, you may want to check out the following few links before reading further:
+
+* _Ask your favorite AI assistant to give you the summaries you need_
+* https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html[Java futures]
+* https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletionStage.html[Java CompletionStage]
+
+== Synchronous by default
+For the vast majority of your Akka programming tasks, writing clean and simple synchronous code is all you need. If you want to return a `String` from an endpoint, you don't need to return a future of a `String`, just write regular code:
+
+[source,java]
+----
+@Get("/hello")
+public String hello() {
+    return "Hello world";
+}
+----
+
+Aside from the route annotation, this is just regular, synchronous Java code. With many other frameworks, to use some other component in the service, you would have to create a future and manually wait for it. With Akka, we can just use `invoke()` and get synchronous results from components:
+
+[source,java]
+----
+@Get("/ai/hello")
+public String hello(Request request) {
+    return componentClient
+      .forAgent()
+      .inSession(request.user)
+      .method(HelloWorldAgent::greet)
+      .invoke(request.text);
+}
+----
+
+We're still just returning regular concrete types. The Akka runtime is happily working in the background to support handling massive volumes of concurrent requests to `/ai/hello`, but the code you write is synchronous.
+
+== Opt-in asynchronous execution
+
+One way to think about your synchronous code is that it returns already completed futures. For example, you could rewrite the first "hello world" sample to return a Java future, e.g. `CompletionStage<String>` as follows:
+
+[source,java]
+----
+@Get("/hello")
+public CompletionStage<String> hello() {
+    return CompletableFuture.completedFuture("Hello world");
+}
+----
+
+Obviously just writing simple synchronous code is easier to read and maintain. If you need to make a component client call that is explicitly asynchronous, then you can use the component client's `invokeAsync()` method, as shown in this HTTP endpoint route that creates a new chess match:
+
+[source,java]
+----
+@Post("/matches")
+public CompletionStage<HttpResponse> createMatch(CreateMatchRequest request) {
+  return componentClient.forEventSourcedEntity(request.matchId())
+    .method(MatchEntity::create)
+    .invokeAsync(request)
+    .thenApply(cr -> cr.toHttpResponse());
+}
+----
+
+Here we're chaining Java futures by calling `thenApply()` after `invokeAsync()`, a fairly ubiquitous pattern in asynchronous Java programming.
+
+Note that the `create()` method on the `MatchEntity` returns an `Effect`, which contains instructions to the runtime such as persisting events and replying to the client.
+
+For more information on the specific components, please see the corresponding documentation.
+
+== When to make asynchronous calls
+_When in doubt, write synchronous code_. Trust that Akka will do the right thing and that the runtime is making the necessary optimizations.
+
+If you do need explicit control over futures, such as creating streams from asynchronous sources or explicitly performing parallel work, then the component client's `invokeAsync()` and the full power of Java concurrency is there for you when you need it.
+
