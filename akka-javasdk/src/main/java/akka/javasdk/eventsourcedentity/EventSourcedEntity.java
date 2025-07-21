@@ -5,11 +5,13 @@
 package akka.javasdk.eventsourcedentity;
 
 import akka.annotation.InternalApi;
+import akka.javasdk.CommandException;
 import akka.javasdk.Metadata;
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
 /**
@@ -382,14 +384,23 @@ public abstract class EventSourcedEntity<S, E> {
       <T> ReadOnlyEffect<T> reply(T message, Metadata metadata);
 
       /**
-       * Create an error reply.
+       * Create an error reply. A short version of {{@code effects().error(new CommandException(message))}}.
        *
-       * @param description The description of the error.
+       * @param message The error message.
        * @return An error reply.
        * @param <T> The type of the message that must be returned by this call.
        */
-      <T> ReadOnlyEffect<T> error(String description);
+      <T> ReadOnlyEffect<T> error(String message);
 
+      /**
+       * Create an error reply. {@link CommandException} will be serialized and sent to the client.
+       * It's possible to catch it with try-catch statement or {@link CompletionStage} API when using async {@link akka.javasdk.client.ComponentClient} API.
+       *
+       * @param commandException The command exception to be returned.
+       * @param <T> The type of the message that must be returned by this call.
+       * @return An error reply.
+       */
+      <T> ReadOnlyEffect<T> error(CommandException commandException);
     }
 
     interface OnSuccessBuilder<S> {

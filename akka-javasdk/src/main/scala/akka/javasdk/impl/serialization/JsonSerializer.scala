@@ -6,13 +6,13 @@ package akka.javasdk.impl.serialization
 
 import akka.Done
 import akka.annotation.InternalApi
-
 import java.io.IOException
 import java.lang
 import java.lang.reflect.InvocationTargetException
 import java.util
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
+
 import akka.javasdk.JsonMigration
 import akka.javasdk.annotations.Migration
 import akka.javasdk.annotations.TypeName
@@ -37,10 +37,11 @@ import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.jsontype.TypeDeserializer
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer
 import com.fasterxml.jackson.databind.module.SimpleModule
-
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.util.Optional
+
+import akka.javasdk.CommandException
 
 /**
  * INTERNAL API
@@ -77,6 +78,7 @@ object JsonSerializer {
     module.addSerializer(classOf[Done], DoneSerializer)
     module.addDeserializer(classOf[Done], DoneDeserializer)
     mapper.registerModule(module)
+    mapper.addMixIn(classOf[Throwable], classOf[ThrowableMixin])
 
     mapper
   }
@@ -217,6 +219,29 @@ final class JsonSerializer(val objectMapper: ObjectMapper) {
       fromBytes(typeClass, bytesPayload)
   }
 
+  def exceptionFromBytes(exceptionPayload: BytesPayload): CommandException = {
+    val exClass = exceptionClass(exceptionPayload)
+    fromBytes(exClass, exceptionPayload).asInstanceOf[CommandException]
+  }
+
+  private def exceptionClass(exceptionPayload: BytesPayload): Class[_] = {
+    val className = stripJsonContentTypePrefix(exceptionPayload.contentType)
+    val exClass = reversedTypeHints.get(className)
+    if (exClass eq null) {
+      val loadedExceptionClass = Class.forName(className)
+      if (classOf[CommandException].isAssignableFrom(loadedExceptionClass)) {
+        addToReversedCache(loadedExceptionClass, className)
+        loadedExceptionClass
+      } else {
+        throw new IllegalStateException(
+          "Loaded class [" + className +
+          "] is not a subclass of CommandException, cannot deserialize it as a CommandException.")
+      }
+    } else {
+      exClass
+    }
+  }
+
   def fromBytes[T, C <: util.Collection[T]](
       valueClass: Class[T],
       collectionType: Class[C],
@@ -274,7 +299,7 @@ final class JsonSerializer(val objectMapper: ObjectMapper) {
   private def jsonProcessingException[T](valueClass: Class[T], contentType: String, e: JsonProcessingException) =
     new IllegalArgumentException(
       s"JSON with contentType [$contentType] could not be decoded into a " +
-      s"[${valueClass.getName}]. Make sure that changes are backwards compatible or apply a @Migration " +
+      s"[${valueClass.getName}]: ${e.getMessage}. When changing the schema, make sure that changes are backwards compatible or apply a @Migration " +
       "mechanism (https://doc.akka.io/java/serialization.html#_schema_evolution).",
       e)
 

@@ -14,8 +14,9 @@ import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
 import akka.javasdk.impl.effect.SecondaryEffectImpl
-
 import scala.jdk.CollectionConverters.CollectionHasAsScala
+
+import akka.javasdk.CommandException
 
 /**
  * INTERNAL API
@@ -53,8 +54,12 @@ private[javasdk] final class AgentStreamEffectImpl
     this.asInstanceOf[AgentStreamEffectImpl]
   }
 
-  override def error(description: String): AgentStreamEffectImpl = {
-    _secondaryEffect = ErrorReplyImpl(description)
+  override def error(message: String): AgentStreamEffectImpl = {
+    error(new CommandException(message))
+  }
+
+  override def error(commandException: CommandException): AgentStreamEffectImpl = {
+    _secondaryEffect = ErrorReplyImpl(commandException)
     this.asInstanceOf[AgentStreamEffectImpl]
   }
 

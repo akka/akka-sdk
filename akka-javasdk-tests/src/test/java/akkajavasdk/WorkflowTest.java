@@ -4,7 +4,9 @@
 
 package akkajavasdk;
 
+import akka.javasdk.CommandException;
 import akka.javasdk.testkit.TestKitSupport;
+import akkajavasdk.components.MyException;
 import akkajavasdk.components.actions.echo.Message;
 import akkajavasdk.components.views.TransferView;
 import akkajavasdk.components.workflowentities.DummyTransferStore;
@@ -25,6 +27,7 @@ import akkajavasdk.components.workflowentities.WorkflowWithTimer;
 import akkajavasdk.components.workflowentities.WorkflowWithoutInitialState;
 import akkajavasdk.components.workflowentities.hierarchy.TextWorkflow;
 import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
@@ -654,6 +657,46 @@ public class WorkflowTest extends TestKitSupport {
         .method(TransferWorkflow::commandHandlerIsOnVirtualThread)
         .invoke();
     assertThat(result).isTrue();
+  }
+
+  @Test
+  public void shouldTestExceptions() {
+    var exc1 = Assertions.assertThrows(CommandException.class, () -> {
+      componentClient.forWorkflow("1")
+        .method(TransferWorkflow::run)
+        .invoke("errorMessage");
+    });
+    assertThat(exc1.getMessage()).isEqualTo("errorMessage");
+
+    var exc2 = Assertions.assertThrows(CommandException.class, () -> {
+      componentClient.forWorkflow("1")
+        .method(TransferWorkflow::run)
+        .invoke("errorCommandException");
+    });
+    assertThat(exc2.getMessage()).isEqualTo("errorCommandException");
+
+    var exc3 = Assertions.assertThrows(MyException.class, () -> {
+      componentClient.forWorkflow("1")
+        .method(TransferWorkflow::run)
+        .invoke("errorMyException");
+    });
+    assertThat(exc3.getMessage()).isEqualTo("errorMyException");
+    assertThat(exc3.getData()).isEqualTo(new MyException.SomeData("some data"));
+
+    var exc4 = Assertions.assertThrows(MyException.class, () -> {
+      componentClient.forWorkflow("1")
+        .method(TransferWorkflow::run)
+        .invoke("throwMyException");
+    });
+    assertThat(exc4.getMessage()).isEqualTo("throwMyException");
+    assertThat(exc4.getData()).isEqualTo(new MyException.SomeData("some data"));
+
+    var exc5 = Assertions.assertThrows(RuntimeException.class, () -> {
+      componentClient.forWorkflow("1")
+        .method(TransferWorkflow::run)
+        .invoke("throwRuntimeException");
+    });
+    assertThat(exc5.getMessage()).contains("Proxy error: user service returned failure - Unexpected failure: java.lang.RuntimeException: throwRuntimeException"); //it's not the original message, but the one from the runtime
   }
 
 

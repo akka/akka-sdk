@@ -10,6 +10,7 @@ import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 import akka.annotation.InternalApi
+import akka.javasdk.CommandException
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.eventsourcedentity.CommandContext
@@ -137,8 +138,8 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
       def errorOrReply(
           updatedState: SpiEventSourcedEntity.State): Either[SpiEntity.Error, (BytesPayload, SpiMetadata)] = {
         commandEffect.secondaryEffect(updatedState) match {
-          case ErrorReplyImpl(description) =>
-            Left(new SpiEntity.Error(description))
+          case ErrorReplyImpl(commandException) =>
+            Left(new SpiEntity.Error(commandException.getMessage, Some(serializer.toBytes(commandException))))
           case MessageReplyImpl(message, m) =>
             val replyPayload = serializer.toBytes(message)
             val metadata = MetadataImpl.toSpi(m)
@@ -184,8 +185,12 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
       }
 
     } catch {
+      case e: CommandException =>
+        val serializedException = serializer.toBytes(e)
+        Future.successful(
+          new SpiEventSourcedEntity.ErrorEffect(error = new SpiEntity.Error(e.getMessage, Some(serializedException))))
       case BadRequestException(msg) =>
-        Future.successful(new SpiEventSourcedEntity.ErrorEffect(error = new SpiEntity.Error(msg)))
+        Future.successful(new SpiEventSourcedEntity.ErrorEffect(error = new SpiEntity.Error(msg, None)))
       case e: EntityException =>
         throw e
       case NonFatal(error) =>
