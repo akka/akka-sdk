@@ -196,7 +196,7 @@ This is utilized when you implement the xref:java:workflows.adoc[Workflow] compo
 |Transactional
 |Short-lived, high volume, concurrent execution.
 
-This is utilized when you implement xref:concepts:grpc-vs-http-endpoints.adoc[Endpoint], xref:java:views.adoc[View], xref:concepts:state-model.adoc[Entity] and xref:java:timed-actions.adoc[Timer] components.
+This is utilized when you implement xref:concepts:grpc-vs-http-endpoints.adoc[Endpoint], xref:java:views.adoc[View], xref:concepts:state-model.adoc#_entity_state_models[Entity] and xref:java:timed-actions.adoc[Timer] components.
 |Streaming
 |Continuous, never-ending processes that handle streams of data.
 
