@@ -6,7 +6,7 @@ Akka provides an in-memory, durable store for stateful data. Stateful data can b
 
 Memory in Akka is structured around xref:reference:glossary.adoc#entity[entities]. An entity holds a particular slice of application state and evolves it over time according to a defined xref:reference:glossary.adoc#state_model[state model]. These state models determine how state is stored, updated, and replicated. This approach provides consistency and durability across the system, even in the face of failure. xref:java:agents.adoc[Agents], for example, manage their memory through entities, whether for short-lived context or persistent behavior.
 
-Akka uses an architectural pattern called _event sourcing_. Following this pattern, all changes to an application's state are stored as a sequence of immutable events. Instead of saving the current state directly, Akka stores the history of what happened to it. The current state is derived by replaying those events. Memory is saved in an event journal managed by Akka, with events recorded both sequentially and via periodic snapshots for faster recovery.
+Akka uses an architectural pattern called _Event Sourcing_. Following this pattern, all changes to an application's state are stored as a sequence of immutable events. Instead of saving the current state directly, Akka stores the history of what happened to it. The current state is derived by replaying those events. Memory is saved in an event journal managed by Akka, with events recorded both sequentially and via periodic snapshots for faster recovery.
 
 [cols="2,2,1", options="header"]
 |===
@@ -19,7 +19,7 @@ Akka uses an architectural pattern called _event sourcing_. Following this patte
 | FundsWithdrawn  | -$400             | $1,200
 |===
 
-Akka uses the event sourcing pattern for many internal stateful operations. For example, xref:java:workflows.adoc[Workflows] rely on event sourcing to record each step as it progresses. This provides a complete history of execution, which can be useful for auditing, debugging, or recovery.
+Akka uses the Event Sourcing pattern for many internal stateful operations. For example, xref:java:workflows.adoc[Workflows] rely on Event Sourcing to record each step as it progresses. This provides a complete history of execution, which can be useful for auditing, debugging, or recovery.
 
 [cols="1,2,2", options="header"]
 |===
