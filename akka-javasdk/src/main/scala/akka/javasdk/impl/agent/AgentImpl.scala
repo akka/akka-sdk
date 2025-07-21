@@ -60,7 +60,7 @@ import akka.runtime.sdk.spi.SpiAgent.TimeoutFailure
 import akka.runtime.sdk.spi.SpiAgent.ToolCallExecutionFailure
 import akka.runtime.sdk.spi.SpiAgent.ToolCallLimitReachedFailure
 import akka.runtime.sdk.spi.SpiAgent.UnsupportedFeatureFailure
-import akka.runtime.sdk.spi.SpiAgent.{AgentException => SpiAgentException}
+import akka.runtime.sdk.spi.SpiAgent.{ AgentException => SpiAgentException }
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.util.ByteString
 import com.typesafe.config.Config

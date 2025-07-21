@@ -86,7 +86,8 @@ object WorkflowEffectImpl {
       WorkflowEffectImpl(NoPersistence, NoTransition, ReplyValue(message, metadata))
   }
 
-  final case class ErrorEffectImpl[R](description: String, exception: Option[CommandException]) extends ReadOnlyEffect[R]
+  final case class ErrorEffectImpl[R](description: String, exception: Option[CommandException])
+      extends ReadOnlyEffect[R]
 }
 
 /**

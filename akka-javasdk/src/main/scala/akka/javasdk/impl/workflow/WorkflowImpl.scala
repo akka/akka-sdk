@@ -46,7 +46,7 @@ import akka.javasdk.impl.workflow.WorkflowEffectImpl.TransitionalEffectImpl
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.UpdateState
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
-import akka.javasdk.workflow.Workflow.{RecoverStrategy => SdkRecoverStrategy}
+import akka.javasdk.workflow.Workflow.{ RecoverStrategy => SdkRecoverStrategy }
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.RegionInfo
