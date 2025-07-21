@@ -4,7 +4,7 @@
 
 package akkajavasdk.components.keyvalueentities.user;
 
-import akka.javasdk.UserException;
+import akka.javasdk.CommandException;
 import akkajavasdk.Ok;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
@@ -78,8 +78,8 @@ public class UserEntity extends KeyValueEntity<User> {
   public Effect<String> run(String errorType) {
     if ("errorMessage".equals(errorType)) {
       return effects().error(errorType);
-    } else if ("errorUserException".equals(errorType)) {
-      return effects().error(new UserException(errorType));
+    } else if ("errorCommandException".equals(errorType)) {
+      return effects().error(new CommandException(errorType));
     } else if ("errorMyException".equals(errorType)) {
       return effects().error(new MyException(errorType, new MyException.SomeData("some data")));
     } else if ("throwMyException".equals(errorType)) {

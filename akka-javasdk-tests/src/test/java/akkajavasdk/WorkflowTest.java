@@ -4,7 +4,7 @@
 
 package akkajavasdk;
 
-import akka.javasdk.UserException;
+import akka.javasdk.CommandException;
 import akka.javasdk.testkit.TestKitSupport;
 import akkajavasdk.components.MyException;
 import akkajavasdk.components.actions.echo.Message;
@@ -661,19 +661,19 @@ public class WorkflowTest extends TestKitSupport {
 
   @Test
   public void shouldTestExceptions() {
-    var exc1 = Assertions.assertThrows(UserException.class, () -> {
+    var exc1 = Assertions.assertThrows(CommandException.class, () -> {
       componentClient.forWorkflow("1")
         .method(TransferWorkflow::run)
         .invoke("errorMessage");
     });
     assertThat(exc1.getMessage()).isEqualTo("errorMessage");
 
-    var exc2 = Assertions.assertThrows(UserException.class, () -> {
+    var exc2 = Assertions.assertThrows(CommandException.class, () -> {
       componentClient.forWorkflow("1")
         .method(TransferWorkflow::run)
-        .invoke("errorUserException");
+        .invoke("errorCommandException");
     });
-    assertThat(exc2.getMessage()).isEqualTo("errorUserException");
+    assertThat(exc2.getMessage()).isEqualTo("errorCommandException");
 
     var exc3 = Assertions.assertThrows(MyException.class, () -> {
       componentClient.forWorkflow("1")

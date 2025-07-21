@@ -17,13 +17,13 @@ import akka.javasdk.workflow.Workflow;
  * 
  * <p><strong>HTTP Response Behavior:</strong>
  * <ul>
- *   <li>By default, {@code UserException} is transformed into an HTTP 400 Bad Request response</li>
+ *   <li>By default, {@code CommandException} is transformed into an HTTP 400 Bad Request response</li>
  *   <li>The exception message becomes the response body</li>
  *   <li>Can be caught and transformed into custom HTTP responses for fine-tuned error handling</li>
  * </ul>
  * 
  * <p><strong>Network Serialization:</strong>
- * Only {@code UserException} and its subtypes are serialized and sent over the network when components 
+ * Only {@code CommandException} and its subtypes are serialized and sent over the network when components
  * are called across different nodes. Other exceptions are transformed into generic HTTP 500 errors.
  * The Jackson serialization is configured to ignore fields like stack trace or cause from the 
  * {@link Throwable} class.
@@ -42,13 +42,13 @@ import akka.javasdk.workflow.Workflow;
  * <pre>{@code
  * // In a command handler
  * if (value > 10000) {
- *   throw new UserException("Increasing counter above 10000 is blocked");
+ *   throw new CommandException("Increasing counter above 10000 is blocked");
  * }
  * }</pre>
  * 
  * <p>Creating custom subtypes:
  * <pre>{@code
- * public class CounterLimitExceededException extends UserException {
+ * public class CounterLimitExceededException extends CommandException {
  *   public CounterLimitExceededException(String message) {
  *     super(message);
  *   }
@@ -65,8 +65,8 @@ import akka.javasdk.workflow.Workflow;
  *            .forEventSourcedEntity(counterId)
  *            .method(CounterEntity::increase)
  *            .invoke(value);
- * } catch (UserException e) {
- *   // Handle the user exception, e.g., return a bad request response
+ * } catch (CommandException e) {
+ *   // Handle the command exception, e.g., return a bad request response
  * }
  * }</pre>
  * 
@@ -74,9 +74,9 @@ import akka.javasdk.workflow.Workflow;
  * @see EventSourcedEntity  
  * @see Workflow
  */
-public class UserException extends IllegalArgumentException {
+public class CommandException extends IllegalArgumentException {
 
-  public UserException(String message) {
+  public CommandException(String message) {
     super(message);
   }
 

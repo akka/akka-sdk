@@ -29,7 +29,7 @@ import java.util
 
 import scala.jdk.CollectionConverters.ListHasAsScala
 
-import akka.javasdk.UserException
+import akka.javasdk.CommandException
 
 /**
  * INTERNAL API
@@ -136,11 +136,11 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
   }
 
   override def error[T](message: String): BaseAgentEffectBuilder[T] = {
-    error(new UserException(message))
+    error(new CommandException(message))
   }
 
-  override def error[T](userException: UserException): BaseAgentEffectBuilder[T] = {
-    _secondaryEffect = ErrorReplyImpl(userException)
+  override def error[T](commandException: CommandException): BaseAgentEffectBuilder[T] = {
+    _secondaryEffect = ErrorReplyImpl(commandException)
     this.asInstanceOf[BaseAgentEffectBuilder[T]]
   }
 

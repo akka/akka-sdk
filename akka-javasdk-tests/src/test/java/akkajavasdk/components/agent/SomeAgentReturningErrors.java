@@ -4,7 +4,7 @@
 
 package akkajavasdk.components.agent;
 
-import akka.javasdk.UserException;
+import akka.javasdk.CommandException;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.ComponentId;
 import akkajavasdk.components.MyException;
@@ -15,8 +15,8 @@ public class SomeAgentReturningErrors extends Agent {
   public Effect<String> run(String errorType) {
     if ("errorMessage".equals(errorType)) {
       return effects().error(errorType);
-    } else if ("errorUserException".equals(errorType)) {
-      return effects().error(new UserException(errorType));
+    } else if ("errorCommandException".equals(errorType)) {
+      return effects().error(new CommandException(errorType));
     } else if ("errorMyException".equals(errorType)) {
       return effects().error(new MyException(errorType, new MyException.SomeData("some data")));
     } else if ("throwMyException".equals(errorType)) {

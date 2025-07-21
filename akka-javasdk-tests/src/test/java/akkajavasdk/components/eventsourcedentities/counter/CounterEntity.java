@@ -5,7 +5,7 @@
 package akkajavasdk.components.eventsourcedentities.counter;
 
 import akka.Done;
-import akka.javasdk.UserException;
+import akka.javasdk.CommandException;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akkajavasdk.Result;
@@ -149,8 +149,8 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
   public Effect<String> run(String errorType) {
     if ("errorMessage".equals(errorType)) {
       return effects().error(errorType);
-    } else if ("errorUserException".equals(errorType)) {
-      return effects().error(new UserException(errorType));
+    } else if ("errorCommandException".equals(errorType)) {
+      return effects().error(new CommandException(errorType));
     } else if ("errorMyException".equals(errorType)) {
       return effects().error(new MyException(errorType, new MyException.SomeData("some data")));
     } else if ("throwMyException".equals(errorType)) {

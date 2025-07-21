@@ -11,21 +11,21 @@ import java.util.Optional
 import scala.beans.BeanProperty
 
 import akka.Done
+import akka.javasdk.CommandException
 import akka.javasdk.DummyClass
 import akka.javasdk.DummyClass2
 import akka.javasdk.DummyClassRenamed
 import akka.javasdk.JsonMigration
-import akka.javasdk.UserException
 import akka.javasdk.annotations.Migration
 import akka.javasdk.annotations.TypeName
 import akka.javasdk.impl.serialization
 import akka.javasdk.impl.serialization.JsonSerializationSpec.Cat
 import akka.javasdk.impl.serialization.JsonSerializationSpec.Dog
 import akka.javasdk.impl.serialization.JsonSerializationSpec.ExceptionData
-import akka.javasdk.impl.serialization.JsonSerializationSpec.OtherUserException
+import akka.javasdk.impl.serialization.JsonSerializationSpec.OtherCommandException
 import akka.javasdk.impl.serialization.JsonSerializationSpec.SimpleClass
 import akka.javasdk.impl.serialization.JsonSerializationSpec.SimpleClassUpdated
-import akka.javasdk.impl.serialization.JsonSerializationSpec.TestUserException
+import akka.javasdk.impl.serialization.JsonSerializationSpec.TestCommandException
 import akka.runtime.sdk.spi.BytesPayload
 import akka.util.ByteString
 import com.fasterxml.jackson.annotation.JsonCreator
@@ -53,13 +53,13 @@ object JsonSerializationSpec {
   final case class ExceptionData(stringField: String, intField: Int)
 
   @JsonCreator
-  final case class TestUserException(msg: String, exceptionData: ExceptionData) extends UserException(msg)
+  final case class TestCommandException(msg: String, exceptionData: ExceptionData) extends CommandException(msg)
 
   @JsonCreator
-  final case class OtherUserException(msg: String, exceptionData: ExceptionData) extends UserException(msg)
+  final case class OtherCommandException(msg: String, exceptionData: ExceptionData) extends CommandException(msg)
 
   @JsonCreator
-  final case class NotUserException(msg: String, exceptionData: ExceptionData)
+  final case class NotCommandException(msg: String, exceptionData: ExceptionData)
 
   @JsonCreator
   case class SimpleClass(str: String, in: Int)
@@ -210,10 +210,10 @@ class JsonSerializationSpec extends AnyWordSpec with Matchers {
 
     "serialize deserialize exception" in {
       val exceptionData = ExceptionData("test", 123)
-      val exception = TestUserException("test exception", exceptionData)
+      val exception = TestCommandException("test exception", exceptionData)
       val bytesPayload = serializer.toBytes(exception)
       bytesPayload.contentType shouldBe jsonContentTypeWith(exception.getClass.getName)
-      val decoded = serializer.exceptionFromBytes(bytesPayload).asInstanceOf[TestUserException]
+      val decoded = serializer.exceptionFromBytes(bytesPayload).asInstanceOf[TestCommandException]
       decoded.getMessage shouldBe "test exception"
       decoded.exceptionData shouldBe exceptionData
       decoded.getStackTrace shouldBe empty
@@ -228,24 +228,24 @@ class JsonSerializationSpec extends AnyWordSpec with Matchers {
           "eyJtc2ciOiJ0ZXN0IGV4Y2VwdGlvbiIsImV4Y2VwdGlvbkRhdGEiOnsic3RyaW5nRmllbGQiOiJ0ZXN0IiwiaW50RmllbGQiOjEyM30sIm1lc3NhZ2UiOiJ0ZXN0IGV4Y2VwdGlvbiJ9")
       val bytesPayload = new BytesPayload(
         ByteString(rawPayload),
-        "json.akka.io/akka.javasdk.impl.serialization.JsonSerializationSpec$OtherUserException")
-      val decoded = serializer.exceptionFromBytes(bytesPayload).asInstanceOf[OtherUserException]
+        "json.akka.io/akka.javasdk.impl.serialization.JsonSerializationSpec$OtherCommandException")
+      val decoded = serializer.exceptionFromBytes(bytesPayload).asInstanceOf[OtherCommandException]
       decoded.getMessage shouldBe "test exception"
       decoded.exceptionData shouldBe exceptionData
     }
 
-    "not deserialize exception that is not UserException" in {
+    "not deserialize exception that is not CommandException" in {
       // payload: {"msg":"test exception","exceptionData":{"stringField":"test","intField":123},"message":"test exception"}
       val rawPayload =
         Base64.getDecoder.decode(
           "eyJtc2ciOiJ0ZXN0IGV4Y2VwdGlvbiIsImV4Y2VwdGlvbkRhdGEiOnsic3RyaW5nRmllbGQiOiJ0ZXN0IiwiaW50RmllbGQiOjEyM30sIm1lc3NhZ2UiOiJ0ZXN0IGV4Y2VwdGlvbiJ9")
       val bytesPayload = new BytesPayload(
         ByteString(rawPayload),
-        "json.akka.io/akka.javasdk.impl.serialization.JsonSerializationSpec$NotUserException")
+        "json.akka.io/akka.javasdk.impl.serialization.JsonSerializationSpec$NotCommandException")
       val caught = intercept[IllegalStateException] {
         serializer.exceptionFromBytes(bytesPayload)
       }
-      caught.getMessage shouldBe "Loaded class [akka.javasdk.impl.serialization.JsonSerializationSpec$NotUserException] is not a subclass of UserException, cannot deserialize it as a UserException."
+      caught.getMessage shouldBe "Loaded class [akka.javasdk.impl.serialization.JsonSerializationSpec$NotCommandException] is not a subclass of CommandException, cannot deserialize it as a CommandException."
     }
 
     "not deserialize unknown exception" in {

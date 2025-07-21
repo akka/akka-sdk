@@ -16,8 +16,8 @@ import WorkflowEffectImpl.Transition
 import WorkflowEffectImpl.TransitionalEffectImpl
 import WorkflowEffectImpl.UpdateState
 import akka.annotation.InternalApi
+import akka.javasdk.CommandException
 import akka.javasdk.Metadata
-import akka.javasdk.UserException
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.Delete
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.ReadOnlyEffectImpl
 import akka.javasdk.workflow.Workflow.Effect
@@ -86,7 +86,7 @@ object WorkflowEffectImpl {
       WorkflowEffectImpl(NoPersistence, NoTransition, ReplyValue(message, metadata))
   }
 
-  final case class ErrorEffectImpl[R](description: String, exception: Option[UserException]) extends ReadOnlyEffect[R]
+  final case class ErrorEffectImpl[R](description: String, exception: Option[CommandException]) extends ReadOnlyEffect[R]
 }
 
 /**
@@ -123,9 +123,9 @@ case class WorkflowEffectImpl[S, T](persistence: Persistence[S], transition: Tra
     ReadOnlyEffectImpl().reply(reply, metadata)
 
   override def error[R](description: String): ReadOnlyEffect[R] =
-    error(new UserException(description))
+    error(new CommandException(description))
 
-  override def error[R](userException: UserException): ReadOnlyEffect[R] =
-    ErrorEffectImpl(userException.getMessage, Some(userException))
+  override def error[R](commandException: CommandException): ReadOnlyEffect[R] =
+    ErrorEffectImpl(commandException.getMessage, Some(commandException))
 
 }

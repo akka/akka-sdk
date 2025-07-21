@@ -9,7 +9,7 @@ import static org.assertj.core.api.Assertions.fail;
 
 import akka.actor.testkit.typed.javadsl.LoggingTestKit;
 import akka.javasdk.DependencyProvider;
-import akka.javasdk.UserException;
+import akka.javasdk.CommandException;
 import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
@@ -317,7 +317,7 @@ public class AgentIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldTestExceptions() {
-    var exc1 = Assertions.assertThrows(UserException.class, () -> {
+    var exc1 = Assertions.assertThrows(CommandException.class, () -> {
       componentClient.forAgent()
         .inSession(newSessionId())
         .method(SomeAgentReturningErrors::run)
@@ -325,13 +325,13 @@ public class AgentIntegrationTest extends TestKitSupport {
     });
     assertThat(exc1.getMessage()).isEqualTo("errorMessage");
 
-    var exc2 = Assertions.assertThrows(UserException.class, () -> {
+    var exc2 = Assertions.assertThrows(CommandException.class, () -> {
       componentClient.forAgent()
         .inSession(newSessionId())
         .method(SomeAgentReturningErrors::run)
-        .invoke("errorUserException");
+        .invoke("errorCommandException");
     });
-    assertThat(exc2.getMessage()).isEqualTo("errorUserException");
+    assertThat(exc2.getMessage()).isEqualTo("errorCommandException");
 
     var exc3 = Assertions.assertThrows(MyException.class, () -> {
       componentClient.forAgent()

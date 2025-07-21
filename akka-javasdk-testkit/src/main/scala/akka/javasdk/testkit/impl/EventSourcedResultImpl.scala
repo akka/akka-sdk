@@ -92,7 +92,7 @@ private[akka] final class EventSourcedResultImpl[R, S, E](
   override def isError: Boolean = secondaryEffect.isInstanceOf[ErrorReplyImpl]
 
   override def getError: String = secondaryEffect match {
-    case ErrorReplyImpl(userException) => userException.getMessage
+    case ErrorReplyImpl(commandException) => commandException.getMessage
     case _ => throw new IllegalStateException(s"The effect was not an error but [$secondaryEffectName]")
   }
 

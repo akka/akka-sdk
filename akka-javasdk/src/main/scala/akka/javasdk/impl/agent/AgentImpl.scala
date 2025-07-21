@@ -60,7 +60,7 @@ import akka.runtime.sdk.spi.SpiAgent.TimeoutFailure
 import akka.runtime.sdk.spi.SpiAgent.ToolCallExecutionFailure
 import akka.runtime.sdk.spi.SpiAgent.ToolCallLimitReachedFailure
 import akka.runtime.sdk.spi.SpiAgent.UnsupportedFeatureFailure
-import akka.runtime.sdk.spi.SpiAgent.{ AgentException => SpiAgentException }
+import akka.runtime.sdk.spi.SpiAgent.{AgentException => SpiAgentException}
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.util.ByteString
 import com.typesafe.config.Config
@@ -77,7 +77,7 @@ import scala.concurrent.Future
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import scala.util.control.NonFatal
 
-import akka.javasdk.UserException
+import akka.javasdk.CommandException
 
 /**
  * INTERNAL API
@@ -153,8 +153,8 @@ private[impl] final class AgentImpl[A <: Agent](
 
       def errorOrReply: Either[SpiAgent.Error, (BytesPayload, SpiMetadata)] = {
         secondaryEffect match {
-          case ErrorReplyImpl(userException) =>
-            Left(new SpiAgent.Error(userException.getMessage, Some(serializer.toBytes(userException))))
+          case ErrorReplyImpl(commandException) =>
+            Left(new SpiAgent.Error(commandException.getMessage, Some(serializer.toBytes(commandException))))
           case MessageReplyImpl(message, m) =>
             val replyPayload = serializer.toBytes(message)
             val metadata = MetadataImpl.toSpi(m)
@@ -226,7 +226,7 @@ private[impl] final class AgentImpl[A <: Agent](
       Future.successful(spiEffect)
 
     } catch {
-      case e: UserException =>
+      case e: CommandException =>
         val serializedException = serializer.toBytes(e)
         Future.successful(new SpiAgent.ErrorEffect(error = new SpiAgent.Error(e.getMessage, Some(serializedException))))
       case e: HandlerNotFoundException =>

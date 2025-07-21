@@ -4,11 +4,9 @@ import static counter.domain.CounterEvent.ValueIncreased;
 import static counter.domain.CounterEvent.ValueMultiplied;
 import static java.util.function.Function.identity;
 
-import akka.javasdk.UserException;
+import akka.javasdk.CommandException;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import counter.domain.CounterEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +44,7 @@ public class CounterEntity extends EventSourcedEntity<Integer, CounterEvent> {
   //end::increaseWithError[]
 
   //tag::increaseWithException[]
-  public static class CounterLimitExceededException extends UserException { // <1>
+  public static class CounterLimitExceededException extends CommandException { // <1>
 
     private final Integer value;
 

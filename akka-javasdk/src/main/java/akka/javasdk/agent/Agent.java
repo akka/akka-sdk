@@ -5,9 +5,9 @@
 package akka.javasdk.agent;
 
 import akka.annotation.InternalApi;
+import akka.javasdk.CommandException;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.Metadata;
-import akka.javasdk.UserException;
 import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.impl.agent.AgentStreamEffectImpl;
@@ -225,7 +225,7 @@ public abstract class Agent {
       <T> Agent.Effect<T> reply(T message, Metadata metadata);
 
       /**
-       * Create an error reply without calling the model. A short version of {{@code effects().error(new UserException(message))}}.
+       * Create an error reply without calling the model. A short version of {{@code effects().error(new CommandException(message))}}.
        *
        * @param message The error message.
        * @param <T> The type of the message that must be returned by this call.
@@ -234,14 +234,14 @@ public abstract class Agent {
       <T> Agent.Effect<T> error(String message);
 
       /**
-       * Create an error reply. {@link UserException} will be serialized and sent to the client.
+       * Create an error reply. {@link CommandException} will be serialized and sent to the client.
        * It's possible to catch it with try-catch statement or {@link CompletionStage} API when using async {@link ComponentClient} API.
        *
-       * @param userException The user exception to be returned.
+       * @param commandException The command exception to be returned.
        * @param <T> The type of the message that must be returned by this call.
        * @return An error reply.
        */
-      <T> Agent.Effect<T> error(UserException userException);
+      <T> Agent.Effect<T> error(CommandException commandException);
 
     }
 
@@ -488,7 +488,7 @@ public abstract class Agent {
       Agent.StreamEffect reply(String message, Metadata metadata);
 
       /**
-       * Create an error reply without calling the model. A short version of {{@code streamEffects().error(new UserException(message))}}.
+       * Create an error reply without calling the model. A short version of {{@code streamEffects().error(new CommandException(message))}}.
        *
        * @param message The error message.
        * @return An error reply.
@@ -496,13 +496,13 @@ public abstract class Agent {
       Agent.StreamEffect error(String message);
 
       /**
-       * Create an error reply. {@link UserException} will be serialized and sent to the client.
+       * Create an error reply. {@link CommandException} will be serialized and sent to the client.
        * It's possible to catch it with try-catch statement.
        *
-       * @param userException The user exception to be returned.
+       * @param commandException The command exception to be returned.
        * @return An error reply.
        */
-      Agent.StreamEffect error(UserException userException);
+      Agent.StreamEffect error(CommandException commandException);
 
 
       Builder memory(MemoryProvider provider);

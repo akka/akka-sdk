@@ -4,7 +4,7 @@ import static akka.javasdk.http.HttpResponses.badRequest;
 import static akka.javasdk.http.HttpResponses.ok;
 
 import akka.http.javadsl.model.HttpResponse;
-import akka.javasdk.UserException;
+import akka.javasdk.CommandException;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
@@ -67,7 +67,7 @@ public class CounterEndpoint {
         .method(CounterEntity::increaseWithError)
         .invoke(value);
       return ok(result);
-    } catch (UserException e) { // <1>
+    } catch (CommandException e) { // <1>
       return badRequest("rejected: " + value);
     }
   }

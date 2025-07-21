@@ -41,7 +41,7 @@ import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.util.Optional
 
-import akka.javasdk.UserException
+import akka.javasdk.CommandException
 
 /**
  * INTERNAL API
@@ -219,9 +219,9 @@ final class JsonSerializer(val objectMapper: ObjectMapper) {
       fromBytes(typeClass, bytesPayload)
   }
 
-  def exceptionFromBytes(exceptionPayload: BytesPayload): UserException = {
+  def exceptionFromBytes(exceptionPayload: BytesPayload): CommandException = {
     val exClass = exceptionClass(exceptionPayload)
-    fromBytes(exClass, exceptionPayload).asInstanceOf[UserException]
+    fromBytes(exClass, exceptionPayload).asInstanceOf[CommandException]
   }
 
   private def exceptionClass(exceptionPayload: BytesPayload): Class[_] = {
@@ -229,13 +229,13 @@ final class JsonSerializer(val objectMapper: ObjectMapper) {
     val exClass = reversedTypeHints.get(className)
     if (exClass eq null) {
       val loadedExceptionClass = Class.forName(className)
-      if (classOf[UserException].isAssignableFrom(loadedExceptionClass)) {
+      if (classOf[CommandException].isAssignableFrom(loadedExceptionClass)) {
         addToReversedCache(loadedExceptionClass, className)
         loadedExceptionClass
       } else {
         throw new IllegalStateException(
           "Loaded class [" + className +
-          "] is not a subclass of UserException, cannot deserialize it as a UserException.")
+          "] is not a subclass of CommandException, cannot deserialize it as a CommandException.")
       }
     } else {
       exClass

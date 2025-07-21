@@ -5,8 +5,8 @@
 package akka.javasdk.impl.effect
 
 import akka.annotation.InternalApi
+import akka.javasdk.CommandException
 import akka.javasdk.Metadata
-import akka.javasdk.UserException
 
 /**
  * INTERNAL API
@@ -33,4 +33,4 @@ private[javasdk] final case class MessageReplyImpl[T](message: T, metadata: Meta
  * INTERNAL API
  */
 @InternalApi
-private[javasdk] final case class ErrorReplyImpl(userException: UserException) extends SecondaryEffectImpl {}
+private[javasdk] final case class ErrorReplyImpl(commandException: CommandException) extends SecondaryEffectImpl {}

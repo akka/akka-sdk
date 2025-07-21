@@ -17,7 +17,7 @@ include::example$event-sourced-counter-brokers/src/main/java/counter/application
 ----
 <1> Return an error effect with a message if the validation fails.
 
-The `effects().error` is later transformed into a `UserException`. The default behavior is to return an HTTP 400 error with the error message as a response body.
+The `effects().error` is later transformed into a `CommandException`. The default behavior is to return an HTTP 400 error with the error message as a response body.
 
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[CounterEndpoint.java]
@@ -39,25 +39,25 @@ Content-Length: 28
 Increasing counter above 10000 is blocked
 ----
 
-For more fine-tuned control over the error handling it's possible to catch the `UserException` and transform it into a proper HTTP error.
+For more fine-tuned control over the error handling it's possible to catch the `CommandException` and transform it into a proper HTTP error.
 
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[CounterEndpoint.java]
 ----
 include::example$event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[tag=increaseWithErrorHandling]
 ----
-<1> Catching the `UserException` and transforming it into 400 Bad Request error.
+<1> Catching the `CommandException` and transforming it into 400 Bad Request error.
 
-Remember that the xref:component-and-service-calls.adoc#_akka_components[called component] can be on a different node. Only the `UserException` and its subtypes are serialized and sent over the network. The xref:serialization.adoc[Jackson] serialization is configured to ignore fields like stack trace or cause from the Java `java.lang.Throwable` class. Other exceptions are not serializable and will be transformed into a generic HTTP 500 error.
+Remember that the xref:component-and-service-calls.adoc#_akka_components[called component] can be on a different node. Only the `CommandException` and its subtypes are serialized and sent over the network. The xref:serialization.adoc[Jackson] serialization is configured to ignore fields like stack trace or cause from the Java `java.lang.Throwable` class. Other exceptions are not serializable and will be transformed into a generic HTTP 500 error.
 
-Using the `effects().error(userException)` method or simply throwing a `UserException` will have the same effect. It's possible to have a more dedicated exceptions that will be used to signal different situations. For example, you can create a `CounterLimitExceededException` that extends `UserException` and use it in the command handler.
+Using the `effects().error(commandException)` method or simply throwing a `CommandException` will have the same effect. It's possible to have a more dedicated exceptions that will be used to signal different situations. For example, you can create a `CounterLimitExceededException` that extends `CommandException` and use it in the command handler.
 
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/application/CounterEntity.java[CounterEntity.java]
 ----
 include::example$event-sourced-counter-brokers/src/main/java/counter/application/CounterEntity.java[tag=increaseWithException]
 ----
-<1> Define a custom exception that extends `UserException`. Inner classes must be static to be serializable.
+<1> Define a custom exception that extends `CommandException`. Inner classes must be static to be serializable.
 <2> Throw the `CounterLimitExceededException`.
 
 This way the client can match them by the type instead of the message.
@@ -74,7 +74,7 @@ Custom exceptions are not the only option to deal with errors in a more structur
 
 == Failures
 
-All unexpected exception (that doesn't extend `UserException`) thrown by the user code are transformed into an HTTP 500 error. When running the service locally in dev mode, a stack trace will be a part of the HTTP response. In production, this information is hidden, to not leak internal details about the service to a client. The client will receive a non-descriptive message with a correlation ID, like below.
+All unexpected exception (that doesn't extend `CommandException`) thrown by the user code are transformed into an HTTP 500 error. When running the service locally in dev mode, a stack trace will be a part of the HTTP response. In production, this information is hidden, to not leak internal details about the service to a client. The client will receive a non-descriptive message with a correlation ID, like below.
 
 [source]
 ----

@@ -4,9 +4,9 @@
 
 package akkajavasdk.components;
 
-import akka.javasdk.UserException;
+import akka.javasdk.CommandException;
 
-public class MyException extends UserException {
+public class MyException extends CommandException {
 
   public record SomeData(String info) {}
 

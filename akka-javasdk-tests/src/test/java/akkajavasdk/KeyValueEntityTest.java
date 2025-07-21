@@ -4,7 +4,7 @@
 
 package akkajavasdk;
 
-import akka.javasdk.UserException;
+import akka.javasdk.CommandException;
 import akka.javasdk.testkit.TestKitSupport;
 import akkajavasdk.components.MyException;
 import akkajavasdk.components.keyvalueentities.customer.CustomerEntity;
@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -141,19 +140,19 @@ public class KeyValueEntityTest extends TestKitSupport {
 
   @Test
   public void shouldTestExceptions() {
-    var exc1 = Assertions.assertThrows(UserException.class, () -> {
+    var exc1 = Assertions.assertThrows(CommandException.class, () -> {
       componentClient.forKeyValueEntity("1")
         .method(UserEntity::run)
         .invoke("errorMessage");
     });
     assertThat(exc1.getMessage()).isEqualTo("errorMessage");
 
-    var exc2 = Assertions.assertThrows(UserException.class, () -> {
+    var exc2 = Assertions.assertThrows(CommandException.class, () -> {
       componentClient.forKeyValueEntity("1")
         .method(UserEntity::run)
-        .invoke("errorUserException");
+        .invoke("errorCommandException");
     });
-    assertThat(exc2.getMessage()).isEqualTo("errorUserException");
+    assertThat(exc2.getMessage()).isEqualTo("errorCommandException");
 
     var exc3 = Assertions.assertThrows(MyException.class, () -> {
       componentClient.forKeyValueEntity("1")

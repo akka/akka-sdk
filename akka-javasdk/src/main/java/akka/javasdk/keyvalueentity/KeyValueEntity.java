@@ -6,7 +6,7 @@ package akka.javasdk.keyvalueentity;
 
 import akka.annotation.InternalApi;
 import akka.javasdk.Metadata;
-import akka.javasdk.UserException;
+import akka.javasdk.CommandException;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityEffectImpl;
 
@@ -300,14 +300,14 @@ public abstract class KeyValueEntity<S> {
       <T> ReadOnlyEffect<T> error(String message);
 
       /**
-       * Create an error reply. {@link UserException} will be serialized and sent to the client.
+       * Create an error reply. {@link CommandException} will be serialized and sent to the client.
        * It's possible to catch it with try-catch statement or {@link CompletionStage} API when using async {@link ComponentClient} API.
        *
-       * @param userException The user exception to be returned.
+       * @param commandException The command exception to be returned.
        * @param <T> The type of the message that must be returned by this call.
        * @return An error reply.
        */
-      <T> ReadOnlyEffect<T> error(UserException userException);
+      <T> ReadOnlyEffect<T> error(CommandException commandException);
 
     }
 

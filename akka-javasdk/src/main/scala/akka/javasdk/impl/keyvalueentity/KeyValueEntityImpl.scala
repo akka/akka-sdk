@@ -10,9 +10,9 @@ import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 import akka.annotation.InternalApi
+import akka.javasdk.CommandException
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
-import akka.javasdk.UserException
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ComponentType
@@ -120,8 +120,8 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
 
       def errorOrReply: Either[SpiEntity.Error, (BytesPayload, SpiMetadata)] = {
         commandEffect.secondaryEffect match {
-          case ErrorReplyImpl(userException) =>
-            Left(new SpiEntity.Error(userException.getMessage, Some(serializer.toBytes(userException))))
+          case ErrorReplyImpl(commandException) =>
+            Left(new SpiEntity.Error(commandException.getMessage, Some(serializer.toBytes(commandException))))
           case MessageReplyImpl(message, m) =>
             val replyPayload = serializer.toBytes(message)
             val metadata = MetadataImpl.toSpi(m)
@@ -172,7 +172,7 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
       }
 
     } catch {
-      case e: UserException =>
+      case e: CommandException =>
         val serializedException = serializer.toBytes(e)
         Future.successful(
           new SpiEventSourcedEntity.ErrorEffect(error = new SpiEntity.Error(e.getMessage, Some(serializedException))))
