@@ -77,7 +77,6 @@
 - [CLI](https://doc.akka.io/operations/cli/index.html.md): Overview of the Akka CLI tool and its capabilities.
 - [Enable CLI command completion](https://doc.akka.io/operations/cli/command-completion.html.md): Setting up command completion for the Akka CLI.
 - [Install the Akka CLI](https://doc.akka.io/operations/cli/installation.html.md): Instructions for installing the Akka Command Line Interface.
-- [Akka Platform features](https://doc.akka.io/operations/platform-features.html.md): Overview of features available in the Akka Platform.
 - [View logs](https://doc.akka.io/operations/observability-and-monitoring/view-logs.html.md): Accessing and analyzing logs from Akka services.
 - [View traces](https://doc.akka.io/operations/observability-and-monitoring/traces.html.md): Working with distributed tracing in Akka applications.
 - [View metrics](https://doc.akka.io/operations/observability-and-monitoring/metrics.html.md): Monitoring performance metrics for Akka services.
