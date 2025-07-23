@@ -33,11 +33,7 @@ In this guide you will:
 
 ## <a href="about:blank#_clone_the_sample"></a> Clone the sample
 
-1. Clone the full source code of the Shopping Cart sample from [Github](https://github.com/akka-samples/shopping-cart-quickstart), or use the Akka CLI command below to download and unzip this quickstart project.
-
-```bash
-akka quickstart download shopping-cart
-```
+1. Clone the full source code of the Shopping Cart sample from [Github](https://github.com/akka-samples/shopping-cart-quickstart)
 2. Open the project in your favorite editor.
 
 ## <a href="about:blank#_understanding_the_shopping_cart"></a> Understanding the shopping cart
