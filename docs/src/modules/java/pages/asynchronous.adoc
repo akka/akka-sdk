@@ -1,4 +1,4 @@
-= Asynchronous execution
+= Synchronous and asynchronous component invocation
 
 include::ROOT:partial$include.adoc[]
 
@@ -66,8 +66,10 @@ Note that the `create()` method on the `MatchEntity` returns an `Effect`, which 
 
 For more information on the specific components, please see the corresponding documentation.
 
-== When to make asynchronous calls
-_When in doubt, write synchronous code_. Trust that Akka will do the right thing and that the runtime is making the necessary optimizations.
+include::ROOT:partial$sync-vs-async.adoc[]
+
+== When in doubt, write synchronous code
+
+Trust that Akka will do the right thing and that the runtime is making the necessary optimizations.
 
 If you do need explicit control over futures, such as creating streams from asynchronous sources or explicitly performing parallel work, then the component client's `invokeAsync()` and the full power of Java concurrency is there for you when you need it.
-

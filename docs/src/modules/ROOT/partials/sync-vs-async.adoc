@@ -1,0 +1,36 @@
+== Synchronous vs asynchronous component invocation
+
+You decide how the xref:reference:glossary.adoc#component_client[component client] invokes the component, and the Akka runtime handles the request in the background. The table below summarizes the key differences between the two approaches.
+
+[cols="1,1,1", options="header"]
+[.compact]
+|===
+|
+|Synchronous
+|Asynchronous
+
+|When the component method returns
+|After the method finishes
+|Immediately
+
+|Client behavior
+|Waits for the result before continuing
+|Continues immediately, must handle the result later
+
+|Return type
+|Whatever the component method returns directly
+|A `CompletionStage<T>` representing the result at a later time
+
+|Component execution
+|Always runs in the background
+|Always runs in the background
+
+|Common use case
+|Calling a method and using the result in the next line of code
+|Starting multiple async tasks or implementing background, always-on processes (Ambient AI)
+
+|Ideal for
+|Simple flows where the result is needed immediately
+|Parallel task execution, deferred response handling, or long-running background logic
+
+|===
