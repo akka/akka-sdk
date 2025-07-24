@@ -13,35 +13,71 @@ You build your application using xref:reference:glossary.adoc#component[Akka _Co
 |===
 |Component |Description
 
-|Agents
-|Performs one focused AI task using a selected model and prompt. Maintains session memory for context. Stateless agents also possible. See xref:java:agents.adoc[Agents].
+.^|Agents
+a|
+* Performs one focused AI task using a selected model and prompt.
+* Maintains session memory for context.
+* Stateless agents also possible.
+* See xref:java:agents.adoc[Agents].
 
-|Workflows
-|Durable execution with support for sequential, parallel, retry, and failure logic. Akka manages delivery, scaling, and recovery. See xref:java:workflows.adoc[Workflows].
+.^|Workflows
+a|
+* Durable execution with support for sequential, parallel, retry, and failure logic.
+* Akka manages delivery, scaling, and recovery.
+* See xref:java:workflows.adoc[Workflows].
 
-|HTTP Endpoints
-|Exposes APIs over HTTP. Accepts input, triggers logic, and returns output. See xref:java:http-endpoints.adoc[HTTP Endpoints].
+.^|HTTP Endpoints
+a|
+* Exposes APIs over HTTP.
+* Accepts input, triggers logic, and returns output.
+* See xref:java:http-endpoints.adoc[HTTP Endpoints].
 
-|gRPC Endpoints
-|Exposes APIs over gRPC using Protobuf contracts. Facilitates compatibility and structured communication. See xref:java:grpc-endpoints.adoc[gRPC Endpoints].
+.^|gRPC Endpoints
+a|
+* Exposes APIs over gRPC using Protobuf contracts.
+* Facilitates compatibility and structured communication.
+* See xref:java:grpc-endpoints.adoc[gRPC Endpoints].
 
-|MCP Endpoints
-|Exposes tools, resources and prompts over the MCP protocol. Used by agents to invoke logic and establish context. See xref:java:mcp-endpoints.adoc[MCP Endpoints].
+.^|MCP Endpoints
+a|
+* Exposes tools, resources and prompts over the MCP protocol.
+* Used by agents to invoke logic and establish context.
+* See xref:java:mcp-endpoints.adoc[MCP Endpoints].
 
-|Event Sourced Entities
-|Durable memory component. Stores a sequence of events that represent state changes. The current state is reconstructed by replaying these events. Suitable for audit trails and event-driven logic. See xref:java:event-sourced-entities.adoc[Event Sourced Entities].
+.^|Event Sourced Entities
+a|
+* Durable memory component.
+* Stores a sequence of events that represent state changes.
+* The current state is reconstructed by replaying these events.
+* Suitable for audit trails and event-driven logic.
+* See xref:java:event-sourced-entities.adoc[Event Sourced Entities].
 
-|Key Value Entities
-|Durable memory component. Stores full state snapshots indexed by a key. Each write replaces the entire object. Simpler to reason about and similar to row-based records. See xref:java:key-value-entities.adoc[Key Value Entities].
+.^|Key Value Entities
+a|
+* Durable memory component.
+* Stores full state snapshots indexed by a key.
+* Each write replaces the entire object.
+* Simpler to reason about and similar to row-based records.
+* See xref:java:key-value-entities.adoc[Key Value Entities].
 
-|Views
-|Indexes and queries entity data across IDs or attributes. Built from entity state or events. Enables efficient lookups, filtering, and real-time updates. See xref:java:views.adoc[Views].
+.^|Views
+a|
+* Indexes and queries entity data across IDs or attributes.
+* Built from entity state or events.
+* Enables efficient lookups, filtering, and real-time updates.
+* See xref:java:views.adoc[Views].
 
-|Consumers (streaming)
-|Listens for and processes events or messages from entities, workflows, or external systems. May emit output messages. See xref:java:consuming-producing.adoc[].
+.^|Consumers (streaming)
+a|
+* Listens for and processes events or messages from entities, workflows, or external systems.
+* May emit output messages.
+* See xref:java:consuming-producing.adoc[].
 
-|Timers
-|Schedules future actions with delivery guarantees. Used for reminders, retries, or timeout logic. See xref:java:timed-actions.adoc[Timed actions].
+.^|Timers
+a|
+* Schedules future actions with delivery guarantees.
+* Used for reminders, retries, or timeout logic.
+* See xref:java:timed-actions.adoc[Timed actions].
 |===
 
 == Composability
