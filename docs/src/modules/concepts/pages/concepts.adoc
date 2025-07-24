@@ -196,7 +196,7 @@ This is utilized when you implement the xref:java:workflows.adoc[Workflow] compo
 |Transactional
 |Short-lived, high volume, concurrent execution.
 
-This is utilized when you implement xref:concepts:grpc-vs-http-endpoints.adoc[Endpoint], xref:java:views.adoc[View], xref:concepts:state-model.adoc[Entity] and xref:java:timed-actions.adoc[Timer] components.
+This is utilized when you implement xref:concepts:grpc-vs-http-endpoints.adoc[Endpoint], xref:java:views.adoc[View], xref:concepts:state-model.adoc#_entity_state_models[Entity] and xref:java:timed-actions.adoc[Timer] components.
 |Streaming
 |Continuous, never-ending processes that handle streams of data.
 
@@ -289,5 +289,13 @@ The examples below show common patterns for how components interact in an Akka s
 |===
 
 Akka provides a way to connect components that is simple to use and reliable in production. By relying on message passing, virtual threads, and transparent routing, the platform helps you focus on what the system should do, rather than how its parts should reach each other.
+
+== Background execution
+
+include::ROOT:partial$background-execution.adoc[]
+
+include::ROOT:partial$sync-vs-async.adoc[]
+
+For implementation guidance on invoking components, see xref:java:component-and-service-calls.adoc[Component and service calls].
 
 include::ROOT:partial$service-packaging.adoc[]

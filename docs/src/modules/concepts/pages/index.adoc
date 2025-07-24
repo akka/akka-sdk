@@ -14,7 +14,7 @@ When you are familiar with the main aspects for Akka applications, continue with
 
 Components in Akka decouple behavior from execution by using xref:declarative-effects.adoc[].
 
-A detailed explanation to how _Entities_ persist their state, is presented in xref:state-model.adoc[State Model] should you wish to learn more.
+A detailed explanation to how _Entities_ persist their state, is presented in xref:state-model.adoc[] should you wish to learn more.
 
 Orchestration use cases are often catered for best by considering _Sagas_ which is discussed in xref:saga-patterns.adoc[].
 

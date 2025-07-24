@@ -23,7 +23,7 @@ Akka supports three deployment models. Behaviour remains consistent across them,
 |Development
 |Developers can build, run, and test multi-service projects locally without needing cloud infrastructure. The Akka SDK provides persistence, clustering, service discovery, and integration features. This is the default when any service using Akka SDK is built. You may also xref:java:running-locally.adoc#_local_console[run the local console] for tracing and debugging.
 
-|Self-managed Operations
+|Self-managed operations
 |Akka clusters xref:concepts:concepts.adoc#_service_packaging[can be run on your infrastructure]: virtual machines, containers, Platform as a Service (PaaS), edge, unikernels, or Kubernetes. You will need to configure routing, certificates, networking, and persistence yourself. Some PaaS systems may block network access, affecting clustering. In those cases, single-node operation is possible. Observability is available through the Akka console or by xref:operations:observability-and-monitoring/observability-exports.adoc[exporting logs, metrics, and traces].
 
 |Akka Automated Operations (AAO)
@@ -82,6 +82,6 @@ Now that you understand the overall architecture and deployment model of Akka yo
 
 The following topics may also be of interest.
 
-- xref:state-model.adoc[State model]
+- xref:state-model.adoc[]
 - xref:java:dev-best-practices.adoc[]
 - xref:architecture-model.adoc[]
