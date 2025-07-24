@@ -45,5 +45,4 @@
 ***** xref:operations:cli/using-cli.adoc[]
 ***** xref:operations:cli/command-completion.adoc[]
 
-*** xref:operations:platform-features.adoc[]
 *** xref:operations:operator-best-practices.adoc[]
