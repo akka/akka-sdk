@@ -12,7 +12,7 @@ include::ROOT:partial$include.adoc[]
 
 [[consumer]]Consumer:: A component used to consume or produce a stream of changes.
 
-[[component_client]]Component client:: It's utility to call Akka components without knowing where they are located.
+[[component_client]]Component client:: A utility to call Akka components without knowing where they are located.
 
 [[component_id]]Component id:: An id to identify components. Changing component id for <<stateful_component>>s should be done with caution, because the id is used for persistence.
 

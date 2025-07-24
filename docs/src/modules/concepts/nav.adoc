@@ -5,6 +5,7 @@
 *** xref:concepts:architecture-model.adoc[]
 *** xref:concepts:deployment-model.adoc[]
 *** xref:concepts:development-process.adoc[]
+*** xref:concepts:background-execution.adoc[]
 *** xref:declarative-effects.adoc[]
 *** xref:concepts:state-model.adoc[]
 *** xref:concepts:multi-region.adoc[]

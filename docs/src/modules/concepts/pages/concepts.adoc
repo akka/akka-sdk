@@ -290,6 +290,10 @@ The examples below show common patterns for how components interact in an Akka s
 
 Akka provides a way to connect components that is simple to use and reliable in production. By relying on message passing, virtual threads, and transparent routing, the platform helps you focus on what the system should do, rather than how its parts should reach each other.
 
+== Background execution
+
+include::ROOT:partial$background-execution.adoc[]
+
 include::ROOT:partial$sync-vs-async.adoc[]
 
 For implementation guidance on invoking components, see xref:java:component-and-service-calls.adoc[Component and service calls].
