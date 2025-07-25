@@ -63,7 +63,7 @@ a|
 .^|Views
 a|
 * Indexes and queries entity data across IDs or attributes.
-* Built from entity state or events.
+* Built from entity state, workflow state, or events.
 * Enables efficient lookups, filtering, and real-time updates.
 * See xref:java:views.adoc[Views].
 
