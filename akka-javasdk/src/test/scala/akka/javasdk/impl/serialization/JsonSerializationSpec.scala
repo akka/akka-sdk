@@ -5,9 +5,13 @@
 package akka.javasdk.impl.serialization
 
 import java.util
+import java.util.Base64
 import java.util.Optional
+
 import scala.beans.BeanProperty
+
 import akka.Done
+import akka.javasdk.CommandException
 import akka.javasdk.DummyClass
 import akka.javasdk.DummyClass2
 import akka.javasdk.DummyClassRenamed
@@ -17,8 +21,11 @@ import akka.javasdk.annotations.TypeName
 import akka.javasdk.impl.serialization
 import akka.javasdk.impl.serialization.JsonSerializationSpec.Cat
 import akka.javasdk.impl.serialization.JsonSerializationSpec.Dog
+import akka.javasdk.impl.serialization.JsonSerializationSpec.ExceptionData
+import akka.javasdk.impl.serialization.JsonSerializationSpec.OtherCommandException
 import akka.javasdk.impl.serialization.JsonSerializationSpec.SimpleClass
 import akka.javasdk.impl.serialization.JsonSerializationSpec.SimpleClassUpdated
+import akka.javasdk.impl.serialization.JsonSerializationSpec.TestCommandException
 import akka.runtime.sdk.spi.BytesPayload
 import akka.util.ByteString
 import com.fasterxml.jackson.annotation.JsonCreator
@@ -41,6 +48,18 @@ object JsonSerializationSpec {
   @JsonCreator
   @TypeName("animal")
   final case class Cat(str: String)
+
+  @JsonCreator
+  final case class ExceptionData(stringField: String, intField: Int)
+
+  @JsonCreator
+  final case class TestCommandException(msg: String, exceptionData: ExceptionData) extends CommandException(msg)
+
+  @JsonCreator
+  final case class OtherCommandException(msg: String, exceptionData: ExceptionData) extends CommandException(msg)
+
+  @JsonCreator
+  final case class NotCommandException(msg: String, exceptionData: ExceptionData)
 
   @JsonCreator
   case class SimpleClass(str: String, in: Int)
@@ -187,6 +206,56 @@ class JsonSerializationSpec extends AnyWordSpec with Matchers {
 
     "conditionally decode JSON depending on suffix" in {
       pending // FIXME do we need this? see JsonSupportSpec
+    }
+
+    "serialize deserialize exception" in {
+      val exceptionData = ExceptionData("test", 123)
+      val exception = TestCommandException("test exception", exceptionData)
+      val bytesPayload = serializer.toBytes(exception)
+      bytesPayload.contentType shouldBe jsonContentTypeWith(exception.getClass.getName)
+      val decoded = serializer.exceptionFromBytes(bytesPayload).asInstanceOf[TestCommandException]
+      decoded.getMessage shouldBe "test exception"
+      decoded.exceptionData shouldBe exceptionData
+      decoded.getStackTrace shouldBe empty
+      decoded.getCause shouldBe null
+    }
+
+    "deserialize exception with empty reversed cache" in {
+      val exceptionData = ExceptionData("test", 123)
+      // payload: {"msg":"test exception","exceptionData":{"stringField":"test","intField":123},"message":"test exception"}
+      val rawPayload =
+        Base64.getDecoder.decode(
+          "eyJtc2ciOiJ0ZXN0IGV4Y2VwdGlvbiIsImV4Y2VwdGlvbkRhdGEiOnsic3RyaW5nRmllbGQiOiJ0ZXN0IiwiaW50RmllbGQiOjEyM30sIm1lc3NhZ2UiOiJ0ZXN0IGV4Y2VwdGlvbiJ9")
+      val bytesPayload = new BytesPayload(
+        ByteString(rawPayload),
+        "json.akka.io/akka.javasdk.impl.serialization.JsonSerializationSpec$OtherCommandException")
+      val decoded = serializer.exceptionFromBytes(bytesPayload).asInstanceOf[OtherCommandException]
+      decoded.getMessage shouldBe "test exception"
+      decoded.exceptionData shouldBe exceptionData
+    }
+
+    "not deserialize exception that is not CommandException" in {
+      // payload: {"msg":"test exception","exceptionData":{"stringField":"test","intField":123},"message":"test exception"}
+      val rawPayload =
+        Base64.getDecoder.decode(
+          "eyJtc2ciOiJ0ZXN0IGV4Y2VwdGlvbiIsImV4Y2VwdGlvbkRhdGEiOnsic3RyaW5nRmllbGQiOiJ0ZXN0IiwiaW50RmllbGQiOjEyM30sIm1lc3NhZ2UiOiJ0ZXN0IGV4Y2VwdGlvbiJ9")
+      val bytesPayload = new BytesPayload(
+        ByteString(rawPayload),
+        "json.akka.io/akka.javasdk.impl.serialization.JsonSerializationSpec$NotCommandException")
+      val caught = intercept[IllegalStateException] {
+        serializer.exceptionFromBytes(bytesPayload)
+      }
+      caught.getMessage shouldBe "Loaded class [akka.javasdk.impl.serialization.JsonSerializationSpec$NotCommandException] is not a subclass of CommandException, cannot deserialize it as a CommandException."
+    }
+
+    "not deserialize unknown exception" in {
+      val bytesPayload = new BytesPayload(
+        ByteString("rawPayload"),
+        "json.akka.io/akka.javasdk.impl.serialization.JsonSerializationSpec$UnknownException")
+      val caught = intercept[ClassNotFoundException] {
+        serializer.exceptionFromBytes(bytesPayload)
+      }
+      caught.getMessage shouldBe "akka.javasdk.impl.serialization.JsonSerializationSpec$UnknownException"
     }
 
     "support java primitives" in {

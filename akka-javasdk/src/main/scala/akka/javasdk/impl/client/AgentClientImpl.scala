@@ -124,8 +124,14 @@ private[javasdk] final case class AgentClientImpl(
               agentClient
                 .send(new AgentRequest(componentId, sessionId, methodName, serializedPayload, toSpi(metadata)))
                 .map { reply =>
-                  // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-                  serializer.fromBytes[R](returnType, reply.payload)
+                  reply.exceptionPayload match {
+                    case Some(value) =>
+                      //rethrowing to catch it on the component client invocation level
+                      throw serializer.exceptionFromBytes(value)
+                    case None =>
+                      // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
+                      serializer.fromBytes[R](returnType, reply.payload)
+                  }
                 }
             }
             metadata =>

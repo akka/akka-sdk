@@ -5,7 +5,9 @@
 package akka.javasdk.workflow;
 
 import akka.annotation.InternalApi;
+import akka.javasdk.CommandException;
 import akka.javasdk.Metadata;
+import akka.javasdk.client.ComponentClient;
 import akka.javasdk.impl.workflow.WorkflowEffectImpl;
 import akka.javasdk.timer.TimerScheduler;
 import akka.javasdk.workflow.Workflow.RecoverStrategy.MaxRetries;
@@ -38,7 +40,7 @@ import java.util.function.Supplier;
  * <p>
  * Concrete classes can accept the following types to the constructor:
  * <ul>
- *   <li>{@link akka.javasdk.client.ComponentClient}</li>
+ *   <li>{@link ComponentClient}</li>
  *   <li>{@link akka.javasdk.http.HttpClientProvider}</li>
  *   <li>{@link akka.javasdk.timer.TimerScheduler}</li>
  *   <li>{@link akka.stream.Materializer}</li>
@@ -96,7 +98,6 @@ public abstract class Workflow<S> {
   }
 
 
-
   /**
    * Returns a {@link TimerScheduler} that can be used to schedule further in time.
    */
@@ -119,7 +120,8 @@ public abstract class Workflow<S> {
     // user may call this method inside a command handler and get a null because it's legal
     // to have emptyState set to null.
     if (stateHasBeenSet) return currentState.orElse(null);
-    else throw new IllegalStateException("Current state is only available when handling a command. Make sure that that you are calling the `currentState` method only in the command handler or step `call`, `andThen` lambda functions.");
+    else
+      throw new IllegalStateException("Current state is only available when handling a command. Make sure that that you are calling the `currentState` method only in the command handler or step `call`, `andThen` lambda functions.");
   }
 
   /**
@@ -131,6 +133,7 @@ public abstract class Workflow<S> {
 
   /**
    * INTERNAL API
+   *
    * @hidden
    */
   @InternalApi
@@ -262,11 +265,21 @@ public abstract class Workflow<S> {
       /**
        * Create an error reply.
        *
-       * @param description The description of the error.
-       * @param <R>         The type of the message that must be returned by this call.
+       * @param message The error message.
+       * @param <R>     The type of the message that must be returned by this call.
        * @return An error reply.
        */
-      <R> ReadOnlyEffect<R> error(String description);
+      <R> ReadOnlyEffect<R> error(String message);
+
+      /**
+       * Create an error reply. {@link CommandException} will be serialized and sent to the client.
+       * It's possible to catch it with try-catch statement or {@link CompletionStage} API when using async {@link ComponentClient} API.
+       *
+       * @param commandException The command exception to be returned.
+       * @param <T> The type of the message that must be returned by this call.
+       * @return An error reply.
+       */
+      <T> ReadOnlyEffect<T> error(CommandException commandException);
 
     }
 
@@ -516,10 +529,10 @@ public abstract class Workflow<S> {
      * Not for direct user construction, instances are created through the workflow DSL
      */
     public CallStep(String name,
-                         Class<CallInput> callInputClass,
-                         Function<CallInput, CallOutput> callFunc,
-                         Class<CallOutput> transitionInputClass,
-                         Function<CallOutput, Effect.TransitionalEffect<Void>> transitionFunc) {
+                    Class<CallInput> callInputClass,
+                    Function<CallInput, CallOutput> callFunc,
+                    Class<CallOutput> transitionInputClass,
+                    Function<CallOutput, Effect.TransitionalEffect<Void>> transitionFunc) {
       _name = name;
       this.callInputClass = callInputClass;
       this.callFunc = callFunc;

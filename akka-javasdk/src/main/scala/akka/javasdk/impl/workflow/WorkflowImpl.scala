@@ -12,6 +12,7 @@ import scala.jdk.OptionConverters.RichOptional
 import scala.util.Failure
 import scala.util.Success
 import scala.util.control.NonFatal
+
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
@@ -59,8 +60,9 @@ import io.opentelemetry.api.trace.Tracer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
-
 import scala.annotation.nowarn
+
+import akka.javasdk.CommandException
 
 /**
  * INTERNAL API
@@ -148,7 +150,8 @@ class WorkflowImpl[S, W <: Workflow[S]](
 
     effect match {
       case error: ErrorEffectImpl[_] =>
-        new SpiWorkflow.ErrorEffect(new SpiEntity.Error(error.description))
+        val serializedException = error.exception.map(serializer.toBytes)
+        new SpiWorkflow.ErrorEffect(new SpiEntity.Error(error.description, serializedException))
 
       case WorkflowEffectImpl(persistence, transition, reply) =>
         val (replyBytes, spiMetadata) =
@@ -222,6 +225,8 @@ class WorkflowImpl[S, W <: Workflow[S]](
         workflowContext)
       Future.successful(toSpiCommandEffect(effect))
     } catch {
+      case e: CommandException =>
+        Future.successful(toSpiCommandEffect(WorkflowEffectImpl[Any]().error(e)))
       case e: HandlerNotFoundException =>
         throw WorkflowException(workflowId, command.name, e.getMessage, Some(e))
       case BadRequestException(msg) =>

@@ -4,7 +4,6 @@
 
 package akka.javasdk.impl.workflow
 
-import io.grpc.Status
 import WorkflowEffectImpl.End
 import WorkflowEffectImpl.ErrorEffectImpl
 import WorkflowEffectImpl.NoPersistence
@@ -17,6 +16,7 @@ import WorkflowEffectImpl.Transition
 import WorkflowEffectImpl.TransitionalEffectImpl
 import WorkflowEffectImpl.UpdateState
 import akka.annotation.InternalApi
+import akka.javasdk.CommandException
 import akka.javasdk.Metadata
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.Delete
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.ReadOnlyEffectImpl
@@ -86,7 +86,8 @@ object WorkflowEffectImpl {
       WorkflowEffectImpl(NoPersistence, NoTransition, ReplyValue(message, metadata))
   }
 
-  final case class ErrorEffectImpl[R](description: String, status: Option[Status.Code]) extends ReadOnlyEffect[R]
+  final case class ErrorEffectImpl[R](description: String, exception: Option[CommandException])
+      extends ReadOnlyEffect[R]
 }
 
 /**
@@ -123,6 +124,9 @@ case class WorkflowEffectImpl[S, T](persistence: Persistence[S], transition: Tra
     ReadOnlyEffectImpl().reply(reply, metadata)
 
   override def error[R](description: String): ReadOnlyEffect[R] =
-    ErrorEffectImpl(description, Some(Status.Code.INVALID_ARGUMENT))
+    error(new CommandException(description))
+
+  override def error[R](commandException: CommandException): ReadOnlyEffect[R] =
+    ErrorEffectImpl(commandException.getMessage, Some(commandException))
 
 }
