@@ -5,7 +5,6 @@
 package akka.javasdk.testmodels.eventsourcedentity;
 
 import akka.javasdk.JsonMigration;
-
 import java.util.List;
 
 public class EmployeeCreatedMigration extends JsonMigration {

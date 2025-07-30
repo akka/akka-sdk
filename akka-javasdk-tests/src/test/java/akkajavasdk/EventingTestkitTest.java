@@ -4,6 +4,9 @@
 
 package akkajavasdk;
 
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import akka.javasdk.testkit.EventingTestKit;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
@@ -13,16 +16,11 @@ import akkajavasdk.components.keyvalueentities.user.UserSideEffect;
 import akkajavasdk.components.pubsub.CounterView;
 import akkajavasdk.components.pubsub.DummyCounterEventStore;
 import akkajavasdk.components.pubsub.ViewFromCounterEventsTopic;
+import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
-import java.util.concurrent.TimeUnit;
-
-import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.assertj.core.api.Assertions.assertThat;
-
 
 @ExtendWith(Junit5LogCapturing.class)
 public class EventingTestkitTest extends TestKitSupport {
@@ -42,64 +40,71 @@ public class EventingTestkitTest extends TestKitSupport {
 
   @Test
   public void shouldPublishEventWithTypeNameViaSubscriptionEventingTestkit() {
-    var topicSubscription = testKit.getTopicIncomingMessages(ViewFromCounterEventsTopic.COUNTER_EVENTS_TOPIC);
+    var topicSubscription =
+        testKit.getTopicIncomingMessages(ViewFromCounterEventsTopic.COUNTER_EVENTS_TOPIC);
 
-    //given
+    // given
     var subject = "test-2";
     var event1 = new CounterEvent.ValueIncreased(1);
     var event2 = new CounterEvent.ValueIncreased(2);
 
-    //when
-    EventingTestKit.Message<CounterEvent.ValueIncreased> test = testKit.getMessageBuilder().of(event1, subject);
+    // when
+    EventingTestKit.Message<CounterEvent.ValueIncreased> test =
+        testKit.getMessageBuilder().of(event1, subject);
     topicSubscription.publish(test);
     topicSubscription.publish(event2, subject);
 
-    //then
+    // then
     Awaitility.await()
-      .ignoreExceptions()
-      .atMost(10, TimeUnit.of(SECONDS))
-      .untilAsserted(() -> {
-        var response = DummyCounterEventStore.get(subject);
-        assertThat(response).containsOnly(event1, event2);
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              var response = DummyCounterEventStore.get(subject);
+              assertThat(response).containsOnly(event1, event2);
 
-        var viewResponse = componentClient
-            .forView()
-            .method(ViewFromCounterEventsTopic::getCountersLessThan)
-            .invoke(new ViewFromCounterEventsTopic.QueryParameters(4));
+              var viewResponse =
+                  componentClient
+                      .forView()
+                      .method(ViewFromCounterEventsTopic::getCountersLessThan)
+                      .invoke(new ViewFromCounterEventsTopic.QueryParameters(4));
 
-        assertThat(viewResponse.counters()).contains(new CounterView(subject, 3));
-      });
+              assertThat(viewResponse.counters()).contains(new CounterView(subject, 3));
+            });
   }
 
   @Test
   public void shouldPublishKVEDeleteMessage() {
-    //given
-    EventingTestKit.IncomingMessages incomingMessages = testKit.getKeyValueEntityIncomingMessages("user");
+    // given
+    EventingTestKit.IncomingMessages incomingMessages =
+        testKit.getKeyValueEntityIncomingMessages("user");
     String subject = "123";
     var user = new User("email", "name");
 
-    //when
+    // when
     incomingMessages.publish(user, subject);
 
-    //then
-    Awaitility.await()
-      .ignoreExceptions()
-      .atMost(10, TimeUnit.of(SECONDS))
-      .untilAsserted(() -> {
-        User consumedUser = UserSideEffect.getUsers().get(subject);
-        assertThat(consumedUser).isEqualTo(user);
-      });
-
-    //when
-    incomingMessages.publishDelete(subject);
-
-    //then
+    // then
     Awaitility.await()
         .ignoreExceptions()
         .atMost(10, TimeUnit.of(SECONDS))
-        .untilAsserted(() -> {
-          User consumedUser = UserSideEffect.getUsers().get(subject);
-          assertThat(consumedUser).isNull();
-        });
+        .untilAsserted(
+            () -> {
+              User consumedUser = UserSideEffect.getUsers().get(subject);
+              assertThat(consumedUser).isEqualTo(user);
+            });
+
+    // when
+    incomingMessages.publishDelete(subject);
+
+    // then
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              User consumedUser = UserSideEffect.getUsers().get(subject);
+              assertThat(consumedUser).isNull();
+            });
   }
 }

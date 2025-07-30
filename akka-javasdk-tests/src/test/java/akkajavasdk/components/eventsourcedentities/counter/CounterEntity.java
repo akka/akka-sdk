@@ -4,32 +4,31 @@
 
 package akkajavasdk.components.eventsourcedentities.counter;
 
+import static akka.Done.done;
+import static java.util.function.Function.identity;
+
 import akka.Done;
 import akka.javasdk.CommandException;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akkajavasdk.Result;
 import akkajavasdk.components.MyException;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
-
-import static akka.Done.done;
-import static java.util.function.Function.identity;
 
 @ComponentId("counter-entity")
 public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
 
   public enum Error {
-    TOO_HIGH, TOO_LOW
+    TOO_HIGH,
+    TOO_LOW
   }
 
   private Integer errorCounter = 0;
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
-  public record DoIncrease(int amount) {
-  }
+  public record DoIncrease(int amount) {}
 
   @Override
   public Counter emptyState() {
@@ -38,11 +37,11 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
 
   public Effect<Integer> increase(Integer value) {
     logger.info(
-      "Increasing counter with commandName={} seqNr={} current={} value={}",
-      commandContext().commandName(),
-      commandContext().sequenceNumber(),
-      currentState(),
-      value);
+        "Increasing counter with commandName={} seqNr={} current={} value={}",
+        commandContext().commandName(),
+        commandContext().sequenceNumber(),
+        currentState(),
+        value);
     return effects().persist(new CounterEvent.ValueIncreased(value)).thenReply(Counter::value);
   }
 
@@ -63,8 +62,8 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
       return effects().reply(new Result.Error<>(CounterEntity.Error.TOO_HIGH));
     } else {
       return effects()
-        .persist(new CounterEvent.ValueIncreased(value))
-        .thenReply(Result.Success::new);
+          .persist(new CounterEvent.ValueIncreased(value))
+          .thenReply(Result.Success::new);
     }
   }
 
@@ -74,16 +73,13 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
     } else if (value > 10000) {
       return effects().error("Value must be less than 10000");
     } else {
-      return effects()
-        .persist(new CounterEvent.ValueIncreased(value))
-        .thenReply(identity());
+      return effects().persist(new CounterEvent.ValueIncreased(value)).thenReply(identity());
     }
   }
 
   public ReadOnlyEffect<Boolean> commandHandlerIsOnVirtualThread() {
     return effects().reply(Thread.currentThread().isVirtual());
   }
-
 
   public Effect<Integer> set(Integer value) {
     return effects().persist(new CounterEvent.ValueSet(value)).thenReply(Counter::value);
@@ -92,20 +88,23 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
   public Effect<Integer> handle(CounterCommand counterCommand) {
     return switch (counterCommand) {
       case CounterCommand.Increase(var value) ->
-        effects().persist(new CounterEvent.ValueIncreased(value)).thenReply(Counter::value);
+          effects().persist(new CounterEvent.ValueIncreased(value)).thenReply(Counter::value);
 
       case CounterCommand.Set(var value) ->
-        effects().persist(new CounterEvent.ValueSet(value)).thenReply(Counter::value);
+          effects().persist(new CounterEvent.ValueSet(value)).thenReply(Counter::value);
     };
   }
 
   public Effect<Integer> multiIncrease(List<Integer> increase) {
-    return effects().persistAll(increase.stream().map(CounterEvent.ValueIncreased::new).toList())
+    return effects()
+        .persistAll(increase.stream().map(CounterEvent.ValueIncreased::new).toList())
         .thenReply(Counter::value);
   }
 
   public Effect<Integer> multiIncreaseCommands(List<DoIncrease> increase) {
-    return effects().persistAll(increase.stream().map(di -> new CounterEvent.ValueIncreased(di.amount)).toList())
+    return effects()
+        .persistAll(
+            increase.stream().map(di -> new CounterEvent.ValueIncreased(di.amount)).toList())
         .thenReply(Counter::value);
   }
 
@@ -166,5 +165,4 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
   public Counter applyEvent(CounterEvent event) {
     return currentState().apply(event);
   }
-
 }

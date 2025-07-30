@@ -53,7 +53,9 @@ public interface RequestContext extends Context {
    */
   Principals getPrincipals();
 
-  /** @return The JWT claims, if any, associated with this request. */
+  /**
+   * @return The JWT claims, if any, associated with this request.
+   */
   JwtClaims getJwtClaims();
 
   /**
@@ -62,12 +64,16 @@ public interface RequestContext extends Context {
    */
   Optional<HttpHeader> requestHeader(String headerName);
 
-  /** @return A list with all the headers of the current request */
+  /**
+   * @return A list with all the headers of the current request
+   */
   List<HttpHeader> allRequestHeaders();
 
   /** Access to tracing for custom app specific tracing. */
   Tracing tracing();
 
-  /** @return The query parameters of the current request. */
+  /**
+   * @return The query parameters of the current request.
+   */
   QueryParams queryParams();
 }

@@ -17,5 +17,4 @@ public class TestValueEntity extends KeyValueEntity<TestVEState1> {
   public Effect<TestVEState1> get() {
     return effects().reply(currentState());
   }
-
 }

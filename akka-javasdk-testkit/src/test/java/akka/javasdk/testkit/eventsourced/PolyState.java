@@ -6,9 +6,7 @@ package akka.javasdk.testkit.eventsourced;
 
 public sealed interface PolyState {
 
-  record StateA() implements PolyState {
-  }
+  record StateA() implements PolyState {}
 
-  record StateB() implements PolyState {
-  }
+  record StateB() implements PolyState {}
 }

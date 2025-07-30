@@ -4,6 +4,10 @@
 
 package akkajavasdk;
 
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import akka.javasdk.CommandException;
 import akka.javasdk.testkit.TestKitSupport;
 import akkajavasdk.components.MyException;
@@ -12,21 +16,15 @@ import akkajavasdk.components.keyvalueentities.hierarchy.AbstractTextConsumer;
 import akkajavasdk.components.keyvalueentities.hierarchy.TextKvEntity;
 import akkajavasdk.components.keyvalueentities.user.User;
 import akkajavasdk.components.keyvalueentities.user.UserEntity;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
-import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 @ExtendWith(Junit5LogCapturing.class)
 public class KeyValueEntityTest extends TestKitSupport {
@@ -55,16 +53,16 @@ public class KeyValueEntityTest extends TestKitSupport {
     var newEmail = joe2.email() + "2";
 
     Awaitility.await()
-      .ignoreExceptions()
-      .atMost(10, TimeUnit.of(SECONDS))
-      .untilAsserted(() -> {
-        // change email uses the currentState internally
-        changeEmail(joe2.withEmail(newEmail));
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              // change email uses the currentState internally
+              changeEmail(joe2.withEmail(newEmail));
 
-        Assertions.assertEquals(newEmail, getUser(joe2).email);
-      });
+              Assertions.assertEquals(newEmail, getUser(joe2).email);
+            });
   }
-
 
   @Test
   public void testHierarchyEntity() {
@@ -76,11 +74,13 @@ public class KeyValueEntityTest extends TestKitSupport {
     assertThat(result).isEqualTo(Optional.of("my text"));
 
     // also verify that hierarchy consumer works
-    Awaitility.await().untilAsserted(() ->
-        org.assertj.core.api.Assertions.assertThat(StaticTestBuffer.getValue(AbstractTextConsumer.BUFFER_KEY)).isEqualTo("my text")
-    );
+    Awaitility.await()
+        .untilAsserted(
+            () ->
+                org.assertj.core.api.Assertions.assertThat(
+                        StaticTestBuffer.getValue(AbstractTextConsumer.BUFFER_KEY))
+                    .isEqualTo("my text"));
   }
-
 
   @Test
   public void verifyGenericParameter() {
@@ -90,125 +90,150 @@ public class KeyValueEntityTest extends TestKitSupport {
     Awaitility.await()
         .ignoreExceptions()
         .atMost(10, TimeUnit.of(SECONDS))
-        .untilAsserted(() -> {
-          // change email uses the currentState internally
-          var found = await(
-              componentClient
-                  .forKeyValueEntity(generic.id())
-                  .method(UserEntity::nameIsLikeOneOf)
-                  .invokeAsync(List.of(generic.name())));
+        .untilAsserted(
+            () -> {
+              // change email uses the currentState internally
+              var found =
+                  await(
+                      componentClient
+                          .forKeyValueEntity(generic.id())
+                          .method(UserEntity::nameIsLikeOneOf)
+                          .invokeAsync(List.of(generic.name())));
 
-          Assertions.assertTrue(found);
-        });
+              Assertions.assertTrue(found);
+            });
 
     Awaitility.await()
         .ignoreExceptions()
         .atMost(10, TimeUnit.of(SECONDS))
-        .untilAsserted(() -> {
-          // change email uses the currentState internally
-          var found = await(
-              componentClient
-                  .forKeyValueEntity(generic.id())
-                  .method(UserEntity::nameIsLikeOneOfUsers)
-                  .invokeAsync(List.of(new User(generic.name(), generic.email()))));
+        .untilAsserted(
+            () -> {
+              // change email uses the currentState internally
+              var found =
+                  await(
+                      componentClient
+                          .forKeyValueEntity(generic.id())
+                          .method(UserEntity::nameIsLikeOneOfUsers)
+                          .invokeAsync(List.of(new User(generic.name(), generic.email()))));
 
-          Assertions.assertTrue(found);
-        });
-
+              Assertions.assertTrue(found);
+            });
   }
 
   @Test
   public void verifyListOfRecordsReturn() {
-    var found = await(
-        componentClient
-            .forKeyValueEntity("listofrecords")
-            .method(CustomerEntity::returnAListOfRecords)
-            .invokeAsync());
+    var found =
+        await(
+            componentClient
+                .forKeyValueEntity("listofrecords")
+                .method(CustomerEntity::returnAListOfRecords)
+                .invokeAsync());
     assertThat(found.size()).isEqualTo(2);
-    assertThat(new HashSet<>(found)).isEqualTo(Set.of(new CustomerEntity.SomeRecord("text1", 1), new CustomerEntity.SomeRecord("text2", 2)));
+    assertThat(new HashSet<>(found))
+        .isEqualTo(
+            Set.of(
+                new CustomerEntity.SomeRecord("text1", 1),
+                new CustomerEntity.SomeRecord("text2", 2)));
   }
 
   @Test
   public void verifyOptionalRecordReturn() {
-    var found = await(
-        componentClient
-            .forKeyValueEntity("listofrecords")
-            .method(CustomerEntity::returnOptionalRecord)
-            .invokeAsync());
+    var found =
+        await(
+            componentClient
+                .forKeyValueEntity("listofrecords")
+                .method(CustomerEntity::returnOptionalRecord)
+                .invokeAsync());
     assertThat(found).isEqualTo(Optional.of(new CustomerEntity.SomeRecord("text1", 1)));
   }
 
   @Test
   public void shouldTestExceptions() {
-    var exc1 = Assertions.assertThrows(CommandException.class, () -> {
-      componentClient.forKeyValueEntity("1")
-        .method(UserEntity::run)
-        .invoke("errorMessage");
-    });
+    var exc1 =
+        Assertions.assertThrows(
+            CommandException.class,
+            () -> {
+              componentClient.forKeyValueEntity("1").method(UserEntity::run).invoke("errorMessage");
+            });
     assertThat(exc1.getMessage()).isEqualTo("errorMessage");
 
-    var exc2 = Assertions.assertThrows(CommandException.class, () -> {
-      componentClient.forKeyValueEntity("1")
-        .method(UserEntity::run)
-        .invoke("errorCommandException");
-    });
+    var exc2 =
+        Assertions.assertThrows(
+            CommandException.class,
+            () -> {
+              componentClient
+                  .forKeyValueEntity("1")
+                  .method(UserEntity::run)
+                  .invoke("errorCommandException");
+            });
     assertThat(exc2.getMessage()).isEqualTo("errorCommandException");
 
-    var exc3 = Assertions.assertThrows(MyException.class, () -> {
-      componentClient.forKeyValueEntity("1")
-        .method(UserEntity::run)
-        .invoke("errorMyException");
-    });
+    var exc3 =
+        Assertions.assertThrows(
+            MyException.class,
+            () -> {
+              componentClient
+                  .forKeyValueEntity("1")
+                  .method(UserEntity::run)
+                  .invoke("errorMyException");
+            });
     assertThat(exc3.getMessage()).isEqualTo("errorMyException");
     assertThat(exc3.getData()).isEqualTo(new MyException.SomeData("some data"));
 
-    var exc4 = Assertions.assertThrows(MyException.class, () -> {
-      componentClient.forKeyValueEntity("1")
-        .method(UserEntity::run)
-        .invoke("throwMyException");
-    });
+    var exc4 =
+        Assertions.assertThrows(
+            MyException.class,
+            () -> {
+              componentClient
+                  .forKeyValueEntity("1")
+                  .method(UserEntity::run)
+                  .invoke("throwMyException");
+            });
     assertThat(exc4.getMessage()).isEqualTo("throwMyException");
     assertThat(exc4.getData()).isEqualTo(new MyException.SomeData("some data"));
 
-    var exc5 = Assertions.assertThrows(RuntimeException.class, () -> {
-      componentClient.forKeyValueEntity("1")
-        .method(UserEntity::run)
-        .invoke("throwRuntimeException");
-    });
-    assertThat(exc5.getMessage()).contains("Unexpected error "); //it's not the original message, but the one from the runtime
+    var exc5 =
+        Assertions.assertThrows(
+            RuntimeException.class,
+            () -> {
+              componentClient
+                  .forKeyValueEntity("1")
+                  .method(UserEntity::run)
+                  .invoke("throwRuntimeException");
+            });
+    assertThat(exc5.getMessage())
+        .contains(
+            "Unexpected error "); // it's not the original message, but the one from the runtime
   }
 
   private void createUser(TestUser user) {
     await(
-      componentClient
-        .forKeyValueEntity(user.id())
-        .method(UserEntity::createUser)
-        .invokeAsync(new UserEntity.CreatedUser(user.name(), user.email())));
+        componentClient
+            .forKeyValueEntity(user.id())
+            .method(UserEntity::createUser)
+            .invokeAsync(new UserEntity.CreatedUser(user.name(), user.email())));
   }
 
   private void changeEmail(TestUser user) {
     await(
-      componentClient
-        .forKeyValueEntity(user.id())
-        .method(UserEntity::updateEmail)
-        .invokeAsync(new UserEntity.UpdateEmail(user.email())));
+        componentClient
+            .forKeyValueEntity(user.id())
+            .method(UserEntity::updateEmail)
+            .invokeAsync(new UserEntity.UpdateEmail(user.email())));
   }
 
   private User getUser(TestUser user) {
     return await(
-      componentClient
-        .forKeyValueEntity(user.id())
-        .method(UserEntity::getUser)
-        .invokeAsync());
+        componentClient.forKeyValueEntity(user.id()).method(UserEntity::getUser).invokeAsync());
   }
 
   private void restartUserEntity(TestUser user) {
     try {
       await(
-        componentClient
-          .forKeyValueEntity(user.id())
-          .method(UserEntity::restart)
-          .invokeAsync(new UserEntity.Restart()));
+          componentClient
+              .forKeyValueEntity(user.id())
+              .method(UserEntity::restart)
+              .invokeAsync(new UserEntity.Restart()));
 
       fail("This should not be reached");
     } catch (Exception ignored) {

@@ -10,7 +10,6 @@ import akka.javasdk.workflow.Workflow;
 @ComponentId("workflow-without-initial-state")
 public class WorkflowWithoutInitialState extends Workflow<String> {
 
-
   @Override
   public WorkflowDef<String> definition() {
     var test =
@@ -18,8 +17,7 @@ public class WorkflowWithoutInitialState extends Workflow<String> {
             .call(() -> "ok")
             .andThen(String.class, result -> effects().updateState("success").end());
 
-    return workflow()
-        .addStep(test);
+    return workflow().addStep(test);
   }
 
   public Effect<String> start() {

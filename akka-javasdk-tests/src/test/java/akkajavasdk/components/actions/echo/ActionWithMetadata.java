@@ -4,8 +4,8 @@
 
 package akkajavasdk.components.actions.echo;
 
-import akka.javasdk.timedaction.TimedAction;
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.timedaction.TimedAction;
 import akkajavasdk.StaticTestBuffer;
 
 @ComponentId("with-metadata")

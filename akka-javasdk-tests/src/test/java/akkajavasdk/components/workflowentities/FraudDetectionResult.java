@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public sealed interface FraudDetectionResult {
 
-  final class TransferVerified implements FraudDetectionResult{
+  final class TransferVerified implements FraudDetectionResult {
     public final Transfer transfer;
 
     @JsonCreator

@@ -4,5 +4,4 @@
 
 package akka.javasdk.eventsourcedentity;
 
-public record TestESState(String s, int i, boolean b, String anotherString) {
-}
+public record TestESState(String s, int i, boolean b, String anotherString) {}

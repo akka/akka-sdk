@@ -15,14 +15,13 @@ import akka.javasdk.view.TableUpdater;
 @ComponentId("users_view")
 class NotPublicView {
 
- @Consume.FromKeyValueEntity(UserEntity.class)
- public static class Users extends TableUpdater<User> {
- }
+  @Consume.FromKeyValueEntity(UserEntity.class)
+  public static class Users extends TableUpdater<User> {}
 
- public record QueryParameters(String email) {}
+  public record QueryParameters(String email) {}
 
- @Query("SELECT * FROM users WHERE email = :email")
- public User getUser(QueryParameters email) {
-  return null;
- }
+  @Query("SELECT * FROM users WHERE email = :email")
+  public User getUser(QueryParameters email) {
+    return null;
+  }
 }

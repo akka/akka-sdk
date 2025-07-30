@@ -4,19 +4,19 @@
 
 package akkajavasdk.components.pubsub;
 
-import akka.javasdk.annotations.ComponentId;
-import akka.javasdk.consumer.Consumer;
-import akkajavasdk.components.keyvalueentities.customer.CustomerEntity;
-import akka.javasdk.Metadata;
-import akka.javasdk.annotations.Produce;
-import akka.javasdk.annotations.Consume;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import static akka.javasdk.impl.MetadataImpl.CeSubject;
 import static akkajavasdk.components.pubsub.PublishVEToTopic.CUSTOMERS_TOPIC;
 
-//@Profile({"docker-it-test", "eventing-testkit-destination"})
+import akka.javasdk.Metadata;
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Consume;
+import akka.javasdk.annotations.Produce;
+import akka.javasdk.consumer.Consumer;
+import akkajavasdk.components.keyvalueentities.customer.CustomerEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+// @Profile({"docker-it-test", "eventing-testkit-destination"})
 @ComponentId("publish-ve-to-topic")
 @Consume.FromKeyValueEntity(CustomerEntity.class)
 @Produce.ToTopic(CUSTOMERS_TOPIC)

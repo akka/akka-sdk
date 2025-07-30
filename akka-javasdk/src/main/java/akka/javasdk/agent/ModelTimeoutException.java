@@ -5,10 +5,10 @@
 package akka.javasdk.agent;
 
 /**
- * Exception thrown when a request to an AI model or external service times out.
- * This indicates that the operation took longer than the configured timeout period.
+ * Exception thrown when a request to an AI model or external service times out. This indicates that
+ * the operation took longer than the configured timeout period.
  */
-final public class ModelTimeoutException extends RuntimeException {
+public final class ModelTimeoutException extends RuntimeException {
 
   public ModelTimeoutException(String message) {
     super(message);

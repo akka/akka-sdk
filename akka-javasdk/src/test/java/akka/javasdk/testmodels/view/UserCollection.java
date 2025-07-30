@@ -4,10 +4,9 @@
 
 package akka.javasdk.testmodels.view;
 
+import akka.javasdk.testmodels.keyvalueentity.User;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import akka.javasdk.testmodels.keyvalueentity.User;
-
 import java.util.Collection;
 
 public class UserCollection {

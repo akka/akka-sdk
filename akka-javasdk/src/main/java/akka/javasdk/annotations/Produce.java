@@ -8,8 +8,8 @@ import java.lang.annotation.*;
 
 /**
  * Annotation for ways of producing outgoing information.
- * <p>
- * Use on methods in a {@link akka.javasdk.consumer.Consumer}.
+ *
+ * <p>Use on methods in a {@link akka.javasdk.consumer.Consumer}.
  */
 public @interface Produce {
 
@@ -25,17 +25,15 @@ public @interface Produce {
     String value();
   }
 
-
   /**
-   * Annotation to configure the component to produce an event stream that can be consumed by other services.
+   * Annotation to configure the component to produce an event stream that can be consumed by other
+   * services.
    */
   @Target(ElementType.TYPE)
   @Retention(RetentionPolicy.RUNTIME)
   @Documented
   @interface ServiceStream {
-    /**
-     * Identifier for the event stream. Must be unique inside the same service.
-     */
+    /** Identifier for the event stream. Must be unique inside the same service. */
     String id();
   }
 }

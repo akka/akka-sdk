@@ -44,7 +44,9 @@ public interface McpRequestContext {
    */
   Principals getPrincipals();
 
-  /** @return The JWT claims, if any, associated with this request. */
+  /**
+   * @return The JWT claims, if any, associated with this request.
+   */
   JwtClaims getJwtClaims();
 
   /** Access to tracing for custom app specific tracing. */
@@ -56,6 +58,8 @@ public interface McpRequestContext {
    */
   Optional<HttpHeader> requestHeader(String headerName);
 
-  /** @return A list with all the headers of the current request */
+  /**
+   * @return A list with all the headers of the current request
+   */
   List<HttpHeader> allRequestHeaders();
 }

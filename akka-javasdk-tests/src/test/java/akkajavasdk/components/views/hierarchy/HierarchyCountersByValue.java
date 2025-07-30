@@ -15,7 +15,6 @@ import akka.javasdk.view.TableUpdater;
 import akkajavasdk.components.eventsourcedentities.counter.Counter;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEntity;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEvent;
-
 import java.util.Optional;
 
 @ComponentId("counters_by_value_hierarchy")
@@ -27,11 +26,14 @@ public class HierarchyCountersByValue extends CountersByValueBaseClass {
 
     public Effect<Counter> onEvent(CounterEvent event) {
       Counter counter = rowState();
-      var updatedCounter = switch(event) {
-        case CounterEvent.ValueIncreased valueIncreased -> counter.onValueIncreased(valueIncreased);
-        case CounterEvent.ValueMultiplied valueMultiplied -> counter.onValueMultiplied(valueMultiplied);
-        case CounterEvent.ValueSet valueSet -> counter.onValueSet(valueSet);
-      };
+      var updatedCounter =
+          switch (event) {
+            case CounterEvent.ValueIncreased valueIncreased ->
+                counter.onValueIncreased(valueIncreased);
+            case CounterEvent.ValueMultiplied valueMultiplied ->
+                counter.onValueMultiplied(valueMultiplied);
+            case CounterEvent.ValueSet valueSet -> counter.onValueSet(valueSet);
+          };
       return effects().updateRow(updatedCounter);
     }
 
@@ -40,7 +42,6 @@ public class HierarchyCountersByValue extends CountersByValueBaseClass {
       return new Counter(0);
     }
   }
-
 
   @Query("SELECT * FROM counters WHERE value = :value")
   public QueryEffect<Optional<Counter>> getCounterByValue(Integer value) {

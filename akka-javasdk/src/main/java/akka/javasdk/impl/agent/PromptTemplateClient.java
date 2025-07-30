@@ -8,9 +8,7 @@ import akka.annotation.InternalApi;
 import akka.javasdk.agent.PromptTemplate;
 import akka.javasdk.client.ComponentClient;
 
-/**
- * INTERNAL API
- */
+/** INTERNAL API */
 @InternalApi
 public final class PromptTemplateClient {
 
@@ -21,8 +19,6 @@ public final class PromptTemplateClient {
   }
 
   public String getPromptTemplate(String templateId) {
-    return componentClient.forEventSourcedEntity(templateId)
-        .method(PromptTemplate::get)
-        .invoke();
+    return componentClient.forEventSourcedEntity(templateId).method(PromptTemplate::get).invoke();
   }
 }

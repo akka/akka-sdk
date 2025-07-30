@@ -5,7 +5,6 @@
 package akka.javasdk;
 
 import akka.javasdk.annotations.Setup;
-
 import java.util.Set;
 
 /**
@@ -39,8 +38,8 @@ public interface ServiceSetup {
   default void onStartup() {}
 
   /**
-   * Invoked once before the service is started, to create a dependency provider. It is not possible to
-   * interact with components in this method.
+   * Invoked once before the service is started, to create a dependency provider. It is not possible
+   * to interact with components in this method.
    *
    * <p>This hook is called before {@link #onStartup()}.
    */
@@ -48,9 +47,7 @@ public interface ServiceSetup {
     return null;
   }
 
-  /**
-   * Provides a set of components that should be disabled from running.
-   */
+  /** Provides a set of components that should be disabled from running. */
   default Set<Class<?>> disabledComponents() {
     return Set.of();
   }

@@ -90,7 +90,9 @@ public interface RemoteMcpTools {
    */
   @DoNotInherit
   interface ToolInterceptorContext {
-    /** @return The tool name that the call is for */
+    /**
+     * @return The tool name that the call is for
+     */
     String toolName();
   }
 
@@ -120,6 +122,7 @@ public interface RemoteMcpTools {
     default String interceptResponse(
         ToolInterceptorContext context, String requestPayloadJson, String responsePayload) {
       return responsePayload;
-    };
+    }
+    ;
   }
 }

@@ -6,4 +6,4 @@ package akka.javasdk.testmodels;
 
 import java.time.Instant;
 
-public record InstantWrapper(Instant instant) { }
+public record InstantWrapper(Instant instant) {}

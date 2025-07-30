@@ -5,51 +5,66 @@
 package akkajavasdk.components.keyvalueentities.user;
 
 import akka.javasdk.CommandException;
-import akkajavasdk.Ok;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
+import akkajavasdk.Ok;
 import akkajavasdk.components.MyException;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 @ComponentId("user")
 public class UserEntity extends KeyValueEntity<User> {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
 
-  public record CreatedUser(String name, String email) {};
-  public record UpdateEmail(String newEmail) {};
-  public record Delete() {};
-  public record Restart() {};
+  public record CreatedUser(String name, String email) {}
+  ;
 
+  public record UpdateEmail(String newEmail) {}
+  ;
+
+  public record Delete() {}
+  ;
+
+  public record Restart() {}
+  ;
 
   public ReadOnlyEffect<User> getUser() {
-    if (currentState() == null)
-      return effects().error("User not found");
+    if (currentState() == null) return effects().error("User not found");
 
     return effects().reply(currentState());
   }
 
   public Effect<Ok> createOrUpdateUser(CreatedUser createdUser) {
-    return effects().updateState(new User(createdUser.name, createdUser.email)).thenReply(Ok.instance);
+    return effects()
+        .updateState(new User(createdUser.name, createdUser.email))
+        .thenReply(Ok.instance);
   }
 
   public Effect<Ok> createUser(CreatedUser createdUser) {
-    return effects().updateState(new User(createdUser.name, createdUser.email)).thenReply(Ok.instance);
+    return effects()
+        .updateState(new User(createdUser.name, createdUser.email))
+        .thenReply(Ok.instance);
   }
 
   public Effect<Ok> updateEmail(UpdateEmail cmd) {
-    return effects().updateState(new User(currentState().name, cmd.newEmail)).thenReply(Ok.instance);
+    return effects()
+        .updateState(new User(currentState().name, cmd.newEmail))
+        .thenReply(Ok.instance);
   }
 
   public Effect<Boolean> nameIsLikeOneOf(List<String> names) {
-    return effects().reply(currentState() != null && names.stream().anyMatch(n -> n.equals(currentState().name)));
+    return effects()
+        .reply(
+            currentState() != null && names.stream().anyMatch(n -> n.equals(currentState().name)));
   }
 
   public Effect<Boolean> nameIsLikeOneOfUsers(List<User> users) {
-    return effects().reply(currentState() != null && users.stream().anyMatch(c -> c.name.equals(currentState().name)));
+    return effects()
+        .reply(
+            currentState() != null
+                && users.stream().anyMatch(c -> c.name.equals(currentState().name)));
   }
 
   public Effect<Ok> deleteUser(Delete cmd) {

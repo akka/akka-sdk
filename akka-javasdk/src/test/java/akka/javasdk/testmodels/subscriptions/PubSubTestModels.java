@@ -5,15 +5,12 @@
 package akka.javasdk.testmodels.subscriptions;
 
 import akka.javasdk.annotations.Acl;
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.DeleteHandler;
 import akka.javasdk.annotations.Produce;
 import akka.javasdk.annotations.Query;
-import akka.javasdk.annotations.Consume;
-import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.consumer.Consumer;
-import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflow;
-import akka.javasdk.view.View;
-import akka.javasdk.view.TableUpdater;
 import akka.javasdk.testmodels.Done;
 import akka.javasdk.testmodels.Message;
 import akka.javasdk.testmodels.Message2;
@@ -26,8 +23,13 @@ import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EmployeeEntity;
 import akka.javasdk.testmodels.keyvalueentity.Counter;
 import akka.javasdk.testmodels.keyvalueentity.CounterState;
+import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflow;
+import akka.javasdk.view.TableUpdater;
+import akka.javasdk.view.View;
 
-public class PubSubTestModels {//TODO shall we remove this class and move things to ActionTestModels and ViewTestModels
+public
+class PubSubTestModels { // TODO shall we remove this class and move things to ActionTestModels and
+  // ViewTestModels
 
   @Consume.FromKeyValueEntity(Counter.class)
   public static class SubscribeToValueEntityTypeLevel extends Consumer {
@@ -85,7 +87,6 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-
   @Consume.FromTopic(value = "topicXYZ", ignoreUnknown = true)
   public static class SubscribeToTopicsActionTypeLevel extends Consumer {
 
@@ -115,7 +116,6 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     public Effect methodOne(Integer message) {
       return effects().produce(message);
     }
-
   }
 
   @Consume.FromKeyValueEntity(Counter.class)
@@ -294,7 +294,6 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   @Produce.ToTopic("foobar")
   public static class VEWithPublishToTopic extends Consumer {
 
-
     public Effect messageOne(String msg) {
       return effects().produce(new Message(msg));
     }
@@ -352,7 +351,6 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-
   // common query parameter for views in this file
   public record ByEmail(String email) {}
 
@@ -362,13 +360,13 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     @Consume.FromEventSourcedEntity(value = EmployeeEntity.class, ignoreUnknown = true)
     public static class Employees extends TableUpdater<Employee> {
       public Effect<Employee> onCreate(EmployeeCreated evt) {
-        return effects()
-            .updateRow(new Employee(evt.firstName, evt.lastName, evt.email));
+        return effects().updateRow(new Employee(evt.firstName, evt.lastName, evt.email));
       }
 
       public Effect<Employee> onEmailUpdate(EmployeeEmailUpdated eeu) {
         var employee = rowState();
-        return effects().updateRow(new Employee(employee.firstName(), employee.lastName(), eeu.email));
+        return effects()
+            .updateRow(new Employee(employee.firstName(), employee.lastName(), eeu.email));
       }
     }
 
@@ -378,23 +376,22 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-
   @Consume.FromEventSourcedEntity(value = EmployeeEntity.class)
   @Produce.ServiceStream(id = "employee_events")
   public static class EventStreamPublishingConsumer extends Consumer {
 
     public Effect transform(EmployeeEvent event) {
-      return switch (event){
-        case EmployeeCreated created ->
-          effects().produce(created.toString());
-        case EmployeeEmailUpdated emailUpdated ->
-          effects().produce(emailUpdated.toString());
+      return switch (event) {
+        case EmployeeCreated created -> effects().produce(created.toString());
+        case EmployeeEmailUpdated emailUpdated -> effects().produce(emailUpdated.toString());
       };
     }
-
   }
 
-  @Consume.FromServiceStream(service = "employee_service", id = "employee_events", ignoreUnknown = true)
+  @Consume.FromServiceStream(
+      service = "employee_service",
+      id = "employee_events",
+      ignoreUnknown = true)
   public static class EventStreamSubscriptionConsumer extends Consumer {
 
     public Effect transform(EmployeeCreated created) {
@@ -412,13 +409,13 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     @Consume.FromServiceStream(service = "employee_service", id = "employee_events")
     public static class Employees extends TableUpdater<Employee> {
       public Effect<Employee> onCreate(EmployeeCreated evt) {
-        return effects()
-            .updateRow(new Employee(evt.firstName, evt.lastName, evt.email));
+        return effects().updateRow(new Employee(evt.firstName, evt.lastName, evt.email));
       }
 
       public Effect<Employee> onEmailUpdate(EmployeeEmailUpdated eeu) {
         var employee = rowState();
-        return effects().updateRow(new Employee(employee.firstName(), employee.lastName(), eeu.email));
+        return effects()
+            .updateRow(new Employee(employee.firstName(), employee.lastName(), eeu.email));
       }
     }
 
