@@ -6,9 +6,12 @@ import akka.javasdk.workflow.Workflow;
 import com.example.domain.TransferState;
 import com.example.domain.TransferState.Transfer;
 
+import java.time.Duration;
+
 import static akka.Done.done;
 import static com.example.domain.TransferState.TransferStatus.COMPLETED;
 import static com.example.domain.TransferState.TransferStatus.WITHDRAW_SUCCEEDED;
+import static java.time.Duration.ofSeconds;
 
 // tag::class[]
 @ComponentId("transfer") // <1>
@@ -17,45 +20,35 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
   }
 
   @Override
-  public WorkflowDef<TransferState> definition() { // <3>
-    return workflow()
-        .addStep(withdrawStep())
-        .addStep(depositStep());
+  public WorkflowConfig configuration() { // <3>
+    return WorkflowConfig.builder()
+      .defaultStepTimeout(ofSeconds(2))
+      .build();
   }
 
-  private Step withdrawStep() {
-    return
-        step("withdraw") // <4>
-            .call(() -> {// <5>
-              return null; // FIXME implement this
-            })
-            .andThen(() -> { // <6>
-              return effects()
-                  .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
-                  .transitionTo("deposit");
-            });
+  private StepEffect withdrawStep() { // <4>
+    // FIXME implement this
+
+    return stepEffects() // <5>
+      .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
+      .thenTransitionTo(TransferWorkflow::depositStep);
   }
 
-  private Step depositStep() {
-    return
-        step("deposit")
-            .call(() -> {
-              return null; // FIXME implement this
-            })
-            .andThen(() -> {
-              return effects()
-                  .updateState(currentState().withStatus(COMPLETED))
-                  .end();
-            });
+  private StepEffect depositStep() {
+    // FIXME implement this
+
+    return stepEffects()
+      .updateState(currentState().withStatus(COMPLETED))
+      .thenEnd();
   }
 
-  public Effect<Done> startTransfer(Transfer transfer) { // <7>
+  public Effect<Done> startTransfer(Transfer transfer) { // <6>
     TransferState initialState = new TransferState(transfer);
 
-    return effects()// <8>
-        .updateState(initialState)
-        .transitionTo("withdraw")
-        .thenReply(done());
+    return effects()// <7>
+      .updateState(initialState)
+      .transitionTo(TransferWorkflow::withdrawStep)
+      .thenReply(done());
   }
 
 }
