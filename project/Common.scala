@@ -7,13 +7,15 @@ import org.scalafmt.sbt.ScalafmtPlugin.autoImport.scalafmtOnCompile
 import sbtprotoc.ProtocPlugin
 
 import java.nio.charset.StandardCharsets
+import scala.annotation.nowarn
 import scala.collection.breakOut
-import com.github.sbt.JavaFormatterPlugin
+import com.github.sbt.AutomateJavaFormatterPlugin
 import com.github.sbt.JavaFormatterPlugin.autoImport.javafmtOnCompile
 
 object CommonSettings extends AutoPlugin {
 
-  override def requires = plugins.JvmPlugin && ScalafmtPlugin && JavaFormatterPlugin
+  @nowarn("msg=deprecated") // need to depend on AutomateJavaFormatterPlugin for settings ordering
+  override def requires = plugins.JvmPlugin && ScalafmtPlugin && AutomateJavaFormatterPlugin
   override def trigger = allRequirements
 
   val additionalValidation =
