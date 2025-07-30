@@ -5,7 +5,6 @@
 package akka.javasdk.testmodels.keyvalueentity;
 
 import akka.javasdk.JsonMigration;
-
 import java.util.List;
 
 public class CounterStateMigration extends JsonMigration {

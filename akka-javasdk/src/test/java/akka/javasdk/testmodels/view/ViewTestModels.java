@@ -8,11 +8,8 @@ import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.DeleteHandler;
-import akka.javasdk.annotations.JWT;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.annotations.Table;
-import akka.javasdk.view.View;
-import akka.javasdk.view.TableUpdater;
 import akka.javasdk.testmodels.eventsourcedentity.Employee;
 import akka.javasdk.testmodels.eventsourcedentity.EmployeeEvent;
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EmployeeEntity;
@@ -23,7 +20,8 @@ import akka.javasdk.testmodels.keyvalueentity.CounterState;
 import akka.javasdk.testmodels.keyvalueentity.TimeTrackerEntity;
 import akka.javasdk.testmodels.keyvalueentity.User;
 import akka.javasdk.testmodels.keyvalueentity.UserEntity;
-
+import akka.javasdk.view.TableUpdater;
+import akka.javasdk.view.View;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -47,19 +45,21 @@ public class ViewTestModels {
       Optional<String> optionalString,
       List<String> repeatedString,
       ByEmail nestedMessage,
-      AnEnum anEnum
-  ) {}
+      AnEnum anEnum) {}
 
   public enum AnEnum {
-    ONE, TWO, THREE
+    ONE,
+    TWO,
+    THREE
   }
 
   // common query parameter for views in this file
-  public record ByEmail(String email) {
-  }
+  public record ByEmail(String email) {}
 
   public record Recursive(String id, Recursive child) {}
+
   public record TwoStepRecursive(TwoStepRecursiveChild child) {}
+
   public record TwoStepRecursiveChild(TwoStepRecursive recursive) {}
 
   @ComponentId("users_view")
@@ -209,7 +209,6 @@ public class ViewTestModels {
     }
   }
 
-
   @ComponentId("users_view")
   public static class TransformedUserView extends View {
 
@@ -242,7 +241,6 @@ public class ViewTestModels {
       public Effect<String> onChange(User user) {
         return effects().updateRow(user.email);
       }
-
     }
 
     @Query("SELECT * FROM users WHERE email = :email")
@@ -269,7 +267,7 @@ public class ViewTestModels {
     }
 
     @Query("SELECT * FROM users WHERE email = :email")
-    public QueryEffect<TransformedUser>  getUser(ByEmail byEmail) {
+    public QueryEffect<TransformedUser> getUser(ByEmail byEmail) {
       return queryResult();
     }
   }
@@ -287,7 +285,7 @@ public class ViewTestModels {
     }
 
     @Query("SELECT * FROM users WHERE email = :email")
-    public QueryEffect<TransformedUser>  getUser(ByEmail byEmail) {
+    public QueryEffect<TransformedUser> getUser(ByEmail byEmail) {
       return queryResult();
     }
   }
@@ -296,11 +294,10 @@ public class ViewTestModels {
   public static class UserViewWithoutTransformation extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
-    public static class TransformedUserUpdater extends TableUpdater<User> {
-    }
+    public static class TransformedUserUpdater extends TableUpdater<User> {}
 
     @Query("SELECT * FROM users WHERE email = :email")
-    public QueryEffect<TransformedUser>  getUser(ByEmail byEmail) {
+    public QueryEffect<TransformedUser> getUser(ByEmail byEmail) {
       return queryResult();
     }
   }
@@ -308,9 +305,8 @@ public class ViewTestModels {
   @ComponentId("users_view")
   public static class ViewWithoutSubscription extends View {
 
-    public static class UserUpdater extends TableUpdater<TransformedUser> {
-    }
-    
+    public static class UserUpdater extends TableUpdater<TransformedUser> {}
+
     @Query("SELECT * FROM users WHERE email = :email")
     public QueryEffect<TransformedUser> getUser(ByEmail byEmail) {
       return queryResult();
@@ -404,10 +400,6 @@ public class ViewTestModels {
     }
   }
 
-
-
-
-
   @ComponentId("employees_view")
   public static class SubscribeToEventSourcedEvents extends View {
 
@@ -438,8 +430,8 @@ public class ViewTestModels {
 
       public Effect<Employee> handle(EmployeeEvent event) {
         return switch (event) {
-          case EmployeeEvent.EmployeeCreated created -> effects()
-              .updateRow(new Employee(created.firstName, created.lastName, created.email));
+          case EmployeeEvent.EmployeeCreated created ->
+              effects().updateRow(new Employee(created.firstName, created.lastName, created.email));
           case EmployeeEvent.EmployeeEmailUpdated updated -> effects().ignore();
         };
       }
@@ -468,7 +460,6 @@ public class ViewTestModels {
     }
   }
 
-
   @ComponentId("users_view")
   public static class TypeLevelSubscribeToEventSourcedEventsWithMissingHandler extends View {
 
@@ -491,7 +482,7 @@ public class ViewTestModels {
   public static class ViewWithServiceLevelAcl extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
-    public static class Users extends TableUpdater<User> { }
+    public static class Users extends TableUpdater<User> {}
 
     @Query("SELECT * FROM users WHERE email = :email")
     public QueryEffect<Employee> getEmployeeByEmail(ByEmail byEmail) {
@@ -503,8 +494,7 @@ public class ViewTestModels {
   public static class ViewWithMethodLevelAcl extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
-    public static class Users extends TableUpdater<User> {
-    }
+    public static class Users extends TableUpdater<User> {}
 
     @Query("SELECT * FROM users WHERE email = :email")
     @Acl(allow = @Acl.Matcher(service = "test"))
@@ -517,7 +507,7 @@ public class ViewTestModels {
   public static class UserByEmailWithCollectionReturn extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
-    public static class UsersTable extends TableUpdater<User> { }
+    public static class UsersTable extends TableUpdater<User> {}
 
     @Query(value = "SELECT * AS users FROM users WHERE name = :name")
     public QueryEffect<UserCollection> getUser(ByEmail name) {
@@ -529,14 +519,13 @@ public class ViewTestModels {
   public static class UserByEmailWithStreamReturn extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
-    public static class UsersTable extends TableUpdater<User> { }
+    public static class UsersTable extends TableUpdater<User> {}
 
     @Query(value = "SELECT * AS users FROM users")
     public QueryStreamEffect<User> getAllUsers() {
       return queryStreamResult();
     }
   }
-
 
   @ComponentId("users_view")
   public static class MultiTableViewValidation extends View {
@@ -583,13 +572,14 @@ public class ViewTestModels {
   @ComponentId("multi-table-view-with-join-query")
   public static class MultiTableViewWithJoinQuery extends View {
 
-    @Query("""
-      SELECT employees.*, counters.* as counters
-      FROM employees
-      JOIN assigned ON assigned.assigneeId = employees.email
-      JOIN counters ON assigned.counterId = counters.id
-      WHERE employees.email = :email
-      """)
+    @Query(
+        """
+        SELECT employees.*, counters.* as counters
+        FROM employees
+        JOIN assigned ON assigned.assigneeId = employees.email
+        JOIN counters ON assigned.counterId = counters.id
+        WHERE employees.email = :email
+        """)
     public QueryEffect<EmployeeCounters> get(ByEmail byEmail) {
       return queryResult();
     }
@@ -629,7 +619,7 @@ public class ViewTestModels {
     public static class Employees extends TableUpdater<Employee> {
       public Effect<Employee> onEvent(EmployeeEvent.EmployeeCreated created) {
         return effects()
-          .updateRow(new Employee(created.firstName, created.lastName, created.email));
+            .updateRow(new Employee(created.firstName, created.lastName, created.email));
       }
     }
 
@@ -663,7 +653,7 @@ public class ViewTestModels {
     public static class Employees extends TableUpdater<Employee> {
       public Effect<Employee> onEvent(EmployeeEvent.EmployeeCreated created) {
         return effects()
-          .updateRow(new Employee(created.firstName, created.lastName, created.email));
+            .updateRow(new Employee(created.firstName, created.lastName, created.email));
       }
     }
 
@@ -688,14 +678,13 @@ public class ViewTestModels {
   public static class TimeTrackerView extends View {
 
     @Consume.FromKeyValueEntity(TimeTrackerEntity.class)
-    public static class TimeTrackers extends TableUpdater<TimeTrackerEntity.TimerState> { }
+    public static class TimeTrackers extends TableUpdater<TimeTrackerEntity.TimerState> {}
 
     @Query(value = "SELECT * FROM time_trackers WHERE name = :name")
     public QueryEffect<TimeTrackerEntity.TimerState> query2() {
       return queryResult();
     }
   }
-
 
   @ComponentId("employee_view")
   public static class TopicTypeLevelSubscriptionView extends View {
@@ -704,13 +693,13 @@ public class ViewTestModels {
     public static class Employees extends TableUpdater<Employee> {
 
       public Effect<Employee> onCreate(EmployeeEvent.EmployeeCreated evt) {
-        return effects()
-            .updateRow(new Employee(evt.firstName, evt.lastName, evt.email));
+        return effects().updateRow(new Employee(evt.firstName, evt.lastName, evt.email));
       }
 
       public Effect<Employee> onEmailUpdate(EmployeeEvent.EmployeeEmailUpdated eeu) {
         var employee = rowState();
-        return effects().updateRow(new Employee(employee.firstName(), employee.lastName(), eeu.email));
+        return effects()
+            .updateRow(new Employee(employee.firstName(), employee.lastName(), eeu.email));
       }
     }
 
@@ -720,13 +709,12 @@ public class ViewTestModels {
     }
   }
 
-
   public record ById(String id) {}
 
   @ComponentId("recursive_view")
   public static class RecursiveViewStateView extends View {
     @Consume.FromTopic(value = "recursivetopic")
-    public static class Events extends TableUpdater<Recursive> { }
+    public static class Events extends TableUpdater<Recursive> {}
 
     @Query("SELECT * FROM events WHERE id = :id")
     public QueryEffect<Employee> getEmployeeByEmail(ById id) {
@@ -737,7 +725,7 @@ public class ViewTestModels {
   @ComponentId("all_the_field_types_view")
   public static class AllTheFieldTypesView extends View {
     @Consume.FromTopic(value = "allthetypestopic")
-    public static class Events extends TableUpdater<EveryType> { }
+    public static class Events extends TableUpdater<EveryType> {}
 
     @Query("SELECT * FROM rows")
     public QueryStreamEffect<Employee> allRows() {

@@ -7,7 +7,6 @@ package akka.javasdk;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-import akka.javasdk.JsonMigration;
 
 public class DummyClass2Migration extends JsonMigration {
   @Override

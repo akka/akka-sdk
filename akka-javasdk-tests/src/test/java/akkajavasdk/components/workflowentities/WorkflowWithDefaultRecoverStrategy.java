@@ -4,12 +4,12 @@
 
 package akkajavasdk.components.workflowentities;
 
-import akkajavasdk.components.actions.echo.Message;
+import static java.time.Duration.ofSeconds;
+
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
-
-import static java.time.Duration.ofSeconds;
+import akkajavasdk.components.actions.echo.Message;
 
 @ComponentId("workflow-with-default-recover-strategy")
 public class WorkflowWithDefaultRecoverStrategy extends Workflow<FailingCounterState> {
@@ -27,26 +27,22 @@ public class WorkflowWithDefaultRecoverStrategy extends Workflow<FailingCounterS
   public WorkflowDef<FailingCounterState> definition() {
     var counterInc =
         step(counterStepName)
-            .call(() -> {
-              var nextValue = currentState().value() + 1;
-              return componentClient
-                  .forEventSourcedEntity(currentState().counterId())
-                  .method(FailingCounterEntity::increase)
-                  .invoke(nextValue);
-            })
-            .andThen(Integer.class, __ -> effects()
-                .updateState(currentState().asFinished())
-                .end());
+            .call(
+                () -> {
+                  var nextValue = currentState().value() + 1;
+                  return componentClient
+                      .forEventSourcedEntity(currentState().counterId())
+                      .method(FailingCounterEntity::increase)
+                      .invoke(nextValue);
+                })
+            .andThen(Integer.class, __ -> effects().updateState(currentState().asFinished()).end());
 
     var counterIncFailover =
         step(counterFailoverStepName)
             .call(() -> "nothing")
-            .andThen(String.class, __ ->
-                effects()
-                    .updateState(currentState().inc())
-                    .transitionTo(counterStepName)
-            );
-
+            .andThen(
+                String.class,
+                __ -> effects().updateState(currentState().inc()).transitionTo(counterStepName));
 
     return workflow()
         .timeout(ofSeconds(30))
@@ -63,7 +59,7 @@ public class WorkflowWithDefaultRecoverStrategy extends Workflow<FailingCounterS
         .thenReply(new Message("workflow started"));
   }
 
-  public Effect<FailingCounterState> get(){
+  public Effect<FailingCounterState> get() {
     return effects().reply(currentState());
   }
 }

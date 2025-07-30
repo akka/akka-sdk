@@ -4,10 +4,10 @@
 
 package akkajavasdk.components.workflowentities;
 
-import akkajavasdk.components.actions.echo.Message;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
+import akkajavasdk.components.actions.echo.Message;
 
 @ComponentId("transfer-workflow-without-inputs")
 public class TransferWorkflowWithoutInputs extends Workflow<TransferState> {
@@ -26,59 +26,74 @@ public class TransferWorkflowWithoutInputs extends Workflow<TransferState> {
   @Override
   public WorkflowDef<TransferState> definition() {
     var withdraw =
-      step(withdrawStepName)
-        .call(() -> {
-          var transfer = currentState().transfer();
-          return componentClient.forKeyValueEntity(transfer.from()).method(WalletEntity::withdraw).invoke(transfer.amount());
-        })
-        .andThen(() -> {
-          var state = currentState().withLastStep("withdrawn").asAccepted();
-          return effects()
-            .updateState(state)
-            .transitionTo(depositStepName);
-        });
+        step(withdrawStepName)
+            .call(
+                () -> {
+                  var transfer = currentState().transfer();
+                  return componentClient
+                      .forKeyValueEntity(transfer.from())
+                      .method(WalletEntity::withdraw)
+                      .invoke(transfer.amount());
+                })
+            .andThen(
+                () -> {
+                  var state = currentState().withLastStep("withdrawn").asAccepted();
+                  return effects().updateState(state).transitionTo(depositStepName);
+                });
 
     var withdrawAsync =
-      step(withdrawAsyncStepName)
-        .asyncCall(() -> {
-          var transfer = currentState().transfer();
-          return componentClient.forKeyValueEntity(transfer.from()).method(WalletEntity::withdraw).invokeAsync(transfer.amount());
-        })
-        .andThen(() -> {
-          var state = currentState().withLastStep("withdrawn").asAccepted();
-          return effects()
-            .updateState(state)
-            .transitionTo(depositAsyncStepName);
-        });
-
+        step(withdrawAsyncStepName)
+            .asyncCall(
+                () -> {
+                  var transfer = currentState().transfer();
+                  return componentClient
+                      .forKeyValueEntity(transfer.from())
+                      .method(WalletEntity::withdraw)
+                      .invokeAsync(transfer.amount());
+                })
+            .andThen(
+                () -> {
+                  var state = currentState().withLastStep("withdrawn").asAccepted();
+                  return effects().updateState(state).transitionTo(depositAsyncStepName);
+                });
 
     var deposit =
-      step(depositStepName)
-        .call(() -> {
-          var transfer = currentState().transfer();
-          return componentClient.forKeyValueEntity(transfer.to()).method(WalletEntity::deposit).invoke(transfer.amount());
-        })
-        .andThen(() -> {
-          var state = currentState().withLastStep("deposited").asFinished();
-          return effects().updateState(state).end();
-        });
+        step(depositStepName)
+            .call(
+                () -> {
+                  var transfer = currentState().transfer();
+                  return componentClient
+                      .forKeyValueEntity(transfer.to())
+                      .method(WalletEntity::deposit)
+                      .invoke(transfer.amount());
+                })
+            .andThen(
+                () -> {
+                  var state = currentState().withLastStep("deposited").asFinished();
+                  return effects().updateState(state).end();
+                });
 
     var depositAsync =
-      step(depositAsyncStepName)
-        .asyncCall(() -> {
-          var transfer = currentState().transfer();
-          return componentClient.forKeyValueEntity(transfer.to()).method(WalletEntity::deposit).invokeAsync(transfer.amount());
-        })
-        .andThen(() -> {
-          var state = currentState().withLastStep("deposited").asFinished();
-          return effects().updateState(state).end();
-        });
+        step(depositAsyncStepName)
+            .asyncCall(
+                () -> {
+                  var transfer = currentState().transfer();
+                  return componentClient
+                      .forKeyValueEntity(transfer.to())
+                      .method(WalletEntity::deposit)
+                      .invokeAsync(transfer.amount());
+                })
+            .andThen(
+                () -> {
+                  var state = currentState().withLastStep("deposited").asFinished();
+                  return effects().updateState(state).end();
+                });
 
     return workflow()
-      .addStep(withdraw)
-      .addStep(deposit)
-      .addStep(withdrawAsync)
-      .addStep(depositAsync);
+        .addStep(withdraw)
+        .addStep(deposit)
+        .addStep(withdrawAsync)
+        .addStep(depositAsync);
   }
 
   public Effect<Message> startTransfer(Transfer transfer) {
@@ -95,9 +110,9 @@ public class TransferWorkflowWithoutInputs extends Workflow<TransferState> {
     } else {
       if (currentState() == null) {
         return effects()
-          .updateState(new TransferState(transfer, "started"))
-          .transitionTo(withdrawStepName)
-          .thenReply(new Message("transfer started"));
+            .updateState(new TransferState(transfer, "started"))
+            .transitionTo(withdrawStepName)
+            .thenReply(new Message("transfer started"));
       } else {
         return effects().reply(new Message("transfer started already"));
       }

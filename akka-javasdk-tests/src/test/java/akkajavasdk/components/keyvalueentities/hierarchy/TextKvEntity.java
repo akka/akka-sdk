@@ -5,7 +5,6 @@
 package akkajavasdk.components.keyvalueentities.hierarchy;
 
 import akka.javasdk.annotations.ComponentId;
-
 import java.util.Optional;
 
 @ComponentId("hierarchy-kv-entity")
@@ -18,5 +17,4 @@ public class TextKvEntity extends AbstractTextKvEntity {
   public Effect<Optional<String>> getText() {
     return effects().reply(Optional.ofNullable(currentState()).map(State::value));
   }
-
 }

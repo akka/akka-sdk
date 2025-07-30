@@ -4,5 +4,4 @@
 
 package akkajavasdk.components.pubsub;
 
-public record CounterView(String counterId, int value) {
-}
+public record CounterView(String counterId, int value) {}

@@ -13,7 +13,9 @@ package akka.javasdk.testkit;
  */
 public interface KeyValueEntityResult<R> {
 
-  /** @return true if the call had an effect with a reply, false if not */
+  /**
+   * @return true if the call had an effect with a reply, false if not
+   */
   boolean isReply();
 
   /**
@@ -22,18 +24,26 @@ public interface KeyValueEntityResult<R> {
    */
   R getReply();
 
-  /** @return true if the call was an error, false if not */
+  /**
+   * @return true if the call was an error, false if not
+   */
   boolean isError();
 
   /** The error description. If the result was not an error an exception is thrown */
   String getError();
 
-  /** @return true if the call updated the entity state */
+  /**
+   * @return true if the call updated the entity state
+   */
   boolean stateWasUpdated();
 
-  /** @return The updated state. If the state was not updated an exception is thrown */
+  /**
+   * @return The updated state. If the state was not updated an exception is thrown
+   */
   Object getUpdatedState();
 
-  /** @return true if the call deleted the entity */
+  /**
+   * @return true if the call deleted the entity
+   */
   boolean stateWasDeleted();
 }

@@ -8,15 +8,14 @@
 
 package akkajavasdk.components.views.counter;
 
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Consume;
+import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
+import akka.javasdk.view.View;
 import akkajavasdk.components.eventsourcedentities.counter.Counter;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEntity;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEvent;
-import akka.javasdk.annotations.ComponentId;
-import akka.javasdk.view.View;
-import akka.javasdk.annotations.Query;
-import akka.javasdk.annotations.Consume;
-
 import java.util.Optional;
 
 @ComponentId("counters_by_value")
@@ -27,11 +26,14 @@ public class CountersByValue extends View {
 
     public Effect<Counter> onEvent(CounterEvent event) {
       Counter counter = rowState();
-      var updatedCounter = switch(event) {
-        case CounterEvent.ValueIncreased valueIncreased -> counter.onValueIncreased(valueIncreased);
-        case CounterEvent.ValueMultiplied valueMultiplied -> counter.onValueMultiplied(valueMultiplied);
-        case CounterEvent.ValueSet valueSet -> counter.onValueSet(valueSet);
-      };
+      var updatedCounter =
+          switch (event) {
+            case CounterEvent.ValueIncreased valueIncreased ->
+                counter.onValueIncreased(valueIncreased);
+            case CounterEvent.ValueMultiplied valueMultiplied ->
+                counter.onValueMultiplied(valueMultiplied);
+            case CounterEvent.ValueSet valueSet -> counter.onValueSet(valueSet);
+          };
       return effects().updateRow(updatedCounter);
     }
 

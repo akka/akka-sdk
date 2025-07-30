@@ -4,10 +4,9 @@
 
 package akka.javasdk.workflow;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import akka.javasdk.DummyClass2;
 import akka.javasdk.JsonMigration;
-
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 
 public class DummyClassRenamedMigration extends JsonMigration {

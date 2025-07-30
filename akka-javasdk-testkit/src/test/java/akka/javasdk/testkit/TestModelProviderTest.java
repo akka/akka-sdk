@@ -4,6 +4,10 @@
 
 package akka.javasdk.testkit;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
+
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatModel;
@@ -12,15 +16,10 @@ import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.model.output.FinishReason;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.fail;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 class TestModelProviderTest {
 
@@ -46,13 +45,16 @@ class TestModelProviderTest {
   @Test
   void testTokenizeWithMultipleSeparators() {
     List<String> tokens = testModelProvider.tokenize("Hello, world! How are you?");
-    assertThat(tokens).containsExactly("Hello", ",", " ", "world", "!", " ", "How", " ", "are", " ", "you", "?");
+    assertThat(tokens)
+        .containsExactly("Hello", ",", " ", "world", "!", " ", "How", " ", "are", " ", "you", "?");
   }
 
   @Test
   void testTokenizeWithAllSeparators() {
     List<String> tokens = testModelProvider.tokenize("a, b. c! d? e; f:");
-    assertThat(tokens).containsExactly("a", ",", " ", "b", ".", " ", "c", "!", " ", "d", "?", " ", "e", ";", " ", "f", ":");
+    assertThat(tokens)
+        .containsExactly(
+            "a", ",", " ", "b", ".", " ", "c", "!", " ", "d", "?", " ", "e", ";", " ", "f", ":");
   }
 
   @Test
@@ -82,15 +84,13 @@ class TestModelProviderTest {
   @Test
   void testCreateChatModel() {
     Object chatModel = testModelProvider.createChatModel();
-    assertThat(chatModel).isNotNull()
-        .isInstanceOf(ChatModel.class);
+    assertThat(chatModel).isNotNull().isInstanceOf(ChatModel.class);
   }
 
   @Test
   void testCreateStreamingChatModel() {
     Object streamingChatModel = testModelProvider.createStreamingChatModel();
-    assertThat(streamingChatModel).isNotNull()
-        .isInstanceOf(StreamingChatModel.class);
+    assertThat(streamingChatModel).isNotNull().isInstanceOf(StreamingChatModel.class);
   }
 
   @Test
@@ -98,9 +98,8 @@ class TestModelProviderTest {
     testModelProvider.fixedResponse("Test response");
 
     ChatModel chatModel = (ChatModel) testModelProvider.createChatModel();
-    ChatRequest request = ChatRequest.builder()
-        .messages(List.of(new UserMessage("Any question")))
-        .build();
+    ChatRequest request =
+        ChatRequest.builder().messages(List.of(new UserMessage("Any question"))).build();
 
     ChatResponse response = chatModel.doChat(request);
 
@@ -110,9 +109,8 @@ class TestModelProviderTest {
 
     // should be possible to update
     testModelProvider.fixedResponse("New response");
-    ChatRequest request2 = ChatRequest.builder()
-        .messages(List.of(new UserMessage("Another question")))
-        .build();
+    ChatRequest request2 =
+        ChatRequest.builder().messages(List.of(new UserMessage("Another question"))).build();
     ChatResponse response2 = chatModel.doChat(request);
 
     assertThat(response2.aiMessage().text()).isEqualTo("New response");
@@ -121,27 +119,21 @@ class TestModelProviderTest {
   @Test
   void testMockResponseWithPredicate() {
 
-    testModelProvider
-      .whenMessage(text -> text.contains("hello"))
-      .reply("Hello response");
+    testModelProvider.whenMessage(text -> text.contains("hello")).reply("Hello response");
 
-    testModelProvider
-      .whenMessage(text -> text.contains("goodbye"))
-      .reply("Goodbye response");
+    testModelProvider.whenMessage(text -> text.contains("goodbye")).reply("Goodbye response");
 
     ChatModel chatModel = (ChatModel) testModelProvider.createChatModel();
 
     // Test first predicate
-    ChatRequest helloRequest = ChatRequest.builder()
-        .messages(List.of(new UserMessage("Say hello to me")))
-        .build();
+    ChatRequest helloRequest =
+        ChatRequest.builder().messages(List.of(new UserMessage("Say hello to me"))).build();
     ChatResponse helloResponse = chatModel.doChat(helloRequest);
     assertThat(helloResponse.aiMessage().text()).isEqualTo("Hello response");
 
     // Test second predicate
-    ChatRequest goodbyeRequest = ChatRequest.builder()
-        .messages(List.of(new UserMessage("Say goodbye to me")))
-        .build();
+    ChatRequest goodbyeRequest =
+        ChatRequest.builder().messages(List.of(new UserMessage("Say goodbye to me"))).build();
     ChatResponse goodbyeResponse = chatModel.doChat(goodbyeRequest);
     assertThat(goodbyeResponse.aiMessage().text()).isEqualTo("Goodbye response");
   }
@@ -149,14 +141,11 @@ class TestModelProviderTest {
   @Test
   void testFailWhenActionIsMissing() {
 
-    var whenClause =
-    testModelProvider
-      .whenMessage("hello");
+    var whenClause = testModelProvider.whenMessage("hello");
 
     ChatModel chatModel = (ChatModel) testModelProvider.createChatModel();
-    ChatRequest helloRequest = ChatRequest.builder()
-      .messages(List.of(new UserMessage("hello")))
-      .build();
+    ChatRequest helloRequest =
+        ChatRequest.builder().messages(List.of(new UserMessage("hello"))).build();
 
     try {
       chatModel.doChat(helloRequest);
@@ -178,9 +167,8 @@ class TestModelProviderTest {
     testModelProvider.whenMessage("hello").failWith(new RuntimeException("I can't handle this"));
 
     ChatModel chatModel = (ChatModel) testModelProvider.createChatModel();
-    ChatRequest helloRequest = ChatRequest.builder()
-      .messages(List.of(new UserMessage("hello")))
-      .build();
+    ChatRequest helloRequest =
+        ChatRequest.builder().messages(List.of(new UserMessage("hello"))).build();
     try {
       chatModel.doChat(helloRequest);
       fail("Should have failed");
@@ -188,19 +176,15 @@ class TestModelProviderTest {
       assertThat(e.getMessage()).isEqualTo("I can't handle this");
       return;
     }
-
   }
 
   @Test
   void testMockResponseNoMatch() {
-    testModelProvider
-      .whenMessage(text -> text.contains("specific"))
-      .reply("Specific response");
+    testModelProvider.whenMessage(text -> text.contains("specific")).reply("Specific response");
 
     ChatModel chatModel = (ChatModel) testModelProvider.createChatModel();
-    ChatRequest request = ChatRequest.builder()
-        .messages(List.of(new UserMessage("Random question")))
-        .build();
+    ChatRequest request =
+        ChatRequest.builder().messages(List.of(new UserMessage("Random question"))).build();
 
     assertThatThrownBy(() -> chatModel.doChat(request))
         .isInstanceOf(IllegalArgumentException.class)
@@ -211,18 +195,17 @@ class TestModelProviderTest {
   void testStreamingChatModel() {
     testModelProvider.fixedResponse("Hello world!");
 
-    StreamingChatModel streamingChatModel = (StreamingChatModel) testModelProvider.createStreamingChatModel();
+    StreamingChatModel streamingChatModel =
+        (StreamingChatModel) testModelProvider.createStreamingChatModel();
     TestStreamingHandler handler = new TestStreamingHandler();
 
-    ChatRequest request = ChatRequest.builder()
-        .messages(List.of(new UserMessage("Test question")))
-        .build();
+    ChatRequest request =
+        ChatRequest.builder().messages(List.of(new UserMessage("Test question"))).build();
 
     streamingChatModel.doChat(request, handler);
 
     // Verify partial responses (tokens) - now separators are separate tokens
-    assertThat(handler.partialResponses).hasSize(4)
-        .containsExactly("Hello", " ", "world", "!");
+    assertThat(handler.partialResponses).hasSize(4).containsExactly("Hello", " ", "world", "!");
 
     // Verify complete response
     assertThat(handler.completeResponse).isNotNull();
@@ -236,9 +219,8 @@ class TestModelProviderTest {
     testModelProvider.fixedResponse("Initial response");
 
     ChatModel chatModel = (ChatModel) testModelProvider.createChatModel();
-    ChatRequest request = ChatRequest.builder()
-        .messages(List.of(new UserMessage("Test question")))
-        .build();
+    ChatRequest request =
+        ChatRequest.builder().messages(List.of(new UserMessage("Test question"))).build();
 
     // Verify initial response works
     ChatResponse response = chatModel.doChat(request);
@@ -257,9 +239,8 @@ class TestModelProviderTest {
     testModelProvider.fixedResponse("Test response");
 
     ChatModel chatModel = (ChatModel) testModelProvider.createChatModel();
-    ChatRequest request = ChatRequest.builder()
-        .messages(List.of(new AiMessage("AI message only")))
-        .build();
+    ChatRequest request =
+        ChatRequest.builder().messages(List.of(new AiMessage("AI message only"))).build();
 
     assertThatThrownBy(() -> chatModel.doChat(request))
         .isInstanceOf(RuntimeException.class)
@@ -268,18 +249,13 @@ class TestModelProviderTest {
 
   @Test
   void testMultipleResponsePredicatesLastMatch() {
-    testModelProvider
-      .whenMessage(text -> text.contains("first"))
-      .reply("First response");
+    testModelProvider.whenMessage(text -> text.contains("first")).reply("First response");
 
-    testModelProvider
-      .whenMessage(text -> text.contains("first"))
-      .reply("Second response");
+    testModelProvider.whenMessage(text -> text.contains("first")).reply("Second response");
 
     ChatModel chatModel = (ChatModel) testModelProvider.createChatModel();
-    ChatRequest request = ChatRequest.builder()
-        .messages(List.of(new UserMessage("This is the first test")))
-        .build();
+    ChatRequest request =
+        ChatRequest.builder().messages(List.of(new UserMessage("This is the first test"))).build();
 
     ChatResponse response = chatModel.doChat(request);
     assertThat(response.aiMessage().text()).isEqualTo("Second response");
@@ -289,36 +265,28 @@ class TestModelProviderTest {
   void testMixOfFixedAndWhen() {
     ChatModel chatModel = (ChatModel) testModelProvider.createChatModel();
 
-    testModelProvider
-        .whenMessage(text -> text.contains("first"))
-        .reply("First response");
+    testModelProvider.whenMessage(text -> text.contains("first")).reply("First response");
 
-    ChatRequest request1 = ChatRequest.builder()
-        .messages(List.of(new UserMessage("This is the first test")))
-        .build();
+    ChatRequest request1 =
+        ChatRequest.builder().messages(List.of(new UserMessage("This is the first test"))).build();
     ChatResponse response1 = chatModel.doChat(request1);
     assertThat(response1.aiMessage().text()).isEqualTo("First response");
 
     // changing to a fixed response that will take precedence
-    testModelProvider
-        .fixedResponse("Fixed response");
+    testModelProvider.fixedResponse("Fixed response");
     ChatResponse response2 = chatModel.doChat(request1);
     assertThat(response2.aiMessage().text()).isEqualTo("Fixed response");
 
     // adding another specific match
-    testModelProvider
-        .whenMessage(text -> text.contains("another"))
-        .reply("Another response");
-    ChatRequest request3 = ChatRequest.builder()
-        .messages(List.of(new UserMessage("This is another test")))
-        .build();
+    testModelProvider.whenMessage(text -> text.contains("another")).reply("Another response");
+    ChatRequest request3 =
+        ChatRequest.builder().messages(List.of(new UserMessage("This is another test"))).build();
     ChatResponse response3 = chatModel.doChat(request3);
     assertThat(response3.aiMessage().text()).isEqualTo("Another response");
 
     // and the fixed will still catch non-match
-    ChatRequest request4 = ChatRequest.builder()
-        .messages(List.of(new UserMessage("This is something else")))
-        .build();
+    ChatRequest request4 =
+        ChatRequest.builder().messages(List.of(new UserMessage("This is something else"))).build();
     ChatResponse response4 = chatModel.doChat(request4);
     assertThat(response4.aiMessage().text()).isEqualTo("Fixed response");
   }
@@ -327,18 +295,20 @@ class TestModelProviderTest {
   void testStreamingWithComplexTokenization() {
     testModelProvider.fixedResponse("Hello, world! How are you?");
 
-    StreamingChatModel streamingChatModel = (StreamingChatModel) testModelProvider.createStreamingChatModel();
+    StreamingChatModel streamingChatModel =
+        (StreamingChatModel) testModelProvider.createStreamingChatModel();
     TestStreamingHandler handler = new TestStreamingHandler();
 
-    ChatRequest request = ChatRequest.builder()
-        .messages(List.of(new UserMessage("Complex test")))
-        .build();
+    ChatRequest request =
+        ChatRequest.builder().messages(List.of(new UserMessage("Complex test"))).build();
 
     streamingChatModel.doChat(request, handler);
 
     // Verify all tokens are streamed correctly - now with separate separators
-    List<String> expectedTokens = List.of("Hello", ",", " ", "world", "!", " ", "How", " ", "are", " ", "you", "?");
-    assertThat(handler.partialResponses).hasSize(expectedTokens.size())
+    List<String> expectedTokens =
+        List.of("Hello", ",", " ", "world", "!", " ", "How", " ", "are", " ", "you", "?");
+    assertThat(handler.partialResponses)
+        .hasSize(expectedTokens.size())
         .containsExactlyElementsOf(expectedTokens);
 
     // Verify complete response
@@ -350,12 +320,12 @@ class TestModelProviderTest {
   void testStreamingWithEmptyResponse() {
     testModelProvider.fixedResponse("");
 
-    StreamingChatModel streamingChatModel = (StreamingChatModel) testModelProvider.createStreamingChatModel();
+    StreamingChatModel streamingChatModel =
+        (StreamingChatModel) testModelProvider.createStreamingChatModel();
     TestStreamingHandler handler = new TestStreamingHandler();
 
-    ChatRequest request = ChatRequest.builder()
-        .messages(List.of(new UserMessage("Empty test")))
-        .build();
+    ChatRequest request =
+        ChatRequest.builder().messages(List.of(new UserMessage("Empty test"))).build();
 
     streamingChatModel.doChat(request, handler);
 

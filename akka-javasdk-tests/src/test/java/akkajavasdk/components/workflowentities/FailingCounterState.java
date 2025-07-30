@@ -8,6 +8,7 @@ public record FailingCounterState(String counterId, int value, boolean finished)
   public FailingCounterState asFinished() {
     return new FailingCounterState(counterId, value, true);
   }
+
   public FailingCounterState asFinished(int value) {
     return new FailingCounterState(counterId, value, true);
   }

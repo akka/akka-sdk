@@ -33,5 +33,4 @@ public sealed interface EmployeeEvent {
       this.email = email;
     }
   }
-
 }

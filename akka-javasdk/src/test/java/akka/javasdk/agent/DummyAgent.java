@@ -6,25 +6,20 @@ package akka.javasdk.agent;
 
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
-
 import java.util.List;
 
 @ComponentId("dummy1")
 @AgentDescription(name = "Dummy Agent", description = "Not very smart agent")
 class DummyAgent1 extends Agent {
   Effect<String> doSomething(String question) {
-    return effects()
-      .systemMessage("You are a helpful...")
-      .userMessage(question)
-      .thenReply();
+    return effects().systemMessage("You are a helpful...").userMessage(question).thenReply();
   }
 }
 
 @ComponentId("dummy2")
 @AgentDescription(name = "Dummy Agent", description = "Not very smart agent")
 class DummyAgent2 extends Agent {
-  record Response(String result) {
-  }
+  record Response(String result) {}
 
   Effect<Response> doSomething(String question) {
     return effects()
@@ -41,18 +36,20 @@ class DummyAgent2 extends Agent {
 class DummyAgent3 extends Agent {
   Effect<String> doSomethingElse(String question) {
     // customer memory
-    var memory = new SessionMemory() {
+    var memory =
+        new SessionMemory() {
 
-      @Override
-      public void addInteraction(String sessionId, SessionMessage.UserMessage userMessage, List<SessionMessage> messages) {
+          @Override
+          public void addInteraction(
+              String sessionId,
+              SessionMessage.UserMessage userMessage,
+              List<SessionMessage> messages) {}
 
-      }
-
-      @Override
-      public SessionHistory getHistory(String sessionId) {
-        return null;
-      }
-    };
+          @Override
+          public SessionHistory getHistory(String sessionId) {
+            return null;
+          }
+        };
 
     return effects()
         .systemMessage("You are a helpful...")
@@ -73,4 +70,3 @@ class DummyAgent4 extends Agent {
         .thenReply();
   }
 }
-

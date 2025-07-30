@@ -14,5 +14,4 @@ public abstract class AbstractTextConsumer extends Consumer {
   protected void onText(String text) {
     StaticTestBuffer.addValue(BUFFER_KEY, text);
   }
-
 }

@@ -7,10 +7,9 @@ package akkajavasdk.components;
 import akka.javasdk.ServiceSetup;
 import akka.javasdk.annotations.Acl;
 import akkajavasdk.components.keyvalueentities.user.ProdCounterEntity;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Set;
 
 @akka.javasdk.annotations.Setup
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))

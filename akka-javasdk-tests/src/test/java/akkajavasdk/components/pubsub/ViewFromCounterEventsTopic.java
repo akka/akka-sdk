@@ -4,6 +4,7 @@
 
 package akkajavasdk.components.pubsub;
 
+import static akka.javasdk.impl.MetadataImpl.CeSubject;
 
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
@@ -11,13 +12,9 @@ import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEvent;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
-
-import static akka.javasdk.impl.MetadataImpl.CeSubject;
-
 
 @ComponentId("counter_view_topic_sub")
 public class ViewFromCounterEventsTopic extends View {
@@ -27,6 +24,7 @@ public class ViewFromCounterEventsTopic extends View {
   private static Logger logger = LoggerFactory.getLogger(ViewFromCounterEventsTopic.class);
 
   public record QueryParameters(int counterValue) {}
+
   public record CounterViewList(List<CounterView> counters) {}
 
   @Query("SELECT * AS counters FROM counter_view_topic_sub WHERE value < :counterValue")
@@ -51,8 +49,8 @@ public class ViewFromCounterEventsTopic extends View {
     public Effect<CounterView> handleMultiply(CounterEvent.ValueMultiplied multiplied) {
       String entityId = updateContext().metadata().get(CeSubject()).orElseThrow();
       logger.info("Consuming: " + multiplied + " from " + entityId);
-      return effects().updateRow(new CounterView(entityId, rowState().value() * multiplied.value()));
-
+      return effects()
+          .updateRow(new CounterView(entityId, rowState().value() * multiplied.value()));
     }
   }
 }

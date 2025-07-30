@@ -11,7 +11,6 @@ import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
 import akkajavasdk.components.keyvalueentities.user.User;
 import akkajavasdk.components.keyvalueentities.user.UserEntity;
-
 import java.util.List;
 
 @ComponentId("users_by_primitives")
@@ -21,13 +20,19 @@ public class UsersByPrimitives extends View {
   public static class Users extends TableUpdater<UserWithByPrimitivesModel> {
     public Effect<UserWithByPrimitivesModel> onChange(User user) {
       return effects()
-        .updateRow(
-          new UserWithByPrimitivesModel(updateContext().eventSubject().orElse(""), user.email, 123, 321, 12.3d, true));
+          .updateRow(
+              new UserWithByPrimitivesModel(
+                  updateContext().eventSubject().orElse(""), user.email, 123, 321, 12.3d, true));
     }
   }
 
-  public record UserWithByPrimitivesModel(String id, String email, int intValue, long longValue, double doubleValue, boolean booleanValue) {
-  }
+  public record UserWithByPrimitivesModel(
+      String id,
+      String email,
+      int intValue,
+      long longValue,
+      double doubleValue,
+      boolean booleanValue) {}
 
   public record UserByPrimitiveList(List<UserWithByPrimitivesModel> users) {}
 

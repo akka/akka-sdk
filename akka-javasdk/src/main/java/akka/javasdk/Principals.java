@@ -24,8 +24,10 @@ public interface Principals {
    * @param name The name of the service.
    */
   boolean isLocalService(String name);
+
   /** Whether this request was from any service in the local project. */
   boolean isAnyLocalService();
+
   /** Get the service that invoked this call, if any. */
   Optional<String> getLocalService();
 
