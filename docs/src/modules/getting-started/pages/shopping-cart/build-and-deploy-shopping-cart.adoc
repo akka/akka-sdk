@@ -23,16 +23,12 @@ In this guide you will:
 
 include::ROOT:partial$cloud-dev-prerequisites.adoc[]
 
-== Clone the sample
+include::ROOT:partial$create-the-empty-project.adoc[]
 
-. Clone the full source code of the Shopping Cart sample from link:https://github.com/akka-samples/shopping-cart-quickstart[GitHub], or use the Akka CLI command below to download and unzip this quickstart project.
-+
-[source,bash]
-----
-akka quickstart download shopping-cart
-----
-
-. Open the project in your favorite editor.
+[NOTE]
+====
+This guide is written assuming you will follow it as a tutorial to walk through all of the components, building them on your own. If at any time you want to compare your solution with the official sample, check out the link:https://github.com/akka-samples/shopping-cart-quickstart[GitHub Repository, window="new"].
+====
 
 == Understanding the shopping cart
 

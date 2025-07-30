@@ -22,9 +22,7 @@ include::ROOT:partial$local-dev-prerequisites.adoc[]
 
 include::ROOT:partial$recommend-ai-video.adoc[]
 
-== Create the empty project
-
-You already learned how to create an empty Akka project when you went through the guide to xref:getting-started:author-your-first-service.adoc#clone_sample[author your first service].
+include::ROOT:partial$create-the-empty-project.adoc[]
 
 [NOTE]
 ====
