@@ -9,12 +9,10 @@ import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.client.DynamicMethodRef;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 abstract class MultiAgentSample {
 
@@ -22,42 +20,44 @@ abstract class MultiAgentSample {
   @AgentDescription(name = "Agent planner", description = "...")
   static class Planner extends Agent {
     record Plan(List<PlanStep> steps) {}
+
     record PlanStep(String agentId, String query) {}
 
     private final AgentRegistry registry;
 
     private final String systemMessageTemplate =
         """
-        Your job is to analyse the user request and the list of agents and devise which agents to use
-        and the best order in which the agents should be called in order to produce a suitable answer
-        to the user.
-      
-        You can find the list of exiting agents below (in JSON format):
-        %s
-      
-        Note that each agent has a description of its capabilities. Given the user request,
-        you must define the right ordering.
-      
-        Moreover, you must generate a concise request to be sent to each agent. This agent request is of course
-        based on the user original request, but is tailored to the specific agent. Each individual agent should not receive
-        requests or any text that is not related with its domain of expertise.
-      
-        Your response should follow a strict json schema as defined bellow.
-         {
-           "steps": [
-              {
-                "agentId": "<the id of the agent>",
-                "query: "<agent tailored query>",
-              }
-           ]
-         }
-      
-        The '<the id of the agent>' should be filled with the agent id.
-        The '<agent tailored query>' should contain the agent tailored message.
-        The order og the items inside the "steps" array should be the order of execution.
-      
-        Do not include any explanations or text outside of the JSON structure.
-        """.stripIndent();
+Your job is to analyse the user request and the list of agents and devise which agents to use
+and the best order in which the agents should be called in order to produce a suitable answer
+to the user.
+
+You can find the list of exiting agents below (in JSON format):
+%s
+
+Note that each agent has a description of its capabilities. Given the user request,
+you must define the right ordering.
+
+Moreover, you must generate a concise request to be sent to each agent. This agent request is of course
+based on the user original request, but is tailored to the specific agent. Each individual agent should not receive
+requests or any text that is not related with its domain of expertise.
+
+Your response should follow a strict json schema as defined bellow.
+ {
+   "steps": [
+      {
+        "agentId": "<the id of the agent>",
+        "query: "<agent tailored query>",
+      }
+   ]
+ }
+
+The '<the id of the agent>' should be filled with the agent id.
+The '<agent tailored query>' should contain the agent tailored message.
+The order og the items inside the "steps" array should be the order of execution.
+
+Do not include any explanations or text outside of the JSON structure.
+"""
+            .stripIndent();
 
     Planner(AgentRegistry registry) {
       this.registry = registry;
@@ -105,16 +105,15 @@ abstract class MultiAgentSample {
 
     public void run() {
       var plan =
-        componentClient.forAgent()
-          .inSession(sessionId)
-          .method(Planner::plan)
-          .invoke("task...");
+          componentClient.forAgent().inSession(sessionId).method(Planner::plan).invoke("task...");
 
       List<String> results =
-        plan.steps.stream().map(step -> {
-          return agentCall(step.agentId)
-              .invoke(step.query);
-        }).toList();
+          plan.steps.stream()
+              .map(
+                  step -> {
+                    return agentCall(step.agentId).invoke(step.query);
+                  })
+              .toList();
 
       logger.info("Result: {}", results);
     }
@@ -126,6 +125,5 @@ abstract class MultiAgentSample {
       // takes a String parameter and returns String.
       return componentClient.forAgent().inSession(sessionId).dynamicCall(agentId);
     }
-
   }
 }

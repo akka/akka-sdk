@@ -4,21 +4,19 @@
 
 package akka.javasdk.testkit;
 
+import static akka.javasdk.testkit.EntitySerializationChecker.verifySerDerWithExpectedType;
+
 import akka.javasdk.Metadata;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import akka.javasdk.impl.client.MethodRefResolver;
 import akka.javasdk.impl.reflection.Reflect;
 import akka.javasdk.testkit.impl.TestKitEventSourcedEntityContext;
-
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
-import static akka.javasdk.testkit.EntitySerializationChecker.verifySerDerWithExpectedType;
 
 /**
  * EventSourced Testkit for use in unit tests for EventSourced entities.
@@ -66,8 +64,8 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
    *
    * <p>A default test entity id will be automatically provided.
    */
-  public static <S, E, ES extends EventSourcedEntity<S, E>> EventSourcedTestKit<S, E, ES> ofEntityWithState(
-      Supplier<ES> entityFactory, S initialState) {
+  public static <S, E, ES extends EventSourcedEntity<S, E>>
+      EventSourcedTestKit<S, E, ES> ofEntityWithState(Supplier<ES> entityFactory, S initialState) {
     return ofEntityWithState(DEFAULT_TEST_ENTITY_ID, entityFactory, initialState);
   }
 
@@ -77,8 +75,9 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
    *
    * <p>A default test entity id will be automatically provided.
    */
-  public static <S, E, ES extends EventSourcedEntity<S, E>> EventSourcedTestKit<S, E, ES> ofEntityFromEvents(
-      Supplier<ES> entityFactory, List<E> initialEvents) {
+  public static <S, E, ES extends EventSourcedEntity<S, E>>
+      EventSourcedTestKit<S, E, ES> ofEntityFromEvents(
+          Supplier<ES> entityFactory, List<E> initialEvents) {
     return ofEntityFromEvents(DEFAULT_TEST_ENTITY_ID, entityFactory, initialEvents);
   }
 
@@ -98,8 +97,9 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
    *
    * <p>A default test entity id will be automatically provided.
    */
-  public static <S, E, ES extends EventSourcedEntity<S, E>> EventSourcedTestKit<S, E, ES> ofEntityWithState(
-      Function<EventSourcedEntityContext, ES> entityFactory, S initialState) {
+  public static <S, E, ES extends EventSourcedEntity<S, E>>
+      EventSourcedTestKit<S, E, ES> ofEntityWithState(
+          Function<EventSourcedEntityContext, ES> entityFactory, S initialState) {
     return ofEntityWithState(DEFAULT_TEST_ENTITY_ID, entityFactory, initialState);
   }
 
@@ -109,8 +109,9 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
    *
    * <p>A default test entity id will be automatically provided.
    */
-  public static <S, E, ES extends EventSourcedEntity<S, E>> EventSourcedTestKit<S, E, ES> ofEntityFromEvents(
-      Function<EventSourcedEntityContext, ES> entityFactory, List<E> initialEvents) {
+  public static <S, E, ES extends EventSourcedEntity<S, E>>
+      EventSourcedTestKit<S, E, ES> ofEntityFromEvents(
+          Function<EventSourcedEntityContext, ES> entityFactory, List<E> initialEvents) {
     return ofEntityFromEvents(DEFAULT_TEST_ENTITY_ID, entityFactory, initialEvents);
   }
 
@@ -127,8 +128,9 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
    * Creates a new testkit instance from a user defined entity id, a Supplier of EventSourcedEntity,
    * and a state into which the supplied entity will be placed for tests.
    */
-  public static <S, E, ES extends EventSourcedEntity<S, E>> EventSourcedTestKit<S, E, ES> ofEntityWithState(
-      String entityId, Supplier<ES> entityFactory, S initialState) {
+  public static <S, E, ES extends EventSourcedEntity<S, E>>
+      EventSourcedTestKit<S, E, ES> ofEntityWithState(
+          String entityId, Supplier<ES> entityFactory, S initialState) {
     return ofEntityWithState(entityId, ctx -> entityFactory.get(), initialState);
   }
 
@@ -136,8 +138,9 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
    * Creates a new testkit instance from a user defined entity id, a Supplier of EventSourcedEntity,
    * and events from which to derive a state for the generated entity for tests.
    */
-  public static <S, E, ES extends EventSourcedEntity<S, E>> EventSourcedTestKit<S, E, ES> ofEntityFromEvents(
-      String entityId, Supplier<ES> entityFactory, List<E> initialEvents) {
+  public static <S, E, ES extends EventSourcedEntity<S, E>>
+      EventSourcedTestKit<S, E, ES> ofEntityFromEvents(
+          String entityId, Supplier<ES> entityFactory, List<E> initialEvents) {
     return ofEntityFromEvents(entityId, ctx -> entityFactory.get(), initialEvents);
   }
 
@@ -154,8 +157,9 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
    * Creates a new testkit instance from a user defined entity id, a factory function for
    * EventSourcedEntity, and a state into which the built entity will be placed for tests.
    */
-  public static <S, E, ES extends EventSourcedEntity<S, E>> EventSourcedTestKit<S, E, ES> ofEntityWithState(
-      String entityId, Function<EventSourcedEntityContext, ES> entityFactory, S initialState) {
+  public static <S, E, ES extends EventSourcedEntity<S, E>>
+      EventSourcedTestKit<S, E, ES> ofEntityWithState(
+          String entityId, Function<EventSourcedEntityContext, ES> entityFactory, S initialState) {
     return new EventSourcedTestKit<>(entityWithId(entityId, entityFactory), entityId, initialState);
   }
 
@@ -163,16 +167,21 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
    * Creates a new testkit instance from a user defined entity id, a factory function for
    * EventSourcedEntity, and events from which to derive a state for the generated entity for tests.
    */
-  public static <S, E, ES extends EventSourcedEntity<S, E>> EventSourcedTestKit<S, E, ES> ofEntityFromEvents(
-      String entityId, Function<EventSourcedEntityContext, ES> entityFactory, List<E> initialEvents) {
-    return new EventSourcedTestKit<>(entityWithId(entityId, entityFactory), entityId, initialEvents);
+  public static <S, E, ES extends EventSourcedEntity<S, E>>
+      EventSourcedTestKit<S, E, ES> ofEntityFromEvents(
+          String entityId,
+          Function<EventSourcedEntityContext, ES> entityFactory,
+          List<E> initialEvents) {
+    return new EventSourcedTestKit<>(
+        entityWithId(entityId, entityFactory), entityId, initialEvents);
   }
 
   public final class MethodRef<R> {
     private final akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func;
     private final Metadata metadata;
 
-    public MethodRef(akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func, Metadata metadata) {
+    public MethodRef(
+        akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func, Metadata metadata) {
       this.func = func;
       this.metadata = metadata;
     }
@@ -192,7 +201,8 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
     private final akka.japi.function.Function2<ES, I, EventSourcedEntity.Effect<R>> func;
     private final Metadata metadata;
 
-    public MethodRef1(akka.japi.function.Function2<ES, I, EventSourcedEntity.Effect<R>> func, Metadata metadata) {
+    public MethodRef1(
+        akka.japi.function.Function2<ES, I, EventSourcedEntity.Effect<R>> func, Metadata metadata) {
       this.func = func;
       this.metadata = metadata;
     }
@@ -208,27 +218,34 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
 
       verifySerDerWithExpectedType(inputType, input, entity);
 
-      return EventSourcedTestKit.this.call(es -> {
-        try {
-          return func.apply(es, input);
-        } catch (Exception e) {
-          throw new RuntimeException(e);
-        }
-      }, metadata, Optional.of(returnType));
+      return EventSourcedTestKit.this.call(
+          es -> {
+            try {
+              return func.apply(es, input);
+            } catch (Exception e) {
+              throw new RuntimeException(e);
+            }
+          },
+          metadata,
+          Optional.of(returnType));
     }
   }
 
   /**
-   * Pass in an Event Sourced Entity command handler method reference without parameters, e.g. {@code UserEntity::create}
+   * Pass in an Event Sourced Entity command handler method reference without parameters, e.g.
+   * {@code UserEntity::create}
    */
-  public <R> MethodRef<R> method(akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func) {
+  public <R> MethodRef<R> method(
+      akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func) {
     return new MethodRef<>(func, Metadata.EMPTY);
   }
 
   /**
-   * Pass in an Event Sourced Entity command handler method reference with a single parameter, e.g. {@code UserEntity::create}
+   * Pass in an Event Sourced Entity command handler method reference with a single parameter, e.g.
+   * {@code UserEntity::create}
    */
-  public <I, R> MethodRef1<I, R> method(akka.japi.function.Function2<ES, I, EventSourcedEntity.Effect<R>> func) {
+  public <I, R> MethodRef1<I, R> method(
+      akka.japi.function.Function2<ES, I, EventSourcedEntity.Effect<R>> func) {
     return new MethodRef1<>(func, Metadata.EMPTY);
   }
 
@@ -243,7 +260,8 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
    * @deprecated Use "method(MyEntity::myCommandHandler).invoke()" instead
    */
   @Deprecated(since = "3.2.1", forRemoval = true)
-  public <R> EventSourcedResult<R> call(akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func) {
+  public <R> EventSourcedResult<R> call(
+      akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func) {
     return call(func, Metadata.EMPTY);
   }
 
@@ -252,26 +270,34 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
    * lambda should return an EventSourcedEntity.Effect. The Effect is interpreted into an
    * EventSourcedResult that can be used in test assertions.
    *
-   * @param func     A function from EventSourcedEntity to EventSourcedEntity.Effect.
+   * @param func A function from EventSourcedEntity to EventSourcedEntity.Effect.
    * @param metadata A metadata passed as a call context.
-   * @param <R>      The type of reply that is expected from invoking a command handler
+   * @param <R> The type of reply that is expected from invoking a command handler
    * @return a EventSourcedResult
    * @deprecated Use "method(MyEntity::myCommandHandler).withMetadata(metadata).invoke()" instead
    */
   @SuppressWarnings("unchecked") // entity() returns the entity we were constructed with
   @Deprecated(since = "3.2.1", forRemoval = true)
-  public <R> EventSourcedResult<R> call(akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func, Metadata metadata) {
+  public <R> EventSourcedResult<R> call(
+      akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func, Metadata metadata) {
     return call(func, metadata, Optional.empty());
   }
 
-  private <R> EventSourcedResult<R> call(akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func, Metadata metadata, Optional<Type> returnType) {
-    return interpretEffects(() -> {
-      try {
-        return func.apply((ES) entity());
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-    }, entityId, metadata,returnType);
+  private <R> EventSourcedResult<R> call(
+      akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func,
+      Metadata metadata,
+      Optional<Type> returnType) {
+    return interpretEffects(
+        () -> {
+          try {
+            return func.apply((ES) entity());
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
+        },
+        entityId,
+        metadata,
+        returnType);
   }
 
   @Override

@@ -187,6 +187,9 @@ Once pushed, you need to use the suggested image from the command's output in yo
 ----
 name: my-service
 service:
+  resources:
+    runtime:
+      mode: embedded
   image: acr.us-east-1.akka.io/my-organization/my-project/container-name:tag-name
   env:
   - name: SOME_VARIABLE
@@ -194,6 +197,8 @@ service:
 ----
 
 NOTE: You must add the primary region image tag from `akka container-registry push` output.
+
+WARNING: Keep the embedded runtime mode in the service descriptor, as it is the only mode supported by Akka services.
 
 To apply this descriptor, run:
 

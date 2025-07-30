@@ -5,7 +5,9 @@
 package akka.javasdk.impl.agent
 
 import java.util.function
+
 import scala.jdk.FunctionConverters.enrichAsScalaFromFunction
+
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.agent.Agent.Effect
@@ -23,9 +25,11 @@ import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
 import akka.javasdk.impl.effect.SecondaryEffectImpl
-
 import java.util
+
 import scala.jdk.CollectionConverters.ListHasAsScala
+
+import akka.javasdk.CommandException
 
 /**
  * INTERNAL API
@@ -131,8 +135,12 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
     this.asInstanceOf[BaseAgentEffectBuilder[T]]
   }
 
-  override def error[T](description: String): BaseAgentEffectBuilder[T] = {
-    _secondaryEffect = ErrorReplyImpl(description)
+  override def error[T](message: String): BaseAgentEffectBuilder[T] = {
+    error(new CommandException(message))
+  }
+
+  override def error[T](commandException: CommandException): BaseAgentEffectBuilder[T] = {
+    _secondaryEffect = ErrorReplyImpl(commandException)
     this.asInstanceOf[BaseAgentEffectBuilder[T]]
   }
 

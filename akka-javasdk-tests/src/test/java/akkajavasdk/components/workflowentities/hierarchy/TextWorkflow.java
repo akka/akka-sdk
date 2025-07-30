@@ -5,18 +5,17 @@
 package akkajavasdk.components.workflowentities.hierarchy;
 
 import akka.javasdk.annotations.ComponentId;
-
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 @ComponentId("hierarchy-workflow")
 public class TextWorkflow extends AbstractTextKvWorkflow {
   @Override
   public WorkflowDef<State> definition() {
-    return workflow().addStep(step("dummy-step")
-        .call(() -> "step completed")
-        .andThen(String.class, result -> effects().end()));
-
+    return workflow()
+        .addStep(
+            step("dummy-step")
+                .call(() -> "step completed")
+                .andThen(String.class, result -> effects().end()));
   }
 
   public Effect<String> setText(String text) {

@@ -4,5 +4,4 @@
 
 package akkajavasdk.components.workflowentities;
 
-public record CounterScheduledValue(int value) {
-}
+public record CounterScheduledValue(int value) {}

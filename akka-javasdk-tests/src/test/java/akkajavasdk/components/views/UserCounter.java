@@ -7,7 +7,6 @@ package akkajavasdk.components.views;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEvent;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.Objects;
 
 public class UserCounter {
@@ -29,15 +28,18 @@ public class UserCounter {
     return new UserCounter(id, value * event.value());
   }
 
-
   public UserCounter onValueSet(CounterEvent.ValueSet event) {
     return new UserCounter(id, event.value());
   }
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) {return true;}
-    if (o == null || getClass() != o.getClass()) {return false;}
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     UserCounter that = (UserCounter) o;
     return Objects.equals(id, that.id) && Objects.equals(value, that.value);
   }

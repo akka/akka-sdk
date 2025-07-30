@@ -5,5 +5,5 @@
 package akkajavasdk;
 
 public record Ok() {
-   public static Ok instance = new Ok();
+  public static Ok instance = new Ok();
 }

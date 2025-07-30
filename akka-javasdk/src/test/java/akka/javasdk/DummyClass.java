@@ -4,9 +4,8 @@
 
 package akka.javasdk;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import akka.javasdk.annotations.Migration;
-
+import com.fasterxml.jackson.annotation.JsonCreator;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -28,7 +27,9 @@ public class DummyClass {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     DummyClass that = (DummyClass) o;
-    return intValue == that.intValue && Objects.equals(stringValue, that.stringValue) && Objects.equals(optionalStringValue, that.optionalStringValue);
+    return intValue == that.intValue
+        && Objects.equals(stringValue, that.stringValue)
+        && Objects.equals(optionalStringValue, that.optionalStringValue);
   }
 
   @Override

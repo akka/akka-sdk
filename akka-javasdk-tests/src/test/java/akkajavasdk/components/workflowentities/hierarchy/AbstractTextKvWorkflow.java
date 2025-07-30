@@ -9,6 +9,4 @@ import akka.javasdk.workflow.Workflow;
 public abstract class AbstractTextKvWorkflow extends Workflow<AbstractTextKvWorkflow.State> {
 
   public record State(String value) {}
-
-
 }

@@ -16,7 +16,8 @@ public class TransferConsumer extends Consumer {
   public static final String TRANSFER_CONSUMER_STORE = "transfer-consumer-store";
 
   public Effect onTransfer(TransferState transfer) {
-    DummyTransferStore.store(TRANSFER_CONSUMER_STORE, messageContext().eventSubject().get(), transfer);
+    DummyTransferStore.store(
+        TRANSFER_CONSUMER_STORE, messageContext().eventSubject().get(), transfer);
     return effects().done();
   }
 

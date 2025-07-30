@@ -24,8 +24,8 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
- * A {@code ModelProvider} implementation for testing purposes that does not use a real AI model.
- * It allows defining mock responses based on input predicates.
+ * A {@code ModelProvider} implementation for testing purposes that does not use a real AI model. It
+ * allows defining mock responses based on input predicates.
  */
 public final class TestModelProvider implements ModelProvider.Custom {
 
@@ -34,75 +34,60 @@ public final class TestModelProvider implements ModelProvider.Custom {
    */
   public record AiResponse(String message, List<ToolInvocationRequest> toolRequests) {
 
-    /**
-     * Constructs an AI response with only a message.
-     */
+    /** Constructs an AI response with only a message. */
     public AiResponse(String message) {
       this(message, List.of());
     }
 
-    /**
-     * Constructs an AI response with a message and a single tool request.
-     */
+    /** Constructs an AI response with a message and a single tool request. */
     public AiResponse(String message, ToolInvocationRequest toolRequest) {
       this(message, List.of(toolRequest));
     }
 
-    /**
-     * Constructs an AI response with only a tool request.
-     */
+    /** Constructs an AI response with only a tool request. */
     public AiResponse(ToolInvocationRequest toolRequest) {
       this("", List.of(toolRequest));
     }
 
-    /**
-     * Constructs an AI response with a list of tool invocation requests.
-     */
+    /** Constructs an AI response with a list of tool invocation requests. */
     public AiResponse(List<ToolInvocationRequest> toolRequests) {
       this("", toolRequests);
     }
   }
 
-  /**
-   * Represents a tool invocation request with a name and arguments.
-   */
-  public record ToolInvocationRequest(String name, String arguments) {
-  }
+  /** Represents a tool invocation request with a name and arguments. */
+  public record ToolInvocationRequest(String name, String arguments) {}
 
   /**
-   * Represents an input message.
-   * Can be a user input message {@link UserMessage} or the result of a tool invocation {@link ToolResult}.
+   * Represents an input message. Can be a user input message {@link UserMessage} or the result of a
+   * tool invocation {@link ToolResult}.
    */
   public sealed interface InputMessage {
     String content();
   }
 
-  /**
-   * Represents a user message.
-   */
+  /** Represents a user message. */
   public record UserMessage(String content) implements InputMessage {}
 
-  /**
-   * Represents a tool result.
-   * This is used to simulate a response from a tool invocation.
-   */
+  /** Represents a tool result. This is used to simulate a response from a tool invocation. */
   public record ToolResult(String name, String content) implements InputMessage {}
 
-  private List<Pair<Predicate<InputMessage>, Function<InputMessage, AiResponse>>> responsePredicates = new ArrayList<>();
+  private List<Pair<Predicate<InputMessage>, Function<InputMessage, AiResponse>>>
+      responsePredicates = new ArrayList<>();
 
+  public static class MissingModelResponseException extends RuntimeException {}
 
-  public static class MissingModelResponseException extends RuntimeException {
-  }
-
-  final private Function<InputMessage, AiResponse> catchMissingResponse = msg -> {
-    throw new MissingModelResponseException();
-  };
+  private final Function<InputMessage, AiResponse> catchMissingResponse =
+      msg -> {
+        throw new MissingModelResponseException();
+      };
 
   private void addPredicateOnly(Predicate<InputMessage> predicate) {
     responsePredicates.addFirst(new Pair<>(predicate, catchMissingResponse));
   }
-    
-  private void addResponse(Predicate<InputMessage> predicate, Function<InputMessage, AiResponse> response) {
+
+  private void addResponse(
+      Predicate<InputMessage> predicate, Function<InputMessage, AiResponse> response) {
 
     var catchMissingResponse = new Pair<>(predicate, this.catchMissingResponse);
 
@@ -113,10 +98,7 @@ public final class TestModelProvider implements ModelProvider.Custom {
     responsePredicates.addFirst(new Pair<>(predicate, response));
   }
 
-
-  /**
-   * Base class for building reply configurations for specific input predicates.
-   */
+  /** Base class for building reply configurations for specific input predicates. */
   public static sealed class WhenClause {
 
     final TestModelProvider provider;
@@ -128,62 +110,50 @@ public final class TestModelProvider implements ModelProvider.Custom {
       provider.addPredicateOnly(predicate);
     }
 
-    /**
-     * Reply with a simple message for matching requests.
-     */
+    /** Reply with a simple message for matching requests. */
     public void reply(String message) {
       reply(new AiResponse(message));
     }
 
-    /**
-     * Reply with a tool invocation request for matching requests.
-     */
+    /** Reply with a tool invocation request for matching requests. */
     public void reply(ToolInvocationRequest request) {
       reply(new AiResponse(request));
     }
 
-    /**
-     * Reply with a list of tool invocation requests for matching requests.
-     */
+    /** Reply with a list of tool invocation requests for matching requests. */
     public void reply(List<ToolInvocationRequest> requests) {
       reply(new AiResponse(requests));
     }
 
-    /**
-     * Reply with a custom AI response for matching requests.
-     */
+    /** Reply with a custom AI response for matching requests. */
     public void reply(AiResponse response) {
       provider.addResponse(predicate, msg -> response);
     }
 
-    /**
-     * Reply with a runtime exception for matching requests.
-     */
+    /** Reply with a runtime exception for matching requests. */
     public void failWith(RuntimeException error) {
-      provider.addResponse(predicate, msg -> { throw error; });
+      provider.addResponse(
+          predicate,
+          msg -> {
+            throw error;
+          });
     }
   }
 
-
-  /**
-   * Specialized reply builder for handling tool result messages.
-   */
-  public static final class WhenToolReplyClause extends WhenClause  {
+  /** Specialized reply builder for handling tool result messages. */
+  public static final class WhenToolReplyClause extends WhenClause {
 
     public WhenToolReplyClause(TestModelProvider provider, Predicate<InputMessage> predicate) {
       super(provider, predicate);
     }
 
-    /**
-     * Configures a reply with a custom handler for a tool result message.
-     */
+    /** Configures a reply with a custom handler for a tool result message. */
     public void thenReply(Function<ToolResult, AiResponse> handler) {
       // safe to cast because predicate ensures the type
       Function<InputMessage, AiResponse> castedHandler =
-        (input) -> handler.apply((ToolResult) input);
+          (input) -> handler.apply((ToolResult) input);
       provider.addResponse(predicate, castedHandler);
     }
-
   }
 
   @Override
@@ -216,94 +186,97 @@ public final class TestModelProvider implements ModelProvider.Custom {
     };
   }
 
-  /**
-   * Tokenizes a string into words using delimiters.
-   */
+  /** Tokenizes a string into words using delimiters. */
   List<String> tokenize(String text) {
     return Stream.of(text.splitWithDelimiters("[ \\.,?!;:]", -1))
-        .filter(t -> !t.isEmpty()).toList();
+        .filter(t -> !t.isEmpty())
+        .toList();
   }
 
-  /**
-   * Extracts the last input message from a chat request.
-   */
+  /** Extracts the last input message from a chat request. */
   private InputMessage getLastInputMessage(ChatRequest chatRequest) {
     return Optional.ofNullable(chatRequest.messages().getLast())
-        .filter(chatMessage -> chatMessage instanceof dev.langchain4j.data.message.UserMessage || chatMessage instanceof ToolExecutionResultMessage)
-        .map(chatMessage ->  {
-          if (chatMessage instanceof dev.langchain4j.data.message.UserMessage userMessage) {
-            return new UserMessage(userMessage.singleText());
-          } else {
-            ToolExecutionResultMessage result = (ToolExecutionResultMessage) chatMessage;
-            return new ToolResult(result.toolName(), result.text());
-          }
-        })
+        .filter(
+            chatMessage ->
+                chatMessage instanceof dev.langchain4j.data.message.UserMessage
+                    || chatMessage instanceof ToolExecutionResultMessage)
+        .map(
+            chatMessage -> {
+              if (chatMessage instanceof dev.langchain4j.data.message.UserMessage userMessage) {
+                return new UserMessage(userMessage.singleText());
+              } else {
+                ToolExecutionResultMessage result = (ToolExecutionResultMessage) chatMessage;
+                return new ToolResult(result.toolName(), result.text());
+              }
+            })
         .orElseThrow(() -> new RuntimeException("No input message found"));
   }
 
-  /**
-   * Retrieves the AI response for a given input message based on the defined predicates.
-   */
+  /** Retrieves the AI response for a given input message based on the defined predicates. */
   private AiResponse getResponse(InputMessage inputMessage) {
-      return responsePredicates.stream()
+    return responsePredicates.stream()
         .filter(pair -> pair.first().test(inputMessage))
         .findFirst()
-        .map(pair -> {
-            try {
-               return pair.second().apply(inputMessage);
-            } catch (MissingModelResponseException e) {
-              throw new IllegalArgumentException("A matching predicate was defined for [" + inputMessage + "]," +
-                " but no reply was defined for it. Please use reply(...), thenReply(...) or failWith(...) methods to " +
-                "provide a reply for this input message.", e);
-            }
-          }
-        )
-        .orElseThrow(() -> new IllegalArgumentException("No response defined in TestModelProvider for [" + inputMessage + "]"));
+        .map(
+            pair -> {
+              try {
+                return pair.second().apply(inputMessage);
+              } catch (MissingModelResponseException e) {
+                throw new IllegalArgumentException(
+                    "A matching predicate was defined for ["
+                        + inputMessage
+                        + "], but no reply was defined for it. Please use reply(...),"
+                        + " thenReply(...) or failWith(...) methods to provide a reply for this"
+                        + " input message.",
+                    e);
+              }
+            })
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "No response defined in TestModelProvider for [" + inputMessage + "]"));
   }
 
-  /**
-   * Constructs a ChatResponse object from an AI response.
-   */
+  /** Constructs a ChatResponse object from an AI response. */
   private ChatResponse chatResponse(AiResponse response) {
 
     var builder = new ChatResponse.Builder().modelName("test-model");
 
     if (!response.toolRequests.isEmpty()) {
       var requests =
-        response.toolRequests.stream().map(req ->
-          ToolExecutionRequest.builder()
-            .id(UUID.randomUUID().toString())
-            .name(req.name)
-            .arguments(req.arguments)
-            .build()
-        ).toList();
+          response.toolRequests.stream()
+              .map(
+                  req ->
+                      ToolExecutionRequest.builder()
+                          .id(UUID.randomUUID().toString())
+                          .name(req.name)
+                          .arguments(req.arguments)
+                          .build())
+              .toList();
 
       var aiMessage = AiMessage.from(response.message, requests);
 
-      return builder
-        .aiMessage(aiMessage)
-        .finishReason(FinishReason.TOOL_EXECUTION)
-        .build();
+      return builder.aiMessage(aiMessage).finishReason(FinishReason.TOOL_EXECUTION).build();
 
     } else {
       return builder
-        .finishReason(FinishReason.STOP).aiMessage(new AiMessage(response.message))
-        .build();
+          .finishReason(FinishReason.STOP)
+          .aiMessage(new AiMessage(response.message))
+          .build();
     }
   }
 
-  /**
-   * Configures a fixed response for all input messages.
-   */
+  /** Configures a fixed response for all input messages. */
   public void fixedResponse(String response) {
     whenMessage(msg -> true).reply(response);
   }
 
   /**
-   * Configures to respond when the passed string predicate matches the content of an {@link InputMessage}.
-   * The predicate is applied to content of {@link UserMessage} or {@link ToolResult}.
-   * <p>
-   * Note that to finish the configuration, you must call one of the reply methods.
+   * Configures to respond when the passed string predicate matches the content of an {@link
+   * InputMessage}. The predicate is applied to content of {@link UserMessage} or {@link
+   * ToolResult}.
+   *
+   * <p>Note that to finish the configuration, you must call one of the reply methods.
    */
   public WhenClause whenMessage(Predicate<String> predicate) {
 
@@ -313,9 +286,10 @@ public final class TestModelProvider implements ModelProvider.Custom {
   }
 
   /**
-   * Configures to respond when the content of an {@link InputMessage} is an exact match of the passed {@code message}.
-   * <p>
-   * Note that to finish the configuration, you must call one of the reply methods.
+   * Configures to respond when the content of an {@link InputMessage} is an exact match of the
+   * passed {@code message}.
+   *
+   * <p>Note that to finish the configuration, you must call one of the reply methods.
    */
   public WhenClause whenMessage(String message) {
     Predicate<InputMessage> messagePredicate = (value) -> message.equals(value.content());
@@ -324,10 +298,10 @@ public final class TestModelProvider implements ModelProvider.Custom {
   }
 
   /**
-   * Configures to respond when the given predicate matches a {@link UserMessage}.
-   * The predicate is applied to {@link UserMessage} instances only.
-   * <p>
-   * Note that to finish the configuration, you must call one of the reply methods.
+   * Configures to respond when the given predicate matches a {@link UserMessage}. The predicate is
+   * applied to {@link UserMessage} instances only.
+   *
+   * <p>Note that to finish the configuration, you must call one of the reply methods.
    */
   public WhenClause whenUserMessage(Predicate<UserMessage> predicate) {
 
@@ -339,25 +313,24 @@ public final class TestModelProvider implements ModelProvider.Custom {
 
   /**
    * Configures to respond when an {@link UserMessage} is an exact match of {@code userMessage}.
-   * <p>
-   * Note that to finish the configuration, you must call one of the reply methods.
+   *
+   * <p>Note that to finish the configuration, you must call one of the reply methods.
    */
   public WhenClause whenUserMessage(UserMessage userMessage) {
 
     Predicate<InputMessage> messagePredicate =
-      (value) -> value instanceof UserMessage uMsg && userMessage.equals(uMsg);
+        (value) -> value instanceof UserMessage uMsg && userMessage.equals(uMsg);
 
     return new WhenClause(this, messagePredicate);
   }
 
-
   /**
-   * Configures to respond when the given predicate matches a {@link ToolResult}.
-   * The predicate is applied to {@link ToolResult} instances only.
-   * <p>
-   * Note that to finish the configuration, you must call one of the reply methods.
+   * Configures to respond when the given predicate matches a {@link ToolResult}. The predicate is
+   * applied to {@link ToolResult} instances only.
+   *
+   * <p>Note that to finish the configuration, you must call one of the reply methods.
    */
-  public WhenToolReplyClause whenToolResult(Predicate<ToolResult> predicate){
+  public WhenToolReplyClause whenToolResult(Predicate<ToolResult> predicate) {
 
     Predicate<InputMessage> messagePredicate =
         (value) -> value instanceof ToolResult toolResult && predicate.test(toolResult);
@@ -367,21 +340,18 @@ public final class TestModelProvider implements ModelProvider.Custom {
 
   /**
    * Configures to respond when an {@link ToolResult} is an exact match of {@code toolResult}.
-   * <p>
-   * Note that to finish the configuration, you must call one of the reply methods.
+   *
+   * <p>Note that to finish the configuration, you must call one of the reply methods.
    */
-  public WhenToolReplyClause whenToolResult(ToolResult toolResult){
+  public WhenToolReplyClause whenToolResult(ToolResult toolResult) {
 
     Predicate<InputMessage> messagePredicate =
-      (value) -> value instanceof ToolResult tResult && toolResult.equals(tResult);
+        (value) -> value instanceof ToolResult tResult && toolResult.equals(tResult);
 
     return new WhenToolReplyClause(this, messagePredicate);
   }
 
-
-  /**
-   * Resets all previously added response configurations.
-   */
+  /** Resets all previously added response configurations. */
   public void reset() {
     responsePredicates = new ArrayList<>();
   }

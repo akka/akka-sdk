@@ -4,14 +4,13 @@
 
 package akkajavasdk.components.actions.echo;
 
-import akka.javasdk.timedaction.TimedAction;
 import akka.javasdk.annotations.ComponentId;
-
+import akka.javasdk.timedaction.TimedAction;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
 @ComponentId("with-primitives")
-//TODO remove or bring tests back
+// TODO remove or bring tests back
 public class ActionWithPrimitives extends TimedAction {
 
   public Effect stringMessageWithOptionalParams(long longValue) {
@@ -27,5 +26,4 @@ public class ActionWithPrimitives extends TimedAction {
     String response = ints.stream().map(Object::toString).collect(Collectors.joining(","));
     return effects().done();
   }
-
 }

@@ -6,4 +6,4 @@ package akka.javasdk.testmodels;
 
 import java.time.Instant;
 
-public record InstantEntryForList(Instant instant) { }
+public record InstantEntryForList(Instant instant) {}

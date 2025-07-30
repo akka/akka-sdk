@@ -5,8 +5,8 @@
 package akka.javasdk.testmodels.workflow;
 
 import akka.javasdk.annotations.Acl;
-import akka.javasdk.annotations.JWT;
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.JWT;
 import akka.javasdk.workflow.Workflow;
 
 public class WorkflowTestModels {
@@ -38,8 +38,8 @@ public class WorkflowTestModels {
         validate = JWT.JwtMethodMode.BEARER_TOKEN,
         bearerTokenIssuers = {"a", "b"},
         staticClaims = {
-            @JWT.StaticClaim(claim = "role", values = "method-admin"),
-            @JWT.StaticClaim(claim = "aud", values = "${ENV}.kalix.io")
+          @JWT.StaticClaim(claim = "role", values = "method-admin"),
+          @JWT.StaticClaim(claim = "aud", values = "${ENV}.kalix.io")
         })
     public Effect<String> startTransfer(StartWorkflow startWorkflow) {
       return null;
@@ -48,12 +48,12 @@ public class WorkflowTestModels {
 
   @ComponentId("transfer-workflow")
   @JWT(
-    validate = JWT.JwtMethodMode.BEARER_TOKEN,
-    bearerTokenIssuers = {"c", "d"},
-    staticClaims = {
+      validate = JWT.JwtMethodMode.BEARER_TOKEN,
+      bearerTokenIssuers = {"c", "d"},
+      staticClaims = {
         @JWT.StaticClaim(claim = "role", values = "admin"),
         @JWT.StaticClaim(claim = "aud", values = "${ENV}")
-    })
+      })
   public static class WorkflowWithServiceLevelJWT extends Workflow<WorkflowState> {
     @Override
     public WorkflowDef<WorkflowState> definition() {

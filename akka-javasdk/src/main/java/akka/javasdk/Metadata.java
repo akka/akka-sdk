@@ -5,7 +5,6 @@
 package akka.javasdk;
 
 import akka.javasdk.impl.MetadataImpl;
-
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -218,7 +217,8 @@ public interface Metadata extends Iterable<Metadata.MetadataEntry> {
   CloudEvent asCloudEvent(String id, URI source, String type);
 
   /**
-   * Merge the given Metadata entries with this Metadata. If the same key is present in both, both values will be kept.
+   * Merge the given Metadata entries with this Metadata. If the same key is present in both, both
+   * values will be kept.
    *
    * @param other The Metadata to merge with this Metadata.
    * @return a copy of this Metadata with the other Metadata merged in.

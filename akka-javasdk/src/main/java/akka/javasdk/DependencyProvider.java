@@ -5,19 +5,21 @@
 package akka.javasdk;
 
 /**
-  * A factory method to provide additional dependencies to the component implementations.
-  * <p>
-  * Implementations of this interface must be thread-safe.
-  * <p>
-  * The {@code DependencyProvider} must be configured using the {@link ServiceSetup#createDependencyProvider} method.
-  * This ensures that the correct dependencies are available to the component implementations at runtime.
-  */
+ * A factory method to provide additional dependencies to the component implementations.
+ *
+ * <p>Implementations of this interface must be thread-safe.
+ *
+ * <p>The {@code DependencyProvider} must be configured using the {@link
+ * ServiceSetup#createDependencyProvider} method. This ensures that the correct dependencies are
+ * available to the component implementations at runtime.
+ */
 public interface DependencyProvider {
 
   /**
-   * Get a dependency for a given class. If the dependency is not found, an exception should be thrown.
-   * <p>
-   * Returned instance for a given class must be safe to use concurrently.
+   * Get a dependency for a given class. If the dependency is not found, an exception should be
+   * thrown.
+   *
+   * <p>Returned instance for a given class must be safe to use concurrently.
    *
    * @param clazz The class of the dependency to get
    * @return The dependency instance
@@ -27,17 +29,18 @@ public interface DependencyProvider {
 
   /**
    * Create a dependency provider that always returns the same instance for a given class.
+   *
    * @param single The single instance to return
    * @return The dependency provider
    */
-  static DependencyProvider single(Object single){
+  static DependencyProvider single(Object single) {
     return new DependencyProvider() {
       @Override
       public <T> T getDependency(Class<T> clazz) {
         if (clazz.isAssignableFrom(single.getClass())) {
           return (T) single;
         } else {
-          throw new RuntimeException("No such dependency found: "+ clazz);
+          throw new RuntimeException("No such dependency found: " + clazz);
         }
       }
     };

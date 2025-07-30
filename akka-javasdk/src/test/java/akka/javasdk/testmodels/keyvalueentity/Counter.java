@@ -23,20 +23,17 @@ public class Counter extends KeyValueEntity<CounterState> {
   public Effect<Number> increase(Number num) {
     CounterState counterState = currentState();
     logger.info(
-      "Increasing counter '{}' by '{}', current value is '{}'",
-      counterState.id,
-      num.value,
-      counterState.value);
+        "Increasing counter '{}' by '{}', current value is '{}'",
+        counterState.id,
+        num.value,
+        counterState.value);
     CounterState newCounter = counterState.increase(num.value);
     return effects().updateState(newCounter).thenReply(new Number(newCounter.value));
   }
 
   public Effect<Number> randomIncrease(Integer value) {
     CounterState counterState = new CounterState(commandContext().entityId(), value);
-    logger.info(
-      "Increasing counter '{}' to value '{}'",
-      counterState.id,
-      counterState.value);
+    logger.info("Increasing counter '{}' to value '{}'", counterState.id, counterState.value);
     return effects().updateState(counterState).thenReply(new Number(counterState.value));
   }
 
@@ -45,4 +42,3 @@ public class Counter extends KeyValueEntity<CounterState> {
     return effects().reply(new Number(currentState().value));
   }
 }
-

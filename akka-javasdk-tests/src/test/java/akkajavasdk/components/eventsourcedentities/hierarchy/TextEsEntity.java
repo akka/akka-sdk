@@ -5,12 +5,12 @@
 package akkajavasdk.components.eventsourcedentities.hierarchy;
 
 import akka.javasdk.annotations.ComponentId;
-
 import java.util.Optional;
 
 @ComponentId("hierarchy-es-entity")
 public class TextEsEntity extends AbstractTextEsEntity<TextEsEntity.Event> {
   sealed interface Event {}
+
   record TextSet(String value) implements Event {}
 
   public Effect<String> setText(String text) {

@@ -13,7 +13,6 @@ import io.grpc.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET), denyCode = 5)
 @GrpcEndpoint
 public class TestGrpcServiceImpl implements TestGrpcService {
@@ -24,7 +23,8 @@ public class TestGrpcServiceImpl implements TestGrpcService {
   private final GrpcRequestContext requestContext;
   private boolean constructedOnVt = Thread.currentThread().isVirtual();
 
-  public TestGrpcServiceImpl(GrpcClientProvider grpcClientProvider, GrpcRequestContext requestContext) {
+  public TestGrpcServiceImpl(
+      GrpcClientProvider grpcClientProvider, GrpcRequestContext requestContext) {
     this.grpcClientProvider = grpcClientProvider;
     this.requestContext = requestContext;
   }
@@ -32,7 +32,14 @@ public class TestGrpcServiceImpl implements TestGrpcService {
   private void logDetailsIfNotVt() {
     if (!Thread.currentThread().isVirtual()) {
       // try to gather more info
-      logger.error("Not on virtual thread, thread name [" + Thread.currentThread().getName() + "], thread state " + Thread.currentThread().getState() + " thread group [" + Thread.currentThread().getThreadGroup().getName() + "]",
+      logger.error(
+          "Not on virtual thread, thread name ["
+              + Thread.currentThread().getName()
+              + "], thread state "
+              + Thread.currentThread().getState()
+              + " thread group ["
+              + Thread.currentThread().getThreadGroup().getName()
+              + "]",
           new RuntimeException("Error to get stacktrace"));
     }
   }
@@ -49,16 +56,18 @@ public class TestGrpcServiceImpl implements TestGrpcService {
   @Override
   public TestGrpcServiceOuterClass.Out readMetadata(TestGrpcServiceOuterClass.In in) {
     logDetailsIfNotVt();
-    return TestGrpcServiceOuterClass.Out.newBuilder().setData(
-            requestContext.metadata().getText(in.getData()).orElse("")).build();
+    return TestGrpcServiceOuterClass.Out.newBuilder()
+        .setData(requestContext.metadata().getText(in.getData()).orElse(""))
+        .build();
   }
-
 
   @Override
   public TestGrpcServiceOuterClass.Out delegateToAkkaService(TestGrpcServiceOuterClass.In in) {
     logDetailsIfNotVt();
-    // alias for external defined in application.conf - but note that it is only allowed for dev/test
-    var grpcServiceClient = grpcClientProvider.grpcClientFor(TestGrpcServiceClient.class, "other-service");
+    // alias for external defined in application.conf - but note that it is only allowed for
+    // dev/test
+    var grpcServiceClient =
+        grpcClientProvider.grpcClientFor(TestGrpcServiceClient.class, "other-service");
     return grpcServiceClient.simple(in);
   }
 
@@ -66,7 +75,8 @@ public class TestGrpcServiceImpl implements TestGrpcService {
   public TestGrpcServiceOuterClass.Out delegateToExternal(TestGrpcServiceOuterClass.In in) {
     logDetailsIfNotVt();
     // alias for external defined in application.conf
-    var grpcServiceClient = grpcClientProvider.grpcClientFor(TestGrpcServiceClient.class, "some.example.com");
+    var grpcServiceClient =
+        grpcClientProvider.grpcClientFor(TestGrpcServiceClient.class, "some.example.com");
     return grpcServiceClient.simple(in);
   }
 
@@ -112,5 +122,4 @@ public class TestGrpcServiceImpl implements TestGrpcService {
   public TestGrpcServiceOuterClass.Out aclDefaultDenyCode(TestGrpcServiceOuterClass.In in) {
     return simple(in);
   }
-
 }

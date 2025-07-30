@@ -4,5 +4,4 @@
 
 package akka.javasdk.testmodels;
 
-public record Message(String value) {
-}
+public record Message(String value) {}

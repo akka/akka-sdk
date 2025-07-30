@@ -4,18 +4,17 @@
 
 package akkajavasdk.components.workflowentities;
 
-import akkajavasdk.components.actions.echo.Message;
+import static java.time.Duration.ofMillis;
+import static java.time.Duration.ofSeconds;
+
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.workflow.Workflow;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import akkajavasdk.components.actions.echo.Message;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-
-import static java.time.Duration.ofMillis;
-import static java.time.Duration.ofSeconds;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ComponentId("workflow-with-step-timeout")
 public class WorkflowWithStepTimeout extends Workflow<FailingCounterState> {
@@ -29,43 +28,41 @@ public class WorkflowWithStepTimeout extends Workflow<FailingCounterState> {
   @Override
   public WorkflowDef<FailingCounterState> definition() {
     var counterInc =
-      step(counterStepName)
-        .asyncCall(() -> {
-          logger.info("Running");
-          return CompletableFuture.supplyAsync(() -> "produces time out", delayedExecutor);
-        })
-        .andThen(String.class, __ -> effects().transitionTo(counterFailoverStepName))
-        .timeout(ofMillis(20));
+        step(counterStepName)
+            .asyncCall(
+                () -> {
+                  logger.info("Running");
+                  return CompletableFuture.supplyAsync(() -> "produces time out", delayedExecutor);
+                })
+            .andThen(String.class, __ -> effects().transitionTo(counterFailoverStepName))
+            .timeout(ofMillis(20));
 
     var counterIncFailover =
-      step(counterFailoverStepName)
-        .call(() -> "nothing")
-        .andThen(String.class, __ -> {
-          var updatedState = currentState().inc();
-          if (updatedState.value() == 2) {
-            return effects()
-              .updateState(updatedState.asFinished())
-              .end();
-          } else {
-            return effects()
-              .updateState(updatedState)
-              .transitionTo(counterStepName);
-          }
-        });
-
+        step(counterFailoverStepName)
+            .call(() -> "nothing")
+            .andThen(
+                String.class,
+                __ -> {
+                  var updatedState = currentState().inc();
+                  if (updatedState.value() == 2) {
+                    return effects().updateState(updatedState.asFinished()).end();
+                  } else {
+                    return effects().updateState(updatedState).transitionTo(counterStepName);
+                  }
+                });
 
     return workflow()
-      .timeout(ofSeconds(8))
-      .defaultStepTimeout(ofMillis(20))
-      .addStep(counterInc, maxRetries(1).failoverTo(counterFailoverStepName))
-      .addStep(counterIncFailover);
+        .timeout(ofSeconds(8))
+        .defaultStepTimeout(ofMillis(20))
+        .addStep(counterInc, maxRetries(1).failoverTo(counterFailoverStepName))
+        .addStep(counterIncFailover);
   }
 
   public Effect<Message> startFailingCounter(String counterId) {
     return effects()
-      .updateState(new FailingCounterState(counterId, 0, false))
-      .transitionTo(counterStepName)
-      .thenReply(new Message("workflow started"));
+        .updateState(new FailingCounterState(counterId, 0, false))
+        .transitionTo(counterStepName)
+        .thenReply(new Message("workflow started"));
   }
 
   public Effect<FailingCounterState> get() {
