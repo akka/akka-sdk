@@ -5,7 +5,7 @@
 package akka.javasdk.testmodels.workflow;
 
 import akka.javasdk.annotations.ComponentId;
-import akka.javasdk.annotations.WorkflowStep;
+import akka.javasdk.annotations.StepName;
 import akka.javasdk.workflow.Workflow;
 
 public class WorkflowTestModels {
@@ -21,7 +21,7 @@ public class WorkflowTestModels {
       return null;
     }
 
-    @WorkflowStep("withdraw")
+    @StepName("withdraw")
     public StepEffect withdrawStep() {
       return null;
     }

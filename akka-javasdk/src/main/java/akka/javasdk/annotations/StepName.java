@@ -14,7 +14,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface WorkflowStep {
+public @interface StepName {
   /** A workflow step name */
   String value();
 }

@@ -8,8 +8,7 @@ import java.lang.reflect.Method
 
 import scala.annotation.nowarn
 import scala.jdk.CollectionConverters.ListHasAsScala
-
-import akka.javasdk.annotations.WorkflowStep
+import akka.javasdk.annotations.StepName
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.Workflow.Step
 import akka.javasdk.workflow.Workflow.StepEffect
@@ -28,7 +27,7 @@ class WorkflowDescriptor(workflow: Workflow[_]) {
     allMethods(workflow.getClass)
       .filter(m => m.getReturnType == classOf[StepEffect])
       .map { m =>
-        val stepName = m.getAnnotation(classOf[WorkflowStep]) match {
+        val stepName = m.getAnnotation(classOf[StepName]) match {
           case null           => m.getName // default to method name
           case stepAnnotation => stepAnnotation.value()
         }
