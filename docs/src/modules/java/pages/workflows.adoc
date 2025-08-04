@@ -118,7 +118,7 @@ include::example$transfer-workflow/src/main/java/com/example/transfer/applicatio
 
 NOTE: The `@ComponentId` value `transfer` is common for all instances of this workflow but must be stable - cannot be changed after a production deploy - and unique across the different workflow types.
 
-== Workflow definition
+== Workflow steps
 
 One missing piece of our transfer workflow implementation is the workflow steps implementation. A workflow `Step` has an action to perform (e.g. a call to an Akka component, or a call to an external service) and a transition to select the next step (or `end` transition to finish the workflow, in case of the last step).
 
@@ -130,11 +130,12 @@ ifdef::todo[TODO: add some diagram or sth]
 include::example$transfer-workflow/src/main/java/com/example/transfer/application/TransferWorkflow.java[tag=definition]
 ----
 <1> Step inputs definition.
-<2> Using the xref:component-and-service-calls.adoc#_component_client[ComponentClient], which is injected in the constructor, we instruct Akka to run a given call to withdraw funds from a wallet.
-<3> The state of the workflow can be accessed with `currentState()` method.
-<4> After successful withdrawal we return a `StepEffect` that will update the workflow state and move to the next step defined in `TransferWorkflow::depositStep` method. An input parameter for this step is a `Deposit` record.
-<5> Another workflow step implementation to deposit funds to a given wallet.
-<6> This time we return an effect that will stop workflow processing, by using the special `thenEnd` method.
+<2> Optional `@StepName` can be used specify the step name, otherwise the method name will be used.
+<3> Using the xref:component-and-service-calls.adoc#_component_client[ComponentClient], which is injected in the constructor, we instruct Akka to run a given call to withdraw funds from a wallet.
+<4> The state of the workflow can be accessed with `currentState()` method.
+<5> After successful withdrawal, we return a `StepEffect` that will update the workflow state and move to the next step defined in `TransferWorkflow::depositStep` method. An input parameter for this step is a `Deposit` record.
+<6> Another workflow step implementation to deposit funds to a given wallet.
+<7> This time we return an effect that will stop workflow processing, by using the special `thenEnd` method.
 
 The step consists of two parts, an execution of the business logic and `StepEffect` construction, where you can update the state and decide (based on the business logic outcome) what the next step should be and provide input for it, if required.
 

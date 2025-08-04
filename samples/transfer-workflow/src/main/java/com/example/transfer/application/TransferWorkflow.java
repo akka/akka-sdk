@@ -2,6 +2,7 @@ package com.example.transfer.application;
 
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.StepName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import com.example.transfer.domain.TransferState;
@@ -15,14 +16,12 @@ import static com.example.transfer.domain.TransferState.TransferStatus.WITHDRAW_
 // tag::class[]
 @ComponentId("transfer") // <1>
 public class TransferWorkflow extends Workflow<TransferState> { // <2>
-  // end::class[]
 
-  // tag::class[]
+  // end::class[]
 
   // tag::definition[]
   public record Withdraw(String from, int amount) { // <1>
   }
-  // end::class[]
   public record Deposit(String to, int amount) { // <1>
   }
 
@@ -32,23 +31,25 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
     this.componentClient = componentClient;
   }
 
+  @StepName("withdraw") // <2>
   private StepEffect withdrawStep(Withdraw withdraw) {
 
     componentClient.forEventSourcedEntity(withdraw.from)
       .method(WalletEntity::withdraw)
-      .invoke(withdraw.amount); // <2>
+      .invoke(withdraw.amount); // <3>
 
-    String to = currentState().transfer().to(); // <3>
+    String to = currentState().transfer().to(); // <4>
     int amount = currentState().transfer().amount();
     Deposit depositInput = new Deposit(to, amount);
 
     return stepEffects()
       .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
-      .thenTransitionTo(TransferWorkflow::depositStep) // <4>
+      .thenTransitionTo(TransferWorkflow::depositStep) // <5>
       .withInput(depositInput);
   }
 
-  private StepEffect depositStep(Deposit deposit) { // <5>
+  @StepName("deposit") // <2>
+  private StepEffect depositStep(Deposit deposit) { // <6>
 
     componentClient.forEventSourcedEntity(deposit.to)
       .method(WalletEntity::deposit)
@@ -56,7 +57,7 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
 
     return stepEffects()
       .updateState(currentState().withStatus(COMPLETED))
-      .thenEnd(); // <6>
+      .thenEnd(); // <7>
   }
   // end::definition[]
 
