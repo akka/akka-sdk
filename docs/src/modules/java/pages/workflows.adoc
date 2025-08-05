@@ -37,14 +37,15 @@ include::example$doc-snippets/src/main/java/com/example/application/TransferWork
 ----
 <1> Annotate the class with `@ComponentId` and pass a unique identifier for this workflow type.
 <2> Class that extends `Workflow`.
-<3> Define all steps that the workflow makes use of.
-<4> Each step has a name.
-<5> The step consists of a `call`, which is a lambda that will be called to execute the step.
-<6> When the `call` has completed successfully the `andThen` lambda is called, and here you can update the state and transition to next step.
-<7> The workflow has methods that can be called with the component client.
-<8> Those methods return an effect, which can be instructions to update the state and transition to a certain step.
+<3> Define optional configuration.
+<4> A step is a method that returns a `StepEffect`.
+<5> The step executes a given code and returns the effect that will instruct the runtime what to do next. For instance, you can update the state and transition to next step.
+<6> The workflow has methods that can be called with the component client.
+<7> Those methods return an `Effect`, which can be instructions to update the state and transition to a certain step.
 
-There must be at least one command handler method, which returns `Effect`. It is the command handler methods that can be called with the component client from other components, such as an endpoint. The workflow is started by the first command, which will transition to the initial step.
+There must be at least one public command handler method, which returns `Effect`. It is the command handler methods that can be called with the component client from other components, such as an endpoint. The workflow is started by the first command, which will transition to the initial step.
+
+Step handler methods can be private and are used to implement the internal business logic of the workflow. Although the `StepEffect` looks similar to the `Effect`, it is not the same. The `StepEffect` has different set of available methods that will guide the workflow execution.
 
 == Modeling state
 
@@ -111,15 +112,15 @@ include::example$transfer-workflow/src/main/java/com/example/transfer/applicatio
 <4> The validation ensures the transfer amount is greater than zero and the workflow is not running already. Otherwise, we might corrupt the existing workflow.
 <5> From the incoming data we create an initial `TransferState`.
 <6> We instruct Akka to persist the new state.
-<7> With the `transitionTo` method, we inform that the name of the first step is "withdraw" and the input for this step is a `Withdraw` object.
+<7> With the `transitionTo` method, we inform that the first step is defined in `TransferWorkflow::withdrawStep` and the input for this step is a `Withdraw` object.
 <8> The last instruction is to inform the caller that the workflow was successfully started.
 
 
 NOTE: The `@ComponentId` value `transfer` is common for all instances of this workflow but must be stable - cannot be changed after a production deploy - and unique across the different workflow types.
 
-== Workflow definition
+== Workflow steps
 
-One missing piece of our transfer workflow implementation is a workflow `definition` method, which composes all steps connected with transitions. A workflow `Step` has a unique name, an action to perform (e.g. a call to an Akka component, or a call to an external service) and a transition to select the next step (or `end` transition to finish the workflow, in case of the last step).
+One missing piece of our transfer workflow implementation is the workflow steps implementation. A workflow `Step` has an action to perform (e.g. a call to an Akka component, or a call to an external service) and a transition to select the next step (or `end` transition to finish the workflow, in case of the last step).
 
 ifdef::todo[TODO: add some diagram or sth]
 
@@ -128,19 +129,17 @@ ifdef::todo[TODO: add some diagram or sth]
 ----
 include::example$transfer-workflow/src/main/java/com/example/transfer/application/TransferWorkflow.java[tag=definition]
 ----
-<1> We collect all steps to form a workflow definition.
-<2> Each step should have a unique name.
-<3> Using the xref:component-and-service-calls.adoc#_component_client[ComponentClient], which is injected in the constructor.
-<4> We instruct Akka to run a given call to withdraw funds from a wallet.
-<5> After successful withdrawal we return an `Effect` that will update the workflow state and move to the next step called "deposit." An input parameter for this step is a `Deposit` record.
-<6> Another workflow step action to deposit funds to a given wallet.
-<7> This time we return an effect that will stop workflow processing, by using the special `end` method.
+<1> Step inputs definition.
+<2> Optional `@StepName` can be used specify the step name, otherwise the method name will be used.
+<3> Using the xref:component-and-service-calls.adoc#_component_client[ComponentClient], which is injected in the constructor, we instruct Akka to run a given call to withdraw funds from a wallet.
+<4> The state of the workflow can be accessed with `currentState()` method.
+<5> After successful withdrawal, we return a `StepEffect` that will update the workflow state and move to the next step defined in `TransferWorkflow::depositStep` method. An input parameter for this step is a `Deposit` record.
+<6> Another workflow step implementation to deposit funds to a given wallet.
+<7> This time we return an effect that will stop workflow processing, by using the special `thenEnd` method.
 
-The step consists of two parts, a lambda that is called to execute the step, and a second lambda that is run when the call has completed successfully. In the `call` lamda you implement what should be executed in the step, and this may be retried until successful. In the `andThen` lambda you can update the state and decide (based on the `call` result) what the next step should be.
+The step consists of two parts, an execution of the business logic and `StepEffect` construction, where you can update the state and decide (based on the business logic outcome) what the next step should be and provide input for it, if required.
 
-The workflow will automatically execute the steps in a reliable and durable way. This means that if a call in a step fails, it will be retried until it succeeds or the retry limit of the recovery strategy is reached and separate error handling can be performed. The state machine of the workflow is durable, which means that if the workflow is restarted for some reason it will continue from where it left off, i.e. execute the current non-completed step again.
-
-It is possible to pass input from `transitionTo` to the call in the next step. It's also possible to pass the result from the call to the `andThen`. These inputs and outputs are optional, and you can use supplier lambdas without parameter, e.g. `call(() -> {})`. The state of the workflow can be accessed with `currentState()` from both the `call` and the `andThen` lambdas, but it can only be updated from `andThen`.
+The workflow will automatically execute the steps in a reliable and durable way. This means that if a step fails, it will be retried until it succeeds or the retry limit of the recovery strategy is reached and separate error handling can be performed. The state machine of the workflow is durable, which means that if the workflow is restarted for some reason it will continue from where it left off, i.e. execute the current non-completed step again.
 
 IMPORTANT: In the following example all `WalletEntity` interactions are not idempotent. It means that if the workflow step retries, it will make the deposit or withdraw again. In a real-world scenario, you should consider making all interactions idempotent with a proper deduplication mechanism. A very basic example of handling retries for workflows can be found in https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow-compensation/src/main/java/com/example/wallet/domain/Wallet.java[this] sample.
 
@@ -207,7 +206,7 @@ Design for failure is one of the key attributes of all Akka components. Workflow
 
 === Timeouts
 
-By default, a workflow run has no time limit. It can run forever, which in most cases is not desirable behavior. A workflow step, on the other hand, has a default timeout of 5 seconds. Both settings can be overridden at the workflow definition level or for a specific step configuration.
+By default, a workflow run has no time limit. It can run forever, which in most cases is not desirable behavior. A workflow step, on the other hand, has a default timeout of 5 seconds. Both settings can be overridden in the workflow `configuration` method.
 
 [source,java,indent=0]
 .{sample-base-url}/transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java[TransferWorkflow.java]

@@ -2,6 +2,7 @@ package com.example.transfer.application;
 
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.StepName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import com.example.transfer.domain.TransferState;
@@ -15,17 +16,13 @@ import static com.example.transfer.domain.TransferState.TransferStatus.WITHDRAW_
 // tag::class[]
 @ComponentId("transfer") // <1>
 public class TransferWorkflow extends Workflow<TransferState> { // <2>
-  // end::class[]
-
-  // tag::class[]
-
-  public record Withdraw(String from, int amount) {
-  }
 
   // end::class[]
 
   // tag::definition[]
-  public record Deposit(String to, int amount) {
+  public record Withdraw(String from, int amount) { // <1>
+  }
+  public record Deposit(String to, int amount) { // <1>
   }
 
   final private ComponentClient componentClient;
@@ -34,40 +31,33 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
     this.componentClient = componentClient;
   }
 
-  @Override
-  public WorkflowDef<TransferState> definition() {
-    return workflow() // <1>
-      .addStep(withdrawStep())
-      .addStep(depositStep());
+  @StepName("withdraw") // <2>
+  private StepEffect withdrawStep(Withdraw withdraw) {
+
+    componentClient.forEventSourcedEntity(withdraw.from)
+      .method(WalletEntity::withdraw)
+      .invoke(withdraw.amount); // <3>
+
+    String to = currentState().transfer().to(); // <4>
+    int amount = currentState().transfer().amount();
+    Deposit depositInput = new Deposit(to, amount);
+
+    return stepEffects()
+      .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
+      .thenTransitionTo(TransferWorkflow::depositStep) // <5>
+      .withInput(depositInput);
   }
 
-  private Step withdrawStep() {
-    return
-        step("withdraw") // <2>
-            .call(Withdraw.class, cmd ->
-                componentClient.forEventSourcedEntity(cmd.from) // <3>
-                    .method(WalletEntity::withdraw)
-                    .invoke(cmd.amount)) // <4>
-            .andThen(() -> {
-              Deposit depositInput = new Deposit(currentState().transfer().to(), currentState().transfer().amount());
-              return effects()
-                  .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
-                  .transitionTo("deposit", depositInput); // <5>
-            });
-  }
+  @StepName("deposit") // <2>
+  private StepEffect depositStep(Deposit deposit) { // <6>
 
-  private Step depositStep() {
-    return
-        step("deposit") // <6>
-            .call(Deposit.class, cmd ->
-                componentClient.forEventSourcedEntity(cmd.to)
-                    .method(WalletEntity::deposit)
-                    .invoke(cmd.amount))
-            .andThen(() -> {
-              return effects()
-                  .updateState(currentState().withStatus(COMPLETED))
-                  .end(); // <7>
-            });
+    componentClient.forEventSourcedEntity(deposit.to)
+      .method(WalletEntity::deposit)
+      .invoke(deposit.amount);
+
+    return stepEffects()
+      .updateState(currentState().withStatus(COMPLETED))
+      .thenEnd(); // <7>
   }
   // end::definition[]
 
@@ -85,7 +75,8 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
 
       return effects()
         .updateState(initialState) // <6>
-        .transitionTo("withdraw", withdrawInput) // <7>
+        .transitionTo(TransferWorkflow::withdrawStep) // <7>
+        .withInput(withdrawInput)
         .thenReply(done()); // <8>
     }
   }
