@@ -8,6 +8,7 @@ import static akka.Done.done;
 
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.StepName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import akkajavasdk.components.actions.echo.Message;
@@ -55,6 +56,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
     }
   }
 
+  @StepName("withdraw-step")
   private StepEffect withdraw(Withdraw withdraw) {
 
     componentClient
@@ -70,6 +72,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
   }
 
 
+  @StepName("deposit-step")
   private StepEffect deposit(Deposit deposit) {
 
     componentClient
