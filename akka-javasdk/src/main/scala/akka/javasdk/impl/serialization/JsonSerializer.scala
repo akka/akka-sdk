@@ -210,12 +210,17 @@ final class JsonSerializer(val objectMapper: ObjectMapper) {
     validateIsJson(bytesPayload)
 
     val typeName = removeVersion(stripJsonContentTypePrefix(bytesPayload.contentType))
-    val typeClass = reversedTypeHints.get(typeName).asInstanceOf[Class[AnyRef]]
-    if (typeClass eq null)
-      throw new IllegalStateException(
-        s"Cannot decode [${bytesPayload.contentType}] message type. Class mapping not found.")
-    else
-      fromBytes(typeClass, bytesPayload)
+    if (typeName == classOf[Done.type].getName || typeName == classOf[Done].getName) {
+      // small optimization for Done, which does not need to be deserialized
+      Done.done()
+    } else {
+      val typeClass = reversedTypeHints.get(typeName).asInstanceOf[Class[AnyRef]]
+      if (typeClass eq null)
+        throw new IllegalStateException(
+          s"Cannot decode [${bytesPayload.contentType}] message type. Class mapping not found.")
+      else
+        fromBytes(typeClass, bytesPayload)
+    }
   }
 
   def exceptionFromBytes(exceptionPayload: BytesPayload): CommandException = {
