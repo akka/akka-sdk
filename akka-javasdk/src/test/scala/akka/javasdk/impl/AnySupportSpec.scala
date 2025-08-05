@@ -4,9 +4,9 @@
 
 package akka.javasdk.impl
 
+import com.google.protobuf.ByteString
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import com.google.protobuf.{ Any => JavaPbAny }
-import com.google.protobuf.ByteString
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec

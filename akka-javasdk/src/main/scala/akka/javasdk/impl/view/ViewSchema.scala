@@ -4,8 +4,12 @@
 
 package akka.javasdk.impl.view
 
+import java.lang.reflect.AccessFlag
+import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
+import java.util.Optional
+
 import akka.annotation.InternalApi
-import akka.runtime.sdk.spi.SpiSchema.SpiType
 import akka.runtime.sdk.spi.SpiSchema.SpiBoolean
 import akka.runtime.sdk.spi.SpiSchema.SpiByteString
 import akka.runtime.sdk.spi.SpiSchema.SpiClass
@@ -21,11 +25,7 @@ import akka.runtime.sdk.spi.SpiSchema.SpiNestableType
 import akka.runtime.sdk.spi.SpiSchema.SpiOptional
 import akka.runtime.sdk.spi.SpiSchema.SpiString
 import akka.runtime.sdk.spi.SpiSchema.SpiTimestamp
-
-import java.lang.reflect.AccessFlag
-import java.lang.reflect.ParameterizedType
-import java.lang.reflect.Type
-import java.util.Optional
+import akka.runtime.sdk.spi.SpiSchema.SpiType
 
 @InternalApi
 private[view] object ViewSchema {

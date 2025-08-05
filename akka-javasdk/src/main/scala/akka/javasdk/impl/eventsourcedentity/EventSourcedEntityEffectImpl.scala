@@ -4,21 +4,22 @@
 
 package akka.javasdk.impl.eventsourcedentity
 
-import akka.annotation.InternalApi
-import akka.javasdk.Metadata
-import akka.javasdk.impl.effect.ErrorReplyImpl
-import akka.javasdk.impl.effect.MessageReplyImpl
-import akka.javasdk.impl.effect.NoSecondaryEffectImpl
-import akka.javasdk.impl.effect.SecondaryEffectImpl
 import java.util
 import java.util.function.{ Function => JFunction }
 
 import scala.jdk.CollectionConverters._
+
+import akka.annotation.InternalApi
 import akka.javasdk.CommandException
+import akka.javasdk.Metadata
 import akka.javasdk.eventsourcedentity.EventSourcedEntity.Effect
 import akka.javasdk.eventsourcedentity.EventSourcedEntity.Effect.Builder
 import akka.javasdk.eventsourcedentity.EventSourcedEntity.Effect.OnSuccessBuilder
 import akka.javasdk.eventsourcedentity.EventSourcedEntity.ReadOnlyEffect
+import akka.javasdk.impl.effect.ErrorReplyImpl
+import akka.javasdk.impl.effect.MessageReplyImpl
+import akka.javasdk.impl.effect.NoSecondaryEffectImpl
+import akka.javasdk.impl.effect.SecondaryEffectImpl
 
 /**
  * INTERNAL API

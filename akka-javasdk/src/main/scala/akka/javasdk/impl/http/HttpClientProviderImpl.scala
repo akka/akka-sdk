@@ -4,6 +4,10 @@
 
 package akka.javasdk.impl.http
 
+import scala.concurrent.Await
+import scala.concurrent.duration.DurationInt
+import scala.util.control.NonFatal
+
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.discovery.Discovery
@@ -15,10 +19,6 @@ import akka.javasdk.impl.Settings
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.LoggerFactory
-
-import scala.concurrent.Await
-import scala.concurrent.duration.DurationInt
-import scala.util.control.NonFatal
 
 /**
  * INTERNAL API

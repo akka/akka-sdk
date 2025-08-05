@@ -4,20 +4,21 @@
 
 package akka.javasdk.impl.http
 
+import java.lang
+import java.time.Instant
+import java.util
+import java.util.Optional
+import java.util.stream.Collectors
+
+import scala.jdk.CollectionConverters._
+import scala.jdk.OptionConverters.RichOption
+
 import akka.javasdk.JsonSupport
 import akka.javasdk.JwtClaims
 import akka.runtime.sdk.spi.{ JwtClaims => RuntimeJwtClaims }
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.`type`.TypeFactory
-
-import java.lang
-import java.time.Instant
-import java.util
-import java.util.Optional
-import java.util.stream.Collectors
-import scala.jdk.CollectionConverters._
-import scala.jdk.OptionConverters.RichOption
 
 class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
 

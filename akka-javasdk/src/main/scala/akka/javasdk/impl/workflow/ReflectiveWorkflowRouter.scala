@@ -13,9 +13,9 @@ import scala.jdk.FutureConverters.CompletionStageOps
 import scala.jdk.OptionConverters.RichOptional
 
 import akka.annotation.InternalApi
-import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.impl.CommandSerialization
 import akka.javasdk.impl.HandlerNotFoundException
+import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.CommandResult
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.TransitionalResult
@@ -24,8 +24,10 @@ import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.WorkflowStepNotSuppor
 import akka.javasdk.timer.TimerScheduler
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
-import akka.javasdk.workflow.Workflow.{ AsyncCallStep, CallStep, RunnableStep }
+import akka.javasdk.workflow.Workflow.AsyncCallStep
+import akka.javasdk.workflow.Workflow.CallStep
 import akka.javasdk.workflow.Workflow.Effect.TransitionalEffect
+import akka.javasdk.workflow.Workflow.RunnableStep
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiWorkflow

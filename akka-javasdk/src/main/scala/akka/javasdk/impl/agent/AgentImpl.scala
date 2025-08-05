@@ -4,8 +4,17 @@
 
 package akka.javasdk.impl.agent
 
+import java.time.Instant
+
+import scala.annotation.tailrec
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.jdk.CollectionConverters.SeqHasAsJava
+import scala.util.control.NonFatal
+
 import akka.annotation.InternalApi
 import akka.http.scaladsl.model.HttpHeader
+import akka.javasdk.CommandException
 import akka.javasdk.DependencyProvider
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
@@ -69,15 +78,6 @@ import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
-import java.time.Instant
-
-import scala.annotation.tailrec
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.jdk.CollectionConverters.SeqHasAsJava
-import scala.util.control.NonFatal
-
-import akka.javasdk.CommandException
 
 /**
  * INTERNAL API

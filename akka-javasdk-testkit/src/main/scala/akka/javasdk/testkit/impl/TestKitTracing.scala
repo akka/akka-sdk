@@ -4,10 +4,10 @@
 
 package akka.javasdk.testkit.impl
 
+import java.util.Optional
+
 import akka.javasdk.Tracing
 import io.opentelemetry.api.trace.Span
-
-import java.util.Optional
 
 /**
  * INTERNAL API

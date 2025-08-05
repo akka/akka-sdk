@@ -4,11 +4,11 @@
 
 package akka.javasdk.impl.http
 
+import scala.util.control.NoStackTrace
+
 import akka.annotation.InternalApi
 import akka.http.scaladsl.model.StatusCode
 import akka.runtime.sdk.spi.HttpEndpointInvocationException
-
-import scala.util.control.NoStackTrace
 
 /**
  * INTERNAL API

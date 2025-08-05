@@ -4,10 +4,10 @@
 
 package akka.javasdk.impl.reflection
 
-import akka.annotation.InternalApi
-
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
+
+import akka.annotation.InternalApi
 
 /**
  * INTERNAL API

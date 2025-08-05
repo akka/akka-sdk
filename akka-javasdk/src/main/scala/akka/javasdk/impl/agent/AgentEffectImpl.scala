@@ -4,11 +4,14 @@
 
 package akka.javasdk.impl.agent
 
+import java.util
 import java.util.function
 
+import scala.jdk.CollectionConverters.ListHasAsScala
 import scala.jdk.FunctionConverters.enrichAsScalaFromFunction
 
 import akka.annotation.InternalApi
+import akka.javasdk.CommandException
 import akka.javasdk.Metadata
 import akka.javasdk.agent.Agent.Effect
 import akka.javasdk.agent.Agent.Effect.Builder
@@ -25,11 +28,6 @@ import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
 import akka.javasdk.impl.effect.SecondaryEffectImpl
-import java.util
-
-import scala.jdk.CollectionConverters.ListHasAsScala
-
-import akka.javasdk.CommandException
 
 /**
  * INTERNAL API

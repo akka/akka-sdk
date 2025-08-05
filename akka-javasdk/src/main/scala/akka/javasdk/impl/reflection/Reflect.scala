@@ -4,19 +4,6 @@
 
 package akka.javasdk.impl.reflection
 
-import akka.annotation.InternalApi
-import akka.javasdk.annotations.GrpcEndpoint
-import akka.javasdk.annotations.http.HttpEndpoint
-import akka.javasdk.annotations.mcp.McpEndpoint
-import akka.javasdk.client.ComponentClient
-import akka.javasdk.consumer.Consumer
-import akka.javasdk.eventsourcedentity.EventSourcedEntity
-import akka.javasdk.impl.client.ComponentClientImpl
-import akka.javasdk.keyvalueentity.KeyValueEntity
-import akka.javasdk.timedaction.TimedAction
-import akka.javasdk.view.TableUpdater
-import akka.javasdk.view.View
-import akka.javasdk.workflow.Workflow
 import java.lang.annotation.Annotation
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
@@ -29,7 +16,20 @@ import java.util.Optional
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
 
+import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
+import akka.javasdk.annotations.GrpcEndpoint
+import akka.javasdk.annotations.http.HttpEndpoint
+import akka.javasdk.annotations.mcp.McpEndpoint
+import akka.javasdk.client.ComponentClient
+import akka.javasdk.consumer.Consumer
+import akka.javasdk.eventsourcedentity.EventSourcedEntity
+import akka.javasdk.impl.client.ComponentClientImpl
+import akka.javasdk.keyvalueentity.KeyValueEntity
+import akka.javasdk.timedaction.TimedAction
+import akka.javasdk.view.TableUpdater
+import akka.javasdk.view.View
+import akka.javasdk.workflow.Workflow
 
 /**
  * Class extension to facilitate some reflection common usages.

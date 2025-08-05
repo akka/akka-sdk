@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl.workflow
 
+import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.ListHasAsScala
@@ -14,6 +15,7 @@ import scala.util.Success
 import scala.util.control.NonFatal
 
 import akka.annotation.InternalApi
+import akka.javasdk.CommandException
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.impl.AbstractContext
@@ -60,9 +62,6 @@ import io.opentelemetry.api.trace.Tracer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
-import scala.annotation.nowarn
-
-import akka.javasdk.CommandException
 
 /**
  * INTERNAL API
