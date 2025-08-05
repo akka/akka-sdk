@@ -4,15 +4,15 @@
 
 package akka.javasdk.impl.client
 
+import java.lang.reflect.Method
+
 import akka.annotation.InternalApi
+import akka.javasdk.agent.Agent
 import akka.javasdk.annotations.Query
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.workflow.Workflow
-import java.lang.reflect.Method
-
-import akka.javasdk.agent.Agent
 
 /**
  * INTERNAL API

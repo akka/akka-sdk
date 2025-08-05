@@ -4,15 +4,19 @@
 
 package akka.javasdk.impl.serialization
 
-import akka.Done
-import akka.annotation.InternalApi
 import java.io.IOException
 import java.lang
 import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
 import java.util
+import java.util.Optional
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
+import akka.Done
+import akka.annotation.InternalApi
+import akka.javasdk.CommandException
 import akka.javasdk.JsonMigration
 import akka.javasdk.annotations.Migration
 import akka.javasdk.annotations.TypeName
@@ -37,11 +41,6 @@ import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.jsontype.TypeDeserializer
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer
 import com.fasterxml.jackson.databind.module.SimpleModule
-import java.lang.reflect.ParameterizedType
-import java.lang.reflect.Type
-import java.util.Optional
-
-import akka.javasdk.CommandException
 
 /**
  * INTERNAL API

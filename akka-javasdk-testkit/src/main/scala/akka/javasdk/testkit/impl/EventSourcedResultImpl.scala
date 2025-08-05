@@ -4,6 +4,11 @@
 
 package akka.javasdk.testkit.impl
 
+import java.util.Collections
+import java.util.{ List => JList }
+
+import scala.jdk.CollectionConverters._
+
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
@@ -14,10 +19,6 @@ import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.EmitEve
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.NoPrimaryEffect
 import akka.javasdk.testkit.EventSourcedResult
 import io.grpc.Status
-
-import java.util.Collections
-import java.util.{ List => JList }
-import scala.jdk.CollectionConverters._
 
 /**
  * INTERNAL API

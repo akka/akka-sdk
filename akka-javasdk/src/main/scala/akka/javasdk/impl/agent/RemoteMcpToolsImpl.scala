@@ -4,12 +4,12 @@
 
 package akka.javasdk.impl.agent
 
+import java.util
+import java.util.function.Predicate
+
 import akka.annotation.InternalApi
 import akka.http.javadsl.model.HttpHeader
 import akka.javasdk.agent.RemoteMcpTools
-
-import java.util
-import java.util.function.Predicate
 
 /**
  * INTERNAL API

@@ -4,6 +4,21 @@
 
 package akka.javasdk.impl.http
 
+import java.io.IOException
+import java.lang.{ Iterable => JIterable }
+import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
+import java.time.Duration
+import java.util
+import java.util.concurrent.CompletionStage
+import java.util.function.Function
+
+import scala.concurrent.ExecutionException
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.FiniteDuration
+import scala.jdk.CollectionConverters.SeqHasAsJava
+import scala.jdk.DurationConverters.JavaDurationOps
+
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.http.javadsl.Http
@@ -29,20 +44,6 @@ import akka.stream.Materializer
 import akka.stream.SystemMaterializer
 import akka.util.ByteString
 import com.fasterxml.jackson.core.JsonProcessingException
-
-import java.io.IOException
-import java.lang.{ Iterable => JIterable }
-import java.nio.charset.Charset
-import java.nio.charset.StandardCharsets
-import java.time.Duration
-import java.util
-import java.util.concurrent.CompletionStage
-import java.util.function.Function
-import scala.concurrent.ExecutionException
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.duration.FiniteDuration
-import scala.jdk.CollectionConverters.SeqHasAsJava
-import scala.jdk.DurationConverters.JavaDurationOps
 
 /**
  * INTERNAL API

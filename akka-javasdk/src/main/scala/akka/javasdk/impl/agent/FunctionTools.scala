@@ -5,6 +5,10 @@
 package akka.javasdk.impl.agent
 
 import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Method
+import java.lang.reflect.Type
+
+import scala.util.control.Exception.Catcher
 
 import akka.annotation.InternalApi
 import akka.javasdk.DependencyProvider
@@ -14,11 +18,6 @@ import akka.javasdk.impl.JsonSchema
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
 import akka.javasdk.impl.reflection.Reflect.Syntax.MethodOps
 import akka.runtime.sdk.spi.SpiAgent
-
-import java.lang.reflect.Method
-import java.lang.reflect.Type
-
-import scala.util.control.Exception.Catcher
 
 /**
  * INTERNAL API

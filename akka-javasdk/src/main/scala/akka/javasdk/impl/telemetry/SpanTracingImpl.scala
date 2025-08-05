@@ -4,14 +4,15 @@
 
 package akka.javasdk.impl.telemetry
 
+import java.util.Optional
+
+import scala.jdk.OptionConverters.RichOption
+
 import akka.annotation.InternalApi
 import akka.javasdk.Tracing
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
-
-import java.util.Optional
-import scala.jdk.OptionConverters.RichOption
 
 /**
  * INTERNAL API

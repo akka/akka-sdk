@@ -4,10 +4,27 @@
 
 package akka.javasdk.testkit.impl
 
+import java.time
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
+import java.util.{ List => JList }
+
+import scala.annotation.nowarn
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.concurrent.duration._
+import scala.jdk.CollectionConverters._
+import scala.jdk.DurationConverters._
+import scala.jdk.OptionConverters._
+import scala.util.Failure
+import scala.util.Success
+
 import akka.NotUsed
 import akka.actor.ActorRef
-import akka.actor.typed.ActorSystem
 import akka.actor.Props
+import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.HttpResponse
@@ -15,6 +32,7 @@ import akka.javasdk.JsonSupport
 import akka.javasdk.Metadata.{ MetadataEntry => SdkMetadataEntry }
 import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.MetadataImpl
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.testkit.EventingTestKit
 import akka.javasdk.testkit.EventingTestKit.IncomingMessages
 import akka.javasdk.testkit.EventingTestKit.OutgoingMessages
@@ -24,6 +42,8 @@ import akka.javasdk.testkit.impl.TestKitMessageImpl.defaultMetadata
 import akka.javasdk.testkit.impl.TestKitMessageImpl.expectMsgInternal
 import akka.javasdk.{ Metadata => SdkMetadata }
 import akka.pattern._
+import akka.runtime.sdk.spi.SpiMetadata
+import akka.runtime.sdk.spi.SpiMetadataEntry
 import akka.stream.BoundedSourceQueue
 import akka.stream.QueueOfferResult
 import akka.stream.scaladsl.Sink
@@ -49,26 +69,6 @@ import kalix.testkit.protocol.eventing_test_backend.RunSourceCreate
 import kalix.testkit.protocol.eventing_test_backend.SourceElem
 import org.slf4j.LoggerFactory
 import scalapb.GeneratedMessage
-import java.time
-import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
-import java.util.{ List => JList }
-
-import scala.annotation.nowarn
-import scala.jdk.CollectionConverters._
-import scala.jdk.DurationConverters._
-import scala.jdk.OptionConverters._
-import scala.concurrent.Await
-import scala.concurrent.ExecutionContextExecutor
-import scala.concurrent.Future
-import scala.concurrent.Promise
-import scala.concurrent.duration._
-import scala.util.Failure
-import scala.util.Success
-
-import akka.javasdk.impl.serialization.JsonSerializer
-import akka.runtime.sdk.spi.SpiMetadata
-import akka.runtime.sdk.spi.SpiMetadataEntry
 
 object EventingTestKitImpl {
 

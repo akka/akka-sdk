@@ -5,8 +5,9 @@
 package akka.javasdk.impl
 
 import akka.annotation.InternalApi
-import Settings.DevModeSettings
 import com.typesafe.config.Config
+
+import Settings.DevModeSettings
 
 /**
  * INTERNAL API
