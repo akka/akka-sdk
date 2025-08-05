@@ -7,19 +7,7 @@ package akka.javasdk.impl.client
 import java.lang.invoke.SerializedLambda
 import java.lang.reflect.Method
 
-import akka.javasdk.annotations.StepName
-
 private[impl] object MethodRefResolver {
-
-  def stepMethodName(lambda: Any): String = {
-    val method = resolveMethodRef(lambda)
-    val stepNameAnnotation = method.getAnnotation(classOf[StepName])
-    if (stepNameAnnotation != null) {
-      stepNameAnnotation.value()
-    } else {
-      method.getName
-    }
-  }
 
   /**
    * Resolve the method ref for a lambda.

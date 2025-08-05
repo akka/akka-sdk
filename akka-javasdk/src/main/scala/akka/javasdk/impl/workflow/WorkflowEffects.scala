@@ -65,13 +65,15 @@ object WorkflowEffects {
     final case class PersistenceEffectBuilderImpl[S](persistence: Persistence[S]) extends PersistenceEffectBuilder[S] {
 
       override def transitionTo[W](lambda: Function[W, Workflow.StepEffect]): Transitional = {
-        val stepName = MethodRefResolver.stepMethodName(lambda)
+        val method = MethodRefResolver.resolveMethodRef(lambda)
+        val stepName = WorkflowDescriptor.stepMethodName(method)
         TransitionalEffectImpl(persistence, StepTransition(stepName, None))
       }
 
       override def transitionTo[W, I](
           lambda: function.Function2[W, I, Workflow.StepEffect]): WithInput[I, Transitional] = {
-        val stepName = MethodRefResolver.stepMethodName(lambda)
+        val method = MethodRefResolver.resolveMethodRef(lambda)
+        val stepName = WorkflowDescriptor.stepMethodName(method)
         EffectCallWithInputImpl(persistence, stepName)
       }
 
@@ -152,13 +154,15 @@ object WorkflowEffects {
       ErrorEffectImpl(description, Some(Status.Code.INVALID_ARGUMENT))
 
     override def transitionTo[W](lambda: Function[W, Workflow.StepEffect]): Transitional = {
-      val stepName = MethodRefResolver.stepMethodName(lambda)
+      val method = MethodRefResolver.resolveMethodRef(lambda)
+      val stepName = WorkflowDescriptor.stepMethodName(method)
       TransitionalEffectImpl(persistence, StepTransition(stepName, None))
     }
 
     override def transitionTo[W, I](
         lambda: function.Function2[W, I, Workflow.StepEffect]): WithInput[I, Transitional] = {
-      val stepName = MethodRefResolver.stepMethodName(lambda)
+      val method = MethodRefResolver.resolveMethodRef(lambda)
+      val stepName = WorkflowDescriptor.stepMethodName(method)
       EffectCallWithInputImpl(NoPersistence, stepName)
     }
   }
@@ -179,11 +183,13 @@ object WorkflowEffects {
         extends StepEffect.PersistenceEffectBuilder {
 
       def thenTransitionTo[W](lambda: Function[W, Workflow.StepEffect]): Workflow.StepEffect = {
-        val stepName = MethodRefResolver.stepMethodName(lambda)
+        val method = MethodRefResolver.resolveMethodRef(lambda)
+        val stepName = WorkflowDescriptor.stepMethodName(method)
         WorkflowStepEffectImpl(persistence, StepTransition(stepName, None))
       }
       override def thenTransitionTo[W, I](lambda: function.Function2[W, I, StepEffect]): WithInput[I, StepEffect] = {
-        val stepName = MethodRefResolver.stepMethodName(lambda)
+        val method = MethodRefResolver.resolveMethodRef(lambda)
+        val stepName = WorkflowDescriptor.stepMethodName(method)
         StepEffectCallWithInputImpl(persistence, stepName)
       }
 
@@ -219,12 +225,14 @@ object WorkflowEffects {
       WorkflowStepEffectImpl(NoPersistence, Pause)
 
     def thenTransitionTo[W](lambda: Function[W, Workflow.StepEffect]): Workflow.StepEffect = {
-      val stepName = MethodRefResolver.stepMethodName(lambda)
+      val method = MethodRefResolver.resolveMethodRef(lambda)
+      val stepName = WorkflowDescriptor.stepMethodName(method)
       WorkflowStepEffectImpl(persistence, StepTransition(stepName, None))
     }
 
     override def thenTransitionTo[W, I](lambda: function.Function2[W, I, StepEffect]): WithInput[I, StepEffect] = {
-      val stepName = MethodRefResolver.stepMethodName(lambda)
+      val method = MethodRefResolver.resolveMethodRef(lambda)
+      val stepName = WorkflowDescriptor.stepMethodName(method)
       StepEffectCallWithInputImpl(persistence, stepName)
     }
 
