@@ -42,13 +42,19 @@ public class AgentIntegrationTest extends TestKitSupport {
             if (clazz.isAssignableFrom(SomeAgentWithTool.TrafficService.class)) {
               return (T) new SomeAgentWithTool.TrafficService();
             }
+
+            if (clazz.isAssignableFrom(SomeAgentWithFailingTool.TrafficService.class)) {
+              return (T) new SomeAgentWithFailingTool.TrafficService();
+            }
             return null;
           }
         };
 
     return TestKit.Settings.DEFAULT
         .withModelProvider(SomeAgent.class, testModelProvider)
+        .withModelProvider(SomeAgentAcceptingInt.class, testModelProvider)
         .withModelProvider(SomeAgentWithTool.class, testModelProvider)
+        .withModelProvider(SomeAgentWithFailingTool.class, testModelProvider)
         .withModelProvider(SomeStructureResponseAgent.class, testModelProvider)
         .withModelProvider(SomeStreamingAgent.class, testModelProvider)
         .withModelProvider(SomeAgentWithBadlyConfiguredTool.class, testModelProvider)
@@ -216,13 +222,12 @@ public class AgentIntegrationTest extends TestKitSupport {
       componentClient
           .forAgent()
           .inSession(newSessionId())
-          .method(SomeAgentWithTool::query)
+          .method(SomeAgentWithFailingTool::query)
           .invoke(userQuestion);
 
       fail("Should have thrown an exception");
     } catch (Exception e) {
-      // FIXME: errors message in dev-mode/test should be propagate
-      assertThat(e.getMessage()).contains("Unexpected error");
+      assertThat(e.getMessage()).contains("Failed to instantiate TrafficService");
     }
   }
 
@@ -296,7 +301,8 @@ public class AgentIntegrationTest extends TestKitSupport {
     testModelProvider.whenMessage(s -> s.equals("hello")).reply("123456");
 
     try {
-      LoggingTestKit.warn("requires a parameter, but was invoked without parameter")
+      // FIXME: log capturing assertions no working with junit5
+      LoggingTestKit.info("requires a parameter, but was invoked without parameter")
           .expect(
               testKit.getActorSystem(),
               () ->
@@ -314,14 +320,24 @@ public class AgentIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldDetectWrongParameterTypeOfDynamicCall() {
-    testModelProvider.whenMessage(s -> s.equals("hello")).reply("123456");
 
     try {
-      componentClient.forAgent().inSession(newSessionId()).dynamicCall("some-agent").invoke(17);
+      // FIXME: log capturing assertions no working with junit5
+      LoggingTestKit.info(
+              "Could not deserialize message of type [json.akka.io/string] "
+                  + "to type [java.lang.Integer]")
+          .expect(
+              testKit.getActorSystem(),
+              () ->
+                  componentClient
+                      .forAgent()
+                      .inSession(newSessionId())
+                      .dynamicCall("some-agent-accepting-int")
+                      .invoke("abc"));
 
       fail("Expected exception");
     } catch (RuntimeException e) {
-      assertThat(e.getMessage()).startsWith("Unexpected error");
+      assertThat(e.getMessage()).startsWith("Component client error");
     }
   }
 
@@ -399,8 +415,7 @@ public class AgentIntegrationTest extends TestKitSupport {
                   .method(SomeAgentReturningErrors::run)
                   .invoke("throwRuntimeException");
             });
-    assertThat(exc5.getMessage())
-        .contains("Component client error"); // it's not the original message, but the one from the
-    // runtime
+    // it's not the original message, but the one from the runtime
+    assertThat(exc5.getMessage()).contains("Component client error");
   }
 }
