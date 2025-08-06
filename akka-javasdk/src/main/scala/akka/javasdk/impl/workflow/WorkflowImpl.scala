@@ -5,6 +5,7 @@
 package akka.javasdk.impl.workflow
 
 import akka.annotation.InternalApi
+import akka.javasdk.CommandException
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.impl.AbstractContext
@@ -22,7 +23,7 @@ import akka.javasdk.impl.telemetry.WorkflowCategory
 import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
-import akka.javasdk.workflow.Workflow.{ RecoverStrategy => SdkRecoverStrategy }
+import akka.javasdk.workflow.Workflow.{RecoverStrategy => SdkRecoverStrategy}
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.RegionInfo
@@ -139,10 +140,13 @@ class WorkflowImpl[S, W <: Workflow[S]](
         workflowContext)
       Future.successful(effect)
     } catch {
+      case e: CommandException =>
+        val serializedException = serializer.toBytes(e)
+        Future.successful(new SpiWorkflow.ErrorEffect(new SpiEntity.Error(e.getMessage, Some(serializedException))))
       case e: HandlerNotFoundException =>
         throw WorkflowException(workflowId, command.name, e.getMessage, Some(e))
       case BadRequestException(msg) =>
-        Future.successful(new SpiWorkflow.ErrorEffect(new SpiEntity.Error(msg)))
+        Future.successful(new SpiWorkflow.ErrorEffect(new SpiEntity.Error(msg, None)))
       case e: WorkflowException => throw e
       case NonFatal(error) =>
         throw WorkflowException(workflowId, command.name, s"Unexpected failure: $error", Some(error))

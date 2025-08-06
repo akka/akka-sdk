@@ -5,7 +5,9 @@
 package akka.javasdk.workflow;
 
 import akka.annotation.InternalApi;
+import akka.javasdk.CommandException;
 import akka.javasdk.Metadata;
+import akka.javasdk.client.ComponentClient;
 import akka.javasdk.impl.client.MethodRefResolver;
 import akka.javasdk.impl.workflow.WorkflowEffects;
 import akka.javasdk.timer.TimerScheduler;
@@ -317,6 +319,17 @@ public abstract class Workflow<S> {
        * @return An error reply.
        */
       <R> ReadOnlyEffect<R> error(String description);
+
+      /**
+       * Create an error reply. {@link CommandException} will be serialized and sent to the client.
+       * It's possible to catch it with try-catch statement or {@link CompletionStage} API when
+       * using async {@link ComponentClient} API.
+       *
+       * @param commandException The command exception to be returned.
+       * @param <R> The type of the message that must be returned by this call.
+       * @return An error reply.
+       */
+      <R> ReadOnlyEffect<R> error(CommandException commandException);
     }
 
     /**
@@ -498,6 +511,8 @@ public abstract class Workflow<S> {
       StepEffect thenDelete();
 
       StepEffect error(String description);
+
+      // TODO: add support for CommandException
     }
 
     interface PersistenceEffectBuilder {
@@ -544,6 +559,8 @@ public abstract class Workflow<S> {
       StepEffect thenDelete();
 
       StepEffect error(String description);
+
+      // TODO: add support for CommandException
     }
   }
 

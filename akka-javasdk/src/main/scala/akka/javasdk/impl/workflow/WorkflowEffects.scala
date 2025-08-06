@@ -7,6 +7,7 @@ package akka.javasdk.impl.workflow
 import akka.annotation.InternalApi
 import akka.japi.function
 import akka.japi.function.Function
+import akka.javasdk.CommandException
 import akka.javasdk.Metadata
 import akka.javasdk.impl.client.MethodRefResolver
 import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.ErrorEffectImpl
@@ -23,7 +24,6 @@ import akka.javasdk.workflow.Workflow.Effect.Transitional
 import akka.javasdk.workflow.Workflow.ReadOnlyEffect
 import akka.javasdk.workflow.Workflow.StepEffect
 import akka.javasdk.workflow.Workflow.WithInput
-import io.grpc.Status
 
 /**
  * INTERNAL API
@@ -113,7 +113,8 @@ object WorkflowEffects {
         WorkflowEffectImpl(NoPersistence, NoTransition, ReplyValue(message, metadata))
     }
 
-    final case class ErrorEffectImpl[R](description: String, status: Option[Status.Code]) extends ReadOnlyEffect[R]
+    final case class ErrorEffectImpl[R](description: String, exception: Option[CommandException])
+        extends ReadOnlyEffect[R]
 
   }
 
@@ -150,9 +151,6 @@ object WorkflowEffects {
     override def reply[R](reply: R, metadata: Metadata): ReadOnlyEffect[R] =
       ReadOnlyEffectImpl().reply(reply, metadata)
 
-    override def error[R](description: String): ReadOnlyEffect[R] =
-      ErrorEffectImpl(description, Some(Status.Code.INVALID_ARGUMENT))
-
     override def transitionTo[W](lambda: Function[W, Workflow.StepEffect]): Transitional = {
       val method = MethodRefResolver.resolveMethodRef(lambda)
       val stepName = WorkflowDescriptor.stepMethodName(method)
@@ -165,6 +163,12 @@ object WorkflowEffects {
       val stepName = WorkflowDescriptor.stepMethodName(method)
       EffectCallWithInputImpl(NoPersistence, stepName)
     }
+
+    override def error[R](description: String): ReadOnlyEffect[R] =
+      error(new CommandException(description))
+
+    override def error[R](commandException: CommandException): ReadOnlyEffect[R] =
+      ErrorEffectImpl(commandException.getMessage, Some(commandException))
   }
 
   private final case class EffectCallWithInputImpl[I, S](persistence: Persistence[S], stepName: String)

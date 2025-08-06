@@ -264,7 +264,8 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
 
     effect match {
       case error: ErrorEffectImpl[_] =>
-        new SpiWorkflow.ErrorEffect(new SpiEntity.Error(error.description))
+        val serializedException = error.exception.map(serializer.toBytes)
+        new SpiWorkflow.ErrorEffect(new SpiEntity.Error(error.description, serializedException))
 
       case WorkflowEffectImpl(persistence, transition, reply) =>
         val (replyBytes, spiMetadata) =
