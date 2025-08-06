@@ -202,8 +202,8 @@ public class KeyValueEntityTest extends TestKitSupport {
                   .invoke("throwRuntimeException");
             });
 
-    assertThat(exc5.getMessage()).contains("Unexpected failure: java.lang.RuntimeException: throwRuntimeException");
-
+    assertThat(exc5.getMessage())
+        .contains("Unexpected failure: java.lang.RuntimeException: throwRuntimeException");
   }
 
   private void createUser(TestUser user) {

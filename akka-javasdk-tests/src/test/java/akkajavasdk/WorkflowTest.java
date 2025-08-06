@@ -743,7 +743,8 @@ public class WorkflowTest extends TestKitSupport {
                   .method(TransferWorkflow::run)
                   .invoke("throwRuntimeException");
             });
-    assertThat(exc5.getMessage()).contains("Unexpected failure: java.lang.RuntimeException: throwRuntimeException");
+    assertThat(exc5.getMessage())
+        .contains("Unexpected failure: java.lang.RuntimeException: throwRuntimeException");
   }
 
   private String randomTransferId() {

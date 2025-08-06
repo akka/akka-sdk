@@ -17,7 +17,6 @@ import akka.javasdk.testkit.TestModelProvider;
 import akka.javasdk.testkit.TestModelProvider.AiResponse;
 import akka.javasdk.testkit.TestModelProvider.ToolInvocationRequest;
 import akka.stream.javadsl.Sink;
-import akkajavasdk.components.MyException;
 import akkajavasdk.Junit5LogCapturing;
 import akkajavasdk.components.MyException;
 import java.util.List;
@@ -325,7 +324,8 @@ public class AgentIntegrationTest extends TestKitSupport {
     try {
       // FIXME: log capturing assertions no working with junit5
       LoggingTestKit.info(
-              "Could not deserialize message of type [json.akka.io/string] to type [java.lang.Integer]")
+              "Could not deserialize message of type [json.akka.io/string] "
+                  + "to type [java.lang.Integer]")
           .expect(
               testKit.getActorSystem(),
               () ->

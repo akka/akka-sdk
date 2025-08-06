@@ -11,7 +11,7 @@ import akka.javasdk.annotations.FunctionTool;
 @ComponentId("some-agent-with-failing-tool")
 public class SomeAgentWithFailingTool extends Agent {
 
-  static public class TrafficService {
+  public static class TrafficService {
     public TrafficService() {
       throw new RuntimeException("Failed to instantiate TrafficService");
     }
@@ -22,16 +22,14 @@ public class SomeAgentWithFailingTool extends Agent {
     }
   }
 
-  public record SomeResponse(String response) {
-  }
+  public record SomeResponse(String response) {}
 
   public Effect<SomeResponse> query(String question) {
     return effects()
-      .systemMessage("You are a helpful...")
-      .tools(TrafficService.class)
-      .userMessage(question)
-      .map(SomeResponse::new)
-      .thenReply();
+        .systemMessage("You are a helpful...")
+        .tools(TrafficService.class)
+        .userMessage(question)
+        .map(SomeResponse::new)
+        .thenReply();
   }
-
 }
