@@ -10,11 +10,8 @@ import akka.javasdk.workflow.Workflow;
 @ComponentId("workflow-without-initial-state")
 public class WorkflowWithoutInitialState extends Workflow<String> {
 
-
   public Effect<String> start() {
-    return effects()
-      .transitionTo(WorkflowWithoutInitialState::test)
-      .thenReply("ok");
+    return effects().transitionTo(WorkflowWithoutInitialState::test).thenReply("ok");
   }
 
   private StepEffect test() {

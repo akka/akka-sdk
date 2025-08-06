@@ -26,44 +26,39 @@ public class WorkflowWithRecoverStrategyAndAsyncCall extends Workflow<FailingCou
     this.componentClient = componentClient;
   }
 
-
   @Override
   public WorkflowDef<FailingCounterState> definition() {
     var counterInc =
-      step(counterStepName)
-        .asyncCall(() -> {
-          var nextValue = currentState().value() + 1;
-          return componentClient
-            .forEventSourcedEntity(currentState().counterId())
-            .method(FailingCounterEntity::increase)
-            .invokeAsync(nextValue);
-        })
-        .andThen(Integer.class, __ -> effects()
-          .updateState(currentState().asFinished())
-          .end());
+        step(counterStepName)
+            .asyncCall(
+                () -> {
+                  var nextValue = currentState().value() + 1;
+                  return componentClient
+                      .forEventSourcedEntity(currentState().counterId())
+                      .method(FailingCounterEntity::increase)
+                      .invokeAsync(nextValue);
+                })
+            .andThen(Integer.class, __ -> effects().updateState(currentState().asFinished()).end());
 
     var counterIncFailover =
-      step(counterFailoverStepName)
-        .asyncCall(() -> CompletableFuture.completedStage("nothing"))
-        .andThen(String.class, __ ->
-          effects()
-            .updateState(currentState().inc())
-            .transitionTo(counterStepName)
-        );
-
+        step(counterFailoverStepName)
+            .asyncCall(() -> CompletableFuture.completedStage("nothing"))
+            .andThen(
+                String.class,
+                __ -> effects().updateState(currentState().inc()).transitionTo(counterStepName));
 
     return workflow()
-      .timeout(ofSeconds(30))
-      .defaultStepTimeout(ofSeconds(10))
-      .addStep(counterInc, maxRetries(1).failoverTo(counterFailoverStepName))
-      .addStep(counterIncFailover);
+        .timeout(ofSeconds(30))
+        .defaultStepTimeout(ofSeconds(10))
+        .addStep(counterInc, maxRetries(1).failoverTo(counterFailoverStepName))
+        .addStep(counterIncFailover);
   }
 
   public Effect<Message> startFailingCounter(String counterId) {
     return effects()
-      .updateState(new FailingCounterState(counterId, 0, false))
-      .transitionTo(counterStepName)
-      .thenReply(new Message("workflow started"));
+        .updateState(new FailingCounterState(counterId, 0, false))
+        .transitionTo(counterStepName)
+        .thenReply(new Message("workflow started"));
   }
 
   public Effect<FailingCounterState> get() {

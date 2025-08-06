@@ -4,12 +4,12 @@
 
 package akkajavasdk.components.workflowentities;
 
+import static java.time.Duration.ofSeconds;
+
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import akkajavasdk.components.actions.echo.Message;
-
-import static java.time.Duration.ofSeconds;
 
 @ComponentId("workflow-with-recover-strategy")
 public class WorkflowWithRecoverStrategy extends Workflow<FailingCounterState> {
@@ -20,16 +20,15 @@ public class WorkflowWithRecoverStrategy extends Workflow<FailingCounterState> {
     this.componentClient = componentClient;
   }
 
-
   @Override
   public WorkflowConfig configuration() {
     return WorkflowConfig.builder()
-      .workflowTimeout(ofSeconds(30))
-      .defaultStepTimeout(ofSeconds(10))
-      .stepConfig(
-        WorkflowWithRecoverStrategy::counterStep,
-        maxRetries(1).failoverTo(WorkflowWithRecoverStrategy::counterStepFailover))
-      .build();
+        .workflowTimeout(ofSeconds(30))
+        .defaultStepTimeout(ofSeconds(10))
+        .stepConfig(
+            WorkflowWithRecoverStrategy::counterStep,
+            maxRetries(1).failoverTo(WorkflowWithRecoverStrategy::counterStepFailover))
+        .build();
   }
 
   public Effect<Message> startFailingCounter(String counterId) {
@@ -41,23 +40,21 @@ public class WorkflowWithRecoverStrategy extends Workflow<FailingCounterState> {
 
   private StepEffect counterStep() {
     var nextValue = currentState().value() + 1;
-     componentClient
-      .forEventSourcedEntity(currentState().counterId())
-      .method(FailingCounterEntity::increase)
-      .invoke(nextValue);
+    componentClient
+        .forEventSourcedEntity(currentState().counterId())
+        .method(FailingCounterEntity::increase)
+        .invoke(nextValue);
 
-     return stepEffects()
-      .updateState(currentState().asFinished())
-      .thenEnd();
+    return stepEffects().updateState(currentState().asFinished()).thenEnd();
   }
 
   private StepEffect counterStepFailover() {
     return stepEffects()
-      .updateState(currentState().inc())
-      .thenTransitionTo(WorkflowWithRecoverStrategy::counterStep);
+        .updateState(currentState().inc())
+        .thenTransitionTo(WorkflowWithRecoverStrategy::counterStep);
   }
 
-  public Effect<FailingCounterState> get(){
+  public Effect<FailingCounterState> get() {
     if (currentState() != null) {
       return effects().reply(currentState());
     } else {

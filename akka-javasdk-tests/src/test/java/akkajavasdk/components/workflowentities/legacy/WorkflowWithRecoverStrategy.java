@@ -25,31 +25,26 @@ public class WorkflowWithRecoverStrategy extends Workflow<FailingCounterState> {
     this.componentClient = componentClient;
   }
 
-
   @Override
   public WorkflowDef<FailingCounterState> definition() {
     var counterInc =
         step(counterStepName)
-            .call(() -> {
-              var nextValue = currentState().value() + 1;
-              return componentClient
-                  .forEventSourcedEntity(currentState().counterId())
-                  .method(FailingCounterEntity::increase)
-                  .invoke(nextValue);
-            })
-            .andThen(Integer.class, __ -> effects()
-                .updateState(currentState().asFinished())
-                .end());
+            .call(
+                () -> {
+                  var nextValue = currentState().value() + 1;
+                  return componentClient
+                      .forEventSourcedEntity(currentState().counterId())
+                      .method(FailingCounterEntity::increase)
+                      .invoke(nextValue);
+                })
+            .andThen(Integer.class, __ -> effects().updateState(currentState().asFinished()).end());
 
     var counterIncFailover =
         step(counterFailoverStepName)
             .call(() -> "nothing")
-            .andThen(String.class, __ ->
-                effects()
-                    .updateState(currentState().inc())
-                    .transitionTo(counterStepName)
-            );
-
+            .andThen(
+                String.class,
+                __ -> effects().updateState(currentState().inc()).transitionTo(counterStepName));
 
     return workflow()
         .timeout(ofSeconds(30))
@@ -65,7 +60,7 @@ public class WorkflowWithRecoverStrategy extends Workflow<FailingCounterState> {
         .thenReply(new Message("workflow started"));
   }
 
-  public Effect<FailingCounterState> get(){
+  public Effect<FailingCounterState> get() {
     if (currentState() != null) {
       return effects().reply(currentState());
     } else {
