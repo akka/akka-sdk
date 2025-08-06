@@ -3,6 +3,7 @@ package akka.ask.indexer.application;
 import akka.Done;
 import akka.ask.common.OpenAiUtils;
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.StepName;
 import akka.javasdk.workflow.Workflow;
 import com.mongodb.client.MongoClient;
 import dev.langchain4j.data.document.BlankDocumentException;
@@ -23,14 +24,13 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 import static akka.Done.done;
-import static java.time.temporal.ChronoUnit.MINUTES;
+import static java.time.Duration.ofMinutes;
 
 /**
  * This workflow reads the files under src/main/resources/md-docs/ and create
@@ -48,7 +48,6 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
 
   // metadata key used to store file name
   private final String srcKey = "src";
-  private static final String PROCESSING_FILE_STEP = "processing-file";
 
   public record State(List<Path> toProcess, List<Path> processed) { // <1>
 
@@ -127,7 +126,7 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
 
       return effects()
           .updateState(State.of(documents))
-          .transitionTo(PROCESSING_FILE_STEP) // <1>
+          .transitionTo(RagIndexingWorkflow::processingFileStep) // <1>
           .thenReply(done());
     }
   }
@@ -143,33 +142,30 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
   }
 
   // tag::def[]
+
+
   @Override
-  public WorkflowDef<State> definition() {
-    return workflow()
-        .addStep(processingFileStep())
-        // the processing step might take a while
-        .defaultStepTimeout(Duration.of(1, MINUTES));
+  public WorkflowConfig configuration() {
+    return WorkflowConfig.builder()
+      .defaultStepTimeout(ofMinutes(1))
+      .build();
   }
 
-  private Step processingFileStep() {
-    return step(PROCESSING_FILE_STEP) // <1>
-        .call(() -> {
-          if (currentState().hasFilesToProcess()) {
-            indexFile(currentState().head().get());
-          }
-        })
-        .andThen(() -> {
-          // we need to check if it hasFilesToProcess, before moving the head
-          // because if workflow is aborted, the state is cleared, and we won't have
-          // anything in the list
-          if (currentState().hasFilesToProcess()) { // <2>
-            var newState = currentState().headProcessed();
-            logger.debug("Processed {}/{}", newState.totalProcessed(), newState.totalFiles());
-            return effects().updateState(newState).transitionTo(PROCESSING_FILE_STEP); // <3>
-          } else {
-            return effects().pause(); // <4>
-          }
-        });
+  @StepName("processing-file")
+  private StepEffect processingFileStep() { // <1>
+    if (currentState().hasFilesToProcess()) {
+      indexFile(currentState().head().get());
+    }
+
+    if (currentState().hasFilesToProcess()) { // <2>
+      var newState = currentState().headProcessed();
+      logger.debug("Processed {}/{}", newState.totalProcessed(), newState.totalFiles());
+      return stepEffects()
+        .updateState(newState)
+        .thenTransitionTo(RagIndexingWorkflow::processingFileStep); // <3>
+    } else {
+      return stepEffects().thenPause(); // <4>
+    }
   }
   // end::def[]
 

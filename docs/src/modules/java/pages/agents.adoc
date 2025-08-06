@@ -202,7 +202,7 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 <3> Inject the `ComponentClient`, which will be used when calling the agent.
 <4> This workflow only has two command handler methods. One that starts the workflow with the initial user request,
 <5> and one to retrieve the final answer.
-<6> Define the steps of the workflow.
+<6> Define the workflow configuration.
 <7> The step that calls the `ActivityAgent`
 <8> Call the agent with the `ComponentClient`
 <9> Store the result from the agent.
@@ -214,14 +214,14 @@ Keep in mind that AI requests are typically slow (many seconds), and you need to
 
 [source,java]
 ----
-.timeout(Duration.ofSeconds(60))
+.stepConfig(ActivityAgentManager::suggestActivities, ofSeconds(60))
 ----
 
 Additionally, you should define a workflow recovery strategy so that it doesn't retry failing requests infinitely. This is specified in the workflow definition with:
 
 [source,java]
 ----
-.defaultStepRecoverStrategy(maxRetries(2).failoverTo("error"))
+.defaultStepRecovery(maxRetries(2).failoverTo(ActivityAgentManager::error))
 ----
 
 More details in xref:workflows.adoc#_error_handling[Workflow timeouts and recovery strategy].

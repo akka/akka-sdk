@@ -83,7 +83,7 @@ Everything that we've done so far has been completely asynchronous. When the wor
 ----
 include::java:example$ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[tag=start]
 ----
-<1> A workflow must always transition to a state on startup
+<1> A workflow transition to processing file step on startup
 
 == Injecting the MongoDB client
 

@@ -6,8 +6,6 @@ import akka.javasdk.workflow.Workflow;
 import com.example.domain.TransferState;
 import com.example.domain.TransferState.Transfer;
 
-import java.time.Duration;
-
 import static akka.Done.done;
 import static com.example.domain.TransferState.TransferStatus.COMPLETED;
 import static com.example.domain.TransferState.TransferStatus.WITHDRAW_SUCCEEDED;
