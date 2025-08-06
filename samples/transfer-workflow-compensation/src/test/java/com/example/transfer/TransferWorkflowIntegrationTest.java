@@ -60,7 +60,8 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
       .forWorkflow(transferId)
       .method(TransferWorkflow::startTransfer)
       .invoke(transfer);
-    assertThat(response).isEqualTo("transfer started");
+
+    assertThat(response).isEqualTo("transfer started, waiting for acceptance");
 
     assertThat(getTransferState(transferId).status()).isEqualTo(WAITING_FOR_ACCEPTANCE);
 
@@ -95,7 +96,8 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
       .forWorkflow(transferId)
       .method(TransferWorkflow::startTransfer)
       .invoke(transfer);
-    assertThat(response).isEqualTo("transfer started");
+
+    assertThat(response).isEqualTo("transfer started, waiting for acceptance");
 
     assertThat(getTransferState(transferId).status()).isEqualTo(WAITING_FOR_ACCEPTANCE);
 
