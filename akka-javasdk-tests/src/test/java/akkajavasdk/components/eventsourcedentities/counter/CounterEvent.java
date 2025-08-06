@@ -9,14 +9,11 @@ import akka.javasdk.annotations.TypeName;
 public sealed interface CounterEvent {
 
   @TypeName("increased")
-  record ValueIncreased(int value) implements CounterEvent {
-  }
+  record ValueIncreased(int value) implements CounterEvent {}
 
   @TypeName("set")
-  record ValueSet(int value) implements CounterEvent {
-  }
+  record ValueSet(int value) implements CounterEvent {}
 
   @TypeName("multiplied")
-  record ValueMultiplied(int value) implements CounterEvent {
-  }
+  record ValueMultiplied(int value) implements CounterEvent {}
 }

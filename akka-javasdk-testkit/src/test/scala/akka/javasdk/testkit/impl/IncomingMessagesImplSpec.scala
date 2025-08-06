@@ -4,8 +4,11 @@
 
 package akka.javasdk.testkit.impl
 
+import scala.collection.mutable
+
 import akka.actor.ActorSystem
 import akka.actor.Props
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.testkit.impl.EventingTestKitImpl.RunningSourceProbe
 import akka.stream.BoundedSourceQueue
 import akka.stream.QueueOfferResult
@@ -20,9 +23,6 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
-import scala.collection.mutable
-
-import akka.javasdk.impl.serialization.JsonSerializer
 
 class IncomingMessagesImplSpec
     extends TestKit(ActorSystem("MySpec"))

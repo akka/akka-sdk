@@ -4,22 +4,22 @@
 
 package akka.javasdk.impl.agent
 
+import java.lang.reflect.Type
+import java.util.Optional
+
+import scala.jdk.CollectionConverters._
+
 import akka.javasdk.JsonSupport
 import akka.javasdk.impl.agent.FunctionTools.FunctionToolInvoker
+import akka.javasdk.impl.agent.ToolExecutorSpec.Bar
+import akka.javasdk.impl.agent.ToolExecutorSpec.Foo
+import akka.javasdk.impl.agent.ToolExecutorSpec.Foobar
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.SpiAgent
+import akka.runtime.sdk.spi.SpiMetadata
 import org.scalatest.TestSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
-
-import java.lang.reflect.Type
-import scala.jdk.CollectionConverters._
-import akka.javasdk.impl.agent.ToolExecutorSpec.Foo
-import akka.javasdk.impl.agent.ToolExecutorSpec.Bar
-import akka.javasdk.impl.agent.ToolExecutorSpec.Foobar
-import akka.runtime.sdk.spi.SpiMetadata
-
-import java.util.Optional
 
 object ToolExecutorSpec {
   // Test data classes for complex type tests

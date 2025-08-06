@@ -8,31 +8,31 @@
       "level": "Beginner"
     },
     {
-      "title": "Multi Agent AI activity suggestion system",
+      "title": "Multi-agent planning and execution",
       "description": "A sample application demonstrating how to build a multi-agent system using Akka and an LLM model.",
       "language": "java",
       "url": "https://github.com/akka-samples/multi-agent"
     },
     {
-      "title": "RAG workflow AI agent",
+      "title": "Chat agent with RAG",
       "description": "This sample illustrates how to build an AI agent that performs a RAG workflow.",
       "language": "java",
       "url": "https://github.com/akka-samples/ask-akka-agent"
     },
     {
-      "title": "Travel Agent",
+      "title": "Travel planning agent",
       "description": "The Travel Planner Agent is an AI-powered application built on the Akka SDK that helps users create personalized travel itineraries.",
       "language": "java",
       "url": "https://github.com/akka-samples/travel-agent"
     },
     {
-      "title": "Medical Discharge Summary Tagging System",
+      "title": "Medical discharge summary tagging",
       "description": "This experiment investigates whether an AI Agentic System can automatically tag medical discharge summaries based on the necessity of hospitalization.",
       "language": "java",
       "url": "https://github.com/akka-samples/medical-tagging-agent"
     },
     {
-      "title": "IoT sensor monitoring agent",
+      "title": "IoT sensor monitoring",
       "description": "This sample is a temperature monitoring system that collects, aggregates, and analyzes temperature data from IoT sensors. The system uses AI to generate insights about temperature trends and anomalies across different locations. Collects and aggregates temperature data using Key Value Entities. OpenAI is used for anomaly and trend detection.",
       "language": "java",
       "url": "https://github.com/akka-samples/temperature-monitoring-agent",
@@ -40,15 +40,15 @@
       "level": "Intermediate"
     },
     {
-      "title": "Release note summary generation agent",
+      "title": "Release note summarizer",
       "description": "This sample is designed to run every time there is a release from configured GitHub repositories. It interacts with Anthropic Claude from an agent and uses tools to retrieve detailed information from GitHub. Entities are used for storing release summaries. A timed action looks for new releases periodically and creates the summary using the LLM.",
       "language": "java",
       "url": "https://github.com/akka-samples/changelog-agent",
       "concepts": "Agent, Entity, Timed Action, Anthropic Claude, Tools, Summarization",
-      "level": "intermediate"
+      "level": "Intermediate"
     },
     {
-      "title": "Agentic customer service workflow",
+      "title": "Customer service chat workflow",
       "description": "The real-estate customer service agent demonstrates how to combine Akka features with an LLM model. It illustrates an agentic workflow for customer service. It processes incoming real-estate inquiries, analyzes the content to extract details, provides follow-up when needed and saves the collected information for future reference.",
       "language": "java",
       "url": "https://github.com/akka-samples/real-estate-cs-agent",
@@ -56,51 +56,19 @@
       "level": "Intermediate"
     },
     {
-      "title": "Tool using trip booking agent",
+      "title": "Trip booking with tools",
       "description": "This app represents a travel agency that searches for flights and accommodations. It’s composed by an LLM (Anthropic) using Spring AI and AI tools to find flights, accommodations and sending mails.",
       "language": "java",
       "url": "https://github.com/akka-samples/trip-agent",
       "concepts": "Agent, Tools, Anthropic, Spring AI, Workflow"
     },
     {
-      "title": "Agent sensor data analysis",
-      "description": "This sample illustrates an AI agent that uses an LLM to analyze data from fitness trackers, medical records and other sensors. It integrates with Fitbit and MongoDB Atlas.\n\n",
+      "title": "Multi-source health sensor analysis",
+      "description": "This sample illustrates an AI agent that uses an LLM to analyze data from fitness trackers, medical records and other sensors. It integrates with Fitbit and MongoDB Atlas.",
       "language": "java",
       "url": "https://github.com/akka-samples/healthcare-agent",
       "concepts": "Agent, Analysis, Integrations, Vector database",
       "level": "Intermediate"
-    },
-    {
-      "title": "Shopping cart microservice",
-      "description": "This sample shows a very simple microservice implementing a shopping cart with an event-sourced entity.",
-      "language": "java",
-      "url": "https://github.com/akka-samples/shopping-cart-with-view",
-      "concepts": "Entity, Events, HTTP Endpoint, View",
-      "level": "Beginner"
-    },
-    {
-      "title": "Customer registry microservice",
-      "description": "This sample illustrates the use of entities and query capabilities with a view. This example shows a simple set of traditional queries and data mutations through events.",
-      "language": "java",
-      "url": "https://github.com/akka-samples/event-sourced-customer-registry",
-      "concepts": "Entity, View, HTTP Endpoint",
-      "level": "Beginner"
-    },
-    {
-      "title": "Multiple Entity orchestration with a Workflow",
-      "description": "This example illustrates a funds transfer workflow between two wallets.",
-      "language": "java",
-      "url": "https://github.com/akka-samples/transfer-workflow-compensation",
-      "concepts": "Transactions, Workflow, Entity",
-      "level": "Intermediate"
-    },
-    {
-      "title": "User registration with a choreography saga",
-      "description": "This example is a user registration service implemented as a choreography saga.",
-      "language": "java",
-      "url": "https://github.com/akka-samples/choreography-saga-quickstart",
-      "concepts": "Choreography, Saga, Workflow",
-      "level": "Advanced"
     },
     {
       "title": "Akka Chess",
@@ -111,6 +79,46 @@
       "level": "Advanced"
     },
     {
+      "title": "Shopping cart",
+      "description": "This sample shows a very simple microservice implementing a shopping cart with an event-sourced entity.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/shopping-cart-with-view",
+      "concepts": "Entity, Events, HTTP Endpoint, View",
+      "level": "Beginner"
+    },
+    {
+      "title": "Customer data store",
+      "description": "This sample illustrates the use of entities and query capabilities with a view. This example shows a simple set of traditional queries and data mutations through events.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/event-sourced-customer-registry",
+      "concepts": "Entity, View, HTTP Endpoint",
+      "level": "Beginner"
+    },
+    {
+      "title": "Wallet transfer",
+      "description": "This example illustrates a funds transfer workflow between two wallets.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/transfer-workflow-orchestration",
+      "concepts": "Transactions, Workflow, Entity",
+      "level": "Intermediate"
+    },
+    {
+      "title": "Wallet transfer with failure compensation",
+      "description": "This example illustrates a funds transfer workflow between two wallets managed by external service.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/transfer-workflow-compensation",
+      "concepts": "Transactions, Workflow",
+      "level": "Intermediate"
+    },
+    {
+      "title": "Choreographed user signup flow",
+      "description": "This example is a user registration service implemented as a choreography saga.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/choreography-saga-quickstart",
+      "concepts": "Choreography, Saga, Workflow",
+      "level": "Advanced"
+    },
+        {
       "title": "Event Sourced Counter with Broker Integration",
       "description": "This project demonstrates the use of an Event Sourced Entity and the different ways to consume and produce from/to a broker.",
       "language": "java",

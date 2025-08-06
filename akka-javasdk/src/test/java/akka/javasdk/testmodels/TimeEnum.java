@@ -6,6 +6,9 @@ package akka.javasdk.testmodels;
 
 import java.time.Instant;
 
-enum Level {HIGH, LOW};
+enum Level {
+  HIGH,
+  LOW
+};
 
-public record TimeEnum(Instant time, Level lev){}
+public record TimeEnum(Instant time, Level lev) {}

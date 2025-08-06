@@ -3,12 +3,12 @@
 Akka is a platform for building, running and evaluating agentic systems. It includes a framework, runtime, streaming engine, and memory store for creating any kind of agentic system: AI, autonomous, real-time, adaptive, transactional, analytical, or edge. The Akka Runtime is the most widely adopted actor-based runtime in the world, enabling high-throughput, stateful services that are resilient, elastic and responsive. Akka runs on any infrastructure: public cloud, private cloud or on-premises.
 
 [discrete]
-== xref:getting-started:index.adoc[Getting Started]
+== xref:getting-started:index.adoc[Tutorials]
 
 **Start here**: a hands-on introduction, guiding you through your first steps.
 
-* xref:getting-started:author-your-first-service.adoc[] 
-* xref:getting-started:build-and-deploy-shopping-cart.adoc[Step-by-step tutorial: build and deploy a shopping cart]
+* xref:getting-started:author-your-first-service.adoc[Build your first agent] 
+* xref:getting-started:planner-agent/index.adoc[Build an AI multi-agent planner]
 * xref:getting-started:samples.adoc[Explore other sample applications]
 * xref:concepts:index.adoc[Foundations for building transactional and agentic AI services]
 
@@ -39,11 +39,11 @@ Akka is a platform for building, running and evaluating agentic systems. It incl
 
 **Implementation guidance** for key components and development patterns.
 
-* xref:java:agents.adoc[AI Agents]
-* xref:java:event-sourced-entities.adoc[Event Sourced Entities]
-* xref:java:workflows.adoc[Workflows]
-* xref:java:http-endpoints.adoc[Endpoints]
-* xref:java:running-locally.adoc[Run a service locally]
+* xref:java:workflows.adoc[Orchestration]
+* xref:java:agents.adoc[Agents]
+* xref:java:event-sourced-entities.adoc[Memory]
+* xref:java:consuming-producing.adoc[Streaming]
+* xref:java:running-locally.adoc[Set up your local dev environment]
 --
 
 [.grid-item]

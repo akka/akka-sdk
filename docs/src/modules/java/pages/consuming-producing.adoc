@@ -167,7 +167,7 @@ To allow proper reading of JSON messages from external topics, the messages need
 
 If the content type is `application/octet-stream`, no content type is present, or the type is unknown to Akka, the message is treated as a binary message. The topic subscriber method must accept the `byte[]` message.
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/application/RawBytesConsumer.java[RawBytesConsumer.java]
 ----
 include::example$event-sourced-counter-brokers/src/main/java/counter/application/RawBytesConsumer.java[tag=class]
@@ -251,7 +251,7 @@ In this example:
 
 To test this flow, we will take advantage of the TestKit to be able to push commands into the `event-commands` topic and check what messages are produced to topic `counter-events`.
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/event-sourced-counter-brokers/src/test/java/counter/application/CounterIntegrationTest.java[CounterIntegrationTest.java]
 ----
 include::example$event-sourced-counter-brokers/src/test/java/counter/application/CounterIntegrationTest.java[tags=class;test-topic]
@@ -268,7 +268,7 @@ TIP: In the example above we take advantage of the TestKit to serialize / deseri
 
 Before running your test, make sure to configure the TestKit correctly.
 
-[source, java]
+[source,java,indent=0]
 .{sample-base-url}/event-sourced-counter-brokers/src/test/java/counter/application/CounterIntegrationTest.java[CounterIntegrationTest.java]
 ----
 include::example$event-sourced-counter-brokers/src/test/java/counter/application/CounterIntegrationTest.java[tags=eventing-config]
@@ -317,7 +317,7 @@ NOTE: Despite the example, you are neither forced to clear all topics nor to do 
 
 To run an integration test against a real instance of Google PubSub (or its Emulator) or Kafka, use the TestKit settings to override the default eventing support, as shown below:
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/event-sourced-counter-brokers/src/test/java/counter/application/CounterWithRealKafkaIntegrationTest.java[CounterWithRealKafkaIntegrationTest.java]
 ----
 include::example$event-sourced-counter-brokers/src/test/java/counter/application/CounterWithRealKafkaIntegrationTest.java[tags=kafka]

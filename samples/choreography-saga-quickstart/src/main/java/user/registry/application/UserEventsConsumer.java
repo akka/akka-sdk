@@ -1,6 +1,5 @@
 package user.registry.application;
 
-
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.client.ComponentClient;
@@ -35,15 +34,18 @@ public class UserEventsConsumer extends Consumer {
       case EmailAssigned assigned -> confirmEmail(assigned.newEmail());
       case EmailUnassigned unassigned -> markAsNotUsed(evt, unassigned);
     };
-
   }
 
   /**
    * When a user stops to use an email address, this method gets called and un-reserves the email address.
    */
   private Effect markAsNotUsed(UserEvent evt, EmailUnassigned unassigned) {
-    logger.info("Old email address unassigned: {}, deleting unique email address record", evt);
-    client.forKeyValueEntity(unassigned.oldEmail())
+    logger.info(
+      "Old email address unassigned: {}, deleting unique email address record",
+      evt
+    );
+    client
+      .forKeyValueEntity(unassigned.oldEmail())
       .method(UniqueEmailEntity::markAsNotUsed)
       .invoke();
 
@@ -55,10 +57,11 @@ public class UserEventsConsumer extends Consumer {
    * It will hit the UniqueEmailEntity to confirm the email address.
    */
   private Effect confirmEmail(String emailAddress) {
-    logger.info("User got a new email address assigned: {}, confirming new address address", emailAddress);
-    client.forKeyValueEntity(emailAddress)
-      .method(UniqueEmailEntity::confirm)
-      .invoke();
+    logger.info(
+      "User got a new email address assigned: {}, confirming new address address",
+      emailAddress
+    );
+    client.forKeyValueEntity(emailAddress).method(UniqueEmailEntity::confirm).invoke();
 
     return effects().done();
   }

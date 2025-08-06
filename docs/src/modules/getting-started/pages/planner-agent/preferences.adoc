@@ -23,7 +23,7 @@ include::ROOT:partial$local-dev-prerequisites.adoc[]
 
 Add a new file `PreferencesEntity.java` to `src/main/java/com/example/application/`
 
-[source,java]
+[source,java,indent=0]
 .PreferencesEntity.java
 ----
 include::java:example$doc-snippets/src/main/java/agent_guide/part2/PreferencesEntity.java[tag=all]
@@ -38,7 +38,7 @@ You also need the `Preferences` and the `PreferencesEvent` records.
 
 Add a new file `Preferences.java` to `src/main/java/com/example/domain/`
 
-[source,java]
+[source,java,indent=0]
 .Preferences.java
 ----
 include::java:example$doc-snippets/src/main/java/agent_guide/part2/Preferences.java[tag=all]
@@ -48,7 +48,7 @@ Here we use plain text for the preferences, but it could be more structured info
 
 Add a new file `PreferencesEvent.java` to `src/main/java/com/example/domain/`
 
-[source,java]
+[source,java,indent=0]
 .PreferencesEvent.java
 ----
 include::java:example$doc-snippets/src/main/java/agent_guide/part2/PreferencesEvent.java[tag=all]
@@ -58,7 +58,7 @@ include::java:example$doc-snippets/src/main/java/agent_guide/part2/PreferencesEv
 
 To use the preferences in the `ActivityAgent` we need to inject the component client and retrieve the preferences for a given user id.
 
-[source,java]
+[source,java,indent=0]
 .ActivityAgent.java
 ----
 include::java:example$doc-snippets/src/main/java/agent_guide/part2/ActivityAgent.java[tag=all]
@@ -72,7 +72,7 @@ include::java:example$doc-snippets/src/main/java/agent_guide/part2/ActivityAgent
 
 We need to add the user id to the HTTP request.
 
-[source, java]
+[source,java,indent=0]
 .ActivityEndpoint.java
 ----
 include::java:example$doc-snippets/src/main/java/agent_guide/part2/ActivityEndpoint.java[tag=userId]
@@ -83,7 +83,7 @@ include::java:example$doc-snippets/src/main/java/agent_guide/part2/ActivityEndpo
 == Update preferences from endpoint
 
 To update the preferences, we add another method to the endpoint:
-[source, java]
+[source,java,indent=0]
 .ActivityEndpoint.java
 ----
 include::java:example$doc-snippets/src/main/java/agent_guide/part2/ActivityEndpoint.java[tag=addPreference]
@@ -93,7 +93,7 @@ include::java:example$doc-snippets/src/main/java/agent_guide/part2/ActivityEndpo
 
 Use the imports:
 
-[source, java]
+[source,java,indent=0]
 ----
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.http.HttpResponses;

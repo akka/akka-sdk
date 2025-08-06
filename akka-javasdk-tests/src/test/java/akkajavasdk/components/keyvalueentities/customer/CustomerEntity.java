@@ -4,10 +4,9 @@
 
 package akkajavasdk.components.keyvalueentities.customer;
 
-import akkajavasdk.Ok;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
-
+import akkajavasdk.Ok;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -15,8 +14,7 @@ import java.util.Optional;
 @ComponentId("customer")
 public class CustomerEntity extends KeyValueEntity<CustomerEntity.Customer> {
 
-  public record Customer(String name, Instant createdOn) {
-  }
+  public record Customer(String name, Instant createdOn) {}
 
   public record SomeRecord(String name, int number) {}
 
@@ -30,10 +28,7 @@ public class CustomerEntity extends KeyValueEntity<CustomerEntity.Customer> {
 
   // test coverage for serialization handling a list of records
   public ReadOnlyEffect<List<SomeRecord>> returnAListOfRecords() {
-    return effects().reply(List.of(
-        new SomeRecord("text1", 1),
-        new SomeRecord("text2", 2)
-    ));
+    return effects().reply(List.of(new SomeRecord("text1", 1), new SomeRecord("text2", 2)));
   }
 
   public ReadOnlyEffect<Optional<SomeRecord>> returnOptionalRecord() {

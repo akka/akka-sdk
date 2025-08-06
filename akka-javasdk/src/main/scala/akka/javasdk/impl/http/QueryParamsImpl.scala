@@ -6,12 +6,12 @@ package akka.javasdk.impl.http
 
 import java.util.Optional
 
+import scala.jdk.CollectionConverters._
 import scala.jdk.OptionConverters.RichOption
 
 import akka.annotation.InternalApi
 import akka.http.scaladsl.model.Uri.Query
 import akka.javasdk.http.QueryParams
-import scala.jdk.CollectionConverters._
 
 /**
  * INTERNAL API

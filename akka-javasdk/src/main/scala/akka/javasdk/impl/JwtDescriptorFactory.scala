@@ -4,6 +4,13 @@
 
 package akka.javasdk.impl
 
+import java.lang.reflect.Method
+
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+import scala.util.matching.Regex
+
 import akka.annotation.InternalApi
 import akka.javasdk.annotations.JWT
 import akka.javasdk.annotations.JWT.JwtMethodMode
@@ -15,12 +22,6 @@ import akka.runtime.sdk.spi.ClaimValues
 import akka.runtime.sdk.spi.StaticClaim
 import akka.runtime.sdk.spi.StaticClaimContent
 import akka.runtime.sdk.spi.{ JWT => RuntimeJWT }
-
-import java.lang.reflect.Method
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
-import scala.util.matching.Regex
 
 /**
  * INTERNAL API

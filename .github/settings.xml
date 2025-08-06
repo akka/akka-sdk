@@ -1,0 +1,27 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+    <profiles>
+        <profile>
+            <id>akka-github-actions</id>
+            <repositories>
+              <repository>
+                  <id>akka-repository</id>
+                  <name>Akka library repository</name>
+                  <!-- This only works for Akka's internal CI/CD -->
+                  <url>https://repo.akka.io/maven/github_actions</url>
+              </repository>
+          </repositories>
+          <pluginRepositories>
+              <pluginRepository>
+                  <id>akka-repository</id>
+                  <name>Akka library repository</name>
+                  <!-- This only works for Akka's internal CI/CD -->
+                  <url>https://repo.akka.io/maven/github_actions</url>
+              </pluginRepository>
+          </pluginRepositories>
+        </profile>
+    </profiles>
+    <activeProfiles>
+        <activeProfile>akka-github-actions</activeProfile>
+    </activeProfiles>
+  </settings>

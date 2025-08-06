@@ -6,7 +6,6 @@ package akka.javasdk.testmodels.keyvalueentity;
 
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,12 +13,11 @@ import java.util.List;
 @ComponentId("timer")
 public class TimeTrackerEntity extends KeyValueEntity<TimeTrackerEntity.TimerState> {
 
-
   public static class TimerState {
 
-    final public String name;
-    final public Instant createdTime;
-    final public List<TimerEntry> entries;
+    public final String name;
+    public final Instant createdTime;
+    public final List<TimerEntry> entries;
 
     public TimerState(String name, Instant createdTime, List<TimerEntry> entries) {
       this.name = name;
@@ -29,8 +27,8 @@ public class TimeTrackerEntity extends KeyValueEntity<TimeTrackerEntity.TimerSta
   }
 
   public static class TimerEntry {
-    final public Instant started;
-    final public Instant stopped = Instant.MAX;
+    public final Instant started;
+    public final Instant stopped = Instant.MAX;
 
     public TimerEntry(Instant started) {
       this.started = started;
@@ -39,8 +37,9 @@ public class TimeTrackerEntity extends KeyValueEntity<TimeTrackerEntity.TimerSta
 
   public Effect<String> start(String timerId) {
     if (currentState() == null)
-      return effects().updateState(new TimerState(timerId, Instant.now(), new ArrayList<>())).thenReply("Created");
-    else
-      return effects().error("Already created");
+      return effects()
+          .updateState(new TimerState(timerId, Instant.now(), new ArrayList<>()))
+          .thenReply("Created");
+    else return effects().error("Already created");
   }
 }

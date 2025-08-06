@@ -1,11 +1,11 @@
 <!-- <nav> -->
 - [Akka](../index.html)
 - [Understanding](index.html)
-- [AI Agents](ai-agents.html)
+- [Building AI agents](ai-agents.html)
 
 <!-- </nav> -->
 
-# AI Agents
+# Building AI agents
 
 AI agents are components that integrate with AI to perceive their environment, make decisions, and take actions toward a specific goal. Agents can have varying degrees of human intervention from none (completely autonomous) to requiring a human to approve each action the agent takes.
 
@@ -62,9 +62,25 @@ You submit the prompt to the model and get an answer back. Then, we can use *ano
 
 Rather than a unit test, we often have entire suites of evaluation runs where we submit a large number of prompts, derive analytics and metrics from the replies, and then score the model-generated data as a whole. This is tricky because you can very easily have an evaluation run that has a high confidence score but still somehow manages to contain [hallucinations](https://www.ibm.com/think/topics/ai-hallucinations).
 
+## <a href="about:blank#_foundational_ai_concepts_video"></a> Foundational AI Concepts (video)
+
+Vectors, embeddings, and Retrieval-Augmented Generation (RAG) are core concepts behind modern AI systems, especially those involving large language models (LLMs). Whether you’re just beginning your journey into AI or brushing up on terminology that’s increasingly appearing in development workflows, this is a great place to start.
+
+The following video is an informal walkthrough of foundational AI concepts that underpin tools like ChatGPT, RAG, and semantic search.
+
+Topics covered in the video include:
+
+- What vectors are and why they’re foundational to AI
+- How embeddings turn human input into machine-readable vectors
+- The role of vector distance and similarity metrics (e.g., Euclidean vs. cosine)
+- How vector databases support semantic search
+- The RAG pattern for enriching LLM prompts
+- Why prompt structure, token count, and caching all matter
+- How concepts like agency and stateful workflows connect to agentic AI and Akka
+
 <!-- <footer> -->
 <!-- <nav> -->
-[Foundational AI concepts (video)](ai-concepts-video.html) [Access Control List concepts](acls.html)
+[Endpoints](grpc-vs-http-endpoints.html) [Access Control List concepts](acls.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

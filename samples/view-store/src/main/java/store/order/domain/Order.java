@@ -6,6 +6,6 @@ public record Order(
   String productId,
   String customerId,
   int quantity,
-  long createdTimestamp) {
-}
+  long createdTimestamp
+) {}
 // end::domain[]

@@ -4,19 +4,15 @@
 
 package akka.javasdk.impl;
 
-import akka.javasdk.timedaction.TimedAction;
 import akka.javasdk.annotations.ComponentId;
-import akka.javasdk.annotations.Query;
-import akka.javasdk.annotations.Consume;
 import akka.javasdk.consumer.Consumer;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
-import akka.javasdk.view.TableUpdater;
-import akka.javasdk.workflow.Workflow;
 import akka.javasdk.testmodels.keyvalueentity.User;
-import akka.javasdk.testmodels.keyvalueentity.UserEntity;
 import akka.javasdk.testmodels.workflow.StartWorkflow;
 import akka.javasdk.testmodels.workflow.WorkflowState;
+import akka.javasdk.timedaction.TimedAction;
+import akka.javasdk.workflow.Workflow;
 
 // below components are not public and thus need to be in the same package as the corresponding test
 public class NotPublicComponents {
@@ -36,10 +32,12 @@ public class NotPublicComponents {
   }
 
   @ComponentId("counter")
-  static class NotPublicEventSourced extends EventSourcedEntity<Integer, NotPublicEventSourced.Event> {
+  static class NotPublicEventSourced
+      extends EventSourcedEntity<Integer, NotPublicEventSourced.Event> {
 
     public sealed interface Event {
-      public record Created()implements Event {};
+      public record Created() implements Event {}
+      ;
     }
 
     public Integer test() {
@@ -71,5 +69,3 @@ public class NotPublicComponents {
     }
   }
 }
-
-

@@ -27,42 +27,47 @@ public class PreferencesConsumer extends Consumer { // <2>
 
     // Get all activities (sessions) for this user from the ActivityView
     var activities = componentClient
-        .forView()
-        .method(ActivityView::getActivities)
-        .invoke(userId); // <3>
+      .forView()
+      .method(ActivityView::getActivities)
+      .invoke(userId); // <3>
 
     // Call EvaluatorAgent for each session
     for (var activity : activities.entries()) {
       if (activity.finalAnswer() != null && !activity.finalAnswer().isEmpty()) {
         var evaluationRequest = new EvaluatorAgent.EvaluationRequest(
-            userId,
-            activity.userQuestion(),
-            activity.finalAnswer()
+          userId,
+          activity.userQuestion(),
+          activity.finalAnswer()
         );
 
         var evaluationResult = componentClient
-            .forAgent()
-            .inSession(activity.sessionId())
-            .method(EvaluatorAgent::evaluate)
-            .invoke(evaluationRequest); // <4>
+          .forAgent()
+          .inSession(activity.sessionId())
+          .method(EvaluatorAgent::evaluate)
+          .invoke(evaluationRequest); // <4>
 
-        logger.info("Evaluation completed for session {}: score={}, feedback='{}'",
-            activity.sessionId(),
-            evaluationResult.score(),
-            evaluationResult.feedback());
+        logger.info(
+          "Evaluation completed for session {}: score={}, feedback='{}'",
+          activity.sessionId(),
+          evaluationResult.score(),
+          evaluationResult.feedback()
+        );
 
         if (evaluationResult.score() < 3) {
           // run the workflow again to generate a better answer
 
           componentClient
-              .forWorkflow(activity.sessionId())
-              .method(AgentTeamWorkflow::runAgain) // <5>
-              .invoke();
+            .forWorkflow(activity.sessionId())
+            .method(AgentTeamWorkflow::runAgain) // <5>
+            .invoke();
 
-          logger.info("Started workflow {} for user {} to re-answer question: '{}'",
-              activity.sessionId(), userId, activity.userQuestion());
+          logger.info(
+            "Started workflow {} for user {} to re-answer question: '{}'",
+            activity.sessionId(),
+            userId,
+            activity.userQuestion()
+          );
         }
-
       }
     }
 

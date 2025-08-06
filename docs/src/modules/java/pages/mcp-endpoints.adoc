@@ -16,7 +16,7 @@ Endpoints are made available using a stateless Streamable HTTP transport defined
 
 To create an MCP endpoint, a class is annotated with `@McpEndpoint` and ACL configuring where it can be accessed from.
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[ExampleMcpEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[tag=endpoint-class]
@@ -41,7 +41,7 @@ Only simple input parameter classes are supported. Fields must be of primitive t
 
 All fields are marked as required in the schema by default, any non-required parameter should be of type `Optional<T>`
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[ExampleMcpEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[tag=tool]
@@ -52,7 +52,7 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.j
 
 For full flexibility and more complex input types, it is also possible to specify the JSON Schema of the input manually in the annotation:
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[ExampleMcpEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[tag=tool-manual-input-schema]
@@ -66,7 +66,7 @@ is actually what is accepted when Jackson parses it into the input parameter typ
 
 A static resource is a public zero-parameter method returning text or bytes. The resource is identified by a unique URI.
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[ExampleMcpEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[tag=static-resource]
@@ -76,7 +76,7 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.j
 
 A dynamic resource instead defines a URI template with placeholders for sections, the method accepts `String` parameters with the same names.
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[ExampleMcpEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[tag=resource-template]
@@ -88,7 +88,7 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.j
 
 Prompts are a way to provide example prompts to the MCP client given some input parameters.
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[ExampleMcpEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[tag=prompt]

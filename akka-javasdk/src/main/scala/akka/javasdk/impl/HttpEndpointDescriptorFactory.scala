@@ -4,6 +4,13 @@
 
 package akka.javasdk.impl
 
+import java.lang.reflect.Method
+
+import scala.annotation.tailrec
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+
 import akka.annotation.InternalApi
 import akka.http.javadsl.model.HttpEntity
 import akka.http.javadsl.model.HttpRequest
@@ -31,12 +38,6 @@ import akka.runtime.sdk.spi.HttpEndpointMethodSpec
 import akka.runtime.sdk.spi.MethodOptions
 import akka.runtime.sdk.spi.SpiJsonSchema
 import org.slf4j.LoggerFactory
-
-import java.lang.reflect.Method
-import scala.annotation.tailrec
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
 
 /**
  * INTERNAL API

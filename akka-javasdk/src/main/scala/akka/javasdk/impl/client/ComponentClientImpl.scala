@@ -4,8 +4,13 @@
 
 package akka.javasdk.impl.client
 
+import scala.concurrent.ExecutionContext
+
+import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
+import akka.javasdk.agent.Agent
+import akka.javasdk.client.AgentClient
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.client.EventSourcedEntityClient
 import akka.javasdk.client.KeyValueEntityClient
@@ -13,13 +18,8 @@ import akka.javasdk.client.TimedActionClient
 import akka.javasdk.client.ViewClient
 import akka.javasdk.client.WorkflowClient
 import akka.javasdk.impl.MetadataImpl
-import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
-import scala.concurrent.ExecutionContext
-
-import akka.actor.typed.ActorSystem
-import akka.javasdk.agent.Agent
-import akka.javasdk.client.AgentClient
 import akka.javasdk.impl.serialization.JsonSerializer
+import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
 import io.opentelemetry.api.trace.Span
 
 /**

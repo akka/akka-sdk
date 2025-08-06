@@ -24,10 +24,14 @@ public interface GrpcRequestContext extends Context {
    */
   Principals getPrincipals();
 
-  /** @return The JWT claims, if any, associated with this request. */
+  /**
+   * @return The JWT claims, if any, associated with this request.
+   */
   JwtClaims getJwtClaims();
 
-  /** @return The metadata associated with the request being processed */
+  /**
+   * @return The metadata associated with the request being processed
+   */
   Metadata metadata();
 
   /** Access to tracing for custom app specific tracing. */

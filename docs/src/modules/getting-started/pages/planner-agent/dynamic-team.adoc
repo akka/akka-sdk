@@ -27,7 +27,7 @@ We split the planning into two steps and use two separate agents for these tasks
 
 The `SelectorAgent` decides which agents to use. Add a new file `SelectorAgent.java` to `src/main/java/com/example/application/`
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/SelectorAgent.java[SelectorAgent.java]
 ----
 include::java:example$multi-agent/src/main/java/demo/multiagent/application/SelectorAgent.java[tag=all]
@@ -37,7 +37,7 @@ include::java:example$multi-agent/src/main/java/demo/multiagent/application/Sele
 <3> Detailed instructions and include descriptions (as json) of the agents.
 
 The result from the `SelectorAgent` is a list of agent ids. Add a new file `AgentSelection.java` to `src/main/java/com/example/domain/`
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/domain/AgentSelection.java[AgentSelection.java]
 ----
 include::java:example$multi-agent/src/main/java/demo/multiagent/domain/AgentSelection.java[tag=all]
@@ -46,14 +46,14 @@ include::java:example$multi-agent/src/main/java/demo/multiagent/domain/AgentSele
 The information about the agents in the `AgentRegistry` comes from the `@ComponentId` and `@AgentDescription` annotations. When using it for planning like this it is important that the agents define those descriptions that the LLM can use to come up with a good plan.
 
 Add the `@AgentDescription` to the `WeatherAgent`:
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/WeatherAgent.java[WeatherAgent.java]
 ----
 include::java:example$multi-agent/src/main/java/demo/multiagent/application/WeatherAgent.java[tag=description]
 ----
 
 Add the `@AgentDescription` to the `ActivityAgent`:
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/ActivityAgent.java[ActivityAgent.java]
 ----
 include::java:example$multi-agent/src/main/java/demo/multiagent/application/ActivityAgent.java[tag=description]
@@ -63,7 +63,7 @@ Note that in image:concepts:steps-2.svg[width=20] of the `SelectorAgent` we retr
 
 After selecting agents, we use a `PlannerAgent` to decide in which order to use the agents and the precise request each agent should receive to perform its single task. Add a new file `PlannerAgent.java` to `src/main/java/com/example/application/`
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/PlannerAgent.java[PlannerAgent.java]
 ----
 include::java:example$multi-agent/src/main/java/demo/multiagent/application/PlannerAgent.java[tag=all]
@@ -74,14 +74,14 @@ include::java:example$multi-agent/src/main/java/demo/multiagent/application/Plan
 The result from the `PlannerAgent` is a `Plan` with a list of `PlanStep`.
 
 Add a new file `Plan.java` to `src/main/java/com/example/domain/`
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/domain/Plan.java[Plan.java]
 ----
 include::java:example$multi-agent/src/main/java/demo/multiagent/domain/Plan.java[tag=all]
 ----
 
 and a new file `PlanStep.java` to `src/main/java/com/example/domain/`
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/domain/PlanStep.java[PlanStep.java]
 ----
 include::java:example$multi-agent/src/main/java/demo/multiagent/domain/PlanStep.java[tag=all]
@@ -91,7 +91,7 @@ include::java:example$multi-agent/src/main/java/demo/multiagent/domain/PlanStep.
 
 We will call the selected agents according to the plan, and we want to do that without explicitly knowing which agent it is. For this, the worker agents (`WeatherAgent` and `ActivityAgent`) must have the same shape. Adjust the `ActivityAgent` to have this method signature:
 
-[source,java]
+[source,java,indent=0]
 .ActivityAgent.java
 ----
   public Effect<String> query(AgentRequest request) {
@@ -99,7 +99,7 @@ We will call the selected agents according to the plan, and we want to do that w
 
 Where `AgentRequest` is a new record. Add a new file `AgentRequest.java` to `src/main/java/com/example/domain/`
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/domain/AgentRequest.java[AgentRequest.java]
 ----
 include::java:example$multi-agent/src/main/java/demo/multiagent/domain/AgentRequest.java[tag=all]
@@ -115,7 +115,7 @@ Make the same changes to the `WeatherAgent`. Use the same method signature and u
 
 Update the `AgentTeamWorkflow` to this:
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[AgentTeamWorkflow.java]
 ----
 include::java:example$multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[tag=all]
@@ -132,7 +132,7 @@ include::java:example$multi-agent/src/main/java/demo/multiagent/application/Agen
 <10> Continue executing the plan until no tasks are remaining.
 
 You can add the imports:
-[source, java]
+[source,java,indent=0]
 ----
 import static com.example.application.AgentTeamWorkflow.Status.*;
 import com.example.domain.*;
@@ -142,7 +142,7 @@ When executing the plan and calling the agents we know the id of the agent to ca
 
 This also ends the workflow by creating a summary of the results from the involved agent. Add a new file `SummarizerAgent.java` to `src/main/java/com/example/application/`
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/SummarizerAgent.java[SummarizerAgent.java]
 ----
 include::java:example$multi-agent/src/main/java/demo/multiagent/application/SummarizerAgent.java[tag=all]

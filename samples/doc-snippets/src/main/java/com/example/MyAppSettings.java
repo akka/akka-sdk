@@ -3,4 +3,4 @@
  */
 package com.example;
 
-public record MyAppSettings(boolean someFeatureFlag) { }
+public record MyAppSettings(boolean someFeatureFlag) {}

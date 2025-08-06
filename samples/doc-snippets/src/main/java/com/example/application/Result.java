@@ -6,15 +6,18 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 // tag::result-type[]
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@type")
-@JsonSubTypes({
-  @JsonSubTypes.Type(value = Result.Success.class, name = "S"),
-  @JsonSubTypes.Type(value = Result.Error.class, name = "E")})
+@JsonSubTypes(
+  {
+    @JsonSubTypes.Type(value = Result.Success.class, name = "S"),
+    @JsonSubTypes.Type(value = Result.Error.class, name = "E"),
+  }
+)
 public sealed interface Result<E, T> { // <1>
-
   record Success<E, T>(
     @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS) // <2>
     T value
-  ) implements Result<E, T> {
+  )
+    implements Result<E, T> {
     // end::result-type[]
     @Override
     public E error() {
@@ -36,7 +39,8 @@ public sealed interface Result<E, T> { // <1>
   record Error<E, T>(
     @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS) // <2>
     E value
-  ) implements Result<E, T> {
+  )
+    implements Result<E, T> {
     // end::result-type[]
     @Override
     public E error() {
@@ -54,6 +58,7 @@ public sealed interface Result<E, T> { // <1>
     }
     // tag::result-type[]
   }
+
   // end::result-type[]
 
   @JsonIgnore

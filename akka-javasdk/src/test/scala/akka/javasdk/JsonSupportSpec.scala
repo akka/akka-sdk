@@ -6,7 +6,9 @@ package akka.javasdk
 
 import java.util
 import java.util.Optional
+
 import scala.beans.BeanProperty
+
 import akka.Done
 import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.ByteStringEncoding

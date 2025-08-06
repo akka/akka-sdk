@@ -4,17 +4,19 @@
 
 package akka.javasdk.http;
 
-
 import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.model.StatusCode;
 
 /**
  * A strict response that contains both the HTTP response and the body.
- * <p>
- * The body is derived from the HttpResponse. Meaning that the HttpResponse body content have
- * already been fully received and cannot be consumed once more. To access its content use the body field.
- * <p>
- * The HttpResponse can be used to access other response fields, like content-type, headers and http status code.
+ *
+ * <p>The body is derived from the HttpResponse. Meaning that the HttpResponse body content have
+ * already been fully received and cannot be consumed once more. To access its content use the body
+ * field.
+ *
+ * <p>The HttpResponse can be used to access other response fields, like content-type, headers and
+ * http status code.
+ *
  * <p>
  *
  * @param <T> The type of the body in the response.

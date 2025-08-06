@@ -4,23 +4,25 @@ This sample illustrates how to build an AI agent that performs a RAG workflow.
 
 ## Running the app
 
-This sample requires OpenAI API Key and a MongoDb Atlas URI. 
-
-### Mongo Atlas
-The Mongo DB atlas URI you get from signing up/logging in to https://cloud.mongodb.com
-Create an empty database and add a database user with a password. Make sure to allow access from your local IP address
-to be able to run the sample locally.
-
-The Mongo DB console should now help out by giving you a URI/connection
-string to copy. Note that you need to insert the database user password into the generated URI.
+This sample requires OpenAI API Key and a MongoDb Atlas URI.
 
 ### OpenAI API
 To get the OpenAI API key, sign up/log in to find the key at https://platform.openai.com/api-keys
 
+### MongoDb Atlas
+
+This sample includes a docker compose file with a pre-configured MongoDB instance. You can start it by running:
+
+```shell
+docker-compose up -d
+```
+
+Alternatively, you can create an account on MongoDb cloud. See `Deploying` section below for details on configuration. 
+
 ### Start the app
 
-The key and uri needs to be exported as environment variables:
-`OPENAI_API_KEY` and `MONGODB_ATLAS_URI` respectively.
+The key needs to be exported as environment variables: `OPENAI_API_KEY`. 
+If you prefer to use a different LLM model, follow the instructions in `application.conf` to change it.
 
 Then, start the application locally:
 
@@ -58,10 +60,23 @@ Results are streamed using SSE.
 
 You can use the [Akka Console](https://console.akka.io) to create a project and see the status of your service.
 
+### Mongo Atlas
+The Mongo DB atlas URI you get from signing up/logging in to https://cloud.mongodb.com
+Create an empty database and add a database user with a password.
+
+The Mongo DB console should now help out by giving you a URI/connection
+string to copy. Note that you need to insert the database user password into the generated URI.
+You can export that as environment variable:
+```shell
+export MONGODB_ATLAS_URI="your generated URI goes here"
+```
+
 Before deploying the service we need to modify MongoDB configuration to allow external connections from
 the Akka Automated Operations. For experimentation purposes, go to "Network Access" and allow access from anywhere.
 For production use cases, you should restrict access to only trusted IP addresses.
 Contact support to know which IPs to allow.
+
+### Deploy service
 
 1. Build container image:
 

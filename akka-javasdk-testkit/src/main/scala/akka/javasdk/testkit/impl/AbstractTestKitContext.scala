@@ -4,11 +4,11 @@
 
 package akka.javasdk.testkit.impl
 
+import scala.jdk.OptionConverters.RichOptional
+
 import akka.javasdk.Context
 import akka.javasdk.impl.InternalContext
 import akka.javasdk.testkit.MockRegistry
-
-import scala.jdk.OptionConverters.RichOptional
 
 class AbstractTestKitContext(mockRegistry: MockRegistry) extends Context with InternalContext {
 

@@ -4,15 +4,19 @@
 
 package akka.javasdk.impl.serialization
 
-import akka.Done
-import akka.annotation.InternalApi
-
 import java.io.IOException
 import java.lang
 import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
 import java.util
+import java.util.Optional
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
+
+import akka.Done
+import akka.annotation.InternalApi
+import akka.javasdk.CommandException
 import akka.javasdk.JsonMigration
 import akka.javasdk.annotations.Migration
 import akka.javasdk.annotations.TypeName
@@ -37,10 +41,6 @@ import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.jsontype.TypeDeserializer
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer
 import com.fasterxml.jackson.databind.module.SimpleModule
-
-import java.lang.reflect.ParameterizedType
-import java.lang.reflect.Type
-import java.util.Optional
 
 /**
  * INTERNAL API
@@ -77,6 +77,7 @@ object JsonSerializer {
     module.addSerializer(classOf[Done], DoneSerializer)
     module.addDeserializer(classOf[Done], DoneDeserializer)
     mapper.registerModule(module)
+    mapper.addMixIn(classOf[Throwable], classOf[ThrowableMixin])
 
     mapper
   }
@@ -209,12 +210,40 @@ final class JsonSerializer(val objectMapper: ObjectMapper) {
     validateIsJson(bytesPayload)
 
     val typeName = removeVersion(stripJsonContentTypePrefix(bytesPayload.contentType))
-    val typeClass = reversedTypeHints.get(typeName).asInstanceOf[Class[AnyRef]]
-    if (typeClass eq null)
-      throw new IllegalStateException(
-        s"Cannot decode [${bytesPayload.contentType}] message type. Class mapping not found.")
-    else
-      fromBytes(typeClass, bytesPayload)
+    if (typeName == classOf[Done.type].getName || typeName == classOf[Done].getName) {
+      // small optimization for Done, which does not need to be deserialized
+      Done.done()
+    } else {
+      val typeClass = reversedTypeHints.get(typeName).asInstanceOf[Class[AnyRef]]
+      if (typeClass eq null)
+        throw new IllegalStateException(
+          s"Cannot decode [${bytesPayload.contentType}] message type. Class mapping not found.")
+      else
+        fromBytes(typeClass, bytesPayload)
+    }
+  }
+
+  def exceptionFromBytes(exceptionPayload: BytesPayload): CommandException = {
+    val exClass = exceptionClass(exceptionPayload)
+    fromBytes(exClass, exceptionPayload).asInstanceOf[CommandException]
+  }
+
+  private def exceptionClass(exceptionPayload: BytesPayload): Class[_] = {
+    val className = stripJsonContentTypePrefix(exceptionPayload.contentType)
+    val exClass = reversedTypeHints.get(className)
+    if (exClass eq null) {
+      val loadedExceptionClass = Class.forName(className)
+      if (classOf[CommandException].isAssignableFrom(loadedExceptionClass)) {
+        addToReversedCache(loadedExceptionClass, className)
+        loadedExceptionClass
+      } else {
+        throw new IllegalStateException(
+          "Loaded class [" + className +
+          "] is not a subclass of CommandException, cannot deserialize it as a CommandException.")
+      }
+    } else {
+      exClass
+    }
   }
 
   def fromBytes[T, C <: util.Collection[T]](
@@ -274,7 +303,7 @@ final class JsonSerializer(val objectMapper: ObjectMapper) {
   private def jsonProcessingException[T](valueClass: Class[T], contentType: String, e: JsonProcessingException) =
     new IllegalArgumentException(
       s"JSON with contentType [$contentType] could not be decoded into a " +
-      s"[${valueClass.getName}]. Make sure that changes are backwards compatible or apply a @Migration " +
+      s"[${valueClass.getName}]: ${e.getMessage}. When changing the schema, make sure that changes are backwards compatible or apply a @Migration " +
       "mechanism (https://doc.akka.io/java/serialization.html#_schema_evolution).",
       e)
 

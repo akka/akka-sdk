@@ -15,6 +15,7 @@ public class ValueEntitiesTestModels {
     public KeyValueEntity.Effect<Done> createEntity(CreateUser createUser) {
       return effects().reply(Done.instance);
     }
+
     public KeyValueEntity.Effect<Done> createEntity(String user) {
       return effects().reply(Done.instance);
     }

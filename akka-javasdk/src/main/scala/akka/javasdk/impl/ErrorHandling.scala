@@ -4,10 +4,11 @@
 
 package akka.javasdk.impl
 
-import akka.annotation.InternalApi
-import org.slf4j.MDC
 import java.util.UUID
 import java.util.concurrent.ExecutionException
+
+import akka.annotation.InternalApi
+import org.slf4j.MDC
 
 /**
  * INTERNAL API

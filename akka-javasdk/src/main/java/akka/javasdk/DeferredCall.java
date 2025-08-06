@@ -17,9 +17,13 @@ public interface DeferredCall<I, O> {
   /** The message to pass to the call when the call is invoked. */
   I message();
 
-  /** @return The metadata to pass with the message when the call is invoked. */
+  /**
+   * @return The metadata to pass with the message when the call is invoked.
+   */
   Metadata metadata();
 
-  /** @return DeferredCall with updated metadata */
+  /**
+   * @return DeferredCall with updated metadata
+   */
   DeferredCall<I, O> withMetadata(Metadata metadata);
 }

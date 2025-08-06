@@ -5,7 +5,6 @@
 package akka.javasdk.impl;
 
 import akka.javasdk.annotations.Description;
-
 import java.time.*;
 import java.util.List;
 import java.util.Map;

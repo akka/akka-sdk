@@ -4,14 +4,14 @@
 
 package akka.javasdk.impl.reflection
 
+import scala.concurrent.ExecutionContext
+
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.client.ComponentClientImpl
 import akka.javasdk.impl.reflection.Reflect
+import akka.javasdk.impl.serialization.JsonSerializer
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import scala.concurrent.ExecutionContext
-
-import akka.javasdk.impl.serialization.JsonSerializer
 
 class SomeClass {
   def a(): Unit = {}

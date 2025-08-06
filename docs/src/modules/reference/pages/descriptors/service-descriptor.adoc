@@ -173,7 +173,7 @@ a|The type of instance to use. Supported values are:
 
 * `small` - A small instance.
 |*autoscaling*  |<<ServiceAutoscaling>> |The autoscaling configuration for a service. Autoscaling is only supported for non-trial projects.
-|*Runtime*    |<<Runtime>> |The runtime configuration for the service.
+|*runtime*    |<<Runtime>> |The runtime configuration for the service.
 |===
 
 === Runtime

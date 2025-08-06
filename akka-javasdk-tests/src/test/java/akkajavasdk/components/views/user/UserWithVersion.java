@@ -20,9 +20,6 @@ public class UserWithVersion {
 
   @Override
   public String toString() {
-    return "UserWithVersion{" +
-        "email='" + email + '\'' +
-        ", version=" + version +
-        '}';
+    return "UserWithVersion{" + "email='" + email + '\'' + ", version=" + version + '}';
   }
 }

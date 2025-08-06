@@ -9,26 +9,28 @@ import akka.annotation.InternalApi;
 import akka.javasdk.impl.timedaction.TimedActionEffectImpl;
 import akka.javasdk.impl.timedaction.TimedActionImpl.CommandContextImpl;
 import akka.javasdk.timer.TimerScheduler;
-
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 /**
- * TimedAction is stateless component that can be used together with a {@link TimerScheduler} to schedule an action.
- * <p>
- * A TimedAction method should return an {@link Effect} that describes the result of the action invocation.
- * <p>
- * Concrete classes can accept the following types to the constructor:
+ * TimedAction is stateless component that can be used together with a {@link TimerScheduler} to
+ * schedule an action.
+ *
+ * <p>A TimedAction method should return an {@link Effect} that describes the result of the action
+ * invocation.
+ *
+ * <p>Concrete classes can accept the following types to the constructor:
+ *
  * <ul>
- *   <li>{@link akka.javasdk.client.ComponentClient}</li>
- *   <li>{@link akka.javasdk.http.HttpClientProvider}</li>
- *   <li>{@link akka.javasdk.timer.TimerScheduler}</li>
- *   <li>{@link akka.stream.Materializer}</li>
- *   <li>{@link com.typesafe.config.Config}</li>
- *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider} from the service setup</li>
+ *   <li>{@link akka.javasdk.client.ComponentClient}
+ *   <li>{@link akka.javasdk.http.HttpClientProvider}
+ *   <li>{@link akka.javasdk.timer.TimerScheduler}
+ *   <li>{@link akka.stream.Materializer}
+ *   <li>{@link com.typesafe.config.Config}
+ *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider} from the service setup
  * </ul>
- * <p>
- * Concrete class must be annotated with {@link akka.javasdk.annotations.ComponentId}.
+ *
+ * <p>Concrete class must be annotated with {@link akka.javasdk.annotations.ComponentId}.
  */
 public abstract class TimedAction {
 
@@ -49,6 +51,7 @@ public abstract class TimedAction {
 
   /**
    * INTERNAL API
+   *
    * @hidden
    */
   @InternalApi
@@ -60,26 +63,26 @@ public abstract class TimedAction {
     return TimedActionEffectImpl.builder();
   }
 
-  /**
-   * Returns a {@link TimerScheduler} that can be used to schedule further in time.
-   */
+  /** Returns a {@link TimerScheduler} that can be used to schedule further in time. */
   public final TimerScheduler timers() {
     CommandContextImpl impl =
-      (CommandContextImpl)
-        commandContext("Timers can only be scheduled or cancelled when handling a command.");
+        (CommandContextImpl)
+            commandContext("Timers can only be scheduled or cancelled when handling a command.");
     return impl.timers();
   }
 
   /**
-   * An Effect is a description of what the runtime needs to do after the command is handled.
-   * You can think of it as a set of instructions you are passing to the runtime, which will process
-   * the instructions on your behalf.
+   * An Effect is a description of what the runtime needs to do after the command is handled. You
+   * can think of it as a set of instructions you are passing to the runtime, which will process the
+   * instructions on your behalf.
+   *
+   * <p>Each component defines its own effects, which are a set of predefined operations that match
+   * the capabilities of that component.
+   *
+   * <p>An TimedAction Effect can either:
+   *
    * <p>
-   * Each component defines its own effects, which are a set of predefined
-   * operations that match the capabilities of that component.
-   * <p>
-   * An TimedAction Effect can either:
-   * <p>
+   *
    * <ul>
    *   <li>return Done to confirm that the command was processed successfully
    *   <li>return an error message
@@ -93,16 +96,11 @@ public abstract class TimedAction {
      */
     interface Builder {
 
-      /**
-       * Command was processed successfully.
-       */
+      /** Command was processed successfully. */
       Effect done();
 
-      /**
-       * Command was processed successfully from an async operation result
-       */
+      /** Command was processed successfully from an async operation result */
       Effect asyncDone(CompletionStage<Done> message);
-
 
       /**
        * Create an error reply.

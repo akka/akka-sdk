@@ -4,6 +4,10 @@
 
 package akka.javasdk.impl.client
 
+import java.util.concurrent.CompletionStage
+
+import scala.concurrent.ExecutionException
+
 import akka.NotUsed
 import akka.annotation.InternalApi
 import akka.javasdk.DeferredCall
@@ -12,11 +16,8 @@ import akka.javasdk.client.ComponentInvokeOnlyMethodRef
 import akka.javasdk.client.ComponentInvokeOnlyMethodRef1
 import akka.javasdk.client.ComponentMethodRef
 import akka.javasdk.client.ComponentMethodRef1
-import akka.javasdk.impl.ErrorHandling
-import java.util.concurrent.CompletionStage
-
-import scala.concurrent.ExecutionException
 import akka.javasdk.client.DynamicMethodRef
+import akka.javasdk.impl.ErrorHandling
 import akka.pattern.RetrySettings
 
 /**

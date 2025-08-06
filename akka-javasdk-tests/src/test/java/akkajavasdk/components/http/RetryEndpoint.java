@@ -11,7 +11,6 @@ import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.pattern.RetrySettings;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEntity;
-
 import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 
@@ -29,23 +28,29 @@ public class RetryEndpoint {
 
   @Post("/retry/{counterId}")
   public CompletionStage<Integer> useRetry(String counterId) {
-    return componentClient.forEventSourcedEntity(counterId)
-      .method(CounterEntity::failedIncrease)
-      .withRetry(RetrySettings.create(3).withFixedDelay(Duration.ofMillis(100)))
-      .invokeAsync(111);
+    return componentClient
+        .forEventSourcedEntity(counterId)
+        .method(CounterEntity::failedIncrease)
+        .withRetry(RetrySettings.create(3).withFixedDelay(Duration.ofMillis(100)))
+        .invokeAsync(111);
   }
 
   @Post("/async-utils/{counterId}")
   public CompletionStage<Integer> useAsyncUtilsRetry(String counterId) {
-    return retries.retryAsync(() -> componentClient.forEventSourcedEntity(counterId)
-      .method(CounterEntity::failedIncrease)
-      .invokeAsync(111), RetrySettings.create(3));
+    return retries.retryAsync(
+        () ->
+            componentClient
+                .forEventSourcedEntity(counterId)
+                .method(CounterEntity::failedIncrease)
+                .invokeAsync(111),
+        RetrySettings.create(3));
   }
 
   @Post("/failing/{counterId}")
   public CompletionStage<Integer> failingIncrease(String counterId) {
-    return componentClient.forEventSourcedEntity(counterId)
-      .method(CounterEntity::failedIncrease)
-      .invokeAsync(111);
+    return componentClient
+        .forEventSourcedEntity(counterId)
+        .method(CounterEntity::failedIncrease)
+        .invokeAsync(111);
   }
 }

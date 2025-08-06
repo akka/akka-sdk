@@ -9,9 +9,7 @@ import akka.japi.function.Function;
 import akka.japi.function.Function2;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 
-/**
- * Not for user extension
- */
+/** Not for user extension */
 @DoNotInherit
 public interface KeyValueEntityClient {
 
@@ -23,7 +21,6 @@ public interface KeyValueEntityClient {
   /**
    * Pass in a Key Value Entity command handler method reference, e.g. {@code UserEntity::update}
    */
-  <T, A1, R> ComponentMethodRef1<A1, R> method(Function2<T, A1, KeyValueEntity.Effect<R>> methodRef);
-
-
+  <T, A1, R> ComponentMethodRef1<A1, R> method(
+      Function2<T, A1, KeyValueEntity.Effect<R>> methodRef);
 }

@@ -1,4 +1,4 @@
-= Getting Started
+= Tutorials
 
 Start with a guided tutorial or explore working samples. The resources below help you learn by building services and agents with Akka.
 
@@ -28,13 +28,13 @@ Add agents and other components step-by-step. The final application will consist
 [options="header", cols="2,1"]
 |=======================
 | Tutorial | Level
-| xref:planner-agent/activity.adoc[Part 1: Activity agent] — An Agent that suggests real-world activities using an LLM. | Beginner
-| xref:planner-agent/preferences.adoc[Part 2: User preferences] — An Entity to make the activity suggestions more personalized. | Beginner
-| xref:planner-agent/weather.adoc[Part 3: Weather agent] — An Agent for the weather forecast that uses an external service as a function tool. | Beginner
-| xref:planner-agent/team.adoc[Part 4: Orchestrate the agents] — A Workflow that orchestrates the calls to the agents. | Intermediate
-| xref:planner-agent/list.adoc[Part 5: List by user] — A View lists all activity suggestions for a user. | Beginner
+| xref:planner-agent/activity.adoc[Part 1: Activity agent] — An Agent (with session memory) that suggests real-world activities using an LLM. | Beginner
+| xref:planner-agent/preferences.adoc[Part 2: User preferences] — An Entity (long-term memory) to personalize the suggestions. | Beginner
+| xref:planner-agent/weather.adoc[Part 3: Weather agent] — A weather forecasting Agent that uses an external service as an agent tool. | Beginner
+| xref:planner-agent/team.adoc[Part 4: Orchestrate the agents] — A Workflow that coordinates long-running calls across the agents. | Intermediate
+| xref:planner-agent/list.adoc[Part 5: List by user] — A View that creates a read-only projection (i.e. a query) of all activity suggestions for a user. | Beginner
 | xref:planner-agent/dynamic-team.adoc[Part 6: Dynamic orchestration] — An Agent that creates a dynamic plan using an LLM, and a Workflow that executes the plan. | Advanced
-| xref:planner-agent/eval.adoc[Part 7: Evaluation on changes] — A Consumer triggers an Agent when the user preferences are changed. | Intermediate
+| xref:planner-agent/eval.adoc[Part 7: Evaluation on changes] — A Consumer that streams user preference changes to trigger an Agent. | Intermediate
 |=======================
 
 === Build a shopping cart system
@@ -44,8 +44,8 @@ Explore a complete e-commerce service and learn key Akka concepts by implementin
 [options="header", cols="2,1"]
 |=======================
 | Tutorial | Level
-| xref:build-and-deploy-shopping-cart.adoc[Part 1: Build a basic shopping cart with persistent state and command handling] | Beginner
-| xref:addview.adoc[Part 2: Add user-specific lookup with JWT-based authentication] | Intermediate
+| xref:shopping-cart/build-and-deploy-shopping-cart.adoc[Part 1: Build a basic shopping cart with persistent state and command handling] | Beginner
+| xref:shopping-cart/addview.adoc[Part 2: Add user-specific lookup with JWT-based authentication] | Intermediate
 |=======================
 
 === Build an AI RAG Agent
@@ -55,7 +55,7 @@ Learn how to implement a Retrieval-Augmented Generation (RAG) pipeline with Akka
 [options="header", cols="2,1"]
 |=======================
 | Tutorial | Level
-| xref:ask-akka-agent/index.adoc[Part 1: The agent] | Beginner
+| xref:ask-akka-agent/the-agent.adoc[Part 1: The agent] | Beginner
 | xref:ask-akka-agent/indexer.adoc[Part 2: Build a workflow that indexes knowledge using semantic embeddings] | Intermediate
 | xref:ask-akka-agent/rag.adoc[Part 3: Executing RAG queries] | Intermediate
 | xref:ask-akka-agent/endpoints.adoc[Part 4: Adding UI endpoints] | Advanced

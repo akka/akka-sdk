@@ -9,7 +9,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public record ShoppingCart(String cartId, List<LineItem> items, Instant creationTimestamp) {
-
   public record LineItem(String productId, String name, int quantity) {
     public LineItem withQuantity(int quantity) {
       return new LineItem(productId, name, quantity);
@@ -18,16 +17,14 @@ public record ShoppingCart(String cartId, List<LineItem> items, Instant creation
 
   public ShoppingCart withItem(LineItem itemAdded) {
     var lineItem = updateItem(itemAdded); // <1>
-    List<LineItem> lineItems =
-      removeItemByProductId(itemAdded.productId()); // <2>
+    List<LineItem> lineItems = removeItemByProductId(itemAdded.productId()); // <2>
     lineItems.add(lineItem); // <3>
     lineItems.sort(Comparator.comparing(LineItem::productId));
     return new ShoppingCart(cartId, lineItems, creationTimestamp); // <4>
   }
 
   public ShoppingCart withoutItem(LineItem itemRemoved) {
-    List<LineItem> updatedItems =
-      removeItemByProductId(itemRemoved.productId());
+    List<LineItem> updatedItems = removeItemByProductId(itemRemoved.productId());
     updatedItems.sort(Comparator.comparing(LineItem::productId));
     return new ShoppingCart(cartId, updatedItems, creationTimestamp);
   }
@@ -37,7 +34,8 @@ public record ShoppingCart(String cartId, List<LineItem> items, Instant creation
   }
 
   private List<LineItem> removeItemByProductId(String productId) {
-    return items().stream()
+    return items()
+      .stream()
       .filter(lineItem -> !lineItem.productId().equals(productId))
       .collect(Collectors.toList());
   }
@@ -49,8 +47,7 @@ public record ShoppingCart(String cartId, List<LineItem> items, Instant creation
   }
 
   public Optional<LineItem> findItemByProductId(String productId) {
-    Predicate<LineItem> lineItemExists =
-      lineItem -> lineItem.productId().equals(productId);
+    Predicate<LineItem> lineItemExists = lineItem -> lineItem.productId().equals(productId);
     return items.stream().filter(lineItemExists).findFirst();
   }
 

@@ -4,8 +4,13 @@
 
 package akka.javasdk.testkit.impl
 
+import scala.collection.mutable
+import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.language.existentials
+
 import akka.actor.ActorSystem
 import akka.javasdk.impl.AnySupport
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.testkit.TestKit
 import akka.testkit.TestProbe
 import com.google.protobuf.ByteString
@@ -20,11 +25,6 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
-import scala.collection.mutable
-import scala.jdk.CollectionConverters.CollectionHasAsScala
-import scala.language.existentials
-
-import akka.javasdk.impl.serialization.JsonSerializer
 
 class OutgoingMessagesImplSpec
     extends TestKit(ActorSystem("MySpec"))

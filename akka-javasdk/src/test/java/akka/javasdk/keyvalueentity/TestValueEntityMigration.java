@@ -12,5 +12,4 @@ public class TestValueEntityMigration extends KeyValueEntity<TestVEState2> {
   public Effect<TestVEState2> get() {
     return effects().reply(currentState());
   }
-
 }
