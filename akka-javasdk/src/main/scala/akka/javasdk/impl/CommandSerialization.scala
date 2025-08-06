@@ -59,7 +59,8 @@ object CommandSerialization {
       } catch {
         case NonFatal(ex) =>
           throw new IllegalArgumentException(
-            s"Could not deserialize message for [${method.getDeclaringClass.getName}.${method.getName}]",
+            s"Could not deserialize message of type [${command.contentType}] to type [${parameterTypes.head.getTypeName}] " +
+            s"as expected by method [${method.getDeclaringClass.getName}.${method.getName}]",
             ex)
       }
     }
