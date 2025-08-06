@@ -178,9 +178,14 @@ class JsonSerializationSpec extends AnyWordSpec with Matchers {
     }
 
     "serialize and deserialize Akka Done class" in {
-      val bytesPayload = serializer.toBytes(Done.getInstance())
+      val bytesPayload = serializer.toBytes(Done.done())
       bytesPayload.contentType shouldBe jsonContentTypeWith(Done.getClass.getName)
-      serializer.fromBytes(classOf[Done], bytesPayload) shouldBe Done.getInstance()
+      serializer.fromBytes(classOf[Done], bytesPayload) shouldBe Done.done()
+    }
+
+    "serialize and deserialize without a given type Akka Done class" in {
+      val bytesPayload = serializer.toBytes(Done.done())
+      serializer.fromBytes(bytesPayload) shouldBe Done.done()
     }
 
     "serialize and deserialize a List of objects" in {
