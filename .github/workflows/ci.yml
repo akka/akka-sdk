@@ -23,7 +23,7 @@ concurrency:
 jobs:
   checks:
     name: Basic checks
-    runs-on: ubuntu-22.04
+    runs-on: Akka-Default
     steps:
       - name: Checkout
         # https://github.com/actions/checkout/releases
@@ -58,6 +58,9 @@ jobs:
         with:
           jvm: temurin:1.21
 
+      - name: Start sbt server with build options
+        run: sbt --client -Dbuild.scalafix exit
+
       - name: Run javafmt checks
         run: |
           sbt --client javafmtCheckAll || \
@@ -73,6 +76,16 @@ jobs:
           sbt --client "scalafmtCheckAll; scalafmtSbtCheck" || \
             { echo "[error] Code not formatted prior to commit. Run 'sbt scalafmtAll scalafmtSbt' then commit the reformatted code."; false; }
 
+      - name: Run scalafix OrganizeImports check
+        run: |
+          sbt --client "scalafixEnable ; Test/compile ; scalafixAll --check OrganizeImports" || \
+            {
+              echo "[error] Scala imports not organized prior to commit."
+              echo "[error] Run organize imports in your IDE then commit the updated code, or run:"
+              echo "[error]   sbt -Dbuild.scalafix scalafixEnable 'scalafixAll OrganizeImports' scalafmtAll"
+              false
+            }
+
       - name: Run additional validations
         run: |
           sbt --client "additionalValidation" || \
@@ -85,7 +98,7 @@ jobs:
 
   publish-local:
     name: Build and publish artifacts and plugins locally
-    runs-on: ubuntu-22.04
+    runs-on: Akka-Default
     steps:
       - name: Checkout
         # https://github.com/actions/checkout/releases
@@ -145,7 +158,7 @@ jobs:
           cd akka-javasdk-maven
           echo "Running maven with SDK version: '${SDK_VERSION}'"
           ../.github/patch-maven-versions.sh
-          mvn verify install --no-transfer-progress -Dskip.docker=true
+          mvn -s ../.github/settings.xml verify install --no-transfer-progress -Dskip.docker=true 
 
       - name: Package io.akka dependencies
         run: |-
@@ -165,7 +178,7 @@ jobs:
   sbt-test:
     name: Run sbt test
     needs: [checks, publish-local]
-    runs-on: ubuntu-22.04
+    runs-on: Akka-Default
 
     steps:
       - name: Checkout
@@ -220,7 +233,7 @@ jobs:
   java-sdk-annotation-processor-test:
     name: Run annotation processor tests
     needs: [checks, publish-local]
-    runs-on: ubuntu-22.04
+    runs-on: Akka-Default
 
     steps:
       - name: Checkout
@@ -275,7 +288,7 @@ jobs:
   check-docker-image-contents:
     name: Check service docker image contents
     needs: [ checks, publish-local ] # usually done via now disabled check-samples-in-ci
-    runs-on: ubuntu-22.04
+    runs-on: Akka-Default
 
     steps:
       - name: Checkout
@@ -328,7 +341,7 @@ jobs:
         run: |-
           export SDK_VERSION=$(cat ~/akka-javasdk-version.txt)
           cd samples/shopping-cart-quickstart
-          mvn install --no-transfer-progress
+          mvn -s ../../.github/settings.xml install --no-transfer-progress
           echo "Docker image contents"
           tar tvf target/docker/shopping-cart-quickstart/latest/tmp/docker-build.tar
           tar tvf target/docker/shopping-cart-quickstart/latest/tmp/docker-build.tar > content-list.txt
@@ -347,22 +360,23 @@ jobs:
     name: Maven samples
     # needs: check-samples-in-ci
     needs: [checks, publish-local] # usually done via now disabled check-samples-in-ci 
-    runs-on: ubuntu-22.04
+    runs-on: Akka-Default
 
     strategy:
       fail-fast: false
       matrix:
         include:
           - { sample: shopping-cart-quickstart, it: true }
+          - { sample: shopping-cart-with-view, it: true }
 
           - { sample: choreography-saga-quickstart, it: true }
           - { sample: doc-snippets, it: false }
+          - { sample: endpoint-jwt, it: true }
           - { sample: view-store, it: true }
           - { sample: spring-dependency-injection, it: true }
 
           - { sample: event-sourced-customer-registry, it: true }
           - { sample: event-sourced-counter-brokers, pre_cmd: 'docker compose up -d', it: true }
-
           - { sample: event-sourced-customer-registry-subscriber, it: true, pre_cmd: './start-upstream.sh' }
 
           - { sample: key-value-counter, it: true }
@@ -374,10 +388,11 @@ jobs:
 
           - { sample: transfer-workflow, it: true }
           - { sample: transfer-workflow-compensation, it: true }
+          - { sample: transfer-workflow-orchestration, it: true }
 
           - { sample: ask-akka-agent, it: false }
-          - { sample: multi-agent, it: false, test: true }
-          - { sample: helloworld-agent, it: false, test: true }
+          - { sample: multi-agent, it: true, test: true }
+          - { sample: helloworld-agent, it: true, test: true }
 
     steps:
       - name: Checkout
@@ -426,6 +441,16 @@ jobs:
           export SDK_VERSION=$(cat ~/akka-javasdk-version.txt)
           ./updateSdkVersions.sh java samples/
 
+
+      - name: ${{ matrix.sample }} check-formatting
+        env:
+          DIR: ${{ matrix.sample }}
+        run: |-
+          export SDK_VERSION=$(cat ~/akka-javasdk-version.txt)
+          cd samples/${DIR}
+          echo "Running mvn formatting check on ${DIR} with SDK version: '${SDK_VERSION}'"
+          mvn -s ../../.github/settings.xml -Pformatting prettier:check
+
       - name: ${{ matrix.sample }} test-compile
         env:
           DIR: ${{ matrix.sample }}
@@ -434,7 +459,7 @@ jobs:
           cd samples/${DIR}
           echo "Running mvn on ${DIR} with SDK version: '${SDK_VERSION}'"
           # must also compile without the profile!
-          mvn test-compile --no-transfer-progress
+          mvn -s ../../.github/settings.xml test-compile --no-transfer-progress
 
       - name: ${{ matrix.sample }} verify
         if: matrix.verify || matrix.it
@@ -446,14 +471,14 @@ jobs:
           ./updateSdkVersions.sh java samples/${DIR}
           cd samples/${DIR}
           if [ true == '${{matrix.test}}' ]; then
-            mvn test --no-transfer-progress
+            mvn -s ../../.github/settings.xml test --no-transfer-progress
           fi
           if [ true == '${{matrix.verify}}' ]; then
-            mvn verify --no-transfer-progress
+            mvn -s ../../.github/settings.xml verify --no-transfer-progress
           fi
           if [ true == '${{matrix.it}}' ]; then
             ${PRE_CMD}
-            KALIX_TESTKIT_DEBUG=true mvn verify --no-transfer-progress
+            KALIX_TESTKIT_DEBUG=true mvn -s ../../.github/settings.xml verify --no-transfer-progress
           fi
 
       - name: ${{ matrix.sample }} rm & test-compile
@@ -464,4 +489,4 @@ jobs:
           cd samples/${DIR}
           echo "==== Verifying that generated unmanaged sources compile ===="
           rm -rf src/main/java src/test/java
-          mvn test-compile --no-transfer-progress
+          mvn -s ../../.github/settings.xml test-compile --no-transfer-progress

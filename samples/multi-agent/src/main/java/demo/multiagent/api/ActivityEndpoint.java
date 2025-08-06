@@ -10,25 +10,25 @@ import akka.javasdk.http.HttpResponses;
 import demo.multiagent.application.ActivityView;
 import demo.multiagent.application.AgentTeamWorkflow;
 import demo.multiagent.application.PreferencesEntity;
-
 import java.util.List;
 import java.util.UUID;
 
 // Opened up for access from the public internet to make the service easy to try out.
-// For actual services meant for production this must be carefully considered, and often set more limited
+// For actual services meant for production this must be carefully considered,
+// and often set more limited
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
-@HttpEndpoint()
+@HttpEndpoint
 public class ActivityEndpoint {
 
-  public record Request(String message) {
-  }
+  public record Request(String message) {}
 
-  public record AddPreference(String preference) {
-  }
+  public record AddPreference(String preference) {}
 
   public record ActivitiesList(List<Suggestion> suggestions) {
     static ActivitiesList fromView(ActivityView.ActivityEntries entries) {
-      return new ActivitiesList(entries.entries().stream().map(Suggestion::fromView).toList());
+      return new ActivitiesList(
+        entries.entries().stream().map(Suggestion::fromView).toList()
+      );
     }
   }
 
@@ -48,35 +48,33 @@ public class ActivityEndpoint {
   public HttpResponse suggestActivities(String userId, Request request) {
     var sessionId = UUID.randomUUID().toString();
 
-    var res =
-      componentClient
+    var res = componentClient
       .forWorkflow(sessionId)
-        .method(AgentTeamWorkflow::start)
-        .invoke(new AgentTeamWorkflow.Request(userId, request.message()));
+      .method(AgentTeamWorkflow::start)
+      .invoke(new AgentTeamWorkflow.Request(userId, request.message()));
 
     return HttpResponses.created(res, "/activities/" + userId + "/" + sessionId);
   }
 
   @Get("/activities/{userId}/{sessionId}")
   public HttpResponse getAnswer(String userId, String sessionId) {
-      var res =
-        componentClient
-          .forWorkflow(sessionId)
-          .method(AgentTeamWorkflow::getAnswer)
-          .invoke();
+    var res = componentClient
+      .forWorkflow(sessionId)
+      .method(AgentTeamWorkflow::getAnswer)
+      .invoke();
 
-      if (res.isEmpty())
-        return HttpResponses.notFound("Answer for '" + sessionId + "' not available (yet)");
-      else
-        return HttpResponses.ok(res);
+    if (res.isEmpty()) return HttpResponses.notFound(
+      "Answer for '" + sessionId + "' not available (yet)"
+    );
+    else return HttpResponses.ok(res);
   }
 
   @Get("/activities/{userId}")
   public ActivitiesList listActivities(String userId) {
-    var viewResult =  componentClient
-        .forView()
-        .method(ActivityView::getActivities)
-        .invoke(userId);
+    var viewResult = componentClient
+      .forView()
+      .method(ActivityView::getActivities)
+      .invoke(userId);
 
     return ActivitiesList.fromView(viewResult);
   }
@@ -84,9 +82,9 @@ public class ActivityEndpoint {
   @Post("/preferences/{userId}")
   public HttpResponse addPreference(String userId, AddPreference request) {
     componentClient
-        .forEventSourcedEntity(userId)
-        .method(PreferencesEntity::addPreference)
-        .invoke(new PreferencesEntity.AddPreference(request.preference()));
+      .forEventSourcedEntity(userId)
+      .method(PreferencesEntity::addPreference)
+      .invoke(new PreferencesEntity.AddPreference(request.preference()));
 
     return HttpResponses.created();
   }

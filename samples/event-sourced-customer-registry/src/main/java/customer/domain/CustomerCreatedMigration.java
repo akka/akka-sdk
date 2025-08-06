@@ -1,8 +1,8 @@
 package customer.domain;
 
+import akka.javasdk.JsonMigration;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import akka.javasdk.JsonMigration;
 
 // tag::customer-created-migration[]
 public class CustomerCreatedMigration extends JsonMigration {

@@ -4,5 +4,4 @@
 
 package akka.javasdk.testmodels.view;
 
-public record ByNameAndEmail(String name, String email) {
-}
+public record ByNameAndEmail(String name, String email) {}

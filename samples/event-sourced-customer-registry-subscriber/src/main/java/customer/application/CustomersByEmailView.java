@@ -5,8 +5,8 @@ import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
-import customer.domain.CustomerEntry;
 import customer.domain.CustomerEntries;
+import customer.domain.CustomerEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,23 +14,25 @@ import org.slf4j.LoggerFactory;
 
 @ComponentId("customers-by-email")
 public class CustomersByEmailView extends View {
+
   // end::view[]
   private static final Logger logger = LoggerFactory.getLogger(CustomersByEmailView.class);
+
   // tag::view[]
 
   @Consume.FromServiceStream( // <1>
-      service = "customer-registry", // <2>
-      id = "customer_events", // <3>
-      consumerGroup = "customer-by-email-view" // <4>
+    service = "customer-registry", // <2>
+    id = "customer_events", // <3>
+    consumerGroup = "customer-by-email-view" // <4>
   )
   public static class CustomersByEmailUpdater extends TableUpdater<CustomerEntry> {
+
     public Effect<CustomerEntry> onEvent(CustomerPublicEvent.Created created) {
       // end::view[]
       logger.info("Received: {}", created);
       // tag::view[]
       var id = updateContext().eventSubject().get();
-      return effects().updateRow(
-          new CustomerEntry(id, created.email(), created.name()));
+      return effects().updateRow(new CustomerEntry(id, created.email(), created.name()));
     }
 
     public Effect<CustomerEntry> onEvent(CustomerPublicEvent.NameChanged nameChanged) {
@@ -46,6 +48,5 @@ public class CustomersByEmailView extends View {
   public QueryEffect<CustomerEntries> findByEmail(String email) {
     return queryResult();
   }
-
 }
 // end::view[]

@@ -25,7 +25,7 @@ include::ROOT:partial$local-dev-prerequisites.adoc[]
 
 == Getting Started
 
-Follow xref:getting-started:author-your-first-service.adoc[] to implement your first agentic service. If you prefer to first explore working example code, you can check out xref:getting-started:build-and-deploy-shopping-cart.adoc[] or our other xref:getting-started:samples.adoc[samples].
+Follow xref:getting-started:author-your-first-service.adoc[] to implement your first agentic service. If you prefer to first explore working example code, you can check out xref:getting-started:shopping-cart/build-and-deploy-shopping-cart.adoc[] or our other xref:getting-started:samples.adoc[samples].
 
 On the other hand, if you would rather spend some time exploring our documentation, here are some main features you will find in this section:
 

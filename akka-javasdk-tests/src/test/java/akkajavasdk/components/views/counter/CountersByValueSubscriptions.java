@@ -4,15 +4,14 @@
 
 package akkajavasdk.components.views.counter;
 
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Consume;
+import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
+import akka.javasdk.view.View;
 import akkajavasdk.components.eventsourcedentities.counter.Counter;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEntity;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEvent;
-import akka.javasdk.annotations.Query;
-import akka.javasdk.annotations.Consume;
-import akka.javasdk.annotations.ComponentId;
-import akka.javasdk.view.View;
-
 import java.util.List;
 
 // With Multiple Subscriptions
@@ -38,15 +37,14 @@ public class CountersByValueSubscriptions extends View {
     public Effect<Counter> onEvent(CounterEvent.ValueSet event) {
       return effects().updateRow(rowState().onValueSet(event));
     }
-
   }
 
   public record QueryParameters(int value) {}
+
   public record CounterList(List<Counter> counters) {}
 
   @Query("SELECT * AS counters FROM counters WHERE value = :value")
   public QueryEffect<CounterList> getCounterByValue(QueryParameters params) {
     return queryResult();
   }
-
 }

@@ -1,0 +1,114 @@
+= Creating the agent
+:page-aliases: java:ask-akka/session.adoc
+
+include::ROOT:partial$include.adoc[]
+
+include::ROOT:partial$new-to-akka-start-here.adoc[]
+
+== Overview
+
+This guide starts with creating an agent. We will incorporate Retrieval-Augmented Generation (RAG) in the next steps.
+
+In this part of the guide you will:
+
+* Create a new, empty Akka project
+* Create an `Agent`
+* Create an HTTP endpoint to expose the agent
+
+== Prerequisites
+
+include::ROOT:partial$local-dev-prerequisites.adoc[]
+* https://platform.openai.com/api-keys[OpenAI API key, window="new"]
+
+include::ROOT:partial$recommend-ai-video.adoc[]
+
+include::ROOT:partial$create-the-empty-project.adoc[]
+
+[NOTE]
+====
+This guide is written assuming you will follow it as a tutorial to walk through all of the components, building them on your own. If at any time you want to compare your solution with the official sample, check out the link:https://github.com/akka-samples/ask-akka-agent[GitHub Repository, window="new"].
+====
+
+== Add the Agent
+
+Add a new file `AskAkkaAgent.java` to `src/main/java/akka/ask/agent/application/`
+
+[source,java,indent=0]
+.AskAkkaAgent.java
+----
+include::java:example$doc-snippets/src/main/java/com/example/application/AskAkkaAgent.java[tag=class]
+----
+<1> Create a class that extends `Agent`.
+<2> Make sure to annotate such class with `@ComponentId` and pass a unique identifier for this agent type.
+<3> Define the command handler method.
+<4> Define the system message.
+<5> Define the user message for the specific request.
+
+The system message provides system-level instructions to the AI model that defines its behavior and context. The system message acts as a foundational prompt that establishes the AI's role, constraints, and operational parameters. It is processed before user messages and helps maintain consistent behavior throughout the interactions.
+
+The user message represents the specific query, instruction, or input that will be processed by the model to generate a response.
+
+For this agent we want immediate visual feedback, and use the `StreamEffecct` to be able to stream the response to the client using server-sent events (SSE).
+
+== Add an Endpoint
+
+Add a new file `AskHttpEndpoint.java` to `src/main/java/akka/ask/agent/api/`
+
+[source,java,ident=0]
+.{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/api/AskHttpEndpoint.java[AskHttpEndpoint.java]
+----
+include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/api/AskHttpEndpoint.java[tag=endpoint]
+----
+<1> Inject the `ComponentClient`, which is used to call the agent.
+<2> Call the `AskAkkaAgent created in the previous step
+<3> Use the `serverSentEvents` function to easily send a stream via SSE
+
+The `userId` and `sessionId` parameters are required in `QueryRequest` along with the `question` field.
+
+== Running the service
+
+Akka has support for many AI providers, and this sample is using OpenAI. This is the configuration:
+
+[source,java,indent=0]
+.{sample-base-url}/ask-akka-agent/src/main/resources/application.conf[application.conf]
+----
+include::java:example$ask-akka-agent/src/main/resources/application.conf[]
+----
+
+Set your https://platform.openai.com/api-keys[OpenAI API key, window="new"] as an environment variable:
+
+include::ROOT:partial$openai-api-key-env-vars.adoc[]
+
+Start your service locally:
+
+[source,command line]
+----
+mvn compile exec:java
+----
+
+Once successfully started, any defined Endpoints become available at `localhost:9000` and you will see an INFO message that the Akka Runtime has started.
+
+In another shell, you can now use `curl` to send requests to this Endpoint.
+[source, command line]
+----
+curl localhost:9000/api/ask --header "Content-Type: application/json" -XPOST \
+--data '{ "userId": "001", "sessionId": "foo", \
+          "question":"What are the core components of Akka?"}'
+----
+
+The AI response will look something like this...
+
+[source]
+----
+Akka is a toolkit for building highly concurrent, distributed, 
+and resilient message-driven applications...
+1. Actor System ...
+2. Actors ...
+...
+----
+
+This is correct for the Akka libraries, but we want to know about the components in the Akka SDK. We need to give the LLM knowledge about the latest Akka documentation, which is the reason for adding Retrieval-Augmented Generation (RAG) to the agent.
+
+== Next steps
+
+It's time to explore our first aspect of the agentic RAG flow: xref:ask-akka-agent/indexer.adoc[Knowledge indexing].

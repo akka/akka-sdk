@@ -1,8 +1,7 @@
 package store.order.view.nested;
 
-import store.customer.domain.Address;
-
 import java.util.List;
+import store.customer.domain.Address;
 
 // tag::nested[]
 public record NestedCustomerOrders(
@@ -10,6 +9,6 @@ public record NestedCustomerOrders(
   String email,
   String name,
   Address address,
-  List<CustomerOrder> orders) {
-} // <1>
+  List<CustomerOrder> orders
+) {} // <1>
 // end::nested[]

@@ -24,6 +24,7 @@ import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.agent.AgentDescriptorFactory
 import akka.javasdk.impl.reflection.Reflect
+import akka.javasdk.impl.reflection.Reflect.Syntax._
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
@@ -32,7 +33,6 @@ import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
 import akka.runtime.sdk.spi.ConsumerDestination
 import akka.runtime.sdk.spi.ConsumerSource
-import akka.javasdk.impl.reflection.Reflect.Syntax._
 
 /**
  * INTERNAL API

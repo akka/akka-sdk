@@ -4,13 +4,13 @@
 
 package akka.javasdk.impl
 
-import akka.annotation.InternalApi
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
 import java.util
 
 import scala.util.control.NonFatal
 
+import akka.annotation.InternalApi
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.BytesPayload
 
@@ -59,7 +59,8 @@ object CommandSerialization {
       } catch {
         case NonFatal(ex) =>
           throw new IllegalArgumentException(
-            s"Could not deserialize message for [${method.getDeclaringClass.getName}.${method.getName}]",
+            s"Could not deserialize message of type [${command.contentType}] to type [${parameterTypes.head.getTypeName}] " +
+            s"as expected by method [${method.getDeclaringClass.getName}.${method.getName}]",
             ex)
       }
     }

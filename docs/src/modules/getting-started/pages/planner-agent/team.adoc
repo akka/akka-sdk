@@ -24,7 +24,7 @@ Agents make external calls to the AI model and possibly other services, and ther
 
 Our workflow should first retrieve the weather forecast and then find suitable activities. Add a new file `AgentTeamWorkflow.java` to `src/main/java/com/example/application/`
 
-[source,java]
+[source,java,indent=0]
 .AgentTeamWorkflow.java
 ----
 include::java:example$doc-snippets/src/main/java/agent_guide/part4/AgentTeamWorkflow.java[tag=all]
@@ -42,7 +42,7 @@ You might have noticed that we don't pass the forecast as a parameter to the `Ac
 
 Let's modify the endpoint to use the `AgentTeamWorkflow` workflow instead of calling the agent directly.
 
-[source,java]
+[source,java,indent=0]
 .ActivityEndpoint.java
 ----
 include::java:example$doc-snippets/src/main/java/agent_guide/part4/ActivityEndpoint.java[tag=workflow]
@@ -54,7 +54,7 @@ This is returning `akka.http.javadsl.model.HttpResponse`, which is created with 
 
 We need another method to retrieve the actual answer:
 
-[source,java]
+[source,java,indent=0]
 .ActivityEndpoint.java
 ----
 include::java:example$doc-snippets/src/main/java/agent_guide/part4/ActivityEndpoint.java[tag=get]

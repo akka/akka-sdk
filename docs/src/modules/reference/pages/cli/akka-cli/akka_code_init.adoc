@@ -1,19 +1,27 @@
-= akka quickstart list
+= akka code init
 
-List all quickstart samples.
+Initialize a new Akka SDK project.
 
 == Synopsis
 
-The `akka quickstart list` command will list a one-line summary of all quickstart samples for Akka.
+The `akka code init` command helps you get started quickly with the Akka SDK by walking you through a simple, interactive setup process.
+
+It allows you to:
+
+* Select and clone one of the official Akka sample projects from https://github.com/akka-samples/
+* Download and install the Akka AI context
+* Display configuration instruction for your preferred AI assistance (Copilot, Cursor, Qodo)
+
+The command will create a new directory with the specified name in the current working directory.
 
 ----
-akka quickstart list [flags]
+akka code init <new-project-directory-name> [flags]
 ----
 
 == Options
 
 ----
-  -h, --help   help for list
+  -h, --help   help for init
 ----
 
 == Options inherited from parent commands
@@ -33,7 +41,7 @@ akka quickstart list [flags]
 
 == SEE ALSO
 
-* link:akka_quickstart.html[akka quickstart]	 - Akka quickstart project samples.
+* link:akka_code.html[akka code]	 - Develop Akka services
 
 [discrete]
 

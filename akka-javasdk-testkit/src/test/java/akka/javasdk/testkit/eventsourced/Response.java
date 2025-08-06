@@ -4,12 +4,9 @@
 
 package akka.javasdk.testkit.eventsourced;
 
-/**
- * Not serializable Response, missing Jackson annotations.
- */
+/** Not serializable Response, missing Jackson annotations. */
 public sealed interface Response {
-  record OK() implements Response {
-  }
-  record Error() implements Response {
-  }
+  record OK() implements Response {}
+
+  record Error() implements Response {}
 }

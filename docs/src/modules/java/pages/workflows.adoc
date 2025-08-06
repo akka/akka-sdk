@@ -30,7 +30,7 @@ For additional details, refer to xref:concepts:declarative-effects.adoc[Declarat
 
 A Workflow implementation has the following code structure.
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/application/TransferWorkflow.java[TransferWorkflow.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/application/TransferWorkflow.java[tag=class]
@@ -175,6 +175,19 @@ You can still handle read requests to the workflow until it has been completely 
 
 It is best to not reuse the same workflow id after deletion, but if that happens after the workflow has been completely removed it will be instantiated as a completely new workflow without any knowledge of previous state.
 
+== Calling external services
+
+The Workflow can be used not only to orchestrate Akka components, but also to call external services. The step implementation can invoke xref:component-and-service-calls.adoc#_external_http_services[HTTP endpoint], a xref:component-and-service-calls.adoc#_external_grpc_services[gRPC service], or any other service that can be called from the Java code.
+
+[source,java,indent=0]
+.{sample-base-url}/transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java[TransferWorkflow.java]
+----
+include::example$transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java[tag=detect-frauds]
+----
+<1> Calls an external service to detect frauds.
+<2> When the transfer is accepted, continues with the next step.
+<3> Otherwise, transitions to the `WAITING_FOR_ACCEPTANCE` step, which will xref:#_pausing_workflow[pause] the workflow and wait for the human acceptance of the transfer.
+
 == Pausing workflow
 
 A long-running workflow can be paused while waiting for some additional information to continue processing. A special `pause` transition can be used to inform Akka that the execution of the Workflow should be postponed. By launching a Workflow command handler, the user can then resume the processing. Additionally, a Timer can be scheduled to automatically inform the Workflow that the expected time for the additional data has passed.
@@ -197,7 +210,7 @@ Exposing additional mutational method from the Workflow implementation should be
 ----
 include::example$transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java[tag=resuming]
 ----
-<1> Accepts the request only when status is `WAITING_FOR_ACCEPTATION`.
+<1> Accepts the request only when status is `WAITING_FOR_ACCEPTANCE`.
 <2> Otherwise, rejects the requests.
 
 == Error handling

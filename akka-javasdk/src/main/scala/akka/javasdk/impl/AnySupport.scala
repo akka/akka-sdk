@@ -7,11 +7,13 @@ package akka.javasdk.impl
 import java.io.ByteArrayOutputStream
 import java.util.Locale
 
+import scala.collection.compat.immutable.ArraySeq
 import scala.collection.concurrent.TrieMap
 import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
 import scala.util.Try
 
+import akka.annotation.InternalApi
 import com.google.common.base.CaseFormat
 import com.google.protobuf.ByteString
 import com.google.protobuf.CodedInputStream
@@ -22,15 +24,14 @@ import com.google.protobuf.UnsafeByteOperations
 import com.google.protobuf.WireFormat
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import com.google.protobuf.{ Any => JavaPbAny }
-import AnySupport.Prefer.Java
-import AnySupport.Prefer.Scala
-import ErrorHandling.BadRequestException
-import akka.annotation.InternalApi
 import org.slf4j.LoggerFactory
 import scalapb.GeneratedMessage
 import scalapb.GeneratedMessageCompanion
 import scalapb.options.Scalapb
-import scala.collection.compat.immutable.ArraySeq
+
+import AnySupport.Prefer.Java
+import AnySupport.Prefer.Scala
+import ErrorHandling.BadRequestException
 
 /**
  * INTERNAL API

@@ -6,9 +6,9 @@ package akka.javasdk.impl.eventsourcedentity
 
 import akka.annotation.InternalApi
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
-import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.impl.CommandSerialization
 import akka.javasdk.impl.HandlerNotFoundException
+import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.BytesPayload
 

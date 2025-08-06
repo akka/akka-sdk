@@ -4,8 +4,8 @@
 
 package akka.javasdk.testmodels.action;
 
-import akka.javasdk.timedaction.TimedAction;
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.timedaction.TimedAction;
 
 public class ActionsTestModels {
 

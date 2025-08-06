@@ -4,6 +4,7 @@
 
 package akkajavasdk.components.workflowentities;
 
+import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
@@ -61,9 +62,9 @@ public class WorkflowWithTimer extends Workflow<FailingCounterState> {
 
   public Effect<String> pingWorkflow(CounterScheduledValue counterScheduledValue) {
     return effects()
-      .updateState(currentState().asFinished(counterScheduledValue.value()))
-      .end()
-      .thenReply("workflow finished");
+        .updateState(currentState().asFinished(counterScheduledValue.value()))
+        .end()
+        .thenReply("workflow finished");
   }
 
   public Effect<FailingCounterState> get() {

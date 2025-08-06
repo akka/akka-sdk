@@ -1,17 +1,28 @@
 package com.example.transfer.domain;
 
-import java.util.UUID;
-
 import static com.example.transfer.domain.TransferState.TransferStatus.STARTED;
 
-public record TransferState(String transferId, Transfer transfer, TransferStatus status, String withdrawId,
-                            String depositId) {
+import java.util.UUID;
 
-  public record Transfer(String from, String to, int amount) {
-  }
+public record TransferState(
+  String transferId,
+  Transfer transfer,
+  TransferStatus status,
+  String withdrawId,
+  String depositId
+) {
+  public record Transfer(String from, String to, int amount) {}
 
   public enum TransferStatus {
-    STARTED, WITHDRAW_FAILED, WITHDRAW_SUCCEEDED, DEPOSIT_FAILED, COMPLETED, COMPENSATION_COMPLETED, WAITING_FOR_ACCEPTATION, TRANSFER_ACCEPTATION_TIMED_OUT, REQUIRES_MANUAL_INTERVENTION
+    STARTED,
+    WITHDRAW_FAILED,
+    WITHDRAW_SUCCEEDED,
+    DEPOSIT_FAILED,
+    COMPLETED,
+    COMPENSATION_COMPLETED,
+    WAITING_FOR_ACCEPTANCE,
+    TRANSFER_ACCEPTANCE_TIMED_OUT,
+    REQUIRES_MANUAL_INTERVENTION,
   }
 
   public static TransferState create(String transferId, Transfer transfer) {

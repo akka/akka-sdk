@@ -4,6 +4,9 @@
 
 package akkajavasdk.components.agent;
 
+import static akka.Done.done;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import akka.Done;
 import akka.javasdk.agent.SessionHistory;
 import akka.javasdk.agent.SessionMemoryEntity;
@@ -15,14 +18,10 @@ import akka.javasdk.testkit.EventSourcedResult;
 import akka.javasdk.testkit.EventSourcedTestKit;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import org.junit.jupiter.api.Test;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-
-import static akka.Done.done;
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
 
 public class SessionMemoryEntityTest {
 
@@ -43,8 +42,10 @@ public class SessionMemoryEntityTest {
     var aiMessage = new AiMessage(timestamp, aiMsg, COMPONENT_ID);
 
     // when
-    EventSourcedResult<Done> result = testKit.method(SessionMemoryEntity::addInteraction)
-      .invoke(new AddInteractionCmd(userMessage, aiMessage));
+    EventSourcedResult<Done> result =
+        testKit
+            .method(SessionMemoryEntity::addInteraction)
+            .invoke(new AddInteractionCmd(userMessage, aiMessage));
 
     // then
     assertThat(result.getReply()).isEqualTo(done());
@@ -69,12 +70,10 @@ public class SessionMemoryEntityTest {
 
     // when retrieving history
     EventSourcedResult<SessionHistory> historyResult =
-      testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
+        testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
 
     // then
-    assertThat(historyResult.getReply().messages()).containsExactly(
-      userMessage,
-      aiMessage);
+    assertThat(historyResult.getReply().messages()).containsExactly(userMessage, aiMessage);
   }
 
   @Test
@@ -93,10 +92,13 @@ public class SessionMemoryEntityTest {
     var aiMessage2 = new AiMessage(timestamp.plusMillis(1), aiMsg2, COMPONENT_ID);
 
     // when
-    testKit.method(SessionMemoryEntity::addInteraction)
-      .invoke(new AddInteractionCmd(userMessage1, aiMessage1));
-    EventSourcedResult<Done> result = testKit.method(SessionMemoryEntity::addInteraction)
-      .invoke(new AddInteractionCmd(userMessage2, aiMessage2));
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage1, aiMessage1));
+    EventSourcedResult<Done> result =
+        testKit
+            .method(SessionMemoryEntity::addInteraction)
+            .invoke(new AddInteractionCmd(userMessage2, aiMessage2));
 
     // then
     assertThat(result.getReply()).isEqualTo(done());
@@ -104,18 +106,17 @@ public class SessionMemoryEntityTest {
     assertThat(events.size()).isEqualTo(2);
     assertThat(events.get(1)).isInstanceOf(SessionMemoryEntity.Event.AiMessageAdded.class);
     var aiEvent = (SessionMemoryEntity.Event.AiMessageAdded) events.get(1);
-    assertThat(aiEvent.historySizeInBytes()).isEqualTo(userMessage1.size() + aiMessage1.size() + userMessage2.size() + aiMessage2.size());
+    assertThat(aiEvent.historySizeInBytes())
+        .isEqualTo(
+            userMessage1.size() + aiMessage1.size() + userMessage2.size() + aiMessage2.size());
 
     // when retrieving history
     EventSourcedResult<SessionHistory> historyResult =
-      testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
+        testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
 
     // then
-    assertThat(historyResult.getReply().messages()).containsExactly(
-      userMessage1,
-      aiMessage1,
-      userMessage2,
-      aiMessage2);
+    assertThat(historyResult.getReply().messages())
+        .containsExactly(userMessage1, aiMessage1, userMessage2, aiMessage2);
   }
 
   @Test
@@ -127,7 +128,8 @@ public class SessionMemoryEntityTest {
     var userMessage1 = new UserMessage(timestamp, "Hello", COMPONENT_ID);
     var aiMessage1 = new AiMessage(timestamp, "Hi there!", COMPONENT_ID);
 
-    testKit.method(SessionMemoryEntity::addInteraction)
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
         .invoke(new AddInteractionCmd(userMessage1, aiMessage1));
 
     // when
@@ -138,8 +140,8 @@ public class SessionMemoryEntityTest {
     var userMessage2 = new UserMessage(timestamp, "Hey", COMPONENT_ID);
     var aiMessage2 = new AiMessage(timestamp, "Hi!", COMPONENT_ID);
     var cmd = new SessionMemoryEntity.CompactionCmd(userMessage2, aiMessage2, sequenceNumber);
-    EventSourcedResult<Done> compactResult = testKit.method(SessionMemoryEntity::compactHistory)
-        .invoke(cmd);
+    EventSourcedResult<Done> compactResult =
+        testKit.method(SessionMemoryEntity::compactHistory).invoke(cmd);
 
     // then
     assertThat(compactResult.getReply()).isEqualTo(done());
@@ -159,9 +161,7 @@ public class SessionMemoryEntityTest {
         testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
 
     // then
-    assertThat(historyResult2.getReply().messages()).containsExactly(
-        userMessage2,
-        aiMessage2);
+    assertThat(historyResult2.getReply().messages()).containsExactly(userMessage2, aiMessage2);
   }
 
   @Test
@@ -173,7 +173,8 @@ public class SessionMemoryEntityTest {
     var userMessage1 = new UserMessage(timestamp, "Hello", COMPONENT_ID);
     var aiMessage1 = new AiMessage(timestamp, "Hi there!", COMPONENT_ID);
 
-    testKit.method(SessionMemoryEntity::addInteraction)
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
         .invoke(new AddInteractionCmd(userMessage1, aiMessage1));
 
     // when
@@ -188,11 +189,12 @@ public class SessionMemoryEntityTest {
     // but before making the compaction update, there is some other update
     var userMessage3 = new UserMessage(timestamp, "I'm Alice", COMPONENT_ID);
     var aiMessage3 = new AiMessage(timestamp, "Hi Alice, I'm bot", COMPONENT_ID);
-    testKit.method(SessionMemoryEntity::addInteraction)
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
         .invoke(new AddInteractionCmd(userMessage3, aiMessage3));
 
-    EventSourcedResult<Done> compactResult = testKit.method(SessionMemoryEntity::compactHistory)
-        .invoke(cmd);
+    EventSourcedResult<Done> compactResult =
+        testKit.method(SessionMemoryEntity::compactHistory).invoke(cmd);
 
     // then
     assertThat(compactResult.getReply()).isEqualTo(done());
@@ -203,18 +205,17 @@ public class SessionMemoryEntityTest {
     assertThat(((SessionMemoryEntity.Event.AiMessageAdded) events.get(2)).historySizeInBytes())
         .isEqualTo(userMessage2.size() + aiMessage2.size());
     assertThat(((SessionMemoryEntity.Event.AiMessageAdded) events.get(4)).historySizeInBytes())
-        .isEqualTo(userMessage2.size() + aiMessage2.size() + userMessage3.size() + aiMessage3.size());
+        .isEqualTo(
+            userMessage2.size() + aiMessage2.size() + userMessage3.size() + aiMessage3.size());
 
     // when retrieving history after compacting
     EventSourcedResult<SessionHistory> historyResult2 =
         testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
 
     // then
-    assertThat(historyResult2.getReply().messages().stream().map(SessionMessage::text).toList()).containsExactly(
-        userMessage2.text(),
-        aiMessage2.text(),
-        userMessage3.text(),
-        aiMessage3.text());
+    assertThat(historyResult2.getReply().messages().stream().map(SessionMessage::text).toList())
+        .containsExactly(
+            userMessage2.text(), aiMessage2.text(), userMessage3.text(), aiMessage3.text());
   }
 
   @Test
@@ -228,8 +229,9 @@ public class SessionMemoryEntityTest {
     var userMessage = new UserMessage(timestamp, userMsg, COMPONENT_ID);
     var aiMessage = new AiMessage(timestamp, aiMsg, COMPONENT_ID);
 
-    testKit.method(SessionMemoryEntity::addInteraction)
-      .invoke(new AddInteractionCmd(userMessage, aiMessage));
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage, aiMessage));
 
     // when
     EventSourcedResult<Done> clearResult = testKit.method(SessionMemoryEntity::delete).invoke();
@@ -244,7 +246,7 @@ public class SessionMemoryEntityTest {
 
     // when retrieving history after clearing
     EventSourcedResult<SessionHistory> historyResult =
-      testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
+        testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
 
     // then
     assertThat(historyResult.getReply().messages()).isEmpty();
@@ -257,7 +259,7 @@ public class SessionMemoryEntityTest {
 
     // when
     EventSourcedResult<SessionHistory> historyResult =
-      testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
+        testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
 
     // then
     assertThat(historyResult.getReply().messages()).isEmpty();
@@ -270,10 +272,10 @@ public class SessionMemoryEntityTest {
     var timestamp = Instant.now();
 
     // Calculate the total bytes needed for each message
-    String userMsg1 = "First message";      // 13 bytes
-    String aiMsg1 = "First response";       // 14 bytes
-    String userMsg2 = "Second message";     // 14 bytes
-    String aiMsg2 = "Second response";      // 15 bytes
+    String userMsg1 = "First message"; // 13 bytes
+    String aiMsg1 = "First response"; // 14 bytes
+    String userMsg2 = "Second message"; // 14 bytes
+    String aiMsg2 = "Second response"; // 15 bytes
 
     var userMessage1 = new UserMessage(timestamp, userMsg1, COMPONENT_ID);
     var aiMessage1 = new AiMessage(timestamp, aiMsg1, COMPONENT_ID);
@@ -286,23 +288,24 @@ public class SessionMemoryEntityTest {
     testKit.method(SessionMemoryEntity::setLimitedWindow).invoke(limitedBuffer);
 
     // when
-    testKit.method(SessionMemoryEntity::addInteraction)
-      .invoke(new AddInteractionCmd(userMessage1, aiMessage1));
-    EventSourcedResult<Done> result = testKit.method(SessionMemoryEntity::addInteraction)
-      .invoke(new AddInteractionCmd(userMessage2, aiMessage2));
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage1, aiMessage1));
+    EventSourcedResult<Done> result =
+        testKit
+            .method(SessionMemoryEntity::addInteraction)
+            .invoke(new AddInteractionCmd(userMessage2, aiMessage2));
 
     // then
     assertThat(result.getReply()).isEqualTo(done());
 
     // when retrieving history
     EventSourcedResult<SessionHistory> historyResult =
-      testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
+        testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
 
     // then - only the most recent interactions should be present
     // note that the 1st aiMsg was also removed because it was orphan
-    assertThat(historyResult.getReply().messages()).containsExactly(
-      userMessage2,
-      aiMessage2);
+    assertThat(historyResult.getReply().messages()).containsExactly(userMessage2, aiMessage2);
     assertThat(historyResult.getReply().messages().size()).isEqualTo(2);
   }
 
@@ -313,12 +316,12 @@ public class SessionMemoryEntityTest {
     var timestamp = Instant.now();
 
     // Calculate the total bytes needed for each message
-    String userMsg1 = "First message";      // 13 bytes
-    String aiMsg1 = "First response";       // 14 bytes
-    String userMsg2 = "Second message";     // 14 bytes
-    String aiMsg2 = "Second response";      // 15 bytes
-    String userMsg3 = "Third message";      // 13 bytes
-    String aiMsg3 = "Third response";       // 14 bytes
+    String userMsg1 = "First message"; // 13 bytes
+    String aiMsg1 = "First response"; // 14 bytes
+    String userMsg2 = "Second message"; // 14 bytes
+    String aiMsg2 = "Second response"; // 15 bytes
+    String userMsg3 = "Third message"; // 13 bytes
+    String aiMsg3 = "Third response"; // 14 bytes
 
     var userMessage1 = new UserMessage(timestamp, userMsg1, COMPONENT_ID);
     var aiMessage1 = new AiMessage(timestamp, aiMsg1, COMPONENT_ID);
@@ -333,43 +336,49 @@ public class SessionMemoryEntityTest {
     testKit.method(SessionMemoryEntity::setLimitedWindow).invoke(limitedBuffer);
 
     // when adding first interaction
-    testKit.method(SessionMemoryEntity::addInteraction)
-      .invoke(new AddInteractionCmd(userMessage1, aiMessage1));
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage1, aiMessage1));
     EventSourcedResult<SessionHistory> result1 =
-      testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
+        testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
 
     // then
-    assertThat(result1.getReply().messages()).containsExactly(
-      new UserMessage(timestamp, userMsg1, COMPONENT_ID),
-      new AiMessage(timestamp, aiMsg1, COMPONENT_ID));
+    assertThat(result1.getReply().messages())
+        .containsExactly(
+            new UserMessage(timestamp, userMsg1, COMPONENT_ID),
+            new AiMessage(timestamp, aiMsg1, COMPONENT_ID));
     assertThat(result1.getReply().messages().size()).isEqualTo(2);
 
     // when adding second interaction (reaching the limit)
-    testKit.method(SessionMemoryEntity::addInteraction)
-      .invoke(new AddInteractionCmd(userMessage2, aiMessage2));
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage2, aiMessage2));
     EventSourcedResult<SessionHistory> result2 =
-      testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
+        testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
 
     // then
-    assertThat(result2.getReply().messages()).containsExactly(
-      new UserMessage(timestamp, userMsg1, COMPONENT_ID),
-      new AiMessage(timestamp, aiMsg1, COMPONENT_ID),
-      new UserMessage(timestamp.plusMillis(1), userMsg2, COMPONENT_ID),
-      new AiMessage(timestamp.plusMillis(1), aiMsg2, COMPONENT_ID));
+    assertThat(result2.getReply().messages())
+        .containsExactly(
+            new UserMessage(timestamp, userMsg1, COMPONENT_ID),
+            new AiMessage(timestamp, aiMsg1, COMPONENT_ID),
+            new UserMessage(timestamp.plusMillis(1), userMsg2, COMPONENT_ID),
+            new AiMessage(timestamp.plusMillis(1), aiMsg2, COMPONENT_ID));
     assertThat(result2.getReply().messages().size()).isEqualTo(4);
 
     // when adding third interaction (exceeding the limit)
-    testKit.method(SessionMemoryEntity::addInteraction)
-      .invoke(new AddInteractionCmd(userMessage3, aiMessage3));
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage3, aiMessage3));
     EventSourcedResult<SessionHistory> result3 =
-      testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
+        testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
 
     // then - first interaction should be removed
-    assertThat(result3.getReply().messages()).containsExactly(
-      new UserMessage(timestamp.plusMillis(1), userMsg2, COMPONENT_ID),
-      new AiMessage(timestamp.plusMillis(1), aiMsg2, COMPONENT_ID),
-      new UserMessage(timestamp.plusMillis(2), userMsg3, COMPONENT_ID),
-      new AiMessage(timestamp.plusMillis(2), aiMsg3, COMPONENT_ID));
+    assertThat(result3.getReply().messages())
+        .containsExactly(
+            new UserMessage(timestamp.plusMillis(1), userMsg2, COMPONENT_ID),
+            new AiMessage(timestamp.plusMillis(1), aiMsg2, COMPONENT_ID),
+            new UserMessage(timestamp.plusMillis(2), userMsg3, COMPONENT_ID),
+            new AiMessage(timestamp.plusMillis(2), aiMsg3, COMPONENT_ID));
     assertThat(result3.getReply().messages().size()).isEqualTo(4);
   }
 
@@ -380,7 +389,8 @@ public class SessionMemoryEntityTest {
     var invalidBuffer = new SessionMemoryEntity.LimitedWindow(0);
 
     // when
-    EventSourcedResult<Done> result = testKit.method(SessionMemoryEntity::setLimitedWindow).invoke(invalidBuffer);
+    EventSourcedResult<Done> result =
+        testKit.method(SessionMemoryEntity::setLimitedWindow).invoke(invalidBuffer);
 
     // then
     assertThat(result.isError()).isTrue();
@@ -402,12 +412,13 @@ public class SessionMemoryEntityTest {
     testKit.method(SessionMemoryEntity::setLimitedWindow).invoke(limitedBuffer);
 
     // Add the large interaction
-    testKit.method(SessionMemoryEntity::addInteraction)
-      .invoke(new AddInteractionCmd(userMessage, aiMessage));
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage, aiMessage));
 
     // Retrieve history
     EventSourcedResult<SessionHistory> historyResult =
-      testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
+        testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
 
     // The history should be empty, as the first interaction cannot fit
     assertThat(historyResult.getReply().messages()).isEmpty();
@@ -416,48 +427,51 @@ public class SessionMemoryEntityTest {
   @Test
   public void shouldReturnOnlyLastNMessages() {
     // Create test kit with the configuration
-    EventSourcedTestKit<SessionMemoryEntity.State, SessionMemoryEntity.Event, SessionMemoryEntity> testKit =
-      EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
+    EventSourcedTestKit<SessionMemoryEntity.State, SessionMemoryEntity.Event, SessionMemoryEntity>
+        testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
     var timestamp = Instant.now();
 
     // Add several interactions
     String[] userMsgs = {"U1", "U2", "U3", "U4"};
     String[] aiMsgs = {"A1", "A2", "A3", "A4"};
     for (int i = 0; i < userMsgs.length; i++) {
-      testKit.method(SessionMemoryEntity::addInteraction)
-        .invoke(new AddInteractionCmd(
-          new UserMessage(timestamp, userMsgs[i], COMPONENT_ID),
-          new AiMessage(timestamp, aiMsgs[i], COMPONENT_ID)));
+      testKit
+          .method(SessionMemoryEntity::addInteraction)
+          .invoke(
+              new AddInteractionCmd(
+                  new UserMessage(timestamp, userMsgs[i], COMPONENT_ID),
+                  new AiMessage(timestamp, aiMsgs[i], COMPONENT_ID)));
     }
 
     // Request only the last 4 messages (should be: U3, A3, U4, A4)
     var lastN = 4;
-    EventSourcedResult<SessionHistory> result = testKit
-      .method(SessionMemoryEntity::getHistory)
-      .invoke(new SessionMemoryEntity.GetHistoryCmd(Optional.of(lastN)));
+    EventSourcedResult<SessionHistory> result =
+        testKit
+            .method(SessionMemoryEntity::getHistory)
+            .invoke(new SessionMemoryEntity.GetHistoryCmd(Optional.of(lastN)));
 
     // The expected last 4 messages
-    var expected = List.of(
-      new UserMessage(timestamp, "U3", COMPONENT_ID),
-      new AiMessage(timestamp, "A3", COMPONENT_ID),
-      new UserMessage(timestamp, "U4", COMPONENT_ID),
-      new AiMessage(timestamp, "A4", COMPONENT_ID)
-    );
+    var expected =
+        List.of(
+            new UserMessage(timestamp, "U3", COMPONENT_ID),
+            new AiMessage(timestamp, "A3", COMPONENT_ID),
+            new UserMessage(timestamp, "U4", COMPONENT_ID),
+            new AiMessage(timestamp, "A4", COMPONENT_ID));
 
     assertThat(result.getReply().messages()).containsExactlyElementsOf(expected);
   }
 
   @Test
   public void shouldReturnEmptyHistoryWithLastN() {
-    EventSourcedTestKit<SessionMemoryEntity.State, SessionMemoryEntity.Event, SessionMemoryEntity> testKit =
-      EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
+    EventSourcedTestKit<SessionMemoryEntity.State, SessionMemoryEntity.Event, SessionMemoryEntity>
+        testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
 
     var lastN = 4;
-    EventSourcedResult<SessionHistory> result = testKit
-      .method(SessionMemoryEntity::getHistory)
-      .invoke(new SessionMemoryEntity.GetHistoryCmd(Optional.of(lastN)));
+    EventSourcedResult<SessionHistory> result =
+        testKit
+            .method(SessionMemoryEntity::getHistory)
+            .invoke(new SessionMemoryEntity.GetHistoryCmd(Optional.of(lastN)));
 
     assertThat(result.getReply().messages()).isEmpty();
   }
-
 }

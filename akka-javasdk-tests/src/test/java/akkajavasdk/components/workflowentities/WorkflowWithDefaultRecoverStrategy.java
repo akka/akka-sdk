@@ -4,9 +4,11 @@
 
 package akkajavasdk.components.workflowentities;
 
+
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
+import akkajavasdk.components.actions.echo.Message;
 import akkajavasdk.components.actions.echo.Message;
 
 import static java.time.Duration.ofSeconds;
@@ -59,7 +61,7 @@ public class WorkflowWithDefaultRecoverStrategy extends Workflow<FailingCounterS
       .thenTransitionTo(WorkflowWithDefaultRecoverStrategy::counterStep);
   }
 
-  public Effect<FailingCounterState> get(){
+  public Effect<FailingCounterState> get() {
     return effects().reply(currentState());
   }
 }

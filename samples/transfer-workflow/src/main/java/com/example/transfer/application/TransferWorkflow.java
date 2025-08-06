@@ -1,5 +1,9 @@
 package com.example.transfer.application;
 
+import static akka.Done.done;
+import static com.example.transfer.domain.TransferState.TransferStatus.COMPLETED;
+import static com.example.transfer.domain.TransferState.TransferStatus.WITHDRAW_SUCCEEDED;
+
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.StepName;
@@ -8,10 +12,6 @@ import akka.javasdk.workflow.Workflow;
 import com.example.transfer.domain.TransferState;
 import com.example.transfer.domain.TransferState.Transfer;
 import com.example.wallet.application.WalletEntity;
-
-import static akka.Done.done;
-import static com.example.transfer.domain.TransferState.TransferStatus.COMPLETED;
-import static com.example.transfer.domain.TransferState.TransferStatus.WITHDRAW_SUCCEEDED;
 
 // tag::class[]
 @ComponentId("transfer") // <1>
@@ -25,7 +25,7 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
   public record Deposit(String to, int amount) { // <1>
   }
 
-  final private ComponentClient componentClient;
+  private final ComponentClient componentClient;
 
   public TransferWorkflow(ComponentClient componentClient) {
     this.componentClient = componentClient;
@@ -36,11 +36,13 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
 
     componentClient.forEventSourcedEntity(withdraw.from)
       .method(WalletEntity::withdraw)
-      .invoke(withdraw.amount); // <3>
+      .invoke(withdraw.amount)
+      ; // <3>
 
     String to = currentState().transfer().to(); // <4>
     int amount = currentState().transfer().amount();
-    Deposit depositInput = new Deposit(to, amount);
+    Deposit depositInput = new Deposit(to,
+          amount);
 
     return stepEffects()
       .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
@@ -59,6 +61,7 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
       .updateState(currentState().withStatus(COMPLETED))
       .thenEnd(); // <7>
   }
+
   // end::definition[]
 
   // tag::class[]
@@ -68,7 +71,6 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
     } else if (currentState() != null) {
       return effects().error("transfer already started");
     } else {
-
       TransferState initialState = new TransferState(transfer); // <5>
 
       Withdraw withdrawInput = new Withdraw(transfer.from(), transfer.amount());
@@ -80,6 +82,7 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
         .thenReply(done()); // <8>
     }
   }
+
   // end::class[]
 
   // tag::get-transfer[]
@@ -90,6 +93,7 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
       return effects().reply(currentState()); // <1>
     }
   }
+
   // end::get-transfer[]
 
   // tag::delete-workflow[]

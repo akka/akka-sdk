@@ -6,7 +6,6 @@ package akka.javasdk.testkit.keyvalueentity;
 
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.testkit.eventsourced.Response;
-
 import java.util.List;
 
 public class CounterValueEntity extends KeyValueEntity<Integer> {
@@ -26,7 +25,9 @@ public class CounterValueEntity extends KeyValueEntity<Integer> {
 
   public Effect<String> increaseFromMeta() {
     Integer state = currentState();
-    return effects().updateState(state + Integer.parseInt(commandContext().metadata().get("value").get())).thenReply("Ok");
+    return effects()
+        .updateState(state + Integer.parseInt(commandContext().metadata().get("value").get()))
+        .thenReply("Ok");
   }
 
   public Effect<String> delete() {

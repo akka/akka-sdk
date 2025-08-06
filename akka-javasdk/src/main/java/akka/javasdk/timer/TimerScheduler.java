@@ -6,7 +6,6 @@ package akka.javasdk.timer;
 
 import akka.Done;
 import akka.javasdk.DeferredCall;
-
 import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 
@@ -129,7 +128,9 @@ public interface TimerScheduler {
   <I, O> CompletionStage<Done> startSingleTimer(
       String name, Duration delay, int maxRetries, DeferredCall<I, O> deferredCall);
 
-  /** @deprecated User {@link TimerScheduler#deleteAsync(String)} instead. */
+  /**
+   * @deprecated User {@link TimerScheduler#deleteAsync(String)} instead.
+   */
   @Deprecated(since = "3.3.0", forRemoval = true)
   CompletionStage<Done> cancel(String name);
 }

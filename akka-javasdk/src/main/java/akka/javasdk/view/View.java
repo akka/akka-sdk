@@ -42,7 +42,9 @@ public abstract class View {
     return null;
   }
 
-  /** @return query effect for a query result that can be streamed */
+  /**
+   * @return query effect for a query result that can be streamed
+   */
   protected final <T> QueryStreamEffect<T> queryStreamResult() {
     return null;
   }

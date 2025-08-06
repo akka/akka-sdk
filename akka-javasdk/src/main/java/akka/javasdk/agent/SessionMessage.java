@@ -9,19 +9,16 @@ import akka.javasdk.agent.SessionMessage.ToolCallResponse;
 import akka.javasdk.agent.SessionMessage.UserMessage;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-
 import java.time.Instant;
 import java.util.List;
 
-
-/**
- * Interface for message representation used inside SessionMemoryEntity state.
- */
+/** Interface for message representation used inside SessionMemoryEntity state. */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "@type")
 @JsonSubTypes({
   @JsonSubTypes.Type(value = UserMessage.class, name = "UM"),
   @JsonSubTypes.Type(value = AiMessage.class, name = "AIM"),
-  @JsonSubTypes.Type(value = ToolCallResponse.class, name = "TCR")})
+  @JsonSubTypes.Type(value = ToolCallResponse.class, name = "TCR")
+})
 public sealed interface SessionMessage {
   static int sizeInBytes(String text) {
     return text.length(); // simple implementation, but not correct for all encodings
@@ -39,13 +36,11 @@ public sealed interface SessionMessage {
     }
   }
 
-  record ToolCallRequest(String id, String name, String arguments)  {
-  }
+  record ToolCallRequest(String id, String name, String arguments) {}
 
-  record AiMessage(Instant timestamp,
-                   String text,
-                   String componentId,
-                   List<ToolCallRequest> toolCallRequests) implements SessionMessage {
+  record AiMessage(
+      Instant timestamp, String text, String componentId, List<ToolCallRequest> toolCallRequests)
+      implements SessionMessage {
 
     public AiMessage(Instant timestamp, String text, String componentId) {
       this(timestamp, text, componentId, List.of());
@@ -56,20 +51,25 @@ public sealed interface SessionMessage {
       var textLength = text == null ? 0 : SessionMessage.sizeInBytes(text);
       // calculating the length of tool call requests arguments
       // NOTE: not accounting for the real payload, only the arguments
-      int argsLength = toolCallRequests == null ? 0 : toolCallRequests.stream()
-          .mapToInt(req -> req.arguments() == null ? 0 : SessionMessage.sizeInBytes(req.arguments()))
-          .sum();
+      int argsLength =
+          toolCallRequests == null
+              ? 0
+              : toolCallRequests.stream()
+                  .mapToInt(
+                      req ->
+                          req.arguments() == null ? 0 : SessionMessage.sizeInBytes(req.arguments()))
+                  .sum();
 
       return textLength + argsLength;
     }
   }
 
-  record ToolCallResponse(Instant timestamp, String componentId, String id, String name, String text) implements SessionMessage {
+  record ToolCallResponse(
+      Instant timestamp, String componentId, String id, String name, String text)
+      implements SessionMessage {
     @Override
     public int size() {
       return SessionMessage.sizeInBytes(text);
     }
   }
-
 }
-

@@ -26,13 +26,14 @@ public class AgentTeamWorkflowTest extends TestKitSupport { // <1>
 
   @Override
   protected TestKit.Settings testKitSettings() {
-    return TestKit.Settings.DEFAULT
-        .withAdditionalConfig("akka.javasdk.agent.openai.api-key = n/a")
-        .withModelProvider(SelectorAgent.class, selectorModel) // <3>
-        .withModelProvider(PlannerAgent.class, plannerModel)
-        .withModelProvider(ActivityAgent.class, activitiesModel)
-        .withModelProvider(WeatherAgent.class, weatherModel)
-        .withModelProvider(SummarizerAgent.class, summaryModel);
+    return TestKit.Settings.DEFAULT.withAdditionalConfig(
+      "akka.javasdk.agent.openai.api-key = n/a"
+    )
+      .withModelProvider(SelectorAgent.class, selectorModel) // <3>
+      .withModelProvider(PlannerAgent.class, plannerModel)
+      .withModelProvider(ActivityAgent.class, activitiesModel)
+      .withModelProvider(WeatherAgent.class, weatherModel)
+      .withModelProvider(SummarizerAgent.class, summaryModel);
   }
 
   @Test
@@ -41,41 +42,56 @@ public class AgentTeamWorkflowTest extends TestKitSupport { // <1>
     selectorModel.fixedResponse(JsonSupport.encodeToString(selection)); // <4>
 
     var weatherQuery = "What is the current weather in Stockholm?";
-    var activityQuery = "Suggest activities to do in Stockholm considering the current weather.";
-    var plan = new Plan(List.of(
+    var activityQuery =
+      "Suggest activities to do in Stockholm considering the current weather.";
+    var plan = new Plan(
+      List.of(
         new PlanStep("weather-agent", weatherQuery),
-        new PlanStep("activity-agent", activityQuery)));
+        new PlanStep("activity-agent", activityQuery)
+      )
+    );
     plannerModel.fixedResponse(JsonSupport.encodeToString(plan));
 
     weatherModel
-        .whenMessage(req -> req.equals(weatherQuery)) // <5>
-        .reply("The weather in Stockholm is sunny.");
+      .whenMessage(req -> req.equals(weatherQuery)) // <5>
+      .reply("The weather in Stockholm is sunny.");
 
     activitiesModel
-        .whenMessage(req -> req.equals(activityQuery))
-        .reply("You can take a bike tour around Djurgården Park, " +
-            "visit the Vasa Museum, explore Gamla Stan (Old Town)...");
+      .whenMessage(req -> req.equals(activityQuery))
+      .reply(
+        "You can take a bike tour around Djurgården Park, " +
+        "visit the Vasa Museum, explore Gamla Stan (Old Town)..."
+      );
 
-    summaryModel.fixedResponse("The weather in Stockholm is sunny, so you can enjoy " +
-        "outdoor activities like a bike tour around Djurgården Park, visiting the Vasa Museum, " +
-        "exploring Gamla Stan (Old Town)");
+    summaryModel.fixedResponse(
+      "The weather in Stockholm is sunny, so you can enjoy " +
+      "outdoor activities like a bike tour around Djurgården Park, " +
+      "visiting the Vasa Museum, exploring Gamla Stan (Old Town)"
+    );
 
     var query = "I am in Stockholm. What should I do? Beware of the weather";
 
     var sessionId = UUID.randomUUID().toString();
     var request = new AgentTeamWorkflow.Request("alice", query);
-    componentClient.forWorkflow(sessionId).method(AgentTeamWorkflow::start).invoke(request); // <6>
+
+    componentClient
+      .forWorkflow(sessionId)
+      .method(AgentTeamWorkflow::start) // <6>
+      .invoke(request);
 
     Awaitility.await()
-        .ignoreExceptions()
-        .atMost(10, SECONDS)
-        .untilAsserted(() -> {
-          var answer = componentClient.forWorkflow(sessionId).method(AgentTeamWorkflow::getAnswer).invoke();
-          assertThat(answer).isNotBlank();
-          assertThat(answer).contains("Stockholm");
-          assertThat(answer).contains("sunny");
-          assertThat(answer).contains("bike tour");
-        });
+      .ignoreExceptions()
+      .atMost(10, SECONDS)
+      .untilAsserted(() -> {
+        var answer = componentClient
+          .forWorkflow(sessionId)
+          .method(AgentTeamWorkflow::getAnswer)
+          .invoke();
+        assertThat(answer).isNotBlank();
+        assertThat(answer).contains("Stockholm");
+        assertThat(answer).contains("sunny");
+        assertThat(answer).contains("bike tour");
+      });
   }
 }
 // end::class[]

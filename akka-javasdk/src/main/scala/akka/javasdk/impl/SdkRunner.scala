@@ -4,6 +4,24 @@
 
 package akka.javasdk.impl
 
+import java.lang.reflect.Constructor
+import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Method
+import java.util
+import java.util.Optional
+import java.util.concurrent.CompletionStage
+import java.util.concurrent.Executor
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.jdk.CollectionConverters._
+import scala.jdk.FutureConverters._
+import scala.jdk.OptionConverters.RichOption
+import scala.jdk.OptionConverters.RichOptional
+import scala.reflect.ClassTag
+import scala.util.control.NonFatal
+
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -330,6 +348,10 @@ private object ComponentLocator {
       val serviceSetupClassName = descriptorConfig.getString(DescriptorServiceSetupEntryPath)
       val serviceSetup = system.dynamicAccess.getClassFor[AnyRef](serviceSetupClassName).get
       if (serviceSetup.hasAnnotation[Setup]) {
+        if (!classOf[ServiceSetup].isAssignableFrom(serviceSetup)) {
+          throw new IllegalStateException(
+            "A class [" + serviceSetup + "] annotated with @Setup must implement [akka.javasdk.ServiceSetup] interface")
+        }
         logger.debug("Found and loaded service class setup: [{}]", serviceSetup)
       } else {
         logger.warn("Ignoring service class [{}] as it does not have the @Setup annotation", serviceSetup)
@@ -756,6 +778,11 @@ private final class Sdk(
         Some(
           wiredInstance[ServiceSetup](serviceClassClass.asInstanceOf[Class[ServiceSetup]])(
             sideEffectingComponentInjects(None)))
+
+      case Some(serviceClassClass) =>
+        //just wiring the class
+        wiredInstance[Any](serviceClassClass.asInstanceOf[Class[Any]])(sideEffectingComponentInjects(None))
+        None
       case _ => None
     }
 

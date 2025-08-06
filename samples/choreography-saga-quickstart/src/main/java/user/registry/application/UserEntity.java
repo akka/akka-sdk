@@ -1,19 +1,17 @@
 package user.registry.application;
 
+import static akka.Done.done;
 
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import user.registry.domain.User;
 import user.registry.domain.UserEvent;
-
-import java.util.List;
-
-import static akka.Done.done;
 
 /**
  * Entity wrapping a User.
@@ -33,31 +31,26 @@ import static akka.Done.done;
 @ComponentId("user")
 public class UserEntity extends EventSourcedEntity<User, UserEvent> {
 
-  public record Create(String name, String country, String email) {
-  }
+  public record Create(String name, String country, String email) {}
 
-  public record ChangeEmail(String newEmail) {
-  }
+  public record ChangeEmail(String newEmail) {}
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
-  @JsonSubTypes({
-    @JsonSubTypes.Type(value = Result.Success.class, name = "Success"),
-    @JsonSubTypes.Type(value = Result.InvalidCommand.class, name = "InvalidCommand")
-  })
+  @JsonSubTypes(
+    {
+      @JsonSubTypes.Type(value = Result.Success.class, name = "Success"),
+      @JsonSubTypes.Type(value = Result.InvalidCommand.class, name = "InvalidCommand"),
+    }
+  )
   public sealed interface Result {
+    record InvalidCommand(String msg) implements Result {}
 
-    record InvalidCommand(String msg) implements Result {
-    }
-
-    record Success() implements Result {
-    }
-
+    record Success() implements Result {}
   }
 
   public Effect<Result> createUser(Create cmd) {
-
     // since the user creation depends on the email address reservation, a better place to valid an incoming command
     // would be in the ApplicationController where we coordinate the two operations.
     // However, to demonstrate a failure case, we validate the command here.
@@ -76,7 +69,6 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
       .persist(new UserEvent.UserWasCreated(cmd.name, cmd.country, cmd.email))
       .thenReply(__ -> new Result.Success());
   }
-
 
   /**
    * Persists EmailAssigned and EmailUnassigned event.
@@ -97,12 +89,11 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
       return effects().reply(done());
     } else {
       var events = List.of(
-          new UserEvent.EmailAssigned(cmd.newEmail),
-          new UserEvent.EmailUnassigned(currentState().email()));
+        new UserEvent.EmailAssigned(cmd.newEmail),
+        new UserEvent.EmailUnassigned(currentState().email())
+      );
 
-      return effects()
-          .persistAll(events)
-          .thenReply(__ -> done());
+      return effects().persistAll(events).thenReply(__ -> done());
     }
   }
 
@@ -112,7 +103,6 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
     }
     return effects().reply(currentState());
   }
-
 
   @Override
   public User applyEvent(UserEvent event) {

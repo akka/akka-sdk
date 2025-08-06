@@ -4,15 +4,15 @@
 
 package akkajavasdk.components.workflowentities;
 
+import static java.time.Duration.ofMillis;
+import static java.time.Duration.ofSeconds;
+
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import akkajavasdk.components.actions.echo.Message;
 
 import java.time.Duration;
-
-import static java.time.Duration.ofMillis;
-import static java.time.Duration.ofSeconds;
 
 @ComponentId("workflow-with-timeout")
 public class WorkflowWithTimeout extends Workflow<FailingCounterState> {

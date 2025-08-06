@@ -2,23 +2,34 @@
 
 include::ROOT:partial$include.adoc[]
 
-This content here introduces key concepts to be aware of when developing Akka applications and services.
+This content here introduces key xref:concepts.adoc[concepts] to be aware of when developing Akka applications and services.
 
-xref:architecture-model.adoc[] explains the principles by which Akka applications are structured.
+Everything in Akka is based on the xref:distributed-systems.adoc[fundamental principles for distributed systems].
+
+xref:architecture-model.adoc[Service structure and layers] explains how Akka applications are structured in different layers.
 
 Akka manages the operational aspects of your application. To learn about how Akka Services run in distributed infrastructure and may span multiple _Regions_, see xref:deployment-model.adoc[Deployment Model]. Once deployed, Akka's xref:operations:observability-and-monitoring/index.adoc[Telemetry and Monitoring] provides operational insights into your deployment.
 
 When you are familiar with the main aspects for Akka applications, continue with xref:concepts:development-process.adoc[Development Process] to understand the steps involved to implement a _Service_.
 
-A detailed explanation to how _Entities_ persist their state, is presented in xref:state-model.adoc[State Model] should you wish to learn more.
+Components in Akka decouple behavior from execution by using xref:declarative-effects.adoc[].
+
+A detailed explanation to how _Entities_ persist their state, is presented in xref:state-model.adoc[] should you wish to learn more.
+
+Orchestration use cases are often catered for best by considering _Sagas_ which is discussed in xref:saga-patterns.adoc[].
 
 == Topics
 
-- xref:architecture-model.adoc[]
-- xref:deployment-model.adoc[]
-- xref:development-process.adoc[]
-- xref:declarative-effects.adoc[]
-- xref:state-model.adoc[]
-- xref:multi-region.adoc[]
-- xref:saga-patterns.adoc[]
-- xref:java:dev-best-practices.adoc[]
+* xref:concepts:concepts.adoc[]
+* xref:concepts:distributed-systems.adoc[]
+* xref:concepts:architecture-model.adoc[]
+* xref:concepts:deployment-model.adoc[]
+* xref:concepts:development-process.adoc[]
+* xref:declarative-effects.adoc[]
+* xref:concepts:state-model.adoc[]
+* xref:concepts:multi-region.adoc[]
+* xref:concepts:saga-patterns.adoc[]
+* xref:concepts:grpc-vs-http-endpoints.adoc[]
+* xref:concepts:ai-agents.adoc[]
+* xref:concepts:inter-agent-comms.adoc[]
+* xref:concepts:acls.adoc[]

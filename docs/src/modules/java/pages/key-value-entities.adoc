@@ -25,7 +25,7 @@ The following sections walk through these steps using a counter service as an ex
 
 As mentioned above, to help us illustrate a Key Value Entity, you will be implementing a Counter service. For such service, you will want to be able to set the initial counter value but also to increase the counter modifying its state. The state will be a simple `Integer` but you will use a wrapper class `Counter` as the domain model, as shown below:
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/key-value-counter/src/main/java/com/example/domain/Counter.java[Counter.java]
 ----
 include::example$key-value-counter/src/main/java/com/example/domain/Counter.java[tag=domain]
@@ -60,7 +60,7 @@ Now that we have our Entity state defined, the remaining steps can be summarized
 
 The class signature for our counter entity will look like this:
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/key-value-counter/src/main/java/com/example/application/CounterEntity.java[CounterEntity.java]
 ----
 include::example$key-value-counter/src/main/java/com/example/application/CounterEntity.java[tags=declarations]

@@ -1,5 +1,9 @@
 package demo.multiagent.application;
 
+import static demo.multiagent.application.AgentTeamWorkflow.Status.*;
+import static java.time.temporal.ChronoUnit.SECONDS;
+
+// tag::all[]
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.StepName;
@@ -10,11 +14,18 @@ import demo.multiagent.domain.AgentRequest;
 import demo.multiagent.domain.AgentSelection;
 import demo.multiagent.domain.Plan;
 import demo.multiagent.domain.PlanStep;
+import java.time.Duration;
+import demo.multiagent.domain.AgentRequest;
+import demo.multiagent.domain.AgentSelection;
+import demo.multiagent.domain.Plan;
+import demo.multiagent.domain.PlanStep;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static demo.multiagent.application.AgentTeamWorkflow.Status.COMPLETED;
 import static demo.multiagent.application.AgentTeamWorkflow.Status.FAILED;
@@ -25,8 +36,8 @@ import static java.time.Duration.ofSeconds;
 // tag::plan[]
 @ComponentId("agent-team")
 public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1>
-  public record Request(String userId, String message) {
-  }
+
+  public record Request(String userId, String message) {}
 
   // end::plan[]
   enum Status {
@@ -41,12 +52,11 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
     Plan plan,
     String finalAnswer,
     Map<String, String> agentResponses,
-    Status status) {
-
+    Status status
+  ) {
     public static State init(String userId, String query) {
       return new State(userId, query, new Plan(), "", new HashMap<>(), STARTED);
     }
-
 
     public State withFinalAnswer(String answer) {
       return new State(userId, userQuery, plan, answer, agentResponses, status);
@@ -79,7 +89,6 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
     public State failed() {
       return new State(userId, userQuery, plan, finalAnswer, agentResponses, FAILED);
     }
-
   }
 
   private static final Logger logger = LoggerFactory.getLogger(AgentTeamWorkflow.class);
@@ -107,9 +116,11 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
         .transitionTo(AgentTeamWorkflow::selectAgentsStep) // <3>
         .thenReply(Done.getInstance());
     } else {
-      return effects().error("Workflow '" + commandContext().workflowId() + "' already started");
+      return effects()
+        .error("Workflow '" + commandContext().workflowId() + "' already started");
     }
   }
+
   // end::plan[]
 
   // tag::runAgain[]
@@ -120,9 +131,11 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
         .transitionTo(AgentTeamWorkflow::selectAgentsStep) // <3>
         .thenReply(Done.getInstance());
     } else {
-      return effects().error("Workflow '" + commandContext().workflowId() + "' has not been started");
+      return effects()
+        .error("Workflow '" + commandContext().workflowId() + "' has not been started");
     }
   }
+
   // end::runAgain[]
 
   public ReadOnlyEffect<String> getAnswer() {
@@ -178,11 +191,11 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
   private StepEffect executePlanStep() { // <2>
 
     var stepPlan = currentState().nextStepPlan(); // <8>
-    logger.info("Executing plan step (agent:{}), asking {}", stepPlan.agentId(), stepPlan.query());
-    var agentResponse = callAgent(stepPlan.agentId(), stepPlan.query()); // <9>
+    logger.info("Executing plan step (agent:{}), asking {}", stepPlan.agentId(), stepPlan.query()
+    );var agentResponse = callAgent(stepPlan.agentId(), stepPlan.query()); // <9>
     if (agentResponse.startsWith("ERROR")) {
-      throw new RuntimeException("Agent '" + stepPlan.agentId() + "' responded with error: " + agentResponse);
-    } else {
+      throw new RuntimeException("Agent '" + stepPlan.agentId() + "' responded with error: " + agentResponse
+    );} else {
       logger.info("Response from [agent:{}]: '{}'", stepPlan.agentId(), agentResponse);
       var newState = currentState().addAgentResponse(agentResponse);
 
@@ -210,6 +223,7 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
         .dynamicCall(agentId); // <9>
     return call.invoke(request);
   }
+
   // end::dynamicCall[]
 
 

@@ -4,14 +4,14 @@
 
 package akkajavasdk.components.views.counter;
 
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Consume;
+import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
+import akka.javasdk.view.View;
 import akkajavasdk.components.eventsourcedentities.counter.Counter;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEntity;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEvent;
-import akka.javasdk.annotations.Query;
-import akka.javasdk.annotations.Consume;
-import akka.javasdk.annotations.ComponentId;
-import akka.javasdk.view.View;
 
 @ComponentId("counters_by_value_with_ignore")
 public class CountersByValueWithIgnore extends View {
@@ -23,7 +23,7 @@ public class CountersByValueWithIgnore extends View {
       return new Counter(0);
     }
 
-    public Effect<Counter> onValueIncreased(CounterEvent.ValueIncreased event){
+    public Effect<Counter> onValueIncreased(CounterEvent.ValueIncreased event) {
       Counter counter = rowState();
       return effects().updateRow(counter.onValueIncreased(event));
     }
@@ -39,5 +39,4 @@ public class CountersByValueWithIgnore extends View {
   public QueryEffect<Counter> getCounterByValue(QueryParameters params) {
     return queryResult();
   }
-
 }

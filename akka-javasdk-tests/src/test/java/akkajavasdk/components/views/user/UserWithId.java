@@ -4,5 +4,4 @@
 
 package akkajavasdk.components.views.user;
 
-public record UserWithId(String id, String email, String name) {
-}
+public record UserWithId(String id, String email, String name) {}

@@ -4,18 +4,17 @@
 
 package akkajavasdk;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+
 import akka.grpc.GrpcServiceException;
 import akka.grpc.javadsl.SingleBlockingResponseRequestBuilder;
-import akka.grpc.javadsl.SingleResponseRequestBuilder;
 import akka.javasdk.Principal;
 import akka.javasdk.testkit.TestKitSupport;
 import akkajavasdk.protocol.TestGrpcServiceClient;
 import akkajavasdk.protocol.TestGrpcServiceOuterClass;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
 
 @ExtendWith(Junit5LogCapturing.class)
 public class GrpcEndpointTest extends TestKitSupport {
@@ -33,14 +32,14 @@ public class GrpcEndpointTest extends TestKitSupport {
 
   @Test
   public void shouldProvideAccessToRequestMetadata() {
-    var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class).addRequestHeader("x-foo", "bar");
+    var testClient =
+        getGrpcEndpointClient(TestGrpcServiceClient.class).addRequestHeader("x-foo", "bar");
 
     var request = TestGrpcServiceOuterClass.In.newBuilder().setData("x-foo").build();
     var response = testClient.readMetadata(request);
 
     assertThat(response.getData()).isEqualTo("bar");
   }
-
 
   @Test
   public void shouldAllowExternalGrpcCall() {
@@ -107,7 +106,8 @@ public class GrpcEndpointTest extends TestKitSupport {
 
   @Test
   public void shouldAllowGrpcCallFromOtherService() {
-    var clientFromOtherService = getGrpcEndpointClient(TestGrpcServiceClient.class, Principal.localService("other-service"));
+    var clientFromOtherService =
+        getGrpcEndpointClient(TestGrpcServiceClient.class, Principal.localService("other-service"));
 
     var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
     var response = clientFromOtherService.aclService(request);
@@ -123,8 +123,9 @@ public class GrpcEndpointTest extends TestKitSupport {
     var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class, Principal.INTERNET);
 
     // should inherit deny code defined at class level
-    expectFailWith(testClient.aclInheritedDenyCode()
-        .addHeader("impersonate-service", "other-service"), "NOT_FOUND");
+    expectFailWith(
+        testClient.aclInheritedDenyCode().addHeader("impersonate-service", "other-service"),
+        "NOT_FOUND");
 
     // should override deny code defined at class level
     expectFailWith(testClient.aclOverrideDenyCode(), "UNAVAILABLE");
@@ -133,7 +134,11 @@ public class GrpcEndpointTest extends TestKitSupport {
     expectFailWith(testClient.aclDefaultDenyCode(), "PERMISSION_DENIED");
   }
 
-  private void expectFailWith(SingleBlockingResponseRequestBuilder<TestGrpcServiceOuterClass.In, TestGrpcServiceOuterClass.Out> method, String expected) {
+  private void expectFailWith(
+      SingleBlockingResponseRequestBuilder<
+              TestGrpcServiceOuterClass.In, TestGrpcServiceOuterClass.Out>
+          method,
+      String expected) {
     try {
       var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
       method.invoke(request);
@@ -141,7 +146,5 @@ public class GrpcEndpointTest extends TestKitSupport {
     } catch (GrpcServiceException e) {
       assertThat(e.getMessage()).contains(expected);
     }
-
   }
-
 }

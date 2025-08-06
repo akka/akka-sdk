@@ -62,7 +62,7 @@ Additionally, note that both endpoint types can be secured using ACLs and JWTs, 
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Saga patterns](saga-patterns.html) [Foundational AI concepts (video)](ai-concepts-video.html)
+[Saga patterns](saga-patterns.html) [Building AI agents](ai-agents.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

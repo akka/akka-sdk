@@ -48,8 +48,10 @@ public interface Principal {
 
   /** Abstract principal representing all requests from the internet */
   Principal INTERNET = Basic.INTERNET;
+
   /** Abstract principal representing all requests from self */
   Principal SELF = Basic.SELF;
+
   /** Abstract principal representing all requests from the backoffice */
   Principal BACKOFFICE = Basic.BACKOFFICE;
 

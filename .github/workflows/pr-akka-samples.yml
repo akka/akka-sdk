@@ -10,7 +10,7 @@ on:
 jobs:
   debug:
     if: github.event_name != 'workflow_dispatch'
-    runs-on: ubuntu-22.04
+    runs-on: Akka-Default
     steps:
       - name: Debugging
         run: |
@@ -20,7 +20,7 @@ jobs:
   # Samples that are maintained in akka-sdk repository are copied to akka-samples
   # after version replacement and doc tag cleanup.
   update-full-samples:
-    runs-on: ubuntu-22.04
+    runs-on: Akka-Default
     # run only when `publish` workflow is successful or this workflow manually triggered
     if: (github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch')
     strategy:
@@ -36,6 +36,7 @@ jobs:
           - { sample: "shopping-cart-with-view", sampleRepo: "akka-samples/shopping-cart-with-view" }
           - { sample: "transfer-workflow", sampleRepo: "akka-samples/transfer-workflow" }
           - { sample: "transfer-workflow-compensation", sampleRepo: "akka-samples/transfer-workflow-compensation" }
+          - { sample: "transfer-workflow-orchestration", sampleRepo: "akka-samples/transfer-workflow-orchestration" }
           - { sample: "ask-akka-agent", sampleRepo: "akka-samples/ask-akka-agent" }
           - { sample: "multi-agent", sampleRepo: "akka-samples/multi-agent" }
 
@@ -101,7 +102,7 @@ jobs:
 
   # Update sdk version of samples that are maintained in akka-samples repository.
   update-version-samples:
-    runs-on: ubuntu-22.04
+    runs-on: Akka-Default
     # run only when `publish` workflow is successful or this workflow manually triggered
     if: (github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch')
     strategy:

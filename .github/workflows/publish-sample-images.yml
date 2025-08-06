@@ -13,7 +13,7 @@ permissions:
 jobs:
   validate-tag:
     name: Don't publish pre-releases
-    runs-on: ubuntu-22.04
+    runs-on: Akka-Default
     if: github.event.repository.fork == false
     outputs:
       should-publish: ${{ steps.check.outputs.should-publish }}
@@ -44,7 +44,7 @@ jobs:
 
   publish-sample-images:
     name: Build and publish sample docker images
-    runs-on: ubuntu-22.04
+    runs-on: Akka-Default
     needs: validate-tag
     if: needs.validate-tag.outputs.should-publish == 'true'
     steps:
@@ -90,4 +90,4 @@ jobs:
         run: |-
           cd samples/shopping-cart-quickstart
           echo "${{ secrets.PUBLISH_PASSWORD }}" | docker login --username "${{ secrets.PUBLISH_USER }}" --password-stdin registry.akka.io
-          mvn --batch-mode deploy docker:push -DskipTests -Ddocker.image=registry.akka.io/shopping-cart-quickstart
+          mvn -s ../../.github/settings.xml --batch-mode deploy docker:push -DskipTests -Ddocker.image=registry.akka.io/shopping-cart-quickstart

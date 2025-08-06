@@ -29,6 +29,8 @@ Set your [OpenAI API key](https://platform.openai.com/api-keys) as an environmen
   ```shell
   set OPENAI_API_KEY=your-openai-api-key
   ```
+  
+Or change the `application.conf` file to use a different model provider.
 
 To start your service locally, run:
 

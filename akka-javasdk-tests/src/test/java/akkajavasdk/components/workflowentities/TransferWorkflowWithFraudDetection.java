@@ -44,8 +44,8 @@ public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> 
       return effects().reply(new Message("transfer not started"));
     } else if (!currentState().accepted() && !currentState().finished()) {
 
-      var withdrawInput = new Withdraw(currentState().transfer().from(), currentState().transfer().amount());
-
+      var withdrawInput =
+          new Withdraw(currentState().transfer().from(), currentState().transfer().amount());
       return effects()
           .updateState(currentState().asAccepted())
           .transitionTo(TransferWorkflowWithFraudDetection::withdraw)
@@ -82,7 +82,8 @@ public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> 
 
     switch (result) {
       case TransferVerified transferVerified -> {
-        var withdrawInput = new Withdraw(transferVerified.transfer.from(), transferVerified.transfer.amount());
+        var withdrawInput =
+            new Withdraw(transferVerified.transfer.from(), transferVerified.transfer.amount());
 
         return stepEffects()
           .updateState(state)

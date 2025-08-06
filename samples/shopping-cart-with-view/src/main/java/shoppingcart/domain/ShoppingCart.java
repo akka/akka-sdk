@@ -1,14 +1,13 @@
 package shoppingcart.domain;
 
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 // tag::domain[]
-public record ShoppingCartState(String cartId, List<LineItem> items, boolean checkedOut) {
-
+public record ShoppingCart(String cartId, List<LineItem> items, boolean checkedOut) {
   public record LineItem(String productId, int quantity) {
     public LineItem withQuantity(int quantity) {
       return new LineItem(productId, quantity);
@@ -17,25 +16,25 @@ public record ShoppingCartState(String cartId, List<LineItem> items, boolean che
 
   // end::domain[]
 
-  public ShoppingCartState onItemAdded(ShoppingCartEvent.ItemAdded itemAdded) {
-    var item = new LineItem(itemAdded.productId(), itemAdded.quantity());
+  public ShoppingCart onItemAdded(LineItem item) {
     var lineItem = updateItem(item);
     List<LineItem> lineItems = removeItemByProductId(item.productId());
     lineItems.add(lineItem);
     lineItems.sort(Comparator.comparing(LineItem::productId));
-    return new ShoppingCartState(cartId, lineItems, checkedOut);
+    return new ShoppingCart(cartId, lineItems, checkedOut);
   }
 
   private LineItem updateItem(LineItem item) {
     return findItemByProductId(item.productId())
-        .map(li -> li.withQuantity(li.quantity() + item.quantity()))
-        .orElse(item);
+      .map(li -> li.withQuantity(li.quantity() + item.quantity()))
+      .orElse(item);
   }
 
   private List<LineItem> removeItemByProductId(String productId) {
-    return items().stream()
-        .filter(lineItem -> !lineItem.productId().equals(productId))
-        .collect(Collectors.toList());
+    return items()
+      .stream()
+      .filter(lineItem -> !lineItem.productId().equals(productId))
+      .collect(Collectors.toList());
   }
 
   public Optional<LineItem> findItemByProductId(String productId) {
@@ -43,14 +42,14 @@ public record ShoppingCartState(String cartId, List<LineItem> items, boolean che
     return items.stream().filter(lineItemExists).findFirst();
   }
 
-  public ShoppingCartState onItemRemoved(ShoppingCartEvent.ItemRemoved itemRemoved) {
-    List<LineItem> updatedItems = removeItemByProductId(itemRemoved.productId());
+  public ShoppingCart removeItem(String productId) {
+    List<LineItem> updatedItems = removeItemByProductId(productId);
     updatedItems.sort(Comparator.comparing(LineItem::productId));
-    return new ShoppingCartState(cartId, updatedItems, checkedOut);
+    return new ShoppingCart(cartId, updatedItems, checkedOut);
   }
 
-  public ShoppingCartState onCheckedOut() {
-    return new ShoppingCartState(cartId, items, true);
+  public ShoppingCart onCheckedOut() {
+    return new ShoppingCart(cartId, items, true);
   }
   // tag::domain[]
 }

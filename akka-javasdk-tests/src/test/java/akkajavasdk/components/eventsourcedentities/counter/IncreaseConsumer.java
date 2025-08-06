@@ -9,7 +9,6 @@ import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.consumer.Consumer;
-
 import java.util.concurrent.CompletionStage;
 
 @ComponentId("increase-action")
@@ -33,7 +32,12 @@ public class IncreaseConsumer extends Consumer {
   public Effect printIncrease(CounterEvent.ValueIncreased event) {
     String entityId = this.messageContext().metadata().asCloudEvent().subject().get();
     if (event.value() == 42) {
-      CompletionStage<Done> res = componentClient.forEventSourcedEntity(entityId).method(CounterEntity::increase).invokeAsync(1).thenApply(__ -> Done.getInstance());
+      CompletionStage<Done> res =
+          componentClient
+              .forEventSourcedEntity(entityId)
+              .method(CounterEntity::increase)
+              .invokeAsync(1)
+              .thenApply(__ -> Done.getInstance());
       return effects().asyncDone(res);
     }
     return effects().done();

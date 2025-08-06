@@ -24,7 +24,7 @@ All services and applications start as a Java project. Akka has a getting starte
 
 ## <a href="about:blank#_specify_service_interface_and_domain_model"></a> Specify service interface and domain model
 
-Creating services in Akka follows the architecture outlined in [Akka Architecture](architecture-model.html#_architecture). You start with your domain model, which models your business domain in plain old Java objects. Then you will create Akka components to coordinate them.
+Creating services in Akka follows the model described in [concepts:architecture-model.adoc#_architecture](architecture-model.html#_architecture). You start with your domain model, which models your business domain in plain old Java objects. Then you will create Akka components to coordinate them.
 
 The main components of an Akka service are:
 
@@ -124,7 +124,7 @@ The following pages provide information about deployment:
 
 ## <a href="about:blank#_next_steps"></a> Next steps
 
-Now that you have a project and have deployed it you should familiarize yourself with operating an Akka project. See [Operating Akka](../operations/index.html) for more information about operating Akka services.
+Now that you have a project and have deployed it you should familiarize yourself with operating an Akka project. See [Operating](../operations/index.html) for more information about operating Akka services.
 
 The following topics may also be of interest.
 
@@ -132,7 +132,7 @@ The following topics may also be of interest.
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Deployment model](deployment-model.html) [Declarative effects](declarative-effects.html)
+[Deployment model](deployment-model.html) [Delegation with Effects](declarative-effects.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

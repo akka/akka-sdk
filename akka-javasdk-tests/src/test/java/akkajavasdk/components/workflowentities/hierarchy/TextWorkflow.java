@@ -5,7 +5,6 @@
 package akkajavasdk.components.workflowentities.hierarchy;
 
 import akka.javasdk.annotations.ComponentId;
-
 import java.util.Optional;
 
 @ComponentId("hierarchy-workflow")

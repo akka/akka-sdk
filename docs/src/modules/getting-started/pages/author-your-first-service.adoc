@@ -1,4 +1,4 @@
-= Author your first agentic service
+= Build your first agent
 :page-aliases: java:build-your-first-application.adoc, java:author-your-first-service.adoc
 
 include::ROOT:partial$include.adoc[]
@@ -23,14 +23,12 @@ include::ROOT:partial$local-dev-prerequisites.adoc[]
 * Git
 * https://platform.openai.com/api-keys[OpenAI API key, window="new"]
 
-Akka has support for many AI providers, and this sample is using OpenAI.
-
-You can run this sample without an OpenAI API key, but it will be more fun if you have one. Sign up for free at https://platform.openai.com/api-keys[platform.openai.com/api-keys, window="new"]. If you don't provide an API key, it will use a predefined response instead of using AI.
+Akka has support for many AI providers, and this sample is using OpenAI. Sign up for free at https://platform.openai.com/api-keys[platform.openai.com/api-keys, window="new"].
 
 [#clone_sample]
 == Clone the sample project
 
-. From a command line, clone the link:https://github.com/akka-samples/helloworld-agent[Github Repository, window="new"] in a convenient location:
+. From a command line, clone the link:https://github.com/akka-samples/helloworld-agent[GitHub Repository, window="new"] in a convenient location:
 +
 [source, command line]
 ----
@@ -41,6 +39,17 @@ git clone https://github.com/akka-samples/helloworld-agent.git --depth 1
 
 . Open it in your preferred IDE / Editor.
 
+[sidebar]
+****
+Another convenient way to download this and other samples is to use the Akka CLI. See xref:quick-install-cli.adoc[installation instructions].
+
+[source, command line]
+----
+akka code init helloworld-agent
+----
+****
+
+
 == Explore the Agent
 
 An _Agent_ interacts with an AI model and maintains contextual history in a session memory.
@@ -49,7 +58,7 @@ An _Agent_ interacts with an AI model and maintains contextual history in a sess
 
 The _Agent_ is implemented with:
 
-[source,java]
+[source,java,indent=0]
 .HelloWorldAgent.java
 ----
 include::java:example$helloworld-agent/src/main/java/com/example/application/HelloWorldAgent.java[tag=class]
@@ -69,7 +78,7 @@ HTTP Endpoint components make it possible to conveniently define such APIs accep
 
 The _Endpoint_ is implemented with:
 
-[source,java]
+[source,java,indent=0]
 .HelloWorldEndpoint.java
 ----
 include::java:example$helloworld-agent/src/main/java/com/example/api/HelloWorldEndpoint.java[tag=class]
@@ -110,9 +119,9 @@ curl -i -XPOST --location "http://localhost:9000/hello" \
 Which will reply with an AI-generated greeting, such as:
 [source]
 ----
-Hello (English)! So great to meet you, Alice! I'm here to add some zest to our conversation with
-greetings from around the world. Let's have some fun learning them together! Feel free to ask about
-anything else too!
+Hello (English)! So great to meet you, Alice! I'm here to add some zest to our conversation 
+with greetings from around the world. Let's have some fun learning them together! 
+Feel free to ask about anything else too!
 
 Previous greetings:
 - Hello (English)
@@ -130,9 +139,9 @@ curl -i -XPOST --location "http://localhost:9000/hello" \
 The AI-generated reply might be:
 [source]
 ----
-Bonjour (French)! Ah, New York, the city that never sleeps! It's almost like you need a coffee the
-size of the Eiffel Tower to keep up with it. What's your favorite thing about living in such a vibrant
-city?
+Bonjour (French)! Ah, New York, the city that never sleeps! It's almost like you need a
+coffee the size of the Eiffel Tower to keep up with it. 
+What's your favorite thing about living in such a vibrant city?
 
 Previous greetings:
 - Hello (English)
@@ -148,9 +157,9 @@ curl -i -XPOST --location "http://localhost:9000/hello" \
 
 [source]
 ----
-¡Hola (Spanish)! The botanical garden in New York must be a refreshing oasis amidst the hustle and
-bustle of the city. It's like taking a nature-themed vacation with just a subway ride! Do you have
-a favorite plant or flower that you like to see there?
+¡Hola (Spanish)! The botanical garden in New York must be a refreshing oasis amidst the
+hustle and bustle of the city. It's like taking a nature-themed vacation with just
+subway ride! Do you have a favorite plant or flower that you like to see there?
 
 Previous greetings:
 - Hello (English)
@@ -171,7 +180,7 @@ Here we use the user `alice` as the session identifier. Give it a try to change 
 
 In this section, you will modify the instructions for the agent and see how it changes behavior. Open the `HelloWorldAgent.java` file and edit the `SYSTEM_MESSAGE`. For example, you can add the following to the guidelines:
 
-[source,java]
+[source,java,indent=0]
 .HelloWorldAgent.java
 ----
 - Include some interesting facts
@@ -215,7 +224,6 @@ The Akka local console is a web-based tool that comes bundled with the Akka CLI.
 Starting the local console requires using the Akka CLI.
 
 include::ROOT:partial$cli-install-short.adoc[]
-
 
 === Start the local console
 

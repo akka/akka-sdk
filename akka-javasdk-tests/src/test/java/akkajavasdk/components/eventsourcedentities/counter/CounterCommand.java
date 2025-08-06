@@ -10,12 +10,11 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@type")
 @JsonSubTypes({
   @JsonSubTypes.Type(value = CounterCommand.Increase.class, name = "I"),
-  @JsonSubTypes.Type(value = CounterCommand.Set.class, name = "S")})
+  @JsonSubTypes.Type(value = CounterCommand.Set.class, name = "S")
+})
 public sealed interface CounterCommand {
 
-  record Increase(int value) implements CounterCommand {
-  }
+  record Increase(int value) implements CounterCommand {}
 
-  record Set(int value) implements CounterCommand {
-  }
+  record Set(int value) implements CounterCommand {}
 }

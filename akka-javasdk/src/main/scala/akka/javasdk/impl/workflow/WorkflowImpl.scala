@@ -4,7 +4,18 @@
 
 package akka.javasdk.impl.workflow
 
+import scala.annotation.nowarn
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.jdk.CollectionConverters.ListHasAsScala
+import scala.jdk.DurationConverters.JavaDurationOps
+import scala.jdk.OptionConverters.RichOptional
+import scala.util.Failure
+import scala.util.Success
+import scala.util.control.NonFatal
+
 import akka.annotation.InternalApi
+import akka.javasdk.CommandException
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.impl.AbstractContext
@@ -40,6 +51,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
+import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.ListHasAsScala
@@ -139,6 +151,8 @@ class WorkflowImpl[S, W <: Workflow[S]](
         workflowContext)
       Future.successful(effect)
     } catch {
+      case e: CommandException =>
+        Future.successful(toSpiCommandEffect(WorkflowEffectImpl[Any]().error(e)))
       case e: HandlerNotFoundException =>
         throw WorkflowException(workflowId, command.name, e.getMessage, Some(e))
       case BadRequestException(msg) =>

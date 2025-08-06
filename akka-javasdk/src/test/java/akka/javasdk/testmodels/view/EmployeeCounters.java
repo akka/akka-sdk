@@ -4,9 +4,8 @@
 
 package akka.javasdk.testmodels.view;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import akka.javasdk.testmodels.keyvalueentity.CounterState;
-
+import com.fasterxml.jackson.annotation.JsonCreator;
 import java.util.Collection;
 
 public class EmployeeCounters {

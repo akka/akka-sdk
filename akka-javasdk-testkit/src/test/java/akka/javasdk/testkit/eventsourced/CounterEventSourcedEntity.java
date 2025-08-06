@@ -5,10 +5,7 @@
 package akka.javasdk.testkit.eventsourced;
 
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
-import akka.javasdk.keyvalueentity.KeyValueEntity;
-import akka.javasdk.testkit.keyvalueentity.CounterValueEntity;
 import com.google.common.collect.HashMultimap;
-
 import java.util.List;
 
 public class CounterEventSourcedEntity extends EventSourcedEntity<Integer, CounterEvent> {
@@ -17,8 +14,12 @@ public class CounterEventSourcedEntity extends EventSourcedEntity<Integer, Count
 
   public Effect<String> increaseBy(Integer value) {
     if (value <= 0) return effects().error("Can't increase with a negative value");
-    else if (wouldOverflow(value)) return effects().error("Can't increase by [" + value + "] due to overflow");
-    else return effects().persist(new CounterEvent.Increased(commandContext().entityId(), value)).thenReply(__ -> "Ok");
+    else if (wouldOverflow(value))
+      return effects().error("Can't increase by [" + value + "] due to overflow");
+    else
+      return effects()
+          .persist(new CounterEvent.Increased(commandContext().entityId(), value))
+          .thenReply(__ -> "Ok");
   }
 
   public Effect<Response> commandHandlerWithResponse() {
@@ -31,11 +32,18 @@ public class CounterEventSourcedEntity extends EventSourcedEntity<Integer, Count
 
   public Effect<String> set(Integer value) {
     var map = HashMultimap.<String, String>create();
-    return effects().persist(new CounterEvent.Set(commandContext().entityId(), value, map)).thenReply(__ -> "Ok");
+    return effects()
+        .persist(new CounterEvent.Set(commandContext().entityId(), value, map))
+        .thenReply(__ -> "Ok");
   }
 
   public Effect<String> increaseFromMeta() {
-    return effects().persist(new CounterEvent.Increased(commandContext().entityId(), Integer.parseInt(commandContext().metadata().get("value").get()))).thenReply(__ -> "Ok");
+    return effects()
+        .persist(
+            new CounterEvent.Increased(
+                commandContext().entityId(),
+                Integer.parseInt(commandContext().metadata().get("value").get())))
+        .thenReply(__ -> "Ok");
   }
 
   public Effect<String> doubleIncreaseBy(Integer value) {
@@ -49,7 +57,10 @@ public class CounterEventSourcedEntity extends EventSourcedEntity<Integer, Count
   }
 
   public Effect<String> delete() {
-    return effects().persist(new CounterEvent.Increased(commandContext().entityId(), 0)).deleteEntity().thenReply(__ -> "Ok");
+    return effects()
+        .persist(new CounterEvent.Increased(commandContext().entityId(), 0))
+        .deleteEntity()
+        .thenReply(__ -> "Ok");
   }
 
   public ReadOnlyEffect<List<SomeRecord>> returnList() {

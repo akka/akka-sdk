@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-AI coding assistants can increase your productivity when developing Akka services. This guide will give you some practical hints of how to setup Akka knowledge and how to prompt the AI assistant. We are using https://www.qodo.ai[Qodo, window="new"] and https://www.cursor.com[Cursor, window="new"] as examples of such coding assistants, but the techniques are applicable for other tools as well.
+AI coding assistants can increase your productivity when developing Akka services. This guide will give you some practical hints of how to setup Akka knowledge and how to prompt the AI assistant. We are using https://www.qodo.ai[Qodo, window="new"], https://www.cursor.com[Cursor, window="new"] and IntelliJ IDEA as examples of such coding assistants, but the techniques are applicable for other tools as well.
 
 Some key benefits of using an AI coding assistant:
 
@@ -33,7 +33,8 @@ The AI response will look something like this...
 
 [source]
 ----
-Akka is a toolkit for building highly concurrent, distributed, and resilient message-driven applications...
+Akka is a toolkit for building highly concurrent, distributed, 
+and resilient message-driven applications...
 1. Actor System ...
 2. Actors ...
 ...
@@ -84,6 +85,16 @@ In the chat window it is important that you include the Akka documentation as co
 
 Make sure that you download the latest documentation regularly to make use of documentation improvements and new features.
 
+== IntelliJ IDEA AI assistant
+
+For the AI assistant in IntelliJ IDEA you need to download the https://doc.akka.io/llms-ctx.txt[llms-ctx.txt, window="new"] file and place it in the root of the project directory. The AI assistant will include relevant information to the LLM.
+
+Add `llms-ctx.txt` to your `.gitignore` file, if you use git.
+
+It is important that you include the Akka documentation as context by enabling `Codebase` in the chat window.
+
+Make sure that you download the latest documentation regularly to make use of documentation improvements and new features.
+
 === Verify that it works
 
 To verify that the assistant now knows about Akka, we can ask the question again:
@@ -108,7 +119,7 @@ it should answer with something like
 Even though the documentation includes comprehensive code snippets it can be good to include the full source code of one or a few samples. This makes it easier for the coding assistant to follow the same structure as the sample.
 
 . Pick one or a few samples from xref:getting-started:samples.adoc[], which are relevant to what you are developing. If you are just getting started learning Akka you can pick the Shopping Cart sample.
-. Clone the sample Github repository. Pull latest if you have already cloned the repository before.
+. Clone the sample GitHub repository. Pull latest if you have already cloned the repository before.
 . Copy the source code to a folder `akka-context/` in your development project, e.g. `akka-context/travel-agent/src`.
 . Add `akka-context/` to your `.gitignore` file, if you use git.
 

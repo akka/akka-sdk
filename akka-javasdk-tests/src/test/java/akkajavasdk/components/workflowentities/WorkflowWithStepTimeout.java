@@ -4,7 +4,9 @@
 
 package akkajavasdk.components.workflowentities;
 
-import akkajavasdk.components.actions.echo.Message;
+import static java.time.Duration.ofMillis;
+import static java.time.Duration.ofSeconds;
+
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.workflow.Workflow;
 

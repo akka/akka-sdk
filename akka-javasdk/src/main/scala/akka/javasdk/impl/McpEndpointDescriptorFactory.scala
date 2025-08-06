@@ -4,6 +4,17 @@
 
 package akka.javasdk.impl
 
+import java.lang.annotation.Annotation
+import java.lang.reflect.Method
+import java.lang.reflect.ParameterizedType
+import java.util.Optional
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.jdk.OptionConverters.RichOption
+import scala.reflect.ClassTag
+import scala.util.control.NonFatal
+
 import akka.annotation.InternalApi
 import akka.http.scaladsl.model.MediaTypes
 import akka.http.scaladsl.model.Uri
@@ -28,7 +39,6 @@ import akka.runtime.sdk.spi.McpEndpointDescriptor.PromptArgument
 import akka.runtime.sdk.spi.McpEndpointDescriptor.PromptMessage
 import akka.runtime.sdk.spi.McpEndpointDescriptor.PromptMethodDescriptor
 import akka.runtime.sdk.spi.McpEndpointDescriptor.PromptResult
-import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
 import akka.runtime.sdk.spi.McpEndpointDescriptor.Resource
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ResourceMethodDescriptor
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ResourceTemplateMethodDescriptor
@@ -43,22 +53,13 @@ import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaBoolean
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaDataType
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaInteger
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaNumber
+import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaString
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.slf4j.LoggerFactory
-
-import java.lang.annotation.Annotation
-import java.lang.reflect.Method
-import java.lang.reflect.ParameterizedType
-import java.util.Optional
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.jdk.OptionConverters.RichOption
-import scala.reflect.ClassTag
-import scala.util.control.NonFatal
 
 /**
  * INTERNAL API

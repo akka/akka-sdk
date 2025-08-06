@@ -3,15 +3,13 @@ package user.registry.domain;
 import java.util.Optional;
 
 public record UniqueEmail(String address, Status status, Optional<String> ownerId) {
-
   public enum Status {
     NOT_USED,
     RESERVED,
-    CONFIRMED
+    CONFIRMED,
   }
 
-  public record ReserveEmail(String address, String ownerId) {
-  }
+  public record ReserveEmail(String address, String ownerId) {}
 
   public boolean sameOwner(String ownerId) {
     return this.ownerId.isPresent() && this.ownerId.get().equals(ownerId);

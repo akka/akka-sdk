@@ -7,12 +7,12 @@
     <parent>
         <groupId>io.akka</groupId>
         <artifactId>akka-javasdk-maven</artifactId>
-        <version>3.4.0</version>
+        <version>3.4.6</version>
     </parent>
 
     <groupId>io.akka</groupId>
     <artifactId>akka-javasdk-parent</artifactId>
-    <version>3.4.0</version>
+    <version>3.4.6</version>
     <packaging>pom</packaging>
 
 
@@ -34,13 +34,13 @@
 
         <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
 
-        <akka-javasdk.version>3.4.0</akka-javasdk.version>
+        <akka-javasdk.version>3.4.6</akka-javasdk.version>
         <!-- must be carefully kept in sync with sdk and runtime version -->
         <akka.grpc.version>2.5.5</akka.grpc.version>
 
         <!-- These are dependent on runtime environment and cannot be customized by users -->
         <maven.compiler.release>21</maven.compiler.release>
-        <akka-runtime.version>1.5.3-780df3f</akka-runtime.version>
+        <akka-runtime.version>1.5.6</akka-runtime.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <skip.docker>false</skip.docker>
@@ -424,6 +424,39 @@
             </build>
         </profile>
 
+        <profile>
+            <id>formatting</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.hubspot.maven.plugins</groupId>
+                        <artifactId>prettier-maven-plugin</artifactId>
+                        <version>0.22</version>
+                        <configuration>
+                            <prettierJavaVersion>2.6.0</prettierJavaVersion>
+                            <printWidth>94</printWidth>
+                            <tabWidth>2</tabWidth>
+                            <useTabs>false</useTabs>
+                            <ignoreConfigFile>true</ignoreConfigFile>
+                            <ignoreEditorConfig>true</ignoreEditorConfig>
+                            <inputGlobs>
+                                <!-- These are the default patterns, you can omit <inputGlobs> entirely unless you want to override them -->
+                                <inputGlob>src/main/java/**/*.java</inputGlob>
+                                <inputGlob>src/test/java/**/*.java</inputGlob>
+                            </inputGlobs>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <phase>validate</phase>
+                                <goals>
+                                    <goal>write</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>clean-on-missing-descriptor</id>
             <activation>

@@ -157,7 +157,7 @@ public Effect<Done> addItem(LineItem item) {
   @Override
   public ShoppingCart applyEvent(ShoppingCartEvent event) {
     return switch (event) {
-      case ShoppingCartEvent.ItemAdded evt -> currentState().onItemAdded(evt); // (5)
+      case ShoppingCartEvent.ItemAdded evt -> currentState().addItem(evt.item()); // (5)
     };
   }
 ```
@@ -166,13 +166,12 @@ public Effect<Done> addItem(LineItem item) {
 | **2** | From the current incoming `LineItem` we create a new `ItemAdded` event representing the change of the cart. |
 | **3** | We store the event by returning an `Effect` with `effects().persist`. |
 | **4** | The acknowledgment that the command was successfully processed is only sent if the event was successfully stored and applied, otherwise there will be an error reply. The lambda parameter `newState` gives us access to the new state returned by applying such event. |
-| **5** | Event handler returns the updated state after applying the event - the logic for state transition is defined inside the `ShoppingCart` domain model. |
-As mentioned above, the business logic that allows us to transition between states was placed on the domain model as seen below:
+| **5** | Event handler returns the updated state after applying the event - the logic for updating the state is defined inside the `ShoppingCart` domain model. |
+As mentioned above, the business logic for updating the state was placed on the domain model as seen below:
 
 [ShoppingCart.java](https://github.com/akka/akka-sdk/blob/main/samples/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java)
 ```java
-public ShoppingCart onItemAdded(ShoppingCartEvent.ItemAdded itemAdded) {
-  var item = itemAdded.item();
+public ShoppingCart addItem(LineItem item) {
   var lineItem = updateItem(item); // (1)
   List<LineItem> lineItems = removeItemByProductId(item.productId()); // (2)
   lineItems.add(lineItem); // (3)

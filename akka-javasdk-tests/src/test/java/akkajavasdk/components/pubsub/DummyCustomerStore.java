@@ -5,7 +5,6 @@
 package akkajavasdk.components.pubsub;
 
 import akkajavasdk.components.keyvalueentities.customer.CustomerEntity.Customer;
-
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DummyCustomerStore {

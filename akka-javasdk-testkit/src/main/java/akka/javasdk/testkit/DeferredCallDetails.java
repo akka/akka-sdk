@@ -7,15 +7,23 @@ package akka.javasdk.testkit;
 import akka.javasdk.Metadata;
 
 public interface DeferredCallDetails<I, O> {
-  /** @return The forwarded message */
+  /**
+   * @return The forwarded message
+   */
   I getMessage();
 
-  /** @return Any metadata attached to the call */
+  /**
+   * @return Any metadata attached to the call
+   */
   Metadata getMetadata();
 
-  /** @return The name of the service being called */
+  /**
+   * @return The name of the service being called
+   */
   String getServiceName();
 
-  /** @return The method name being called */
+  /**
+   * @return The method name being called
+   */
   String getMethodName();
 }

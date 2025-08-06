@@ -4,12 +4,13 @@
 
 package akkajavasdk.components.workflowentities;
 
+import static java.time.Duration.ofSeconds;
+
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import akkajavasdk.components.actions.echo.Message;
 
-import static java.time.Duration.ofSeconds;
 
 @ComponentId("workflow-with-recover-strategy")
 public class WorkflowWithRecoverStrategy extends Workflow<FailingCounterState> {
@@ -19,7 +20,6 @@ public class WorkflowWithRecoverStrategy extends Workflow<FailingCounterState> {
   public WorkflowWithRecoverStrategy(ComponentClient componentClient) {
     this.componentClient = componentClient;
   }
-
 
   @Override
   public WorkflowConfig configuration() {
@@ -57,7 +57,7 @@ public class WorkflowWithRecoverStrategy extends Workflow<FailingCounterState> {
       .thenTransitionTo(WorkflowWithRecoverStrategy::counterStep);
   }
 
-  public Effect<FailingCounterState> get(){
+  public Effect<FailingCounterState> get() {
     if (currentState() != null) {
       return effects().reply(currentState());
     } else {

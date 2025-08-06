@@ -1,13 +1,12 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
 - [Getting Started](../index.html)
-- [AI Planner Part 3: Weather agent](weather.html)
+- [Build an AI multi-agent planner](index.html)
+- [Weather agent](weather.html)
 
 <!-- </nav> -->
 
-# AI Planner Part 3: Weather agent
-
-[1: The activity agent](index.html) > [2: User preferences](preferences.html) > **Weather agent** > [4: Orchestrate the agents](team.html) > [5: List by user](list.html) > [6: Dynamic orchestration](dynamic-team.html)
+# Weather agent
 
 |  | **New to Akka? Start here:**
 
@@ -20,6 +19,7 @@ Activities may depend on the weather, so let’s add an agent that retrieves a w
 In this part of the guide you will:
 
 - Create an agent for the weather forecast that uses an external service as a function tool
+- Make a request to the external `api.weatherapi.com` service
 
 ## <a href="about:blank#_prerequisites"></a> Prerequisites
 
@@ -105,11 +105,12 @@ We could make a request to the `WeatherAgent` from the endpoint before calling t
 
 Before introducing the workflow we would like to see that the `WeatherAgent` works in isolation.
 
-To use the preferences from the `ActivityAgent` we need to inject the component client and retrieve the preferences for a given user id.
+Add a new file `WeatherAgentIntegrationTest.java` to `src/main/test/com/example/application/`
 
-ActivityAgent.java
+WeatherAgentIntegrationTest.java
 ```java
 import akka.javasdk.testkit.TestKitSupport;
+import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
@@ -117,6 +118,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 public class WeatherAgentIntegrationTest extends TestKitSupport { // (1)
 
+  @Test
   public void testAgent() {
     var sessionId = UUID.randomUUID().toString();
     var message = "I am in Madrid";
@@ -154,12 +156,12 @@ mvn verify
 
 ## <a href="about:blank#_next_steps"></a> Next steps
 
-- Introduce a workflow that orchestrates the calls between the agents. Continue with [Part 4: Orchestrate the agents](team.html)
+- Introduce a workflow that orchestrates the calls between the agents. Continue with [Orchestrate the agents](team.html)
 - Learn more about more possibilities of [extending agents with function tools](../../java/agents.html#tools).
 
 <!-- <footer> -->
 <!-- <nav> -->
-[AI Planner Part 2: User preferences](preferences.html) [AI Planner Part 4: Orchestrate the agents](team.html)
+[User preferences](preferences.html) [Orchestrate the agents](team.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

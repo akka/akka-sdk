@@ -4,6 +4,14 @@
 
 package akka.javasdk.impl
 
+import java.lang.annotation.Annotation
+import java.lang.reflect.Field
+import java.lang.reflect.Method
+import java.lang.reflect.Parameter
+import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
+import java.util.Optional
+
 import akka.annotation.InternalApi
 import akka.http.javadsl.model.HttpEntity
 import akka.http.javadsl.model.HttpRequest
@@ -15,14 +23,6 @@ import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaInteger
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaNumber
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaString
-
-import java.lang.annotation.Annotation
-import java.lang.reflect.Field
-import java.lang.reflect.Method
-import java.lang.reflect.Parameter
-import java.lang.reflect.ParameterizedType
-import java.lang.reflect.Type
-import java.util.Optional
 
 /**
  * INTERNAL API

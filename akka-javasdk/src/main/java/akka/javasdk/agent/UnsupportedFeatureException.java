@@ -5,10 +5,10 @@
 package akka.javasdk.agent;
 
 /**
- * Exception thrown when an unsupported feature is requested from an AI model or service.
- * This indicates that the feature is not available or not supported by the current configuration.
+ * Exception thrown when an unsupported feature is requested from an AI model or service. This
+ * indicates that the feature is not available or not supported by the current configuration.
  */
-final public class UnsupportedFeatureException extends RuntimeException {
+public final class UnsupportedFeatureException extends RuntimeException {
 
   public UnsupportedFeatureException(String message) {
     super(message);
