@@ -2,12 +2,13 @@ package com.example.application;
 
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.StepName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
+import static java.time.Duration.ofSeconds;
 
 // tag::all[]
 @ComponentId("agent-team")
@@ -32,9 +33,9 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
 
   public Effect<Done> start(String query) {
     return effects()
-        .updateState(new State(query, "", ""))
-        .transitionTo("weather") // <1>
-        .thenReply(Done.getInstance());
+      .updateState(new State(query, "", ""))
+      .transitionTo(AgentTeamWorkflow::askWeather) // <1>
+      .thenReply(Done.getInstance());
   }
 
   public Effect<String> getAnswer() {
@@ -46,57 +47,49 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
   }
 
   @Override
-  public WorkflowDef<State> definition() {
-    return workflow()
-        .addStep(askWeather())
-        .addStep(suggestActivities())
-        .addStep(error())
-        .defaultStepRecoverStrategy(maxRetries(2).failoverTo("error"));
+  public WorkflowConfig configuration() {
+    return WorkflowConfig.builder()
+      .stepConfig(AgentTeamWorkflow::askWeather, ofSeconds(60))
+      .stepConfig(AgentTeamWorkflow::suggestActivities, ofSeconds(60))
+      .defaultStepRecovery(maxRetries(2).failoverTo(AgentTeamWorkflow::error))
+      .build();
   }
 
-  private Step askWeather() { // <2>
-    return step("weather")
-        .call(() ->
-            componentClient
-                .forAgent()
-                .inSession(sessionId())
-                .method(WeatherAgent::query)
-                .invoke(currentState().userQuery))
-        .andThen(String.class, forecast -> {
-          logger.info("Weather forecast: {}", forecast);
+  @StepName("weather")
+  private StepEffect askWeather() { // <2>
+    var forecast = componentClient
+      .forAgent()
+      .inSession(sessionId())
+      .method(WeatherAgent::query)
+      .invoke(currentState().userQuery);
 
-          return effects()
-              .updateState(currentState().withWeatherForecast(forecast))// <3>
-              .transitionTo("activities");
-        })
-        .timeout(Duration.ofSeconds(60));
+    logger.info("Weather forecast: {}", forecast);
+
+    return stepEffects()
+      .updateState(currentState().withWeatherForecast(forecast))// <3>
+      .thenTransitionTo(AgentTeamWorkflow::suggestActivities);
   }
 
-  private Step suggestActivities() {
-    return step("activities")
-        .call(() -> {
-          String request = currentState().userQuery +
-              "\nWeather forecast: " + currentState().weatherForecast; // <4>
-          return componentClient
-              .forAgent()
-              .inSession(sessionId())
-              .method(ActivityAgent::query)
-              .invoke(request);
-        })
-        .andThen(String.class, suggestion -> {
-          logger.info("Activities: {}", suggestion);
+  @StepName("activities")
+  private StepEffect suggestActivities() {
 
-          return effects()
-              .updateState(currentState().withAnswer(suggestion)) // <5>
-              .end();
-        })
-        .timeout(Duration.ofSeconds(60));
+    var request = currentState().userQuery +
+      "\nWeather forecast: " + currentState().weatherForecast; // <4>
+    var suggestion = componentClient
+      .forAgent()
+      .inSession(sessionId())
+      .method(ActivityAgent::query)
+      .invoke(request);
+
+    logger.info("Activities: {}", suggestion);
+
+    return stepEffects()
+      .updateState(currentState().withAnswer(suggestion)) // <5>
+      .thenEnd();
   }
 
-  private Step error() {
-    return step("error")
-        .call(() -> null)
-        .andThen(() -> effects().end());
+  private StepEffect error() {
+    return stepEffects().thenEnd();
   }
 
   private String sessionId() {
