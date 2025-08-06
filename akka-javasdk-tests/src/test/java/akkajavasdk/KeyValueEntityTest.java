@@ -201,9 +201,9 @@ public class KeyValueEntityTest extends TestKitSupport {
                   .method(UserEntity::run)
                   .invoke("throwRuntimeException");
             });
+
     assertThat(exc5.getMessage())
-        .contains(
-            "Unexpected error "); // it's not the original message, but the one from the runtime
+        .contains("Unexpected failure: java.lang.RuntimeException: throwRuntimeException");
   }
 
   private void createUser(TestUser user) {
