@@ -269,9 +269,7 @@ public class EventSourcedEntityTest extends TestKitSupport {
                   .method(CounterEntity::run)
                   .invoke("throwRuntimeException");
             });
-    assertThat(exc5.getMessage())
-        .contains(
-            "Unexpected error "); // it's not the original message, but the one from the runtime
+    assertThat(exc5.getMessage()).contains("Unexpected failure: java.lang.RuntimeException: throwRuntimeException");
   }
 
   private Integer increaseCounter(EventSourcedEntityClient client, int value) {

@@ -743,11 +743,7 @@ public class WorkflowTest extends TestKitSupport {
                   .method(TransferWorkflow::run)
                   .invoke("throwRuntimeException");
             });
-    assertThat(exc5.getMessage())
-        .contains(
-            "Proxy error: user service returned failure - Unexpected failure:"
-                + " java.lang.RuntimeException:" // it's not the original message
-                + " throwRuntimeException"); // but the one from the runtime
+    assertThat(exc5.getMessage()).contains("Unexpected failure: java.lang.RuntimeException: throwRuntimeException");
   }
 
   private String randomTransferId() {
