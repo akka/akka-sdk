@@ -1,6 +1,10 @@
 package demo.multiagent.application;
 
 import static demo.multiagent.application.AgentTeamWorkflow.Status.*;
+import static demo.multiagent.application.AgentTeamWorkflow.Status.COMPLETED;
+import static demo.multiagent.application.AgentTeamWorkflow.Status.FAILED;
+import static demo.multiagent.application.AgentTeamWorkflow.Status.STARTED;
+import static java.time.Duration.ofSeconds;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 // tag::all[]
@@ -11,26 +15,20 @@ import akka.javasdk.client.ComponentClient;
 import akka.javasdk.client.DynamicMethodRef;
 import akka.javasdk.workflow.Workflow;
 import demo.multiagent.domain.AgentRequest;
-import demo.multiagent.domain.AgentSelection;
-import demo.multiagent.domain.Plan;
-import demo.multiagent.domain.PlanStep;
-import java.time.Duration;
 import demo.multiagent.domain.AgentRequest;
 import demo.multiagent.domain.AgentSelection;
+import demo.multiagent.domain.AgentSelection;
+import demo.multiagent.domain.Plan;
 import demo.multiagent.domain.Plan;
 import demo.multiagent.domain.PlanStep;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import demo.multiagent.domain.PlanStep;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static demo.multiagent.application.AgentTeamWorkflow.Status.COMPLETED;
-import static demo.multiagent.application.AgentTeamWorkflow.Status.FAILED;
-import static demo.multiagent.application.AgentTeamWorkflow.Status.STARTED;
-import static java.time.Duration.ofSeconds;
+import org.slf4j.LoggerFactory;
 
 // tag::all[]
 // tag::plan[]
@@ -149,7 +147,8 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
   // tag::plan[]
   @StepName("select-agents")
   private StepEffect selectAgentsStep() { // <2>
-    var selection = componentClient.forAgent()
+    var selection = componentClient
+      .forAgent()
       .inSession(sessionId())
       .method(SelectorAgent::selectAgents)
       .invoke(currentState().userQuery); // <4>
@@ -159,26 +158,26 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
       var newState = currentState()
         .withFinalAnswer("Couldn't find any agent(s) able to respond to the original query.")
         .failed();
-      return stepEffects()
-        .updateState(newState)
-        .thenEnd(); // terminate workflow
-    }else {
+      return stepEffects().updateState(newState).thenEnd(); // terminate workflow
+    } else {
       return stepEffects()
         .thenTransitionTo(AgentTeamWorkflow::createPlanStep)
         .withInput(selection); // <5>
-
     }
   }
-
 
   @StepName("create-plan")
   private StepEffect createPlanStep(AgentSelection agentSelection) { // <2>
     logger.info(
       "Calling planner with: '{}' / {}",
       currentState().userQuery,
-      agentSelection.agents());
+      agentSelection.agents()
+    );
 
-    var plan =  componentClient.forAgent().inSession(sessionId()).method(PlannerAgent::createPlan)
+    var plan = componentClient
+      .forAgent()
+      .inSession(sessionId())
+      .method(PlannerAgent::createPlan)
       .invoke(new PlannerAgent.Request(currentState().userQuery, agentSelection)); // <6>
 
     logger.info("Execution plan: {}", plan);
@@ -189,22 +188,31 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
 
   @StepName("execute-plan")
   private StepEffect executePlanStep() { // <2>
-
     var stepPlan = currentState().nextStepPlan(); // <8>
-    logger.info("Executing plan step (agent:{}), asking {}", stepPlan.agentId(), stepPlan.query()
-    );var agentResponse = callAgent(stepPlan.agentId(), stepPlan.query()); // <9>
+    logger.info(
+      "Executing plan step (agent:{}), asking {}",
+      stepPlan.agentId(),
+      stepPlan.query()
+    );
+    var agentResponse = callAgent(stepPlan.agentId(), stepPlan.query()); // <9>
     if (agentResponse.startsWith("ERROR")) {
-      throw new RuntimeException("Agent '" + stepPlan.agentId() + "' responded with error: " + agentResponse
-    );} else {
+      throw new RuntimeException(
+        "Agent '" + stepPlan.agentId() + "' responded with error: " + agentResponse
+      );
+    } else {
       logger.info("Response from [agent:{}]: '{}'", stepPlan.agentId(), agentResponse);
       var newState = currentState().addAgentResponse(agentResponse);
 
       if (newState.hasMoreSteps()) {
         logger.info("Still {} steps to execute.", newState.plan().steps().size());
-        return stepEffects().updateState(newState).thenTransitionTo(AgentTeamWorkflow::executePlanStep); // <10>
+        return stepEffects()
+          .updateState(newState)
+          .thenTransitionTo(AgentTeamWorkflow::executePlanStep); // <10>
       } else {
         logger.info("No further steps to execute.");
-        return stepEffects().updateState(newState).thenTransitionTo(AgentTeamWorkflow::summarizeStep);
+        return stepEffects()
+          .updateState(newState)
+          .thenTransitionTo(AgentTeamWorkflow::summarizeStep);
       }
     }
   }
@@ -214,39 +222,38 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
     // We know the id of the agent to call, but not the agent class.
     // Could be WeatherAgent or ActivityAgent.
     // We can still invoke the agent based on its id, given that we know that it
-    // takes a AgentRequest parameter and returns String.
+    // takes an AgentRequest parameter and returns String.
     var request = new AgentRequest(currentState().userId(), query);
-    DynamicMethodRef<AgentRequest, String> call =
-      componentClient
-        .forAgent()
-        .inSession(sessionId())
-        .dynamicCall(agentId); // <9>
+    DynamicMethodRef<AgentRequest, String> call = componentClient
+      .forAgent()
+      .inSession(sessionId())
+      .dynamicCall(agentId); // <9>
     return call.invoke(request);
   }
 
   // end::dynamicCall[]
 
-
   @StepName("summarize")
   private StepEffect summarizeStep() { // <2>
-
     var agentsAnswers = currentState().agentResponses.values();
-    var finalAnswer = componentClient.forAgent().inSession(sessionId()).method(SummarizerAgent::summarize)
+    var finalAnswer = componentClient
+      .forAgent()
+      .inSession(sessionId())
+      .method(SummarizerAgent::summarize)
       .invoke(new SummarizerAgent.Request(currentState().userQuery, agentsAnswers));
 
     return stepEffects()
       .updateState(currentState().withFinalAnswer(finalAnswer).complete())
       .thenPause();
   }
+
   // end::plan[]
 
   @StepName("interrupt")
   private StepEffect interruptStep() {
     logger.info("Interrupting workflow");
 
-    return stepEffects()
-      .updateState(currentState().failed())
-      .thenEnd();
+    return stepEffects().updateState(currentState().failed()).thenEnd();
   }
 
   private String sessionId() {

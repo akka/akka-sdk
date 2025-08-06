@@ -20,10 +20,9 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
   // end::class[]
 
   // tag::definition[]
-  public record Withdraw(String from, int amount) { // <1>
-  }
-  public record Deposit(String to, int amount) { // <1>
-  }
+  public record Withdraw(String from, int amount) {} // <1>
+
+  public record Deposit(String to, int amount) {} // <1>
 
   private final ComponentClient componentClient;
 
@@ -33,16 +32,14 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
 
   @StepName("withdraw") // <2>
   private StepEffect withdrawStep(Withdraw withdraw) {
-
-    componentClient.forEventSourcedEntity(withdraw.from)
+    componentClient
+      .forEventSourcedEntity(withdraw.from)
       .method(WalletEntity::withdraw)
-      .invoke(withdraw.amount)
-      ; // <3>
+      .invoke(withdraw.amount); // <3>
 
     String to = currentState().transfer().to(); // <4>
     int amount = currentState().transfer().amount();
-    Deposit depositInput = new Deposit(to,
-          amount);
+    Deposit depositInput = new Deposit(to, amount);
 
     return stepEffects()
       .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
@@ -52,11 +49,12 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
 
   @StepName("deposit") // <2>
   private StepEffect depositStep(Deposit deposit) { // <6>
-
-    componentClient.forEventSourcedEntity(deposit.to)
+    componentClient
+      .forEventSourcedEntity(deposit.to)
       .method(WalletEntity::deposit)
       .invoke(deposit.amount);
 
+    // prettier-ignore
     return stepEffects()
       .updateState(currentState().withStatus(COMPLETED))
       .thenEnd(); // <7>

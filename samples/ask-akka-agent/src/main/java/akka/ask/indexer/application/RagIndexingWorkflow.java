@@ -1,6 +1,8 @@
 package akka.ask.indexer.application;
 
 import static akka.Done.done;
+import static akka.Done.done;
+import static java.time.Duration.ofMinutes;
 import static java.time.temporal.ChronoUnit.MINUTES;
 
 import akka.Done;
@@ -30,9 +32,6 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static akka.Done.done;
-import static java.time.Duration.ofMinutes;
 
 /**
  * This workflow reads the files under src/main/resources/md-docs/ and create
@@ -147,9 +146,9 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
 
   // tag::def[]
 
-
   @Override
   public WorkflowConfig configuration() {
+    // prettier-ignore
     return WorkflowConfig.builder()
       .defaultStepTimeout(ofMinutes(1))
       .build();
