@@ -4,6 +4,14 @@
 
 package akka.javasdk.impl.workflow
 
+import java.util.concurrent.CompletionStage
+import java.util.function.{ Function => JFunc }
+
+import scala.annotation.nowarn
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.jdk.FutureConverters.CompletionStageOps
+
 import akka.annotation.InternalApi
 import akka.javasdk.impl.CommandSerialization
 import akka.javasdk.impl.HandlerNotFoundException
@@ -40,13 +48,6 @@ import akka.runtime.sdk.spi.SpiEntity
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiWorkflow
 import akka.runtime.sdk.spi.SpiWorkflow.StepCallReply
-
-import java.util.concurrent.CompletionStage
-import java.util.function.{ Function => JFunc }
-import scala.annotation.nowarn
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.jdk.FutureConverters.CompletionStageOps
 
 /**
  * INTERNAL API
@@ -264,7 +265,8 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
 
     effect match {
       case error: ErrorEffectImpl[_] =>
-        new SpiWorkflow.ErrorEffect(new SpiEntity.Error(error.description))
+        val serializedException = error.exception.map(serializer.toBytes)
+        new SpiWorkflow.ErrorEffect(new SpiEntity.Error(error.description, serializedException))
 
       case WorkflowEffectImpl(persistence, transition, reply) =>
         val (replyBytes, spiMetadata) =

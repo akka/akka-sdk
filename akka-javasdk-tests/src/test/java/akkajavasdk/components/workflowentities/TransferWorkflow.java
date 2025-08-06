@@ -36,10 +36,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
 
   @Override
   public WorkflowConfig configuration() {
-    return WorkflowConfig
-      .builder()
-      .workflowTimeout(Duration.ofSeconds(10))
-      .build();
+    return WorkflowConfig.builder().workflowTimeout(Duration.ofSeconds(10)).build();
   }
 
   public Effect<Message> startTransfer(Transfer transfer) {
@@ -62,9 +59,9 @@ public class TransferWorkflow extends Workflow<TransferState> {
   private StepEffect withdraw(Withdraw withdraw) {
 
     componentClient
-      .forKeyValueEntity(withdraw.from)
-      .method(WalletEntity::withdraw)
-      .invoke(withdraw.amount);
+        .forKeyValueEntity(withdraw.from)
+        .method(WalletEntity::withdraw)
+        .invoke(withdraw.amount);
 
     var state = currentState().withLastStep("withdrawn").asAccepted();
     return stepEffects()
@@ -72,7 +69,6 @@ public class TransferWorkflow extends Workflow<TransferState> {
         .thenTransitionTo(TransferWorkflow::deposit)
         .withInput(new Deposit(currentState().transfer().to(), currentState().transfer().amount()));
   }
-
 
   @StepName("deposit-step")
   private StepEffect deposit(Deposit deposit) {
@@ -83,9 +79,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
         .invoke(deposit.amount);
 
     var state = currentState().withLastStep("deposited").asFinished();
-    return stepEffects()
-      .updateState(state)
-      .thenTransitionTo(TransferWorkflow::logAndStop);
+    return stepEffects().updateState(state).thenTransitionTo(TransferWorkflow::logAndStop);
   }
 
   private StepEffect logAndStop() {

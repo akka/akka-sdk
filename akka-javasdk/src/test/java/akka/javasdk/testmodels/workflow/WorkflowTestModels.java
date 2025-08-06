@@ -4,10 +4,8 @@
 
 package akka.javasdk.testmodels.workflow;
 
-import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.StepName;
-import akka.javasdk.annotations.JWT;
 import akka.javasdk.workflow.Workflow;
 
 public class WorkflowTestModels {

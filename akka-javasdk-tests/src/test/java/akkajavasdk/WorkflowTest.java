@@ -28,6 +28,8 @@ import akkajavasdk.components.workflowentities.WorkflowWithTimeout;
 import akkajavasdk.components.workflowentities.WorkflowWithTimer;
 import akkajavasdk.components.workflowentities.WorkflowWithoutInitialState;
 import akkajavasdk.components.workflowentities.hierarchy.TextWorkflow;
+import akkajavasdk.components.workflowentities.legacy.TransferWorkflowWithoutInputs;
+import akkajavasdk.components.workflowentities.legacy.WorkflowWithRecoverStrategyAndAsyncCall;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -39,7 +41,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith(Junit5LogCapturing.class)
 public class WorkflowTest extends TestKitSupport {
-
 
   @Test
   public void shouldNotStartTransferForWithNegativeAmount() {
@@ -646,19 +647,17 @@ public class WorkflowTest extends TestKitSupport {
   public void shouldAllowHierarchyWorkflow() {
     var workflowId = randomId();
 
-
-    componentClient.forWorkflow(workflowId)
-      .method(TextWorkflow::setText).invoke("text");
+    componentClient.forWorkflow(workflowId).method(TextWorkflow::setText).invoke("text");
 
     Awaitility.await()
-      .ignoreExceptions()
-      .atMost(20, TimeUnit.of(SECONDS))
-      .untilAsserted(() -> {
-
-        var result = componentClient.forWorkflow(workflowId)
-          .method(TextWorkflow::getText).invoke();
-        assertThat(result).isEqualTo(Optional.of("text[concrete][abstract][interface]"));
-      });
+        .ignoreExceptions()
+        .atMost(20, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              var result =
+                  componentClient.forWorkflow(workflowId).method(TextWorkflow::getText).invoke();
+              assertThat(result).isEqualTo(Optional.of("text[concrete][abstract][interface]"));
+            });
   }
 
   @Test
@@ -698,55 +697,56 @@ public class WorkflowTest extends TestKitSupport {
     var exc1 =
         Assertions.assertThrows(
             CommandException.class,
-            () -> {
-              componentClient.forWorkflow("1").method(TransferWorkflow::run).invoke("errorMessage");
-            });
+            () ->
+                componentClient
+                    .forWorkflow("1")
+                    .method(TransferWorkflow::run)
+                    .invoke("errorMessage"));
     assertThat(exc1.getMessage()).isEqualTo("errorMessage");
 
     var exc2 =
         Assertions.assertThrows(
             CommandException.class,
-            () -> {
-              componentClient
-                  .forWorkflow("1")
-                  .method(TransferWorkflow::run)
-                  .invoke("errorCommandException");
-            });
+            () ->
+                componentClient
+                    .forWorkflow("1")
+                    .method(TransferWorkflow::run)
+                    .invoke("errorCommandException"));
     assertThat(exc2.getMessage()).isEqualTo("errorCommandException");
 
     var exc3 =
         Assertions.assertThrows(
             MyException.class,
-            () -> {
-              componentClient
-                  .forWorkflow("1")
-                  .method(TransferWorkflow::run)
-                  .invoke("errorMyException");
-            });
+            () ->
+                componentClient
+                    .forWorkflow("1")
+                    .method(TransferWorkflow::run)
+                    .invoke("errorMyException"));
+
     assertThat(exc3.getMessage()).isEqualTo("errorMyException");
     assertThat(exc3.getData()).isEqualTo(new MyException.SomeData("some data"));
 
     var exc4 =
         Assertions.assertThrows(
             MyException.class,
-            () -> {
-              componentClient
-                  .forWorkflow("1")
-                  .method(TransferWorkflow::run)
-                  .invoke("throwMyException");
-            });
+            () ->
+                componentClient
+                    .forWorkflow("1")
+                    .method(TransferWorkflow::run)
+                    .invoke("throwMyException"));
+
     assertThat(exc4.getMessage()).isEqualTo("throwMyException");
     assertThat(exc4.getData()).isEqualTo(new MyException.SomeData("some data"));
 
     var exc5 =
         Assertions.assertThrows(
             RuntimeException.class,
-            () -> {
-              componentClient
-                  .forWorkflow("1")
-                  .method(TransferWorkflow::run)
-                  .invoke("throwRuntimeException");
-            });
+            () ->
+                componentClient
+                    .forWorkflow("1")
+                    .method(TransferWorkflow::run)
+                    .invoke("throwRuntimeException"));
+
     assertThat(exc5.getMessage())
         .contains("Unexpected failure: java.lang.RuntimeException: throwRuntimeException");
   }

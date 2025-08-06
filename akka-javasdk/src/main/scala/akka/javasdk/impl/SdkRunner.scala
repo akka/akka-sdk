@@ -12,6 +12,7 @@ import java.util.Optional
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.Executor
 
+import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -130,24 +131,6 @@ import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
-
-import java.lang.reflect.Constructor
-import java.lang.reflect.InvocationTargetException
-import java.lang.reflect.Method
-import java.util
-import java.util.Optional
-import java.util.concurrent.CompletionStage
-import java.util.concurrent.Executor
-import scala.annotation.nowarn
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.concurrent.Promise
-import scala.jdk.CollectionConverters._
-import scala.jdk.FutureConverters._
-import scala.jdk.OptionConverters.RichOption
-import scala.jdk.OptionConverters.RichOptional
-import scala.reflect.ClassTag
-import scala.util.control.NonFatal
 
 /**
  * INTERNAL API

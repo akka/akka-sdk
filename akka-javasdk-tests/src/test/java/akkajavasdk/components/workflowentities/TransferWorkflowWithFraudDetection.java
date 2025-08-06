@@ -21,7 +21,6 @@ public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> 
     this.componentClient = componentClient;
   }
 
-
   public Effect<Message> startTransfer(Transfer transfer) {
     if (transfer.amount() <= 0) {
       return effects().error("Transfer amount should be greater than zero");
@@ -37,7 +36,6 @@ public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> 
       }
     }
   }
-
 
   public Effect<Message> acceptTransfer() {
     if (currentState() == null) {
@@ -86,19 +84,15 @@ public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> 
             new Withdraw(transferVerified.transfer.from(), transferVerified.transfer.amount());
 
         return stepEffects()
-          .updateState(state)
-          .thenTransitionTo(TransferWorkflowWithFraudDetection::withdraw)
-          .withInput(withdrawInput);
+            .updateState(state)
+            .thenTransitionTo(TransferWorkflowWithFraudDetection::withdraw)
+            .withInput(withdrawInput);
       }
       case TransferRequiresManualAcceptation __ -> {
-        return stepEffects()
-          .updateState(state)
-          .thenPause();
+        return stepEffects().updateState(state).thenPause();
       }
       case TransferRejected __ -> {
-        return stepEffects()
-          .updateState(state.asFinished())
-          .thenEnd();
+        return stepEffects().updateState(state.asFinished()).thenEnd();
       }
     }
   }
@@ -106,30 +100,29 @@ public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> 
   private StepEffect withdraw(Withdraw withdraw) {
 
     componentClient
-      .forKeyValueEntity(withdraw.from)
-      .method(WalletEntity::withdraw)
-      .invoke(withdraw.amount);
+        .forKeyValueEntity(withdraw.from)
+        .method(WalletEntity::withdraw)
+        .invoke(withdraw.amount);
 
     var state = currentState().withLastStep("withdraw");
-    var depositInput = new Deposit(currentState().transfer().to(), currentState().transfer().amount());
+    var depositInput =
+        new Deposit(currentState().transfer().to(), currentState().transfer().amount());
 
     return stepEffects()
-      .updateState(state)
-      .thenTransitionTo(TransferWorkflowWithFraudDetection::deposit)
-      .withInput(depositInput);
+        .updateState(state)
+        .thenTransitionTo(TransferWorkflowWithFraudDetection::deposit)
+        .withInput(depositInput);
   }
 
   private StepEffect deposit(Deposit deposit) {
 
     componentClient
-      .forKeyValueEntity(deposit.to)
-      .method(WalletEntity::deposit)
-      .invoke(deposit.amount);
+        .forKeyValueEntity(deposit.to)
+        .method(WalletEntity::deposit)
+        .invoke(deposit.amount);
 
     var state = currentState().withLastStep("deposit");
 
-    return stepEffects()
-      .updateState(state)
-      .thenEnd();
+    return stepEffects().updateState(state).thenEnd();
   }
 }
