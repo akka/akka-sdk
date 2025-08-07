@@ -5,7 +5,6 @@
 package akkajavasdk.components.workflowentities;
 
 import static java.time.Duration.ofMillis;
-import static java.time.Duration.ofSeconds;
 
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
@@ -25,14 +24,11 @@ public class WorkflowWithTimeout extends Workflow<FailingCounterState> {
   @Override
   public WorkflowConfig configuration() {
     return WorkflowConfig.builder()
-        .workflowTimeout(ofSeconds(1))
-        .workflowRecovery(
-            maxRetries(1).failoverTo(WorkflowWithTimeout::counterFailoverStep).withInput(3))
         .defaultStepTimeout(ofMillis(999))
         .stepConfig(
             WorkflowWithTimeout::counterStep,
             Duration.ofMillis(50),
-            maxRetries(1).failoverTo(WorkflowWithTimeout::counterStep))
+            maxRetries(1).failoverTo(WorkflowWithTimeout::counterFailoverStep).withInput(3))
         .build();
   }
 
@@ -54,9 +50,7 @@ public class WorkflowWithTimeout extends Workflow<FailingCounterState> {
         .method(FailingCounterEntity::increase)
         .invoke(num);
 
-    return stepEffects()
-        .updateState(currentState().asFinished())
-        .thenTransitionTo(WorkflowWithTimeout::counterStep);
+    return stepEffects().updateState(currentState().asFinished()).thenEnd();
   }
 
   public Effect<FailingCounterState> get() {

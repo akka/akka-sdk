@@ -12,7 +12,6 @@ import scala.jdk.OptionConverters.RichOptional
 import scala.util.Failure
 import scala.util.Success
 import scala.util.control.NonFatal
-
 import akka.annotation.InternalApi
 import akka.javasdk.CommandException
 import akka.javasdk.Metadata
@@ -32,6 +31,7 @@ import akka.javasdk.impl.telemetry.WorkflowCategory
 import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
+import akka.javasdk.workflow.Workflow.LegacyWorkflowTimeout
 import akka.javasdk.workflow.Workflow.{ RecoverStrategy => SdkRecoverStrategy }
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi.BytesPayload
@@ -94,8 +94,12 @@ class WorkflowImpl[S, W <: Workflow[S]](
         (config.stepName, new SpiWorkflow.StepConfig(config.stepName, stepTimeout, failoverRecoverStrategy))
       }.toMap
 
-    val workflowTimeout = workflowConfig.workflowTimeout.toScala.map(_.toScala)
-    val workflowRecoverStrategy = workflowConfig.workflowRecoverStrategy().toScala.map(toRecovery)
+    val (workflowTimeout, workflowRecoverStrategy) =
+      workflowConfig match {
+        case c: LegacyWorkflowTimeout =>
+          (c.workflowTimeout.toScala.map(_.toScala), c.workflowRecoverStrategy().toScala.map(toRecovery))
+        case _ => (None, None)
+      }
 
     val defaultStepTimeout = workflowConfig.defaultStepTimeout().toScala.map(_.toScala)
     val defaultStepRecoverStrategy = workflowConfig.defaultStepRecoverStrategy.toScala.map(toRecovery)
