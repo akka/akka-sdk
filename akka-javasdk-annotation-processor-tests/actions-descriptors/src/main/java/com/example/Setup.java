@@ -5,4 +5,4 @@
 package com.example;
 
 @akka.javasdk.annotations.Setup
-public class Setup { }
+public class Setup {}

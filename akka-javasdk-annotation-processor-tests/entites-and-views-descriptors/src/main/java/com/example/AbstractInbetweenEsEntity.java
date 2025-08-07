@@ -6,9 +6,11 @@ package com.example;
 
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 
-public abstract class AbstractInbetweenEsEntity extends EventSourcedEntity<AbstractInbetweenEsEntity.State, AbstractInbetweenEsEntity.Event> {
+public abstract class AbstractInbetweenEsEntity
+    extends EventSourcedEntity<AbstractInbetweenEsEntity.State, AbstractInbetweenEsEntity.Event> {
 
   public record State(String value) {}
+
   public record Event(String value) {}
 
   @Override

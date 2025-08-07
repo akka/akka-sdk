@@ -7,6 +7,4 @@ package com.example;
 import akka.javasdk.annotations.ComponentId;
 
 @ComponentId("hierarchy-es-entity")
-public class HierarchyEsEntity extends AbstractInbetweenEsEntity {
-
-}
+public class HierarchyEsEntity extends AbstractInbetweenEsEntity {}
