@@ -43,7 +43,12 @@ object SamplesCompilationProject {
               .settings(
                 Test / unmanagedSourceDirectories += baseDirectory.value / "src" / "it" / "java",
                 akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Java),
-                akkaGrpcCodeGeneratorSettings ++= CommonSettings.serviceGrpcGeneratorSettings)
+                akkaGrpcCodeGeneratorSettings ++= CommonSettings.serviceGrpcGeneratorSettings,
+                // Disable tests for composite projects since they're primarily for compilation verification
+                // Maven sets akka.javasdk.dev-mode.project-artifact-id automatically but SBT composite projects don't have this
+                Test / test := {},
+                Test / testOnly := {}
+                )
 
             additionalDeps.get(dir.getName).fold(proj)(deps => proj.settings(libraryDependencies ++= deps))
           }
