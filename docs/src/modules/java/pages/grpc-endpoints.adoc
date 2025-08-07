@@ -29,7 +29,7 @@ TIP: For a reference on how to format your protobuf files, check https://protobu
 When compiling the project, a Java interface for the service is generated at `customer.api.proto.CustomerGrpcEndpoint`. Define a class implementing this interface in the `api` package of your project
 and annotate the class with `@GrpcEndpoint`:
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/CustomerGrpcEndpointImpl.java[CustomerGrpcEndpointImpl.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/api/CustomerGrpcEndpointImpl.java[]
@@ -45,7 +45,7 @@ NOTE: This implementation does not interact with any other components and has an
 The gRPC protocol has different status codes to signal that something went wrong with a request, for example `INVALID_ARGUMENT` to signal that the request was malformed.
 
 To signal an error in the response, throw a `GrpcServiceException` as shown in the example below:
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/api/CustomerGrpcEndpointImpl.java[CustomerGrpcEndpointImpl.java]
 ----
 include::example$event-sourced-customer-registry/src/main/java/customer/api/CustomerGrpcEndpointImpl.java[tag=exception]
@@ -73,7 +73,7 @@ Endpoints are commonly used to interact with other components in a service. This
 the `akka.javasdk.client.ComponentClient`. If the constructor of the endpoint class has a parameter of this type,
 it will be injected by the SDK and can then be available for use when processing requests. Let's see how this is done:
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/api/CustomerGrpcEndpointImpl.java[CustomerGrpcEndpointImpl.java]
 ----
 include::example$event-sourced-customer-registry/src/main/java/customer/api/CustomerGrpcEndpointImpl.java[tags=endpoint-component-interaction;get]
@@ -99,7 +99,7 @@ include::example$event-sourced-customer-registry/src/main/proto/customer/api/cus
 
 Then, the method in the endpoint interface will need to construct and return a `Stream`:
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/api/CustomerGrpcEndpointImpl.java[CustomerGrpcEndpointImpl.java]
 ----
 include::example$event-sourced-customer-registry/src/main/java/customer/api/CustomerGrpcEndpointImpl.java[tag=customerByEmailStream]
@@ -111,7 +111,7 @@ NOTE: The above example depends on existing a View component that also returns a
 
 To exercise a gRPC endpoint, the testkit contains methods to get a gRPC client for calling the methods of the endpoint:
 
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/event-sourced-customer-registry/src/test/java/customer/api/CustomerGrpcIntegrationTest.java[CustomerGrpcIntegrationTest.java]
 ----
 include::example$event-sourced-customer-registry/src/test/java/customer/api/CustomerGrpcIntegrationTest.java[tag=sample-it]

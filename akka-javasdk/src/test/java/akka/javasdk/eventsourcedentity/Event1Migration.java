@@ -5,7 +5,6 @@
 package akka.javasdk.eventsourcedentity;
 
 import akka.javasdk.JsonMigration;
-
 import java.util.List;
 
 public class Event1Migration extends JsonMigration {

@@ -1,13 +1,12 @@
 package com.example.wallet.domain;
 
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
 
 class WalletTest {
 
@@ -18,7 +17,9 @@ class WalletTest {
 
     //when
     for (int i = 0; i < 10000; i++) {
-      List<WalletEvent> events = wallet.handle(new WalletCommand.Deposit(UUID.randomUUID().toString(), 10));
+      List<WalletEvent> events = wallet.handle(
+        new WalletCommand.Deposit(UUID.randomUUID().toString(), 10)
+      );
       wallet = wallet.applyEvent(events.get(0));
     }
 

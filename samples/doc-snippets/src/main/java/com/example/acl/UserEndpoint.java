@@ -21,10 +21,11 @@ import akka.javasdk.http.AbstractHttpEndpoint;
 // tag::endpoint-class[]
 @HttpEndpoint("/user")
 public class UserEndpoint extends AbstractHttpEndpoint { // <1>
+
   // ...
   // end::endpoint-class[]
 
-  public record CreateUser(String username, String email) { }
+  public record CreateUser(String username, String email) {}
 
   // tag::checking-principals[]
   @Get
@@ -39,10 +40,10 @@ public class UserEndpoint extends AbstractHttpEndpoint { // <1>
     } else if (principals.isBackoffice()) {
       return "accessed from Backoffice API";
     } else {
-      return "accessed from another service: " +
-        principals.getLocalService();
+      return "accessed from another service: " + principals.getLocalService();
     }
   }
+
   // end::checking-principals[]
 
   // tag::method-overwrite[]
@@ -52,42 +53,33 @@ public class UserEndpoint extends AbstractHttpEndpoint { // <1>
     //... create user logic
     return Done.getInstance();
   }
+
   // end::method-overwrite[]
 
   // tag::allow-deny[]
-  @Acl(allow = @Acl.Matcher(service = "*"),
-       deny = @Acl.Matcher(service = "service-b"))
+  @Acl(allow = @Acl.Matcher(service = "*"), deny = @Acl.Matcher(service = "service-b"))
   // end::allow-deny[]
-  public void example1() {
-  }
+  public void example1() {}
 
   // tag::all-traffic[]
   @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
   // end::all-traffic[]
-  public void example2() {
-  }
+  public void example2() {}
 
   // tag::internet[]
   @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
   // end::internet[]
-  public void example3() {
-  }
+  public void example3() {}
 
   // tag::multiple-services[]
-  @Acl(allow = {
-    @Acl.Matcher(service = "service-a"),
-    @Acl.Matcher(service = "service-b")})
+  @Acl(allow = { @Acl.Matcher(service = "service-a"), @Acl.Matcher(service = "service-b") })
   // end::multiple-services[]
-  public void example4() {
-  }
-
+  public void example4() {}
 
   // tag::block-traffic[]
   @Acl(allow = {})
   // end::block-traffic[]
-  public void example5() {
-  }
-
-// tag::endpoint-class[]
+  public void example5() {}
+  // tag::endpoint-class[]
 }
 // end::endpoint-class[]

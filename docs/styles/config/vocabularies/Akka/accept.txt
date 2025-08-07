@@ -118,6 +118,7 @@ O'Reilly
 OAuth
 Okta
 [Oo]llama
+[Oo]pen[Aa]i
 onboarding
 operationalized
 (?i)OpenID
@@ -204,6 +205,7 @@ unary
 unencrypted
 updaters
 [Uu]nexpose
+unikernels
 unnested
 unsets
 untrusted

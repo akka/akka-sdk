@@ -6,7 +6,6 @@ package akkajavasdk.components.keyvalueentities.user;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.Objects;
 
 public class User {
@@ -27,7 +26,6 @@ public class User {
     return Objects.equals(email, user.email) && Objects.equals(name, user.name);
   }
 
-
   @Override
   public int hashCode() {
     return Objects.hash(email, name);
@@ -35,9 +33,6 @@ public class User {
 
   @Override
   public String toString() {
-    return "User{" +
-        "email='" + email + '\'' +
-        ", name='" + name + '\'' +
-        '}';
+    return "User{" + "email='" + email + '\'' + ", name='" + name + '\'' + '}';
   }
 }

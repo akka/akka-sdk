@@ -32,7 +32,7 @@ SELECT * FROM customers WHERE name = :customerName AND address.city = :city
 ----
 View query methods accept only a single parameter. Passing more than one argument to your query requires to wrap them in a query record, for example:
 +
-[source,java]
+[source,java,indent=0]
 .{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomersByCity.java[CustomersByCity.java]
 ----
 include::example$key-value-customer-registry/src/main/java/customer/application/CustomersByCity.java[tag=by-name-and-city]

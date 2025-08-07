@@ -6,7 +6,6 @@ package akka.javasdk;
 
 import akka.annotation.DoNotInherit;
 import io.opentelemetry.api.trace.Span;
-
 import java.util.Optional;
 
 /**

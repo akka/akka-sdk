@@ -23,26 +23,43 @@ public class CustomerStoreUpdater extends Consumer {
   public Effect onEffect(CustomerEvent event) { // <1>
     var customerId = messageContext().eventSubject().get();
     return switch (event) {
-      case CustomerCreated created ->
-        effects().asyncDone(customerStore.save(customerId, new Customer(created.email(), created.name(), created.address())));
-
-      case NameChanged nameChanged ->
-        effects().asyncDone(customerStore.getById(customerId).thenCompose(customer -> {
-          if (customer.isPresent()) {
-            return customerStore.save(customerId, customer.get().withName(nameChanged.newName()));
-          } else {
-            throw new IllegalStateException("Customer not found: " + customerId);
-          }
-        }));
-
-      case AddressChanged addressChanged ->
-        effects().asyncDone(customerStore.getById(customerId).thenCompose(customer -> {
-          if (customer.isPresent()) {
-            return customerStore.save(customerId, customer.get().withAddress(addressChanged.address()));
-          } else {
-            throw new IllegalStateException("Customer not found: " + customerId);
-          }
-        }));
+      case CustomerCreated created -> effects()
+        .asyncDone(
+          customerStore.save(
+            customerId,
+            new Customer(created.email(), created.name(), created.address())
+          )
+        );
+      case NameChanged nameChanged -> effects()
+        .asyncDone(
+          customerStore
+            .getById(customerId)
+            .thenCompose(customer -> {
+              if (customer.isPresent()) {
+                return customerStore.save(
+                  customerId,
+                  customer.get().withName(nameChanged.newName())
+                );
+              } else {
+                throw new IllegalStateException("Customer not found: " + customerId);
+              }
+            })
+        );
+      case AddressChanged addressChanged -> effects()
+        .asyncDone(
+          customerStore
+            .getById(customerId)
+            .thenCompose(customer -> {
+              if (customer.isPresent()) {
+                return customerStore.save(
+                  customerId,
+                  customer.get().withAddress(addressChanged.address())
+                );
+              } else {
+                throw new IllegalStateException("Customer not found: " + customerId);
+              }
+            })
+        );
     };
   }
 }

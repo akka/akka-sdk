@@ -5,7 +5,6 @@
 package akka.javasdk.testkit;
 
 import io.grpc.Status;
-
 import java.util.List;
 
 /**
@@ -18,7 +17,9 @@ import java.util.List;
  */
 public interface EventSourcedResult<R> {
 
-  /** @return true if the call had an effect with a reply, false if not */
+  /**
+   * @return true if the call had an effect with a reply, false if not
+   */
   boolean isReply();
 
   /**
@@ -27,7 +28,9 @@ public interface EventSourcedResult<R> {
    */
   R getReply();
 
-  /** @return true if the call was an error, false if not */
+  /**
+   * @return true if the call was an error, false if not
+   */
   boolean isError();
 
   /** The error description. If the result was not an error an exception is thrown */
@@ -56,7 +59,9 @@ public interface EventSourcedResult<R> {
    */
   boolean didPersistEvents();
 
-  /** @return All the events that were emitted by handling this command. */
+  /**
+   * @return All the events that were emitted by handling this command.
+   */
   List<Object> getAllEvents();
 
   /**
@@ -67,5 +72,4 @@ public interface EventSourcedResult<R> {
    * @return The next event if it is of type E, for additional assertions.
    */
   <E> E getNextEventOfType(Class<E> expectedClass);
-
 }

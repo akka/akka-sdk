@@ -8,16 +8,16 @@ The Akka SDK provides several mechanisms dealing with validation or when somethi
 
 The first line of the defense is the validation of the incoming data on the `Endpoint` level. Already described is details in the xref:http-endpoints.adoc#_advanced_http_requests_and_responses[request and response] section. This is a basic request validation, which doesn't require domain state. It's better to handle it as soon as possible, since it will reduce the load on the system. The logic can reject the request before it reaches the entity.
 
-The next phase is domain validation error. An incoming command doesn't fulfil the requirements or the current state doesn't allow the command to be handled. Such errors can be signalled back to the client as an error effect using the `effects().error(description)` function.
+The next phase is domain validation error. An incoming command doesn't fulfil the requirements or the current state doesn't allow the command to be handled. Such errors can be signalled back to the client as an error effect using the `effects().error(message)` function.
 
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/application/CounterEntity.java[CounterEntity.java]
 ----
 include::example$event-sourced-counter-brokers/src/main/java/counter/application/CounterEntity.java[tag=increaseWithError]
 ----
-<1> Return an error effect with a description if the validation fails.
+<1> Return an error effect with a message if the validation fails.
 
-The `effects().error` is later transformed into a `IllegalArgumentException`. This exception can be caught by the caller and transformed into a proper HTTP error. The default behavior is to return an HTTP 400 error with the error message as a response body.
+The `effects().error` is later transformed into a `CommandException`. The default behavior is to return an HTTP 400 error with the error message as a response body.
 
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[CounterEndpoint.java]
@@ -39,37 +39,42 @@ Content-Length: 28
 Increasing counter above 10000 is blocked
 ----
 
-
-== Errors as reply types
-
-To have a full and type-safe control over the errors, another approach would be to encode them as a part of reply protocol.
-
-[source,java,indent=0]
-.{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/application/CounterEntity.java[CounterEntity.java]
-----
-include::example$event-sourced-counter-brokers/src/main/java/counter/application/CounterEntity.java[tag=increaseWithResult]
-----
-<1> Additional Jackson annotations are required to serialize a polymorphic `CounterResult` type.
-<2> Sealed trait groups all possible results of the command handling.
-<3> Instead of returning an error effect, we reply with a specific result type.
-<4> A `CounterResult.Success` reply returns the updated counter value.
-
-Handling the response in the client is straightforward.
+For more fine-tuned control over the error handling it's possible to catch the `CommandException` and transform it into a proper HTTP error.
 
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[CounterEndpoint.java]
 ----
-include::example$event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[tag=increaseWithResult]
+include::example$event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[tag=increaseWithErrorHandling]
 ----
-<1> Match all the possible results and transform them into HTTP responses.
+<1> Catching the `CommandException` and transforming it into 400 Bad Request error.
 
-This approach is more explicit and type-safe, but it requires more boilerplate code. It is recommended to use this approach when the error handling is more complex and requires more than just a simple message.
+Remember that the xref:component-and-service-calls.adoc#_akka_components[called component] can be on a different node. Only the `CommandException` and its subtypes are serialized and sent over the network. The xref:serialization.adoc[Jackson] serialization is configured to ignore fields like stack trace or cause from the Java `java.lang.Throwable` class. Other exceptions are not serializable and will be transformed into a generic HTTP 500 error.
 
-NOTE: Make sure that you are familiar with the Jackson serialization library and how to use it with sealed interfaces and generic types. Schema evolution and compatibility aspects in terms of response types should be considered. Especially in the context of using Workflows, where step action results are persisted and will be deserialized in the future.
+Using the `effects().error(commandException)` method or simply throwing a `CommandException` will have the same effect. It's possible to have a more dedicated exceptions that will be used to signal different situations. For example, you can create a `CounterLimitExceededException` that extends `CommandException` and use it in the command handler.
+
+[source,java,indent=0]
+.{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/application/CounterEntity.java[CounterEntity.java]
+----
+include::example$event-sourced-counter-brokers/src/main/java/counter/application/CounterEntity.java[tag=increaseWithException]
+----
+<1> Define a custom exception that extends `CommandException`. Inner classes must be static to be serializable.
+<2> Throw the `CounterLimitExceededException`.
+
+This way the client can match them by the type instead of the message.
+
+[source,java,indent=0]
+.{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[CounterEndpoint.java]
+----
+include::example$event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[tag=increaseWithException]
+----
+<1> Catching the `CounterLimitExceededException` and transforming it into 400 Bad Request error.
+
+Custom exceptions are not the only option to deal with errors in a more structured way. Another approach would be to encode them as a part of reply protocol. Make sure that you are familiar with the Jackson serialization library and how to use it with sealed interfaces and generic types, see https://javadoc.io/doc/com.fasterxml.jackson.core/jackson-annotations/2.19.1/com/fasterxml/jackson/annotation/JsonSubTypes.html[@JsonSubTypes] for details.
+
 
 == Failures
 
-All unexpected exception thrown be the user code are transformed into an HTTP 500 error. When running the service locally in dev mode, a stack trace is will be a part of the HTTP response. In production, this information is hidden, to not leak internal details about the service to a client. The client will receive a non-descriptive message with a correlation ID, like below.
+All unexpected exception (that doesn't extend `CommandException`) thrown by the user code are transformed into an HTTP 500 error. When running the service locally in dev mode, a stack trace will be a part of the HTTP response. In production, this information is hidden, to not leak internal details about the service to a client. The client will receive a non-descriptive message with a correlation ID, like below.
 
 [source]
 ----

@@ -1,4 +1,4 @@
-= AI RAG agent part 3: Executing RAG queries
+= Executing RAG queries
 :page-aliases: java:ask-akka/rag.adoc
 
 include::ROOT:partial$include.adoc[]
@@ -23,7 +23,7 @@ We're going to add a utility that will retrieve content from MongoDB that is rel
 The following is the basic RAG-specific code that you can add to a new file `Knowledge.java` in `src/main/java/akka/ask/agent/application/`.
 
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/application/Knowledge.java[Knowledge.java]
 ----
 include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/application/Knowledge.java[tag=class]
@@ -36,7 +36,7 @@ include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/application/Kn
 
 == Use the knowledge in the agent
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/application/AskAkkaAgent.java[AskAkkaAgent.java]
 ----
 include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/application/AskAkkaAgent.java[tag=class]
@@ -48,7 +48,7 @@ include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/application/As
 
 To be able to inject the `Knowledge` we need to add it to the `Bootstrap`:
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/Bootstrap.java[Bootstrap.java]
 ----
 include::java:example$ask-akka-agent/src/main/java/akka/ask/Bootstrap.java[tag=knowledge]
@@ -67,7 +67,8 @@ In another shell, you can now use `curl` to send requests to this Endpoint.
 [source, command line]
 ----
 curl localhost:9000/api/ask --header "Content-Type: application/json" -XPOST \
---data '{ "userId": "001", "sessionId": "foo", "question":"What are the core components of Akka?"}'
+--data '{ "userId": "001", "sessionId": \
+          "foo", "question":"What are the core components of Akka?"}'
 ----
 
 In the first part of this guide, the AI model couldn't answer that question meaningfully, but now it will answer something like:

@@ -1,18 +1,20 @@
 package com.example.application;
 
+import static java.time.Duration.ofSeconds;
+
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.StepName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
+import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static java.time.Duration.ofSeconds;
 
 // tag::all[]
 @ComponentId("agent-team")
 public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
+
   private static final Logger logger = LoggerFactory.getLogger(AgentTeamWorkflow.class);
 
   public record State(String userQuery, String weatherForecast, String answer) {
@@ -40,7 +42,10 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
 
   public Effect<String> getAnswer() {
     if (currentState() == null || currentState().answer.isEmpty()) {
-      return effects().error("Workflow '" + commandContext().workflowId() + "' not started, or not completed");
+      return effects()
+        .error(
+          "Workflow '" + commandContext().workflowId() + "' not started, or not completed"
+        );
     } else {
       return effects().reply(currentState().answer);
     }
@@ -66,15 +71,14 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
     logger.info("Weather forecast: {}", forecast);
 
     return stepEffects()
-      .updateState(currentState().withWeatherForecast(forecast))// <3>
+      .updateState(currentState().withWeatherForecast(forecast)) // <3>
       .thenTransitionTo(AgentTeamWorkflow::suggestActivities);
   }
 
   @StepName("activities")
   private StepEffect suggestActivities() {
-
-    var request = currentState().userQuery +
-      "\nWeather forecast: " + currentState().weatherForecast; // <4>
+    var request = // <4>currentState().userQuery +
+      "\nWeather forecast: " + currentState().weatherForecast;
     var suggestion = componentClient
       .forAgent()
       .inSession(sessionId())

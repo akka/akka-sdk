@@ -17,22 +17,24 @@ public class SomeStructureResponseAgent extends Agent {
   private static final Logger log = LoggerFactory.getLogger(SomeStructureResponseAgent.class);
 
   public record SomeResponse(String response) {}
+
   public record StructuredResponse(String response) {}
 
   public Effect<SomeResponse> mapStructureResponse(String question) {
     return effects()
-      .systemMessage("You are a helpful...")
-      .userMessage(question)
-      .responseAs(StructuredResponse.class)
-      .map(r -> new SomeResponse(r.response()))
-      .onFailure(throwable -> {
-        if (throwable instanceof JsonParsingException jsonParsingException){
-          log.info("Raw json: {}", jsonParsingException.getRawJson());
-          return new SomeResponse("default response");
-        }else {
-          throw new RuntimeException(throwable);
-        }
-      })
-      .thenReply();
+        .systemMessage("You are a helpful...")
+        .userMessage(question)
+        .responseAs(StructuredResponse.class)
+        .map(r -> new SomeResponse(r.response()))
+        .onFailure(
+            throwable -> {
+              if (throwable instanceof JsonParsingException jsonParsingException) {
+                log.info("Raw json: {}", jsonParsingException.getRawJson());
+                return new SomeResponse("default response");
+              } else {
+                throw new RuntimeException(throwable);
+              }
+            })
+        .thenReply();
   }
 }

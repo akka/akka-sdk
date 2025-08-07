@@ -4,7 +4,8 @@
 
 package akkajavasdk.components.workflowentities;
 
-public record TransferState(Transfer transfer, String lastStep, boolean finished, boolean accepted) {
+public record TransferState(
+    Transfer transfer, String lastStep, boolean finished, boolean accepted) {
 
   public static final TransferState EMPTY = new TransferState(null, null, false, false);
 

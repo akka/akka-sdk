@@ -5,9 +5,11 @@
 package akka.javasdk.impl.consumer
 
 import java.util.concurrent.CompletionStage
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.FutureConverters.CompletionStageOps
+
 import akka.Done
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata

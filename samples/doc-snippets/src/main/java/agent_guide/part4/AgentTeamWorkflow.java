@@ -1,5 +1,7 @@
 package agent_guide.part4;
 
+import static java.time.Duration.ofSeconds;
+
 import agent_guide.part2.ActivityAgent;
 import agent_guide.part3.WeatherAgent;
 // tag::all[]
@@ -11,14 +13,12 @@ import akka.javasdk.workflow.Workflow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static java.time.Duration.ofSeconds;
-
 @ComponentId("agent-team")
 public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
+
   private static final Logger logger = LoggerFactory.getLogger(AgentTeamWorkflow.class);
 
-  public record Request(String userId, String message) {
-  }
+  public record Request(String userId, String message) {}
 
   public record State(String userId, String userQuery, String finalAnswer) {
     State withAnswer(String a) {
@@ -34,14 +34,17 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
 
   public Effect<Done> start(Request request) {
     return effects()
-      .updateState(new State(request.userId(), request.message(), ""))// <1>
-      .transitionTo("weather") // <2>
+      .updateState(new State(request.userId(), request.message(), "")) // <1>
+      .transitionTo(AgentTeamWorkflow::askWeather) // <2>
       .thenReply(Done.getInstance());
   }
 
   public Effect<String> getAnswer() {
     if (currentState() == null || currentState().finalAnswer.isEmpty()) {
-      return effects().error("Workflow '" + commandContext().workflowId() + "' not started, or not completed");
+      String workflowId = commandContext().workflowId();
+      // prettier-ignore
+      return effects()
+        .error("Workflow '" + workflowId + "' not started, or not completed");
     } else {
       return effects().reply(currentState().finalAnswer);
     }
@@ -66,6 +69,7 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
 
     logger.info("Weather forecast: {}", forecast);
 
+    // prettier-ignore
     return stepEffects()
       .thenTransitionTo(AgentTeamWorkflow::suggestActivities); // <4>
   }
@@ -84,7 +88,6 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
       .updateState(currentState().withAnswer(suggestion)) // <6>
       .thenEnd();
   }
-
 
   private StepEffect error() {
     return stepEffects().thenEnd();

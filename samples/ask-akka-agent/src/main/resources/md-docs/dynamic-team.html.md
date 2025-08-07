@@ -1,13 +1,12 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
 - [Getting Started](../index.html)
-- [AI Planner Part 6: Dynamic orchestration](dynamic-team.html)
+- [Build an AI multi-agent planner](index.html)
+- [Dynamic orchestration](dynamic-team.html)
 
 <!-- </nav> -->
 
-# AI Planner Part 6: Dynamic orchestration
-
-[1: The activity agent](index.html) > [2: User preferences](preferences.html) > [3: Weather agent](weather.html) > [4: Orchestrate the agents](team.html) > [5: List by user](list.html) > **6: Dynamic orchestration**
+# Dynamic orchestration
 
 |  | **New to Akka? Start here:**
 
@@ -39,6 +38,12 @@ The `SelectorAgent` decides which agents to use. Add a new file `SelectorAgent.j
 
 [SelectorAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/SelectorAgent.java)
 ```java
+import akka.javasdk.JsonSupport;
+import akka.javasdk.agent.Agent;
+import akka.javasdk.agent.AgentRegistry;
+import akka.javasdk.annotations.AgentDescription;
+import akka.javasdk.annotations.ComponentId;
+
 @ComponentId("selector-agent")
 @AgentDescription(
     name = "Selector Agent",
@@ -102,6 +107,13 @@ public class SelectorAgent extends Agent {
 | **1** | The `AgentRegistry` contains information about all agents. |
 | **2** | Select the agents with the role `"worker"`. |
 | **3** | Detailed instructions and include descriptions (as json) of the agents. |
+The result from the `SelectorAgent` is a list of agent ids. Add a new file `AgentSelection.java` to `src/main/java/com/example/domain/`
+
+[AgentSelection.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/domain/AgentSelection.java)
+```java
+public record AgentSelection(List<String> agents) {
+}
+```
 The information about the agents in the `AgentRegistry` comes from the `@ComponentId` and `@AgentDescription` annotations. When using it for planning like this it is important that the agents define those descriptions that the LLM can use to come up with a good plan.
 
 Add the `@AgentDescription` to the `WeatherAgent`:
@@ -138,17 +150,18 @@ Note that in
 ![steps 2](../../concepts/_images/steps-2.svg)
 of the `SelectorAgent` we retrieve a subset of the agents with a certain role. This role is also defined in the `@AgentDescription` annotation.
 
-The result from the `SelectorAgent` is a list of agent ids. Add a new file `AgentSelection.java` to `src/main/java/com/example/domain/`
-
-[AgentSelection.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/domain/AgentSelection.java)
-```java
-public record AgentSelection(List<String> agents) {
-}
-```
 After selecting agents, we use a `PlannerAgent` to decide in which order to use the agents and the precise request each agent should receive to perform its single task. Add a new file `PlannerAgent.java` to `src/main/java/com/example/application/`
 
 [PlannerAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/PlannerAgent.java)
 ```java
+import akka.javasdk.JsonSupport;
+import akka.javasdk.agent.Agent;
+import akka.javasdk.agent.AgentRegistry;
+import akka.javasdk.annotations.AgentDescription;
+import akka.javasdk.annotations.ComponentId;
+
+import java.util.List;
+
 @ComponentId("planner-agent")
 @AgentDescription(
     name = "Planner",
@@ -222,10 +235,43 @@ public class PlannerAgent extends Agent {
 
 | **1** | Lookup the agent information for the selected agents from the `AgentRegistry. |
 | **2** | Detailed instructions and include descriptions (as json) of the agents. |
+The result from the `PlannerAgent` is a `Plan` with a list of `PlanStep`.
+
+Add a new file `Plan.java` to `src/main/java/com/example/domain/`
+
+[Plan.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/domain/Plan.java)
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Represents a plan consisting of multiple steps to be executed by different agents.
+ */
+public record Plan(List<PlanStep> steps) {
+
+  /**
+   * Creates an empty plan with no steps.
+   */
+  public Plan() {
+    this(new ArrayList<>());
+  }
+}
+```
+and a new file `PlanStep.java` to `src/main/java/com/example/domain/`
+
+[PlanStep.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/domain/PlanStep.java)
+```java
+/**
+ * Represents a single step within a Plan.
+ * Each step is assigned to a specific agent and contains a command description.
+ */
+public record PlanStep(String agentId, String query) {
+}
+```
 
 ## <a href="about:blank#_common_signature_of_worker_agents"></a> Common signature of worker agents
 
-We will call the selected agents according to the plan, and we want to do that without explicitly knowing which agent to call. For this, the worker agents (`WeatherAgent` and `ActivityAgent`) must have the same shape. Adjust the `ActivityAgent` to have this method signature:
+We will call the selected agents according to the plan, and we want to do that without explicitly knowing which agent it is. For this, the worker agents (`WeatherAgent` and `ActivityAgent`) must have the same shape. Adjust the `ActivityAgent` to have this method signature:
 
 ActivityAgent.java
 ```java
@@ -245,13 +291,28 @@ Make the same changes to the `WeatherAgent`. Use the same method signature and u
 
 `SelectorAgent` and `PlannerAgent` are the two agents that perform the planning, but we also need to connect them and execute the plan. This orchestration is the job of the workflow.
 
-Update the `AgentTeam` to this:
+Update the `AgentTeamWorkflow` to this:
 
-[AgentTeam.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/AgentTeam.java)
+[AgentTeamWorkflow.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java)
 ```java
+import akka.Done;
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.client.ComponentClient;
+import akka.javasdk.client.DynamicMethodRef;
+import akka.javasdk.workflow.Workflow;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+
+import static java.time.temporal.ChronoUnit.SECONDS;
+
 @ComponentId("agent-team")
-public class AgentTeam extends Workflow<AgentTeam.State> { // (1)
-  public record Request(String userId, String message) {}
+public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // (1)
+  public record Request(String userId, String message) {
+  }
 
 
   enum Status {
@@ -307,34 +368,45 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // (1)
 
   }
 
-  private static final Logger logger = LoggerFactory.getLogger(AgentTeam.class);
+  private static final Logger logger = LoggerFactory.getLogger(AgentTeamWorkflow.class);
 
   private final ComponentClient componentClient;
 
-  public AgentTeam(ComponentClient componentClient) {
+  public AgentTeamWorkflow(ComponentClient componentClient) {
     this.componentClient = componentClient;
   }
 
   @Override
   public WorkflowDef<State> definition() {
     return workflow()
-      .defaultStepRecoverStrategy(maxRetries// (1).failoverTo(INTERRUPT))
-      .defaultStepTimeout(Duration.of(30, SECONDS))
-      .addStep(selectAgentsStep()) // (2)
-      .addStep(planStep())
-      .addStep(executePlanStep())
-      .addStep(summarizeStep())
-      .addStep(interruptStep());
+        .defaultStepRecoverStrategy(maxRetries// (1).failoverTo(INTERRUPT))
+        .defaultStepTimeout(Duration.of(30, SECONDS))
+        .addStep(selectAgentsStep()) // (2)
+        .addStep(planStep())
+        .addStep(executePlanStep())
+        .addStep(summarizeStep())
+        .addStep(interruptStep());
   }
 
   public Effect<Done> start(Request request) {
     if (currentState() == null) {
       return effects()
-        .updateState(State.init(request.userId(), request.message()))
-        .transitionTo(SELECT_AGENTS) // (3)
-        .thenReply(Done.getInstance());
+          .updateState(State.init(request.userId(), request.message()))
+          .transitionTo(SELECT_AGENTS) // (3)
+          .thenReply(Done.getInstance());
     } else {
       return effects().error("Workflow '" + commandContext().workflowId() + "' already started");
+    }
+  }
+
+  public Effect<Done> runAgain() {
+    if (currentState() != null) {
+      return effects()
+          .updateState(State.init(currentState().userId(), currentState().userQuery()))
+          .transitionTo(SELECT_AGENTS) // (3)
+          .thenReply(Done.getInstance());
+    } else {
+      return effects().error("Workflow '" + commandContext().workflowId() + "' has not been started");
     }
   }
 
@@ -350,76 +422,76 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // (1)
 
   private Step selectAgentsStep() {
     return step(SELECT_AGENTS)
-      .call(() ->
-          componentClient.forAgent().inSession(sessionId()).method(SelectorAgent::selectAgents)
-              .invoke(currentState().userQuery)) // (4)
-      .andThen(AgentSelection.class, selection -> {
-        logger.debug("Selected agents: {}", selection.agents());
-          if (selection.agents().isEmpty()) {
-            var newState = currentState()
-              .withFinalAnswer("Couldn't find any agent(s) able to respond to the original query.")
-              .failed();
-            return effects().updateState(newState).end(); // terminate workflow
-          } else {
-            return effects().transitionTo(CREATE_PLAN, selection); // (5)
+        .call(() ->
+            componentClient.forAgent().inSession(sessionId()).method(SelectorAgent::selectAgents)
+                .invoke(currentState().userQuery)) // (4)
+        .andThen(AgentSelection.class, selection -> {
+              logger.info("Selected agents: {}", selection.agents());
+              if (selection.agents().isEmpty()) {
+                var newState = currentState()
+                    .withFinalAnswer("Couldn't find any agent(s) able to respond to the original query.")
+                    .failed();
+                return effects().updateState(newState).end(); // terminate workflow
+              } else {
+                return effects().transitionTo(CREATE_PLAN, selection); // (5)
 
-          }
-        }
-      );
+              }
+            }
+        );
   }
 
   private static final String CREATE_PLAN = "create-plan";
 
   private Step planStep() {
     return step(CREATE_PLAN)
-      .call(AgentSelection.class, agentSelection -> {
-        logger.debug(
-            "Calling planner with: '{}' / {}",
-            currentState().userQuery,
-            agentSelection.agents());
+        .call(AgentSelection.class, agentSelection -> {
+              logger.info(
+                  "Calling planner with: '{}' / {}",
+                  currentState().userQuery,
+                  agentSelection.agents());
 
-          return componentClient.forAgent().inSession(sessionId()).method(PlannerAgent::createPlan)
-              .invoke(new PlannerAgent.Request(currentState().userQuery, agentSelection)); // (6)
-        }
-      )
-      .andThen(Plan.class, plan -> {
-        logger.debug("Execution plan: {}", plan);
-          return effects()
-            .updateState(currentState().withPlan(plan))
-            .transitionTo(EXECUTE_PLAN); // (7)
-        }
-      );
+              return componentClient.forAgent().inSession(sessionId()).method(PlannerAgent::createPlan)
+                  .invoke(new PlannerAgent.Request(currentState().userQuery, agentSelection)); // (6)
+            }
+        )
+        .andThen(Plan.class, plan -> {
+              logger.info("Execution plan: {}", plan);
+              return effects()
+                  .updateState(currentState().withPlan(plan))
+                  .transitionTo(EXECUTE_PLAN); // (7)
+            }
+        );
   }
 
   private static final String EXECUTE_PLAN = "execute-plan";
 
   private Step executePlanStep() {
     return step(EXECUTE_PLAN)
-      .call(() -> {
-        var stepPlan = currentState().nextStepPlan(); // (8)
-        logger.debug("Executing plan step (agent:{}), asking {}", stepPlan.agentId(), stepPlan.query());
-        var agentResponse = callAgent(stepPlan.agentId(), stepPlan.query()); // (9)
-        if (agentResponse.startsWith("ERROR")) {
-          throw new RuntimeException("Agent '" + stepPlan.agentId() + "' responded with error: " + agentResponse);
-        } else {
-          logger.debug("Response from [agent:{}]: '{}'", stepPlan.agentId(), agentResponse);
-          return agentResponse;
-        }
-
-      })
-      .andThen(String.class, answer -> {
-          var newState = currentState().addAgentResponse(answer);
-
-          if (newState.hasMoreSteps()) {
-            logger.debug("Still {} steps to execute.", newState.plan().steps().size());
-            return effects().updateState(newState).transitionTo(EXECUTE_PLAN); // (10)
+        .call(() -> {
+          var stepPlan = currentState().nextStepPlan(); // (8)
+          logger.info("Executing plan step (agent:{}), asking {}", stepPlan.agentId(), stepPlan.query());
+          var agentResponse = callAgent(stepPlan.agentId(), stepPlan.query()); // (9)
+          if (agentResponse.startsWith("ERROR")) {
+            throw new RuntimeException("Agent '" + stepPlan.agentId() + "' responded with error: " + agentResponse);
           } else {
-            logger.debug("No further steps to execute.");
-            return effects().updateState(newState).transitionTo(SUMMARIZE);
+            logger.info("Response from [agent:{}]: '{}'", stepPlan.agentId(), agentResponse);
+            return agentResponse;
           }
 
-        }
-      );
+        })
+        .andThen(String.class, answer -> {
+              var newState = currentState().addAgentResponse(answer);
+
+              if (newState.hasMoreSteps()) {
+                logger.info("Still {} steps to execute.", newState.plan().steps().size());
+                return effects().updateState(newState).transitionTo(EXECUTE_PLAN); // (10)
+              } else {
+                logger.info("No further steps to execute.");
+                return effects().updateState(newState).transitionTo(SUMMARIZE);
+              }
+
+            }
+        );
   }
 
   private String callAgent(String agentId, String query) {
@@ -440,24 +512,27 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // (1)
 
   private Step summarizeStep() {
     return step(SUMMARIZE)
-      .call(() -> {
-        var agentsAnswers = currentState().agentResponses.values();
-        return componentClient.forAgent().inSession(sessionId()).method(SummarizerAgent::summarize)
-                .invoke(new SummarizerAgent.Request(currentState().userQuery, agentsAnswers));
-      })
-      .andThen(String.class, finalAnswer ->
-        effects().updateState(currentState().withFinalAnswer(finalAnswer).complete()).end());
+        .call(() -> {
+          var agentsAnswers = currentState().agentResponses.values();
+          return componentClient.forAgent().inSession(sessionId()).method(SummarizerAgent::summarize)
+              .invoke(new SummarizerAgent.Request(currentState().userQuery, agentsAnswers));
+        })
+        .andThen(String.class, finalAnswer -> {
+          logger.info("Final summarized answer: '{}'", finalAnswer);
+          return effects()
+              .updateState(currentState().withFinalAnswer(finalAnswer).complete()).pause();
+        });
   }
 
   private static final String INTERRUPT = "interrupt";
 
   private Workflow.Step interruptStep() {
     return step(INTERRUPT)
-      .call(() -> {
-        logger.debug("Interrupting workflow");
-        return Done.getInstance();
-      })
-      .andThen(() -> effects().updateState(currentState().failed()).end());
+        .call(() -> {
+          logger.info("Interrupting workflow");
+          return Done.getInstance();
+        })
+        .andThen(() -> effects().updateState(currentState().failed()).end());
   }
 
   private String sessionId() {
@@ -476,12 +551,25 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // (1)
 | **8** | Take the next task in the plan. |
 | **9** | Call the agent for the task. |
 | **10** | Continue executing the plan until no tasks are remaining. |
+You can add the imports:
+
+```java
+import static com.example.application.AgentTeamWorkflow.Status.*;
+import com.example.domain.*;
+```
 When executing the plan and calling the agents we know the id of the agent to call, but not the agent class. It can be the `WeatherAgent` or `ActivityAgent`. Therefore, we can’t use the ordinary `method` of the `ComponentClient. Instead, we use the `dynamicCall` with the id of the agent. This is the reason why we had to align the method signatures of the worker agents.
 
 This also ends the workflow by creating a summary of the results from the involved agent. Add a new file `SummarizerAgent.java` to `src/main/java/com/example/application/`
 
 [SummarizerAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/SummarizerAgent.java)
 ```java
+import akka.javasdk.agent.Agent;
+import akka.javasdk.annotations.AgentDescription;
+import akka.javasdk.annotations.ComponentId;
+
+import java.util.Collection;
+import java.util.stream.Collectors;
+
 @ComponentId("summarizer-agent")
 @AgentDescription(
     name = "Summarizer",
@@ -504,7 +592,7 @@ public class SummarizerAgent extends Agent {
       """.formatted(userQuery);
   }
 
-  public Agent.Effect<String> summarize(Request request) {
+  public Effect<String> summarize(Request request) {
     var allResponses = request.agentsResponses.stream()
         .filter(response -> !response.startsWith("ERROR"))
         .collect(Collectors.joining(" "));
@@ -516,6 +604,11 @@ public class SummarizerAgent extends Agent {
   }
 
 }
+```
+Fix any compilation errors, such as missing imports.
+
+```command
+mvn compile
 ```
 We still only have the two worker agents `WeatherAgent` and `ActivityAgent`, but you can add more agents to this structure of dynamic planning and execution, and it will be able to solve other types of problems without changing the orchestration engine.
 
@@ -538,17 +631,15 @@ Retrieve the suggested activities with the `sessionId` from the previous respons
 ```command
 curl -i -XGET --location "http://localhost:9000/activities/alice/{sessionId}"
 ```
+Inspect the logs and notice the difference if you include "Beware of the weather" in the request or not.
 
 ## <a href="about:blank#_next_steps"></a> Next steps
 
-Congratulations, you have completed the tour of building a multi-agent system. Now you can take your Akka skills to the next level:
-
-- **Expand on your own**: Learn more details of the [Akka components](../../java/components/index.html) to enhance your application with additional features.
-- **Explore other Akka samples**: Discover more about Akka by exploring [different use cases](../samples.html) for inspiration.
+- Finally, let’s use another agent to evaluate the previous suggestions when the user preferences are changed or if new suggestions should be created. Continue with [Evaluation on changes](eval.html) that will illustrate the Consumer component and "LLM as judge" pattern.
 
 <!-- <footer> -->
 <!-- <nav> -->
-[AI Planner Part 5: List by user](list.html) [Samples](../samples.html)
+[List by user](list.html) [Evaluation on changes](eval.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

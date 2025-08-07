@@ -5,10 +5,12 @@
 package akka.javasdk.impl.consumer
 
 import java.util.Optional
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.OptionConverters.RichOption
 import scala.util.control.NonFatal
+
 import akka.actor.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport

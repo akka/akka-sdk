@@ -9,7 +9,6 @@ import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
-
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -42,13 +41,13 @@ public class AllTheTypesView extends View {
       String nestedEmail
       // FIXME indexing on enums not supported yet: AllTheTypesKvEntity.AnEnum anEnum
       // Note: recursive structures cannot be indexed
-  ) {}
-
+      ) {}
 
   @Consume.FromKeyValueEntity(AllTheTypesKvEntity.class)
-  public static class Events extends TableUpdater<AllTheTypesKvEntity.AllTheTypes> { }
+  public static class Events extends TableUpdater<AllTheTypesKvEntity.AllTheTypes> {}
 
-  @Query("""
+  @Query(
+      """
       SELECT * FROM events WHERE
       intValue = :intValue AND
       longValue = :longValue AND
@@ -68,7 +67,10 @@ public class AllTheTypesView extends View {
       :stringValue = ANY(repeatedString) AND
       nestedMessage.email = :nestedEmail
       """)
-  public QueryStreamEffect<AllTheTypesKvEntity.AllTheTypes> specificRow(AllTheQueryableTypes query) { return queryStreamResult(); }
+  public QueryStreamEffect<AllTheTypesKvEntity.AllTheTypes> specificRow(
+      AllTheQueryableTypes query) {
+    return queryStreamResult();
+  }
 
   @Query("SELECT * FROM events")
   public QueryStreamEffect<AllTheTypesKvEntity.AllTheTypes> allRows() {
@@ -76,33 +78,49 @@ public class AllTheTypesView extends View {
   }
 
   public record CountResult(long count) {}
+
   @Query("SELECT COUNT(*) FROM events")
   public QueryEffect<CountResult> countRows() {
     return queryResult();
   }
 
   public record InstantRequest(Instant instant) {}
+
   @Query("SELECT * FROM events WHERE instant > :instant")
-  public QueryStreamEffect<AllTheTypesKvEntity.AllTheTypes> compareInstant(InstantRequest request) { return queryStreamResult(); }
+  public QueryStreamEffect<AllTheTypesKvEntity.AllTheTypes> compareInstant(InstantRequest request) {
+    return queryStreamResult();
+  }
 
   public record GroupResult(List<AllTheTypesKvEntity.AllTheTypes> grouped, long totalCount) {}
+
   @Query("SELECT collect(*) AS grouped, total_count() FROM events GROUP BY intValue")
-  public QueryStreamEffect<GroupResult> groupQuery() { return queryStreamResult(); }
+  public QueryStreamEffect<GroupResult> groupQuery() {
+    return queryStreamResult();
+  }
 
-  public record ProjectedGroupResult(int intValue, List<String> groupedStringValues, long totalCount) {}
-  @Query("SELECT intValue, stringValue AS groupedStringValues, total_count() FROM events GROUP BY intValue")
-  public QueryStreamEffect<ProjectedGroupResult> projectedGroupQuery() { return queryStreamResult(); }
+  public record ProjectedGroupResult(
+      int intValue, List<String> groupedStringValues, long totalCount) {}
 
+  @Query(
+      "SELECT intValue, stringValue AS groupedStringValues, total_count() FROM events GROUP BY"
+          + " intValue")
+  public QueryStreamEffect<ProjectedGroupResult> projectedGroupQuery() {
+    return queryStreamResult();
+  }
 
-  @Query("SELECT * FROM events WHERE optionalString IS NOT NULL AND nestedMessage.email IS NOT NULL")
+  @Query(
+      "SELECT * FROM events WHERE optionalString IS NOT NULL AND nestedMessage.email IS NOT NULL")
   public QueryStreamEffect<AllTheTypesKvEntity.AllTheTypes> nullableQuery() {
     return queryStreamResult();
   }
 
   public record PageRequest(String pageToken) {}
-  public record Page(List<AllTheTypesKvEntity.AllTheTypes> entries, String nextPageToken, boolean hasMore) { }
 
-  @Query("""
+  public record Page(
+      List<AllTheTypesKvEntity.AllTheTypes> entries, String nextPageToken, boolean hasMore) {}
+
+  @Query(
+      """
       SELECT * AS entries, next_page_token() AS nextPageToken, has_more() AS hasMore
       FROM events
       OFFSET page_token_offset(:pageToken)
@@ -115,5 +133,7 @@ public class AllTheTypesView extends View {
   public record BeforeRequest(Instant instant) {}
 
   @Query("SELECT * FROM events WHERE zonedDateTime < :instant")
-  public QueryStreamEffect<AllTheTypesKvEntity.AllTheTypes> beforeInstant(BeforeRequest query)  { return queryStreamResult(); }
+  public QueryStreamEffect<AllTheTypesKvEntity.AllTheTypes> beforeInstant(BeforeRequest query) {
+    return queryStreamResult();
+  }
 }

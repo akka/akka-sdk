@@ -1,18 +1,21 @@
 import akka.grpc.sbt.AkkaGrpcPlugin
-import sbt._
-import sbt.Keys._
-import com.lightbend.sbt.JavaFormatterPlugin.autoImport.javafmtOnCompile
+import sbt.*
+import sbt.Keys.*
 import de.heikoseeberger.sbtheader.{ AutomateHeaderPlugin, HeaderPlugin }
 import org.scalafmt.sbt.ScalafmtPlugin
 import org.scalafmt.sbt.ScalafmtPlugin.autoImport.scalafmtOnCompile
 import sbtprotoc.ProtocPlugin
 
 import java.nio.charset.StandardCharsets
+import scala.annotation.nowarn
 import scala.collection.breakOut
+import com.github.sbt.AutomateJavaFormatterPlugin
+import com.github.sbt.JavaFormatterPlugin.autoImport.javafmtOnCompile
 
 object CommonSettings extends AutoPlugin {
 
-  override def requires = plugins.JvmPlugin && ScalafmtPlugin
+  @nowarn("msg=deprecated") // need to depend on AutomateJavaFormatterPlugin for settings ordering
+  override def requires = plugins.JvmPlugin && ScalafmtPlugin && AutomateJavaFormatterPlugin
   override def trigger = allRequirements
 
   val additionalValidation =
@@ -25,7 +28,7 @@ object CommonSettings extends AutoPlugin {
       organizationHomepage := Some(url("https://akka.io")),
       homepage := Some(url("https://akka.io")),
       description := "Akka SDK for Java",
-      resolvers += "Akka repository".at("https://repo.akka.io/maven"),
+      resolvers += "Akka repository".at("https://repo.akka.io/maven/github_actions"),
       developers := List(
         Developer(
           id = "akka-developers",

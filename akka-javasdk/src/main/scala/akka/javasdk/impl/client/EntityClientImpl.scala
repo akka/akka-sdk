@@ -4,6 +4,13 @@
 
 package akka.javasdk.impl.client
 
+import scala.concurrent.ExecutionContext
+import scala.jdk.FutureConverters.FutureOps
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+
+import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.japi.function
 import akka.javasdk.Metadata
@@ -19,27 +26,20 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.ComponentDescriptorFactory
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.reflection.Reflect
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.workflow.Workflow
-import akka.runtime.sdk.spi.TimedActionRequest
-import akka.runtime.sdk.spi.TimedActionType
+import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.ComponentType
 import akka.runtime.sdk.spi.EntityRequest
 import akka.runtime.sdk.spi.EventSourcedEntityType
 import akka.runtime.sdk.spi.KeyValueEntityType
+import akka.runtime.sdk.spi.TimedActionRequest
+import akka.runtime.sdk.spi.TimedActionType
 import akka.runtime.sdk.spi.WorkflowType
-import akka.runtime.sdk.spi.{ TimedActionClient => RuntimeTimedActionClient }
 import akka.runtime.sdk.spi.{ EntityClient => RuntimeEntityClient }
-import scala.concurrent.ExecutionContext
-import scala.jdk.FutureConverters.FutureOps
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
-
-import akka.actor.typed.ActorSystem
-import akka.javasdk.impl.serialization.JsonSerializer
-import akka.runtime.sdk.spi.BytesPayload
+import akka.runtime.sdk.spi.{ TimedActionClient => RuntimeTimedActionClient }
 
 /**
  * INTERNAL API
@@ -97,8 +97,13 @@ private[impl] sealed abstract class EntityClientImpl(
               entityClient
                 .send(new EntityRequest(componentId, entityId, methodName, serializedPayload, toSpi(metadata)))
                 .map { reply =>
-                  // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-                  serializer.fromBytes[R](returnType, reply.payload)
+                  reply.exceptionPayload match {
+                    case Some(value) =>
+                      //rethrowing to catch it on the component client invocation level
+                      throw serializer.exceptionFromBytes(value)
+                    case None => // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
+                      serializer.fromBytes[R](returnType, reply.payload)
+                  }
                 }
             }
             metadata =>

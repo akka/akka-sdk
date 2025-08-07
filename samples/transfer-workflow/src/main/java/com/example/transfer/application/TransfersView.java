@@ -6,7 +6,6 @@ import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
 import com.example.transfer.domain.TransferState;
-
 import java.util.Collection;
 
 // tag::view-from-workflow[]

@@ -137,7 +137,7 @@ The protobuf schema for the export can be found xref:attachment$data_management_
 
 For streaming exports, we can take advantage of the fact that writing a single protobuf message out to a stream with a repeating field many times will result in a single large message with the entries from each message written being concatenated into one large repeating field.
 
-[source,java]
+[source,java,indent=0]
 ----
 public void export(Iterable<EventSourcedEntityEvent> events) throws IOException {
     var fileStream = new FileOutputStream("my-export.binpb");
@@ -172,7 +172,7 @@ public void export(Iterable<EventSourcedEntityEvent> events) throws IOException 
 
 Reading exports is a little more complex, it requires using the protobuf `CodedInputStream` class, but is nonetheless straight forward.
 
-[source,java]
+[source,java,indent=0]
 ----
 public void readExport(File file) throws IOException {
     var extensionRegistry = ExtensionRegistry.newInstance();

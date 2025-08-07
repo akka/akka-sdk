@@ -1,11 +1,11 @@
 package com.example.domain;
 
+import static com.example.domain.CounterEvent.ValueIncreased;
+
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.example.domain.CounterEvent.ValueIncreased;
 
 @ComponentId("counter")
 public class Counter extends EventSourcedEntity<Integer, CounterEvent> {
@@ -24,26 +24,20 @@ public class Counter extends EventSourcedEntity<Integer, CounterEvent> {
     return 0;
   }
 
-
   public Effect<String> increase(Integer value) {
-
     //accept updates only after 12:00
     if (clock.now().getHour() > 12) {
       logger.info("Counter {} increased by {}", this.commandContext().entityId(), value);
-      return effects()
-        .persist(new ValueIncreased(value))
-        .thenReply(Object::toString);
+      return effects().persist(new ValueIncreased(value)).thenReply(Object::toString);
     } else {
       logger.info("Counter {} ignored increase {}", this.commandContext().entityId(), value);
-      return effects()
-        .reply("ignored");
+      return effects().reply("ignored");
     }
   }
 
   public ReadOnlyEffect<Integer> get() {
     return effects().reply(currentState());
   }
-
 
   @Override
   public Integer applyEvent(CounterEvent event) {
@@ -52,4 +46,3 @@ public class Counter extends EventSourcedEntity<Integer, CounterEvent> {
     };
   }
 }
-

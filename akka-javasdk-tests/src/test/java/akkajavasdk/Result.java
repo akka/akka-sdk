@@ -11,13 +11,11 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@type")
 @JsonSubTypes({
   @JsonSubTypes.Type(value = Result.Success.class, name = "S"),
-  @JsonSubTypes.Type(value = Result.Error.class, name = "E")})
+  @JsonSubTypes.Type(value = Result.Error.class, name = "E")
+})
 public sealed interface Result<E, T> {
 
-  record Success<E, T>(
-    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
-    T value
-  ) implements Result<E, T> {
+  record Success<E, T>(@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS) T value) implements Result<E, T> {
     @Override
     public E error() {
       throw new IllegalStateException("Result is not an error");
@@ -34,10 +32,7 @@ public sealed interface Result<E, T> {
     }
   }
 
-  record Error<E, T>(
-    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
-    E value
-  ) implements Result<E, T> {
+  record Error<E, T>(@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS) E value) implements Result<E, T> {
     @Override
     public E error() {
       return value;

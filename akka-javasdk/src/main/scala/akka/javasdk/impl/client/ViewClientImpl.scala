@@ -4,6 +4,16 @@
 
 package akka.javasdk.impl.client
 
+import java.lang.reflect.Method
+import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
+import java.util.Optional
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.jdk.FutureConverters.FutureOps
+
+import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.japi.function
 import akka.javasdk.Metadata
@@ -15,25 +25,13 @@ import akka.javasdk.client.NoEntryFoundException
 import akka.javasdk.client.ViewClient
 import akka.javasdk.impl.ComponentDescriptorFactory
 import akka.javasdk.impl.MetadataImpl
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.view.View
+import akka.runtime.sdk.spi.BytesPayload
+import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.ViewRequest
 import akka.runtime.sdk.spi.ViewType
 import akka.runtime.sdk.spi.{ ViewClient => RuntimeViewClient }
-import java.lang.reflect.Method
-import java.lang.reflect.ParameterizedType
-
-import scala.concurrent.ExecutionContext
-import scala.jdk.FutureConverters.FutureOps
-
-import akka.javasdk.impl.serialization.JsonSerializer
-import akka.runtime.sdk.spi.BytesPayload
-import akka.runtime.sdk.spi.SpiMetadata
-import java.lang.reflect.Type
-import java.util.Optional
-
-import scala.concurrent.Future
-
-import akka.actor.typed.ActorSystem
 
 /**
  * INTERNAL API

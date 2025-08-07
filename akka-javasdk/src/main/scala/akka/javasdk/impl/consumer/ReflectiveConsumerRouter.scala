@@ -5,6 +5,7 @@
 package akka.javasdk.impl.consumer
 
 import java.util.Optional
+
 import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
 import akka.javasdk.consumer.Consumer

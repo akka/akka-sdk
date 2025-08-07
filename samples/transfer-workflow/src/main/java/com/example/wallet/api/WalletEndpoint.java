@@ -28,15 +28,18 @@ public class WalletEndpoint {
   @Get("/{id}")
   public String get(String id) {
     log.info("Get wallet with id [{}].", id);
-    var balance = componentClient.forEventSourcedEntity(id)
-      .method(WalletEntity::get).invoke();
+    var balance = componentClient
+      .forEventSourcedEntity(id)
+      .method(WalletEntity::get)
+      .invoke();
     return "The balance is [" + balance + "].";
   }
 
   @Post("/{id}/create/{initialAmount}")
   public HttpResponse create(String id, int initialAmount) {
     log.info("creating wallet [{}] with balance [{}].", id, initialAmount);
-    componentClient.forEventSourcedEntity(id)
+    componentClient
+      .forEventSourcedEntity(id)
       .method(WalletEntity::create)
       .invoke(initialAmount);
     return HttpResponses.ok();
@@ -44,17 +47,13 @@ public class WalletEndpoint {
 
   @Post("/{id}/deposit/{amount}")
   public HttpResponse deposit(String id, int amount) {
-    componentClient.forEventSourcedEntity(id)
-      .method(WalletEntity::deposit)
-      .invoke(amount);
+    componentClient.forEventSourcedEntity(id).method(WalletEntity::deposit).invoke(amount);
     return HttpResponses.ok();
   }
 
   @Post("/{id}/withdraw/{amount}")
   public HttpResponse withdraw(String id, int amount) {
-    componentClient.forEventSourcedEntity(id)
-      .method(WalletEntity::withdraw)
-      .invoke(amount);
+    componentClient.forEventSourcedEntity(id).method(WalletEntity::withdraw).invoke(amount);
     return HttpResponses.ok();
   }
 }

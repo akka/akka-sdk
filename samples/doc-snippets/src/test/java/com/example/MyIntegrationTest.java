@@ -1,21 +1,23 @@
 package com.example;
 
+import static org.junit.jupiter.api.Assertions.assertSame;
+
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertSame;
-
 // tag::test-di-provider[]
 public class MyIntegrationTest extends TestKitSupport {
 
-  private static final DependencyProvider mockDependencyProvider = new DependencyProvider() { // <1>
+  // prettier-ignore
+  private static final DependencyProvider mockDependencyProvider =
+    new DependencyProvider() { // <1>
     @SuppressWarnings("unchecked")
     @Override
     public <T> T getDependency(Class<T> clazz) {
       if (clazz.equals(MyAppSettings.class)) {
-           return (T) new MyAppSettings(true);
+        return (T) new MyAppSettings(true);
       } else {
         throw new IllegalArgumentException("Unknown dependency type: " + clazz);
       }
@@ -24,8 +26,7 @@ public class MyIntegrationTest extends TestKitSupport {
 
   @Override
   protected TestKit.Settings testKitSettings() {
-    return TestKit.Settings.DEFAULT
-        .withDependencyProvider(mockDependencyProvider); // <2>
+    return TestKit.Settings.DEFAULT.withDependencyProvider(mockDependencyProvider); // <2>
   }
 
   // end::test-di-provider[]

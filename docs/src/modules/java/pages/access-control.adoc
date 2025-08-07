@@ -32,7 +32,7 @@ applies to all methods in the class. Unless it's overridden by an ACL added at m
 
 Here is an example of an ACL added at the class level on an HTTP Endpoint:
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[UserEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tags=endpoint-class;class-level-acl]
@@ -42,7 +42,7 @@ The above ACL only allows incoming traffic from `service-a`. Meaning that only a
 
 This rule can be overridden by an ACL on a method level. Here is an example ACL on a method that overrides the class level ACL:
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[UserEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tags=endpoint-class;class-level-acl;method-overwrite]
@@ -53,7 +53,7 @@ it.
 You can combine `allow` and `deny` rules. In the following example, access is open to all other services, except
 `service-b`.
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[UserEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tag=allow-deny]
@@ -61,7 +61,7 @@ include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[ta
 
 To allow all traffic:
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[UserEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tag=all-traffic]
@@ -69,7 +69,7 @@ include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[ta
 
 To allow only traffic from the internet:
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[UserEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tag=internet]
@@ -77,7 +77,7 @@ include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[ta
 
 To allow traffic from `service-a` and `service-b`:
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[UserEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tag=multiple-services]
@@ -85,7 +85,7 @@ include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[ta
 
 To block all traffic, an ACL with no allows can be configured:
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[UserEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tag=block-traffic]
@@ -105,7 +105,7 @@ When a request is denied, by default a 403 `Forbbiden`, is sent. The code that i
 
 For example, to make Akka reply with 404, `Not Found`:
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[UserEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tags=endpoint-class;deny-class-level]
@@ -128,7 +128,7 @@ The current principal associated with a request can be accessed through the `Req
 
 NOTE: Endpoints are stateless and each request is served by a new Endpoint instance. Therefore, the `RequestContext` is always a new instance and is associated with the request currently being handled.
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[UserEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tags=endpoint-class;request-context]
@@ -146,7 +146,7 @@ was made from the Internet, from the current service or from the Backoffice API 
 those made using the `akka services proxy` command, they are authenticated and authorized to ensure only developers
 of your project can make them.
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[UserEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tags=checking-principals]
@@ -156,7 +156,7 @@ include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[ta
 
 When running locally, ACLs are enabled by default. You can disable the local ACL checks by configuring the following settings in the `application.conf` file:
 
-[source,conf]
+[source,conf,indent=0]
 .src/main/resources/application.conf
 ----
 akka.javasdk.dev-mode.acl.enabled = false
@@ -181,7 +181,7 @@ Let's consider the existence of two distinct services called `shopping-cart` and
 The payment service only accepts request from the shopping cart service and has an ACL defined as
 such:
 
-[source,java,ident=0]
+[source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/acl/PaymentEndpoint.java[PaymentEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/acl/PaymentEndpoint.java[tag=endpoint-class]
@@ -226,7 +226,7 @@ ACLs are enabled by default when running integration tests.
 ACL rules will be applied whenever a call is made using testkit's `HttpClient`. Those calls are interpreted as
 originating from the internet. You can disable the ACL checks by overriding the `testKitSettings()` method.
 
-[source, java, indent=0]
+[source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/test/java/com/example/acl/UserEndpointIntegrationTest.java[UserEndpointIntegrationTest.java]
 ----
 include::example$doc-snippets/src/test/java/com/example/acl/UserEndpointIntegrationTest.java[tag=disable-acl-in-it]

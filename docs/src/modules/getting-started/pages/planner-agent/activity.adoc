@@ -19,20 +19,19 @@ In this part of the guide you will:
 include::ROOT:partial$local-dev-prerequisites.adoc[]
 * https://platform.openai.com/api-keys[OpenAI API key, window="new"]
 
-== Create the empty project
-
-You already learned how to create an empty Akka project when you went through the guide to xref:getting-started:author-your-first-service.adoc#clone_sample[author your first service].
+include::ROOT:partial$create-the-empty-project.adoc[]
+You can continue from the `helloworld-agent` project.
 
 [NOTE]
 ====
-This guide is written assuming you will follow it as a tutorial to walk through all of the components, building them on your own. If at any time you want to compare your solution with the official sample, check out the link:https://github.com/akka-samples/multi-agent[Github Repository, window="new"].
+This guide is written assuming you will follow it as a tutorial to walk through all of the components, building them on your own. If at any time you want to compare your solution with the official sample, check out the link:https://github.com/akka-samples/multi-agent[GitHub Repository, window="new"].
 ====
 
 == Add the Agent
 
 We will add an agent that suggests real-world activities. Add a new file `ActivityAgent.java` to `src/main/java/com/example/application/`
 
-[source,java]
+[source,java,indent=0]
 .ActivityAgent.java
 ----
 include::java:example$doc-snippets/src/main/java/agent_guide/part1/ActivityAgent.java[tag=all]
@@ -51,7 +50,7 @@ The user message represents the specific query, instruction, or input that will 
 
 Add a new file `ActivityEndpoint.java` to `src/main/java/com/example/api/`
 
-[source, java]
+[source,java,indent=0]
 .ActivityEndpoint.java
 ----
 include::java:example$doc-snippets/src/main/java/agent_guide/part1/ActivityEndpoint.java[tag=all]
@@ -64,7 +63,7 @@ include::java:example$doc-snippets/src/main/java/agent_guide/part1/ActivityEndpo
 
 Akka has support for many AI providers, and this sample is using OpenAI. This is the configuration:
 
-[source, java]
+[source,java,indent=0]
 .application.conf
 ----
 include::java:example$doc-snippets/src/main/resources/application.conf[tag=agent-model-config]

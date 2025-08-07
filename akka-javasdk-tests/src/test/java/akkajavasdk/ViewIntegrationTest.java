@@ -4,6 +4,11 @@
 
 package akkajavasdk;
 
+import static java.time.temporal.ChronoUnit.DAYS;
+import static java.time.temporal.ChronoUnit.HOURS;
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import akka.javasdk.client.EventSourcedEntityClient;
 import akka.javasdk.client.NoEntryFoundException;
 import akka.javasdk.testkit.TestKitSupport;
@@ -27,12 +32,6 @@ import akkajavasdk.components.views.user.UsersByEmailAndName;
 import akkajavasdk.components.views.user.UsersByName;
 import akkajavasdk.components.views.user.UsersByPrimitives;
 import akkajavasdk.components.views.user.UsersView;
-import org.awaitility.Awaitility;
-import org.hamcrest.core.IsEqual;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -40,16 +39,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-
-
-import static java.time.temporal.ChronoUnit.DAYS;
-import static java.time.temporal.ChronoUnit.HOURS;
-import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.assertj.core.api.Assertions.assertThat;
+import org.awaitility.Awaitility;
+import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith(Junit5LogCapturing.class)
 public class ViewIntegrationTest extends TestKitSupport {
-
 
   /* Note: when changing test view queries/types so that they are invalid
    *       The failure is not shown by log capturing (happens in beforeAll)
@@ -73,8 +70,7 @@ public class ViewIntegrationTest extends TestKitSupport {
     Awaitility.await()
         .ignoreExceptions()
         .atMost(15, TimeUnit.of(SECONDS))
-        .until(() -> getUserByEmail(user.email()).version,
-            new IsEqual(1));
+        .until(() -> getUserByEmail(user.email()).version, new IsEqual(1));
 
     updateUser(user.withName("JohnDoeJr"));
 
@@ -82,8 +78,7 @@ public class ViewIntegrationTest extends TestKitSupport {
     Awaitility.await()
         .ignoreExceptions()
         .atMost(15, TimeUnit.of(SECONDS))
-        .until(() -> getUserByEmail(user.email()).version,
-            new IsEqual(2));
+        .until(() -> getUserByEmail(user.email()).version, new IsEqual(2));
   }
 
   @Test
@@ -102,10 +97,12 @@ public class ViewIntegrationTest extends TestKitSupport {
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () -> {
-              var byValue = await(
-                  componentClient.forView()
-                      .method(CountersByValueWithIgnore::getCounterByValue)
-                      .invokeAsync(CountersByValueWithIgnore.queryParam(2)));
+              var byValue =
+                  await(
+                      componentClient
+                          .forView()
+                          .method(CountersByValueWithIgnore::getCounterByValue)
+                          .invokeAsync(CountersByValueWithIgnore.queryParam(2)));
 
               assertThat(byValue.value()).isEqualTo(1 + 1);
             });
@@ -114,19 +111,21 @@ public class ViewIntegrationTest extends TestKitSupport {
   @Test
   public void verifyHierarchyView() {
 
-    var emptyCounter = await(
-        componentClient.forView()
-            .method(HierarchyCountersByValue::getCounterByValue)
-            .invokeAsync(201));
+    var emptyCounter =
+        await(
+            componentClient
+                .forView()
+                .method(HierarchyCountersByValue::getCounterByValue)
+                .invokeAsync(201));
 
     assertThat(emptyCounter).isEmpty();
 
     var esId = newId();
     await(
-        componentClient.forEventSourcedEntity(esId)
+        componentClient
+            .forEventSourcedEntity(esId)
             .method(CounterEntity::increase)
             .invokeAsync(201));
-
 
     // the view is eventually updated
     Awaitility.await()
@@ -134,10 +133,12 @@ public class ViewIntegrationTest extends TestKitSupport {
         .atMost(15, TimeUnit.of(SECONDS))
         .untilAsserted(
             () -> {
-              var byValue = await(
-                  componentClient.forView()
-                      .method(HierarchyCountersByValue::getCounterByValue)
-                      .invokeAsync(201));
+              var byValue =
+                  await(
+                      componentClient
+                          .forView()
+                          .method(HierarchyCountersByValue::getCounterByValue)
+                          .invokeAsync(201));
 
               assertThat(byValue).hasValue(new Counter(201));
             });
@@ -148,25 +149,24 @@ public class ViewIntegrationTest extends TestKitSupport {
 
     var id1 = newId();
     await(
-        componentClient.forEventSourcedEntity(id1)
-            .method(CounterEntity::increase)
-            .invokeAsync(74));
+        componentClient.forEventSourcedEntity(id1).method(CounterEntity::increase).invokeAsync(74));
 
     var id2 = newId();
     await(
-        componentClient.forEventSourcedEntity(id2)
-            .method(CounterEntity::increase)
-            .invokeAsync(74));
+        componentClient.forEventSourcedEntity(id2).method(CounterEntity::increase).invokeAsync(74));
 
     Awaitility.await()
         .ignoreExceptions()
         .atMost(20, TimeUnit.SECONDS)
         .until(
             () ->
-                await(componentClient.forView()
-                    .method(CountersByValueSubscriptions::getCounterByValue)
-                    .invokeAsync(new CountersByValueSubscriptions.QueryParameters(74)))
-                    .counters().size(),
+                await(
+                        componentClient
+                            .forView()
+                            .method(CountersByValueSubscriptions::getCounterByValue)
+                            .invokeAsync(new CountersByValueSubscriptions.QueryParameters(74)))
+                    .counters()
+                    .size(),
             new IsEqual<>(2));
   }
 
@@ -174,136 +174,186 @@ public class ViewIntegrationTest extends TestKitSupport {
   public void verifyAllTheFieldTypesView() throws Exception {
     // see that we can persist and read a row with all fields, no indexed columns
     var id = newId();
-    var row = new AllTheTypesKvEntity.AllTheTypes(1, 2L, 3F, 4D, true, "text", 5, 6L, 7F, 8D, false,
-        Instant.now(),
-        // Note: we turn it into a timestamp internally, so the specific TZ is lost (but the exact point in time stays the same)
-        ZonedDateTime.now().withZoneSameInstant(ZoneId.of("Z")),
-        Optional.of("optional"), List.of("text", "text2"),
-        new AllTheTypesKvEntity.ByEmail("test@example.com"),
-        AllTheTypesKvEntity.AnEnum.THREE, new AllTheTypesKvEntity.Recursive(new AllTheTypesKvEntity.Recursive(null, "level2"), "level1"));
-    await(componentClient.forKeyValueEntity(id).method(AllTheTypesKvEntity::store).invokeAsync(row));
+    var row =
+        new AllTheTypesKvEntity.AllTheTypes(
+            1,
+            2L,
+            3F,
+            4D,
+            true,
+            "text",
+            5,
+            6L,
+            7F,
+            8D,
+            false,
+            Instant.now(),
+            // Note: we turn it into a timestamp internally, so the specific TZ is lost (but the
+            // exact point in time stays the same)
+            ZonedDateTime.now().withZoneSameInstant(ZoneId.of("Z")),
+            Optional.of("optional"),
+            List.of("text", "text2"),
+            new AllTheTypesKvEntity.ByEmail("test@example.com"),
+            AllTheTypesKvEntity.AnEnum.THREE,
+            new AllTheTypesKvEntity.Recursive(
+                new AllTheTypesKvEntity.Recursive(null, "level2"), "level1"));
+    await(
+        componentClient.forKeyValueEntity(id).method(AllTheTypesKvEntity::store).invokeAsync(row));
 
     // just as row payload
     Awaitility.await()
         .ignoreExceptions()
         .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(() -> {
-              var rows = await(componentClient.forView()
-                  .stream(AllTheTypesView::allRows)
-                  .source().runWith(Sink.seq(), testKit.getMaterializer()));
+        .untilAsserted(
+            () -> {
+              var rows =
+                  await(
+                      componentClient.forView().stream(AllTheTypesView::allRows)
+                          .source()
+                          .runWith(Sink.seq(), testKit.getMaterializer()));
 
               assertThat(rows).hasSize(1);
-            }
-        );
+            });
 
     // cover indexable column types
-    var query = new AllTheTypesView.AllTheQueryableTypes(
-        row.intValue(), row.longValue(), row.floatValue(), row.doubleValue(), row.booleanValue(), row.stringValue(),
-        row.wrappedInt(), row.wrappedLong(), row.wrappedFloat(), row.wrappedDouble(), row.wrappedBoolean(),
-        row.instant(), row.zonedDateTime(),
-        row.optionalString(), row.repeatedString(), row.nestedMessage().email());
+    var query =
+        new AllTheTypesView.AllTheQueryableTypes(
+            row.intValue(),
+            row.longValue(),
+            row.floatValue(),
+            row.doubleValue(),
+            row.booleanValue(),
+            row.stringValue(),
+            row.wrappedInt(),
+            row.wrappedLong(),
+            row.wrappedFloat(),
+            row.wrappedDouble(),
+            row.wrappedBoolean(),
+            row.instant(),
+            row.zonedDateTime(),
+            row.optionalString(),
+            row.repeatedString(),
+            row.nestedMessage().email());
     Awaitility.await()
         .ignoreExceptions()
         .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(() -> {
-          var rows = await(componentClient.forView()
-              .stream(AllTheTypesView::specificRow)
-              .source(query).runWith(Sink.seq(), testKit.getMaterializer()));
+        .untilAsserted(
+            () -> {
+              var rows =
+                  await(
+                      componentClient.forView().stream(AllTheTypesView::specificRow)
+                          .source(query)
+                          .runWith(Sink.seq(), testKit.getMaterializer()));
 
-          assertThat(rows).hasSize(1);
-        });
+              assertThat(rows).hasSize(1);
+            });
 
     // timestamp comparisons
     Awaitility.await()
         .ignoreExceptions()
         .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(() -> {
-          var rows = await(componentClient.forView()
-              .stream(AllTheTypesView::beforeInstant)
-              .source(new AllTheTypesView.BeforeRequest(row.zonedDateTime().toInstant().plus(4, HOURS)))
-              .runWith(Sink.seq(), testKit.getMaterializer()));
+        .untilAsserted(
+            () -> {
+              var rows =
+                  await(
+                      componentClient.forView().stream(AllTheTypesView::beforeInstant)
+                          .source(
+                              new AllTheTypesView.BeforeRequest(
+                                  row.zonedDateTime().toInstant().plus(4, HOURS)))
+                          .runWith(Sink.seq(), testKit.getMaterializer()));
 
-          assertThat(rows).hasSize(1);
-        });
-
-    Awaitility.await()
-        .ignoreExceptions()
-        .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(() -> {
-          var result = await(componentClient.forView()
-              .method(AllTheTypesView::countRows)
-              .invokeAsync());
-
-          assertThat(result.count()).isEqualTo(1);
-        });
-
+              assertThat(rows).hasSize(1);
+            });
 
     Awaitility.await()
         .ignoreExceptions()
         .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(() -> {
-          var rows = await(componentClient.forView()
-              .stream(AllTheTypesView::compareInstant)
-              .source(new AllTheTypesView.InstantRequest(Instant.now().minus(3, DAYS)))
-              .runWith(Sink.seq(), testKit.getMaterializer()));
+        .untilAsserted(
+            () -> {
+              var result =
+                  await(componentClient.forView().method(AllTheTypesView::countRows).invokeAsync());
 
-          assertThat(rows).hasSize(1);
-        });
-
-    Awaitility.await()
-        .ignoreExceptions()
-        .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(() -> {
-          var rows = await(componentClient.forView()
-              .stream(AllTheTypesView::groupQuery)
-              .source()
-              .runWith(Sink.seq(), testKit.getMaterializer()));
-
-          assertThat(rows).hasSize(1);
-          assertThat(rows.getFirst().grouped()).hasSize(1);
-          assertThat(rows.getFirst().grouped().getFirst()).isEqualTo(row);
-          assertThat(rows.getFirst().totalCount()).isEqualTo(1L);
-        });
+              assertThat(result.count()).isEqualTo(1);
+            });
 
     Awaitility.await()
         .ignoreExceptions()
         .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(() -> {
-          var rows = await(componentClient.forView()
-              .stream(AllTheTypesView::projectedGroupQuery)
-              .source()
-              .runWith(Sink.seq(), testKit.getMaterializer()));
+        .untilAsserted(
+            () -> {
+              var rows =
+                  await(
+                      componentClient.forView().stream(AllTheTypesView::compareInstant)
+                          .source(new AllTheTypesView.InstantRequest(Instant.now().minus(3, DAYS)))
+                          .runWith(Sink.seq(), testKit.getMaterializer()));
 
-          assertThat(rows).hasSize(1);
-          assertThat(rows.getFirst().groupedStringValues()).hasSize(1);
-          assertThat(rows.getFirst().groupedStringValues().getFirst()).isEqualTo(row.stringValue());
-          assertThat(rows.getFirst().totalCount()).isEqualTo(1L);
-        });
-
+              assertThat(rows).hasSize(1);
+            });
 
     Awaitility.await()
         .ignoreExceptions()
         .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(() -> {
-          var rows = await(componentClient.forView()
-              .stream(AllTheTypesView::nullableQuery)
-              .source()
-              .runWith(Sink.seq(), testKit.getMaterializer()));
+        .untilAsserted(
+            () -> {
+              var rows =
+                  await(
+                      componentClient.forView().stream(AllTheTypesView::groupQuery)
+                          .source()
+                          .runWith(Sink.seq(), testKit.getMaterializer()));
 
-          assertThat(rows).hasSize(1);
-        });
+              assertThat(rows).hasSize(1);
+              assertThat(rows.getFirst().grouped()).hasSize(1);
+              assertThat(rows.getFirst().grouped().getFirst()).isEqualTo(row);
+              assertThat(rows.getFirst().totalCount()).isEqualTo(1L);
+            });
 
     Awaitility.await()
         .ignoreExceptions()
         .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(() -> {
-          var page = await(componentClient.forView()
-              .method(AllTheTypesView::paging)
-              .invokeAsync(new AllTheTypesView.PageRequest("")));
+        .untilAsserted(
+            () -> {
+              var rows =
+                  await(
+                      componentClient.forView().stream(AllTheTypesView::projectedGroupQuery)
+                          .source()
+                          .runWith(Sink.seq(), testKit.getMaterializer()));
 
-          assertThat(page.entries()).hasSize(1);
-          assertThat(page.hasMore()).isFalse();
-        });
+              assertThat(rows).hasSize(1);
+              assertThat(rows.getFirst().groupedStringValues()).hasSize(1);
+              assertThat(rows.getFirst().groupedStringValues().getFirst())
+                  .isEqualTo(row.stringValue());
+              assertThat(rows.getFirst().totalCount()).isEqualTo(1L);
+            });
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var rows =
+                  await(
+                      componentClient.forView().stream(AllTheTypesView::nullableQuery)
+                          .source()
+                          .runWith(Sink.seq(), testKit.getMaterializer()));
+
+              assertThat(rows).hasSize(1);
+            });
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var page =
+                  await(
+                      componentClient
+                          .forView()
+                          .method(AllTheTypesView::paging)
+                          .invokeAsync(new AllTheTypesView.PageRequest("")));
+
+              assertThat(page.entries()).hasSize(1);
+              assertThat(page.hasMore()).isFalse();
+            });
   }
 
   @Disabled // pending primitive query parameters working
@@ -318,45 +368,57 @@ public class ViewIntegrationTest extends TestKitSupport {
     Awaitility.await()
         .ignoreExceptions()
         .atMost(10, TimeUnit.of(SECONDS))
-        .untilAsserted(() -> {
-          var resultByString = await(
-              componentClient.forView()
-                  .method(UsersByPrimitives::getUserByString)
-                  .invokeAsync(user1.email()));
-          assertThat(resultByString.users()).isNotEmpty();
+        .untilAsserted(
+            () -> {
+              var resultByString =
+                  await(
+                      componentClient
+                          .forView()
+                          .method(UsersByPrimitives::getUserByString)
+                          .invokeAsync(user1.email()));
+              assertThat(resultByString.users()).isNotEmpty();
 
-          var resultByInt = await(
-              componentClient.forView()
-                  .method(UsersByPrimitives::getUserByInt)
-                  .invokeAsync(123));
-          assertThat(resultByInt.users()).isNotEmpty();
+              var resultByInt =
+                  await(
+                      componentClient
+                          .forView()
+                          .method(UsersByPrimitives::getUserByInt)
+                          .invokeAsync(123));
+              assertThat(resultByInt.users()).isNotEmpty();
 
-          var resultByLong = await(
-              componentClient.forView()
-                  .method(UsersByPrimitives::getUserByLong)
-                  .invokeAsync(321l));
-          assertThat(resultByLong.users()).isNotEmpty();
+              var resultByLong =
+                  await(
+                      componentClient
+                          .forView()
+                          .method(UsersByPrimitives::getUserByLong)
+                          .invokeAsync(321l));
+              assertThat(resultByLong.users()).isNotEmpty();
 
-          var resultByDouble = await(
-              componentClient.forView()
-                  .method(UsersByPrimitives::getUserByDouble)
-                  .invokeAsync(12.3d));
-          assertThat(resultByDouble.users()).isNotEmpty();
+              var resultByDouble =
+                  await(
+                      componentClient
+                          .forView()
+                          .method(UsersByPrimitives::getUserByDouble)
+                          .invokeAsync(12.3d));
+              assertThat(resultByDouble.users()).isNotEmpty();
 
-          var resultByBoolean = await(
-              componentClient.forView()
-                  .method(UsersByPrimitives::getUserByBoolean)
-                  .invokeAsync(true));
-          assertThat(resultByBoolean.users()).isNotEmpty();
+              var resultByBoolean =
+                  await(
+                      componentClient
+                          .forView()
+                          .method(UsersByPrimitives::getUserByBoolean)
+                          .invokeAsync(true));
+              assertThat(resultByBoolean.users()).isNotEmpty();
 
-          var resultByEmails = await(
-              componentClient.forView()
-                  .method(UsersByPrimitives::getUserByEmails)
-                  .invokeAsync(List.of(user1.email(), user2.email())));
-          assertThat(resultByEmails.users()).hasSize(2);
-        });
+              var resultByEmails =
+                  await(
+                      componentClient
+                          .forView()
+                          .method(UsersByPrimitives::getUserByEmails)
+                          .invokeAsync(List.of(user1.email(), user2.email())));
+              assertThat(resultByEmails.users()).hasSize(2);
+            });
   }
-
 
   @Test
   public void shouldDeleteValueEntityAndDeleteViewsState() {
@@ -367,14 +429,12 @@ public class ViewIntegrationTest extends TestKitSupport {
     Awaitility.await()
         .ignoreExceptions()
         .atMost(15, TimeUnit.of(SECONDS))
-        .until(() -> getUserByEmail(user.email()).version,
-            new IsEqual(1));
+        .until(() -> getUserByEmail(user.email()).version, new IsEqual(1));
 
     Awaitility.await()
         .ignoreExceptions()
         .atMost(15, TimeUnit.of(SECONDS))
-        .until(() -> getUsersByName(user.name()).size(),
-            new IsEqual(1));
+        .until(() -> getUsersByName(user.name()).size(), new IsEqual(1));
 
     deleteUser(user);
 
@@ -385,7 +445,8 @@ public class ViewIntegrationTest extends TestKitSupport {
             () -> {
               var ex =
                   failed(
-                      componentClient.forView()
+                      componentClient
+                          .forView()
                           .method(UserWithVersionView::getUser)
                           .invokeAsync(UserWithVersionView.queryParam(user.email())));
               assertThat(ex).isInstanceOf(NoEntryFoundException.class);
@@ -394,8 +455,7 @@ public class ViewIntegrationTest extends TestKitSupport {
     Awaitility.await()
         .ignoreExceptions()
         .atMost(15, TimeUnit.of(SECONDS))
-        .until(() -> getUsersByName(user.name()).size(),
-            new IsEqual(0));
+        .until(() -> getUsersByName(user.name()).size(), new IsEqual(0));
   }
 
   @Test
@@ -410,10 +470,12 @@ public class ViewIntegrationTest extends TestKitSupport {
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () -> {
-              var byEmail = await(
-                  componentClient.forView()
-                      .method(UsersView::getUserByEmail)
-                      .invokeAsync(UsersView.byEmailParam(user.email())));
+              var byEmail =
+                  await(
+                      componentClient
+                          .forView()
+                          .method(UsersView::getUserByEmail)
+                          .invokeAsync(UsersView.byEmailParam(user.email())));
 
               assertThat(byEmail.email).isEqualTo(user.email());
             });
@@ -452,7 +514,8 @@ public class ViewIntegrationTest extends TestKitSupport {
 
               var byEmail =
                   await(
-                      componentClient.forView()
+                      componentClient
+                          .forView()
                           .method(UsersByEmailAndName::getUsers)
                           .invokeAsync(request));
 
@@ -496,20 +559,23 @@ public class ViewIntegrationTest extends TestKitSupport {
     assertThat(aliceCounters.id).isEqualTo(alice.id());
     assertThat(aliceCounters.email).isEqualTo(alice.email());
     assertThat(aliceCounters.name).isEqualTo(alice.name());
-    assertThat(aliceCounters.counters).containsOnly(new UserCounter("c1", 11), new UserCounter("c3", 33));
+    assertThat(aliceCounters.counters)
+        .containsOnly(new UserCounter("c1", 11), new UserCounter("c3", 33));
 
     UserCounters bobCounters = getUserCounters(bob.id());
 
     assertThat(bobCounters.id).isEqualTo(bob.id());
     assertThat(bobCounters.email).isEqualTo(bob.email());
     assertThat(bobCounters.name).isEqualTo(bob.name());
-    assertThat(bobCounters.counters).containsOnly(new UserCounter("c2", 22), new UserCounter("c4", 44));
+    assertThat(bobCounters.counters)
+        .containsOnly(new UserCounter("c2", 22), new UserCounter("c4", 44));
   }
 
   private void createUser(TestUser user) {
     Ok userCreation =
         await(
-            componentClient.forKeyValueEntity(user.id())
+            componentClient
+                .forKeyValueEntity(user.id())
                 .method(UserEntity::createOrUpdateUser)
                 .invokeAsync(new UserEntity.CreatedUser(user.name(), user.email())));
     assertThat(userCreation).isEqualTo(Ok.instance);
@@ -518,7 +584,8 @@ public class ViewIntegrationTest extends TestKitSupport {
   private void updateUser(TestUser user) {
     Ok userUpdate =
         await(
-            componentClient.forKeyValueEntity(user.id())
+            componentClient
+                .forKeyValueEntity(user.id())
                 .method(UserEntity::createOrUpdateUser)
                 .invokeAsync(new UserEntity.CreatedUser(user.name(), user.email())));
 
@@ -527,37 +594,42 @@ public class ViewIntegrationTest extends TestKitSupport {
 
   private UserWithVersion getUserByEmail(String email) {
     return await(
-        componentClient.forView()
+        componentClient
+            .forView()
             .method(UserWithVersionView::getUser)
             .invokeAsync(UserWithVersionView.queryParam(email)));
   }
 
   private void increaseCounter(String id, int value) {
     await(
-        componentClient.forEventSourcedEntity(id)
+        componentClient
+            .forEventSourcedEntity(id)
             .method(CounterEntity::increase)
             .invokeAsync(value));
   }
 
   private void assignCounter(String id, String assignee) {
     await(
-        componentClient.forKeyValueEntity(id)
+        componentClient
+            .forKeyValueEntity(id)
             .method(AssignedCounterEntity::assign)
             .invokeAsync(assignee));
   }
 
   private UserCounters getUserCounters(String userId) {
     return await(
-        componentClient.forView().method(UserCountersView::get)
+        componentClient
+            .forView()
+            .method(UserCountersView::get)
             .invokeAsync(UserCountersView.queryParam(userId)));
   }
 
-
   private List<User> getUsersByName(String name) {
     return await(
-        componentClient.forView()
-            .method(UsersByName::getUsers)
-            .invokeAsync(new UsersByName.QueryParameters(name)))
+            componentClient
+                .forView()
+                .method(UsersByName::getUsers)
+                .invokeAsync(new UsersByName.QueryParameters(name)))
         .users();
   }
 
@@ -570,5 +642,4 @@ public class ViewIntegrationTest extends TestKitSupport {
                 .invokeAsync(new UserEntity.Delete()));
     assertThat(userDeleted).isEqualTo(Ok.instance);
   }
-
 }

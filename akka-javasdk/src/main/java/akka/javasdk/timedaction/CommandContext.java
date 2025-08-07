@@ -6,7 +6,6 @@ package akka.javasdk.timedaction;
 
 import akka.javasdk.MetadataContext;
 import akka.javasdk.Tracing;
-import io.opentelemetry.api.trace.Tracer;
 
 /** Context for action calls. */
 public interface CommandContext extends MetadataContext {

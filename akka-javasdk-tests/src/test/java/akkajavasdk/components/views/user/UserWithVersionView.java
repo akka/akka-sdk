@@ -4,14 +4,14 @@
 
 package akkajavasdk.components.views.user;
 
-import akka.javasdk.view.TableUpdater;
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.DeleteHandler;
+import akka.javasdk.annotations.Query;
+import akka.javasdk.view.TableUpdater;
+import akka.javasdk.view.View;
 import akkajavasdk.components.keyvalueentities.user.User;
 import akkajavasdk.components.keyvalueentities.user.UserEntity;
-import akka.javasdk.annotations.Query;
-import akka.javasdk.annotations.Consume;
-import akka.javasdk.annotations.ComponentId;
-import akka.javasdk.view.View;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,5 +45,4 @@ public class UserWithVersionView extends View {
   public QueryEffect<UserWithVersion> getUser(QueryParameters params) {
     return queryResult();
   }
-
 }

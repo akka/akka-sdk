@@ -4,15 +4,14 @@
 
 package akka.javasdk.testkit;
 
-import akka.javasdk.impl.ErrorHandling;
+import static java.time.temporal.ChronoUnit.SECONDS;
 
+import akka.javasdk.impl.ErrorHandling;
 import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import static java.time.temporal.ChronoUnit.SECONDS;
 
 public abstract class AsyncCallsSupport {
 
@@ -32,9 +31,9 @@ public abstract class AsyncCallsSupport {
     }
   }
 
-
   /**
-   * If completed with an exception, returns the exception. If completed successfully, fail with runtime exception.
+   * If completed with an exception, returns the exception. If completed successfully, fail with
+   * runtime exception.
    */
   public <O> Exception failed(CompletionStage<O> stage) {
     try {

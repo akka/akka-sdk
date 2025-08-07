@@ -28,12 +28,11 @@ public class ResourcesEndpoint {
     return HttpResponses.staticResource(request, "/static");
   }
 
-
   @Post("static-exploit-try")
   public HttpResponse oneSpecificResourceExploit(SomeRequest request) {
-    // Not possible to exploit through the wildcard path as Akka HTTP would normalize 'something/somewhere/..' into `something/'
+    // Not possible to exploit through the wildcard path as Akka HTTP would normalize
+    // 'something/somewhere/..' into `something/'
     // already when parsing the request
     return HttpResponses.staticResource(request.path);
   }
-
 }

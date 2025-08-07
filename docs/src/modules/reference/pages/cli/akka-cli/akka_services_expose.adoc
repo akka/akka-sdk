@@ -25,7 +25,7 @@ akka services expose my-service
       --enable-cors         enable HTTP CORS
       --force-global        force an existing regional resource to be configured as a global resource
       --force-regional      force an existing global resource to be configured as a regional resource
-      --global-hostname     force the hostname to be global even if this is not a multi-region project
+      --global-hostname     force the the hostname to be global even if this is not a multi-region project
   -h, --help                help for expose
       --hostname string     specify a service route hostname
       --once-per-region     expose the service once per region

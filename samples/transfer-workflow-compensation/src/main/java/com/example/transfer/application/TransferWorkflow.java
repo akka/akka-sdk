@@ -1,5 +1,16 @@
 package com.example.transfer.application;
 
+import static com.example.transfer.domain.TransferState.TransferStatus.COMPENSATION_COMPLETED;
+import static com.example.transfer.domain.TransferState.TransferStatus.COMPLETED;
+import static com.example.transfer.domain.TransferState.TransferStatus.DEPOSIT_FAILED;
+import static com.example.transfer.domain.TransferState.TransferStatus.REQUIRES_MANUAL_INTERVENTION;
+import static com.example.transfer.domain.TransferState.TransferStatus.TRANSFER_ACCEPTANCE_TIMED_OUT;
+import static com.example.transfer.domain.TransferState.TransferStatus.WAITING_FOR_ACCEPTANCE;
+import static com.example.transfer.domain.TransferState.TransferStatus.WITHDRAW_FAILED;
+import static com.example.transfer.domain.TransferState.TransferStatus.WITHDRAW_SUCCEEDED;
+import static java.time.Duration.ofHours;
+import static java.time.Duration.ofSeconds;
+
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
@@ -14,28 +25,16 @@ import com.example.wallet.domain.WalletCommand.Withdraw;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.example.transfer.domain.TransferState.TransferStatus.COMPENSATION_COMPLETED;
-import static com.example.transfer.domain.TransferState.TransferStatus.COMPLETED;
-import static com.example.transfer.domain.TransferState.TransferStatus.DEPOSIT_FAILED;
-import static com.example.transfer.domain.TransferState.TransferStatus.REQUIRES_MANUAL_INTERVENTION;
-import static com.example.transfer.domain.TransferState.TransferStatus.TRANSFER_ACCEPTATION_TIMED_OUT;
-import static com.example.transfer.domain.TransferState.TransferStatus.WAITING_FOR_ACCEPTATION;
-import static com.example.transfer.domain.TransferState.TransferStatus.WITHDRAW_FAILED;
-import static com.example.transfer.domain.TransferState.TransferStatus.WITHDRAW_SUCCEEDED;
-import static java.time.Duration.ofHours;
-import static java.time.Duration.ofSeconds;
-
 @ComponentId("transfer") // <1>
 public class TransferWorkflow extends Workflow<TransferState> {
 
   private static final Logger logger = LoggerFactory.getLogger(TransferWorkflow.class);
 
-  final private ComponentClient componentClient;
+  private final ComponentClient componentClient;
 
   public TransferWorkflow(ComponentClient componentClient) {
     this.componentClient = componentClient;
   }
-
 
   // tag::timeouts[]
   // tag::recover-strategy[]
@@ -54,30 +53,36 @@ public class TransferWorkflow extends Workflow<TransferState> {
       // tag::recover-strategy[]
       .workflowRecovery(maxRetries(0).failoverTo(TransferWorkflow::failoverHandlerStep)) // <1>
       .defaultStepRecovery(maxRetries(1).failoverTo(TransferWorkflow::failoverHandlerStep)) // <2>
-      .stepConfig(TransferWorkflow::depositStep, maxRetries(2).failoverTo(TransferWorkflow::compensateWithdrawStep)) // <3>
+      .stepConfig(
+        TransferWorkflow::depositStep,
+        maxRetries(2).failoverTo(TransferWorkflow::compensateWithdrawStep)
+      ) // <3>
       // tag::step-timeout[]
       // tag::timeouts[]
       .build();
   }
+
   // end::timeouts[]
   // end::step-timeout[]
   // end::recover-strategy[]
 
-
   private StepEffect withdrawStep(Withdraw withdraw) {
-
     logger.info("Running withdraw: {}", withdraw);
 
     // cancelling the timer in case it was scheduled
-    timers().delete("acceptationTimout-" + currentState().transferId());
+    timers().delete("acceptanceTimeout-" + currentState().transferId());
 
-    WalletResult result = componentClient.forEventSourcedEntity(currentState().transfer().from())
+    WalletResult result = componentClient
+      .forEventSourcedEntity(currentState().transfer().from())
       .method(WalletEntity::withdraw)
       .invoke(withdraw);
 
     return switch (result) {
       case Success __ -> {
-        Deposit depositInput = new Deposit(currentState().depositId(), currentState().transfer().amount());
+        Deposit depositInput = new Deposit(
+          currentState().depositId(),
+          currentState().transfer().amount()
+        );
         yield stepEffects()
           .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
           .thenTransitionTo(TransferWorkflow::depositStep)
@@ -85,9 +90,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
       }
       case Failure failure -> {
         logger.warn("Withdraw failed with msg: {}", failure.errorMsg());
-        yield stepEffects()
-          .updateState(currentState().withStatus(WITHDRAW_FAILED))
-          .thenEnd();
+        yield stepEffects().updateState(currentState().withStatus(WITHDRAW_FAILED)).thenEnd();
       }
     };
   }
@@ -98,15 +101,15 @@ public class TransferWorkflow extends Workflow<TransferState> {
     logger.info("Running deposit: {}", deposit);
     // tag::compensation[]
     String to = currentState().transfer().to();
-    WalletResult result = componentClient.forEventSourcedEntity(to)
+    WalletResult result = componentClient
+      .forEventSourcedEntity(to)
       .method(WalletEntity::deposit) // <1>
       .invoke(deposit);
 
     return switch (result) {
-      case Success __ -> // <2>
-        stepEffects()
-          .updateState(currentState().withStatus(COMPLETED))
-          .thenEnd();
+      case Success __ -> stepEffects() // <2>
+        .updateState(currentState().withStatus(COMPLETED))
+        .thenEnd();
       case Failure failure -> {
         // end::compensation[]
         logger.warn("Deposit failed with msg: {}", failure.errorMsg());
@@ -127,37 +130,40 @@ public class TransferWorkflow extends Workflow<TransferState> {
     // depositId is reused for the compensation, just to have a stable commandId and simplify the example
     // tag::compensation[]
     String commandId = currentState().depositId();
-    WalletResult result = componentClient.forEventSourcedEntity(transfer.from())
+    WalletResult result = componentClient
+      .forEventSourcedEntity(transfer.from())
       .method(WalletEntity::deposit)
       .invoke(new Deposit(commandId, transfer.amount()));
 
     return switch (result) {
-      case Success __ -> // <5>
-        stepEffects()
-          .updateState(currentState().withStatus(COMPENSATION_COMPLETED))
-          .thenEnd();
-      case Failure __ -> // <6>
-        throw new IllegalStateException("Expecting succeed operation but received: " + result);
+      case Success __ -> stepEffects() // <5>
+        .updateState(currentState().withStatus(COMPENSATION_COMPLETED))
+        .thenEnd();
+      case Failure __ -> throw new IllegalStateException( // <6>
+        "Expecting succeed operation but received: " + result
+      );
     };
-
   }
+
   // end::compensation[]
 
   // tag::pausing[]
-  private StepEffect waitForAcceptationStep() {
+  private StepEffect waitForAcceptanceStep() {
     String transferId = currentState().transferId();
-    timers().createSingleTimer(
-      "acceptationTimeout-" + transferId,
-      ofHours(8),
-      componentClient.forWorkflow(transferId)
-        .method(TransferWorkflow::acceptationTimeout)
-        .deferred()); // <1>
+    timers()
+      .createSingleTimer(
+        "acceptanceTimeout-" + transferId,
+        ofHours(8),
+        componentClient
+          .forWorkflow(transferId)
+          .method(TransferWorkflow::acceptanceTimeout)
+          .deferred()
+      ); // <1>
 
-    return stepEffects()
-      .thenPause(); // <2>
+    return stepEffects().thenPause(); // <2>
   }
-  // end::pausing[]
 
+  // end::pausing[]
 
   private StepEffect failoverHandlerStep() {
     logger.info("Running workflow failed step");
@@ -175,13 +181,15 @@ public class TransferWorkflow extends Workflow<TransferState> {
     } else {
       String workflowId = commandContext().workflowId();
       if (transfer.amount() > 1000) {
-        logger.info("Waiting for acceptation: " + transfer);
-        TransferState waitingForAcceptationState = TransferState.create(workflowId, transfer)
-          .withStatus(WAITING_FOR_ACCEPTATION);
+        logger.info("Waiting for acceptance: " + transfer);
+        TransferState waitingForAcceptanceState = TransferState.create(
+          workflowId,
+          transfer
+        ).withStatus(WAITING_FOR_ACCEPTANCE);
         return effects()
-          .updateState(waitingForAcceptationState)
-          .transitionTo(TransferWorkflow::waitForAcceptationStep)
-          .thenReply("transfer started, waiting for acceptation");
+          .updateState(waitingForAcceptanceState)
+          .transitionTo(TransferWorkflow::waitForAcceptanceStep)
+          .thenReply("transfer started, waiting for acceptance");
       } else {
         logger.info("Running: " + transfer);
         TransferState initialState = TransferState.create(workflowId, transfer);
@@ -195,16 +203,16 @@ public class TransferWorkflow extends Workflow<TransferState> {
     }
   }
 
-  public Effect<String> acceptationTimeout() {
+  public Effect<String> acceptanceTimeout() {
     if (currentState() == null) {
       return effects().error("transfer not started");
-    } else if (currentState().status() == WAITING_FOR_ACCEPTATION) {
+    } else if (currentState().status() == WAITING_FOR_ACCEPTANCE) {
       return effects()
-        .updateState(currentState().withStatus(TRANSFER_ACCEPTATION_TIMED_OUT))
+        .updateState(currentState().withStatus(TRANSFER_ACCEPTANCE_TIMED_OUT))
         .end()
         .thenReply("timed out");
     } else {
-      logger.info("Ignoring acceptation timeout for status: " + currentState().status());
+      logger.info("Ignoring acceptance timeout for status: " + currentState().status());
       return effects().reply("Ok");
     }
   }
@@ -213,7 +221,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
   public Effect<String> accept() {
     if (currentState() == null) {
       return effects().error("transfer not started");
-    } else if (currentState().status() == WAITING_FOR_ACCEPTATION) { // <1>
+    } else if (currentState().status() == WAITING_FOR_ACCEPTANCE) { // <1>
       Transfer transfer = currentState().transfer();
       // end::resuming[]
       logger.info("Accepting transfer: " + transfer);
@@ -224,9 +232,11 @@ public class TransferWorkflow extends Workflow<TransferState> {
         .withInput(withdrawInput)
         .thenReply("transfer accepted");
     } else { // <2>
-      return effects().error("Cannot accept transfer with status: " + currentState().status());
+      return effects()
+        .error("Cannot accept transfer with status: " + currentState().status());
     }
   }
+
   // end::resuming[]
 
   public Effect<TransferState> getTransferState() {

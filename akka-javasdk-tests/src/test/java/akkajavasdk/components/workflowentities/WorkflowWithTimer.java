@@ -24,35 +24,31 @@ public class WorkflowWithTimer extends Workflow<FailingCounterState> {
     this.componentClient = componentClient;
   }
 
-
   @Override
   public WorkflowConfig configuration() {
-    return WorkflowConfig.builder()
-      .defaultStepTimeout(Duration.ofMillis(50))
-      .build();
+    return WorkflowConfig.builder().defaultStepTimeout(Duration.ofMillis(50)).build();
   }
 
   public Effect<Message> startFailingCounter(String counterId) {
     return effects()
-      .updateState(new FailingCounterState(counterId, 0, false))
-      .transitionTo(WorkflowWithTimer::counterStep)
-      .thenReply(new Message("workflow started"));
+        .updateState(new FailingCounterState(counterId, 0, false))
+        .transitionTo(WorkflowWithTimer::counterStep)
+        .thenReply(new Message("workflow started"));
   }
 
   public Effect<Message> startFailingCounterWithReqParam(String counterId) {
     return effects()
-      .updateState(new FailingCounterState(counterId, 0, false))
-      .transitionTo(WorkflowWithTimer::counterStep)
-      .thenReply(new Message("workflow started"));
+        .updateState(new FailingCounterState(counterId, 0, false))
+        .transitionTo(WorkflowWithTimer::counterStep)
+        .thenReply(new Message("workflow started"));
   }
-
 
   private StepEffect counterStep() {
     var pingWorkflow =
-      componentClient
-        .forWorkflow(workflowContext.workflowId())
-        .method(WorkflowWithTimer::pingWorkflow)
-        .deferred(new CounterScheduledValue(12));
+        componentClient
+            .forWorkflow(workflowContext.workflowId())
+            .method(WorkflowWithTimer::pingWorkflow)
+            .deferred(new CounterScheduledValue(12));
 
     timers().createSingleTimer("ping", Duration.ofSeconds(2), pingWorkflow);
 
@@ -61,9 +57,9 @@ public class WorkflowWithTimer extends Workflow<FailingCounterState> {
 
   public Effect<String> pingWorkflow(CounterScheduledValue counterScheduledValue) {
     return effects()
-      .updateState(currentState().asFinished(counterScheduledValue.value()))
-      .end()
-      .thenReply("workflow finished");
+        .updateState(currentState().asFinished(counterScheduledValue.value()))
+        .end()
+        .thenReply("workflow finished");
   }
 
   public Effect<FailingCounterState> get() {

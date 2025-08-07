@@ -18,7 +18,7 @@ permissions:
 jobs:
   make-docs:
     name: "Make docs"
-    runs-on: ubuntu-22.04
+    runs-on: Akka-Default
     steps:
       - name: Checkout
         # https://github.com/actions/checkout/releases
@@ -43,7 +43,7 @@ jobs:
 
   vale:
     name: "Vale style checking"
-    runs-on: ubuntu-22.04
+    runs-on: Akka-Default
     if: github.event.repository.fork == false
     steps:
       - name: Checkout
@@ -71,7 +71,7 @@ jobs:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
   verify-include-paths:
-    runs-on: ubuntu-22.04
+    runs-on: Akka-Default
 
     steps:
       - name: Checkout

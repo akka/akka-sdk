@@ -22,7 +22,7 @@ include::ROOT:partial$local-dev-prerequisites.adoc[]
 
 Add a new file `WeatherAgent.java` to `src/main/java/com/example/application/`
 
-[source,java]
+[source,java,indent=0]
 .WeatherAgent.java
 ----
 include::java:example$doc-snippets/src/main/java/agent_guide/part3/WeatherAgent.java[tag=all]
@@ -43,7 +43,7 @@ Before introducing the workflow we would like to see that the `WeatherAgent` wor
 
 Add a new file `WeatherAgentIntegrationTest.java` to `src/main/test/com/example/application/`
 
-[source,java]
+[source,java,indent=0]
 .WeatherAgentIntegrationTest.java
 ----
 include::java:example$doc-snippets/src/test/java/agent_guide/part3/WeatherAgentIntegrationTest.java[tag=all]

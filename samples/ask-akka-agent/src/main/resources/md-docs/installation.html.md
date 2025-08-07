@@ -25,10 +25,10 @@ curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix /tmp && \
 You can pass options to the installer script with `-s --` e.g.:
 
 ```bash
-curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix=$HOME --version=3.0.22 --verbose
-curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v 3.0.22 -V
+curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix=$HOME --version=3.0.23 --verbose
+curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v 3.0.23 -V
 ```
-For manual installation, download [akka_linux_amd64_3.0.22.tar.gz](https://downloads.akka.io/3.0.22/akka_linux_amd64_3.0.22.tar.gz), extract the `akka` executable and make it available on your PATH.
+For manual installation, download [akka_linux_amd64_3.0.23.tar.gz](https://downloads.akka.io/3.0.23/akka_linux_amd64_3.0.23.tar.gz), extract the `akka` executable and make it available on your PATH.
 
 macOS **Recommended approach**
 
@@ -48,8 +48,8 @@ brew upgrade akka
 curl -sL https://doc.akka.io/install-cli.sh | bash You can pass options to the installer script with `-s --` e.g.:
 
 ```bash
-curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix=$HOME --version=3.0.22 --verbose
-curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v 3.0.22 -V
+curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix=$HOME --version=3.0.23 --verbose
+curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v 3.0.23 -V
 ```
 Windows
 1. Download the latest version of `akka` from [https://downloads.akka.io/latest/akka_windows_amd64.zip](https://downloads.akka.io/latest/akka_windows_amd64.zip)

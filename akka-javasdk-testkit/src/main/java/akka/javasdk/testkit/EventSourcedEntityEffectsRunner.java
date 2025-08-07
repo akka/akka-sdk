@@ -4,21 +4,20 @@
 
 package akka.javasdk.testkit;
 
+import static akka.javasdk.testkit.EntitySerializationChecker.verifySerDer;
+import static akka.javasdk.testkit.EntitySerializationChecker.verifySerDerWithExpectedType;
+
 import akka.javasdk.Metadata;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.impl.reflection.Reflect;
 import akka.javasdk.testkit.impl.EventSourcedResultImpl;
 import akka.javasdk.testkit.impl.TestKitEventSourcedEntityCommandContext;
 import akka.javasdk.testkit.impl.TestKitEventSourcedEntityEventContext;
-
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-
-import static akka.javasdk.testkit.EntitySerializationChecker.verifySerDer;
-import static akka.javasdk.testkit.EntitySerializationChecker.verifySerDerWithExpectedType;
 
 /** Extended by generated code, not meant for user extension */
 abstract class EventSourcedEntityEffectsRunner<S, E> {
@@ -51,22 +50,32 @@ abstract class EventSourcedEntityEffectsRunner<S, E> {
     playEventsForEntity(initialEvents);
   }
 
-  /** @return The current state of the entity after applying the event */
+  /**
+   * @return The current state of the entity after applying the event
+   */
   protected abstract S handleEvent(S state, E event);
 
-  protected EventSourcedEntity<S, E> entity() { return entity; }
+  protected EventSourcedEntity<S, E> entity() {
+    return entity;
+  }
 
-  /** @return The current state of the entity */
+  /**
+   * @return The current state of the entity
+   */
   public S getState() {
     return _state;
   }
 
-  /** @return true if the entity is deleted */
+  /**
+   * @return true if the entity is deleted
+   */
   public boolean isDeleted() {
     return deleted;
   }
 
-  /** @return All events persisted by command handlers of this entity up to now */
+  /**
+   * @return All events persisted by command handlers of this entity up to now
+   */
   public List<E> getAllEvents() {
     return events;
   }
@@ -79,9 +88,13 @@ abstract class EventSourcedEntityEffectsRunner<S, E> {
    * @return the result of the side effects
    */
   protected <R> EventSourcedResult<R> interpretEffects(
-      Supplier<EventSourcedEntity.Effect<R>> effect, String entityId, Metadata metadata, Optional<Type> returnType) {
+      Supplier<EventSourcedEntity.Effect<R>> effect,
+      String entityId,
+      Metadata metadata,
+      Optional<Type> returnType) {
     var sequenceNumber = this.events.size();
-    var commandContext = new TestKitEventSourcedEntityCommandContext(entityId, metadata, sequenceNumber);
+    var commandContext =
+        new TestKitEventSourcedEntityCommandContext(entityId, metadata, sequenceNumber);
     EventSourcedEntity.Effect<R> effectExecuted;
     try {
       entity._internalSetCommandContext(Optional.of(commandContext));

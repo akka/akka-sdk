@@ -8,8 +8,6 @@ import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.keyvalueentity.KeyValueEntityContext;
 import com.typesafe.config.Config;
-import com.typesafe.config.ConfigRenderOptions;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -35,11 +33,12 @@ public class TestCounterEntity extends KeyValueEntity<Integer> {
 
   public Effect<Map<String, String>> getUserConfigKeys(Set<String> keys) {
     var found = new HashMap<String, String>();
-    keys.forEach(key -> {
-      if (userConfig.hasPath(key)) {
-        found.put(key, userConfig.getString(key));
-      }
-    });
+    keys.forEach(
+        key -> {
+          if (userConfig.hasPath(key)) {
+            found.put(key, userConfig.getString(key));
+          }
+        });
     return effects().reply(found);
   }
 }

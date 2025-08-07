@@ -12,7 +12,6 @@ import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
 import akkajavasdk.components.workflowentities.TransferState;
 import akkajavasdk.components.workflowentities.TransferWorkflow;
-
 import java.util.Collection;
 
 @ComponentId("transfer-view")

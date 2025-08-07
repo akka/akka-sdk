@@ -1,4 +1,3 @@
 package store.order.application;
 
-public record CreateOrder(String productId, String customerId, int quantity) {
-}
+public record CreateOrder(String productId, String customerId, int quantity) {}

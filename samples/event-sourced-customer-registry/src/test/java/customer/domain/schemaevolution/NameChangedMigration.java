@@ -1,10 +1,9 @@
 package customer.domain.schemaevolution;
 
+import akka.javasdk.JsonMigration;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-import akka.javasdk.JsonMigration;
-
 
 // tag::name-changed-migration[]
 public class NameChangedMigration extends JsonMigration { // <1>

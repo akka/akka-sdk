@@ -71,9 +71,9 @@ public record AddLineItemCommand(String userId, String productId, String name, i
 ```
 Next we modify the shape of the internal state used by the entity. To illustrate the different roles of entities and views, we’ve modified the state so that it doesn’t store the `name` or `description` fields, since those aren’t needed for decision making during command processing.
 
-[ShoppingCartState.java](https://github.com/akka/akka-sdk/blob/main/samples/shopping-cart-with-view/src/main/java/shoppingcart/domain/ShoppingCartState.java)
+[ShoppingCart.java](https://github.com/akka/akka-sdk/blob/main/samples/shopping-cart-with-view/src/main/java/shoppingcart/domain/ShoppingCart.java)
 ```java
-public record ShoppingCartState(String cartId, List<LineItem> items, boolean checkedOut) {
+public record ShoppingCart(String cartId, List<LineItem> items, boolean checkedOut) {
 
   public record LineItem(String productId, int quantity) {
     public LineItem withQuantity(int quantity) {
@@ -173,7 +173,7 @@ The user entity in this sample is quite small (but easily enhanced later). It ma
 [UserEntity.java](https://github.com/akka/akka-sdk/blob/main/samples/shopping-cart-with-view/src/main/java/shoppingcart/application/UserEntity.java)
 ```java
 @ComponentId("user")
-public class UserEntity extends EventSourcedEntity<UserState, UserEvent> {
+public class UserEntity extends EventSourcedEntity<User, UserEvent> {
   private final String entityId;
 
   private static final Logger logger = LoggerFactory.getLogger(UserEntity.class);
@@ -196,22 +196,22 @@ public class UserEntity extends EventSourcedEntity<UserState, UserEvent> {
   }
 
   @Override
-  public UserState emptyState() {
+  public User emptyState() {
     int newCartId = 1;
-    return new UserState(entityId, newCartId);
+    return new User(entityId, newCartId);
   }
 
   @Override
-  public UserState applyEvent(UserEvent event) {
+  public User applyEvent(UserEvent event) {
     logger.debug("Applying user event to user id={}", entityId);
 
     return switch (event) {
-      case UserEvent.UserCartClosed closed -> currentState().onCartClosed(closed);
+      case UserEvent.UserCartClosed closed -> currentState().closeCart();
     };
   }
 }
 ```
-Incrementing the cart ID is done simply in the `onCartClosed` function of the `UserState`:
+Incrementing the cart ID is done simply in the `onCartClosed` function of the `User`:
 
 ```java
 public UserState onCartClosed(UserEvent.UserCartClosed closed) {
@@ -330,7 +330,7 @@ curl http://localhost:9000/carts/my -H 'Authorization: Bearer eyJhbGciOiJIUzI1Ni
 Now that you’ve added a view *and* user authentication to the shopping cart sample, take your Akka skills to the next level:
 
 1. **Install and build**: Before moving on, download the code for this sample, compile it, and make sure you can run and utilize the new service.
-2. **Expand on your own**: Explore [other Akka components](../concepts/architecture-model.html#_akka_components) to enhance your application with additional features.
+2. **Expand on your own**: Explore [other Akka components](../java/components/index.html) to enhance your application with additional features.
 3. **Explore other Akka samples**: Discover more about Akka by exploring [different use cases](samples.html) for inspiration.
 
 <!-- <footer> -->

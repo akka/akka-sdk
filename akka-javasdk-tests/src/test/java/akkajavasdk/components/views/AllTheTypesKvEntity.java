@@ -6,7 +6,6 @@ package akkajavasdk.components.views;
 
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
-
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -16,12 +15,13 @@ import java.util.Optional;
 public class AllTheTypesKvEntity extends KeyValueEntity<AllTheTypesKvEntity.AllTheTypes> {
 
   public enum AnEnum {
-    ONE, TWO, THREE
+    ONE,
+    TWO,
+    THREE
   }
 
   // common query parameter for views in this file
-  public record ByEmail(String email) {
-  }
+  public record ByEmail(String email) {}
 
   public record Recursive(Recursive recurse, String field) {}
 
@@ -45,10 +45,7 @@ public class AllTheTypesKvEntity extends KeyValueEntity<AllTheTypesKvEntity.AllT
       List<String> repeatedString,
       ByEmail nestedMessage,
       AnEnum anEnum,
-      Recursive recursive
-  ) {}
-
-
+      Recursive recursive) {}
 
   public Effect<String> store(AllTheTypes value) {
     return effects().updateState(value).thenReply("OK");

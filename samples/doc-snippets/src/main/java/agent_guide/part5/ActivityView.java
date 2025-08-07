@@ -1,7 +1,6 @@
 package agent_guide.part5;
 
 import agent_guide.part4.AgentTeamWorkflow;
-
 // tag::all[]
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
@@ -9,11 +8,11 @@ import akka.javasdk.annotations.DeleteHandler;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
-
 import java.util.List;
 
 @ComponentId("activity-view")
 public class ActivityView extends View {
+
   public record ActivityEntries(List<ActivityEntry> entries) {}
 
   public record ActivityEntry(String userId, String userQuestion, String finalAnswer) {}
@@ -25,9 +24,10 @@ public class ActivityView extends View {
 
   @Consume.FromWorkflow(AgentTeamWorkflow.class) // <2>
   public static class Updater extends TableUpdater<ActivityEntry> {
+
     public Effect<ActivityEntry> onStateChange(AgentTeamWorkflow.State state) {
       return effects()
-          .updateRow(new ActivityEntry(state.userId(), state.userQuery(), state.finalAnswer()));
+        .updateRow(new ActivityEntry(state.userId(), state.userQuery(), state.finalAnswer()));
     }
 
     @DeleteHandler
@@ -35,6 +35,5 @@ public class ActivityView extends View {
       return effects().deleteRow();
     }
   }
-
 }
 // end::all[]

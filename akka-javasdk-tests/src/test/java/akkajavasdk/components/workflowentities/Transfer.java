@@ -4,5 +4,4 @@
 
 package akkajavasdk.components.workflowentities;
 
-public record Transfer(String from, String to, int amount) {
-}
+public record Transfer(String from, String to, int amount) {}

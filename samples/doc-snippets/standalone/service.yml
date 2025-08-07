@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: shopping-cart-service-svc
+  namespace: shopping-cart-namespace
 spec:
   selector:
     app: shopping-cart-service

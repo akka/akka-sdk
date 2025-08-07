@@ -5,9 +5,9 @@
 package akka.javasdk.impl.keyvalueentity
 
 import akka.annotation.InternalApi
-import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.impl.CommandSerialization
 import akka.javasdk.impl.HandlerNotFoundException
+import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.runtime.sdk.spi.BytesPayload

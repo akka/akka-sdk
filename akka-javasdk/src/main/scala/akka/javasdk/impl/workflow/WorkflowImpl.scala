@@ -4,7 +4,17 @@
 
 package akka.javasdk.impl.workflow
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.jdk.CollectionConverters.ListHasAsScala
+import scala.jdk.DurationConverters.JavaDurationOps
+import scala.jdk.OptionConverters.RichOptional
+import scala.util.Failure
+import scala.util.Success
+import scala.util.control.NonFatal
+
 import akka.annotation.InternalApi
+import akka.javasdk.CommandException
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.impl.AbstractContext
@@ -39,15 +49,6 @@ import io.opentelemetry.api.trace.Tracer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
-
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.jdk.CollectionConverters.ListHasAsScala
-import scala.jdk.DurationConverters.JavaDurationOps
-import scala.jdk.OptionConverters.RichOptional
-import scala.util.Failure
-import scala.util.Success
-import scala.util.control.NonFatal
 
 /**
  * INTERNAL API
@@ -139,10 +140,13 @@ class WorkflowImpl[S, W <: Workflow[S]](
         workflowContext)
       Future.successful(effect)
     } catch {
+      case e: CommandException =>
+        val serializedException = serializer.toBytes(e)
+        Future.successful(new SpiWorkflow.ErrorEffect(new SpiEntity.Error(e.getMessage, Some(serializedException))))
       case e: HandlerNotFoundException =>
         throw WorkflowException(workflowId, command.name, e.getMessage, Some(e))
       case BadRequestException(msg) =>
-        Future.successful(new SpiWorkflow.ErrorEffect(new SpiEntity.Error(msg)))
+        Future.successful(new SpiWorkflow.ErrorEffect(new SpiEntity.Error(msg, None)))
       case e: WorkflowException => throw e
       case NonFatal(error) =>
         throw WorkflowException(workflowId, command.name, s"Unexpected failure: $error", Some(error))

@@ -12,10 +12,14 @@ import com.example.proto.HelloRequest;
 @GrpcEndpoint
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 public class CallExternalGrpcEndpointImpl implements CallExternalGrpcEndpoint {
+
   private final ExampleGrpcEndpointClient external;
 
   public CallExternalGrpcEndpointImpl(GrpcClientProvider clientProvider) { // <1>
-    external = clientProvider.grpcClientFor(ExampleGrpcEndpointClient.class, "hellogrpc.example.com"); // <2>
+    external = clientProvider.grpcClientFor(
+      ExampleGrpcEndpointClient.class,
+      "hellogrpc.example.com"
+    ); // <2>
   }
 
   @Override

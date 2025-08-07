@@ -7,9 +7,9 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpResponses;
+import com.example.transfer.application.TransferWorkflow;
 import com.example.transfer.application.TransfersView;
 import com.example.transfer.application.TransfersView.TransferEntries;
-import com.example.transfer.application.TransferWorkflow;
 import com.example.transfer.domain.TransferState.Transfer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,22 +31,22 @@ public class TransferEndpoint {
   @Get("/transfer/{id}")
   public String get(String id) {
     log.info("Get transfer with id [{}].", id);
-    var transferState = componentClient.forWorkflow(id)
-      .method(TransferWorkflow::getTransferState).invoke();
-   return transferState.status().toString();
+    var transferState = componentClient
+      .forWorkflow(id)
+      .method(TransferWorkflow::getTransferState)
+      .invoke();
+    return transferState.status().toString();
   }
 
   @Get("/transfers/completed")
   public TransferEntries getCompleted() {
-    return componentClient.forView()
-      .method(TransfersView::getAllCompleted).invoke();
+    return componentClient.forView().method(TransfersView::getAllCompleted).invoke();
   }
 
   @Post("/transfer/{id}")
   public HttpResponse start(String id, Transfer transfer) {
     log.info("Starting transfer [{}].", transfer.toString());
-    componentClient.forWorkflow(id)
-      .method(TransferWorkflow::startTransfer).invoke(transfer);
+    componentClient.forWorkflow(id).method(TransferWorkflow::startTransfer).invoke(transfer);
     return HttpResponses.accepted();
   }
 }

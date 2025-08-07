@@ -4,5 +4,4 @@
 
 package akka.javasdk.keyvalueentity;
 
-public record TestVEState1(String s, int i) {
-}
+public record TestVEState1(String s, int i) {}

@@ -1,11 +1,11 @@
 <!-- <nav> -->
 - [Akka](../index.html)
 - [Understanding](index.html)
-- [A foundation of fundamental distributed systems principles and patterns](distributed-systems.html)
+- [Distributed systems principles](distributed-systems.html)
 
 <!-- </nav> -->
 
-# A foundation of fundamental distributed systems principles and patterns
+# Distributed systems principles
 
 Modern distributed systems—whether agentic AI, microservices applications, or edge computing—demand more than just scalable infrastructure. They require systems that are resilient under stress, responsive under load, elastic with demand, and maintainable at scale. The Akka Agentic AI Platform is built from the ground up on proven battle-tested principles of distributed computing, reflecting more than a decade-long commitment to applying architectural discipline to the nondeterminism and chaos of concurrency, distribution, and failure.
 
@@ -69,7 +69,7 @@ Whether deploying thousands of autonomous AI agents or orchestrating business-cr
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Concepts](concepts.html) [Architecture model](architecture-model.html)
+[Concepts](concepts.html) [Service structure and layers](architecture-model.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

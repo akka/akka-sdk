@@ -29,24 +29,24 @@ public class TransferEndpoint {
   @Get("/{id}")
   public String get(String id) {
     log.info("Get transfer with id [{}].", id);
-    var transferState = componentClient.forWorkflow(id)
-      .method(TransferWorkflow::getTransferState).invoke();
+    var transferState = componentClient
+      .forWorkflow(id)
+      .method(TransferWorkflow::getTransferState)
+      .invoke();
     return transferState.status().toString();
   }
 
   @Post("/{id}")
   public HttpResponse start(String id, Transfer transfer) {
-    log.info("Starting transfer [{}].", transfer.toString());
-    componentClient.forWorkflow(id)
-      .method(TransferWorkflow::startTransfer).invoke(transfer);
+    log.info("Starting transfer [{}].", transfer);
+    componentClient.forWorkflow(id).method(TransferWorkflow::startTransfer).invoke(transfer);
     return HttpResponses.accepted();
   }
 
   @Post("/{id}/accept")
   public HttpResponse accept(String id) {
     log.info("Accepting transfer [{}].", id);
-    componentClient.forWorkflow(id)
-      .method(TransferWorkflow::accept).invoke();
+    componentClient.forWorkflow(id).method(TransferWorkflow::accept).invoke();
     return HttpResponses.accepted();
   }
 }

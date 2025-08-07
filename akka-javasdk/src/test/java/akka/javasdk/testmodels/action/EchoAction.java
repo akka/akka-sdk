@@ -4,8 +4,8 @@
 
 package akka.javasdk.testmodels.action;
 
-import akka.javasdk.timedaction.TimedAction;
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.timedaction.TimedAction;
 
 @ComponentId("test-echo")
 public class EchoAction extends TimedAction {
@@ -13,5 +13,4 @@ public class EchoAction extends TimedAction {
   public Effect stringMessage(String msg) {
     return effects().done();
   }
-
 }

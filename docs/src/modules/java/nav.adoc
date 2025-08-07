@@ -22,5 +22,7 @@
 *** xref:java:access-control.adoc[]
 *** xref:java:auth-with-jwts.adoc[]
 *** xref:java:running-locally.adoc[]
+*** xref:java:model-provider-details.adoc[]
 ** xref:java:dev-best-practices.adoc[]
 ** xref:java:ai-coding-assistant.adoc[]
+** xref:java:asynchronous.adoc[]

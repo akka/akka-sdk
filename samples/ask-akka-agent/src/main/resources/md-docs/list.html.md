@@ -1,13 +1,12 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
 - [Getting Started](../index.html)
-- [AI Planner Part 5: List by user](list.html)
+- [Build an AI multi-agent planner](index.html)
+- [List by user](list.html)
 
 <!-- </nav> -->
 
-# AI Planner Part 5: List by user
-
-[1: The activity agent](index.html) > [2: User preferences](preferences.html) > [3: Weather agent](weather.html) > [4: Orchestrate the agents](team.html) > **5: List by user** > [6: Dynamic orchestration](dynamic-team.html)
+# List by user
 
 |  | **New to Akka? Start here:**
 
@@ -35,7 +34,6 @@ Add a new file `ActivityView.java` to `src/main/java/com/example/application/`
 
 ActivityView.java
 ```java
-import agent_guide.part4.AgentTeam;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.DeleteHandler;
@@ -47,24 +45,24 @@ import java.util.List;
 
 @ComponentId("activity-view")
 public class ActivityView extends View {
-  public record Rows(List<Row> entries) {}
+  public record ActivityEntries(List<ActivityEntry> entries) {}
 
-  public record Row(String userId, String userQuestion, String finalAnswer) {}
+  public record ActivityEntry(String userId, String userQuestion, String finalAnswer) {}
 
-  @Query("SELECT * FROM activities WHERE userId = :userId") // (1)
-  public QueryEffect<Rows> getActivities(String userId) {
+  @Query("SELECT * AS entries FROM activities WHERE userId = :userId") // (1)
+  public QueryEffect<ActivityEntries> getActivities(String userId) {
     return queryResult();
   }
 
-  @Consume.FromWorkflow(AgentTeam.class) // (2)
-  public static class Updater extends TableUpdater<Row> {
-    public Effect<Row> onStateChange(AgentTeam.State state) {
+  @Consume.FromWorkflow(AgentTeamWorkflow.class) // (2)
+  public static class Updater extends TableUpdater<ActivityEntry> {
+    public Effect<ActivityEntry> onStateChange(AgentTeamWorkflow.State state) {
       return effects()
-          .updateRow(new Row(state.userId(), state.userQuery(), state.finalAnswer()));
+          .updateRow(new ActivityEntry(state.userId(), state.userQuery(), state.finalAnswer()));
     }
 
     @DeleteHandler
-    public Effect<Row> onDelete() {
+    public Effect<ActivityEntry> onDelete() {
       return effects().deleteRow();
     }
   }
@@ -81,14 +79,14 @@ Add a new method that asks the view for a given user id.
 
 ```java
 public record ActivitiesList(List<Suggestion> suggestions) {
-    static ActivitiesList fromView(ActivityView.Rows rows) {
-      return new ActivitiesList(rows.entries().stream().map(Suggestion::fromView).toList());
+    static ActivitiesList fromView(ActivityView.ActivityEntries entries) {
+      return new ActivitiesList(entries.entries().stream().map(Suggestion::fromView).toList());
     }
   }
 
   public record Suggestion(String userQuestion, String answer) {
-    static Suggestion fromView(ActivityView.Row row) {
-      return new Suggestion(row.userQuestion(), row.finalAnswer());
+    static Suggestion fromView(ActivityView.ActivityEntry entry) {
+      return new Suggestion(entry.userQuestion(), entry.finalAnswer());
     }
   }
 
@@ -115,7 +113,7 @@ Ask for activities.
 ```command
 curl -i -XPOST --location "http://localhost:9000/activities/alice" \
   --header "Content-Type: application/json" \
-  --data '{"message": "I am in Madrid. What should I do?"}'
+  --data '{"message": "I am in Madrid. What should I do? Beware of the weather."}'
 ```
 Retrieve the suggested activities with the new list method:
 
@@ -127,22 +125,27 @@ Make another request for activities:
 ```command
 curl -i -XPOST --location "http://localhost:9000/activities/alice" \
   --header "Content-Type: application/json" \
-  --data '{"message": "I am in Stockholm. What should I do?"}'
+  --data '{"message": "I am in Stockholm. What should I do? Take the weather into account."}'
 ```
 The list should include suggested activities for both Madrid and Stockholm:
 
 ```command
 curl -i -XGET --location "http://localhost:9000/activities/alice"
 ```
+If you have `jq` installed you can format the json response with:
+
+```command
+curl http://localhost:9000/activities/alice | jq
+```
 
 ## <a href="about:blank#_next_steps"></a> Next steps
 
-- In a larger system with more agents, we could benefit from letting the AI model come up with a plan of which agents to use and in which order to execute. Continue with > [Part 6: Dynamic orchestration](dynamic-team.html)
+- In a larger system with more agents, we could benefit from letting the AI model come up with a plan of which agents to use and in which order to execute. Continue with [Dynamic orchestration](dynamic-team.html)
 - Learn more about the <a href="../../java/views.html">`View` component</a>.
 
 <!-- <footer> -->
 <!-- <nav> -->
-[AI Planner Part 4: Orchestrate the agents](team.html) [AI Planner Part 6: Dynamic orchestration](dynamic-team.html)
+[Orchestrate the agents](team.html) [Dynamic orchestration](dynamic-team.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

@@ -1,16 +1,14 @@
 package user.registry.application;
 
-
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.consumer.Consumer;
 import com.typesafe.config.Config;
+import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import user.registry.domain.UniqueEmail;
-
-import java.time.Duration;
 
 /**
  * This Consumer consumes from the UniqueEmailEntity state changes.
@@ -42,7 +40,6 @@ public class UniqueEmailConsumer extends Consumer {
   }
 
   public Effect onChange(UniqueEmail email) {
-
     logger.info("Received update for address '{}'", email);
     var timerId = "timer-" + email.address();
 
@@ -51,28 +48,26 @@ public class UniqueEmailConsumer extends Consumer {
       // but we can override these settings using a -D argument
       // for example, calling: mvn compile exec:java -Demail.confirmation.timeout=10s will make the timer fire after 10 seconds
       Duration delay = config.getDuration("email.confirmation.timeout");
-      logger.info("Email is not confirmed, scheduling timer '{}' to fire in '{}'", timerId, delay);
-      var callToUnReserve =
-        client
-          .forKeyValueEntity(email.address())
-          .method(UniqueEmailEntity::cancelReservation).deferred();
-
-      timers().createSingleTimer(
+      logger.info(
+        "Email is not confirmed, scheduling timer '{}' to fire in '{}'",
         timerId,
-        delay,
-        callToUnReserve);
+        delay
+      );
+      var callToUnReserve = client
+        .forKeyValueEntity(email.address())
+        .method(UniqueEmailEntity::cancelReservation)
+        .deferred();
+
+      timers().createSingleTimer(timerId, delay, callToUnReserve);
 
       return effects().done();
-
     } else if (email.isConfirmed()) {
       logger.info("Email is already confirmed, deleting timer (if exists) '{}'", timerId);
       timers().delete(timerId);
       return effects().done();
-
     } else {
       // Email is not reserved, so we don't need to do anything
       return effects().done();
     }
   }
-
 }

@@ -12,10 +12,9 @@ import com.example.wallet.application.WalletEntity.WalletResult.Failure;
 import com.example.wallet.application.WalletEntity.WalletResult.Success;
 import com.example.wallet.domain.WalletCommand.Deposit;
 import com.example.wallet.domain.WalletCommand.Withdraw;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.UUID;
 
 // Opened up for access from the public internet to make the sample service easy to try out.
 // For actual services meant for production this must be carefully considered, and often set more limited
@@ -34,15 +33,18 @@ public class WalletEndpoint {
   @Get("/{id}")
   public String get(String id) {
     log.info("Get wallet with id [{}].", id);
-    var balance = componentClient.forEventSourcedEntity(id)
-      .method(WalletEntity::get).invoke();
+    var balance = componentClient
+      .forEventSourcedEntity(id)
+      .method(WalletEntity::get)
+      .invoke();
     return "The balance is [" + balance + "].";
   }
 
   @Post("/{id}/create/{initialAmount}")
   public HttpResponse create(String id, int initialAmount) {
     log.info("creating wallet [{}] with balance [{}].", id, initialAmount);
-    componentClient.forEventSourcedEntity(id)
+    componentClient
+      .forEventSourcedEntity(id)
       .method(WalletEntity::create)
       .invoke(initialAmount);
     return HttpResponses.ok();
@@ -50,7 +52,8 @@ public class WalletEndpoint {
 
   @Post("/{id}/deposit/{amount}")
   public HttpResponse deposit(String id, int amount) {
-    var walletResult = componentClient.forEventSourcedEntity(id)
+    var walletResult = componentClient
+      .forEventSourcedEntity(id)
       .method(WalletEntity::deposit)
       .invoke(new Deposit(UUID.randomUUID().toString(), amount));
 
@@ -65,7 +68,8 @@ public class WalletEndpoint {
 
   @Post("/{id}/withdraw/{amount}")
   public HttpResponse withdraw(String id, int amount) {
-    var walletResult = componentClient.forEventSourcedEntity(id)
+    var walletResult = componentClient
+      .forEventSourcedEntity(id)
       .method(WalletEntity::withdraw)
       .invoke(new Withdraw(UUID.randomUUID().toString(), amount));
 

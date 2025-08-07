@@ -14,7 +14,7 @@ Akka is a framework, runtime, and memory store for autonomous, adaptive agentic 
 ![Akka Agentic Platform](../concepts/_images/akka-agentic-platform.png)
 
 
-Developers create services built with Akka components that - when deployed - become agentic systems. Services can be tested locally or within a Continuous Integration/Continuous Delivery (CI/CD) practice using a Testkit that is available with each Akka component. Your services are compiled into a binary that includes the Akka Runtime which enables your services to self-cluster for scale and resilience. Akka clusters are able to execute on any infrastructure whether bare metal, Kubernetes, Docker or edge. You can optionally deploy your services into an Akka-managed cloud environment which automates most Day 2 concerns. We support Serverless, Bring Your Own Cloud (BYOC), and Self-Hosted cloud-hosted environments.
+Developers create services built with *Akka components* that - when deployed - become agentic systems. Services can be tested locally or within a Continuous Integration/Continuous Delivery (CI/CD) practice using a *Testkit* that is available with each Akka component. Your services are compiled into a binary that includes the *Akka Runtime* which enables your services to self-cluster for scale and resilience. *Akka clusters* are able to execute on any infrastructure whether bare metal, Kubernetes, Docker or edge. Optionally, add *Akka Automated Operations* to gain multi-region failover, auto-elasticity, persistence oversight, multi-tenant services, and certificate rotation. *Akka Automated Operations* has two deployment options: our serverless cloud or your virtual private cloud (VPC).
 
 | Product | Where To Start |
 | --- | --- |
@@ -55,7 +55,7 @@ The services you build with Akka components are composable, which can be combine
 In this guide, you will:
 
 - Set up your development environment.
-- Clone a simple project that follows the recommended [onion architecture](../concepts/architecture-model.html#_architecture).
+- Clone a simple project that follows the [recommended structure](../concepts/architecture-model.html).
 - Explore a basic AI Agent that acts as a creative greeter.
 - Explore a basic HTTP Endpoint to interact with the agent.
 - Add a request body to the Endpoint.
@@ -78,10 +78,15 @@ You can run this sample without an OpenAI API key, but it will be more fun if yo
 1. From a command line, clone the [Github Repository](https://github.com/akka-samples/helloworld-agent) in a convenient location:
 
 ```command
-git clone https://github.com/akka-samples/helloworld-agent.git
+git clone https://github.com/akka-samples/helloworld-agent.git --depth 1
 ```
 2. Navigate to the new project directory.
 3. Open it in your preferred IDE / Editor.
+Another convenient way to download this and other samples is to use the Akka CLI. See [installation instructions](quick-install-cli.html).
+
+```command
+akka code init helloworld-agent
+```
 
 ## <a href="about:blank#_explore_the_agent"></a> Explore the Agent
 
@@ -296,9 +301,7 @@ The Akka local console is a web-based tool that comes bundled with the Akka CLI.
 
 Starting the local console requires using the Akka CLI.
 
-Install the Akka CLI:
-
-|  | In case there is any trouble with installing the CLI when following these instructions, please check [Install the Akka CLI](../operations/cli/installation.html). |
+|  | In case there is any trouble with installing the CLI when following these instructions, please check the [detailed CLI installation instructions](../operations/cli/installation.html). |
 Linux Download and install the latest version of `akka`:
 
 ```bash
@@ -361,11 +364,14 @@ This is a simple Hello World service, so there isn’t much to see here yet. How
 
 ## <a href="about:blank#_next_steps"></a> Next steps
 
-Now that you have a basic service running, it’s time to learn more about building real services in Akka. See [multi-agent activity planner](planner-agent/index.html) to build a more realistic application.
+Now that you have a basic service running, it’s time to learn more about building real services in Akka.
+
+- See [multi-agent planner](planner-agent/index.html) to build a more realistic application.
+- [Deploy to akka.io](quick-deploy.html)
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Getting Started](index.html) [AI Planner Part 1: The activity agent](planner-agent/index.html)
+[Getting Started](index.html) [Build an AI multi-agent planner](planner-agent/index.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

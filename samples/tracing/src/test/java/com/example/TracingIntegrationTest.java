@@ -1,12 +1,10 @@
 package com.example;
 
-import akka.javasdk.testkit.TestKitSupport;
-import org.junit.jupiter.api.Test;
-
-import java.time.Duration;
-
 import static java.time.temporal.ChronoUnit.SECONDS;
 
+import akka.javasdk.testkit.TestKitSupport;
+import java.time.Duration;
+import org.junit.jupiter.api.Test;
 
 public class TracingIntegrationTest extends TestKitSupport {
 

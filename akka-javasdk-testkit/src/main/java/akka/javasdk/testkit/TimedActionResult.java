@@ -11,13 +11,19 @@ package akka.javasdk.testkit;
  */
 public interface TimedActionResult {
 
-  /** @return true if the call had an effect with a reply, false if not */
+  /**
+   * @return true if the call had an effect with a reply, false if not
+   */
   boolean isDone();
 
-  /** @return true if the call was async, false if not */
+  /**
+   * @return true if the call was async, false if not
+   */
   boolean isAsync();
 
-  /** @return true if the call was an error, false if not */
+  /**
+   * @return true if the call was an error, false if not
+   */
   boolean isError();
 
   /**

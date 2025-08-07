@@ -4,10 +4,10 @@
 
 package akka.javasdk.testkit.impl
 
-import akka.javasdk.testkit.MockRegistry
-
 import scala.jdk.CollectionConverters._
 import scala.jdk.OptionConverters.RichOption
+
+import akka.javasdk.testkit.MockRegistry
 
 private[akka] class MockRegistryImpl(var mocks: Map[Class[_], Any]) extends MockRegistry {
 

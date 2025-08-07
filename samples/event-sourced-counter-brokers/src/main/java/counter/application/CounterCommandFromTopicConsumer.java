@@ -12,14 +12,11 @@ import org.slf4j.LoggerFactory;
 @Consume.FromTopic(value = "counter-commands", ignoreUnknown = true)
 public class CounterCommandFromTopicConsumer extends Consumer {
 
-  public record IncreaseCounter(String counterId, int value) {
-  }
+  public record IncreaseCounter(String counterId, int value) {}
 
-  public record MultiplyCounter(String counterId, int value) {
-  }
+  public record MultiplyCounter(String counterId, int value) {}
 
-  public record IgnoredEvent(String message) {
-  }
+  public record IgnoredEvent(String message) {}
 
   private ComponentClient componentClient;
 
@@ -31,7 +28,8 @@ public class CounterCommandFromTopicConsumer extends Consumer {
 
   public Effect onValueIncreased(IncreaseCounter increase) {
     logger.info("Received increase event: {}", increase.toString());
-    componentClient.forEventSourcedEntity(increase.counterId)
+    componentClient
+      .forEventSourcedEntity(increase.counterId)
       .method(CounterEntity::increase)
       .invoke(increase.value);
     return effects().done();
@@ -39,7 +37,8 @@ public class CounterCommandFromTopicConsumer extends Consumer {
 
   public Effect onValueMultiplied(MultiplyCounter multiply) {
     logger.info("Received multiply event: {}", multiply.toString());
-    componentClient.forEventSourcedEntity(multiply.counterId)
+    componentClient
+      .forEventSourcedEntity(multiply.counterId)
       .method(CounterEntity::multiply)
       .invoke(multiply.value);
     return effects().done();

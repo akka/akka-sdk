@@ -4,12 +4,10 @@
 
 package akka.javasdk.keyvalueentity;
 
-
+import akka.javasdk.JsonMigration;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-import akka.javasdk.JsonMigration;
-
 
 public class TestVEState2Migration extends JsonMigration {
 
@@ -24,7 +22,6 @@ public class TestVEState2Migration extends JsonMigration {
       return ((ObjectNode) json).set("newValue", TextNode.valueOf("newValue"));
     } else {
       return null;
-
     }
   }
 }
