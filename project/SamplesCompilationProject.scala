@@ -1,6 +1,5 @@
 import akka.grpc.sbt.AkkaGrpcPlugin
 import com.github.sbt.JavaFormatterPlugin
-import com.github.sbt.JavaFormatterPlugin.autoImport._
 
 import java.io.File
 import de.heikoseeberger.sbtheader.HeaderPlugin
@@ -37,14 +36,14 @@ object SamplesCompilationProject {
         findSamples
           .map { dir =>
             val proj = Project("sample-" + dir.getName, dir)
-              .disablePlugins(HeaderPlugin)
-              .enablePlugins(AkkaGrpcPlugin, JavaFormatterPlugin)
+              // JavaFormatterPlugin must be disable
+              // samples use prettier-maven-plugin from the parent pom
+              .disablePlugins(HeaderPlugin, JavaFormatterPlugin)
+              .enablePlugins(AkkaGrpcPlugin)
               .settings(
                 Test / unmanagedSourceDirectories += baseDirectory.value / "src" / "it" / "java",
                 akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Java),
-                akkaGrpcCodeGeneratorSettings ++= CommonSettings.serviceGrpcGeneratorSettings,
-                javafmtOnCompile := false // Enable Java formatting, but not on compile to avoid CI issues
-              )
+                akkaGrpcCodeGeneratorSettings ++= CommonSettings.serviceGrpcGeneratorSettings)
 
             additionalDeps.get(dir.getName).fold(proj)(deps => proj.settings(libraryDependencies ++= deps))
           }
