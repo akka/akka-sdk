@@ -17,3 +17,4 @@ The GitHub Actions workflow runs `prettier:check` on all Java samples. Formattin
 - Line length: 94
 - Ident lines with spaces, not tabs
 - Number of spaces per indentation level: 2
+
