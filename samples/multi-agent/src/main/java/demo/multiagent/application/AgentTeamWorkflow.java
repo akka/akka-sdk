@@ -7,7 +7,6 @@ import static demo.multiagent.application.AgentTeamWorkflow.Status.STARTED;
 import static java.time.Duration.ofSeconds;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
-// tag::all[]
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.StepName;
