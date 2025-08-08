@@ -32,9 +32,13 @@ object SamplesCompilationProject {
           .aggregate(innerProjects.map(p => p: ProjectReference): _*)
 
       import akka.grpc.sbt.AkkaGrpcPlugin.autoImport._
+
+      val formatIfNeeded = taskKey[Unit]("Format with prettier-maven-plugin if sources have changed")
+
       lazy val innerProjects =
         findSamples
           .map { dir =>
+            val formatIfNeeded = taskKey[Unit]("Format with prettier-maven-plugin if needed")
             val proj = Project("sample-" + dir.getName, dir)
               // JavaFormatterPlugin must be disabled
               // samples use prettier-maven-plugin from the parent pom
@@ -47,7 +51,32 @@ object SamplesCompilationProject {
                 // Disable tests for composite projects since they're primarily for compilation verification
                 // Maven sets akka.javasdk.dev-mode.project-artifact-id automatically but SBT composite projects don't have this
                 Test / test := {},
-                Test / testOnly := {})
+                Test / testOnly := {},
+                // Only run prettier-maven-plugin if there are sources to compile
+                formatIfNeeded := {
+                  val srcs = (Compile / sources).value
+                  val targetDir = (Compile / compile / streams).value.cacheDirectory
+                  val markerFile = targetDir / "prettier-last-run"
+                  val changed = 
+                    if (markerFile.exists) {
+                      srcs.exists(src => src.lastModified() > markerFile.lastModified())
+                         } else {
+                           srcs.nonEmpty
+                         }
+                         if (changed) {
+                            println(s"[info] Running: mvn -Pformatting prettier:write in ${baseDirectory.value}")
+                            val process = scala.sys.process.Process("mvn -Pformatting prettier:write", baseDirectory.value)
+                            val outputLines = process.lineStream_!
+                            outputLines.foreach { line =>
+                              if (line.contains("[INFO] Reformatted file:")) println(line)
+                            }
+                            markerFile.createNewFile()
+                            markerFile.setLastModified(System.currentTimeMillis())
+                         }
+                       },
+                Compile / compile := (Compile / compile).dependsOn(formatIfNeeded).value
+            
+              )
 
             additionalDeps.get(dir.getName).fold(proj)(deps => proj.settings(libraryDependencies ++= deps))
           }
