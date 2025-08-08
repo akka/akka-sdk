@@ -36,33 +36,25 @@ public class TransferWorkflow extends Workflow<TransferState> {
     this.componentClient = componentClient;
   }
 
-  // tag::timeouts[]
+
   // tag::recover-strategy[]
   // tag::step-timeout[]
   @Override
   public WorkflowConfig configuration() {
     return WorkflowConfig.builder()
       // end::recover-strategy[]
-      // end::step-timeout[]
-      .workflowTimeout(ofSeconds(5)) // <1>
-      .defaultStepTimeout(ofSeconds(2)) // <2>
-      // end::timeouts[]
-      // tag::step-timeout[]
-      .stepConfig(TransferWorkflow::failoverHandlerStep, ofSeconds(1)) // <1>
+      .defaultStepTimeout(ofSeconds(2)) // <1>
+      .stepConfig(TransferWorkflow::failoverHandlerStep, ofSeconds(1)) // <2>
       // end::step-timeout[]
       // tag::recover-strategy[]
-      .workflowRecovery(maxRetries(0).failoverTo(TransferWorkflow::failoverHandlerStep)) // <1>
-      .defaultStepRecovery(maxRetries(1).failoverTo(TransferWorkflow::failoverHandlerStep)) // <2>
+      .defaultStepRecovery(maxRetries(1).failoverTo(TransferWorkflow::failoverHandlerStep)) // <1>
       .stepConfig(
         TransferWorkflow::depositStep,
         maxRetries(2).failoverTo(TransferWorkflow::compensateWithdrawStep)
-      ) // <3>
+      ) // <2>
       // tag::step-timeout[]
-      // tag::timeouts[]
       .build();
   }
-
-  // end::timeouts[]
   // end::step-timeout[]
   // end::recover-strategy[]
 
