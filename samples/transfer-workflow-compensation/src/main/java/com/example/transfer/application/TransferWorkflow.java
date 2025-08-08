@@ -36,7 +36,6 @@ public class TransferWorkflow extends Workflow<TransferState> {
     this.componentClient = componentClient;
   }
 
-
   // tag::recover-strategy[]
   // tag::step-timeout[]
   @Override
@@ -55,6 +54,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
       // tag::step-timeout[]
       .build();
   }
+
   // end::step-timeout[]
   // end::recover-strategy[]
 
