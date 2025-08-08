@@ -1,10 +1,7 @@
 package com.example.application;
 
 import static akka.Done.done;
-import static akka.Done.done;
 import static com.example.domain.TransferState.TransferStatus.COMPLETED;
-import static com.example.domain.TransferState.TransferStatus.COMPLETED;
-import static com.example.domain.TransferState.TransferStatus.WITHDRAW_SUCCEEDED;
 import static com.example.domain.TransferState.TransferStatus.WITHDRAW_SUCCEEDED;
 import static java.time.Duration.ofSeconds;
 
@@ -21,9 +18,9 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
   public record Withdraw(String from, int amount) {}
 
   @Override
-  public WorkflowConfig configuration() { // <3>
+  public WorkflowSettings settings() { // <3>
     // prettier-ignore
-    return WorkflowConfig.builder()
+    return WorkflowSettings.builder()
       .defaultStepTimeout(ofSeconds(2))
       .build();
   }

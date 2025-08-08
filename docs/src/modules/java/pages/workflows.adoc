@@ -220,7 +220,7 @@ Design for failure is one of the key attributes of all Akka components. Workflow
 
 === Step Timeouts
 
-Each workflow step has a default timeout of 5 seconds. You can override this default for all steps in the workflow `configuration` method, or set a custom timeout for individual steps.
+Each workflow step has a default timeout of 5 seconds. You can override this default for all steps in the workflow `settings` method, or set a custom timeout for individual steps.
 
 [source,java,indent=0]
 .{sample-base-url}/transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java[TransferWorkflow.java]

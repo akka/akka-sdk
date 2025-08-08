@@ -22,10 +22,10 @@ public class WorkflowWithTimeout extends Workflow<FailingCounterState> {
   }
 
   @Override
-  public WorkflowConfig configuration() {
-    return WorkflowConfig.builder()
+  public WorkflowSettings settings() {
+    return WorkflowSettings.builder()
         .defaultStepTimeout(ofMillis(999))
-        .stepConfig(
+        .stepPolicy(
             WorkflowWithTimeout::counterStep,
             Duration.ofMillis(50),
             maxRetries(1).failoverTo(WorkflowWithTimeout::counterFailoverStep).withInput(3))

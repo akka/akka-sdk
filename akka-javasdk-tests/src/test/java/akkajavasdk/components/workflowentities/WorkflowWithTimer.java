@@ -23,8 +23,8 @@ public class WorkflowWithTimer extends Workflow<FailingCounterState> {
   }
 
   @Override
-  public WorkflowConfig configuration() {
-    return WorkflowConfig.builder().defaultStepTimeout(Duration.ofMillis(50)).build();
+  public WorkflowSettings settings() {
+    return WorkflowSettings.builder().defaultStepTimeout(Duration.ofMillis(50)).build();
   }
 
   public Effect<Message> startFailingCounter(String counterId) {
