@@ -50,8 +50,8 @@ public class ActivityAgentManager extends Workflow<ActivityAgentManager.State> {
   }
 
   @Override
-  public WorkflowConfig configuration() { // <6>
-    return WorkflowConfig.builder()
+  public WorkflowSettings settings() { // <6>
+    return WorkflowSettings.builder()
       .stepConfig(ActivityAgentManager::suggestActivities, ofSeconds(60))
       .defaultStepRecovery(maxRetries(2).failoverTo(ActivityAgentManager::error))
       .build();

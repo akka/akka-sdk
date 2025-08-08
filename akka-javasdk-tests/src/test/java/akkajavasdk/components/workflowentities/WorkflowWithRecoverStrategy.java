@@ -21,8 +21,8 @@ public class WorkflowWithRecoverStrategy extends Workflow<FailingCounterState> {
   }
 
   @Override
-  public WorkflowConfig configuration() {
-    return WorkflowConfig.builder()
+  public WorkflowSettings settings() {
+    return WorkflowSettings.builder()
         .defaultStepTimeout(ofSeconds(10))
         .stepConfig(
             WorkflowWithRecoverStrategy::counterStep,

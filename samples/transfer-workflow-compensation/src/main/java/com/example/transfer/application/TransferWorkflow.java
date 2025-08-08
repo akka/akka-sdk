@@ -45,8 +45,8 @@ public class TransferWorkflow extends Workflow<TransferState> {
   // tag::recover-strategy[]
   // tag::step-timeout[]
   @Override
-  public WorkflowConfig configuration() {
-    return WorkflowConfig.builder()
+  public WorkflowSettings settings() {
+    return WorkflowSettings.builder()
       // end::recover-strategy[]
       .defaultStepTimeout(ofSeconds(2)) // <1>
       .stepConfig(TransferWorkflow::failoverHandlerStep, ofSeconds(1)) // <2>

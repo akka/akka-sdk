@@ -78,7 +78,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
   override def configuration: SpiWorkflow.WorkflowConfig = {
     val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, None, tracerFactory)
     val workflow = instanceFactory(workflowContext)
-    val workflowConfig = workflow.configuration()
+    val workflowConfig = workflow.settings()
 
     def toRecovery(sdkRecoverStrategy: SdkRecoverStrategy[_]): SpiWorkflow.RecoverStrategy = {
 
