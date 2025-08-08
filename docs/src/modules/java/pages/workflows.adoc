@@ -216,11 +216,9 @@ include::example$transfer-workflow-compensation/src/main/java/com/example/transf
 
 Design for failure is one of the key attributes of all Akka components. Workflow has the richest set of configurations from all of them. It's essential to build robust and reliable solutions.
 
-=== Timeouts
+=== Step Timeouts
 
 Workflows do not have a global timeout and can run indefinitely. Only step timeouts are supported.
-
-==== Step Timeouts
 
 Each workflow step has a default timeout of 5 seconds. You can override this default for all steps in the workflow `configuration` method, or set a custom timeout for individual steps.
 
@@ -231,6 +229,7 @@ include::example$transfer-workflow-compensation/src/main/java/com/example/transf
 ----
 <1> Sets a default timeout for all workflow steps.
 <2> Overrides the step timeout for a specific step.
+
 === Recover strategy
 
 It's time to define what should happen in case of step timeout or any other unhandled error.
