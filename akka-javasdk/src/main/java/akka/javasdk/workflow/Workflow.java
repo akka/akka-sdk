@@ -512,10 +512,6 @@ public abstract class Workflow<S> {
        * delay to allow downstream consumers to observe that fact.
        */
       StepEffect thenDelete();
-
-      StepEffect error(String description);
-
-      // TODO: add support for CommandException
     }
 
     interface PersistenceEffectBuilder {
@@ -560,10 +556,6 @@ public abstract class Workflow<S> {
        * delay to allow downstream consumers to observe that fact.
        */
       StepEffect thenDelete();
-
-      StepEffect error(String description);
-
-      // TODO: add support for CommandException
     }
   }
 

@@ -16,7 +16,6 @@ import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.Persistence
 import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.ReadOnlyEffectImpl
 import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.Reply
 import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.TransitionalEffectImpl
-import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowStepEffectImpl.ErrorStepEffectImpl
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.Workflow.Effect
 import akka.javasdk.workflow.Workflow.Effect.PersistenceEffectBuilder
@@ -206,12 +205,7 @@ object WorkflowEffects {
       override def thenEnd(): StepEffect =
         WorkflowStepEffectImpl(persistence, End)
 
-      override def error(description: String): StepEffect =
-        ErrorStepEffectImpl(description)
-
     }
-
-    final case class ErrorStepEffectImpl[R](description: String) extends StepEffect
   }
 
   /**
@@ -245,9 +239,6 @@ object WorkflowEffects {
 
     override def thenDelete(): StepEffect =
       WorkflowStepEffectImpl(NoPersistence, Delete)
-
-    override def error(description: String): StepEffect =
-      ErrorStepEffectImpl(description)
   }
 
   private final case class StepEffectCallWithInputImpl[I, S](persistence: Persistence[S], stepName: String)
