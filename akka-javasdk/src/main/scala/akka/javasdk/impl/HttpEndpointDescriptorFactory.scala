@@ -57,8 +57,8 @@ private[javasdk] object HttpEndpointDescriptorFactory {
       case Some("") => "/"
       case Some(path) =>
         val startingWithSlash =
-          if (!path.startsWith("/")) "/" + path
-          else path
+          if (path.startsWith("/")) path
+          else "/" + path
         val startingAndEndingWithSlash =
           if (startingWithSlash.endsWith("/")) startingWithSlash
           else startingWithSlash + "/"
