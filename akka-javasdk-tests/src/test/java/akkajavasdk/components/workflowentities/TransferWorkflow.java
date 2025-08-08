@@ -14,7 +14,6 @@ import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import akkajavasdk.components.MyException;
 import akkajavasdk.components.actions.echo.Message;
-import java.time.Duration;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,17 +25,12 @@ public class TransferWorkflow extends Workflow<TransferState> {
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
-  private ComponentClient componentClient;
+  private final ComponentClient componentClient;
 
-  private boolean constructedOnVt = Thread.currentThread().isVirtual();
+  private final boolean constructedOnVt = Thread.currentThread().isVirtual();
 
   public TransferWorkflow(ComponentClient componentClient) {
     this.componentClient = componentClient;
-  }
-
-  @Override
-  public WorkflowConfig configuration() {
-    return WorkflowConfig.builder().workflowTimeout(Duration.ofSeconds(10)).build();
   }
 
   public Effect<Message> startTransfer(Transfer transfer) {

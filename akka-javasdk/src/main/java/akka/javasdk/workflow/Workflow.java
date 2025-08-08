@@ -731,10 +731,6 @@ public abstract class Workflow<S> {
       return WorkflowConfigBuilder.newBuilder();
     }
 
-    Optional<Duration> workflowTimeout();
-
-    Optional<RecoverStrategy<?>> workflowRecoverStrategy();
-
     Optional<Duration> defaultStepTimeout();
 
     Optional<RecoverStrategy<?>> defaultStepRecoverStrategy();
@@ -742,8 +738,16 @@ public abstract class Workflow<S> {
     List<StepConfig> stepConfigs();
   }
 
+  /** INTERNAL API */
+  @InternalApi
+  public sealed interface LegacyWorkflowTimeout {
+    Optional<Duration> workflowTimeout();
+
+    Optional<RecoverStrategy<?>> workflowRecoverStrategy();
+  }
+
   private record LegacyWorkflowConfig<S>(WorkflowDef<S> legacyDefinition)
-      implements WorkflowConfig {
+      implements WorkflowConfig, LegacyWorkflowTimeout {
 
     @Override
     public Optional<Duration> workflowTimeout() {
@@ -780,8 +784,6 @@ public abstract class Workflow<S> {
   }
 
   private record WorkflowConfigImpl(
-      Optional<Duration> workflowTimeout,
-      Optional<RecoverStrategy<?>> workflowRecoverStrategy,
       Optional<Duration> defaultStepTimeout,
       Optional<RecoverStrategy<?>> defaultStepRecoverStrategy,
       List<StepConfig> stepConfigs)
@@ -789,68 +791,33 @@ public abstract class Workflow<S> {
 
   public static class WorkflowConfigBuilder {
 
-    private final Optional<Duration> workflowTimeout;
-    private final Optional<RecoverStrategy<?>> workflowRecoverStrategy;
     private final Optional<Duration> defaultStepTimeout;
     private final Optional<RecoverStrategy<?>> defaultStepRecoverStrategy;
     private final List<StepConfig> stepConfigs;
 
     public WorkflowConfigBuilder(
-        Optional<Duration> workflowTimeout,
-        Optional<RecoverStrategy<?>> workflowRecoverStrategy,
         Optional<Duration> defaultStepTimeout,
         Optional<RecoverStrategy<?>> defaultStepRecoverStrategy,
         List<StepConfig> stepConfigs) {
-      this.workflowTimeout = workflowTimeout;
-      this.workflowRecoverStrategy = workflowRecoverStrategy;
       this.defaultStepTimeout = defaultStepTimeout;
       this.defaultStepRecoverStrategy = defaultStepRecoverStrategy;
       this.stepConfigs = stepConfigs;
     }
 
     public static WorkflowConfigBuilder newBuilder() {
-      return new WorkflowConfigBuilder(
-          Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), List.of());
-    }
-
-    /** Define a timeout for the duration of the entire workflow. */
-    public WorkflowConfigBuilder workflowTimeout(Duration duration) {
-      return new WorkflowConfigBuilder(
-          Optional.of(duration),
-          workflowRecoverStrategy,
-          defaultStepTimeout,
-          defaultStepRecoverStrategy,
-          stepConfigs);
-    }
-
-    /** Define a recovery strategy for the entire workflow in case of timeout. */
-    public WorkflowConfigBuilder workflowRecovery(RecoverStrategy<?> recoverStrategy) {
-      return new WorkflowConfigBuilder(
-          workflowTimeout,
-          Optional.of(recoverStrategy),
-          defaultStepTimeout,
-          defaultStepRecoverStrategy,
-          stepConfigs);
+      return new WorkflowConfigBuilder(Optional.empty(), Optional.empty(), List.of());
     }
 
     /** Define a default timeout duration for all steps. Can be overridden per step. */
     public WorkflowConfigBuilder defaultStepTimeout(Duration timeout) {
       return new WorkflowConfigBuilder(
-          workflowTimeout,
-          workflowRecoverStrategy,
-          Optional.of(timeout),
-          defaultStepRecoverStrategy,
-          stepConfigs);
+          Optional.of(timeout), defaultStepRecoverStrategy, stepConfigs);
     }
 
     /** Define a default recovery strategy for all steps. Can be overridden per step. */
     public WorkflowConfigBuilder defaultStepRecovery(RecoverStrategy<?> recoverStrategy) {
       return new WorkflowConfigBuilder(
-          workflowTimeout,
-          workflowRecoverStrategy,
-          defaultStepTimeout,
-          Optional.of(recoverStrategy),
-          stepConfigs);
+          defaultStepTimeout, Optional.of(recoverStrategy), stepConfigs);
     }
 
     /**
@@ -940,11 +907,7 @@ public abstract class Workflow<S> {
       newStepConfigs.add(stepConfig);
 
       return new WorkflowConfigBuilder(
-          workflowTimeout,
-          workflowRecoverStrategy,
-          defaultStepTimeout,
-          defaultStepRecoverStrategy,
-          List.copyOf(newStepConfigs));
+          defaultStepTimeout, defaultStepRecoverStrategy, List.copyOf(newStepConfigs));
     }
 
     /**
@@ -953,12 +916,7 @@ public abstract class Workflow<S> {
      * @return The complete workflow configuration
      */
     public WorkflowConfig build() {
-      return new WorkflowConfigImpl(
-          workflowTimeout,
-          workflowRecoverStrategy,
-          defaultStepTimeout,
-          defaultStepRecoverStrategy,
-          stepConfigs);
+      return new WorkflowConfigImpl(defaultStepTimeout, defaultStepRecoverStrategy, stepConfigs);
     }
   }
 

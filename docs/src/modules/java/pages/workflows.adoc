@@ -169,7 +169,7 @@ include::example$transfer-workflow/src/main/java/com/example/transfer/applicatio
 ----
 <1> Instruction to delete the workflow.
 
-When you give the instruction to delete a running workflow it's equivalent to ending and deleting a workflow. For already finished workflows, it is possible to delete them in the command handler. The actual removal of workflow state is delayed to give downstream consumers time to process all prior updates. Including the fact that the workflow has been deleted (via method annotated with `@DeleteHandler`). By default, the existence of the workflow is completely cleaned up after a week.
+When you give the instruction to delete a running workflow, it's equivalent to ending and deleting a workflow. For already finished workflows, it is possible to delete them in the command handler. The actual removal of the workflow state is delayed to give downstream consumers time to process all prior updates. Including the fact that the workflow has been deleted (via method annotated with `@DeleteHandler`). By default, the existence of the workflow is completely cleaned up after a week.
 
 You can still handle read requests to the workflow until it has been completely removed, but the current state will be empty (or null). To check whether the workflow has been deleted, you can use the `isDeleted` method inherited from the `Workflow` class.
 
@@ -192,7 +192,6 @@ include::example$transfer-workflow-compensation/src/main/java/com/example/transf
 
 A long-running workflow can be paused while waiting for some additional information to continue processing. A special `pause` transition can be used to inform Akka that the execution of the Workflow should be postponed. By launching a Workflow command handler, the user can then resume the processing. Additionally, a Timer can be scheduled to automatically inform the Workflow that the expected time for the additional data has passed.
 
-
 [source,java,indent=0]
 .{sample-base-url}/transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java[TransferWorkflow.java]
 ----
@@ -201,9 +200,11 @@ include::example$transfer-workflow-compensation/src/main/java/com/example/transf
 <1> Schedules a timer as a Workflow step action. Make sure that the timer name is unique for every Workflow instance.
 <2> Pauses the Workflow execution.
 
-NOTE: Remember to cancel the timer once the Workflow is resumed. Also, adjust the workflow xref:#_timeouts[timeout], if it has been defined, to be longer than the longest expected pause. 8 hours in this example.
+NOTE: Remember to cancel the timer once the Workflow is resumed.
 
-Exposing additional mutational method from the Workflow implementation should be done with special caution. Accepting a call to such method should only be possible when the Workflow is in the expected state.
+CAUTION: Exposing additional mutational methods from the Workflow implementation should be done with special caution.
+Accepting a call to such a method should only be possible when the Workflow is in the expected state. If the workflow
+ is in the middle of a step execution, such a call will be queued and only handled once the step completes.
 
 [source,java,indent=0]
 .{sample-base-url}/transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java[TransferWorkflow.java]
@@ -217,42 +218,31 @@ include::example$transfer-workflow-compensation/src/main/java/com/example/transf
 
 Design for failure is one of the key attributes of all Akka components. Workflow has the richest set of configurations from all of them. It's essential to build robust and reliable solutions.
 
-=== Timeouts
+=== Step Timeouts
 
-By default, a workflow run has no time limit. It can run forever, which in most cases is not desirable behavior. A workflow step, on the other hand, has a default timeout of 5 seconds. Both settings can be overridden in the workflow `configuration` method.
-
-[source,java,indent=0]
-.{sample-base-url}/transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java[TransferWorkflow.java]
-----
-include::example$transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java[tag=timeouts]
-----
-<1> Sets a timeout for the duration of the entire workflow. When the timeout expires, the workflow is finished and no transitions are allowed.
-<2> Sets a default timeout for all workflow steps.
-
-A default step timeout can be overridden for an individual step.
+Each workflow step has a default timeout of 5 seconds. You can override this default for all steps in the workflow `configuration` method, or set a custom timeout for individual steps.
 
 [source,java,indent=0]
 .{sample-base-url}/transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java[TransferWorkflow.java]
 ----
 include::example$transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java[tag=step-timeout]
 ----
-<1> Overrides the step timeout for a specific step.
+<1> Sets a default timeout for all workflow steps.
+<2> Overrides the step timeout for a specific step.
+
+NOTE: If you need a global workflow timeout, consider using durable timers as described in the xref:#_pausing_workflow[] section.
 
 === Recover strategy
 
-It's time to define what should happen in case of timeout or any other unhandled error.
+It's time to define what should happen in case of step timeout or any other unhandled error.
 
 [source,java,indent=0]
 .{sample-base-url}/transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java[TransferWorkflow.java]
 ----
 include::example$transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java[tag=recover-strategy]
 ----
-<1> Set a failover transition in case of a workflow timeout.
-<2> Set a default failover transition for all steps with maximum number of retries.
-<3> Override the step recovery strategy for the `deposit` step.
-
-
-NOTE: In case of a workflow timeout one last failover step can be performed. Transitions from that failover step will be ignored.
+<1> Set a default failover transition for all steps with the maximum number of retries.
+<2> Override the step recovery strategy for the `deposit` step.
 
 === Compensation
 

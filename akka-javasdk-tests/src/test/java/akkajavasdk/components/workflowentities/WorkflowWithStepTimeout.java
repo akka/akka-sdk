@@ -5,7 +5,6 @@
 package akkajavasdk.components.workflowentities;
 
 import static java.time.Duration.ofMillis;
-import static java.time.Duration.ofSeconds;
 
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.workflow.Workflow;
@@ -17,7 +16,6 @@ public class WorkflowWithStepTimeout extends Workflow<FailingCounterState> {
   @Override
   public WorkflowConfig configuration() {
     return WorkflowConfig.builder()
-        .workflowTimeout(ofSeconds(8))
         .defaultStepTimeout(ofMillis(20))
         .stepConfig(
             WorkflowWithStepTimeout::counterStep,
