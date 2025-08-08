@@ -42,10 +42,8 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
 
   public Effect<String> getAnswer() {
     if (currentState() == null || currentState().answer.isEmpty()) {
-      return effects()
-        .error(
-          "Workflow '" + commandContext().workflowId() + "' not started, or not completed"
-        );
+      String workflowId = commandContext().workflowId();
+      return effects().error("Workflow '" + workflowId + "' not started, or not completed");
     } else {
       return effects().reply(currentState().answer);
     }
@@ -77,8 +75,11 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
 
   @StepName("activities")
   private StepEffect suggestActivities() {
-    var request = // <4>currentState().userQuery +
-      "\nWeather forecast: " + currentState().weatherForecast;
+    // prettier-ignore
+    var request = // <4>
+      currentState().userQuery +
+        "\nWeather forecast: " + currentState().weatherForecast;
+
     var suggestion = componentClient
       .forAgent()
       .inSession(sessionId())
