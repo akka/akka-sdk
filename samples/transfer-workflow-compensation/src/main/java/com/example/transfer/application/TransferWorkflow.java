@@ -32,8 +32,12 @@ public class TransferWorkflow extends Workflow<TransferState> {
 
   private final ComponentClient componentClient;
 
-  public TransferWorkflow(ComponentClient componentClient) {
+  private final FraudDetectionService fraudDetectionService;
+
+  public TransferWorkflow(
+      ComponentClient componentClient, FraudDetectionService fraudDetectionService) {
     this.componentClient = componentClient;
+    this.fraudDetectionService = fraudDetectionService;
   }
 
   // tag::recover-strategy[]
@@ -54,7 +58,6 @@ public class TransferWorkflow extends Workflow<TransferState> {
       // tag::step-timeout[]
       .build();
   }
-
   // end::step-timeout[]
   // end::recover-strategy[]
 
@@ -157,6 +160,43 @@ public class TransferWorkflow extends Workflow<TransferState> {
 
   // end::pausing[]
 
+  // tag::detect-frauds[]
+  private StepEffect detectFraudsStep() {
+    // end::detect-frauds[]
+    logger.info("Transfer {} - detecting frauds", currentState().transferId());
+    // tag::detect-frauds[]
+    FraudDetectionService.FraudDetectionResult result =
+        fraudDetectionService.detectFrauds(currentState().transfer()); // <1>
+
+    var workflowId = commandContext().workflowId();
+    var transfer = currentState().transfer();
+    return switch (result) {
+      case ACCEPTED -> { // <2>
+        // end::detect-frauds[]
+        logger.info("Running: {}", transfer);
+        // tag::detect-frauds[]
+        TransferState initialState = TransferState.create(workflowId, transfer);
+        Withdraw withdrawInput = new Withdraw(initialState.withdrawId(), transfer.amount());
+        yield stepEffects()
+            .updateState(initialState)
+            .thenTransitionTo(TransferWorkflow::withdrawStep)
+            .withInput(withdrawInput);
+      }
+      case MANUAL_ACCEPTANCE_REQUIRED -> { // <3>
+        // end::detect-frauds[]
+        logger.info("Waiting for acceptance: {}", transfer);
+        // tag::detect-frauds[]
+        TransferState waitingForAcceptanceState =
+            TransferState.create(workflowId, transfer).withStatus(WAITING_FOR_ACCEPTANCE);
+        yield stepEffects()
+            .updateState(waitingForAcceptanceState)
+            .thenTransitionTo(TransferWorkflow::waitForAcceptanceStep);
+      }
+    };
+  }
+
+  // end::detect-frauds[]
+
   private StepEffect failoverHandlerStep() {
     logger.info("Running workflow failed step");
 
@@ -173,7 +213,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
     } else {
       String workflowId = commandContext().workflowId();
       if (transfer.amount() > 1000) {
-        logger.info("Waiting for acceptance: " + transfer);
+        logger.info("Waiting for acceptance: {}", transfer);
         TransferState waitingForAcceptanceState = TransferState.create(
           workflowId,
           transfer
@@ -183,7 +223,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
           .transitionTo(TransferWorkflow::waitForAcceptanceStep)
           .thenReply("transfer started, waiting for acceptance");
       } else {
-        logger.info("Running: " + transfer);
+        logger.info("Running: {}", transfer);
         TransferState initialState = TransferState.create(workflowId, transfer);
         Withdraw withdrawInput = new Withdraw(initialState.withdrawId(), transfer.amount());
         return effects()
