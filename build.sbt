@@ -4,6 +4,10 @@ import Dependencies.AkkaRuntimeVersion
 lazy val `akka-javasdk-root` = project
   .in(file("."))
   .aggregate(akkaJavaSdkAnnotationProcessor, akkaJavaSdk, akkaJavaSdkTestKit, akkaJavaSdkTests)
+  // samplesCompilationProject and annotationProcessorTestProject are composite project
+  // to aggregate them we need to map over them
+  .aggregate(samplesCompilationProject.componentProjects.map(p => p: ProjectReference): _*)
+  .aggregate(annotationProcessorTestProject.componentProjects.map(p => p: ProjectReference): _*)
   .settings(
     (publish / skip) := true,
     // https://github.com/sbt/sbt/issues/3465

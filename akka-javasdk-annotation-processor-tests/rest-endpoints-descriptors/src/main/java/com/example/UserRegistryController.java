@@ -11,7 +11,5 @@ import akka.javasdk.annotations.http.Post;
 public class UserRegistryController {
 
   @Post("/{id}")
-  public void createUser(String id, String name) {
-
-  }
+  public void createUser(String id, String name) {}
 }
