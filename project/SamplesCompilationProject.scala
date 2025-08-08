@@ -57,26 +57,24 @@ object SamplesCompilationProject {
                   val srcs = (Compile / sources).value
                   val targetDir = (Compile / compile / streams).value.cacheDirectory
                   val markerFile = targetDir / "prettier-last-run"
-                  val changed = 
+                  val changed =
                     if (markerFile.exists) {
                       srcs.exists(src => src.lastModified() > markerFile.lastModified())
-                         } else {
-                           srcs.nonEmpty
-                         }
-                         if (changed) {
-                            println(s"[info] Running: mvn -Pformatting prettier:write in ${baseDirectory.value}")
-                            val process = scala.sys.process.Process("mvn -Pformatting prettier:write", baseDirectory.value)
-                            val outputLines = process.lineStream_!
-                            outputLines.foreach { line =>
-                              if (line.contains("[INFO] Reformatted file:")) println(line)
-                            }
-                            markerFile.createNewFile()
-                            markerFile.setLastModified(System.currentTimeMillis())
-                         }
-                       },
-                Compile / compile := (Compile / compile).dependsOn(formatIfNeeded).value
-            
-              )
+                    } else {
+                      srcs.nonEmpty
+                    }
+                  if (changed) {
+                    println(s"[info] Running: mvn -Pformatting prettier:write in ${baseDirectory.value}")
+                    val process = scala.sys.process.Process("mvn -Pformatting prettier:write", baseDirectory.value)
+                    val outputLines = process.lineStream_!
+                    outputLines.foreach { line =>
+                      if (line.contains("[INFO] Reformatted file:")) println(line)
+                    }
+                    markerFile.createNewFile()
+                    markerFile.setLastModified(System.currentTimeMillis())
+                  }
+                },
+                Compile / compile := (Compile / compile).dependsOn(formatIfNeeded).value)
 
             additionalDeps.get(dir.getName).fold(proj)(deps => proj.settings(libraryDependencies ++= deps))
           }
