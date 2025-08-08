@@ -738,6 +738,8 @@ public abstract class Workflow<S> {
     List<StepConfig> stepConfigs();
   }
 
+  /** INTERNAL API */
+  @InternalApi
   public sealed interface LegacyWorkflowTimeout {
     Optional<Duration> workflowTimeout();
 

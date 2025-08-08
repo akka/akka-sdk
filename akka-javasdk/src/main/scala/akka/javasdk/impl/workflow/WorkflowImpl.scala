@@ -12,6 +12,7 @@ import scala.jdk.OptionConverters.RichOptional
 import scala.util.Failure
 import scala.util.Success
 import scala.util.control.NonFatal
+
 import akka.annotation.InternalApi
 import akka.javasdk.CommandException
 import akka.javasdk.Metadata
