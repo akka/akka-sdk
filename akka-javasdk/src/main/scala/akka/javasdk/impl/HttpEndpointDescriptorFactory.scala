@@ -52,7 +52,19 @@ private[javasdk] object HttpEndpointDescriptorFactory {
       instanceFactory: HttpEndpointConstructionContext => Any): HttpEndpointDescriptor = {
     assert(Reflect.isRestEndpoint(endpointClass))
 
-    val mainPath = Option(endpointClass.getAnnotation(classOf[HttpEndpoint])).map(_.value()).filterNot(_.isEmpty)
+    // make sure it is predictable - always starts with slash and ends with slash, if undefined, always "/"
+    val mainPath = Option(endpointClass.getAnnotation(classOf[HttpEndpoint])).map(_.value()) match {
+      case None     => "/"
+      case Some("") => "/"
+      case Some(path) =>
+        val startingWithSlash =
+          if (path.startsWith("/")) path
+          else "/" + path
+        val startingAndEndingWithSlash =
+          if (startingWithSlash.endsWith("/")) startingWithSlash
+          else startingWithSlash + "/"
+        startingAndEndingWithSlash
+    }
 
     val methodsWithValidation: Seq[Either[Validation, HttpEndpointMethodDescriptor]] =
       endpointClass.getDeclaredMethods.toVector.flatMap { method =>
@@ -76,8 +88,13 @@ private[javasdk] object HttpEndpointDescriptorFactory {
           None
         }
 
-        maybePathMethod.map { case (path, httpMethod) =>
-          val fullPathExpression = mainPath.map(m => m + path).getOrElse(path)
+        maybePathMethod.map { case (rawPath, httpMethod) =>
+          // make sure individual method paths are consistently relative to the prefix, which always starts with slash
+          val path =
+            if (rawPath.startsWith("/")) rawPath.drop(1)
+            else rawPath
+
+          val fullPathExpression = mainPath + path
           val parsedPath = Path(fullPathExpression)
 
           def invalid(message: String): (Validation, Int) =
@@ -146,7 +163,7 @@ private[javasdk] object HttpEndpointDescriptorFactory {
       summedUp.throwFailureSummary()
     } else {
       new HttpEndpointDescriptor(
-        mainPath = mainPath,
+        mainPath = Some(mainPath),
         instanceFactory = instanceFactory,
         methods = methods.toVector,
         componentOptions = new ComponentOptions(

@@ -55,7 +55,7 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
       val descriptor = HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.TestEndpoint], _ => null)
       val byMethodName = descriptor.methods.map(md => md.userMethod.getName -> md).toMap
 
-      descriptor.mainPath should ===(Some("prefix"))
+      descriptor.mainPath should ===(Some("/prefix/"))
       descriptor.methods should have size 6
       descriptor.componentOptions.aclOpt shouldBe empty
       descriptor.componentOptions.jwtOpt shouldBe empty
@@ -65,32 +65,32 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
         Schema.jsonObject(properties = Map("someProperty" -> Schema.string()), required = Seq("someProperty")))
 
       val list = byMethodName("list")
-      list.pathExpression should ===("/")
+      list.pathExpression should ===("")
       list.httpMethod should ===(HttpMethods.GET)
       list.methodSpec should ===(Spec.empty)
 
       val get = byMethodName("get")
-      get.pathExpression should ===("/{it}")
+      get.pathExpression should ===("{it}")
       get.httpMethod should ===(HttpMethods.GET)
       get.methodSpec should ===(Spec(parameters = Seq(itParameter)))
 
       val create = byMethodName("create")
-      create.pathExpression should ===("/{it}")
+      create.pathExpression should ===("{it}")
       create.httpMethod should ===(HttpMethods.POST)
       create.methodSpec should ===(Spec(parameters = Seq(itParameter), requestBody = aThingJsonBody))
 
       val delete = byMethodName("delete")
-      delete.pathExpression should ===("/{it}")
+      delete.pathExpression should ===("{it}")
       delete.httpMethod should ===(HttpMethods.DELETE)
       delete.methodSpec should ===(Spec(parameters = Seq(itParameter)))
 
       val update = byMethodName("update")
-      update.pathExpression should ===("/{it}")
+      update.pathExpression should ===("{it}")
       update.httpMethod should ===(HttpMethods.PUT)
       update.methodSpec should ===(Spec(parameters = Seq(itParameter), requestBody = aThingJsonBody))
 
       val patch = byMethodName("patch")
-      patch.pathExpression should ===("/{it}")
+      patch.pathExpression should ===("{it}")
       patch.httpMethod should ===(HttpMethods.PATCH)
       patch.methodSpec should ===(Spec(parameters = Seq(itParameter), requestBody = aThingJsonBody))
     }
@@ -99,11 +99,11 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
       val descriptor = HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.TestEndpointSpecs], _ => null)
       val byMethodName = descriptor.methods.map(md => md.userMethod.getName -> md).toMap
 
-      descriptor.mainPath shouldBe Some("test-specs")
+      descriptor.mainPath shouldBe Some("/test-specs/")
       descriptor.methods should have size 9
 
       val parametersOnly = byMethodName("parametersOnly")
-      parametersOnly.pathExpression shouldBe "/parameters-only/{someString}/and/{someInt}"
+      parametersOnly.pathExpression shouldBe "parameters-only/{someString}/and/{someInt}"
       parametersOnly.httpMethod shouldBe HttpMethods.GET
       parametersOnly.methodSpec shouldBe Spec(parameters = Seq(
         Spec.parameter("someString", Schema.string("some string")),
@@ -122,50 +122,50 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
             required = Seq("someBoolean", "someInt", "someString")))
 
       val parametersAndBody = byMethodName("parametersAndBody")
-      parametersAndBody.pathExpression shouldBe "/parameters-and-body/{someString}/and/{someDouble}"
+      parametersAndBody.pathExpression shouldBe "parameters-and-body/{someString}/and/{someDouble}"
       parametersAndBody.httpMethod shouldBe HttpMethods.POST
       parametersAndBody.methodSpec shouldBe Spec(
         parameters = Seq(Spec.parameter("someString", Schema.string()), Spec.parameter("someDouble", Schema.number())),
         requestBody = someObjectBody())
 
       val bodyOnly = byMethodName("bodyOnly")
-      bodyOnly.pathExpression shouldBe "/body-only"
+      bodyOnly.pathExpression shouldBe "body-only"
       bodyOnly.httpMethod shouldBe HttpMethods.POST
       bodyOnly.methodSpec shouldBe Spec(requestBody = someObjectBody("some body"))
 
       val parametersAndTextBody = byMethodName("parametersAndTextBody")
-      parametersAndTextBody.pathExpression shouldBe "/parameters-and-text-body/{someInt}"
+      parametersAndTextBody.pathExpression shouldBe "parameters-and-text-body/{someInt}"
       parametersAndTextBody.httpMethod shouldBe HttpMethods.POST
       parametersAndTextBody.methodSpec shouldBe Spec(
         parameters = Seq(Spec.parameter("someInt", Schema.integer())),
         requestBody = Spec.textBody("some body"))
 
       val textBodyOnly = byMethodName("textBodyOnly")
-      textBodyOnly.pathExpression shouldBe "/text-body-only"
+      textBodyOnly.pathExpression shouldBe "text-body-only"
       textBodyOnly.httpMethod shouldBe HttpMethods.POST
       textBodyOnly.methodSpec shouldBe Spec(requestBody = Spec.textBody("some body"))
 
       val parametersAndArrayBody = byMethodName("parametersAndArrayBody")
-      parametersAndArrayBody.pathExpression shouldBe "/parameters-and-array-body/{someString}/and/{someInt}"
+      parametersAndArrayBody.pathExpression shouldBe "parameters-and-array-body/{someString}/and/{someInt}"
       parametersAndArrayBody.httpMethod shouldBe HttpMethods.POST
       parametersAndArrayBody.methodSpec shouldBe Spec(
         parameters = Seq(Spec.parameter("someString", Schema.string()), Spec.parameter("someInt", Schema.integer())),
         requestBody = Spec.jsonBody(Schema.array(Schema.string())))
 
       val arrayBodyOnly = byMethodName("arrayBodyOnly")
-      arrayBodyOnly.pathExpression shouldBe "/array-body-only"
+      arrayBodyOnly.pathExpression shouldBe "array-body-only"
       arrayBodyOnly.httpMethod shouldBe HttpMethods.POST
       arrayBodyOnly.methodSpec shouldBe Spec(requestBody = Spec.jsonBody(Schema.array(Schema.number(), "some body")))
 
       val parametersAndLowLevelBody = byMethodName("parametersAndLowLevelBody")
-      parametersAndLowLevelBody.pathExpression shouldBe "/parameters-and-low-level-body/{someBoolean}"
+      parametersAndLowLevelBody.pathExpression shouldBe "parameters-and-low-level-body/{someBoolean}"
       parametersAndLowLevelBody.httpMethod shouldBe HttpMethods.POST
       parametersAndLowLevelBody.methodSpec shouldBe Spec(
         parameters = Seq(Spec.parameter("someBoolean", Schema.boolean("some boolean"))),
         requestBody = Spec.lowLevelBody("some body", required = true))
 
       val lowLevelBodyOnly = byMethodName("lowLevelBodyOnly")
-      lowLevelBodyOnly.pathExpression shouldBe "/low-level-body-only"
+      lowLevelBodyOnly.pathExpression shouldBe "low-level-body-only"
       lowLevelBodyOnly.httpMethod shouldBe HttpMethods.POST
       lowLevelBodyOnly.methodSpec shouldBe Spec(requestBody = Spec.lowLevelBody())
     }
@@ -187,10 +187,18 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
         "Wildcard path can only be the last segment of the path [/{id}/my-endpoint/wildcard/**/not/last]")
     }
 
+    "hide double slash when combining prefix with method path" in {
+      val descriptor = HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.WithRootPrefix], _ => null)
+      val byMethodName = descriptor.methods.map(md => md.userMethod.getName -> md).toMap
+      byMethodName("root").pathExpression shouldEqual ""
+      byMethodName("a").pathExpression shouldEqual "a"
+      byMethodName("b").pathExpression shouldEqual "b"
+    }
+
     "parse ACL annotations into descriptor" in {
       val descriptor = HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.TestEndpointAcls], _ => null)
 
-      descriptor.mainPath should ===(Some("acls"))
+      descriptor.mainPath should ===(Some("/acls/"))
       descriptor.methods should have size 3
 
       descriptor.componentOptions.aclOpt should not be empty
