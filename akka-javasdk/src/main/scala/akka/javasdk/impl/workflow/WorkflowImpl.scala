@@ -89,7 +89,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
     }
 
     val stepConfigs =
-      workflowConfig.stepConfigs.asScala.map { config =>
+      workflowConfig.stepPolicies.asScala.map { config =>
         val stepTimeout = config.timeout.toScala.map(_.toScala)
         val failoverRecoverStrategy = config.recovery.toScala.map(toRecovery)
         (config.stepName, new SpiWorkflow.StepConfig(config.stepName, stepTimeout, failoverRecoverStrategy))

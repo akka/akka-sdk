@@ -578,7 +578,7 @@ public abstract class Workflow<S> {
 
     private final boolean legacy;
     private final List<Step> steps = new ArrayList<>();
-    private final List<StepConfig> stepConfigs = new ArrayList<>();
+    private final List<StepPolicy> stepPolicies = new ArrayList<>();
     private final Set<String> uniqueNames = new HashSet<>();
     private Optional<Duration> workflowTimeout = Optional.empty();
     private Optional<String> failoverStepName = Optional.empty();
@@ -603,7 +603,7 @@ public abstract class Workflow<S> {
     public WorkflowDef<S> addStep(Step step) {
       addStepWithValidation(step);
       if (step.timeout().isPresent()) {
-        stepConfigs.add(new StepConfig(step.name(), step.timeout(), Optional.empty()));
+        stepPolicies.add(new StepPolicy(step.name(), step.timeout(), Optional.empty()));
       }
       return this;
     }
@@ -617,7 +617,7 @@ public abstract class Workflow<S> {
      */
     public WorkflowDef<S> addStep(Step step, RecoverStrategy<?> recoverStrategy) {
       addStepWithValidation(step);
-      stepConfigs.add(new StepConfig(step.name(), step.timeout(), Optional.of(recoverStrategy)));
+      stepPolicies.add(new StepPolicy(step.name(), step.timeout(), Optional.of(recoverStrategy)));
       return this;
     }
 
@@ -700,8 +700,8 @@ public abstract class Workflow<S> {
       return steps;
     }
 
-    public List<StepConfig> getStepConfigs() {
-      return stepConfigs;
+    public List<StepPolicy> getStepPolicies() {
+      return stepPolicies;
     }
 
     public Optional<String> getFailoverStepName() {
@@ -727,7 +727,7 @@ public abstract class Workflow<S> {
 
     Optional<RecoverStrategy<?>> defaultStepRecoverStrategy();
 
-    List<StepConfig> stepConfigs();
+    List<StepPolicy> stepPolicies();
   }
 
   /** INTERNAL API */
@@ -770,30 +770,30 @@ public abstract class Workflow<S> {
     }
 
     @Override
-    public List<StepConfig> stepConfigs() {
-      return legacyDefinition.getStepConfigs();
+    public List<StepPolicy> stepPolicies() {
+      return legacyDefinition.getStepPolicies();
     }
   }
 
   private record WorkflowSettingsImpl(
       Optional<Duration> defaultStepTimeout,
       Optional<RecoverStrategy<?>> defaultStepRecoverStrategy,
-      List<StepConfig> stepConfigs)
+      List<StepPolicy> stepPolicies)
       implements WorkflowSettings {}
 
   public static class WorkflowSettingsBuilder {
 
     private final Optional<Duration> defaultStepTimeout;
     private final Optional<RecoverStrategy<?>> defaultStepRecoverStrategy;
-    private final List<StepConfig> stepConfigs;
+    private final List<StepPolicy> stepPolicies;
 
     public WorkflowSettingsBuilder(
         Optional<Duration> defaultStepTimeout,
         Optional<RecoverStrategy<?>> defaultStepRecoverStrategy,
-        List<StepConfig> stepConfigs) {
+        List<StepPolicy> stepPolicies) {
       this.defaultStepTimeout = defaultStepTimeout;
       this.defaultStepRecoverStrategy = defaultStepRecoverStrategy;
-      this.stepConfigs = stepConfigs;
+      this.stepPolicies = stepPolicies;
     }
 
     public static WorkflowSettingsBuilder newBuilder() {
@@ -803,13 +803,13 @@ public abstract class Workflow<S> {
     /** Define a default timeout duration for all steps. Can be overridden per step. */
     public WorkflowSettingsBuilder defaultStepTimeout(Duration timeout) {
       return new WorkflowSettingsBuilder(
-          Optional.of(timeout), defaultStepRecoverStrategy, stepConfigs);
+          Optional.of(timeout), defaultStepRecoverStrategy, stepPolicies);
     }
 
     /** Define a default recovery strategy for all steps. Can be overridden per step. */
     public WorkflowSettingsBuilder defaultStepRecovery(RecoverStrategy<?> recoverStrategy) {
       return new WorkflowSettingsBuilder(
-          defaultStepTimeout, Optional.of(recoverStrategy), stepConfigs);
+          defaultStepTimeout, Optional.of(recoverStrategy), stepPolicies);
     }
 
     /**
@@ -818,7 +818,7 @@ public abstract class Workflow<S> {
      * @param lambda Reference to the step method
      * @param timeout Timeout duration for this step
      */
-    public <W> WorkflowSettingsBuilder stepConfig(
+    public <W> WorkflowSettingsBuilder stepPolicy(
         akka.japi.function.Function<W, StepEffect> lambda, Duration timeout) {
       var method = MethodRefResolver.resolveMethodRef(lambda);
       return addStepConfig(method.getName(), Optional.of(timeout), Optional.empty());
@@ -830,7 +830,7 @@ public abstract class Workflow<S> {
      * @param lambda Reference to the step method
      * @param timeout Timeout duration for this step
      */
-    public <W, I> WorkflowSettingsBuilder stepConfig(
+    public <W, I> WorkflowSettingsBuilder stepPolicy(
         akka.japi.function.Function2<W, I, StepEffect> lambda, Duration timeout) {
       var method = MethodRefResolver.resolveMethodRef(lambda);
       return addStepConfig(method.getName(), Optional.of(timeout), Optional.empty());
@@ -842,7 +842,7 @@ public abstract class Workflow<S> {
      * @param lambda Reference to the step method
      * @param recovery Recovery strategy for this step
      */
-    public <W> WorkflowSettingsBuilder stepConfig(
+    public <W> WorkflowSettingsBuilder stepPolicy(
         akka.japi.function.Function<W, StepEffect> lambda, RecoverStrategy<?> recovery) {
       var method = MethodRefResolver.resolveMethodRef(lambda);
       return addStepConfig(method.getName(), Optional.empty(), Optional.of(recovery));
@@ -854,7 +854,7 @@ public abstract class Workflow<S> {
      * @param lambda Reference to the step method
      * @param recovery Recovery strategy for this step
      */
-    public <W, I> WorkflowSettingsBuilder stepConfig(
+    public <W, I> WorkflowSettingsBuilder stepPolicy(
         akka.japi.function.Function2<W, I, StepEffect> lambda, RecoverStrategy<?> recovery) {
       var method = MethodRefResolver.resolveMethodRef(lambda);
       return addStepConfig(method.getName(), Optional.empty(), Optional.of(recovery));
@@ -867,7 +867,7 @@ public abstract class Workflow<S> {
      * @param timeout Timeout duration for this step
      * @param recovery Recovery strategy for this step
      */
-    public <W> WorkflowSettingsBuilder stepConfig(
+    public <W> WorkflowSettingsBuilder stepPolicy(
         akka.japi.function.Function<W, StepEffect> lambda,
         Duration timeout,
         RecoverStrategy<?> recovery) {
@@ -882,7 +882,7 @@ public abstract class Workflow<S> {
      * @param timeout Timeout duration for this step
      * @param recovery Recovery strategy for this step
      */
-    public <W, I> WorkflowSettingsBuilder stepConfig(
+    public <W, I> WorkflowSettingsBuilder stepPolicy(
         akka.japi.function.Function2<W, I, StepEffect> lambda,
         Duration timeout,
         RecoverStrategy<?> recovery) {
@@ -893,9 +893,9 @@ public abstract class Workflow<S> {
     private WorkflowSettingsBuilder addStepConfig(
         String stepName, Optional<Duration> timeout, Optional<RecoverStrategy<?>> recovery) {
 
-      var stepConfig = new StepConfig(stepName, timeout, recovery);
+      var stepConfig = new StepPolicy(stepName, timeout, recovery);
 
-      var newStepConfigs = new ArrayList<>(stepConfigs);
+      var newStepConfigs = new ArrayList<>(stepPolicies);
       newStepConfigs.add(stepConfig);
 
       return new WorkflowSettingsBuilder(
@@ -908,7 +908,7 @@ public abstract class Workflow<S> {
      * @return The complete workflow configuration
      */
     public WorkflowSettings build() {
-      return new WorkflowSettingsImpl(defaultStepTimeout, defaultStepRecoverStrategy, stepConfigs);
+      return new WorkflowSettingsImpl(defaultStepTimeout, defaultStepRecoverStrategy, stepPolicies);
     }
   }
 
@@ -1065,7 +1065,7 @@ public abstract class Workflow<S> {
     }
   }
 
-  public record StepConfig(
+  public record StepPolicy(
       String stepName, Optional<Duration> timeout, Optional<RecoverStrategy<?>> recovery) {}
 
   /**
