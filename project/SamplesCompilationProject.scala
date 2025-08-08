@@ -36,7 +36,7 @@ object SamplesCompilationProject {
         findSamples
           .map { dir =>
             val proj = Project("sample-" + dir.getName, dir)
-              // JavaFormatterPlugin must be disable
+              // JavaFormatterPlugin must be disabled
               // samples use prettier-maven-plugin from the parent pom
               .disablePlugins(HeaderPlugin, JavaFormatterPlugin)
               .enablePlugins(AkkaGrpcPlugin)
