@@ -5,11 +5,8 @@
 package akka.javasdk.impl.telemetry
 
 import java.lang
-import java.util.Collections
-
 import scala.collection.mutable
 import scala.jdk.OptionConverters._
-
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.runtime.sdk.spi.SpiEntity
@@ -26,6 +23,8 @@ import io.opentelemetry.context.propagation.TextMapSetter
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+
+import scala.jdk.CollectionConverters.IterableHasAsJava
 
 /**
  * INTERNAL API
@@ -117,14 +116,13 @@ private[akka] object Telemetry {
 @InternalApi
 private[akka] object TraceInstrumentation {
   // Trick to extract trace parent from a single metadata entry and using the W3C decoding from OTEL
-  private val metadataEntryTraceParentGetter = new TextMapGetter[SpiMetadataEntry]() {
+  private val spiMetadataGetter = new TextMapGetter[SpiMetadata]() {
 
-    override def get(carrier: SpiMetadataEntry, key: String): String =
-      if (key == Telemetry.TRACE_PARENT_KEY) carrier.value
-      else null
+    override def get(carrier: SpiMetadata, key: String): String =
+      carrier.entries.find(_.key == key).map(_.value).orNull
 
-    override def keys(carrier: SpiMetadataEntry): lang.Iterable[String] =
-      Collections.singleton(Telemetry.TRACE_PARENT_KEY)
+    override def keys(carrier: SpiMetadata): lang.Iterable[String] =
+      carrier.entries.map(_.key).asJava
   }
 
   val InstrumentationScopeName: String = "akka-javasdk"
@@ -139,7 +137,6 @@ private[akka] final class TraceInstrumentation(
     componentCategory: ComponentCategory,
     val tracerFactory: () => Tracer) {
 
-  import Telemetry._
   import TraceInstrumentation._
 
   private val propagator = ContextPropagators.create(W3CTraceContextPropagator.getInstance())
@@ -191,22 +188,21 @@ private[akka] final class TraceInstrumentation(
       commandName: Option[String],
       commandMetadata: SpiMetadata,
       subjectId: Option[String]): Option[Span] = {
-    // only if there is a trace parent in the metadata
-    val traceParent = commandMetadata.entries.find(_.key == TRACE_PARENT_KEY)
-    traceParent.map { traceParentMetadataEntry =>
-      val parentContext = propagator.getTextMapPropagator
-        .extract(OtelContext.current(), traceParentMetadataEntry, metadataEntryTraceParentGetter)
-
+    val context = propagator.getTextMapPropagator.extract(OtelContext.current(), commandMetadata, spiMetadataGetter)
+    // is valid only if there is a trace parent in the metadata
+    if (!Span.fromContext(context).getSpanContext.isValid) {
+      None
+    } else {
       val spanName = s"$traceNamePrefix${commandName.fold("")("." + _)}"
       var spanBuilder =
         tracer
           .spanBuilder(spanName)
-          .setParent(parentContext)
+          .setParent(context)
           .setSpanKind(SpanKind.SERVER)
           .setAttribute("component.type", componentType)
           .setAttribute("component.type_id", componentId)
       subjectId.foreach(id => spanBuilder = spanBuilder.setAttribute("component.id", id))
-      spanBuilder.startSpan()
+      Some(spanBuilder.startSpan())
     }
   }
 
