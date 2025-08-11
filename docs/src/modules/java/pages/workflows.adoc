@@ -13,14 +13,16 @@ include::partial$entity-sharding.adoc[]
 [#_effect_api]
 == Workflow's Effect API
 
+The Workflow's Effect defines the operations that Akka should perform when an incoming command is handled by a Workflow.
 
-Workflows have two distinct Effect APIs:
+A Workflow Effect can either:
 
-* **Effect API**: Used for handling external commands. Methods that are exposed as public command handlers (invoked via the component client) must return an `Effect`. This API allows you to update the workflow state, transition to a step, pause, end, delete, fail, or reply to commands.
-
-* **StepEffect API**: Used for internal workflow steps. Methods that implement workflow steps (typically private) must return a `StepEffect`. This API is similar in spirit to `Effect`, but is specialized for guiding the internal execution and transitions between workflow steps. It provides methods to update state, transition to the next step, pause, end, or delete the workflow.
-
-Workflow is the only component that has both APIs: `Effect` for external commands and `StepEffect` for internal steps. This separation allows workflows to clearly distinguish between external interactions and internal orchestration logic.
+* update the state of the workflow
+* define the next step to be executed (transition)
+* pause the workflow
+* end the workflow
+* fail the step or reject a command by returning an error
+* reply to incoming commands
 
 For additional details, refer to xref:concepts:declarative-effects.adoc[Declarative Effects].
 
