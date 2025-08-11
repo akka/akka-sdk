@@ -54,24 +54,26 @@ object SamplesCompilationProject {
                 Test / testOnly := {},
                 // Only run prettier-maven-plugin if there are sources to compile
                 formatIfNeeded := {
-                  val srcs = (Compile / sources).value
-                  val targetDir = (Compile / compile / streams).value.cacheDirectory
-                  val markerFile = targetDir / "prettier-last-run"
-                  val changed =
-                    if (markerFile.exists) {
-                      srcs.exists(src => src.lastModified() > markerFile.lastModified())
+                  val srcs = (Compile / sources).value.filter(_.getName.endsWith(".java"))
+                  val classDir = (Compile / classDirectory).value
+
+                  val shouldFormat =
+                    if (classDir.exists) {
+                      // Check if any source files are newer than the class directory
+                      val lastCompileTime = classDir.lastModified()
+                      srcs.exists(_.lastModified() > lastCompileTime)
                     } else {
+                      // No previous compilation output means first compilation
                       srcs.nonEmpty
                     }
-                  if (changed) {
+
+                  if (shouldFormat) {
                     println(s"[info] Running: mvn -Pformatting prettier:write in ${baseDirectory.value}")
                     val process = scala.sys.process.Process("mvn -Pformatting prettier:write", baseDirectory.value)
                     val outputLines = process.lineStream_!
                     outputLines.foreach { line =>
                       if (line.contains("[INFO] Reformatted file:")) println(line)
                     }
-                    markerFile.createNewFile()
-                    markerFile.setLastModified(System.currentTimeMillis())
                   }
                 },
                 Compile / compile := (Compile / compile).dependsOn(formatIfNeeded).value)
