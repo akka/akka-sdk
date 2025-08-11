@@ -94,6 +94,7 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
     return WorkflowSettings.builder()
       .defaultStepTimeout(ofSeconds(30))
       .defaultStepRecovery(maxRetries(1).failoverTo(AgentTeamWorkflow::interruptStep))
+      .stepRecovery(AgentTeamWorkflow::selectAgentsStep, maxRetries(1).failoverTo(AgentTeamWorkflow::summarizeStep))
       .build();
   }
 

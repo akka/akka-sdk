@@ -24,7 +24,7 @@ public class WorkflowWithRecoverStrategy extends Workflow<FailingCounterState> {
   public WorkflowSettings settings() {
     return WorkflowSettings.builder()
         .defaultStepTimeout(ofSeconds(10))
-        .stepPolicy(
+        .stepRecovery(
             WorkflowWithRecoverStrategy::counterStep,
             maxRetries(1).failoverTo(WorkflowWithRecoverStrategy::counterStepFailover))
         .build();
