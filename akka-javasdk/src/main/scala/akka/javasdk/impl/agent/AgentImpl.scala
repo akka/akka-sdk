@@ -69,15 +69,15 @@ import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
-import java.time.Instant
 
+import java.time.Instant
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import scala.util.control.NonFatal
-
 import akka.javasdk.CommandException
+import akka.javasdk.impl.JsonSchema
 
 /**
  * INTERNAL API
@@ -201,6 +201,12 @@ private[impl] final class AgentImpl[A <: Agent](
 
             val toolExecutor = new ToolExecutor(functionTools, serializer)
 
+            val responseSchema = if (!req.responseType.isAssignableFrom(classOf[String])) {
+              Some(JsonSchema.jsonSchemaFor(req.responseType))
+            } else None
+
+            log.info("Executing command: {} with system message: {}", command.name, responseSchema)
+
             new SpiAgent.RequestModelEffect(
               modelProvider = spiModelProvider,
               systemMessage = systemMessage,
@@ -210,6 +216,7 @@ private[impl] final class AgentImpl[A <: Agent](
               callToolFunction = request => Future(toolExecutor.execute(request))(sdkExecutionContext),
               mcpClientDescriptors = mcpToolEndpoints,
               responseType = req.responseType,
+              responseSchema = responseSchema,
               responseMapping = req.responseMapping,
               failureMapping = req.failureMapping.map(mapSpiAgentException),
               replyMetadata = metadata,
