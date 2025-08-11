@@ -1,6 +1,5 @@
 import akka.grpc.sbt.AkkaGrpcPlugin
 import com.github.sbt.JavaFormatterPlugin
-import com.github.sbt.JavaFormatterPlugin.autoImport._
 
 import java.io.File
 import de.heikoseeberger.sbtheader.HeaderPlugin
@@ -33,18 +32,51 @@ object SamplesCompilationProject {
           .aggregate(innerProjects.map(p => p: ProjectReference): _*)
 
       import akka.grpc.sbt.AkkaGrpcPlugin.autoImport._
+
+      val formatIfNeeded = taskKey[Unit]("Format with prettier-maven-plugin if sources have changed")
+
       lazy val innerProjects =
         findSamples
           .map { dir =>
+            val formatIfNeeded = taskKey[Unit]("Format with prettier-maven-plugin if needed")
             val proj = Project("sample-" + dir.getName, dir)
-              .disablePlugins(HeaderPlugin)
-              .enablePlugins(AkkaGrpcPlugin, JavaFormatterPlugin)
+              // JavaFormatterPlugin must be disabled
+              // samples use prettier-maven-plugin from the parent pom
+              .disablePlugins(HeaderPlugin, JavaFormatterPlugin)
+              .enablePlugins(AkkaGrpcPlugin)
               .settings(
                 Test / unmanagedSourceDirectories += baseDirectory.value / "src" / "it" / "java",
                 akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Java),
                 akkaGrpcCodeGeneratorSettings ++= CommonSettings.serviceGrpcGeneratorSettings,
-                javafmtOnCompile := false // Enable Java formatting, but not on compile to avoid CI issues
-              )
+                // Disable tests for composite projects since they're primarily for compilation verification
+                // Maven sets akka.javasdk.dev-mode.project-artifact-id automatically but SBT composite projects don't have this
+                Test / test := {},
+                Test / testOnly := {},
+                // Only run prettier-maven-plugin if there are sources to compile
+                formatIfNeeded := {
+                  val srcs = (Compile / sources).value.filter(_.getName.endsWith(".java"))
+                  val classDir = (Compile / classDirectory).value
+
+                  val shouldFormat =
+                    if (classDir.exists) {
+                      // Check if any source files are newer than the class directory
+                      val lastCompileTime = classDir.lastModified()
+                      srcs.exists(_.lastModified() > lastCompileTime)
+                    } else {
+                      // No previous compilation output means first compilation
+                      srcs.nonEmpty
+                    }
+
+                  if (shouldFormat) {
+                    println(s"[info] Running: mvn -Pformatting prettier:write in ${baseDirectory.value}")
+                    val process = scala.sys.process.Process("mvn -Pformatting prettier:write", baseDirectory.value)
+                    val outputLines = process.lineStream_!
+                    outputLines.foreach { line =>
+                      if (line.contains("[INFO] Reformatted file:")) println(line)
+                    }
+                  }
+                },
+                Compile / compile := (Compile / compile).dependsOn(formatIfNeeded).value)
 
             additionalDeps.get(dir.getName).fold(proj)(deps => proj.settings(libraryDependencies ++= deps))
           }
