@@ -1,11 +1,9 @@
 package demo.multiagent.application;
 
-import static demo.multiagent.application.AgentTeamWorkflow.Status.*;
 import static demo.multiagent.application.AgentTeamWorkflow.Status.COMPLETED;
 import static demo.multiagent.application.AgentTeamWorkflow.Status.FAILED;
 import static demo.multiagent.application.AgentTeamWorkflow.Status.STARTED;
 import static java.time.Duration.ofSeconds;
-import static java.time.temporal.ChronoUnit.SECONDS;
 
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
@@ -14,19 +12,12 @@ import akka.javasdk.client.ComponentClient;
 import akka.javasdk.client.DynamicMethodRef;
 import akka.javasdk.workflow.Workflow;
 import demo.multiagent.domain.AgentRequest;
-import demo.multiagent.domain.AgentRequest;
-import demo.multiagent.domain.AgentSelection;
 import demo.multiagent.domain.AgentSelection;
 import demo.multiagent.domain.Plan;
-import demo.multiagent.domain.Plan;
 import demo.multiagent.domain.PlanStep;
-import demo.multiagent.domain.PlanStep;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.LoggerFactory;
 
 // tag::all[]
@@ -99,10 +90,14 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
   // tag::plan[]
 
   @Override
-  public WorkflowConfig configuration() {
-    return WorkflowConfig.builder()
+  public WorkflowSettings settings() {
+    return WorkflowSettings.builder()
       .defaultStepTimeout(ofSeconds(30))
       .defaultStepRecovery(maxRetries(1).failoverTo(AgentTeamWorkflow::interruptStep))
+      .stepRecovery(
+        AgentTeamWorkflow::selectAgentsStep,
+        maxRetries(1).failoverTo(AgentTeamWorkflow::summarizeStep)
+      )
       .build();
   }
 

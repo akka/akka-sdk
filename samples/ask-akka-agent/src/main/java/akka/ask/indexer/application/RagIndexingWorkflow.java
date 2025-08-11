@@ -1,9 +1,7 @@
 package akka.ask.indexer.application;
 
 import static akka.Done.done;
-import static akka.Done.done;
 import static java.time.Duration.ofMinutes;
-import static java.time.temporal.ChronoUnit.MINUTES;
 
 import akka.Done;
 import akka.ask.common.OpenAiUtils;
@@ -147,9 +145,9 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
   // tag::def[]
 
   @Override
-  public WorkflowConfig configuration() {
+  public WorkflowSettings settings() {
     // prettier-ignore
-    return WorkflowConfig.builder()
+    return WorkflowSettings.builder()
       .defaultStepTimeout(ofMinutes(1))
       .build();
   }

@@ -14,10 +14,10 @@ import akkajavasdk.components.actions.echo.Message;
 public class WorkflowWithStepTimeout extends Workflow<FailingCounterState> {
 
   @Override
-  public WorkflowConfig configuration() {
-    return WorkflowConfig.builder()
+  public WorkflowSettings settings() {
+    return WorkflowSettings.builder()
         .defaultStepTimeout(ofMillis(20))
-        .stepConfig(
+        .stepRecovery(
             WorkflowWithStepTimeout::counterStep,
             maxRetries(1).failoverTo(WorkflowWithStepTimeout::counterFailover))
         .build();

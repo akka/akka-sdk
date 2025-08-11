@@ -51,10 +51,10 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
   }
 
   @Override
-  public WorkflowConfig configuration() {
-    return WorkflowConfig.builder()
-      .stepConfig(AgentTeamWorkflow::askWeather, ofSeconds(60))
-      .stepConfig(AgentTeamWorkflow::suggestActivities, ofSeconds(60))
+  public WorkflowSettings settings() {
+    return WorkflowSettings.builder()
+      .stepTimeout(AgentTeamWorkflow::askWeather, ofSeconds(60))
+      .stepTimeout(AgentTeamWorkflow::suggestActivities, ofSeconds(60))
       .defaultStepRecovery(maxRetries(2).failoverTo(AgentTeamWorkflow::error))
       .build();
   }
