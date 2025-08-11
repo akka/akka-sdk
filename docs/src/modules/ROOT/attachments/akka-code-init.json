@@ -1,17 +1,17 @@
 {
   "repositories": [
     {
-      "title": "Empty project",
-      "description": "This project contains the build and project structure to create an Akka service.",
-      "language": "java",
-      "url": "https://github.com/akka-samples/empty",
-      "level": "Beginner"
-    },
-    {
       "title": "Hello world agent",
       "description": "This sample uses an agent and LLM to generate greetings in different languages. It illustrates how the agent maintains contextual history in a session memory.",
       "language": "java",
       "url": "https://github.com/akka-samples/helloworld-agent",
+      "level": "Beginner"
+    },
+    {
+      "title": "Empty project",
+      "description": "This project contains the build and project structure to create an Akka service.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/empty",
       "level": "Beginner"
     },
     {
