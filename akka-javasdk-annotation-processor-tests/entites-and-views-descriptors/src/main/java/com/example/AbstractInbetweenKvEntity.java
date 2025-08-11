@@ -6,5 +6,4 @@ package com.example;
 
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 
-public abstract class AbstractInbetweenKvEntity<S> extends KeyValueEntity<S> {
-}
+public abstract class AbstractInbetweenKvEntity<S> extends KeyValueEntity<S> {}

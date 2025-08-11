@@ -8,12 +8,12 @@ import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 
 @ComponentId("simple-event-sourced")
-public class SimpleEventSourcedEntity extends EventSourcedEntity<SimpleEventSourcedEntity.State, SimpleEventSourcedEntity.Event> {
-
+public class SimpleEventSourcedEntity
+    extends EventSourcedEntity<SimpleEventSourcedEntity.State, SimpleEventSourcedEntity.Event> {
 
   record State(String value) {}
-  record Event(String value) {}
 
+  record Event(String value) {}
 
   @Override
   public State applyEvent(Event event) {

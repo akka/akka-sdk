@@ -10,7 +10,7 @@ import akka.javasdk.keyvalueentity.KeyValueEntity;
 @ComponentId("simple-key-value")
 public class SimpleKeyValueEntity extends KeyValueEntity<SimpleKeyValueEntity.State> {
 
-  record State(String value ) {}
+  record State(String value) {}
 
   public Effect<String> create(String value) {
     return effects().updateState(new State(value)).thenReply("done");

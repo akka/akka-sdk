@@ -4,11 +4,8 @@
 
 package com.example;
 
-import akka.javasdk.timedaction.TimedAction;
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.timedaction.TimedAction;
 
 @ComponentId("some-timed-action")
-public class SomeTimedAction extends TimedAction {
-
-
-}
+public class SomeTimedAction extends TimedAction {}

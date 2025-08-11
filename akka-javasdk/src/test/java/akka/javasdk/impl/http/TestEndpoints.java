@@ -254,4 +254,17 @@ public class TestEndpoints {
     @Get("/wildcard/**/not/last")
     public void invalidWildcard(String id) {}
   }
+
+  @HttpEndpoint("/")
+  public static class WithRootPrefix {
+
+    @Get("/")
+    public void root() {}
+
+    @Get("a")
+    public void a() {}
+
+    @Get("/b")
+    public void b() {}
+  }
 }
