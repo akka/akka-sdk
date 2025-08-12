@@ -1,10 +1,12 @@
 package com.example.application;
 
+import static java.time.Duration.ofSeconds;
+
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.StepName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
-import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,49 +34,46 @@ public class ActivityAgentManager extends Workflow<ActivityAgentManager.State> {
   public Effect<Done> start(String query) { // <4>
     return effects()
       .updateState(new State(query, ""))
-      .transitionTo("activities")
+      .transitionTo(ActivityAgentManager::suggestActivities)
       .thenReply(Done.getInstance());
   }
 
   public ReadOnlyEffect<String> getAnswer() { // <5>
     if (currentState() == null || currentState().answer.isEmpty()) {
+      String workflowId = commandContext().workflowId();
+      // prettier-ignore
       return effects()
-        .error(
-          "Workflow '" + commandContext().workflowId() + "' not started, or not completed"
-        );
+        .error("Workflow '" + workflowId + "' not started, or not completed");
     } else {
       return effects().reply(currentState().answer);
     }
   }
 
   @Override
-  public WorkflowDef<State> definition() { // <6>
-    return workflow()
-      .addStep(suggestActivities())
-      .addStep(error())
-      .defaultStepRecoverStrategy(maxRetries(2).failoverTo("error"));
+  public WorkflowSettings settings() { // <6>
+    return WorkflowSettings.builder()
+      .stepTimeout(ActivityAgentManager::suggestActivities, ofSeconds(60))
+      .defaultStepRecovery(maxRetries(2).failoverTo(ActivityAgentManager::error))
+      .build();
   }
 
-  private Step suggestActivities() { // <7>
-    return step("activities")
-      .call(() ->
-        componentClient
-          .forAgent()
-          .inSession(sessionId())
-          .method(ActivityAgent::query) // <8>
-          .invoke(currentState().userQuery))
-      .andThen(String.class, suggestion -> {
-        logger.info("Activities: {}", suggestion);
+  @StepName("activities")
+  private StepEffect suggestActivities() { // <7>
+    var suggestion = componentClient
+      .forAgent()
+      .inSession(sessionId())
+      .method(ActivityAgent::query) // <8>
+      .invoke(currentState().userQuery);
 
-        return effects()
-          .updateState(currentState().withAnswer(suggestion)) // <9>
-          .end();
-      })
-      .timeout(Duration.ofSeconds(60));
+    logger.info("Activities: {}", suggestion);
+
+    return stepEffects()
+      .updateState(currentState().withAnswer(suggestion)) // <9>
+      .thenEnd();
   }
 
-  private Step error() {
-    return step("error").call(Done::getInstance).andThen(() -> effects().end());
+  private StepEffect error() {
+    return stepEffects().thenEnd();
   }
 
   private String sessionId() { // <10>

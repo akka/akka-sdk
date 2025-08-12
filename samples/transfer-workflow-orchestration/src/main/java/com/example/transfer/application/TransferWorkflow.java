@@ -9,10 +9,10 @@ import static java.time.Duration.ofHours;
 
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.StepName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import akka.javasdk.workflow.WorkflowContext;
-import com.example.transfer.application.FraudDetectionService.FraudDetectionResult;
 import com.example.transfer.domain.Transfer;
 import com.example.transfer.domain.TransferState;
 
@@ -43,81 +43,63 @@ public class TransferWorkflow extends Workflow<TransferState> {
     this.transferId = workflowContext.workflowId();
   }
 
-  @Override
-  public WorkflowDef<TransferState> definition() {
-    return workflow()
-      .addStep(detectFraudsStep())
-      .addStep(waitForAcceptanceStep())
-      .addStep(withdrawStep())
-      .addStep(depositStep());
-  }
-
-  private Step detectFraudsStep() {
-    return step("detect-frauds")
-      .call(() -> fraudDetectionService.check(currentState().transfer()))
-      .andThen(
-        FraudDetectionResult.class,
-        result ->
-          switch (result) {
-            case ACCEPTED -> effects().transitionTo("withdraw");
-            case MANUAL_ACCEPTANCE_REQUIRED -> effects()
-              .updateState(currentState().withStatus(WAITING_FOR_ACCEPTANCE))
-              .transitionTo("wait-for-acceptance");
-          }
-      );
-  }
-
-  private Step withdrawStep() {
-    return step("withdraw")
-      .call(() -> {
-        var fromWalletId = currentState().transfer().from();
-        var amount = currentState().transfer().amount();
-        walletService.withdraw(fromWalletId, amount);
-      })
-      .andThen(
-        () ->
-          effects()
-            .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
-            .transitionTo("deposit")
-      );
-  }
-
-  private Step depositStep() {
-    return step("deposit")
-      .call(() -> {
-        var to = currentState().transfer().to();
-        var amount = currentState().transfer().amount();
-        walletService.deposit(to, amount);
-      })
-      .andThen(() -> effects().updateState(currentState().withStatus(COMPLETED)).end());
-  }
-
   public Effect<String> start(Transfer transfer) {
     return effects()
       .updateState(TransferState.create(transferId, transfer))
-      .transitionTo("detect-frauds")
+      .transitionTo(TransferWorkflow::detectFraudsStep)
       .thenReply("transfer started");
   }
 
-  private Step waitForAcceptanceStep() {
-    return step("wait-for-acceptance")
-      .call(() -> {
-        timers()
-          .createSingleTimer(
-            "acceptanceTimeout-" + transferId,
-            ofHours(8),
-            componentClient
-              .forWorkflow(transferId)
-              .method(TransferWorkflow::acceptanceTimeout)
-              .deferred()
-          );
-      })
-      .andThen(() -> effects().pause());
+  @StepName("detect-frauds")
+  private StepEffect detectFraudsStep() {
+    var result = fraudDetectionService.check(currentState().transfer());
+
+    return switch (result) {
+      case ACCEPTED -> stepEffects().thenTransitionTo(TransferWorkflow::withdrawStep);
+      case MANUAL_ACCEPTANCE_REQUIRED -> stepEffects()
+        .updateState(currentState().withStatus(WAITING_FOR_ACCEPTANCE))
+        .thenTransitionTo(TransferWorkflow::waitForAcceptanceStep);
+    };
+  }
+
+  @StepName("wait-for-acceptance")
+  private StepEffect waitForAcceptanceStep() {
+    timers()
+      .createSingleTimer(
+        "acceptanceTimeout-" + transferId,
+        ofHours(8),
+        componentClient
+          .forWorkflow(transferId)
+          .method(TransferWorkflow::acceptanceTimeout)
+          .deferred()
+      );
+
+    return stepEffects().thenPause();
+  }
+
+  @StepName("withdraw")
+  private StepEffect withdrawStep() {
+    var fromWalletId = currentState().transfer().from();
+    var amount = currentState().transfer().amount();
+    walletService.withdraw(fromWalletId, amount);
+
+    return stepEffects()
+      .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
+      .thenTransitionTo(TransferWorkflow::depositStep);
+  }
+
+  @StepName("deposit")
+  private StepEffect depositStep() {
+    var to = currentState().transfer().to();
+    var amount = currentState().transfer().amount();
+    walletService.deposit(to, amount);
+
+    return stepEffects().updateState(currentState().withStatus(COMPLETED)).thenEnd();
   }
 
   public Effect<Done> accept() {
     if (currentState().status().equals(WAITING_FOR_ACCEPTANCE)) {
-      return effects().transitionTo("withdraw").thenReply(done());
+      return effects().transitionTo(TransferWorkflow::withdrawStep).thenReply(done());
     } else {
       return effects()
         .error("Acceptance not allowed in current state: " + currentState().status());

@@ -12,6 +12,7 @@ import java.util.Optional
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.Executor
 
+import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -465,6 +466,7 @@ private final class Sdk(
 
   // we need a method instead of function in order to have type params
   // to late use in Reflect.workflowStateType
+  @nowarn("msg=deprecated")
   private def workflowInstanceFactory[S, W <: Workflow[S]](
       componentId: String,
       factoryContext: SpiWorkflow.FactoryContext,

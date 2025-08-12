@@ -9,17 +9,19 @@ import java.util.Optional;
 
 @ComponentId("hierarchy-workflow")
 public class TextWorkflow extends AbstractTextKvWorkflow {
-  @Override
-  public WorkflowDef<State> definition() {
-    return workflow()
-        .addStep(
-            step("dummy-step")
-                .call(() -> "step completed")
-                .andThen(String.class, result -> effects().end()));
-  }
 
   public Effect<String> setText(String text) {
-    return effects().updateState(new State(text)).transitionTo("dummy-step").thenReply("ok");
+    // this Workflow will call a series of steps defined in
+    // the concrete class, its parent and an interface
+    // each call appends a text to the original message
+    return effects().transitionTo(TextWorkflow::dummyStep).withInput(text).thenReply("ok");
+  }
+
+  private StepEffect dummyStep(String text) {
+    // step defined in parent should be callable
+    return stepEffects()
+        .thenTransitionTo(TextWorkflow::dummyStepInParent)
+        .withInput(text + "[concrete]");
   }
 
   public Effect<Optional<String>> getText() {
