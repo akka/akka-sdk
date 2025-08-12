@@ -9,6 +9,7 @@ import akka.javasdk.CommandException;
 import akka.javasdk.Metadata;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.impl.client.MethodRefResolver;
+import akka.javasdk.impl.workflow.WorkflowDescriptor;
 import akka.javasdk.impl.workflow.WorkflowEffects;
 import akka.javasdk.timer.TimerScheduler;
 import akka.javasdk.workflow.Workflow.RecoverStrategy.MaxRetries;
@@ -829,7 +830,8 @@ public abstract class Workflow<S> {
     public <W> WorkflowSettingsBuilder stepTimeout(
         akka.japi.function.Function<W, StepEffect> lambda, Duration timeout) {
       var method = MethodRefResolver.resolveMethodRef(lambda);
-      return addStepTimeout(method.getName(), timeout);
+      var stepName = WorkflowDescriptor.stepMethodName(method);
+      return addStepTimeout(stepName, timeout);
     }
 
     /**
@@ -841,7 +843,8 @@ public abstract class Workflow<S> {
     public <W, I> WorkflowSettingsBuilder stepTimeout(
         akka.japi.function.Function2<W, I, StepEffect> lambda, Duration timeout) {
       var method = MethodRefResolver.resolveMethodRef(lambda);
-      return addStepTimeout(method.getName(), timeout);
+      var stepName = WorkflowDescriptor.stepMethodName(method);
+      return addStepTimeout(stepName, timeout);
     }
 
     /**
@@ -853,7 +856,8 @@ public abstract class Workflow<S> {
     public <W> WorkflowSettingsBuilder stepRecovery(
         akka.japi.function.Function<W, StepEffect> lambda, RecoverStrategy<?> recovery) {
       var method = MethodRefResolver.resolveMethodRef(lambda);
-      return addStepRecovery(method.getName(), recovery);
+      var stepName = WorkflowDescriptor.stepMethodName(method);
+      return addStepRecovery(stepName, recovery);
     }
 
     /**
@@ -865,7 +869,8 @@ public abstract class Workflow<S> {
     public <W, I> WorkflowSettingsBuilder stepRecovery(
         akka.japi.function.Function2<W, I, StepEffect> lambda, RecoverStrategy<?> recovery) {
       var method = MethodRefResolver.resolveMethodRef(lambda);
-      return addStepRecovery(method.getName(), recovery);
+      var stepName = WorkflowDescriptor.stepMethodName(method);
+      return addStepRecovery(stepName, recovery);
     }
 
     private WorkflowSettingsBuilder addStepTimeout(String stepName, Duration timeout) {
@@ -1108,7 +1113,8 @@ public abstract class Workflow<S> {
       public <W> RecoverStrategy<Void> failoverTo(
           akka.japi.function.Function<W, StepEffect> lambda) {
         var method = MethodRefResolver.resolveMethodRef(lambda);
-        return new RecoverStrategy<>(maxRetries, method.getName(), Optional.<Void>empty());
+        var stepName = WorkflowDescriptor.stepMethodName(method);
+        return new RecoverStrategy<>(maxRetries, stepName, Optional.<Void>empty());
       }
 
       /**
@@ -1130,7 +1136,8 @@ public abstract class Workflow<S> {
       public <W, I> RecoveryInput<I> failoverTo(
           akka.japi.function.Function2<W, I, StepEffect> lambda) {
         var method = MethodRefResolver.resolveMethodRef(lambda);
-        return new RecoveryInput<>(maxRetries, method.getName());
+        var stepName = WorkflowDescriptor.stepMethodName(method);
+        return new RecoveryInput<>(maxRetries, stepName);
       }
     }
 
@@ -1160,7 +1167,8 @@ public abstract class Workflow<S> {
     public static <W> RecoverStrategy<Void> failoverTo(
         akka.japi.function.Function<W, StepEffect> lambda) {
       var method = MethodRefResolver.resolveMethodRef(lambda);
-      return new RecoverStrategy<>(0, method.getName(), Optional.<Void>empty());
+      var stepName = WorkflowDescriptor.stepMethodName(method);
+      return new RecoverStrategy<>(0, stepName, Optional.<Void>empty());
     }
 
     /**
@@ -1183,7 +1191,8 @@ public abstract class Workflow<S> {
     public static <W, I> RecoveryInput<I> failoverTo(
         akka.japi.function.Function2<W, I, StepEffect> lambda) {
       var method = MethodRefResolver.resolveMethodRef(lambda);
-      return new RecoveryInput<>(0, method.getName());
+      var stepName = WorkflowDescriptor.stepMethodName(method);
+      return new RecoveryInput<>(0, stepName);
     }
   }
 }
