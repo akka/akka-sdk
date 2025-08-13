@@ -274,7 +274,7 @@ private object ComponentLocator {
   case class LocatedClasses(components: Seq[Class[_]], service: Option[Class[_]])
 
   def locateUserComponents(system: ActorSystem[_]): LocatedClasses = {
-    val kalixComponentTypeAndBaseClasses: Map[String, Class[_]] =
+    val akkaComponentTypeAndBaseClasses: Map[String, Class[_]] =
       Map(
         ComponentType.HttpEndpoint -> classOf[AnyRef],
         ComponentType.GrpcEndpoint -> classOf[AnyRef],
@@ -296,10 +296,10 @@ private object ComponentLocator {
     val descriptorConfig = ConfigFactory.load(ComponentDescriptorResourcePath)
     if (!descriptorConfig.hasPath(DescriptorComponentBasePath))
       throw new IllegalStateException(
-        "It looks like your project needs to be recompiled. Run `mvn clean compile` and try again.")
+        "No components found. If you have any, it looks like your project needs to be recompiled. Run `mvn clean compile` and try again.")
     val componentConfig = descriptorConfig.getConfig(DescriptorComponentBasePath)
 
-    val components: Seq[Class[_]] = kalixComponentTypeAndBaseClasses.flatMap {
+    val components: Seq[Class[_]] = akkaComponentTypeAndBaseClasses.flatMap {
       case (componentTypeKey, componentTypeClass) =>
         if (componentConfig.hasPath(componentTypeKey)) {
           componentConfig.getStringList(componentTypeKey).asScala.map { className =>
