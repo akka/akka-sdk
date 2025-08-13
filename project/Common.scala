@@ -114,9 +114,8 @@ object CommonSettings extends AutoPlugin {
     val askAkkaLangchainVersion = langchainDepRegex.findFirstMatchIn(askAkkaAgentPomContents).get.group(1)
     if (Dependencies.Langchain4jVersion != askAkkaLangchainVersion)
       throw new IllegalStateException(
-        s"SDK depends on langchain [${Dependencies.Langchain4jVersion}], but ask-akka-agent is on different version [$askAkkaLangchainVersion]. " + 
-        s"Update ${askAkkaAgentPom} and align the version with the SDK or sample will be broken."
-      )
+        s"SDK depends on langchain [${Dependencies.Langchain4jVersion}], but ask-akka-agent is on different version [$askAkkaLangchainVersion]. " +
+        s"Update ${askAkkaAgentPom} and align the version with the SDK or sample will be broken.")
   }
 
   // Note: keep aligned with parent pom
