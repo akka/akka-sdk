@@ -100,7 +100,7 @@ object Dependencies {
     jacksonJsr310,
     jacksonParameterNames,
     jacksonScala,
-    langchain4j % Provided)
+    langchain4j)
 
   // Important: be careful when adding dependencies here, unless provided, runtime or test they will also be packaged in the user project
   //            binaries/artifacts unless explicitly excluded in the akka-javasdk-parent assembly descriptor
