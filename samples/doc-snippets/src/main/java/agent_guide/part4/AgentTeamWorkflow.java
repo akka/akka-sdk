@@ -1,13 +1,15 @@
 package agent_guide.part4;
 
+import static java.time.Duration.ofSeconds;
+
 import agent_guide.part2.ActivityAgent;
 import agent_guide.part3.WeatherAgent;
 // tag::all[]
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.StepName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
-import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,70 +35,62 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
   public Effect<Done> start(Request request) {
     return effects()
       .updateState(new State(request.userId(), request.message(), "")) // <1>
-      .transitionTo("weather") // <2>
+      .transitionTo(AgentTeamWorkflow::askWeather) // <2>
       .thenReply(Done.getInstance());
   }
 
   public Effect<String> getAnswer() {
     if (currentState() == null || currentState().finalAnswer.isEmpty()) {
+      String workflowId = commandContext().workflowId();
+      // prettier-ignore
       return effects()
-        .error(
-          "Workflow '" + commandContext().workflowId() + "' not started, or not completed"
-        );
+        .error("Workflow '" + workflowId + "' not started, or not completed");
     } else {
       return effects().reply(currentState().finalAnswer);
     }
   }
 
   @Override
-  public WorkflowDef<State> definition() {
-    return workflow()
-      .addStep(askWeather())
-      .addStep(suggestActivities())
-      .addStep(error())
-      .defaultStepRecoverStrategy(maxRetries(2).failoverTo("error"));
+  public WorkflowSettings settings() {
+    return WorkflowSettings.builder()
+      .stepTimeout(AgentTeamWorkflow::askWeather, ofSeconds(60))
+      .stepTimeout(AgentTeamWorkflow::suggestActivities, ofSeconds(60))
+      .defaultStepRecovery(maxRetries(2).failoverTo(AgentTeamWorkflow::error))
+      .build();
   }
 
-  private Step askWeather() { // <3>
-    return step("weather")
-      .call(
-        () ->
-          componentClient
-            .forAgent()
-            .inSession(sessionId())
-            .method(WeatherAgent::query)
-            .invoke(currentState().userQuery)
-      )
-      .andThen(String.class, forecast -> {
-        logger.info("Weather forecast: {}", forecast);
+  @StepName("weather")
+  private StepEffect askWeather() { // <3>
+    var forecast = componentClient
+      .forAgent()
+      .inSession(sessionId())
+      .method(WeatherAgent::query)
+      .invoke(currentState().userQuery);
 
-        return effects().transitionTo("activities"); // <4>
-      })
-      .timeout(Duration.ofSeconds(60));
+    logger.info("Weather forecast: {}", forecast);
+
+    // prettier-ignore
+    return stepEffects()
+      .thenTransitionTo(AgentTeamWorkflow::suggestActivities); // <4>
   }
 
-  private Step suggestActivities() {
-    return step("activities")
-      .call(() ->
-        componentClient
-          .forAgent()
-          .inSession(sessionId())
-          .method(ActivityAgent::query) // <5>
-          .invoke(
-            new ActivityAgent.Request(currentState().userId(), currentState().userQuery())
-          ))
-      .andThen(String.class, suggestion -> {
-        logger.info("Activities: {}", suggestion);
+  @StepName("activities")
+  private StepEffect suggestActivities() {
+    var suggestion = componentClient
+      .forAgent()
+      .inSession(sessionId())
+      .method(ActivityAgent::query) // <5>
+      .invoke(new ActivityAgent.Request(currentState().userId(), currentState().userQuery()));
 
-        return effects()
-          .updateState(currentState().withAnswer(suggestion)) // <6>
-          .end();
-      })
-      .timeout(Duration.ofSeconds(60));
+    logger.info("Activities: {}", suggestion);
+
+    return stepEffects()
+      .updateState(currentState().withAnswer(suggestion)) // <6>
+      .thenEnd();
   }
 
-  private Step error() {
-    return step("error").call(() -> null).andThen(() -> effects().end());
+  private StepEffect error() {
+    return stepEffects().thenEnd();
   }
 
   private String sessionId() {

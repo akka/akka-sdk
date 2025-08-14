@@ -1,6 +1,7 @@
 package com.example.transfer.application;
 
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.StepName;
 import akka.javasdk.workflow.Workflow;
 import com.example.transfer.domain.Transfer;
 
@@ -19,27 +20,23 @@ public class BasicTransferWorkflow extends Workflow<Transfer> {
     this.accountService = walletService;
   }
 
-  @Override
-  public WorkflowDef<Transfer> definition() {
-    return workflow().addStep(withdrawStep()).addStep(depositStep());
+  @StepName("withdraw")
+  private StepEffect withdrawStep() {
+    accountService.withdraw(currentState().from(), currentState().amount());
+
+    return stepEffects().thenTransitionTo(BasicTransferWorkflow::depositStep);
   }
 
-  private Step withdrawStep() {
-    return step("withdraw")
-      .call(() -> accountService.withdraw(currentState().from(), currentState().amount()))
-      .andThen(() -> effects().transitionTo("deposit"));
-  }
-
-  private Step depositStep() {
-    return step("deposit")
-      .call(() -> accountService.deposit(currentState().to(), currentState().amount()))
-      .andThen(() -> effects().end());
+  @StepName("deposit")
+  private StepEffect depositStep() {
+    accountService.deposit(currentState().to(), currentState().amount());
+    return stepEffects().thenEnd();
   }
 
   public Effect<String> start(Transfer transfer) {
     return effects()
       .updateState(transfer)
-      .transitionTo("withdraw")
+      .transitionTo(BasicTransferWorkflow::withdrawStep)
       .thenReply("transfer started");
   }
 }

@@ -23,7 +23,6 @@ import akka.javasdk.impl.telemetry.Telemetry.metadataGetter
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiMetadataEntry
 import io.opentelemetry.api.trace.Span
-import io.opentelemetry.api.trace.SpanContext
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.{ Context => OtelContext }
 
@@ -43,18 +42,11 @@ private[javasdk] class MetadataImpl private (val entries: Seq[SpiMetadataEntry])
       case entry if key.equalsIgnoreCase(entry.key) => entry.value
     }
 
-  def withTracing(spanContext: SpanContext): Metadata = {
-    withTracing(Span.wrap(spanContext))
-  }
-
-  def withTracing(span: Span): MetadataImpl = {
-    // remove parent trace parent and trace state from the metadata so they can be re-injected with current span context
+  // FIXME(tracing): have context propagators provided by the runtime
+  def withTelemetryContext(context: OtelContext): MetadataImpl = {
     val builder = Vector.newBuilder[SpiMetadataEntry]
-    builder.addAll(
-      entries.iterator.filter(m => m.key != Telemetry.TRACE_PARENT_KEY && m.key != Telemetry.TRACE_STATE_KEY))
-    W3CTraceContextPropagator
-      .getInstance()
-      .inject(io.opentelemetry.context.Context.current().`with`(span), builder, Telemetry.builderSetter)
+    builder.addAll(entries)
+    W3CTraceContextPropagator.getInstance.inject(context, builder, Telemetry.builderSetter)
     MetadataImpl.of(builder.result())
   }
 

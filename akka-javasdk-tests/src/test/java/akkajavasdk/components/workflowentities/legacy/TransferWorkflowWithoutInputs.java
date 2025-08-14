@@ -2,14 +2,19 @@
  * Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akkajavasdk.components.workflowentities;
+package akkajavasdk.components.workflowentities.legacy;
 
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import akkajavasdk.components.actions.echo.Message;
+import akkajavasdk.components.workflowentities.Transfer;
+import akkajavasdk.components.workflowentities.TransferState;
+import akkajavasdk.components.workflowentities.WalletEntity;
 
-@ComponentId("transfer-workflow-without-inputs")
+// This is a compiler only test. Its logic is not being exercised.
+// TODO: can be removed after deprecation cycle of Step API
+@ComponentId("transfer-workflow-without-inputs-legacy")
 public class TransferWorkflowWithoutInputs extends Workflow<TransferState> {
 
   private final String withdrawStepName = "withdraw";
@@ -17,7 +22,7 @@ public class TransferWorkflowWithoutInputs extends Workflow<TransferState> {
   private final String depositStepName = "deposit";
   private final String depositAsyncStepName = "deposit-async";
 
-  private ComponentClient componentClient;
+  private final ComponentClient componentClient;
 
   public TransferWorkflowWithoutInputs(ComponentClient componentClient) {
     this.componentClient = componentClient;

@@ -4,7 +4,6 @@
 
 package akka.javasdk.impl.workflow
 
-import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.ListHasAsScala
@@ -31,23 +30,9 @@ import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.javasdk.impl.telemetry.WorkflowCategory
 import akka.javasdk.impl.timer.TimerSchedulerImpl
-import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.CommandResult
-import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.TransitionalResult
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.Delete
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.End
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.ErrorEffectImpl
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.NoPersistence
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.NoReply
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.NoTransition
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.Pause
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.Persistence
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.ReplyValue
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.StepTransition
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.Transition
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.TransitionalEffectImpl
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.UpdateState
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
+import akka.javasdk.workflow.Workflow.LegacyWorkflowTimeout
 import akka.javasdk.workflow.Workflow.{ RecoverStrategy => SdkRecoverStrategy }
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi.BytesPayload
@@ -55,10 +40,14 @@ import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiEntity
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiWorkflow
+import akka.runtime.sdk.spi.SpiWorkflow.StepCallReply
+import akka.runtime.sdk.spi.SpiWorkflow.StepCommand
+import akka.runtime.sdk.spi.SpiWorkflow.StepResult
 import akka.runtime.sdk.spi.TimerClient
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.StatusCode
 import io.opentelemetry.api.trace.Tracer
+import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
@@ -90,7 +79,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
   override def configuration: SpiWorkflow.WorkflowConfig = {
     val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, None, tracerFactory)
     val workflow = instanceFactory(workflowContext)
-    val definition = workflow.definition()
+    val workflowConfig = workflow.settings()
 
     def toRecovery(sdkRecoverStrategy: SdkRecoverStrategy[_]): SpiWorkflow.RecoverStrategy = {
 
@@ -101,111 +90,46 @@ class WorkflowImpl[S, W <: Workflow[S]](
     }
 
     val stepConfigs =
-      definition.getStepConfigs.asScala.map { config =>
-        val stepTimeout = config.timeout.toScala.map(_.toScala)
-        val failoverRecoverStrategy = config.recoverStrategy.toScala.map(toRecovery)
-        (config.stepName, new SpiWorkflow.StepConfig(config.stepName, stepTimeout, failoverRecoverStrategy))
+      workflowConfig.stepSettings.asScala.map { stepSettings =>
+        val stepTimeout = stepSettings.timeout.toScala.map(_.toScala)
+        val failoverRecoverStrategy = stepSettings.recovery.toScala.map(toRecovery)
+        (stepSettings.stepName, new SpiWorkflow.StepConfig(stepSettings.stepName, stepTimeout, failoverRecoverStrategy))
       }.toMap
 
-    val defaultStepRecoverStrategy = definition.getStepRecoverStrategy.toScala.map(toRecovery)
+    val (workflowTimeout, workflowRecoverStrategy) =
+      workflowConfig match {
+        case c: LegacyWorkflowTimeout =>
+          (c.workflowTimeout.toScala.map(_.toScala), c.workflowRecoverStrategy().toScala.map(toRecovery))
+        case _ => (None, None)
+      }
 
-    val failoverRecoverStrategy = definition.getFailoverStepName.toScala.map(stepName =>
-      //when failoverStepName exists, maxRetries must exist
-      new SpiWorkflow.RecoverStrategy(
-        definition.getFailoverMaxRetries.toScala.get.maxRetries,
-        new SpiWorkflow.StepTransition(stepName, definition.getFailoverStepInput.toScala.map(serializer.toBytes))))
-
-    val stepTimeout = definition.getStepTimeout.toScala.map(_.toScala)
+    val defaultStepTimeout = workflowConfig.defaultStepTimeout().toScala.map(_.toScala)
+    val defaultStepRecoverStrategy = workflowConfig.defaultStepRecoverStrategy.toScala.map(toRecovery)
 
     new SpiWorkflow.WorkflowConfig(
-      workflowTimeout = definition.getWorkflowTimeout.toScala.map(_.toScala),
-      failoverRecoverStrategy = failoverRecoverStrategy,
-      defaultStepTimeout = stepTimeout,
+      workflowTimeout = workflowTimeout,
+      failoverRecoverStrategy = workflowRecoverStrategy,
+      defaultStepTimeout = defaultStepTimeout,
       defaultStepRecoverStrategy = defaultStepRecoverStrategy,
       stepConfigs = stepConfigs)
   }
 
-  private def commandContext(commandName: String, span: Option[Span], metadata: Metadata) =
-    new CommandContextImpl(workflowId, commandName, regionInfo.selfRegion, metadata, span, tracerFactory)
-
-  private def toSpiTransition(transition: Transition): SpiWorkflow.Transition =
-    transition match {
-      case StepTransition(stepName, input) =>
-        new SpiWorkflow.StepTransition(stepName, input.map(serializer.toBytes))
-      case Pause        => SpiWorkflow.Pause
-      case NoTransition => SpiWorkflow.NoTransition
-      case End          => SpiWorkflow.End
-      case Delete       => SpiWorkflow.Delete
-    }
-
-  private def handleState(persistence: Persistence[Any]): SpiWorkflow.Persistence =
-    persistence match {
-      case UpdateState(newState) => new SpiWorkflow.UpdateState(serializer.toBytes(newState))
-      case NoPersistence         => SpiWorkflow.NoPersistence
-    }
-
-  @nowarn("msg=deprecated") // DeleteState deprecated but must be in here
-  private def toSpiCommandEffect(effect: Workflow.Effect[_]): SpiWorkflow.CommandEffect = {
-
-    effect match {
-      case error: ErrorEffectImpl[_] =>
-        val serializedException = error.exception.map(serializer.toBytes)
-        new SpiWorkflow.ErrorEffect(new SpiEntity.Error(error.description, serializedException))
-
-      case WorkflowEffectImpl(persistence, transition, reply) =>
-        val (replyBytes, spiMetadata) =
-          reply match {
-            case ReplyValue(value, metadata) => (serializer.toBytes(value), MetadataImpl.toSpi(metadata))
-            // FIXME: WorkflowEffectImpl never contain a NoReply
-            case NoReply => (BytesPayload.empty, SpiMetadata.empty)
-          }
-
-        val spiTransition = toSpiTransition(transition)
-
-        handleState(persistence) match {
-          case upt: SpiWorkflow.UpdateState =>
-            new SpiWorkflow.CommandTransitionalEffect(upt, spiTransition, replyBytes, spiMetadata)
-
-          case SpiWorkflow.NoPersistence =>
-            // no persistence and no transition, is a reply only effect
-            if (spiTransition == SpiWorkflow.NoTransition)
-              new SpiWorkflow.ReadOnlyEffect(replyBytes, spiMetadata)
-            else
-              new SpiWorkflow.CommandTransitionalEffect(
-                SpiWorkflow.NoPersistence,
-                spiTransition,
-                replyBytes,
-                spiMetadata)
-
-          case SpiWorkflow.DeleteState =>
-            // deprecated
-            throw new IllegalArgumentException("State deletion deprecated")
-
-        }
-
-      case TransitionalEffectImpl(persistence, transition) =>
-        // Adding for matching completeness can't happen. Typed API blocks this case.
-        throw new IllegalArgumentException("Received transitional effect while processing a command")
-    }
-  }
-
-  private def toSpiTransitionalEffect(effect: Workflow.Effect.TransitionalEffect[_]) =
-    effect match {
-      case trEff: TransitionalEffectImpl[_, _] =>
-        new SpiWorkflow.TransitionalOnlyEffect(handleState(trEff.persistence), toSpiTransition(trEff.transition))
-    }
+  private def commandContext(commandName: String, telemetryContext: Option[OtelContext], metadata: Metadata) =
+    new CommandContextImpl(workflowId, commandName, regionInfo.selfRegion, metadata, telemetryContext, tracerFactory)
 
   override def handleCommand(
       userState: Option[SpiWorkflow.State],
       command: SpiEntity.Command): Future[SpiWorkflow.CommandEffect] = {
 
+    // FIXME(tracing): move this tracing to runtime
     val span: Option[Span] =
       traceInstrumentation.buildEntityCommandSpan(ComponentType.Workflow, componentId, workflowId, command)
+    val telemetryContext = span.map(OtelContext.root.`with`)
     span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
-    val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, span, tracerFactory)
+    val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, telemetryContext, tracerFactory)
 
     val metadata = MetadataImpl.of(command.metadata)
-    val context = commandContext(command.name, span, metadata)
+    val context = commandContext(command.name, telemetryContext, metadata)
 
     val timerScheduler =
       new TimerSchedulerImpl(timerClient, context.componentCallMetadata)
@@ -214,7 +138,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
     val cmd = command.payload.getOrElse(BytesPayload.empty)
 
     try {
-      val CommandResult(effect) = router.handleCommand(
+      val effect = router.handleCommand(
         userState = userState,
         commandName = command.name,
         command = cmd,
@@ -222,14 +146,15 @@ class WorkflowImpl[S, W <: Workflow[S]](
         timerScheduler = timerScheduler,
         deleted = command.isDeleted,
         workflowContext)
-      Future.successful(toSpiCommandEffect(effect))
+      Future.successful(effect)
     } catch {
       case e: CommandException =>
-        Future.successful(toSpiCommandEffect(WorkflowEffectImpl[Any]().error(e)))
+        val serializedException = serializer.toBytes(e)
+        Future.successful(new SpiWorkflow.ErrorEffect(new SpiEntity.Error(e.getMessage, Some(serializedException))))
       case e: HandlerNotFoundException =>
         throw WorkflowException(workflowId, command.name, e.getMessage, Some(e))
       case BadRequestException(msg) =>
-        Future.successful(toSpiCommandEffect(WorkflowEffectImpl[Any]().error(msg)))
+        Future.successful(new SpiWorkflow.ErrorEffect(new SpiEntity.Error(msg, None)))
       case e: WorkflowException => throw e
       case NonFatal(error) =>
         throw WorkflowException(workflowId, command.name, s"Unexpected failure: $error", Some(error))
@@ -242,11 +167,10 @@ class WorkflowImpl[S, W <: Workflow[S]](
 
   }
 
-  override def executeStep(
-      userState: Option[BytesPayload],
-      stepCommand: SpiWorkflow.StepCommand): Future[BytesPayload] = {
+  override def invokeStep(userState: Option[BytesPayload], stepCommand: StepCommand): Future[StepResult] = {
 
     val stepName = stepCommand.stepName
+    // FIXME(tracing): move this tracing to runtime
     val span: Option[Span] =
       traceInstrumentation.buildEntityCommandSpan(
         ComponentType.Workflow,
@@ -254,10 +178,11 @@ class WorkflowImpl[S, W <: Workflow[S]](
         workflowId,
         stepName,
         stepCommand.metadata)
+    val telemetryContext = span.map(OtelContext.root.`with`)
     span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
-    val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, span, tracerFactory)
+    val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, telemetryContext, tracerFactory)
 
-    val context = commandContext(stepName, span, MetadataImpl.of(stepCommand.metadata))
+    val context = commandContext(stepName, telemetryContext, MetadataImpl.of(stepCommand.metadata))
     val timerScheduler =
       new TimerSchedulerImpl(timerClient, context.componentCallMetadata)
 
@@ -270,6 +195,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
         commandContext = context,
         executionContext = sdkExecutionContext,
         workflowContext)
+
       handleStep.onComplete {
         case Failure(exception) =>
           span.foreach { s =>
@@ -280,7 +206,9 @@ class WorkflowImpl[S, W <: Workflow[S]](
         case Success(_) =>
           span.foreach(_.end())
       }(sdkExecutionContext)
+
       handleStep
+
     } catch {
       case NonFatal(ex) =>
         val message = s"unexpected exception [${ex.getMessage}] while executing step [$stepName]"
@@ -299,7 +227,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
       stepName: String,
       result: Option[BytesPayload],
       userState: Option[BytesPayload]): Future[SpiWorkflow.TransitionalOnlyEffect] = {
-    val TransitionalResult(effect) =
+    val effect =
       try {
         val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, None, tracerFactory)
         router.getNextStep(stepName, result.get, userState, workflowContext)
@@ -310,7 +238,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
             s"unexpected exception [${ex.getMessage}] while executing transition for step [$stepName]",
             Some(ex))
       }
-    Future.successful(toSpiTransitionalEffect(effect))
+    Future.successful(effect)
   }
 
   override def executeStep(
@@ -319,6 +247,12 @@ class WorkflowImpl[S, W <: Workflow[S]](
       userState: Option[BytesPayload]): Future[BytesPayload] = {
     executeStep(userState, new SpiWorkflow.StepCommand(stepName, input, SpiMetadata.empty))
   }
+
+  override def executeStep(userState: Option[BytesPayload], stepCommand: StepCommand): Future[BytesPayload] =
+    invokeStep(userState, stepCommand).map {
+      case stepReply: StepCallReply => stepReply.reply
+      case _                        => throw new IllegalArgumentException(s"Unexpected result from step [$stepCommand]")
+    }(sdkExecutionContext)
 }
 
 /**
@@ -330,13 +264,13 @@ private[akka] final class CommandContextImpl(
     override val commandName: String,
     override val selfRegion: String,
     override val metadata: Metadata,
-    span: Option[Span],
+    telemetryContext: Option[OtelContext],
     tracerFactory: () => Tracer)
     extends AbstractContext
     with CommandContext {
 
   override def tracing(): Tracing =
-    new SpanTracingImpl(span, tracerFactory)
+    new SpanTracingImpl(telemetryContext, tracerFactory)
 
   override def commandId(): Long = 0
 }
@@ -348,10 +282,10 @@ private[akka] final class CommandContextImpl(
 private[akka] final class WorkflowContextImpl(
     override val workflowId: String,
     override val selfRegion: String,
-    val span: Option[Span],
+    val telemetryContext: Option[OtelContext],
     tracerFactory: () => Tracer)
     extends AbstractContext
     with WorkflowContext {
 
-  override def tracing(): Tracing = new SpanTracingImpl(span, tracerFactory)
+  override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
 }

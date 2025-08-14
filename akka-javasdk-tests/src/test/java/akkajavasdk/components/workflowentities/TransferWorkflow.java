@@ -9,11 +9,11 @@ import static akka.Done.done;
 import akka.Done;
 import akka.javasdk.CommandException;
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.StepName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import akkajavasdk.components.MyException;
 import akkajavasdk.components.actions.echo.Message;
-import java.time.Duration;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,70 +22,15 @@ import org.slf4j.LoggerFactory;
 public class TransferWorkflow extends Workflow<TransferState> {
 
   private final String withdrawStepName = "withdraw";
-  private final String depositStepName = "deposit";
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
-  private ComponentClient componentClient;
+  private final ComponentClient componentClient;
 
-  private boolean constructedOnVt = Thread.currentThread().isVirtual();
+  private final boolean constructedOnVt = Thread.currentThread().isVirtual();
 
   public TransferWorkflow(ComponentClient componentClient) {
     this.componentClient = componentClient;
-  }
-
-  @Override
-  public WorkflowDef<TransferState> definition() {
-    var withdraw =
-        step(withdrawStepName)
-            .call(
-                Withdraw.class,
-                cmd ->
-                    componentClient
-                        .forKeyValueEntity(cmd.from)
-                        .method(WalletEntity::withdraw)
-                        .invoke(cmd.amount))
-            .andThen(
-                () -> {
-                  var state = currentState().withLastStep("withdrawn").asAccepted();
-
-                  var depositInput =
-                      new Deposit(
-                          currentState().transfer().to(), currentState().transfer().amount());
-
-                  return effects().updateState(state).transitionTo(depositStepName, depositInput);
-                });
-
-    var deposit =
-        step(depositStepName)
-            .call(
-                Deposit.class,
-                cmd ->
-                    componentClient
-                        .forKeyValueEntity(cmd.to)
-                        .method(WalletEntity::deposit)
-                        .invoke(cmd.amount))
-            .andThen(
-                () -> {
-                  var state = currentState().withLastStep("deposited").asFinished();
-                  return effects().updateState(state).transitionTo("logAndStop");
-                });
-
-    // this last step is mainly to ensure that Runnables are properly supported
-    var logAndStop =
-        step("logAndStop")
-            .call(() -> logger.info("Workflow finished"))
-            .andThen(
-                () -> {
-                  var state = currentState().withLastStep("logAndStop");
-                  return effects().updateState(state).end();
-                });
-
-    return workflow()
-        .timeout(Duration.ofSeconds(10))
-        .addStep(withdraw)
-        .addStep(deposit)
-        .addStep(logAndStop);
   }
 
   public Effect<Message> startTransfer(Transfer transfer) {
@@ -95,12 +40,46 @@ public class TransferWorkflow extends Workflow<TransferState> {
       if (currentState() == null) {
         return effects()
             .updateState(new TransferState(transfer, "started"))
-            .transitionTo(withdrawStepName, new Withdraw(transfer.from(), transfer.amount()))
+            .transitionTo(TransferWorkflow::withdraw)
+            .withInput(new Withdraw(transfer.from(), transfer.amount()))
             .thenReply(new Message("transfer started"));
       } else {
         return effects().reply(new Message("transfer started already"));
       }
     }
+  }
+
+  @StepName("withdraw-step")
+  private StepEffect withdraw(Withdraw withdraw) {
+
+    componentClient
+        .forKeyValueEntity(withdraw.from)
+        .method(WalletEntity::withdraw)
+        .invoke(withdraw.amount);
+
+    var state = currentState().withLastStep("withdrawn").asAccepted();
+    return stepEffects()
+        .updateState(state)
+        .thenTransitionTo(TransferWorkflow::deposit)
+        .withInput(new Deposit(currentState().transfer().to(), currentState().transfer().amount()));
+  }
+
+  @StepName("deposit-step")
+  private StepEffect deposit(Deposit deposit) {
+
+    componentClient
+        .forKeyValueEntity(deposit.to)
+        .method(WalletEntity::deposit)
+        .invoke(deposit.amount);
+
+    var state = currentState().withLastStep("deposited").asFinished();
+    return stepEffects().updateState(state).thenTransitionTo(TransferWorkflow::logAndStop);
+  }
+
+  private StepEffect logAndStop() {
+    logger.info("Workflow finished");
+    var state = currentState().withLastStep("logAndStop");
+    return stepEffects().updateState(state).thenEnd();
   }
 
   public Effect<Done> updateAndDelete(Transfer transfer) {
