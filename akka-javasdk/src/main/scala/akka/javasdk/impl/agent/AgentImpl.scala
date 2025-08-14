@@ -124,48 +124,49 @@ private[impl] final class AgentImpl[A <: Agent](
     new ReflectiveAgentRouter[A](factory, componentDescriptor.methodInvokers, serializer)
   }
 
-  override def handleCommand(command: SpiAgent.Command): Future[SpiAgent.Effect] = {
+  override def handleCommand(command: SpiAgent.Command): Future[SpiAgent.Effect] =
+    Future {
 
-    // FIXME(tracing): add full telemetry context to SpiAgent.Command
-    val telemetryContext = command.span.map(OtelContext.root.`with`)
-    command.span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
-    // smuggling 0 arity methods called from the component client through here
-    val cmdPayload = command.payload.getOrElse(BytesPayload.empty)
-    val metadata: Metadata = MetadataImpl.of(command.metadata)
-    val agentContext = new AgentContextImpl(sessionId, regionInfo.selfRegion, metadata, telemetryContext, tracerFactory)
+      // FIXME(tracing): add full telemetry context to SpiAgent.Command
+      val telemetryContext = command.span.map(OtelContext.root.`with`)
+      command.span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
+      // smuggling 0 arity methods called from the component client through here
+      val cmdPayload = command.payload.getOrElse(BytesPayload.empty)
+      val metadata: Metadata = MetadataImpl.of(command.metadata)
+      val agentContext =
+        new AgentContextImpl(sessionId, regionInfo.selfRegion, metadata, telemetryContext, tracerFactory)
 
-    try {
-      // we need the agent at this scope.
-      // therefore, we initialize it exceptionally outside the router
-      val agent = factory(agentContext)
-      val commandEffect = router.handleCommand(agent, command.name, cmdPayload, agentContext)
+      try {
+        // we need the agent at this scope.
+        // therefore, we initialize it exceptionally outside the router
+        val agent = factory(agentContext)
+        val commandEffect = router.handleCommand(agent, command.name, cmdPayload, agentContext)
 
-      def primaryEffect =
-        commandEffect match {
-          case e: AgentEffectImpl       => e.primaryEffect
-          case e: AgentStreamEffectImpl => e.primaryEffect
+        def primaryEffect =
+          commandEffect match {
+            case e: AgentEffectImpl       => e.primaryEffect
+            case e: AgentStreamEffectImpl => e.primaryEffect
+          }
+
+        def secondaryEffect =
+          commandEffect match {
+            case e: AgentEffectImpl       => e.secondaryEffect
+            case e: AgentStreamEffectImpl => e.secondaryEffect
+          }
+
+        def errorOrReply: Either[SpiAgent.Error, (BytesPayload, SpiMetadata)] = {
+          secondaryEffect match {
+            case ErrorReplyImpl(commandException) =>
+              Left(new SpiAgent.Error(commandException.getMessage, Some(serializer.toBytes(commandException))))
+            case MessageReplyImpl(message, m) =>
+              val replyPayload = serializer.toBytes(message)
+              val metadata = MetadataImpl.toSpi(m)
+              Right(replyPayload -> metadata)
+            case NoSecondaryEffectImpl =>
+              throw new IllegalStateException("Expected reply or error")
+          }
         }
 
-      def secondaryEffect =
-        commandEffect match {
-          case e: AgentEffectImpl       => e.secondaryEffect
-          case e: AgentStreamEffectImpl => e.secondaryEffect
-        }
-
-      def errorOrReply: Either[SpiAgent.Error, (BytesPayload, SpiMetadata)] = {
-        secondaryEffect match {
-          case ErrorReplyImpl(commandException) =>
-            Left(new SpiAgent.Error(commandException.getMessage, Some(serializer.toBytes(commandException))))
-          case MessageReplyImpl(message, m) =>
-            val replyPayload = serializer.toBytes(message)
-            val metadata = MetadataImpl.toSpi(m)
-            Right(replyPayload -> metadata)
-          case NoSecondaryEffectImpl =>
-            throw new IllegalStateException("Expected reply or error")
-        }
-      }
-
-      val spiEffect =
         primaryEffect match {
           case req: RequestModel =>
             val systemMessage = req.systemMessage match {
@@ -224,26 +225,25 @@ private[impl] final class AgentImpl[A <: Agent](
                 new SpiAgent.ReplyEffect(reply, metadata)
             }
         }
-      Future.successful(spiEffect)
 
-    } catch {
-      case e: CommandException =>
-        val serializedException = serializer.toBytes(e)
-        Future.successful(new SpiAgent.ErrorEffect(error = new SpiAgent.Error(e.getMessage, Some(serializedException))))
-      case e: HandlerNotFoundException =>
-        throw AgentException(command.name, e.getMessage, Some(e))
-      case BadRequestException(msg) =>
-        Future.successful(new SpiAgent.ErrorEffect(error = new SpiAgent.Error(msg, None)))
-      case e: AgentException => throw e
-      case NonFatal(error) =>
-        throw AgentException(command.name, s"Unexpected failure: $error", Some(error))
-    } finally {
-      command.span.foreach { _ =>
-        MDC.remove(Telemetry.TRACE_ID)
+      } catch {
+        case e: CommandException =>
+          val serializedException = serializer.toBytes(e)
+          new SpiAgent.ErrorEffect(error = new SpiAgent.Error(e.getMessage, Some(serializedException)))
+        case e: HandlerNotFoundException =>
+          throw AgentException(command.name, e.getMessage, Some(e))
+        case BadRequestException(msg) =>
+          new SpiAgent.ErrorEffect(error = new SpiAgent.Error(msg, None))
+        case e: AgentException => throw e
+        case NonFatal(error) =>
+          throw AgentException(command.name, s"Unexpected failure: $error", Some(error))
+      } finally {
+        command.span.foreach { _ =>
+          MDC.remove(Telemetry.TRACE_ID)
+        }
       }
-    }
 
-  }
+    }(sdkExecutionContext)
 
   private def toSpiMcpEndpoints(remoteMcpTools: Seq[RemoteMcpTools]): Seq[SpiAgent.McpToolEndpointDescriptor] =
     remoteMcpTools.map {
