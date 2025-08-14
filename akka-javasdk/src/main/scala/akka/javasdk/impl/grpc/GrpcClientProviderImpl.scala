@@ -226,13 +226,14 @@ private[akka] final class GrpcClientProviderImpl(
     }
   }
 
-  def withTraceContext(traceContext: OtelContext): GrpcClientProvider = {
+  // FIXME(tracing): have context propagators provided by the runtime
+  def withTelemetryContext(telemetryContext: OtelContext): GrpcClientProvider = {
     val otelTraceHeaders: Vector[(String, String)] = {
       val builder = Vector.newBuilder[(String, String)]
       W3CTraceContextPropagator
         .getInstance()
         .inject(
-          traceContext,
+          telemetryContext,
           null,
           // Note: side-effecting instead of mutable collection
           (_: scala.Any, key: String, value: String) => {

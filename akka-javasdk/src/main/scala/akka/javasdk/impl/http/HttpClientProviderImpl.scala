@@ -26,16 +26,17 @@ import org.slf4j.LoggerFactory
 @InternalApi
 private[akka] final class HttpClientProviderImpl(
     system: ActorSystem[_],
-    traceContext: Option[OtelContext],
+    telemetryContext: Option[OtelContext],
     remoteIdentificationHeader: Option[RawHeader],
     settings: Settings)
     extends HttpClientProvider {
 
   private val log = LoggerFactory.getLogger(classOf[HttpClientProvider])
 
+  // FIXME(tracing): have context propagators provided by the runtime
   private val otelTraceHeaders: Vector[HttpHeader] = {
     val builder = Vector.newBuilder[HttpHeader]
-    traceContext.foreach(context =>
+    telemetryContext.foreach(context =>
       W3CTraceContextPropagator
         .getInstance()
         .inject(
@@ -100,7 +101,7 @@ private[akka] final class HttpClientProviderImpl(
     new HttpClientImpl(system, baseUrl, defaultHeaders)
   }
 
-  def withTraceContext(traceContext: OtelContext): HttpClientProvider =
-    new HttpClientProviderImpl(system, Some(traceContext), remoteIdentificationHeader, settings)
+  def withTelemetryContext(telemetryContext: OtelContext): HttpClientProvider =
+    new HttpClientProviderImpl(system, Some(telemetryContext), remoteIdentificationHeader, settings)
 
 }

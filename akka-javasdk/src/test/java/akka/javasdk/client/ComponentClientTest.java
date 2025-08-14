@@ -13,7 +13,6 @@ import akka.javasdk.impl.*;
 import akka.javasdk.impl.client.ComponentClientImpl;
 import akka.javasdk.impl.client.DeferredCallImpl;
 import akka.javasdk.impl.serialization.JsonSerializer;
-import akka.javasdk.impl.telemetry.Telemetry;
 import akka.javasdk.testmodels.Number;
 import akka.javasdk.testmodels.action.ActionsTestModels.ActionWithOneParam;
 import akka.javasdk.testmodels.action.ActionsTestModels.ActionWithoutParam;
@@ -118,7 +117,7 @@ class ComponentClientTest {
   public void shouldReturnDeferredCallWithTraceParent() {
     // given
     String traceparent = "074c4c8d-d87c-4573-847f-77951ce4e0a4";
-    Metadata metadata = MetadataImpl.Empty().set(Telemetry.TRACE_PARENT_KEY(), traceparent);
+    Metadata metadata = MetadataImpl.Empty().set("traceparent", traceparent);
     // when
     DeferredCallImpl<NotUsed, Object> call =
         (DeferredCallImpl<NotUsed, Object>)
@@ -129,7 +128,7 @@ class ComponentClientTest {
                 .deferred();
 
     // then
-    assertThat(call.metadata().get(Telemetry.TRACE_PARENT_KEY()).get()).isEqualTo(traceparent);
+    assertThat(call.metadata().get("traceparent").get()).isEqualTo(traceparent);
   }
 
   @Test

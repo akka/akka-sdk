@@ -32,13 +32,13 @@ import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.timer.TimerScheduler
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.RegionInfo
-import akka.runtime.sdk.spi.SpiMetadataEntry
 import akka.runtime.sdk.spi.SpiTimedAction
 import akka.runtime.sdk.spi.SpiTimedAction.Command
 import akka.runtime.sdk.spi.SpiTimedAction.Effect
 import akka.runtime.sdk.spi.TimerClient
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
+import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
@@ -52,7 +52,7 @@ object TimedActionImpl {
       override val selfRegion: String,
       override val metadata: Metadata,
       timerClient: TimerClient,
-      span: Option[Span],
+      telemetryContext: Option[OtelContext],
       tracerFactory: () => Tracer)
       extends AbstractContext
       with CommandContext {
@@ -60,15 +60,10 @@ object TimedActionImpl {
     val timers: TimerScheduler = new TimerSchedulerImpl(timerClient, componentCallMetadata)
 
     override def componentCallMetadata: MetadataImpl = {
-      if (metadata.has(Telemetry.TRACE_PARENT_KEY)) {
-        MetadataImpl.of(
-          List(new SpiMetadataEntry(Telemetry.TRACE_PARENT_KEY, metadata.get(Telemetry.TRACE_PARENT_KEY).get())))
-      } else {
-        MetadataImpl.Empty
-      }
+      telemetryContext.fold(MetadataImpl.Empty)(MetadataImpl.Empty.withTelemetryContext)
     }
 
-    override def tracing(): Tracing = new SpanTracingImpl(span, tracerFactory)
+    override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
   }
 
   final case class CommandEnvelopeImpl[T](payload: T, metadata: Metadata) extends CommandEnvelope[T]
@@ -102,16 +97,17 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
   override def handleCommand(command: Command): Future[Effect] = {
     val metadata = MetadataImpl.of(command.metadata)
 
+    // FIXME(tracing): move this tracing to runtime
     // FIXME would be good if we could record the chosen method in the span
     val span: Option[Span] =
       traceInstrumentation.buildSpan(ComponentType.TimedAction, componentId, metadata.subjectScala, command.metadata)
+    val telemetryContext = span.map(OtelContext.root.`with`)
 
     span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
     val fut =
       try {
-        val updatedMetadata = span.map(metadata.withTracing).getOrElse(metadata)
         val commandContext =
-          new CommandContextImpl(regionInfo.selfRegion, updatedMetadata, timerClient, span, tracerFactory)
+          new CommandContextImpl(regionInfo.selfRegion, metadata, timerClient, telemetryContext, tracerFactory)
 
         val payload: BytesPayload = command.payload.getOrElse(throw new IllegalArgumentException("No command payload"))
         val effect = createRouter()

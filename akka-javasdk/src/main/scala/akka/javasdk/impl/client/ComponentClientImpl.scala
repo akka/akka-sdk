@@ -20,7 +20,7 @@ import akka.javasdk.client.WorkflowClient
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
-import io.opentelemetry.api.trace.Span
+import io.opentelemetry.context.{ Context => OtelContext }
 
 /**
  * Note: new instance per call since it includes call metadata
@@ -32,12 +32,12 @@ private[javasdk] final case class ComponentClientImpl(
     runtimeComponentClients: RuntimeComponentClients,
     serializer: JsonSerializer,
     agentClassById: Map[String, Class[Agent]],
-    openTelemetrySpan: Option[Span])(implicit ec: ExecutionContext, system: ActorSystem[_])
+    telemetryContext: Option[OtelContext])(implicit ec: ExecutionContext, system: ActorSystem[_])
     extends ComponentClient {
 
   // Volatile since the component client could be accessed in nested/composed futures and is mutated by the reflective action router
-  @volatile var callMetadata: Option[Metadata] = openTelemetrySpan.map { span =>
-    MetadataImpl.Empty.withTracing(span)
+  @volatile var callMetadata: Option[Metadata] = telemetryContext.map { context =>
+    MetadataImpl.Empty.withTelemetryContext(context)
   }
 
   override def forTimedAction(): TimedActionClient =

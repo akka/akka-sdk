@@ -74,8 +74,8 @@ import akka.runtime.sdk.spi.SpiMetadata
 import akka.util.ByteString
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigException
-import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
+import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
@@ -90,11 +90,11 @@ private[impl] object AgentImpl {
       override val sessionId: String,
       override val selfRegion: String,
       override val metadata: Metadata,
-      val span: Option[Span],
+      val telemetryContext: Option[OtelContext],
       tracerFactory: () => Tracer)
       extends AbstractContext
       with AgentContext {
-    override def tracing(): Tracing = new SpanTracingImpl(span, tracerFactory)
+    override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
   }
 
 }
@@ -126,12 +126,13 @@ private[impl] final class AgentImpl[A <: Agent](
 
   override def handleCommand(command: SpiAgent.Command): Future[SpiAgent.Effect] = {
 
-    val span: Option[Span] = command.span
-    span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
+    // FIXME(tracing): add full telemetry context to SpiAgent.Command
+    val telemetryContext = command.span.map(OtelContext.root.`with`)
+    command.span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
     // smuggling 0 arity methods called from the component client through here
     val cmdPayload = command.payload.getOrElse(BytesPayload.empty)
     val metadata: Metadata = MetadataImpl.of(command.metadata)
-    val agentContext = new AgentContextImpl(sessionId, regionInfo.selfRegion, metadata, span, tracerFactory)
+    val agentContext = new AgentContextImpl(sessionId, regionInfo.selfRegion, metadata, telemetryContext, tracerFactory)
 
     try {
       // we need the agent at this scope.
@@ -237,7 +238,7 @@ private[impl] final class AgentImpl[A <: Agent](
       case NonFatal(error) =>
         throw AgentException(command.name, s"Unexpected failure: $error", Some(error))
     } finally {
-      span.foreach { _ =>
+      command.span.foreach { _ =>
         MDC.remove(Telemetry.TRACE_ID)
       }
     }

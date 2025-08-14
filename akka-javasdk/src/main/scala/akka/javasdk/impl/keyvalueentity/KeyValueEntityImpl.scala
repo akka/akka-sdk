@@ -38,6 +38,7 @@ import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiMetadata
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
+import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.MDC
 
 /**
@@ -51,11 +52,11 @@ private[impl] object KeyValueEntityImpl {
       override val commandName: String,
       override val selfRegion: String,
       override val metadata: Metadata,
-      span: Option[Span],
+      telemetryContext: Option[OtelContext],
       tracerFactory: () => Tracer)
       extends AbstractContext
       with CommandContext {
-    override def tracing(): Tracing = new SpanTracingImpl(span, tracerFactory)
+    override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
 
     override def commandId(): Long = 0
   }
@@ -102,14 +103,16 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
       state: SpiEventSourcedEntity.State,
       command: SpiEntity.Command): Future[SpiEventSourcedEntity.Effect] = {
 
+    // FIXME(tracing): move this tracing to runtime
     val span: Option[Span] =
       traceInstrumentation.buildEntityCommandSpan(ComponentType.KeyValueEntity, componentId, entityId, command)
+    val telemetryContext = span.map(OtelContext.root.`with`)
     span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
     // smuggling 0 arity method called from component client through here
     val cmdPayload = command.payload.getOrElse(BytesPayload.empty)
     val metadata: Metadata = MetadataImpl.of(command.metadata)
     val cmdContext =
-      new CommandContextImpl(entityId, command.name, regionInfo.selfRegion, metadata, span, tracerFactory)
+      new CommandContextImpl(entityId, command.name, regionInfo.selfRegion, metadata, telemetryContext, tracerFactory)
 
     try {
       entity._internalSetCommandContext(Optional.of(cmdContext))
