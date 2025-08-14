@@ -47,6 +47,7 @@ import akka.runtime.sdk.spi.TimerClient
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.StatusCode
 import io.opentelemetry.api.trace.Tracer
+import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
@@ -113,20 +114,22 @@ class WorkflowImpl[S, W <: Workflow[S]](
       stepConfigs = stepConfigs)
   }
 
-  private def commandContext(commandName: String, span: Option[Span], metadata: Metadata) =
-    new CommandContextImpl(workflowId, commandName, regionInfo.selfRegion, metadata, span, tracerFactory)
+  private def commandContext(commandName: String, telemetryContext: Option[OtelContext], metadata: Metadata) =
+    new CommandContextImpl(workflowId, commandName, regionInfo.selfRegion, metadata, telemetryContext, tracerFactory)
 
   override def handleCommand(
       userState: Option[SpiWorkflow.State],
       command: SpiEntity.Command): Future[SpiWorkflow.CommandEffect] = {
 
+    // FIXME(tracing): move this tracing to runtime
     val span: Option[Span] =
       traceInstrumentation.buildEntityCommandSpan(ComponentType.Workflow, componentId, workflowId, command)
+    val telemetryContext = span.map(OtelContext.root.`with`)
     span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
-    val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, span, tracerFactory)
+    val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, telemetryContext, tracerFactory)
 
     val metadata = MetadataImpl.of(command.metadata)
-    val context = commandContext(command.name, span, metadata)
+    val context = commandContext(command.name, telemetryContext, metadata)
 
     val timerScheduler =
       new TimerSchedulerImpl(timerClient, context.componentCallMetadata)
@@ -167,6 +170,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
   override def invokeStep(userState: Option[BytesPayload], stepCommand: StepCommand): Future[StepResult] = {
 
     val stepName = stepCommand.stepName
+    // FIXME(tracing): move this tracing to runtime
     val span: Option[Span] =
       traceInstrumentation.buildEntityCommandSpan(
         ComponentType.Workflow,
@@ -174,10 +178,11 @@ class WorkflowImpl[S, W <: Workflow[S]](
         workflowId,
         stepName,
         stepCommand.metadata)
+    val telemetryContext = span.map(OtelContext.root.`with`)
     span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
-    val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, span, tracerFactory)
+    val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, telemetryContext, tracerFactory)
 
-    val context = commandContext(stepName, span, MetadataImpl.of(stepCommand.metadata))
+    val context = commandContext(stepName, telemetryContext, MetadataImpl.of(stepCommand.metadata))
     val timerScheduler =
       new TimerSchedulerImpl(timerClient, context.componentCallMetadata)
 
@@ -259,13 +264,13 @@ private[akka] final class CommandContextImpl(
     override val commandName: String,
     override val selfRegion: String,
     override val metadata: Metadata,
-    span: Option[Span],
+    telemetryContext: Option[OtelContext],
     tracerFactory: () => Tracer)
     extends AbstractContext
     with CommandContext {
 
   override def tracing(): Tracing =
-    new SpanTracingImpl(span, tracerFactory)
+    new SpanTracingImpl(telemetryContext, tracerFactory)
 
   override def commandId(): Long = 0
 }
@@ -277,10 +282,10 @@ private[akka] final class CommandContextImpl(
 private[akka] final class WorkflowContextImpl(
     override val workflowId: String,
     override val selfRegion: String,
-    val span: Option[Span],
+    val telemetryContext: Option[OtelContext],
     tracerFactory: () => Tracer)
     extends AbstractContext
     with WorkflowContext {
 
-  override def tracing(): Tracing = new SpanTracingImpl(span, tracerFactory)
+  override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
 }

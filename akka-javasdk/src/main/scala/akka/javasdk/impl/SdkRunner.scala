@@ -485,7 +485,7 @@ private final class Sdk(
       { context =>
 
         val workflow = wiredInstance(clz) {
-          sideEffectingComponentInjects(context.asInstanceOf[WorkflowContextImpl].span).orElse {
+          sideEffectingComponentInjects(context.asInstanceOf[WorkflowContextImpl].telemetryContext).orElse {
             // remember to update component type API doc and docs if changing the set of injectables
             case p if p == classOf[WorkflowContext] => context
           }
@@ -695,7 +695,7 @@ private final class Sdk(
             factoryContext.sessionId,
             context =>
               wiredInstance(agentClass) {
-                (sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].span)).orElse {
+                (sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext)).orElse {
                   // remember to update component type API doc and docs if changing the set of injectables
                   case p if p == classOf[AgentContext] => context
                 }
@@ -738,12 +738,12 @@ private final class Sdk(
   // these are available for injecting in all kinds of component that are primarily
   // for side effects
   // Note: config is also always available through the combination with user DI way down below
-  private def sideEffectingComponentInjects(span: Option[Span]): PartialFunction[Class[_], Any] = {
+  private def sideEffectingComponentInjects(telemetryContext: Option[OtelContext]): PartialFunction[Class[_], Any] = {
     // remember to update component type API doc and docs if changing the set of injectables
-    case p if p == classOf[ComponentClient]    => componentClient(span)
-    case h if h == classOf[HttpClientProvider] => httpClientProvider(span)
-    case g if g == classOf[GrpcClientProvider] => grpcClientProvider(span)
-    case t if t == classOf[TimerScheduler]     => timerScheduler(span)
+    case p if p == classOf[ComponentClient]    => componentClient(telemetryContext)
+    case h if h == classOf[HttpClientProvider] => httpClientProvider(telemetryContext)
+    case g if g == classOf[GrpcClientProvider] => grpcClientProvider(telemetryContext)
+    case t if t == classOf[TimerScheduler]     => timerScheduler(telemetryContext)
     case m if m == classOf[Materializer]       => sdkMaterializer
     case a if a == classOf[Retries]            => retries
     case r if r == classOf[AgentRegistry]      => agentRegistry
@@ -897,7 +897,7 @@ private final class Sdk(
           // Note: force cast to Java header model
           context.requestHeaders.allHeaders.asInstanceOf[Seq[HttpHeader]].asJava
 
-        override def tracing(): Tracing = new SpanTracingImpl(context.openTelemetrySpan, sdkTracerFactory)
+        override def tracing(): Tracing = new SpanTracingImpl(Option(context.telemetryContext), sdkTracerFactory)
 
         override def queryParams(): QueryParams = {
           QueryParamsImpl(context.httpRequest.uri.query())
@@ -906,7 +906,7 @@ private final class Sdk(
         override def selfRegion(): String = regionInfo.selfRegion
       }
       val instance = wiredInstance(httpEndpointClass) {
-        sideEffectingComponentInjects(context.openTelemetrySpan).orElse {
+        sideEffectingComponentInjects(Option(context.telemetryContext)).orElse {
           case p if p == classOf[RequestContext] => requestContext
         }
       }
@@ -934,13 +934,13 @@ private final class Sdk(
 
         override def metadata(): Metadata = new JavaMetadataImpl(context.metadata)
 
-        override def tracing(): Tracing = new SpanTracingImpl(context.openTelemetrySpan, sdkTracerFactory)
+        override def tracing(): Tracing = new SpanTracingImpl(Option(context.telemetryContext), sdkTracerFactory)
 
         override def selfRegion(): String = regionInfo.selfRegion
       }
 
       val instance = wiredInstance(grpcEndpointClass) {
-        sideEffectingComponentInjects(context.openTelemetrySpan).orElse {
+        sideEffectingComponentInjects(Option(context.telemetryContext)).orElse {
           case p if p == classOf[GrpcRequestContext] => grpcRequestContext
         }
       }
@@ -953,6 +953,9 @@ private final class Sdk(
 
   private def mcpEndpointFactory[E](mcpEndpointClass: Class[E]): McpEndpointConstructionContext => E = {
     (context: McpEndpointConstructionContext) =>
+      // FIXME(tracing): add full telemetry context to McpRequestContext
+      val telemetryContext = context.openTelemetrySpan.map(OtelContext.root.`with`)
+
       lazy val mcpRequestContext = new McpRequestContext {
         override def getPrincipals: Principals =
           PrincipalsImpl(context.principal.source, context.principal.service)
@@ -965,7 +968,7 @@ private final class Sdk(
                 "There are no JWT claims defined but trying accessing the JWT claims. The class or the method needs to be annotated with @JWT.")
           }
 
-        override def tracing(): Tracing = new SpanTracingImpl(context.openTelemetrySpan, sdkTracerFactory)
+        override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, sdkTracerFactory)
 
         override def requestHeader(headerName: String): Optional[HttpHeader] =
           // Note: force cast to Java header model
@@ -978,7 +981,7 @@ private final class Sdk(
       }
 
       val instance = wiredInstance(mcpEndpointClass) {
-        sideEffectingComponentInjects(context.openTelemetrySpan).orElse {
+        sideEffectingComponentInjects(telemetryContext).orElse {
           case p if p == classOf[GrpcRequestContext] => mcpRequestContext
         }
       }
@@ -1041,30 +1044,30 @@ private final class Sdk(
     }
   }
 
-  private def componentClient(openTelemetrySpan: Option[Span]): ComponentClient = {
-    ComponentClientImpl(runtimeComponentClients, serializer, agentRegistry.agentClassById, openTelemetrySpan)(
+  private def componentClient(telemetryContext: Option[OtelContext]): ComponentClient = {
+    ComponentClientImpl(runtimeComponentClients, serializer, agentRegistry.agentClassById, telemetryContext)(
       sdkExecutionContext,
       system)
   }
 
-  private def timerScheduler(openTelemetrySpan: Option[Span]): TimerScheduler = {
-    val metadata = openTelemetrySpan match {
-      case None       => MetadataImpl.Empty
-      case Some(span) => MetadataImpl.Empty.withTracing(span)
+  private def timerScheduler(telemetryContext: Option[OtelContext]): TimerScheduler = {
+    val metadata = telemetryContext match {
+      case None          => MetadataImpl.Empty
+      case Some(context) => MetadataImpl.Empty.withTelemetryContext(context)
     }
     new TimerSchedulerImpl(runtimeComponentClients.timerClient, metadata)
   }
 
-  private def httpClientProvider(openTelemetrySpan: Option[Span]): HttpClientProvider =
-    openTelemetrySpan match {
-      case None       => httpClientProvider
-      case Some(span) => httpClientProvider.withTraceContext(OtelContext.current().`with`(span))
+  private def httpClientProvider(telemetryContext: Option[OtelContext]): HttpClientProvider =
+    telemetryContext match {
+      case None          => httpClientProvider
+      case Some(context) => httpClientProvider.withTelemetryContext(context)
     }
 
-  private def grpcClientProvider(openTelemetrySpan: Option[Span]): GrpcClientProvider =
-    openTelemetrySpan match {
-      case None       => grpcClientProvider
-      case Some(span) => grpcClientProvider.withTraceContext(OtelContext.current().`with`(span))
+  private def grpcClientProvider(telemetryContext: Option[OtelContext]): GrpcClientProvider =
+    telemetryContext match {
+      case None          => grpcClientProvider
+      case Some(context) => grpcClientProvider.withTelemetryContext(context)
     }
 
 }
