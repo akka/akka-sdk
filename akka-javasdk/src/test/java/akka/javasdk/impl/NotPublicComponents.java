@@ -14,7 +14,8 @@ import akka.javasdk.testmodels.workflow.WorkflowState;
 import akka.javasdk.timedaction.TimedAction;
 import akka.javasdk.workflow.Workflow;
 
-// below components are not public and thus need to be in the same package as the corresponding test
+// bellow components are not public and thus
+// need to be in the same package as the corresponding test
 public class NotPublicComponents {
 
   @ComponentId("not-public")

@@ -4,20 +4,20 @@
 
 package akka.javasdk.impl.timer
 
-import akka.Done
-
 import java.time.Duration
+import java.util.concurrent.CompletionStage
+import java.util.concurrent.ExecutionException
+
+import scala.jdk.DurationConverters.JavaDurationOps
 import scala.jdk.FutureConverters.FutureOps
+
+import akka.Done
 import akka.annotation.InternalApi
 import akka.javasdk.DeferredCall
 import akka.javasdk.Metadata
 import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.client.DeferredCallImpl
 import akka.javasdk.timer.TimerScheduler
-
-import java.util.concurrent.CompletionStage
-import java.util.concurrent.ExecutionException
-import scala.jdk.DurationConverters.JavaDurationOps
 
 /**
  * INTERNAL API

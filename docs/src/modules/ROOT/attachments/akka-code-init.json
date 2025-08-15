@@ -8,6 +8,13 @@
       "level": "Beginner"
     },
     {
+      "title": "Empty project",
+      "description": "This project contains the build and project structure to create an Akka service.",
+      "language": "java",
+      "url": "https://github.com/akka-samples/empty",
+      "level": "Beginner"
+    },
+    {
       "title": "Multi-agent planning and execution",
       "description": "A sample application demonstrating how to build a multi-agent system using Akka and an LLM model.",
       "language": "java",

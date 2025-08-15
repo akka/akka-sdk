@@ -5,10 +5,12 @@
 package akka.javasdk.impl.consumer
 
 import java.util.Optional
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.OptionConverters.RichOption
 import scala.util.control.NonFatal
+
 import akka.actor.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
@@ -41,10 +43,10 @@ import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiConsumer
 import akka.runtime.sdk.spi.SpiConsumer.Effect
 import akka.runtime.sdk.spi.SpiConsumer.Message
-import akka.runtime.sdk.spi.SpiMetadataEntry
 import akka.runtime.sdk.spi.TimerClient
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
+import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
@@ -89,21 +91,21 @@ private[impl] final class ConsumerImpl[C <: Consumer](
   override def handleMessage(message: Message): Future[Effect] = {
     val metadata = MetadataImpl.of(message.metadata)
 
+    // FIXME(tracing): move this tracing to runtime
     // FIXME would be good if we could record the chosen method in the span
     val span: Option[Span] =
       traceInstrumentation.buildSpan(ComponentType.Consumer, componentId, metadata.subjectScala, message.metadata)
-
-    val updatedMetadata = span.map(metadata.withTracing).getOrElse(metadata)
+    val telemetryContext = span.map(OtelContext.root.`with`)
 
     span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
     val fut =
       try {
         val messageContext =
           new MessageContextImpl(
-            updatedMetadata,
+            metadata,
             timerClient,
             tracerFactory,
-            span,
+            telemetryContext,
             regionInfo.selfRegion,
             message.originRegion.toJava)
 
@@ -178,7 +180,7 @@ private[impl] final class MessageContextImpl(
     override val metadata: Metadata,
     timerClient: TimerClient,
     tracerFactory: () => Tracer,
-    val span: Option[Span],
+    val telemetryContext: Option[OtelContext],
     override val selfRegion: String,
     override val originRegion: Optional[String])
     extends AbstractContext
@@ -193,14 +195,9 @@ private[impl] final class MessageContextImpl(
       Optional.empty()
 
   override def componentCallMetadata: MetadataImpl = {
-    if (metadata.has(Telemetry.TRACE_PARENT_KEY)) {
-      MetadataImpl.of(
-        List(new SpiMetadataEntry(Telemetry.TRACE_PARENT_KEY, metadata.get(Telemetry.TRACE_PARENT_KEY).get())))
-    } else {
-      MetadataImpl.Empty
-    }
+    telemetryContext.fold(MetadataImpl.Empty)(MetadataImpl.Empty.withTelemetryContext)
   }
 
-  override def tracing(): Tracing = new SpanTracingImpl(span, tracerFactory)
+  override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
 
 }

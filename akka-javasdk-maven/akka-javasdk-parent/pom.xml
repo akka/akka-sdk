@@ -7,12 +7,12 @@
     <parent>
         <groupId>io.akka</groupId>
         <artifactId>akka-javasdk-maven</artifactId>
-        <version>3.4.6</version>
+        <version>3.5.0</version>
     </parent>
 
     <groupId>io.akka</groupId>
     <artifactId>akka-javasdk-parent</artifactId>
-    <version>3.4.6</version>
+    <version>3.5.0</version>
     <packaging>pom</packaging>
 
 
@@ -34,13 +34,13 @@
 
         <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
 
-        <akka-javasdk.version>3.4.6</akka-javasdk.version>
+        <akka-javasdk.version>3.5.0</akka-javasdk.version>
         <!-- must be carefully kept in sync with sdk and runtime version -->
         <akka.grpc.version>2.5.5</akka.grpc.version>
 
         <!-- These are dependent on runtime environment and cannot be customized by users -->
         <maven.compiler.release>21</maven.compiler.release>
-        <akka-runtime.version>1.5.4</akka-runtime.version>
+        <akka-runtime.version>1.5.8</akka-runtime.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <skip.docker>false</skip.docker>

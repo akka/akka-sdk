@@ -4,8 +4,13 @@
 
 package akka.javasdk.impl.client
 
+import scala.concurrent.ExecutionContext
+
+import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
+import akka.javasdk.agent.Agent
+import akka.javasdk.client.AgentClient
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.client.EventSourcedEntityClient
 import akka.javasdk.client.KeyValueEntityClient
@@ -13,14 +18,9 @@ import akka.javasdk.client.TimedActionClient
 import akka.javasdk.client.ViewClient
 import akka.javasdk.client.WorkflowClient
 import akka.javasdk.impl.MetadataImpl
-import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
-import scala.concurrent.ExecutionContext
-
-import akka.actor.typed.ActorSystem
-import akka.javasdk.agent.Agent
-import akka.javasdk.client.AgentClient
 import akka.javasdk.impl.serialization.JsonSerializer
-import io.opentelemetry.api.trace.Span
+import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
+import io.opentelemetry.context.{ Context => OtelContext }
 
 /**
  * Note: new instance per call since it includes call metadata
@@ -32,12 +32,12 @@ private[javasdk] final case class ComponentClientImpl(
     runtimeComponentClients: RuntimeComponentClients,
     serializer: JsonSerializer,
     agentClassById: Map[String, Class[Agent]],
-    openTelemetrySpan: Option[Span])(implicit ec: ExecutionContext, system: ActorSystem[_])
+    telemetryContext: Option[OtelContext])(implicit ec: ExecutionContext, system: ActorSystem[_])
     extends ComponentClient {
 
   // Volatile since the component client could be accessed in nested/composed futures and is mutated by the reflective action router
-  @volatile var callMetadata: Option[Metadata] = openTelemetrySpan.map { span =>
-    MetadataImpl.Empty.withTracing(span)
+  @volatile var callMetadata: Option[Metadata] = telemetryContext.map { context =>
+    MetadataImpl.Empty.withTelemetryContext(context)
   }
 
   override def forTimedAction(): TimedActionClient =

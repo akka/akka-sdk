@@ -15,3 +15,16 @@ addSbtPlugin("com.thoughtworks.sbt-api-mappings" % "sbt-api-mappings" % "3.0.2")
 
 // align guava version between sbt-akka-grpc and sbt-java-formatter
 libraryDependencies += "com.google.guava" % "guava" % "33.3.1-jre"
+
+// optional scalafix plugin for organize imports
+optionalSbtPlugin(sys.props.contains("build.scalafix"))("ch.epfl.scala" % "sbt-scalafix" % "0.14.3")
+
+def optionalSbtPlugin(predicate: Boolean)(module: ModuleID): Setting[Seq[ModuleID]] = {
+  libraryDependencies ++= {
+    if (predicate) {
+      val sbtV = (pluginCrossBuild / sbtBinaryVersion).value
+      val scalaV = (update / scalaBinaryVersion).value
+      Seq(Defaults.sbtPluginExtra(module, sbtV, scalaV))
+    } else Seq.empty
+  }
+}

@@ -10,15 +10,12 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 interface Outer {
 
   @ComponentId("nested-event-sourced")
-  class NestedEventSourcedEntity extends EventSourcedEntity<NestedEventSourcedEntity.State, NestedEventSourcedEntity.Event> {
+  class NestedEventSourcedEntity
+      extends EventSourcedEntity<NestedEventSourcedEntity.State, NestedEventSourcedEntity.Event> {
 
+    record State(String value) {}
 
-    record State(String value) {
-    }
-
-    record Event(String value) {
-    }
-
+    record Event(String value) {}
 
     @Override
     public State applyEvent(Event event) {

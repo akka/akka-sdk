@@ -58,6 +58,9 @@ jobs:
         with:
           jvm: temurin:1.21
 
+      - name: Start sbt server with build options
+        run: sbt --client -Dbuild.scalafix exit
+
       - name: Run javafmt checks
         run: |
           sbt --client javafmtCheckAll || \
@@ -72,6 +75,16 @@ jobs:
         run: |
           sbt --client "scalafmtCheckAll; scalafmtSbtCheck" || \
             { echo "[error] Code not formatted prior to commit. Run 'sbt scalafmtAll scalafmtSbt' then commit the reformatted code."; false; }
+
+      - name: Run scalafix OrganizeImports check
+        run: |
+          sbt --client "scalafixEnable ; Test/compile ; scalafixAll --check OrganizeImports" || \
+            {
+              echo "[error] Scala imports not organized prior to commit."
+              echo "[error] Run organize imports in your IDE then commit the updated code, or run:"
+              echo "[error]   sbt -Dbuild.scalafix scalafixEnable 'scalafixAll OrganizeImports' scalafmtAll"
+              false
+            }
 
       - name: Run additional validations
         run: |
@@ -216,61 +229,6 @@ jobs:
 
       - name: sbt test
         run: sbt test
-
-  java-sdk-annotation-processor-test:
-    name: Run annotation processor tests
-    needs: [checks, publish-local]
-    runs-on: Akka-Default
-
-    steps:
-      - name: Checkout
-        # https://github.com/actions/checkout/releases
-        # v4.1.1
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-
-      - name: Checkout GitHub merge
-        if: github.event.pull_request
-        run: |-
-          git fetch origin pull/${{ github.event.pull_request.number }}/merge:scratch
-          git checkout scratch
-
-      - name: Restore Coursier cache
-        # https://github.com/actions/cache/releases
-        # v4.2.0
-        uses: actions/cache/restore@1bd1e32a3bdc45362d1e726936510720a7c30a57
-        with:
-          path: |
-            ~/.cache/coursier
-            ~/.sbt
-            ~/.ivy2/cache
-          key: coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
-          restore-keys: |
-            coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
-            coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-
-            coursier-
-
-      - name: Set up JDK 21
-        # https://github.com/coursier/setup-action/releases
-        # v1.3.5
-        uses: coursier/setup-action@7bde40eee928896f074dbb76d22dd772eed5c65f
-        with:
-          jvm: temurin:1.21
-
-      - name: Download io.akka dependencies
-        # https://github.com/actions/download-artifact/releases
-        # v4.1.5
-        uses: actions/download-artifact@8caf195ad4b1dee92908e23f56eeb0696f1dd42d
-        with:
-          name: m2-cache
-          path: ~/
-
-      - name: Unpack io.akka dependencies
-        run: |-
-          cd
-          tar -xf dependencies.tar.gz
-
-      - name: Compile and Run annotation-processor-tests
-        run: sbt "akka-javasdk-annotation-processor-tests/compile;akka-javasdk-annotation-processor-tests/test"
 
   check-docker-image-contents:
     name: Check service docker image contents

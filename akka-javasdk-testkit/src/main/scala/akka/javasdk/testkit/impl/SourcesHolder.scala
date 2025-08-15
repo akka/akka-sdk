@@ -4,6 +4,8 @@
 
 package akka.javasdk.testkit.impl
 
+import scala.collection.mutable.ArrayBuffer
+
 import akka.actor.Actor
 import akka.javasdk.testkit.TestKit
 import akka.javasdk.testkit.impl.EventingTestKitImpl.RunningSourceProbe
@@ -12,8 +14,6 @@ import akka.javasdk.testkit.impl.SourcesHolder.Publish
 import akka.javasdk.{ Metadata => SdkMetadata }
 import com.google.protobuf.ByteString
 import org.slf4j.LoggerFactory
-
-import scala.collection.mutable.ArrayBuffer
 
 object SourcesHolder {
 

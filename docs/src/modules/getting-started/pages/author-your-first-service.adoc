@@ -23,9 +23,7 @@ include::ROOT:partial$local-dev-prerequisites.adoc[]
 * Git
 * https://platform.openai.com/api-keys[OpenAI API key, window="new"]
 
-Akka has support for many AI providers, and this sample is using OpenAI.
-
-You can run this sample without an OpenAI API key, but it will be more fun if you have one. Sign up for free at https://platform.openai.com/api-keys[platform.openai.com/api-keys, window="new"]. If you don't provide an API key, it will use a predefined response instead of using AI.
+Akka has support for many AI providers, and this sample is using OpenAI. Sign up for free at https://platform.openai.com/api-keys[platform.openai.com/api-keys, window="new"].
 
 [#clone_sample]
 == Clone the sample project

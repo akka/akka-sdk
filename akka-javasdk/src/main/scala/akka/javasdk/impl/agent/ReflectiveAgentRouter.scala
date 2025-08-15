@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.agent
 
+import java.util.Optional
+
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
@@ -12,8 +14,6 @@ import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.BytesPayload
-
-import java.util.Optional
 
 /**
  * INTERNAL API

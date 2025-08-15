@@ -7,5 +7,4 @@ package com.example;
 import akka.javasdk.annotations.ComponentId;
 
 @ComponentId("hierarchy-timed-action")
-public class HierarchyTimedAction extends AbstracInbetweenAction {
-}
+public class HierarchyTimedAction extends AbstracInbetweenAction {}

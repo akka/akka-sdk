@@ -4,11 +4,12 @@
 
 package akka.javasdk.impl
 
-import akka.annotation.InternalApi
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 
 import scala.util.control.Exception.Catcher
+
+import akka.annotation.InternalApi
 
 /**
  * INTERNAL API

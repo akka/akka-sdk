@@ -4,6 +4,17 @@
 
 package akka.javasdk.impl.grpc
 
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executor
+
+import scala.annotation.nowarn
+import scala.concurrent.Await
+import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
+import scala.jdk.CollectionConverters._
+import scala.jdk.FutureConverters._
+import scala.util.control.NonFatal
+
 import akka.Done
 import akka.actor.ClassicActorSystemProvider
 import akka.actor.CoordinatedShutdown
@@ -18,18 +29,8 @@ import akka.javasdk.impl.grpc.GrpcClientProviderImpl.AuthHeaders
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
-import org.slf4j.LoggerFactory
-
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executor
-import scala.annotation.nowarn
-import scala.concurrent.Await
-import scala.concurrent.Future
-import scala.concurrent.duration.DurationInt
-import scala.jdk.CollectionConverters._
-import scala.jdk.FutureConverters._
-import scala.util.control.NonFatal
 import io.opentelemetry.context.{ Context => OtelContext }
+import org.slf4j.LoggerFactory
 
 /**
  * INTERNAL API
@@ -225,13 +226,14 @@ private[akka] final class GrpcClientProviderImpl(
     }
   }
 
-  def withTraceContext(traceContext: OtelContext): GrpcClientProvider = {
+  // FIXME(tracing): have context propagators provided by the runtime
+  def withTelemetryContext(telemetryContext: OtelContext): GrpcClientProvider = {
     val otelTraceHeaders: Vector[(String, String)] = {
       val builder = Vector.newBuilder[(String, String)]
       W3CTraceContextPropagator
         .getInstance()
         .inject(
-          traceContext,
+          telemetryContext,
           null,
           // Note: side-effecting instead of mutable collection
           (_: scala.Any, key: String, value: String) => {

@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.view
 
+import scala.reflect.ClassTag
+
 import akka.dispatch.ExecutionContexts
 import akka.javasdk.impl.ValidationException
 import akka.javasdk.impl.Validations
@@ -11,6 +13,7 @@ import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.testmodels.view.ViewTestModels
 import akka.runtime.sdk.spi.ConsumerSource
 import akka.runtime.sdk.spi.Principal
+import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.ServiceNamePattern
 import akka.runtime.sdk.spi.SpiSchema.SpiClass
 import akka.runtime.sdk.spi.SpiSchema.SpiInteger
@@ -20,9 +23,6 @@ import akka.runtime.sdk.spi.SpiSchema.SpiTimestamp
 import akka.runtime.sdk.spi.ViewDescriptor
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import scala.reflect.ClassTag
-
-import akka.runtime.sdk.spi.RegionInfo
 
 class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
 

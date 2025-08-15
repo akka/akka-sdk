@@ -4,28 +4,29 @@
 
 package akka.javasdk.impl.telemetry
 
+import java.util.Optional
+
+import scala.jdk.OptionConverters.RichOption
+
 import akka.annotation.InternalApi
 import akka.javasdk.Tracing
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
 
-import java.util.Optional
-import scala.jdk.OptionConverters.RichOption
-
 /**
  * INTERNAL API
  */
 @InternalApi
-final class SpanTracingImpl(span: Option[Span], tracerFactory: () => Tracer) extends Tracing {
+final class SpanTracingImpl(context: Option[OtelContext], tracerFactory: () => Tracer) extends Tracing {
   override def startSpan(name: String): Optional[Span] =
-    span.map { s =>
-      val parent = OtelContext.current().`with`(s)
+    context.map { parent =>
       tracerFactory()
-        .spanBuilder("ad-hoc span")
+        .spanBuilder(name)
         .setParent(parent)
         .startSpan()
     }.toJava
 
-  override def parentSpan(): Optional[Span] = span.toJava
+  override def parentSpan(): Optional[Span] =
+    context.flatMap(context => Option(Span.fromContextOrNull(context))).toJava
 }
