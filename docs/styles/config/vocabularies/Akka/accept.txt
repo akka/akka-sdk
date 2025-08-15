@@ -200,6 +200,7 @@ tokenization
 tokenSecret
 transcoded
 [Tt]ranscoding
+[Tt]ypesafe
 uid
 unary
 unencrypted
