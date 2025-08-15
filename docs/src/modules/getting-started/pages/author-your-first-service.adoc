@@ -45,7 +45,7 @@ Another convenient way to download this and other samples is to use the Akka CLI
 
 [source, command line]
 ----
-akka code init helloworld-agent
+akka code init helloworld-agent --repo https://github.com/akka-samples/helloworld-agent.git
 ----
 ****
 
