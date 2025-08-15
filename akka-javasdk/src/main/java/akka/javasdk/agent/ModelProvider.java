@@ -228,7 +228,7 @@ public sealed interface ModelProvider {
 
   /** Settings for the OpenAI Large Language Model provider. */
   static OpenAi openAi() {
-    return new OpenAi("", "", "", Double.NaN, Double.NaN, -1);
+    return new OpenAi("", "", "", Double.NaN, Double.NaN, -1, -1);
   }
 
   /** Settings for the OpenAI Large Language Model provider. */
@@ -239,18 +239,25 @@ public sealed interface ModelProvider {
       String modelName,
       /** Base URL for OpenAI's API endpoints */
       String baseUrl,
-      /** Controls randomness in the model's output (0.0-1.0, higher = more random) */
+      /**
+       * Controls randomness in the model's output (0.0-1.0, higher = more random). Not supported by
+       * GPT-5.
+       */
       double temperature,
       /**
        * Nucleus sampling parameter (0.0 to 1.0). Controls text generation by only considering the
        * most likely tokens whose cumulative probability exceeds the threshold value. It helps
        * balance between diversity and quality of outputs—lower values (like 0.3) produce more
        * focused, predictable text while higher values (like 0.9) allow more creativity and
-       * variation.
+       * variation. Not supported by GPT-5.
        */
       double topP,
-      /** Maximum number of tokens to generate in the response */
-      int maxTokens)
+      /**
+       * Maximum number of tokens to generate in the response. Not supported by GPT-5, use
+       * maxCompletionTokens instead.
+       */
+      int maxTokens,
+      int maxCompletionTokens)
       implements ModelProvider {
 
     public static OpenAi fromConfig(Config config) {
@@ -260,31 +267,43 @@ public sealed interface ModelProvider {
           config.getString("base-url"),
           config.getDouble("temperature"),
           config.getDouble("top-p"),
-          config.getInt("max-tokens"));
+          config.getInt("max-tokens"),
+          config.getInt("max-completion-tokens"));
     }
 
     public OpenAi withApiKey(String apiKey) {
-      return new OpenAi(apiKey, modelName, baseUrl, temperature, topP, maxTokens);
+      return new OpenAi(
+          apiKey, modelName, baseUrl, temperature, topP, maxTokens, maxCompletionTokens);
     }
 
     public OpenAi withModelName(String modelName) {
-      return new OpenAi(apiKey, modelName, baseUrl, temperature, topP, maxTokens);
+      return new OpenAi(
+          apiKey, modelName, baseUrl, temperature, topP, maxTokens, maxCompletionTokens);
     }
 
     public OpenAi withBaseUrl(String baseUrl) {
-      return new OpenAi(apiKey, modelName, baseUrl, temperature, topP, maxTokens);
+      return new OpenAi(
+          apiKey, modelName, baseUrl, temperature, topP, maxTokens, maxCompletionTokens);
     }
 
     public OpenAi withTemperature(double temperature) {
-      return new OpenAi(apiKey, modelName, baseUrl, temperature, topP, maxTokens);
+      return new OpenAi(
+          apiKey, modelName, baseUrl, temperature, topP, maxTokens, maxCompletionTokens);
     }
 
     public OpenAi withTopP(double topP) {
-      return new OpenAi(apiKey, modelName, baseUrl, temperature, topP, maxTokens);
+      return new OpenAi(
+          apiKey, modelName, baseUrl, temperature, topP, maxTokens, maxCompletionTokens);
     }
 
     public OpenAi withMaxTokens(int maxTokens) {
-      return new OpenAi(apiKey, modelName, baseUrl, temperature, topP, maxTokens);
+      return new OpenAi(
+          apiKey, modelName, baseUrl, temperature, topP, maxTokens, maxCompletionTokens);
+    }
+
+    public OpenAi withMaxCompletionTokens(int maxCompletionTokens) {
+      return new OpenAi(
+          apiKey, modelName, baseUrl, temperature, topP, maxTokens, maxCompletionTokens);
     }
   }
 

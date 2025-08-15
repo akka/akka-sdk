@@ -426,8 +426,7 @@ private[impl] final class AgentImpl[A <: Agent](
           temperature = p.temperature,
           topP = p.topP,
           maxTokens = p.maxTokens,
-          maxCompletionTokens = -1 // FIXME update in other PR
-        )
+          maxCompletionTokens = p.maxCompletionTokens)
       case p: ModelProvider.Custom =>
         new SpiAgent.ModelProvider.Custom(() => p.createChatModel(), () => p.createStreamingChatModel())
     }
