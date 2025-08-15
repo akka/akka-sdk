@@ -58,8 +58,8 @@ These guidelines apply only to the Akka SDK and do not cover usage of the lower-
 * Command handlers only ever accept a single parameter and return effects. If a command handler needs to accept more than one parameter, those parameters should be wrapped inside a single command message.
 * The command handler parameter and reply should be defined as inner record of the entity, but sometimes it makes sense to place them in the `domain` package together with other data transfer and state records. Parameter and reply can also be a plain String, Java primitive or class.
 * State of a workflow can be defined as a record inside the workflow, but if it contains much business logic it should be in the `domain` package, also know as domain object.
-* Prefer using methods to create each step of the workflow rather than defining them directly in the `definition` method. The methods should be named the same as the step and translate from the step name strings using Java camel case, e.g. a step named `"begin-batch"` will be produced from a method named `beginBatchStep()`.
-* Workflows should be explicit about timeouts and retries whenever appropriate. When calling agents the step timeout must be rather long (60 seconds) since LLM response times can be long. A workflow that orchestrates agents should define `defaultStepRecoverStrategy` with limited number of retries, to avoid too many (costly) retries to the LLM.
+* Use methods returning `StepEffect` for each step of the workflow. Don't use the old deprecated `definition` method. Prefer defining a `StepName` annotation to the step methods to give them a stable identifier.
+* Workflows should be explicit about timeouts and retries whenever appropriate. When calling agents the step timeout must be rather long (60 seconds) since LLM response times can be long. A workflow that orchestrates agents should define `defaultStepRecover` in the `WorkflowSettings` with limited number of retries, to avoid too many (costly) retries to the LLM.
 
 == Agents
 
