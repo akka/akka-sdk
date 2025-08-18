@@ -15,8 +15,7 @@ import java.util.stream.Collectors;
   An agent that acts as an LLM judge to evaluate the quality of AI responses.
   It assesses whether the final answer is appropriate for the original question
   and checks for any deviations from user preferences.
-  """,
-  role = "worker"
+  """
 )
 public class EvaluatorAgent extends Agent {
 
