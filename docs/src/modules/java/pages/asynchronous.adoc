@@ -1,6 +1,8 @@
-= Synchronous and asynchronous component invocation
+= Asynchronous invocation
 
 include::ROOT:partial$include.adoc[]
+
+This section covers synchronous and asynchronous invocation of components and when to use which style.
 
 If you are not familiar with Java or with Java's use of threads and futures, you may want to check out the following few links before reading further:
 
