@@ -26,7 +26,7 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
   }
 
   private StepEffect withdrawStep() { // <4>
-    // FIXME implement this
+    // TODO: implement your step logic here
     // prettier-ignore
     return stepEffects() // <5>
       .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
@@ -34,7 +34,7 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
   }
 
   private StepEffect depositStep() {
-    // FIXME implement this
+    // TODO: implement your step logic here
     // prettier-ignore
     return stepEffects()
       .updateState(currentState().withStatus(COMPLETED))
