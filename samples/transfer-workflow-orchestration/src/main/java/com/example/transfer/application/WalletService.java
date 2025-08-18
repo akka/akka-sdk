@@ -16,13 +16,13 @@ public class WalletService {
   private Map<String, Integer> walletBalances = new ConcurrentHashMap<>();
 
   public void withdraw(String fromWalletId, int amount) {
-    //TODO: Implement withdrawal logic
+    //TODO: implement your withdrawal logic here
     walletBalances.compute(fromWalletId, (k, v) -> v - amount);
     log.info("Withdrawn from: {} amount: {}", fromWalletId, amount);
   }
 
   public void deposit(String toWalletId, int amount) {
-    //TODO: Implement deposit logic
+    //TODO: implement your deposit logic here
     walletBalances.compute(toWalletId, (k, v) -> v == null ? amount : v + amount);
     log.info("Deposited to: {} amount: {}", toWalletId, amount);
   }
