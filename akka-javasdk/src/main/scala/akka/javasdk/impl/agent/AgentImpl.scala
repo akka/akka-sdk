@@ -44,6 +44,7 @@ import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ErrorHandling.BadRequestException
 import akka.javasdk.impl.HandlerNotFoundException
+import akka.javasdk.impl.JsonSchema
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.ConstantSystemMessage
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.NoPrimaryEffect
@@ -242,6 +243,12 @@ private[impl] final class AgentImpl[A <: Agent](
 
             val toolExecutor = new ToolExecutor(functionTools, serializer)
 
+            val responseSchema =
+              if (req.includeJsonSchema)
+                Some(JsonSchema.jsonSchemaFor(req.responseType))
+              else
+                None
+
             new SpiAgent.RequestModelEffect(
               modelProvider = spiModelProvider,
               systemMessage = systemMessage,
@@ -251,7 +258,7 @@ private[impl] final class AgentImpl[A <: Agent](
               callToolFunction = request => Future(toolExecutor.execute(request))(sdkExecutionContext),
               mcpClientDescriptors = mcpToolEndpoints,
               responseType = req.responseType,
-              responseSchema = None, // FIXME update in separate PR
+              responseSchema = responseSchema,
               responseMapping = req.responseMapping,
               failureMapping = req.failureMapping.map(mapSpiAgentException),
               replyMetadata = metadata,

@@ -50,7 +50,7 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
   "The JsonSchema" should {
 
     "extract schema with all primitives" in {
-      val result = JsonSchema.jsonSchemaFor(classOf[SomeToolInput1])
+      val result = JsonSchema.jsonSchemaFor(classOf[SomeToolInput1]).asInstanceOf[JsonSchemaObject]
 
       val expected = Map(
         "string" -> Schema.string(description = "some description"),
@@ -93,14 +93,14 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
     }
 
     "extract schema with collection" in {
-      val result = JsonSchema.jsonSchemaFor(classOf[SomeToolInput2])
+      val result = JsonSchema.jsonSchemaFor(classOf[SomeToolInput2]).asInstanceOf[JsonSchemaObject]
 
       result.properties shouldEqual Map(
         "listOfStrings" -> Schema.array(items = Schema.string(), description = "some strings"))
     }
 
     "extract schema with nested object" in {
-      val result = JsonSchema.jsonSchemaFor(classOf[SomeToolInput3])
+      val result = JsonSchema.jsonSchemaFor(classOf[SomeToolInput3]).asInstanceOf[JsonSchemaObject]
 
       result.properties shouldEqual Map(
         "nestedObject" -> Schema.jsonObject(
@@ -120,7 +120,7 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
     }
 
     "extract schema with recursive types" in {
-      val result = JsonSchema.jsonSchemaFor(classOf[ClassWithRecursiveFields])
+      val result = JsonSchema.jsonSchemaFor(classOf[ClassWithRecursiveFields]).asInstanceOf[JsonSchemaObject]
 
       result.properties shouldEqual Map(
         "regular" -> Schema.string(),
@@ -132,7 +132,7 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
     }
 
     "extract schema with common Java stdlib types" in {
-      val result = JsonSchema.jsonSchemaFor(classOf[CommonStdlibTypes])
+      val result = JsonSchema.jsonSchemaFor(classOf[CommonStdlibTypes]).asInstanceOf[JsonSchemaObject]
 
       result.properties shouldEqual Map(
         "instant" -> Schema.string(),
@@ -152,6 +152,15 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
         "localTime",
         "duration")
 
+    }
+
+    "extract schema of primitive type" in {
+      JsonSchema.jsonSchemaFor(classOf[String]) shouldBe a[JsonSchemaString]
+      JsonSchema.jsonSchemaFor(classOf[Integer]) shouldBe a[JsonSchemaInteger]
+      JsonSchema.jsonSchemaFor(classOf[java.lang.Long]) shouldBe a[JsonSchemaInteger]
+      JsonSchema.jsonSchemaFor(classOf[java.lang.Double]) shouldBe a[JsonSchemaNumber]
+      JsonSchema.jsonSchemaFor(classOf[java.lang.Float]) shouldBe a[JsonSchemaNumber]
+      JsonSchema.jsonSchemaFor(classOf[java.lang.Boolean]) shouldBe a[JsonSchemaBoolean]
     }
 
   }

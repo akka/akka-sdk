@@ -56,6 +56,7 @@ public class AgentIntegrationTest extends TestKitSupport {
         .withModelProvider(SomeAgentWithTool.class, testModelProvider)
         .withModelProvider(SomeAgentWithFailingTool.class, testModelProvider)
         .withModelProvider(SomeStructureResponseAgent.class, testModelProvider)
+        .withModelProvider(SomeStructureResponseSchemaAgent.class, testModelProvider)
         .withModelProvider(SomeStreamingAgent.class, testModelProvider)
         .withModelProvider(SomeAgentWithBadlyConfiguredTool.class, testModelProvider)
         .withDependencyProvider(depsProvider);
@@ -102,6 +103,28 @@ public class AgentIntegrationTest extends TestKitSupport {
 
     // then
     assertThat(result.response()).isEqualTo("123456");
+  }
+
+  @Test
+  public void shouldIncludeJsonSchema() {
+    // given
+    testModelProvider
+        .whenMessage(s -> s.equals("structured-include-schema"))
+        .reply("{\"response\": \"ok\", \"count\": 12345}");
+
+    // when
+    SomeStructureResponseSchemaAgent.StructuredResponse result =
+        componentClient
+            .forAgent()
+            .inSession(newSessionId())
+            .method(SomeStructureResponseSchemaAgent::structuredResponse)
+            .invoke("structured-include-schema");
+
+    // then
+    assertThat(result.response()).isEqualTo("ok");
+    assertThat(result.count()).isEqualTo(12345);
+    // this doesn't really verify that the schema is included in the request, but at least it
+    // exercises that code path
   }
 
   @Test
