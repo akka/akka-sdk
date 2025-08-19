@@ -44,6 +44,7 @@ import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ErrorHandling.BadRequestException
 import akka.javasdk.impl.HandlerNotFoundException
+import akka.javasdk.impl.JsonSchema
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.ConstantSystemMessage
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.NoPrimaryEffect
@@ -69,13 +70,13 @@ import akka.runtime.sdk.spi.SpiAgent.TimeoutFailure
 import akka.runtime.sdk.spi.SpiAgent.ToolCallExecutionFailure
 import akka.runtime.sdk.spi.SpiAgent.ToolCallLimitReachedFailure
 import akka.runtime.sdk.spi.SpiAgent.UnsupportedFeatureFailure
-import akka.runtime.sdk.spi.SpiAgent.{ AgentException => SpiAgentException }
+import akka.runtime.sdk.spi.SpiAgent.{AgentException => SpiAgentException}
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.util.ByteString
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigException
 import io.opentelemetry.api.trace.Tracer
-import io.opentelemetry.context.{ Context => OtelContext }
+import io.opentelemetry.context.{Context => OtelContext}
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
@@ -242,6 +243,12 @@ private[impl] final class AgentImpl[A <: Agent](
 
             val toolExecutor = new ToolExecutor(functionTools, serializer)
 
+            val responseSchema =
+              if (req.includeJsonSchema)
+                Some(JsonSchema.jsonSchemaFor(req.responseType))
+              else
+                None
+
             new SpiAgent.RequestModelEffect(
               modelProvider = spiModelProvider,
               systemMessage = systemMessage,
@@ -251,7 +258,7 @@ private[impl] final class AgentImpl[A <: Agent](
               callToolFunction = request => Future(toolExecutor.execute(request))(sdkExecutionContext),
               mcpClientDescriptors = mcpToolEndpoints,
               responseType = req.responseType,
-              responseSchema = None, // FIXME update in separate PR
+              responseSchema = responseSchema,
               responseMapping = req.responseMapping,
               failureMapping = req.failureMapping.map(mapSpiAgentException),
               replyMetadata = metadata,
