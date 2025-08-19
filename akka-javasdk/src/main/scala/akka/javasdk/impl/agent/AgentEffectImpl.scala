@@ -43,6 +43,7 @@ private[javasdk] object BaseAgentEffectBuilder {
         systemMessage = ConstantSystemMessage(""),
         userMessage = "",
         responseType = classOf[String],
+        includeJsonSchema = false,
         responseMapping = None,
         failureMapping = None,
         replyMetadata = Metadata.EMPTY,
@@ -60,6 +61,7 @@ private[javasdk] object BaseAgentEffectBuilder {
       systemMessage: SystemMessage,
       userMessage: String,
       responseType: Class[_],
+      includeJsonSchema: Boolean,
       responseMapping: Option[Function1[Any, Any]],
       failureMapping: Option[Throwable => Any],
       replyMetadata: Metadata,
@@ -193,8 +195,11 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
     this.asInstanceOf[BaseAgentEffectBuilder[String]]
   }
 
-  override def responseAs[T](responseType: Class[T]): MappingResponseBuilder[T] = {
-    updateRequestModel(_.copy(responseType = responseType))
+  override def responseAs[T](responseType: Class[T]): MappingResponseBuilder[T] =
+    responseAs(responseType, includeJsonSchema = false)
+
+  override def responseAs[T](responseType: Class[T], includeJsonSchema: Boolean): MappingResponseBuilder[T] = {
+    updateRequestModel(_.copy(responseType = responseType, includeJsonSchema = includeJsonSchema))
     new MappingResponseEffectBuilder(_primaryEffect.asInstanceOf[RequestModel])
   }
 
