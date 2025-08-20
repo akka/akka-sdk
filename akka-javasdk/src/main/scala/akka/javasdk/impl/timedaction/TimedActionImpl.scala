@@ -14,14 +14,11 @@ import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
-import akka.javasdk.impl.ComponentType
 import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
-import akka.javasdk.impl.telemetry.TimedActionCategory
-import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.javasdk.impl.timedaction.TimedActionEffectImpl.AsyncEffect
 import akka.javasdk.impl.timedaction.TimedActionEffectImpl.ErrorEffect
 import akka.javasdk.impl.timedaction.TimedActionEffectImpl.SuccessEffect
@@ -89,39 +86,32 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
 
   private implicit val executionContext: ExecutionContext = sdkExecutionContext
   implicit val system: ActorSystem = _system
-  private val traceInstrumentation = new TraceInstrumentation(componentId, TimedActionCategory, tracerFactory)
 
   private def createRouter(): ReflectiveTimedActionRouter[TA] =
     new ReflectiveTimedActionRouter[TA](factory(), componentDescriptor.methodInvokers, jsonSerializer)
 
   override def handleCommand(command: Command): Future[Effect] = {
     val metadata = MetadataImpl.of(command.metadata)
+    val telemetryContext = Option(command.telemetryContext)
+    val traceId = telemetryContext.flatMap { context =>
+      Option(Span.fromContextOrNull(context)).map(_.getSpanContext.getTraceId)
+    }
 
-    // FIXME(tracing): move this tracing to runtime
-    // FIXME would be good if we could record the chosen method in the span
-    val span: Option[Span] =
-      traceInstrumentation.buildSpan(ComponentType.TimedAction, componentId, metadata.subjectScala, command.metadata)
-    val telemetryContext = span.map(OtelContext.root.`with`)
+    traceId.foreach(id => MDC.put(Telemetry.TRACE_ID, id))
+    try {
+      val commandContext =
+        new CommandContextImpl(regionInfo.selfRegion, metadata, timerClient, telemetryContext, tracerFactory)
 
-    span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
-    val fut =
-      try {
-        val commandContext =
-          new CommandContextImpl(regionInfo.selfRegion, metadata, timerClient, telemetryContext, tracerFactory)
-
-        val payload: BytesPayload = command.payload.getOrElse(throw new IllegalArgumentException("No command payload"))
-        val effect = createRouter()
-          .handleCommand(command.name, CommandEnvelope.of(payload, commandContext.metadata), commandContext)
-        toSpiEffect(command, effect)
-      } catch {
-        case NonFatal(ex) =>
-          // command handler threw an "unexpected" error, also covers HandlerNotFoundException
-          Future.successful(handleUnexpectedException(command, ex))
-      } finally {
-        MDC.remove(Telemetry.TRACE_ID)
-      }
-    fut.andThen { case _ =>
-      span.foreach(_.end())
+      val payload: BytesPayload = command.payload.getOrElse(throw new IllegalArgumentException("No command payload"))
+      val effect = createRouter()
+        .handleCommand(command.name, CommandEnvelope.of(payload, commandContext.metadata), commandContext)
+      toSpiEffect(command, effect)
+    } catch {
+      case NonFatal(ex) =>
+        // command handler threw an "unexpected" error, also covers HandlerNotFoundException
+        Future.successful(handleUnexpectedException(command, ex))
+    } finally {
+      if (traceId.isDefined) MDC.remove(Telemetry.TRACE_ID)
     }
   }
 

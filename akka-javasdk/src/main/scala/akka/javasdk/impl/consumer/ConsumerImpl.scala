@@ -21,17 +21,14 @@ import akka.javasdk.consumer.MessageContext
 import akka.javasdk.consumer.MessageEnvelope
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
-import akka.javasdk.impl.ComponentType
 import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.AsyncEffect
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.ConsumedEffect
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.ProduceEffect
 import akka.javasdk.impl.serialization.JsonSerializer
-import akka.javasdk.impl.telemetry.ConsumerCategory
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
-import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.timer.TimerScheduler
 import akka.runtime.sdk.spi.BytesPayload
@@ -72,7 +69,6 @@ private[impl] final class ConsumerImpl[C <: Consumer](
 
   private implicit val executionContext: ExecutionContext = sdkExecutionContext
   implicit val system: ActorSystem = _system
-  private val traceInstrumentation = new TraceInstrumentation(componentId, ConsumerCategory, tracerFactory)
 
   private val resultSerializer =
     // producing to topic, external json format, so mapper configurable by user
@@ -90,38 +86,32 @@ private[impl] final class ConsumerImpl[C <: Consumer](
 
   override def handleMessage(message: Message): Future[Effect] = {
     val metadata = MetadataImpl.of(message.metadata)
+    val telemetryContext = Option(message.telemetryContext)
+    val traceId = telemetryContext.flatMap { context =>
+      Option(Span.fromContextOrNull(context)).map(_.getSpanContext.getTraceId)
+    }
 
-    // FIXME(tracing): move this tracing to runtime
-    // FIXME would be good if we could record the chosen method in the span
-    val span: Option[Span] =
-      traceInstrumentation.buildSpan(ComponentType.Consumer, componentId, metadata.subjectScala, message.metadata)
-    val telemetryContext = span.map(OtelContext.root.`with`)
+    traceId.foreach(id => MDC.put(Telemetry.TRACE_ID, id))
+    try {
+      val messageContext =
+        new MessageContextImpl(
+          metadata,
+          timerClient,
+          tracerFactory,
+          telemetryContext,
+          regionInfo.selfRegion,
+          message.originRegion.toJava)
 
-    span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
-    val fut =
-      try {
-        val messageContext =
-          new MessageContextImpl(
-            metadata,
-            timerClient,
-            tracerFactory,
-            telemetryContext,
-            regionInfo.selfRegion,
-            message.originRegion.toJava)
-
-        val payload: BytesPayload = message.payload.getOrElse(throw new IllegalArgumentException("No message payload"))
-        val effect = createRouter()
-          .handleCommand(MessageEnvelope.of(payload, messageContext.metadata), messageContext)
-        toSpiEffect(message, effect)
-      } catch {
-        case NonFatal(ex) =>
-          // command handler threw an "unexpected" error, also covers HandlerNotFoundException
-          Future.successful(handleUnexpectedException(message, ex))
-      } finally {
-        MDC.remove(Telemetry.TRACE_ID)
-      }
-    fut.andThen { case _ =>
-      span.foreach(_.end())
+      val payload: BytesPayload = message.payload.getOrElse(throw new IllegalArgumentException("No message payload"))
+      val effect = createRouter()
+        .handleCommand(MessageEnvelope.of(payload, messageContext.metadata), messageContext)
+      toSpiEffect(message, effect)
+    } catch {
+      case NonFatal(ex) =>
+        // command handler threw an "unexpected" error, also covers HandlerNotFoundException
+        Future.successful(handleUnexpectedException(message, ex))
+    } finally {
+      if (traceId.isDefined) MDC.remove(Telemetry.TRACE_ID)
     }
   }
 

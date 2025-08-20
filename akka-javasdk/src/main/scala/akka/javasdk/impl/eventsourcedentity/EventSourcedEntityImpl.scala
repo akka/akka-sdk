@@ -19,7 +19,6 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
-import akka.javasdk.impl.ComponentType
 import akka.javasdk.impl.EntityExceptions.EntityException
 import akka.javasdk.impl.ErrorHandling.BadRequestException
 import akka.javasdk.impl.MetadataImpl
@@ -29,10 +28,8 @@ import akka.javasdk.impl.effect.NoSecondaryEffectImpl
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.EmitEvents
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.NoPrimaryEffect
 import akka.javasdk.impl.serialization.JsonSerializer
-import akka.javasdk.impl.telemetry.EventSourcedEntityCategory
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
-import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiEntity
@@ -94,8 +91,6 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
     extends SpiEventSourcedEntity {
   import EventSourcedEntityImpl._
 
-  private val traceInstrumentation = new TraceInstrumentation(componentId, EventSourcedEntityCategory, tracerFactory)
-
   private val router: ReflectiveEventSourcedEntityRouter[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]] = {
     val context = new EventSourcedEntityContextImpl(entityId, regionInfo.selfRegion)
     new ReflectiveEventSourcedEntityRouter[S, E, ES](factory(context), componentDescriptor.methodInvokers, serializer)
@@ -112,11 +107,12 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
       state: SpiEventSourcedEntity.State,
       command: SpiEntity.Command): Future[SpiEventSourcedEntity.Effect] = {
 
-    // FIXME(tracing): move this tracing to runtime
-    val span: Option[Span] =
-      traceInstrumentation.buildEntityCommandSpan(ComponentType.EventSourcedEntity, componentId, entityId, command)
-    val telemetryContext = span.map(OtelContext.root.`with`)
-    span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
+    val telemetryContext = Option(command.telemetryContext)
+    val traceId = telemetryContext.flatMap { context =>
+      Option(Span.fromContextOrNull(context)).map(_.getSpanContext.getTraceId)
+    }
+    traceId.foreach(id => MDC.put(Telemetry.TRACE_ID, id))
+
     // smuggling 0 arity method called from component client through here
     val cmdPayload = command.payload.getOrElse(BytesPayload.empty)
     val metadata: Metadata = MetadataImpl.of(command.metadata)
@@ -206,11 +202,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
     } finally {
       entity._internalSetCommandContext(Optional.empty())
       entity._internalClearCurrentState()
-
-      span.foreach { s =>
-        MDC.remove(Telemetry.TRACE_ID)
-        s.end()
-      }
+      if (traceId.isDefined) MDC.remove(Telemetry.TRACE_ID)
     }
 
   }
