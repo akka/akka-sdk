@@ -22,6 +22,7 @@ akka roles invitations list [flags]
                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
   -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
       --owner string        the owner of the project to use, needed if you have two projects with the same name from different owners
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
       --project string      project to use if not using the default configured project
   -q, --quiet               set quiet output (helpful when used as part of a script)
       --timeout duration    client command timeout (default 10s)
