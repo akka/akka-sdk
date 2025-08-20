@@ -62,13 +62,6 @@ The xref:reference:cli/akka-cli/akka_projects.adoc[akka projects] command includ
 
 <AKKA_PROJECTS_CMD>
 
-== Access quickstart project samples
-The `akka quickstart` commands enable one to access Akka quickstart project samples.
-
-The xref:reference:cli/akka-cli/akka_quickstart.adoc[akka quickstart] command includes the following options:
-
-<AKKA_QUICKSTART_CMD>
-
 == Regions
 The `akka regions` commands allow you to manage regions on Akka.
 

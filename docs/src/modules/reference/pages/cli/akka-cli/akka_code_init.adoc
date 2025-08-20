@@ -15,7 +15,7 @@ It allows you to:
 The command will create a new directory with the specified name in the current working directory.
 
 ----
-akka code init <new-project-directory-name> [flags]
+akka code init [flags]
 ----
 
 == Options
