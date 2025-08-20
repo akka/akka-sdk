@@ -180,13 +180,6 @@ The xref:reference:cli/akka-cli/akka_projects.adoc[akka projects] command includ
 * xref:reference:cli/akka-cli/akka_projects_tokens_revoke.adoc[akka projects tokens revoke]
 * xref:reference:cli/akka-cli/akka_projects_update.adoc[akka projects update]
 
-== Access quickstart project samples
-The `akka quickstart` commands enable one to access Akka quickstart project samples.
-
-The xref:reference:cli/akka-cli/akka_quickstart.adoc[akka quickstart] command includes the following options:
-
-
-
 == Regions
 The `akka regions` commands allow you to manage regions on Akka.
 
