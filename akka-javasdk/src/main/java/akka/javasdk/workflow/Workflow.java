@@ -8,6 +8,7 @@ import akka.annotation.InternalApi;
 import akka.javasdk.CommandException;
 import akka.javasdk.Metadata;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.impl.ErrorHandling;
 import akka.javasdk.impl.client.MethodRefResolver;
 import akka.javasdk.impl.workflow.WorkflowDescriptor;
 import akka.javasdk.impl.workflow.WorkflowEffects;
@@ -926,8 +927,10 @@ public abstract class Workflow<S> {
       try {
         javaMethod.setAccessible(true);
         return (StepEffect) javaMethod.invoke(instance, args);
-      } catch (IllegalAccessException | InvocationTargetException e) {
+      } catch (IllegalAccessException e) {
         throw new RuntimeException(e);
+      } catch (InvocationTargetException e) {
+        throw ErrorHandling.unwrapInvocationTargetException(e);
       }
     }
   }

@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl
 
+import java.lang.reflect.InvocationTargetException
 import java.util.UUID
 import java.util.concurrent.ExecutionException
 
@@ -31,6 +32,14 @@ private[javasdk] object ErrorHandling {
   }
 
   def unwrapExecutionException(exc: ExecutionException): RuntimeException = {
+    exc.getCause match {
+      case null                => new RuntimeException(exc.getMessage)
+      case e: RuntimeException => e
+      case other               => new RuntimeException(other)
+    }
+  }
+
+  def unwrapInvocationTargetException(exc: InvocationTargetException): RuntimeException = {
     exc.getCause match {
       case null                => new RuntimeException(exc.getMessage)
       case e: RuntimeException => e
