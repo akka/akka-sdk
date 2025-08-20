@@ -43,6 +43,7 @@ These guidelines apply only to the Akka SDK and do not cover usage of the lower-
 
 * Command handlers only ever accept a single parameter and return effects. If a command handler needs to accept more than one parameter, those parameters should be wrapped inside a single command message.
 * The command handler parameter and reply should be defined as inner record of an entity, but sometimes it makes sense to place them in the `domain` package together with other data transfer and state records. Parameter and reply can also be a plain String, Java primitive or class.
+* When a command handler takes a single String or primitive parameter, you can use that directly as the method parameter. There is no need to create a wrapper command record.
 * Commands should be defined using an imperative naming convention, described as instructions of some task to be performed. For example, a command requesting a shopping cart be checked out would be `ShoppingCartEntity.Checkout`.
 * Command handlers are to be implemented in the entity and not in the state or domain object. Command handlers should invoke the domain object’s validation methods and methods that encapsulate the core business logic. The entity’s command handler is responsible for choosing the appropriate effect(s) to return. The domain object should not return effects or a list of events. This keeps the domain model clean of infrastructural concerns and makes it easy to unit test in isolation.
 * Command handlers that make updates without returning any information should return `akka.Done` for successful responses and `effects().error()` for validation errors.
@@ -89,7 +90,7 @@ These guidelines apply only to the Akka SDK and do not cover usage of the lower-
 * The endpoint should not directly return or expose domain or application types. Include a `toApi` conversion method if the response type includes many fields or nested records. `toApi` also makes for a good function to pass into a streamed mapper.
 * Endpoints should return responses directly and not use `CompletionStage`, favoring a synchronous code style.
 * Endpoints should prefer to return concrete, application API specific types and only use the `akka.http.javadsl.model.HttpResponse` when  needing to stream a response or return a specific status code.
-* If an endpoint method creates or updates anything, it should return `HttpResponses.created()` or `HttpResponses.ok()` accordingly.
+* If an endpoint method creates or updates anything, it should return `HttpResponses.created()` or `HttpResponses.ok()` accordingly. Use the factory methods in `akka.javasdk.http.HttpResponses` to create the `HttpResponse`.
 * Use the `ComponentClient` which is constructor-injected via dependency injection when communicating with other components. Use the combination of `method` followed by `invoke` to prefer a synchronous style rather than using `invokeAsync`.
 
 == gRPC Endpoints

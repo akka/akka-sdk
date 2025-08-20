@@ -57,7 +57,17 @@ The markdown documentation is published according to the widely used standard pr
 
 == Setup AI assistant to use the Akka documentation
 
-We need to make the AI coding assistant aware of the latest Akka documentation. Different assistants support this in different ways, and we will use Cursor and Qodo as two examples of how to do it.
+We need to make the AI coding assistant aware of the latest Akka documentation. Different assistants support this in different ways, and we will use a few as examples of how to do it.
+
+[sidebar]
+****
+Another convenient way is to use the Akka CLI. See xref:getting-started:quick-install-cli.adoc[installation instructions]. It will download the markdown documentation.
+
+[source, command line]
+----
+akka code init
+----
+****
 
 === Cursor
 
@@ -113,6 +123,38 @@ it should answer with something like
 3. HTTP Endpoints ...
 ...
 ----
+
+== Claude code
+
+For https://www.anthropic.com/claude-code[Claude code] you need to define a `CLAUDE.md` file with the following instructions:
+
+[source, md]
+----
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Build and Development Commands
+
+See @README.md for a project overview, and how to build, test and run the application.
+
+## Coding guidelines
+
+Use the guidelines in @akka-context/java/ai-coding-assistant-guidelines.html.md when writing code in this project.
+
+## Akka documentation
+
+You find the reference documentation of Akka in the akka-context directory and sub-directories.
+Read this documentation to answer questions about Akka or finding code templates for writing Akka code.
+----
+
+Download the markdown documentation files and include them in the project directory.
+
+. Download the link:../java/_attachments/akka-docs-md.zip[akka-docs-md.zip].
+. Unzip the content and place in a folder `akka-context/` in your development project.
+. Add `akka-context/` to your `.gitignore` file, if you use git.
+
+Make sure that you download the latest documentation regularly to make use of documentation improvements and new features.
 
 == Include sample source code
 
