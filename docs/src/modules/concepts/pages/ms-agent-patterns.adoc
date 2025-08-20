@@ -52,11 +52,11 @@ You should avoid sequential orchestration when:
 
 https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns#concurrent-orchestration[Concurrent orchestration] refers to running multiple AI agents simultaneously working on the same task. The outputs of all concurrent agents are then collected and processed. This is ideal when you have a number of agentic tasks that do not rely on the outputs of others.
 
-In Microsoft’s original diagram, there is an “Initiator and collector agent”. In the Akka version, we’ve simply replaced the collector agent with a workflow. Nearly everything else remains the same.
+In Microsoft’s original diagram, there is an “Initiator and collector agent.” In the Akka version, we’ve simply replaced the collector agent with a workflow. Nearly everything else remains the same.
 
 image:ai_arch_concurrent.jpg[Diagram showing concurrent workflow execution in agentic app]
 
-Also note that in this diagram, the workflow is responsible for controlling “agent 1.1” and “agent 1.2”, which appear as sub-agents in Microsoft’s pattern. In keeping with the golden rule of agentic composition, Akka agents don’t spawn sub-agents, workflows decide which agents are needed and the Akka runtime takes care of provisioning.
+Also note that in this diagram, the workflow is responsible for controlling `agent 1.1` and `agent 1.2`, which appear as sub-agents in Microsoft’s pattern. In keeping with the golden rule of agentic composition, Akka agents don’t spawn sub-agents, workflows decide which agents are needed and the Akka runtime takes care of provisioning.
 
 As you’ll see later in this document, Akka workflows can easily spawn sub-workflows. This reinforces the notion that the only real difference between these patterns in Akka and elsewhere is that Akka separates the roles of orchestration and model communication while most other frameworks choose to combine them.
 
