@@ -212,6 +212,7 @@ private[impl] final class AgentImpl[A <: Agent](
               callToolFunction = request => Future(toolExecutor.execute(request))(sdkExecutionContext),
               mcpClientDescriptors = mcpToolEndpoints,
               responseType = req.responseType,
+              responseSchema = None, // FIXME update in separate PR
               responseMapping = req.responseMapping,
               failureMapping = req.failureMapping.map(mapSpiAgentException),
               replyMetadata = metadata,
