@@ -82,24 +82,23 @@ public interface ActivityAgentMore {
   public class ActivityAgentStructuredResponseSchema extends Agent {
 
     private static final String SYSTEM_MESSAGE = // <1>
-        """
-        You are an activity agent. Your job is to suggest activities in the
-        real world. Like for example, a team building activity, sports, an
-        indoor or outdoor game, board games, a city trip, etc.
-        """.stripIndent();
+      """
+      You are an activity agent. Your job is to suggest activities in the
+      real world. Like for example, a team building activity, sports, an
+      indoor or outdoor game, board games, a city trip, etc.
+      """.stripIndent();
 
     record Activity(
-        @Description("Name of the activity")
-        String name,
-        @Description("Description of the activity")
-        String description) {} // <2>
+      @Description("Name of the activity") String name,
+      @Description("Description of the activity") String description
+    ) {} // <2>
 
     public Effect<Activity> query(String message) {
       return effects()
-          .systemMessage(SYSTEM_MESSAGE)
-          .userMessage(message)
-          .responseWithJsonSchema(Activity.class) // <3>
-          .thenReply();
+        .systemMessage(SYSTEM_MESSAGE)
+        .userMessage(message)
+        .responseWithJsonSchema(Activity.class) // <3>
+        .thenReply();
     }
   }
 
