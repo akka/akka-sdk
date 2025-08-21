@@ -45,7 +45,7 @@ You should avoid sequential orchestration when:
 
 === Examples
 
-* In https://doc.akka.io/getting-started/planner-agent/dynamic-team.html[this example], this pattern is illustrated well with a workflow with deterministic steps (no dynamic planning) that calls agents in sequence
+* In xref:getting-started:planner-agent/dynamic-team.adoc[this example], this pattern is illustrated well with a workflow with deterministic steps (no dynamic planning) that calls agents in sequence
 
 
 == Concurrent orchestration
@@ -94,7 +94,7 @@ private StepEffect askWeatherAndTraffic() {
          .withWeather(forecast)
          .withTraffic(trafficAlerts))
       .thenTransitionTo(AgentTeamWorkflow::suggestActivities);
-  }
+}
 ----
 
 == Group chat orchestration
@@ -112,7 +112,7 @@ This concept of a shared session in Akka is flexible enough that it can be appli
 
 Group chat (session) orchestration is ideal for:
 
-Collaborative scenarios between agents, workflows, and sub-workflows
+* Collaborative scenarios between agents, workflows, and sub-workflows
 Validation and quality control where evaluation and quality checks can be done based on the session history
 
 Group chat (session) orchestration should be avoided when:
@@ -146,7 +146,7 @@ Tool calls (e.g. MCP) can be used to add more deterministic logic to planning an
 This plan-and-execute loop can be extended by combining it with any of the other patterns outlined in this document.
 
 === Examples
-The PlannerAgent in https://doc.akka.io/getting-started/planner-agent/dynamic-team.html[this example] illustrates this pattern.
+The PlannerAgent in xref:getting-started:planner-agent/dynamic-team.adoc[this example] illustrates this pattern.
 
 == Magentic orchestration
 Magentic orchestration is a pattern for open-ended, complex problems that don’t have a predetermined plan. This dynamic planning aspect often overlaps with other patterns in this group. In this pattern, agents frequently have access to tools.
@@ -158,6 +158,6 @@ While the origin of the term `magentic` is open for debate, our best guess for t
 When we use workflows as ubiquitous coordinators and allow agents to be small, purpose-built model interaction components, then the need for individual, concrete patterns becomes less explicit. We don’t need to rewrite agents if we want to use them in different ways, we can either change how planning agents work or modify small bits of logic in the workflow.
 
 === Examples
-In our https://doc.akka.io/getting-started/planner-agent/dynamic-team.html[Akka dynamic orchestration] example, we illustrate a planning and evaluation loop, as well as re-planning.
+In our xref:getting-started:planner-agent/dynamic-team.adoc[Akka dynamic orchestration] example, we illustrate a planning and evaluation loop, as well as re-planning.
 
 
