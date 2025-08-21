@@ -15,7 +15,6 @@ import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
-import akka.javasdk.impl.ComponentType
 import akka.javasdk.impl.EntityExceptions.EntityException
 import akka.javasdk.impl.ErrorHandling.BadRequestException
 import akka.javasdk.impl.MetadataImpl
@@ -24,10 +23,8 @@ import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
 import akka.javasdk.impl.serialization.JsonSerializer
-import akka.javasdk.impl.telemetry.KeyValueEntityCategory
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
-import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.javasdk.keyvalueentity.CommandContext
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.keyvalueentity.KeyValueEntityContext
@@ -85,8 +82,6 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
   import KeyValueEntityEffectImpl._
   import KeyValueEntityImpl._
 
-  private val traceInstrumentation = new TraceInstrumentation(componentId, KeyValueEntityCategory, tracerFactory)
-
   private val router: ReflectiveKeyValueEntityRouter[AnyRef, KeyValueEntity[AnyRef]] = {
     val context = new KeyValueEntityContextImpl(entityId, regionInfo.selfRegion)
     new ReflectiveKeyValueEntityRouter[S, KV](factory(context), componentDescriptor.methodInvokers, serializer)
@@ -103,11 +98,12 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
       state: SpiEventSourcedEntity.State,
       command: SpiEntity.Command): Future[SpiEventSourcedEntity.Effect] = {
 
-    // FIXME(tracing): move this tracing to runtime
-    val span: Option[Span] =
-      traceInstrumentation.buildEntityCommandSpan(ComponentType.KeyValueEntity, componentId, entityId, command)
-    val telemetryContext = span.map(OtelContext.root.`with`)
-    span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
+    val telemetryContext = Option(command.telemetryContext)
+    val traceId = telemetryContext.flatMap { context =>
+      Option(Span.fromContextOrNull(context)).map(_.getSpanContext.getTraceId)
+    }
+    traceId.foreach(id => MDC.put(Telemetry.TRACE_ID, id))
+
     // smuggling 0 arity method called from component client through here
     val cmdPayload = command.payload.getOrElse(BytesPayload.empty)
     val metadata: Metadata = MetadataImpl.of(command.metadata)
@@ -193,11 +189,7 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
     } finally {
       entity._internalSetCommandContext(Optional.empty())
       entity._internalClearCurrentState()
-
-      span.foreach { s =>
-        MDC.remove(Telemetry.TRACE_ID)
-        s.end()
-      }
+      if (traceId.isDefined) MDC.remove(Telemetry.TRACE_ID)
     }
 
   }
