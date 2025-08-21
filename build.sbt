@@ -3,7 +3,7 @@ import Dependencies.AkkaRuntimeVersion
 
 lazy val `akka-javasdk-root` = project
   .in(file("."))
-  .aggregate(akkaJavaSdkAnnotationProcessor, akkaJavaSdk, akkaJavaSdkTestKit, akkaJavaSdkTests)
+  .aggregate(akkaJavaSdkAnnotationProcessor, akkaJavaSdk, akkaJavaSdkTestKit, akkaJavaSdkTests, akkaJavaSdkParent)
   // samplesCompilationProject and annotationProcessorTestProject are composite project
   // to aggregate them we need to map over them
   .aggregate(samplesCompilationProject.componentProjects.map(p => p: ProjectReference): _*)
@@ -104,5 +104,18 @@ lazy val annotationProcessorTestProject: CompositeProject =
         libraryDependencies += Dependencies.scalaTest % Test,
         Compile / javacOptions ++= Seq("-processor", "akka.javasdk.tooling.processor.ComponentAnnotationProcessor"))
   }
+
+lazy val akkaJavaSdkParent =
+  Project(id = "akka-javasdk-parent", base = file("akka-javasdk-parent"))
+    .enablePlugins(BuildInfoPlugin, Publish)
+    .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
+    .settings(
+      name := "akka-javasdk-parent",
+      crossPaths := false,
+      scalaVersion := Dependencies.ScalaVersion,
+      pomPostProcess := { (node: scala.xml.Node) =>
+        // completely replace with our pom.xml
+        scala.xml.XML.loadFile(baseDirectory.value / "pom.xml")
+      })
 
 addCommandAlias("formatAll", "scalafmtAll; javafmtAll")
