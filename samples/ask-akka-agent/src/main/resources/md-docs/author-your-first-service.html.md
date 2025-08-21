@@ -376,6 +376,4 @@ Now that you have a basic service running, it’s time to learn more about build
 
 <!-- </footer> -->
 
-<!-- <aside> -->
-
 <!-- </aside> -->
