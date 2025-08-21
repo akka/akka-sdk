@@ -70,13 +70,13 @@ import akka.runtime.sdk.spi.SpiAgent.TimeoutFailure
 import akka.runtime.sdk.spi.SpiAgent.ToolCallExecutionFailure
 import akka.runtime.sdk.spi.SpiAgent.ToolCallLimitReachedFailure
 import akka.runtime.sdk.spi.SpiAgent.UnsupportedFeatureFailure
-import akka.runtime.sdk.spi.SpiAgent.{AgentException => SpiAgentException}
+import akka.runtime.sdk.spi.SpiAgent.{ AgentException => SpiAgentException }
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.util.ByteString
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigException
 import io.opentelemetry.api.trace.Tracer
-import io.opentelemetry.context.{Context => OtelContext}
+import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
