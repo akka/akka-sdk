@@ -45,7 +45,7 @@ You should avoid sequential orchestration when:
 
 === Examples
 
-* In xref:getting-started:planner-agent/dynamic-team.adoc[this example], this pattern is illustrated well with a workflow with deterministic steps (no dynamic planning) that calls agents in sequence
+* In xref:getting-started:planner-agent/team.adoc[this example], this pattern is illustrated well with a workflow with deterministic steps (no dynamic planning) that calls agents in sequence
 
 
 == Concurrent orchestration
