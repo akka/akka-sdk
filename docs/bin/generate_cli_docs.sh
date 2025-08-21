@@ -60,6 +60,7 @@ EOM
 
   echo "patch command links in cli-index.adoc ..."
   AKKA_AUTH_CMD=`grep "akka_auth_" temp-cli-index.txt`
+  AKKA_CODE_CMD=`grep "akka_code_" temp-cli-index.txt`
   AKKA_CONFIG_CMD=`grep "akka_config_" temp-cli-index.txt`
   AKKA_CONTAINER_REGISTRY_CMD=`grep "akka_container-registry_" temp-cli-index.txt`
   AKKA_DOCKER_CMD=`grep "akka_docker_" temp-cli-index.txt`
@@ -74,6 +75,7 @@ EOM
 
   perl -pi.bak -e "s|<AKKA_AUTH_CMD>|${AKKA_AUTH_CMD}|" cli-index.adoc
   perl -pi.bak -e "s|<AKKA_CONFIG_CMD>|${AKKA_CONFIG_CMD}|" cli-index.adoc
+  perl -pi.bak -e "s|<AKKA_CODE_CMD>|${AKKA_CODE_CMD}|" cli-index.adoc
   perl -pi.bak -e "s|<AKKA_CONTAINER_REGISTRY_CMD>|${AKKA_CONTAINER_REGISTRY_CMD}|" cli-index.adoc
   perl -pi.bak -e "s|<AKKA_DOCKER_CMD>|${AKKA_DOCKER_CMD}|" cli-index.adoc
   perl -pi.bak -e "s|<AKKA_LOCAL_CMD>|${AKKA_LOCAL_CMD}|" cli-index.adoc

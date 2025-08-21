@@ -38,6 +38,13 @@ The xref:reference:cli/akka-cli/akka_auth.adoc[] command offers these options:
 == Enable auto-completion for your shell
 The xref:reference:cli/akka-cli/akka_completion.adoc[akka completion] command generates auto-completion configuration for common shells. See xref:operations:cli/command-completion.adoc[Enable command completion] for more information.
 
+== Initialize a source code project
+To start a source code project for a new Akka Service, the `akka code init` command offers an interactive experience to get you started.
+Using it, you can select from the samples catalog or create an empty source code project including instructions for your favorite AI
+assistant.
+
+* xref:reference:cli/akka-cli/akka_code_init.adoc[akka code init]
+
 == Manage local context
 The `akka config` command is used to display and set configuration contexts and values that apply to subsequent commands. Configuration settings are stored in a file on your local system, by default at `.kalix/config.yaml` in your home directory.
 
