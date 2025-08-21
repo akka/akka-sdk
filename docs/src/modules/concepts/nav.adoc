@@ -13,4 +13,5 @@
 *** xref:concepts:grpc-vs-http-endpoints.adoc[]
 *** xref:concepts:ai-agents.adoc[]
 *** xref:concepts:inter-agent-comms.adoc[]
+*** xref:concepts:ms-agent-patterns.adoc[]
 *** xref:concepts:acls.adoc[]
