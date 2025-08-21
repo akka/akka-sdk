@@ -68,34 +68,14 @@ In this kind of advanced scenario, Akka takes care of all the hard parts like ma
 === Examples
 The following code snippet shows how easily we can create a workflow step that calls two agents concurrently and gathers their results to be passed to the next step in the workflow:
 
-[source, java]
+[source,java,indent=0]
+.ConcurrentWorkflow.java
 ----
-private StepEffect askWeatherAndTraffic() {
-    // call WeatherAgent and TrafficAgent in parallel
-
-    var forecastCall = componentClient
-      .forAgent()
-      .inSession(sessionId())
-      .method(WeatherAgent::query)
-      .invokeAsync(currentState().userQuery);
-
-    var trafficAlertsCall = componentClient
-      .forAgent()
-      .inSession(sessionId())
-      .method(TrafficAgent::query)
-      .invokeAsync(currentState().userQuery);
-
-    // collect the results
-    var forecast = await(forecastCall);
-    var trafficAlerts = await(trafficAlertsCall);
-
-    return stepEffects()
-      .updateState(currentState()
-         .withWeather(forecast)
-         .withTraffic(trafficAlerts))
-      .thenTransitionTo(AgentTeamWorkflow::suggestActivities);
-}
+include::java:example$doc-snippets/src/main/java/patterns/ConcurrentWorkflow.java[tag=concurrent-step]
 ----
+<1> Call the `WeatherAgent` and `TrafficAgent` with `invokeAsync`, which immediately returns a `CompletionStage` of the future result.
+<2> Collect the results from the two agents.
+<3> Update the workflow state and continue with next step.
 
 == Group chat orchestration
 https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns#group-chat-orchestration[Group chat orchestration, window="new"] is when multiple agents collaborate to solve problems, make decisions, or judge work products. This collaboration between agents is facilitated by a shared discussion and a chat manager to coordinate all of the activities.
