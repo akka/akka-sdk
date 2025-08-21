@@ -1,5 +1,6 @@
 import Dependencies.Kalix
 import Dependencies.AkkaRuntimeVersion
+import scala.xml.Node
 
 lazy val `akka-javasdk-root` = project
   .in(file("."))
@@ -113,9 +114,26 @@ lazy val akkaJavaSdkParent =
       name := "akka-javasdk-parent",
       crossPaths := false,
       scalaVersion := Dependencies.ScalaVersion,
-      pomPostProcess := { (node: scala.xml.Node) =>
+      pomPostProcess := { (node: Node) =>
         // completely replace with our pom.xml
-        scala.xml.XML.loadFile(baseDirectory.value / "pom.xml")
+        val pom = scala.xml.XML.loadFile(baseDirectory.value / "pom.xml")
+        // but use the current version
+        updatePomVersion(pom, version.value)
       })
+
+def updatePomVersion(node: Node, v: String): Node = {
+  def updateElements(seq: Seq[Node]): Seq[Node] = {
+    seq.map {
+      case version @ <version>{_}</version> =>
+        <version>{v}</version>
+      case other => other
+    }
+  }
+
+  node match {
+    case <project>{ch @ _*}</project> => <project>{updateElements(ch)}</project>
+    case other                        => other
+  }
+}
 
 addCommandAlias("formatAll", "scalafmtAll; javafmtAll")
