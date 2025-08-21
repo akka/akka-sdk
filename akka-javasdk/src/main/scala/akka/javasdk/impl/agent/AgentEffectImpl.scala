@@ -195,11 +195,14 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
     this.asInstanceOf[BaseAgentEffectBuilder[String]]
   }
 
-  override def responseAs[T](responseType: Class[T]): MappingResponseBuilder[T] =
-    responseAs(responseType, includeJsonSchema = false)
+  override def responseAs[T](responseType: Class[T]): MappingResponseBuilder[T] = {
+    updateRequestModel(_.copy(responseType = responseType, includeJsonSchema = false))
+    new MappingResponseEffectBuilder(_primaryEffect.asInstanceOf[RequestModel])
+  }
 
-  override def responseAs[T](responseType: Class[T], includeJsonSchema: Boolean): MappingResponseBuilder[T] = {
-    updateRequestModel(_.copy(responseType = responseType, includeJsonSchema = includeJsonSchema))
+  override def responseWithJsonSchema[T](responseType: Class[T]): MappingResponseBuilder[T] = {
+    require(responseType != classOf[String], "Response schema not supported for plain String response")
+    updateRequestModel(_.copy(responseType = responseType, includeJsonSchema = true))
     new MappingResponseEffectBuilder(_primaryEffect.asInstanceOf[RequestModel])
   }
 
