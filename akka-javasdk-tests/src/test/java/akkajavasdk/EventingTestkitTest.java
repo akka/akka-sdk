@@ -12,6 +12,7 @@ import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEvent;
 import akkajavasdk.components.keyvalueentities.user.User;
+import akkajavasdk.components.keyvalueentities.user.UserEntity;
 import akkajavasdk.components.keyvalueentities.user.UserSideEffect;
 import akkajavasdk.components.pubsub.CounterView;
 import akkajavasdk.components.pubsub.DummyCounterEventStore;
@@ -30,7 +31,7 @@ public class EventingTestkitTest extends TestKitSupport {
     return TestKit.Settings.DEFAULT
         .withAclEnabled()
         .withTopicIncomingMessages(ViewFromCounterEventsTopic.COUNTER_EVENTS_TOPIC)
-        .withKeyValueEntityIncomingMessages("user");
+        .withKeyValueEntityIncomingMessages(UserEntity.class);
   }
 
   @BeforeEach
@@ -77,7 +78,7 @@ public class EventingTestkitTest extends TestKitSupport {
   public void shouldPublishKVEDeleteMessage() {
     // given
     EventingTestKit.IncomingMessages incomingMessages =
-        testKit.getKeyValueEntityIncomingMessages("user");
+        testKit.getKeyValueEntityIncomingMessages(UserEntity.class);
     String subject = "123";
     var user = new User("email", "name");
 
