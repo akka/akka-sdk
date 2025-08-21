@@ -58,7 +58,7 @@ image:ai_arch_concurrent.jpg[Diagram showing concurrent workflow execution in ag
 
 Also note that in this diagram, the workflow is responsible for controlling `agent 1.1` and `agent 1.2`, which appear as sub-agents in Microsoft’s pattern. In keeping with the golden rule of agentic composition, Akka agents don’t spawn sub-agents, workflows decide which agents are needed and the Akka runtime takes care of provisioning.
 
-As you’ll see later in this document, Akka workflows can easily spawn sub-workflows. This reinforces the notion that the only real difference between these patterns in Akka and elsewhere is that Akka separates the roles of orchestration and model communication while most other frameworks choose to combine them.
+As you’ll see later in this document, Akka workflows can easily spawn concurrent agents or even sub-workflows as needed. This reinforces the notion that the only real difference between these patterns in Akka and elsewhere is that Akka separates the roles of orchestration and model communication while most other frameworks choose to combine them.
 
 More advanced concurrent orchestration could be implemented by a parent workflow spawning child workflows. In this pattern, each child workflow performs a multi-step task and then delivers the result back to the parent workflow as a message (i.e. method call). 
 The parent workflow pauses when waiting for the results from children. The results would be stored in the state, and when the parent workflow is satisfied with all of the collected results it transitions to another step. 
