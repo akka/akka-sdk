@@ -214,6 +214,8 @@
                                                         <exclude>com.fasterxml.jackson.module:jackson-module-parameter-names</exclude>
                                                         <!-- SDK spi -->
                                                         <exclude>io.akka:akka-sdk-spi_2.13</exclude>
+                                                        <!-- langchain -->
+                                                        <exclude>dev.langchain4j:langchain4j</exclude>
                                                     </excludes>
                                                 </dependencySet>
                                             </dependencySets>
