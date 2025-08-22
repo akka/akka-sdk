@@ -6,7 +6,7 @@
 
     <groupId>io.akka</groupId>
     <artifactId>akka-javasdk-parent</artifactId>
-    <version>3.5.0</version>
+    <version>REPLACED_BY_BUILD</version>
     <packaging>pom</packaging>
 
 
