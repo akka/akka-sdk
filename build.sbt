@@ -1,6 +1,8 @@
 import Dependencies.Kalix
 import Dependencies.AkkaRuntimeVersion
+import scala.xml.Elem
 import scala.xml.Node
+import scala.xml.TopScope
 
 lazy val `akka-javasdk-root` = project
   .in(file("."))
@@ -114,25 +116,41 @@ lazy val akkaJavaSdkParent =
       name := "akka-javasdk-parent",
       crossPaths := false,
       scalaVersion := Dependencies.ScalaVersion,
+      publishArtifact := false, // disable jar, sources, docs
+      makePom / publishArtifact := true, // only pom
       pomPostProcess := { (node: Node) =>
         // completely replace with our pom.xml
         val pom = scala.xml.XML.loadFile(baseDirectory.value / "pom.xml")
         // but use the current version
-        updatePomVersion(pom, version.value)
+        updatePomVersion(pom, version.value, AkkaRuntimeVersion)
       })
 
-def updatePomVersion(node: Node, v: String): Node = {
+def updatePomVersion(node: Elem, v: String, runtimeVersion: String): Elem = {
   def updateElements(seq: Seq[Node]): Seq[Node] = {
     seq.map {
       case version @ <version>{_}</version> =>
         <version>{v}</version>
+      case ps @ <properties>{ch @ _*}</properties> =>
+        val updatedProperties =
+          ch.map {
+            case <akka-runtime.version>{_}</akka-runtime.version> =>
+              <akka-runtime.version>{runtimeVersion}</akka-runtime.version>
+            case <akka-javasdk.version>{_}</akka-javasdk.version> =>
+              <akka-javasdk.version>{v}</akka-javasdk.version>
+            case other =>
+              other
+          }
+        ps.asInstanceOf[Elem].copy(child = updatedProperties)
       case other => other
     }
   }
 
   node match {
-    case <project>{ch @ _*}</project> => <project>{updateElements(ch)}</project>
-    case other                        => other
+    case p @ <project>{ch @ _*}</project> =>
+      // important to copy to keep the namespace attributes
+      p.copy(child = updateElements(ch))
+    case other =>
+      other
   }
 }
 
