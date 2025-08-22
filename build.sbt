@@ -4,6 +4,8 @@ import scala.xml.Elem
 import scala.xml.Node
 import scala.xml.TopScope
 
+import Dependencies.AkkaGrpcVersion
+
 lazy val `akka-javasdk-root` = project
   .in(file("."))
   .aggregate(akkaJavaSdkAnnotationProcessor, akkaJavaSdk, akkaJavaSdkTestKit, akkaJavaSdkTests, akkaJavaSdkParent)
@@ -122,10 +124,10 @@ lazy val akkaJavaSdkParent =
         // completely replace with our pom.xml
         val pom = scala.xml.XML.loadFile(baseDirectory.value / "pom.xml")
         // but use the current version
-        updatePomVersion(pom, version.value, AkkaRuntimeVersion)
+        updatePomVersion(pom, version.value, AkkaRuntimeVersion, AkkaGrpcVersion)
       })
 
-def updatePomVersion(node: Elem, v: String, runtimeVersion: String): Elem = {
+def updatePomVersion(node: Elem, v: String, runtimeVersion: String, akkaGrpcVersion: String): Elem = {
   def updateElements(seq: Seq[Node]): Seq[Node] = {
     seq.map {
       case version @ <version>{_}</version> =>
@@ -137,6 +139,8 @@ def updatePomVersion(node: Elem, v: String, runtimeVersion: String): Elem = {
               <akka-runtime.version>{runtimeVersion}</akka-runtime.version>
             case <akka-javasdk.version>{_}</akka-javasdk.version> =>
               <akka-javasdk.version>{v}</akka-javasdk.version>
+            case <akka.grpc.version>{_}</akka.grpc.version> =>
+              <akka.grpc.version>{akkaGrpcVersion}</akka.grpc.version>
             case other =>
               other
           }
