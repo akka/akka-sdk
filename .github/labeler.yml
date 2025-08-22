@@ -5,7 +5,7 @@ java-sdk:
   - akka-javasdk-testkit/**/*
   - akka-javasdk-annotation-processor/**/*
   - akka-javasdk-annotation-processor-tests/**/*
-  - akka-javasdk-maven/**/*
+  - akka-javasdk-parent/**/*
 
 documentation:
   - docs/**/*

@@ -96,17 +96,6 @@ object CommonSettings extends AutoPlugin {
     Seq(run / fork := true, Test / fork := true, Test / javaOptions ++= Seq("-Xms1G"))
 
   def performAdditionalValidation(projectRoot: File): Unit = {
-    // parent pom and SDK akka gRPC version
-    val pluginVersion = akka.grpc.gen.BuildInfo.version
-    val parentPomFile = projectRoot / "akka-javasdk-maven" / "akka-javasdk-parent" / "pom.xml"
-    val parentPomContents = IO.read(parentPomFile, StandardCharsets.UTF_8)
-    val akkaGrpcVersionRegex = """<akka\.grpc\.version>([0-9.]+)""".r
-    val parentPomAkkaGrpcVersion = akkaGrpcVersionRegex.findFirstMatchIn(parentPomContents).get.group(1)
-    if (pluginVersion != parentPomAkkaGrpcVersion)
-      throw new IllegalStateException(
-        s"SDK Akka gRPC plugin version is [$pluginVersion] but parent pom version is not the same [$parentPomAkkaGrpcVersion]. " +
-        s"Align $parentPomFile with the SDK build version to correct.")
-
     // sample using explicit langchain dep that must be kept in sync
     val askAkkaAgentPom = projectRoot / "samples" / "ask-akka-agent" / "pom.xml"
     val askAkkaAgentPomContents = IO.read(askAkkaAgentPom, StandardCharsets.UTF_8)
