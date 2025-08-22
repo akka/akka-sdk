@@ -97,8 +97,8 @@ object CommonSettings extends AutoPlugin {
 
   def performAdditionalValidation(projectRoot: File): Unit = {
     // parent pom and SDK akka gRPC version
-    val pluginVersion = akka.grpc.gen.BuildInfo.version
-    val parentPomFile = projectRoot / "akka-javasdk-maven" / "akka-javasdk-parent" / "pom.xml"
+    val pluginVersion = Dependencies.AkkaGrpcVersion
+    val parentPomFile = projectRoot / "akka-javasdk-parent" / "pom.xml"
     val parentPomContents = IO.read(parentPomFile, StandardCharsets.UTF_8)
     val akkaGrpcVersionRegex = """<akka\.grpc\.version>([0-9.]+)""".r
     val parentPomAkkaGrpcVersion = akkaGrpcVersionRegex.findFirstMatchIn(parentPomContents).get.group(1)

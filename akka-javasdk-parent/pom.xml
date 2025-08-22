@@ -4,14 +4,6 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- FIXME This can be removed, right?
-    <parent>
-        <groupId>io.akka</groupId>
-        <artifactId>akka-javasdk-maven</artifactId>
-        <version>3.5.0</version>
-    </parent>
-    -->
-
     <groupId>io.akka</groupId>
     <artifactId>akka-javasdk-parent</artifactId>
     <version>3.5.0</version>
@@ -24,7 +16,34 @@
         It contains all dependencies and plugins to build an Akka service using the Akka SDK for Java.
     </description>
 
+    <url>https://www.akka.io</url>
+    <scm>
+        <url>https://github.com/akka/akka-sdk</url>
+    </scm>
+
+    <developers>
+        <developer>
+            <id>akka-developers</id>
+            <name>Akka SDK Developers</name>
+            <url>https://github.com/akka/akka-sdk/graphs/contributors</url>
+            <email>akka.official@gmail.com</email>
+        </developer>
+    </developers>
+
+    <prerequisites>
+        <maven>${maven.version}</maven>
+    </prerequisites>
+
     <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.release>21</maven.compiler.release>
+        <!-- keep in sync with
+         docs/build/src/managed/modules/java/partials/attributes.adoc#L4
+        -->
+        <maven.version>3.9.0</maven.version>
+
         <logback.configurationFile>logback-runtime-dev-mode.xml</logback.configurationFile>
 
         <docker.image>${project.artifactId}</docker.image>
@@ -167,8 +186,7 @@
                                                         <exclude>com.hierynomus:asn-one</exclude>
                                                         <exclude>org.reactivestreams:reactive-streams</exclude>
                                                         <!-- Scala stdlib -->
-                                                        <exclude>org.scala-lang.modules:scala-collection-compat_2.13
-                                                        </exclude>
+                                                        <exclude>org.scala-lang.modules:scala-collection-compat_2.13</exclude>
                                                         <exclude>org.scala-lang:scala-library</exclude>
                                                         <!-- Protobuf/gRPC
                                                             Note: scalapb validation is still provided from with service (for now) -->
@@ -180,10 +198,8 @@
                                                         <exclude>io.grpc:grpc-netty-shaded</exclude>
                                                         <exclude>io.grpc:grpc-protobuf</exclude>
                                                         <exclude>com.google.protobuf:protobuf-java</exclude>
-                                                        <exclude>com.google.api.grpc:proto-google-common-protos
-                                                        </exclude>
-                                                        <exclude>com.lightbend.akka.grpc:akka-grpc-runtime_2.13
-                                                        </exclude>
+                                                        <exclude>com.google.api.grpc:proto-google-common-protos</exclude>
+                                                        <exclude>com.lightbend.akka.grpc:akka-grpc-runtime_2.13</exclude>
                                                         <exclude>org.codehaus.mojo:animal-sniffer-annotations</exclude>
                                                         <!-- guava and related -->
                                                         <exclude>com.google.guava:guava</exclude>
@@ -202,8 +218,7 @@
                                                         <exclude>io.opentelemetry:opentelemetry-sdk-metrics</exclude>
                                                         <exclude>io.opentelemetry:opentelemetry-sdk-trace</exclude>
                                                         <exclude>io.opentelemetry:opentelemetry-exporter-otlp</exclude>
-                                                        <exclude>io.opentelemetry.semconv:opentelemetry-semconv
-                                                        </exclude>
+                                                        <exclude>io.opentelemetry.semconv:opentelemetry-semconv</exclude>
                                                         <!-- logging -->
                                                         <exclude>org.slf4j:slf4j-api</exclude>
                                                         <exclude>ch.qos.logback:logback-classic</exclude>
@@ -212,18 +227,12 @@
                                                         <exclude>ch.qos.logback.contrib:logback-json-core</exclude>
                                                         <exclude>ch.qos.logback.contrib:logback-jackson</exclude>
                                                         <!-- serialization/jackson -->
-                                                        <exclude>com.fasterxml.jackson.core:jackson-annotations
-                                                        </exclude>
+                                                        <exclude>com.fasterxml.jackson.core:jackson-annotations</exclude>
                                                         <exclude>com.fasterxml.jackson.core:jackson-core</exclude>
                                                         <exclude>com.fasterxml.jackson.core:jackson-databind</exclude>
-                                                        <exclude>com.fasterxml.jackson.datatype:jackson-datatype-jdk8
-                                                        </exclude>
-                                                        <exclude>
-                                                            com.fasterxml.jackson.datatype:jackson-datatype-jsr310
-                                                        </exclude>
-                                                        <exclude>
-                                                            com.fasterxml.jackson.module:jackson-module-parameter-names
-                                                        </exclude>
+                                                        <exclude>com.fasterxml.jackson.datatype:jackson-datatype-jdk8</exclude>
+                                                        <exclude>com.fasterxml.jackson.datatype:jackson-datatype-jsr310</exclude>
+                                                        <exclude>com.fasterxml.jackson.module:jackson-module-parameter-names</exclude>
                                                         <!-- SDK spi -->
                                                         <exclude>io.akka:akka-sdk-spi_2.13</exclude>
                                                         <!-- langchain -->
@@ -234,9 +243,7 @@
                                         </inline>
                                     </assembly>
                                     <entryPoint>
-                                        <shell>echo "Listing dependencies copied:"; cp --verbose /maven/*.jar
-                                            /opt/local-lib/
-                                        </shell>
+                                        <shell>echo "Listing dependencies copied:"; cp --verbose /maven/*.jar /opt/local-lib/</shell>
                                     </entryPoint>
                                 </build>
                             </image>
@@ -312,8 +319,7 @@
                         </excludes>
                         <systemPropertyVariables>
                             <logback.configurationFile>${logback.configurationFile}</logback.configurationFile>
-                            <akka.javasdk.dev-mode.project-artifact-id>${project.artifactId}
-                            </akka.javasdk.dev-mode.project-artifact-id>
+                            <akka.javasdk.dev-mode.project-artifact-id>${project.artifactId}</akka.javasdk.dev-mode.project-artifact-id>
                         </systemPropertyVariables>
                     </configuration>
                 </plugin>
@@ -334,9 +340,7 @@
                                     <include>**/IT*.java</include>
                                     <include>**/*ITCase.java</include>
                                 </includes>
-                                <argLine>-Dlogback.configurationFile=${logback.configurationFile}
-                                    -Dakka.javasdk.dev-mode.project-artifact-id=${project.artifactId}
-                                </argLine>
+                                <argLine>-Dlogback.configurationFile=${logback.configurationFile} -Dakka.javasdk.dev-mode.project-artifact-id=${project.artifactId}</argLine>
                             </configuration>
                         </execution>
                     </executions>
@@ -433,7 +437,7 @@
                                 </goals>
                                 <configuration>
                                     <source>
-                                        log.warn('The ' it ' profile is deprecated. It will be removed in future versions. Integration tests only need `mvn verify` to run.')
+                                        log.warn('The 'it' profile is deprecated. It will be removed in future versions. Integration tests only need `mvn verify` to run.')
                                     </source>
                                 </configuration>
                             </execution>
@@ -649,5 +653,4 @@
             <scope>runtime</scope>
         </dependency>
     </dependencies>
-
 </project>
