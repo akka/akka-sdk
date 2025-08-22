@@ -23,7 +23,3 @@ echo ">>> Updating Dependencies.scala"
 sed -i.bak "s/sys.props.getOrElse(\"akka-runtime.version\", \"\(.*\)\")/sys.props.getOrElse(\"akka-runtime.version\", \"$RUNTIME_VERSION\")/" ./project/Dependencies.scala
 rm ./project/Dependencies.scala.bak
 
-# The runtime version in the parent pom.xml is automatically replaced by `sbt publishM2`, but let's keep it in sync
-echo ">>> Updating akka-javasdk-parent/pom.xml"
-sed -i.bak "s/<akka-runtime\.version>[^<]*/<akka-runtime.version>$RUNTIME_VERSION/" ./akka-javasdk-parent/pom.xml
-rm ./akka-javasdk-parent/pom.xml.bak
