@@ -10,8 +10,9 @@ if [ $# -eq 0 ]; then
   echo "or simply using bash expansion..."
   echo "eg: ./updateSampleVersions.sh samples/*"
 else 
-  source publishLocally.sh
-  export SDK_VERSION="$SDK_VERSION"
+  export SDK_VERSION=$(sbt "print akka-javasdk/version" | tail -1)
+  echo "SDK version: $SDK_VERSION"
+  sbt 'publishM2; +publishLocal'
 
   echo "------------------------------------------------------------------------"
   for i in "$@"
