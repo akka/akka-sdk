@@ -54,22 +54,24 @@
         <maven-failsafe-plugin.version>3.1.2</maven-failsafe-plugin.version>
         <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
         <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
-
+        <akka-token>invalid-token</akka-token>
+        <akka-secure-repo>https://repo.akka.io/${akka-token}/secure</akka-secure-repo>
     </properties>
 
 
     <pluginRepositories>
         <pluginRepository>
-            <id>akka-repository</id>
-            <url>https://repo.akka.io/maven</url>
+            <id>akka-secure</id>
+            <name>Akka Secure</name>
+            <url>${akka-secure-repo}</url>
         </pluginRepository>
     </pluginRepositories>
 
     <repositories>
         <repository>
-            <id>akka-repository</id>
-            <name>Akka repository</name>
-            <url>https://repo.akka.io/maven</url>
+            <id>akka-secure</id>
+            <name>Akka Secure</name>
+            <url>${akka-secure-repo}</url>
         </repository>
     </repositories>
 
