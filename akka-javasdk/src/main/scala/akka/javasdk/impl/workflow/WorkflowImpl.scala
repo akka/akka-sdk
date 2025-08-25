@@ -19,7 +19,6 @@ import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
-import akka.javasdk.impl.ComponentType
 import akka.javasdk.impl.ErrorHandling.BadRequestException
 import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.MetadataImpl
@@ -27,8 +26,6 @@ import akka.javasdk.impl.WorkflowExceptions.WorkflowException
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
-import akka.javasdk.impl.telemetry.TraceInstrumentation
-import akka.javasdk.impl.telemetry.WorkflowCategory
 import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
@@ -45,7 +42,6 @@ import akka.runtime.sdk.spi.SpiWorkflow.StepCommand
 import akka.runtime.sdk.spi.SpiWorkflow.StepResult
 import akka.runtime.sdk.spi.TimerClient
 import io.opentelemetry.api.trace.Span
-import io.opentelemetry.api.trace.StatusCode
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
@@ -70,8 +66,6 @@ class WorkflowImpl[S, W <: Workflow[S]](
     extends SpiWorkflow {
 
   private val log: Logger = LoggerFactory.getLogger(workflowClass)
-
-  private val traceInstrumentation = new TraceInstrumentation(componentId, WorkflowCategory, tracerFactory)
 
   private val router =
     new ReflectiveWorkflowRouter[S, W](instanceFactory, componentDescriptor.methodInvokers, serializer)
@@ -121,11 +115,12 @@ class WorkflowImpl[S, W <: Workflow[S]](
       userState: Option[SpiWorkflow.State],
       command: SpiEntity.Command): Future[SpiWorkflow.CommandEffect] = {
 
-    // FIXME(tracing): move this tracing to runtime
-    val span: Option[Span] =
-      traceInstrumentation.buildEntityCommandSpan(ComponentType.Workflow, componentId, workflowId, command)
-    val telemetryContext = span.map(OtelContext.root.`with`)
-    span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
+    val telemetryContext = Option(command.telemetryContext)
+    val traceId = telemetryContext.flatMap { context =>
+      Option(Span.fromContextOrNull(context)).map(_.getSpanContext.getTraceId)
+    }
+    traceId.foreach(id => MDC.put(Telemetry.TRACE_ID, id))
+
     val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, telemetryContext, tracerFactory)
 
     val metadata = MetadataImpl.of(command.metadata)
@@ -159,10 +154,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
       case NonFatal(error) =>
         throw WorkflowException(workflowId, command.name, s"Unexpected failure: $error", Some(error))
     } finally {
-      span.foreach { s =>
-        MDC.remove(Telemetry.TRACE_ID)
-        s.end()
-      }
+      if (traceId.isDefined) MDC.remove(Telemetry.TRACE_ID)
     }
 
   }
@@ -170,16 +162,11 @@ class WorkflowImpl[S, W <: Workflow[S]](
   override def invokeStep(userState: Option[BytesPayload], stepCommand: StepCommand): Future[StepResult] = {
 
     val stepName = stepCommand.stepName
-    // FIXME(tracing): move this tracing to runtime
-    val span: Option[Span] =
-      traceInstrumentation.buildEntityCommandSpan(
-        ComponentType.Workflow,
-        componentId,
-        workflowId,
-        stepName,
-        stepCommand.metadata)
-    val telemetryContext = span.map(OtelContext.root.`with`)
-    span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
+    val telemetryContext = Option(stepCommand.telemetryContext)
+    val traceId = telemetryContext.flatMap { context =>
+      Option(Span.fromContextOrNull(context)).map(_.getSpanContext.getTraceId)
+    }
+    traceId.foreach(id => MDC.put(Telemetry.TRACE_ID, id))
     val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, telemetryContext, tracerFactory)
 
     val context = commandContext(stepName, telemetryContext, MetadataImpl.of(stepCommand.metadata))
@@ -198,13 +185,8 @@ class WorkflowImpl[S, W <: Workflow[S]](
 
       handleStep.onComplete {
         case Failure(exception) =>
-          span.foreach { s =>
-            s.setStatus(StatusCode.ERROR) //TODO doesn't work, not sure why the span is presented the same way
-            s.end()
-          }
           log.error(s"Workflow [$workflowId], failed to execute step [$stepName]", exception)
         case Success(_) =>
-          span.foreach(_.end())
       }(sdkExecutionContext)
 
       handleStep
@@ -213,13 +195,9 @@ class WorkflowImpl[S, W <: Workflow[S]](
       case NonFatal(ex) =>
         val message = s"unexpected exception [${ex.getMessage}] while executing step [$stepName]"
         log.error(message, ex)
-        span.foreach(_.end())
         throw WorkflowException(message, Some(ex))
     } finally {
-      span.foreach { __ =>
-        MDC.remove(Telemetry.TRACE_ID)
-      //ending the span is done in the onComplete above, can't be here because the Future may not complete
-      }
+      if (traceId.isDefined) MDC.remove(Telemetry.TRACE_ID)
     }
   }
 

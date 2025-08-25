@@ -212,6 +212,7 @@ private[impl] final class AgentImpl[A <: Agent](
               callToolFunction = request => Future(toolExecutor.execute(request))(sdkExecutionContext),
               mcpClientDescriptors = mcpToolEndpoints,
               responseType = req.responseType,
+              responseSchema = None, // FIXME update in separate PR
               responseMapping = req.responseMapping,
               failureMapping = req.failureMapping.map(mapSpiAgentException),
               replyMetadata = metadata,
@@ -424,7 +425,8 @@ private[impl] final class AgentImpl[A <: Agent](
           baseUrl = p.baseUrl,
           temperature = p.temperature,
           topP = p.topP,
-          maxTokens = p.maxTokens)
+          maxTokens = p.maxTokens,
+          maxCompletionTokens = p.maxCompletionTokens)
       case p: ModelProvider.Custom =>
         new SpiAgent.ModelProvider.Custom(() => p.createChatModel(), () => p.createStreamingChatModel())
     }

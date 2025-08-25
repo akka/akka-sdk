@@ -19,12 +19,12 @@ public class ActivityViewTest extends TestKitSupport {
     // We don't need a real one though.
     return TestKit.Settings.DEFAULT.withAdditionalConfig(
       ConfigFactory.parseString("akka.javasdk.agent.openai.api-key=fake-key")
-    ).withWorkflowIncomingMessages("agent-team");
+    ).withWorkflowIncomingMessages(AgentTeamWorkflow.class);
   }
 
   @Test
   public void shouldHandleMultipleSessionsForSameUser() {
-    var workflowMessages = testKit.getWorkflowIncomingMessages("agent-team");
+    var workflowMessages = testKit.getWorkflowIncomingMessages(AgentTeamWorkflow.class);
 
     var userId = "alice";
 
@@ -102,7 +102,7 @@ public class ActivityViewTest extends TestKitSupport {
 
   @Test
   public void shouldFilterActivitiesByUserId() {
-    var workflowMessages = testKit.getWorkflowIncomingMessages("agent-team");
+    var workflowMessages = testKit.getWorkflowIncomingMessages(AgentTeamWorkflow.class);
 
     // Activity for user bob
     var aliceState = new AgentTeamWorkflow.State(

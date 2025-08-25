@@ -17,6 +17,13 @@ The xref:reference:cli/akka-cli/akka_auth.adoc[] command offers these options:
 == Enable auto-completion for your shell
 The xref:reference:cli/akka-cli/akka_completion.adoc[akka completion] command generates auto-completion configuration for common shells. See xref:operations:cli/command-completion.adoc[Enable command completion] for more information.
 
+== Initialize a source code project
+To start a source code project for a new Akka Service, the `akka code init` command offers an interactive experience to get you started.
+Using it, you can select from the samples catalog or create an empty source code project including instructions for your favorite AI
+assistant.
+
+<AKKA_CODE_CMD>
+
 == Manage local context
 The `akka config` command is used to display and set configuration contexts and values that apply to subsequent commands. Configuration settings are stored in a file on your local system, by default at `.kalix/config.yaml` in your home directory.
 
@@ -61,13 +68,6 @@ See also the xref:reference:cli/akka-cli/akka_roles.adoc#_see_also[akka roles] c
 The xref:reference:cli/akka-cli/akka_projects.adoc[akka projects] command includes the following options:
 
 <AKKA_PROJECTS_CMD>
-
-== Access quickstart project samples
-The `akka quickstart` commands enable one to access Akka quickstart project samples.
-
-The xref:reference:cli/akka-cli/akka_quickstart.adoc[akka quickstart] command includes the following options:
-
-<AKKA_QUICKSTART_CMD>
 
 == Regions
 The `akka regions` commands allow you to manage regions on Akka.

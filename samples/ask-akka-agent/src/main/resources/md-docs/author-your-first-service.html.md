@@ -85,7 +85,7 @@ git clone https://github.com/akka-samples/helloworld-agent.git --depth 1
 Another convenient way to download this and other samples is to use the Akka CLI. See [installation instructions](quick-install-cli.html).
 
 ```command
-akka code init helloworld-agent
+akka code init
 ```
 
 ## <a href="about:blank#_explore_the_agent"></a> Explore the Agent
@@ -375,7 +375,5 @@ Now that you have a basic service running, it’s time to learn more about build
 <!-- </nav> -->
 
 <!-- </footer> -->
-
-<!-- <aside> -->
 
 <!-- </aside> -->

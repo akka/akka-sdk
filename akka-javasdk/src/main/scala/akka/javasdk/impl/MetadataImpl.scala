@@ -265,11 +265,22 @@ object MetadataImpl {
         }
       }
 
-    new MetadataImpl(transformedEntries)
+    ensureContentType(new MetadataImpl(transformedEntries))
   }
 
   def of(metadata: SpiMetadata): MetadataImpl = {
     of(metadata.entries)
+  }
+
+  private def ensureContentType(metadata: MetadataImpl): MetadataImpl = {
+    // NOTE: MetadataImpl currently always uses `Content-Type` for `ce-datacontenttype`.
+    // If the metadata only has `ce-datacontenttype`, also copy it to `Content-Type`.
+    if (metadata.datacontenttype.isEmpty) {
+      metadata.getScala("ce-datacontenttype") match {
+        case Some(contentType) => metadata.withDatacontenttype(contentType)
+        case _                 => metadata
+      }
+    } else metadata
   }
 
 }

@@ -423,7 +423,7 @@ private[testkit] class OutgoingMessagesImpl(
 
   private def typeUrlFor(metadata: MetadataImpl): String = {
     val ceType = metadata.get("ce-type").toScala
-    val contentType = metadata.get("Content-Type").toScala
+    val contentType = metadata.datacontenttypeScala()
 
     (ceType, contentType) match {
       case (_, Some("text/plain; charset=utf-8")) => "type.kalix.io/string"

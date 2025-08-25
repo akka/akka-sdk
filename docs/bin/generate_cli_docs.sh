@@ -60,13 +60,13 @@ EOM
 
   echo "patch command links in cli-index.adoc ..."
   AKKA_AUTH_CMD=`grep "akka_auth_" temp-cli-index.txt`
+  AKKA_CODE_CMD=`grep "akka_code_" temp-cli-index.txt`
   AKKA_CONFIG_CMD=`grep "akka_config_" temp-cli-index.txt`
   AKKA_CONTAINER_REGISTRY_CMD=`grep "akka_container-registry_" temp-cli-index.txt`
   AKKA_DOCKER_CMD=`grep "akka_docker_" temp-cli-index.txt`
   AKKA_LOCAL_CMD=`grep "akka_local_" temp-cli-index.txt`
   AKKA_ORGANIZATIONS_CMD=`grep "akka_organizations_" temp-cli-index.txt`
   AKKA_PROJECTS_CMD=`grep "akka_projects_" temp-cli-index.txt`
-  AKKA_QUICKSTART_CMD=`grep "akka_quickstart_" temp-cli-index.txt`
   AKKA_REGIONS_CMD=`grep "akka_regions_" temp-cli-index.txt`
   AKKA_ROLES_CMD=`grep "akka_roles_" temp-cli-index.txt`
   AKKA_ROUTES_CMD=`grep "akka_routes_" temp-cli-index.txt`
@@ -75,12 +75,12 @@ EOM
 
   perl -pi.bak -e "s|<AKKA_AUTH_CMD>|${AKKA_AUTH_CMD}|" cli-index.adoc
   perl -pi.bak -e "s|<AKKA_CONFIG_CMD>|${AKKA_CONFIG_CMD}|" cli-index.adoc
+  perl -pi.bak -e "s|<AKKA_CODE_CMD>|${AKKA_CODE_CMD}|" cli-index.adoc
   perl -pi.bak -e "s|<AKKA_CONTAINER_REGISTRY_CMD>|${AKKA_CONTAINER_REGISTRY_CMD}|" cli-index.adoc
   perl -pi.bak -e "s|<AKKA_DOCKER_CMD>|${AKKA_DOCKER_CMD}|" cli-index.adoc
   perl -pi.bak -e "s|<AKKA_LOCAL_CMD>|${AKKA_LOCAL_CMD}|" cli-index.adoc
   perl -pi.bak -e "s|<AKKA_ORGANIZATIONS_CMD>|${AKKA_ORGANIZATIONS_CMD}|" cli-index.adoc
   perl -pi.bak -e "s|<AKKA_PROJECTS_CMD>|${AKKA_PROJECTS_CMD}|" cli-index.adoc
-  perl -pi.bak -e "s|<AKKA_QUICKSTART_CMD>|${AKKA_QUICKSTART_CMD}|" cli-index.adoc
   perl -pi.bak -e "s|<AKKA_REGIONS_CMD>|${AKKA_REGIONS_CMD}|" cli-index.adoc
   perl -pi.bak -e "s|<AKKA_ROLES_CMD>|${AKKA_ROLES_CMD}|" cli-index.adoc
   perl -pi.bak -e "s|<AKKA_ROUTES_CMD>|${AKKA_ROUTES_CMD}|" cli-index.adoc
