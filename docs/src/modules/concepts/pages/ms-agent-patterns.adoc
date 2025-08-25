@@ -93,7 +93,7 @@ This concept of a shared session in Akka is flexible enough that it can be appli
 Group chat (session) orchestration is ideal for:
 
 * Collaborative scenarios between agents, workflows, and sub-workflows
-Validation and quality control where evaluation and quality checks can be done based on the session history
+* Validation and quality control where evaluation and quality checks can be done based on the session history
 
 Group chat (session) orchestration should be avoided when:
 
