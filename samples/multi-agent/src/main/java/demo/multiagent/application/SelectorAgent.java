@@ -61,7 +61,7 @@ public class SelectorAgent extends Agent {
     return effects()
       .systemMessage(systemMessage)
       .userMessage(message)
-      .responseAs(AgentSelection.class)
+      .responseWithJsonSchema(AgentSelection.class)
       .thenReply();
   }
 }
