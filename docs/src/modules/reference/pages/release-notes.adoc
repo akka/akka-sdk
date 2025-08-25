@@ -14,7 +14,7 @@ Current versions
 
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.1[Akka SDK 3.5.1]
 - GPT-5 support
-- Various bugfixes and internal improvements
+- Various bug fixes and internal improvements
 
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.0[Akka SDK 3.5.0]
 - New typesafe API for workflows - previous Step API is deprecated
