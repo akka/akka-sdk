@@ -271,13 +271,13 @@ public abstract class Agent {
       Agent.Effect<String> thenReply(Metadata metadata);
 
       /**
-       * Parse the response from the model into a structured response of a given responseType.
-       * The system message must have instruction or example of how the JSON should be
-       * structured. Alternatively, or as a compliment, the JSON schema of the {@code responseType}
-       * can be included automatically in the request by using {@link #responseWithJsonSchema}.
+       * Parse the response from the model into a structured response of a given responseType. The
+       * system message must have instruction or example of how the JSON should be structured.
+       * Alternatively, or as a compliment, the JSON schema of the {@code responseType} can be
+       * included automatically in the request by using {@link #responseWithJsonSchema}.
        *
        * @param responseType The structured response type.
-       * @see #responseWithJsonSchema 
+       * @see #responseWithJsonSchema
        */
       <T> MappingResponseBuilder<T> responseAs(Class<T> responseType);
 
@@ -289,7 +289,7 @@ public abstract class Agent {
        * the system message.
        *
        * @param responseType The structured response type.
-       * @see #responseAs 
+       * @see #responseAs
        */
       <T> MappingResponseBuilder<T> responseWithJsonSchema(Class<T> responseType);
 
