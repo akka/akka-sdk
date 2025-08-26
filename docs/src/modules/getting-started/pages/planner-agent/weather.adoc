@@ -41,7 +41,7 @@ We could make a request to the `WeatherAgent` from the endpoint before calling t
 
 Before introducing the workflow we would like to see that the `WeatherAgent` works in isolation.
 
-Add a new file `WeatherAgentIntegrationTest.java` to `src/main/test/com/example/application/`
+Add a new file `WeatherAgentIntegrationTest.java` to `src/test/com/example/application/`
 
 [source,java,indent=0]
 .WeatherAgentIntegrationTest.java
