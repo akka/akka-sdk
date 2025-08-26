@@ -2,10 +2,11 @@ name: Update and PR akka-samples
 
 on:
   workflow_dispatch: # to trigger manually
-  workflow_run:
-    workflows: ["Publish"]
-    types:
-      - completed
+# Currently only triggered manually because it seems to not see latest tag?
+#  workflow_run:
+#    workflows: ["Publish"]
+#    types:
+#      - completed
 
 jobs:
   debug:
@@ -88,17 +89,24 @@ jobs:
           cd akka-samples-${{ matrix.sample }}
           git config user.name "lightbend-tools-secure"
           git config user.email "lightbend-tools-secure@lightbend.com"
-          BRANCH=update-sdk-$sdk_version
+          # include timestamp to make the branch name unique
+          timestamp=`date '+%Y%m%d-%H%M%S'`
+          BRANCH=update-sdk-$sdk_version-$timestamp
           git checkout -b $BRANCH
           rm -rf ./src/*
           rsync -a ../docs/build/bundle/${{ matrix.sample }}/ ./
           rm -f .bundleignore
-          git add -f .idea/runConfigurations/Run_locally.xml
-          git add .
-          git commit . -m "chore: bump SDK version to $sdk_version"
-          git push --set-upstream origin $BRANCH
-          gh pr create -B main -t "Auto PR - Bump SDK version to $sdk_version" \
+          
+          if [ -n "$(git status --porcelain)" ]; then
+            git add -f .idea/runConfigurations/Run_locally.xml
+            git add .
+            git commit . -m "chore: bump SDK version to $sdk_version"
+            git push --set-upstream origin $BRANCH
+            gh pr create -B main -t "Auto PR - Bump SDK version to $sdk_version" \
               -b "This PR should update SDK (pom.xml) and latest source code.  [$GITHUB_SHA]($COMMIT_URL$GITHUB_SHA)"
+          else
+            echo "no changes";
+          fi
 
   # Update sdk version of samples that are maintained in akka-samples repository.
   update-version-samples:
@@ -161,11 +169,18 @@ jobs:
           cd akka-samples-${{ matrix.sample }}
           git config user.name "lightbend-tools-secure"
           git config user.email "lightbend-tools-secure@lightbend.com"
-          BRANCH=update-sdk-$sdk_version
+          # include timestamp to make the branch name unique
+          timestamp=`date '+%Y%m%d-%H%M%S'`
+          BRANCH=update-sdk-$sdk_version-$timestamp
           git checkout -b $BRANCH
           ../updateSdkVersions.sh java .
-          git add .
-          git commit . -m "chore: bump SDK version to $sdk_version"
-          git push --set-upstream origin $BRANCH
-          gh pr create -B main -t "Auto PR - Bump SDK version to $sdk_version" \
+          
+          if [ -n "$(git status --porcelain)" ]; then
+            git add .
+            git commit . -m "chore: bump SDK version to $sdk_version"
+            git push --set-upstream origin $BRANCH
+            gh pr create -B main -t "Auto PR - Bump SDK version to $sdk_version" \
               -b "This PR should update SDK (pom.xml).  [$GITHUB_SHA]($COMMIT_URL$GITHUB_SHA)"
+          else
+            echo "no changes";
+          fi
