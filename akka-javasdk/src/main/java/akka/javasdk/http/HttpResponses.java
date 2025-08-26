@@ -17,7 +17,6 @@ import akka.javasdk.impl.http.HttpClassPathResource;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import com.google.common.net.HttpHeaders;
-
 import java.time.Duration;
 import java.util.Arrays;
 
@@ -250,12 +249,18 @@ public class HttpResponses {
                     ServerSentEvent.create(JsonSupport.getObjectMapper().writeValueAsString(elem)))
             .keepAlive(Duration.ofSeconds(10), ServerSentEvent::heartbeat)
             .map(ServerSentEvent::encode)
-            .recoverWith(Match.<Throwable, Source<ByteString, NotUsed>, Throwable>match(Throwable.class, (ex) -> {
-              // Note: no natural way to convey stream errors to client with SSE - the HTTP response with status is already sent to client
-              //       so we recover/complete stream and log error
-              SdkRunner.userServiceLog().error("HTTP endpoint SSE stream failed with error", ex);
-              return Source.empty();
-            }).build());
+            .recoverWith(
+                Match.<Throwable, Source<ByteString, NotUsed>, Throwable>match(
+                        Throwable.class,
+                        (ex) -> {
+                          // Note: no natural way to convey stream errors to client with SSE - the
+                          // HTTP response with status is already sent to client
+                          //       so we recover/complete stream and log error
+                          SdkRunner.userServiceLog()
+                              .error("HTTP endpoint SSE stream failed with error", ex);
+                          return Source.empty();
+                        })
+                    .build());
 
     return HttpResponse.create()
         .withStatus(StatusCodes.OK)
