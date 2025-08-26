@@ -106,6 +106,7 @@ jobs:
               -b "This PR should update SDK (pom.xml) and latest source code.  [$GITHUB_SHA]($COMMIT_URL$GITHUB_SHA)"
           else
             echo "no changes";
+            cat pom.xml
           fi
 
   # Update sdk version of samples that are maintained in akka-samples repository.
@@ -165,6 +166,7 @@ jobs:
           GH_TOKEN: ${{ secrets.AKKA_SAMPLES_RW_ACCESS_TOKEN }}
         run: |
           sdk_version=`./docs/bin/version.sh`
+          echo "Updating ${{ matrix.sample }} to sdk $sdk_version"
           export SDK_VERSION=${sdk_version}
           cd akka-samples-${{ matrix.sample }}
           git config user.name "lightbend-tools-secure"
@@ -183,4 +185,5 @@ jobs:
               -b "This PR should update SDK (pom.xml).  [$GITHUB_SHA]($COMMIT_URL$GITHUB_SHA)"
           else
             echo "no changes";
+            cat pom.xml
           fi
