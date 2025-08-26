@@ -45,7 +45,6 @@ import akka.javasdk.agent.SessionMemoryEntity
 import akka.javasdk.annotations.AgentDescription
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.GrpcEndpoint
-import akka.javasdk.annotations.Setup
 import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.client.ComponentClient
@@ -330,15 +329,7 @@ private object ComponentLocator {
       // central config/lifecycle class
       val serviceSetupClassName = descriptorConfig.getString(DescriptorServiceSetupEntryPath)
       val serviceSetup = system.dynamicAccess.getClassFor[AnyRef](serviceSetupClassName).get
-      if (serviceSetup.hasAnnotation[Setup]) {
-        if (!classOf[ServiceSetup].isAssignableFrom(serviceSetup)) {
-          throw new IllegalStateException(
-            "A class [" + serviceSetup + "] annotated with @Setup must implement [akka.javasdk.ServiceSetup] interface")
-        }
-        logger.debug("Found and loaded service class setup: [{}]", serviceSetup)
-      } else {
-        logger.warn("Ignoring service class [{}] as it does not have the @Setup annotation", serviceSetup)
-      }
+      logger.debug("Found and loaded service class setup: [{}]", serviceSetup)
       LocatedClasses(withBuildInComponents, Some(serviceSetup))
     } else {
       LocatedClasses(withBuildInComponents, None)
