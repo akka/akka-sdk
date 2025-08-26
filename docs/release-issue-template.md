@@ -29,6 +29,7 @@ You can see the Akka Runtime version on prod [on grafana](https://grafana.sre.ka
     - Note that the PR will be pretty big normally, not only involving documentation files.
 
 ### Update samples
+- [ ] Run https://github.com/akka/akka-sdk/actions/workflows/pr-akka-samples.yml from the release tag 
 - [ ] Merge auto-PRs in akka-samples https://github.com/orgs/akka-samples/repositories?q=sort%3Aname-asc
  
 ### Announcements
