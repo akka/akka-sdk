@@ -272,8 +272,12 @@ public abstract class Agent {
 
       /**
        * Parse the response from the model into a structured response of a given responseType.
+       * The system message must have instruction or example of how the JSON should be
+       * structured. Alternatively, or as a compliment, the JSON schema of the {@code responseType}
+       * can be included automatically in the request by using {@link #responseWithJsonSchema}.
        *
        * @param responseType The structured response type.
+       * @see #responseWithJsonSchema 
        */
       <T> MappingResponseBuilder<T> responseAs(Class<T> responseType);
 
@@ -281,10 +285,11 @@ public abstract class Agent {
        * Parse the response from the model into a structured response of a given responseType. The
        * JSON schema of the {@code responseType} is included in the model request. At least OpenAI
        * and Google Gemini support this structured model output feature. For other models that don't
-       * support it you have to give more detailed instructions about the expected output format in
+       * support it, you have to give more detailed instructions about the expected output format in
        * the system message.
        *
        * @param responseType The structured response type.
+       * @see #responseAs 
        */
       <T> MappingResponseBuilder<T> responseWithJsonSchema(Class<T> responseType);
 
