@@ -160,7 +160,7 @@ public sealed interface ModelProvider {
 
   /** Settings for the Local AI Large Language Model provider. */
   static LocalAI localAI() {
-    return new LocalAI("", "", Double.NaN, Double.NaN, -1);
+    return new LocalAI("http://localhost:8080/v1", "", Double.NaN, Double.NaN, -1);
   }
 
   /** Settings for the Local AI Large Language Model provider. */
@@ -194,7 +194,7 @@ public sealed interface ModelProvider {
 
   /** Settings for the Ollama Large Language Model provider. */
   static Ollama ollama() {
-    return new Ollama("", "", Double.NaN, Double.NaN);
+    return new Ollama("http://localhost:11434", "", Double.NaN, Double.NaN);
   }
 
   /** Settings for the Ollama Large Language Model provider. */
