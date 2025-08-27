@@ -97,6 +97,45 @@ private[impl] object AgentImpl {
     override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
   }
 
+  def modelProviderFromConfig(config: Config, configPath: String, componentId: String): ModelProvider = {
+    val actualPath =
+      if (configPath == "")
+        config.getString("akka.javasdk.agent.model-provider")
+      else
+        configPath
+
+    if (actualPath == "")
+      throw new IllegalArgumentException(
+        s"You must define model provider configuration in [akka.javasdk.agent.model-provider]")
+
+    val resolvedConfigPath =
+      if (config.hasPath(actualPath))
+        actualPath
+      else if (!actualPath.contains('.') && config.hasPath("akka.javasdk.agent." + actualPath))
+        "akka.javasdk.agent." + actualPath
+      else
+        throw new IllegalArgumentException(s"Undefined model provider configuration [$actualPath]")
+
+    try {
+      log.debug("Model provider from config [{}]", resolvedConfigPath)
+      val providerConfig = config.getConfig(resolvedConfigPath)
+      providerConfig.getString("provider") match {
+        case "anthropic"       => ModelProvider.Anthropic.fromConfig(providerConfig)
+        case "googleai-gemini" => ModelProvider.GoogleAIGemini.fromConfig(providerConfig)
+        case "hugging-face"    => ModelProvider.HuggingFace.fromConfig(providerConfig)
+        case "ollama"          => ModelProvider.Ollama.fromConfig(providerConfig)
+        case "openai"          => ModelProvider.OpenAi.fromConfig(providerConfig)
+        case "local-ai"        => ModelProvider.LocalAI.fromConfig(providerConfig)
+        case other =>
+          throw new IllegalArgumentException(s"Unknown model provider [$other] in config [$resolvedConfigPath]")
+      }
+    } catch {
+      case exc: ConfigException =>
+        log.error("Invalid model provider configuration at [{}] for agent [{}].", resolvedConfigPath, componentId, exc)
+        throw exc
+    }
+  }
+
 }
 
 /**
@@ -389,7 +428,7 @@ private[impl] final class AgentImpl[A <: Agent](
   private def toSpiModelProvider(modelProvider: ModelProvider): SpiAgent.ModelProvider = {
     modelProvider match {
       case p: ModelProvider.FromConfig =>
-        toSpiModelProvider(modelProviderFromConfig(p.configPath()))
+        toSpiModelProvider(modelProviderFromConfig(config, p.configPath(), componentId))
       case p: ModelProvider.Anthropic =>
         new SpiAgent.ModelProvider.Anthropic(
           apiKey = p.apiKey,
@@ -429,45 +468,6 @@ private[impl] final class AgentImpl[A <: Agent](
           maxCompletionTokens = p.maxCompletionTokens)
       case p: ModelProvider.Custom =>
         new SpiAgent.ModelProvider.Custom(() => p.createChatModel(), () => p.createStreamingChatModel())
-    }
-  }
-
-  private def modelProviderFromConfig(configPath: String): ModelProvider = {
-    val actualPath =
-      if (configPath == "")
-        config.getString("akka.javasdk.agent.model-provider")
-      else
-        configPath
-
-    if (actualPath == "")
-      throw new IllegalArgumentException(
-        s"You must define model provider configuration in [akka.javasdk.agent.model-provider]")
-
-    val resolvedConfigPath =
-      if (config.hasPath(actualPath))
-        actualPath
-      else if (!actualPath.contains('.') && config.hasPath("akka.javasdk.agent." + actualPath))
-        "akka.javasdk.agent." + actualPath
-      else
-        throw new IllegalArgumentException(s"Undefined model provider configuration [$actualPath]")
-
-    try {
-      log.debug("Model provider from config [{}]", resolvedConfigPath)
-      val providerConfig = config.getConfig(resolvedConfigPath)
-      providerConfig.getString("provider") match {
-        case "anthropic"       => ModelProvider.Anthropic.fromConfig(providerConfig)
-        case "googleai-gemini" => ModelProvider.GoogleAIGemini.fromConfig(providerConfig)
-        case "hugging-face"    => ModelProvider.HuggingFace.fromConfig(providerConfig)
-        case "ollama"          => ModelProvider.Ollama.fromConfig(providerConfig)
-        case "openai"          => ModelProvider.OpenAi.fromConfig(providerConfig)
-        case "local-ai"        => ModelProvider.LocalAI.fromConfig(providerConfig)
-        case other =>
-          throw new IllegalArgumentException(s"Unknown model provider [$other] in config [$resolvedConfigPath]")
-      }
-    } catch {
-      case exc: ConfigException =>
-        log.error("Invalid model provider configuration at [{}] for agent [{}].", resolvedConfigPath, componentId, exc)
-        throw exc
     }
   }
 

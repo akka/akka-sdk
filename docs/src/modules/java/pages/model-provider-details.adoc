@@ -28,7 +28,7 @@ of their probability. It provides a simpler way to control randomness,
 smaller k values (like 10) produce more focused outputs while larger
 values (like 50) allow for more diversity.
 
-=== max-tokens
+=== max-tokens or max-completion-tokens
 If this value is supplied and the model supports this property, then it will stop operations in mid flight if the token quota runs out. It's important to check _how_ the model counts tokens, as some may count differently. Be aware of the fact that this parameter name frequently varies from one provider to the next. Make sure you're using the right property name.
 
 == Model configuration
@@ -249,6 +249,10 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.Ollama.html[`ModelPro
 
 | max-tokens
 | Integer
+| Max token quota. Leave as –1 for model default. Not supported by GPT-5, use max-completion-tokens instead.
+
+| max-completion-tokens
+| Integer
 | Max token quota. Leave as –1 for model default
 
 |===
@@ -257,6 +261,27 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`ModelPro
 
 == Reference configurations
 The following is a list of the various reference configurations for each of the AI models
+
+Note that the following reference configurations are the default values, and you would typically only define the properties that you want to override, such as:
+
+[source,hocon,indent=0]
+----
+akka.javasdk.agent.openai {
+  model-name = "gpt-4o-mini"
+}
+----
+
+You may also have to use a fallback to the reference configuration if you use a different configuration section:
+
+[source,hocon,indent=0]
+----
+gpt-o3 = ${akka.javasdk.agent.openai}
+gpt-o3 {
+  model-name = "o3"
+  max-completion-tokens = 200000
+}
+----
+
 
 === Anthropic
 [source,hocon,indent=0]
