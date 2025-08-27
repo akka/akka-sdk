@@ -17,7 +17,7 @@ Required aliasing for the boolean result in the query response. The alias determ
 == Features
 
 Continuation Check::
-Provides a simple boolean indicator that can be used in UIs to show or hide "load more" or pagination controls.
+Provides a simple boolean indicator that can be used in user interfaces to show or hide "load more" or pagination controls.
 
 Works with All Paging Methods::
 Can be used with both token-based pagination and traditional offset/limit pagination.
