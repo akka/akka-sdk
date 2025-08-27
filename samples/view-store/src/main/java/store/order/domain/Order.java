@@ -1,6 +1,5 @@
 package store.order.domain;
 
-// tag::domain[]
 public record Order(
   String orderId,
   String productId,
@@ -8,4 +7,3 @@ public record Order(
   int quantity,
   long createdTimestamp
 ) {}
-// end::domain[]

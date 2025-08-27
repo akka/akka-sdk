@@ -3,7 +3,6 @@ package store.order.view.joined;
 import store.customer.domain.Address;
 import store.product.domain.Money;
 
-// tag::joined[]
 public record CustomerOrder(
   String orderId,
   String productId,
@@ -16,4 +15,4 @@ public record CustomerOrder(
   Address address,
   long createdTimestamp
 ) {}
-// end::joined[]
+
