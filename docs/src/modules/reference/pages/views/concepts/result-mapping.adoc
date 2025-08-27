@@ -114,62 +114,7 @@ public record Contact(String fullName, String emailAddress) { }
 
 === Collections
 
-Map collection results using the `collect()` function or by aliasing `*` to a collection field:
-
-[source,sql]
-----
-SELECT category, collect(*) AS products FROM products GROUP BY category
-----
-
-Maps to:
-
-[source,java]
-----
-public record CategoryProducts(
-    String category,
-    List<Product> products
-) { }
-----
-
-=== Collections with Specific Fields
-
-Collect specific fields into collections:
-
-[source,sql]
-----
-SELECT category, collect(name) AS productNames FROM products GROUP BY category
-----
-
-Maps to:
-
-[source,java]
-----
-public record CategoryProductNames(
-    String category,
-    List<String> productNames
-) { }
-----
-
-=== Nested Collections
-
-Create collections of nested objects:
-
-[source,sql]
-----
-SELECT category, collect((name, price) AS item) AS products FROM products GROUP BY category
-----
-
-Maps to:
-
-[source,java]
-----
-public record CategoryResponse(
-    String category,
-    List<ProductItem> products
-) { }
-
-public record ProductItem(String name, double price) { }
-----
+See xref:views/concepts/array-types.adoc#_creating_arrays_in_query_results[Creating Arrays in Query Results]
 
 == Special Function Results
 

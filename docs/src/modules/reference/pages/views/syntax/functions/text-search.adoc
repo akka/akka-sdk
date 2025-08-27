@@ -114,13 +114,6 @@ The `text_search()` function:
 * Multiple words in the query are combined with AND logic (all words must be present)
 * Text search is case-insensitive by default
 
-== Implementation Details
-
-Under the hood, text search is implemented using database-specific full-text search features:
-
-* In PostgreSQL, it uses `to_tsvector` and `to_tsquery` with the specified language configuration
-* Tokenization, stemming, and normalization are handled by the database's text search engine
-
 == Related Features
 
 * xref:reference:views/syntax/where.adoc[WHERE clause] - Used with text_search() for filtering

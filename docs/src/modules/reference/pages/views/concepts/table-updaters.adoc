@@ -30,6 +30,8 @@ public class CustomerView extends View {
 }
 ----
 
+For a full view sample see xref:java:views.adoc#value-entity[Creating a View from a Key Value Entity]
+
 == Table Naming
 
 Table names can be specified explicitly with the `@Table` annotation:
@@ -40,10 +42,11 @@ Table names can be specified explicitly with the `@Table` annotation:
 public static class Customers extends TableUpdater<Customer> { }
 ----
 
-If not specified, the table name defaults to a name derived from:
+For single table views the annotation is optional and is derived from the table name used in the queries in the view.
 
-* The component ID for single-table views
-* The class name of the Table Updater for multi-table views
+For multi table xref:reference:views/concepts/advanced-views.adoc[] each updater must have the annotation to specify
+which table name it updates.
+
 
 == Data Sources
 
@@ -56,8 +59,9 @@ Subscribe to state changes from Key Value Entities:
 [source,java]
 ----
 @Consume.FromKeyValueEntity(CustomerEntity.class)
-public static class CustomerUpdater extends TableUpdater<Customer> { }
 ----
+
+For a full sample see xref:java:views.adoc#value-entity[Creating a View from a Key Value Entity]
 
 === Event Sourced Entities
 
@@ -66,8 +70,31 @@ Subscribe to events from Event Sourced Entities:
 [source,java]
 ----
 @Consume.FromEventSourcedEntity(CustomerEntity.class)
-public static class CustomerEvents extends TableUpdater<CustomerView> { }
 ----
+
+For a full sample see xref:java:views.adoc#event-sourced-entity[Creating a View from an Event Sourced Entity]
+
+=== Workflows
+
+Subscribe to state changes from Workflows:
+
+[source,java]
+----
+@Consume.FromWorkflow(TransferWorkflow.class)
+----
+
+For a full sample see xref:java:views.adoc#workflow[Creating a View from a Workflow]
+
+=== Service to service eventing
+
+Subscribe to events from an Event Sourced entity made available by another Akka service:
+
+[source,java]
+----
+@Consume.FromServiceStream("service-name", "stream-id")
+----
+
+For more details see xref:java:consuming-producing.adoc#s2s-eventing[Service to Service Eventing]
 
 === Topics
 
@@ -76,8 +103,9 @@ Subscribe to messages from a topic:
 [source,java]
 ----
 @Consume.FromTopic("customer-events")
-public static class CustomerFromTopic extends TableUpdater<Customer> { }
 ----
+
+For a full sample see xref:java:views.adoc#topic-view[Creating a View from a topic]
 
 == Generic Type Parameter
 
@@ -92,19 +120,8 @@ This means each row in the view table will have the structure of the `Customer` 
 
 == Transformation Methods
 
-Table Updaters can include methods to transform incoming data:
-
-=== For Key Value Entities
-
-For Key Value Entities, a default transformation (storing the entire state) is used if no transformation method is provided:
-
-[source,java]
-----
-@Consume.FromKeyValueEntity(CustomerEntity.class)
-public static class Customers extends TableUpdater<Customer> { }
-----
-
-You can define custom transformation with an `onUpdate` method:
+Table Updaters can include an `onUpdate` method to transform incoming data. The update method is handed the incoming event,
+message or update, and returns an effect describing what should happen with the table row:
 
 [source,java]
 ----
@@ -123,52 +140,7 @@ public static class CustomerSummaries extends TableUpdater<CustomerSummary> {
 }
 ----
 
-=== For Event Sourced Entities
-
-For Event Sourced Entities, you need to define how events transform the view:
-
-[source,java]
-----
-@Consume.FromEventSourcedEntity(CustomerEntity.class)
-public static class CustomersByName extends TableUpdater<CustomerRow> {
-
-  public Effect<CustomerRow> onEvent(CustomerEvent event) {
-    return switch (event) {
-      case CustomerEvent.CustomerCreated created ->
-        effects().updateRow(new CustomerRow(
-          updateContext().eventSubject().get(),
-          created.name(),
-          created.email(),
-          created.address()
-        ));
-
-      case CustomerEvent.NameChanged nameChanged ->
-        effects().updateRow(rowState().withName(nameChanged.newName()));
-
-      case CustomerEvent.AddressChanged addressChanged ->
-        effects().updateRow(rowState().withAddress(addressChanged.address()));
-    };
-  }
-}
-----
-
-=== For Topics
-
-For Topics, define how to transform messages into view rows:
-
-[source,java]
-----
-@Consume.FromTopic("customer-events")
-public static class CustomerMessages extends TableUpdater<Customer> {
-
-  public Effect<Customer> onMessage(CustomerMessage message) {
-    String customerId = messageContext().metadata().asCloudEvent().subject().get();
-    return effects().updateRow(
-      new Customer(customerId, message.name(), message.email())
-    );
-  }
-}
-----
+For a few examples of different table update handlers see xref:java:views.adoc[]
 
 == Effect Types
 
@@ -277,11 +249,15 @@ public class ShopView extends View {
 }
 ----
 
+For details on querying multi table views, see xref:reference:views/concepts/advanced-views.adoc[]
+
 == Handling Deletes
 
-To handle entity deletions, use the `@DeleteHandler` annotation:
+To handle entity deletions
 
 === For Key Value Entities
+
+Use the `@DeleteHandler` annotation:
 
 [source,java]
 ----
@@ -312,15 +288,6 @@ public static class Customers extends TableUpdater<Customer> {
   }
 }
 ----
-
-== Notes
-
-* A View can contain multiple Table Updaters, each creating a separate table
-* Each Table Updater can subscribe to a different entity or topic
-* The generic type parameter defines the structure of the view table
-* Table Updaters are declarative - they define what happens for each event or state change
-* View tables are eventually consistent with their source entities
-* Multi-region replication is handled automatically at the entity level
 
 == Related Features
 

@@ -114,13 +114,6 @@ Both variations check for membership in the array.
 * The operation is equivalent to checking if the array contains the specified value
 * The order of elements in the array doesn't affect the results
 
-== Implementation Details
-
-Depending on the underlying database, the `= ANY` operator may be implemented differently:
-
-* In PostgreSQL, it translates to the native `= ANY` operator or `@>` array contains operator
-* In other environments, it might be implemented as a function call to check array membership
-
 == Related Features
 
 * xref:reference:views/syntax/operators/in.adoc[IN operator] - Tests if a value matches any value in a specified list

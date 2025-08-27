@@ -141,6 +141,8 @@ Collection fields can be:
 * Used with the `= ANY` operator: `WHERE :tag = ANY(tags)`
 * Created with the `collect()` function: `collect(name) AS productNames`
 
+For more details see xref:reference:views/concepts/array-types.adoc[]
+
 == Optional Fields
 
 Fields in a view type can be optional, represented in Java as:

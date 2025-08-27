@@ -270,7 +270,7 @@ GROUP BY c.name
 Advanced View features are not available by default in deployed services:
 
 * For local development and testing, advanced features are available automatically
-* For deployed services, contact the Akka support team to enable advanced view features
+* For deployed services, contact the xref:support:index.adoc[Akka support team] to enable advanced view features
 
 == Best Practices
 

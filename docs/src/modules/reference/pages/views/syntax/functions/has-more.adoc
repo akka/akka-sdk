@@ -99,10 +99,6 @@ if (response.moreAvailable()) {
 * The function is particularly useful for infinite scrolling or "load more" UI patterns
 * The function can be used alongside `next_page_token()` to provide both a boolean indicator and a token for the next page
 
-== Implementation Details
-
-The implementation of `has_more()` typically works by checking if there are at least `LIMIT + 1` matching rows. If so, it returns `true` and only returns the first `LIMIT` rows in the result. This approach avoids the need for an additional query to determine if more results exist.
-
 == Related Features
 
 * xref:reference:views/syntax/functions/next-page-token.adoc[next_page_token() function] - Generates tokens for subsequent page requests

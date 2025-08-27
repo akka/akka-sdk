@@ -49,15 +49,6 @@ SELECT count(*) AS customerCount FROM customers
 SELECT count(*) AS activeCustomers FROM customers WHERE status = 'active'
 ----
 
-== Future Enhancements
-
-Future versions of the View query language may include:
-
-* Support for `count(*)` within `GROUP BY` clauses
-* Support for `count(distinct column)` syntax
-* Support for `count(column_name)` to count non-NULL values
-* Additional aggregation functions like `sum()`, `avg()`, `min()`, and `max()`
-
 == Notes
 
 * For total counts with pagination, prefer using the `total_count()` function which is specifically designed for this purpose
