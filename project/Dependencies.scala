@@ -13,7 +13,7 @@ object Dependencies {
   // if AkkaVersion and AkkaHttpVersion are aligned
   // for prod code, they are marked as Provided, but testkit still requires the alignment
   val AkkaVersion = "2.10.9"
-  val AkkaHttpVersion = "10.7.1" // Note: should at least the Akka HTTP version required by Akka gRPC
+  val AkkaHttpVersion = "10.7.2" // Note: should at least the Akka HTTP version required by Akka gRPC
 
   // Note: the Scala version must be aligned with the runtime
   val ScalaVersion = "2.13.16"
