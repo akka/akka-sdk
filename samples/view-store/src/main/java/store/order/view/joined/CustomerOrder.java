@@ -15,4 +15,3 @@ public record CustomerOrder(
   Address address,
   long createdTimestamp
 ) {}
-
