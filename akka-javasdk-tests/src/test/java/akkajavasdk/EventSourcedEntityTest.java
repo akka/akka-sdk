@@ -6,10 +6,10 @@ package akkajavasdk;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 import akka.javasdk.CommandException;
+import akka.javasdk.Metadata;
 import akka.javasdk.client.EventSourcedEntityClient;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
@@ -47,13 +47,38 @@ public class EventSourcedEntityTest extends TestKitSupport {
     var client = componentClient.forEventSourcedEntity(counterId);
 
     Integer counterIncrease = increaseCounter(client, 10);
-    Assertions.assertEquals(10, counterIncrease);
+    assertEquals(10, counterIncrease);
 
     Integer counterMultiply = multiplyCounter(client, 20);
-    Assertions.assertEquals(200, counterMultiply);
+    assertEquals(200, counterMultiply);
 
     int counterGet = getCounter(client);
-    Assertions.assertEquals(200, counterGet);
+    assertEquals(200, counterGet);
+  }
+
+  @Test
+  public void verifyEventMetadata() {
+    var counterId = "hello-meta";
+    var client = componentClient.forEventSourcedEntity(counterId);
+
+    var metadata = Metadata.EMPTY.add(CounterEntity.META_KEY, "test-value").add("other", "blah");
+    Integer counterIncrease =
+        client.method(CounterEntity::increase).withMetadata(metadata).invoke(10);
+
+    assertEquals(10, counterIncrease);
+
+    Counter counterState = client.method(CounterEntity::getState).invoke();
+    assertEquals(10, counterState.value());
+    assertEquals("test-value", counterState.meta());
+
+    restartCounterEntity(client);
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(20, TimeUnit.of(SECONDS))
+        .until(
+            () -> client.method(CounterEntity::getState).invoke().meta(),
+            new IsEqual("test-value"));
   }
 
   @Test
@@ -137,7 +162,7 @@ public class EventSourcedEntityTest extends TestKitSupport {
     increaseCounter(client, 15);
     multiplyCounter(client, 2);
     int counterGet = getCounter(client);
-    Assertions.assertEquals(30, counterGet);
+    assertEquals(30, counterGet);
 
     // force restart of counter entity
     restartCounterEntity(client);
@@ -161,7 +186,7 @@ public class EventSourcedEntityTest extends TestKitSupport {
     for (int i = 0; i < 10; i++) {
       increaseCounter(client, 1);
     }
-    Assertions.assertEquals(10, getCounter(client));
+    assertEquals(10, getCounter(client));
 
     // force restart of counter entity
     restartCounterEntity(client);

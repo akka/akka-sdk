@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class UserSideEffect {
 
   static final ConcurrentHashMap<String, User> users = new ConcurrentHashMap<>();
+  static final ConcurrentHashMap<String, String> metas = new ConcurrentHashMap<>();
 
   static void addUser(String id, User user) {
     users.put(id, user);
@@ -20,5 +21,13 @@ public class UserSideEffect {
 
   public static ConcurrentHashMap<String, User> getUsers() {
     return users;
+  }
+
+  static void setMeta(String id, String meta) {
+    metas.put(id, meta);
+  }
+
+  public static ConcurrentHashMap<String, String> getMetas() {
+    return metas;
   }
 }

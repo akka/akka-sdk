@@ -16,6 +16,7 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntity.Effect
 import akka.javasdk.eventsourcedentity.EventSourcedEntity.Effect.Builder
 import akka.javasdk.eventsourcedentity.EventSourcedEntity.Effect.OnSuccessBuilder
 import akka.javasdk.eventsourcedentity.EventSourcedEntity.ReadOnlyEffect
+import akka.javasdk.eventsourcedentity.EventWithMetadata
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
@@ -27,7 +28,11 @@ import akka.javasdk.impl.effect.SecondaryEffectImpl
 @InternalApi
 private[javasdk] object EventSourcedEntityEffectImpl {
   sealed trait PrimaryEffectImpl
-  final case class EmitEvents[E](event: Iterable[E], deleteEntity: Boolean = false) extends PrimaryEffectImpl
+  final case class EmitEvents[E](events: Iterable[E], deleteEntity: Boolean = false) extends PrimaryEffectImpl
+  final case class EmitEventsWithMetadata[E](
+      eventsWithMetadata: Iterable[EventWithMetadata[E]],
+      deleteEntity: Boolean = false)
+      extends PrimaryEffectImpl
   case object NoPrimaryEffect extends PrimaryEffectImpl
 }
 
@@ -76,10 +81,22 @@ private[javasdk] class EventSourcedEntityEffectImpl[S, E]
     this
   }
 
+  override def persistWithMetadata(event: E, metadata: Metadata): EventSourcedEntityEffectImpl[S, E] = {
+    _primaryEffect = EmitEventsWithMetadata(Vector(new EventWithMetadata(event, metadata)))
+    this
+  }
+
+  override def persistAllWithMetadata(
+      events: util.List[EventWithMetadata[_ <: E]]): EventSourcedEntityEffectImpl[S, E] = {
+    _primaryEffect = EmitEventsWithMetadata(events.asScala.iterator.map(_.asInstanceOf[EventWithMetadata[E]]).toVector)
+    this
+  }
+
   override def deleteEntity(): EventSourcedEntityEffectImpl[S, E] = {
     _primaryEffect = _primaryEffect match {
-      case NoPrimaryEffect           => EmitEvents[E](Vector.empty, deleteEntity = true)
-      case emitEvents: EmitEvents[_] => emitEvents.copy(deleteEntity = true)
+      case NoPrimaryEffect                       => EmitEvents[E](Vector.empty, deleteEntity = true)
+      case emitEvents: EmitEvents[_]             => emitEvents.copy(deleteEntity = true)
+      case emitEvents: EmitEventsWithMetadata[_] => emitEvents.copy(deleteEntity = true)
     }
     this
   }
