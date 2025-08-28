@@ -264,13 +264,22 @@ public abstract class KeyValueEntity<S> {
     interface Builder<S> {
 
       /**
-       * Updates the entity state with the provided new state. This is the only way to persist state
-       * changes in a Key Value Entity. The new state will replace the current state entirely.
+       * Updates the entity state with the provided new state. The new state will replace the
+       * current state entirely.
        *
        * @param newState the new state to persist, replacing the current state
        * @return a builder for chaining additional effects like replies
        */
       OnSuccessBuilder<S> updateState(S newState);
+
+      /**
+       * Updates the entity state with the provided new state and additional metadata together with
+       * the state. The new state will replace the current state entirely.
+       *
+       * @param newState the new state to persist, replacing the current state
+       * @return a builder for chaining additional effects like replies
+       */
+      OnSuccessBuilder<S> updateStateWithMetadata(S newState, Metadata metadata);
 
       /**
        * Marks the entity for deletion. After deletion, the entity will still exist with an empty

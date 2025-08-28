@@ -5,6 +5,7 @@
 package akkajavasdk.components.keyvalueentities.user;
 
 import akka.javasdk.CommandException;
+import akka.javasdk.Metadata;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akkajavasdk.Ok;
@@ -15,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 @ComponentId("user")
 public class UserEntity extends KeyValueEntity<User> {
+  public static String META_KEY = "test-key";
 
   private Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -37,9 +39,18 @@ public class UserEntity extends KeyValueEntity<User> {
   }
 
   public Effect<Ok> createOrUpdateUser(CreatedUser createdUser) {
-    return effects()
-        .updateState(new User(createdUser.name, createdUser.email))
-        .thenReply(Ok.instance);
+    var metadata = commandContext().metadata();
+
+    if (metadata.has(META_KEY)) {
+      var stateMetadata = Metadata.EMPTY.add(META_KEY, metadata.getLast(META_KEY).get());
+      return effects()
+          .updateStateWithMetadata(new User(createdUser.name, createdUser.email), stateMetadata)
+          .thenReply(Ok.instance);
+    } else {
+      return effects()
+          .updateState(new User(createdUser.name, createdUser.email))
+          .thenReply(Ok.instance);
+    }
   }
 
   public Effect<Ok> createUser(CreatedUser createdUser) {

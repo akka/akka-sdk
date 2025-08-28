@@ -351,7 +351,7 @@ public class SdkIntegrationTest extends TestKitSupport {
   }
 
   @Test
-  public void verifyUserSubscriptionAction() {
+  public void verifyUserKeyValueSubscription() {
 
     TestUser user = new TestUser("123", "john345@doe.com", "JohnDoe");
 
@@ -379,6 +379,24 @@ public class SdkIntegrationTest extends TestKitSupport {
         .ignoreExceptions()
         .atMost(15, TimeUnit.of(SECONDS))
         .until(() -> UserSideEffect.getUsers().get(user.id()), new IsNull<>());
+  }
+
+  @Test
+  public void verifyUserKeyValueSubscriptionWithMetadata() {
+
+    TestUser user = new TestUser("12345", "john345@doe.com", "JohnDoe");
+
+    await(
+        componentClient
+            .forKeyValueEntity(user.id())
+            .method(UserEntity::createOrUpdateUser)
+            .withMetadata(Metadata.EMPTY.add(UserEntity.META_KEY, "test-meta"))
+            .invokeAsync(new UserEntity.CreatedUser(user.name(), user.email())));
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(15, TimeUnit.of(SECONDS))
+        .until(() -> UserSideEffect.getMetas().get(user.id()), new IsEqual("test-meta"));
   }
 
   @Test
