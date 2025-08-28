@@ -36,11 +36,11 @@
 
         <akka-javasdk.version>3.5.1</akka-javasdk.version>
         <!-- must be carefully kept in sync with sdk and runtime version -->
-        <akka.grpc.version>2.5.5</akka.grpc.version>
+        <akka.grpc.version>2.5.7</akka.grpc.version>
 
         <!-- These are dependent on runtime environment and cannot be customized by users -->
         <maven.compiler.release>21</maven.compiler.release>
-        <akka-runtime.version>1.5.9</akka-runtime.version>
+        <akka-runtime.version>1.5.11</akka-runtime.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <skip.docker>false</skip.docker>
