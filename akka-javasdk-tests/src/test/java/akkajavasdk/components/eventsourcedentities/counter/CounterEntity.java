@@ -9,6 +9,7 @@ import static java.util.function.Function.identity;
 
 import akka.Done;
 import akka.javasdk.CommandException;
+import akka.javasdk.Metadata;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akkajavasdk.Result;
@@ -19,13 +20,14 @@ import org.slf4j.LoggerFactory;
 
 @ComponentId("counter-entity")
 public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
+  public static String META_KEY = "test-key";
 
   public enum Error {
     TOO_HIGH,
     TOO_LOW
   }
 
-  private Integer errorCounter = 0;
+  private int errorCounter = 0;
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
   public record DoIncrease(int amount) {}
@@ -35,17 +37,26 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
     return new Counter(0);
   }
 
-  public Effect<Integer> increase(Integer value) {
+  public Effect<Integer> increase(int value) {
     logger.info(
-        "Increasing counter with commandName={} seqNr={} current={} value={}",
+        "Increasing counter with commandName={} seqNr={} current={} value={} metadata={}",
         commandContext().commandName(),
         commandContext().sequenceNumber(),
         currentState(),
-        value);
-    return effects().persist(new CounterEvent.ValueIncreased(value)).thenReply(Counter::value);
+        value,
+        commandContext().metadata());
+    var event = new CounterEvent.ValueIncreased(value);
+    var metadata = commandContext().metadata();
+
+    if (metadata.has(META_KEY)) {
+      var eventMetadata = Metadata.EMPTY.add(META_KEY, metadata.getLast(META_KEY).get());
+      return effects().persistWithMetadata(event, eventMetadata).thenReply(Counter::value);
+    } else {
+      return effects().persist(event).thenReply(Counter::value);
+    }
   }
 
-  public Effect<Integer> failedIncrease(Integer value) {
+  public Effect<Integer> failedIncrease(int value) {
     logger.info("Calling failedIncrease with value={}, errorCounter={}", value, errorCounter);
     if (errorCounter <= 2) {
       errorCounter++;
@@ -55,7 +66,7 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
     }
   }
 
-  public Effect<Result<Error, Counter>> increaseWithResult(Integer value) {
+  public Effect<Result<Error, Counter>> increaseWithResult(int value) {
     if (value <= 0) {
       return effects().reply(new Result.Error<>(CounterEntity.Error.TOO_LOW));
     } else if (value > 10000) {
@@ -67,7 +78,7 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
     }
   }
 
-  public Effect<Counter> increaseWithError(Integer value) {
+  public Effect<Counter> increaseWithError(int value) {
     if (value <= 0) {
       return effects().error("Value must be greater than 0");
     } else if (value > 10000) {
@@ -81,7 +92,7 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
     return effects().reply(Thread.currentThread().isVirtual());
   }
 
-  public Effect<Integer> set(Integer value) {
+  public Effect<Integer> set(int value) {
     return effects().persist(new CounterEvent.ValueSet(value)).thenReply(Counter::value);
   }
 
@@ -113,12 +124,16 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
     return effects().reply(currentState().value());
   }
 
+  public ReadOnlyEffect<Counter> getState() {
+    return effects().reply(currentState());
+  }
+
   public ReadOnlyEffect<Boolean> getDeleted() {
     // don't modify, we want to make sure we call currentState().value here
     return effects().reply(isDeleted());
   }
 
-  public Effect<Integer> times(Integer value) {
+  public Effect<Integer> times(int value) {
     logger.info(
         "Multiplying counter with commandId={} commandName={} seqNr={} current={} by value={}",
         commandContext().commandId(),
@@ -163,6 +178,9 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
 
   @Override
   public Counter applyEvent(CounterEvent event) {
-    return currentState().apply(event);
+    var newState = currentState().apply(event);
+    var metadata = eventContext().metadata();
+    if (metadata.has(META_KEY)) return newState.withMeta(metadata.getLast(META_KEY).get());
+    else return newState;
   }
 }

@@ -5,6 +5,7 @@
 package akkajavasdk.components.eventsourcedentities.counter;
 
 import akka.Done;
+import akka.javasdk.Metadata;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.client.ComponentClient;
@@ -32,10 +33,22 @@ public class IncreaseConsumer extends Consumer {
   public Effect printIncrease(CounterEvent.ValueIncreased event) {
     String entityId = this.messageContext().metadata().asCloudEvent().subject().get();
     if (event.value() == 42) {
+      Metadata metadata;
+      if (messageContext().metadata().has(CounterEntity.META_KEY)) {
+        metadata =
+            Metadata.EMPTY.add(
+                CounterEntity.META_KEY,
+                "magic 42 with metadata from IncreaseConsumer: "
+                    + messageContext().metadata().getLast(CounterEntity.META_KEY).get());
+      } else {
+        metadata = Metadata.EMPTY;
+      }
+
       CompletionStage<Done> res =
           componentClient
               .forEventSourcedEntity(entityId)
               .method(CounterEntity::increase)
+              .withMetadata(metadata)
               .invokeAsync(1)
               .thenApply(__ -> Done.getInstance());
       return effects().asyncDone(res);

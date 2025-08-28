@@ -4,6 +4,8 @@
 
 package akka.javasdk.eventsourcedentity;
 
+import akka.javasdk.MetadataContext;
+
 /**
  * Context information available when processing events in the {@link EventSourcedEntity#applyEvent}
  * method. Provides access to event metadata and sequence information.
@@ -11,7 +13,7 @@ package akka.javasdk.eventsourcedentity;
  * <p>This context is automatically provided by the Akka runtime and can be accessed within the
  * {@link EventSourcedEntity#applyEvent} method using {@link EventSourcedEntity#eventContext()}.
  */
-public interface EventContext extends EventSourcedEntityContext {
+public interface EventContext extends EventSourcedEntityContext, MetadataContext {
   /**
    * Returns the sequence number of the current event being processed. This represents the position
    * of this event in the entity's event journal.

@@ -259,7 +259,32 @@ public class SdkIntegrationTest extends TestKitSupport {
                           .method(CounterEntity::get)
                           .invokeAsync());
 
-              assertThat(result).isEqualTo(43); // 42 +1
+              assertThat(result).isEqualTo(42 + 1);
+            });
+
+    // once more, but now with event metadata
+    await(
+        componentClient
+            .forEventSourcedEntity(entityId)
+            .method(CounterEntity::increase)
+            .withMetadata(Metadata.EMPTY.add(CounterEntity.META_KEY, "inc42"))
+            .invokeAsync(42));
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              Counter result =
+                  await(
+                      componentClient
+                          .forEventSourcedEntity(entityId)
+                          .method(CounterEntity::getState)
+                          .invokeAsync());
+
+              assertThat(result.value()).isEqualTo(43 + 42 + 1);
+              assertThat(result.meta())
+                  .isEqualTo("magic 42 with metadata from IncreaseConsumer: inc42");
             });
   }
 
