@@ -22,7 +22,7 @@ import akka.javasdk.keyvalueentity.KeyValueEntity.ReadOnlyEffect
 @InternalApi
 private[javasdk] object KeyValueEntityEffectImpl {
   sealed trait PrimaryEffectImpl[+S]
-  final case class UpdateState[S](newState: S) extends PrimaryEffectImpl[S]
+  final case class UpdateState[S](newState: S, metadata: Option[Metadata]) extends PrimaryEffectImpl[S]
   case object DeleteEntity extends PrimaryEffectImpl[Nothing]
   case object NoPrimaryEffect extends PrimaryEffectImpl[Nothing]
 }
@@ -46,7 +46,12 @@ private[javasdk] final class KeyValueEntityEffectImpl[S]
   def secondaryEffect: SecondaryEffectImpl = _secondaryEffect
 
   override def updateState(newState: S): KeyValueEntityEffectImpl[S] = {
-    _primaryEffect = UpdateState(newState)
+    _primaryEffect = UpdateState(newState, metadata = None)
+    this
+  }
+
+  override def updateStateWithMetadata(newState: S, metadata: Metadata): OnSuccessBuilder[S] = {
+    _primaryEffect = UpdateState(newState, Option(metadata))
     this
   }
 

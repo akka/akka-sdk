@@ -43,7 +43,7 @@ private[akka] final class KeyValueEntityResultImpl[R](effect: KeyValueEntityEffe
   override def stateWasUpdated(): Boolean = effect.primaryEffect.isInstanceOf[KeyValueEntityEffectImpl.UpdateState[_]]
 
   override def getUpdatedState(): Any = effect.primaryEffect match {
-    case KeyValueEntityEffectImpl.UpdateState(s) => s
+    case KeyValueEntityEffectImpl.UpdateState(s, _) => s
     case _ => throw new IllegalStateException("State was not updated by the effect")
   }
 
