@@ -1,0 +1,185 @@
+= Comparison Operators
+
+Comparison operators compare values and return boolean results. They form the foundation of filtering conditions in the WHERE clause and join conditions in the JOIN clause.
+
+== Syntax
+
+[source,sql]
+----
+<value1> <operator> <value2>
+----
+
+== Available Operators
+
+[#equals]
+=== Equals (=)
+
+Tests if two values are equal.
+
+Syntax:
+[source,sql]
+----
+<value1> = <value2>
+----
+
+Examples:
+[source,sql]
+----
+name = 'John'
+age = 30
+status = :statusParameter
+customer.address.city = 'New York'
+----
+
+[#not-equals]
+=== Not Equals (!=)
+
+Tests if two values are not equal.
+
+Syntax:
+[source,sql]
+----
+<value1> != <value2>
+----
+
+Examples:
+[source,sql]
+----
+category != 'Electronics'
+status != 'inactive'
+price != :targetPrice
+----
+
+[#greater-than]
+=== Greater Than (>)
+
+Tests if the first value is greater than the second value.
+
+Syntax:
+[source,sql]
+----
+<value1> > <value2>
+----
+
+Examples:
+[source,sql]
+----
+price > 100
+age > 18
+createdDate > '2023-01-01'
+----
+
+[#greater-equals]
+=== Greater Than or Equal To (>=)
+
+Tests if the first value is greater than or equal to the second value.
+
+Syntax:
+[source,sql]
+----
+<value1> >= <value2>
+----
+
+Examples:
+[source,sql]
+----
+price >= 100
+age >= 18
+rating >= :minimumRating
+----
+
+[#less-than]
+=== Less Than (<)
+
+Tests if the first value is less than the second value.
+
+Syntax:
+[source,sql]
+----
+<value1> < <value2>
+----
+
+Examples:
+[source,sql]
+----
+price < 50
+age < 65
+expireDate < :currentDate
+----
+
+[#less-equals]
+=== Less Than or Equal To (<=)
+
+Tests if the first value is less than or equal to the second value.
+
+Syntax:
+[source,sql]
+----
+<value1> <= <value2>
+----
+
+Examples:
+[source,sql]
+----
+price <= 50
+age <= 65
+endDate <= '2023-12-31'
+----
+
+== Type Compatibility
+
+Comparison operators require compatible types on both sides:
+
+* String values can only be compared with other strings
+* Numeric values (int, long, float, double) can be compared with other numeric values
+* Boolean values can only be compared with other booleans
+* Date/timestamp values can only be compared with other date/timestamp values
+
+== Comparison with NULL
+
+Comparison operators (`=`, `!=`, `>`, etc.) do not work correctly with NULL values. Use the xref:reference:views/syntax/operators/is-null.adoc[IS NULL / IS NOT NULL] operators instead:
+
+[source,sql]
+----
+-- Incorrect: does not find rows where email is NULL
+email = NULL
+
+-- Correct: finds rows where email is NULL
+email IS NULL
+----
+
+== Usage in WHERE Clause
+
+Comparison operators are commonly used in the WHERE clause to filter results:
+
+[source,sql]
+----
+SELECT * FROM products
+WHERE price > 100 AND category = 'Electronics'
+----
+
+== Usage in JOIN Conditions
+
+Comparison operators define how tables are joined together:
+
+[source,sql]
+----
+SELECT c.name, o.id
+FROM customers AS c
+JOIN orders AS o ON o.customerId = c.id
+----
+
+== Notes
+
+* String comparisons are case-sensitive
+* Date/time comparisons work with ISO format strings (`'YYYY-MM-DD'`, `'YYYY-MM-DDThh:mm:ss'`)
+* When comparing values of different but compatible numeric types, implicit conversion may occur
+* Field paths can be used on either side of a comparison operator
+
+== Related Features
+
+* xref:reference:views/syntax/operators/index.adoc[Operators Overview] - All available operators
+* xref:reference:views/syntax/operators/logical.adoc[Logical Operators] - AND, OR, NOT operators
+* xref:reference:views/syntax/where.adoc[WHERE clause] - Using comparisons for filtering
+* xref:reference:views/syntax/operators/is-null.adoc[IS NULL / IS NOT NULL] - Testing for NULL values
+* xref:reference:views/concepts/data-types.adoc[Data Types] - Type compatibility information

@@ -12,11 +12,12 @@ Views can be defined from any of the following:
 * xref:topic-view[Messages received from subscribing to topics on a broker]
 * xref:consuming-producing.adoc#s2s-eventing[Events consumed from a different Akka service]
 
+Reference documentation covering the view query language syntax, query capabilities and how query results are mapped to Java types can be found in xref:reference:views/index.adoc[View reference].
+
 The remainder of this page describes:
 
 * <<#results-projection>>
 * <<#changing>>
-* <<#query>>
 
 IMPORTANT: Be aware that Views are not updated immediately when the Entity state changes. It is not instant but eventually all changes will become visible in the query results. View updates might also take more time during failure scenarios (e.g. network instability) than during normal operation.
 
@@ -188,60 +189,15 @@ include::example$event-sourced-counter-brokers/src/main/java/counter/application
 <2> Extracts the `ce-subject` attribute from the topic event metadata to include in the view row.
 <3> Returns an updating effect with new table row state.
 
+== View query results
 [#results-projection]
-== How to transform results
+=== How to transform results
 
-When creating a View, you can transform the results as a projection for constructing a new type instead of using a `SELECT *` statement.
-
-
-=== Result projection
-
-Instead of using `SELECT *` you can define which columns will be used in the response message. If you want to use a `CustomerSummary` used on the previous section, you will need to define your entity as this:
-
-[source,java,indent=0]
-.{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomerSummaryByName.java[CustomerSummaryByName.java]
-----
-include::example$key-value-customer-registry/src/main/java/customer/application/CustomerSummaryByName.java[tag=projection]
-----
-<1> Note the renaming from `customerId` as `id` on the query, as `id` and `name` match the record `CustomerSummary`.
-<2> Returns the query result.
-
-In a similar way, you can include values from the request in the response, for example `:requestId`:
-
-[source,sql]
-----
-SELECT :requestId, customerId as id, name FROM customers
-WHERE name = :customerName
-----
-
-=== Multiple results
-
-Oftentimes a query might be designed to return multiple results. In this case, you can either:
-
-* Wrap the results in a `Collection` field in the response type.
-* Stream the results to the client.
-
-==== Wrapping results in a Collection
-
-To include the results in a `Collection` field in the response object, you can do as below:
-
-[source,java,indent=0]
-.{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomerList.java[CustomerList.java]
-----
-include::example$key-value-customer-registry/src/main/java/customer/application/CustomerList.java[tag=class]
-----
-
-[source,java,indent=0]
-.{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomersListByName.java[CustomersListByName.java]
-----
-include::example$key-value-customer-registry/src/main/java/customer/application/CustomersListByName.java[tag=class]
-----
-<1> Table updater type is the original `Customer` as shown at the beginning of this section.
-<2> Note the use of `* AS customers` so records are matched to `customers` field in `CustomersList`.
-<3> Return type of the query is `CustomersList`.
+When creating a View, you can transform the results as a projection for constructing a new type instead of returning the
+view row type directly, for details see xref:reference:views/concepts/result-mapping.adoc[]
 
 [#_streaming_the_result]
-==== Streaming the result
+=== Streaming the result
 
 Instead of collecting the query result in memory as a collection before returning it, the entries can be streamed.
 To return the result as a stream, modify the returned type to be `QueryStreamEffect` and use `queryStreamResult()` to return the stream.
@@ -253,7 +209,7 @@ include::example$key-value-customer-registry/src/main/java/customer/application/
 ----
 
 [#_streaming_view_updates]
-==== Streaming view updates
+=== Streaming view updates
 
 A query can provide a near real-time stream of results for the query, emitting new entries matching the query as they are added or updated in
 the view.
@@ -306,7 +262,7 @@ Some specific scenarios might require a complete rebuild of the View, for exampl
 
 Such changes require you to define a new View. Akka will then rebuild it from the source event log or value changes.
 
-TIP: You should be able to test if a change is compatible locally by running the service with xref:java:running-locally.adoc#_running_service_with_persistence_enabled[persistence mode enabled], producing some data, and then changing the View query and re-running the service. If the service boots up correctly and is able to serve the new query, the change is compatible.
+TIP: You should be able to test if a change is compatible locally by running the service with xref:java:running-locally.adoc#persistence-enabled[persistence mode enabled], producing some data, and then changing the View query and re-running the service. If the service boots up correctly and is able to serve the new query, the change is compatible.
 
 Rebuilding a new View may take some time if there are many events that have to be processed. The recommended way when changing a View is multi-step, with two deployments:
 
@@ -318,12 +274,6 @@ Rebuilding a new View may take some time if there are many events that have to b
 The View definitions are stored and validated when a new version is deployed. There will be an error message if the changes are not compatible.
 
 WARNING: Views from topics cannot be rebuilt from the source messages, because it might not be possible to consume all events from the topic again. The new View is built from new messages published to the topic.
-
-
-[#query]
-include::java:partial$query-syntax-reference.adoc[]
-
-include::java:partial$query-syntax-advanced.adoc[]
 
 == Testing the View
 

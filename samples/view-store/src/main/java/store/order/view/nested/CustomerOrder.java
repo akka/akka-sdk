@@ -2,7 +2,6 @@ package store.order.view.nested;
 
 import store.product.domain.Money;
 
-// tag::nested[]
 public record CustomerOrder(
   String customerId,
   String orderId,
@@ -12,4 +11,3 @@ public record CustomerOrder(
   int quantity,
   long createdTimestamp
 ) {}
-// end::nested[]

@@ -1,0 +1,196 @@
+= Logical Operators
+
+Logical operators combine conditions and enable complex filtering expressions. They allow you to express compound conditions by combining simpler conditions using boolean logic.
+
+== Available Operators
+
+[#and]
+=== AND
+
+The `AND` operator combines two conditions and returns true only when both conditions are true.
+
+Syntax:
+[source,sql]
+----
+<condition1> AND <condition2>
+----
+
+Examples:
+[source,sql]
+----
+category = 'Electronics' AND price < 500
+status = 'active' AND createdDate > '2023-01-01'
+country = 'USA' AND state = 'California' AND city = 'San Francisco'
+----
+
+Truth table:
+[cols="1,1,1"]
+|===
+|Condition 1 |Condition 2 |Result
+
+|true
+|true
+|true
+
+|true
+|false
+|false
+
+|false
+|true
+|false
+
+|false
+|false
+|false
+|===
+
+[#or]
+=== OR
+
+The `OR` operator combines two conditions and returns true when either condition is true or both are true.
+
+Syntax:
+[source,sql]
+----
+<condition1> OR <condition2>
+----
+
+Examples:
+[source,sql]
+----
+category = 'Electronics' OR category = 'Computers'
+price < 100 OR onSale = true
+country = 'USA' OR country = 'Canada' OR country = 'Mexico'
+----
+
+Truth table:
+[cols="1,1,1"]
+|===
+|Condition 1 |Condition 2 |Result
+
+|true
+|true
+|true
+
+|true
+|false
+|true
+
+|false
+|true
+|true
+
+|false
+|false
+|false
+|===
+
+[#not]
+=== NOT
+
+The `NOT` operator negates a condition, reversing its boolean value.
+
+Syntax:
+[source,sql]
+----
+NOT <condition>
+----
+
+Examples:
+[source,sql]
+----
+NOT category = 'Electronics'
+NOT price > 100
+NOT (address.city = 'New York' AND age > 65)
+----
+
+Truth table:
+[cols="1,1"]
+|===
+|Condition |Result
+
+|true
+|false
+
+|false
+|true
+|===
+
+== Operator Precedence
+
+In the View query language, logical operators have the following precedence (from highest to lowest):
+
+1. NOT
+2. AND
+3. OR
+
+This means that:
+
+* `NOT a AND b` is evaluated as `(NOT a) AND b`
+* `a AND b OR c` is evaluated as `(a AND b) OR c`
+* `a OR b AND c` is evaluated as `a OR (b AND c)`
+
+Use parentheses to override the default precedence:
+
+[source,sql]
+----
+(category = 'Electronics' OR category = 'Computers') AND price < 1000
+----
+
+== Complex Expressions
+
+Logical operators can be combined to create complex conditions:
+
+[source,sql]
+----
+(category = 'Electronics' OR category = 'Computers')
+AND (price < 1000 OR onSale = true)
+AND NOT discontinued = true
+----
+
+== Alternative Expressions
+
+Many complex logical expressions can be simplified using other operators:
+
+[cols="1,1"]
+|===
+|Complex Expression |Simpler Alternative
+
+|`category = 'A' OR category = 'B' OR category = 'C'`
+|`category IN ('A', 'B', 'C')`
+
+|`NOT a = b`
+|`a != b`
+
+|`NOT a > b`
+|`a <= b`
+
+|`NOT a < b`
+|`a >= b`
+
+|`NOT a IS NULL`
+|`a IS NOT NULL`
+|===
+
+== De Morgan's Laws
+
+These logical equivalences can help simplify negated expressions:
+
+* `NOT (a AND b)` is equivalent to `NOT a OR NOT b`
+* `NOT (a OR b)` is equivalent to `NOT a AND NOT b`
+
+== Notes
+
+* Use parentheses to make complex expressions more readable and to ensure the correct evaluation order
+* When combining many OR conditions with the same column, consider using the IN operator instead
+* For checking if a value is in an array column, use the = ANY operator
+* Logical operators work with any expressions that evaluate to boolean values
+
+== Related Features
+
+* xref:reference:views/syntax/operators/index.adoc[Operators Overview] - All available operators
+* xref:reference:views/syntax/operators/comparison.adoc[Comparison Operators] - =, !=, >, <, etc.
+* xref:reference:views/syntax/operators/in.adoc[IN Operator] - Shorthand for multiple OR conditions with equality
+* xref:reference:views/syntax/operators/any.adoc[= ANY Operator] - Tests if a value is in an array
+* xref:reference:views/syntax/where.adoc[WHERE Clause] - Using logical operators for filtering

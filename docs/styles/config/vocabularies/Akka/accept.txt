@@ -42,6 +42,7 @@ CVEs
 decodeRequest
 defaultMode
 declaratively
+denormalization
 Deserializing
 [Dd]eduplicate
 [Dd]eduplication
@@ -69,6 +70,7 @@ gzipped
 (?i)gRPCurl
 hakkers
 hakking
+has_more
 hasPrefix
 hasSuffix
 hyperscaler
@@ -133,6 +135,7 @@ Postgres
 PostgreSQL
 precalculated
 preconfigured
+prefetching
 prepended
 prepending
 [Pp]rometheus
@@ -142,6 +145,7 @@ proto
 Qodo
 [Qq]uantiles
 Quatrini
+queryable
 [Qq]uickstarts
 rebalance
 rebalances
@@ -192,11 +196,13 @@ subtree
 Szymanski
 [Tt]elemedicine
 [Tt]estKit
+text_search
 [Tt]imeframe
 Tink
 (?i)TLS
 tokenid
 tokenization
+[Tt]okenizes
 tokenSecret
 transcoded
 [Tt]ranscoding

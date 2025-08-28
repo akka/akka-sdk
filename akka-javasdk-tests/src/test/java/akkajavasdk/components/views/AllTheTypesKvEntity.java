@@ -44,6 +44,7 @@ public class AllTheTypesKvEntity extends KeyValueEntity<AllTheTypesKvEntity.AllT
       Optional<String> optionalString,
       List<String> repeatedString,
       ByEmail nestedMessage,
+      // Note: not currently indexable
       AnEnum anEnum,
       Recursive recursive) {}
 

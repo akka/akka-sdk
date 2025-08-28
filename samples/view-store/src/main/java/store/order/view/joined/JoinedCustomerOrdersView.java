@@ -16,11 +16,10 @@ import store.order.view.model.Product;
 import store.product.application.ProductEntity;
 import store.product.domain.ProductEvent;
 
-// tag::join[]
 @ComponentId("joined-customer-orders") // <1>
 public class JoinedCustomerOrdersView extends View {
 
-  @Table("customers") // <2>
+  @Table("customers")
   @Consume.FromEventSourcedEntity(CustomerEntity.class)
   public static class CustomersUpdater extends TableUpdater<Customer> {
 
@@ -39,7 +38,7 @@ public class JoinedCustomerOrdersView extends View {
     }
   }
 
-  @Table("products") // <2>
+  @Table("products")
   @Consume.FromEventSourcedEntity(ProductEntity.class)
   public static class ProductsUpdater extends TableUpdater<Product> {
 
@@ -57,13 +56,13 @@ public class JoinedCustomerOrdersView extends View {
     }
   }
 
-  @Table("orders") // <2>
+  @Table("orders")
   @Consume.FromKeyValueEntity(OrderEntity.class)
   public static class OrdersUpdater extends TableUpdater<Order> {}
 
   public record JoinedCustomerOrders(List<CustomerOrder> orders) {}
 
-  @Query( // <3>
+  @Query(
     """
     SELECT * AS orders
     FROM customers
@@ -77,4 +76,3 @@ public class JoinedCustomerOrdersView extends View {
     return queryResult();
   }
 }
-// end::join[]

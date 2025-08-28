@@ -1,0 +1,74 @@
+= FROM
+
+The `FROM` clause specifies the data source for your query, indicating which view table to retrieve data from. In multi-table views, it establishes the primary source table that can be joined with other tables.
+
+== Syntax
+
+[source,sql]
+----
+FROM <table_name>
+----
+
+== Elements
+
+`table_name`::
+The name of the view table to query. This corresponds to a `TableUpdater` defined in your View. Table names can be specified with the `@Table` annotation or can be automatically derived for single table views.
+
+== Features
+
+Table selection::
+Specifies the primary source table for the query. This table contains the rows that will be examined by the query.
+
+Derived tables::
+In advanced scenarios, a subquery can be used in place of a table name to create a derived table.
+
+== Table names
+
+Table names in a View query correspond to the name specified in the `@Table` annotation on a `TableUpdater` class. Single table views may omit the `@Table` annotation.
+
+== Examples
+
+.Basic FROM clause
+[source,sql]
+----
+SELECT * FROM customers
+----
+
+.Using a table name explicitly defined with `@Table("customer_profiles")`
+[source,sql]
+----
+SELECT * FROM customer_profiles
+----
+
+.Referencing table in a join context
+[source,sql]
+----
+SELECT customers.name, orders.id
+FROM customers
+JOIN orders ON orders.customerId = customers.id
+----
+
+.Using a derived table (advanced)
+[source,sql]
+----
+SELECT * FROM (
+  SELECT name, address
+  FROM customers
+  WHERE active = true
+) AS active_customers
+----
+
+== Notes
+
+* The `FROM` clause is required in every query
+* Table names are case-sensitive
+* When using joins, the first table in the FROM clause becomes the left side of the first join
+* Table names must correspond to `TableUpdater` classes defined in your View
+* If table names contain special characters or spaces, they must be enclosed in backticks
+
+== Related Features
+
+* xref:reference:views/syntax/select.adoc[SELECT clause] - Specifies what data to retrieve
+* xref:reference:views/syntax/join.adoc[JOIN clause] - Combines data from multiple tables
+* xref:reference:views/syntax/where.adoc[WHERE clause] - Filters results based on conditions
+* xref:reference:views/concepts/table-updaters.adoc[Table updaters] - Defining view tables in code

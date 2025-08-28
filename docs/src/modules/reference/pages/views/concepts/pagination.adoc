@@ -1,0 +1,261 @@
+= Pagination
+
+Pagination is the practice of dividing large query result sets into smaller, manageable chunks or "pages." This concept page explains pagination approaches in Akka Views, their characteristics, and how to implement them effectively.
+
+== Why Pagination Is Important
+
+When working with large data sets, pagination offers several benefits:
+
+* **Performance**: Reduces memory usage and processing time by handling only a subset of results
+* **Response Time**: Enables faster initial display of data to users
+* **User Experience**: Provides a manageable way to navigate through large sets of data
+* **Resource Efficiency**: Minimizes network bandwidth and client-side memory usage
+
+== Pagination Approaches
+
+Akka Views support two main pagination approaches, each with distinct characteristics and use cases:
+
+=== Count-based Pagination
+
+Count-based pagination uses numeric offsets to skip a certain number of rows and return a specific count of results. This is the traditional approach used in many database systems.
+
+*Implementation:*
+
+[source,sql]
+----
+SELECT * FROM products
+OFFSET 20 LIMIT 10
+----
+
+*Characteristics:*
+
+* Simple implementation and concept
+* Works well with static data
+* Supports arbitrary jumping to specific pages (e.g., page 5, page 10)
+* Can use parameters for dynamic values: `OFFSET :startFrom LIMIT :pageSize`
+
+*Limitations:*
+
+* Can lead to missing or duplicated items if data changes between page requests
+* Performance can degrade for large offsets as the database must still process all skipped rows
+* Less suitable for real-time or frequently changing data
+
+=== Token-based Pagination
+
+Token-based pagination (also known as cursor-based pagination) uses opaque tokens that mark the position after the last returned row. These tokens are used to retrieve subsequent pages.
+
+*Implementation:*
+
+[source,sql]
+----
+SELECT * AS products, next_page_token() AS nextPageToken
+FROM products
+OFFSET page_token_offset(:pageToken)
+LIMIT 10
+----
+
+*Characteristics:*
+
+* More resilient to data changes between requests
+* More efficient for large result sets
+* Consistent results even when items are added or removed
+* Better performance with large data sets
+
+*Limitations:*
+
+* Cannot jump to arbitrary pages; must traverse pages sequentially
+* More complex implementation
+* Tokens are opaque and should be treated as black boxes
+
+== Implementing Pagination
+
+=== Count-based Pagination Flow
+
+1. **Initial Request**: Start with `OFFSET 0 LIMIT pageSize`
+2. **Subsequent Requests**: Calculate offset as `page * pageSize` for each page
+3. **Navigation**: Allow moving forward, backward, or jumping to specific pages
+
+*Example in Java:*
+
+[source,java]
+----
+public record PageRequest(int page, int pageSize) { }
+
+public record PageResponse<T>(List<T> items, int currentPage, int pageSize, int totalCount) { }
+
+@Query("SELECT * AS items, total_count() AS totalCount FROM products OFFSET :offset LIMIT :pageSize")
+public QueryEffect<ProductsPage> getProductsPage(int offset, int pageSize) {
+    return queryResult();
+}
+
+// In client code:
+int page = 2;
+int pageSize = 10;
+int offset = page * pageSize;
+ProductsPage response = componentClient.forView().method(ProductView::getProductsPage)
+    .invoke(offset, pageSize);
+
+// Calculate total pages
+int totalPages = (int) Math.ceil((double) response.totalCount() / pageSize);
+----
+
+=== Token-based Pagination Flow
+
+1. **First Request**: Use an empty string as the `pageToken`
+2. **Store Token**: Save the `nextPageToken` from the response
+3. **Subsequent Requests**: Pass the saved token as `pageToken` in the next request
+4. **Last Page Detection**: When an empty token is returned, you've reached the end
+
+*Example in Java:*
+
+[source,java]
+----
+public record TokenPageRequest(String pageToken) { }
+
+public record TokenPageResponse<T>(List<T> items, String nextPageToken, boolean hasMore) { }
+
+@Query("""
+    SELECT * AS items,
+           next_page_token() AS nextPageToken,
+           has_more() AS hasMore
+    FROM products
+    OFFSET page_token_offset(:pageToken)
+    LIMIT 10
+    """)
+public QueryEffect<ProductsTokenPage> getProductsWithToken(String pageToken) {
+    return queryResult();
+}
+
+// In client code:
+String token = ""; // Empty for first page
+ProductsTokenPage response;
+do {
+    response = componentClient.forView().method(ProductView::getProductsWithToken)
+        .invoke(token);
+
+    // Process the current page
+    processItems(response.items());
+
+    // Update token for next page
+    token = response.nextPageToken();
+} while (!token.isEmpty());
+----
+
+== Enhancing Pagination
+
+=== Including Total Count
+
+To include the total number of results in a paginated response, use the `total_count()` function:
+
+[source,sql]
+----
+SELECT * AS items, total_count() AS totalCount
+FROM products
+OFFSET :offset LIMIT :pageSize
+----
+
+This allows clients to:
+
+* Display "showing X-Y of Z results" information
+* Calculate the total number of pages
+* Show appropriate pagination controls
+
+=== Determining If More Results Exist
+
+To check if there are more results beyond the current page, use the `has_more()` function:
+
+[source,sql]
+----
+SELECT * AS items, has_more() AS hasMore
+FROM products
+LIMIT :pageSize
+----
+
+This is particularly useful for "load more" patterns where you want to show a button only if more data is available.
+
+=== Combining with Sorting
+
+For consistent pagination results, always combine pagination with explicit sorting:
+
+[source,sql]
+----
+SELECT * FROM products
+ORDER BY name ASC
+OFFSET :offset LIMIT :pageSize
+----
+
+Without explicit sorting, the order of results is not guaranteed, which can lead to unpredictable pagination behavior.
+
+== UI Pagination Patterns
+
+Different pagination approaches support different UI patterns:
+
+=== Page Numbers
+
+Best supported by count-based pagination:
+
+* "Page 1, 2, 3..." navigation
+* "First/Previous/Next/Last" buttons
+* Jump to specific page
+
+[source,java]
+----
+// Calculate values for UI
+int totalPages = (int) Math.ceil((double) totalCount / pageSize);
+int currentPage = offset / pageSize;
+boolean hasNextPage = currentPage < totalPages - 1;
+boolean hasPreviousPage = currentPage > 0;
+----
+
+=== Infinite Scroll / Load More
+
+Best supported by token-based pagination:
+
+* Continuous scrolling that loads more content when reaching the bottom
+* "Load more" button that appends additional results
+* One-way traversal through results
+
+[source,java]
+----
+// Check if "Load More" button should be shown
+boolean showLoadMore = !nextPageToken.isEmpty() || response.hasMore();
+----
+
+== Best Practices
+
+=== Choosing the Right Approach
+
+* **Use count-based pagination when**:
+  - The data set is relatively stable
+  - Users need to jump to specific pages
+  - You need simple implementation
+
+* **Use token-based pagination when**:
+  - Data changes frequently
+  - Dealing with very large result sets
+  - Consistency between requests is critical
+  - Implementing infinite scroll or "load more" patterns
+
+=== Performance Optimization
+
+* Use reasonable page sizes (typically 10-50 items)
+* Always include `ORDER BY` with paginated queries
+* Consider using `has_more()` instead of `total_count()` when the exact total isn't needed
+* For large data sets, prefer token-based pagination
+
+=== User Experience
+
+* Display clear pagination controls appropriate for your approach
+* Show the current range and total count when available (e.g., "Showing 21-30 of 145")
+* Cache previously loaded pages when appropriate
+* Consider prefetching the next page for smoother navigation
+
+== Related Features
+
+* xref:reference:views/syntax/limit.adoc[LIMIT clause] - Limiting the number of returned rows
+* xref:reference:views/syntax/offset.adoc[OFFSET clause] - Skipping rows in results
+* xref:reference:views/syntax/functions/next-page-token.adoc[next_page_token() function] - Creating pagination tokens
+* xref:reference:views/syntax/functions/page-token-offset.adoc[page_token_offset() function] - Using pagination tokens
+* xref:reference:views/syntax/functions/has-more.adoc[has_more() function] - Checking for more results
+* xref:reference:views/syntax/functions/total-count.adoc[total_count() function] - Getting the total count of results
+* xref:reference:views/syntax/order-by.adoc[ORDER BY clause] - Sorting results for consistent pagination

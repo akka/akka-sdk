@@ -1,6 +1,5 @@
 package store.order.view.structured;
 
-// tag::structured[]
 public record ProductOrder(
   String id,
   String name,
@@ -9,4 +8,3 @@ public record ProductOrder(
   String orderId,
   long orderCreatedTimestamp
 ) {}
-// end::structured[]

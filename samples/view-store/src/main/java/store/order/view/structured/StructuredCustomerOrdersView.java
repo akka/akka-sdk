@@ -18,7 +18,6 @@ import store.product.domain.ProductEvent;
 @ComponentId("structured-customer-orders")
 public class StructuredCustomerOrdersView extends View {
 
-  // tag::query[]
   @Query( // <1>
     """
     SELECT
@@ -43,8 +42,6 @@ public class StructuredCustomerOrdersView extends View {
   public QueryEffect<StructuredCustomerOrders> get(String customerId) {
     return queryResult();
   }
-
-  // end::query[]
 
   @Table("customers")
   @Consume.FromEventSourcedEntity(CustomerEntity.class)
