@@ -145,7 +145,7 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
                   reply,
                   metadata,
                   deleteEntity = false,
-                  eventsMetadata = Vector.empty // FIXME updated in other PR
+                  Vector.empty // FIXME eventMetadata
                 ))
           }
 
@@ -161,7 +161,7 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
                   reply,
                   metadata,
                   deleteEntity = true,
-                  eventsMetadata = Vector.empty // FIXME updated in other PR
+                  Vector.empty // FIXME eventMetadata
                 ))
           }
 

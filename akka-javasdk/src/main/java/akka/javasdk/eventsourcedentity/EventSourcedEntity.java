@@ -391,6 +391,21 @@ public abstract class EventSourcedEntity<S, E> {
       OnSuccessBuilder<S> persistAll(List<? extends E> events);
 
       /**
+       * Persist a single event and additional metadata together with the event. After this event is
+       * persisted, the event handler {@link #applyEvent(E event)} is called in order to update the
+       * entity state.
+       */
+      OnSuccessBuilder<S> persistWithMetadata(E event, Metadata metadata);
+
+      /**
+       * Persist the passed List of events and additional metadata together with the events. After
+       * these events are persisted, the event handler {@link #applyEvent} is called in order to
+       * update the entity state. Note, the event handler is called only once after all events are
+       * persisted.
+       */
+      OnSuccessBuilder<S> persistAllWithMetadata(List<EventWithMetadata<? extends E>> events);
+
+      /**
        * Create a message reply.
        *
        * @param message The payload of the reply.

@@ -16,6 +16,7 @@ import akka.javasdk.impl.effect.NoSecondaryEffectImpl
 import akka.javasdk.impl.effect.SecondaryEffectImpl
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.EmitEvents
+import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.EmitEventsWithMetadata
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.NoPrimaryEffect
 import akka.javasdk.testkit.EventSourcedResult
 import io.grpc.Status
@@ -44,8 +45,9 @@ private[akka] object EventSourcedResultImpl {
     effect match {
       case ei: EventSourcedEntityEffectImpl[_, E @unchecked] =>
         ei.primaryEffect match {
-          case ee: EmitEvents[E @unchecked] => ee.event.toList.asJava
-          case _: NoPrimaryEffect.type      => Collections.emptyList()
+          case ee: EmitEvents[E @unchecked]             => ee.events.toList.asJava
+          case ee: EmitEventsWithMetadata[E @unchecked] => ee.eventsWithMetadata.iterator.map(_.getEvent).toList.asJava
+          case _: NoPrimaryEffect.type                  => Collections.emptyList()
         }
     }
   }
