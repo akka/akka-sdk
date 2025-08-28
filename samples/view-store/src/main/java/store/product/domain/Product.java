@@ -1,6 +1,5 @@
 package store.product.domain;
 
-// tag::domain[]
 public record Product(String name, Money price) {
   public Product withName(String newName) {
     return new Product(newName, price);
@@ -10,4 +9,3 @@ public record Product(String name, Money price) {
     return new Product(name, newPrice);
   }
 }
-// end::domain[]

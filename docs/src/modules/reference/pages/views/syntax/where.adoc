@@ -1,0 +1,284 @@
+= WHERE
+
+The `WHERE` clause filters query results based on specified conditions. It allows you to retrieve only the rows that satisfy the filtering criteria, enabling precise data selection.
+
+== Syntax
+
+[source,sql]
+----
+WHERE <condition> [AND|OR <condition>...]
+----
+
+== Elements
+
+`condition`::
+An expression that evaluates to true or false. Only rows for which the condition evaluates to true are included in the result.
+
+== Supported operators
+
+=== Comparison operators
+
+The WHERE clause supports various comparison operators for creating conditions:
+
+[cols="1,3,2"]
+|===
+| Operator | Description | Example
+
+| xref:reference:views/syntax/operators/comparison.adoc#equals[`=`]
+| Equals - Tests if values are equal
+| `name = 'John'` or `status = :statusParam`
+
+| xref:reference:views/syntax/operators/comparison.adoc#not-equals[`!=`]
+| Not equals - Tests if values are not equal
+| `category != 'Electronics'`
+
+| xref:reference:views/syntax/operators/comparison.adoc#greater-than[`>`]
+| Greater than - Tests if left value is greater
+| `price > 100` or `created > '2023-01-01'`
+
+| xref:reference:views/syntax/operators/comparison.adoc#greater-equals[`>=`]
+| Greater than or equal to
+| `price >= 100` or `age >= 18`
+
+| xref:reference:views/syntax/operators/comparison.adoc#less-than[`<`]
+| Less than - Tests if left value is smaller
+| `price < 50` or `created < :dateParam`
+
+| xref:reference:views/syntax/operators/comparison.adoc#less-equals[`<=`]
+| Less than or equal to
+| `price <= 50` or `count <= 10`
+|===
+
+=== Logical operators
+
+Logical operators combine multiple conditions:
+
+[cols="1,3,2"]
+|===
+| Operator | Description | Example
+
+| xref:reference:views/syntax/operators/logical.adoc#and[`AND`]
+| Requires both conditions to be true
+| `category = 'Books' AND price < 20`
+
+| xref:reference:views/syntax/operators/logical.adoc#or[`OR`]
+| Requires at least one condition to be true
+| `status = 'new' OR status = 'sale'`
+
+| xref:reference:views/syntax/operators/logical.adoc#not[`NOT`]
+| Negates a condition
+| `NOT price > 100` or `NOT (status = 'deleted')`
+|===
+
+=== Set membership operators
+
+Check if values are members of sets:
+
+[cols="1,3,2"]
+|===
+| Operator | Description | Example
+
+| xref:reference:views/syntax/operators/in.adoc[`IN`]
+| Tests if a value matches any in a list
+| `category IN ('Books', 'Magazines', 'Comics')`
+
+| xref:reference:views/syntax/operators/any.adoc[`= ANY`]
+| Tests if a value matches any in an array column
+| `'electronics' = ANY(tags)` or `category = ANY(:categoryList)`
+|===
+
+=== Null testing
+
+Operators for checking null values:
+
+[cols="1,3,2"]
+|===
+| Operator | Description | Example
+
+| xref:reference:views/syntax/operators/is-null.adoc[`IS NULL`]
+| Tests if a value is NULL (missing)
+| `phoneNumber IS NULL`
+
+| xref:reference:views/syntax/operators/is-null.adoc[`IS NOT NULL`]
+| Tests if a value is not NULL (present)
+| `email IS NOT NULL`
+|===
+
+=== Pattern matching
+
+Operators for string pattern matching:
+
+[cols="1,3,2"]
+|===
+| Operator | Description | Example
+
+| xref:reference:views/syntax/operators/like.adoc[`LIKE`]
+| Pattern matching with wildcards
+| `name LIKE 'Jo%'` or `code LIKE 'ABC_%'`
+|===
+
+=== Text search function
+
+Advanced text searching capabilities:
+
+[cols="1,3,2"]
+|===
+| Function | Description | Example
+
+| xref:reference:views/syntax/functions/text-search.adoc[`text_search()`]
+| Language-aware text search with word tokenization
+| `text_search(description, :searchTerms, 'english')`
+|===
+
+== Examples
+
+=== Basic filtering
+
+.Simple equality filter
+[source,sql]
+----
+SELECT * FROM products
+WHERE category = 'Electronics'
+----
+
+.Numeric comparison
+[source,sql]
+----
+SELECT * FROM products
+WHERE price < 100
+----
+
+.Date comparison
+[source,sql]
+----
+SELECT * FROM customers
+WHERE joinDate > '2023-01-01'
+----
+
+=== Multiple conditions
+
+.Combining conditions with AND
+[source,sql]
+----
+SELECT * FROM products
+WHERE category = 'Electronics' AND price < 500 AND inStock = true
+----
+
+.Combining conditions with OR
+[source,sql]
+----
+SELECT * FROM customers
+WHERE region = 'Europe' OR region = 'Asia'
+----
+
+.Using parentheses for complex logic
+[source,sql]
+----
+SELECT * FROM products
+WHERE (category = 'Electronics' OR category = 'Computers')
+  AND price < 1000
+  AND NOT discontinued = true
+----
+
+=== Working with NULL values
+
+.Finding missing values
+[source,sql]
+----
+SELECT * FROM customers
+WHERE phoneNumber IS NULL
+----
+
+.Finding present values
+[source,sql]
+----
+SELECT * FROM customers
+WHERE address IS NOT NULL AND address.street IS NOT NULL
+----
+
+=== Using sets and arrays
+
+.Testing membership in a fixed list
+[source,sql]
+----
+SELECT * FROM products
+WHERE category IN ('Electronics', 'Computers', 'Accessories')
+----
+
+.Testing membership in a parameter list
+[source,sql]
+----
+SELECT * FROM products
+WHERE category IN (:category1, :category2, :category3)
+----
+
+.Testing membership in an array column
+[source,sql]
+----
+SELECT * FROM products
+WHERE :searchTag = ANY(tags)
+----
+
+.Testing membership with an array parameter
+[source,sql]
+----
+SELECT * FROM customers
+WHERE status = ANY(:statusList)
+----
+
+=== Text searching
+
+.Pattern matching with prefix
+[source,sql]
+----
+SELECT * FROM customers
+WHERE email LIKE 'john.%'
+----
+
+.Pattern matching with suffix
+[source,sql]
+----
+SELECT * FROM customers
+WHERE email LIKE '%.com'
+----
+
+.Full-text search
+[source,sql]
+----
+SELECT * FROM articles
+WHERE text_search(content, :searchQuery, 'english')
+----
+
+=== Accessing nested fields
+
+.Filter based on nested object fields
+[source,sql]
+----
+SELECT * FROM customers
+WHERE address.country = 'USA' AND address.state = 'California'
+----
+
+.Filter with deeply nested fields
+[source,sql]
+----
+SELECT * FROM orders
+WHERE shipping.address.zipCode = '10001'
+----
+
+== Notes
+
+* Conditions in the WHERE clause are applied before any GROUP BY, ORDER BY, or LIMIT operations
+* For complex conditions, use parentheses to explicitly control the order of evaluation
+* Type compatibility is enforced - you cannot directly compare values of different types
+* NULL values require special handling with IS NULL and IS NOT NULL - standard comparison operators don't work with NULL
+* The LIKE operator requires a non-wildcard prefix or suffix for optimal performance
+* For pagination efficiency, ensure your WHERE conditions match available indexes
+
+== Related features
+
+* xref:reference:views/syntax/operators/index.adoc[Operators overview] - Complete reference for all operators
+* xref:reference:views/syntax/functions/text-search.adoc[text_search() function] - Advanced text search capabilities
+* xref:reference:views/syntax/join.adoc[JOIN clause] - Combining data from multiple tables
+* xref:reference:views/syntax/from.adoc[FROM clause] - Specifies the source table
+* xref:reference:views/concepts/data-types.adoc[Data types] - Type compatibility in conditions
+* xref:reference:views/concepts/optional-fields.adoc[Optional fields] - Working with null values
