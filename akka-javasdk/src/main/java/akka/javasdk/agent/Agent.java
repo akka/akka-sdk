@@ -274,10 +274,10 @@ public abstract class Agent {
        * Parse the response from the model into a structured response of a given responseType. The
        * system message must have instruction or example of how the JSON should be structured.
        * Alternatively, or as a compliment, the JSON schema of the {@code responseType} can be
-       * included automatically in the request by using {@link #responseWithJsonSchema}.
+       * included automatically in the request by using {@link #responseConformsTo}.
        *
        * @param responseType The structured response type.
-       * @see #responseWithJsonSchema
+       * @see #responseConformsTo
        */
       <T> MappingResponseBuilder<T> responseAs(Class<T> responseType);
 
@@ -291,7 +291,7 @@ public abstract class Agent {
        * @param responseType The structured response type.
        * @see #responseAs
        */
-      <T> MappingResponseBuilder<T> responseWithJsonSchema(Class<T> responseType);
+      <T> MappingResponseBuilder<T> responseConformsTo(Class<T> responseType);
 
       /** Map the String response from the model into a different response type. */
       <T> MappingResponseBuilder<T> map(Function<String, T> mapper);

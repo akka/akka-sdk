@@ -82,7 +82,7 @@ public class EvaluatorAgent extends Agent {
     return effects()
       .systemMessage(SYSTEM_MESSAGE)
       .userMessage(evaluationPrompt)
-      .responseWithJsonSchema(EvaluationResult.class) // <3>
+      .responseConformsTo(EvaluationResult.class) // <3>
       .thenReply();
   }
 

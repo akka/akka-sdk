@@ -97,7 +97,7 @@ public interface ActivityAgentMore {
       return effects()
         .systemMessage(SYSTEM_MESSAGE)
         .userMessage(message)
-        .responseWithJsonSchema(Activity.class) // <3>
+        .responseConformsTo(Activity.class) // <3>
         .thenReply();
     }
   }

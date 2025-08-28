@@ -18,7 +18,7 @@ public class SomeStructureResponseSchemaAgent extends Agent {
     return effects()
         .systemMessage("You are a helpful...")
         .userMessage(question)
-        .responseWithJsonSchema(StructuredResponse.class)
+        .responseConformsTo(StructuredResponse.class)
         .thenReply();
   }
 }
