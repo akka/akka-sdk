@@ -29,6 +29,7 @@ object SamplesCompilationProject {
 
       lazy val root =
         Project(id = s"samples", base = file(pathToSample))
+          .settings(publish / skip := true, publishTo := None)
           .aggregate(innerProjects.map(p => p: ProjectReference): _*)
 
       import akka.grpc.sbt.AkkaGrpcPlugin.autoImport._
@@ -45,6 +46,8 @@ object SamplesCompilationProject {
               .disablePlugins(HeaderPlugin, JavaFormatterPlugin)
               .enablePlugins(AkkaGrpcPlugin)
               .settings(
+                publish / skip := true,
+                publishTo := None,
                 Test / unmanagedSourceDirectories += baseDirectory.value / "src" / "it" / "java",
                 akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Java),
                 akkaGrpcCodeGeneratorSettings ++= CommonSettings.serviceGrpcGeneratorSettings,

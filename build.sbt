@@ -14,7 +14,8 @@ lazy val `akka-javasdk-root` = project
   .aggregate(samplesCompilationProject.componentProjects.map(p => p: ProjectReference): _*)
   .aggregate(annotationProcessorTestProject.componentProjects.map(p => p: ProjectReference): _*)
   .settings(
-    (publish / skip) := true,
+    publish / skip := true,
+    publishTo := None,
     // https://github.com/sbt/sbt/issues/3465
     // Libs and plugins must share a version. The root project must use that
     // version (and set the crossScalaVersions as empty list) so each sub-project
@@ -76,6 +77,7 @@ lazy val akkaJavaSdkTests =
       Test / javacOptions ++= Seq("-parameters"),
       // only tests here
       publish / skip := true,
+      publishTo := None,
       doc / sources := Seq.empty,
       // generating test service
       Test / akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Java),
@@ -112,12 +114,13 @@ lazy val annotationProcessorTestProject: CompositeProject =
 
 lazy val akkaJavaSdkParent =
   Project(id = "akka-javasdk-parent", base = file("akka-javasdk-parent"))
-    .enablePlugins(BuildInfoPlugin, Publish)
-    .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
+    .enablePlugins(BuildInfoPlugin, CiReleasePlugin)
+    .disablePlugins(Publish)
     .settings(
       name := "akka-javasdk-parent",
       crossPaths := false,
       scalaVersion := Dependencies.ScalaVersion,
+      publish / skip := false,
       publishArtifact := false, // disable jar, sources, docs
       makePom / publishArtifact := true, // only pom
       pomPostProcess := { (node: Node) =>

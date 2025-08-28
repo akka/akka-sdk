@@ -41,12 +41,14 @@ jobs:
           SDK_VERSION="$(cat ~/akka-javasdk-version.txt)"
           echo "SDK version: '${SDK_VERSION}'"
 
-      - name: sbt publishSigned (Cloudsmith)
+      - name: sbt publishSigned
         env:
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
           PUBLISH_USER: ${{ secrets.PUBLISH_USER }}
           PUBLISH_PASSWORD: ${{ secrets.PUBLISH_PASSWORD }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_AKKA_IO_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_AKKA_IO_PASSWORD }}
         run: sbt publishSigned
 
       - name: sbt publishM2
