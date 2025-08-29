@@ -52,8 +52,8 @@ private[impl] object JsonSchema {
       required = parameters.collect { case TypedParameter(name, _, _, true) => name }.sorted)
   }
 
-  def jsonSchemaFor(value: Class[_]): JsonSchemaObject = {
-    jsonSchemaTypeFor(value, None, Set.empty)._1.asInstanceOf[JsonSchemaObject]
+  def jsonSchemaFor(value: Class[_]): JsonSchemaDataType = {
+    jsonSchemaTypeFor(value, None, Set.empty)._1
   }
 
   def typedParametersFor(method: Method): Seq[TypedParameter] = {
