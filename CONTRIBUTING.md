@@ -14,26 +14,6 @@ ThisBuild / resolvers += "lightbend-akka".at("your token resolver here")
 
 ##  Build scripts
 
-1. See `.sh` scripts in the root directory.
+1. The SDK can be built with `sbt publishM2`
 
-2. Set the maven plugin version to the version sbt generated:
-
-`publishLocally.sh` or
-
-    ```shell
-    cd akka-javasdk-maven
-    mvn versions:set -DnewVersion="0.7...-SNAPSHOT"
-    mvn install
-    git checkout .
-    ```
-
-3. Pass that version to the sample projects when building:
-
-`updateSamplesVersions.sh` or
-
-    ```shell
-    cd samples/protobuf-key-value-shopping-cart
-    mvn -Dakka-javasdk.version="0.7...-SNAPSHOT" compile
-    ```
-
-Be careful not to accidentally check in the `maven` `pom.xml` files with changed version.
+2. Samples can be updated to a locally built SDK with `updateSamplesVersions.sh samples/*` 
