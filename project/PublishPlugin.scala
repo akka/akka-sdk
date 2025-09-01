@@ -3,7 +3,6 @@ import com.jsuereth.sbtpgp.PgpKeys.publishSigned
 import sbt._
 import sbt.Keys._
 import sbtdynver.DynVerPlugin.autoImport.dynverSonatypeSnapshots
-import xerial.sbt.Sonatype.autoImport.sonatypeProfileName
 
 import java.util.concurrent.atomic.AtomicBoolean
 
