@@ -33,7 +33,6 @@ object Publish extends AutoPlugin {
     Seq(
       publish / skip := false, // re-enable publishing
       dynverSonatypeSnapshots := true, // append -SNAPSHOT
-      sonatypeProfileName := "com.typesafe",
       beforePublishTask := beforePublish(isSnapshot.value),
       publishSigned := publishSigned.dependsOn(beforePublishTask).value,
       publishTo :=
