@@ -3,7 +3,6 @@ import com.jsuereth.sbtpgp.PgpKeys.publishSigned
 import sbt._
 import sbt.Keys._
 import sbtdynver.DynVerPlugin.autoImport.dynverSonatypeSnapshots
-import xerial.sbt.Sonatype.autoImport.sonatypeProfileName
 
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -33,7 +32,6 @@ object Publish extends AutoPlugin {
     Seq(
       publish / skip := false, // re-enable publishing
       dynverSonatypeSnapshots := true, // append -SNAPSHOT
-      sonatypeProfileName := "com.typesafe",
       beforePublishTask := beforePublish(isSnapshot.value),
       publishSigned := publishSigned.dependsOn(beforePublishTask).value,
       publishTo :=

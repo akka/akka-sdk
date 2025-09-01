@@ -20,6 +20,13 @@
     <scm>
         <url>https://github.com/akka/akka-sdk</url>
     </scm>
+    <licenses>
+        <license>
+            <name>BUSL-1.1</name>
+            <url>https://raw.githubusercontent.com/akka/akka-sdk/main/LICENSE</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
     <developers>
         <developer>
