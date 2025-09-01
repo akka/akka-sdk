@@ -49,7 +49,7 @@ jobs:
           PUBLISH_PASSWORD: ${{ secrets.PUBLISH_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_AKKA_IO_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_AKKA_IO_PASSWORD }}
-        run: sbt publishSigned
+        run: sbt publishSigned akka-javasdk-parent/ci-release
 
       - name: sbt publishM2
         run: sbt publishM2
