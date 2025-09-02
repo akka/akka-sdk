@@ -22,6 +22,7 @@ akka services restart my-service
 
 ----
       --all-regions      run the command on all regions
+  -f, --force            if true the service will be restarted by killing all instances, otherwise instances will be restarted in a rolling fashion
   -h, --help             help for restart
       --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
       --project string   project to use if not using the default configured project
