@@ -286,6 +286,7 @@ The xref:reference:cli/akka-cli/akka_services.adoc[akka services] command includ
 * xref:reference:cli/akka-cli/akka_services_views.adoc[akka services views]
 * xref:reference:cli/akka-cli/akka_services_views_describe.adoc[akka services views describe]
 * xref:reference:cli/akka-cli/akka_services_views_drop.adoc[akka services views drop]
+* xref:reference:cli/akka-cli/akka_services_views_get-state.adoc[akka services views get-state]
 * xref:reference:cli/akka-cli/akka_services_views_list.adoc[akka services views list]
 
 == Run Akka services locally
@@ -311,6 +312,7 @@ The xref:reference:cli/akka-cli/akka_local.adoc[akka local] command includes the
 * xref:reference:cli/akka-cli/akka_local_services_views.adoc[akka local services views]
 * xref:reference:cli/akka-cli/akka_local_services_views_describe.adoc[akka local services views describe]
 * xref:reference:cli/akka-cli/akka_local_services_views_drop.adoc[akka local services views drop]
+* xref:reference:cli/akka-cli/akka_local_services_views_get-state.adoc[akka local services views get-state]
 * xref:reference:cli/akka-cli/akka_local_services_views_list.adoc[akka local services views list]
 
 == Display version

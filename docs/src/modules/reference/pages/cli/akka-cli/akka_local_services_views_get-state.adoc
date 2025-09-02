@@ -1,27 +1,32 @@
-= akka code init
+= akka local services views get-state
 
-Initialize a new Akka SDK project.
+Get view state.
 
 == Synopsis
 
-The `akka code init` command helps you get started quickly with the Akka SDK by walking you through a simple, interactive setup process.
-
-It allows you to:
-
-* Select and clone one of the official Akka sample projects from https://github.com/akka-samples/
-* Download and install the Akka AI context
-* Display configuration instruction for your preferred AI assistance (Copilot, Cursor, Qodo)
-
-The command will create a new directory with the selected sample in the current working directory.
+The `akka local service views get-state` command gets the view state for a given subject.
 
 ----
-akka code init [flags]
+akka local services views get-state SERVICE VIEW_ID TABLE (optional) SUBJECT [flags]
+----
+
+== Examples
+
+----
+
+> akka local service views get-state customer-registry customer-by-name Alice
+
+if the view has multiple tables, you must also provide the table name:
+> akka local service views get-state customer-registry customer-by-name customers Alice
 ----
 
 == Options
 
 ----
-  -h, --help   help for init
+  -h, --help             help for get-state
+      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string   project to use if not using the default configured project
+      --region string    region to use if project has more than one region
 ----
 
 == Options inherited from parent commands
@@ -42,7 +47,7 @@ akka code init [flags]
 
 == SEE ALSO
 
-* link:akka_code.html[akka code]	 - Develop Akka services
+* link:akka_local_services_views.html[akka local services views]	 - Manage views.
 
 [discrete]
 
