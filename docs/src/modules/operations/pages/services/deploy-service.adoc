@@ -15,7 +15,7 @@ Before deploying a service, ensure you have the following:
 
 == Build container image
 
-NOTE: The `mvn install` command of the Maven Docker plugin connects to the locally running Docker daemon using the `DOCKER_HOST` environment value. Depending on your Docker tooling you might need to set this accordingly, you may use `docker context ls` to identify the correct value.
+NOTE: The `mvn install` command of the Maven Docker plugin connects to the locally running Docker daemon. Check your active Docker context with `docker context list`. You may overwrite it through the `DOCKER_HOST` environment value.
 
 Build a container image of the service:
 
