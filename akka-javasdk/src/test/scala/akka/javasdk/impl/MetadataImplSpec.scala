@@ -34,8 +34,10 @@ class MetadataImplSpec extends AnyWordSpec with Matchers with OptionValues {
       merged.get("foo").toScala.value shouldBe "bar"
       merged.get("baz").toScala.value shouldBe "qux"
 
-      val expectedEntries = "foobar" :: "raboof" :: Nil
-      merged.getAll("foobar").asScala should contain theSameElementsAs expectedEntries
+      val expectedEntries = "raboof" :: "foobar" :: Nil
+      merged.getAll("foobar").asScala shouldBe expectedEntries
+      merged.get("foobar").toScala.value shouldBe "raboof" // first
+      merged.getLast("foobar").toScala.value shouldBe "foobar"
     }
   }
 

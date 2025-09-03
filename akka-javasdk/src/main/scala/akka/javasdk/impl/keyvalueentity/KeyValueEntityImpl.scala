@@ -131,12 +131,13 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
       }
 
       commandEffect.primaryEffect match {
-        case UpdateState(updatedState) =>
+        case UpdateState(updatedState, metadataOpt) =>
           errorOrReply match {
             case Left(err) =>
               Future.successful(new SpiEventSourcedEntity.ErrorEffect(err))
             case Right((reply, metadata)) =>
               val serializedState = serializer.toBytes(updatedState)
+              val stateMetadata = metadataOpt.map(MetadataImpl.toSpi).toVector
 
               Future.successful(
                 new SpiEventSourcedEntity.PersistEffect(
@@ -144,7 +145,8 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
                   updatedState,
                   reply,
                   metadata,
-                  deleteEntity = false))
+                  deleteEntity = false,
+                  stateMetadata))
           }
 
         case DeleteEntity =>
@@ -158,7 +160,8 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
                   null,
                   reply,
                   metadata,
-                  deleteEntity = true))
+                  deleteEntity = true,
+                  Vector.empty))
           }
 
         case NoPrimaryEffect =>
