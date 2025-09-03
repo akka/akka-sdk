@@ -17,6 +17,8 @@ akka auth login
 
 . Build a container image of your service:
 +
+NOTE: The `mvn install` command of the Maven Docker plugin connects to the locally running Docker daemon. Check your active Docker context with `docker context list`. You may overwrite it through the `DOCKER_HOST` environment value.
++
 [source, command line]
 ----
 mvn clean install -DskipTests
