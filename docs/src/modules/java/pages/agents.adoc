@@ -701,3 +701,11 @@ include::example$multi-agent/src/test/java/demo/multiagent/application/AgentTeam
 <5> For more complex scenarios, define a response that is only returned if the user message matches a specific condition. This is useful for testing different logic paths within your agent.
 <6> Call the components with the `componentClient`.
 
+=== Log model request and response
+
+To see exactly what is sent to and received from the AI model, you can enable the following logger in `include-dev-loggers.xml`:
+
+[source]
+----
+  <logger name="kalix.runtime.agent.AkkaLangChain4jHttpClient" level="TRACE"/>
+----
