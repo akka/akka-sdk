@@ -7,7 +7,7 @@ object Dependencies {
     val ProtocolVersionMajor = 1
     val ProtocolVersionMinor = 1
   }
-  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.5.11")
+  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.5.12")
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
   // for prod code, they are marked as Provided, but testkit still requires the alignment
@@ -35,11 +35,11 @@ object Dependencies {
   val CommonsIoVersion = "2.11.0"
   val MunitVersion = "0.7.29"
 
-  val kalixTestkitProtocol = "io.kalix" % "kalix-testkit-protocol" % AkkaRuntimeVersion
-  val kalixSdkSpi = "io.akka" %% "akka-sdk-spi" % AkkaRuntimeVersion
+  val kalixTestkitProtocol = "io.akka" % "kalix-testkit-protocol" % AkkaRuntimeVersion
+  val akkaSdkSpi = "io.akka" %% "akka-sdk-spi" % AkkaRuntimeVersion
 
   // Note: this should never be on the compile classpath, only test and or runtime
-  val kalixDevRuntime = "io.kalix" %% "kalix-dev-runtime" % AkkaRuntimeVersion
+  val AkkaDevRuntime = "io.akka" %% "akka-runtime-dev" % AkkaRuntimeVersion
 
   val commonsIo = "commons-io" % "commons-io" % CommonsIoVersion
   val logback = "ch.qos.logback" % "logback-classic" % LogbackVersion
@@ -105,7 +105,7 @@ object Dependencies {
   // Important: be careful when adding dependencies here, unless provided, runtime or test they will also be packaged in the user project
   //            binaries/artifacts unless explicitly excluded in the akka-javasdk-parent assembly descriptor
   val javaSdk = deps ++= sdkDeps ++ Seq(
-    kalixSdkSpi,
+    akkaSdkSpi,
     // make sure these two are on the classpath for users to consume http request/response APIs and streams
     "com.typesafe.akka" %% "akka-http-core" % AkkaHttpVersion,
     akkaDependency("akka-stream"),
@@ -124,7 +124,7 @@ object Dependencies {
         kalixTestkitProtocol % "protobuf-src",
         // FIXME use by the testkit itself but should not be on user test classpath
         //      should possibly be provided or runtime here and added for the test runner in project parent pom
-        kalixDevRuntime,
+        AkkaDevRuntime,
         // user will interface with these
         junit5,
         // convenience-transitive dependencies for user assertions and async interactions
@@ -139,7 +139,7 @@ object Dependencies {
       // FIXME why doesn't these two come along transitively from the testkit?
       "org.assertj" % "assertj-core" % "3.24.2" % Test,
       "org.awaitility" % "awaitility" % "4.2.1" % Test,
-      kalixDevRuntime % Test,
+      AkkaDevRuntime % Test,
       akkaDependency("akka-testkit"),
       // These are for the test of the testkit
       "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
