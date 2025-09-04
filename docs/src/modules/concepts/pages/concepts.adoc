@@ -330,6 +330,8 @@ Akka provides a way to connect components that is simple to use and reliable in 
 
 include::ROOT:partial$background-execution.adoc[]
 
+== Synchronous vs asynchronous component invocation
+
 include::ROOT:partial$sync-vs-async.adoc[]
 
 For implementation guidance on invoking components, see xref:java:component-and-service-calls.adoc[Component and service calls].
