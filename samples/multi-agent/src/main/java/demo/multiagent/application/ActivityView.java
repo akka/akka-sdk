@@ -20,7 +20,7 @@ public class ActivityView extends View {
     String finalAnswer
   ) {}
 
-  @Query("SELECT * as entries FROM activities WHERE userId = :userId")
+  @Query("SELECT * AS entries FROM activities WHERE userId = :userId")
   public QueryEffect<ActivityEntries> getActivities(String userId) {
     return queryResult();
   }
