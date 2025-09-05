@@ -171,7 +171,9 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
                   updatedState,
                   reply,
                   metadata,
-                  deleteEntity))
+                  deleteEntity,
+                  eventsMetadata = Vector.empty // FIXME updated in other PR
+                ))
           }
 
         case NoPrimaryEffect =>

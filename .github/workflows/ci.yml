@@ -282,7 +282,7 @@ jobs:
           echo "Docker image contents"
           tar tvf target/docker/shopping-cart-quickstart/latest/tmp/docker-build.tar
           tar tvf target/docker/shopping-cart-quickstart/latest/tmp/docker-build.tar > content-list.txt
-          for artifact in "akka-actor" "akka-http-core" "kalix-dev-runtime"
+          for artifact in "akka-actor" "akka-http-core" "akka-runtime-dev"
           do
             if grep -q "$artifact" "content-list.txt"; then
               echo "Docker image contained $artifact, it shouldn't"
