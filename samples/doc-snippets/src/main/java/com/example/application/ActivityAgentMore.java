@@ -8,6 +8,7 @@ import akka.javasdk.agent.RateLimitException;
 import akka.javasdk.agent.ToolCallExecutionException;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Description;
 import akka.javasdk.annotations.TypeName;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
@@ -75,6 +76,33 @@ public interface ActivityAgentMore {
   }
 
   // end::structured-response[]
+
+  // tag::structured-response-schema[]
+  @ComponentId("activity-agent")
+  public class ActivityAgentStructuredResponseSchema extends Agent {
+
+    private static final String SYSTEM_MESSAGE = // <1>
+      """
+      You are an activity agent. Your job is to suggest activities in the
+      real world. Like for example, a team building activity, sports, an
+      indoor or outdoor game, board games, a city trip, etc.
+      """.stripIndent();
+
+    record Activity(
+      @Description("Name of the activity") String name,
+      @Description("Description of the activity") String description
+    ) {} // <2>
+
+    public Effect<Activity> query(String message) {
+      return effects()
+        .systemMessage(SYSTEM_MESSAGE)
+        .userMessage(message)
+        .responseConformsTo(Activity.class) // <3>
+        .thenReply();
+    }
+  }
+
+  // end::structured-response-schema[]
 
   // tag::di[]
   @ComponentId("activity-agent")

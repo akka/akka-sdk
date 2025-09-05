@@ -78,7 +78,7 @@ public class PlannerAgent extends Agent {
       return effects()
         .systemMessage(buildSystemMessage(request.agentSelection))
         .userMessage(request.message())
-        .responseAs(Plan.class)
+        .responseConformsTo(Plan.class)
         .thenReply();
     }
   }

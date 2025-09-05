@@ -271,11 +271,27 @@ public abstract class Agent {
       Agent.Effect<String> thenReply(Metadata metadata);
 
       /**
-       * Parse the response from the model into a structured response of a given responseType.
+       * Parse the response from the model into a structured response of a given responseType. The
+       * system message must have instruction or example of how the JSON should be structured.
+       * Alternatively, or as a compliment, the JSON schema of the {@code responseType} can be
+       * included automatically in the request by using {@link #responseConformsTo}.
        *
        * @param responseType The structured response type.
+       * @see #responseConformsTo
        */
       <T> MappingResponseBuilder<T> responseAs(Class<T> responseType);
+
+      /**
+       * Parse the response from the model into a structured response of a given responseType. The
+       * JSON schema of the {@code responseType} is included in the model request. At least OpenAI
+       * and Google Gemini support this structured model output feature. For other models that don't
+       * support it, you have to give more detailed instructions about the expected output format in
+       * the system message.
+       *
+       * @param responseType The structured response type.
+       * @see #responseAs
+       */
+      <T> MappingResponseBuilder<T> responseConformsTo(Class<T> responseType);
 
       /** Map the String response from the model into a different response type. */
       <T> MappingResponseBuilder<T> map(Function<String, T> mapper);
