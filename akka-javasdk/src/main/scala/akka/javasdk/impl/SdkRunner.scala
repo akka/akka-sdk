@@ -696,8 +696,8 @@ private final class Sdk(
             serializer,
             ComponentDescriptor.descriptorFor(agentClass, serializer),
             regionInfo,
-            new PromptTemplateClient(componentClient(None)),
-            componentClient(None),
+            telemetryContext => new PromptTemplateClient(componentClient(telemetryContext)),
+            telemetryContext => componentClient(telemetryContext),
             overrideModelProvider,
             dependencyProviderOpt,
             applicationConfig)
