@@ -151,8 +151,8 @@ private[impl] final class AgentImpl[A <: Agent](
     serializer: JsonSerializer,
     componentDescriptor: ComponentDescriptor,
     regionInfo: RegionInfo,
-    promptTemplateClient: PromptTemplateClient,
-    componentClient: ComponentClient,
+    promptTemplateClient: Option[OtelContext] => PromptTemplateClient,
+    componentClient: Option[OtelContext] => ComponentClient,
     overrideModelProvider: OverrideModelProvider,
     dependencyProvider: Option[DependencyProvider],
     config: Config)
@@ -211,12 +211,12 @@ private[impl] final class AgentImpl[A <: Agent](
             val systemMessage = req.systemMessage match {
               case ConstantSystemMessage(message) => message
               case template: TemplateSystemMessage =>
-                promptTemplateClient.getPromptTemplate(template.templateId).formatted(template.args)
+                promptTemplateClient(telemetryContext).getPromptTemplate(template.templateId).formatted(template.args)
             }
             val modelProvider = overrideModelProvider.getModelProviderForAgent(componentId).getOrElse(req.modelProvider)
             val spiModelProvider = toSpiModelProvider(modelProvider)
             val metadata = MetadataImpl.toSpi(req.replyMetadata)
-            val sessionMemoryClient = deriveMemoryClient(req.memoryProvider)
+            val sessionMemoryClient = deriveMemoryClient(req.memoryProvider, telemetryContext)
             val additionalContext = toSpiContextMessages(sessionMemoryClient.getHistory(sessionId))
             val mcpToolEndpoints = toSpiMcpEndpoints(req.mcpTools)
 
@@ -318,13 +318,17 @@ private[impl] final class AgentImpl[A <: Agent](
       case other => throw new IllegalArgumentException(s"Unsupported remote mcp tools impl $other")
     }
 
-  private def deriveMemoryClient(memoryProvider: MemoryProvider): SessionMemory = {
+  private def deriveMemoryClient(
+      memoryProvider: MemoryProvider,
+      telemetryContext: Option[OtelContext]): SessionMemory = {
     memoryProvider match {
       case _: MemoryProvider.Disabled =>
-        new SessionMemoryClient(componentClient, MemorySettings.disabled())
+        new SessionMemoryClient(componentClient(telemetryContext), MemorySettings.disabled())
 
       case p: MemoryProvider.LimitedWindowMemoryProvider =>
-        new SessionMemoryClient(componentClient, new MemorySettings(p.read(), p.write(), p.readLastN()))
+        new SessionMemoryClient(
+          componentClient(telemetryContext),
+          new MemorySettings(p.read(), p.write(), p.readLastN()))
 
       case p: MemoryProvider.CustomMemoryProvider =>
         p.sessionMemory()
@@ -335,7 +339,7 @@ private[impl] final class AgentImpl[A <: Agent](
             "akka.javasdk.agent.memory"
           else
             p.configPath()
-        new SessionMemoryClient(componentClient, config.getConfig(actualPath))
+        new SessionMemoryClient(componentClient(telemetryContext), config.getConfig(actualPath))
       }
     }
   }
