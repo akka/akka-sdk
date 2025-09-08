@@ -72,6 +72,10 @@ set WEATHER_API_KEY=your-openai-api-key
 ----
 --
 
+This test is using real LLM requests, and you must set your https://platform.openai.com/api-keys[OpenAI API key, window="new"] as an environment variable:
+
+include::ROOT:partial$openai-api-key-env-vars.adoc[]
+
 Run the test with
 
 [source,command line]
