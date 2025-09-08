@@ -4,18 +4,25 @@
 
 package akkajavasdk.components.eventsourcedentities.counter;
 
-public record Counter(Integer value) {
+public record Counter(int value, String meta) {
+  public Counter(int value) {
+    this(value, "");
+  }
 
   public Counter onValueIncreased(CounterEvent.ValueIncreased evt) {
-    return new Counter(this.value + evt.value());
+    return new Counter(this.value + evt.value(), meta);
   }
 
   public Counter onValueSet(CounterEvent.ValueSet evt) {
-    return new Counter(evt.value());
+    return new Counter(evt.value(), meta);
   }
 
   public Counter onValueMultiplied(CounterEvent.ValueMultiplied evt) {
-    return new Counter(this.value * evt.value());
+    return new Counter(this.value * evt.value(), meta);
+  }
+
+  public Counter withMeta(String m) {
+    return new Counter(value, m);
   }
 
   public Counter apply(CounterEvent counterEvent) {

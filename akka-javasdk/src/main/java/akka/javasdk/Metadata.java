@@ -45,6 +45,19 @@ public interface Metadata extends Iterable<Metadata.MetadataEntry> {
   Optional<String> get(String key);
 
   /**
+   * Get the last string value for the given key, if found.
+   *
+   * <p>If the entry is a binary entry, nothing will be returned.
+   *
+   * <p>The key lookup is case insensitive. If multiple entries with the same key are present, the
+   * last string entry will be returned.
+   *
+   * @param key The key to lookup.
+   * @return The value, if found.
+   */
+  Optional<String> getLast(String key);
+
+  /**
    * Get all the string values for a given key.
    *
    * <p>Binary values will be ignored. The key lookup is case insensitive.
@@ -224,6 +237,12 @@ public interface Metadata extends Iterable<Metadata.MetadataEntry> {
    * @return a copy of this Metadata with the other Metadata merged in.
    */
   Metadata merge(Metadata other);
+
+  /**
+   * @return {@code true} if it doesn't contain any entries
+   * @see Metadata#EMPTY
+   */
+  boolean isEmpty();
 
   /** A metadata entry. */
   interface MetadataEntry {

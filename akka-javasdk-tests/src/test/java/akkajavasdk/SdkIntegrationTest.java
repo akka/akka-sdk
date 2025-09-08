@@ -259,7 +259,32 @@ public class SdkIntegrationTest extends TestKitSupport {
                           .method(CounterEntity::get)
                           .invokeAsync());
 
-              assertThat(result).isEqualTo(43); // 42 +1
+              assertThat(result).isEqualTo(42 + 1);
+            });
+
+    // once more, but now with event metadata
+    await(
+        componentClient
+            .forEventSourcedEntity(entityId)
+            .method(CounterEntity::increase)
+            .withMetadata(Metadata.EMPTY.add(CounterEntity.META_KEY, "inc42"))
+            .invokeAsync(42));
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              Counter result =
+                  await(
+                      componentClient
+                          .forEventSourcedEntity(entityId)
+                          .method(CounterEntity::getState)
+                          .invokeAsync());
+
+              assertThat(result.value()).isEqualTo(43 + 42 + 1);
+              assertThat(result.meta())
+                  .isEqualTo("magic 42 with metadata from IncreaseConsumer: inc42");
             });
   }
 
@@ -326,7 +351,7 @@ public class SdkIntegrationTest extends TestKitSupport {
   }
 
   @Test
-  public void verifyUserSubscriptionAction() {
+  public void verifyUserKeyValueSubscription() {
 
     TestUser user = new TestUser("123", "john345@doe.com", "JohnDoe");
 
@@ -354,6 +379,24 @@ public class SdkIntegrationTest extends TestKitSupport {
         .ignoreExceptions()
         .atMost(15, TimeUnit.of(SECONDS))
         .until(() -> UserSideEffect.getUsers().get(user.id()), new IsNull<>());
+  }
+
+  @Test
+  public void verifyUserKeyValueSubscriptionWithMetadata() {
+
+    TestUser user = new TestUser("12345", "john345@doe.com", "JohnDoe");
+
+    await(
+        componentClient
+            .forKeyValueEntity(user.id())
+            .method(UserEntity::createOrUpdateUser)
+            .withMetadata(Metadata.EMPTY.add(UserEntity.META_KEY, "test-meta"))
+            .invokeAsync(new UserEntity.CreatedUser(user.name(), user.email())));
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(15, TimeUnit.of(SECONDS))
+        .until(() -> UserSideEffect.getMetas().get(user.id()), new IsEqual("test-meta"));
   }
 
   @Test

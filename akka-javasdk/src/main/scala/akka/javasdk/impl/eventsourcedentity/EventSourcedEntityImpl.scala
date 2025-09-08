@@ -26,6 +26,7 @@ import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.EmitEvents
+import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.EmitEventsWithMetadata
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.NoPrimaryEffect
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
@@ -69,7 +70,8 @@ private[impl] object EventSourcedEntityImpl {
   private final class EventContextImpl(
       entityId: String,
       override val sequenceNumber: Long,
-      override val selfRegion: String)
+      override val selfRegion: String,
+      override val metadata: Metadata)
       extends EventSourcedEntityContextImpl(entityId, selfRegion)
       with EventContext
 
@@ -149,32 +151,47 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
       }
 
       var currentSequence = command.sequenceNumber
+
+      def emitEvents(events: Iterable[Any], eventsMetadata: Iterable[Metadata], deleteEntity: Boolean) = {
+        var updatedState = state
+        val eventsAndMetadata =
+          if (eventsMetadata.isEmpty)
+            events.map(_ -> Metadata.EMPTY)
+          else
+            events.zip(eventsMetadata)
+
+        eventsAndMetadata.foreach { case (event, eventMetadata) =>
+          updatedState = entityHandleEvent(updatedState, event.asInstanceOf[AnyRef], eventMetadata, currentSequence)
+          if (updatedState == null)
+            throw new IllegalArgumentException("Event handler must not return null as the updated state.")
+          currentSequence += 1
+        }
+
+        errorOrReply(updatedState) match {
+          case Left(err) =>
+            Future.successful(new SpiEventSourcedEntity.ErrorEffect(err))
+          case Right((reply, metadata)) =>
+            val serializedEvents = events.map(event => serializer.toBytes(event)).toVector
+
+            Future.successful(
+              new SpiEventSourcedEntity.PersistEffect(
+                events = serializedEvents,
+                updatedState,
+                reply,
+                metadata,
+                deleteEntity,
+                eventsMetadata.iterator.map(MetadataImpl.toSpi).toVector))
+        }
+      }
+
       commandEffect.primaryEffect match {
         case EmitEvents(events, deleteEntity) =>
-          var updatedState = state
-          events.foreach { event =>
-            updatedState = entityHandleEvent(updatedState, event.asInstanceOf[AnyRef], currentSequence)
-            if (updatedState == null)
-              throw new IllegalArgumentException("Event handler must not return null as the updated state.")
-            currentSequence += 1
-          }
+          emitEvents(events, Vector.empty, deleteEntity)
 
-          errorOrReply(updatedState) match {
-            case Left(err) =>
-              Future.successful(new SpiEventSourcedEntity.ErrorEffect(err))
-            case Right((reply, metadata)) =>
-              val serializedEvents = events.map(event => serializer.toBytes(event)).toVector
-
-              Future.successful(
-                new SpiEventSourcedEntity.PersistEffect(
-                  events = serializedEvents,
-                  updatedState,
-                  reply,
-                  metadata,
-                  deleteEntity,
-                  eventsMetadata = Vector.empty // FIXME updated in other PR
-                ))
-          }
+        case EmitEventsWithMetadata(eventsWithMetadata, deleteEntity) =>
+          val events = eventsWithMetadata.map(_.getEvent)
+          val eventsMetadata = eventsWithMetadata.map(_.getMetadata)
+          emitEvents(events, eventsMetadata, deleteEntity)
 
         case NoPrimaryEffect =>
           errorOrReply(state) match {
@@ -214,14 +231,16 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
       eventEnv: SpiEventSourcedEntity.EventEnvelope): SpiEventSourcedEntity.State = {
     // all event types are preemptively registered to the serializer by the ReflectiveEventSourcedEntityRouter
     val event = serializer.fromBytes(eventEnv.payload)
-    entityHandleEvent(state, event, eventEnv.sequenceNumber)
+    val eventMetadata = MetadataImpl.of(eventEnv.eventMetadata)
+    entityHandleEvent(state, event, eventMetadata, eventEnv.sequenceNumber)
   }
 
   def entityHandleEvent(
       state: SpiEventSourcedEntity.State,
       event: AnyRef,
+      eventMetadata: Metadata,
       sequenceNumber: Long): SpiEventSourcedEntity.State = {
-    val eventContext = new EventContextImpl(entityId, sequenceNumber, regionInfo.selfRegion)
+    val eventContext = new EventContextImpl(entityId, sequenceNumber, regionInfo.selfRegion, eventMetadata)
     entity._internalSetEventContext(Optional.of(eventContext))
     val clearState = entity._internalSetCurrentState(state, false)
     try {
