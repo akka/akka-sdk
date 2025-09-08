@@ -51,7 +51,7 @@ import org.slf4j.MDC
 @InternalApi
 private[impl] final class ConsumerImpl[C <: Consumer](
     componentId: String,
-    val factory: () => C,
+    val factory: MessageContext => C,
     consumerClass: Class[C],
     consumerSource: ConsumerSource,
     consumerDestination: Option[ConsumerDestination],
@@ -76,9 +76,9 @@ private[impl] final class ConsumerImpl[C <: Consumer](
     // non-topic is internal, so non-configurable (also means no output json is ever passed anywhere though)
     else internalSerializer
 
-  private def createRouter(): ReflectiveConsumerRouter[C] =
+  private def createRouter(consumer: C): ReflectiveConsumerRouter[C] =
     new ReflectiveConsumerRouter[C](
-      factory(),
+      consumer,
       componentDescriptor.methodInvokers,
       internalSerializer,
       ignoreUnknown,
@@ -102,8 +102,10 @@ private[impl] final class ConsumerImpl[C <: Consumer](
           regionInfo.selfRegion,
           message.originRegion.toJava)
 
+      val consumer = factory(messageContext)
+
       val payload: BytesPayload = message.payload.getOrElse(throw new IllegalArgumentException("No message payload"))
-      val effect = createRouter()
+      val effect = createRouter(consumer)
         .handleCommand(MessageEnvelope.of(payload, messageContext.metadata), messageContext)
       toSpiEffect(message, effect)
     } catch {

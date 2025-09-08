@@ -14,7 +14,6 @@ import akka.javasdk.consumer.MessageEnvelope
 import akka.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
 import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.impl.reflection.ParameterExtractors
-import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.BytesPayload
 
@@ -43,11 +42,6 @@ private[impl] class ReflectiveConsumerRouter[A <: Consumer](
     val payload = message.payload()
     // make sure we route based on the new type url if we get an old json type url message
     val inputTypeUrl = internalSerializer.removeVersion(internalSerializer.replaceLegacyJsonPrefix(payload.contentType))
-
-    // FIXME drop this because we don't really support field injection of the component client in the Akka SDK?
-    // lookup ComponentClient
-    val componentClients = Reflect.lookupComponentClientFields(consumer)
-    componentClients.foreach(_.callMetadata = Some(message.metadata()))
 
     val methodInvoker = methodInvokers.get(inputTypeUrl)
     methodInvoker match {

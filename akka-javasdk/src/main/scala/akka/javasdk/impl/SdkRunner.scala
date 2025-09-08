@@ -71,6 +71,7 @@ import akka.javasdk.impl.agent.OverrideModelProvider
 import akka.javasdk.impl.agent.PromptTemplateClient
 import akka.javasdk.impl.client.ComponentClientImpl
 import akka.javasdk.impl.consumer.ConsumerImpl
+import akka.javasdk.impl.consumer.MessageContextImpl
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl
 import akka.javasdk.impl.http.HttpClientProviderImpl
@@ -639,7 +640,10 @@ private final class Sdk(
         val timedActionSpi =
           new TimedActionImpl[TimedAction](
             componentId,
-            () => wiredInstance(timedActionClass)(sideEffectingComponentInjects(None)),
+            context =>
+              wiredInstance(timedActionClass)(
+                sideEffectingComponentInjects(
+                  context.asInstanceOf[TimedActionImpl.CommandContextImpl].telemetryContext)),
             timedActionClass,
             system.classicSystem,
             runtimeComponentClients.timerClient,
@@ -659,7 +663,9 @@ private final class Sdk(
         val consumerSpi =
           new ConsumerImpl[Consumer](
             componentId,
-            () => wiredInstance(consumerClass)(sideEffectingComponentInjects(None)),
+            context =>
+              wiredInstance(consumerClass)(
+                sideEffectingComponentInjects(context.asInstanceOf[MessageContextImpl].telemetryContext)),
             consumerClass,
             consumerSrc,
             consumerDest,

@@ -35,8 +35,7 @@ private[javasdk] final case class ComponentClientImpl(
     telemetryContext: Option[OtelContext])(implicit ec: ExecutionContext, system: ActorSystem[_])
     extends ComponentClient {
 
-  // Volatile since the component client could be accessed in nested/composed futures and is mutated by the reflective action router
-  @volatile var callMetadata: Option[Metadata] = telemetryContext.map { context =>
+  private val callMetadata: Option[Metadata] = telemetryContext.map { context =>
     MetadataImpl.Empty.withTelemetryContext(context)
   }
 
