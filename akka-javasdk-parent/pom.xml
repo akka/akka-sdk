@@ -554,7 +554,7 @@
             <dependencyManagement>
                 <dependencies>
                     <dependency>
-                        <groupId>io.kalix</groupId>
+                        <groupId>io.akka</groupId>
                         <artifactId>akka-runtime-core_2.13</artifactId>
                         <version>${akka-runtime.version}</version>
                     </dependency>
@@ -563,7 +563,7 @@
 
             <dependencies>
                 <dependency>
-                    <groupId>io.kalix</groupId>
+                    <groupId>io.akka</groupId>
                     <artifactId>akka-runtime-core_2.13</artifactId>
                 </dependency>
             </dependencies>
@@ -635,8 +635,8 @@
                 <version>${akka-javasdk.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.kalix</groupId>
-                <artifactId>kalix-dev-runtime_2.13</artifactId>
+                <groupId>io.akka</groupId>
+                <artifactId>akka-runtime-dev_2.13</artifactId>
                 <version>${akka-runtime.version}</version>
             </dependency>
         </dependencies>
@@ -654,8 +654,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.kalix</groupId>
-            <artifactId>kalix-dev-runtime_2.13</artifactId>
+            <groupId>io.akka</groupId>
+            <artifactId>akka-runtime-dev_2.13</artifactId>
             <scope>runtime</scope>
         </dependency>
     </dependencies>
