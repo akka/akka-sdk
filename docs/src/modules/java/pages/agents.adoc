@@ -339,6 +339,18 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 <3> Use the `responseAs` method to specify the expected response type.
 <4> Sometimes the model may not return a valid JSON, so you can use `onFailure` to provide a fallback value in case of parsing exception.
 
+Some models, such as OpenAI and Google Gemini, have specific support for structured model responses according to a given JSON schema. To automatically include a JSON schema that corresponds to the response type you can use `responseConformsTo` instead of `responseAs`.
+
+[source,java,indent=0]
+----
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgentMore.java[tag=structured-response-schema]
+----
+<1> Instructions to the model doesn't have to include details about the JSON response format.
+<2> `Activity` record is used to map the JSON response to a Java object. It can optionally have `akka.javasdk.annotations.Description` of the fields, which will be included in the JSON schema.
+<3> Use the `responseConformsTo` method  to specify the expected response type, which is also used for creating the JSON schema.
+
+If you still don't get expected JSON responses from the model, you can combine those two approaches of both including the JSON schema and giving instructions about the format in the system message.
+
 == Handling failures
 
 The `onFailure` method in the agent's effect API provides comprehensive error handling capabilities for various types of failures that can occur during model processing. This allows you to implement robust fallback strategies and provide meaningful responses even when things go wrong.
