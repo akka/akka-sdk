@@ -2,7 +2,7 @@ package customer.api;
 
 import akka.javasdk.annotations.TypeName;
 
-public interface CustomerPublicEvent {
+public sealed interface CustomerPublicEvent {
   @TypeName("customer-created")
   record Created(String email, String name) implements CustomerPublicEvent {}
 
