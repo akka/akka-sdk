@@ -935,8 +935,8 @@ private final class Sdk(
 
   private def mcpEndpointFactory[E](mcpEndpointClass: Class[E]): McpEndpointConstructionContext => E = {
     (context: McpEndpointConstructionContext) =>
-      // FIXME(tracing): add full telemetry context to McpRequestContext
-      val telemetryContext = context.openTelemetrySpan.map(OtelContext.root.`with`)
+
+      val telemetryContext = Option(context.telemetryContext)
 
       lazy val mcpRequestContext = new McpRequestContext {
         override def getPrincipals: Principals =
