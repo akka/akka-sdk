@@ -581,7 +581,7 @@ public class TestKit {
   private Config applicationConfig;
   private String serviceName;
   private Optional<InMemorySpanExporter> inMemorySpanExporter =
-      Optional.empty(); // TODO maybe this should be always InMemorySpanExporter?
+      Optional.empty(); // TODO maybe this should not be optional
 
   /** Create a new testkit for a service descriptor with the default settings. */
   public TestKit() {
