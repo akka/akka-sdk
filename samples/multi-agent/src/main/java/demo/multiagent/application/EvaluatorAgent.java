@@ -31,7 +31,9 @@ public class EvaluatorAgent extends Agent {
       return switch (evaluation.toLowerCase(Locale.ROOT)) {
         case "correct" -> true;
         case "incorrect" -> false;
-        default -> throw new IllegalArgumentException("Unknown evaluation result [" + evaluation + "]");
+        default -> throw new IllegalArgumentException(
+          "Unknown evaluation result [" + evaluation + "]"
+        );
       };
     }
   }
@@ -40,17 +42,17 @@ public class EvaluatorAgent extends Agent {
     """
     You are an evaluator agent that acts as an LLM judge. Your job is to evaluate
     the quality and appropriateness of AI-generated responses.
-    
+
     Your evaluation should focus on:
     1. Whether the final answer appropriately addresses the original question
     2. Whether the answer respects and aligns with the user's stated preferences
     3. The overall quality, relevance, and helpfulness of the response
     4. Any potential deviations or inconsistencies with user preferences
-    
+
     A response is "Incorrect" if it meets ANY of the following failure conditions:
     - poor response with significant issues or minor preference violations
     - unacceptable response that fails to address the question or violates preferences
-    
+
     A response is "Correct" if it:
     - fully addresses the question and respects all preferences
     - good response with minor issues but respects preferences
