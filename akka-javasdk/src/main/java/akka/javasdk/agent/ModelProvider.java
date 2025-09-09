@@ -5,6 +5,7 @@
 package akka.javasdk.agent;
 
 import com.typesafe.config.Config;
+import java.time.Duration;
 
 /**
  * Configuration interface for AI model providers used by agents.
@@ -46,7 +47,17 @@ public sealed interface ModelProvider {
 
   /** Settings for the Anthropic Large Language Model provider. */
   static Anthropic anthropic() {
-    return new Anthropic("", "", "", Double.NaN, Double.NaN, -1, -1);
+    return new Anthropic(
+        "",
+        "",
+        "",
+        Double.NaN,
+        Double.NaN,
+        -1,
+        -1,
+        Duration.ofSeconds(15),
+        Duration.ofMinutes(1),
+        2);
   }
 
   /** Settings for the Anthropic Large Language Model provider. */
@@ -75,7 +86,16 @@ public sealed interface ModelProvider {
        */
       int topK,
       /** Maximum number of tokens to generate in the response */
-      int maxTokens)
+      int maxTokens,
+      /** Fail the request if connecting to the model API takes longer than this */
+      Duration connectionTimeout,
+      /**
+       * Fail the request if getting a response from the model API takes longer than this, does not
+       * apply to streaming agents
+       */
+      Duration responseTimeout,
+      /** If the request fails, retry this many times. */
+      int maxRetries)
       implements ModelProvider {
 
     public static Anthropic fromConfig(Config config) {
@@ -86,46 +106,169 @@ public sealed interface ModelProvider {
           config.getDouble("temperature"),
           config.getDouble("top-p"),
           config.getInt("top-k"),
-          config.getInt("max-tokens"));
+          config.getInt("max-tokens"),
+          config.getDuration("connection-timeout"),
+          config.getDuration("response-timeout"),
+          config.getInt("max-retries"));
     }
 
     public Anthropic withApiKey(String apiKey) {
-      return new Anthropic(apiKey, modelName, baseUrl, temperature, topP, topK, maxTokens);
+      return new Anthropic(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          topK,
+          maxTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
     }
 
     public Anthropic withModelName(String modelName) {
-      return new Anthropic(apiKey, modelName, baseUrl, temperature, topP, topK, maxTokens);
+      return new Anthropic(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          topK,
+          maxTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
     }
 
     public Anthropic withBaseUrl(String baseUrl) {
-      return new Anthropic(apiKey, modelName, baseUrl, temperature, topP, topK, maxTokens);
+      return new Anthropic(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          topK,
+          maxTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
     }
 
     public Anthropic withTemperature(double temperature) {
-      return new Anthropic(apiKey, modelName, baseUrl, temperature, topP, topK, maxTokens);
+      return new Anthropic(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          topK,
+          maxTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
     }
 
     public Anthropic withTopP(double topP) {
-      return new Anthropic(apiKey, modelName, baseUrl, temperature, topP, topK, maxTokens);
+      return new Anthropic(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          topK,
+          maxTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
     }
 
     public Anthropic withTopK(int topK) {
-      return new Anthropic(apiKey, modelName, baseUrl, temperature, topP, topK, maxTokens);
+      return new Anthropic(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          topK,
+          maxTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
     }
 
     public Anthropic withMaxTokens(int maxTokens) {
-      return new Anthropic(apiKey, modelName, baseUrl, temperature, topP, topK, maxTokens);
+      return new Anthropic(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          topK,
+          maxTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
+    }
+
+    public Anthropic withConnectionTimeout(Duration connectionTimeout) {
+      return new Anthropic(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          topK,
+          maxTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
+    }
+
+    public Anthropic withResponseTimeout(Duration responseTimeout) {
+      return new Anthropic(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          topK,
+          maxTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
+    }
+
+    public Anthropic withMaxRetries(int maxRetries) {
+      return new Anthropic(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          topK,
+          maxTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
     }
   }
 
   /** Settings for the Google AI Gemini Large Language Model provider. */
   static GoogleAIGemini googleAiGemini() {
-    return new GoogleAIGemini("", "", Double.NaN, Double.NaN, -1);
+    return new GoogleAIGemini(
+        "", "", Double.NaN, Double.NaN, -1, Duration.ofSeconds(15), Duration.ofMinutes(1), 2);
   }
 
   /** Settings for the Google AI Gemini Large Language Model provider. */
   record GoogleAIGemini(
-      String apiKey, String modelName, Double temperature, Double topP, int maxOutputTokens)
+      String apiKey,
+      String modelName,
+      Double temperature,
+      Double topP,
+      int maxOutputTokens,
+      Duration connectionTimeout,
+      Duration responseTimeout,
+      int maxRetries)
       implements ModelProvider {
 
     public static GoogleAIGemini fromConfig(Config config) {
@@ -134,27 +277,106 @@ public sealed interface ModelProvider {
           config.getString("model-name"),
           config.getDouble("temperature"),
           config.getDouble("top-p"),
-          config.getInt("max-output-tokens"));
+          config.getInt("max-output-tokens"),
+          config.getDuration("connection-timeout"),
+          config.getDuration("response-timeout"),
+          config.getInt("max-retries"));
     }
 
     public GoogleAIGemini withApiKey(String apiKey) {
-      return new GoogleAIGemini(apiKey, modelName, temperature, topP, maxOutputTokens);
+      return new GoogleAIGemini(
+          apiKey,
+          modelName,
+          temperature,
+          topP,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
     }
 
     public GoogleAIGemini withModelName(String modelName) {
-      return new GoogleAIGemini(apiKey, modelName, temperature, topP, maxOutputTokens);
+      return new GoogleAIGemini(
+          apiKey,
+          modelName,
+          temperature,
+          topP,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
     }
 
     public GoogleAIGemini withTemperature(double temperature) {
-      return new GoogleAIGemini(apiKey, modelName, temperature, topP, maxOutputTokens);
+      return new GoogleAIGemini(
+          apiKey,
+          modelName,
+          temperature,
+          topP,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
     }
 
     public GoogleAIGemini withTopP(double topP) {
-      return new GoogleAIGemini(apiKey, modelName, temperature, topP, maxOutputTokens);
+      return new GoogleAIGemini(
+          apiKey,
+          modelName,
+          temperature,
+          topP,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
     }
 
     public GoogleAIGemini withMaxOutputTokens(int maxOutputTokens) {
-      return new GoogleAIGemini(apiKey, modelName, temperature, topP, maxOutputTokens);
+      return new GoogleAIGemini(
+          apiKey,
+          modelName,
+          temperature,
+          topP,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
+    }
+
+    public GoogleAIGemini withConnectionTimeout(Duration connectionTimeout) {
+      return new GoogleAIGemini(
+          apiKey,
+          modelName,
+          temperature,
+          topP,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
+    }
+
+    public GoogleAIGemini withResponseTimeout(Duration responseTimeout) {
+      return new GoogleAIGemini(
+          apiKey,
+          modelName,
+          temperature,
+          topP,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
+    }
+
+    public GoogleAIGemini withMaxRetries(int maxRetries) {
+      return new GoogleAIGemini(
+          apiKey,
+          modelName,
+          temperature,
+          topP,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
     }
   }
 
@@ -194,11 +416,25 @@ public sealed interface ModelProvider {
 
   /** Settings for the Ollama Large Language Model provider. */
   static Ollama ollama() {
-    return new Ollama("http://localhost:11434", "", Double.NaN, Double.NaN);
+    return new Ollama(
+        "http://localhost:11434",
+        "",
+        Double.NaN,
+        Double.NaN,
+        Duration.ofSeconds(15),
+        Duration.ofMinutes(1),
+        2);
   }
 
   /** Settings for the Ollama Large Language Model provider. */
-  record Ollama(String baseUrl, String modelName, Double temperature, Double topP)
+  record Ollama(
+      String baseUrl,
+      String modelName,
+      Double temperature,
+      Double topP,
+      Duration connectionTimeout,
+      Duration responseTimeout,
+      int maxRetries)
       implements ModelProvider {
 
     public static Ollama fromConfig(Config config) {
@@ -206,29 +442,61 @@ public sealed interface ModelProvider {
           config.getString("base-url"),
           config.getString("model-name"),
           config.getDouble("temperature"),
-          config.getDouble("top-p"));
+          config.getDouble("top-p"),
+          config.getDuration("connection-timeout"),
+          config.getDuration("response-timeout"),
+          config.getInt("max-retries"));
     }
 
     public Ollama withBaseUrl(String baseUrl) {
-      return new Ollama(baseUrl, modelName, temperature, topP);
+      return new Ollama(
+          baseUrl, modelName, temperature, topP, connectionTimeout, responseTimeout, maxRetries);
     }
 
     public Ollama withModelName(String modelName) {
-      return new Ollama(baseUrl, modelName, temperature, topP);
+      return new Ollama(
+          baseUrl, modelName, temperature, topP, connectionTimeout, responseTimeout, maxRetries);
     }
 
     public Ollama withTemperature(double temperature) {
-      return new Ollama(baseUrl, modelName, temperature, topP);
+      return new Ollama(
+          baseUrl, modelName, temperature, topP, connectionTimeout, responseTimeout, maxRetries);
     }
 
     public Ollama withTopP(double topP) {
-      return new Ollama(baseUrl, modelName, temperature, topP);
+      return new Ollama(
+          baseUrl, modelName, temperature, topP, connectionTimeout, responseTimeout, maxRetries);
+    }
+
+    public Ollama withConnectionTimeout(Duration connectionTimeout) {
+      return new Ollama(
+          baseUrl, modelName, temperature, topP, connectionTimeout, responseTimeout, maxRetries);
+    }
+
+    public Ollama withResponseTimeout(Duration responseTimeout) {
+      return new Ollama(
+          baseUrl, modelName, temperature, topP, connectionTimeout, responseTimeout, maxRetries);
+    }
+
+    public Ollama withMaxRetries(int maxRetries) {
+      return new Ollama(
+          baseUrl, modelName, temperature, topP, connectionTimeout, responseTimeout, maxRetries);
     }
   }
 
   /** Settings for the OpenAI Large Language Model provider. */
   static OpenAi openAi() {
-    return new OpenAi("", "", "", Double.NaN, Double.NaN, -1, -1);
+    return new OpenAi(
+        "",
+        "",
+        "",
+        Double.NaN,
+        Double.NaN,
+        -1,
+        -1,
+        Duration.ofSeconds(15),
+        Duration.ofMinutes(1),
+        2);
   }
 
   /** Settings for the OpenAI Large Language Model provider. */
@@ -257,7 +525,10 @@ public sealed interface ModelProvider {
        * maxCompletionTokens instead.
        */
       int maxTokens,
-      int maxCompletionTokens)
+      int maxCompletionTokens,
+      Duration connectionTimeout,
+      Duration responseTimeout,
+      int maxRetries)
       implements ModelProvider {
 
     public static OpenAi fromConfig(Config config) {
@@ -268,49 +539,158 @@ public sealed interface ModelProvider {
           config.getDouble("temperature"),
           config.getDouble("top-p"),
           config.getInt("max-tokens"),
-          config.getInt("max-completion-tokens"));
+          config.getInt("max-completion-tokens"),
+          config.getDuration("connection-timeout"),
+          config.getDuration("response-timeout"),
+          config.getInt("max-retries"));
     }
 
     public OpenAi withApiKey(String apiKey) {
       return new OpenAi(
-          apiKey, modelName, baseUrl, temperature, topP, maxTokens, maxCompletionTokens);
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
     }
 
     public OpenAi withModelName(String modelName) {
       return new OpenAi(
-          apiKey, modelName, baseUrl, temperature, topP, maxTokens, maxCompletionTokens);
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
     }
 
     public OpenAi withBaseUrl(String baseUrl) {
       return new OpenAi(
-          apiKey, modelName, baseUrl, temperature, topP, maxTokens, maxCompletionTokens);
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
     }
 
     public OpenAi withTemperature(double temperature) {
       return new OpenAi(
-          apiKey, modelName, baseUrl, temperature, topP, maxTokens, maxCompletionTokens);
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
     }
 
     public OpenAi withTopP(double topP) {
       return new OpenAi(
-          apiKey, modelName, baseUrl, temperature, topP, maxTokens, maxCompletionTokens);
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
     }
 
     public OpenAi withMaxTokens(int maxTokens) {
       return new OpenAi(
-          apiKey, modelName, baseUrl, temperature, topP, maxTokens, maxCompletionTokens);
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
     }
 
     public OpenAi withMaxCompletionTokens(int maxCompletionTokens) {
       return new OpenAi(
-          apiKey, modelName, baseUrl, temperature, topP, maxTokens, maxCompletionTokens);
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
+    }
+
+    public OpenAi withConnectionTimeout(Duration connectionTimeout) {
+      return new OpenAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
+    }
+
+    public OpenAi withResponseTimeout(Duration responseTimeout) {
+      return new OpenAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
+    }
+
+    public OpenAi withMaxRetries(int maxRetries) {
+      return new OpenAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
     }
   }
 
   /** Settings for the HuggingFace Large Language Model provider. */
   static HuggingFace huggingFace() {
     // Implementation omitted for shortness
-    return new HuggingFace("", "", "", Double.NaN, Double.NaN, -1);
+    return new HuggingFace(
+        "", "", "", Double.NaN, Double.NaN, -1, Duration.ofSeconds(15), Duration.ofMinutes(1), 2);
   }
 
   record HuggingFace(
@@ -319,7 +699,10 @@ public sealed interface ModelProvider {
       String baseUrl,
       double temperature,
       double topP,
-      int maxNewTokens)
+      int maxNewTokens,
+      Duration connectionTimeout,
+      Duration responseTimeout,
+      int maxRetries)
       implements ModelProvider {
 
     public static HuggingFace fromConfig(Config config) {
@@ -329,37 +712,127 @@ public sealed interface ModelProvider {
           config.getString("base-url"),
           config.getDouble("temperature"),
           config.getDouble("top-p"),
-          config.getInt("max-new-tokens"));
+          config.getInt("max-new-tokens"),
+          config.getDuration("connection-timeout"),
+          config.getDuration("response-timeout"),
+          config.getInt("max-retries"));
     }
 
     public HuggingFace withAccessToken(String accessToken) {
       return new HuggingFace(
-          accessToken, this.modelId, this.baseUrl, this.temperature, this.topP, this.maxNewTokens);
+          accessToken,
+          this.modelId,
+          this.baseUrl,
+          this.temperature,
+          this.topP,
+          this.maxNewTokens,
+          this.connectionTimeout,
+          this.responseTimeout,
+          this.maxRetries);
     }
 
     public HuggingFace withModelId(String modelId) {
       return new HuggingFace(
-          this.accessToken, modelId, this.baseUrl, this.temperature, this.topP, this.maxNewTokens);
+          this.accessToken,
+          modelId,
+          this.baseUrl,
+          this.temperature,
+          this.topP,
+          this.maxNewTokens,
+          this.connectionTimeout,
+          this.responseTimeout,
+          this.maxRetries);
     }
 
     public HuggingFace withBaseUrl(String baseUrl) {
       return new HuggingFace(
-          this.accessToken, this.modelId, baseUrl, this.temperature, this.topP, this.maxNewTokens);
+          this.accessToken,
+          this.modelId,
+          baseUrl,
+          this.temperature,
+          this.topP,
+          this.maxNewTokens,
+          this.connectionTimeout,
+          this.responseTimeout,
+          this.maxRetries);
     }
 
     public HuggingFace withTemperature(Double temperature) {
       return new HuggingFace(
-          this.accessToken, this.modelId, this.baseUrl, temperature, this.topP, this.maxNewTokens);
+          this.accessToken,
+          this.modelId,
+          this.baseUrl,
+          temperature,
+          this.topP,
+          this.maxNewTokens,
+          this.connectionTimeout,
+          this.responseTimeout,
+          this.maxRetries);
     }
 
     public HuggingFace withTopP(Double topP) {
       return new HuggingFace(
-          this.accessToken, this.modelId, this.baseUrl, this.temperature, topP, this.maxNewTokens);
+          this.accessToken,
+          this.modelId,
+          this.baseUrl,
+          this.temperature,
+          topP,
+          this.maxNewTokens,
+          this.connectionTimeout,
+          this.responseTimeout,
+          this.maxRetries);
     }
 
     public HuggingFace withMaxNewTokens(Integer maxNewTokens) {
       return new HuggingFace(
-          this.accessToken, this.modelId, this.baseUrl, this.temperature, this.topP, maxNewTokens);
+          this.accessToken,
+          this.modelId,
+          this.baseUrl,
+          this.temperature,
+          this.topP,
+          maxNewTokens,
+          this.connectionTimeout,
+          this.responseTimeout,
+          this.maxRetries);
+    }
+
+    public HuggingFace withConnectionTimeout(Duration connectionTimeout) {
+      return new HuggingFace(
+          this.accessToken,
+          this.modelId,
+          this.baseUrl,
+          this.temperature,
+          this.topP,
+          this.maxNewTokens,
+          connectionTimeout,
+          this.responseTimeout,
+          this.maxRetries);
+    }
+
+    public HuggingFace withResponseTimeout(Duration responseTimeout) {
+      return new HuggingFace(
+          this.accessToken,
+          this.modelId,
+          this.baseUrl,
+          this.temperature,
+          this.topP,
+          this.maxNewTokens,
+          this.connectionTimeout,
+          responseTimeout,
+          this.maxRetries);
+    }
+
+    public HuggingFace withMaxRetries(int maxRetries) {
+      return new HuggingFace(
+          this.accessToken,
+          this.modelId,
+          this.baseUrl,
+          this.temperature,
+          this.topP,
+          this.maxNewTokens,
+          this.connectionTimeout,
+          this.responseTimeout,
+          maxRetries);
     }
   }
 
