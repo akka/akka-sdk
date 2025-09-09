@@ -44,6 +44,7 @@ import akka.stream.Materializer;
 import akka.stream.SystemMaterializer;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.time.Duration;
@@ -60,6 +61,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import kalix.runtime.AkkaRuntimeMain;
+import kalix.runtime.telemetry.Telemetry;
+import kalix.runtime.telemetry.tracing.ActiveTracingInstrumentation;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -577,6 +580,8 @@ public class TestKit {
   private int eventingTestKitPort = -1;
   private Config applicationConfig;
   private String serviceName;
+  private Optional<InMemorySpanExporter> inMemorySpanExporter =
+      Optional.empty(); // TODO maybe this should be always InMemorySpanExporter?
 
   /** Create a new testkit for a service descriptor with the default settings. */
   public TestKit() {
@@ -766,6 +771,16 @@ public class TestKit {
 
       // once runtime is started
 
+      Telemetry telemetry = (Telemetry) Telemetry.get(runtimeActorSystem);
+
+      if (telemetry.tracing()
+          instanceof ActiveTracingInstrumentation activeTracingInstrumentation) {
+        if (activeTracingInstrumentation.exporter()
+            instanceof InMemorySpanExporter inMemorySpanExporter) {
+          this.inMemorySpanExporter = Optional.of(inMemorySpanExporter);
+        }
+      }
+
       componentClient =
           new ComponentClientImpl(
               componentClients,
@@ -900,6 +915,10 @@ public class TestKit {
    */
   public HttpClient getSelfHttpClient() {
     return selfHttpClient;
+  }
+
+  public InMemorySpanExporter getInMemorySpanExporter() {
+    return inMemorySpanExporter.get();
   }
 
   /**

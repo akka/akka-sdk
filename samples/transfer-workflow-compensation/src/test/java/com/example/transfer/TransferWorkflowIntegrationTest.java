@@ -8,7 +8,10 @@ import static com.example.transfer.domain.TransferState.TransferStatus.WAITING_F
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import akka.http.javadsl.model.StatusCodes;
+import akka.javasdk.http.StrictResponse;
 import akka.javasdk.testkit.TestKitSupport;
+import akka.util.ByteString;
 import com.example.transfer.application.TransferWorkflow;
 import com.example.transfer.domain.TransferState;
 import com.example.transfer.domain.TransferState.Transfer;
@@ -19,6 +22,38 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 public class TransferWorkflowIntegrationTest extends TestKitSupport {
+
+  @Test
+  public void shouldTransferMoney2() {
+    var walletId1 = randomId();
+    var walletId2 = randomId();
+    createWallet(walletId1, 100);
+    createWallet(walletId2, 100);
+    var transferId = randomId();
+    var transfer = new Transfer(walletId1, walletId2, 10);
+
+    String debugId = "123";
+    StrictResponse<ByteString> response = httpClient
+      .POST("/transfer/" + transferId)
+      .withRequestBody(transfer)
+      .addHeader("akka-debug-id", debugId)
+      .invoke();
+
+    assertThat(response.status()).isEqualTo(StatusCodes.ACCEPTED);
+
+    Awaitility.await()
+      .atMost(10, TimeUnit.of(SECONDS))
+      .untilAsserted(() -> {
+        var balance1 = getWalletBalance(walletId1);
+        var balance2 = getWalletBalance(walletId2);
+
+        assertThat(balance1).isEqualTo(90);
+        assertThat(balance2).isEqualTo(110);
+      });
+
+    var steps = componentEvaluator.getWorkflowSteps(debugId);
+    assertThat(steps).containsExactly("withdrawStep","depositStep");
+  }
 
   @Test
   public void shouldTransferMoney() {
