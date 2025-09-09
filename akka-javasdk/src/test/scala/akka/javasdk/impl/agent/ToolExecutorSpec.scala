@@ -17,6 +17,7 @@ import akka.javasdk.impl.agent.ToolExecutorSpec.Foobar
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiMetadata
+import io.opentelemetry.context.{ Context => TelemetryContext }
 import org.scalatest.TestSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -46,7 +47,7 @@ class ToolExecutorSpec extends AnyWordSpecLike with TestSuite with Matchers {
   }
 
   private def toolRequest(name: String, args: String): SpiAgent.ToolCallCommand =
-    new SpiAgent.ToolCallCommand("001", name, args, SpiMetadata.empty, io.opentelemetry.context.Context.root())
+    new SpiAgent.ToolCallCommand("001", name, args, SpiMetadata.empty, TelemetryContext.root)
 
   "The ToolExecutor" should {
 
