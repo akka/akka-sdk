@@ -44,8 +44,8 @@ public class WorkflowTest extends TestKitSupport {
 
   @Test
   public void shouldNotStartTransferForWithNegativeAmount() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     createWallet(walletId1, 100);
     createWallet(walletId2, 100);
     var transferId = randomTransferId();
@@ -62,8 +62,8 @@ public class WorkflowTest extends TestKitSupport {
 
   @Test
   public void shouldTransferMoneyAndDelete() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     createWallet(walletId1, 100);
     createWallet(walletId2, 100);
     var transferId = randomTransferId();
@@ -104,6 +104,16 @@ public class WorkflowTest extends TestKitSupport {
               assertThat(lastStep).isEqualTo("logAndStop");
             });
 
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(5, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              List<String> workflowSteps =
+                  telemetryReader.getWorkflowSteps(TransferWorkflow.class, transferId);
+              assertThat(workflowSteps).containsOnly("withdraw-step", "deposit-step", "logAndStop");
+            });
+
     var isDeleted =
         componentClient.forWorkflow(transferId).method(TransferWorkflow::hasBeenDeleted).invoke();
     assertThat(isDeleted).isFalse();
@@ -117,8 +127,8 @@ public class WorkflowTest extends TestKitSupport {
 
   @Test
   public void shouldUpdateAndDelete() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     var transferId = randomTransferId();
     var transfer = new Transfer(walletId1, walletId2, 10);
 
@@ -134,8 +144,8 @@ public class WorkflowTest extends TestKitSupport {
 
   @Test
   public void shouldVerifyWorkflowSubscriptions() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     createWallet(walletId1, 100);
     createWallet(walletId2, 100);
     var transferId1 = randomTransferId();
@@ -191,8 +201,8 @@ public class WorkflowTest extends TestKitSupport {
 
   @Test
   public void shouldTransferMoneyWithoutStepInputs() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     createWallet(walletId1, 100);
     createWallet(walletId2, 100);
     var transferId = randomTransferId();
@@ -221,8 +231,8 @@ public class WorkflowTest extends TestKitSupport {
 
   @Test
   public void shouldTransferAsyncMoneyWithoutStepInputs() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     createWallet(walletId1, 100);
     createWallet(walletId2, 100);
     var transferId = randomTransferId();
@@ -251,8 +261,8 @@ public class WorkflowTest extends TestKitSupport {
 
   @Test
   public void shouldTransferMoneyWithFraudDetection() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     createWallet(walletId1, 100);
     createWallet(walletId2, 100);
     var transferId = randomTransferId();
@@ -280,9 +290,10 @@ public class WorkflowTest extends TestKitSupport {
   }
 
   @Test
-  public void shouldTransferMoneyWithFraudDetectionAndManualAcceptance() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+  public void shouldTransferMoneyWithFraudDetectionAndManualAcceptance()
+      throws InterruptedException {
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     createWallet(walletId1, 100000);
     createWallet(walletId2, 100000);
     var transferId = randomTransferId();
@@ -312,6 +323,16 @@ public class WorkflowTest extends TestKitSupport {
             });
 
     Awaitility.await()
+        .atMost(10, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              List<String> workflowSteps =
+                  telemetryReader.getWorkflowSteps(
+                      TransferWorkflowWithFraudDetection.class, transferId);
+              assertThat(workflowSteps).containsOnly("detectFraud");
+            });
+
+    Awaitility.await()
         .ignoreExceptions()
         .atMost(20, TimeUnit.of(SECONDS))
         .untilAsserted(
@@ -336,12 +357,24 @@ public class WorkflowTest extends TestKitSupport {
               assertThat(balance1).isEqualTo(99000);
               assertThat(balance2).isEqualTo(101000);
             });
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(20, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              List<String> workflowStepsAfterAcceptation =
+                  telemetryReader.getWorkflowSteps(
+                      TransferWorkflowWithFraudDetection.class, transferId);
+              assertThat(workflowStepsAfterAcceptation)
+                  .containsOnly("detectFraud", "withdraw", "deposit");
+            });
   }
 
   @Test
   public void shouldNotTransferMoneyWhenFraudDetectionRejectTransfer() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     createWallet(walletId1, 100);
     createWallet(walletId2, 100);
     var transferId = randomTransferId();
