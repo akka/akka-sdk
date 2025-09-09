@@ -168,7 +168,7 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
     evaluatorModel.fixedResponse(
       """
       {
-        "score": 5,
+        "evaluation": "Correct",
         "feedback": "The suggestion is appropriate for the user."
       }
       """
@@ -183,7 +183,7 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
       .reply(
         """
         {
-          "score": 1,
+          "evaluation": "Incorrect",
           "feedback": "The previous suggestion conflicts with user preferences for indoor activities. Outdoor bike tours are not suitable."
         }
         """
