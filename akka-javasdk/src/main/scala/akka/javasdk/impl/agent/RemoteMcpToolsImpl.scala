@@ -6,10 +6,14 @@ package akka.javasdk.impl.agent
 
 import java.util
 import java.util.function.Predicate
-
 import akka.annotation.InternalApi
 import akka.http.javadsl.model.HttpHeader
 import akka.javasdk.agent.RemoteMcpTools
+
+import java.time.{ Duration => JDuration }
+import scala.concurrent.duration.Duration
+import scala.concurrent.duration.FiniteDuration
+import scala.jdk.DurationConverters.JavaDurationOps
 
 /**
  * INTERNAL API
@@ -19,10 +23,11 @@ final case class RemoteMcpToolsImpl(
     serverUri: String,
     toolNameFilter: Option[Predicate[String]],
     interceptor: Option[RemoteMcpTools.ToolInterceptor],
-    additionalClientHeaders: Seq[HttpHeader])
+    additionalClientHeaders: Seq[HttpHeader],
+    timeout: FiniteDuration)
     extends RemoteMcpTools {
 
-  def this(serverUri: String) = this(serverUri, None, None, Seq.empty)
+  def this(serverUri: String) = this(serverUri, None, None, Seq.empty, Duration.Zero)
 
   override def withToolNameFilter(toolNameFilter: Predicate[String]): RemoteMcpTools =
     copy(toolNameFilter = Some(toolNameFilter))
@@ -40,4 +45,7 @@ final case class RemoteMcpToolsImpl(
 
   override def addClientHeader(header: HttpHeader): RemoteMcpTools =
     copy(additionalClientHeaders = additionalClientHeaders :+ header)
+
+  override def withTimeout(timeout: JDuration): RemoteMcpTools =
+    copy(timeout = timeout.toScala)
 }
