@@ -47,13 +47,13 @@ public class PreferencesConsumer extends Consumer { // <2>
           .invoke(evaluationRequest); // <4>
 
         logger.info(
-          "Evaluation completed for session {}: score={}, feedback='{}'",
+          "Evaluation completed for session {}: evaluation={}, feedback='{}'",
           activity.sessionId(),
-          evaluationResult.score(),
+          evaluationResult.evaluation(),
           evaluationResult.feedback()
         );
 
-        if (evaluationResult.score() < 3) {
+        if (!evaluationResult.ok()) {
           // run the workflow again to generate a better answer
 
           componentClient
