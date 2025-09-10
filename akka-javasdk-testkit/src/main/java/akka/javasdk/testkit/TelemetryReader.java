@@ -4,20 +4,20 @@
 
 package akka.javasdk.testkit;
 
+import static java.util.Optional.ofNullable;
+
 import io.opentelemetry.api.common.AttributeKey;
-import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import kalix.runtime.telemetry.tracing.TracingSetup;
 
-import static java.util.Optional.ofNullable;
+public class TelemetryReader {
 
-public class ComponentEvaluator {
+  private final TracingSetup.AkkaInMemorySpanExporter inMemorySpanExporter;
 
-  private final InMemorySpanExporter inMemorySpanExporter;
-
-  public ComponentEvaluator(InMemorySpanExporter inMemorySpanExporter) {
+  public TelemetryReader(TracingSetup.AkkaInMemorySpanExporter inMemorySpanExporter) {
     this.inMemorySpanExporter = inMemorySpanExporter;
   }
 
@@ -47,10 +47,10 @@ public class ComponentEvaluator {
         inMemorySpanExporter.getFinishedSpanItems().stream()
             .filter(
                 spanData -> {
-                  return
-                      ofNullable(spanData.getAttributes().get(AttributeKey.stringKey("akka.debug.id")))
-                        .map(value -> value.equals(debugId))
-                        .orElse(false);
+                  return ofNullable(
+                          spanData.getAttributes().get(AttributeKey.stringKey("akka.debug.id")))
+                      .map(value -> value.equals(debugId))
+                      .orElse(false);
                 })
             .findFirst();
 
