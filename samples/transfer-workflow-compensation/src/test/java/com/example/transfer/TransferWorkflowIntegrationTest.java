@@ -51,7 +51,7 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
         assertThat(balance2).isEqualTo(110);
       });
 
-    var steps = componentEvaluator.getWorkflowSteps(debugId);
+    var steps = telemetryReader.getWorkflowSteps(debugId);
     assertThat(steps).containsExactly("withdrawStep","depositStep");
   }
 
