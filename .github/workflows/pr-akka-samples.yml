@@ -119,6 +119,7 @@ jobs:
       matrix:
         include:
           - { sample: "empty", sampleRepo: "akka-samples/empty" }
+          - { sample: "empty-kotlin", sampleRepo: "akka-samples/empty-kotlin" }
           - { sample: "akka-chess", sampleRepo: "akka-samples/akka-chess" }
           - { sample: "changelog-agent", sampleRepo: "akka-samples/changelog-agent" }
           - { sample: "medical-tagging-agent", sampleRepo: "akka-samples/medical-tagging-agent" }
