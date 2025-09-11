@@ -721,10 +721,11 @@ Here is an example endpoint returning a static response over the OpenAI protocol
 include::example$doc-snippets/src/main/java/com/example/api/MockOpenAI.java[tag=class]
 ----
 
-For more elaborate scenarios, the mock model endpoint may have to parse the request to decide which hardcoded answer out of a few
+For more elaborate scenarios, the mock model endpoint may have to parse the request to decide which hard coded answer out of a few
 or to create a reply in a more dynamic fashion.
 
-Deploying this service as `mock-openai` allows a service containing agents using it with a config like this:
+Deploying this service as `mock-openai` allows other services containing agents in the same xref:operations:projects/index.adoc[Akka project].
+Using the deployed mock service from an agent in another service can be done with a config like this:
 
 [source,hocon,indent=0]
 .application.conf
@@ -735,12 +736,15 @@ akka.javasdk {
 
     openai {
       model-name = "gpt-4o-mini"
-      base-url = "http://mock-openai"
+      base-url = "http://mock-openai" // <1>
     }
   }
 }
 
 ----
+1. The service name the mock was deployed as.
+
+Note that you should use `http`, and not `https`, the connection will be encrypted with TLS, but that is handled by the platform.
 
 === Log model request and response
 
