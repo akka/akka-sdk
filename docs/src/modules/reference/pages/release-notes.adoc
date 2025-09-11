@@ -10,6 +10,17 @@ Current versions
 * Akka CLI {akka-cli-version}
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
 
+== September 2025
+
+* https://github.com/akka/akka-sdk/releases/tag/v3.5.2[Akka SDK 3.5.2]
+- Persist metadata together with event
+- Include json schema for the structured response
+- Documentation improvements
+- Various bug fixes and internal improvements
+
+* Akka Runtime 1.5.14
+- Enriched tracing
+
 == August 2025
 
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.1[Akka SDK 3.5.1]
