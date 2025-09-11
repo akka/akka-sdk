@@ -5,12 +5,13 @@
 package akka.javasdk.impl.agent
 
 import java.time.Instant
+import java.util.Locale
 
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
-import scala.jdk.CollectionConverters.SeqHasAsJava
+import scala.jdk.CollectionConverters._
 import scala.jdk.DurationConverters.JavaDurationOps
 import scala.util.control.NonFatal
 
@@ -22,6 +23,7 @@ import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
+import akka.javasdk.agent.Guardrail
 import akka.javasdk.agent.InternalServerException
 import akka.javasdk.agent.JsonParsingException
 import akka.javasdk.agent.McpToolCallExecutionException
@@ -38,6 +40,7 @@ import akka.javasdk.agent.SessionMessage.AiMessage
 import akka.javasdk.agent.SessionMessage.ToolCallRequest
 import akka.javasdk.agent.SessionMessage.ToolCallResponse
 import akka.javasdk.agent.SessionMessage.UserMessage
+import akka.javasdk.agent.SimilarityGuard
 import akka.javasdk.agent.ToolCallExecutionException
 import akka.javasdk.agent.ToolCallLimitReachedException
 import akka.javasdk.agent.UnsupportedFeatureException
@@ -63,6 +66,7 @@ import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAgent.ContextMessage
+import akka.runtime.sdk.spi.SpiAgent.GuardrailFailure
 import akka.runtime.sdk.spi.SpiAgent.InternalFailure
 import akka.runtime.sdk.spi.SpiAgent.McpToolCallExecutionFailure
 import akka.runtime.sdk.spi.SpiAgent.ModelFailure
@@ -137,6 +141,26 @@ private[impl] object AgentImpl {
         log.error("Invalid model provider configuration at [{}] for agent [{}].", resolvedConfigPath, componentId, exc)
         throw exc
     }
+  }
+
+  final class SpiGuardrailAdapter(g: Guardrail) extends SpiAgent.Guardrail {
+
+    override def category: String = {
+      if (g.category == Guardrail.Category.OTHER)
+        g.otherCategory
+      else
+        g.category.name.toLowerCase(Locale.ROOT)
+    }
+
+    override def name: String = g.name
+
+    override def reportOnly: Boolean = g.reportOnly
+
+    override def evaluate(text: String): Future[SpiAgent.Guardrail.Result] = {
+      val result = g.evaluate(text)
+      Future.successful(new SpiAgent.Guardrail.Result(result.passed, result.reason))
+    }
+
   }
 
 }
@@ -264,7 +288,9 @@ private[impl] final class AgentImpl[A <: Agent](
               responseMapping = req.responseMapping,
               failureMapping = req.failureMapping.map(mapSpiAgentException),
               replyMetadata = metadata,
-              onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, results))
+              onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, results),
+              requestGuardrails = req.requestGuardrails.map(toSpiGuardrail),
+              responseGuardrails = req.responseGuardrails.map(toSpiGuardrail))
 
           case NoPrimaryEffect =>
             errorOrReply match {
@@ -293,6 +319,21 @@ private[impl] final class AgentImpl[A <: Agent](
       }
 
     }(sdkExecutionContext)
+
+  private def toSpiGuardrail(g: Guardrail): SpiAgent.Guardrail =
+    g match {
+      case g: SimilarityGuard => toSpiSimilarityGuard(g)
+      case g                  => new SpiGuardrailAdapter(g)
+    }
+
+  private def toSpiSimilarityGuard(g: SimilarityGuard): SpiAgent.SimilarityGuard = {
+    val category =
+      if (g.category() == Guardrail.Category.OTHER)
+        g.otherCategory
+      else
+        g.category.name.toLowerCase(Locale.ROOT)
+    new SpiAgent.SimilarityGuard(g.name, category, g.reportOnly, g.badExamplesResources().asScala.toSeq, g.threshold)
+  }
 
   private def toSpiMcpEndpoints(remoteMcpTools: Seq[RemoteMcpTools]): Seq[SpiAgent.McpToolEndpointDescriptor] =
     remoteMcpTools.map {
@@ -326,7 +367,9 @@ private[impl] final class AgentImpl[A <: Agent](
           },
           toolTimeout =
             if (remoteMcp.timeout == Duration.Zero) None
-            else Some(remoteMcp.timeout))
+            else Some(remoteMcp.timeout),
+          requestGuardrails = remoteMcp.requestGuardrails.map(toSpiGuardrail),
+          responseGuardrails = remoteMcp.responseGuardrails.map(toSpiGuardrail))
       case other => throw new IllegalArgumentException(s"Unsupported remote mcp tools impl $other")
     }
 
@@ -345,14 +388,13 @@ private[impl] final class AgentImpl[A <: Agent](
       case p: MemoryProvider.CustomMemoryProvider =>
         p.sessionMemory()
 
-      case p: MemoryProvider.FromConfig => {
+      case p: MemoryProvider.FromConfig =>
         val actualPath =
           if (p.configPath() == "")
             "akka.javasdk.agent.memory"
           else
             p.configPath()
         new SessionMemoryClient(componentClient(telemetryContext), config.getConfig(actualPath))
-      }
     }
   }
 
@@ -425,6 +467,9 @@ private[impl] final class AgentImpl[A <: Agent](
               new ToolCallExecutionException(exc.getMessage, reason.toolName, exc.cause)
             case reason: McpToolCallExecutionFailure =>
               new McpToolCallExecutionException(exc.getMessage, reason.toolName, reason.endpoint, exc.cause)
+
+            case reason: GuardrailFailure =>
+              new Guardrail.GuardrailException(reason.reason)
 
             // this is expected to be a JsonParsingException, we give it as is to users
             case OutputParsingFailure => exc.cause
