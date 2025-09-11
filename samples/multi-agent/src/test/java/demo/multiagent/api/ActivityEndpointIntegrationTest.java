@@ -177,7 +177,6 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
 
   private void setupUpdatedModelResponsesForPreference() {
     // Evaluator detects preference conflict and triggers new suggestion
-    evaluatorModel.reset(); // FIXME this should not be needed, https://github.com/akka/akka-sdk/pull/730
     evaluatorModel
       .whenMessage(req -> req.contains("hate outdoor activities"))
       .reply(
@@ -198,7 +197,6 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
       );
 
     // Updated summary reflecting preference
-    summaryModel.reset(); // FIXME this should not be needed, https://github.com/akka/akka-sdk/pull/730
     summaryModel
       .whenMessage(req -> req.contains("preference for indoor activities"))
       .reply(
