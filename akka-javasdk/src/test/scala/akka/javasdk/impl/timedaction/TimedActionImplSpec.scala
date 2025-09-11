@@ -56,7 +56,7 @@ class TimedActionImplSpec
   def create(componentDescriptor: ComponentDescriptor): TimedActionImpl[TestTimedAction] = {
     new TimedActionImpl(
       "dummy-id",
-      () => new TestTimedAction,
+      _ => new TestTimedAction,
       classOf[TestTimedAction],
       classicSystem,
       timerClient,

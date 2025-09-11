@@ -1,6 +1,4 @@
-== Synchronous vs asynchronous component invocation
-
-You decide how the xref:reference:glossary.adoc#component_client[component client] invokes the component, and the Akka runtime handles the request in the background. The table below summarizes the key differences between the two approaches.
+You decide how the xref:reference:glossary.adoc#component_client[component client] invokes the component, and the Akka runtime handles the request in the background. The following table summarizes the key differences between synchronous and asynchronous component invocation.
 
 [cols="1,1,1", options="header"]
 [.compact]

@@ -49,7 +49,7 @@ object TimedActionImpl {
       override val selfRegion: String,
       override val metadata: Metadata,
       timerClient: TimerClient,
-      telemetryContext: Option[OtelContext],
+      val telemetryContext: Option[OtelContext],
       tracerFactory: () => Tracer)
       extends AbstractContext
       with CommandContext {
@@ -70,7 +70,7 @@ object TimedActionImpl {
 @InternalApi
 private[impl] final class TimedActionImpl[TA <: TimedAction](
     componentId: String,
-    val factory: () => TA,
+    val factory: CommandContext => TA,
     timedActionClass: Class[TA],
     _system: ActorSystem,
     timerClient: TimerClient,
@@ -87,8 +87,8 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
   private implicit val executionContext: ExecutionContext = sdkExecutionContext
   implicit val system: ActorSystem = _system
 
-  private def createRouter(): ReflectiveTimedActionRouter[TA] =
-    new ReflectiveTimedActionRouter[TA](factory(), componentDescriptor.methodInvokers, jsonSerializer)
+  private def createRouter(timedAction: TA): ReflectiveTimedActionRouter[TA] =
+    new ReflectiveTimedActionRouter[TA](timedAction, componentDescriptor.methodInvokers, jsonSerializer)
 
   override def handleCommand(command: Command): Future[Effect] = {
     val metadata = MetadataImpl.of(command.metadata)
@@ -102,8 +102,10 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
       val commandContext =
         new CommandContextImpl(regionInfo.selfRegion, metadata, timerClient, telemetryContext, tracerFactory)
 
+      val timedAction = factory(commandContext)
+
       val payload: BytesPayload = command.payload.getOrElse(throw new IllegalArgumentException("No command payload"))
-      val effect = createRouter()
+      val effect = createRouter(timedAction)
         .handleCommand(command.name, CommandEnvelope.of(payload, commandContext.metadata), commandContext)
       toSpiEffect(command, effect)
     } catch {

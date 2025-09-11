@@ -168,7 +168,7 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
     evaluatorModel.fixedResponse(
       """
       {
-        "score": 5,
+        "evaluation": "Correct",
         "feedback": "The suggestion is appropriate for the user."
       }
       """
@@ -177,13 +177,12 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
 
   private void setupUpdatedModelResponsesForPreference() {
     // Evaluator detects preference conflict and triggers new suggestion
-    evaluatorModel.reset(); // FIXME this should not be needed, https://github.com/akka/akka-sdk/pull/730
     evaluatorModel
       .whenMessage(req -> req.contains("hate outdoor activities"))
       .reply(
         """
         {
-          "score": 1,
+          "evaluation": "Incorrect",
           "feedback": "The previous suggestion conflicts with user preferences for indoor activities. Outdoor bike tours are not suitable."
         }
         """
@@ -198,7 +197,6 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
       );
 
     // Updated summary reflecting preference
-    summaryModel.reset(); // FIXME this should not be needed, https://github.com/akka/akka-sdk/pull/730
     summaryModel
       .whenMessage(req -> req.contains("preference for indoor activities"))
       .reply(

@@ -1,0 +1,90 @@
+= View query syntax
+
+The View query language provides a SQL-like syntax for querying and retrieving data from your views. This page provides an overview of the language features and serves as an entry point to the detailed syntax documentation.
+
+== Overview
+
+The View query language enables you to:
+
+* Select specific data fields or entire objects
+* Filter results based on conditions
+* Join data from multiple tables
+* Sort and limit results
+* Create hierarchical data structures
+* Paginate large result sets
+
+== Core query components
+
+For the complete query structure and syntax, see xref:reference:views/syntax/query.adoc[Query].
+
+=== Query structure
+
+* xref:reference:views/syntax/query.adoc[Query] - Complete query structure and composition
+* xref:reference:views/syntax/select.adoc[SELECT] - Specifying data to retrieve
+* xref:reference:views/syntax/from.adoc[FROM] - Specifying the data source
+* xref:reference:views/syntax/where.adoc[WHERE] - Filtering results
+* xref:reference:views/syntax/as.adoc[AS] - Creating aliases
+* xref:reference:views/syntax/order-by.adoc[ORDER BY] - Sorting results
+* xref:reference:views/syntax/group-by.adoc[GROUP BY] - Grouping related data
+* xref:reference:views/syntax/join.adoc[JOIN] - Combining data from multiple tables
+
+=== Operators
+
+* xref:reference:views/syntax/operators/index.adoc[Operators overview] - All available operators
+* xref:reference:views/syntax/operators/comparison.adoc[Comparison operators] - =, !=, >, <, etc.
+* xref:reference:views/syntax/operators/logical.adoc[Logical operators] - AND, OR, NOT
+* xref:reference:views/syntax/operators/in.adoc[IN] - Testing membership in a list
+* xref:reference:views/syntax/operators/any.adoc[= ANY] - Testing membership in an array
+* xref:reference:views/syntax/operators/like.adoc[LIKE] - Pattern matching
+* xref:reference:views/syntax/operators/is-null.adoc[IS NULL / IS NOT NULL] - Testing for null values
+
+=== Functions
+
+* xref:reference:views/syntax/functions/index.adoc[Functions overview] - All available functions
+* xref:reference:views/syntax/functions/collect.adoc[collect()] - Creating collections from grouped rows
+* xref:reference:views/syntax/functions/count.adoc[count(*)] - Counting rows
+* xref:reference:views/syntax/functions/distinct.adoc[DISTINCT] - Removing duplicates
+* xref:reference:views/syntax/functions/text-search.adoc[text_search()] - Advanced text searching
+
+=== Pagination
+
+* xref:reference:views/concepts/pagination.adoc[Pagination] - Pagination approaches
+* xref:reference:views/syntax/offset.adoc[OFFSET] - Skipping results
+* xref:reference:views/syntax/limit.adoc[LIMIT] - Limiting result count
+
+== Example queries
+
+Here are a few examples of common query patterns:
+
+.Basic query with filtering
+[source,sql]
+----
+SELECT * FROM products
+WHERE category = 'Electronics' AND price < 500
+ORDER BY price ASC
+----
+
+.Query with pagination
+[source,sql]
+----
+SELECT * AS products, next_page_token() AS nextPageToken
+FROM products
+OFFSET page_token_offset(:pageToken)
+LIMIT 10
+----
+
+.Query with grouping and collection
+[source,sql]
+----
+SELECT category, collect(*) AS products
+FROM products
+GROUP BY category
+----
+
+Start with the xref:reference:views/syntax/query.adoc[Query] reference for more examples and detailed syntax information.
+
+== Related concepts
+
+* xref:reference:views/concepts/data-types.adoc[Data types] - Types supported in views
+* xref:reference:views/concepts/result-mapping.adoc[Result mapping] - How queries map to Java types
+* xref:reference:views/concepts/table-updaters.adoc[Table updaters] - Defining view tables

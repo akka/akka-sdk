@@ -6,6 +6,7 @@ import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @ComponentId("evaluator-agent")
@@ -25,7 +26,17 @@ public class EvaluatorAgent extends Agent {
     String finalAnswer
   ) {}
 
-  public record EvaluationResult(int score, String feedback) {}
+  public record EvaluationResult(String evaluation, String feedback) {
+    public boolean ok() {
+      return switch (evaluation.toLowerCase(Locale.ROOT)) {
+        case "correct" -> true;
+        case "incorrect" -> false;
+        default -> throw new IllegalArgumentException(
+          "Unknown evaluation result [" + evaluation + "]"
+        );
+      };
+    }
+  }
 
   private static final String SYSTEM_MESSAGE = // <1>
     """
@@ -38,27 +49,21 @@ public class EvaluatorAgent extends Agent {
     3. The overall quality, relevance, and helpfulness of the response
     4. Any potential deviations or inconsistencies with user preferences
 
-    SCORING CRITERIA:
-    - Use a score from 1-5 where:
-      * 5 = Excellent response that fully addresses the question and respects all preferences
-      * 4 = Good response with minor issues but respects preferences
-      * 3 = Acceptable response that meets basic requirements and respects preferences
-      * 2 = Poor response with significant issues or minor preference violations
-      * 1 = Unacceptable response that fails to address the question or violates preferences
+    A response is "Incorrect" if it meets ANY of the following failure conditions:
+    - poor response with significant issues or minor preference violations
+    - unacceptable response that fails to address the question or violates preferences
+
+    A response is "Correct" if it:
+    - fully addresses the question and respects all preferences
+    - good response with minor issues but respects preferences
 
     IMPORTANT:
-    - A score of 3 or higher means the answer passes evaluation (acceptable)
-    - A score below 3 means the answer fails evaluation (unacceptable)
-    - Any violations of user preferences should result in a failing score (below 3) since
+    - Any violations of user preferences should result in an incorrect evaluation since
       respecting user preferences is the most important criteria
 
-    Your response should be a JSON object with the following structure:
-    {
-      "score": <integer from 1-5>,
-      "feedback": "<specific feedback on what works well or deviations from preferences>",
-    }
-
-    Do not include any explanations or text outside of the JSON structure.
+    Your response must be a single JSON object with the following fields:
+    - "evaluation": A string, either "Correct" or "Incorrect".
+    - "feedback": Specific feedback on what works well or deviations from preferences.
     """.stripIndent();
 
   private final ComponentClient componentClient;
@@ -82,7 +87,7 @@ public class EvaluatorAgent extends Agent {
     return effects()
       .systemMessage(SYSTEM_MESSAGE)
       .userMessage(evaluationPrompt)
-      .responseAs(EvaluationResult.class) // <3>
+      .responseConformsTo(EvaluationResult.class) // <3>
       .thenReply();
   }
 

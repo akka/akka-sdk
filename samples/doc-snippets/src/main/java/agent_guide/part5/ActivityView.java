@@ -15,7 +15,12 @@ public class ActivityView extends View {
 
   public record ActivityEntries(List<ActivityEntry> entries) {}
 
-  public record ActivityEntry(String userId, String userQuestion, String finalAnswer) {}
+  public record ActivityEntry(
+    String userId,
+    String sessionId,
+    String userQuestion,
+    String finalAnswer
+  ) {}
 
   @Query("SELECT * AS entries FROM activities WHERE userId = :userId") // <1>
   public QueryEffect<ActivityEntries> getActivities(String userId) {
@@ -26,8 +31,11 @@ public class ActivityView extends View {
   public static class Updater extends TableUpdater<ActivityEntry> {
 
     public Effect<ActivityEntry> onStateChange(AgentTeamWorkflow.State state) {
+      var sessionId = updateContext().eventSubject().get(); // <3>
       return effects()
-        .updateRow(new ActivityEntry(state.userId(), state.userQuery(), state.finalAnswer()));
+        .updateRow(
+          new ActivityEntry(state.userId(), sessionId, state.userQuery(), state.finalAnswer())
+        );
     }
 
     @DeleteHandler

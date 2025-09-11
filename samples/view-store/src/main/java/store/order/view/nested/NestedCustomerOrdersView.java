@@ -18,7 +18,6 @@ import store.product.domain.ProductEvent;
 @ComponentId("nested-customer-orders")
 public class NestedCustomerOrdersView extends View {
 
-  // tag::query[]
   @Query( // <1>
     """
     SELECT customers.*, (orders.*, products.*) AS orders
@@ -32,8 +31,6 @@ public class NestedCustomerOrdersView extends View {
   public QueryEffect<NestedCustomerOrders> get(String customerId) { // <2>
     return queryResult();
   }
-
-  // end::query[]
 
   @Table("customers")
   @Consume.FromEventSourcedEntity(CustomerEntity.class)

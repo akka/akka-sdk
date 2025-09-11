@@ -41,7 +41,7 @@ We could make a request to the `WeatherAgent` from the endpoint before calling t
 
 Before introducing the workflow we would like to see that the `WeatherAgent` works in isolation.
 
-Add a new file `WeatherAgentIntegrationTest.java` to `src/main/test/com/example/application/`
+Add a new file `WeatherAgentIntegrationTest.java` to `src/test/com/example/application/`
 
 [source,java,indent=0]
 .WeatherAgentIntegrationTest.java
@@ -71,6 +71,10 @@ Windows 10+::
 set WEATHER_API_KEY=your-openai-api-key
 ----
 --
+
+This test is using real LLM requests, and you must set your https://platform.openai.com/api-keys[OpenAI API key, window="new"] as an environment variable:
+
+include::ROOT:partial$openai-api-key-env-vars.adoc[]
 
 Run the test with
 

@@ -10,7 +10,6 @@
 
 - [AI coding assistant guidelines](https://doc.akka.io/java/ai-coding-assistant-guidelines.html.md): Guidelines for efficient use of AI coding assistant tools with Akka.
 - [Developer best practices](https://doc.akka.io/java/dev-best-practices.html.md): Guidelines and recommended patterns for effective Akka SDK development.
-- [Architecture model](https://doc.akka.io/concepts/architecture-model.html.md): Key architectural patterns and principles used in Akka.
 - [Developing](https://doc.akka.io/java/index.html.md): Overview of the development process with the Akka SDK.
 - [Components](https://doc.akka.io/java/components/index.html.md): Introduction to Akka's core building blocks and their usage.
 - [Implementing Agents](https://doc.akka.io/java/agents.html.md): How to create agents that interact with an AI model.
@@ -23,13 +22,16 @@
 - [Designing gRPC Endpoints](https://doc.akka.io/java/grpc-endpoints.html.md): Building high-performance APIs with gRPC support.
 - [Designing MCP Endpoints](https://doc.akka.io/java/mcp-endpoints.html.md): MCP Endpoints allow you to expose a services to MCP clients such as LLM chat agent desktop applications and agents running on other services.
 - [Timers](https://doc.akka.io/java/timed-actions.html.md): Implementing scheduled and delayed actions in Akka services.
-- [Declarative effects](https://doc.akka.io/concepts/declarative-effects.html.md): Understanding how Akka's effect system enables composable, testable side effects.
 - [Component and service calls](https://doc.akka.io/java/component-and-service-calls.html.md): Making calls between components and to external services.
 - [Errors and failures](https://doc.akka.io/java/errors-and-failures.html.md): Handling and managing errors in Akka applications.
 - [Setup and configuration](https://doc.akka.io/java/setup-and-configuration/index.html.md): Configuring and initializing Akka services.
 - [Setup and dependency injection](https://doc.akka.io/java/setup-and-dependency-injection.html.md): Integrating dependency injection with Akka services.
 - [Serialization](https://doc.akka.io/java/serialization.html.md): Configuring and customizing serialization for entity data and messages.
 - [Retrieval-Augmented Generation (RAG)](https://doc.akka.io/java/rag.html.md): Performing semantic search on a vector database to find relevant content and enrich the request to the AI model.
+- [Architecture model](https://doc.akka.io/concepts/architecture-model.html.md): Key architectural patterns and principles used in Akka.
+- [Declarative effects](https://doc.akka.io/concepts/declarative-effects.html.md): Understanding how Akka's effect system enables composable, testable side effects.
+- [AI orchestration patterns](https://doc.akka.io/concepts/ms-agent-patterns.html.md): Patterns for composing agentic applications.
+- [Inter-agent communications](https://doc.akka.io/concepts/inter-agent-comms.html.md): Patterns for agent collaboration and communication.
 
 ## Tutorials
 
@@ -77,6 +79,9 @@
 - [CLI](https://doc.akka.io/operations/cli/index.html.md): Overview of the Akka CLI tool and its capabilities.
 - [Enable CLI command completion](https://doc.akka.io/operations/cli/command-completion.html.md): Setting up command completion for the Akka CLI.
 - [Install the Akka CLI](https://doc.akka.io/operations/cli/installation.html.md): Instructions for installing the Akka Command Line Interface.
+- [View Query Syntax Reference](https://doc.akka.io/reference/views/syntax/query.html.md): Overview of the Akka View query language syntax.
+- [View Query Result Mapping](https://doc.akka.io/reference/views/concepts/result-mapping.html.md): How view query results are mapped into Java classes.
+- [Advanced Views](https://doc.akka.io/reference/views/concepts/advanced-views.html.md): Views for queries over tables populated from multiple different entities.
 - [View logs](https://doc.akka.io/operations/observability-and-monitoring/view-logs.html.md): Accessing and analyzing logs from Akka services.
 - [View traces](https://doc.akka.io/operations/observability-and-monitoring/traces.html.md): Working with distributed tracing in Akka applications.
 - [View metrics](https://doc.akka.io/operations/observability-and-monitoring/metrics.html.md): Monitoring performance metrics for Akka services.
@@ -94,6 +99,7 @@
 - [Saga patterns](https://doc.akka.io/concepts/saga-patterns.html.md): Implementing distributed transactions using the saga pattern in Akka.
 - [AI coding assistant](https://doc.akka.io/java/ai-coding-assistant.html.md): How to setup AI coding assistant tools with Akka.
 - [Building AI Agents](https://doc.akka.io/concepts/ai-agents.html.md): How to design, orchestrate and evaluate AI agents powered by LLMs.
+- [Distributed systems](https://doc.akka.io/concepts/distributed-systems.html.md): Modern distributed systems require systems that are resilient under stress, responsive under load, elastic with demand, and maintainable at scale.
 
 ### Examples
 

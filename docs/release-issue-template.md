@@ -19,9 +19,7 @@ You can see the Akka Runtime version on prod [on grafana](https://grafana.sre.ka
 ### Update to the latest version
  
 - [ ] Review and merge PR created by bot (should appear [here](https://github.com/akka/akka-sdk/pulls?q=is%3Apr+is%3Aopen+auto+pr+)). While reviewing confirm the release version is updated for:
-    - `version` in the `samples/*/pom.xml` files
-    - `akka-javasdk.version` in the `akka-javasdk-maven/akka-javasdk-parent/pom.xml`
-    - `version` in all `akka-javasdk-maven/**/pom.xml`
+    - SDK `version` in the `samples/*/pom.xml` files
 
 ### Publish latest docs
 - [ ] Add a summary of relevant changes into `docs/src/modules/reference/pages/release-notes.adoc`
@@ -29,6 +27,7 @@ You can see the Akka Runtime version on prod [on grafana](https://grafana.sre.ka
     - Note that the PR will be pretty big normally, not only involving documentation files.
 
 ### Update samples
+- [ ] Run https://github.com/akka/akka-sdk/actions/workflows/pr-akka-samples.yml from the release tag 
 - [ ] Merge auto-PRs in akka-samples https://github.com/orgs/akka-samples/repositories?q=sort%3Aname-asc
  
 ### Announcements

@@ -20,29 +20,17 @@ updateJavaSamples() {
   done
 }
 
-
-updateMavenPlugin() {
-  echo ">>> Updating maven plugin to $SDK_VERSION"
-  (
-    cd akka-javasdk-maven &&
-    ../.github/patch-maven-versions.sh
-  )
-}
-
 DEFAULT_SAMPLES="./samples"
 option="${1}"
 sample="${2:-$DEFAULT_SAMPLES}"
 case ${option} in
    java) updateJavaSamples $sample
       ;;
-   plugin) updateMavenPlugin
-      ;;
    all)
      updateJavaSamples $sample
-     updateMavenPlugin
       ;;
    *)
-      echo "`basename ${0}`:usage: java|plugin|all [project-folder]"
+      echo "`basename ${0}`:usage: java|all [project-folder]"
       echo "e.g.: `basename ${0}` java ./samples/customer-registry-kafka-quickstart/"
       exit 1 # Command to come out of the program with status 1
       ;;

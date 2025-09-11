@@ -42,6 +42,14 @@ private[javasdk] class MetadataImpl private (val entries: Seq[SpiMetadataEntry])
       case entry if key.equalsIgnoreCase(entry.key) => entry.value
     }
 
+  override def getLast(key: String): Optional[String] =
+    getLastScala(key).toJava
+
+  private[akka] def getLastScala(key: String): Option[String] =
+    entries.reverseIterator.collectFirst {
+      case entry if key.equalsIgnoreCase(entry.key) => entry.value
+    }
+
   // FIXME(tracing): have context propagators provided by the runtime
   def withTelemetryContext(context: OtelContext): MetadataImpl = {
     val builder = Vector.newBuilder[SpiMetadataEntry]
@@ -209,6 +217,15 @@ private[javasdk] class MetadataImpl private (val entries: Seq[SpiMetadataEntry])
     val otherImpl = other.asInstanceOf[MetadataImpl]
     MetadataImpl.of(entries ++ otherImpl.entries)
   }
+
+  override def isEmpty: Boolean =
+    entries.isEmpty
+
+  override def toString: String = {
+    val entriesStr = entries.map(e => s"${e.key}->${e.value}").mkString(",")
+    s"Metadata($entriesStr)"
+  }
+
 }
 
 object MetadataImpl {
@@ -238,7 +255,7 @@ object MetadataImpl {
     (key, attr)
   }.toMap
 
-  val Empty = MetadataImpl.of(Vector.empty)
+  val Empty = new MetadataImpl(Vector.empty)
 
   def toSpi(metadata: Option[Metadata]): SpiMetadata =
     metadata.map(toSpi).getOrElse(SpiMetadata.empty)
@@ -255,17 +272,21 @@ object MetadataImpl {
   }
 
   def of(entries: Seq[SpiMetadataEntry]): MetadataImpl = {
-    val transformedEntries =
-      entries.map { entry =>
-        // is incoming ce key in one of the alternative formats?
-        // if so, convert key to our internal default key format
-        alternativeKeyFormats.get(entry.key) match {
-          case Some(defaultKey) => new SpiMetadataEntry(defaultKey, entry.value)
-          case _                => entry
+    if (entries.isEmpty) {
+      Empty
+    } else {
+      val transformedEntries =
+        entries.map { entry =>
+          // is incoming ce key in one of the alternative formats?
+          // if so, convert key to our internal default key format
+          alternativeKeyFormats.get(entry.key) match {
+            case Some(defaultKey) => new SpiMetadataEntry(defaultKey, entry.value)
+            case _                => entry
+          }
         }
-      }
 
-    ensureContentType(new MetadataImpl(transformedEntries))
+      ensureContentType(new MetadataImpl(transformedEntries))
+    }
   }
 
   def of(metadata: SpiMetadata): MetadataImpl = {

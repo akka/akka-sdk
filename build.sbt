@@ -1,15 +1,21 @@
 import Dependencies.Kalix
 import Dependencies.AkkaRuntimeVersion
+import scala.xml.Elem
+import scala.xml.Node
+import scala.xml.TopScope
+
+import Dependencies.AkkaGrpcVersion
 
 lazy val `akka-javasdk-root` = project
   .in(file("."))
-  .aggregate(akkaJavaSdkAnnotationProcessor, akkaJavaSdk, akkaJavaSdkTestKit, akkaJavaSdkTests)
+  .aggregate(akkaJavaSdkAnnotationProcessor, akkaJavaSdk, akkaJavaSdkTestKit, akkaJavaSdkTests, akkaJavaSdkParent)
   // samplesCompilationProject and annotationProcessorTestProject are composite project
   // to aggregate them we need to map over them
   .aggregate(samplesCompilationProject.componentProjects.map(p => p: ProjectReference): _*)
   .aggregate(annotationProcessorTestProject.componentProjects.map(p => p: ProjectReference): _*)
   .settings(
-    (publish / skip) := true,
+    publish / skip := true,
+    publishTo := None,
     // https://github.com/sbt/sbt/issues/3465
     // Libs and plugins must share a version. The root project must use that
     // version (and set the crossScalaVersions as empty list) so each sub-project
@@ -71,6 +77,7 @@ lazy val akkaJavaSdkTests =
       Test / javacOptions ++= Seq("-parameters"),
       // only tests here
       publish / skip := true,
+      publishTo := None,
       doc / sources := Seq.empty,
       // generating test service
       Test / akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Java),
@@ -104,5 +111,54 @@ lazy val annotationProcessorTestProject: CompositeProject =
         libraryDependencies += Dependencies.scalaTest % Test,
         Compile / javacOptions ++= Seq("-processor", "akka.javasdk.tooling.processor.ComponentAnnotationProcessor"))
   }
+
+lazy val akkaJavaSdkParent =
+  Project(id = "akka-javasdk-parent", base = file("akka-javasdk-parent"))
+    .enablePlugins(BuildInfoPlugin, CiReleasePlugin)
+    .disablePlugins(Publish)
+    .settings(
+      name := "akka-javasdk-parent",
+      crossPaths := false,
+      scalaVersion := Dependencies.ScalaVersion,
+      publish / skip := false,
+      publishArtifact := false, // disable jar, sources, docs
+      makePom / publishArtifact := true, // only pom
+      pomPostProcess := { (node: Node) =>
+        // completely replace with our pom.xml
+        val pom = scala.xml.XML.loadFile(baseDirectory.value / "pom.xml")
+        // but use the current version
+        updatePomVersion(pom, version.value, AkkaRuntimeVersion, AkkaGrpcVersion)
+      })
+
+def updatePomVersion(node: Elem, v: String, runtimeVersion: String, akkaGrpcVersion: String): Elem = {
+  def updateElements(seq: Seq[Node]): Seq[Node] = {
+    seq.map {
+      case version @ <version>{_}</version> =>
+        <version>{v}</version>
+      case ps @ <properties>{ch @ _*}</properties> =>
+        val updatedProperties =
+          ch.map {
+            case <akka-runtime.version>{_}</akka-runtime.version> =>
+              <akka-runtime.version>{runtimeVersion}</akka-runtime.version>
+            case <akka-javasdk.version>{_}</akka-javasdk.version> =>
+              <akka-javasdk.version>{v}</akka-javasdk.version>
+            case <akka.grpc.version>{_}</akka.grpc.version> =>
+              <akka.grpc.version>{akkaGrpcVersion}</akka.grpc.version>
+            case other =>
+              other
+          }
+        ps.asInstanceOf[Elem].copy(child = updatedProperties)
+      case other => other
+    }
+  }
+
+  node match {
+    case p @ <project>{ch @ _*}</project> =>
+      // important to copy to keep the namespace attributes
+      p.copy(child = updateElements(ch))
+    case other =>
+      other
+  }
+}
 
 addCommandAlias("formatAll", "scalafmtAll; javafmtAll")

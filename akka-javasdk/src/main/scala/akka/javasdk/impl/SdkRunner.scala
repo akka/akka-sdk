@@ -45,7 +45,6 @@ import akka.javasdk.agent.SessionMemoryEntity
 import akka.javasdk.annotations.AgentDescription
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.GrpcEndpoint
-import akka.javasdk.annotations.Setup
 import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.client.ComponentClient
@@ -72,6 +71,7 @@ import akka.javasdk.impl.agent.OverrideModelProvider
 import akka.javasdk.impl.agent.PromptTemplateClient
 import akka.javasdk.impl.client.ComponentClientImpl
 import akka.javasdk.impl.consumer.ConsumerImpl
+import akka.javasdk.impl.consumer.MessageContextImpl
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl
 import akka.javasdk.impl.http.HttpClientProviderImpl
@@ -330,15 +330,7 @@ private object ComponentLocator {
       // central config/lifecycle class
       val serviceSetupClassName = descriptorConfig.getString(DescriptorServiceSetupEntryPath)
       val serviceSetup = system.dynamicAccess.getClassFor[AnyRef](serviceSetupClassName).get
-      if (serviceSetup.hasAnnotation[Setup]) {
-        if (!classOf[ServiceSetup].isAssignableFrom(serviceSetup)) {
-          throw new IllegalStateException(
-            "A class [" + serviceSetup + "] annotated with @Setup must implement [akka.javasdk.ServiceSetup] interface")
-        }
-        logger.debug("Found and loaded service class setup: [{}]", serviceSetup)
-      } else {
-        logger.warn("Ignoring service class [{}] as it does not have the @Setup annotation", serviceSetup)
-      }
+      logger.debug("Found and loaded service class setup: [{}]", serviceSetup)
       LocatedClasses(withBuildInComponents, Some(serviceSetup))
     } else {
       LocatedClasses(withBuildInComponents, None)
@@ -648,7 +640,10 @@ private final class Sdk(
         val timedActionSpi =
           new TimedActionImpl[TimedAction](
             componentId,
-            () => wiredInstance(timedActionClass)(sideEffectingComponentInjects(None)),
+            context =>
+              wiredInstance(timedActionClass)(
+                sideEffectingComponentInjects(
+                  context.asInstanceOf[TimedActionImpl.CommandContextImpl].telemetryContext)),
             timedActionClass,
             system.classicSystem,
             runtimeComponentClients.timerClient,
@@ -668,7 +663,9 @@ private final class Sdk(
         val consumerSpi =
           new ConsumerImpl[Consumer](
             componentId,
-            () => wiredInstance(consumerClass)(sideEffectingComponentInjects(None)),
+            context =>
+              wiredInstance(consumerClass)(
+                sideEffectingComponentInjects(context.asInstanceOf[MessageContextImpl].telemetryContext)),
             consumerClass,
             consumerSrc,
             consumerDest,
@@ -705,8 +702,8 @@ private final class Sdk(
             serializer,
             ComponentDescriptor.descriptorFor(agentClass, serializer),
             regionInfo,
-            new PromptTemplateClient(componentClient(None)),
-            componentClient(None),
+            telemetryContext => new PromptTemplateClient(componentClient(telemetryContext)),
+            telemetryContext => componentClient(telemetryContext),
             overrideModelProvider,
             dependencyProviderOpt,
             applicationConfig)

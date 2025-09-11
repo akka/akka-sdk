@@ -1,6 +1,8 @@
 = Endpoints
 
-Endpoints components are how you expose your services to the outside world, be it another Akka service, external dependencies or client-facing applications. Two different types of endpoints are available: HTTP and gRPC Endpoints.
+Endpoints components are how you expose your services to the outside world, be it another Akka service, external dependencies or client-facing applications. Three different types of endpoints are available: HTTP, gRPC and MCP Endpoints.
+
+MCP (Model Context Protocol) endpoints are only for providing functionality to a remote agent and not for defining regular APIs, for more details see xref:java:mcp-endpoints.adoc[]
 
 When designing APIs, choosing between HTTP and gRPC endpoints depends on the use case. This document outlines the key differences, strengths, and recommended usage for each approach.
 

@@ -76,6 +76,7 @@ Start one or more services as described in <<_starting_your_service>> and they w
 
 image:local-console.png[]
 
+[#persistence-enabled]
 == Running a service with persistence enabled
 
 By default, when running locally, persistence is disabled. This means the Akka Runtime will use an in-memory data store for the state of your services. This is useful for local development since it allows you to quickly start and stop your service without having to worry about cleaning the database.

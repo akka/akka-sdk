@@ -1,18 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
-    <parent>
-        <groupId>io.akka</groupId>
-        <artifactId>akka-javasdk-maven</artifactId>
-        <version>3.5.1</version>
-    </parent>
 
     <groupId>io.akka</groupId>
     <artifactId>akka-javasdk-parent</artifactId>
-    <version>3.5.1</version>
+    <version>REPLACED_BY_BUILD</version>
     <packaging>pom</packaging>
 
 
@@ -22,7 +16,41 @@
         It contains all dependencies and plugins to build an Akka service using the Akka SDK for Java.
     </description>
 
+    <url>https://www.akka.io</url>
+    <scm>
+        <url>https://github.com/akka/akka-sdk</url>
+    </scm>
+    <licenses>
+        <license>
+            <name>BUSL-1.1</name>
+            <url>https://raw.githubusercontent.com/akka/akka-sdk/main/LICENSE</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>akka-developers</id>
+            <name>Akka SDK Developers</name>
+            <url>https://github.com/akka/akka-sdk/graphs/contributors</url>
+            <email>akka.official@gmail.com</email>
+        </developer>
+    </developers>
+
+    <prerequisites>
+        <maven>${maven.version}</maven>
+    </prerequisites>
+
     <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.release>21</maven.compiler.release>
+        <!-- keep in sync with
+         docs/build/src/managed/modules/java/partials/attributes.adoc#L4
+        -->
+        <maven.version>3.9.0</maven.version>
+
         <logback.configurationFile>logback-runtime-dev-mode.xml</logback.configurationFile>
 
         <docker.image>${project.artifactId}</docker.image>
@@ -34,13 +62,12 @@
 
         <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
 
-        <akka-javasdk.version>3.5.1</akka-javasdk.version>
-        <!-- must be carefully kept in sync with sdk and runtime version -->
-        <akka.grpc.version>2.5.5</akka.grpc.version>
+        <akka-javasdk.version>REPLACED_BY_BUILD</akka-javasdk.version>
+        <akka.grpc.version>REPLACED_BY_BUILD</akka.grpc.version>
 
         <!-- These are dependent on runtime environment and cannot be customized by users -->
         <maven.compiler.release>21</maven.compiler.release>
-        <akka-runtime.version>1.5.9</akka-runtime.version>
+        <akka-runtime.version>REPLACED_BY_BUILD</akka-runtime.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <skip.docker>false</skip.docker>
@@ -527,7 +554,7 @@
             <dependencyManagement>
                 <dependencies>
                     <dependency>
-                        <groupId>io.kalix</groupId>
+                        <groupId>io.akka</groupId>
                         <artifactId>akka-runtime-core_2.13</artifactId>
                         <version>${akka-runtime.version}</version>
                     </dependency>
@@ -536,60 +563,60 @@
 
             <dependencies>
                 <dependency>
-                    <groupId>io.kalix</groupId>
+                    <groupId>io.akka</groupId>
                     <artifactId>akka-runtime-core_2.13</artifactId>
                 </dependency>
             </dependencies>
 
             <build>
                 <pluginManagement>
-                <plugins>
-                    <plugin>
-                        <groupId>io.fabric8</groupId>
-                        <artifactId>docker-maven-plugin</artifactId>
-                        <version>${docker-maven-plugin.version}</version>
-                        <configuration combine.self="override">
-                            <skip>${skip.docker}</skip>
-                            <images>
-                                <image>
-                                    <name>${docker.image}:%l</name>
-                                    <build>
-                                        <!-- Base Docker image which contains jre-->
-                                        <from>${docker.base.image}</from>
-                                        <buildOptions>
-                                            <platform>${docker.platform}</platform>
-                                        </buildOptions>
-                                        <tags>
-                                            <!-- tag for generated image -->
-                                            <tag>${docker.tag}</tag>
-                                        </tags>
-                                        <entryPoint>
-                                            <exec>
-                                                <arg>java</arg>
-                                                <arg>-cp</arg>
-                                                <arg>/maven/*</arg>
-                                                <arg>-Dconfig.resource=runtime-standalone.conf</arg>
-                                                <arg>kalix.runtime.AkkaRuntimeMain</arg>
-                                            </exec>
-                                        </entryPoint>
-                                        <assembly>
-                                            <descriptorRef>artifact-with-dependencies</descriptorRef>
-                                        </assembly>
-                                    </build>
-                                </image>
-                            </images>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>build-docker-image</id>
-                                <phase>install</phase>
-                                <goals>
-                                    <goal>build</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
+                    <plugins>
+                        <plugin>
+                            <groupId>io.fabric8</groupId>
+                            <artifactId>docker-maven-plugin</artifactId>
+                            <version>${docker-maven-plugin.version}</version>
+                            <configuration combine.self="override">
+                                <skip>${skip.docker}</skip>
+                                <images>
+                                    <image>
+                                        <name>${docker.image}:%l</name>
+                                        <build>
+                                            <!-- Base Docker image which contains jre-->
+                                            <from>${docker.base.image}</from>
+                                            <buildOptions>
+                                                <platform>${docker.platform}</platform>
+                                            </buildOptions>
+                                            <tags>
+                                                <!-- tag for generated image -->
+                                                <tag>${docker.tag}</tag>
+                                            </tags>
+                                            <entryPoint>
+                                                <exec>
+                                                    <arg>java</arg>
+                                                    <arg>-cp</arg>
+                                                    <arg>/maven/*</arg>
+                                                    <arg>-Dconfig.resource=runtime-standalone.conf</arg>
+                                                    <arg>kalix.runtime.AkkaRuntimeMain</arg>
+                                                </exec>
+                                            </entryPoint>
+                                            <assembly>
+                                                <descriptorRef>artifact-with-dependencies</descriptorRef>
+                                            </assembly>
+                                        </build>
+                                    </image>
+                                </images>
+                            </configuration>
+                            <executions>
+                                <execution>
+                                    <id>build-docker-image</id>
+                                    <phase>install</phase>
+                                    <goals>
+                                        <goal>build</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
                 </pluginManagement>
             </build>
         </profile>
@@ -608,8 +635,8 @@
                 <version>${akka-javasdk.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.kalix</groupId>
-                <artifactId>kalix-dev-runtime_2.13</artifactId>
+                <groupId>io.akka</groupId>
+                <artifactId>akka-runtime-dev_2.13</artifactId>
                 <version>${akka-runtime.version}</version>
             </dependency>
         </dependencies>
@@ -627,8 +654,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.kalix</groupId>
-            <artifactId>kalix-dev-runtime_2.13</artifactId>
+            <groupId>io.akka</groupId>
+            <artifactId>akka-runtime-dev_2.13</artifactId>
             <scope>runtime</scope>
         </dependency>
     </dependencies>

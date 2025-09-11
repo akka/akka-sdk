@@ -44,6 +44,7 @@ import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ErrorHandling.BadRequestException
 import akka.javasdk.impl.HandlerNotFoundException
+import akka.javasdk.impl.JsonSchema
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.ConstantSystemMessage
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.NoPrimaryEffect
@@ -97,6 +98,45 @@ private[impl] object AgentImpl {
     override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
   }
 
+  def modelProviderFromConfig(config: Config, configPath: String, componentId: String): ModelProvider = {
+    val actualPath =
+      if (configPath == "")
+        config.getString("akka.javasdk.agent.model-provider")
+      else
+        configPath
+
+    if (actualPath == "")
+      throw new IllegalArgumentException(
+        s"You must define model provider configuration in [akka.javasdk.agent.model-provider]")
+
+    val resolvedConfigPath =
+      if (config.hasPath(actualPath))
+        actualPath
+      else if (!actualPath.contains('.') && config.hasPath("akka.javasdk.agent." + actualPath))
+        "akka.javasdk.agent." + actualPath
+      else
+        throw new IllegalArgumentException(s"Undefined model provider configuration [$actualPath]")
+
+    try {
+      log.debug("Model provider from config [{}]", resolvedConfigPath)
+      val providerConfig = config.getConfig(resolvedConfigPath)
+      providerConfig.getString("provider") match {
+        case "anthropic"       => ModelProvider.Anthropic.fromConfig(providerConfig)
+        case "googleai-gemini" => ModelProvider.GoogleAIGemini.fromConfig(providerConfig)
+        case "hugging-face"    => ModelProvider.HuggingFace.fromConfig(providerConfig)
+        case "ollama"          => ModelProvider.Ollama.fromConfig(providerConfig)
+        case "openai"          => ModelProvider.OpenAi.fromConfig(providerConfig)
+        case "local-ai"        => ModelProvider.LocalAI.fromConfig(providerConfig)
+        case other =>
+          throw new IllegalArgumentException(s"Unknown model provider [$other] in config [$resolvedConfigPath]")
+      }
+    } catch {
+      case exc: ConfigException =>
+        log.error("Invalid model provider configuration at [{}] for agent [{}].", resolvedConfigPath, componentId, exc)
+        throw exc
+    }
+  }
+
 }
 
 /**
@@ -112,8 +152,8 @@ private[impl] final class AgentImpl[A <: Agent](
     serializer: JsonSerializer,
     componentDescriptor: ComponentDescriptor,
     regionInfo: RegionInfo,
-    promptTemplateClient: PromptTemplateClient,
-    componentClient: ComponentClient,
+    promptTemplateClient: Option[OtelContext] => PromptTemplateClient,
+    componentClient: Option[OtelContext] => ComponentClient,
     overrideModelProvider: OverrideModelProvider,
     dependencyProvider: Option[DependencyProvider],
     config: Config)
@@ -172,12 +212,12 @@ private[impl] final class AgentImpl[A <: Agent](
             val systemMessage = req.systemMessage match {
               case ConstantSystemMessage(message) => message
               case template: TemplateSystemMessage =>
-                promptTemplateClient.getPromptTemplate(template.templateId).formatted(template.args)
+                promptTemplateClient(telemetryContext).getPromptTemplate(template.templateId).formatted(template.args)
             }
             val modelProvider = overrideModelProvider.getModelProviderForAgent(componentId).getOrElse(req.modelProvider)
             val spiModelProvider = toSpiModelProvider(modelProvider)
             val metadata = MetadataImpl.toSpi(req.replyMetadata)
-            val sessionMemoryClient = deriveMemoryClient(req.memoryProvider)
+            val sessionMemoryClient = deriveMemoryClient(req.memoryProvider, telemetryContext)
             val additionalContext = toSpiContextMessages(sessionMemoryClient.getHistory(sessionId))
             val mcpToolEndpoints = toSpiMcpEndpoints(req.mcpTools)
 
@@ -203,6 +243,12 @@ private[impl] final class AgentImpl[A <: Agent](
 
             val toolExecutor = new ToolExecutor(functionTools, serializer)
 
+            val responseSchema =
+              if (req.includeJsonSchema)
+                Some(JsonSchema.jsonSchemaFor(req.responseType))
+              else
+                None
+
             new SpiAgent.RequestModelEffect(
               modelProvider = spiModelProvider,
               systemMessage = systemMessage,
@@ -212,7 +258,7 @@ private[impl] final class AgentImpl[A <: Agent](
               callToolFunction = request => Future(toolExecutor.execute(request))(sdkExecutionContext),
               mcpClientDescriptors = mcpToolEndpoints,
               responseType = req.responseType,
-              responseSchema = None, // FIXME update in separate PR
+              responseSchema = responseSchema,
               responseMapping = req.responseMapping,
               failureMapping = req.failureMapping.map(mapSpiAgentException),
               replyMetadata = metadata,
@@ -279,13 +325,17 @@ private[impl] final class AgentImpl[A <: Agent](
       case other => throw new IllegalArgumentException(s"Unsupported remote mcp tools impl $other")
     }
 
-  private def deriveMemoryClient(memoryProvider: MemoryProvider): SessionMemory = {
+  private def deriveMemoryClient(
+      memoryProvider: MemoryProvider,
+      telemetryContext: Option[OtelContext]): SessionMemory = {
     memoryProvider match {
       case _: MemoryProvider.Disabled =>
-        new SessionMemoryClient(componentClient, MemorySettings.disabled())
+        new SessionMemoryClient(componentClient(telemetryContext), MemorySettings.disabled())
 
       case p: MemoryProvider.LimitedWindowMemoryProvider =>
-        new SessionMemoryClient(componentClient, new MemorySettings(p.read(), p.write(), p.readLastN()))
+        new SessionMemoryClient(
+          componentClient(telemetryContext),
+          new MemorySettings(p.read(), p.write(), p.readLastN()))
 
       case p: MemoryProvider.CustomMemoryProvider =>
         p.sessionMemory()
@@ -296,7 +346,7 @@ private[impl] final class AgentImpl[A <: Agent](
             "akka.javasdk.agent.memory"
           else
             p.configPath()
-        new SessionMemoryClient(componentClient, config.getConfig(actualPath))
+        new SessionMemoryClient(componentClient(telemetryContext), config.getConfig(actualPath))
       }
     }
   }
@@ -389,7 +439,7 @@ private[impl] final class AgentImpl[A <: Agent](
   private def toSpiModelProvider(modelProvider: ModelProvider): SpiAgent.ModelProvider = {
     modelProvider match {
       case p: ModelProvider.FromConfig =>
-        toSpiModelProvider(modelProviderFromConfig(p.configPath()))
+        toSpiModelProvider(modelProviderFromConfig(config, p.configPath(), componentId))
       case p: ModelProvider.Anthropic =>
         new SpiAgent.ModelProvider.Anthropic(
           apiKey = p.apiKey,
@@ -429,45 +479,6 @@ private[impl] final class AgentImpl[A <: Agent](
           maxCompletionTokens = p.maxCompletionTokens)
       case p: ModelProvider.Custom =>
         new SpiAgent.ModelProvider.Custom(() => p.createChatModel(), () => p.createStreamingChatModel())
-    }
-  }
-
-  private def modelProviderFromConfig(configPath: String): ModelProvider = {
-    val actualPath =
-      if (configPath == "")
-        config.getString("akka.javasdk.agent.model-provider")
-      else
-        configPath
-
-    if (actualPath == "")
-      throw new IllegalArgumentException(
-        s"You must define model provider configuration in [akka.javasdk.agent.model-provider]")
-
-    val resolvedConfigPath =
-      if (config.hasPath(actualPath))
-        actualPath
-      else if (!actualPath.contains('.') && config.hasPath("akka.javasdk.agent." + actualPath))
-        "akka.javasdk.agent." + actualPath
-      else
-        throw new IllegalArgumentException(s"Undefined model provider configuration [$actualPath]")
-
-    try {
-      log.debug("Model provider from config [{}]", resolvedConfigPath)
-      val providerConfig = config.getConfig(resolvedConfigPath)
-      providerConfig.getString("provider") match {
-        case "anthropic"       => ModelProvider.Anthropic.fromConfig(providerConfig)
-        case "googleai-gemini" => ModelProvider.GoogleAIGemini.fromConfig(providerConfig)
-        case "hugging-face"    => ModelProvider.HuggingFace.fromConfig(providerConfig)
-        case "ollama"          => ModelProvider.Ollama.fromConfig(providerConfig)
-        case "openai"          => ModelProvider.OpenAi.fromConfig(providerConfig)
-        case "local-ai"        => ModelProvider.LocalAI.fromConfig(providerConfig)
-        case other =>
-          throw new IllegalArgumentException(s"Unknown model provider [$other] in config [$resolvedConfigPath]")
-      }
-    } catch {
-      case exc: ConfigException =>
-        log.error("Invalid model provider configuration at [{}] for agent [{}].", resolvedConfigPath, componentId, exc)
-        throw exc
     }
   }
 

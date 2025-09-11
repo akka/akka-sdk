@@ -1,0 +1,93 @@
+= Functions
+
+This page provides an overview of all functions available in the View query language. Functions perform operations on data and return results that can be used in queries.
+
+== Aggregation Functions
+
+Aggregation functions perform calculations across groups of rows.
+
+[cols="1,3,2"]
+|===
+| Function | Description | Example
+
+| xref:reference:views/syntax/functions/collect.adoc[`collect([distinct] expression)`]
+| Creates a collection of values from multiple rows
+| `collect(name) AS productNames`
+
+| xref:reference:views/syntax/functions/count.adoc[`count(*)`]
+| Counts the number of matching rows
+| `count(*) AS totalCustomers`
+|===
+
+== Pagination Functions
+
+Functions that support pagination and result set management.
+
+[cols="1,3,2"]
+|===
+| Function | Description | Example
+
+| xref:reference:views/syntax/functions/next-page-token.adoc[`next_page_token()`]
+| Generates a token for retrieving the next page of results
+| `next_page_token() AS nextPageToken`
+
+| xref:reference:views/syntax/functions/page-token-offset.adoc[`page_token_offset(token)`]
+| Uses a token to determine the starting position for pagination
+| `OFFSET page_token_offset(:pageToken)`
+
+| xref:reference:views/syntax/functions/has-more.adoc[`has_more()`]
+| Indicates if more results exist beyond the current page
+| `has_more() AS hasMoreResults`
+
+| xref:reference:views/syntax/functions/total-count.adoc[`total_count()`]
+| Returns the total count of rows matching the query
+| `total_count() AS totalCount`
+|===
+
+== Text Search Functions
+
+Functions for advanced text searching capabilities.
+
+[cols="1,3,2"]
+|===
+| Function | Description | Example
+
+| xref:reference:views/syntax/functions/text-search.adoc[`text_search(column, query, [config\])`]
+| Performs language-aware text search
+| `text_search(description, :searchText, 'english')`
+|===
+
+== Function Usage
+
+Functions can be used in different parts of a query:
+
+* In the `SELECT` clause to compute values for the result
+* With the `OFFSET` clause for token-based pagination
+* In the `WHERE` clause for filtering (text_search only)
+
+== Function Categories by Return Type
+
+=== Boolean Functions
+
+* `has_more()` - Returns true if more results exist beyond the current page
+* `text_search()` - Returns true if the text contains the search terms
+
+=== Numeric Functions
+
+* `count(*)` - Returns the number of rows
+* `total_count()` - Returns the total number of matching rows
+
+=== String Functions
+
+* `next_page_token()` - Returns a string token for pagination
+
+=== Collection Functions
+
+* `collect()` - Returns a collection of values from multiple rows
+
+== Related Features
+
+* xref:reference:views/syntax/select.adoc[SELECT clause] - Using functions in result projections
+* xref:reference:views/concepts/pagination.adoc[Paging] - Using pagination functions
+* xref:reference:views/syntax/where.adoc[WHERE clause] - Using functions in filters
+* xref:reference:views/concepts/result-mapping.adoc[Result Mapping] - How function results map to Java types

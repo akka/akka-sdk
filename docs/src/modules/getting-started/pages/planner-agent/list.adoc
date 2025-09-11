@@ -29,6 +29,7 @@ include::java:example$doc-snippets/src/main/java/agent_guide/part5/ActivityView.
 ----
 <1> The query selects all rows for a given user id.
 <2> The view is updated from the state changes of the workflow.
+<3> The workflow id corresponds to the session id.
 
 == Expose in the endpoint
 

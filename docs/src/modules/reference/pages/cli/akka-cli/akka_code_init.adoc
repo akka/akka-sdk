@@ -12,7 +12,7 @@ It allows you to:
 * Download and install the Akka AI context
 * Display configuration instruction for your preferred AI assistance (Copilot, Cursor, Qodo)
 
-The command will create a new directory with the specified name in the current working directory.
+The command will create a new directory with the selected sample in the current working directory.
 
 ----
 akka code init [flags]

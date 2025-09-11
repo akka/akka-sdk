@@ -48,7 +48,7 @@ include::java:example$multi-agent/src/main/java/demo/multiagent/application/Pref
 <2> Extend `Consumer`.
 <3> Retrieve previous activity suggestions for the user from the `ActivityView`.
 <4> Call the `EvaluatorAgent` for each previous suggestion.
-<5> Run the workflow again, using the new preferences when the evaluation score is below 3.
+<5> Run the workflow again, using the new preferences when the suggested activities are evaluated to be incorrect.
 
 This would probably be improved in a real application by not evaluating all previous suggestions, but only the ones that are still relevant, e.g. last 3 sorted by timestamp. The evaluations could also be made in parallel by using `invokeAsync` and compose the `CompletionStage` results.
 
