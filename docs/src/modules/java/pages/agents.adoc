@@ -716,7 +716,7 @@ configuring the deployed agentic service to use that.
 Here is an example endpoint returning a static response over the OpenAI protocol:
 
 [source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/api/MockOpenAI.java[tag=class]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/MockOpenAI.java[MockOpenAI.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/api/MockOpenAI.java[tag=class]
 ----
