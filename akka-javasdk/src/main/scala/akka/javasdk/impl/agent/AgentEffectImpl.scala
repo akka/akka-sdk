@@ -19,6 +19,7 @@ import akka.javasdk.agent.Agent.Effect.FailureBuilder
 import akka.javasdk.agent.Agent.Effect.MappingFailureBuilder
 import akka.javasdk.agent.Agent.Effect.MappingResponseBuilder
 import akka.javasdk.agent.Agent.Effect.OnSuccessBuilder
+import akka.javasdk.agent.Guardrail
 import akka.javasdk.agent.MemoryProvider
 import akka.javasdk.agent.ModelProvider
 import akka.javasdk.agent.RemoteMcpTools
@@ -226,6 +227,9 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
     this
   }
 
+  override def requestGuardrails(guard: Guardrail*): Builder = ??? // FIXME
+
+  override def responseGuardrails(guard: Guardrail*): Builder = ??? // FIXME
 }
 
 /**

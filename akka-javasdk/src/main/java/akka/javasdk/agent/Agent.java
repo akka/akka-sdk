@@ -251,6 +251,10 @@ public abstract class Agent {
        * @return An error reply.
        */
       <T> Agent.Effect<T> error(CommandException commandException);
+
+      Builder requestGuardrails(Guardrail... guard);
+
+      Builder responseGuardrails(Guardrail... guard);
     }
 
     interface OnSuccessBuilder {
