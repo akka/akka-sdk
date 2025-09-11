@@ -10,7 +10,7 @@ import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
-import scala.jdk.CollectionConverters.SeqHasAsJava
+import scala.jdk.CollectionConverters._
 import scala.jdk.DurationConverters.JavaDurationOps
 import scala.util.control.NonFatal
 
@@ -22,6 +22,7 @@ import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
+import akka.javasdk.agent.Guardrail
 import akka.javasdk.agent.InternalServerException
 import akka.javasdk.agent.JsonParsingException
 import akka.javasdk.agent.McpToolCallExecutionException
@@ -52,6 +53,7 @@ import akka.javasdk.impl.agent.BaseAgentEffectBuilder.ConstantSystemMessage
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.NoPrimaryEffect
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.RequestModel
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.TemplateSystemMessage
+import akka.javasdk.impl.agent.GuardrailProvider.AgentGuardrails
 import akka.javasdk.impl.agent.SessionMemoryClient.MemorySettings
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
@@ -160,6 +162,7 @@ private[impl] final class AgentImpl[A <: Agent](
     componentClient: Option[OtelContext] => ComponentClient,
     overrideModelProvider: OverrideModelProvider,
     dependencyProvider: Option[DependencyProvider],
+    guardrails: AgentGuardrails,
     config: Config)
     extends SpiAgent {
   import AgentImpl._
@@ -270,8 +273,8 @@ private[impl] final class AgentImpl[A <: Agent](
               failureMapping = req.failureMapping.map(mapSpiAgentException),
               replyMetadata = metadata,
               onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, results),
-              requestGuardrails = Nil, // FIXME updated in separate PR
-              responseGuardrails = Nil)
+              requestGuardrails = guardrails.modelRequestGuardrails,
+              responseGuardrails = guardrails.modelResponseGuardrails)
 
           case NoPrimaryEffect =>
             errorOrReply match {
@@ -332,8 +335,8 @@ private[impl] final class AgentImpl[A <: Agent](
           toolTimeout =
             if (remoteMcp.timeout == Duration.Zero) None
             else Some(remoteMcp.timeout),
-          requestGuardrails = Nil, // FIXME updated in separate PR
-          responseGuardrails = Nil)
+          requestGuardrails = guardrails.mcpToolRequestGuardrails,
+          responseGuardrails = guardrails.mcpToolResponseGuardrails)
       case other => throw new IllegalArgumentException(s"Unsupported remote mcp tools impl $other")
     }
 
@@ -352,14 +355,13 @@ private[impl] final class AgentImpl[A <: Agent](
       case p: MemoryProvider.CustomMemoryProvider =>
         p.sessionMemory()
 
-      case p: MemoryProvider.FromConfig => {
+      case p: MemoryProvider.FromConfig =>
         val actualPath =
           if (p.configPath() == "")
             "akka.javasdk.agent.memory"
           else
             p.configPath()
         new SessionMemoryClient(componentClient(telemetryContext), config.getConfig(actualPath))
-      }
     }
   }
 
@@ -432,8 +434,9 @@ private[impl] final class AgentImpl[A <: Agent](
               new ToolCallExecutionException(exc.getMessage, reason.toolName, exc.cause)
             case reason: McpToolCallExecutionFailure =>
               new McpToolCallExecutionException(exc.getMessage, reason.toolName, reason.endpoint, exc.cause)
+
             case reason: GuardrailFailure =>
-              new RuntimeException(reason.explanation) // FIXME updated in separate PR
+              new Guardrail.GuardrailException(reason.explanation)
 
             // this is expected to be a JsonParsingException, we give it as is to users
             case OutputParsingFailure => exc.cause
