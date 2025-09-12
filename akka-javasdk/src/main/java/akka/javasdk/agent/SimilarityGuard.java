@@ -4,47 +4,33 @@
 
 package akka.javasdk.agent;
 
+import akka.japi.Util;
+import akka.runtime.sdk.spi.SpiAgent;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
-public final class SimilarityGuard implements Guardrail {
-  private final Guardrail.Category category;
-  private final String otherCcategory;
-  private final List<String> badExamplesResources;
+public final class SimilarityGuard extends SpiAgent.SimilarityGuard {
+  private static final List<String> DEFAULT_JAILBREAK_RESOURCES;
 
-  public static SimilarityGuard defaultJailbreakPrompts() {
-    return new SimilarityGuard(Category.JAILBREAK, Collections.emptyList());
+  static {
+    var jailbreakList = new ArrayList<String>();
+    for (int i = 1; i <= 10; i++) {
+      jailbreakList.add("guardrail/jailbreak/prompt-" + i + ".txt");
+    }
+    DEFAULT_JAILBREAK_RESOURCES = Collections.unmodifiableList(jailbreakList);
   }
 
-  public SimilarityGuard(Category category, List<String> badExamplesResources) {
-    this.category = category;
-    this.otherCcategory = null;
-    this.badExamplesResources = badExamplesResources;
+  public static SimilarityGuard defaultJailbreakGuard() {
+    return new SimilarityGuard(Guardrail.Category.JAILBREAK, DEFAULT_JAILBREAK_RESOURCES);
+  }
+
+  public SimilarityGuard(Guardrail.Category category, List<String> badExamplesResources) {
+    super(category.name().toLowerCase(Locale.ROOT), false, Util.immutableSeq(badExamplesResources));
   }
 
   public SimilarityGuard(String otherCategory, List<String> badExamplesResources) {
-    this.category = Category.OTHER;
-    this.otherCcategory = otherCategory;
-    this.badExamplesResources = badExamplesResources;
-  }
-
-  @Override
-  public Result evaluate(String text) {
-    // this is implemented by the runtime
-    return null;
-  }
-
-  @Override
-  public Category category() {
-    return this.category;
-  }
-
-  @Override
-  public String otherCategory() {
-    return this.otherCcategory;
-  }
-
-  public List<String> getBadExamplesResources() {
-    return badExamplesResources;
+    super(otherCategory, false, Util.immutableSeq(badExamplesResources));
   }
 }

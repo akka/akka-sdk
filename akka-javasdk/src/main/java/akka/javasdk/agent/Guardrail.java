@@ -26,7 +26,7 @@ public interface Guardrail {
    * traces.
    */
   final class GuardrailException extends RuntimeException {
-    public GuardrailException(Category category, String message) {
+    public GuardrailException(String message) {
       super(message);
     }
   }
@@ -45,7 +45,7 @@ public interface Guardrail {
    * throwing {@code GuardrailException} or continue anyway. In both cases, the result is tracked in
    * logs, metrics and traces.
    */
-  default boolean abortExecution() {
-    return true;
+  default boolean reportOnly() {
+    return false;
   }
 }

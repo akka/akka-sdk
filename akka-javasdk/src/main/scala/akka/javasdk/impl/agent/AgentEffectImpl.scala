@@ -50,7 +50,9 @@ private[javasdk] object BaseAgentEffectBuilder {
         replyMetadata = Metadata.EMPTY,
         memoryProvider = MemoryProvider.fromConfig(),
         toolInstancesOrClasses = Seq.empty,
-        mcpTools = Seq.empty)
+        mcpTools = Seq.empty,
+        requestGuardrails = Seq.empty,
+        responseGuardrails = Seq.empty)
   }
 
   sealed trait SystemMessage
@@ -68,7 +70,9 @@ private[javasdk] object BaseAgentEffectBuilder {
       replyMetadata: Metadata,
       memoryProvider: MemoryProvider,
       toolInstancesOrClasses: Seq[AnyRef],
-      mcpTools: Seq[RemoteMcpTools])
+      mcpTools: Seq[RemoteMcpTools],
+      requestGuardrails: Seq[Guardrail],
+      responseGuardrails: Seq[Guardrail])
       extends PrimaryEffectImpl {
 
     def withProvider(provider: ModelProvider): RequestModel =
@@ -86,6 +90,14 @@ private[javasdk] object BaseAgentEffectBuilder {
 
     def addMcpTools(tools: Seq[RemoteMcpTools]): RequestModel =
       copy(mcpTools = mcpTools ++ tools)
+
+    def addRequestGuardrails(guardrails: Seq[Guardrail]): RequestModel = {
+      copy(requestGuardrails = this.requestGuardrails ++ guardrails)
+    }
+
+    def addResponseGuardrails(guardrails: Seq[Guardrail]): RequestModel = {
+      copy(responseGuardrails = this.responseGuardrails ++ guardrails)
+    }
   }
 
   case object NoPrimaryEffect extends PrimaryEffectImpl
@@ -227,9 +239,15 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
     this
   }
 
-  override def requestGuardrails(guard: Guardrail*): Builder = ??? // FIXME
+  override def requestGuardrails(guard: Guardrail, guards: Guardrail*): Builder = {
+    updateRequestModel(_.addRequestGuardrails(guard :: guards.toList))
+    this
+  }
 
-  override def responseGuardrails(guard: Guardrail*): Builder = ??? // FIXME
+  override def responseGuardrails(guard: Guardrail, guards: Guardrail*): Builder = {
+    updateRequestModel(_.addResponseGuardrails(guard :: guards.toList))
+    this
+  }
 }
 
 /**

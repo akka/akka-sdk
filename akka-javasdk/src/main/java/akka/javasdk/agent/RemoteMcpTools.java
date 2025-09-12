@@ -77,9 +77,9 @@ public interface RemoteMcpTools {
    */
   RemoteMcpTools withToolInterceptor(ToolInterceptor interceptor);
 
-  RemoteMcpTools withRequestGuardrails(Guardrail... guard);
+  RemoteMcpTools withRequestGuardrails(Guardrail guard, Guardrail... guards);
 
-  RemoteMcpTools withResponseGuardrails(Guardrail... guard);
+  RemoteMcpTools withResponseGuardrails(Guardrail guard, Guardrail... guards);
 
   /**
    * @param header A header that should be passed with each call to the MCP server, for example some
