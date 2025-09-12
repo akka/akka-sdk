@@ -116,6 +116,7 @@ import akka.runtime.sdk.spi.SpiEventingSupportSettings
 import akka.runtime.sdk.spi.SpiMockedEventingSettings
 import akka.runtime.sdk.spi.SpiServiceInfo
 import akka.runtime.sdk.spi.SpiSettings
+import akka.runtime.sdk.spi.SpiTestSettings
 import akka.runtime.sdk.spi.SpiWorkflow
 import akka.runtime.sdk.spi.StartContext
 import akka.runtime.sdk.spi.TimedActionDescriptor
@@ -188,7 +189,8 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
             serviceName = applicationConf.getString("akka.javasdk.dev-mode.service-name"),
             eventingSupport = extractBrokerConfig(applicationConf.getConfig("akka.javasdk.dev-mode.eventing")),
             mockedEventing = SpiMockedEventingSettings.empty,
-            testMode = false))
+            testSetting = new SpiTestSettings(false, false),
+            None))
       else
         None
 
