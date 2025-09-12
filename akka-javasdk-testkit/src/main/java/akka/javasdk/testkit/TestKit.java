@@ -40,6 +40,7 @@ import akka.runtime.sdk.spi.SpiDevModeSettings;
 import akka.runtime.sdk.spi.SpiEventingSupportSettings;
 import akka.runtime.sdk.spi.SpiMockedEventingSettings;
 import akka.runtime.sdk.spi.SpiSettings;
+import akka.runtime.sdk.spi.SpiTestSettings;
 import akka.stream.Materializer;
 import akka.stream.SystemMaterializer;
 import com.typesafe.config.Config;
@@ -688,7 +689,7 @@ public class TestKit {
                       serviceName + "-IT-" + System.currentTimeMillis(),
                       eventingSettings,
                       mockedEventingSettings,
-                      true,
+                      new SpiTestSettings(true, true),
                       Some.apply(serviceName));
 
               return s.withDevMode(devModeSettings);

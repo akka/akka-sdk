@@ -31,22 +31,43 @@ public class TelemetryReader {
     return workflowStepsFrom(spanDatas);
   }
 
+  public List<String> getAgents(String debugId) {
+    List<SpanData> spanDatas = spansFor(debugId);
+
+    AttributeKey<String> agentToolAttributeKey = AttributeKey.stringKey("gen_ai.agent.id");
+
+    return collectAttributeValues(spanDatas, agentToolAttributeKey);
+  }
+
+  public List<String> getAgentTools(String debugId) {
+    List<SpanData> spanDatas = spansFor(debugId);
+
+    AttributeKey<String> agentToolAttributeKey = AttributeKey.stringKey("gen_ai.tool.name");
+
+    return collectAttributeValues(spanDatas, agentToolAttributeKey);
+  }
+
   public List<String> getWorkflowSteps(String debugId) {
     List<SpanData> spanDatas = spansFor(debugId);
 
     return workflowStepsFrom(spanDatas);
   }
 
+  private List<String> collectAttributeValues(
+      List<SpanData> spanDatas, AttributeKey<String> agentToolAttributeKey) {
+    List<SpanData> stepSpanDatas = collectByAttribute(spanDatas, agentToolAttributeKey);
+
+    return stepSpanDatas.stream()
+        .sorted(Comparator.comparing(SpanData::getStartEpochNanos))
+        .map(spanData -> spanData.getAttributes().get(agentToolAttributeKey))
+        .toList();
+  }
+
   private List<String> workflowStepsFrom(List<SpanData> spanDatas) {
     AttributeKey<String> workflowStepNameAttribute =
         AttributeKey.stringKey("akka.workflow.step.name");
 
-    List<SpanData> stepSpanDatas = collectByAttribute(spanDatas, workflowStepNameAttribute);
-
-    return stepSpanDatas.stream()
-        .sorted(Comparator.comparing(SpanData::getStartEpochNanos))
-        .map(spanData -> spanData.getAttributes().get(workflowStepNameAttribute))
-        .toList();
+    return collectAttributeValues(spanDatas, workflowStepNameAttribute);
   }
 
   private String getComponentId(Class<?> componentClass) {
