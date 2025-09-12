@@ -94,7 +94,7 @@ jobs:
           BRANCH=update-sdk-$sdk_version-$timestamp
           git checkout -b $BRANCH
           rm -rf ./src/*
-          rsync -a ../docs/build/bundle/${{ matrix.sample }}/ ./
+          rsync -av ../docs/build/bundle/${{ matrix.sample }}/ ./
           rm -f .bundleignore
           
           if [ -n "$(git status --porcelain)" ]; then
@@ -106,7 +106,7 @@ jobs:
               -b "This PR should update SDK (pom.xml) and latest source code.  [$GITHUB_SHA]($COMMIT_URL$GITHUB_SHA)"
           else
             echo "no changes";
-            cat pom.xml
+            if [ -f "pom.xml" ]; then cat pom.xml; fi
           fi
 
   # Update sdk version of samples that are maintained in akka-samples repository.
@@ -186,5 +186,5 @@ jobs:
               -b "This PR should update SDK (pom.xml).  [$GITHUB_SHA]($COMMIT_URL$GITHUB_SHA)"
           else
             echo "no changes";
-            cat pom.xml
+            if [ -f "pom.xml" ]; then cat pom.xml; fi
           fi
