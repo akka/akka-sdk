@@ -1,20 +1,26 @@
 package demo.multiagent.api;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import akka.http.javadsl.model.StatusCodes;
 import akka.javasdk.JsonSupport;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
-import demo.multiagent.application.*;
+import demo.multiagent.application.ActivityAgent;
+import demo.multiagent.application.EvaluatorAgent;
+import demo.multiagent.application.PlannerAgent;
+import demo.multiagent.application.SelectorAgent;
+import demo.multiagent.application.SummarizerAgent;
+import demo.multiagent.application.WeatherAgent;
 import demo.multiagent.domain.AgentSelection;
 import demo.multiagent.domain.Plan;
 import demo.multiagent.domain.PlanStep;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class ActivityEndpointIntegrationTest extends TestKitSupport {
 
@@ -46,10 +52,14 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
     // Setup initial AI model responses
     setupInitialModelResponses();
 
+    //debug id for correlating tracing information
+    String debugId = "12345";
+
     // 1. Call suggestActivities endpoint
     var suggestResponse = httpClient
       .POST("/activities/" + userId)
       .withRequestBody(new ActivityEndpoint.Request(query))
+      .addHeader("akka-debug-id", debugId)
       .invoke();
 
     assertThat(suggestResponse.status()).isEqualTo(StatusCodes.CREATED);
@@ -98,6 +108,12 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
         assertThat(suggestion.userQuestion()).isEqualTo(query);
         assertThat(suggestion.answer()).contains("bike tour");
       });
+
+    var steps = telemetryReader.getWorkflowSteps(debugId);
+    assertThat(steps).containsOnly("select-agents", "create-plan", "execute-plan", "execute-plan", "summarize");
+
+    var tools = telemetryReader.getAgents(debugId);
+    assertThat(tools).containsOnly("selector-agent", "planner-agent", "weather-agent", "activity-agent", "summarizer-agent");
 
     // 4. Add preference that invalidates previous suggestion
     setupUpdatedModelResponsesForPreference();
