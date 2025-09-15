@@ -63,7 +63,8 @@ private[impl] object JwtDescriptorFactory {
       val spiStaticClaims = ann.staticClaims().flatMap(createStaticClaim)
       new RuntimeJWT(
         validate = ann.validate().contains(JwtMethodMode.BEARER_TOKEN),
-        bearerTokenIssuers = ann.bearerTokenIssuers().toSeq,
+        bearerTokenIssuers =
+          ann.bearerTokenIssuers().toSeq.map(issuer => extractEnvVars(issuer, "bearer token issuer")),
         claims = spiStaticClaims.toSet)
     }
   }

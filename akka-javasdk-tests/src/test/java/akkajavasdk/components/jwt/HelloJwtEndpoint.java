@@ -21,7 +21,7 @@ import java.util.concurrent.CompletionStage;
 @HttpEndpoint("/hello")
 @JWT(
     validate = JWT.JwtMethodMode.BEARER_TOKEN,
-    bearerTokenIssuers = "my-issuer-123",
+    bearerTokenIssuers = {"my-issuer-123", "${ISSUER_ENV_VALUE}"},
     staticClaims = {@JWT.StaticClaim(claim = "sub", pattern = "my-subject-123")})
 public class HelloJwtEndpoint extends AbstractHttpEndpoint {
   // end::bearer-token[]
