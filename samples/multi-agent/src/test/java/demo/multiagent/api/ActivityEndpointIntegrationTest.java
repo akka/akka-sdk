@@ -107,13 +107,13 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
         var suggestion = activitiesList.suggestions().getFirst();
         assertThat(suggestion.userQuestion()).isEqualTo(query);
         assertThat(suggestion.answer()).contains("bike tour");
+
+        var steps = telemetryReader.getWorkflowSteps(debugId);
+        assertThat(steps).containsOnly("select-agents", "create-plan", "execute-plan", "execute-plan", "summarize");
+
+        var tools = telemetryReader.getAgents(debugId);
+        assertThat(tools).containsOnly("selector-agent", "planner-agent", "weather-agent", "activity-agent", "summarizer-agent");
       });
-
-    var steps = telemetryReader.getWorkflowSteps(debugId);
-    assertThat(steps).containsOnly("select-agents", "create-plan", "execute-plan", "execute-plan", "summarize");
-
-    var tools = telemetryReader.getAgents(debugId);
-    assertThat(tools).containsOnly("selector-agent", "planner-agent", "weather-agent", "activity-agent", "summarizer-agent");
 
     // 4. Add preference that invalidates previous suggestion
     setupUpdatedModelResponsesForPreference();
@@ -147,9 +147,10 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
         assertThat(updatedAnswer).contains("Vasa Museum");
         assertThat(updatedAnswer).contains("indoor");
         assertThat(updatedAnswer).doesNotContain("bike tour");
+
+        assertThat(telemetryReader.getAgents(nextDebugId)).containsOnly("evaluator-agent");
       });
 
-    assertThat(telemetryReader.getAgents(nextDebugId)).containsOnly("evaluator-agent");
   }
 
   private void setupInitialModelResponses() {
