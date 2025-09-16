@@ -13,7 +13,9 @@ import java.lang.reflect.Type
 import java.util
 import java.util.Optional
 
+import scala.annotation.nowarn
 import scala.annotation.tailrec
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.reflect.ClassTag
 
 import akka.annotation.InternalApi
@@ -25,11 +27,14 @@ import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.client.ComponentClientImpl
+import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
+import akka.javasdk.workflow.Workflow.RunnableStep
+import com.fasterxml.jackson.annotation.JsonSubTypes
 
 /**
  * Class extension to facilitate some reflection common usages.
@@ -124,15 +129,17 @@ private[impl] object Reflect {
   }
 
   def keyValueEntityStateType(component: Class[_]): Class[_] = {
-    findStateType(component, s"Cannot find key value state class for $component")
+    findSingleTypeParam(component, s"Cannot find key value state class for $component")
   }
 
-  def workflowStateType(component: Class[_]): Class[_] = {
-    findStateType(component, s"Cannot find workflow state class for $component")
-  }
-
+  /**
+   * Find the type parameter class.
+   *
+   * This method should only be called on a class receiving a single type parameter. For example, given a type defined
+   * as F[G], it will return Class[G].
+   */
   @tailrec
-  private def findStateType(current: Class[_], errorMsg: String): Class[_] = {
+  private def findSingleTypeParam(current: Class[_], errorMsg: String): Class[_] =
     if (current == classOf[AnyRef])
       // recursed to root without finding type param
       throw new IllegalArgumentException(errorMsg)
@@ -144,10 +151,9 @@ private[impl] object Reflect {
           else throw new IllegalArgumentException(errorMsg)
         case noTypeParamsParent: Class[_] =>
           // recurse and look at parent
-          findStateType(noTypeParamsParent, errorMsg)
+          findSingleTypeParam(noTypeParamsParent, errorMsg)
       }
     }
-  }
 
   private def extendsView(component: Class[_]): Boolean =
     classOf[View].isAssignableFrom(component)
@@ -160,51 +166,69 @@ private[impl] object Reflect {
     Modifier.isStatic(component.getModifiers) &&
     Modifier.isPublic(component.getModifiers)
 
-  def workflowStateType[S, W <: Workflow[S]](workflow: W): Class[S] = {
-    loop(workflow.getClass, s"Cannot find workflow state class for ${workflow.getClass}").asInstanceOf[Class[S]]
+  def workflowStateType(component: Class[_]): Class[_] = {
+    findSingleTypeParam(component, s"Cannot find workflow state class for $component")
   }
 
-  def kveStateType[S, E <: KeyValueEntity[S]](kve: E): Class[S] = {
-    loop(kve.getClass, s"Cannot find Key Value Entity state class for ${kve.getClass}").asInstanceOf[Class[S]]
-  }
+  def workflowKnownInputTypes(clz: Class[_]): List[Class[_]] = {
 
-  @tailrec
-  private def loop(current: Class[_], errorMsg: String): Class[_] =
-    if (current == classOf[AnyRef])
-      // recursed to root without finding type param
-      throw new IllegalArgumentException(errorMsg)
-    else {
-      current.getGenericSuperclass match {
-        case parameterizedType: ParameterizedType =>
-          if (parameterizedType.getActualTypeArguments.length == 1)
-            parameterizedType.getActualTypeArguments.head.asInstanceOf[Class[_]]
-          else throw new IllegalArgumentException(errorMsg)
-        case noTypeParamsParent: Class[_] =>
-          // recurse and look at parent
-          loop(noTypeParamsParent, errorMsg)
-      }
+    // register all inputs for methods returning StepEffect
+    val stepEffectClass = classOf[Workflow.StepEffect]
+    val methods = clz.getDeclaredMethods.filter { m =>
+      m.getParameterTypes.length == 1 && stepEffectClass.isAssignableFrom(m.getReturnType)
     }
 
-  def tableUpdaterRowType(tableUpdater: Class[_]): Class[_] = {
-    @tailrec
-    def loop(current: Class[_]): Class[_] =
-      if (current == classOf[AnyRef])
-        // recursed to root without finding type param
-        throw new IllegalArgumentException(s"Cannot find table updater class for ${tableUpdater.getClass}")
-      else {
-        current.getGenericSuperclass match {
-          case parameterizedType: ParameterizedType =>
-            if (parameterizedType.getActualTypeArguments.size == 1)
-              parameterizedType.getActualTypeArguments.head.asInstanceOf[Class[_]]
-            else throw new IllegalArgumentException(s"Cannot find table updater class for ${tableUpdater.getClass}")
-          case noTypeParamsParent: Class[_] =>
-            // recurse and look at parent
-            loop(noTypeParamsParent)
-        }
-      }
-
-    loop(tableUpdater)
+    methods.foldLeft(List.empty[Class[_]]) { (acc, method) =>
+      acc ++ lookupSubClasses(method.getParameterTypes.head)
+    }
   }
+
+  @nowarn("msg=deprecated")
+  def workflowKnownInputTypes[S, W <: Workflow[S]](workflow: Workflow[S]): List[Class[_]] =
+    workflow
+      .definition()
+      .getSteps
+      .asScala
+      .flatMap {
+        case asyncCallStep: Workflow.AsyncCallStep[_, _, _] =>
+          if (asyncCallStep.transitionInputClass == null) lookupSubClasses(asyncCallStep.callInputClass)
+          else lookupSubClasses(asyncCallStep.callInputClass) ++ lookupSubClasses(asyncCallStep.transitionInputClass)
+
+        case callStep: Workflow.CallStep[_, _, _] =>
+          if (callStep.transitionInputClass == null) lookupSubClasses(callStep.callInputClass)
+          else lookupSubClasses(callStep.callInputClass) ++ lookupSubClasses(callStep.transitionInputClass)
+
+        case runnable: RunnableStep => List.empty
+      }
+      .toList
+
+  /**
+   * This method will try to find all know subtypes if the passed class is an interface. Interfaces that are neither
+   * sealed nor have JsonSubTypes annotation cannot be handled As we can't deserialize them.
+   *
+   * Note this method is only used when registering workflow step input types
+   */
+  private def lookupSubClasses(cls: Class[_]): List[Class[_]] =
+    if (cls.isInterface) {
+      if (cls.isSealed) cls.getPermittedSubclasses.toList :+ cls
+      else if (cls.hasAnnotation[JsonSubTypes]) {
+        val anno = cls.getAnnotation(classOf[JsonSubTypes])
+        val subTypes =
+          anno.value().foldLeft(List.empty[Class[_]]) { (acc, typ) =>
+            acc :+ typ.value()
+          }
+        subTypes :+ cls
+      } else {
+        throw new IllegalArgumentException(
+          s"Can't determine all existing subtypes of ${cls.getName}. Interfaces " +
+          s"must be either sealed or be annotated with ${classOf[JsonSubTypes].getName}")
+      }
+    } else {
+      List(cls)
+    }
+
+  def tableUpdaterRowType(tableUpdater: Class[_]): Class[_] =
+    findSingleTypeParam(tableUpdater, s"Cannot find table updater class for ${tableUpdater.getClass}")
 
   def allKnownEventSourcedEntityEventType(component: Class[_]): Seq[Class[_]] = {
     val eventType = eventSourcedEntityEventType(component)

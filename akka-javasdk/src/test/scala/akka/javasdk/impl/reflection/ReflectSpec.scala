@@ -54,5 +54,13 @@ class ReflectSpec extends AnyWordSpec with Matchers {
 
       Reflect.lookupComponentClientFields(bar) should have size 2
     }
+
+    "return all step input types for a workflow " in {
+      pending
+    }
+
+    "return all call and transition input types for a workflow " in {
+      pending
+    }
   }
 }

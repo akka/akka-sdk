@@ -80,16 +80,15 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
         case payload if payload.nonEmpty => serializer.fromBytes(payload).asInstanceOf[S]
       }
 
-  // in same cases, the runtime may send a message with contentType set to object.
-  // if that's the case, we need to patch the message using the contentType from the expected input class
   private def decodeInput(result: BytesPayload, expectedInputClass: Class[_]) = {
-    if (result.isEmpty) null // input can't be empty, but just in case
-    else if (serializer.isJson(result) &&
-      result.contentType.endsWith("/object")) {
-      serializer.fromBytes(expectedInputClass, result)
-    } else {
+    if (result.isEmpty)
+      null // input can't be empty, but just in case
+    else if (expectedInputClass.isInterface)
+      // if it's an interface, we must rely on the typeHint in the payload
       serializer.fromBytes(result)
-    }
+    else
+      // if a concrete type using expectedInputClass should be enough to deserialize it
+      serializer.fromBytes(expectedInputClass, result)
   }
 
   private def methodInvokerLookup(commandName: String, workflowClass: Class[_]) =
