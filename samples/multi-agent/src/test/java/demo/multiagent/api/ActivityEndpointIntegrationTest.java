@@ -118,8 +118,10 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
     // 4. Add preference that invalidates previous suggestion
     setupUpdatedModelResponsesForPreference();
 
+    var nextDebugId = "67890";
     var preferenceResponse = httpClient
       .POST("/preferences/" + userId)
+      .addHeader("akka-debug-id", nextDebugId)
       .withRequestBody(
         new ActivityEndpoint.AddPreference(
           "I hate outdoor activities and prefer indoor museums"
@@ -146,6 +148,8 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
         assertThat(updatedAnswer).contains("indoor");
         assertThat(updatedAnswer).doesNotContain("bike tour");
       });
+
+    assertThat(telemetryReader.getAgents(nextDebugId)).containsOnly("evaluator-agent");
   }
 
   private void setupInitialModelResponses() {

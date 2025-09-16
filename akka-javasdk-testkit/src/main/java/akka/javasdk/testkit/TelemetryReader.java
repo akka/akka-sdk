@@ -6,6 +6,7 @@ package akka.javasdk.testkit;
 
 import static java.util.Optional.ofNullable;
 
+import akka.annotation.ApiMayChange;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.workflow.Workflow;
 import io.opentelemetry.api.common.AttributeKey;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 import kalix.runtime.telemetry.tracing.TracingSetup;
 
+@ApiMayChange
 public class TelemetryReader {
 
   private final TracingSetup.AkkaInMemorySpanExporter inMemorySpanExporter;
@@ -23,6 +25,7 @@ public class TelemetryReader {
     this.inMemorySpanExporter = inMemorySpanExporter;
   }
 
+  @ApiMayChange
   public List<String> getWorkflowSteps(Class<? extends Workflow<?>> workflow, String workflowId) {
     String componentId = getComponentId(workflow);
     List<SpanData> spanDatas =
@@ -31,6 +34,7 @@ public class TelemetryReader {
     return workflowStepsFrom(spanDatas);
   }
 
+  @ApiMayChange
   public List<String> getAgents(String debugId) {
     List<SpanData> spanDatas = spansFor(debugId);
 
@@ -39,6 +43,7 @@ public class TelemetryReader {
     return collectAttributeValues(spanDatas, agentToolAttributeKey);
   }
 
+  @ApiMayChange
   public List<String> getAgentTools(String debugId) {
     List<SpanData> spanDatas = spansFor(debugId);
 
@@ -47,6 +52,7 @@ public class TelemetryReader {
     return collectAttributeValues(spanDatas, agentToolAttributeKey);
   }
 
+  @ApiMayChange
   public List<String> getWorkflowSteps(String debugId) {
     List<SpanData> spanDatas = spansFor(debugId);
 
