@@ -9,6 +9,7 @@ import java.util.function.Predicate
 
 import akka.annotation.InternalApi
 import akka.http.javadsl.model.HttpHeader
+import akka.javasdk.agent.Guardrail
 import akka.javasdk.agent.RemoteMcpTools
 
 /**
@@ -19,10 +20,12 @@ final case class RemoteMcpToolsImpl(
     serverUri: String,
     toolNameFilter: Option[Predicate[String]],
     interceptor: Option[RemoteMcpTools.ToolInterceptor],
-    additionalClientHeaders: Seq[HttpHeader])
+    additionalClientHeaders: Seq[HttpHeader],
+    requestGuardrails: Seq[Guardrail],
+    responseGuardrails: Seq[Guardrail])
     extends RemoteMcpTools {
 
-  def this(serverUri: String) = this(serverUri, None, None, Seq.empty)
+  def this(serverUri: String) = this(serverUri, None, None, Seq.empty, Seq.empty, Seq.empty)
 
   override def withToolNameFilter(toolNameFilter: Predicate[String]): RemoteMcpTools =
     copy(toolNameFilter = Some(toolNameFilter))
@@ -40,4 +43,10 @@ final case class RemoteMcpToolsImpl(
 
   override def addClientHeader(header: HttpHeader): RemoteMcpTools =
     copy(additionalClientHeaders = additionalClientHeaders :+ header)
+
+  override def withRequestGuardrails(guard: Guardrail, guards: Guardrail*): RemoteMcpTools =
+    copy(requestGuardrails = requestGuardrails :+ guard :++ guards)
+
+  override def withResponseGuardrails(guard: Guardrail, guards: Guardrail*): RemoteMcpTools =
+    copy(responseGuardrails = responseGuardrails :+ guard :++ guards)
 }
