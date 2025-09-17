@@ -211,11 +211,13 @@ private[impl] object Reflect {
    */
   private def lookupSubClasses(cls: Class[_]): List[Class[_]] = {
 
-    def isAbstract: Boolean = {
+    // primitive types show up as abstract types to Modifier.isAbstract
+    // basically, Modifier.isAbstract is not reliable enough in that respect
+    // therefore we need this extra isAbstract method
+    def isAbstract: Boolean =
       !cls.isInterface &&
       !cls.isPrimitive &&
       Modifier.isAbstract(cls.getModifiers)
-    }
 
     if (cls.isAssignableFrom(classOf[Done])) {
       // especial handling for akka.Done
