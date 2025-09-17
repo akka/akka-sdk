@@ -4,14 +4,14 @@
 
 package akka.javasdk.impl
 
-import java.util.concurrent.atomic.AtomicReference
-
 import akka.actor.ClassicActorSystemProvider
 import akka.actor.ExtendedActorSystem
 import akka.actor.Extension
 import akka.actor.ExtensionId
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+
+import java.util.concurrent.atomic.AtomicReference
 
 object ApplicationConfig extends ExtensionId[ApplicationConfig] {
 
@@ -22,9 +22,27 @@ object ApplicationConfig extends ExtensionId[ApplicationConfig] {
 
   def loadApplicationConf: Config = {
     val testConf = "application-test.conf"
-    if (getClass.getResource(s"/$testConf") eq null)
-      ConfigFactory.load(ConfigFactory.parseResources("application.conf"))
-    else
+    if (getClass.getResource(s"/$testConf") eq null) {
+
+      val portKey = "akka.javasdk.dev-mode.http-port"
+      val appConfigAlone = ConfigFactory.parseResources("application.conf")
+      val appConfig = ConfigFactory.load(appConfigAlone)
+
+      if (appConfigAlone.hasPath(portKey)) {
+        // if application.conf is defining the port, we stick with it
+        appConfig
+      } else {
+        // if not, try to load config.resources
+        sys.props.get("config.resource") match {
+          case Some(extraFile) =>
+            val extraConfig = ConfigFactory.parseResources(extraFile)
+            // the config resource goes before app config
+            ConfigFactory.load(extraConfig.withFallback(appConfigAlone))
+          case None =>
+            appConfig
+        }
+      }
+    } else
       ConfigFactory.load(ConfigFactory.parseResources(testConf))
   }
 }
