@@ -4,20 +4,7 @@
 
 package akka.javasdk.impl.reflection
 
-import java.lang.annotation.Annotation
-import java.lang.reflect.AnnotatedElement
-import java.lang.reflect.Method
-import java.lang.reflect.Modifier
-import java.lang.reflect.ParameterizedType
-import java.lang.reflect.Type
-import java.util
-import java.util.Optional
-
-import scala.annotation.nowarn
-import scala.annotation.tailrec
-import scala.jdk.CollectionConverters.CollectionHasAsScala
-import scala.reflect.ClassTag
-
+import akka.Done
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
 import akka.javasdk.annotations.GrpcEndpoint
@@ -35,6 +22,19 @@ import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.Workflow.RunnableStep
 import com.fasterxml.jackson.annotation.JsonSubTypes
+
+import java.lang.annotation.Annotation
+import java.lang.reflect.AnnotatedElement
+import java.lang.reflect.Method
+import java.lang.reflect.Modifier
+import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
+import java.util
+import java.util.Optional
+import scala.annotation.nowarn
+import scala.annotation.tailrec
+import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.reflect.ClassTag
 
 /**
  * Class extension to facilitate some reflection common usages.
@@ -209,9 +209,20 @@ private[impl] object Reflect {
    * Note this method is only used when registering workflow step input types
    */
   private def lookupSubClasses(cls: Class[_]): List[Class[_]] =
-    if (cls.isInterface) {
-      if (cls.isSealed) cls.getPermittedSubclasses.toList :+ cls
-      else if (cls.hasAnnotation[JsonSubTypes]) {
+    if (cls.isAssignableFrom(classOf[Done])) {
+      // especial handling for akka.Done
+      // it is a sealed and abstract class, but we know we can deserialize
+      // Note that Done is a scala class and Java reflection don't see it as sealed
+      List(cls)
+
+    } else if (cls.isSealed) {
+      // if sealed, we know what to do
+      cls.getPermittedSubclasses.toList :+ cls
+
+    } else if (cls.isInterface || Modifier.isAbstract(cls.getModifiers)) {
+      // not a concreate class?
+      // then need to find the subtypes using Jackson annotation
+      if (cls.hasAnnotation[JsonSubTypes]) {
         val anno = cls.getAnnotation(classOf[JsonSubTypes])
         val subTypes =
           anno.value().foldLeft(List.empty[Class[_]]) { (acc, typ) =>
@@ -219,11 +230,19 @@ private[impl] object Reflect {
           }
         subTypes :+ cls
       } else {
-        throw new IllegalArgumentException(
-          s"Can't determine all existing subtypes of ${cls.getName}. Interfaces " +
-          s"must be either sealed or be annotated with ${classOf[JsonSubTypes].getName}")
+        if (cls.isInterface) {
+          throw new IllegalArgumentException(
+            s"Can't determine all existing subtypes of ${cls.getName}. Interfaces " +
+            s"must be either sealed or be annotated with ${classOf[JsonSubTypes].getName}")
+        } else {
+          throw new IllegalArgumentException(
+            s"Can't determine all existing subtypes of ${cls.getName}. Abstract classes " +
+            s"must be annotated with ${classOf[JsonSubTypes].getName}")
+        }
       }
     } else {
+      // we might have a concreate class with subtypes, but in this case
+      // there is nothing we can do since the sky is the limit
       List(cls)
     }
 
