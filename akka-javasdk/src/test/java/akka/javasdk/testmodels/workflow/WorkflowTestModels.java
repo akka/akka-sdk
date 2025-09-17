@@ -122,6 +122,37 @@ public class WorkflowTestModels {
     }
   }
 
+  public static class TransferWorkflowWithPrimitives extends Workflow<WorkflowState> {
+
+    public StepEffect longStep(long longVal) {
+      return null;
+    }
+
+    public StepEffect intStep(int intVal) {
+      return null;
+    }
+
+    public StepEffect boolStep(boolean boolVal) {
+      return null;
+    }
+
+    public StepEffect shortStep(short shortVal) {
+      return null;
+    }
+
+    public StepEffect charStep(char charVal) {
+      return null;
+    }
+
+    public StepEffect floatStep(float floatVal) {
+      return null;
+    }
+
+    public StepEffect doubleStep(double doubleVal) {
+      return null;
+    }
+  }
+
   // same as above, but using legacy API ----------------------
 
   public static class TransferWorkflowSealedInterfaceLegacy extends Workflow<WorkflowState> {

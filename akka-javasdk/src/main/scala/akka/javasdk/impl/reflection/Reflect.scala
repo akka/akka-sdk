@@ -4,6 +4,20 @@
 
 package akka.javasdk.impl.reflection
 
+import java.lang.annotation.Annotation
+import java.lang.reflect.AnnotatedElement
+import java.lang.reflect.Method
+import java.lang.reflect.Modifier
+import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
+import java.util
+import java.util.Optional
+
+import scala.annotation.nowarn
+import scala.annotation.tailrec
+import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.reflect.ClassTag
+
 import akka.Done
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
@@ -22,19 +36,6 @@ import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.Workflow.RunnableStep
 import com.fasterxml.jackson.annotation.JsonSubTypes
-
-import java.lang.annotation.Annotation
-import java.lang.reflect.AnnotatedElement
-import java.lang.reflect.Method
-import java.lang.reflect.Modifier
-import java.lang.reflect.ParameterizedType
-import java.lang.reflect.Type
-import java.util
-import java.util.Optional
-import scala.annotation.nowarn
-import scala.annotation.tailrec
-import scala.jdk.CollectionConverters.CollectionHasAsScala
-import scala.reflect.ClassTag
 
 /**
  * Class extension to facilitate some reflection common usages.
@@ -208,7 +209,14 @@ private[impl] object Reflect {
    *
    * Note this method is only used when registering workflow step input types
    */
-  private def lookupSubClasses(cls: Class[_]): List[Class[_]] =
+  private def lookupSubClasses(cls: Class[_]): List[Class[_]] = {
+
+    def isAbstract: Boolean = {
+      !cls.isInterface &&
+      !cls.isPrimitive &&
+      Modifier.isAbstract(cls.getModifiers)
+    }
+
     if (cls.isAssignableFrom(classOf[Done])) {
       // especial handling for akka.Done
       // it is a sealed and abstract class, but we know we can deserialize
@@ -219,7 +227,7 @@ private[impl] object Reflect {
       // if sealed, we know what to do
       cls.getPermittedSubclasses.toList :+ cls
 
-    } else if (cls.isInterface || Modifier.isAbstract(cls.getModifiers)) {
+    } else if (cls.isInterface || isAbstract) {
       // not a concreate class?
       // then need to find the subtypes using Jackson annotation
       if (cls.hasAnnotation[JsonSubTypes]) {
@@ -245,6 +253,7 @@ private[impl] object Reflect {
       // there is nothing we can do since the sky is the limit
       List(cls)
     }
+  }
 
   def tableUpdaterRowType(tableUpdater: Class[_]): Class[_] =
     findSingleTypeParam(tableUpdater, s"Cannot find table updater class for ${tableUpdater.getClass}")

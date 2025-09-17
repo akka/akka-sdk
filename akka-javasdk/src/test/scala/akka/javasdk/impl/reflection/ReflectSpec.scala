@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.reflection
 
+import scala.concurrent.ExecutionContext
+
 import akka.Done
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.client.ComponentClientImpl
@@ -18,10 +20,9 @@ import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowUnann
 import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowUnannotatedAbstractClassLegacy
 import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowUnannotatedInterface
 import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowUnannotatedInterfaceLegacy
+import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowWithPrimitives
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-
-import scala.concurrent.ExecutionContext
 
 class SomeClass {
   def a(): Unit = {}
@@ -74,6 +75,19 @@ class ReflectSpec extends AnyWordSpec with Matchers {
         classOf[TransferWorkflowSealedInterface.Transaction],
         classOf[TransferWorkflowSealedInterface.CreditTransaction],
         classOf[TransferWorkflowSealedInterface.DebitTransaction])
+    }
+
+    "return all step input types for a workflow with primitives" in {
+      val types = Reflect.workflowKnownInputTypes(classOf[TransferWorkflowWithPrimitives])
+
+      types should contain theSameElementsAs List(
+        classOf[Boolean],
+        classOf[Long],
+        classOf[Int],
+        classOf[Float],
+        classOf[Double],
+        classOf[Short],
+        classOf[Char])
     }
 
     "return all step input types for a workflow with annotated interface" in {
