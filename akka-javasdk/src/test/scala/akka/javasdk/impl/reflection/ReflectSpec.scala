@@ -6,10 +6,21 @@ package akka.javasdk.impl.reflection
 
 import scala.concurrent.ExecutionContext
 
+import akka.Done
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.client.ComponentClientImpl
-import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowAnnotatedAbstractClass
+import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowAnnotatedAbstractClassLegacy
+import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowAnnotatedInterface
+import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowAnnotatedInterfaceLegacy
+import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowSealedInterface
+import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowSealedInterfaceLegacy
+import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowUnannotatedAbstractClass
+import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowUnannotatedAbstractClassLegacy
+import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowUnannotatedInterface
+import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowUnannotatedInterfaceLegacy
+import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowWithPrimitives
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -53,6 +64,104 @@ class ReflectSpec extends AnyWordSpec with Matchers {
       val bar = new Bar(c1, c2)
 
       Reflect.lookupComponentClientFields(bar) should have size 2
+    }
+
+    "return all step input types for a workflow" in {
+      val types = Reflect.workflowKnownInputTypes(classOf[TransferWorkflowSealedInterface])
+
+      types should contain theSameElementsAs List(
+        classOf[TransferWorkflowSealedInterface.Deposit],
+        classOf[TransferWorkflowSealedInterface.Withdraw],
+        classOf[TransferWorkflowSealedInterface.Transaction],
+        classOf[TransferWorkflowSealedInterface.CreditTransaction],
+        classOf[TransferWorkflowSealedInterface.DebitTransaction])
+    }
+
+    "return all step input types for a workflow with primitives" in {
+      val types = Reflect.workflowKnownInputTypes(classOf[TransferWorkflowWithPrimitives])
+
+      types should contain theSameElementsAs List(
+        classOf[Boolean],
+        classOf[Long],
+        classOf[Int],
+        classOf[Float],
+        classOf[Double],
+        classOf[Short],
+        classOf[Char])
+    }
+
+    "return all step input types for a workflow with annotated interface" in {
+      val types =
+        Reflect.workflowKnownInputTypes(classOf[TransferWorkflowAnnotatedInterface])
+      types should contain theSameElementsAs List(
+        classOf[TransferWorkflowAnnotatedInterface.Transaction],
+        classOf[TransferWorkflowAnnotatedInterface.CreditTransaction],
+        classOf[TransferWorkflowAnnotatedInterface.DebitTransaction])
+    }
+
+    "throw exception if interface subtypes can be found" in {
+      intercept[IllegalArgumentException] {
+        Reflect.workflowKnownInputTypes(classOf[TransferWorkflowUnannotatedInterface])
+      }.getMessage should startWith("Can't determine all existing subtypes")
+    }
+
+    "return all step input types for a workflow with annotated abstract clas" in {
+      val types =
+        Reflect.workflowKnownInputTypes(classOf[TransferWorkflowAnnotatedAbstractClass])
+      types should contain theSameElementsAs List(
+        classOf[TransferWorkflowAnnotatedAbstractClass.Transaction],
+        classOf[TransferWorkflowAnnotatedAbstractClass.CreditTransaction],
+        classOf[TransferWorkflowAnnotatedAbstractClass.DebitTransaction])
+    }
+
+    "throw exception if abstract class subtypes can be found" in {
+      intercept[IllegalArgumentException] {
+        Reflect.workflowKnownInputTypes(classOf[TransferWorkflowUnannotatedAbstractClass])
+      }.getMessage should startWith("Can't determine all existing subtypes")
+    }
+
+    "return all step input types for a workflow (legacy)" in {
+      val types = Reflect.workflowKnownInputTypes(new TransferWorkflowSealedInterfaceLegacy)
+
+      types should contain theSameElementsAs List(
+        classOf[Done],
+        classOf[TransferWorkflowSealedInterfaceLegacy.Deposit],
+        classOf[TransferWorkflowSealedInterfaceLegacy.Withdraw],
+        classOf[TransferWorkflowSealedInterfaceLegacy.Transaction],
+        classOf[TransferWorkflowSealedInterfaceLegacy.CreditTransaction],
+        classOf[TransferWorkflowSealedInterfaceLegacy.DebitTransaction])
+    }
+
+    "return all step input types for a workflow with annotated interface (legacy)" in {
+      val types =
+        Reflect.workflowKnownInputTypes(new TransferWorkflowAnnotatedInterfaceLegacy)
+      types should contain theSameElementsAs List(
+        classOf[Done],
+        classOf[TransferWorkflowAnnotatedInterfaceLegacy.Transaction],
+        classOf[TransferWorkflowAnnotatedInterfaceLegacy.CreditTransaction],
+        classOf[TransferWorkflowAnnotatedInterfaceLegacy.DebitTransaction])
+    }
+
+    "throw exception if interface subtypes can be found (legacy)" in {
+      intercept[IllegalArgumentException] {
+        Reflect.workflowKnownInputTypes(new TransferWorkflowUnannotatedInterfaceLegacy)
+      }.getMessage should startWith("Can't determine all existing subtypes")
+    }
+
+    "return all step input types for a workflow with annotated abstract clas (legacy)" in {
+      val types =
+        Reflect.workflowKnownInputTypes(new TransferWorkflowAnnotatedAbstractClassLegacy)
+      types should contain theSameElementsAs List(
+        classOf[Done],
+        classOf[TransferWorkflowAnnotatedAbstractClassLegacy.Transaction],
+        classOf[TransferWorkflowAnnotatedAbstractClassLegacy.CreditTransaction],
+        classOf[TransferWorkflowAnnotatedAbstractClassLegacy.DebitTransaction])
+    }
+
+    "throw exception if abstract class subtypes can be found (legacy)" in {
+      intercept[IllegalArgumentException] {
+        Reflect.workflowKnownInputTypes(new TransferWorkflowUnannotatedAbstractClassLegacy)
+      }.getMessage should startWith("Can't determine all existing subtypes")
     }
   }
 }
