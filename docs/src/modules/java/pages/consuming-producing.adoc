@@ -120,8 +120,7 @@ include::example$event-sourced-customer-registry-subscriber/src/main/java/custom
 <1> Annotate the Table Updater with `@Consume.FromStream` to subscribe to an event stream from another Akka service.
 <2> The name of the Akka service publishing the event stream.
 <3> The public identifier of the specific stream.
-<4> Consumer group is required in case many consumers subscribing to the same stream.
-<5> Handler method per message type that the stream may contain.
+<4> Handler method per message type that the stream may contain.
 
 TIP: If you're looking to test this locally, you will likely need to run the 2 services with different ports. For more details, consult xref:running-locally.adoc#multiple_services[Running multiple services].
 

@@ -22,8 +22,7 @@ public class CustomersByEmailView extends View {
 
   @Consume.FromServiceStream( // <1>
     service = "customer-registry", // <2>
-    id = "customer_events", // <3>
-    consumerGroup = "customer-by-email-view" // <4>
+    id = "customer_events" // <3>
   )
   public static class CustomersByEmailUpdater extends TableUpdater<CustomerEntry> {
 
