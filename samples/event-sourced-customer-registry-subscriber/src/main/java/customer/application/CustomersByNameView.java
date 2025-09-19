@@ -21,12 +21,11 @@ public class CustomersByNameView extends View {
 
   @Consume.FromServiceStream( // <1>
     service = "customer-registry", // <2>
-    id = "customer_events", // <3>
-    consumerGroup = "customer-by-name-view" // <4>
+    id = "customer_events" // <3>
   )
   public static class CustomersByNameUpdater extends TableUpdater<CustomerEntry> {
 
-    public Effect<CustomerEntry> onEvent( // <5>
+    public Effect<CustomerEntry> onEvent( // <4>
       CustomerPublicEvent.Created created
     ) {
       // end::view[]
