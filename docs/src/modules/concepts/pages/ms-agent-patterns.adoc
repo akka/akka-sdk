@@ -1,4 +1,4 @@
-= AI Orchestration Patterns
+= AI orchestration patterns
 
 include::ROOT:partial$include.adoc[]
 
