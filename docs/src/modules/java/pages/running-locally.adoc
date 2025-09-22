@@ -171,13 +171,13 @@ To start each node, use the following commands in separate terminal windows:
 [source, command line]
 ----
 # Node 1 (runs on port 9000)
-mvn exec:java -Dconfig.resource=local-node1.conf
+mvn compile exec:java -Dconfig.resource=local-node1.conf
 
 # Node 2 (runs on port 9001)
-mvn exec:java -Dconfig.resource=local-node2.conf
+mvn compile exec:java -Dconfig.resource=local-node2.conf
 
 # Node 3 (runs on port 9002)
-mvn exec:java -Dconfig.resource=local-node3.conf
+mvn compile exec:java -Dconfig.resource=local-node3.conf
 ----
 
 === Port assignment
