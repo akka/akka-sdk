@@ -131,6 +131,37 @@ With both services configured, we can start them independently by running `mvn c
 
 For testing clustering behavior and high availability scenarios, you can run your Akka service as a local cluster with multiple nodes. This allows you to simulate a distributed environment on your local machine.
 
+=== Database requirement
+
+To run in cluster mode, you need a shared database that all nodes can connect to. The `local-nodeX.conf` files configure the application to connect to a PostgreSQL database.
+
+Before starting your cluster nodes, you must start a local PostgreSQL database. We recommend using Docker Compose for this purpose. Create a `docker-compose.yml` file with the following configuration:
+
+[source, yaml]
+----
+services:
+  postgres-db:
+    image: postgres:17
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-d", "postgres", "-U", "postgres"]
+      interval: 5s
+      retries: 5
+      start_period: 5s
+      timeout: 5s
+----
+
+Start the database with:
+
+[source, command line]
+----
+docker compose up -d
+----
+
 === Cluster configuration
 
 You can create a local cluster with up to 3 nodes. Each node requires its own configuration file and will run on a different HTTP port.
