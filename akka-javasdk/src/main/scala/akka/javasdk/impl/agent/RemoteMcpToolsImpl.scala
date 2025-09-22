@@ -4,16 +4,17 @@
 
 package akka.javasdk.impl.agent
 
+import java.time.{ Duration => JDuration }
 import java.util
 import java.util.function.Predicate
-import akka.annotation.InternalApi
-import akka.http.javadsl.model.HttpHeader
-import akka.javasdk.agent.RemoteMcpTools
 
-import java.time.{ Duration => JDuration }
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.DurationConverters.JavaDurationOps
+
+import akka.annotation.InternalApi
+import akka.http.javadsl.model.HttpHeader
+import akka.javasdk.agent.RemoteMcpTools
 
 /**
  * INTERNAL API

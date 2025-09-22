@@ -5,11 +5,15 @@
 package akka.javasdk.impl.agent
 
 import java.time.Instant
+
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 import scala.jdk.CollectionConverters.SeqHasAsJava
+import scala.jdk.DurationConverters.JavaDurationOps
 import scala.util.control.NonFatal
+
 import akka.annotation.InternalApi
 import akka.http.scaladsl.model.HttpHeader
 import akka.javasdk.CommandException
@@ -77,9 +81,6 @@ import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
-
-import scala.concurrent.duration.Duration
-import scala.jdk.DurationConverters.JavaDurationOps
 
 /**
  * INTERNAL API
