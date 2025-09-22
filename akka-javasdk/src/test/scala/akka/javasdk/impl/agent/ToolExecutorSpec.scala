@@ -46,7 +46,7 @@ class ToolExecutorSpec extends AnyWordSpecLike with TestSuite with Matchers {
   }
 
   private def toolRequest(name: String, args: String): SpiAgent.ToolCallCommand =
-    new SpiAgent.ToolCallCommand("001", name, args, SpiMetadata.empty, None)
+    new SpiAgent.ToolCallCommand("001", name, args, SpiMetadata.empty, io.opentelemetry.context.Context.root())
 
   "The ToolExecutor" should {
 
