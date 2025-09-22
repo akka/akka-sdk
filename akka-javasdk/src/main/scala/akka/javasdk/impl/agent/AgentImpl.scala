@@ -9,7 +9,9 @@ import java.time.Instant
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 import scala.jdk.CollectionConverters.SeqHasAsJava
+import scala.jdk.DurationConverters.JavaDurationOps
 import scala.util.control.NonFatal
 
 import akka.annotation.InternalApi
@@ -321,7 +323,10 @@ private[impl] final class AgentImpl[A <: Agent](
                     sdkExecutionContext)
                 }
 
-          })
+          },
+          toolTimeout =
+            if (remoteMcp.timeout == Duration.Zero) None
+            else Some(remoteMcp.timeout))
       case other => throw new IllegalArgumentException(s"Unsupported remote mcp tools impl $other")
     }
 
@@ -448,14 +453,16 @@ private[impl] final class AgentImpl[A <: Agent](
           temperature = p.temperature,
           topP = p.topP,
           topK = p.topK,
-          maxTokens = p.maxTokens)
+          maxTokens = p.maxTokens,
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()))
       case p: ModelProvider.GoogleAIGemini =>
         new SpiAgent.ModelProvider.GoogleAIGemini(
           p.apiKey(),
           p.modelName(),
           p.temperature(),
           p.topP(),
-          p.maxOutputTokens())
+          p.maxOutputTokens(),
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()))
       case p: ModelProvider.HuggingFace =>
         new SpiAgent.ModelProvider.HuggingFace(
           p.accessToken(),
@@ -463,11 +470,17 @@ private[impl] final class AgentImpl[A <: Agent](
           p.baseUrl(),
           p.temperature(),
           p.topP(),
-          p.maxNewTokens())
+          p.maxNewTokens(),
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()))
       case p: ModelProvider.LocalAI =>
         new SpiAgent.ModelProvider.LocalAI(p.baseUrl(), p.modelName(), p.temperature(), p.topP(), p.maxTokens())
       case p: ModelProvider.Ollama =>
-        new SpiAgent.ModelProvider.Ollama(p.baseUrl(), p.modelName(), p.temperature(), p.topP())
+        new SpiAgent.ModelProvider.Ollama(
+          p.baseUrl(),
+          p.modelName(),
+          p.temperature(),
+          p.topP(),
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()))
       case p: ModelProvider.OpenAi =>
         new SpiAgent.ModelProvider.OpenAi(
           apiKey = p.apiKey,
@@ -476,7 +489,8 @@ private[impl] final class AgentImpl[A <: Agent](
           temperature = p.temperature,
           topP = p.topP,
           maxTokens = p.maxTokens,
-          maxCompletionTokens = p.maxCompletionTokens)
+          maxCompletionTokens = p.maxCompletionTokens,
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()))
       case p: ModelProvider.Custom =>
         new SpiAgent.ModelProvider.Custom(() => p.createChatModel(), () => p.createStreamingChatModel())
     }

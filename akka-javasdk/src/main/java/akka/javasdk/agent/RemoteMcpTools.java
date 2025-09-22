@@ -7,6 +7,7 @@ package akka.javasdk.agent;
 import akka.annotation.DoNotInherit;
 import akka.http.javadsl.model.HttpHeader;
 import akka.javasdk.impl.agent.RemoteMcpToolsImpl;
+import java.time.Duration;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -82,6 +83,12 @@ public interface RemoteMcpTools {
    *     authentication token in an {@link akka.http.javadsl.model.headers.OAuth2BearerToken}
    */
   RemoteMcpTools addClientHeader(HttpHeader header);
+
+  /**
+   * @param timeout A max time any MCP request may take before it is failed. If not specified a
+   *     default timeout of 20s applies.
+   */
+  RemoteMcpTools withTimeout(Duration timeout);
 
   /**
    * Context details about the intercepted MCP tool call.
