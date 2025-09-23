@@ -77,6 +77,7 @@ import akka.runtime.sdk.spi.SpiMetadata
 import akka.util.ByteString
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigException
+import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.LoggerFactory
@@ -169,9 +170,12 @@ private[impl] final class AgentImpl[A <: Agent](
   override def handleCommand(command: SpiAgent.Command): Future[SpiAgent.Effect] =
     Future {
 
-      // FIXME(tracing): add full telemetry context to SpiAgent.Command
-      val telemetryContext = command.span.map(OtelContext.root.`with`)
-      command.span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
+      val telemetryContext = Option(command.telemetryContext)
+      val traceId = telemetryContext.flatMap { context =>
+        Option(Span.fromContextOrNull(context)).map(_.getSpanContext.getTraceId)
+      }
+      traceId.foreach(id => MDC.put(Telemetry.TRACE_ID, id))
+
       // smuggling 0 arity methods called from the component client through here
       val cmdPayload = command.payload.getOrElse(BytesPayload.empty)
       val metadata: Metadata = MetadataImpl.of(command.metadata)
@@ -287,9 +291,7 @@ private[impl] final class AgentImpl[A <: Agent](
         case NonFatal(error) =>
           throw AgentException(command.name, s"Unexpected failure: $error", Some(error))
       } finally {
-        command.span.foreach { _ =>
-          MDC.remove(Telemetry.TRACE_ID)
-        }
+        if (traceId.isDefined) MDC.remove(Telemetry.TRACE_ID)
       }
 
     }(sdkExecutionContext)
