@@ -226,6 +226,27 @@ Adapts a secret into a volume that can be mounted into the service's container.
 |*optional*              |boolean |Specifies whether the container should fail to start if the secret doesn't exist.
 |===
 
+
+Example of using a volume mount to mount a secret named `google-application-credentials` at path `/google-application-credentials-path`, which is later referenced by an environment variable named `GOOGLE_APPLICATION_CREDENTIALS` pointing to a file named `credentials.json` in that path:
+
+[source, bash]
+----
+akka secret create generic google-application-credentials --from-file credentials.json=/path/to/credentials.json
+----
+
+[source, yaml]
+----
+name: <<service-name>>
+service:
+  volumeMounts:
+  - mountPath: /google-application-credentials-path
+    secret:
+      secretName: google-application-credentials
+  env:
+  - name: GOOGLE_APPLICATION_CREDENTIALS
+    value: /google-application-credentials-path/credentials.json
+----
+
 === ServiceTelemetry
 
 Telemetry configuration for the service.
