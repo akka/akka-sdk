@@ -12,24 +12,45 @@ It is also possible to deploy a pre-built sample project in https://console.akka
 [cols="4,^1,^1,^1,^1"]
 |===
 | Sample | Orchestration | Agents | Memory | Streaming
-
-| <<Multi-agent planning and execution>>      | ✅ | ✅ | ✅ | ✅
-| <<Chat agent with RAG>>                     |    | ✅ | ✅ | ✅
-| <<Travel planning agent>>                   |    | ✅ |    | 
-| <<Medical discharge summary tagging>>       | ✅ | ✅ |    |
-| <<IoT sensor monitoring>>                   |    | ✅ | ✅ | ✅
-| <<Release note summarizer>>                 | ✅ | ✅ |    |
-| <<Customer service chat workflow>>          | ✅ | ✅ | ✅ |
-| <<Trip booking with tools>>                 | ✅ | ✅ | ✅ | ✅ 
-| <<Multi-source health sensor analysis>>     |    | ✅ | ✅ | ✅
-| <<Akka Chess>>          |    |    |    |  
-| <<Shopping cart>>                           | ✅ |    |    |
-| <<Customer data store>>                     |    |    |    |
-| <<Wallet transfer>>           | ✅ |    |    |
-| <<Wallet transfer with failure compensation>> | ✅ |  |   |
-| <<Choreographed user signup flow>>          |    |    |    |  
+| <<Hello World>>                               |    | ✅ | ✅ |
+| <<Hello World (Kotlin)>>                      |    | ✅ | ✅ |
+| <<Multi-agent planning and execution>>        | ✅ | ✅ | ✅ | ✅
+| <<Chat agent with RAG>>                       |    | ✅ | ✅ | ✅
+| <<Travel planning agent>>                     |    | ✅ |    |
+| <<Medical discharge summary tagging>>         | ✅ | ✅ |    |
+| <<IoT sensor monitoring>>                     |    | ✅ | ✅ | ✅
+| <<Release note summarizer>>                   | ✅ | ✅ |    |
+| <<Customer service chat workflow>>            | ✅ | ✅ | ✅ |
+| <<Trip booking with tools>>                   | ✅ | ✅ | ✅ | ✅
+| <<Multi-source health sensor analysis>>       |    | ✅ | ✅ | ✅
+| <<Akka Chess>>                                |    |    |    |
+| <<Shopping cart>>                             | ✅ |    |    |
+| <<Customer data store>>                       |    |    |    |
+| <<Wallet transfer>>                           | ✅ |    |    |
+| <<Wallet transfer with failure compensation>> | ✅ |    |    |
+| <<Choreographed user signup flow>>            |    |    |    |
 
 |===
+
+== Hello World
+
+This sample uses an agent and LLM to generate greetings in different languages. It illustrates how the agent maintains contextual history in a session memory.
+
+[%hardbreaks]
+**Concepts**: _Agent_, _LLM_
+**Level**: _Beginner_
+xref:getting-started:author-your-first-service.adoc[Step-by-step guide]
+link:https://github.com/akka-samples/helloworld-agent[GitHub Repository, window="new"]
+
+
+== Hello World (Kotlin)
+
+This sample uses an agent and LLM to generate greetings in different languages. It illustrates how the agent maintains contextual history in a session memory. This sample is built with Kotlin
+
+[%hardbreaks]
+**Concepts**: _Agent_, _LLM_
+**Level**: _Beginner_
+link:https://github.com/akka-samples/helloworld-agent-kotlin[GitHub Repository, window="new"]
 
 == Multi-agent planning and execution
 
