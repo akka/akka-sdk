@@ -23,7 +23,7 @@ object Dependencies {
   // https://github.com/akka/akka/blob/main/project/Dependencies.scala#L31
   val JacksonVersion = "2.19.0"
   val JacksonDatabindVersion = JacksonVersion
-  val Langchain4jVersion = "1.3.0"
+  val Langchain4jVersion = "1.5.0"
   val LogbackVersion = "1.5.18"
   val LogbackContribVersion = "0.1.5"
   val JUnitVersion = "4.13.2"
