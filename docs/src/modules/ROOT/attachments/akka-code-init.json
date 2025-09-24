@@ -15,6 +15,13 @@
       "level": "Beginner"
     },
     {
+      "title": "Empty project (Kotlin)",
+      "description": "This project contains the build and project structure to create an Akka service in Kotlin.",
+      "language": "kotlin",
+      "url": "https://github.com/akka-samples/empty-kotlin",
+      "level": "Beginner"
+    },
+    {
       "title": "Multi-agent planning and execution",
       "description": "A sample application demonstrating how to build a multi-agent system using Akka and an LLM model.",
       "language": "java",
@@ -25,6 +32,13 @@
       "description": "This sample illustrates how to build an AI agent that performs a RAG workflow.",
       "language": "java",
       "url": "https://github.com/akka-samples/ask-akka-agent"
+    },
+    {
+      "title": "Hello world agent (Kotlin)",
+      "description": "This sample uses an agent and LLM to generate greetings in different languages. It illustrates how the agent maintains contextual history in a session memory.",
+      "language": "kotlin",
+      "url": "https://github.com/akka-samples/helloworld-agent-kotlin",
+      "level": "Beginner"
     },
     {
       "title": "Travel planning agent",
