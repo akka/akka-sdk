@@ -43,7 +43,9 @@ import java.util.concurrent.CompletionStage;
  *
  *   public Effect onEvent(CounterEvent event) {
  *     return switch (event) {
- *       case ValueIncreased valueIncreased -> effects().done();
+ *       case ValueIncreased valueIncreased -> 
+                 //processing the event
+                 effects().done();
  *       case ValueMultiplied valueMultiplied -> effects().ignore();
  *     };
  *   }
