@@ -27,6 +27,20 @@
       "url": "https://github.com/akka-samples/ask-akka-agent"
     },
     {
+      "title": "Empty project (Kotlin)",
+      "description": "This project contains the build and project structure to create an Akka service in Kotlin.",
+      "language": "kotlin",
+      "url": "https://github.com/akka-samples/empty-kotlin",
+      "level": "Beginner"
+    },
+    {
+      "title": "Hello world agent (Kotlin)",
+      "description": "This sample uses an agent and LLM to generate greetings in different languages. It illustrates how the agent maintains contextual history in a session memory.",
+      "language": "kotlin",
+      "url": "https://github.com/akka-samples/helloworld-agent-kotlin",
+      "level": "Beginner"
+    },
+    {
       "title": "Travel planning agent",
       "description": "The Travel Planner Agent is an AI-powered application built on the Akka SDK that helps users create personalized travel itineraries.",
       "language": "java",
