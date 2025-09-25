@@ -13,6 +13,7 @@ import scala.reflect.ClassTag
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
 import akka.javasdk.annotations.AgentDescription
+import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.Consume.FromKeyValueEntity
 import akka.javasdk.annotations.Consume.FromWorkflow
@@ -575,18 +576,31 @@ private[javasdk] object Validations {
     Validation(messages)
   }
 
+  @SuppressWarnings(Array("deprecation"))
   private def mustHaveValidComponentId(component: Class[_]): Validation = {
-    val ann = component.getAnnotation(classOf[ComponentId])
-    if (ann != null) {
-      val componentId: String = ann.value()
+    // Check for new Component annotation first
+    val componentAnn = component.getAnnotation(classOf[Component])
+    if (componentAnn != null) {
+      val componentId: String = componentAnn.id()
       if ((componentId eq null) || componentId.isBlank)
-        Invalid(errorMessage(component, "@ComponentId name is empty, must be a non-empty string."))
+        Invalid(errorMessage(component, "@Component id is empty, must be a non-empty string."))
       else if (componentId.contains("|"))
-        Invalid(errorMessage(component, "@ComponentId must not contain the pipe character '|'."))
+        Invalid(errorMessage(component, "@Component id must not contain the pipe character '|'."))
       else Valid
     } else {
-      //missing annotation means that the component is disabled
-      Valid
+      // Fallback to old ComponentId annotation
+      val componentIdAnn = component.getAnnotation(classOf[ComponentId])
+      if (componentIdAnn != null) {
+        val componentId: String = componentIdAnn.value()
+        if ((componentId eq null) || componentId.isBlank)
+          Invalid(errorMessage(component, "@ComponentId name is empty, must be a non-empty string."))
+        else if (componentId.contains("|"))
+          Invalid(errorMessage(component, "@ComponentId must not contain the pipe character '|'."))
+        else Valid
+      } else {
+        //missing annotation means that the component is disabled
+        Valid
+      }
     }
   }
 

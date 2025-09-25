@@ -17,6 +17,7 @@ import akka.javasdk.ServiceSetup;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.agent.ModelProvider;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
@@ -525,7 +526,7 @@ public class TestKit {
 
     public Settings withModelProvider(
         Class<? extends Agent> agentClass, ModelProvider modelProvider) {
-      var componentId = agentClass.getAnnotation(ComponentId.class).value();
+      var componentId = getComponentId(agentClass);
       var newModelProvidersByAgentId = new HashMap<>(modelProvidersByAgentId);
       newModelProvidersByAgentId.put(componentId, modelProvider);
       return new Settings(
@@ -942,16 +943,68 @@ public class TestKit {
     return getEventSourcedEntityIncomingMessages(componentId);
   }
 
+  @SuppressWarnings("deprecation")
   private static String getComponentId(Class<?> componentClass) {
-    return componentClass.getAnnotation(ComponentId.class).value();
+    // First check for the new Component annotation
+    Component componentAnnotation = componentClass.getAnnotation(Component.class);
+    if (componentAnnotation != null) {
+      return componentAnnotation.id();
+    }
+
+    // Fallback to the old ComponentId annotation for backward compatibility
+    ComponentId componentIdAnnotation = componentClass.getAnnotation(ComponentId.class);
+    if (componentIdAnnotation != null) {
+      return componentIdAnnotation.value();
+    }
+
+    throw new IllegalArgumentException(
+        "Component [" + componentClass + "] is missing @Component or @ComponentId annotation");
   }
 
+  /**
+   * Utility method to get the component ID from a component class.
+   *
+   * @param componentClass the component class annotated with @Component or @ComponentId
+   * @return the component ID
+   */
+  public static String getComponentIdValue(Class<?> componentClass) {
+    return getComponentId(componentClass);
+  }
+
+  /**
+   * Utility method to get the component name from a component class.
+   *
+   * @param componentClass the component class annotated with @Component
+   * @return the component name, or null if not specified or using @ComponentId
+   */
+  public static String getComponentName(Class<?> componentClass) {
+    Component componentAnnotation = componentClass.getAnnotation(Component.class);
+    if (componentAnnotation != null && !componentAnnotation.name().isEmpty()) {
+      return componentAnnotation.name();
+    }
+    return null;
+  }
+
+  /**
+   * Utility method to get the component description from a component class.
+   *
+   * @param componentClass the component class annotated with @Component
+   * @return the component description, or null if not specified or using @ComponentId
+   */
+  public static String getComponentDescription(Class<?> componentClass) {
+    Component componentAnnotation = componentClass.getAnnotation(Component.class);
+    if (componentAnnotation != null && !componentAnnotation.description().isEmpty()) {
+      return componentAnnotation.description();
+    }
+    return null;
+  }
   /**
    * Get incoming messages for Workflow.
    *
    * @param componentId As annotated with @ComponentId on the EventSourcedEntity
    * @deprecated use {@link #getWorkflowIncomingMessages(Class)} instead.
    */
+
   @Deprecated(since = "3.4.2", forRemoval = true)
   public IncomingMessages getWorkflowIncomingMessages(String componentId) {
     if (!settings.mockedEventing.hasWorkflowSubscription(componentId)) {
