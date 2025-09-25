@@ -5,7 +5,6 @@
 package akka.javasdk.impl.agent
 
 import java.time.Instant
-import java.util.Locale
 
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
@@ -40,7 +39,6 @@ import akka.javasdk.agent.SessionMessage.AiMessage
 import akka.javasdk.agent.SessionMessage.ToolCallRequest
 import akka.javasdk.agent.SessionMessage.ToolCallResponse
 import akka.javasdk.agent.SessionMessage.UserMessage
-import akka.javasdk.agent.SimilarityGuard
 import akka.javasdk.agent.ToolCallExecutionException
 import akka.javasdk.agent.ToolCallLimitReachedException
 import akka.javasdk.agent.UnsupportedFeatureException
@@ -55,6 +53,7 @@ import akka.javasdk.impl.agent.BaseAgentEffectBuilder.ConstantSystemMessage
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.NoPrimaryEffect
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.RequestModel
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.TemplateSystemMessage
+import akka.javasdk.impl.agent.GuardrailProvider.AgentGuardrails
 import akka.javasdk.impl.agent.SessionMemoryClient.MemorySettings
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
@@ -143,26 +142,6 @@ private[impl] object AgentImpl {
     }
   }
 
-  final class SpiGuardrailAdapter(g: Guardrail) extends SpiAgent.Guardrail {
-
-    override def category: String = {
-      if (g.category == Guardrail.Category.OTHER)
-        g.otherCategory
-      else
-        g.category.name.toLowerCase(Locale.ROOT)
-    }
-
-    override def name: String = g.name
-
-    override def reportOnly: Boolean = g.reportOnly
-
-    override def evaluate(text: String): Future[SpiAgent.Guardrail.Result] = {
-      val result = g.evaluate(text)
-      Future.successful(new SpiAgent.Guardrail.Result(result.passed, result.reason))
-    }
-
-  }
-
 }
 
 /**
@@ -182,6 +161,7 @@ private[impl] final class AgentImpl[A <: Agent](
     componentClient: Option[OtelContext] => ComponentClient,
     overrideModelProvider: OverrideModelProvider,
     dependencyProvider: Option[DependencyProvider],
+    guardrails: AgentGuardrails,
     config: Config)
     extends SpiAgent {
   import AgentImpl._
@@ -289,8 +269,8 @@ private[impl] final class AgentImpl[A <: Agent](
               failureMapping = req.failureMapping.map(mapSpiAgentException),
               replyMetadata = metadata,
               onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, results),
-              requestGuardrails = req.requestGuardrails.map(toSpiGuardrail),
-              responseGuardrails = req.responseGuardrails.map(toSpiGuardrail))
+              requestGuardrails = guardrails.modelRequestGuardrails,
+              responseGuardrails = guardrails.modelResponseGuardrails)
 
           case NoPrimaryEffect =>
             errorOrReply match {
@@ -319,21 +299,6 @@ private[impl] final class AgentImpl[A <: Agent](
       }
 
     }(sdkExecutionContext)
-
-  private def toSpiGuardrail(g: Guardrail): SpiAgent.Guardrail =
-    g match {
-      case g: SimilarityGuard => toSpiSimilarityGuard(g)
-      case g                  => new SpiGuardrailAdapter(g)
-    }
-
-  private def toSpiSimilarityGuard(g: SimilarityGuard): SpiAgent.SimilarityGuard = {
-    val category =
-      if (g.category() == Guardrail.Category.OTHER)
-        g.otherCategory
-      else
-        g.category.name.toLowerCase(Locale.ROOT)
-    new SpiAgent.SimilarityGuard(g.name, category, g.reportOnly, g.badExamplesResources().asScala.toSeq, g.threshold)
-  }
 
   private def toSpiMcpEndpoints(remoteMcpTools: Seq[RemoteMcpTools]): Seq[SpiAgent.McpToolEndpointDescriptor] =
     remoteMcpTools.map {
@@ -368,8 +333,8 @@ private[impl] final class AgentImpl[A <: Agent](
           toolTimeout =
             if (remoteMcp.timeout == Duration.Zero) None
             else Some(remoteMcp.timeout),
-          requestGuardrails = remoteMcp.requestGuardrails.map(toSpiGuardrail),
-          responseGuardrails = remoteMcp.responseGuardrails.map(toSpiGuardrail))
+          requestGuardrails = guardrails.mcpToolRequestGuardrails,
+          responseGuardrails = guardrails.mcpToolResponseGuardrails)
       case other => throw new IllegalArgumentException(s"Unsupported remote mcp tools impl $other")
     }
 

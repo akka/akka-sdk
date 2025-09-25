@@ -14,7 +14,6 @@ import scala.jdk.DurationConverters.JavaDurationOps
 
 import akka.annotation.InternalApi
 import akka.http.javadsl.model.HttpHeader
-import akka.javasdk.agent.Guardrail
 import akka.javasdk.agent.RemoteMcpTools
 
 /**
@@ -26,12 +25,10 @@ final case class RemoteMcpToolsImpl(
     toolNameFilter: Option[Predicate[String]],
     interceptor: Option[RemoteMcpTools.ToolInterceptor],
     additionalClientHeaders: Seq[HttpHeader],
-    timeout: FiniteDuration,
-    requestGuardrails: Seq[Guardrail],
-    responseGuardrails: Seq[Guardrail])
+    timeout: FiniteDuration)
     extends RemoteMcpTools {
 
-  def this(serverUri: String) = this(serverUri, None, None, Seq.empty, Duration.Zero, Seq.empty, Seq.empty)
+  def this(serverUri: String) = this(serverUri, None, None, Seq.empty, Duration.Zero)
 
   override def withToolNameFilter(toolNameFilter: Predicate[String]): RemoteMcpTools =
     copy(toolNameFilter = Some(toolNameFilter))
@@ -53,9 +50,4 @@ final case class RemoteMcpToolsImpl(
   override def withTimeout(timeout: JDuration): RemoteMcpTools =
     copy(timeout = timeout.toScala)
 
-  override def withRequestGuardrails(guard: Guardrail, guards: Guardrail*): RemoteMcpTools =
-    copy(requestGuardrails = requestGuardrails :+ guard :++ guards)
-
-  override def withResponseGuardrails(guard: Guardrail, guards: Guardrail*): RemoteMcpTools =
-    copy(responseGuardrails = responseGuardrails :+ guard :++ guards)
 }
