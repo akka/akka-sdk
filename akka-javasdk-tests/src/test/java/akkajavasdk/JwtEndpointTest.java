@@ -41,6 +41,21 @@ public class JwtEndpointTest extends TestKitSupport {
     assertThat(call.body()).isEqualTo("issuer: my-issuer-123, subject: my-subject-123");
   }
 
+  // Note: env var set in sbt build
+  @Test
+  public void shouldAllowIssuerFromEnv() {
+    var token = bearerTokenWith(Map.of("iss", "issuer-from-env", "sub", "my-subject-123"));
+
+    StrictResponse<String> call =
+        httpClient
+            .GET("/hello")
+            .addHeader("Authorization", token)
+            .responseBodyAs(String.class)
+            .invoke();
+
+    assertThat(call.body()).isEqualTo("issuer: issuer-from-env, subject: my-subject-123");
+  }
+
   @Test
   public void shouldReturnForbidden() {
     var token = bearerTokenWith(Map.of("iss", "my-issuer-123"));

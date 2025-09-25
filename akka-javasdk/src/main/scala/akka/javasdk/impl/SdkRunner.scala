@@ -96,7 +96,6 @@ import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.timer.TimerScheduler
 import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
-import akka.javasdk.workflow.Workflow.RunnableStep
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi
 import akka.runtime.sdk.spi.AgentDescriptor
@@ -483,26 +482,8 @@ private final class Sdk(
           }
         }
 
-        // FIXME pull this inline setup stuff out of SdkRunner and into some workflow class
-        // would be good to run this code only once per workflow class, not every workflow interaction
-        val workflowStateType: Class[_] = Reflect.workflowStateType[S, W](workflow)
-        serializer.registerTypeHints(workflowStateType)
-
-        workflow
-          .definition()
-          .getSteps
-          .asScala
-          .flatMap {
-            case asyncCallStep: Workflow.AsyncCallStep[_, _, _] =>
-              if (asyncCallStep.transitionInputClass == null) List(asyncCallStep.callInputClass)
-              else List(asyncCallStep.callInputClass, asyncCallStep.transitionInputClass)
-            case callStep: Workflow.CallStep[_, _, _] =>
-              if (callStep.transitionInputClass == null) List(callStep.callInputClass)
-              else List(callStep.callInputClass, callStep.transitionInputClass)
-            case runnable: RunnableStep => List.empty
-          }
-          .foreach(serializer.registerTypeHints)
-
+        // need to run this each time because it depends on runtime Workflow.definitions
+        Reflect.workflowKnownInputTypes(workflow).foreach(serializer.registerTypeHints)
         workflow
       })
   }
@@ -618,6 +599,10 @@ private final class Sdk(
 
       case clz if Reflect.isWorkflow(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
+
+        // register known types
+        serializer.registerTypeHints(Reflect.workflowStateType(clz))
+        Reflect.workflowKnownInputTypes(clz)
 
         val readOnlyCommandNames =
           clz.getDeclaredMethods.collect {
@@ -950,8 +935,8 @@ private final class Sdk(
 
   private def mcpEndpointFactory[E](mcpEndpointClass: Class[E]): McpEndpointConstructionContext => E = {
     (context: McpEndpointConstructionContext) =>
-      // FIXME(tracing): add full telemetry context to McpRequestContext
-      val telemetryContext = context.openTelemetrySpan.map(OtelContext.root.`with`)
+
+      val telemetryContext = Option(context.telemetryContext)
 
       lazy val mcpRequestContext = new McpRequestContext {
         override def getPrincipals: Principals =

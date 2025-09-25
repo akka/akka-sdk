@@ -75,6 +75,8 @@ lazy val akkaJavaSdkTests =
       Test / fork := true,
       // for Jackson
       Test / javacOptions ++= Seq("-parameters"),
+      // for akkajavasdk.JwtEndpointTest
+      Test / envVars += "ISSUER_ENV_VALUE" -> "issuer-from-env",
       // only tests here
       publish / skip := true,
       publishTo := None,

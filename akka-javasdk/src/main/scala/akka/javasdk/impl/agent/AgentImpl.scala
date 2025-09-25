@@ -9,7 +9,9 @@ import java.time.Instant
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 import scala.jdk.CollectionConverters.SeqHasAsJava
+import scala.jdk.DurationConverters.JavaDurationOps
 import scala.util.control.NonFatal
 
 import akka.annotation.InternalApi
@@ -75,6 +77,7 @@ import akka.runtime.sdk.spi.SpiMetadata
 import akka.util.ByteString
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigException
+import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.LoggerFactory
@@ -167,9 +170,12 @@ private[impl] final class AgentImpl[A <: Agent](
   override def handleCommand(command: SpiAgent.Command): Future[SpiAgent.Effect] =
     Future {
 
-      // FIXME(tracing): add full telemetry context to SpiAgent.Command
-      val telemetryContext = command.span.map(OtelContext.root.`with`)
-      command.span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
+      val telemetryContext = Option(command.telemetryContext)
+      val traceId = telemetryContext.flatMap { context =>
+        Option(Span.fromContextOrNull(context)).map(_.getSpanContext.getTraceId)
+      }
+      traceId.foreach(id => MDC.put(Telemetry.TRACE_ID, id))
+
       // smuggling 0 arity methods called from the component client through here
       val cmdPayload = command.payload.getOrElse(BytesPayload.empty)
       val metadata: Metadata = MetadataImpl.of(command.metadata)
@@ -285,9 +291,7 @@ private[impl] final class AgentImpl[A <: Agent](
         case NonFatal(error) =>
           throw AgentException(command.name, s"Unexpected failure: $error", Some(error))
       } finally {
-        command.span.foreach { _ =>
-          MDC.remove(Telemetry.TRACE_ID)
-        }
+        if (traceId.isDefined) MDC.remove(Telemetry.TRACE_ID)
       }
 
     }(sdkExecutionContext)
@@ -321,7 +325,10 @@ private[impl] final class AgentImpl[A <: Agent](
                     sdkExecutionContext)
                 }
 
-          })
+          },
+          toolTimeout =
+            if (remoteMcp.timeout == Duration.Zero) None
+            else Some(remoteMcp.timeout))
       case other => throw new IllegalArgumentException(s"Unsupported remote mcp tools impl $other")
     }
 
@@ -448,14 +455,16 @@ private[impl] final class AgentImpl[A <: Agent](
           temperature = p.temperature,
           topP = p.topP,
           topK = p.topK,
-          maxTokens = p.maxTokens)
+          maxTokens = p.maxTokens,
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()))
       case p: ModelProvider.GoogleAIGemini =>
         new SpiAgent.ModelProvider.GoogleAIGemini(
           p.apiKey(),
           p.modelName(),
           p.temperature(),
           p.topP(),
-          p.maxOutputTokens())
+          p.maxOutputTokens(),
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()))
       case p: ModelProvider.HuggingFace =>
         new SpiAgent.ModelProvider.HuggingFace(
           p.accessToken(),
@@ -463,11 +472,17 @@ private[impl] final class AgentImpl[A <: Agent](
           p.baseUrl(),
           p.temperature(),
           p.topP(),
-          p.maxNewTokens())
+          p.maxNewTokens(),
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()))
       case p: ModelProvider.LocalAI =>
         new SpiAgent.ModelProvider.LocalAI(p.baseUrl(), p.modelName(), p.temperature(), p.topP(), p.maxTokens())
       case p: ModelProvider.Ollama =>
-        new SpiAgent.ModelProvider.Ollama(p.baseUrl(), p.modelName(), p.temperature(), p.topP())
+        new SpiAgent.ModelProvider.Ollama(
+          p.baseUrl(),
+          p.modelName(),
+          p.temperature(),
+          p.topP(),
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()))
       case p: ModelProvider.OpenAi =>
         new SpiAgent.ModelProvider.OpenAi(
           apiKey = p.apiKey,
@@ -476,7 +491,8 @@ private[impl] final class AgentImpl[A <: Agent](
           temperature = p.temperature,
           topP = p.topP,
           maxTokens = p.maxTokens,
-          maxCompletionTokens = p.maxCompletionTokens)
+          maxCompletionTokens = p.maxCompletionTokens,
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()))
       case p: ModelProvider.Custom =>
         new SpiAgent.ModelProvider.Custom(() => p.createChatModel(), () => p.createStreamingChatModel())
     }

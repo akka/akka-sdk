@@ -12,7 +12,7 @@ if [ $# -eq 0 ]; then
 else 
   export SDK_VERSION=$(sbt "print akka-javasdk/version" | tail -1)
   echo "SDK version: $SDK_VERSION"
-  sbt 'publishM2; +publishLocal'
+  sbt -Dakka.javasdk.no-discipline=true 'publishM2; +publishLocal'
 
   echo "------------------------------------------------------------------------"
   for i in "$@"
