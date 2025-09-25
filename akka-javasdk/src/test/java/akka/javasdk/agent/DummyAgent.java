@@ -5,11 +5,11 @@
 package akka.javasdk.agent;
 
 import akka.javasdk.annotations.AgentDescription;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.ComponentId;
 import java.util.List;
 
-@ComponentId("dummy1")
-@AgentDescription(name = "Dummy Agent", description = "Not very smart agent")
+@Component(id = "dummy1", name = "Dummy Agent", description = "Not very smart agent")
 class DummyAgent1 extends Agent {
   Effect<String> doSomething(String question) {
     return effects().systemMessage("You are a helpful...").userMessage(question).thenReply();
