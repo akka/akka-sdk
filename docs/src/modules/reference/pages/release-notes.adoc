@@ -12,6 +12,13 @@ Current versions
 
 == September 2025
 
+* https://github.com/akka/akka-sdk/releases/tag/v3.5.3[Akka SDK 3.5.3]
+- User configurable timeouts and retries for model and MCP
+- Environment variable configuration for bearer token issuer
+- Enhanced telemetry context for MCP endpoints and agent commands
+- Local cluster formation for testing failure scenarios
+- Helloworld agent Kotlin sample
+
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.2[Akka SDK 3.5.2]
 - Persist metadata together with event
 - Include json schema for the structured response
