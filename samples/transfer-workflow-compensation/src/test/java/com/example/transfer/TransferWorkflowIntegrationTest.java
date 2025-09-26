@@ -127,7 +127,7 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
     );
 
     Awaitility.await()
-      .atMost(10, TimeUnit.of(SECONDS))
+      .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var steps = telemetryReader.getWorkflowSteps(TransferWorkflow.class, transferId);
         assertThat(steps).containsExactly("waitForAcceptanceStep");

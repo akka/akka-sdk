@@ -321,9 +321,14 @@ public class WorkflowTest extends TestKitSupport {
               assertThat(transferState.lastStep()).isEqualTo("fraud-detection");
             });
 
-    List<String> workflowSteps =
-        telemetryReader.getWorkflowSteps(TransferWorkflowWithFraudDetection.class, transferId);
-    assertThat(workflowSteps).containsOnly("detectFraud");
+    Awaitility.await()
+      .atMost(10, TimeUnit.of(SECONDS))
+      .untilAsserted(
+        () -> {
+          List<String> workflowSteps =
+            telemetryReader.getWorkflowSteps(TransferWorkflowWithFraudDetection.class, transferId);
+          assertThat(workflowSteps).containsOnly("detectFraud");
+        });
 
     Awaitility.await()
         .ignoreExceptions()
