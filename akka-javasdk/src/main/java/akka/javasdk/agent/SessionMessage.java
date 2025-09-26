@@ -29,9 +29,17 @@ public sealed interface SessionMessage {
 
   String text();
 
-  record UserMessageMetadata(String modelProvider, String modelName, double temperature, double topP, int topK, int reqMaxTokens) {}
+  record UserMessageMetadata(
+      String modelProvider,
+      String modelName,
+      double temperature,
+      double topP,
+      int topK,
+      int reqMaxTokens) {}
 
-  record UserMessage(Instant timestamp, String text, String componentId, Optional<UserMessageMetadata> metadata) implements SessionMessage {
+  record UserMessage(
+      Instant timestamp, String text, String componentId, Optional<UserMessageMetadata> metadata)
+      implements SessionMessage {
 
     @Override
     public int size() {
@@ -41,14 +49,18 @@ public sealed interface SessionMessage {
 
   record ToolCallRequest(String id, String name, String arguments) {}
 
-  record AiMessageMetadata(String responseType, int inputTokenCount, int outputTokenCount) {
-  }
+  record AiMessageMetadata(String responseType, int inputTokenCount, int outputTokenCount) {}
 
   record AiMessage(
-      Instant timestamp, String text, String componentId, List<ToolCallRequest> toolCallRequests, Optional<AiMessageMetadata> metadata)
+      Instant timestamp,
+      String text,
+      String componentId,
+      List<ToolCallRequest> toolCallRequests,
+      Optional<AiMessageMetadata> metadata)
       implements SessionMessage {
 
-    public AiMessage(Instant timestamp, String text, String componentId, Optional<AiMessageMetadata> metadata) {
+    public AiMessage(
+        Instant timestamp, String text, String componentId, Optional<AiMessageMetadata> metadata) {
       this(timestamp, text, componentId, List.of(), metadata);
     }
 
