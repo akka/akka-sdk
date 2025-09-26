@@ -1,16 +1,5 @@
 package com.example.transfer;
 
-import akka.javasdk.testkit.TestKitSupport;
-import com.example.transfer.application.TransferWorkflow;
-import com.example.transfer.domain.TransferState;
-import com.example.transfer.domain.TransferState.Transfer;
-import com.example.wallet.application.WalletEntity;
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.Test;
-
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-
 import static akka.Done.done;
 import static com.example.transfer.domain.TransferState.TransferStatus.COMPENSATION_COMPLETED;
 import static com.example.transfer.domain.TransferState.TransferStatus.REQUIRES_MANUAL_INTERVENTION;
@@ -18,6 +7,16 @@ import static com.example.transfer.domain.TransferState.TransferStatus.TRANSFER_
 import static com.example.transfer.domain.TransferState.TransferStatus.WAITING_FOR_ACCEPTANCE;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+
+import akka.javasdk.testkit.TestKitSupport;
+import com.example.transfer.application.TransferWorkflow;
+import com.example.transfer.domain.TransferState;
+import com.example.transfer.domain.TransferState.Transfer;
+import com.example.wallet.application.WalletEntity;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Test;
 
 public class TransferWorkflowIntegrationTest extends TestKitSupport {
 
@@ -86,7 +85,11 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
         assertThat(balance2).isEqualTo(1101);
 
         var steps = telemetryReader.getWorkflowSteps(TransferWorkflow.class, transferId);
-        assertThat(steps).containsExactly("waitForAcceptanceStep", "withdrawStep", "depositStep");
+        assertThat(steps).containsExactly(
+          "waitForAcceptanceStep",
+          "withdrawStep",
+          "depositStep"
+        );
       });
   }
 
@@ -158,7 +161,13 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
         assertThat(balance1).isEqualTo(100);
 
         var steps = telemetryReader.getWorkflowSteps(TransferWorkflow.class, transferId);
-        assertThat(steps).containsExactly("withdrawStep", "depositStep", "depositStep", "depositStep", "compensateWithdrawStep");
+        assertThat(steps).containsExactly(
+          "withdrawStep",
+          "depositStep",
+          "depositStep",
+          "depositStep",
+          "compensateWithdrawStep"
+        );
       });
   }
 
@@ -184,7 +193,11 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
         assertThat(transferState.status()).isEqualTo(REQUIRES_MANUAL_INTERVENTION);
 
         var steps = telemetryReader.getWorkflowSteps(TransferWorkflow.class, transferId);
-        assertThat(steps).containsExactly("withdrawStep", "withdrawStep", "failoverHandlerStep");
+        assertThat(steps).containsExactly(
+          "withdrawStep",
+          "withdrawStep",
+          "failoverHandlerStep"
+        );
       });
   }
 
