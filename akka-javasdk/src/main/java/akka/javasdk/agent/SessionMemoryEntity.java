@@ -146,7 +146,12 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     record LimitedWindowSet(Instant timestamp, int maxSizeInBytes) implements Event {}
 
     @TypeName("akka-memory-user-message-added")
-    record UserMessageAdded(Instant timestamp, String componentId, String message, int sizeInBytes)
+    record UserMessageAdded(
+        Instant timestamp,
+        String componentId,
+        String message,
+        int sizeInBytes,
+        Optional<SessionMessage.UserMessageMetadata> metadata)
         implements Event {}
 
     @TypeName("akka-memory-ai-message-added")
@@ -156,12 +161,13 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
         String message,
         int sizeInBytes,
         long historySizeInBytes,
-        List<SessionMessage.ToolCallRequest> toolCallRequests)
+        List<SessionMessage.ToolCallRequest> toolCallRequests,
+        Optional<SessionMessage.AiMessageMetadata> metadata)
         implements Event {
 
       AiMessageAdded withHistorySizeInBytes(long newSize) {
         return new AiMessageAdded(
-            timestamp, componentId, message, sizeInBytes, newSize, toolCallRequests);
+            timestamp, componentId, message, sizeInBytes, newSize, toolCallRequests, metadata);
       }
     }
 
@@ -223,7 +229,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                                 aiMessage.text(),
                                 aiMessage.size(),
                                 0L, // filled in later
-                                aiMessage.toolCallRequests());
+                                aiMessage.toolCallRequests(),
+                                aiMessage.metadata());
 
                         case SessionMessage.ToolCallResponse toolCallResponse ->
                             new Event.ToolResponseMessageAdded(
@@ -245,7 +252,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
             cmd.userMessage.timestamp(),
             cmd.userMessage.componentId(),
             cmd.userMessage.text(),
-            cmd.userMessage.size());
+            cmd.userMessage.size(),
+            cmd.userMessage.metadata());
 
     List<Event> allEvents = new ArrayList<>();
     allEvents.add(userMessageEvent);
@@ -289,7 +297,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
             cmd.userMessage.timestamp(),
             componentId,
             cmd.userMessage.text(),
-            cmd.userMessage.size()));
+            cmd.userMessage.size(),
+            cmd.userMessage.metadata()));
     events.add(
         new Event.AiMessageAdded(
             cmd.aiMessage.timestamp(),
@@ -297,7 +306,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
             cmd.aiMessage.text(),
             cmd.aiMessage.size(),
             0L, // filled in later
-            Collections.emptyList()));
+            Collections.emptyList(),
+            cmd.aiMessage.metadata()));
 
     if (commandContext().sequenceNumber() > cmd.sequenceNumber
         && !currentState().messages.isEmpty()) {
@@ -314,7 +324,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                             userMessage.timestamp(),
                             userMessage.componentId(),
                             userMessage.text(),
-                            userMessage.size()));
+                            userMessage.size(),
+                            userMessage.metadata()));
                   }
 
                   case ToolCallResponse toolCallResponse -> {
@@ -336,7 +347,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                             aiMessage.text(),
                             aiMessage.size(),
                             0L, // filled in later
-                            aiMessage.toolCallRequests()));
+                            aiMessage.toolCallRequests(),
+                            aiMessage.metadata()));
                   }
                 }
               });
@@ -396,13 +408,21 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
       case Event.UserMessageAdded userMsg ->
           currentState()
               .addMessage(
-                  new UserMessage(userMsg.timestamp(), userMsg.message(), userMsg.componentId));
+                  new UserMessage(
+                      userMsg.timestamp(),
+                      userMsg.message(),
+                      userMsg.componentId,
+                      userMsg.metadata));
 
       case Event.AiMessageAdded aiMsg ->
           currentState()
               .addMessage(
                   new AiMessage(
-                      aiMsg.timestamp, aiMsg.message, aiMsg.componentId, aiMsg.toolCallRequests));
+                      aiMsg.timestamp,
+                      aiMsg.message,
+                      aiMsg.componentId,
+                      aiMsg.toolCallRequests,
+                      aiMsg.metadata));
 
       case Event.ToolResponseMessageAdded toolMsg ->
           currentState()
