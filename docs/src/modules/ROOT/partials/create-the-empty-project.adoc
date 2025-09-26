@@ -1,3 +1,24 @@
 == Create the empty project
 
-You already learned how to create an empty Akka project when you went through the guide to xref:getting-started:author-your-first-service.adoc#clone_sample[author your first service].
+. From a command line, use the Akka CLI to create a new project. See xref:quick-install-cli.adoc[installation instructions] if you haven't installed the CLI yet.
++
+[source, command line]
+----
+akka code init --name helloworld-agent --repo akka-samples/empty.git
+----
+
+. Navigate to the new project directory.
+
+. Open it in your preferred IDE / Editor.
+
+[sidebar]
+****
+Alternatively, you can clone the link:https://github.com/akka-samples/empty[GitHub Repository, window="new"] directly:
+
+[source, command line]
+----
+git clone https://github.com/akka-samples/empty.git --depth 1
+----
+
+Then navigate to the new project directory and open it in your preferred IDE / Editor.
+****
