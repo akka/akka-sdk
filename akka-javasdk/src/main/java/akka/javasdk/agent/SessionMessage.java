@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 /** Interface for message representation used inside SessionMemoryEntity state. */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "@type")
@@ -28,7 +29,9 @@ public sealed interface SessionMessage {
 
   String text();
 
-  record UserMessage(Instant timestamp, String text, String componentId) implements SessionMessage {
+  record UserMessageMetadata(String modelProvider, String modelName, double temperature, double topP, int topK, int reqMaxTokens) {}
+
+  record UserMessage(Instant timestamp, String text, String componentId, Optional<UserMessageMetadata> metadata) implements SessionMessage {
 
     @Override
     public int size() {
@@ -38,12 +41,15 @@ public sealed interface SessionMessage {
 
   record ToolCallRequest(String id, String name, String arguments) {}
 
+  record AiMessageMetadata(String responseType, int inputTokenCount, int outputTokenCount) {
+  }
+
   record AiMessage(
-      Instant timestamp, String text, String componentId, List<ToolCallRequest> toolCallRequests)
+      Instant timestamp, String text, String componentId, List<ToolCallRequest> toolCallRequests, Optional<AiMessageMetadata> metadata)
       implements SessionMessage {
 
-    public AiMessage(Instant timestamp, String text, String componentId) {
-      this(timestamp, text, componentId, List.of());
+    public AiMessage(Instant timestamp, String text, String componentId, Optional<AiMessageMetadata> metadata) {
+      this(timestamp, text, componentId, List.of(), metadata);
     }
 
     @Override

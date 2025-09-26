@@ -5,6 +5,7 @@
 package akka.javasdk.impl.agent
 
 import java.time.Instant
+import java.util.Optional
 
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
@@ -35,9 +36,11 @@ import akka.javasdk.agent.SessionHistory
 import akka.javasdk.agent.SessionMemory
 import akka.javasdk.agent.SessionMessage
 import akka.javasdk.agent.SessionMessage.AiMessage
+import akka.javasdk.agent.SessionMessage.AiMessageMetadata
 import akka.javasdk.agent.SessionMessage.ToolCallRequest
 import akka.javasdk.agent.SessionMessage.ToolCallResponse
 import akka.javasdk.agent.SessionMessage.UserMessage
+import akka.javasdk.agent.SessionMessage.UserMessageMetadata
 import akka.javasdk.agent.ToolCallExecutionException
 import akka.javasdk.agent.ToolCallLimitReachedException
 import akka.javasdk.agent.UnsupportedFeatureException
@@ -268,7 +271,7 @@ private[impl] final class AgentImpl[A <: Agent](
               responseMapping = req.responseMapping,
               failureMapping = req.failureMapping.map(mapSpiAgentException),
               replyMetadata = metadata,
-              onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, results))
+              onSuccess = results => onSuccess(sessionMemoryClient, req, results, spiModelProvider))
 
           case NoPrimaryEffect =>
             errorOrReply match {
@@ -360,8 +363,9 @@ private[impl] final class AgentImpl[A <: Agent](
 
   private def onSuccess(
       sessionMemoryClient: SessionMemory,
-      userMessage: String,
-      responses: Seq[SpiAgent.Response]): Unit = {
+      req: RequestModel,
+      responses: Seq[SpiAgent.Response],
+      spiModelProvider: SpiAgent.ModelProvider): Unit = {
 
     val timestamp = Instant.now()
 
@@ -372,7 +376,12 @@ private[impl] final class AgentImpl[A <: Agent](
           val requests = res.toolRequests.map { req =>
             new ToolCallRequest(req.id, req.name, req.arguments)
           }.asJava
-          new AiMessage(timestamp, res.content, componentId, requests)
+          new AiMessage(
+            timestamp,
+            res.content,
+            componentId,
+            requests,
+            Optional.of(new AiMessageMetadata(req.responseType.getName, res.inputTokenCount, res.outputTokenCount)))
 
         case res: SpiAgent.ToolCallResponse =>
           new ToolCallResponse(timestamp, componentId, res.id, res.name, res.content)
@@ -380,8 +389,28 @@ private[impl] final class AgentImpl[A <: Agent](
 
     sessionMemoryClient.addInteraction(
       sessionId,
-      new UserMessage(timestamp, userMessage, componentId),
+      new UserMessage(timestamp, req.userMessage, componentId, toUserMetadata(spiModelProvider)),
       responseMessages.asJava)
+  }
+
+  private def toUserMetadata(spiModelProvider: SpiAgent.ModelProvider): Optional[UserMessageMetadata] = {
+    spiModelProvider match {
+      case m: SpiAgent.ModelProvider.Anthropic =>
+        Optional.of(new UserMessageMetadata("anthropic", m.modelName, m.temperature, m.topP, m.topK, m.maxTokens))
+      case m: SpiAgent.ModelProvider.OpenAi =>
+        Optional.of(new UserMessageMetadata("openai", m.modelName, m.temperature, m.topP, -1, m.maxTokens))
+      case m: SpiAgent.ModelProvider.Ollama =>
+        Optional.of(new UserMessageMetadata("ollama", m.modelName, m.temperature, m.topP, -1, -1))
+      case m: SpiAgent.ModelProvider.GoogleAIGemini =>
+        Optional.of(
+          new UserMessageMetadata("googleai-gemini", m.modelName, m.temperature, m.topP, -1, m.maxOutputTokens))
+      case m: SpiAgent.ModelProvider.HuggingFace =>
+        Optional.of(new UserMessageMetadata("hugging-face", m.modelId, m.temperature, m.topP, -1, m.maxNewTokens))
+      case m: SpiAgent.ModelProvider.LocalAI =>
+        Optional.of(new UserMessageMetadata("local-ai", m.modelName, m.temperature, m.topP, -1, m.maxTokens))
+      case m: SpiAgent.ModelProvider.Custom =>
+        Optional.of(new UserMessageMetadata("custom", m.modelName, m.temperature, Double.NaN, -1, -1))
+    }
   }
 
   private def toSpiContextMessages(sessionHistory: SessionHistory): Vector[SpiAgent.ContextMessage] = {
