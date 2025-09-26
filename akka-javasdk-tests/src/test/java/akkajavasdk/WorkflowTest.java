@@ -104,6 +104,16 @@ public class WorkflowTest extends TestKitSupport {
               assertThat(lastStep).isEqualTo("logAndStop");
             });
 
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(5, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              List<String> workflowSteps =
+                  telemetryReader.getWorkflowSteps(TransferWorkflow.class, transferId);
+              assertThat(workflowSteps).containsOnly("withdraw-step", "deposit-step", "logAndStop");
+            });
+
     var isDeleted =
         componentClient.forWorkflow(transferId).method(TransferWorkflow::hasBeenDeleted).invoke();
     assertThat(isDeleted).isFalse();
@@ -312,6 +322,15 @@ public class WorkflowTest extends TestKitSupport {
             });
 
     Awaitility.await()
+      .atMost(10, TimeUnit.of(SECONDS))
+      .untilAsserted(
+        () -> {
+          List<String> workflowSteps =
+            telemetryReader.getWorkflowSteps(TransferWorkflowWithFraudDetection.class, transferId);
+          assertThat(workflowSteps).containsOnly("detectFraud");
+        });
+
+    Awaitility.await()
         .ignoreExceptions()
         .atMost(20, TimeUnit.of(SECONDS))
         .untilAsserted(
@@ -335,6 +354,18 @@ public class WorkflowTest extends TestKitSupport {
 
               assertThat(balance1).isEqualTo(99000);
               assertThat(balance2).isEqualTo(101000);
+            });
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(20, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              List<String> workflowStepsAfterAcceptation =
+                  telemetryReader.getWorkflowSteps(
+                      TransferWorkflowWithFraudDetection.class, transferId);
+              assertThat(workflowStepsAfterAcceptation)
+                  .containsOnly("detectFraud", "withdraw", "deposit");
             });
   }
 
