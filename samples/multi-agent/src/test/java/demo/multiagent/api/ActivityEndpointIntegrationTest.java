@@ -1,5 +1,7 @@
 package demo.multiagent.api;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import akka.http.javadsl.model.StatusCodes;
 import akka.javasdk.JsonSupport;
 import akka.javasdk.testkit.TestKit;
@@ -14,13 +16,10 @@ import demo.multiagent.application.WeatherAgent;
 import demo.multiagent.domain.AgentSelection;
 import demo.multiagent.domain.Plan;
 import demo.multiagent.domain.PlanStep;
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.Test;
-
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Test;
 
 public class ActivityEndpointIntegrationTest extends TestKitSupport {
 
@@ -109,10 +108,22 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
         assertThat(suggestion.answer()).contains("bike tour");
 
         var steps = telemetryReader.getWorkflowSteps(debugId);
-        assertThat(steps).containsOnly("select-agents", "create-plan", "execute-plan", "execute-plan", "summarize");
+        assertThat(steps).containsOnly(
+          "select-agents",
+          "create-plan",
+          "execute-plan",
+          "execute-plan",
+          "summarize"
+        );
 
         var tools = telemetryReader.getAgents(debugId);
-        assertThat(tools).containsOnly("selector-agent", "planner-agent", "weather-agent", "activity-agent", "summarizer-agent");
+        assertThat(tools).containsOnly(
+          "selector-agent",
+          "planner-agent",
+          "weather-agent",
+          "activity-agent",
+          "summarizer-agent"
+        );
       });
 
     // 4. Add preference that invalidates previous suggestion
@@ -150,7 +161,6 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
 
         assertThat(telemetryReader.getAgents(nextDebugId)).containsOnly("evaluator-agent");
       });
-
   }
 
   private void setupInitialModelResponses() {
