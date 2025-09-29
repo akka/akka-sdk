@@ -128,7 +128,7 @@ Here's a simple example:
 
 [source,java]
 ----
-@ComponentId("customers-view")
+@Component(id = "customers-view")
 public class CustomerView extends View {
 
   @Consume.FromKeyValueEntity(CustomerEntity.class)

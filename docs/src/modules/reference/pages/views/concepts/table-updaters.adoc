@@ -17,7 +17,7 @@ A Table Updater is defined as a static inner class inside your View:
 
 [source,java]
 ----
-@ComponentId("customer-view")
+@Component(id = "customer-view")
 public class CustomerView extends View {
 
   @Table("customers") // Optional table name
@@ -214,7 +214,7 @@ A single View can define multiple Table Updaters to create a view with multiple 
 
 [source,java]
 ----
-@ComponentId("shop-view")
+@Component(id = "shop-view")
 public class ShopView extends View {
 
   @Table("customers")

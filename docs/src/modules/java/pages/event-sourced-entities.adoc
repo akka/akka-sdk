@@ -91,10 +91,10 @@ The class signature for our shopping cart entity will look like this:
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tag=class]
 ----
 <1> Create a class that extends `EventSourcedEntity<S, E>`, where `S` is the state type this entity will store (i.e. `ShoppingCart`) and `E` is the top type for the events it persists (i.e. `ShoppingCartEvent`).
-<2> Make sure to annotate such class with `@ComponentId` and pass a stable unique identifier for this entity type.
+<2> Make sure to annotate such class with `@Component` and pass a stable unique identifier for this entity type.
 
 
-NOTE: The `@ComponentId` value `shopping-cart` is common for all instances of this entity but must be stable - cannot be changed after a production deploy - and unique across the different entity types in the service.
+NOTE: The `@Component` value `shopping-cart` is common for all instances of this entity but must be stable - cannot be changed after a production deploy - and unique across the different entity types in the service.
 
 === Updating state
 
