@@ -75,7 +75,7 @@ public class ViewTestModels {
   }
 
   @Table("users")
-  public static class ViewWithoutComponentIdAnnotation extends View {
+  public static class ViewWithoutComponentAnnotation extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
     public static class UserUpdater extends TableUpdater<User> {}
@@ -87,7 +87,7 @@ public class ViewTestModels {
   }
 
   @Component(id = " ")
-  public static class ViewWithEmptyComponentIdAnnotation extends View {
+  public static class ViewWithEmptyComponentAnnotation extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
     public static class UserUpdater extends TableUpdater<User> {}
@@ -99,7 +99,7 @@ public class ViewTestModels {
   }
 
   @Component(id = "oh|my|pipe")
-  public static class ViewWithPipeyComponentIdAnnotation extends View {
+  public static class ViewWithPipeyComponentAnnotation extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
     public static class UserUpdater extends TableUpdater<User> {}
