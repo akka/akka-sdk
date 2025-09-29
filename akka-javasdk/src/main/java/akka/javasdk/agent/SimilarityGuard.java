@@ -4,8 +4,6 @@
 
 package akka.javasdk.agent;
 
-import com.typesafe.config.Config;
-
 /**
  * The SimilarityGuard evaluates the text by making a similarity search in a dataset of "bad
  * examples". If the similarity exceeds a threshold, the result is flagged as blocked.
@@ -14,9 +12,9 @@ public final class SimilarityGuard implements Guardrail {
   private final String badExamplesResourceDir;
   private final double threshold;
 
-  public SimilarityGuard(Config config) {
-    this.badExamplesResourceDir = config.getString("bad-examples-resource-dir");
-    this.threshold = config.getDouble("threshold");
+  public SimilarityGuard(GuardrailContext context) {
+    this.badExamplesResourceDir = context.config().getString("bad-examples-resource-dir");
+    this.threshold = context.config().getDouble("threshold");
   }
 
   public double threshold() {

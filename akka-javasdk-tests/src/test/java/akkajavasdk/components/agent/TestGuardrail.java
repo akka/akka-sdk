@@ -5,13 +5,13 @@
 package akkajavasdk.components.agent;
 
 import akka.javasdk.agent.Guardrail;
-import com.typesafe.config.Config;
+import akka.javasdk.agent.GuardrailContext;
 
 public class TestGuardrail implements Guardrail {
   private final String searchFor;
 
-  public TestGuardrail(Config config) {
-    this.searchFor = config.getString("search-for");
+  public TestGuardrail(GuardrailContext context) {
+    this.searchFor = context.config().getString("search-for");
   }
 
   @Override

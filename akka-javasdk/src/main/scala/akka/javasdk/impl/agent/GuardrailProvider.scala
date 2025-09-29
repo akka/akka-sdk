@@ -10,6 +10,7 @@ import scala.util.Failure
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Guardrail
+import akka.javasdk.agent.GuardrailContext
 import akka.javasdk.agent.SimilarityGuard
 import akka.javasdk.impl.agent.ConfiguredGuardrail.UseFor
 import akka.runtime.sdk.spi.SpiAgent
@@ -99,15 +100,16 @@ import com.typesafe.config.Config
   }
 
   private def createGuardrail(c: ConfiguredGuardrail): Guardrail = {
+    val guardrailContext = new GuardrailContextImpl(c.name, c.config)
     system.dynamicAccess
-      .createInstanceFor[Guardrail](c.implementationClass, (classOf[Config] -> c.config) :: Nil)
+      .createInstanceFor[Guardrail](c.implementationClass, (classOf[GuardrailContext] -> guardrailContext) :: Nil)
       .recoverWith { case _: ClassNotFoundException | _: NoSuchMethodException =>
         system.dynamicAccess.createInstanceFor[Guardrail](c.implementationClass, Nil)
       }
       .recoverWith { case _: ClassNotFoundException | _: NoSuchMethodException =>
         Failure(
           new IllegalArgumentException(s"Guardrail [${c.name}] must implement [${classOf[Guardrail].getName}] and " +
-          s"optionally have a constructor with Config parameter"))
+          s"optionally have a constructor with GuardrailContext parameter"))
       }
       .get
   }

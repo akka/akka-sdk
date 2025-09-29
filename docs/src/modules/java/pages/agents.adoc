@@ -710,7 +710,7 @@ akka.javasdk.agent.guardrails {
 }
 ----
 <1> Each configured guardrail has a unique name.
-<2> Implementation class of the guardrail, must implement `akka.javasdk.agent.Guardrail`. The class may optionally have a constructor with a `Config` parameter, which is the config section for the specific guardrail.
+<2> Implementation class of the guardrail, must implement `akka.javasdk.agent.Guardrail`. The class may optionally have a constructor with a `akka.javasdk.agent.GuardrailContext` parameter, which includes the config section for the specific guardrail.
 <3> Enable this guardrail for agents with these component ids.
 <4> Enable this guardrail for agents with these roles.
 <5> The type of validation, such as JAILBREAK, PROMPT_INJECTION, PII, TOXIC, HALLUCINATED, NSFW, FORMAT.
