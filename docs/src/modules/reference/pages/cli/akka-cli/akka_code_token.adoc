@@ -1,15 +1,19 @@
-= akka code
+= akka code token
 
-Develop Akka services
+The token command allow you to provision a resolver for Akka dependency downloads.
 
 == Synopsis
 
-The 'code' command provides tools for developing Akka services, including AI assistance configuration and Akka samples downloading.
+The `akka code token` command helps you to provision a resolver for downloading Akka dependencies.
+
+----
+akka code token [flags]
+----
 
 == Options
 
 ----
-  -h, --help   help for code
+  -h, --help   help for token
 ----
 
 == Options inherited from parent commands
@@ -30,9 +34,7 @@ The 'code' command provides tools for developing Akka services, including AI ass
 
 == SEE ALSO
 
-* link:akka.html[akka]	 - Akka control
-* link:akka_code_init.html[akka code init]	 - Initialize a new Akka SDK project.
-* link:akka_code_token.html[akka code token]	 - The token command allow you to provision a resolver for Akka dependency downloads.
+* link:akka_code.html[akka code]	 - Develop Akka services
 
 [discrete]
 
