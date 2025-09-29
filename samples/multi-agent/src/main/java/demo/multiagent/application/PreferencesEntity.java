@@ -1,13 +1,13 @@
 package demo.multiagent.application;
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import demo.multiagent.domain.Preferences;
 import demo.multiagent.domain.PreferencesEvent;
 import java.util.List;
 
-@ComponentId("preferences")
+@Component(id = "preferences")
 public class PreferencesEntity extends EventSourcedEntity<Preferences, PreferencesEvent> {
 
   public record AddPreference(String preference) {}

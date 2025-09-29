@@ -10,7 +10,7 @@ import static java.util.function.Function.identity;
 import akka.Done;
 import akka.javasdk.CommandException;
 import akka.javasdk.Metadata;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akkajavasdk.Result;
 import akkajavasdk.components.MyException;
@@ -18,7 +18,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ComponentId("counter-entity")
+@Component(id = "counter-entity")
 public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
   public static String META_KEY = "test-key";
 

@@ -1,13 +1,13 @@
 package com.example.transfer.application;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.DeleteHandler;
 import akka.javasdk.consumer.Consumer;
 import com.example.transfer.domain.TransferState;
 
 // tag::workflow-consumer[]
-@ComponentId("transfer-state-consumer")
+@Component(id = "transfer-state-consumer")
 @Consume.FromWorkflow(TransferWorkflow.class) // <1>
 public class TransferStateConsumer extends Consumer {
 

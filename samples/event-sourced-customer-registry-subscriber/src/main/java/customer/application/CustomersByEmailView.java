@@ -1,6 +1,6 @@
 package customer.application;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 
 // tag::view[]
 
-@ComponentId("customers-by-email")
+@Component(id = "customers-by-email")
 public class CustomersByEmailView extends View {
 
   // end::view[]

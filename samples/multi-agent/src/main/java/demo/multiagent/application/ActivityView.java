@@ -1,6 +1,6 @@
 package demo.multiagent.application;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.DeleteHandler;
 import akka.javasdk.annotations.Query;
@@ -8,7 +8,7 @@ import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
 import java.util.List;
 
-@ComponentId("activity-view")
+@Component(id = "activity-view")
 public class ActivityView extends View {
 
   public record ActivityEntries(List<ActivityEntry> entries) {}

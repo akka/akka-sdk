@@ -42,9 +42,9 @@ import akka.javasdk.JsonSupport;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.annotations.AgentDescription;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 
-@ComponentId("selector-agent")
+@Component(id = "selector-agent")
 @AgentDescription(
     name = "Selector Agent",
     description = """
@@ -120,7 +120,7 @@ Add the `@AgentDescription` to the `WeatherAgent`:
 
 [WeatherAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/WeatherAgent.java)
 ```java
-@ComponentId("weather-agent")
+@Component(id = "weather-agent")
 @AgentDescription(
     name = "Weather Agent",
     description = """
@@ -135,7 +135,7 @@ Add the `@AgentDescription` to the `ActivityAgent`:
 
 [ActivityAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/ActivityAgent.java)
 ```java
-@ComponentId("activity-agent")
+@Component(id = "activity-agent")
 @AgentDescription(
   name = "Activity Agent",
   description = """
@@ -158,11 +158,11 @@ import akka.javasdk.JsonSupport;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.annotations.AgentDescription;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 
 import java.util.List;
 
-@ComponentId("planner-agent")
+@Component(id = "planner-agent")
 @AgentDescription(
     name = "Planner",
     description = """
@@ -296,7 +296,7 @@ Update the `AgentTeamWorkflow` to this:
 [AgentTeamWorkflow.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java)
 ```java
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.client.DynamicMethodRef;
 import akka.javasdk.workflow.Workflow;
@@ -309,7 +309,7 @@ import java.util.Map;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 
-@ComponentId("agent-team")
+@Component(id = "agent-team")
 public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // (1)
   public record Request(String userId, String message) {
   }
@@ -565,12 +565,12 @@ This also ends the workflow by creating a summary of the results from the involv
 ```java
 import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.AgentDescription;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-@ComponentId("summarizer-agent")
+@Component(id = "summarizer-agent")
 @AgentDescription(
     name = "Summarizer",
     description = "An agent that creates a summary from responses provided by other agents")

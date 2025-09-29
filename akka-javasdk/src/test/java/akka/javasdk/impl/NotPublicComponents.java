@@ -4,7 +4,7 @@
 
 package akka.javasdk.impl;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.consumer.Consumer;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
@@ -18,21 +18,21 @@ import akka.javasdk.workflow.Workflow;
 // need to be in the same package as the corresponding test
 public class NotPublicComponents {
 
-  @ComponentId("not-public")
+  @Component(id = "not-public")
   static class NotPublicAction extends TimedAction {
     public Effect message() {
       return effects().done();
     }
   }
 
-  @ComponentId("not-public")
+  @Component(id = "not-public")
   static class NotPublicConsumer extends Consumer {
     public Effect message() {
       return effects().ignore();
     }
   }
 
-  @ComponentId("counter")
+  @Component(id = "counter")
   static class NotPublicEventSourced
       extends EventSourcedEntity<Integer, NotPublicEventSourced.Event> {
 
@@ -51,14 +51,14 @@ public class NotPublicComponents {
     }
   }
 
-  @ComponentId("user")
+  @Component(id = "user")
   static class NotPublicValueEntity extends KeyValueEntity<User> {
     public KeyValueEntity.Effect<String> ok() {
       return effects().reply("ok");
     }
   }
 
-  @ComponentId("transfer-workflow")
+  @Component(id = "transfer-workflow")
   static class NotPublicWorkflow extends Workflow<WorkflowState> {
     @Override
     public WorkflowDef<WorkflowState> definition() {

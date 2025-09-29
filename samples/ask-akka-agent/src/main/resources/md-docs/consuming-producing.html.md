@@ -39,7 +39,7 @@ You can consume event from an Event Sourced Entity by adding `@Consume.FromEvent
 
 [CounterEventsConsumer.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-counter-brokers/src/main/java/counter/application/CounterEventsConsumer.java)
 ```java
-@ComponentId("counter-events-consumer") // (1)
+@Component(id = "counter-events-consumer") // (1)
 @Consume.FromEventSourcedEntity(CounterEntity.class) // (2)
 public class CounterEventsConsumer extends Consumer { // (3)
 
@@ -71,7 +71,7 @@ You can consume state changes from a Key Value Entity. To receive messages with 
 
 [ShoppingCartConsumer.java](https://github.com/akka/akka-sdk/blob/main/samples/key-value-shopping-cart/src/main/java/com/example/application/ShoppingCartConsumer.java)
 ```java
-@ComponentId("shopping-cart-consumer")
+@Component(id = "shopping-cart-consumer")
 @Consume.FromKeyValueEntity(ShoppingCartEntity.class) // (1)
 public class ShoppingCartConsumer extends Consumer {
 
@@ -98,7 +98,7 @@ You can consume state changes from a Workflow. To receive messages with the stat
 
 [TransferStateConsumer.java](https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow/src/main/java/com/example/transfer/application/TransferStateConsumer.java)
 ```java
-@ComponentId("transfer-state-consumer")
+@Component(id = "transfer-state-consumer")
 @Consume.FromWorkflow(TransferWorkflow.class) // (1)
 public class TransferStateConsumer extends Consumer {
 
@@ -138,7 +138,7 @@ To illustrate how to publish entity events, let’s assume the existence of a `C
 
 [CustomerEvents.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-customer-registry/src/main/java/customer/api/CustomerEvents.java)
 ```java
-@ComponentId("customer-events-service")
+@Component(id = "customer-events-service")
 @Consume.FromEventSourcedEntity(CustomerEntity.class) // (1)
 @Produce.ServiceStream(id = "customer_events") // (2)
 @Acl(allow = @Acl.Matcher(service = "*")) // (3)
@@ -168,7 +168,7 @@ The consuming side can be a Consumer or a View, annotated with `@Consume.FromStr
 
 [CustomersByNameView.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-customer-registry-subscriber/src/main/java/customer/application/CustomersByNameView.java)
 ```java
-@ComponentId("customers-by-name")
+@Component(id = "customers-by-name")
 public class CustomersByNameView extends View {
 
   @Consume.FromServiceStream( // (1)
@@ -217,7 +217,7 @@ In the following example the events from the topic are delivered to the Consumer
 
 [CounterEventsTopicConsumer.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-counter-brokers/src/main/java/counter/application/CounterEventsTopicConsumer.java)
 ```java
-@ComponentId("counter-events-topic-consumer")
+@Component(id = "counter-events-topic-consumer")
 @Consume.FromTopic(value = "counter-events") // (1)
 public class CounterEventsTopicConsumer extends Consumer {
 
@@ -283,7 +283,7 @@ Producing to a topic is the same as producing to a stream in service to service 
 |  | To guarantee that events for each entity can be read from the message broker in the same order they were written, the cloud event subject id must be specified in metadata along with the event. See how to in [Metadata](about:blank#_metadata) below. |
 [CounterJournalToTopicConsumer.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-counter-brokers/src/main/java/counter/application/CounterJournalToTopicConsumer.java)
 ```java
-@ComponentId("counter-journal-to-topic")
+@Component(id = "counter-journal-to-topic")
 @Consume.FromEventSourcedEntity(CounterEntity.class) // (1)
 @Produce.ToTopic("counter-events") // (2)
 public class CounterJournalToTopicConsumer extends Consumer {
@@ -322,7 +322,7 @@ Using metadata is also possible when producing messages to a topic or a stream. 
 
 [CounterJournalToTopicWithMetaConsumer.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-counter-brokers/src/main/java/counter/application/CounterJournalToTopicWithMetaConsumer.java)
 ```java
-@ComponentId("counter-journal-to-topic-with-meta")
+@Component(id = "counter-journal-to-topic-with-meta")
 @Consume.FromEventSourcedEntity(CounterEntity.class)
 @Produce.ToTopic("counter-events-with-meta")  // (1)
 public class CounterJournalToTopicWithMetaConsumer extends Consumer {

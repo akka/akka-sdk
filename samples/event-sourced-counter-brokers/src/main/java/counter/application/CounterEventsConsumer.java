@@ -1,6 +1,6 @@
 package counter.application;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.consumer.Consumer;
 import counter.domain.CounterEvent;
@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // tag::ese-consumer[]
-@ComponentId("counter-events-consumer") // <1>
+@Component(id = "counter-events-consumer") // <1>
 @Consume.FromEventSourcedEntity(CounterEntity.class) // <2>
 public class CounterEventsConsumer extends Consumer { // <3>
 

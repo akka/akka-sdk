@@ -4,12 +4,12 @@
 
 package com.example;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 
 interface Outer {
 
-  @ComponentId("nested-event-sourced")
+  @Component(id = "nested-event-sourced")
   class NestedEventSourcedEntity
       extends EventSourcedEntity<NestedEventSourcedEntity.State, NestedEventSourcedEntity.Event> {
 

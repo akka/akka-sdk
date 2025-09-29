@@ -5,11 +5,11 @@ import akka.javasdk.JsonSupport;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.annotations.AgentDescription;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import demo.multiagent.domain.AgentSelection;
 
 // tag::class[]
-@ComponentId("selector-agent")
+@Component(id = "selector-agent")
 @AgentDescription(
   name = "Selector Agent",
   description = """

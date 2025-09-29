@@ -1,6 +1,6 @@
 package shoppingcart.application;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
@@ -11,7 +11,7 @@ import java.util.Optional;
 import shoppingcart.domain.ShoppingCartEvent;
 
 // tag::view[]
-@ComponentId("shopping-cart-view")
+@Component(id = "shopping-cart-view")
 public class ShoppingCartView extends View {
 
   @Query("SELECT * FROM shopping_carts WHERE cartId = :cartId") // <1>

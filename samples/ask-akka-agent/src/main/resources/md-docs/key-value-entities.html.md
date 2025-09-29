@@ -73,7 +73,7 @@ The class signature for our counter entity will look like this:
 
 [CounterEntity.java](https://github.com/akka/akka-sdk/blob/main/samples/key-value-counter/src/main/java/com/example/application/CounterEntity.java)
 ```java
-@ComponentId("counter") // (1)
+@Component(id = "counter") // (1)
 public class CounterEntity extends KeyValueEntity<Counter> { // (2)
 
   private final String entityId;

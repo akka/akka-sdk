@@ -4,7 +4,7 @@
 
 package akkajavasdk.components.views.user;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.DeleteHandler;
 import akka.javasdk.annotations.Query;
@@ -14,7 +14,7 @@ import akkajavasdk.components.keyvalueentities.user.User;
 import akkajavasdk.components.keyvalueentities.user.UserEntity;
 import java.util.List;
 
-@ComponentId("users_by_name")
+@Component(id = "users_by_name")
 public class UsersByName extends View {
 
   @Consume.FromKeyValueEntity(value = UserEntity.class)

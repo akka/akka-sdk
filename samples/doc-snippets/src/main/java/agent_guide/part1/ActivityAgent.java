@@ -2,9 +2,9 @@ package agent_guide.part1;
 
 // tag::all[]
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 
-@ComponentId("activity-agent") // <1>
+@Component(id = "activity-agent") // <1>
 public class ActivityAgent extends Agent { // <2>
 
   private static final String SYSTEM_MESSAGE =

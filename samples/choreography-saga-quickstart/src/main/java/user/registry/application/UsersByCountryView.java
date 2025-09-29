@@ -1,6 +1,6 @@
 package user.registry.application;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
@@ -15,7 +15,7 @@ import user.registry.domain.UserEvent.UserWasCreated;
 /**
  * A View to query users by country.
  */
-@ComponentId("users-by-country")
+@Component(id = "users-by-country")
 public class UsersByCountryView extends View {
 
   private static Logger logger = LoggerFactory.getLogger(UsersByCountryView.class);

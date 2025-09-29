@@ -4,11 +4,11 @@
 
 package com.example;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
 
-@ComponentId("simple-view")
+@Component(id = "simple-view")
 public class SimpleView extends View {
 
   public static class TheTable extends TableUpdater<String> {}

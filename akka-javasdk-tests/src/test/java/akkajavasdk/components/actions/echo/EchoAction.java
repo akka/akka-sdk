@@ -4,14 +4,14 @@
 
 package akkajavasdk.components.actions.echo;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.timedaction.TimedAction;
 import akkajavasdk.StaticTestBuffer;
 import java.util.List;
 import java.util.concurrent.Executor;
 
-@ComponentId("echo")
+@Component(id = "echo")
 public class EchoAction extends TimedAction {
 
   private boolean constructedOnVt = Thread.currentThread().isVirtual();

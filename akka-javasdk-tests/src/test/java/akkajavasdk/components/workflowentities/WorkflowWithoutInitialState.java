@@ -4,10 +4,10 @@
 
 package akkajavasdk.components.workflowentities;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.workflow.Workflow;
 
-@ComponentId("workflow-without-initial-state")
+@Component(id = "workflow-without-initial-state")
 public class WorkflowWithoutInitialState extends Workflow<String> {
 
   public Effect<String> start() {

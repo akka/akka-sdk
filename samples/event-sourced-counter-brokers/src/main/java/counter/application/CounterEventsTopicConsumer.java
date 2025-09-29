@@ -1,6 +1,6 @@
 package counter.application;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.consumer.Consumer;
 import counter.domain.CounterEvent.ValueIncreased;
@@ -9,7 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // tag::topic-consumer[]
-@ComponentId("counter-events-topic-consumer")
+@Component(id = "counter-events-topic-consumer")
 @Consume.FromTopic(value = "counter-events") // <1>
 public class CounterEventsTopicConsumer extends Consumer {
 

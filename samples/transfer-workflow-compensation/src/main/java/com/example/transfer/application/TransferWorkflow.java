@@ -11,7 +11,7 @@ import static com.example.transfer.domain.TransferState.TransferStatus.WITHDRAW_
 import static java.time.Duration.ofHours;
 import static java.time.Duration.ofSeconds;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import com.example.transfer.domain.TransferState;
@@ -25,7 +25,7 @@ import com.example.wallet.domain.WalletCommand.Withdraw;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ComponentId("transfer") // <1>
+@Component(id = "transfer") // <1>
 public class TransferWorkflow extends Workflow<TransferState> {
 
   private static final Logger logger = LoggerFactory.getLogger(TransferWorkflow.class);

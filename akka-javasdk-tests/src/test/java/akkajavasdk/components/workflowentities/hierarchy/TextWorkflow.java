@@ -4,10 +4,10 @@
 
 package akkajavasdk.components.workflowentities.hierarchy;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import java.util.Optional;
 
-@ComponentId("hierarchy-workflow")
+@Component(id = "hierarchy-workflow")
 public class TextWorkflow extends AbstractTextKvWorkflow {
 
   public Effect<String> setText(String text) {

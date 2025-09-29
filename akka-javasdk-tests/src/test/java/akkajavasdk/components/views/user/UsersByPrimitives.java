@@ -4,7 +4,7 @@
 
 package akkajavasdk.components.views.user;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
@@ -13,7 +13,7 @@ import akkajavasdk.components.keyvalueentities.user.User;
 import akkajavasdk.components.keyvalueentities.user.UserEntity;
 import java.util.List;
 
-@ComponentId("users_by_primitives")
+@Component(id = "users_by_primitives")
 public class UsersByPrimitives extends View {
 
   @Consume.FromKeyValueEntity(UserEntity.class)

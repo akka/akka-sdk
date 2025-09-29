@@ -4,19 +4,19 @@
 
 package akka.javasdk.testmodels.action;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.timedaction.TimedAction;
 
 public class ActionsTestModels {
 
-  @ComponentId("test-action-0")
+  @Component(id = "test-action-0")
   public static class ActionWithoutParam extends TimedAction {
     public Effect message() {
       return effects().done();
     }
   }
 
-  @ComponentId("test-action-1")
+  @Component(id = "test-action-1")
   public static class ActionWithOneParam extends TimedAction {
     public Effect message(String one) {
       return effects().done();

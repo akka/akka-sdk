@@ -1,6 +1,6 @@
 package store.order.view.nested;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.annotations.Table;
@@ -15,7 +15,7 @@ import store.order.view.model.Product;
 import store.product.application.ProductEntity;
 import store.product.domain.ProductEvent;
 
-@ComponentId("nested-customer-orders")
+@Component(id = "nested-customer-orders")
 public class NestedCustomerOrdersView extends View {
 
   @Query( // <1>

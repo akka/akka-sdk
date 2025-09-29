@@ -1,9 +1,9 @@
 package patterns;
 
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 
-@ComponentId("traffic-agent")
+@Component(id = "traffic-agent")
 public class TrafficAgent extends Agent {
 
   private static final String SYSTEM_MESSAGE =

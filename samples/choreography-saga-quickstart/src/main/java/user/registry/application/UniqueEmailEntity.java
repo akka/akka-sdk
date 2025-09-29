@@ -3,7 +3,7 @@ package user.registry.application;
 import static akka.Done.done;
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.keyvalueentity.KeyValueEntityContext;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -27,7 +27,7 @@ import user.registry.domain.UniqueEmail;
  * <p>
  * If, while creating a user, the email address is already reserved, the user creation fails.
  */
-@ComponentId("unique-address")
+@Component(id = "unique-address")
 public class UniqueEmailEntity extends KeyValueEntity<UniqueEmail> {
 
   private final String address;

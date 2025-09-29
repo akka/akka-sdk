@@ -1,12 +1,12 @@
 package com.example.application;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.keyvalueentity.KeyValueEntityContext;
 import com.example.domain.ShoppingCart;
 import java.time.Instant;
 
-@ComponentId("shopping-cart")
+@Component(id = "shopping-cart")
 public class ShoppingCartEntity extends KeyValueEntity<ShoppingCart> {
 
   @SuppressWarnings("unused")

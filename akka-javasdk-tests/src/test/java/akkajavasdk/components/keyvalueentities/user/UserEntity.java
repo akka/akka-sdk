@@ -6,7 +6,7 @@ package akkajavasdk.components.keyvalueentities.user;
 
 import akka.javasdk.CommandException;
 import akka.javasdk.Metadata;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akkajavasdk.Ok;
 import akkajavasdk.components.MyException;
@@ -14,7 +14,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ComponentId("user")
+@Component(id = "user")
 public class UserEntity extends KeyValueEntity<User> {
   public static String META_KEY = "test-key";
 

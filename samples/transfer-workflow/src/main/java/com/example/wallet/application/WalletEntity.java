@@ -3,7 +3,7 @@ package com.example.wallet.application;
 import static akka.Done.done;
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import com.example.wallet.domain.Wallet;
 import com.example.wallet.domain.WalletEvent;
@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // tag::wallet[]
-@ComponentId("wallet")
+@Component(id = "wallet")
 public class WalletEntity extends EventSourcedEntity<Wallet, WalletEvent> {
 
   // end::wallet[]

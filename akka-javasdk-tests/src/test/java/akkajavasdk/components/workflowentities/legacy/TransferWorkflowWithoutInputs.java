@@ -4,7 +4,7 @@
 
 package akkajavasdk.components.workflowentities.legacy;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import akkajavasdk.components.actions.echo.Message;
@@ -14,7 +14,7 @@ import akkajavasdk.components.workflowentities.WalletEntity;
 
 // This is a compiler only test. Its logic is not being exercised.
 // TODO: can be removed after deprecation cycle of Step API
-@ComponentId("transfer-workflow-without-inputs-legacy")
+@Component(id = "transfer-workflow-without-inputs-legacy")
 public class TransferWorkflowWithoutInputs extends Workflow<TransferState> {
 
   private final String withdrawStepName = "withdraw";

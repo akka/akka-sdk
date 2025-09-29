@@ -86,7 +86,7 @@ public class Knowledge {
 
 [AskAkkaAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/ask-akka-agent/src/main/java/akka/ask/agent/application/AskAkkaAgent.java)
 ```java
-@ComponentId("ask-akka-agent")
+@Component(id = "ask-akka-agent")
 @AgentDescription(name = "Ask Akka", description = "Expert in Akka")
 public class AskAkkaAgent extends Agent {
   private final Knowledge knowledge;

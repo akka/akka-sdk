@@ -37,7 +37,7 @@ import java.util.concurrent.CompletionStage;
  * <p><b>Example usage:</b>
  *
  * <pre>{@code
- * @ComponentId("counter-events-consumer")
+ * @Component(id = "counter-events-consumer")
  * @Consume.FromEventSourcedEntity(CounterEntity.class)
  * public class CounterEventsConsumer extends Consumer {
  *

@@ -1,13 +1,13 @@
 package com.example.application;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.DeleteHandler;
 import akka.javasdk.consumer.Consumer;
 import com.example.domain.ShoppingCart;
 
 // tag::kve-consumer[]
-@ComponentId("shopping-cart-consumer")
+@Component(id = "shopping-cart-consumer")
 @Consume.FromKeyValueEntity(ShoppingCartEntity.class) // <1>
 public class ShoppingCartConsumer extends Consumer {
 

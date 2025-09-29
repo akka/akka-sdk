@@ -2,7 +2,7 @@ package customer.application;
 
 // tag::class[]
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
@@ -10,7 +10,7 @@ import akka.javasdk.view.View;
 import customer.domain.Customer;
 import java.util.List;
 
-@ComponentId("customers-by-email") // <1>
+@Component(id = "customers-by-email") // <1>
 public class CustomersByEmail extends View { // <2>
 
   public record Customers(List<Customer> customers) {}

@@ -4,11 +4,11 @@
 
 package akkajavasdk.components.keyvalueentities.user;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.keyvalueentity.KeyValueEntityContext;
 
-@ComponentId("stage-counter")
+@Component(id = "stage-counter")
 public class StageCounterEntity extends KeyValueEntity<Integer> {
   private final String entityId;
 

@@ -4,14 +4,14 @@
 
 package akkajavasdk.components.keyvalueentities.customer;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akkajavasdk.Ok;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
-@ComponentId("customer")
+@Component(id = "customer")
 public class CustomerEntity extends KeyValueEntity<CustomerEntity.Customer> {
 
   public record Customer(String name, Instant createdOn) {}

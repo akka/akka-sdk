@@ -4,10 +4,10 @@
 
 package com.example;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 
-@ComponentId("simple-event-sourced")
+@Component(id = "simple-event-sourced")
 public class SimpleEventSourcedEntity
     extends EventSourcedEntity<SimpleEventSourcedEntity.State, SimpleEventSourcedEntity.Event> {
 

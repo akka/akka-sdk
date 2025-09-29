@@ -1,6 +1,6 @@
 package customer.application;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.consumer.Consumer;
 import customer.domain.Customer;
@@ -10,7 +10,7 @@ import customer.domain.CustomerEvent.CustomerCreated;
 import customer.domain.CustomerEvent.NameChanged;
 
 // tag::idempotent-update[]
-@ComponentId("customer-store-updater")
+@Component(id = "customer-store-updater")
 @Consume.FromEventSourcedEntity(CustomerEntity.class)
 public class CustomerStoreUpdater extends Consumer {
 

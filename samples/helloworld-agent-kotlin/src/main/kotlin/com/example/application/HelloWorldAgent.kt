@@ -3,7 +3,7 @@ package com.example.application
 import akka.javasdk.agent.Agent
 import akka.javasdk.annotations.ComponentId
 
-@ComponentId("hello-world-agent")
+@Component(id = "hello-world-agent")
 class HelloWorldAgent : Agent() {
 
     companion object {
