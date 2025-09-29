@@ -3,14 +3,14 @@ package customer.application;
 // tag::customer[]
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import customer.domain.Address;
 import customer.domain.Customer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ComponentId("customer") // <1>
+@Component(id = "customer") // <1>
 public class CustomerEntity extends KeyValueEntity<Customer> { // <4>
 
   private static final Logger logger = LoggerFactory.getLogger(CustomerEntity.class);

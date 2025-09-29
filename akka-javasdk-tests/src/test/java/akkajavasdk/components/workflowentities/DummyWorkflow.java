@@ -4,10 +4,10 @@
 
 package akkajavasdk.components.workflowentities;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.workflow.Workflow;
 
-@ComponentId("dummy-workflow")
+@Component(id = "dummy-workflow")
 public class DummyWorkflow extends Workflow<Integer> {
 
   public Effect<String> startAndFinish() {

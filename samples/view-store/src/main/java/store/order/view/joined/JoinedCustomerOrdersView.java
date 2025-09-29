@@ -1,6 +1,6 @@
 package store.order.view.joined;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.annotations.Table;
@@ -16,7 +16,7 @@ import store.order.view.model.Product;
 import store.product.application.ProductEntity;
 import store.product.domain.ProductEvent;
 
-@ComponentId("joined-customer-orders") // <1>
+@Component(id = "joined-customer-orders") // <1>
 public class JoinedCustomerOrdersView extends View {
 
   @Table("customers")

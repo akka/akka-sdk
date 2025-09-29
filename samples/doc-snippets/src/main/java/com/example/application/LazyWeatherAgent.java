@@ -1,12 +1,12 @@
 package com.example.application;
 
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.FunctionTool;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-@ComponentId("lazy-weather-agent")
+@Component(id = "lazy-weather-agent")
 public class LazyWeatherAgent extends Agent {
 
   record AgentResponse() {}

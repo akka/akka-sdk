@@ -8,7 +8,7 @@ import static com.example.transfer.domain.TransferState.TransferStatus.WITHDRAW_
 import static java.time.Duration.ofHours;
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.StepName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
@@ -23,7 +23,7 @@ import com.example.transfer.domain.TransferState;
  * For other aspects like error handling, retry strategy, compensation
  * @see <a href="https://doc.akka.io/java/workflows.html#_error_handling">documentation</a>.
  */
-@ComponentId("transfer-workflow")
+@Component(id = "transfer-workflow")
 public class TransferWorkflow extends Workflow<TransferState> {
 
   private final WalletService walletService;

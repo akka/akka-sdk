@@ -998,13 +998,13 @@ public class TestKit {
     }
     return null;
   }
+
   /**
    * Get incoming messages for Workflow.
    *
    * @param componentId As annotated with @ComponentId on the EventSourcedEntity
    * @deprecated use {@link #getWorkflowIncomingMessages(Class)} instead.
    */
-
   @Deprecated(since = "3.4.2", forRemoval = true)
   public IncomingMessages getWorkflowIncomingMessages(String componentId) {
     if (!settings.mockedEventing.hasWorkflowSubscription(componentId)) {

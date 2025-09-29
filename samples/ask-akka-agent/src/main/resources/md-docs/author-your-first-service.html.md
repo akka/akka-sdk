@@ -97,7 +97,7 @@ The *Agent* is implemented with:
 
 HelloWorldAgent.java
 ```java
-@ComponentId("hello-world-agent")
+@Component(id = "hello-world-agent")
 public class HelloWorldAgent extends Agent {
 
  private static final String SYSTEM_MESSAGE =

@@ -1,7 +1,7 @@
 package demo.multiagent.application;
 
 // tag::all[]
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.consumer.Consumer;
@@ -9,7 +9,7 @@ import demo.multiagent.domain.PreferencesEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ComponentId("preferences-consumer")
+@Component(id = "preferences-consumer")
 @Consume.FromEventSourcedEntity(PreferencesEntity.class) // <1>
 public class PreferencesConsumer extends Consumer { // <2>
 

@@ -4,7 +4,7 @@
 
 package akkajavasdk.components.workflowentities;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import akkajavasdk.components.actions.echo.Message;
@@ -12,7 +12,7 @@ import akkajavasdk.components.workflowentities.FraudDetectionResult.TransferReje
 import akkajavasdk.components.workflowentities.FraudDetectionResult.TransferRequiresManualAcceptation;
 import akkajavasdk.components.workflowentities.FraudDetectionResult.TransferVerified;
 
-@ComponentId("transfer-workflow-with-fraud-detection")
+@Component(id = "transfer-workflow-with-fraud-detection")
 public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> {
 
   private final ComponentClient componentClient;

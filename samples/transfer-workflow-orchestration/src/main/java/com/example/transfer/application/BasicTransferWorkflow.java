@@ -1,6 +1,6 @@
 package com.example.transfer.application;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.StepName;
 import akka.javasdk.workflow.Workflow;
 import com.example.transfer.domain.Transfer;
@@ -11,7 +11,7 @@ import com.example.transfer.domain.Transfer;
  * <p>
  * For a more advanced example, see {@link TransferWorkflow}.
  */
-@ComponentId("basic-transfer-workflow")
+@Component(id = "basic-transfer-workflow")
 public class BasicTransferWorkflow extends Workflow<Transfer> {
 
   private final WalletService accountService;

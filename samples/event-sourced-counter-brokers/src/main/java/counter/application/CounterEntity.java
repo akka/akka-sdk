@@ -5,13 +5,13 @@ import static counter.domain.CounterEvent.ValueMultiplied;
 import static java.util.function.Function.identity;
 
 import akka.javasdk.CommandException;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import counter.domain.CounterEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ComponentId("counter")
+@Component(id = "counter")
 public class CounterEntity extends EventSourcedEntity<Integer, CounterEvent> {
 
   private Logger logger = LoggerFactory.getLogger(CounterEntity.class);

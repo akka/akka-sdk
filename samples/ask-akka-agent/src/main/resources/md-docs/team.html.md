@@ -37,7 +37,7 @@ Our workflow should first retrieve the weather forecast and then find suitable a
 AgentTeamWorkflow.java
 ```java
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import org.slf4j.Logger;
@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 
-@ComponentId("agent-team")
+@Component(id = "agent-team")
 public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
   private static final Logger logger = LoggerFactory.getLogger(AgentTeamWorkflow.class);
 

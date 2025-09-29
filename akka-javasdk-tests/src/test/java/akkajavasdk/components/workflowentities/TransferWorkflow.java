@@ -8,7 +8,7 @@ import static akka.Done.done;
 
 import akka.Done;
 import akka.javasdk.CommandException;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.StepName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
@@ -18,7 +18,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ComponentId("transfer-workflow")
+@Component(id = "transfer-workflow")
 public class TransferWorkflow extends Workflow<TransferState> {
 
   private final String withdrawStepName = "withdraw";

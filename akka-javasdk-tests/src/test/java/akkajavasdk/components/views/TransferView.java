@@ -4,7 +4,7 @@
 
 package akkajavasdk.components.views;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.DeleteHandler;
 import akka.javasdk.annotations.Query;
@@ -14,7 +14,7 @@ import akkajavasdk.components.workflowentities.TransferState;
 import akkajavasdk.components.workflowentities.TransferWorkflow;
 import java.util.Collection;
 
-@ComponentId("transfer-view")
+@Component(id = "transfer-view")
 public class TransferView extends View {
 
   public record TransferEntry(String id, boolean finished) {}

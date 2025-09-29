@@ -6,12 +6,12 @@ package akkajavasdk.components.workflowentities;
 
 import static java.time.Duration.ofSeconds;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import akkajavasdk.components.actions.echo.Message;
 
-@ComponentId("workflow-with-default-recover-strategy")
+@Component(id = "workflow-with-default-recover-strategy")
 public class WorkflowWithDefaultRecoverStrategy extends Workflow<FailingCounterState> {
 
   private final ComponentClient componentClient;

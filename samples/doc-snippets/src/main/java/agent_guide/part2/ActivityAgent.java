@@ -2,11 +2,11 @@ package agent_guide.part2;
 
 // tag::all[]
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import java.util.stream.Collectors;
 
-@ComponentId("activity-agent")
+@Component(id = "activity-agent")
 public class ActivityAgent extends Agent {
 
   public record Request(String userId, String message) {}

@@ -7,7 +7,7 @@ package akka.javasdk.agent;
 import static akka.Done.done;
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.TypeName;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import java.util.Optional;
@@ -28,7 +28,7 @@ import java.util.Optional;
  * <p><strong>Change Monitoring:</strong> You can subscribe to prompt template changes using a
  * Consumer to build views or react to prompt updates.
  */
-@ComponentId("akka-prompt-template")
+@Component(id = "akka-prompt-template")
 public final class PromptTemplate
     extends EventSourcedEntity<PromptTemplate.Prompt, PromptTemplate.Event> {
 

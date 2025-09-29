@@ -5,9 +5,9 @@
 package akkajavasdk.components.agent;
 
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 
-@ComponentId("some-agent-with-bad-tool")
+@Component(id = "some-agent-with-bad-tool")
 public class SomeAgentWithBadlyConfiguredTool extends Agent {
 
   public static class WeatherServiceWithAnnotation {

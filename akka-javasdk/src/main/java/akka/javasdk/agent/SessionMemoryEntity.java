@@ -12,7 +12,7 @@ import akka.javasdk.agent.SessionMemoryEntity.State;
 import akka.javasdk.agent.SessionMessage.AiMessage;
 import akka.javasdk.agent.SessionMessage.ToolCallResponse;
 import akka.javasdk.agent.SessionMessage.UserMessage;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.TypeName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
@@ -56,7 +56,7 @@ import org.slf4j.LoggerFactory;
  * akka.javasdk.consumer.Consumer} to monitor session activity, implement custom analytics, or
  * trigger compaction when memory usage exceeds thresholds.
  */
-@ComponentId("akka-session-memory")
+@Component(id = "akka-session-memory")
 public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> {
 
   private static final Logger log = LoggerFactory.getLogger(SessionMemoryEntity.class);

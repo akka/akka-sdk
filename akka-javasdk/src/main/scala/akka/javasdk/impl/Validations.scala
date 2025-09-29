@@ -7,9 +7,7 @@ package akka.javasdk.impl
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
-
 import scala.reflect.ClassTag
-
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
 import akka.javasdk.annotations.AgentDescription
@@ -49,6 +47,8 @@ import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
+
+import scala.annotation.nowarn
 
 /**
  * INTERNAL API
@@ -577,6 +577,7 @@ private[javasdk] object Validations {
   }
 
   @SuppressWarnings(Array("deprecation"))
+  @nowarn("cat=deprecation")
   private def mustHaveValidComponentId(component: Class[_]): Validation = {
     // Check for new Component annotation first
     val componentAnn = component.getAnnotation(classOf[Component])

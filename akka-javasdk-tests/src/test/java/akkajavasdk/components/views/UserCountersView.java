@@ -4,7 +4,7 @@
 
 package akkajavasdk.components.views;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.annotations.Table;
@@ -19,7 +19,7 @@ import akkajavasdk.components.keyvalueentities.user.UserEntity;
 import akkajavasdk.components.views.user.UserWithId;
 import java.util.Optional;
 
-@ComponentId("user-counters")
+@Component(id = "user-counters")
 public class UserCountersView extends View {
 
   public record QueryParameters(String userId) {}

@@ -4,9 +4,9 @@
 
 package akka.javasdk.eventsourcedentity;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 
-@ComponentId("es")
+@Component(id = "es")
 public class TestEventSourcedEntity extends EventSourcedEntity<TestESState, TestESEvent> {
 
   @Override

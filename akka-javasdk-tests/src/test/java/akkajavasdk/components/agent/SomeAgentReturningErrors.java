@@ -6,10 +6,10 @@ package akkajavasdk.components.agent;
 
 import akka.javasdk.CommandException;
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akkajavasdk.components.MyException;
 
-@ComponentId("some-agent-returning-errors")
+@Component(id = "some-agent-returning-errors")
 public class SomeAgentReturningErrors extends Agent {
 
   public Effect<String> run(String errorType) {

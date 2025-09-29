@@ -5,9 +5,9 @@
 package akkajavasdk.components.agent;
 
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 
-@ComponentId("some-agent-accepting-int")
+@Component(id = "some-agent-accepting-int")
 public class SomeAgentAcceptingInt extends Agent {
   public record SomeResponse(String response) {}
 

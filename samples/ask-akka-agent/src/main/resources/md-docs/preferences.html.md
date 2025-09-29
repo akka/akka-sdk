@@ -36,12 +36,12 @@ Add a new file `PreferencesEntity.java` to `src/main/java/com/example/applicatio
 PreferencesEntity.java
 ```java
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 
 import java.util.List;
 
-@ComponentId("preferences") // (2)
+@Component(id = "preferences") // (2)
 public class PreferencesEntity
     extends EventSourcedEntity<Preferences, PreferencesEvent> { // (1)
 
@@ -116,12 +116,12 @@ To use the preferences in the `ActivityAgent` we need to inject the component cl
 ActivityAgent.java
 ```java
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 
 import java.util.stream.Collectors;
 
-@ComponentId("activity-agent")
+@Component(id = "activity-agent")
 public class ActivityAgent extends Agent {
 
   public record Request(String userId, String message) {}

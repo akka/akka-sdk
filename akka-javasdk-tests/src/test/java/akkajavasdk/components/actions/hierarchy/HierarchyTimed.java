@@ -4,10 +4,10 @@
 
 package akkajavasdk.components.actions.hierarchy;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akkajavasdk.StaticTestBuffer;
 
-@ComponentId("hierarchy-action")
+@Component(id = "hierarchy-action")
 public class HierarchyTimed extends AbstractTimed {
   public Effect stringMessage(String msg) {
     StaticTestBuffer.addValue("hierarchy-action", msg);

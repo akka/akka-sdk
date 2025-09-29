@@ -137,7 +137,7 @@ To go with our domain data and our events, we have an entity named `ShoppingCart
 package shoppingcart.application;
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import org.slf4j.Logger;
@@ -148,7 +148,7 @@ import shoppingcart.domain.ShoppingCartEvent;
 
 import java.util.Collections;
 
-@ComponentId("shopping-cart") // (2)
+@Component(id = "shopping-cart") // (2)
 public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, ShoppingCartEvent> { // (1)
 }
 ```

@@ -4,10 +4,10 @@
 
 package akkajavasdk.components.keyvalueentities.hierarchy;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 
-@ComponentId("kv-hierarchy-text-consumer")
+@Component(id = "kv-hierarchy-text-consumer")
 @Consume.FromKeyValueEntity(value = TextKvEntity.class)
 public class TextKvConsumer extends AbstractTextConsumer {
 

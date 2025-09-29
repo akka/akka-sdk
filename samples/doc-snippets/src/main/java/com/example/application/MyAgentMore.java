@@ -3,10 +3,10 @@ package com.example.application;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.MemoryProvider;
 import akka.javasdk.agent.ModelProvider;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 
 public interface MyAgentMore {
-  @ComponentId("my-agent")
+  @Component(id = "my-agent")
   public class MyAgentWithModel extends Agent {
 
     // tag::model[]
@@ -26,7 +26,7 @@ public interface MyAgentMore {
     // end::model[]
   }
 
-  @ComponentId("my-agent-memory")
+  @Component(id = "my-agent-memory")
   public class MyAgentNoMemory extends Agent {
 
     // tag::no-memory[]
@@ -40,7 +40,7 @@ public interface MyAgentMore {
     // end::no-memory[]
   }
 
-  @ComponentId("my-agent-readlast")
+  @Component(id = "my-agent-readlast")
   public class MyAgentReadLastMemory extends Agent {
 
     // tag::read-last[]

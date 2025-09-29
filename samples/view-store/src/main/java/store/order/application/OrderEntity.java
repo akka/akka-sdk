@@ -3,12 +3,12 @@ package store.order.application;
 import static akka.Done.done;
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import java.time.Instant;
 import store.order.domain.Order;
 
-@ComponentId("order")
+@Component(id = "order")
 public class OrderEntity extends KeyValueEntity<Order> {
 
   public ReadOnlyEffect<Order> get() {
