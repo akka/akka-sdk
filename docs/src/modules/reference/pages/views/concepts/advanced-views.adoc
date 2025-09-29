@@ -12,7 +12,7 @@ Multiple tables are defined by creating multiple `TableUpdater` classes within a
 
 [source,java]
 ----
-@ComponentId("shop-view")
+@Component(id = "shop-view")
 public class ShopView extends View {
 
   @Table("customers")
@@ -320,7 +320,7 @@ View with multiple tables:
 
 [source,java]
 ----
-@ComponentId("shop-view")
+@Component(id = "shop-view")
 public class ShopView extends View {
 
   @Table("customers")

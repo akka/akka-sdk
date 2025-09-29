@@ -2,6 +2,28 @@
 
 include::ROOT:partial$include.adoc[]
 
+== SDK 3.5.4
+
+
+## Migrating from @Component to @Component
+
+The `@Component` annotation is now deprecated in favor of the new `@Component` annotation. To migrate your codebase:
+
+1. **Replace usages of `@Component`**:
+- Remove the `@Component("your-id")` annotation from your component classes.
+- Add the `@Component` annotation, specifying the required `id` and optionally `name` and `description` fields:
+```java
+@Component(id = "your-id", name = "Your Name", description = "Description")
+public class YourComponent { ... }
+```
+
+2. **Update imports**:
+- Change `import akka.javasdk.annotations.ComponentId;` to `import akka.javasdk.annotations.Component;`
+
+3. **Test backward compatibility**:
+- The framework will continue to support `@Component` for backward compatibility, but new features and improvements will only be available with `@Component`.
+
+
 == SDK 3.3.0
 
 This release introduces support for Java 21 virtual threads across all user component and endpoint logic. As a result, it is now safe to perform blocking I/O operations without occupying underlying OS threads.
