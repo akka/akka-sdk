@@ -6,7 +6,7 @@ package akka.javasdk.agent;
 
 public interface Guardrail {
 
-  record Result(boolean passed, String reason) {}
+  record Result(boolean passed, String explanation) {}
 
   /**
    * Thrown when the text didn't pass the evaluation criteria, and {@code abortExecution} is true.

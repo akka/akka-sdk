@@ -42,7 +42,7 @@ import com.typesafe.config.Config
 
     override def evaluate(text: String): Future[SpiAgent.Guardrail.Result] = {
       val result = guardrail.evaluate(text)
-      Future.successful(new SpiAgent.Guardrail.Result(result.passed, result.reason))
+      Future.successful(new SpiAgent.Guardrail.Result(result.passed, result.explanation))
     }
 
     override val name: String =

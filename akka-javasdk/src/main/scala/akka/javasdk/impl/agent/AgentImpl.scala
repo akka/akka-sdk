@@ -434,7 +434,7 @@ private[impl] final class AgentImpl[A <: Agent](
               new McpToolCallExecutionException(exc.getMessage, reason.toolName, reason.endpoint, exc.cause)
 
             case reason: GuardrailFailure =>
-              new Guardrail.GuardrailException(reason.reason)
+              new Guardrail.GuardrailException(reason.explanation)
 
             // this is expected to be a JsonParsingException, we give it as is to users
             case OutputParsingFailure => exc.cause
