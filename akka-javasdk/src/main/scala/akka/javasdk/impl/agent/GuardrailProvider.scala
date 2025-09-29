@@ -4,9 +4,6 @@
 
 package akka.javasdk.impl.agent
 
-import java.util.Locale
-
-import scala.concurrent.Future
 import scala.concurrent.Future
 import scala.util.Failure
 
@@ -14,10 +11,7 @@ import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Guardrail
 import akka.javasdk.agent.SimilarityGuard
-import akka.javasdk.impl.ApplicationConfig
 import akka.javasdk.impl.agent.ConfiguredGuardrail.UseFor
-import akka.runtime.sdk.spi.SpiAgent
-import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAgent
 import com.typesafe.config.Config
 
@@ -76,7 +70,7 @@ import com.typesafe.config.Config
 @InternalApi private[javasdk] class GuardrailProvider(system: ActorSystem[_], applicationConfig: Config) {
   import GuardrailProvider._
 
-  private lazy val configuredGuardrails = {
+  lazy val configuredGuardrails: Seq[ConfiguredGuardrail] = {
     GuardrailSettings(applicationConfig.getConfig("akka.javasdk.agent.guardrails")).configuredGuardrails
   }
 

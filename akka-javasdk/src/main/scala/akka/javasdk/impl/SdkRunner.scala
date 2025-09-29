@@ -67,6 +67,7 @@ import akka.javasdk.impl.Validations.Validation
 import akka.javasdk.impl.agent.AgentImpl
 import akka.javasdk.impl.agent.AgentImpl.AgentContextImpl
 import akka.javasdk.impl.agent.AgentRegistryImpl
+import akka.javasdk.impl.agent.ConfiguredGuardrail
 import akka.javasdk.impl.agent.GuardrailProvider
 import akka.javasdk.impl.agent.OverrideModelProvider
 import akka.javasdk.impl.agent.PromptTemplateClient
@@ -110,9 +111,11 @@ import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.RemoteIdentification
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiComponents
+import akka.runtime.sdk.spi.SpiConfiguredGuardrail
 import akka.runtime.sdk.spi.SpiDevModeSettings
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
+import akka.runtime.sdk.spi.SpiGuardrailReport
 import akka.runtime.sdk.spi.SpiMockedEventingSettings
 import akka.runtime.sdk.spi.SpiServiceInfo
 import akka.runtime.sdk.spi.SpiSettings
@@ -527,6 +530,8 @@ private final class Sdk(
   private var viewDescriptors = Vector.empty[ViewDescriptor]
   private var agentDescriptors = Vector.empty[AgentDescriptor]
   private var agentRegistryInfo = Vector.empty[AgentRegistryImpl.AgentDetails]
+  // guardrail name => component ids
+  private var guardrailEnabledForComponent = Map.empty[String, Set[String]]
 
   componentClasses
     .filter(hasComponentId)
@@ -682,6 +687,12 @@ private final class Sdk(
         val agentClass = clz.asInstanceOf[Class[Agent]]
 
         val agentGuardrails = guardrailProvider.agentGuardrails(componentId, agentDescription.map(_.role))
+        agentGuardrails.entries.foreach { entry =>
+          val guardrailName = entry.configuredGuardrail.name
+          guardrailEnabledForComponent = guardrailEnabledForComponent.updated(
+            guardrailName,
+            guardrailEnabledForComponent.getOrElse(guardrailName, Set.empty) + componentId)
+        }
 
         val instanceFactory: SpiAgent.FactoryContext => SpiAgent = { factoryContext =>
           new AgentImpl(
@@ -844,6 +855,16 @@ private final class Sdk(
       SdkRunner.FutureDone
     }
 
+    val guardrailReport = new SpiGuardrailReport(guardrailProvider.configuredGuardrails.map { g =>
+      new SpiConfiguredGuardrail(
+        name = g.name,
+        implementationClass = g.implementationClass,
+        enabledForComponents = guardrailEnabledForComponent.getOrElse(g.name, Set.empty),
+        reportOnly = g.reportOnly,
+        useFor = g.useFor.map(_.toString),
+        config = g.config)
+    })
+
     new SpiComponents(
       serviceInfo = new SpiServiceInfo(
         serviceName = serviceNameOverride.orElse(sdkSettings.devModeSettings.map(_.serviceName)).getOrElse(""),
@@ -852,6 +873,7 @@ private final class Sdk(
         protocolMajorVersion = BuildInfo.protocolMajorVersion,
         protocolMinorVersion = BuildInfo.protocolMinorVersion),
       componentDescriptors = descriptors,
+      guardrailReport,
       preStart = preStart,
       onStart = onStart,
       reportError = reportError,
