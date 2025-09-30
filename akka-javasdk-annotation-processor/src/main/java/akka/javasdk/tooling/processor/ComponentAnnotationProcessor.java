@@ -206,7 +206,7 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
           throw new IllegalArgumentException(
               "Unknown supertype for class ["
                   + annotatedClass
-                  + "] annotated with @ComponentId: ["
+                  + "] annotated with @Component or @ComponentId: ["
                   + superClassName
                   + "]");
       default ->
