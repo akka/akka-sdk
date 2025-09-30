@@ -159,12 +159,14 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
         assertThat(updatedAnswer).contains("indoor");
         assertThat(updatedAnswer).doesNotContain("bike tour");
 
-        assertThat(telemetryReader.getAgents(nextDebugId)).containsOnly("evaluator-agent",
+        assertThat(telemetryReader.getAgents(nextDebugId)).containsOnly(
+          "evaluator-agent",
           "selector-agent",
           "planner-agent",
           "weather-agent",
           "activity-agent",
-          "summarizer-agent");
+          "summarizer-agent"
+        );
       });
   }
 
