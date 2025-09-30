@@ -685,7 +685,7 @@ Guardrails can protect against harmful inputs, such as jailbreak attempts, and d
 
 A specific guardrail implements the link:_attachments/api/akka/javasdk/agent/Guardrail.html[`Guardrail` interface]. It takes the input or output text as a parameter and a result if it passed the validation or not, including an explanation of why the decision was made. These results are included in metrics and traces. A guardrail can abort the interaction with the model, or only report the problem and continue anyway.
 
-Guardrails are enabled by configuration, to be able to enforce at an enterprise level that certain guardrails are always used.
+Guardrails are enabled by configuration, to be able to enforce at deployment time that certain guardrails are always used.
 
 [source,conf,indent=0]
 ----
@@ -717,18 +717,20 @@ akka.javasdk.agent.guardrails {
 <6> Where to use the guardrail, such as for the model request or model response.
 <7> If it didn't pass the evaluation criteria, the execution can either be aborted or continue anyway. In both cases, the result is tracked in logs, metrics and traces.
 
-The implementation class of the guardrail is configured with the `class` property. The class must implement the link:_attachments/api/akka/javasdk/agent/Guardrail.html[`Guardrail` interface]. The class may optionally have a constructor with an link:_attachments/api/akka/javasdk/agent/GuardrailContext.html[`GuardrailContext`] parameter, which includes the name and the config section for the specific guardrail.
+The implementation class of the guardrail is configured with the `class` property. The class must implement the link:_attachments/api/akka/javasdk/agent/Guardrail.html[`Guardrail` interface]. The class may optionally have a constructor with a link:_attachments/api/akka/javasdk/agent/GuardrailContext.html[`GuardrailContext`] parameter, which includes the name and the config section for the specific guardrail.
 
 Agents are selected by matching `agent` or `agent-role` configuration.
 
 * `agents`: enabled for agents with these component ids, if `agents` contain `"*"` the guardrail is enabled for all agents
 * `agent-roles`: enabled for agents with these roles, if agent-roles contain `"*"` the guardrail is enabled for all agents that has a role, but not for agents without a role
 
+If both `agents` and `agent-roles` are defined it's enough that one of them matches to enable the guardrail for an agent.
+
 This role is defined in the `@AgentDescription` annotation.
 
 The name and the category are reported in logs, metrics and traces. The `category` should classify the type of validation. It can be any value, but a few recommended categories are JAILBREAK, PROMPT_INJECTION, PII, TOXIC, HALLUCINATED, NSFW, FORMAT.
 
-The guardrail can be enabled for certain inputs or outputs with the `use-for` property. Possible values are `model-request`, `model-response`, `mcp-tool-request`, `mcp-tool-response`, `all`.
+The guardrail can be enabled for certain inputs or outputs with the `use-for` property. Possible values are `model-request`, `model-response`, `mcp-tool-request`, `mcp-tool-response`, `*`.
 
 === Guardrail of similar text
 

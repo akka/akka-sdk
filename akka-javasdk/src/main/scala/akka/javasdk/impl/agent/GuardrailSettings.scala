@@ -73,7 +73,7 @@ import com.typesafe.config.ConfigObject
         case "model-response"    => UseFor.ModelResponse :: Nil
         case "mcp-tool-request"  => UseFor.McpToolRequest :: Nil
         case "mcp-tool-response" => UseFor.McpToolResponse :: Nil
-        case "all"               => UseFor.all
+        case "*"                 => UseFor.all
         case other =>
           throw new IllegalArgumentException(s"Unknown use-for [$other] in guardrail configuration [$name]")
       }

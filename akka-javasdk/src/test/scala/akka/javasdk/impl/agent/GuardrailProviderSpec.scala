@@ -124,20 +124,20 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
             class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$AnotherGuard"
             agents = ["*"]
             category = TOXIC
-            use-for = ["all"]
+            use-for = ["*"]
           }
           "role wildcard guard" {
             class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$AnotherGuard"
             agent-roles = ["*"]
             category = TOXIC
-            use-for = ["all"]
+            use-for = ["*"]
           }
           "componentId and role wildcard guard" {
             class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$AnotherGuard"
             agents = ["*", "summarizer-agent"]
             agent-roles = ["*", "author"]
             category = TOXIC
-            use-for = ["all"]
+            use-for = ["*"]
           }
         }
         """)

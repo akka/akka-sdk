@@ -68,7 +68,7 @@ import com.typesafe.config.Config
 /**
  * INTERNAL API
  */
-@InternalApi private[javasdk] class GuardrailProvider(system: ActorSystem[_], applicationConfig: Config) {
+@InternalApi private[javasdk] final class GuardrailProvider(system: ActorSystem[_], applicationConfig: Config) {
   import GuardrailProvider._
 
   lazy val configuredGuardrails: Seq[ConfiguredGuardrail] = {

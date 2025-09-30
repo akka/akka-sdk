@@ -11,5 +11,5 @@ import com.typesafe.config.Config
 /**
  * INTERNAL API
  */
-@InternalApi private[javasdk] class GuardrailContextImpl(override val name: String, override val config: Config)
+@InternalApi private[javasdk] final class GuardrailContextImpl(override val name: String, override val config: Config)
     extends GuardrailContext
