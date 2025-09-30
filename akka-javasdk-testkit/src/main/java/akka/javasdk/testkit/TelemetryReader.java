@@ -88,30 +88,20 @@ public class TelemetryReader {
   }
 
   private List<SpanData> spansFor(
-      String componentId, AttributeKey<String> idAttributeKey, String id) {
-    Optional<SpanData> mainSpan =
-        inMemorySpanExporter.getFinishedSpanItems().stream()
-            .filter(
-                spanData -> {
-                  return ofNullable(
-                              spanData
-                                  .getAttributes()
-                                  .get(AttributeKey.stringKey("akka.component.id")))
-                          .map(value -> value.equals(componentId))
-                          .orElse(false)
-                      && ofNullable(spanData.getAttributes().get(idAttributeKey))
-                          .map(value -> value.equals(id))
-                          .orElse(false);
-                })
-            .findFirst();
+      String componentId, AttributeKey<String> attributeKey, String attributeValue) {
 
-    return mainSpan
-        .map(
-            spanData ->
-                inMemorySpanExporter.getFinishedSpanItems().stream()
-                    .filter(span -> span.getTraceId().equals(spanData.getTraceId()))
-                    .toList())
-        .orElse(List.of());
+    return inMemorySpanExporter.getFinishedSpanItems().stream()
+        .filter(
+            spanData -> {
+              return ofNullable(
+                          spanData.getAttributes().get(AttributeKey.stringKey("akka.component.id")))
+                      .map(value -> value.equals(componentId))
+                      .orElse(false)
+                  && ofNullable(spanData.getAttributes().get(attributeKey))
+                      .map(value -> value.equals(attributeValue))
+                      .orElse(false);
+            })
+        .toList();
   }
 
   private List<SpanData> spansFor(String debugId) {
