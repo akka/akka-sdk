@@ -76,10 +76,10 @@ import com.typesafe.config.Config
   }
 
   private lazy val guardrailsByComponentId: Map[String, Seq[GuardrailEntry]] = {
-    configuredGuardrails.foldLeft(Map.empty[String, List[GuardrailEntry]]) { case (acc, c) =>
+    configuredGuardrails.foldLeft(Map.empty[String, Vector[GuardrailEntry]]) { case (acc, c) =>
       if (c.useFor.nonEmpty) {
         c.agents.foldLeft(acc) { case (acc2, componentId) =>
-          acc2.updated(componentId, GuardrailEntry(c, createGuardrail(c)) :: acc2.getOrElse(componentId, Nil))
+          acc2.updated(componentId, acc2.getOrElse(componentId, Vector.empty) :+ GuardrailEntry(c, createGuardrail(c)))
         }
       } else {
         acc
@@ -88,10 +88,10 @@ import com.typesafe.config.Config
   }
 
   private lazy val guardrailsByRole: Map[String, Seq[GuardrailEntry]] = {
-    configuredGuardrails.foldLeft(Map.empty[String, List[GuardrailEntry]]) { case (acc, c) =>
+    configuredGuardrails.foldLeft(Map.empty[String, Vector[GuardrailEntry]]) { case (acc, c) =>
       if (c.useFor.nonEmpty) {
         c.agentRoles.foldLeft(acc) { case (acc2, role) =>
-          acc2.updated(role, GuardrailEntry(c, createGuardrail(c)) :: acc2.getOrElse(role, Nil))
+          acc2.updated(role, acc2.getOrElse(role, Vector.empty) :+ GuardrailEntry(c, createGuardrail(c)))
         }
       } else {
         acc
@@ -123,20 +123,26 @@ import com.typesafe.config.Config
    * The guardrails for a specific agent component.
    */
   def agentGuardrails(componentId: String, role: Option[String]): AgentGuardrails = {
-    // FIXME there should also be a way to enable a guardrail for all agents
-    val byComponentId = guardrailsByComponentId.getOrElse(componentId, Nil)
-    role match {
-      case Some(r) =>
-        val usedNames = byComponentId.map(_.configuredGuardrail.name).toSet
-        val byRole = guardrailsByRole
-          .getOrElse(r, Nil)
-          .filterNot(setup => usedNames.contains(setup.configuredGuardrail.name)) // remove duplicates
-        AgentGuardrails(byComponentId ++ byRole)
-      case None =>
-        AgentGuardrails(byComponentId)
-
-    }
-
+    val byComponentId = guardrailsByComponentId.getOrElse(componentId, Vector.empty) ++ guardrailsByComponentId
+      .getOrElse("*", Vector.empty)
+    val all =
+      role match {
+        case Some(r) =>
+          val byRole = guardrailsByRole.getOrElse(r, Vector.empty) ++ guardrailsByRole.getOrElse("*", Vector.empty)
+          byComponentId ++ byRole
+        case None =>
+          byComponentId
+      }
+    // remove duplicates, only one per name since the name is the unique key
+    val deduplicated =
+      all.foldLeft(Map.empty[String, GuardrailEntry]) { case (acc, entry) =>
+        val name = entry.configuredGuardrail.name
+        if (acc.contains(name))
+          acc
+        else
+          acc.updated(name, entry)
+      }
+    AgentGuardrails(deduplicated.values.toVector)
   }
 
 }

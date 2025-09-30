@@ -14,7 +14,6 @@ import akka.javasdk.http.HttpResponses
 import akka.javasdk.http.RequestBuilder
 import akka.util.ByteString
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.wordspec.AnyWordSpecLike
 
 class HttpClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matchers with LogCapturing {

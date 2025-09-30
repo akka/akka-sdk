@@ -710,12 +710,25 @@ akka.javasdk.agent.guardrails {
 }
 ----
 <1> Each configured guardrail has a unique name.
-<2> Implementation class of the guardrail, must implement `akka.javasdk.agent.Guardrail`. The class may optionally have a constructor with a `akka.javasdk.agent.GuardrailContext` parameter, which includes the config section for the specific guardrail.
+<2> Implementation class of the guardrail.
 <3> Enable this guardrail for agents with these component ids.
 <4> Enable this guardrail for agents with these roles.
-<5> The type of validation, such as JAILBREAK, PROMPT_INJECTION, PII, TOXIC, HALLUCINATED, NSFW, FORMAT.
-<6> Where to use the guardrail, possible values are `model-request`, `model-response`, `mcp-tool-request`, `mcp-tool-response`, `all`.
+<5> The type of validation, such as PII and TOXIC.
+<6> Where to use the guardrail, such as for the model request or model response.
 <7> If it didn't pass the evaluation criteria, the execution can either be aborted or continue anyway. In both cases, the result is tracked in logs, metrics and traces.
+
+The implementation class of the guardrail is configured with the `class` property. The class must implement the link:_attachments/api/akka/javasdk/agent/Guardrail.html[`Guardrail` interface]. The class may optionally have a constructor with an link:_attachments/api/akka/javasdk/agent/GuardrailContext.html[`GuardrailContext`] parameter, which includes the name and the config section for the specific guardrail.
+
+Agents are selected by matching `agent` or `agent-role` configuration.
+
+* `agents`: enabled for agents with these component ids, if `agents` contain `"*"` the guardrail is enabled for all agents
+* `agent-roles`: enabled for agents with these roles, if agent-roles contain `"*"` the guardrail is enabled for all agents that has a role, but not for agents without a role
+
+This role is defined in the `@AgentDescription` annotation.
+
+The name and the category are reported in logs, metrics and traces. The `category` should classify the type of validation. It can be any value, but a few recommended categories are JAILBREAK, PROMPT_INJECTION, PII, TOXIC, HALLUCINATED, NSFW, FORMAT.
+
+The guardrail can be enabled for certain inputs or outputs with the `use-for` property. Possible values are `model-request`, `model-response`, `mcp-tool-request`, `mcp-tool-response`, `all`.
 
 === Guardrail of similar text
 

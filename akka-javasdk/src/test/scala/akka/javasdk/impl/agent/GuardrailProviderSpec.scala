@@ -7,6 +7,7 @@ package akka.javasdk.impl.agent
 import akka.actor.testkit.typed.scaladsl.LogCapturing
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.javasdk.agent.Guardrail
+import akka.javasdk.agent.GuardrailContext
 import akka.javasdk.agent.SimilarityGuard
 import akka.runtime.sdk.spi.SpiAgent
 import com.typesafe.config.ConfigException
@@ -41,6 +42,12 @@ object GuardrailProviderSpec {
 
     override def evaluate(text: String): Guardrail.Result =
       new Guardrail.Result(true, "")
+  }
+
+  class AnotherGuard(context: GuardrailContext) extends Guardrail {
+
+    override def evaluate(text: String): Guardrail.Result =
+      new Guardrail.Result(false, s"${context.name} says no")
   }
 
   class WrongGuard
@@ -107,6 +114,48 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
       g2.modelRequestGuardrails.head.getClass shouldBe classOf[SpiAgent.SimilarityGuard]
       g2.modelResponseGuardrails.size shouldBe 1
       g2.modelResponseGuardrails.head.name shouldBe "my guard"
+    }
+
+    "select guardrails with wildcards" in {
+      val wildcardConfig = ConfigFactory
+        .parseString(s"""
+        akka.javasdk.agent.guardrails {
+          "componentId wildcard guard" {
+            class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$AnotherGuard"
+            agents = ["*"]
+            category = TOXIC
+            use-for = ["all"]
+          }
+          "role wildcard guard" {
+            class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$AnotherGuard"
+            agent-roles = ["*"]
+            category = TOXIC
+            use-for = ["all"]
+          }
+          "componentId and role wildcard guard" {
+            class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$AnotherGuard"
+            agents = ["*", "summarizer-agent"]
+            agent-roles = ["*", "author"]
+            category = TOXIC
+            use-for = ["all"]
+          }
+        }
+        """)
+        .withFallback(config)
+      val provider = new GuardrailProvider(system, wildcardConfig)
+
+      val g1 = provider.agentGuardrails("planner-agent", role = None)
+      g1.entries.map(_.configuredGuardrail.name) should contain theSameElementsAs Set(
+        "request prompt injection",
+        "componentId wildcard guard",
+        "componentId and role wildcard guard")
+
+      val g2 = provider.agentGuardrails("weather-agent", role = Some("worker"))
+      g2.entries.map(_.configuredGuardrail.name) should contain theSameElementsAs Set(
+        "my guard",
+        "componentId wildcard guard",
+        "role wildcard guard",
+        "componentId and role wildcard guard")
     }
 
   }
