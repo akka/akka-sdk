@@ -44,6 +44,7 @@ Using it, you can select from the samples catalog or create an empty source code
 assistant.
 
 * xref:reference:cli/akka-cli/akka_code_init.adoc[akka code init]
+* xref:reference:cli/akka-cli/akka_code_token.adoc[akka code token]
 
 == Manage local context
 The `akka config` command is used to display and set configuration contexts and values that apply to subsequent commands. Configuration settings are stored in a file on your local system, by default at `.kalix/config.yaml` in your home directory.

@@ -28,11 +28,11 @@ Akka has support for many AI providers, and this sample is using OpenAI. Sign up
 [#clone_sample]
 == Clone the sample project
 
-. From a command line, clone the link:https://github.com/akka-samples/helloworld-agent[GitHub Repository, window="new"] in a convenient location:
+. From a command line, use the Akka CLI to create a new project. See xref:quick-install-cli.adoc[installation instructions] if you haven't installed the CLI yet.
 +
 [source, command line]
 ----
-git clone https://github.com/akka-samples/helloworld-agent.git --depth 1
+akka code init --name helloworld-agent --repo akka-samples/helloworld-agent.git
 ----
 
 . Navigate to the new project directory.
@@ -41,12 +41,14 @@ git clone https://github.com/akka-samples/helloworld-agent.git --depth 1
 
 [sidebar]
 ****
-Another convenient way to download this and other samples is to use the Akka CLI. See xref:quick-install-cli.adoc[installation instructions].
+Alternatively, you can clone the link:https://github.com/akka-samples/helloworld-agent[GitHub Repository, window="new"] directly:
 
 [source, command line]
 ----
-akka code init --name helloworld-agent --repo https://github.com/akka-samples/helloworld-agent.git
+git clone https://github.com/akka-samples/helloworld-agent.git --depth 1
 ----
+
+Then navigate to the new project directory and open it in your preferred IDE / Editor.
 ****
 
 
