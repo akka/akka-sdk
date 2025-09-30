@@ -130,6 +130,7 @@ private[javasdk] object Validations {
 
   def validate(component: Class[_]): Validation =
     componentMustBePublic(component) ++
+    mustHaveValidComponentId(component) ++
     validateTimedAction(component) ++
     validateConsumer(component) ++
     validateView(component) ++
@@ -142,7 +143,6 @@ private[javasdk] object Validations {
     when[EventSourcedEntity[_, _]](component) {
       eventSourcedEntityEventMustBeSealed(component) ++
       eventSourcedCommandHandlersMustBeUnique(component) ++
-      mustHaveValidComponentId(component) ++
       commandHandlerArityShouldBeZeroOrOne(component, hasESEffectOutput)
     }
 
@@ -153,7 +153,6 @@ private[javasdk] object Validations {
 
   private def validateAgent(component: Class[_]) =
     when[Agent](component) {
-      mustHaveValidComponentId(component) ++
       mustHaveValidAgentDescription(component) ++
       agentCommandHandlersMustBeOne(component) ++
       commandHandlerArityShouldBeZeroOrOne(component, hasAgentEffectOutput)
@@ -203,7 +202,6 @@ private[javasdk] object Validations {
 
   def validateValueEntity(component: Class[_]): Validation = when[KeyValueEntity[_]](component) {
     valueEntityCommandHandlersMustBeUnique(component) ++
-    mustHaveValidComponentId(component) ++
     commandHandlerArityShouldBeZeroOrOne(component, hasKVEEffectOutput)
   }
 
@@ -244,7 +242,6 @@ private[javasdk] object Validations {
   private def validateTimedAction(component: Class[_]): Validation = {
     when[TimedAction](component) {
       actionValidation(component) ++
-      mustHaveValidComponentId(component) ++
       commandHandlerArityShouldBeZeroOrOne(component, hasTimedActionEffectOutput)
     }
   }
@@ -253,8 +250,7 @@ private[javasdk] object Validations {
     when[Consumer](component) {
       hasConsumeAnnotation(component, "Consumer") ++
       commonSubscriptionValidation(component, hasConsumerOutput) ++
-      actionValidation(component) ++
-      mustHaveValidComponentId(component)
+      actionValidation(component)
     }
   }
 
@@ -273,7 +269,6 @@ private[javasdk] object Validations {
     when[View](component) {
       val tableUpdaters: Seq[Class[_]] = component.getDeclaredClasses.filter(Reflect.isViewTableUpdater).toSeq
 
-      mustHaveValidComponentId(component) ++
       viewMustNotHaveTableAnnotation(component) ++
       viewMustHaveAtLeastOneViewTableUpdater(component) ++
       viewMustHaveAtLeastOneQueryMethod(component) ++
@@ -576,32 +571,36 @@ private[javasdk] object Validations {
     Validation(messages)
   }
 
-  @SuppressWarnings(Array("deprecation"))
   @nowarn("cat=deprecation")
   private def mustHaveValidComponentId(component: Class[_]): Validation = {
-    // Check for new Component annotation first
+
     val componentAnn = component.getAnnotation(classOf[Component])
-    if (componentAnn != null) {
+    val componentIdAnn = component.getAnnotation(classOf[ComponentId])
+
+    if (componentAnn != null && componentIdAnn != null) {
+      Invalid(
+        errorMessage(
+          component,
+          s"Component class '${component.getName}' has both @Component and " +
+          s"deprecated @ComponentId annotations. Please remove @ComponentId and use only @Component."))
+
+    } else if (componentAnn != null) {
       val componentId: String = componentAnn.id()
       if ((componentId eq null) || componentId.isBlank)
         Invalid(errorMessage(component, "@Component id is empty, must be a non-empty string."))
       else if (componentId.contains("|"))
         Invalid(errorMessage(component, "@Component id must not contain the pipe character '|'."))
       else Valid
+    } else if (componentIdAnn != null) {
+      val componentId: String = componentIdAnn.value()
+      if ((componentId eq null) || componentId.isBlank)
+        Invalid(errorMessage(component, "@ComponentId name is empty, must be a non-empty string."))
+      else if (componentId.contains("|"))
+        Invalid(errorMessage(component, "@ComponentId must not contain the pipe character '|'."))
+      else Valid
     } else {
-      // Fallback to old ComponentId annotation
-      val componentIdAnn = component.getAnnotation(classOf[ComponentId])
-      if (componentIdAnn != null) {
-        val componentId: String = componentIdAnn.value()
-        if ((componentId eq null) || componentId.isBlank)
-          Invalid(errorMessage(component, "@ComponentId name is empty, must be a non-empty string."))
-        else if (componentId.contains("|"))
-          Invalid(errorMessage(component, "@ComponentId must not contain the pipe character '|'."))
-        else Valid
-      } else {
-        //missing annotation means that the component is disabled
-        Valid
-      }
+      //missing annotation means that the component is disabled
+      Valid
     }
   }
 
