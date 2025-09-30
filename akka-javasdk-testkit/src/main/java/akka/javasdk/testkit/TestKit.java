@@ -40,6 +40,7 @@ import akka.runtime.sdk.spi.SpiDevModeSettings;
 import akka.runtime.sdk.spi.SpiEventingSupportSettings;
 import akka.runtime.sdk.spi.SpiMockedEventingSettings;
 import akka.runtime.sdk.spi.SpiSettings;
+import akka.runtime.sdk.spi.SpiTestSettings;
 import akka.stream.Materializer;
 import akka.stream.SystemMaterializer;
 import com.typesafe.config.Config;
@@ -60,6 +61,9 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import kalix.runtime.AkkaRuntimeMain;
+import kalix.runtime.telemetry.Telemetry;
+import kalix.runtime.telemetry.tracing.ActiveTracingInstrumentation;
+import kalix.runtime.telemetry.tracing.TracingSetup.AkkaInMemorySpanExporter;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -577,6 +581,7 @@ public class TestKit {
   private int eventingTestKitPort = -1;
   private Config applicationConfig;
   private String serviceName;
+  private Optional<AkkaInMemorySpanExporter> inMemorySpanExporter = Optional.empty();
 
   /** Create a new testkit for a service descriptor with the default settings. */
   public TestKit() {
@@ -684,7 +689,7 @@ public class TestKit {
                       serviceName + "-IT-" + System.currentTimeMillis(),
                       eventingSettings,
                       mockedEventingSettings,
-                      true,
+                      new SpiTestSettings(true, true),
                       Some.apply(serviceName));
 
               return s.withDevMode(devModeSettings);
@@ -765,6 +770,16 @@ public class TestKit {
         throw new IllegalStateException("Runtime was terminated.");
 
       // once runtime is started
+
+      Telemetry telemetry = (Telemetry) Telemetry.get(runtimeActorSystem);
+
+      if (telemetry.tracing()
+          instanceof ActiveTracingInstrumentation activeTracingInstrumentation) {
+        if (activeTracingInstrumentation.exporter()
+            instanceof AkkaInMemorySpanExporter inMemorySpanExporter) {
+          this.inMemorySpanExporter = Optional.of(inMemorySpanExporter);
+        }
+      }
 
       componentClient =
           new ComponentClientImpl(
@@ -900,6 +915,13 @@ public class TestKit {
    */
   public HttpClient getSelfHttpClient() {
     return selfHttpClient;
+  }
+
+  public AkkaInMemorySpanExporter getInMemorySpanExporter() {
+    return inMemorySpanExporter.orElseThrow(
+        () ->
+            new IllegalStateException(
+                "No in-memory span exporter configured. Tracing may not be enabled."));
   }
 
   /**
