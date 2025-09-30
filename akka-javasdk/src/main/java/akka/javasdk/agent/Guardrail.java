@@ -21,7 +21,9 @@ public interface Guardrail {
    * @param passed true if the text passed the guardrail evaluation
    * @param explanation reason for the decision, especially when it didn't pass
    */
-  record Result(boolean passed, String explanation) {}
+  record Result(boolean passed, String explanation) {
+    public static final Result OK = new Result(true, "");
+  }
 
   /**
    * Thrown when the text didn't pass the evaluation criteria, and {@code report-only} is true. Can

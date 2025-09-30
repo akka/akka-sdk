@@ -685,13 +685,21 @@ Guardrails can protect against harmful inputs, such as jailbreak attempts, and d
 
 A specific guardrail implements the link:_attachments/api/akka/javasdk/agent/Guardrail.html[`Guardrail` interface]. It takes the input or output text as a parameter and a result if it passed the validation or not, including an explanation of why the decision was made. These results are included in metrics and traces. A guardrail can abort the interaction with the model, or only report the problem and continue anyway.
 
+An example of a `Guardrail` implementation:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/guardrail/ToxicGuard.java[ToxicGuard.java]
+----
+include::example$doc-snippets/src/main/java/com/example/guardrail/ToxicGuard.java[tag=all]
+----
+
 Guardrails are enabled by configuration, to be able to enforce at deployment time that certain guardrails are always used.
 
 [source,conf,indent=0]
 ----
 akka.javasdk.agent.guardrails {
   "pii guard" {                                     // <1>
-    class = "com.example.guardrails.PiiGuard"       // <2>
+    class = "com.example.guardrail.PiiGuard"       // <2>
     agent = ["planner-agent"]                       // <3>
     agent-roles = ["worker"]                        // <4>
     category = PII                                  // <5>
@@ -700,7 +708,7 @@ akka.javasdk.agent.guardrails {
   }
 
   "toxic guard" {
-    class = "com.example.guardrails.ToxicGuard"
+    class = "com.example.guardrail.ToxicGuard"
     agent-roles = ["worker"]
     category = TOXIC
     use-for = ["model-response", "mcp-tool-response"]
@@ -717,7 +725,7 @@ akka.javasdk.agent.guardrails {
 <6> Where to use the guardrail, such as for the model request or model response.
 <7> If it didn't pass the evaluation criteria, the execution can either be aborted or continue anyway. In both cases, the result is tracked in logs, metrics and traces.
 
-The implementation class of the guardrail is configured with the `class` property. The class must implement the link:_attachments/api/akka/javasdk/agent/Guardrail.html[`Guardrail` interface]. The class may optionally have a constructor with a link:_attachments/api/akka/javasdk/agent/GuardrailContext.html[`GuardrailContext`] parameter, which includes the name and the config section for the specific guardrail.
+The implementation class of the guardrail is configured with the `class` property. The class must implement the link:_attachments/api/akka/javasdk/agent/Guardrail.html[`Guardrail` interface]. The class may optionally have a constructor with a link:_attachments/api/akka/javasdk/agent/GuardrailContext.html[`GuardrailContext`] parameter, which includes the name and the config section for the specific guardrail. In above code example of the `ToxicGuard` you can see how the configuration property `search-for` is read from the configuration of the `GuardrailContext` parameter.
 
 Agents are selected by matching `agent` or `agent-role` configuration.
 
