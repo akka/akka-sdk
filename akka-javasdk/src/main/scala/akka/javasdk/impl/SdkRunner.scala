@@ -4,25 +4,6 @@
 
 package akka.javasdk.impl
 
-import java.lang.reflect.Constructor
-import java.lang.reflect.InvocationTargetException
-import java.lang.reflect.Method
-import java.util
-import java.util.Optional
-import java.util.concurrent.CompletionStage
-import java.util.concurrent.Executor
-
-import scala.annotation.nowarn
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.concurrent.Promise
-import scala.jdk.CollectionConverters._
-import scala.jdk.FutureConverters._
-import scala.jdk.OptionConverters.RichOption
-import scala.jdk.OptionConverters.RichOptional
-import scala.reflect.ClassTag
-import scala.util.control.NonFatal
-
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -61,6 +42,8 @@ import akka.javasdk.http.QueryParams
 import akka.javasdk.http.RequestContext
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerDestination
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerSource
+import akka.javasdk.impl.ComponentDescriptorFactory.readComponentDescription
+import akka.javasdk.impl.ComponentDescriptorFactory.readComponentName
 import akka.javasdk.impl.Sdk.StartupContext
 import akka.javasdk.impl.Validations.Invalid
 import akka.javasdk.impl.Validations.Valid
@@ -131,6 +114,24 @@ import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
+
+import java.lang.reflect.Constructor
+import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Method
+import java.util
+import java.util.Optional
+import java.util.concurrent.CompletionStage
+import java.util.concurrent.Executor
+import scala.annotation.nowarn
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.jdk.CollectionConverters._
+import scala.jdk.FutureConverters._
+import scala.jdk.OptionConverters.RichOption
+import scala.jdk.OptionConverters.RichOptional
+import scala.reflect.ClassTag
+import scala.util.control.NonFatal
 
 /**
  * INTERNAL API
@@ -561,7 +562,9 @@ private final class Sdk(
             clz.getName,
             readOnlyCommandNames,
             instanceFactory,
-            keyValue = false)
+            keyValue = false,
+            name = readComponentName(clz),
+            description = readComponentDescription(clz))
 
       case clz if classOf[KeyValueEntity[_]].isAssignableFrom(clz) =>
         val componentId = extractComponentId(clz)
@@ -598,7 +601,9 @@ private final class Sdk(
             clz.getName,
             readOnlyCommandNames,
             instanceFactory,
-            keyValue = true)
+            keyValue = true,
+            name = readComponentName(clz),
+            description = readComponentDescription(clz))
 
       case clz if Reflect.isWorkflow(clz) =>
         val componentId = extractComponentId(clz)
@@ -620,7 +625,9 @@ private final class Sdk(
             componentId,
             clz.getName,
             readOnlyCommandNames,
-            ctx => workflowInstanceFactory(componentId, ctx, clz.asInstanceOf[Class[Workflow[Nothing]]]))
+            ctx => workflowInstanceFactory(componentId, ctx, clz.asInstanceOf[Class[Workflow[Nothing]]]),
+            name = readComponentName(clz),
+            description = readComponentDescription(clz))
 
       case clz if classOf[TimedAction].isAssignableFrom(clz) =>
         val componentId = extractComponentId(clz)
@@ -641,7 +648,12 @@ private final class Sdk(
             regionInfo,
             ComponentDescriptor.descriptorFor(timedActionClass, serializer))
         timedActionDescriptors :+=
-          new TimedActionDescriptor(componentId, clz.getName, timedActionSpi)
+          new TimedActionDescriptor(
+            componentId,
+            clz.getName,
+            timedActionSpi,
+            name = readComponentName(clz),
+            description = readComponentDescription(clz))
 
       case clz if classOf[Consumer].isAssignableFrom(clz) =>
         val componentId = extractComponentId(clz)
@@ -666,7 +678,14 @@ private final class Sdk(
             ComponentDescriptor.descriptorFor(consumerClass, serializer),
             regionInfo)
         consumerDescriptors :+=
-          new ConsumerDescriptor(componentId, clz.getName, consumerSrc, consumerDestination(consumerClass), consumerSpi)
+          new ConsumerDescriptor(
+            componentId,
+            clz.getName,
+            consumerSrc,
+            consumerDestination(consumerClass),
+            consumerSpi,
+            name = readComponentName(clz),
+            description = readComponentDescription(clz))
 
       case clz if classOf[Agent].isAssignableFrom(clz) =>
         val componentId = extractComponentId(clz)
@@ -698,7 +717,12 @@ private final class Sdk(
 
         }
         agentDescriptors :+=
-          new AgentDescriptor(componentId, clz.getName, instanceFactory)
+          new AgentDescriptor(
+            componentId,
+            clz.getName,
+            instanceFactory,
+            name = readComponentName(clz),
+            description = readComponentDescription(clz))
 
         agentRegistryInfo :+=
           (agentDescription match {
