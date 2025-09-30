@@ -906,7 +906,7 @@ public class TestKit {
   /**
    * Get incoming messages for KeyValueEntity.
    *
-   * @param componentId As annotated with @ComponentId on the KeyValueEntity
+   * @param componentId As annotated with @Component on the KeyValueEntity
    * @deprecated use {@link #getKeyValueEntityIncomingMessages(Class)} instead.
    */
   @Deprecated(since = "3.4.2", forRemoval = true)
@@ -926,7 +926,7 @@ public class TestKit {
   /**
    * Get incoming messages for EventSourcedEntity.
    *
-   * @param componentId As annotated with @ComponentId on the EventSourcedEntity
+   * @param componentId As annotated with @Component on the EventSourcedEntity
    * @deprecated use {@link #getEventSourcedEntityIncomingMessages(Class)} instead.
    */
   @Deprecated(since = "3.4.2", forRemoval = true)
@@ -1002,7 +1002,7 @@ public class TestKit {
   /**
    * Get incoming messages for Workflow.
    *
-   * @param componentId As annotated with @ComponentId on the EventSourcedEntity
+   * @param componentId As annotated with @Component on the EventSourcedEntity
    * @deprecated use {@link #getWorkflowIncomingMessages(Class)} instead.
    */
   @Deprecated(since = "3.4.2", forRemoval = true)
