@@ -7,6 +7,9 @@ package akka.javasdk.impl
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
+
+import scala.annotation.nowarn
+
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
 import akka.javasdk.annotations.Acl
@@ -33,8 +36,6 @@ import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
 import akka.runtime.sdk.spi.ConsumerDestination
 import akka.runtime.sdk.spi.ConsumerSource
-
-import scala.annotation.nowarn
 
 /**
  * INTERNAL API

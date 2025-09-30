@@ -6,6 +6,7 @@ package akka.javasdk.impl.timedaction
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
+
 import akka.Done
 import akka.actor.testkit.typed.scaladsl.LogCapturing
 import akka.actor.testkit.typed.scaladsl.LoggingTestKit
