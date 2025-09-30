@@ -750,7 +750,7 @@ akka.javasdk.agent.guardrails {
 }
 ----
 
-Here, it's using predefined examples of jailbreak prompts in `guardrail/jailbreak/`. Those have been incorporated from https://github.com/verazuo/jailbreak_llms/[https://github.com/verazuo/jailbreak_llms, window="new"], but you can define your own examples and place in `src/main/resources/` directory. All text files in the configured `bad-examples-resource-dir` are included in the similarity search.
+Here, it's using predefined examples of jailbreak prompts in `guardrail/jailbreak/`. Those have been incorporated from https://github.com/verazuo/jailbreak_llms/[https://github.com/verazuo/jailbreak_llms, window="new"], but you can define your own examples and place in a subdirectory of  `src/main/resources/`. All text files in the configured `bad-examples-resource-dir` are included in the similarity search.
 
 This can be used for other things than jailbreak attempt detection.
 
