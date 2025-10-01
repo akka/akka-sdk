@@ -21,6 +21,7 @@ import scala.reflect.ClassTag
 import akka.Done
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
+import akka.javasdk.agent.EvaluationResult
 import akka.javasdk.annotations.GrpcEndpoint
 import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
@@ -80,9 +81,14 @@ private[impl] object Reflect {
   def isMcpEndpoint(cls: Class[_]): Boolean =
     cls.getAnnotation(classOf[McpEndpoint]) != null
 
-  def isEntity(cls: Class[_]): Boolean =
-    classOf[EventSourcedEntity[_, _]].isAssignableFrom(cls) ||
+  def isEventSourcedEntity(cls: Class[_]): Boolean =
+    classOf[EventSourcedEntity[_, _]].isAssignableFrom(cls)
+
+  def isKeyValueEntity(cls: Class[_]): Boolean =
     classOf[KeyValueEntity[_]].isAssignableFrom(cls)
+
+  def isEntity(cls: Class[_]): Boolean =
+    isEventSourcedEntity(cls) || isKeyValueEntity(cls)
 
   def isWorkflow(cls: Class[_]): Boolean =
     classOf[Workflow[_]].isAssignableFrom(cls)
@@ -93,8 +99,30 @@ private[impl] object Reflect {
 
   def isAction(clazz: Class[_]): Boolean = classOf[TimedAction].isAssignableFrom(clazz)
 
+  def isTimedAction(cls: Class[_]): Boolean =
+    classOf[TimedAction].isAssignableFrom(cls)
+
   def isAgent(cls: Class[_]): Boolean =
     classOf[Agent].isAssignableFrom(cls)
+
+  def isEvaluatorAgent(cls: Class[_]): Boolean = {
+    isAgent(cls) && {
+      val effectMethod =
+        cls.getDeclaredMethods
+          .find { method =>
+            isCommandHandlerCandidate[Agent.Effect[_]](method)
+          }
+      effectMethod match {
+        case Some(method) =>
+          val returnClass = getReturnClass(cls, method)
+          classOf[EvaluationResult].isAssignableFrom(returnClass)
+        case None =>
+          // StreamEffect
+          false
+      }
+    }
+
+  }
 
   // command handlers candidate must have 0 or 1 parameter and return the components effect type
   // we might later revisit this, instead of single param, we can require (State, Cmd) => Effect like in Akka
