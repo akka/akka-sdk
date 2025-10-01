@@ -56,7 +56,14 @@ import org.slf4j.LoggerFactory;
  * akka.javasdk.consumer.Consumer} to monitor session activity, implement custom analytics, or
  * trigger compaction when memory usage exceeds thresholds.
  */
-@Component(id = "akka-session-memory")
+@Component(
+    id = "akka-session-memory",
+    name = "Agent Session Memory",
+    description = """
+      Stores the recent conversation history for each agent session, including user, AI, and tool messages. 
+      Use this component to view or inspect the memory that the agents uses for context during interactions.
+      """
+)
 public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> {
 
   private static final Logger log = LoggerFactory.getLogger(SessionMemoryEntity.class);
