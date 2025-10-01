@@ -63,9 +63,9 @@ The WIP documentation will be published and available for viewing at [https://do
 
 ## Docs theme bundle source  
 
-The [`antora-ui-default`](https://github.com/lightbend/antora-ui-default) repository contains the source files used to build the `akka-theme-ui-002-bundle.zip` bundle. This repository is based on the [Antora Default UI](https://gitlab.com/antora/antora-ui-default) and has been customized for Akka documentation needs.  
+The [`antora-akka-theme-ui`](https://github.com/lightbend/antora-akka-theme-ui) repository contains the source files used to build the `akka-theme-ui-___-bundle.zip` bundle. This repository is based on the [Antora Default UI](https://gitlab.com/antora/antora-ui-default) and has been customized for Akka documentation needs.  
 
-To modify or extend the theme, clone the [`antora-ui-default`](https://github.com/lightbend/antora-ui-default) repository, make the necessary changes, and build a new bundle.
+To modify or extend the theme, clone the [`antora-akka-theme-ui`](https://github.com/lightbend/antora-akka-theme-ui) repository, make the necessary changes, and build a new bundle.
 
 ## Graphical assets
 
