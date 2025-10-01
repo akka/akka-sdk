@@ -114,7 +114,7 @@ import akka.runtime.sdk.spi.SpiConfiguredGuardrail
 import akka.runtime.sdk.spi.SpiDevModeSettings
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
-import akka.runtime.sdk.spi.SpiGuardrailReport
+import akka.runtime.sdk.spi.SpiGuardrailSetup
 import akka.runtime.sdk.spi.SpiMockedEventingSettings
 import akka.runtime.sdk.spi.SpiServiceInfo
 import akka.runtime.sdk.spi.SpiSettings
@@ -854,7 +854,7 @@ private final class Sdk(
       SdkRunner.FutureDone
     }
 
-    val guardrailReport = new SpiGuardrailReport(guardrailProvider.configuredGuardrails.map { g =>
+    val guardrailSetup = new SpiGuardrailSetup(guardrailProvider.configuredGuardrails.map { g =>
       new SpiConfiguredGuardrail(
         name = g.name,
         implementationClass = g.implementationClass,
@@ -872,7 +872,7 @@ private final class Sdk(
         protocolMajorVersion = BuildInfo.protocolMajorVersion,
         protocolMinorVersion = BuildInfo.protocolMinorVersion),
       componentDescriptors = descriptors,
-      guardrailReport,
+      guardrailSetup,
       preStart = preStart,
       onStart = onStart,
       reportError = reportError,

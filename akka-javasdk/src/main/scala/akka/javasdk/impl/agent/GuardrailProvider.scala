@@ -40,9 +40,15 @@ import com.typesafe.config.Config
   final class SpiGuardrailAdapter(entry: GuardrailEntry) extends SpiAgent.Guardrail {
     private val guardrail = entry.guardrail
 
-    override def evaluate(text: String): Future[SpiAgent.Guardrail.Result] = {
-      val result = guardrail.evaluate(text)
-      Future.successful(new SpiAgent.Guardrail.Result(result.passed, result.explanation))
+    override def evaluate(content: SpiAgent.Guardrail.Content): Future[SpiAgent.Guardrail.Result] = {
+      content match {
+        case textContent: SpiAgent.Guardrail.TextContent =>
+          val result = guardrail.evaluate(textContent.text)
+          Future.successful(new SpiAgent.Guardrail.Result(result.passed, result.explanation))
+        case other =>
+          Future.failed(
+            new IllegalArgumentException(s"Only text content is supported, but was [${other.getClass.getName}]"))
+      }
     }
 
     override val name: String =
