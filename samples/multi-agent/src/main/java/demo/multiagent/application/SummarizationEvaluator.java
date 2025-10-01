@@ -3,8 +3,11 @@ package demo.multiagent.application;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.EvaluationResult;
 import akka.javasdk.agent.MemoryProvider;
+import akka.javasdk.agent.PromptTemplate;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.client.ComponentClient;
+
 import java.util.Locale;
 
 @ComponentId("summarization-evaluator")
@@ -16,6 +19,11 @@ import java.util.Locale;
   role = "evaluator"
 )
 public class SummarizationEvaluator extends Agent {
+  private final ComponentClient componentClient;
+
+  public SummarizationEvaluator(ComponentClient componentClient) {
+    this.componentClient = componentClient;
+  }
 
   public record EvaluationRequest(String document, String summary) {}
 
@@ -31,7 +39,9 @@ public class SummarizationEvaluator extends Agent {
     }
   }
 
-  private static final String SYSTEM_MESSAGE =
+  private static final String SYSTEM_MESSAGE_PROMPT_ID = "summarization-evaluator.system";
+
+  private static final String INIT_SYSTEM_MESSAGE =
     """
     You are comparing the summary text and it's original document and trying to determine
     if the summary is good.
@@ -49,6 +59,8 @@ public class SummarizationEvaluator extends Agent {
     - "label": A string, either "good" or "bad".
     """.stripIndent();
 
+  private static final String USER_MESSAGE_PROMPT_ID = "summarization-evaluator.user";
+
   private static final String USER_MESSAGE_TEMPLATE =
     """
     [Summary]
@@ -65,7 +77,7 @@ public class SummarizationEvaluator extends Agent {
     String evaluationPrompt = buildEvaluationPrompt(req);
 
     return effects()
-      .systemMessage(SYSTEM_MESSAGE)
+      .systemMessage(INIT_SYSTEM_MESSAGE)
       .memory(MemoryProvider.none())
       .userMessage(evaluationPrompt)
       .responseConformsTo(Result.class)
@@ -73,6 +85,19 @@ public class SummarizationEvaluator extends Agent {
   }
 
   private String buildEvaluationPrompt(EvaluationRequest req) {
-    return USER_MESSAGE_TEMPLATE.formatted(req.summary, req.document);
+    return prompt(USER_MESSAGE_PROMPT_ID, USER_MESSAGE_TEMPLATE).formatted(req.summary, req.document);
+  }
+
+  private String prompt(String promptId, String initMessage) {
+    return componentClient.forEventSourcedEntity(promptId)
+        .method(PromptTemplate::getOptional)
+        .invoke().orElseGet(() -> initPrompt(promptId, initMessage));
+  }
+
+  private String initPrompt(String promptId, String initMessage) {
+    componentClient.forEventSourcedEntity(promptId)
+        .method(PromptTemplate::init)
+        .invoke(initMessage);
+    return initMessage;
   }
 }

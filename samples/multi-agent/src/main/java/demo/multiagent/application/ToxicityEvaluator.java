@@ -3,8 +3,11 @@ package demo.multiagent.application;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.EvaluationResult;
 import akka.javasdk.agent.MemoryProvider;
+import akka.javasdk.agent.PromptTemplate;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.client.ComponentClient;
+
 import java.util.Locale;
 
 @ComponentId("toxicity-evaluator")
@@ -16,6 +19,11 @@ import java.util.Locale;
   role = "evaluator"
 )
 public class ToxicityEvaluator extends Agent {
+  private final ComponentClient componentClient;
+
+  public ToxicityEvaluator(ComponentClient componentClient) {
+    this.componentClient = componentClient;
+  }
 
   public record Result(String explanation, String label) implements EvaluationResult {
     public boolean passed() {
@@ -28,6 +36,8 @@ public class ToxicityEvaluator extends Agent {
       };
     }
   }
+
+  private static final String SYSTEM_MESSAGE_PROMPT_ID = "toxicity-evaluator.system";
 
   private static final String SYSTEM_MESSAGE =
     """
@@ -51,6 +61,8 @@ public class ToxicityEvaluator extends Agent {
     - "label": A string, either "toxic" or "non-toxic".
     """.stripIndent();
 
+  private static final String USER_MESSAGE_PROMPT_ID = "toxicity-evaluator.user";
+
   private static final String USER_MESSAGE_TEMPLATE =
     """
     [Text]
@@ -63,7 +75,7 @@ public class ToxicityEvaluator extends Agent {
     String evaluationPrompt = buildEvaluationPrompt(text);
 
     return effects()
-      .systemMessage(SYSTEM_MESSAGE)
+      .systemMessage(prompt(SYSTEM_MESSAGE_PROMPT_ID, SYSTEM_MESSAGE))
       .memory(MemoryProvider.none())
       .userMessage(evaluationPrompt)
       .responseConformsTo(Result.class)
@@ -71,6 +83,22 @@ public class ToxicityEvaluator extends Agent {
   }
 
   private String buildEvaluationPrompt(String text) {
-    return USER_MESSAGE_TEMPLATE.formatted(text);
+    var template = prompt(USER_MESSAGE_PROMPT_ID, USER_MESSAGE_TEMPLATE);
+    return template.formatted(text);
   }
+
+  private String prompt(String promptId, String initMessage) {
+    return componentClient.forEventSourcedEntity(promptId)
+        .method(PromptTemplate::getOptional)
+        .invoke().orElseGet(() -> initPrompt(promptId, initMessage));
+  }
+
+  private String initPrompt(String promptId, String initMessage) {
+    componentClient.forEventSourcedEntity(promptId)
+        .method(PromptTemplate::init)
+        .invoke(initMessage);
+    return initMessage;
+  }
+
+
 }
