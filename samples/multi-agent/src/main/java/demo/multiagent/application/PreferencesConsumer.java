@@ -53,7 +53,7 @@ public class PreferencesConsumer extends Consumer { // <2>
           evaluationResult.explanation()
         );
 
-        if (!evaluationResult.ok()) {
+        if (!evaluationResult.passed()) {
           // run the workflow again to generate a better answer
 
           componentClient

@@ -10,7 +10,5 @@ package akka.javasdk.agent;
 public interface EvaluationResult {
   String explanation();
 
-  String label();
-
-  boolean isOk();
+  boolean passed();
 }

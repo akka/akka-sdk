@@ -8,10 +8,9 @@ import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.consumer.Consumer;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Optional;
 
 @ComponentId("session-memory-eval-consumer")
 @Consume.FromEventSourcedEntity(value = SessionMemoryEntity.class, ignoreUnknown = true)
@@ -26,7 +25,6 @@ public class SessionMemoryConsumer extends Consumer {
   }
 
   public Effect onUserMessage(UserMessageAdded event) {
-
     return effects().done();
   }
 
@@ -41,40 +39,46 @@ public class SessionMemoryConsumer extends Consumer {
 
   private void evalToxicity(AiMessageAdded event) {
     componentClient
-        .forAgent()
-        .inSession(sessionId())
-        .method(ToxicityEvaluator::evaluate)
-        .invoke(event.message());
+      .forAgent()
+      .inSession(sessionId())
+      .method(ToxicityEvaluator::evaluate)
+      .invoke(event.message());
   }
 
   private void evalSummarization(AiMessageAdded event) {
-    var sessionHistory =
-        componentClient
-            .forEventSourcedEntity(sessionId())
-            .method(SessionMemoryEntity::getHistory)
-            .invoke(new SessionMemoryEntity.GetHistoryCmd(Optional.empty()));
+    var sessionHistory = componentClient
+      .forEventSourcedEntity(sessionId())
+      .method(SessionMemoryEntity::getHistory)
+      .invoke(new SessionMemoryEntity.GetHistoryCmd(Optional.empty()));
 
-    Optional<SessionMessage> correspondingUserMessage = sessionHistory.messages().stream()
-        .takeWhile(m -> switch (m) {
-          case SessionMessage.AiMessage msg when msg.timestamp().equals(event.timestamp()) -> false;
+    Optional<SessionMessage> correspondingUserMessage = sessionHistory
+      .messages()
+      .stream()
+      .takeWhile(m ->
+        switch (m) {
+          case SessionMessage.AiMessage msg when msg
+            .timestamp()
+            .equals(event.timestamp()) -> false;
           default -> true;
         })
-        .filter(m -> m instanceof SessionMessage.UserMessage)
-        .reduce((first, second) -> second);
+      .filter(m -> m instanceof SessionMessage.UserMessage)
+      .reduce((first, second) -> second);
 
     if (correspondingUserMessage.isPresent()) {
       componentClient
-          .forAgent()
-          .inSession(sessionId())
-          .method(SummarizationEvaluator::evaluate)
-          .invoke(new SummarizationEvaluator.EvaluationRequest(
-              correspondingUserMessage.get().text(), event.message()));
+        .forAgent()
+        .inSession(sessionId())
+        .method(SummarizationEvaluator::evaluate)
+        .invoke(
+          new SummarizationEvaluator.EvaluationRequest(
+            correspondingUserMessage.get().text(),
+            event.message()
+          )
+        );
     }
   }
-
 
   private String sessionId() {
     return messageContext().eventSubject().get();
   }
 }
-

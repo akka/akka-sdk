@@ -2,6 +2,7 @@ package demo.multiagent.application;
 
 // tag::all[]
 import akka.javasdk.agent.Agent;
+import akka.javasdk.agent.EvaluationResult;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
@@ -26,8 +27,8 @@ public class EvaluatorAgent extends Agent {
     String finalAnswer
   ) {}
 
-  public record Result(String explanation, String label) {
-    public boolean ok() {
+  public record Result(String explanation, String label) implements EvaluationResult {
+    public boolean passed() {
       return switch (label.toLowerCase(Locale.ROOT)) {
         case "correct" -> true;
         case "incorrect" -> false;

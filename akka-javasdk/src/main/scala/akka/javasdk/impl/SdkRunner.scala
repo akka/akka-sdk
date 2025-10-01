@@ -98,7 +98,6 @@ import akka.javasdk.mcp.AbstractMcpEndpoint
 import akka.javasdk.mcp.McpRequestContext
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.timer.TimerScheduler
-import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi
@@ -540,7 +539,7 @@ private final class Sdk(
   componentClasses
     .filter(hasComponentId)
     .foreach {
-      case clz if classOf[EventSourcedEntity[_, _]].isAssignableFrom(clz) =>
+      case clz if Reflect.isEventSourcedEntity(clz) =>
         val componentId = extractComponentId(clz)
 
         val readOnlyCommandNames =
@@ -581,7 +580,7 @@ private final class Sdk(
             name = readComponentName(clz),
             description = readComponentDescription(clz))
 
-      case clz if classOf[KeyValueEntity[_]].isAssignableFrom(clz) =>
+      case clz if Reflect.isKeyValueEntity(clz) =>
         val componentId = extractComponentId(clz)
 
         val readOnlyCommandNames =
@@ -644,7 +643,7 @@ private final class Sdk(
             name = readComponentName(clz),
             description = readComponentDescription(clz))
 
-      case clz if classOf[TimedAction].isAssignableFrom(clz) =>
+      case clz if Reflect.isTimedAction(clz) =>
         val componentId = extractComponentId(clz)
         val timedActionClass = clz.asInstanceOf[Class[TimedAction]]
         val timedActionSpi =
@@ -670,7 +669,7 @@ private final class Sdk(
             name = readComponentName(clz),
             description = readComponentDescription(clz))
 
-      case clz if classOf[Consumer].isAssignableFrom(clz) =>
+      case clz if Reflect.isConsumer(clz) =>
         val componentId = extractComponentId(clz)
         val consumerClass = clz.asInstanceOf[Class[Consumer]]
         val consumerDest = consumerDestination(consumerClass)
@@ -702,7 +701,7 @@ private final class Sdk(
             name = readComponentName(clz),
             description = readComponentDescription(clz))
 
-      case clz if classOf[Agent].isAssignableFrom(clz) =>
+      case clz if Reflect.isAgent(clz) =>
         val componentId = extractComponentId(clz)
         val agentDescription = Option(clz.getAnnotation(classOf[AgentDescription]))
 
@@ -740,13 +739,15 @@ private final class Sdk(
             applicationConfig)
 
         }
+
         agentDescriptors :+=
           new AgentDescriptor(
             componentId,
             clz.getName,
             instanceFactory,
             name = readComponentName(clz),
-            description = readComponentDescription(clz))
+            description = readComponentDescription(clz),
+            evaluator = Reflect.isEvaluatorAgent(clz))
 
         agentRegistryInfo :+=
           (agentDescription match {
@@ -757,7 +758,7 @@ private final class Sdk(
               AgentRegistryImpl.AgentDetails(componentId, name = componentId, description = "", role = "", agentClass)
           })
 
-      case clz if classOf[View].isAssignableFrom(clz) =>
+      case clz if Reflect.isView(clz) =>
         viewDescriptors :+= ViewDescriptorFactory(clz, serializer, regionInfo, sdkExecutionContext)
 
       case clz if Reflect.isRestEndpoint(clz) =>
