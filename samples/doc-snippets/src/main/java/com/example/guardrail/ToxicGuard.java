@@ -1,10 +1,10 @@
 package com.example.guardrail;
 
 // tag::all[]
-import akka.javasdk.agent.Guardrail;
 import akka.javasdk.agent.GuardrailContext;
+import akka.javasdk.agent.TextGuardrail;
 
-public class ToxicGuard implements Guardrail {
+public class ToxicGuard implements TextGuardrail {
 
   private final String searchFor;
 

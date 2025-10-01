@@ -4,10 +4,10 @@
 
 package akkajavasdk.components.agent;
 
-import akka.javasdk.agent.Guardrail;
 import akka.javasdk.agent.GuardrailContext;
+import akka.javasdk.agent.TextGuardrail;
 
-public class TestGuardrail implements Guardrail {
+public class TestGuardrail implements TextGuardrail {
   private final String searchFor;
 
   public TestGuardrail(GuardrailContext context) {

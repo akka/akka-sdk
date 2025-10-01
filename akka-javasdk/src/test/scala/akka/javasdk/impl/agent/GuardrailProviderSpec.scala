@@ -9,6 +9,7 @@ import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.javasdk.agent.Guardrail
 import akka.javasdk.agent.GuardrailContext
 import akka.javasdk.agent.SimilarityGuard
+import akka.javasdk.agent.TextGuardrail
 import akka.runtime.sdk.spi.SpiAgent
 import com.typesafe.config.ConfigException
 import com.typesafe.config.ConfigFactory
@@ -38,13 +39,13 @@ object GuardrailProviderSpec {
     }
     """)
 
-  class MyGuard extends Guardrail {
+  class MyGuard extends TextGuardrail {
 
     override def evaluate(text: String): Guardrail.Result =
       new Guardrail.Result(true, "")
   }
 
-  class AnotherGuard(context: GuardrailContext) extends Guardrail {
+  class AnotherGuard(context: GuardrailContext) extends TextGuardrail {
 
     override def evaluate(text: String): Guardrail.Result =
       new Guardrail.Result(false, s"${context.name} says no")

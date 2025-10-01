@@ -12,6 +12,7 @@ import akka.annotation.InternalApi
 import akka.javasdk.agent.Guardrail
 import akka.javasdk.agent.GuardrailContext
 import akka.javasdk.agent.SimilarityGuard
+import akka.javasdk.agent.TextGuardrail
 import akka.javasdk.impl.agent.ConfiguredGuardrail.UseFor
 import akka.runtime.sdk.spi.SpiAgent
 import com.typesafe.config.Config
@@ -43,8 +44,16 @@ import com.typesafe.config.Config
     override def evaluate(content: SpiAgent.Guardrail.Content): Future[SpiAgent.Guardrail.Result] = {
       content match {
         case textContent: SpiAgent.Guardrail.TextContent =>
-          val result = guardrail.evaluate(textContent.text)
-          Future.successful(new SpiAgent.Guardrail.Result(result.passed, result.explanation))
+          guardrail match {
+            case textGuardrail: TextGuardrail =>
+              val result = textGuardrail.evaluate(textContent.text)
+              Future.successful(new SpiAgent.Guardrail.Result(result.passed, result.explanation))
+            case other =>
+              // it's sealed to only TextGuardrail so this shouldn't happen unless we add more types
+              Future.failed(
+                new IllegalStateException(s"Only TextGuardrail is supported, but was [${other.getClass.getName}]"))
+          }
+
         case other =>
           Future.failed(
             new IllegalArgumentException(s"Only text content is supported, but was [${other.getClass.getName}]"))
