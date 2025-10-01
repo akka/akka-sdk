@@ -67,7 +67,7 @@ curl -i -XPOST localhost:9000/carts/123/checkout
 
 ## Explore the local console
 
-To get a clear view of your locally running service, [install the Akka CLI](https://doc.akka.io/reference/cli/index.html). It provides a local web-based management console.
+To get a clear view of your locally running service, [install the Akka CLI](https://doc.akka.io/operations/cli/installation.html). It provides a local web-based management console.
 
 After you have installed the CLI, start the local console:
 
@@ -99,7 +99,7 @@ Build container image:
 mvn clean install -DskipTests
 ```
 
-Install the `akka` CLI as documented in [Install Akka CLI](https://doc.akka.io/reference/cli/index.html).
+Install the `akka` CLI as documented in [Install Akka CLI](https://doc.akka.io/operations/cli/installation.html).
 
 Deploy the service using the image name and tag from above `mvn install`:
 

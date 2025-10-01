@@ -52,6 +52,14 @@ RedirectMatch 301 ^/docs/akka/2.5.(\d+)/scala.html$      https://doc.akka.io/lib
 RedirectMatch 301 ^/docs/akka/2.5.(\d+)/java.html$       https://doc.akka.io/libraries/akka-core/2.5/?language=java
 
 # ===================================
+# Akka CLI docs, https://github.com/akka/akka-sdk/pull/324
+# ===================================
+Redirect 301 /reference/cli/index.html                https://doc.akka.io/operations/cli/index.html
+Redirect 301 /reference/cli/installation.html         https://doc.akka.io/operations/cli/index.html
+Redirect 301 /reference/cli/using-cli.html            https://doc.akka.io/operations/cli/using-cli.html
+Redirect 301 /reference/cli/command-completion.html   https://doc.akka.io/operations/cli/command-completion.html
+
+# ===================================
 # Akka core
 # ===================================
 Redirect 301 /docs/akka/current/contrib/cluster-singleton.html   https://doc.akka.io/libraries/akka-core/current/cluster-singleton.html
@@ -421,6 +429,3 @@ RedirectMatch 301 ^/libraries/(a[^/]+)/?$  https://doc.akka.io/libraries/$1/curr
 
 # All: /docs/{module}/.*    -> /libraries/{module}/.*
 RedirectMatch 301 ^/docs/([^/]+)/(.*)$       https://doc.akka.io/libraries/$1/$2
-
-# TODO remove once the real docs are published
-RedirectMatch 301 ^/akka-cli(/?|/.*)$      https://doc.akka.io/snapshots/akka-documentation/akka-cli$1

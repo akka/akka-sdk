@@ -169,7 +169,7 @@ Build container image:
 mvn clean install -DskipTests
 ```
 
-Install the `akka` CLI as documented in [Install Akka CLI](https://doc.akka.io/reference/cli/index.html).
+Install the `akka` CLI as documented in [Install Akka CLI](https://doc.akka.io/operations/cli/installation.html).
 
 Deploy the service using the image tag from above `mvn install`:
 
