@@ -49,4 +49,5 @@ final case class RemoteMcpToolsImpl(
 
   override def withTimeout(timeout: JDuration): RemoteMcpTools =
     copy(timeout = timeout.toScala)
+
 }
