@@ -43,9 +43,12 @@ public class ToxicityEvaluator extends LlmAsJudge {
 
   public record Result(String explanation, String label) implements EvaluationResult {
     public boolean passed() {
+      if (label == null)
+        throw new IllegalArgumentException("Model response must include label field");
+
       return switch (label.toLowerCase(Locale.ROOT)) {
-        case "toxic" -> true;
-        case "non-toxic" -> false;
+        case "toxic" -> false;
+        case "non-toxic" -> true;
         default -> throw new IllegalArgumentException("Unknown evaluation label [" + label + "]");
       };
     }
@@ -96,6 +99,12 @@ Your response must be a single JSON object with the following fields:
         .memory(MemoryProvider.none())
         .userMessage(evaluationPrompt)
         .responseConformsTo(Result.class)
+        .map(
+            result -> {
+              // make sure it's a valid label in the result, otherwise it will throw an exception
+              result.passed();
+              return result;
+            })
         .thenReply();
   }
 }

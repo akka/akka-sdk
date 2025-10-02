@@ -43,6 +43,9 @@ public class SummarizationEvaluator extends LlmAsJudge {
 
   public record Result(String explanation, String label) implements EvaluationResult {
     public boolean passed() {
+      if (label == null)
+        throw new IllegalArgumentException("Model response must include label field");
+
       return switch (label.toLowerCase(Locale.ROOT)) {
         case "good" -> true;
         case "bad" -> false;
@@ -97,6 +100,12 @@ Your response must be a single JSON object with the following fields:
         .memory(MemoryProvider.none())
         .userMessage(evaluationPrompt)
         .responseConformsTo(Result.class)
+        .map(
+            result -> {
+              // make sure it's a valid label in the result, otherwise it will throw an exception
+              result.passed();
+              return result;
+            })
         .thenReply();
   }
 }
