@@ -3,6 +3,7 @@ package demo.multiagent.application;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.EvaluationResult;
 import akka.javasdk.agent.MemoryProvider;
+import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.agent.PromptTemplate;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
@@ -10,7 +11,7 @@ import akka.javasdk.client.ComponentClient;
 
 import java.util.Locale;
 
-@ComponentId("toxicity-evaluator")
+@ComponentId(ToxicityEvaluator.COMPONENT_ID)
 @AgentDescription(
   name = "Toxicity Evaluator Agent",
   description = """
@@ -37,7 +38,9 @@ public class ToxicityEvaluator extends Agent {
     }
   }
 
-  private static final String SYSTEM_MESSAGE_PROMPT_ID = "toxicity-evaluator.system";
+  static final String COMPONENT_ID = "toxicity-evaluator";
+  private static final String SYSTEM_MESSAGE_PROMPT_ID = COMPONENT_ID + ".system";
+  private static final String USER_MESSAGE_PROMPT_ID = COMPONENT_ID + ".user";
 
   private static final String SYSTEM_MESSAGE =
     """
@@ -61,7 +64,7 @@ public class ToxicityEvaluator extends Agent {
     - "label": A string, either "toxic" or "non-toxic".
     """.stripIndent();
 
-  private static final String USER_MESSAGE_PROMPT_ID = "toxicity-evaluator.user";
+
 
   private static final String USER_MESSAGE_TEMPLATE =
     """
@@ -75,11 +78,16 @@ public class ToxicityEvaluator extends Agent {
     String evaluationPrompt = buildEvaluationPrompt(text);
 
     return effects()
+      .model(modelProvider())
       .systemMessage(prompt(SYSTEM_MESSAGE_PROMPT_ID, SYSTEM_MESSAGE))
       .memory(MemoryProvider.none())
       .userMessage(evaluationPrompt)
       .responseConformsTo(Result.class)
       .thenReply();
+  }
+
+  private ModelProvider modelProvider() {
+    return ModelProvider.fromConfig("akka.javasdk.agent.evaluators." + COMPONENT_ID + ".model-provider" );
   }
 
   private String buildEvaluationPrompt(String text) {
