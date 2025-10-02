@@ -31,19 +31,11 @@ abstract class LlmAsJudge extends Agent {
         config.getString("akka.javasdk.agent.evaluators." + componentId + ".model-provider"));
   }
 
-  protected String prompt(String promptId, String initMessage) {
+  protected String prompt(String promptId, String defaultPrompt) {
     return componentClient
         .forEventSourcedEntity(promptId)
         .method(PromptTemplate::getOptional)
         .invoke()
-        .orElseGet(() -> initPrompt(promptId, initMessage));
-  }
-
-  private String initPrompt(String promptId, String initMessage) {
-    componentClient
-        .forEventSourcedEntity(promptId)
-        .method(PromptTemplate::init)
-        .invoke(initMessage);
-    return initMessage;
+        .orElse(defaultPrompt);
   }
 }
