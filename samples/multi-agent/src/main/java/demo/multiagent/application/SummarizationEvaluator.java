@@ -3,6 +3,7 @@ package demo.multiagent.application;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.EvaluationResult;
 import akka.javasdk.agent.MemoryProvider;
+import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.agent.PromptTemplate;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
@@ -10,7 +11,7 @@ import akka.javasdk.client.ComponentClient;
 
 import java.util.Locale;
 
-@ComponentId("summarization-evaluator")
+@ComponentId(SummarizationEvaluator.COMPONENT_ID)
 @AgentDescription(
   name = "Summarization Evaluator Agent",
   description = """
@@ -39,7 +40,9 @@ public class SummarizationEvaluator extends Agent {
     }
   }
 
-  private static final String SYSTEM_MESSAGE_PROMPT_ID = "summarization-evaluator.system";
+  static final String COMPONENT_ID = "summarization-evaluator";
+  private static final String SYSTEM_MESSAGE_PROMPT_ID = COMPONENT_ID + ".system";
+  private static final String USER_MESSAGE_PROMPT_ID = COMPONENT_ID + ".user";
 
   private static final String INIT_SYSTEM_MESSAGE =
     """
@@ -59,8 +62,6 @@ public class SummarizationEvaluator extends Agent {
     - "label": A string, either "good" or "bad".
     """.stripIndent();
 
-  private static final String USER_MESSAGE_PROMPT_ID = "summarization-evaluator.user";
-
   private static final String USER_MESSAGE_TEMPLATE =
     """
     [Summary]
@@ -77,11 +78,16 @@ public class SummarizationEvaluator extends Agent {
     String evaluationPrompt = buildEvaluationPrompt(req);
 
     return effects()
+      .model(modelProvider())
       .systemMessage(INIT_SYSTEM_MESSAGE)
       .memory(MemoryProvider.none())
       .userMessage(evaluationPrompt)
       .responseConformsTo(Result.class)
       .thenReply();
+  }
+
+  private ModelProvider modelProvider() {
+    return ModelProvider.fromConfig("akka.javasdk.agent.evaluators." + COMPONENT_ID + ".model-provider" );
   }
 
   private String buildEvaluationPrompt(EvaluationRequest req) {
