@@ -42,6 +42,8 @@ import akka.javasdk.agent.AgentContext
 import akka.javasdk.agent.AgentRegistry
 import akka.javasdk.agent.PromptTemplate
 import akka.javasdk.agent.SessionMemoryEntity
+import akka.javasdk.agent.evaluator.SummarizationEvaluator
+import akka.javasdk.agent.evaluator.ToxicityEvaluator
 import akka.javasdk.annotations.AgentDescription
 import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.ComponentId
@@ -325,7 +327,8 @@ private object ComponentLocator {
 
     val withBuildInComponents = if (components.exists(classOf[Agent].isAssignableFrom)) {
       logger.debug("Agent component detected, adding built-in components")
-      classOf[SessionMemoryEntity] +: classOf[PromptTemplate] +: components
+      classOf[SessionMemoryEntity] +: classOf[PromptTemplate] +: classOf[ToxicityEvaluator] +: classOf[
+        SummarizationEvaluator] +: components
     } else {
       components
     }
