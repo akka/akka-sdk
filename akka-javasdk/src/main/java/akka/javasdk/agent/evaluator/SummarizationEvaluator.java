@@ -17,8 +17,8 @@ import java.util.Locale;
  * An agent that acts as an LLM judge to evaluate a summarization task.
  *
  * <p>Model provider is defined in configuration {@code
- * akka.javasdk.agent.evaluators.summarization-evaluator.model-provider}, why by default is the same
- * as the default model provider.
+ * akka.javasdk.agent.evaluators.summarization-evaluator.model-provider}, which by default is the
+ * same as the default model provider.
  *
  * <p>The system and user message prompts are loaded from {@link PromptTemplate} with id {@code
  * summarization-evaluator.system} and {@code summarization-evaluator.user} respectively. Default
@@ -58,7 +58,7 @@ public class SummarizationEvaluator extends LlmAsJudge {
   private static final String SYSTEM_MESSAGE_PROMPT_ID = COMPONENT_ID + ".system";
   private static final String USER_MESSAGE_PROMPT_ID = COMPONENT_ID + ".user";
 
-  private static final String INIT_SYSTEM_MESSAGE =
+  private static final String SYSTEM_MESSAGE =
       """
 You are comparing the summary text and it's original document and trying to determine
 if the summary is good.
@@ -81,11 +81,11 @@ Your response must be a single JSON object with the following fields:
       """
       [Summary]
       ************
-      {output}
+      {}
       ************
       [Original Document]
       ************
-      {input}
+      {}
       ************
       """
           .stripIndent();
@@ -96,7 +96,7 @@ Your response must be a single JSON object with the following fields:
 
     return effects()
         .model(modelProvider())
-        .systemMessage(prompt(SYSTEM_MESSAGE_PROMPT_ID, INIT_SYSTEM_MESSAGE))
+        .systemMessage(prompt(SYSTEM_MESSAGE_PROMPT_ID, SYSTEM_MESSAGE))
         .memory(MemoryProvider.none())
         .userMessage(evaluationPrompt)
         .responseConformsTo(Result.class)
