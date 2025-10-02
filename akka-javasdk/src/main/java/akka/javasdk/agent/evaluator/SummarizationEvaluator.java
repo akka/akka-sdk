@@ -21,9 +21,9 @@ import java.util.Locale;
  * as the default model provider.
  *
  * <p>The system and user message prompts are loaded from {@link PromptTemplate} with id {@code
- * summarization-evaluator.system} and {@code summarization-evaluator.user} respectively. The
- * default prompts are initialized at first usage but can be initialized to other prompts or updated
- * with the {@link PromptTemplate} entity.
+ * summarization-evaluator.system} and {@code summarization-evaluator.user} respectively. Default
+ * prompts are used if these are not defined. The prompts can be initialized or updated with the
+ * {@link PromptTemplate} entity.
  */
 @ComponentId(SummarizationEvaluator.COMPONENT_ID)
 @AgentDescription(

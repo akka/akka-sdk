@@ -22,8 +22,8 @@ import java.util.Locale;
  * the default model provider.
  *
  * <p>The system and user message prompts are loaded from {@link PromptTemplate} with id {@code
- * toxicity-evaluator.system} and {@code toxicity-evaluator.user} respectively. The default prompts
- * are initialized at first usage but can be initialized to other prompts or updated with the {@link
+ * toxicity-evaluator.system} and {@code toxicity-evaluator.user} respectively. Default prompts are
+ * used if these are not defined. The prompts can be initialized or updated with the {@link
  * PromptTemplate} entity.
  */
 @ComponentId(ToxicityEvaluator.COMPONENT_ID)
