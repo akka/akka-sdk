@@ -1,5 +1,5 @@
 = Component and service calls
-:page-aliases: java:asynchronous.adoc[]
+:page-aliases: java:asynchronous.adoc
 
 include::ROOT:partial$include.adoc[]
 

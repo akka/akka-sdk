@@ -1,4 +1,5 @@
 = Using the Akka CLI
+:page-aliases: reference:cli/using-cli.adoc
 :page-supergroup-browser-cli: Interface
 
 include::ROOT:partial$include.adoc[]

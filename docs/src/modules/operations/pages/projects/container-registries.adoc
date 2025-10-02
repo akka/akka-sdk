@@ -1,5 +1,5 @@
 = Configure a container registry
-:page-aliases: projects:projects/container-registries.adoc[]
+:page-aliases: projects:projects/container-registries.adoc
 
 include::ROOT:partial$include.adoc[]
 
