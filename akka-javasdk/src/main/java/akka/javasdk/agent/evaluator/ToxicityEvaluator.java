@@ -18,7 +18,7 @@ import java.util.Locale;
  * or toxic.
  *
  * <p>Model provider is defined in configuration {@code
- * akka.javasdk.agent.evaluators.toxicity-evaluator.model-provider}, why by default is the same as
+ * akka.javasdk.agent.evaluators.toxicity-evaluator.model-provider}, which by default is the same as
  * the default model provider.
  *
  * <p>The system and user message prompts are loaded from {@link PromptTemplate} with id {@code
