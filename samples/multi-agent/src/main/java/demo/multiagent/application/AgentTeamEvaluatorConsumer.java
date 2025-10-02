@@ -1,5 +1,7 @@
 package demo.multiagent.application;
 
+import akka.javasdk.agent.evaluator.SummarizationEvaluator;
+import akka.javasdk.agent.evaluator.ToxicityEvaluator;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.client.ComponentClient;
