@@ -722,7 +722,13 @@ private final class Sdk(
         }
 
         agentDescriptors :+=
-          new AgentDescriptor(componentId, clz.getName, instanceFactory, Reflect.isEvaluatorAgent(clz))
+          new AgentDescriptor(
+            componentId,
+            clz.getName,
+            instanceFactory,
+            None,
+            None, // FIXME name and description in other PR
+            Reflect.isEvaluatorAgent(clz))
 
         agentRegistryInfo :+=
           (agentDescription match {
