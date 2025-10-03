@@ -12,11 +12,11 @@ import java.util.Set;
 // tag::pojo-dependency-injection[]
 // tag::disable-components[]
 @Setup
-public class MyAppSetup implements ServiceSetup {
+public class Bootstrap implements ServiceSetup {
 
   private final Config appConfig;
 
-  public MyAppSetup(Config appConfig) {
+  public Bootstrap(Config appConfig) {
     this.appConfig = appConfig;
   }
 

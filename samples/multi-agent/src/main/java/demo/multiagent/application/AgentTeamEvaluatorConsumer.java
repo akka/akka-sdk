@@ -9,9 +9,10 @@ import akka.javasdk.consumer.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+// tag::class[]
 @ComponentId("agent-team-eval-consumer")
 @Consume.FromWorkflow(AgentTeamWorkflow.class)
-public class AgentTeamEvaluatorConsumer extends Consumer {
+public class AgentTeamEvaluatorConsumer extends Consumer { // <1>
   private static final Logger logger = LoggerFactory.getLogger(AgentTeamEvaluatorConsumer.class);
 
   private final ComponentClient componentClient;
@@ -20,7 +21,7 @@ public class AgentTeamEvaluatorConsumer extends Consumer {
     this.componentClient = componentClient;
   }
 
-  public Effect onStateChanged(AgentTeamWorkflow.State state) {
+  public Effect onStateChanged(AgentTeamWorkflow.State state) { // <2>
     if (state.status() == AgentTeamWorkflow.Status.COMPLETED) {
       evalToxicity(state);
       evalSummarization(state);
@@ -33,12 +34,12 @@ public class AgentTeamEvaluatorConsumer extends Consumer {
       componentClient
         .forAgent()
         .inSession(sessionId())
-        .method(ToxicityEvaluator::evaluate)
+        .method(ToxicityEvaluator::evaluate) // <3>
         .invoke(state.finalAnswer());
     if (result.passed()) {
       logger.debug("Eval toxicity failed, session [{}], explanation: {}", sessionId(), result.explanation());
     } else {
-      logger.warn("Eval toxicity passed, session [{}]", sessionId());
+      logger.warn("Eval toxicity passed, session [{}]", sessionId()); // <4>
     }
   }
 
@@ -67,3 +68,4 @@ public class AgentTeamEvaluatorConsumer extends Consumer {
     return messageContext().eventSubject().get();
   }
 }
+// end::class[]
