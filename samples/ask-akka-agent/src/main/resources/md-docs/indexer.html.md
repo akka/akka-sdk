@@ -78,7 +78,7 @@ Let’s start with the outer shell of the workflow class (this won’t compile y
 
 [RagIndexingWorkflow.java](https://github.com/akka/akka-sdk/blob/main/samples/ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java)
 ```java
-@ComponentId("rag-indexing-workflow")
+@Component(id = "rag-indexing-workflow")
 public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
 
   private final Logger logger = LoggerFactory.getLogger(getClass());

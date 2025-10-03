@@ -7,7 +7,7 @@ package akkajavasdk.components.workflowentities.legacy;
 import static java.time.Duration.ofMillis;
 import static java.time.Duration.ofSeconds;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import akkajavasdk.components.actions.echo.Message;
@@ -18,7 +18,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
-@ComponentId("workflow-with-timeout-legacy")
+@Component(id = "workflow-with-timeout-legacy")
 public class WorkflowWithTimeout extends Workflow<FailingCounterState> {
 
   private final String counterStepName = "counter";

@@ -1,6 +1,6 @@
 package shoppingcart.application;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.consumer.Consumer;
@@ -10,7 +10,7 @@ import shoppingcart.application.UserEntity.CloseCartCommand;
 import shoppingcart.domain.ShoppingCartEvent;
 
 // tag::consumer[]
-@ComponentId("cart-closer-consumer")
+@Component(id = "cart-closer-consumer")
 @Consume.FromEventSourcedEntity(value = ShoppingCartEntity.class, ignoreUnknown = true)
 public class CartCloser extends Consumer {
 

@@ -48,7 +48,7 @@ import java.util.concurrent.CompletionStage;
  * <h2>Example Implementation</h2>
  *
  * <pre>{@code
- * @ComponentId("counter")
+ * @Component(id = "counter")
  * public class CounterEntity extends KeyValueEntity<Counter> {
  *
  *   public CounterEntity(KeyValueEntityContext context) {

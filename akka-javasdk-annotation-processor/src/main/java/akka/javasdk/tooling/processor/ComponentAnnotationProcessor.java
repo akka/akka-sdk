@@ -37,6 +37,7 @@ import javax.tools.StandardLocation;
   "akka.javasdk.annotations.GrpcEndpoint",
   "akka.javasdk.annotations.mcp.McpEndpoint",
   // all components will have this
+  "akka.javasdk.annotations.Component",
   "akka.javasdk.annotations.ComponentId",
   // central config/lifecycle class
   "akka.javasdk.annotations.Setup"
@@ -170,6 +171,7 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
       case "akka.javasdk.annotations.GrpcEndpoint" -> GRPC_ENDPOINT_KEY;
       case "akka.javasdk.annotations.Setup" -> SERVICE_SETUP_KEY;
       case "akka.javasdk.annotations.mcp.McpEndpoint" -> MCP_ENDPOINT_KEY;
+      case "akka.javasdk.annotations.Component" -> componentType(annotatedClass);
       case "akka.javasdk.annotations.ComponentId" -> componentType(annotatedClass);
       default ->
           throw new IllegalArgumentException(
@@ -206,7 +208,7 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
           throw new IllegalArgumentException(
               "Unknown supertype for class ["
                   + annotatedClass
-                  + "] annotated with @ComponentId: ["
+                  + "] annotated with @Component or @ComponentId: ["
                   + superClassName
                   + "]");
       default ->

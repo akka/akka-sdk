@@ -1,7 +1,7 @@
 package shoppingcart.application;
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import org.slf4j.Logger;
@@ -15,7 +15,7 @@ import shoppingcart.domain.UserEvent;
  * be easy to add more user-specific features and events.
  */
 // tag::entity[]
-@ComponentId("user")
+@Component(id = "user")
 public class UserEntity extends EventSourcedEntity<User, UserEvent> {
 
   private final String entityId;

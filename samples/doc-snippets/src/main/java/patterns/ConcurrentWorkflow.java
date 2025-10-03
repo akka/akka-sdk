@@ -1,12 +1,12 @@
 package patterns;
 
 import agent_guide.part3.WeatherAgent;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import java.util.concurrent.TimeUnit;
 
-@ComponentId("concurrent-agent-team")
+@Component(id = "concurrent-agent-team")
 public class ConcurrentWorkflow extends Workflow<ConcurrentWorkflow.State> {
 
   public record State(

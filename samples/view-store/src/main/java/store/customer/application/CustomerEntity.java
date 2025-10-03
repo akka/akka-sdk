@@ -6,13 +6,13 @@ import static store.customer.domain.CustomerEvent.CustomerCreated;
 import static store.customer.domain.CustomerEvent.CustomerNameChanged;
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import store.customer.domain.Address;
 import store.customer.domain.Customer;
 import store.customer.domain.CustomerEvent;
 
-@ComponentId("customer")
+@Component(id = "customer")
 public class CustomerEntity extends EventSourcedEntity<Customer, CustomerEvent> {
 
   public ReadOnlyEffect<Customer> get() {

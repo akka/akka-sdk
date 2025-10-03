@@ -33,7 +33,7 @@ A Workflow implementation has the following code structure.
 ----
 include::example$doc-snippets/src/main/java/com/example/application/TransferWorkflow.java[tag=class]
 ----
-<1> Annotate the class with `@ComponentId` and pass a unique identifier for this workflow type.
+<1> Annotate the class with `@Component` and pass a unique identifier for this workflow type.
 <2> Class that extends `Workflow`.
 <3> Define optional configuration.
 <4> A step is a method that returns a `StepEffect`.
@@ -104,7 +104,7 @@ Let's have a look at what our transfer workflow will look like for the first 2 p
 ----
 include::example$transfer-workflow/src/main/java/com/example/transfer/application/TransferWorkflow.java[tag=class]
 ----
-<1> Annotate such class with `@ComponentId` and pass a unique identifier for this workflow type.
+<1> Annotate such class with `@Component` and pass a unique identifier for this workflow type.
 <2> Extend `Workflow<S>`, where `S` is the state type this workflow will store (i.e. `TransferState`).
 <3> Create a method to start the workflow that returns an `Effect<Done>` class.
 <4> The validation ensures the transfer amount is greater than zero and the workflow is not running already. Otherwise, we might corrupt the existing workflow.
@@ -114,7 +114,7 @@ include::example$transfer-workflow/src/main/java/com/example/transfer/applicatio
 <8> The last instruction is to inform the caller that the workflow was successfully started.
 
 
-NOTE: The `@ComponentId` value `transfer` is common for all instances of this workflow but must be stable - cannot be changed after a production deploy - and unique across the different workflow types.
+NOTE: The `@Component` value `transfer` is common for all instances of this workflow but must be stable - cannot be changed after a production deploy - and unique across the different workflow types.
 
 == Workflow steps
 

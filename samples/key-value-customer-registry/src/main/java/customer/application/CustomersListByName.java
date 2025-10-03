@@ -1,13 +1,13 @@
 package customer.application;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
 import customer.domain.Customer;
 
-@ComponentId("customers-list-by-name")
+@Component(id = "customers-list-by-name")
 // tag::class[]
 public class CustomersListByName extends View {
 

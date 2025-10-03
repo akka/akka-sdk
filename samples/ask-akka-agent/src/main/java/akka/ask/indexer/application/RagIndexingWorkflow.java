@@ -5,7 +5,7 @@ import static java.time.Duration.ofMinutes;
 
 import akka.Done;
 import akka.ask.common.OpenAiUtils;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.StepName;
 import akka.javasdk.workflow.Workflow;
 import com.mongodb.client.MongoClient;
@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
  * used to augment the LLM context.
  */
 // tag::shell[]
-@ComponentId("rag-indexing-workflow")
+@Component(id = "rag-indexing-workflow")
 public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
 
   private final Logger logger = LoggerFactory.getLogger(getClass());

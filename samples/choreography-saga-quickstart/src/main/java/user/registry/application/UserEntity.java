@@ -3,7 +3,7 @@ package user.registry.application;
 import static akka.Done.done;
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -28,7 +28,7 @@ import user.registry.domain.UserEvent;
  * This entity is protected from outside access. It can only be accessed from within this service (see the ACL annotation).
  * External access is gated and should go through the ApplicationController.
  */
-@ComponentId("user")
+@Component(id = "user")
 public class UserEntity extends EventSourcedEntity<User, UserEvent> {
 
   public record Create(String name, String country, String email) {}

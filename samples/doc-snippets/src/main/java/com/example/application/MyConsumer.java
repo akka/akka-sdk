@@ -1,12 +1,12 @@
 package com.example.application;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.DeleteHandler;
 import akka.javasdk.consumer.Consumer;
 import java.util.UUID;
 
-@ComponentId("my-consumer")
+@Component(id = "my-consumer")
 @Consume.FromKeyValueEntity(MyComponent.class)
 public class MyConsumer extends Consumer {
 

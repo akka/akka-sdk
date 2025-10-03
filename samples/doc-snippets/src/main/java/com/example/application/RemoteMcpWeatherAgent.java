@@ -4,10 +4,10 @@ import akka.http.javadsl.model.headers.Authorization;
 import akka.http.javadsl.model.headers.OAuth2BearerToken;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.RemoteMcpTools;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import java.util.Set;
 
-@ComponentId("remote-mcp-weather-agent")
+@Component(id = "remote-mcp-weather-agent")
 public class RemoteMcpWeatherAgent extends Agent {
 
   record AgentResponse() {}

@@ -65,12 +65,12 @@ The class signature for our counter entity will look like this:
 ----
 include::example$key-value-counter/src/main/java/com/example/application/CounterEntity.java[tags=declarations]
 ----
-<1> Every Entity must be annotated with `@ComponentId` with a stable unique identifier for this entity type.
+<1> Every Entity must be annotated with `@Component` with a stable unique identifier for this entity type.
 <2> The `CounterEntity` class should extend `akka.javasdk.keyvalueentity.KeyValueEntity`.
 <3> Stores the `entityId` on an internal attribute so we can use it later. Alternatively, if inside a command handler, `commandContext().entityId()` also provides such information.
 <4> The initial state of each counter is defined with value 0.
 
-NOTE: The `@ComponentId` value `counter` is common for all instances of this entity but must be stable - cannot be changed after a production deploy - and unique across the different entity types in the service.
+NOTE: The `@Component` value `counter` is common for all instances of this entity but must be stable - cannot be changed after a production deploy - and unique across the different entity types in the service.
 
 === Updating state
 

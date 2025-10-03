@@ -1,9 +1,9 @@
 package com.example.application;
 
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 
-@ComponentId("weather-agent")
+@Component(id = "weather-agent")
 public class WeatherAgent extends Agent {
 
   private static final String SYSTEM_MESSAGE =

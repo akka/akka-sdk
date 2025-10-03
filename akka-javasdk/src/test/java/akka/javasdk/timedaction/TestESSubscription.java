@@ -4,13 +4,13 @@
 
 package akka.javasdk.timedaction;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.consumer.Consumer;
 import akka.javasdk.eventsourcedentity.TestESEvent;
 import akka.javasdk.eventsourcedentity.TestEventSourcedEntity;
 
-@ComponentId("es-sub-action")
+@Component(id = "es-sub-action")
 @Consume.FromEventSourcedEntity(value = TestEventSourcedEntity.class, ignoreUnknown = true)
 public class TestESSubscription extends Consumer {
 

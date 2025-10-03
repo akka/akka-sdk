@@ -4,12 +4,12 @@
 
 package akkajavasdk.components.actions.headers;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.timedaction.TimedAction;
 
 /** Action with the same class name in a different package. */
 @SuppressWarnings("unused") // not here to be called, but to test conflicting names
-@ComponentId("echo2")
+@Component(id = "echo2")
 public class EchoAction extends TimedAction {
 
   public Effect stringMessage(String msg) {

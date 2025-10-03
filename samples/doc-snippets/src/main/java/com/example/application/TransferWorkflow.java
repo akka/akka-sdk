@@ -6,13 +6,13 @@ import static com.example.domain.TransferState.TransferStatus.WITHDRAW_SUCCEEDED
 import static java.time.Duration.ofSeconds;
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.workflow.Workflow;
 import com.example.domain.TransferState;
 import com.example.domain.TransferState.Transfer;
 
 // tag::class[]
-@ComponentId("transfer") // <1>
+@Component(id = "transfer") // <1>
 public class TransferWorkflow extends Workflow<TransferState> { // <2>
 
   public record Withdraw(String from, int amount) {}

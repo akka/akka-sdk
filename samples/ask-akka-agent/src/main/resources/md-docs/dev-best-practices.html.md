@@ -78,7 +78,7 @@ A consumer implementation that updates such a store is written in an idempotent 
 
 [CustomerStoreUpdater.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-customer-registry/src/main/java/customer/application/CustomerStoreUpdater.java)
 ```java
-@ComponentId("customer-store-updater")
+@Component(id = "customer-store-updater")
 @Consume.FromEventSourcedEntity(CustomerEntity.class)
 public class CustomerStoreUpdater extends Consumer {
 
@@ -131,7 +131,7 @@ Some updates are inherently not idempotent. A good example might be calculating 
 
 [CounterByValueView.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-counter-brokers/src/main/java/counter/application/CounterByValueView.java)
 ```java
-@ComponentId("counter-by-value")
+@Component(id = "counter-by-value")
 public class CounterByValueView extends View {
 
   public record CounterByValue(String name, int value) {
@@ -241,7 +241,7 @@ The Consumer component, uses sequence number for tracking deduplicated events.
 
 [CounterStoreUpdater.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-counter-brokers/src/main/java/counter/application/CounterStoreUpdater.java)
 ```java
-@ComponentId("counter-store-updater")
+@Component(id = "counter-store-updater")
 @Consume.FromEventSourcedEntity(CounterEntity.class)
 public class CounterStoreUpdater extends Consumer {
 
@@ -337,7 +337,7 @@ A different aspect of deduplication is how to deal with, possibly duplicated, in
 
 [WalletEntity.java](https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow-compensation/src/main/java/com/example/wallet/application/WalletEntity.java)
 ```java
-@ComponentId("wallet")
+@Component(id = "wallet")
 public class WalletEntity extends EventSourcedEntity<Wallet, WalletEvent> {
 
   public Effect<WalletResult> deposit(Deposit deposit) { // (1)

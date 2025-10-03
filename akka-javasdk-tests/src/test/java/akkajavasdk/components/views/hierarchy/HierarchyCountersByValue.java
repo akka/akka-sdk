@@ -8,7 +8,7 @@
 
 package akkajavasdk.components.views.hierarchy;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
@@ -17,7 +17,7 @@ import akkajavasdk.components.eventsourcedentities.counter.CounterEntity;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEvent;
 import java.util.Optional;
 
-@ComponentId("counters_by_value_hierarchy")
+@Component(id = "counters_by_value_hierarchy")
 public class HierarchyCountersByValue extends CountersByValueBaseClass {
 
   // needs to be in concrete class for now

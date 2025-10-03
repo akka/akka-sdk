@@ -40,7 +40,7 @@ A Workflow implementation has the following code structure.
 
 [TransferWorkflow.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/application/TransferWorkflow.java)
 ```java
-@ComponentId("transfer") // (1)
+@Component(id = "transfer") // (1)
 public class TransferWorkflow extends Workflow<TransferState> { // (2)
   public record Withdraw(String from, int amount) {
   }
@@ -143,7 +143,7 @@ The domain object is wrapped with a Event Sourced Entity component.
 
 [WalletEntity.java](https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow/src/main/java/com/example/wallet/application/WalletEntity.java)
 ```java
-@ComponentId("wallet")
+@Component(id = "wallet")
 public class WalletEntity extends EventSourcedEntity<Wallet, WalletEvent> {
 
   public Effect<Done> create(int initialBalance) { // (1)
@@ -229,7 +229,7 @@ Let’s have a look at what our transfer workflow will look like for the first 2
 
 [TransferWorkflow.java](https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow/src/main/java/com/example/transfer/application/TransferWorkflow.java)
 ```java
-@ComponentId("transfer") // (1)
+@Component(id = "transfer") // (1)
 public class TransferWorkflow extends Workflow<TransferState> { // (2)
 
   public record Withdraw(String from, int amount) {

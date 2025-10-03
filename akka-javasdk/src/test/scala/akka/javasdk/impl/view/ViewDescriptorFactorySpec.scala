@@ -167,14 +167,14 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
     "not allow View without ComponentId annotation" in {
       intercept[ValidationException] {
-        Validations.validate(classOf[ViewWithoutComponentIdAnnotation]).failIfInvalid()
+        Validations.validate(classOf[ViewWithoutComponentAnnotation]).failIfInvalid()
       }.getMessage should include("A View itself should not be annotated with @Table.")
     }
 
-    "not allow View with empty ComponentId" in {
+    "not allow View with empty Component" in {
       intercept[ValidationException] {
-        Validations.validate(classOf[ViewWithEmptyComponentIdAnnotation]).failIfInvalid()
-      }.getMessage should include("@ComponentId name is empty, must be a non-empty string.")
+        Validations.validate(classOf[ViewWithEmptyComponentAnnotation]).failIfInvalid()
+      }.getMessage should include("@Component id is empty, must be a non-empty string.")
     }
 
     "not allow View with a query with more than 1 param" in {
@@ -363,13 +363,13 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
     "not allow empty component id" in {
       intercept[ValidationException] {
-        Validations.validate(classOf[ViewWithEmptyComponentIdAnnotation]).failIfInvalid()
-      }.getMessage should include("@ComponentId name is empty, must be a non-empty string.")
+        Validations.validate(classOf[ViewWithEmptyComponentAnnotation]).failIfInvalid()
+      }.getMessage should include("@Component id is empty, must be a non-empty string.")
     }
 
     "not allow invalid component id" in {
       intercept[ValidationException] {
-        Validations.validate(classOf[ViewWithPipeyComponentIdAnnotation]).failIfInvalid()
+        Validations.validate(classOf[ViewWithPipeyComponentAnnotation]).failIfInvalid()
       }.getMessage should include("must not contain the pipe character")
     }
 

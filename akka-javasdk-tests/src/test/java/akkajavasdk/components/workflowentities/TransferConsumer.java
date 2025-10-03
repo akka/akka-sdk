@@ -4,12 +4,12 @@
 
 package akkajavasdk.components.workflowentities;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.DeleteHandler;
 import akka.javasdk.consumer.Consumer;
 
-@ComponentId("transfer-consumer")
+@Component(id = "transfer-consumer")
 @Consume.FromWorkflow(TransferWorkflow.class)
 public class TransferConsumer extends Consumer {
 

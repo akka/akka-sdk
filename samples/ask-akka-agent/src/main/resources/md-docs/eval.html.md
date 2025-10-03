@@ -38,12 +38,12 @@ Add a new file `EvaluatorAgent.java` to `src/main/java/com/example/application/`
 ```java
 import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.AgentDescription;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 
 import java.util.stream.Collectors;
 
-@ComponentId("evaluator-agent")
+@Component(id = "evaluator-agent")
 @AgentDescription(
     name = "Evaluator Agent",
     description = """
@@ -160,7 +160,7 @@ Add a new file `PreferencesConsumer.java` to `src/main/java/com/example/applicat
 
 [PreferencesConsumer.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/PreferencesConsumer.java)
 ```java
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.consumer.Consumer;
@@ -168,7 +168,7 @@ import demo.multiagent.domain.PreferencesEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ComponentId("preferences-consumer")
+@Component(id = "preferences-consumer")
 @Consume.FromEventSourcedEntity(PreferencesEntity.class) // (1)
 public class PreferencesConsumer extends Consumer { // (2)
 

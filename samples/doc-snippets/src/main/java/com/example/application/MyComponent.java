@@ -1,7 +1,7 @@
 package com.example.application;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 
-@ComponentId("my-component")
+@Component(id = "my-component")
 public class MyComponent extends KeyValueEntity<String> {}

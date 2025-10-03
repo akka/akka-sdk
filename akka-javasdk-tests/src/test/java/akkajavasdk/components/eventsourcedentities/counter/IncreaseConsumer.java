@@ -6,13 +6,13 @@ package akkajavasdk.components.eventsourcedentities.counter;
 
 import akka.Done;
 import akka.javasdk.Metadata;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.consumer.Consumer;
 import java.util.concurrent.CompletionStage;
 
-@ComponentId("increase-action")
+@Component(id = "increase-action")
 @Consume.FromEventSourcedEntity(value = CounterEntity.class)
 public class IncreaseConsumer extends Consumer {
 

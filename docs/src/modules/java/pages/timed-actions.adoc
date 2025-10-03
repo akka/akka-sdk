@@ -89,7 +89,7 @@ Now let’s examine the `OrderTimedAction.expireOrder` method.
 ----
 include::example$reliable-timers/src/main/java/com/example/application/OrderTimedAction.java[tags=expire-order]
 ----
-<1> Uses the `@ComponentId` annotation to identify the component.
+<1> Uses the `@Component` annotation to identify the component.
 <2> Extends the `TimedAction` class.
 <3> Call to `OrderEntity` to cancel the order.
 <4> Determines if the call should recover or fail. If `NotFound` or `Invalid` is returned, the timer is marked obsolete and is not rescheduled. Other errors cause `expireOrder` to fail, and the timer is rescheduled.

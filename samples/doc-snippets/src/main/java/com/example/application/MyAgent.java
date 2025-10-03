@@ -2,9 +2,9 @@ package com.example.application;
 
 // tag::class[]
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 
-@ComponentId("my-agent") // <2>
+@Component(id = "my-agent") // <2>
 public class MyAgent extends Agent { // <1>
 
   public Effect<String> query(String question) { // <3>

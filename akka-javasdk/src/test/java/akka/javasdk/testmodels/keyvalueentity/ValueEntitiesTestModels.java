@@ -4,13 +4,13 @@
 
 package akka.javasdk.testmodels.keyvalueentity;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.testmodels.Done;
 
 public class ValueEntitiesTestModels {
 
-  @ComponentId("user")
+  @Component(id = "user")
   public static class InvalidValueEntityWithOverloadedCommandHandler extends KeyValueEntity<User> {
     public KeyValueEntity.Effect<Done> createEntity(CreateUser createUser) {
       return effects().reply(Done.instance);

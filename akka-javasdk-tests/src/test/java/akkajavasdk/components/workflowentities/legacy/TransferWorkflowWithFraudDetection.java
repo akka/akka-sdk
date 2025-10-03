@@ -4,7 +4,7 @@
 
 package akkajavasdk.components.workflowentities.legacy;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import akkajavasdk.components.actions.echo.Message;
@@ -18,7 +18,7 @@ import akkajavasdk.components.workflowentities.TransferState;
 import akkajavasdk.components.workflowentities.WalletEntity;
 import akkajavasdk.components.workflowentities.Withdraw;
 
-@ComponentId("transfer-workflow-with-fraud-detection-legacy")
+@Component(id = "transfer-workflow-with-fraud-detection-legacy")
 public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> {
 
   private final String fraudDetectionStepName = "fraud-detection";

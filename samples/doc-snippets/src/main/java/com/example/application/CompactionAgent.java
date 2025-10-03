@@ -5,12 +5,12 @@ import akka.javasdk.agent.MemoryProvider;
 import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.agent.SessionHistory;
 import akka.javasdk.agent.SessionMessage;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import java.util.stream.Collectors;
 
 // tag::compaction[]
-@ComponentId("compaction-agent")
+@Component(id = "compaction-agent")
 public class CompactionAgent extends Agent {
 
   private static final String SYSTEM_MESSAGE =

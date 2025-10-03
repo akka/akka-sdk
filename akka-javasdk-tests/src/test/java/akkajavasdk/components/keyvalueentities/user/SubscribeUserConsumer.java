@@ -4,13 +4,13 @@
 
 package akkajavasdk.components.keyvalueentities.user;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.DeleteHandler;
 import akka.javasdk.consumer.Consumer;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEntity;
 
-@ComponentId("subscribe-user-action")
+@Component(id = "subscribe-user-action")
 @Consume.FromKeyValueEntity(UserEntity.class)
 public class SubscribeUserConsumer extends Consumer {
 

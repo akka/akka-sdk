@@ -2,7 +2,7 @@ package com.example.application;
 
 import akka.javasdk.agent.SessionMemoryEntity;
 import akka.javasdk.agent.SessionMessage;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.consumer.Consumer;
@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 
 // tag::consumer[]
 // tag::compaction[]
-@ComponentId("session-memory-consumer")
+@Component(id = "session-memory-consumer")
 @Consume.FromEventSourcedEntity(SessionMemoryEntity.class)
 public class SessionMemoryConsumer extends Consumer {
 

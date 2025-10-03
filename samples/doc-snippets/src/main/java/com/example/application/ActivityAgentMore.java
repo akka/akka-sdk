@@ -7,7 +7,7 @@ import akka.javasdk.agent.ModelTimeoutException;
 import akka.javasdk.agent.RateLimitException;
 import akka.javasdk.agent.ToolCallExecutionException;
 import akka.javasdk.annotations.Acl;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Description;
 import akka.javasdk.annotations.TypeName;
 import akka.javasdk.annotations.http.HttpEndpoint;
@@ -19,7 +19,7 @@ import java.time.Duration;
 
 public interface ActivityAgentMore {
   // tag::prompt-template[]
-  @ComponentId("activity-agent")
+  @Component(id = "activity-agent")
   public class ActivityAgentWithTemplate extends Agent {
 
     public Effect<String> query(String message) {
@@ -33,7 +33,7 @@ public interface ActivityAgentMore {
   // end::prompt-template[]
 
   // tag::structured-response[]
-  @ComponentId("activity-agent")
+  @Component(id = "activity-agent")
   public class ActivityAgentStructuredResponse extends Agent {
 
     private static final String SYSTEM_MESSAGE = // <1>
@@ -78,7 +78,7 @@ public interface ActivityAgentMore {
   // end::structured-response[]
 
   // tag::structured-response-schema[]
-  @ComponentId("activity-agent")
+  @Component(id = "activity-agent")
   public class ActivityAgentStructuredResponseSchema extends Agent {
 
     private static final String SYSTEM_MESSAGE = // <1>
@@ -105,7 +105,7 @@ public interface ActivityAgentMore {
   // end::structured-response-schema[]
 
   // tag::di[]
-  @ComponentId("activity-agent")
+  @Component(id = "activity-agent")
   public class ActivityAgent extends Agent {
 
     public record Request(String userId, String message) {}
@@ -144,7 +144,7 @@ public interface ActivityAgentMore {
     record UserProfileUpdated(String preferences) implements UserProfileEvent {}
   }
 
-  @ComponentId("user-profile")
+  @Component(id = "user-profile")
   public class UserProfileEntity extends EventSourcedEntity<UserProfile, UserProfileEvent> {
 
     public record GetProfile() {}
@@ -160,7 +160,7 @@ public interface ActivityAgentMore {
   }
 
   // tag::stream-tokens[]
-  @ComponentId("streaming-activity-agent")
+  @Component(id = "streaming-activity-agent")
   public class StreamingActivityAgent extends Agent {
 
     private static final String SYSTEM_MESSAGE =
@@ -227,7 +227,7 @@ public interface ActivityAgentMore {
 
   // end::stream-endpoint[]
 
-  @ComponentId("activity-agent")
+  @Component(id = "activity-agent")
   public class ActivityAgentWithErrorHandling extends Agent {
 
     private static final String SYSTEM_MESSAGE =

@@ -43,7 +43,7 @@ The result from the `SelectorAgent` is a list of agent ids. Add a new file `Agen
 include::java:example$multi-agent/src/main/java/demo/multiagent/domain/AgentSelection.java[tag=all]
 ----
 
-The information about the agents in the `AgentRegistry` comes from the `@ComponentId` and `@AgentDescription` annotations. When using it for planning like this it is important that the agents define those descriptions that the LLM can use to come up with a good plan.
+The information about the agents in the `AgentRegistry` comes from the `@Component` and `@AgentDescription` annotations. When using it for planning like this it is important that the agents define those descriptions that the LLM can use to come up with a good plan.
 
 Add the `@AgentDescription` to the `WeatherAgent`:
 [source,java,indent=0]

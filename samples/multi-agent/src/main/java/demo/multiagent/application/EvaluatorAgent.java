@@ -3,13 +3,13 @@ package demo.multiagent.application;
 // tag::all[]
 import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.AgentDescription;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-@ComponentId("evaluator-agent")
+@Component(id = "evaluator-agent")
 @AgentDescription(
   name = "Evaluator Agent",
   description = """

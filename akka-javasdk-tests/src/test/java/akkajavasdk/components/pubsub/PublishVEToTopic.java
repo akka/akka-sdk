@@ -8,7 +8,7 @@ import static akka.javasdk.impl.MetadataImpl.CeSubject;
 import static akkajavasdk.components.pubsub.PublishVEToTopic.CUSTOMERS_TOPIC;
 
 import akka.javasdk.Metadata;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Produce;
 import akka.javasdk.consumer.Consumer;
@@ -17,7 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // @Profile({"docker-it-test", "eventing-testkit-destination"})
-@ComponentId("publish-ve-to-topic")
+@Component(id = "publish-ve-to-topic")
 @Consume.FromKeyValueEntity(CustomerEntity.class)
 @Produce.ToTopic(CUSTOMERS_TOPIC)
 public class PublishVEToTopic extends Consumer {

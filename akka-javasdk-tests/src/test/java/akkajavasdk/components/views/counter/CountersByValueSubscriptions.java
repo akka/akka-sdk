@@ -4,7 +4,7 @@
 
 package akkajavasdk.components.views.counter;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
@@ -15,7 +15,7 @@ import akkajavasdk.components.eventsourcedentities.counter.CounterEvent;
 import java.util.List;
 
 // With Multiple Subscriptions
-@ComponentId("counters_by_value_ms")
+@Component(id = "counters_by_value_ms")
 public class CountersByValueSubscriptions extends View {
 
   @Consume.FromEventSourcedEntity(CounterEntity.class)
