@@ -59,7 +59,8 @@ public class SummarizationEvaluator extends LlmAsJudge {
   private static final String USER_MESSAGE_PROMPT_ID = COMPONENT_ID + ".user";
 
   private static final String SYSTEM_MESSAGE =
-      """
+// tag::prompt[]
+"""
 You are comparing the summary text and it's original document and trying to determine
 if the summary is good.
 
@@ -75,6 +76,7 @@ Your response must be a single JSON object with the following fields:
 - "explanation": An explanation of your reasoning for why the label is "good" or "bad"
 - "label": A string, either "good" or "bad".
 """
+// end::prompt[]
           .stripIndent();
 
   private static final String USER_MESSAGE_TEMPLATE =

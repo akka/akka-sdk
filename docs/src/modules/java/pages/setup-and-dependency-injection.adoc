@@ -28,9 +28,9 @@ individually and independently, for example during a rolling upgrade. Each such 
 You can use `ServiceSetup` to disable components by overriding `disabledComponents` and returning a set of component classes to disable.
 
 [source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/MyAppSetup.java[MyAppSetup.java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/Bootstrap.java[Bootstrap.java]
 ----
-include::example$doc-snippets/src/main/java/com/example/MyAppSetup.java[tag=disable-components]
+include::example$doc-snippets/src/main/java/com/example/Bootstrap.java[tag=disable-components]
 ----
 <1> Override `disabledComponents`
 <2> Provide a set of component classes to disable depending on the configuration
@@ -108,9 +108,9 @@ so should be avoided.
 The implementation can be pure Java without any dependencies:
 
 [source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/MyAppSetup.java[MyAppSetup.java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/Bootstrap.java[Bootstrap.java]
 ----
-include::example$doc-snippets/src/main/java/com/example/MyAppSetup.java[tag=pojo-dependency-injection]
+include::example$doc-snippets/src/main/java/com/example/Bootstrap.java[tag=pojo-dependency-injection]
 ----
 <1> Override `createDependencyProvider`
 <2> Create an object for injection, in this case an immutable settings class built from config defined in
