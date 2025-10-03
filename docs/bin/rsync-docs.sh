@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 if [ -z ${SCP_SECRET} ]; then
   echo "No SCP_SECRET found."
   exit 1;
@@ -17,9 +18,14 @@ if [ -z "${TARGET}" ]; then
 fi
 
 eval "$(ssh-agent -s)"
+trap 'rm -f .github/id_rsa' EXIT
 echo "${SCP_SECRET}" | base64 -di > .github/id_rsa
 chmod 600 .github/id_rsa
-ssh-add .github/id_rsa
+ssh-add .github/id_rsa || { echo "Failed to add SSH key."; exit 1; }
 rm .github/id_rsa
 export RSYNC_RSH="ssh -o UserKnownHostsFile=docs/bin/gustav_known_hosts.txt "
-rsync -azP ${SOURCE} ${TARGET}
+# -r (recursive): Copies directories and their contents.
+# -t (times): Preserves modification times, which is crucial for rsync's efficiency, as it uses timestamps to determine which files need to be updated.
+# -l (links): Copies symbolic links as links.
+# -z (compress): Compresses data during the transfer.
+rsync -rtlz ${SOURCE} ${TARGET}

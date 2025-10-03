@@ -84,7 +84,7 @@ Contact support to know which IPs to allow.
 mvn clean install -DskipTests
 ```
 
-2. Install the `akka` CLI as documented in [Install Akka CLI](https://doc.akka.io/reference/cli/index.html).
+2. Install the `akka` CLI as documented in [Install Akka CLI](https://doc.akka.io/operations/cli/installation.html).
 
 3. Let's setup up a secret containing both the OpenAI API key and the MongoDB Atlas Uri.
 
