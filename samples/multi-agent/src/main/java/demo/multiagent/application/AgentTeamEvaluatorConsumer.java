@@ -13,7 +13,10 @@ import org.slf4j.LoggerFactory;
 @ComponentId("agent-team-eval-consumer")
 @Consume.FromWorkflow(AgentTeamWorkflow.class)
 public class AgentTeamEvaluatorConsumer extends Consumer { // <1>
-  private static final Logger logger = LoggerFactory.getLogger(AgentTeamEvaluatorConsumer.class);
+
+  private static final Logger logger = LoggerFactory.getLogger(
+    AgentTeamEvaluatorConsumer.class
+  );
 
   private final ComponentClient componentClient;
 
@@ -30,37 +33,40 @@ public class AgentTeamEvaluatorConsumer extends Consumer { // <1>
   }
 
   private void evalToxicity(AgentTeamWorkflow.State state) {
-    var result =
-      componentClient
-        .forAgent()
-        .inSession(sessionId())
-        .method(ToxicityEvaluator::evaluate) // <3>
-        .invoke(state.finalAnswer());
+    var result = componentClient
+      .forAgent()
+      .inSession(sessionId())
+      .method(ToxicityEvaluator::evaluate) // <3>
+      .invoke(state.finalAnswer());
     if (result.passed()) {
       logger.debug("Eval toxicity passed, session [{}]", sessionId()); // <4>
     } else {
-      logger.warn("Eval toxicity failed, session [{}], explanation: {}", sessionId(), result.explanation());
+      logger.warn(
+        "Eval toxicity failed, session [{}], explanation: {}",
+        sessionId(),
+        result.explanation()
+      );
     }
   }
 
   private void evalSummarization(AgentTeamWorkflow.State state) {
     var agentsAnswers = String.join("\n\n", state.agentResponses().values());
 
-    var result =
-      componentClient
-          .forAgent()
-          .inSession(sessionId())
-          .method(SummarizationEvaluator::evaluate)
-          .invoke(
-              new SummarizationEvaluator.EvaluationRequest(
-                  agentsAnswers,
-                  state.finalAnswer()
-              )
-          );
+    var result = componentClient
+      .forAgent()
+      .inSession(sessionId())
+      .method(SummarizationEvaluator::evaluate)
+      .invoke(
+        new SummarizationEvaluator.EvaluationRequest(agentsAnswers, state.finalAnswer())
+      );
     if (result.passed()) {
       logger.debug("Eval summarization passed, session [{}]", sessionId());
     } else {
-      logger.warn("Eval summarization failed, session [{}], explanation: {}", sessionId(), result.explanation());
+      logger.warn(
+        "Eval summarization failed, session [{}], explanation: {}",
+        sessionId(),
+        result.explanation()
+      );
     }
   }
 
