@@ -37,9 +37,9 @@ public class AgentTeamEvaluatorConsumer extends Consumer { // <1>
         .method(ToxicityEvaluator::evaluate) // <3>
         .invoke(state.finalAnswer());
     if (result.passed()) {
-      logger.debug("Eval toxicity failed, session [{}], explanation: {}", sessionId(), result.explanation());
+      logger.debug("Eval toxicity passed, session [{}]", sessionId()); // <4>
     } else {
-      logger.warn("Eval toxicity passed, session [{}]", sessionId()); // <4>
+      logger.warn("Eval toxicity failed, session [{}], explanation: {}", sessionId(), result.explanation());
     }
   }
 
@@ -58,9 +58,9 @@ public class AgentTeamEvaluatorConsumer extends Consumer { // <1>
               )
           );
     if (result.passed()) {
-      logger.warn("Eval summarization failed, session [{}], explanation: {}", sessionId(), result.explanation());
-    } else {
       logger.debug("Eval summarization passed, session [{}]", sessionId());
+    } else {
+      logger.warn("Eval summarization failed, session [{}], explanation: {}", sessionId(), result.explanation());
     }
   }
 
