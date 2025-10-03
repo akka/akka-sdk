@@ -92,15 +92,15 @@ Your response must be a single JSON object with the following fields:
       """
       [Query]
       ************
-      {}
+      %s
       ************
       [Reference text]
       ************
-      {}
+      %s
       ************
       [Answer]
       ************
-      {}
+      %s
       ************
       """
           .stripIndent();

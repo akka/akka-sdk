@@ -62,15 +62,15 @@ public class HumanVsAiEvaluator extends Agent { // <1>
     """
     [Question]
     ************
-    {}
+    %s
     ************
     [Human ground truth answer]
     ************
-    {}
+    %s
     ************
     [AI Answer]
     ************
-    {}
+    %s
     ************
     """.stripIndent();
 
