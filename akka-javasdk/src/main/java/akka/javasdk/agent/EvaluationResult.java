@@ -14,7 +14,6 @@ public interface EvaluationResult {
   String explanation();
 
   /**
-   *
    * @return true if the input passed the guardrail evaluation
    */
   boolean passed();
