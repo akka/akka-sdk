@@ -83,11 +83,11 @@ Your response must be a single JSON object with the following fields:
       """
       [Summary]
       ************
-      {}
+      %s
       ************
       [Original Document]
       ************
-      {}
+      %s
       ************
       """
           .stripIndent();
