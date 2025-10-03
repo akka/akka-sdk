@@ -95,7 +95,7 @@ In the chat window it is important that you include the Akka documentation as co
 
 Make sure that you download the latest documentation regularly to make use of documentation improvements and new features.
 
-== IntelliJ IDEA AI assistant
+=== IntelliJ IDEA AI assistant
 
 For the AI assistant in IntelliJ IDEA you need to download the https://doc.akka.io/llms-ctx.txt[llms-ctx.txt, window="new"] file and place it in the root of the project directory. The AI assistant will include relevant information to the LLM.
 
@@ -105,26 +105,7 @@ It is important that you include the Akka documentation as context by enabling `
 
 Make sure that you download the latest documentation regularly to make use of documentation improvements and new features.
 
-=== Verify that it works
-
-To verify that the assistant now knows about Akka, we can ask the question again:
-
-[source]
-----
-What are the core components of Akka?
-----
-
-it should answer with something like
-
-[source]
-----
-1. Event Sourced Entities ...
-2. Key Value Entities ...
-3. HTTP Endpoints ...
-...
-----
-
-== Claude code
+=== Claude code
 
 For https://www.anthropic.com/claude-code[Claude code] you need to define a `CLAUDE.md` file with the following instructions:
 
@@ -155,6 +136,25 @@ Download the markdown documentation files and include them in the project direct
 . Add `akka-context/` to your `.gitignore` file, if you use git.
 
 Make sure that you download the latest documentation regularly to make use of documentation improvements and new features.
+
+== Verify that it works
+
+To verify that the assistant now knows about Akka, we can ask the question again:
+
+[source]
+----
+What are the core components of Akka?
+----
+
+it should answer with something like
+
+[source]
+----
+1. Event Sourced Entities ...
+2. Key Value Entities ...
+3. HTTP Endpoints ...
+...
+----
 
 == Include sample source code
 

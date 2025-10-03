@@ -42,6 +42,9 @@ import akka.javasdk.agent.AgentContext
 import akka.javasdk.agent.AgentRegistry
 import akka.javasdk.agent.PromptTemplate
 import akka.javasdk.agent.SessionMemoryEntity
+import akka.javasdk.agent.evaluator.HallucinationEvaluator
+import akka.javasdk.agent.evaluator.SummarizationEvaluator
+import akka.javasdk.agent.evaluator.ToxicityEvaluator
 import akka.javasdk.annotations.AgentDescription
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.GrpcEndpoint
@@ -95,7 +98,6 @@ import akka.javasdk.mcp.AbstractMcpEndpoint
 import akka.javasdk.mcp.McpRequestContext
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.timer.TimerScheduler
-import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi
@@ -323,7 +325,8 @@ private object ComponentLocator {
 
     val withBuildInComponents = if (components.exists(classOf[Agent].isAssignableFrom)) {
       logger.debug("Agent component detected, adding built-in components")
-      classOf[SessionMemoryEntity] +: classOf[PromptTemplate] +: components
+      classOf[SessionMemoryEntity] +: classOf[PromptTemplate] +: classOf[ToxicityEvaluator] +: classOf[
+        SummarizationEvaluator] +: classOf[HallucinationEvaluator] +: components
     } else {
       components
     }
@@ -535,7 +538,7 @@ private final class Sdk(
   componentClasses
     .filter(hasComponentId)
     .foreach {
-      case clz if classOf[EventSourcedEntity[_, _]].isAssignableFrom(clz) =>
+      case clz if Reflect.isEventSourcedEntity(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
 
         val readOnlyCommandNames =
@@ -574,7 +577,7 @@ private final class Sdk(
             instanceFactory,
             keyValue = false)
 
-      case clz if classOf[KeyValueEntity[_]].isAssignableFrom(clz) =>
+      case clz if Reflect.isKeyValueEntity(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
 
         val readOnlyCommandNames =
@@ -633,7 +636,7 @@ private final class Sdk(
             readOnlyCommandNames,
             ctx => workflowInstanceFactory(componentId, ctx, clz.asInstanceOf[Class[Workflow[Nothing]]]))
 
-      case clz if classOf[TimedAction].isAssignableFrom(clz) =>
+      case clz if Reflect.isTimedAction(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
         val timedActionClass = clz.asInstanceOf[Class[TimedAction]]
         val timedActionSpi =
@@ -654,7 +657,7 @@ private final class Sdk(
         timedActionDescriptors :+=
           new TimedActionDescriptor(componentId, clz.getName, timedActionSpi)
 
-      case clz if classOf[Consumer].isAssignableFrom(clz) =>
+      case clz if Reflect.isConsumer(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
         val consumerClass = clz.asInstanceOf[Class[Consumer]]
         val consumerDest = consumerDestination(consumerClass)
@@ -679,7 +682,7 @@ private final class Sdk(
         consumerDescriptors :+=
           new ConsumerDescriptor(componentId, clz.getName, consumerSrc, consumerDestination(consumerClass), consumerSpi)
 
-      case clz if classOf[Agent].isAssignableFrom(clz) =>
+      case clz if Reflect.isAgent(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
         val agentDescription = Option(clz.getAnnotation(classOf[AgentDescription]))
 
@@ -717,8 +720,15 @@ private final class Sdk(
             applicationConfig)
 
         }
+
         agentDescriptors :+=
-          new AgentDescriptor(componentId, clz.getName, instanceFactory)
+          new AgentDescriptor(
+            componentId,
+            clz.getName,
+            instanceFactory,
+            None,
+            None, // FIXME name and description in other PR
+            Reflect.isEvaluatorAgent(clz))
 
         agentRegistryInfo :+=
           (agentDescription match {
@@ -729,7 +739,7 @@ private final class Sdk(
               AgentRegistryImpl.AgentDetails(componentId, name = componentId, description = "", role = "", agentClass)
           })
 
-      case clz if classOf[View].isAssignableFrom(clz) =>
+      case clz if Reflect.isView(clz) =>
         viewDescriptors :+= ViewDescriptorFactory(clz, serializer, regionInfo, sdkExecutionContext)
 
       case clz if Reflect.isRestEndpoint(clz) =>
@@ -969,8 +979,8 @@ private final class Sdk(
 
   private def mcpEndpointFactory[E](mcpEndpointClass: Class[E]): McpEndpointConstructionContext => E = {
     (context: McpEndpointConstructionContext) =>
-      // FIXME(tracing): add full telemetry context to McpRequestContext
-      val telemetryContext = context.openTelemetrySpan.map(OtelContext.root.`with`)
+
+      val telemetryContext = Option(context.telemetryContext)
 
       lazy val mcpRequestContext = new McpRequestContext {
         override def getPrincipals: Principals =
