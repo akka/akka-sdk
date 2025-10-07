@@ -738,7 +738,7 @@ This role is defined in the `@AgentDescription` annotation.
 
 The name and the category are reported in logs, metrics and traces. The `category` should classify the type of validation. It can be any value, but a few recommended categories are JAILBREAK, PROMPT_INJECTION, PII, TOXIC, HALLUCINATED, NSFW, FORMAT.
 
-The guardrail can be enabled for certain inputs or outputs with the `use-for` property. Possible values are `model-request`, `model-response`, `mcp-tool-request`, `mcp-tool-response` and `*`.
+The guardrail can be enabled for certain inputs or outputs with the `use-for` property. The `use-for` property accepts the following values: `model-request`, `model-response`, `mcp-tool-request`, `mcp-tool-response`, and `*`.
 
 === Guardrail of similar text
 
