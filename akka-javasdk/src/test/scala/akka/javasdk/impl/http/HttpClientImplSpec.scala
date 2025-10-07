@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.http
 
+import akka.actor.testkit.typed.scaladsl.LogCapturing
+import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import akka.http.javadsl.model.HttpHeader
@@ -12,10 +14,9 @@ import akka.javasdk.http.HttpResponses
 import akka.javasdk.http.RequestBuilder
 import akka.util.ByteString
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.wordspec.AnyWordSpecLike
 
-class HttpClientImplSpec extends AnyWordSpec with Matchers {
-  val system: ActorSystem[Nothing] = ActorSystem[Nothing](Behaviors.empty[Nothing], "httpClient")
+class HttpClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matchers with LogCapturing {
 
   "RequestBuilderImpl" should {
     "add query parameter" in new HttpClientImplSuite {

@@ -5,6 +5,7 @@
 package akkajavasdk.components.agent;
 
 import akka.javasdk.agent.Agent;
+import akka.javasdk.agent.Guardrail;
 import akka.javasdk.annotations.Component;
 
 /** Dummy agent for testing component auto registration, e.g. PromptTemplate. */
@@ -17,6 +18,14 @@ public class SomeAgent extends Agent {
         .systemMessage("You are a helpful...")
         .userMessage(question)
         .map(SomeResponse::new)
+        .onFailure(
+            cause -> {
+              return switch (cause) {
+                case Guardrail.GuardrailException e -> new SomeResponse(e.getMessage());
+                case RuntimeException e -> throw e;
+                default -> throw new RuntimeException(cause);
+              };
+            })
         .thenReply();
   }
 }
