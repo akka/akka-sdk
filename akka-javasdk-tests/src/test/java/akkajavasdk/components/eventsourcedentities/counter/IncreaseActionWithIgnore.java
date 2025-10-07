@@ -5,13 +5,13 @@
 package akkajavasdk.components.eventsourcedentities.counter;
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.consumer.Consumer;
 import java.util.concurrent.CompletionStage;
 
-@ComponentId("increase-action-with-ignore")
+@Component(id = "increase-action-with-ignore")
 @Consume.FromEventSourcedEntity(value = CounterEntity.class, ignoreUnknown = true)
 public class IncreaseActionWithIgnore extends Consumer {
 

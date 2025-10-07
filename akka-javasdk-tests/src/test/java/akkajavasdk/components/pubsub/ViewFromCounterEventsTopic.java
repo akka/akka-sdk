@@ -6,7 +6,7 @@ package akkajavasdk.components.pubsub;
 
 import static akka.javasdk.impl.MetadataImpl.CeSubject;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
@@ -16,7 +16,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ComponentId("counter_view_topic_sub")
+@Component(id = "counter_view_topic_sub")
 public class ViewFromCounterEventsTopic extends View {
 
   public static final String COUNTER_EVENTS_TOPIC = "counter_events";

@@ -6,7 +6,7 @@ include::ROOT:partial$concepts-intro.adoc[]
 
 == Components
 
-You build your application using xref:reference:glossary.adoc#component[Akka _Components_]. These offer structure and maintain responsiveness. All components except Endpoints are placed in your `application` package. Endpoints live in the `api` package. Use `@ComponentId` or `@HttpEndpoint` to identify them to the runtime.
+You build your application using xref:reference:glossary.adoc#component[Akka _Components_]. These offer structure and maintain responsiveness. All components except Endpoints are placed in your `application` package. Endpoints live in the `api` package. Use `@Component` or `@HttpEndpoint` to identify them to the runtime.
 
 [cols="1,3", options="header"]
 [.compact]

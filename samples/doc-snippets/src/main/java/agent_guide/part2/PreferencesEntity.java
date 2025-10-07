@@ -2,11 +2,11 @@ package agent_guide.part2;
 
 // tag::all[]
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import java.util.List;
 
-@ComponentId("preferences") // <2>
+@Component(id = "preferences") // <2>
 public class PreferencesEntity extends EventSourcedEntity<Preferences, PreferencesEvent> { // <1>
 
   public record AddPreference(String preference) {}

@@ -92,7 +92,7 @@ For our new view, we want all of the information on the shopping cart contents, 
 
 [ShoppingCartView.java](https://github.com/akka/akka-sdk/blob/main/samples/shopping-cart-with-view/src/main/java/shoppingcart/application/ShoppingCartView.java)
 ```java
-@ComponentId("shopping-cart-view")
+@Component(id = "shopping-cart-view")
 public class ShoppingCartView extends View {
 
   @Query("SELECT * FROM shopping_carts WHERE cartId = :cartId") // (1)
@@ -172,7 +172,7 @@ The user entity in this sample is quite small (but easily enhanced later). It ma
 
 [UserEntity.java](https://github.com/akka/akka-sdk/blob/main/samples/shopping-cart-with-view/src/main/java/shoppingcart/application/UserEntity.java)
 ```java
-@ComponentId("user")
+@Component(id = "user")
 public class UserEntity extends EventSourcedEntity<User, UserEvent> {
   private final String entityId;
 
@@ -225,7 +225,7 @@ Given the preceding entity, we still need *something* to call the `closeCart` fu
 
 [CartCloser.java](https://github.com/akka/akka-sdk/blob/main/samples/shopping-cart-with-view/src/main/java/shoppingcart/application/CartCloser.java)
 ```java
-@ComponentId("cart-closer-consumer")
+@Component(id = "cart-closer-consumer")
 @Consume.FromEventSourcedEntity(value = ShoppingCartEntity.class, ignoreUnknown = true)
 public class CartCloser extends Consumer {
 

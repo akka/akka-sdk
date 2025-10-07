@@ -4,7 +4,7 @@
 
 package akkajavasdk.components.keyvalueentities.user;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.keyvalueentity.KeyValueEntityContext;
 import com.typesafe.config.Config;
@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-@ComponentId("test-counter")
+@Component(id = "test-counter")
 public class TestCounterEntity extends KeyValueEntity<Integer> {
   private final String entityId;
   private final Config userConfig;

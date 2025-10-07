@@ -7,7 +7,7 @@ image:ROOT:agent.png[Agent,width=100,float=left]An Agent interacts with an AI mo
 == Identify the agent
 Every component in Akka needs to be identifiable by the rest of the system. This usually involves two different forms of identification: a **component ID** an **instance ID**. We use component IDs as a way to identify the component _class_ and distinguish it from others. Instance identifiers are, as the name implies, unique identifiers for an instance of a component.
 
-As with all other components, we supply an identifier for the component class using the `@ComponentId` annotation.
+As with all other components, we supply an identifier for the component class using the `@Component` annotation.
 
 In the case of agents, we don't supply a unique identifier for the instance of the agent. Instead, we supply an identifier for the _session_ to which the agent is bound. This lets you have multiple components with different component IDs all performing various agentic tasks within the same shared session.
 
@@ -38,10 +38,10 @@ An agent implementation has the following code structure.
 include::example$doc-snippets/src/main/java/com/example/application/MyAgent.java[tag=class]
 ----
 <1> Create a class that extends `Agent`.
-<2> Make sure to annotate the class with `@ComponentId` and pass a unique identifier for this agent type.
+<2> Make sure to annotate the class with `@Component` and pass a unique identifier for this agent type.
 <3> Define the command handler method.
 
-NOTE: The `@ComponentId` value `my-agent` is common for all instances of this agent and must be unique across the different components in the service.
+NOTE: The `@Component` value `my-agent` is common for all instances of this agent and must be unique across the different components in the service.
 
 An agent must have one command handler method that is public and returns `Effect<T>`, where `T` it the type of the reply. Alternatively it can return `StreamEffect` for xref:#_streaming_response[streaming responses].
 
@@ -617,7 +617,7 @@ include::example$multi-agent/src/main/java/demo/multiagent/application/SelectorA
 <2> Select the agents with the role `"worker"`.
 <3> Detailed instructions and include descriptions (as json) of the agents.
 
-The information about the agents in the `AgentRegistry` comes from the `@ComponentId` and `@AgentDescription` annotations. When using it for planning like this it is important that the agents define those descriptions that the LLM can use to come up with a good plan.
+The information about the agents in the `AgentRegistry` comes from the `@Component` and `@AgentDescription` annotations. When using it for planning like this it is important that the agents define those descriptions that the LLM can use to come up with a good plan.
 
 The `WeatherAgent` has:
 [source,java,indent=0]

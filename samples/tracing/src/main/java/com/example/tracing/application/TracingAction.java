@@ -1,6 +1,6 @@
 package com.example.tracing.application;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.timedaction.TimedAction;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
@@ -10,7 +10,7 @@ import java.util.concurrent.CompletionStage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ComponentId("tracing-action")
+@Component(id = "tracing-action")
 public class TracingAction extends TimedAction {
 
   private static final Logger logger = LoggerFactory.getLogger(TracingAction.class);

@@ -6,11 +6,11 @@ package akkajavasdk.components.workflowentities;
 
 import static java.time.Duration.ofMillis;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.workflow.Workflow;
 import akkajavasdk.components.actions.echo.Message;
 
-@ComponentId("workflow-with-step-timeout")
+@Component(id = "workflow-with-step-timeout")
 public class WorkflowWithStepTimeout extends Workflow<FailingCounterState> {
 
   @Override

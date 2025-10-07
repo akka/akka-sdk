@@ -72,7 +72,7 @@ import java.util.function.Function;
  * <h2>Example Implementation</h2>
  *
  * <pre>{@code
- * @ComponentId("shopping-cart")
+ * @Component(id = "shopping-cart")
  * public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, ShoppingCartEvent> {
  *   private final String entityId;
  *

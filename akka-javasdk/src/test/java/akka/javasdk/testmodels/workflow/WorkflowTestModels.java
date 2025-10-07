@@ -5,7 +5,7 @@
 package akka.javasdk.testmodels.workflow;
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.StepName;
 import akka.javasdk.workflow.Workflow;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class WorkflowTestModels {
 
-  @ComponentId("transfer-workflow")
+  @Component(id = "transfer-workflow")
   public static class TransferWorkflow extends Workflow<WorkflowState> {
 
     public Effect<String> startTransfer(StartWorkflow startWorkflow) {

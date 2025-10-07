@@ -4,12 +4,12 @@
 
 package akkajavasdk.components.workflowentities;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ComponentId("wallet")
+@Component(id = "wallet")
 public class WalletEntity extends KeyValueEntity<Wallet> {
 
   private static final Logger logger = LoggerFactory.getLogger(WalletEntity.class);

@@ -40,7 +40,7 @@ Add a new file `ConversationHistoryView.java` to `src/main/java/akka/ask/agent/a
 
 [ConversationHistoryView.java](https://github.com/akka/akka-sdk/blob/main/samples/ask-akka-agent/src/main/java/akka/ask/agent/application/ConversationHistoryView.java)
 ```java
-@ComponentId("view_chat_log")
+@Component(id = "view_chat_log")
 public class ConversationHistoryView extends View {
 
   public record ConversationHistory(List<Session> sessions) {

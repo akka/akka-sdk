@@ -2,7 +2,7 @@ package agent_guide.part3;
 
 // tag::all[]
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Description;
 import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.http.HttpClient;
@@ -11,7 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-@ComponentId("weather-agent")
+@Component(id = "weather-agent")
 public class WeatherAgent extends Agent {
 
   private static final String SYSTEM_MESSAGE = // <1>

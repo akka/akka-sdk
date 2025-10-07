@@ -5,10 +5,10 @@
 package akkajavasdk.components.agent;
 
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.FunctionTool;
 
-@ComponentId("some-agent-with-tool")
+@Component(id = "some-agent-with-tool")
 public class SomeAgentWithTool extends Agent {
 
   public static class WeatherService {

@@ -5,7 +5,7 @@
 package akka.javasdk.testmodels.view;
 
 import akka.javasdk.annotations.Acl;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.DeleteHandler;
 import akka.javasdk.annotations.Query;
@@ -62,7 +62,7 @@ public class ViewTestModels {
 
   public record TwoStepRecursiveChild(TwoStepRecursive recursive) {}
 
-  @ComponentId("users_view")
+  @Component(id = "users_view")
   public static class UserByEmailWithGet extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -75,7 +75,7 @@ public class ViewTestModels {
   }
 
   @Table("users")
-  public static class ViewWithoutComponentIdAnnotation extends View {
+  public static class ViewWithoutComponentAnnotation extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
     public static class UserUpdater extends TableUpdater<User> {}
@@ -86,8 +86,8 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId(" ")
-  public static class ViewWithEmptyComponentIdAnnotation extends View {
+  @Component(id = " ")
+  public static class ViewWithEmptyComponentAnnotation extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
     public static class UserUpdater extends TableUpdater<User> {}
@@ -98,8 +98,8 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("oh|my|pipe")
-  public static class ViewWithPipeyComponentIdAnnotation extends View {
+  @Component(id = "oh|my|pipe")
+  public static class ViewWithPipeyComponentAnnotation extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
     public static class UserUpdater extends TableUpdater<User> {}
@@ -110,7 +110,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("view_query_with_too_many_arguments")
+  @Component(id = "view_query_with_too_many_arguments")
   public static class ViewQueryWithTooManyArguments extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -122,7 +122,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("users_view")
+  @Component(id = "users_view")
   public static class ViewWithLowerCaseQuery extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -134,7 +134,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("users_view")
+  @Component(id = "users_view")
   public static class ViewWithQuotedTableName extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -146,7 +146,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("users_view")
+  @Component(id = "users_view")
   public static class ViewWithNoTableUpdater extends View {
 
     @Query("SELECT * FROM users WHERE email = :email")
@@ -155,7 +155,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("users_view")
+  @Component(id = "users_view")
   @Table("users")
   public static class ViewWithTableName extends View {
 
@@ -168,7 +168,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("users_view")
+  @Component(id = "users_view")
   public static class WrongQueryReturnType extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -180,7 +180,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("users_view")
+  @Component(id = "users_view")
   public static class WrongQueryEffectReturnType extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -192,7 +192,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("users_view")
+  @Component(id = "users_view")
   public static class WrongHandlerSignature extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -209,7 +209,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("users_view")
+  @Component(id = "users_view")
   public static class TransformedUserView extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -233,7 +233,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("users_view")
+  @Component(id = "users_view")
   public static class ViewWithInvalidRowType extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -249,7 +249,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("users_view")
+  @Component(id = "users_view")
   public static class TransformedUserViewWithDeletes extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -272,7 +272,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("users_view")
+  @Component(id = "users_view")
   public static class UserViewWithOnlyDeleteHandler extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -290,7 +290,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("users_view")
+  @Component(id = "users_view")
   public static class UserViewWithoutTransformation extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -302,7 +302,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("users_view")
+  @Component(id = "users_view")
   public static class ViewWithoutSubscription extends View {
 
     public static class UserUpdater extends TableUpdater<TransformedUser> {}
@@ -313,7 +313,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("users_view")
+  @Component(id = "users_view")
   public static class ViewDuplicatedHandleDeletesAnnotations extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -340,7 +340,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("users_view")
+  @Component(id = "users_view")
   public static class ViewHandleDeletesWithParam extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -362,10 +362,10 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("users_view")
+  @Component(id = "users_view")
   public static class ViewWithNoQuery extends View {}
 
-  @ComponentId("users_view")
+  @Component(id = "users_view")
   public static class ViewWithTwoQueries extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -382,7 +382,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("users_view")
+  @Component(id = "users_view")
   public static class ViewWithIncorrectQueries extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -400,7 +400,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("employees_view")
+  @Component(id = "employees_view")
   public static class SubscribeToEventSourcedEvents extends View {
 
     @Consume.FromEventSourcedEntity(EmployeeEntity.class)
@@ -422,7 +422,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("employees_view")
+  @Component(id = "employees_view")
   public static class SubscribeToSealedEventSourcedEvents extends View {
 
     @Consume.FromEventSourcedEntity(EmployeeEntity.class)
@@ -443,7 +443,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("users_view")
+  @Component(id = "users_view")
   public static class SubscribeToEventSourcedWithMissingHandler extends View {
 
     @Consume.FromEventSourcedEntity(EmployeeEntity.class)
@@ -460,7 +460,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("users_view")
+  @Component(id = "users_view")
   public static class TypeLevelSubscribeToEventSourcedEventsWithMissingHandler extends View {
 
     @Consume.FromEventSourcedEntity(value = EmployeeEntity.class, ignoreUnknown = false)
@@ -477,7 +477,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("employees_view")
+  @Component(id = "employees_view")
   @Acl(allow = @Acl.Matcher(service = "test"))
   public static class ViewWithServiceLevelAcl extends View {
 
@@ -490,7 +490,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("employees_view")
+  @Component(id = "employees_view")
   public static class ViewWithMethodLevelAcl extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -503,7 +503,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("users_view")
+  @Component(id = "users_view")
   public static class UserByEmailWithCollectionReturn extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -515,7 +515,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("users_view")
+  @Component(id = "users_view")
   public static class UserByEmailWithStreamReturn extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -527,7 +527,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("users_view")
+  @Component(id = "users_view")
   public static class MultiTableViewValidation extends View {
     @Consume.FromKeyValueEntity(UserEntity.class)
     public static class ViewTableWithoutTableAnnotation extends TableUpdater<User> {}
@@ -546,13 +546,13 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("multi-table-view-without-query")
+  @Component(id = "multi-table-view-without-query")
   public static class MultiTableViewWithoutQuery extends View {
     @Table("users")
     public static class Users extends TableUpdater<User> {}
   }
 
-  @ComponentId("multi-table-view-with-multiple-queries")
+  @Component(id = "multi-table-view-with-multiple-queries")
   public static class MultiTableViewWithMultipleQueries extends View {
     @Query("SELECT * FROM users")
     public QueryEffect<User> query1() {
@@ -569,7 +569,7 @@ public class ViewTestModels {
     public static class Users extends TableUpdater<User> {}
   }
 
-  @ComponentId("multi-table-view-with-join-query")
+  @Component(id = "multi-table-view-with-join-query")
   public static class MultiTableViewWithJoinQuery extends View {
 
     @Query(
@@ -606,7 +606,7 @@ public class ViewTestModels {
     public static class Assigned extends TableUpdater<AssignedCounterState> {}
   }
 
-  @ComponentId("multi-table-view-with-join-query")
+  @Component(id = "multi-table-view-with-join-query")
   public static class MultiTableViewWithDuplicatedVESubscriptions extends View {
 
     @Query("SELECT * FROM employees")
@@ -640,7 +640,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("multi-table-view-with-join-query")
+  @Component(id = "multi-table-view-with-join-query")
   public static class MultiTableViewWithDuplicatedESSubscriptions extends View {
 
     @Query("SELECT * FROM users")
@@ -674,7 +674,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("time-tracker-view")
+  @Component(id = "time-tracker-view")
   public static class TimeTrackerView extends View {
 
     @Consume.FromKeyValueEntity(TimeTrackerEntity.class)
@@ -686,7 +686,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("employee_view")
+  @Component(id = "employee_view")
   public static class TopicTypeLevelSubscriptionView extends View {
 
     @Consume.FromTopic(value = "source", consumerGroup = "cg")
@@ -711,7 +711,7 @@ public class ViewTestModels {
 
   public record ById(String id) {}
 
-  @ComponentId("recursive_view")
+  @Component(id = "recursive_view")
   public static class RecursiveViewStateView extends View {
     @Consume.FromTopic(value = "recursivetopic")
     public static class Events extends TableUpdater<Recursive> {}
@@ -722,7 +722,7 @@ public class ViewTestModels {
     }
   }
 
-  @ComponentId("all_the_field_types_view")
+  @Component(id = "all_the_field_types_view")
   public static class AllTheFieldTypesView extends View {
     @Consume.FromTopic(value = "allthetypestopic")
     public static class Events extends TableUpdater<EveryType> {}

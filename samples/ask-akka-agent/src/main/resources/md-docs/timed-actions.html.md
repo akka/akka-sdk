@@ -108,7 +108,7 @@ For reference, here is the `OrderEntity.placeOrder` method implementation.
 
 [OrderEntity.java](https://github.com/akka/akka-sdk/blob/main/samples/reliable-timers/src/main/java/com/example/application/OrderEntity.java)
 ```java
-@ComponentId("order")
+@Component(id = "order")
 public class OrderEntity extends KeyValueEntity<Order> {
    //...
   public Effect<Order> placeOrder(OrderRequest orderRequest) { // (1)
@@ -138,7 +138,7 @@ Now let’s examine the `OrderTimedAction.expireOrder` method.
 
 [OrderTimedAction.java](https://github.com/akka/akka-sdk/blob/main/samples/reliable-timers/src/main/java/com/example/application/OrderTimedAction.java)
 ```java
-@ComponentId("order-timed-action") // (1)
+@Component(id = "order-timed-action") // (1)
 public class OrderTimedAction extends TimedAction { // (2)
 
   private final ComponentClient componentClient;
@@ -170,7 +170,7 @@ Here is the `OrderEntity.cancel` method for reference.
 
 [OrderEntity.java](https://github.com/akka/akka-sdk/blob/main/samples/reliable-timers/src/main/java/com/example/application/OrderEntity.java)
 ```java
-@ComponentId("order")
+@Component(id = "order")
 public class OrderEntity extends KeyValueEntity<Order> {
    //...
   public Effect<Result> cancel() {

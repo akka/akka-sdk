@@ -4,14 +4,14 @@
 
 package akkajavasdk.components.workflowentities;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import akka.javasdk.workflow.WorkflowContext;
 import akkajavasdk.components.actions.echo.Message;
 import java.time.Duration;
 
-@ComponentId("workflow-with-timer")
+@Component(id = "workflow-with-timer")
 public class WorkflowWithTimer extends Workflow<FailingCounterState> {
 
   private final WorkflowContext workflowContext;

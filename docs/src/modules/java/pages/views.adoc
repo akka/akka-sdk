@@ -69,7 +69,7 @@ include::example$key-value-customer-registry/src/main/java/customer/application/
 <6> Use method `queryResult()` to return the result of the query.
 
 
-IMPORTANT: Assigning a component identifier (i.e. `@ComponentId`) to your View is mandatory, it must be unique, and it should be stable. This allows you to refactor the name of the class later on without the risk of losing the view. If you change this identifier later, Akka will not recognize this component as the same view and will create a brand-new view. For a view consuming from an Event Sourced Entity this becomes very resource consuming because it will reprocess all the events of that entity to rebuild it. While for a view built from a topic, you can lose all the previous events because, depending on the topic configuration, you may only process events from the current time forwards. Last but not least, it's also a problem for Key Value Entities because it will need to index them again when grouping them by some value.
+IMPORTANT: Assigning a component identifier (i.e. `@Component`) to your View is mandatory, it must be unique, and it should be stable. This allows you to refactor the name of the class later on without the risk of losing the view. If you change this identifier later, Akka will not recognize this component as the same view and will create a brand-new view. For a view consuming from an Event Sourced Entity this becomes very resource consuming because it will reprocess all the events of that entity to rebuild it. While for a view built from a topic, you can lose all the previous events because, depending on the topic configuration, you may only process events from the current time forwards. Last but not least, it's also a problem for Key Value Entities because it will need to index them again when grouping them by some value.
 
 === Using a transformed model
 
@@ -266,7 +266,7 @@ TIP: You should be able to test if a change is compatible locally by running the
 
 Rebuilding a new View may take some time if there are many events that have to be processed. The recommended way when changing a View is multi-step, with two deployments:
 
-. Define the new View with a new `@ComponentId`, and keep the old View intact.
+. Define the new View with a new `@Component`, and keep the old View intact.
 . Deploy the new View, and let it rebuild. Verify that the new query works as expected. The old View can still be used.
 . Remove the old View and redirect the endpoint calls to the new View.
 . Deploy the second change.

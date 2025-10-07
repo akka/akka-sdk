@@ -3,9 +3,9 @@ package com.example.application;
 // tag::class[]
 import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.AgentDescription;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 
-@ComponentId("ask-akka-agent") // <2>
+@Component(id = "ask-akka-agent") // <2>
 @AgentDescription(name = "Ask Akka", description = "Expert in Akka")
 public class AskAkkaAgent extends Agent { // <1>
 

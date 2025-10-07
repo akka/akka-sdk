@@ -4,12 +4,12 @@
 
 package akkajavasdk.components.workflowentities;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akkajavasdk.components.eventsourcedentities.counter.Counter;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEvent;
 
-@ComponentId("failing-counter")
+@Component(id = "failing-counter")
 public class FailingCounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
 
   @Override

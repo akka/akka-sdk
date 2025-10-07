@@ -4,10 +4,10 @@
 
 package akkajavasdk.components.keyvalueentities.hierarchy;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import java.util.Optional;
 
-@ComponentId("hierarchy-kv-entity")
+@Component(id = "hierarchy-kv-entity")
 public class TextKvEntity extends AbstractTextKvEntity {
 
   public Effect<String> setText(String text) {

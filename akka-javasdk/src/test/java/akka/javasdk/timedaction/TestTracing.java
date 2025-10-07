@@ -4,7 +4,7 @@
 
 package akka.javasdk.timedaction;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.consumer.Consumer;
 import akka.javasdk.eventsourcedentity.TestESEvent;
@@ -14,7 +14,7 @@ import io.opentelemetry.context.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ComponentId("tracing-action")
+@Component(id = "tracing-action")
 @Consume.FromEventSourcedEntity(value = TestEventSourcedEntity.class, ignoreUnknown = true)
 public class TestTracing extends Consumer {
 

@@ -6,7 +6,7 @@ import static demo.multiagent.application.AgentTeamWorkflow.Status.STARTED;
 import static java.time.Duration.ofSeconds;
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.StepName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.client.DynamicMethodRef;
@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 
 // tag::all[]
 // tag::plan[]
-@ComponentId("agent-team")
+@Component(id = "agent-team")
 public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1>
 
   public record Request(String userId, String message) {}

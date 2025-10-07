@@ -4,7 +4,7 @@
 
 package akkajavasdk.components.views.customer;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
@@ -13,7 +13,7 @@ import akkajavasdk.components.keyvalueentities.customer.CustomerEntity;
 import java.time.Instant;
 import java.util.List;
 
-@ComponentId("view_customers_by_creation_time")
+@Component(id = "view_customers_by_creation_time")
 public class CustomerByCreationTime extends View {
 
   @Consume.FromKeyValueEntity(CustomerEntity.class)

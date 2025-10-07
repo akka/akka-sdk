@@ -8,9 +8,12 @@ import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
 
+import scala.annotation.nowarn
+
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
 import akka.javasdk.annotations.Acl
+import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.Consume.FromEventSourcedEntity
 import akka.javasdk.annotations.Consume.FromKeyValueEntity
@@ -134,12 +137,40 @@ private[impl] object ComponentDescriptorFactory {
   def hasStreamPublication(clazz: Class[_]): Boolean =
     clazz.hasAnnotation[ServiceStream]
 
+  @nowarn("cat=deprecation")
   def readComponentIdValue(annotated: AnnotatedElement): String = {
-    val annotation = annotated.getAnnotation(classOf[ComponentId])
-    if (annotation eq null)
-      throw new IllegalArgumentException(
-        s"Component [$annotated] is missing ${classOf[ComponentId].getName} annotation")
-    else annotation.value()
+    // First check for the new Component annotation
+    val componentAnnotation = annotated.getAnnotation(classOf[Component])
+    if (componentAnnotation ne null) {
+      componentAnnotation.id()
+    } else {
+      // Fallback to the old ComponentId annotation for backward compatibility
+      val componentIdAnnotation = annotated.getAnnotation(classOf[ComponentId])
+      if (componentIdAnnotation eq null)
+        throw new IllegalArgumentException(
+          s"Component [$annotated] is missing ${classOf[Component].getName} or ${classOf[ComponentId].getName} annotation")
+      else componentIdAnnotation.value()
+    }
+  }
+
+  def readComponentName(annotated: AnnotatedElement): Option[String] = {
+    val componentAnnotation = annotated.getAnnotation(classOf[Component])
+    if (componentAnnotation ne null) {
+      val name = componentAnnotation.name()
+      if (name.nonEmpty) Some(name) else None
+    } else {
+      None
+    }
+  }
+
+  def readComponentDescription(annotated: AnnotatedElement): Option[String] = {
+    val componentAnnotation = annotated.getAnnotation(classOf[Component])
+    if (componentAnnotation ne null) {
+      val description = componentAnnotation.description()
+      if (description.nonEmpty) Some(description) else None
+    } else {
+      None
+    }
   }
 
   def findEventSourcedEntityClass(javaMethod: Method): Class[_ <: EventSourcedEntity[_, _]] = {

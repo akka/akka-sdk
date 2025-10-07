@@ -3,7 +3,7 @@ package com.example.application;
 import static akka.Done.done;
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.keyvalueentity.KeyValueEntityContext;
 import com.example.domain.Counter;
@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // tag::declarations[]
-@ComponentId("counter") // <1>
+@Component(id = "counter") // <1>
 public class CounterEntity extends KeyValueEntity<Counter> { // <2>
 
   private final String entityId;

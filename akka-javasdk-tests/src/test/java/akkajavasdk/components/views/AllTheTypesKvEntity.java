@@ -4,14 +4,14 @@
 
 package akkajavasdk.components.views;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
-@ComponentId("all-the-types-kve")
+@Component(id = "all-the-types-kve")
 public class AllTheTypesKvEntity extends KeyValueEntity<AllTheTypesKvEntity.AllTheTypes> {
 
   public enum AnEnum {

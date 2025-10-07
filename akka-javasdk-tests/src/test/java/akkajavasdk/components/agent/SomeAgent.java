@@ -5,10 +5,10 @@
 package akkajavasdk.components.agent;
 
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 
 /** Dummy agent for testing component auto registration, e.g. PromptTemplate. */
-@ComponentId("some-agent")
+@Component(id = "some-agent")
 public class SomeAgent extends Agent {
   public record SomeResponse(String response) {}
 
