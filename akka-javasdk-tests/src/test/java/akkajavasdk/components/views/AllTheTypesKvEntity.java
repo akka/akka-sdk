@@ -6,6 +6,7 @@ package akkajavasdk.components.views;
 
 import akka.javasdk.annotations.Component;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -46,7 +47,8 @@ public class AllTheTypesKvEntity extends KeyValueEntity<AllTheTypesKvEntity.AllT
       ByEmail nestedMessage,
       // Note: not currently indexable
       AnEnum anEnum,
-      Recursive recursive) {}
+      Recursive recursive,
+      BigDecimal bigDecimal) {}
 
   public Effect<String> store(AllTheTypes value) {
     return effects().updateState(value).thenReply("OK");
