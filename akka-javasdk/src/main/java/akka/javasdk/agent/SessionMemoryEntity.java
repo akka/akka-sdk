@@ -59,11 +59,11 @@ import org.slf4j.LoggerFactory;
 @Component(
     id = "akka-session-memory",
     name = "Agent Session Memory",
-    description = """
-      Stores the recent conversation history for each agent session, including user, AI, and tool messages. 
-      Use this component to view or inspect the memory that the agents uses for context during interactions.
-      """
-)
+    description =
+        """
+Stores the recent conversation history for each agent session, including user, AI, and tool messages.
+Use this component to view or inspect the memory that the agents uses for context during interactions.
+""")
 public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> {
 
   private static final Logger log = LoggerFactory.getLogger(SessionMemoryEntity.class);

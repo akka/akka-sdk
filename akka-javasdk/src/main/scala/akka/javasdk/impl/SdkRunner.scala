@@ -114,7 +114,6 @@ import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
-
 import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
@@ -122,6 +121,7 @@ import java.util
 import java.util.Optional
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.Executor
+
 import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -132,6 +132,8 @@ import scala.jdk.OptionConverters.RichOption
 import scala.jdk.OptionConverters.RichOptional
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
+
+import akka.runtime.sdk.spi.SpiGuardrailSetup
 
 /**
  * INTERNAL API
@@ -869,7 +871,9 @@ private final class Sdk(
       preStart = preStart,
       onStart = onStart,
       reportError = reportError,
-      healthCheck = () => SdkRunner.FutureDone)
+      healthCheck = () => SdkRunner.FutureDone,
+      guardrailSetup = new SpiGuardrailSetup(Nil) // FIXME updated in separate PR
+    )
   }
 
   private lazy val agentRegistry =

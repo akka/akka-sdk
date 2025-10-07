@@ -63,6 +63,7 @@ import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAgent.ContextMessage
+import akka.runtime.sdk.spi.SpiAgent.GuardrailFailure
 import akka.runtime.sdk.spi.SpiAgent.InternalFailure
 import akka.runtime.sdk.spi.SpiAgent.McpToolCallExecutionFailure
 import akka.runtime.sdk.spi.SpiAgent.ModelFailure
@@ -268,7 +269,9 @@ private[impl] final class AgentImpl[A <: Agent](
               responseMapping = req.responseMapping,
               failureMapping = req.failureMapping.map(mapSpiAgentException),
               replyMetadata = metadata,
-              onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, results))
+              onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, results),
+              requestGuardrails = Nil, // FIXME updated in separate PR
+              responseGuardrails = Nil)
 
           case NoPrimaryEffect =>
             errorOrReply match {
@@ -328,7 +331,9 @@ private[impl] final class AgentImpl[A <: Agent](
           },
           toolTimeout =
             if (remoteMcp.timeout == Duration.Zero) None
-            else Some(remoteMcp.timeout))
+            else Some(remoteMcp.timeout),
+          requestGuardrails = Nil, // FIXME updated in separate PR
+          responseGuardrails = Nil)
       case other => throw new IllegalArgumentException(s"Unsupported remote mcp tools impl $other")
     }
 
@@ -427,6 +432,8 @@ private[impl] final class AgentImpl[A <: Agent](
               new ToolCallExecutionException(exc.getMessage, reason.toolName, exc.cause)
             case reason: McpToolCallExecutionFailure =>
               new McpToolCallExecutionException(exc.getMessage, reason.toolName, reason.endpoint, exc.cause)
+            case reason: GuardrailFailure =>
+              new RuntimeException(reason.explanation) // FIXME updated in separate PR
 
             // this is expected to be a JsonParsingException, we give it as is to users
             case OutputParsingFailure => exc.cause

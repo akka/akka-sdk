@@ -31,10 +31,11 @@ import java.util.Optional;
 @Component(
     id = "akka-prompt-template",
     name = "Agent Prompt Template",
-    description = """
-      Stores the current prompt template for an agent, including its change history. 
-      Use this component to view or update the instructions that guide the agent's behavior.
-      """)
+    description =
+        """
+        Stores the current prompt template for an agent, including its change history.
+        Use this component to view or update the instructions that guide the agent's behavior.
+        """)
 public final class PromptTemplate
     extends EventSourcedEntity<PromptTemplate.Prompt, PromptTemplate.Event> {
 
