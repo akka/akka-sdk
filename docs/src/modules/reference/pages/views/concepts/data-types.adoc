@@ -45,6 +45,10 @@ View queries support the following data types:
 | Date and Time
 | `java.time.ZonedDateTime`
 | Date and time with timezone information
+
+| Decimal numbers
+| `java.math.BigDecimal`
+| Suitable for finance, currency.
 |===
 
 == Type Mapping
@@ -62,6 +66,7 @@ When executing queries, the View system automatically maps between Java types an
 * `Collection<T>` → List of the mapped type of `T`
 * `java.time.Instant` → Timestamp
 * `java.time.ZonedDateTime` → Date and time
+* `java.math.BigDecimal` -> Numeric
 * Custom types → Complex structure based on fields
 
 === From Query to Java
@@ -91,6 +96,14 @@ Numeric literals are written without quotes:
 WHERE price = 99.99
 WHERE quantity = 5
 ----
+
+It is also possible to explicitly describe the type of a literal:
+[source,sql]
+----
+WHERE price = 99.99::numeric
+WHERE quantity = 5::float
+----
+
 
 === Boolean Literals
 

@@ -32,6 +32,7 @@ import akkajavasdk.components.views.user.UsersByEmailAndName;
 import akkajavasdk.components.views.user.UsersByName;
 import akkajavasdk.components.views.user.UsersByPrimitives;
 import akkajavasdk.components.views.user.UsersView;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -56,6 +57,9 @@ public class ViewIntegrationTest extends TestKitSupport {
   private String newId() {
     return UUID.randomUUID().toString();
   }
+
+  private static final BigDecimal PI_BIG_DECIMAL =
+      new BigDecimal("3.14159265358979323846264338327950");
 
   @Test
   public void verifyTransformedUserViewWiring() {
@@ -196,7 +200,8 @@ public class ViewIntegrationTest extends TestKitSupport {
             new AllTheTypesKvEntity.ByEmail("test@example.com"),
             AllTheTypesKvEntity.AnEnum.THREE,
             new AllTheTypesKvEntity.Recursive(
-                new AllTheTypesKvEntity.Recursive(null, "level2"), "level1"));
+                new AllTheTypesKvEntity.Recursive(null, "level2"), "level1"),
+            PI_BIG_DECIMAL);
     await(
         componentClient.forKeyValueEntity(id).method(AllTheTypesKvEntity::store).invokeAsync(row));
 
@@ -233,7 +238,8 @@ public class ViewIntegrationTest extends TestKitSupport {
             row.zonedDateTime(),
             row.optionalString(),
             row.repeatedString(),
-            row.nestedMessage().email());
+            row.nestedMessage().email(),
+            PI_BIG_DECIMAL);
     Awaitility.await()
         .ignoreExceptions()
         .atMost(10, TimeUnit.SECONDS)

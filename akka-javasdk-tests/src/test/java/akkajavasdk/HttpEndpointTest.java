@@ -145,4 +145,17 @@ public class HttpEndpointTest extends TestKitSupport {
     assertThat(response.status()).isEqualTo(StatusCodes.OK);
     assertThat(response.body()).isEqualTo(list);
   }
+
+  @Test
+  public void shouldHandleBigDecimalOutOfTheBox() {
+    var bigDecimal = new java.math.BigDecimal("12345678901234567890.12345678901234567890");
+    var response =
+        httpClient
+            .POST("/big-decimal")
+            .withRequestBody(new TestEndpoint.BigDecimalRequest(bigDecimal))
+            .responseBodyAs(TestEndpoint.BigDecimalRequest.class)
+            .invoke();
+    assertThat(response.status()).isEqualTo(StatusCodes.OK);
+    assertThat(response.body().value()).isEqualTo(bigDecimal);
+  }
 }

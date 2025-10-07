@@ -9,6 +9,7 @@ import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.http.AbstractHttpEndpoint;
+import java.math.BigDecimal;
 import java.util.List;
 
 @HttpEndpoint()
@@ -36,5 +37,12 @@ public class TestEndpoint extends AbstractHttpEndpoint {
   public String getOnVirtual() {
     if (Thread.currentThread().isVirtual() && constructedOnVt) return "ok";
     else throw new RuntimeException("Endpoint not executing on virtual thread");
+  }
+
+  public record BigDecimalRequest(BigDecimal value) {}
+
+  @Post("/big-decimal")
+  public BigDecimalRequest postBigDecimal(BigDecimalRequest request) {
+    return request;
   }
 }
