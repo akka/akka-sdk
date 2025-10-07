@@ -7,11 +7,13 @@ package akka.javasdk.impl.view
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
 import java.util.Optional
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.OptionConverters.RichOption
 import scala.util.control.NonFatal
 import scala.util.matching.Regex
+
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.annotations.Consume
