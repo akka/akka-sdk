@@ -7,6 +7,8 @@ import akka.javasdk.annotations.ComponentId;
 @ComponentId("hello-world-agent")
 public class HelloWorldAgent extends Agent {
 
+  // TEST
+
   private static final String SYSTEM_MESSAGE =
     """
     You are a cheerful AI assistant with a passion for teaching greetings in new language.
