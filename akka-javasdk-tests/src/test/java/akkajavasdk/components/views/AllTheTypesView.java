@@ -9,6 +9,7 @@ import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -38,10 +39,10 @@ public class AllTheTypesView extends View {
       List<String> repeatedString,
       // AllTheTypesKvEntity.AllTheTypes.nestedMessage.email
       // Note: nested classes not supported in query parameter
-      String nestedEmail
+      String nestedEmail,
       // FIXME indexing on enums not supported yet: AllTheTypesKvEntity.AnEnum anEnum
       // Note: recursive structures cannot be indexed
-      ) {}
+      BigDecimal bigDecimal) {}
 
   @Consume.FromKeyValueEntity(AllTheTypesKvEntity.class)
   public static class Events extends TableUpdater<AllTheTypesKvEntity.AllTheTypes> {}
@@ -65,7 +66,8 @@ public class AllTheTypesView extends View {
       optionalString = :optionalString AND
       stringValue = ANY(:repeatedString) AND
       :stringValue = ANY(repeatedString) AND
-      nestedMessage.email = :nestedEmail
+      nestedMessage.email = :nestedEmail AND
+      bigDecimal = :bigDecimal
       """)
   public QueryStreamEffect<AllTheTypesKvEntity.AllTheTypes> specificRow(
       AllTheQueryableTypes query) {
