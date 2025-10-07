@@ -16,7 +16,7 @@ then
 else
   echo akka does not exist
   echo Please follow instruction page to install it.
-  echo [Instruction Page] https://doc.akka.io/operations/cli/index.html
+  echo [Instruction Page] https://doc.akka.io/akka-cli/installation.html
   exit 1
 fi
 

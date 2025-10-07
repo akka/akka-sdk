@@ -1,5 +1,5 @@
 = CLI
-:page-aliases: reference:cli/index.adoc
+:page-aliases: cli:index.adoc[]
 
 include::ROOT:partial$include.adoc[]
 

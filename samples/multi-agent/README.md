@@ -151,7 +151,7 @@ Build container image:
 ```shell
 mvn clean install -DskipTests
 ```
-Install the `akka` CLI as documented in [Install Akka CLI](https://doc.akka.io/operations/cli/installation.html).
+Install the `akka` CLI as documented in [Install Akka CLI](https://doc.akka.io/reference/cli/index.html).
 
 Set up secret containing OpenAI API key:
 ```shell

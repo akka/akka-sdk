@@ -1,5 +1,5 @@
 = Services
-:page-aliases: services:index.adoc
+:page-aliases: services:index.adoc[]
 
 include::ROOT:partial$include.adoc[]
 

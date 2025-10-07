@@ -421,3 +421,6 @@ RedirectMatch 301 ^/libraries/(a[^/]+)/?$  https://doc.akka.io/libraries/$1/curr
 
 # All: /docs/{module}/.*    -> /libraries/{module}/.*
 RedirectMatch 301 ^/docs/([^/]+)/(.*)$       https://doc.akka.io/libraries/$1/$2
+
+# TODO remove once the real docs are published
+RedirectMatch 301 ^/akka-cli(/?|/.*)$      https://doc.akka.io/snapshots/akka-documentation/akka-cli$1

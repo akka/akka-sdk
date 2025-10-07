@@ -1,5 +1,4 @@
 = Enable CLI command completion
-:page-aliases: reference:cli/command-completion.adoc
 
 include::ROOT:partial$include.adoc[]
 
