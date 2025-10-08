@@ -20,6 +20,7 @@ import akkajavasdk.components.eventsourcedentities.counter.CounterEntity;
 import akkajavasdk.components.eventsourcedentities.hierarchy.AbstractTextConsumer;
 import akkajavasdk.components.eventsourcedentities.hierarchy.TextEsEntity;
 import com.typesafe.config.ConfigFactory;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -296,6 +297,21 @@ public class EventSourcedEntityTest extends TestKitSupport {
             });
     assertThat(exc5.getMessage())
         .contains("Unexpected failure: java.lang.RuntimeException: throwRuntimeException");
+  }
+
+  // not really specific to ES but to cover component client serializing BigDecimal
+  @Test
+  public void componentClientShouldPassBigDecimalFine() {
+    var client = componentClient.forEventSourcedEntity("some-counter");
+    var someBigDecimal = new BigDecimal("12345678901234567890.12345678901234567890");
+    var nonWrapped = client.method(CounterEntity::passBigDecimalThrough).invoke(someBigDecimal);
+    assertThat(nonWrapped).isEqualTo(someBigDecimal);
+
+    var wrapped =
+        client
+            .method(CounterEntity::passWrappedBigDecimalThrough)
+            .invoke(new CounterEntity.WrappedBigDecimal(someBigDecimal));
+    assertThat(wrapped.value()).isEqualTo(someBigDecimal);
   }
 
   private Integer increaseCounter(EventSourcedEntityClient client, int value) {
