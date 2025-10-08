@@ -40,7 +40,7 @@ jobs:
 
       - name: Make docs and validate links
         # validate-links not enabled yet, waiting for fixing broken links
-        run:
+        run: |
           make clean
           git status
           make managed local
