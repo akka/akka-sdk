@@ -87,8 +87,7 @@ local: docker-image examples antora-local done
 prod: docker-image managed antora-prod done
 
 antora-local:
-	git status
-	docker run --debug \
+	docker --debug run \
 		-v ${ROOT_DIR}:/antora \
 		--rm \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
