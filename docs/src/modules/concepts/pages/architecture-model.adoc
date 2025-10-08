@@ -64,9 +64,28 @@ The API layer may also expose public event models over Kafka or other channels. 
 
 Access control and request validation also belong here. For HTTP-specific guidance, see xref:java:http-endpoints.adoc[Designing HTTP Endpoints].
 
-== Akka Services
+== Akka services
 
-image:ROOT:service.png[Services,width=100,float=left] A _Project_ may contain multiple _Services_. Projects can be deployed to one or more regions to achieve geographic resilience. For details, see xref:multi-region.adoc[].
+image:ROOT:service.png[Services,width=50,float=left] A _Project_ may contain multiple _Services_. Projects can be deployed to one or more regions to achieve geographic resilience. For details, see xref:multi-region.adoc[]. Services are a hard boundary and unit of deployment in Akka projects.
+
+=== Multi-service sharing
+
+Code and components can also be shared between Akka services. There are a few guidelines to remember when setting up this kind of sharing in large, multi-service projects.
+
+If you're following the recommended project structure, then your code should fall into one of three categories: _API_, _Application_, and _Domain_. 
+
+Below is a list of some considerations you should keep in mind when sharing.
+
+* ⚠️  **Entities** - Shared entities can make it easy for multiple services to agree on a set of events and commands. Be careful to avoid multiple, isolated entities sharing the same _internal_ state. Keep in mind that the same entity in different services will not share data. Akka will consider them two different entities with regard to persistence.
+* ⚠️  **Views** - Views are easily shared. It may be useful to share views when you want multiple services to maintain the same aggregate data. When sharing views, keep an eye on your bounded contexts as it can be easy to blur those lines when multiple services maintain the same view. Also note that a shared view carries along with it all of the components it monitors for change.
+* ⚠️  **Workflows** - Workflows contain a lot of business logic and are also easily reused. Before doing so, as with views, ask yourself why two services need to maintain the same workflow rather than having one service own a workflow exposed via an endpoint (endpoints can be internal only).
+* ⚠️  **Endpoints** - Endpoints expose functionality to clients that can be internal or public, secure or wide open. As with all other components, identify why two services might need to expose the same endpoint? If they share the same endpoint, by extension they will share all of the code called by that endpoint. It can be easy to accidentally get an endpoint from a dependency and not notice. While it might seem useful to have two services with the same routes, sharing the entire endpoint also means sharing all of the involved components. +
+You can design an endpoint class so that it is just a thin wrapper around an injected context, which then makes it easier to share the same routes but with different data and behavior.
+* ✅  **Agents** - Agents are good candidates for sharing as two different services may need to perform the same agentic tasks but with different inputs.
+* ✅  **MCP Tools** - Similar to shared agents, Akka makes it easy to create a shared class containing tool functions that can be available to multiple agents.
+* ✅  **Domain classes** - The domain is the most ideal candidate for cross-service sharing. Multiple services using different views, entities, and workflows can safely rely on the same underlying set of domain objects (_not_ always the same as internal state).
+
+Our recommendation is to start with a "share nothing" approach and then move to the domain level when appropriate. Only then consider other component types as candidates for sharing. Maintaining context boundaries and avoiding accidental sharing is key. 
 
 == Next steps
 
