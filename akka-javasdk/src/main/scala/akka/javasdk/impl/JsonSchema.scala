@@ -96,7 +96,8 @@ private[impl] object JsonSchema {
     "java.lang.Long" -> integer,
     "java.lang.Double" -> number,
     "java.lang.Float" -> number,
-    "java.lang.Boolean" -> boolean)
+    "java.lang.Boolean" -> boolean,
+    "java.math.BigDecimal" -> number)
 
   private final val typesWithStringJsonRepresentation = Set[Class[_]](
     classOf[String], // obviously
