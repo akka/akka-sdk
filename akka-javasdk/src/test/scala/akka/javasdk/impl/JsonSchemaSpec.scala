@@ -96,7 +96,11 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
       val result = JsonSchema.jsonSchemaFor(classOf[SomeToolInput2]).asInstanceOf[JsonSchemaObject]
 
       result.properties shouldEqual Map(
-        "listOfStrings" -> Schema.array(items = Schema.string(), description = "some strings"))
+        "listOfStrings" -> Schema.array(items = Schema.string(), description = "some strings"),
+        "arrayOfStrings" -> Schema.array(items = Schema.string()),
+        "setOfStrings" -> Schema.array(items = Schema.string()),
+        // semi-supported - no map type in json, but can be represented as object
+        "mapOfStrings" -> Schema.jsonObject())
     }
 
     "extract schema with nested object" in {
@@ -161,6 +165,11 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
       JsonSchema.jsonSchemaFor(classOf[java.lang.Double]) shouldBe a[JsonSchemaNumber]
       JsonSchema.jsonSchemaFor(classOf[java.lang.Float]) shouldBe a[JsonSchemaNumber]
       JsonSchema.jsonSchemaFor(classOf[java.lang.Boolean]) shouldBe a[JsonSchemaBoolean]
+    }
+
+    "use object for types causing exceptions" in {
+      // undefined type parameters in Hashtable#Entry should always make this throw
+      JsonSchema.jsonSchemaFor(classOf[java.util.Hashtable[_, _]]) shouldBe a[JsonSchemaObject]
     }
 
   }

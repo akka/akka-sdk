@@ -11,7 +11,6 @@ import java.lang.reflect.Parameter
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.util.Optional
-
 import akka.annotation.InternalApi
 import akka.http.javadsl.model.HttpEntity
 import akka.http.javadsl.model.HttpRequest
@@ -23,12 +22,18 @@ import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaInteger
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaNumber
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaString
+import org.slf4j.LoggerFactory
+
+import java.lang.reflect.GenericArrayType
+import scala.util.control.NonFatal
 
 /**
  * INTERNAL API
  */
 @InternalApi
 private[impl] object JsonSchema {
+
+  private val log = LoggerFactory.getLogger(getClass)
 
   final case class TypedParameter(
       name: String,
@@ -111,6 +116,14 @@ private[impl] object JsonSchema {
   private def emptyObject(description: Option[String]) =
     new JsonSchemaObject(description, properties = Map.empty, required = Seq.empty)
 
+  // not tailrec but should never recurse very deep
+  private def classFor(tpe: Type): Class[AnyRef] = tpe match {
+    case c: Class[_]          => c.asInstanceOf[Class[AnyRef]]
+    case p: ParameterizedType => p.getRawType.asInstanceOf[Class[AnyRef]]
+    case g: GenericArrayType  => classFor(g.getGenericComponentType)
+    case other                => throw new IllegalArgumentException(s"Currently unsupported type: $other")
+  }
+
   // Note: we don't support recursive types, not quite sure if we should though
   private def jsonSchemaTypeFor(
       genericFieldType: Type,
@@ -119,48 +132,51 @@ private[impl] object JsonSchema {
     typeNameMap.get(genericFieldType.getTypeName) match {
       case Some(jsTypeFactory) => (jsTypeFactory(description), true)
       case None =>
-        val clazz = genericFieldType match {
-          case c: Class[_]          => c
-          case p: ParameterizedType => p.getRawType.asInstanceOf[Class[_]]
-        }
-        genericFieldType match {
-          case _ if clazz == classOf[HttpRequest] => // for body parameter
-            (emptyObject(description), false) // unknown if body is required
-          case _ if clazz == classOf[HttpEntity.Strict] => // for body parameter
+        try {
+          val clazz = classFor(genericFieldType)
+          genericFieldType match {
+            case _ if clazz == classOf[HttpRequest] => // for body parameter
+              (emptyObject(description), false) // unknown if body is required
+            case _ if clazz == classOf[HttpEntity.Strict] => // for body parameter
+              (emptyObject(description), true)
+            case _ if seenTypes.contains(clazz) =>
+              (emptyObject(description), true) // avoid infinite recursion
+            case _ if typesWithStringJsonRepresentation.contains(clazz) =>
+              (new JsonSchemaString(description), true)
+            case _ if clazz.isArray =>
+              (new JsonSchemaArray(jsonSchemaTypeFor(clazz.getComponentType, None, seenTypes)._1, None), true)
+            case p: ParameterizedType if clazz == classOf[Optional[_]] =>
+              val (jsonFieldType, _) = jsonSchemaTypeFor(p.getActualTypeArguments.head, description, seenTypes)
+              (jsonFieldType, false)
+            case p: ParameterizedType if classOf[java.util.Collection[_]].isAssignableFrom(clazz) =>
+              (
+                new JsonSchemaArray(
+                  items = jsonSchemaTypeFor(p.getActualTypeArguments.head, None, seenTypes)._1,
+                  description),
+                true)
+            case _ =>
+              // Note: for now the top level can only be a class
+              val properties = clazz.getDeclaredFields.toVector.map { field: Field =>
+                val description = field.getAnnotation(classOf[Description]) match {
+                  case null       => None
+                  case annotation => Some(annotation.value())
+                }
+
+                field.getName -> jsonSchemaTypeFor(field.getGenericType, description, seenTypes + clazz)
+              }.toMap
+
+              val jsObjectSchema = new JsonSchemaObject(
+                description = description,
+                properties = properties.map { case (key, (schemaType, _)) => key -> schemaType },
+                // All fields that are not wrapped in Optional are listed as required
+                required = properties.collect { case (key, (_, required)) if required => key }.toSeq.sorted)
+
+              (jsObjectSchema, true)
+          }
+        } catch {
+          case NonFatal(ex) =>
+            log.debug("Failed to generate schema for [{}], returning 'object'", genericFieldType, ex)
             (emptyObject(description), true)
-          case _ if seenTypes.contains(clazz) =>
-            (emptyObject(description), true) // avoid infinite recursion
-          case _ if typesWithStringJsonRepresentation.contains(clazz) =>
-            (new JsonSchemaString(description), true)
-          case _ if clazz.isArray =>
-            (new JsonSchemaArray(jsonSchemaTypeFor(clazz.getComponentType, None, seenTypes)._1, None), true)
-          case p: ParameterizedType if clazz == classOf[Optional[_]] =>
-            val (jsonFieldType, _) = jsonSchemaTypeFor(p.getActualTypeArguments.head, description, seenTypes)
-            (jsonFieldType, false)
-          case p: ParameterizedType if classOf[java.util.Collection[_]].isAssignableFrom(clazz) =>
-            (
-              new JsonSchemaArray(
-                items = jsonSchemaTypeFor(p.getActualTypeArguments.head, None, seenTypes)._1,
-                description),
-              true)
-          case _ =>
-            // Note: for now the top level can only be a class
-            val properties = clazz.getDeclaredFields.toVector.map { field: Field =>
-              val description = field.getAnnotation(classOf[Description]) match {
-                case null       => None
-                case annotation => Some(annotation.value())
-              }
-
-              field.getName -> jsonSchemaTypeFor(field.getGenericType, description, seenTypes + clazz)
-            }.toMap
-
-            val jsObjectSchema = new JsonSchemaObject(
-              description = description,
-              properties = properties.map { case (key, (schemaType, _)) => key -> schemaType },
-              // All fields that are not wrapped in Optional are listed as required
-              required = properties.collect { case (key, (_, required)) if required => key }.toSeq.sorted)
-
-            (jsObjectSchema, true)
         }
     }
   }
