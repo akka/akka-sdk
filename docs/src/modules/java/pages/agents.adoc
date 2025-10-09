@@ -812,7 +812,7 @@ External evaluation products can be integrated with Akka by operating on the tra
 
 === Built-in evaluators
 
-As shown above, it's easy to implement your own evaluator agents, but for convenience Akka provides a few built-in evaluators that you can use by calling them with the `ComponentClient`.
+As shown above, it's easy to implement your own evaluator agents, but for convenience Akka provides a few built-in evaluators that you can use by calling them with the `ComponentClient`. The `AgentTeamEvaluatorConsumer` example above shows how to call the evaluator agents.
 
 The model provider for these agents can be defined in a specific configuration for each agent, which by default is the same as the default model provider.
 
