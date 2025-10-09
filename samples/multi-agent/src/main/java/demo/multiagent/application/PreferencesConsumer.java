@@ -47,7 +47,7 @@ public class PreferencesConsumer extends Consumer { // <2>
           .invoke(evaluationRequest); // <4>
 
         logger.info(
-          "Evaluation completed for session {}: evaluation={}, feedback='{}'",
+          "Evaluation completed for session {}: label={}, explanation='{}'",
           activity.sessionId(),
           evaluationResult.label(),
           evaluationResult.explanation()
