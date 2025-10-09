@@ -35,11 +35,11 @@ public class SummarizerAgent extends Agent {
     var allResponses = request.agentsResponses
       .stream()
       .filter(response -> !response.startsWith("ERROR"))
-      .collect(Collectors.joining(" "));
+      .collect(Collectors.joining("\n\n"));
 
     return effects()
       .systemMessage(buildSystemMessage(request.originalQuery))
-      .userMessage("Summarize the following message: '" + allResponses + "'")
+      .userMessage("Summarize the following: \n" + allResponses)
       .thenReply();
   }
 }
