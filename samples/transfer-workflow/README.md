@@ -11,6 +11,7 @@ Used for code snippets in the Workflow documentation.
 - [Apache Maven](https://maven.apache.org/install.html)
 - [Docker Engine](https://docs.docker.com/get-started/get-docker/)
 - [`curl` command-line tool](https://curl.se/download.html)
+- A [Secure Repository Token](https://account.akka.io/token)
 
 ## Concepts
 
@@ -23,6 +24,19 @@ To understand the Akka concepts behind this example, see [Development Process](h
 This project demonstrates the use of Workflow and Event Sourced Entity components. For more information, see [Developing Services](https://doc.akka.io/sdk/index.html).
 
 ## Build
+
+---
+
+### Secure Repository Token
+
+Building requires a secure repository token, which is set up as part of [Akka CLI](https://doc.akka.io/getting-started/quick-install-cli.html)'s `akka code init` command.
+
+If you still need to configure your system with the token there are two additional ways:
+
+1. Use the Akka CLI's `akka code token` command and follow the instructions.
+2. Set up the token manually as described [here](https://account.akka.io/token).
+
+---
 
 Use Maven to build your project:
 
