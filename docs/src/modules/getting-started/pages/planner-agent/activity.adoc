@@ -36,7 +36,7 @@ We will add an agent that suggests real-world activities. Add a new file `Activi
 ----
 include::java:example$doc-snippets/src/main/java/agent_guide/part1/ActivityAgent.java[tag=all]
 ----
-<1> Annotate the class with `@ComponentId` and pass a unique identifier for this agent type.
+<1> Annotate the class with `@Component` and pass a unique identifier for this agent type.
 <2> Class extends `Agent`.
 <3> Define the command handler method.
 <4> Define the system message as a constant, and use the system message in the effect builder.

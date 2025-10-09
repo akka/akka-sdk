@@ -4,13 +4,13 @@
 
 package akka.javasdk.testmodels.keyvalueentity;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-@ComponentId("timer")
+@Component(id = "timer")
 public class TimeTrackerEntity extends KeyValueEntity<TimeTrackerEntity.TimerState> {
 
   public static class TimerState {

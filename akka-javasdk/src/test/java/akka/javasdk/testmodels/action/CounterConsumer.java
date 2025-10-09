@@ -4,7 +4,7 @@
 
 package akka.javasdk.testmodels.action;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.consumer.Consumer;
 import akka.javasdk.testmodels.keyvalueentity.Counter;
@@ -12,7 +12,7 @@ import akka.javasdk.testmodels.keyvalueentity.CounterState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ComponentId("counter-subscriber")
+@Component(id = "counter-subscriber")
 @Consume.FromKeyValueEntity(Counter.class)
 public class CounterConsumer extends Consumer {
 

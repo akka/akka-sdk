@@ -6,14 +6,14 @@ import agent_guide.part2.ActivityAgent;
 import agent_guide.part3.WeatherAgent;
 // tag::all[]
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.StepName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ComponentId("agent-team")
+@Component(id = "agent-team")
 public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
 
   private static final Logger logger = LoggerFactory.getLogger(AgentTeamWorkflow.class);

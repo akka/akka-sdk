@@ -6,13 +6,13 @@ package akkajavasdk.components.workflowentities;
 
 import static java.time.Duration.ofMillis;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import akkajavasdk.components.actions.echo.Message;
 import java.time.Duration;
 
-@ComponentId("workflow-with-timeout")
+@Component(id = "workflow-with-timeout")
 public class WorkflowWithTimeout extends Workflow<FailingCounterState> {
 
   private final ComponentClient componentClient;

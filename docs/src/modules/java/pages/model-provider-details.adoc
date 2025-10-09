@@ -286,36 +286,36 @@ gpt-o3 {
 === Anthropic
 [source,hocon,indent=0]
 ----
-include::example$resources/reference.conf[tag=anthropic]
+include::example$akka-javasdk/src/main/resources/reference.conf[tag=anthropic]
 ----
 
 === Gemini
 [source,hocon,indent=0]
 ----
-include::example$resources/reference.conf[tag=googleai-gemini]
+include::example$akka-javasdk/src/main/resources/reference.conf[tag=googleai-gemini]
 ----
 
 === Hugging face
 [source,hocon,indent=0]
 ----
-include::example$resources/reference.conf[tag=hugging-face]
+include::example$akka-javasdk/src/main/resources/reference.conf[tag=hugging-face]
 ----
 
 === Local AI
 [source,hocon,indent=0]
 ----
-include::example$resources/reference.conf[tag=local-ai]
+include::example$akka-javasdk/src/main/resources/reference.conf[tag=local-ai]
 ----
 
 === Ollama
 [source,hocon,indent=0]
 ----
-include::example$resources/reference.conf[tag=ollama]
+include::example$akka-javasdk/src/main/resources/reference.conf[tag=ollama]
 ----
 
 === OpenAI
 [source,hocon,indent=0]
 ----
-include::example$resources/reference.conf[tag=openai]
+include::example$akka-javasdk/src/main/resources/reference.conf[tag=openai]
 ----
 

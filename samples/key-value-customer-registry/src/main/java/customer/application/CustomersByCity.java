@@ -1,6 +1,6 @@
 package customer.application;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
@@ -8,7 +8,7 @@ import akka.javasdk.view.View;
 import customer.domain.Customer;
 import java.util.List;
 
-@ComponentId("customers-by-city")
+@Component(id = "customers-by-city")
 // tag::view-test[]
 public class CustomersByCity extends View {
 

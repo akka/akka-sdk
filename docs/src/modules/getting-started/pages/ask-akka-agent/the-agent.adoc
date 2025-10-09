@@ -39,7 +39,7 @@ Add a new file `AskAkkaAgent.java` to `src/main/java/akka/ask/agent/application/
 include::java:example$doc-snippets/src/main/java/com/example/application/AskAkkaAgent.java[tag=class]
 ----
 <1> Create a class that extends `Agent`.
-<2> Make sure to annotate such class with `@ComponentId` and pass a unique identifier for this agent type.
+<2> Make sure to annotate such class with `@Component` and pass a unique identifier for this agent type.
 <3> Define the command handler method.
 <4> Define the system message.
 <5> Define the user message for the specific request.

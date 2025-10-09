@@ -5,7 +5,7 @@
 package akka.javasdk.testmodels.subscriptions;
 
 import akka.javasdk.annotations.Acl;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.DeleteHandler;
 import akka.javasdk.annotations.Produce;
@@ -354,7 +354,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
   // common query parameter for views in this file
   public record ByEmail(String email) {}
 
-  @ComponentId("employee_view")
+  @Component(id = "employee_view")
   public static class SubscribeOnTypeToEventSourcedEvents extends View {
 
     @Consume.FromEventSourcedEntity(value = EmployeeEntity.class, ignoreUnknown = true)
@@ -403,7 +403,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
-  @ComponentId("employee_view")
+  @Component(id = "employee_view")
   public static class EventStreamSubscriptionView extends View {
 
     @Consume.FromServiceStream(service = "employee_service", id = "employee_events")

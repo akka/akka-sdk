@@ -4,10 +4,10 @@
 
 package akkajavasdk.components.eventsourcedentities.hierarchy;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 
-@ComponentId("es-hierarchy-text-consumer")
+@Component(id = "es-hierarchy-text-consumer")
 @Consume.FromEventSourcedEntity(value = TextEsEntity.class)
 public class TextEsConsumer extends AbstractTextConsumer {
 

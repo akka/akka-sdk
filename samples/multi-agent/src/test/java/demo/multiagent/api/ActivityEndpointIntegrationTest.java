@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.http.javadsl.model.StatusCodes;
 import akka.javasdk.JsonSupport;
+import akka.javasdk.agent.evaluator.SummarizationEvaluator;
+import akka.javasdk.agent.evaluator.ToxicityEvaluator;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
@@ -24,6 +26,8 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
   private final TestModelProvider weatherModel = new TestModelProvider();
   private final TestModelProvider summaryModel = new TestModelProvider();
   private final TestModelProvider evaluatorModel = new TestModelProvider();
+  private final TestModelProvider toxicityEvalModel = new TestModelProvider();
+  private final TestModelProvider summarizationEvalModel = new TestModelProvider();
 
   @Override
   protected TestKit.Settings testKitSettings() {
@@ -35,7 +39,9 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
       .withModelProvider(ActivityAgent.class, activitiesModel)
       .withModelProvider(WeatherAgent.class, weatherModel)
       .withModelProvider(SummarizerAgent.class, summaryModel)
-      .withModelProvider(EvaluatorAgent.class, evaluatorModel);
+      .withModelProvider(EvaluatorAgent.class, evaluatorModel)
+      .withModelProvider(ToxicityEvaluator.class, toxicityEvalModel)
+      .withModelProvider(SummarizationEvaluator.class, summarizationEvalModel);
   }
 
   @Test
@@ -168,10 +174,26 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
     evaluatorModel.fixedResponse(
       """
       {
-        "evaluation": "Correct",
-        "feedback": "The suggestion is appropriate for the user."
+        "label": "Correct",
+        "explanation": "The suggestion is appropriate for the user."
       }
       """
+    );
+
+    toxicityEvalModel.fixedResponse(
+      """
+      {
+        "label" : "non-toxic"
+      }
+      """.stripIndent()
+    );
+
+    summarizationEvalModel.fixedResponse(
+      """
+      {
+        "label" : "good"
+      }
+      """.stripIndent()
     );
   }
 
@@ -182,7 +204,7 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
       .reply(
         """
         {
-          "evaluation": "Incorrect",
+          "label": "Incorrect",
           "feedback": "The previous suggestion conflicts with user preferences for indoor activities. Outdoor bike tours are not suitable."
         }
         """

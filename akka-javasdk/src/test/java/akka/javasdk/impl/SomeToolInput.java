@@ -9,6 +9,7 @@ import java.time.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 interface SomeToolInput {
   record SomeToolInput1(
@@ -29,7 +30,11 @@ interface SomeToolInput {
       boolean[] primitiveBooleanArray,
       Boolean[] boxedBooleanArray) {}
 
-  record SomeToolInput2(@Description("some strings") List<String> listOfStrings) {}
+  record SomeToolInput2(
+      @Description("some strings") List<String> listOfStrings,
+      String[] arrayOfStrings,
+      Set<String> setOfStrings,
+      Map<String, String> mapOfStrings) {}
 
   record SomeToolInput3(@Description("a nested object") NestedObject nestedObject) {}
 

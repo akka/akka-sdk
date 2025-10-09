@@ -85,6 +85,7 @@ private[javasdk] object BaseAgentEffectBuilder {
 
     def addMcpTools(tools: Seq[RemoteMcpTools]): RequestModel =
       copy(mcpTools = mcpTools ++ tools)
+
   }
 
   case object NoPrimaryEffect extends PrimaryEffectImpl

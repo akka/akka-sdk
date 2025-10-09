@@ -2,7 +2,7 @@
 package shoppingcart.application;
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import java.util.Collections;
@@ -17,7 +17,7 @@ import shoppingcart.domain.ShoppingCartEvent;
 // prettier-ignore
 // tag::all[]
 // tag::class[]
-@ComponentId("shopping-cart") // <2>
+@Component(id = "shopping-cart") // <2>
 public class ShoppingCartEntity 
   extends EventSourcedEntity<ShoppingCart, ShoppingCartEvent> { // <1>
 

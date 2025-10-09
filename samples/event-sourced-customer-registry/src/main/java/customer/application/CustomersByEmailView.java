@@ -1,6 +1,6 @@
 package customer.application;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
@@ -9,7 +9,7 @@ import customer.domain.CustomerEntries;
 import customer.domain.CustomerEntry;
 import customer.domain.CustomerEvent;
 
-@ComponentId("customers-by-email")
+@Component(id = "customers-by-email")
 public class CustomersByEmailView extends View {
 
   @Query("SELECT * as customers FROM customers_by_email WHERE email = :email")

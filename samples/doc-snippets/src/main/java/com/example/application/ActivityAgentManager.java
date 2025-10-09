@@ -3,7 +3,7 @@ package com.example.application;
 import static java.time.Duration.ofSeconds;
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.StepName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // tag::all[]
-@ComponentId("activity-agent-manager")
+@Component(id = "activity-agent-manager")
 public class ActivityAgentManager extends Workflow<ActivityAgentManager.State> { // <1>
 
   // end::all[]

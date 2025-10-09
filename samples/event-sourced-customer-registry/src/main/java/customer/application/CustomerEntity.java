@@ -7,7 +7,7 @@ import static customer.domain.CustomerEvent.NameChanged;
 
 import akka.Done;
 import akka.javasdk.annotations.Acl;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import customer.domain.Address;
 import customer.domain.Customer;
@@ -15,7 +15,7 @@ import customer.domain.CustomerEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ComponentId("customer")
+@Component(id = "customer")
 public class CustomerEntity extends EventSourcedEntity<Customer, CustomerEvent> {
 
   private static final Logger logger = LoggerFactory.getLogger(CustomerEntity.class);

@@ -2,7 +2,7 @@ package com.example.application;
 
 import static com.example.application.OrderEntity.Result.Ok.ok;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.keyvalueentity.KeyValueEntityContext;
 import com.example.api.OrderRequest;
@@ -14,7 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // tag::order[]
-@ComponentId("order")
+@Component(id = "order")
 public class OrderEntity extends KeyValueEntity<Order> {
 
   //...

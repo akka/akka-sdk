@@ -4,10 +4,10 @@
 
 package com.example;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 
-@ComponentId("simple-key-value")
+@Component(id = "simple-key-value")
 public class SimpleKeyValueEntity extends KeyValueEntity<SimpleKeyValueEntity.State> {
 
   record State(String value) {}

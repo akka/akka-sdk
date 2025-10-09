@@ -4,9 +4,9 @@
 
 package com.example;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 
-@ComponentId("hierarchy-kv-entity")
+@Component(id = "hierarchy-kv-entity")
 public class HierarchyKvEntity extends AbstractInbetweenKvEntity2<AbstractInbetweenEsEntity.State> {
   public record State(String value) {}
 }

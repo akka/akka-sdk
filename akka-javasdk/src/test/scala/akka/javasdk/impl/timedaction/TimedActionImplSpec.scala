@@ -12,7 +12,7 @@ import akka.actor.testkit.typed.scaladsl.LogCapturing
 import akka.actor.testkit.typed.scaladsl.LoggingTestKit
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.actor.typed.scaladsl.adapter._
-import akka.javasdk.annotations.ComponentId
+import akka.javasdk.annotations.Component
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.TimedActionDescriptorFactory
 import akka.javasdk.impl.serialization.JsonSerializer
@@ -67,7 +67,7 @@ class TimedActionImplSpec
       componentDescriptor)
   }
 
-  @ComponentId("dummy-id")
+  @Component(id = "dummy-id")
   class TestTimedAction extends TimedAction {
 
     def myMethod(): TimedAction.Effect = {

@@ -42,9 +42,9 @@ We will add an agent that suggests real-world activities. Add a new file `Activi
 ActivityAgent.java
 ```java
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 
-@ComponentId("activity-agent") // (1)
+@Component(id = "activity-agent") // (1)
 public class ActivityAgent extends Agent { // (2)
   private static final String SYSTEM_MESSAGE =
       """

@@ -1,14 +1,14 @@
 package counter.application;
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.consumer.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ComponentId("counter-command-from-topic")
+@Component(id = "counter-command-from-topic")
 @Consume.FromTopic(value = "counter-commands", ignoreUnknown = true)
 public class CounterCommandFromTopicConsumer extends Consumer {
 

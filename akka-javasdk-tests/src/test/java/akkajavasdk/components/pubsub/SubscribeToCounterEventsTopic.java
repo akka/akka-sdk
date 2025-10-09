@@ -4,14 +4,14 @@
 
 package akkajavasdk.components.pubsub;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.consumer.Consumer;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ComponentId("subscribe-to-counter-events-topic")
+@Component(id = "subscribe-to-counter-events-topic")
 @Consume.FromTopic(SubscribeToCounterEventsTopic.COUNTER_EVENTS_TOPIC)
 public class SubscribeToCounterEventsTopic extends Consumer {
 

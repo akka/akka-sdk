@@ -21,6 +21,8 @@ import akka.javasdk.annotations.Query
 import akka.javasdk.annotations.Table
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptorFactory
+import akka.javasdk.impl.ComponentDescriptorFactory.readComponentDescription
+import akka.javasdk.impl.ComponentDescriptorFactory.readComponentName
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.JsonSerializer
@@ -86,7 +88,7 @@ private[impl] object ViewDescriptorFactory {
               TableNamePattern
                 .findFirstMatchIn(query)
                 .map(m => Option(m.group(1)).getOrElse(m.group(2))) // optionally quoted in first group
-                .getOrElse(throw new RuntimeException(s"Could not extract table name from query [${query}]"))
+                .getOrElse(throw new RuntimeException(s"Could not extract table name from query [$query]"))
             }
           }
 
@@ -115,7 +117,7 @@ private[impl] object ViewDescriptorFactory {
               regionInfo,
               userEc)
           } else
-            throw new IllegalStateException(s"Table updater [${tableUpdaterClass}] is missing a @Consume annotation")
+            throw new IllegalStateException(s"Table updater [$tableUpdaterClass] is missing a @Consume annotation")
         }
 
     new ViewDescriptor(
@@ -124,7 +126,9 @@ private[impl] object ViewDescriptorFactory {
       tables,
       queries = allQueryMethods.map(_.descriptor),
       // FIXME reintroduce ACLs (does JWT make any sense here? I don't think so)
-      componentOptions = new ComponentOptions(None, None))
+      componentOptions = new ComponentOptions(None, None),
+      name = readComponentName(viewClass),
+      description = readComponentDescription(viewClass))
   }
 
   private case class QueryMethod(descriptor: QueryDescriptor, queryString: String)
@@ -178,7 +182,7 @@ private[impl] object ViewDescriptorFactory {
           QueryStreamEffect[_]]}")
 
     val inputType: Option[SpiSchema.QueryInput] =
-      method.getGenericParameterTypes.headOption.map(ViewSchema.apply(_)).map {
+      method.getGenericParameterTypes.headOption.map(h => ViewSchema.apply(h)).map {
         case validInput: SpiSchema.QueryInput => validInput
         case other                            =>
           // FIXME let's see if this flies
@@ -195,7 +199,7 @@ private[impl] object ViewDescriptorFactory {
         else output
       case _ =>
         throw new IllegalArgumentException(
-          s"Query return type [${actualQueryOutputClass}] for [${method.getDeclaringClass}.${method.getName}] is not a valid query return type")
+          s"Query return type [$actualQueryOutputClass] for [${method.getDeclaringClass}.${method.getName}] is not a valid query return type")
     }
 
     QueryMethod(
@@ -483,7 +487,7 @@ private[impl] object ViewDescriptorFactory {
 
               } catch {
                 case NonFatal(error) =>
-                  userLog.error(s"View updater for view [${componentId}] threw an exception", error)
+                  userLog.error(s"View updater for view [$componentId] threw an exception", error)
                   throw ViewException(componentId, s"View unexpected failure: ${error.getMessage}", Some(error))
               } finally {
                 tableUpdaterInstance._internalSetUpdateContext(Optional.empty())
@@ -504,7 +508,7 @@ private[impl] object ViewDescriptorFactory {
             if (newState == null) {
               // FIXME MDC trace id should stretch here as well
               userLog.error(
-                s"View updater tried to set row state to null, not allowed [${componentId}] threw an exception")
+                s"View updater tried to set row state to null, not allowed [$componentId] threw an exception")
               throw ViewException(componentId, "updateState with null state is not allowed.", None)
             }
             val bytesPayload = serializer.toBytes(newState)

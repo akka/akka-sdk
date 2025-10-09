@@ -41,9 +41,9 @@ An agent implementation has the following code structure.
 [MyAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/application/MyAgent.java)
 ```java
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 
-@ComponentId("my-agent") // (2)
+@Component(id = "my-agent") // (2)
 public class MyAgent extends Agent { // (1)
 
   public Effect<String> query(String question) { // (3)
@@ -132,7 +132,7 @@ An agent that suggests real-world activities may have a prompt like:
 
 [ActivityAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/application/ActivityAgent.java)
 ```java
-@ComponentId("activity-agent")
+@Component(id = "activity-agent")
 public class ActivityAgent extends Agent {
   private static final String SYSTEM_MESSAGE = // (1)
       """
@@ -161,7 +161,7 @@ As an alternative to hard-coded prompts, there is a built-in prompt template ent
 
 ActivityAgent.java
 ```java
-@ComponentId("activity-agent")
+@Component(id = "activity-agent")
  public class ActivityAgentWithTemplate extends Agent {
   public Effect<String> query(String message) {
    return effects()
@@ -260,7 +260,7 @@ We will look more at [multi-agent systems](about:blank#multi_agent), but let’s
 
 [ActivityAgentManager.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/application/ActivityAgentManager.java)
 ```java
-@ComponentId("activity-agent-manager")
+@Component(id = "activity-agent-manager")
 public class ActivityAgentManager extends Workflow<ActivityAgentManager.State> { // (1)
 
   public record State(String userQuery, String answer) { // (2)
@@ -427,7 +427,7 @@ The default implementation of Session Memory is backed by a regular [Event Sourc
 
 [SessionMemoryConsumer.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/application/SessionMemoryConsumer.java)
 ```java
-@ComponentId("session-memory-consumer")
+@Component(id = "session-memory-consumer")
 @Consume.FromEventSourcedEntity(SessionMemoryEntity.class)
 public class SessionMemoryConsumer extends Consumer {
 
@@ -458,7 +458,7 @@ You can update the session memory to reduce the size of the history. One techniq
 
 [CompactionAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/application/CompactionAgent.java)
 ```java
-@ComponentId("compaction-agent")
+@Component(id = "compaction-agent")
 public class CompactionAgent extends Agent {
   private static final String SYSTEM_MESSAGE =
       """
@@ -539,7 +539,7 @@ One way to trigger compaction is to use a consumer of the session memory events 
 
 [SessionMemoryConsumer.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/application/SessionMemoryConsumer.java)
 ```java
-@ComponentId("session-memory-consumer")
+@Component(id = "session-memory-consumer")
 @Consume.FromEventSourcedEntity(SessionMemoryEntity.class)
 public class SessionMemoryConsumer extends Consumer {
 
@@ -603,7 +603,7 @@ public class SessionMemoryConsumer extends Consumer {
 Many LLMs support generating outputs in a structured format, typically JSON. You can easily map such output to Java objects using the effect API.
 
 ```java
-@ComponentId("activity-agent")
+@Component(id = "activity-agent")
  public class ActivityAgentStructuredResponse extends Agent {
 
   private static final String SYSTEM_MESSAGE = // (1)
@@ -863,7 +863,7 @@ information from entities or views may look like this:
 
 ActivityAgent.java
 ```java
-@ComponentId("activity-agent")
+@Component(id = "activity-agent")
  public class ActivityAgent extends Agent {
   public record Request(String userId, String message) {}
 
@@ -910,7 +910,7 @@ In AI chat applications, you’ve seen how responses are displayed word by word 
 The other reason why responses are streamed is that it can take a very long time to generate the full response, so the user experience is much better getting the answer as a live stream of tokens. To support this real-time user experience, the agent can stream the model response tokens to an endpoint. These tokens can then be pushed to the client using server-sent events (SSE).
 
 ```java
-@ComponentId("streaming-activity-agent")
+@Component(id = "streaming-activity-agent")
  public class StreamingActivityAgent extends Agent {
   private static final String SYSTEM_MESSAGE =
       """
@@ -1001,7 +1001,7 @@ A single agent performs one well-defined task. Several agents can collaborate to
 Let’s first look at how to define a workflow that orchestrates several agents in a predefined steps. This is similar to the <a href="about:blank#_drive_the_agent_from_a_workflow">`ActivityAgentManager`</a> that was illustrated above, but it uses both the `WeatherAgent` and the `ActivityAgent`. First it retrieves the weather forecast and then it finds suitable activities.
 
 ```java
-@ComponentId("agent-team")
+@Component(id = "agent-team")
 public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
   private static final Logger logger = LoggerFactory.getLogger(AgentTeamWorkflow.class);
 
@@ -1122,7 +1122,7 @@ The `SelectorAgent` decides which agents to use:
 
 [SelectorAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/SelectorAgent.java)
 ```java
-@ComponentId("selector-agent")
+@Component(id = "selector-agent")
 @AgentDescription(
     name = "Selector Agent",
     description = """
@@ -1191,7 +1191,7 @@ The `WeatherAgent` has:
 
 [WeatherAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/WeatherAgent.java)
 ```java
-@ComponentId("weather-agent")
+@Component(id = "weather-agent")
 @AgentDescription(
     name = "Weather Agent",
     description = """
@@ -1206,7 +1206,7 @@ The `ActivityAgent` has:
 
 [ActivityAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/ActivityAgent.java)
 ```java
-@ComponentId("activity-agent")
+@Component(id = "activity-agent")
 @AgentDescription(
   name = "Activity Agent",
   description = """
@@ -1232,7 +1232,7 @@ After selecting agents, we use a `PlannerAgent` to decide in which order to use 
 
 [PlannerAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/PlannerAgent.java)
 ```java
-@ComponentId("planner-agent")
+@Component(id = "planner-agent")
 @AgentDescription(
     name = "Planner",
     description = """
@@ -1309,7 +1309,7 @@ That’s the two agents that perform the planning, but we also need to connect t
 
 [AgentTeamWorkflow.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java)
 ```java
-@ComponentId("agent-team")
+@Component(id = "agent-team")
 public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // (1)
   public record Request(String userId, String message) {
   }
@@ -1477,7 +1477,7 @@ Akka will soon have an Agent evaluation workbench that will help you run these k
 
 For predictable and repeatable tests of your agent’s business logic and component integrations, it’s essential to use deterministic responses. This allows you to verify that your agent behaves correctly when it receives a known model output.
 
-Use the `TestKitSupport` and the `CoponentClient` to call the components from the test. The `ModelProvider` of the agents can be replaced with [TestModelProvider](_attachments/testkit/akka/javasdk/testkit/TestModelProvider.html), which provides ways to mock the responses without using the real AI model.
+Use the `TestKitSupport` and the `ComponentClient` to call the components from the test. The `ModelProvider` of the agents can be replaced with [TestModelProvider](_attachments/testkit/akka/javasdk/testkit/TestModelProvider.html), which provides ways to mock the responses without using the real AI model.
 
 [AgentTeamWorkflowTest.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/test/java/demo/multiagent/application/AgentTeamWorkflowTest.java)
 ```java

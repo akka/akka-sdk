@@ -4,7 +4,7 @@
 
 package akkajavasdk.components.views.user;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.DeleteHandler;
 import akka.javasdk.annotations.Query;
@@ -15,7 +15,7 @@ import akkajavasdk.components.keyvalueentities.user.UserEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ComponentId("user_view")
+@Component(id = "user_view")
 public class UserWithVersionView extends View {
 
   private static final Logger logger = LoggerFactory.getLogger(UserWithVersionView.class);

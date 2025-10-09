@@ -2,12 +2,12 @@ package com.example.domain;
 
 import static com.example.domain.CounterEvent.ValueIncreased;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ComponentId("counter")
+@Component(id = "counter")
 public class Counter extends EventSourcedEntity<Integer, CounterEvent> {
 
   private Logger logger = LoggerFactory.getLogger(Counter.class);

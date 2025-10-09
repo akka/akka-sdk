@@ -1,7 +1,7 @@
 package shoppingcart.application;
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import java.util.Collections;
@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import shoppingcart.domain.ShoppingCart;
 import shoppingcart.domain.ShoppingCartEvent;
 
-@ComponentId("shopping-cart")
+@Component(id = "shopping-cart")
 public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, ShoppingCartEvent> {
 
   private final String entityId;

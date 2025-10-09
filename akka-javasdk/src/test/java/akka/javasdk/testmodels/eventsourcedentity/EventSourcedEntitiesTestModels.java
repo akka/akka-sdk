@@ -5,7 +5,7 @@
 package akka.javasdk.testmodels.eventsourcedentity;
 
 import akka.javasdk.JsonMigration;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Migration;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import java.util.List;
@@ -18,7 +18,7 @@ public class EventSourcedEntitiesTestModels {
     record DecrementCounter(int value) implements CounterEvent {}
   }
 
-  @ComponentId("employee")
+  @Component(id = "employee")
   public static class EmployeeEntity extends EventSourcedEntity<Employee, EmployeeEvent> {
 
     public Effect<String> createUser(CreateEmployee create) {
@@ -34,7 +34,7 @@ public class EventSourcedEntitiesTestModels {
     }
   }
 
-  @ComponentId("counter-entity")
+  @Component(id = "counter-entity")
   public static class CounterEventSourcedEntity extends EventSourcedEntity<Integer, CounterEvent> {
 
     @Migration(EventMigration.class)
@@ -79,7 +79,7 @@ public class EventSourcedEntitiesTestModels {
     }
   }
 
-  @ComponentId("counter")
+  @Component(id = "counter")
   public static class InvalidEventSourcedEntityWithOverloadedCommandHandler
       extends EventSourcedEntity<Employee, EmployeeEvent> {
 
@@ -102,7 +102,7 @@ public class EventSourcedEntitiesTestModels {
     }
   }
 
-  @ComponentId("counter")
+  @Component(id = "counter")
   public static class InvalidEventSourcedEntityWithGenericReturnTypeHandler
       extends EventSourcedEntity<Employee, EmployeeEvent> {
 

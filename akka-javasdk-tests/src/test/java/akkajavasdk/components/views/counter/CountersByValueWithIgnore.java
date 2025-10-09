@@ -4,7 +4,7 @@
 
 package akkajavasdk.components.views.counter;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
@@ -13,7 +13,7 @@ import akkajavasdk.components.eventsourcedentities.counter.Counter;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEntity;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEvent;
 
-@ComponentId("counters_by_value_with_ignore")
+@Component(id = "counters_by_value_with_ignore")
 public class CountersByValueWithIgnore extends View {
 
   @Consume.FromEventSourcedEntity(value = CounterEntity.class, ignoreUnknown = true)

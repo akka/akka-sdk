@@ -1,11 +1,11 @@
 package com.example.application;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.timedaction.TimedAction;
 
 // tag::expire-order[]
-@ComponentId("order-timed-action") // <1>
+@Component(id = "order-timed-action") // <1>
 public class OrderTimedAction extends TimedAction { // <2>
 
   private final ComponentClient componentClient;

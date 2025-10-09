@@ -7,7 +7,7 @@ image:ROOT:agent.png[Agent,width=100,float=left]An Agent interacts with an AI mo
 == Identify the agent
 Every component in Akka needs to be identifiable by the rest of the system. This usually involves two different forms of identification: a **component ID** an **instance ID**. We use component IDs as a way to identify the component _class_ and distinguish it from others. Instance identifiers are, as the name implies, unique identifiers for an instance of a component.
 
-As with all other components, we supply an identifier for the component class using the `@ComponentId` annotation.
+As with all other components, we supply an identifier for the component class using the `@Component` annotation.
 
 In the case of agents, we don't supply a unique identifier for the instance of the agent. Instead, we supply an identifier for the _session_ to which the agent is bound. This lets you have multiple components with different component IDs all performing various agentic tasks within the same shared session.
 
@@ -38,10 +38,10 @@ An agent implementation has the following code structure.
 include::example$doc-snippets/src/main/java/com/example/application/MyAgent.java[tag=class]
 ----
 <1> Create a class that extends `Agent`.
-<2> Make sure to annotate the class with `@ComponentId` and pass a unique identifier for this agent type.
+<2> Make sure to annotate the class with `@Component` and pass a unique identifier for this agent type.
 <3> Define the command handler method.
 
-NOTE: The `@ComponentId` value `my-agent` is common for all instances of this agent and must be unique across the different components in the service.
+NOTE: The `@Component` value `my-agent` is common for all instances of this agent and must be unique across the different components in the service.
 
 An agent must have one command handler method that is public and returns `Effect<T>`, where `T` it the type of the reply. Alternatively it can return `StreamEffect` for xref:#_streaming_response[streaming responses].
 
@@ -617,7 +617,7 @@ include::example$multi-agent/src/main/java/demo/multiagent/application/SelectorA
 <2> Select the agents with the role `"worker"`.
 <3> Detailed instructions and include descriptions (as json) of the agents.
 
-The information about the agents in the `AgentRegistry` comes from the `@ComponentId` and `@AgentDescription` annotations. When using it for planning like this it is important that the agents define those descriptions that the LLM can use to come up with a good plan.
+The information about the agents in the `AgentRegistry` comes from the `@Component` and `@AgentDescription` annotations. When using it for planning like this it is important that the agents define those descriptions that the LLM can use to come up with a good plan.
 
 The `WeatherAgent` has:
 [source,java,indent=0]
@@ -679,27 +679,199 @@ include::example$multi-agent/src/main/java/demo/multiagent/application/AgentTeam
 
 You find the full source code for this multi-agent sample in the link:https://github.com/akka-samples/multi-agent[akka-samples/multi-agent GitHub Repository].
 
-== Testing the agent
+== Guardrails
 
-Testing agents built with Generative AI involves two complementary approaches: evaluating the quality of the non-deterministic model behavior and writing deterministic unit tests for the agent's  and surrounding components' logic.
+Guardrails can protect against harmful inputs, such as jailbreak attempts, and damaging output, such as mentions of a competitor’s product.
 
-=== Evaluating AI model quality
+A specific guardrail implements the link:_attachments/api/akka/javasdk/agent/TextGuardrail.html[`TextGuardrail` interface]. It takes the input or output text as a parameter and a result if it passed the validation or not, including an explanation of why the decision was made. These results are included in metrics and traces. A guardrail can abort the interaction with the model, or only report the problem and continue anyway.
 
-Testing AI quality is a subject that goes way beyond the scope of Akka. Testing with generative AI is difficult no matter what you're using to implement it. Interactions with an LLM are not _deterministic_. In other words, you shouldn't expect to get the same answer twice for the same prompt.
+An example of a `Guardrail` implementation:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/guardrail/ToxicGuard.java[ToxicGuard.java]
+----
+include::example$doc-snippets/src/main/java/com/example/guardrail/ToxicGuard.java[tag=all]
+----
+
+Guardrails are enabled by configuration, to be able to enforce at deployment time that certain guardrails are always used.
+
+[source,conf,indent=0]
+----
+akka.javasdk.agent.guardrails {
+  "pii guard" {                                     // <1>
+    class = "com.example.guardrail.PiiGuard"       // <2>
+    agent = ["planner-agent"]                       // <3>
+    agent-roles = ["worker"]                        // <4>
+    category = PII                                  // <5>
+    use-for = ["model-request", "mcp-tool-request"] // <6>
+    report-only = false                             // <7>
+  }
+
+  "toxic guard" {
+    class = "com.example.guardrail.ToxicGuard"
+    agent-roles = ["worker"]
+    category = TOXIC
+    use-for = ["model-response", "mcp-tool-response"]
+    report-only = false
+    search-for = "bad stuff"
+  }
+}
+----
+<1> Each configured guardrail has a unique name.
+<2> Implementation class of the guardrail.
+<3> Enable this guardrail for agents with these component ids.
+<4> Enable this guardrail for agents with these roles.
+<5> The type of validation, such as PII and TOXIC.
+<6> Where to use the guardrail, such as for the model request or model response.
+<7> If it didn't pass the evaluation criteria, the execution can either be aborted or continue anyway. In both cases, the result is tracked in logs, metrics and traces.
+
+The implementation class of the guardrail is configured with the `class` property. The class must implement the link:_attachments/api/akka/javasdk/agent/TextGuardrail.html[`TextGuardrail` interface]. The class may optionally have a constructor with a link:_attachments/api/akka/javasdk/agent/GuardrailContext.html[`GuardrailContext`] parameter, which includes the name and the config section for the specific guardrail. In above code example of the `ToxicGuard` you can see how the configuration property `search-for` is read from the configuration of the `GuardrailContext` parameter.
+
+Agents are selected by matching `agent` or `agent-role` configuration.
+
+* `agents`: enabled for agents with these component ids, if `agents` contain `"*"` the guardrail is enabled for all agents
+* `agent-roles`: enabled for agents with these roles, if agent-roles contain `"*"` the guardrail is enabled for all agents that has a role, but not for agents without a role
+
+If both `agents` and `agent-roles` are defined it's enough that one of them matches to enable the guardrail for an agent.
+
+This role is defined in the `@AgentDescription` annotation.
+
+The name and the category are reported in logs, metrics and traces. The `category` should classify the type of validation. It can be any value, but a few recommended categories are JAILBREAK, PROMPT_INJECTION, PII, TOXIC, HALLUCINATED, NSFW, FORMAT.
+
+The guardrail can be enabled for certain inputs or outputs with the `use-for` property. The `use-for` property accepts the following values: `model-request`, `model-response`, `mcp-tool-request`, `mcp-tool-response`, and `*`.
+
+=== Guardrail of similar text
+
+The built-in link:_attachments/api/akka/javasdk/agent/SimilarityGuard.html[`SimilarityGuard`] evaluates the text by making a similarity search in a dataset of "bad examples". If the similarity exceeds a threshold, the result is flagged as blocked.
+
+This is how to configure the `SimilarityGuard`:
+
+[source,conf,indent=0]
+----
+akka.javasdk.agent.guardrails {
+  "jailbreak guard" {
+    class = "akka.javasdk.agent.SimilarityGuard"
+    agents = ["planner-agent", "weather-agent"]
+    category = JAILBREAK
+    use-for = ["model-request"]
+    threshold = 0.75
+    bad-examples-resource-dir = "guardrail/jailbreak"
+  }
+}
+----
+
+Here, it's using predefined examples of jailbreak prompts in `guardrail/jailbreak`. Those have been incorporated from https://github.com/verazuo/jailbreak_llms/[https://github.com/verazuo/jailbreak_llms, window="new"], but you can define your own examples and place in a subdirectory of  `src/main/resources/`. All text files in the configured `bad-examples-resource-dir` are included in the similarity search.
+
+This can be used for other things than jailbreak attempt detection.
+
+== LLM evaluation
+
+Evaluating AI quality is critical when refining prompts and model parameters. Without evaluation with realistic scenarios and data, you won’t know whether a change improves performance, breaks a use case, or has no impact at all.
+
+Testing with generative AI is difficult no matter what you're using to implement it. Interactions with an LLM are not _deterministic_. In other words, you shouldn't expect to get the same answer twice for the same prompt. Because interactions with an LLM are not deterministic, traditional assertions don't work.
 
 How can you write assertions for something like that? There are a ton of solutions, but most of them revolve around the idea that to verify an LLM's answer, you need another LLM. This pattern is often called "LLM-as-judge". You can get an answer from one agent, and then use another agent or model to review the session history and prompts to infer, with some level of confidence, if the agent behaved the way you want it to.
 
 For instance, after a test run, you could send the session history to a powerful model like GPT-4 with a prompt like: "Based on the user's question about activities, did the agent correctly use the provided `getWeather` tool? Respond with only YES or NO."
 
-There is a practice called **Agent evaluation** where developers will run single ad hoc tests or an automated battery of tests. You run your agent and then _evaluate_ the results based on a number of criteria like token usage, elapsed time, and the results of using other models to infer quality metrics like accuracy or confidence.
+You run your agent and then _evaluate_ the results based on a number of criteria like token usage, elapsed time, and the results of using other models to infer quality metrics like accuracy or confidence.
 
-Akka will soon have an Agent evaluation workbench that will help you run these kinds of evaluation tests.
+You can implement an LLM-as-judge evaluator as an Akka `Agent`. The result of the agent method should implement the link:_attachments/api/akka/javasdk/agent/EvaluationResult.html[`EvaluationResult`] interface. Essentially a boolean that tells if the input passed the evaluation criteria, and an explanation for the decision. These results are captured and included in metrics and traces.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/HumanVsAiEvaluator.java[HumanVsAiEvaluator.java]
+----
+include::example$doc-snippets/src/main/java/com/example/evaluator/HumanVsAiEvaluator.java[tag=all]
+----
+<1> It's an ordinary `Agent`
+<2> It can have any type of request parameter
+<3> The return type must implement `EvaluationResult`, but may also include more information
+<4> Instructions of how to evaluate
+<5> The method with return type implementing `EvaluationResult`
+<6> The instructions are to use "correct" or "incorrect" in the label, and fail fast if that isn't followed by the model
+
+Since the evaluator is an ordinary `Agent` you can call it with the component client in the same way as any other agent. For example, from a consumer of workflow state changes:
+
+[source,java,indent=0]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/AgentTeamEvaluatorConsumer.java[AgentTeamEvaluatorConsumer.java]
+----
+include::example$multi-agent/src/main/java/demo/multiagent/application/AgentTeamEvaluatorConsumer.java[tag=class]
+----
+<1> Consumer of workflow state changes
+<2> When there is a state change that is worth evaluating
+<3> Call the evaluator agent with relevant parameters
+<4> Additional logging, but metrics and traces are updated automatically from the evaluation result
+
+This illustrates that evaluation happens asynchronously, in the background, to capture the results for analytics and later development improvements of prompts. However, the evaluators can also be part of the core agent workflow and thereby have a more immediate impact on the workflow. For example, if the outcome of some step in the workflow doesn't pass the evaluation it can refine the plan and iterate. In this case it's still good to capture the results in metrics and traces by using the `EvaluationResult`. The concrete, application specific, result may include more things than `EvaluationResult`, which can be used for adjusting the execution plan in the workflow.
+
+NOTE: Evaluator agents have an associated cost and overhead since they typically use an LLM. You might want to enable them only in test environments and not for large scale production environments. You can xref:setup-and-dependency-injection.adoc#_disabling_components[disable consumers] that are calling evaluator agents.
+
+An alternative approach is to not include evaluator agents in the deployed application at all, but only use them from integration tests with test data. This is a good way to capture regressions before deploying to the production environment. These tests would use the `TestKitSupport` and the `ComponentClient` to call the evaluators. Still using real LLM for the evaluator agents.
+
+External evaluation products can be integrated with Akka by operating on the trace data that Akka captures and can export according to OpenTelemetry or OpenInference semantic conventions for AI.
+
+=== Built-in evaluators
+
+As shown above, it's easy to implement your own evaluator agents, but for convenience Akka provides a few built-in evaluators that you can use by calling them with the `ComponentClient`. The `AgentTeamEvaluatorConsumer` example above shows how to call the evaluator agents.
+
+The model provider for these agents can be defined in a specific configuration for each agent, which by default is the same as the default model provider.
+
+The system and user message prompts for these agents are loaded from a xref:#_using_dynamic_prompts_with_templates[`PromptTemplate` entity] with specific ids for each agent. Default prompts are used if these templates are not defined. The prompts can be initialized or updated with the xref:#_using_dynamic_prompts_with_templates[`PromptTemplate` entity].
+
+==== Toxicity evaluator
+
+link:_attachments/api/akka/javasdk/agent/evaluator/ToxicityEvaluator.html[`ToxicityEvaluator`] is an agent that acts as an LLM judge to evaluate if an AI response or other text is racist, biased, or toxic.
+
+* Model provider configuration: `akka.javasdk.agent.evaluators.toxicity-evaluator.model-provider`
+* System message prompt id: `toxicity-evaluator.system`
+* User message prompt id: `toxicity-evaluator.user`
+
+Default system message:
+
+[source,java,indent=0]
+----
+include::example$akka-javasdk/src/main/java/akka/javasdk/agent/evaluator/ToxicityEvaluator.java[tag=prompt]
+----
+
+==== Summarization evaluator
+
+link:_attachments/api/akka/javasdk/agent/evaluator/SummarizationEvaluator.html[`SummarizationEvaluator`] is an agent that acts as an LLM judge to evaluate a summarization task.
+
+* Model provider configuration: `akka.javasdk.agent.evaluators.summarization-evaluator.model-provider`
+* System message prompt id: `summarization-evaluator.system`
+* User message prompt id: `summarization-evaluator.user`
+
+Default system message:
+
+[source,java,indent=0]
+----
+include::example$akka-javasdk/src/main/java/akka/javasdk/agent/evaluator/SummarizationEvaluator.java[tag=prompt]
+----
+
+==== Hallucination evaluator
+
+link:_attachments/api/akka/javasdk/agent/evaluator/HallucinationEvaluator.html[`HallucinationEvaluator`] is an agent that acts as an LLM judge to evaluate whether an output contains information not available in the reference text given an input question.
+
+* Model provider configuration: `akka.javasdk.agent.evaluators.hallucination-evaluator.model-provider`
+* System message prompt id: `hallucination-evaluator.system`
+* User message prompt id: `hallucination-evaluator.user`
+
+Default system message:
+
+[source,java,indent=0]
+----
+include::example$akka-javasdk/src/main/java/akka/javasdk/agent/evaluator/HallucinationEvaluator.java[tag=prompt]
+----
+
+== Testing the agent
+
+Testing agents built with Generative AI involves two complementary approaches: evaluating the quality of the non-deterministic model behavior and writing deterministic unit tests for the agent's and surrounding components' logic. Evaluations is described in xref:#_evaluating_ai_model_quality[], and here we will cover the deterministic testing.
 
 === Mocking responses from the model
 
 For predictable and repeatable tests of your agent's business logic and component integrations, it's essential to use deterministic responses. This allows you to verify that your agent behaves correctly when it receives a known model output.
 
-Use the `TestKitSupport` and the `CoponentClient` to call the components from the test. The `ModelProvider` of the agents can be replaced with link:_attachments/testkit/akka/javasdk/testkit/TestModelProvider.html[TestModelProvider], which provides ways to mock the responses without using the real AI model.
+Use the `TestKitSupport` and the `ComponentClient` to call the components from the test. The `ModelProvider` of the agents can be replaced with link:_attachments/testkit/akka/javasdk/testkit/TestModelProvider.html[TestModelProvider], which provides ways to mock the responses without using the real AI model.
 
 [source,java,indent=0]
 .{sample-base-url}/multi-agent/src/test/java/demo/multiagent/application/AgentTeamWorkflowTest.java[AgentTeamWorkflowTest.java]

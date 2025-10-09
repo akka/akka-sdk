@@ -1,12 +1,12 @@
 package com.example.application;
 
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import java.util.UUID;
 
 // tag::prompt[]
-@ComponentId("activity-agent")
+@Component(id = "activity-agent")
 public class ActivityAgent extends Agent {
 
   private static final String SYSTEM_MESSAGE = // <1>

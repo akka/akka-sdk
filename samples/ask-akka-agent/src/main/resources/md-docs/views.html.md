@@ -65,7 +65,7 @@ You implement a View by extending `akka.javasdk.view.View` and subscribing to ch
 
 [CustomersByEmail.java](https://github.com/akka/akka-sdk/blob/main/samples/key-value-customer-registry/src/main/java/customer/application/CustomersByEmail.java)
 ```java
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
@@ -74,7 +74,7 @@ import customer.domain.Customer;
 
 import java.util.List;
 
-@ComponentId("customers-by-email") // (1)
+@Component(id = "customers-by-email") // (1)
 public class CustomersByEmail extends View { // (2)
 
   public record Customers(List<Customer> customers) { }
@@ -110,7 +110,7 @@ In this scenario, the view state should be of type `CustomerSummary` and you wil
 
 [CustomersByName.java](https://github.com/akka/akka-sdk/blob/main/samples/key-value-customer-registry/src/main/java/customer/application/CustomersByName.java)
 ```java
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
@@ -119,7 +119,7 @@ import customer.domain.Customer;
 
 import java.util.Collection;
 
-@ComponentId("customers-by-name")
+@Component(id = "customers-by-name")
 public class CustomersByName extends View {
 
   public record CustomerSummary(String customerId, String name, String email) { }
@@ -216,7 +216,7 @@ Every time an event is processed by the view, the state of the view can be updat
 
 [CustomersByNameView.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-customer-registry/src/main/java/customer/application/CustomersByNameView.java)
 ```java
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
@@ -225,7 +225,7 @@ import customer.domain.CustomerEvent;
 import customer.domain.CustomerEntry;
 import customer.domain.CustomerEntries;
 
-@ComponentId("customers-by-name") // (1)
+@Component(id = "customers-by-name") // (1)
 public class CustomersByNameView extends View {
 
   @Consume.FromEventSourcedEntity(CustomerEntity.class)
@@ -273,7 +273,7 @@ The source of a View can be also a Workflow state changes. It works the same way
 
 [TransfersView.java](https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow/src/main/java/com/example/transfer/application/TransfersView.java)
 ```java
-@ComponentId("transfer-view")
+@Component(id = "transfer-view")
 public class TransfersView extends View {
 
   public record TransferEntry(String id, String status) {}
@@ -306,7 +306,7 @@ The source of a View can be a topic. It works the same way as shown in [Creating
 |  | For the messages to be correctly consumed in the view, there must be a `ce-subject` metadata associated with each message. This is required because for each message consumed from the topic there will be a corresponding view row. That view row is selected based on such `ce-subject`. For an example on how to pass such metadata when producing to a topic, see page [Metadata](consuming-producing.html#_metadata). |
 [CounterTopicView.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-counter-brokers/src/main/java/counter/application/CounterTopicView.java)
 ```java
-@ComponentId("counter-topic-view")
+@Component(id = "counter-topic-view")
 public class CounterTopicView extends View {
 
   private static final Logger logger = LoggerFactory.getLogger(CounterTopicView.class);
@@ -825,7 +825,7 @@ public record CustomerOrder(
 ```
 [JoinedCustomerOrdersView.java](https://github.com/akka/akka-sdk/blob/main/samples/view-store/src/main/java/store/order/view/joined/JoinedCustomerOrdersView.java)
 ```java
-@ComponentId("joined-customer-orders") // (1)
+@Component(id = "joined-customer-orders") // (1)
 public class JoinedCustomerOrdersView extends View {
 
   @Table("customers") // (2)

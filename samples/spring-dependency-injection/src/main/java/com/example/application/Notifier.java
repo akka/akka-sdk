@@ -1,6 +1,6 @@
 package com.example.application;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.consumer.Consumer;
 import com.example.domain.Counter;
@@ -8,7 +8,7 @@ import com.example.domain.CounterEvent.ValueIncreased;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ComponentId("notifier")
+@Component(id = "notifier")
 @Consume.FromEventSourcedEntity(value = Counter.class, ignoreUnknown = true)
 public class Notifier extends Consumer {
 

@@ -120,7 +120,7 @@ The class signature for our shopping cart entity will look like this:
 
 [ShoppingCartEntity.java](https://github.com/akka/akka-sdk/blob/main/samples/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java)
 ```java
-@ComponentId("shopping-cart") // (2)
+@Component(id = "shopping-cart") // (2)
 public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, ShoppingCartEvent> { // (1)
 }
 ```

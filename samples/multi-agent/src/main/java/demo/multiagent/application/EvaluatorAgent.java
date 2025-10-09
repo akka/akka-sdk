@@ -2,14 +2,15 @@ package demo.multiagent.application;
 
 // tag::all[]
 import akka.javasdk.agent.Agent;
+import akka.javasdk.agent.EvaluationResult;
 import akka.javasdk.annotations.AgentDescription;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-@ComponentId("evaluator-agent")
+@Component(id = "evaluator-agent")
 @AgentDescription(
   name = "Evaluator Agent",
   description = """
@@ -26,13 +27,17 @@ public class EvaluatorAgent extends Agent {
     String finalAnswer
   ) {}
 
-  public record EvaluationResult(String evaluation, String feedback) {
-    public boolean ok() {
-      return switch (evaluation.toLowerCase(Locale.ROOT)) {
+  public record Result(String explanation, String label) implements EvaluationResult {
+    public boolean passed() {
+      if (label == null) throw new IllegalArgumentException(
+        "Model response must include label field"
+      );
+
+      return switch (label.toLowerCase(Locale.ROOT)) {
         case "correct" -> true;
         case "incorrect" -> false;
         default -> throw new IllegalArgumentException(
-          "Unknown evaluation result [" + evaluation + "]"
+          "Unknown evaluation result [" + label + "]"
         );
       };
     }
@@ -62,8 +67,8 @@ public class EvaluatorAgent extends Agent {
       respecting user preferences is the most important criteria
 
     Your response must be a single JSON object with the following fields:
-    - "evaluation": A string, either "Correct" or "Incorrect".
-    - "feedback": Specific feedback on what works well or deviations from preferences.
+    - "explanation": Specific feedback on what works well or deviations from preferences.
+    - "label": A string, either "Correct" or "Incorrect".
     """.stripIndent();
 
   private final ComponentClient componentClient;
@@ -72,7 +77,7 @@ public class EvaluatorAgent extends Agent {
     this.componentClient = componentClient;
   }
 
-  public Effect<EvaluationResult> evaluate(EvaluationRequest request) {
+  public Effect<Result> evaluate(EvaluationRequest request) {
     var allPreferences = componentClient
       .forEventSourcedEntity(request.userId())
       .method(PreferencesEntity::getPreferences)
@@ -87,7 +92,7 @@ public class EvaluatorAgent extends Agent {
     return effects()
       .systemMessage(SYSTEM_MESSAGE)
       .userMessage(evaluationPrompt)
-      .responseConformsTo(EvaluationResult.class) // <3>
+      .responseConformsTo(Result.class) // <3>
       .thenReply();
   }
 

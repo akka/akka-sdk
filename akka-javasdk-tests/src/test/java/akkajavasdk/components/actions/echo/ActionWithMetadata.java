@@ -4,11 +4,11 @@
 
 package akkajavasdk.components.actions.echo;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.timedaction.TimedAction;
 import akkajavasdk.StaticTestBuffer;
 
-@ComponentId("with-metadata")
+@Component(id = "with-metadata")
 public class ActionWithMetadata extends TimedAction {
 
   public static final String SOME_HEADER = "some-header";

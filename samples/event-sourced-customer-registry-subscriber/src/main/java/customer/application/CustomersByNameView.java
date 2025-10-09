@@ -1,6 +1,6 @@
 package customer.application;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // tag::view[]
-@ComponentId("customers-by-name")
+@Component(id = "customers-by-name")
 public class CustomersByNameView extends View {
 
   // end::view[]

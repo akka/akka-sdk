@@ -4,12 +4,12 @@
 
 package akkajavasdk.components.actions.echo;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.timedaction.TimedAction;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-@ComponentId("with-primitives")
+@Component(id = "with-primitives")
 // TODO remove or bring tests back
 public class ActionWithPrimitives extends TimedAction {
 

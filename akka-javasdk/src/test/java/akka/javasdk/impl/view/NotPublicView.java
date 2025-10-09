@@ -4,7 +4,7 @@
 
 package akka.javasdk.impl.view;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.testmodels.keyvalueentity.User;
@@ -12,7 +12,7 @@ import akka.javasdk.testmodels.keyvalueentity.UserEntity;
 import akka.javasdk.view.TableUpdater;
 
 // not public and thus need to be in the same package as the corresponding test
-@ComponentId("users_view")
+@Component(id = "users_view")
 class NotPublicView {
 
   @Consume.FromKeyValueEntity(UserEntity.class)
