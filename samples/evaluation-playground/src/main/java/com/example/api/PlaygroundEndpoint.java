@@ -8,7 +8,6 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import com.example.application.PromptAgent;
-
 import java.util.UUID;
 
 /**
@@ -29,7 +28,9 @@ public class PlaygroundEndpoint {
   }
 
   @Post("/eval/summarization")
-  public SummarizationEvaluator.Result evalSummarization(SummarizationEvaluator.EvaluationRequest request) {
+  public SummarizationEvaluator.Result evalSummarization(
+    SummarizationEvaluator.EvaluationRequest request
+  ) {
     return componentClient
       .forAgent()
       .inSession(UUID.randomUUID().toString())
@@ -38,30 +39,31 @@ public class PlaygroundEndpoint {
   }
 
   @Post("/eval/hallucination")
-  public HallucinationEvaluator.Result evalHallucination(HallucinationEvaluator.EvaluationRequest request) {
+  public HallucinationEvaluator.Result evalHallucination(
+    HallucinationEvaluator.EvaluationRequest request
+  ) {
     return componentClient
-        .forAgent()
-        .inSession(UUID.randomUUID().toString())
-        .method(HallucinationEvaluator::evaluate)
-        .invoke(request);
+      .forAgent()
+      .inSession(UUID.randomUUID().toString())
+      .method(HallucinationEvaluator::evaluate)
+      .invoke(request);
   }
 
   @Post("/eval/toxicity")
   public ToxicityEvaluator.Result evalToxicity(String text) {
     return componentClient
-        .forAgent()
-        .inSession(UUID.randomUUID().toString())
-        .method(ToxicityEvaluator::evaluate)
-        .invoke(text);
+      .forAgent()
+      .inSession(UUID.randomUUID().toString())
+      .method(ToxicityEvaluator::evaluate)
+      .invoke(text);
   }
 
   @Post("/prompt/{sessionId}")
   public String prompt(String sessionId, PromptAgent.Request request) {
     return componentClient
-        .forAgent()
-        .inSession(UUID.randomUUID().toString())
-        .method(PromptAgent::send)
-        .invoke(request);
+      .forAgent()
+      .inSession(UUID.randomUUID().toString())
+      .method(PromptAgent::send)
+      .invoke(request);
   }
 }
-
