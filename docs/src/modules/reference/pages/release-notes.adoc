@@ -10,6 +10,23 @@ Current versions
 * Akka CLI {akka-cli-version}
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
 
+== October 2025
+
+* https://github.com/akka/akka-sdk/releases/tag/v3.5.4[Akka SDK 3.5.4]
+- Agent guardrails
+- Evaluator agents
+- New `@Component` annotation, replacing `@ComponentId`
+- Better error handling in JsonSchema generation
+- Runtime 1.5.18
+
+* Akka Runtime 1.5.18
+- Turn unknown tool into ToolCallExecutionFailure
+- Telemetry for evaluation results
+
+* Akka Runtime 1.5.17
+- Telemetry for view update sequence gap detection
+- Agent guardrails
+
 == September 2025
 
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.3[Akka SDK 3.5.3]
@@ -24,6 +41,15 @@ Current versions
 - Include json schema for the structured response
 - Documentation improvements
 - Various bug fixes and internal improvements
+
+* Akka Runtime 1.5.16
+- Langchain4j 1.5.0
+
+* Akka Runtime 1.5.15
+- Fix unexpected rejected events in catchup scenario
+- Allow configuration of model and MCP timeouts and retries
+- Improvements to tracing
+- Support local cluster
 
 * Akka Runtime 1.5.14
 - Enriched tracing
