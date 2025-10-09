@@ -830,7 +830,7 @@ Default system message:
 
 [source,java,indent=0]
 ----
-include::example$doc-snippets/src/main/java/akka/javasdk/agent/evaluator/ToxicityEvaluator.java[tag=prompt]
+include::example$akka-javasdk/src/main/java/akka/javasdk/agent/evaluator/ToxicityEvaluator.java[tag=prompt]
 ----
 
 ==== Summarization evaluator
@@ -845,7 +845,7 @@ Default system message:
 
 [source,java,indent=0]
 ----
-include::example$doc-snippets/src/main/java/akka/javasdk/agent/evaluator/SummarizationEvaluator.java[tag=prompt]
+include::example$akka-javasdk/src/main/java/akka/javasdk/agent/evaluator/SummarizationEvaluator.java[tag=prompt]
 ----
 
 ==== Hallucination evaluator
@@ -860,7 +860,7 @@ Default system message:
 
 [source,java,indent=0]
 ----
-include::example$doc-snippets/src/main/java/akka/javasdk/agent/evaluator/HallucinationEvaluator.java[tag=prompt]
+include::example$akka-javasdk/src/main/java/akka/javasdk/agent/evaluator/HallucinationEvaluator.java[tag=prompt]
 ----
 
 == Testing the agent
