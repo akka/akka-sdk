@@ -1477,7 +1477,7 @@ Akka will soon have an Agent evaluation workbench that will help you run these k
 
 For predictable and repeatable tests of your agent’s business logic and component integrations, it’s essential to use deterministic responses. This allows you to verify that your agent behaves correctly when it receives a known model output.
 
-Use the `TestKitSupport` and the `CoponentClient` to call the components from the test. The `ModelProvider` of the agents can be replaced with [TestModelProvider](_attachments/testkit/akka/javasdk/testkit/TestModelProvider.html), which provides ways to mock the responses without using the real AI model.
+Use the `TestKitSupport` and the `ComponentClient` to call the components from the test. The `ModelProvider` of the agents can be replaced with [TestModelProvider](_attachments/testkit/akka/javasdk/testkit/TestModelProvider.html), which provides ways to mock the responses without using the real AI model.
 
 [AgentTeamWorkflowTest.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/test/java/demo/multiagent/application/AgentTeamWorkflowTest.java)
 ```java

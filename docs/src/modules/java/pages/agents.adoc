@@ -806,13 +806,13 @@ This illustrates that evaluation happens asynchronously, in the background, to c
 
 NOTE: Evaluator agents have an associated cost and overhead since they typically use an LLM. You might want to enable them only in test environments and not for large scale production environments. You can xref:setup-and-dependency-injection.adoc#_disabling_components[disable consumers] that are calling evaluator agents.
 
-An alternative approach is to not include evaluator agents in the deployed application at all, but only use them from integration tests with test data. This is a good way to capture regressions before deploying to the production environment. These tests would use the `TestKitSupport` and the `CoponentClient` to call the evaluators. Still using real LLM for the evaluator agents.
+An alternative approach is to not include evaluator agents in the deployed application at all, but only use them from integration tests with test data. This is a good way to capture regressions before deploying to the production environment. These tests would use the `TestKitSupport` and the `ComponentClient` to call the evaluators. Still using real LLM for the evaluator agents.
 
 External evaluation products can be integrated with Akka by operating on the trace data that Akka captures and can export according to OpenTelemetry or OpenInference semantic conventions for AI.
 
 === Built-in evaluators
 
-As shown above, it's easy to implement your own evaluator agents, but for convenience Akka provides a few built-in evaluators that you can use by calling them with the `CoponentClient`.
+As shown above, it's easy to implement your own evaluator agents, but for convenience Akka provides a few built-in evaluators that you can use by calling them with the `ComponentClient`.
 
 The model provider for these agents can be defined in a specific configuration for each agent, which by default is the same as the default model provider.
 
@@ -871,7 +871,7 @@ Testing agents built with Generative AI involves two complementary approaches: e
 
 For predictable and repeatable tests of your agent's business logic and component integrations, it's essential to use deterministic responses. This allows you to verify that your agent behaves correctly when it receives a known model output.
 
-Use the `TestKitSupport` and the `CoponentClient` to call the components from the test. The `ModelProvider` of the agents can be replaced with link:_attachments/testkit/akka/javasdk/testkit/TestModelProvider.html[TestModelProvider], which provides ways to mock the responses without using the real AI model.
+Use the `TestKitSupport` and the `ComponentClient` to call the components from the test. The `ModelProvider` of the agents can be replaced with link:_attachments/testkit/akka/javasdk/testkit/TestModelProvider.html[TestModelProvider], which provides ways to mock the responses without using the real AI model.
 
 [source,java,indent=0]
 .{sample-base-url}/multi-agent/src/test/java/demo/multiagent/application/AgentTeamWorkflowTest.java[AgentTeamWorkflowTest.java]
