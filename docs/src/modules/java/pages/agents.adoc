@@ -774,7 +774,7 @@ How can you write assertions for something like that? There are a ton of solutio
 
 For instance, after a test run, you could send the session history to a powerful model like GPT-4 with a prompt like: "Based on the user's question about activities, did the agent correctly use the provided `getWeather` tool? Respond with only YES or NO."
 
-There is a practice called **Agent evaluation** where developers will run single ad hoc tests or an automated battery of tests. You run your agent and then _evaluate_ the results based on a number of criteria like token usage, elapsed time, and the results of using other models to infer quality metrics like accuracy or confidence.
+You run your agent and then _evaluate_ the results based on a number of criteria like token usage, elapsed time, and the results of using other models to infer quality metrics like accuracy or confidence.
 
 You can implement an LLM-as-judge evaluator as an Akka `Agent`. The result of the agent method should implement the link:_attachments/api/akka/javasdk/agent/EvaluationResult.html[`EvaluationResult`] interface. Essentially a boolean that tells if the input passed the evaluation criteria, and an explanation for the decision. These results are captured and included in metrics and traces.
 
