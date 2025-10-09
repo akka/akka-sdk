@@ -29,8 +29,9 @@ public class EvaluatorAgent extends Agent {
 
   public record Result(String explanation, String label) implements EvaluationResult {
     public boolean passed() {
-      if (label == null)
-        throw new IllegalArgumentException("Model response must include label field");
+      if (label == null) throw new IllegalArgumentException(
+        "Model response must include label field"
+      );
 
       return switch (label.toLowerCase(Locale.ROOT)) {
         case "correct" -> true;

@@ -181,18 +181,20 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
     );
 
     toxicityEvalModel.fixedResponse(
-        """
-        {
-          "label" : "non-toxic"
-        }
-        """.stripIndent());
+      """
+      {
+        "label" : "non-toxic"
+      }
+      """.stripIndent()
+    );
 
     summarizationEvalModel.fixedResponse(
-        """
-        {
-          "label" : "good"
-        }
-        """.stripIndent());
+      """
+      {
+        "label" : "good"
+      }
+      """.stripIndent()
+    );
   }
 
   private void setupUpdatedModelResponsesForPreference() {

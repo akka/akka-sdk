@@ -76,18 +76,20 @@ public class AgentTeamWorkflowTest extends TestKitSupport { // <1>
     );
 
     toxicityEvalModel.fixedResponse(
-        """
-        {
-          "label" : "non-toxic"
-        }
-        """.stripIndent());
+      """
+      {
+        "label" : "non-toxic"
+      }
+      """.stripIndent()
+    );
 
     summarizationEvalModel.fixedResponse(
-        """
-        {
-          "label" : "good"
-        }
-        """.stripIndent());
+      """
+      {
+        "label" : "good"
+      }
+      """.stripIndent()
+    );
 
     var query = "I am in Stockholm. What should I do? Beware of the weather";
 

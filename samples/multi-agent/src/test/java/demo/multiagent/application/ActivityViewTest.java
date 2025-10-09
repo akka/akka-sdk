@@ -7,7 +7,6 @@ import akka.javasdk.testkit.TestKitSupport;
 import com.typesafe.config.ConfigFactory;
 import demo.multiagent.application.ActivityView.ActivityEntries;
 import demo.multiagent.application.ActivityView.ActivityEntry;
-
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
@@ -21,8 +20,9 @@ public class ActivityViewTest extends TestKitSupport {
     // We don't need a real one though.
     return TestKit.Settings.DEFAULT.withAdditionalConfig(
       ConfigFactory.parseString("akka.javasdk.agent.openai.api-key=fake-key")
-    ).withWorkflowIncomingMessages(AgentTeamWorkflow.class)
-     .withDisabledComponents(Set.of(AgentTeamEvaluatorConsumer.class));
+    )
+      .withWorkflowIncomingMessages(AgentTeamWorkflow.class)
+      .withDisabledComponents(Set.of(AgentTeamEvaluatorConsumer.class));
   }
 
   @Test
