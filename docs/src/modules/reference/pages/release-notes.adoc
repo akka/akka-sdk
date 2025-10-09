@@ -46,7 +46,7 @@ Current versions
 - Langchain4j 1.5.0
 
 * Akka Runtime 1.5.15
-- Fix unexpected rejected events in catchup scenario
+- Fix unexpected rejected events for views and consumers
 - Allow configuration of model and MCP timeouts and retries
 - Improvements to tracing
 - Support local cluster
