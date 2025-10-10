@@ -6,6 +6,17 @@ Used for code snippets in the Views documentation.
 
 When running a Akka service locally, we need to have its companion Akka Runtime running alongside it.
 
+---
+
+### Secure Repository Token
+
+To build you need to set up a token in one of two ways:
+
+1. Download the [Akka CLI](https://doc.akka.io/operations/cli/installation.html), run `akka code token` and follow the instructions.
+2. Set up the token manually as described [here](https://account.akka.io/token).
+
+---
+
 To start your service locally, run:
 
 ```shell
