@@ -1,9 +1,9 @@
 package com.example.application;
 
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 
-@ComponentId("prompt-agent")
+@Component(id = "prompt-agent")
 public class PromptAgent extends Agent {
 
   public record Request(String systemMessage, String userMessage) {}
