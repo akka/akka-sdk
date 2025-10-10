@@ -513,7 +513,6 @@
                     <!-- Note: Order of plugins is significant since they bind to the same phase -->
                     <plugin>
                         <artifactId>maven-dependency-plugin</artifactId>
-                        <version>3.8.1</version>
                         <executions>
                             <execution>
                                 <id>unpack-proto-dependencies</id>
@@ -570,6 +569,7 @@
             </build>
             <dependencies>
                 <dependency>
+                    <!-- Note: needed - also includes some classes that the messages depend on -->
                     <groupId>com.google.protobuf</groupId>
                     <artifactId>protobuf-java</artifactId>
                     <version>${protobuf-java.version}</version>
