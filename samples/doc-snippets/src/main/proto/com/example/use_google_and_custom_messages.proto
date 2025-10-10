@@ -1,9 +1,11 @@
 syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
-
+import "google/type/color.proto";
 
 message SomeMessage {
   // google proto message types automatically available
   google.protobuf.Timestamp timestamp = 1;
+  // third party protobufs explicitly included in project
+  google.type.Color color = 2;
 }
