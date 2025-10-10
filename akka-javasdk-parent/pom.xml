@@ -82,6 +82,8 @@
         <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
         <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
 
+        <!-- FIXME must be aligned with sdk/runtime/akka-grpc -->
+        <protobuf-java.version>3.25.5</protobuf-java.version>
     </properties>
 
     <build>
@@ -508,6 +510,36 @@
             </activation>
             <build>
                 <plugins>
+                    <!-- Note: Order of plugins is significant since they bind to the same phase -->
+                    <plugin>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>3.8.1</version>
+                        <executions>
+                            <execution>
+                                <id>unpack-proto-dependencies</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <!--  We include the core "google/protobuf/*" proto message types out of the box -->
+                                        <artifactItem>
+                                            <groupId>com.google.protobuf</groupId>
+                                            <artifactId>protobuf-java</artifactId>
+                                            <version>${protobuf-java.version}</version>
+                                            <type>jar</type>
+                                            <overWrite>true</overWrite>
+                                            <outputDirectory>${project.build.directory}/proto</outputDirectory>
+                                            <includes>**/*.proto</includes>
+                                        </artifactItem>
+                                    </artifactItems>
+                                    <overWriteReleases>false</overWriteReleases>
+                                    <overWriteSnapshots>true</overWriteSnapshots>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>com.lightbend.akka.grpc</groupId>
                         <artifactId>akka-grpc-maven-plugin</artifactId>
@@ -517,11 +549,17 @@
                                 <!-- required to generate the instance-per-request handler -->
                                 <generateScalaHandlerFactory>true</generateScalaHandlerFactory>
                                 <blockingApis>true</blockingApis>
+                                <includeStdTypes>true</includeStdTypes>
                             </generatorSettings>
+                            <protoPaths>
+                                <protoPath>src/main/proto</protoPath>
+                                <protoPath>target/proto</protoPath>
+                            </protoPaths>
                         </configuration>
                         <!-- Hook the generate goal into the lifecycle, automatically tied to generate-sources -->
                         <executions>
                             <execution>
+                                <id>generate-grpc-and-protobuf-sources</id>
                                 <goals>
                                     <goal>generate</goal>
                                 </goals>
@@ -530,6 +568,13 @@
                     </plugin>
                 </plugins>
             </build>
+            <dependencies>
+                <dependency>
+                    <groupId>com.google.protobuf</groupId>
+                    <artifactId>protobuf-java</artifactId>
+                    <version>${protobuf-java.version}</version>
+                </dependency>
+            </dependencies>
         </profile>
 
         <profile>

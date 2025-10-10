@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+
+message SomeMessage {
+  // google proto message types automatically available
+  google.protobuf.Timestamp timestamp = 1;
+}
