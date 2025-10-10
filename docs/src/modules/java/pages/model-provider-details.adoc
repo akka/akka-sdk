@@ -259,6 +259,28 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.Ollama.html[`ModelPro
 
 See link:_attachments/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`ModelProvider.OpenAi`] for programmatic settings.
 
+== Default model configuration
+
+The default model will be used if the agent doesn't specify another model.
+
+You can define a default model in `application.conf`:
+
+[source,json,indent=0]
+.src/main/resources/application.conf
+----
+include::java:example$doc-snippets/src/main/resources/application.conf[tags=agent-model-config]
+----
+
+The `model-provider` property points to name of another configuration section, in this case `akka.javasdk.agent.openai`. That configuration section contains the actual configuration for the model provider, according to the properties described in below xref:#_reference_configurations[].
+
+Another example where we have selected `anthropic` with `claude-sonnet-4` as the default model provider:
+
+[source,json,indent=0]
+.src/main/resources/application.conf
+----
+include::java:example$doc-snippets/src/main/resources/application.conf[tags=agent-model-config2]
+----
+
 == Reference configurations
 The following is a list of the various reference configurations for each of the AI models
 
