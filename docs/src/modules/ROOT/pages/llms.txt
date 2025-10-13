@@ -13,6 +13,17 @@
 - [Developing](https://doc.akka.io/java/index.html.md): Overview of the development process with the Akka SDK.
 - [Components](https://doc.akka.io/java/components/index.html.md): Introduction to Akka's core building blocks and their usage.
 - [Implementing Agents](https://doc.akka.io/java/agents.html.md): How to create agents that interact with an AI model.
+- [Choosing the prompt](https://doc.akka.io/java/agents/prompt.html.md): Choosing the prompts for agents.
+- [Calling agents](https://doc.akka.io/java/agents/calling.html.md): Calling agents from Akka code.
+- [Managing session memory](https://doc.akka.io/java/agents/memory.html.md): Managing agent session memory.
+- [Structured responses](https://doc.akka.io/java/agents/structured.html.md): Handling strongly typed responses from LLMs.
+- [Handling failures](https://doc.akka.io/java/agents/failures.html.md): Handling agent failures.
+- [Extending agents with function tools](https://doc.akka.io/java/agents/extending.html.md): Extending agents with function (callback) tools.
+- [Streaming agent responses](https://doc.akka.io/java/agents/streaming.html.md): Streaming model responses with agents.
+- [Orchestrating multiple agents](https://doc.akka.io/java/agents/orchestrating.html.md): Orchestrating multiple agents.
+- [Providing guardrails](https://doc.akka.io/java/agents/guardrails.html.md): Constraining and controlling agent behavior with guardrails.
+- [Evaluating model responses](https://doc.akka.io/java/agents/evaluating.html.md): Evaluating and judging the responses from LLMs via agents.
+- [Testing agents](https://doc.akka.io/java/agents/testing.html.md): Testing agents and agentic behavior.
 - [Implementing Event Sourced Entities](https://doc.akka.io/java/event-sourced-entities.html.md): How to create entities that store their state as a sequence of events.
 - [Implementing Key Value Entities](https://doc.akka.io/java/key-value-entities.html.md): Guide to implementing entities that store their state directly.
 - [Implementing Workflows](https://doc.akka.io/java/workflows.html.md): Creating and managing long-running business processes with Akka workflows.
