@@ -1,0 +1,68 @@
+= Choosing the prompt
+
+include::ROOT:partial$include.adoc[]
+
+The prompt consists of essential instructions to the model.
+
+* The system message provides system-level instructions to the AI model that defines its behavior and context. The system message acts as a foundational prompt that establishes the AI's role, constraints, and operational parameters. It is processed before user messages and helps maintain consistent behavior throughout the interactions.
+* The user message represents the specific query, instruction, or input that will be processed by the model to generate a response.
+
+An agent that suggests real-world activities may have a prompt like:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/ActivityAgent.java[ActivityAgent.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgent.java[tag=prompt]
+----
+<1> Define the system message as a constant, but it could also be a method that adapts the system message based on the request.
+<2> Use the system message in the effect builder.
+<3> Define the user message for the specific request, and use in the effect builder.
+
+Keep in mind that some models have preferences in how you wrap or label user input within the system prompt and you'll need to take that into account when defining your system message.
+
+== Using dynamic prompts with templates
+
+As an alternative to hard-coded prompts, there is a built-in prompt template entity. The advantage of using the prompt template entity is that you can change the prompts at runtime without restarting or redeploying the service. Because the prompt template is managed as an entity, you retain full change history.
+
+[source,java,indent=0]
+.ActivityAgent.java
+----
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgentMore.java[tag=prompt-template]
+----
+<1> Define the system message prompt template key.
+
+In addition to the prompt template key you can optionally add parameters to `systemMessageFromTemplate`. Those will be used to format the template with `java.util.Formatter`.
+
+Prompts are stored in the `PromptTemplate` xref:event-sourced-entities.adoc[Event Sourced Entity]. This is a built-in entity, automatically registered at runtime if there are any Agent components in the service. To initialize the prompt or get the current value you can use component client the same way as for any other entity.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ActivityPromptEndpoint.java[ActivityPromptEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/ActivityPromptEndpoint.java[tag=prompt-template-endpoint]
+----
+<1> Prompt key is used as entity id.
+<2> `PromptTemplate::update` update the prompt value.
+<3> `PromptTemplate::get` retrieves the current prompt value.
+
+Keeping the prompt in the Event Sourced Entity lets you see the history of all changes. It's also possible to subscribe to changes in the prompt template entity, so that you can build a xref:views.adoc[View] or react to changes in the prompt.
+
+The following table describes all of the methods available for the `PromptTemplate` entity:
+
+[cols="1,3", width=85%]
+|===
+| Method | Description
+
+| `init` | Initializes the prompt template with a given value. If the prompt template already exists, it will not change it. Useful for setting the initial value, e.g. in the `onStartup` method of the xref:setup-and-dependency-injection.adoc#_service_lifecycle[ServiceSetup].
+| `update` | Updates the prompt template with a new value. If the prompt template does not exist, it will create it. If the value is the same as the current value, it will not change it.
+| `get` |  Retrieves the current value of the prompt template. If the prompt template does not exist, it will throw an exception.
+| `getOptional` | Retrieves the current value of the prompt template as an `Optional`. If the prompt template does not exist, it will return an empty `Optional`.
+| `delete` | Deletes the prompt template.
+
+|===
+
+Although the system message has a dedicated method to use the prompt template, you can also use it for the user message. In that case you have to use the component client to retrieve the current value of the prompt template and pass it as the user message.
+
+== Adding more context
+
+xref:rag.adoc[] is a technique to provide additional, relevant content in the user message.
+
