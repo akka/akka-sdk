@@ -1,0 +1,123 @@
+= Extending agents with function tools
+
+include::ROOT:partial$include.adoc[]
+
+You may frequently hear people say things like "the LLM can make a call" or "the LLM can use a tool". While these statements get the point across, they're not entirely accurate. In truth, the agent will tell the LLM which _tools_ are available for use. The LLM then determines from the prompt which tools it needs to call and with which parameters.
+
+The Agent will then in turn execute the tool requested by the LLM, incorporate the tool results into the session context, and then send a new prompt. This will continue in a loop until the LLM no longer indicates it needs to invoke a tool to perform its task.
+
+There are three ways to add function tools to your agent:
+
+1. **Agent-defined function tools** — Define function tools directly within your agent class using the `@FunctionTool`
+annotation. These are automatically registered as available tools for the current Agent.
+
+2. **Externally defined function tools** — Explicitly register external objects or classes containing function tools by
+passing them to the `effects().tools()` method in your agent's command handler. Objects or classes passed to `effects
+().tools()` must have at least one public method annotated with `@FunctionTool`.
+
+3. **Tools defined by remote MCP servers** – Register remote MCP servers to let the agent use tools they provide.
+
+NOTE: A class (either the agent itself or an external tool class) can have multiple methods annotated with `@FunctionTool`. Each annotated method will be registered as a separate tool that the LLM can choose to invoke based on the task requirements.
+
+You can use either approach independently or combine them based on your needs. Let's look at a complete example showing both approaches:
+
+[source,java,indent=0]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/WeatherAgent.java[WeatherAgent.java]
+----
+include::example$multi-agent/src/main/java/demo/multiagent/application/WeatherAgent.java[tag=function-tool]
+----
+<1> The `WeatherService` providing a function tool is injected into the agent (see
+xref:setup-and-dependency-injection.adoc#_custom_dependency_injection[DependencyProvider]).
+<2> We explicitly register the `weatherService` using the `tools()` method to make its method available as a tool for
+ the current Agent.
+<3> We define a simple tool directly in the agent class using the `@FunctionTool` annotation, which is implicitly registered. Note that since this method is defined in the agent itself, it can even be a private method.
+
+The `WeatherService` is an interface with a method annotated with `@FunctionTool`. A concrete implementation of this
+interface is provided by `{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/WeatherServiceImpl.java[WeatherServiceImpl]` class.
+This class is made available for injection in the service setup using a xref:setup-and-dependency-injection.adoc#_custom_dependency_injection[DependencyProvider].
+
+[source,java,indent=0]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/WeatherService.java[WeatherService.java]
+----
+include::example$multi-agent/src/main/java/demo/multiagent/application/WeatherService.java[tag=function-tool]
+----
+
+<1> Annotate method with `@FunctionTool` and provide a clear description of what it does.
+<2> Parameters can be documented with the `@Description` annotation to help the LLM understand how to use them.
+<3> The date parameter is optional. The LLM may call `getCurrentDate` first or call this method without a date, depending on the user query.
+
+
+[NOTE]
+====
+LLMs are all about context. The more context you can provide, the better the results.
+Both `@FunctionTool` and `@Description` annotations are used to provide context to the LLM about the tool function and its parameters.
+The better the context, the better the LLM can understand what the tool function does and how to use it.
+====
+
+In this example, the agent has access to both:
+
+* The `getCurrentDate()` method defined within the agent class (implicitly registered via annotation)
+* The `getWeather()` method defined in the `WeatherService` interface (explicitly registered via the `.tools()` method)
+
+== Sharing function tools across agents
+
+Function tools defined in external classes can be shared and reused across multiple agents. This approach promotes code reusability and helps maintain a consistent behavior for common functionalities.
+
+When a tool like `WeatherService` is shared across multiple agents:
+
+* Each agent can register the same tool but use it in different contexts
+* The tool behavior remains consistent, but how and when agents invoke it may differ based on their specific tasks
+* Agents provide different system prompts that influence how the LLM decides to use the shared tool
+
+== Lazy initialization of tool classes
+
+In the example above, we pass an instance of `WeatherService` to the `tools()` method. Alternatively, you can pass the `Class` object instead:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/LazyWeatherAgent.java[LazyWeatherAgent
+.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/LazyWeatherAgent.java[tag=function-tool]
+----
+<1> The WeatherService is passed as a `Class` instead of an instance. It will be instantiated when the agent needs to use it.
+
+When you pass a `Class` instead of an instance, the class is only instantiated when the agent actually needs to use the tool.
+
+For this approach to work, you must register the class with a xref:setup-and-dependency-injection.adoc#_custom_dependency_injection[DependencyProvider] in your service setup. The DependencyProvider is responsible for creating and managing instances of these classes when they're needed. This gives you complete control over how tool dependencies are instantiated and managed throughout your application.
+
+== Using tools from remote MCP servers ==
+
+xref:mcp-endpoints.adoc[Akka MCP endpoints] declared in other services, or third party MCP services can be added to
+the agent. By default, all tools provided by each added remote MCP server are included, but it is possible to filter
+available tools from each server based on their name.
+
+It is also possible to intercept, modify, or deny MCP tool requests, or their responses by defining a `RemoteMcpTools.ToolInterceptor`.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/RemoteMcpWeatherAgent.java[RemoteMcpWeatherAgent.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/RemoteMcpWeatherAgent.java[tag=mcp-function-tool]
+----
+<1> For MCP endpoints in other Akka services, use HTTP and the deployed service name
+<2> For third party MCP servers use the fully qualified host name and make sure to use HTTPS as the requests will
+    go over the public internet.
+<3> Custom headers to pass along can be defined
+<4> As well as filters of what tools to allow.
+
+
+When using MCP endpoints in other Akka services, the service ACLs apply just like for xref:http-endpoints.adoc[HTTP endpoints] and xref:grpc-endpoints.adoc[gRPC endpoints].
+
+[#configuring_tool_call_limits]
+== Configuring tool call limits
+
+Inside a single request/response cycle, an LLM can successively request the agent to call functions tools or MCP tools. After analyzing the result of a call, the LLM might decide to request another call to gather more context. The `akka.javasdk.agent.max-tool-call-steps` setting limits how many such steps may occur between a user request and the final AI response.
+
+By default, this value is set to 100. You can adjust this in your configuration:
+
+[source,hocon,indent=0]
+.application.conf
+----
+# Increase the limit to allow more tool calls
+akka.javasdk.agent.max-tool-call-steps = 150
+----
+
