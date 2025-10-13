@@ -1,15 +1,19 @@
-= akka code
+= akka code ai-assistance-update
 
-Develop Akka services
+Updates the Akka AI Assistance context directory in the given project directory.
 
 == Synopsis
 
-The 'code' command provides tools for developing Akka services, including AI assistance configuration and Akka samples downloading.
+The `akka code ai-assistance-update <directory>` command creates or updates the Akka AI Assistance context in the specified project directory by downloading the latest version from the official Akka source, and creates or updates the 'akka-context' subdirectory within the provided project location.
+
+----
+akka code ai-assistance-update [flags]
+----
 
 == Options
 
 ----
-  -h, --help   help for code
+  -h, --help   help for ai-assistance-update
 ----
 
 == Options inherited from parent commands
@@ -30,10 +34,7 @@ The 'code' command provides tools for developing Akka services, including AI ass
 
 == SEE ALSO
 
-* link:akka.html[akka]	 - Akka control
-* link:akka_code_ai-assistance-update.html[akka code ai-assistance-update]	 - Updates the Akka AI Assistance context directory in the given project directory.
-* link:akka_code_init.html[akka code init]	 - Initialize a new Akka SDK project.
-* link:akka_code_token.html[akka code token]	 - The token command allow you to provision a resolver for Akka dependency downloads.
+* link:akka_code.html[akka code]	 - Develop Akka services
 
 [discrete]
 
