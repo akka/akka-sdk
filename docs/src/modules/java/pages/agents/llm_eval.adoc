@@ -52,7 +52,7 @@ As shown above, it's easy to implement your own evaluator agents, but for conven
 
 The model provider for these agents can be defined in a specific configuration for each agent, which by default is the same as the default model provider.
 
-The system and user message prompts for these agents are loaded from a xref:#_using_dynamic_prompts_with_templates[`PromptTemplate` entity] with specific ids for each agent. Default prompts are used if these templates are not defined. The prompts can be initialized or updated with the xref:#_using_dynamic_prompts_with_templates[`PromptTemplate` entity].
+The system and user message prompts for these agents are loaded from a xref:java:agents/prompt.adoc[`PromptTemplate` entity] with specific ids for each agent. Default prompts are used if these templates are not defined. The prompts can be initialized or updated with the xref:java:agents/orchestrating.adoc[`PromptTemplate` entity].
 
 === Toxicity evaluator
 

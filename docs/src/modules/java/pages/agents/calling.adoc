@@ -11,7 +11,7 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 <1> Use `forAgent`.
 <2> Define the identifier of the session that the agent participates in.
 
-The session id is used by the xref:#session_memory[session memory], but it is also important for observability tracking and AI evaluation.
+The session id is used by the xref:java:agents/memory.adoc[session memory], but it is also important for observability tracking and AI evaluation.
 
 You can use a new random UUID for each call if the agent doesn't collaborate with other agents nor have a multi-step interaction with the AI model. Deciding how you manage sessions will be an important part of designing the agentic parts of your application.
 
@@ -23,7 +23,7 @@ Agents make external calls to the AI model and possibly other services, and ther
 
 A workflow will typically orchestrate several agents, which collaborate in achieving a common goal. Even if you only have a single agent, having a workflow manage retries, failures, and timeouts can be invaluable.
 
-We will look more at xref:#multi_agent[multi-agent systems], but let's start with a workflow for the single activities agent.
+We will look more at xref:java:agents/orchestrating.adoc[multi-agent systems], but let's start with a workflow for the single activities agent.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/application/ActivityAgentManager.java[ActivityAgentManager.java]
