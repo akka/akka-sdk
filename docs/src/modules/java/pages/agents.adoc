@@ -696,6 +696,7 @@ include::example$doc-snippets/src/main/java/com/example/guardrail/ToxicGuard.jav
 Guardrails are enabled by configuration, to be able to enforce at deployment time that certain guardrails are always used.
 
 [source,conf,indent=0]
+.src/main/resources/application.conf
 ----
 akka.javasdk.agent.guardrails {
   "pii guard" {                                     // <1>
@@ -747,6 +748,7 @@ The built-in link:_attachments/api/akka/javasdk/agent/SimilarityGuard.html[`Simi
 This is how to configure the `SimilarityGuard`:
 
 [source,conf,indent=0]
+.src/main/resources/application.conf
 ----
 akka.javasdk.agent.guardrails {
   "jailbreak guard" {
