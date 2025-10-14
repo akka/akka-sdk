@@ -4,16 +4,10 @@
 
 package akka.javasdk.impl
 
-import java.lang.reflect.AnnotatedElement
-import java.lang.reflect.Method
-import java.lang.reflect.ParameterizedType
-
-import scala.annotation.nowarn
-import scala.reflect.ClassTag
-
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
 import akka.javasdk.annotations.AgentDescription
+import akka.javasdk.annotations.AgentRole
 import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.Consume.FromKeyValueEntity
@@ -50,6 +44,12 @@ import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
+
+import java.lang.reflect.AnnotatedElement
+import java.lang.reflect.Method
+import java.lang.reflect.ParameterizedType
+import scala.annotation.nowarn
+import scala.reflect.ClassTag
 
 /**
  * INTERNAL API
@@ -171,20 +171,64 @@ private[javasdk] object Validations {
   }
 
   private def mustHaveValidAgentDescription(component: Class[_]): Validation = {
-    val ann = component.getAnnotation(classOf[AgentDescription])
-    if (ann == null) {
-      Valid // ok, optional
-    } else {
-      val name: String = ann.name()
-      val description: String = ann.description()
-      var result: Validation = Valid
-      if ((name eq null) || name.isBlank)
-        result ++= Invalid(errorMessage(component, "@AgentDescription name is empty, must be a non-empty string."))
-      if ((description eq null) || description.isBlank)
-        result ++= Invalid(
-          errorMessage(component, "@AgentDescription description is empty, must be a non-empty string."))
-      result
-    }
+    @nowarn("cat=deprecation")
+    val agentDescOpt = component.annotationOption[AgentDescription]
+
+    // if it has agentDesc, it should not have name or description defined in @Component
+    agentDescOpt
+      .map { agentDesc =>
+        var result: Validation = Valid
+
+        val componentAnn = component.getAnnotation(classOf[Component])
+        // @AgentDescription being used together with @Component
+        if (componentAnn != null) {
+          if (componentAnn.name() != null)
+            result ++= Invalid(
+              errorMessage(
+                component,
+                "Both @AgentDescription.name and @Component.name are defined. " +
+                "Remove @AgentDescription.name and use only @Component.name."))
+
+          if (componentAnn.description() != null)
+            result ++= Invalid(
+              errorMessage(
+                component,
+                "Both @AgentDescription.description and @Component.description are defined. " +
+                "Remove @AgentDescription.description and use only @Component.description."))
+
+        } else {
+          // new @Component is not being used, and @AgentDescription is badly configured
+          if ((agentDesc.name() eq null) || agentDesc.name().isBlank)
+            result ++= Invalid(
+              errorMessage(
+                component,
+                "@AgentDescription.name is empty. " +
+                "Remove @AgentDescription annotation and use only @Component."))
+
+          if ((agentDesc.description() eq null) || agentDesc.description().isBlank)
+            result ++= Invalid(
+              errorMessage(
+                component,
+                "@AgentDescription.description is empty." +
+                "Remove @AgentDescription annotation and use only @Component."))
+
+        }
+
+        val agentRole = component.getAnnotation(classOf[AgentRole])
+        // @AgentDescription being used together with @AgentRole
+        if (agentRole != null) {
+          if (!agentDesc.role().isBlank) {
+            result ++= Invalid(
+              errorMessage(
+                component,
+                "Both @AgentDescription.role and @AgentRole are defined. " +
+                "Remove @AgentDescription.role and use only @AgentRole."))
+          }
+        }
+
+        result
+      }
+      .getOrElse(Valid) // Agent Description is optional
   }
 
   private def eventSourcedEntityEventMustBeSealed(component: Class[_]): Validation = {

@@ -5,7 +5,7 @@
 package akka.javasdk.agent;
 
 import akka.javasdk.JsonSupport;
-import akka.javasdk.annotations.AgentDescription;
+import akka.javasdk.annotations.AgentRole;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.client.DynamicMethodRef;
@@ -16,8 +16,7 @@ import org.slf4j.LoggerFactory;
 
 abstract class MultiAgentSample {
 
-  @Component(id = "planner")
-  @AgentDescription(name = "Agent planner", description = "...")
+  @Component(id = "planner", name = "Agent planner", description = "...")
   static class Planner extends Agent {
     record Plan(List<PlanStep> steps) {}
 
@@ -74,16 +73,16 @@ Do not include any explanations or text outside of the JSON structure.
     }
   }
 
-  @Component(id = "agent1")
-  @AgentDescription(name = "Agent 1", description = "...", role = "worker")
+  @Component(id = "agent1", name = "Agent 1", description = "...")
+  @AgentRole("worker")
   static class Agent1 extends Agent {
     public Effect<String> call1(String arg) {
       return effects().reply("rsp1");
     }
   }
 
-  @Component(id = "agent2")
-  @AgentDescription(name = "Agent 2", description = "...", role = "worker")
+  @Component(id = "agent2", name = "Agent 2", description = "...")
+  @AgentRole("worker")
   static class Agent2 extends Agent {
     public Effect<String> call2(String arg) {
       return effects().reply("rsp2");

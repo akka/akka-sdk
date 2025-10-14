@@ -30,7 +30,7 @@ import java.util.concurrent.CompletionStage;
  *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider} from the service setup
  * </ul>
  *
- * <p>Concrete class must be annotated with {@link akka.javasdk.annotations.ComponentId}.
+ * <p>Concrete class must be annotated with {@link akka.javasdk.annotations.Component}.
  */
 public abstract class TimedAction {
 

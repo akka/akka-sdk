@@ -4,24 +4,14 @@
 
 package akka.javasdk.impl.reflection
 
-import java.lang.annotation.Annotation
-import java.lang.reflect.AnnotatedElement
-import java.lang.reflect.Method
-import java.lang.reflect.Modifier
-import java.lang.reflect.ParameterizedType
-import java.lang.reflect.Type
-import java.util
-import java.util.Optional
-
-import scala.annotation.nowarn
-import scala.annotation.tailrec
-import scala.jdk.CollectionConverters.CollectionHasAsScala
-import scala.reflect.ClassTag
-
 import akka.Done
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.EvaluationResult
+import akka.javasdk.annotations.AgentDescription
+import akka.javasdk.annotations.AgentRole
+import akka.javasdk.annotations.Component
+import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.GrpcEndpoint
 import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
@@ -37,6 +27,19 @@ import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.Workflow.RunnableStep
 import com.fasterxml.jackson.annotation.JsonSubTypes
+
+import java.lang.annotation.Annotation
+import java.lang.reflect.AnnotatedElement
+import java.lang.reflect.Method
+import java.lang.reflect.Modifier
+import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
+import java.util
+import java.util.Optional
+import scala.annotation.nowarn
+import scala.annotation.tailrec
+import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.reflect.ClassTag
 
 /**
  * Class extension to facilitate some reflection common usages.
@@ -347,5 +350,45 @@ private[impl] object Reflect {
       .getActualTypeArguments
       .head
       .asInstanceOf[Class[_]]
+
+  @nowarn("cat=deprecation")
+  def readComponentId(clz: Class[_]): String = {
+    val componentAnn = clz.getAnnotation(classOf[akka.javasdk.annotations.Component])
+    if (componentAnn != null) componentAnn.id()
+    else {
+      val componentIdAnn = clz.getAnnotation(classOf[ComponentId])
+      if (componentIdAnn != null) componentIdAnn.value() else ""
+    }
+  }
+
+  def readComponentName(annotated: AnnotatedElement): Option[String] = {
+    val componentAnnotation = annotated.getAnnotation(classOf[Component])
+    if (componentAnnotation ne null) {
+      val name = componentAnnotation.name()
+      if (name.nonEmpty) Some(name) else None
+    } else {
+      None
+    }
+  }
+
+  def readComponentDescription(annotated: AnnotatedElement): Option[String] = {
+    val componentAnnotation = annotated.getAnnotation(classOf[Component])
+    if (componentAnnotation ne null) {
+      val description = componentAnnotation.description()
+      if (description.nonEmpty) Some(description) else None
+    } else {
+      None
+    }
+  }
+
+  def readAgentRole[A <: Agent](agentClass: Class[A]): Option[String] = {
+    val agentRoleAnn = agentClass.annotationOption[AgentRole]
+    @nowarn("cat=deprecation")
+    val agentDescAnno = agentClass.annotationOption[AgentDescription]
+
+    agentRoleAnn
+      .map(_.value())
+      .orElse(agentDescAnno.map(_.role()))
+  }
 
 }

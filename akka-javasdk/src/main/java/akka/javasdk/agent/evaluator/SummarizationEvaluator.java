@@ -7,7 +7,7 @@ package akka.javasdk.agent.evaluator;
 import akka.javasdk.agent.EvaluationResult;
 import akka.javasdk.agent.MemoryProvider;
 import akka.javasdk.agent.PromptTemplate;
-import akka.javasdk.annotations.AgentDescription;
+import akka.javasdk.annotations.AgentRole;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import com.typesafe.config.Config;
@@ -25,14 +25,14 @@ import java.util.Locale;
  * prompts are used if these are not defined. The prompts can be initialized or updated with the
  * {@link PromptTemplate} entity.
  */
-@Component(id = SummarizationEvaluator.COMPONENT_ID)
-@AgentDescription(
+@Component(
+    id = SummarizationEvaluator.COMPONENT_ID,
     name = "Summarization Evaluator Agent",
     description =
         """
         An agent that acts as an LLM judge to evaluate a summarization task.
-        """,
-    role = "evaluator")
+        """)
+@AgentRole("evaluator")
 public class SummarizationEvaluator extends LlmAsJudge {
 
   public SummarizationEvaluator(ComponentClient componentClient, Config config) {

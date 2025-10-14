@@ -12,9 +12,9 @@ import java.util.Set;
  *
  * <p>It can be injected as a constructor parameter in components.
  *
- * <p>The agent id is defined with the {@link akka.javasdk.annotations.ComponentId} annotation on
- * the agent class. Additional information is defined with the {@link
- * akka.javasdk.annotations.AgentDescription} annotation on the agent class.
+ * <p>The agent id, name, and description are defined with the {@link
+ * akka.javasdk.annotations.Component} annotation on the agent class. The agent role is defined with
+ * the {@link akka.javasdk.annotations.AgentRole} annotation on the agent class.
  *
  * <p>Note that agents can be called based on the id without knowing the exact agent class or lambda
  * of the agent method by using the {{@code dynamicCall}} of the component client.
@@ -37,27 +37,24 @@ public interface AgentRegistry {
   }
 
   /**
-   * Information about All agents. The agent id is defined with the {@link
-   * akka.javasdk.annotations.ComponentId} annotation on the agent class. Additional information is
-   * defined with the {@link akka.javasdk.annotations.AgentDescription} annotation on the agent
-   * class.
+   * Information about all agents. The agent id, name, and description are defined with the {@link
+   * akka.javasdk.annotations.Component} annotation on the agent class. The agent role is defined
+   * with the {@link akka.javasdk.annotations.AgentRole} annotation on the agent class.
    */
   Set<AgentInfo> allAgents();
 
   /**
    * Agent identifiers of agents with a certain role. The role is defined with {@link
-   * akka.javasdk.annotations.AgentDescription} annotation on the agent class. The agent id is
-   * defined with the {@link akka.javasdk.annotations.ComponentId} annotation on the agent class.
-   * Additional information is defined with the {@link akka.javasdk.annotations.AgentDescription}
-   * annotation on the agent class.
+   * akka.javasdk.annotations.AgentRole} annotation on the agent class. The agent id, name, and
+   * description are defined with the {@link akka.javasdk.annotations.Component} annotation on the
+   * agent class.
    */
   Set<AgentInfo> agentsWithRole(String role);
 
   /**
-   * Information about a given agent. The agent id is defined with the {@link
-   * akka.javasdk.annotations.ComponentId} annotation on the agent class. Additional information is
-   * defined with the {@link akka.javasdk.annotations.AgentDescription} annotation on the agent
-   * class.
+   * Information about a given agent. The agent id, name, and description are defined with the
+   * {@link akka.javasdk.annotations.Component} annotation on the agent class. The agent role is
+   * defined with the {@link akka.javasdk.annotations.AgentRole} annotation on the agent class.
    */
   AgentInfo agentInfo(String agentId);
 }

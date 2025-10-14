@@ -44,8 +44,7 @@ import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.Component;
 
-@Component(id = "selector-agent")
-@AgentDescription(
+@Component(id = "selector-agent",
     name = "Selector Agent",
     description = """
       An agent that analyses the user request and selects useful agents for
@@ -570,8 +569,7 @@ import akka.javasdk.annotations.Component;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-@Component(id = "summarizer-agent")
-@AgentDescription(
+@Component(id = "summarizer-agent",
     name = "Summarizer",
     description = "An agent that creates a summary from responses provided by other agents")
 public class SummarizerAgent extends Agent {

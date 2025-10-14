@@ -2,13 +2,12 @@ package demo.multiagent.application;
 
 // tag::all[]
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.Component;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-@Component(id = "summarizer-agent")
-@AgentDescription(
+@Component(
+  id = "summarizer-agent",
   name = "Summarizer",
   description = "An agent that creates a summary from responses provided by other agents"
 )
