@@ -10,7 +10,7 @@ External container registries are configured by creating an Akka secret, and the
 
 There are four parameters you need to specify, depending on the registry you want to connect to:
 
-- Server: The first part of the container image URL. For example, if your image is at `us.gcr.io/my-project/my-image`, the server is `\https://us.gcr.io` (_mandatory_).
+- Server: The first part of the container image URL. For example, if your image is at `us-central1-docker.pkg.dev/my-project/my-repo/my-image`, the server is `\https://us-central1-docker.pkg.dev` (_mandatory_).
 - Username: The username (_optional_).
 - Email: The email address (_optional_).
 - Password: The password (_mandatory_).
@@ -50,8 +50,8 @@ akka docker list-credentials
 The results should look something like:
 
 ----
-NAME                STATUS  SERVER             EMAIL             USERNAME
-docker-credentials  OK      https://us.gcr.io  user@example.com  _json_key
+NAME                STATUS  SERVER                                  EMAIL             USERNAME
+docker-credentials  OK      https://us-central1-docker.pkg.dev     user@example.com  _json_key
 ----
 
 == Removing credentials
@@ -98,13 +98,14 @@ When you use the Akka Console, you don't need to provide the Server URL.
 
 Docker has https://docs.docker.com/docker-hub/download-rate-limit/[rate limits, window="new"] for unauthenticated and free Docker Hub usage. For unauthenticated users, pull rates are limited based on IP address (anonymous, or unauthenticated, users have a limit of 100 container image pulls per 6 hours per IP address). Akka leverages a limited set of IP addresses to connect to Docker Hub. This means that unauthenticated image pulls might be rate limited. The limit for unauthenticated pulls is shared by all users of Akka.
 
-=== Google Container Registry
+=== Google Artifact Registry
 
-To connect your Akka project to Google Container Registry (GCR), you'll need:
+To connect your Akka project to Google Artifact Registry, you'll need:
 
 - An active Google Cloud Platform account.
-- The Registry API enabled on your Google Cloud project.
+- The Artifact Registry API enabled on your Google Cloud project.
 - The ID that corresponds with your GCP project.
+- The location and name of your Artifact Registry repository.
 
 . Create the service account.
 +
@@ -114,7 +115,7 @@ In the following example the service account is named `akka-docker-reader`. Run 
 ----
 gcloud iam service-accounts create akka-docker-reader
 ----
-. Grant the GCP storage object viewer role to the service account.
+. Grant the Artifact Registry Reader role to the service account.
 +
 In the following example, replace `<gcp-project-id>` with the GCP project ID.
 +
@@ -122,7 +123,7 @@ In the following example, replace `<gcp-project-id>` with the GCP project ID.
 ----
 gcloud projects add-iam-policy-binding <gcp-project-id> \
   --member "serviceAccount:akka-docker-reader@<gcp-project-id>.iam.gserviceaccount.com" \
-  --role "roles/storage.objectViewer"
+  --role "roles/artifactregistry.reader"
 ----
 . Generate the service account `_json_key`.
 +
@@ -133,14 +134,16 @@ gcloud iam service-accounts keys create keyfile.json \
 ----
 . Configure your Akka project to use these credentials, by passing the contents of the key file as the password.
 +
+In the following example, replace `<location>` with your Artifact Registry location (e.g., `us-central1`, `us-east1`, `europe-west1`).
++
 [source,command line]
 ----
-akka docker add-credentials --docker-server https://us.gcr.io \
+akka docker add-credentials --docker-server https://<location>-docker.pkg.dev \
   --docker-username _json_key \
   --docker-email anyemail@example.com \
   --docker-password "$(cat keyfile.json)"
 ----
-NOTE: Find detailed configuration instructions in the https://cloud.google.com/container-registry/docs/advanced-authentication#json-key[Google documentation, window="new"].
+NOTE: Find detailed configuration instructions in the https://cloud.google.com/artifact-registry/docs/docker/authentication#json-key[Google documentation, window="new"].
 
 === Azure Container Registry
 

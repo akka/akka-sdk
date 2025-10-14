@@ -2,7 +2,7 @@ package demo.multiagent.application;
 
 import akka.javasdk.agent.evaluator.SummarizationEvaluator;
 import akka.javasdk.agent.evaluator.ToxicityEvaluator;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.consumer.Consumer;
@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // tag::class[]
-@ComponentId("agent-team-eval-consumer")
+@Component(id = "agent-team-eval-consumer")
 @Consume.FromWorkflow(AgentTeamWorkflow.class)
 public class AgentTeamEvaluatorConsumer extends Consumer { // <1>
 

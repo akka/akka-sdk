@@ -5,10 +5,10 @@ import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.EvaluationResult;
 import akka.javasdk.agent.MemoryProvider;
 import akka.javasdk.annotations.AgentDescription;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import java.util.Locale;
 
-@ComponentId("human-vs-ai-evaluator")
+@Component(id = "human-vs-ai-evaluator")
 @AgentDescription(
   name = "Human vs AI Evaluator Agent",
   description = """
