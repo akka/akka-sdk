@@ -1,7 +1,7 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
-- [Getting Started](../index.html)
-- [Build an AI multi-agent planner](index.html)
+- [Tutorials](../index.html)
+- [Multi-agent planner](index.html)
 - [List by user](list.html)
 
 <!-- </nav> -->
@@ -10,7 +10,7 @@
 
 |  | **New to Akka? Start here:**
 
-Use the [Author your first agentic service](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
+Use the [Build your first agent](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
 
 ## <a href="about:blank#_overview"></a> Overview
 
@@ -40,14 +40,19 @@ import akka.javasdk.annotations.DeleteHandler;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
-
 import java.util.List;
 
 @Component(id = "activity-view")
 public class ActivityView extends View {
+
   public record ActivityEntries(List<ActivityEntry> entries) {}
 
-  public record ActivityEntry(String userId, String userQuestion, String finalAnswer) {}
+  public record ActivityEntry(
+    String userId,
+    String sessionId,
+    String userQuestion,
+    String finalAnswer
+  ) {}
 
   @Query("SELECT * AS entries FROM activities WHERE userId = :userId") // (1)
   public QueryEffect<ActivityEntries> getActivities(String userId) {
@@ -56,9 +61,13 @@ public class ActivityView extends View {
 
   @Consume.FromWorkflow(AgentTeamWorkflow.class) // (2)
   public static class Updater extends TableUpdater<ActivityEntry> {
+
     public Effect<ActivityEntry> onStateChange(AgentTeamWorkflow.State state) {
+      var sessionId = updateContext().eventSubject().get(); // (3)
       return effects()
-          .updateRow(new ActivityEntry(state.userId(), state.userQuery(), state.finalAnswer()));
+        .updateRow(
+          new ActivityEntry(state.userId(), sessionId, state.userQuery(), state.finalAnswer())
+        );
     }
 
     @DeleteHandler
@@ -66,12 +75,12 @@ public class ActivityView extends View {
       return effects().deleteRow();
     }
   }
-
 }
 ```
 
 | **1** | The query selects all rows for a given user id. |
 | **2** | The view is updated from the state changes of the workflow. |
+| **3** | The workflow id corresponds to the session id. |
 
 ## <a href="about:blank#_expose_in_the_endpoint"></a> Expose in the endpoint
 
@@ -79,26 +88,28 @@ Add a new method that asks the view for a given user id.
 
 ```java
 public record ActivitiesList(List<Suggestion> suggestions) {
-    static ActivitiesList fromView(ActivityView.ActivityEntries entries) {
-      return new ActivitiesList(entries.entries().stream().map(Suggestion::fromView).toList());
-    }
+  static ActivitiesList fromView(ActivityView.ActivityEntries entries) {
+    return new ActivitiesList(
+      entries.entries().stream().map(Suggestion::fromView).toList()
+    );
   }
+}
 
-  public record Suggestion(String userQuestion, String answer) {
-    static Suggestion fromView(ActivityView.ActivityEntry entry) {
-      return new Suggestion(entry.userQuestion(), entry.finalAnswer());
-    }
+public record Suggestion(String userQuestion, String answer) {
+  static Suggestion fromView(ActivityView.ActivityEntry entry) {
+    return new Suggestion(entry.userQuestion(), entry.finalAnswer());
   }
+}
 
-  @Get("/activities/{userId}")
-  public ActivitiesList listActivities(String userId) {
-      var viewResult =  componentClient
-            .forView()
-            .method(ActivityView::getActivities)
-            .invoke(userId);
+@Get("/activities/{userId}")
+public ActivitiesList listActivities(String userId) {
+  var viewResult = componentClient
+    .forView()
+    .method(ActivityView::getActivities)
+    .invoke(userId);
 
-    return ActivitiesList.fromView(viewResult);
-  }
+  return ActivitiesList.fromView(viewResult);
+}
 ```
 
 ## <a href="about:blank#_running_the_service"></a> Running the service

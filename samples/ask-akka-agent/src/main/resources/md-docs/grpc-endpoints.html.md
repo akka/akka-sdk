@@ -74,9 +74,9 @@ public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
   public Customer getCustomer(GetCustomerRequest in) {
     // dummy implementation with hardcoded values
     var customer = Customer.newBuilder() // (2)
-        .setName("Alice")
-        .setEmail("alice@email.com")
-        .build();
+      .setName("Alice")
+      .setEmail("alice@email.com")
+      .build();
     return customer; // (3)
   }
 }
@@ -96,9 +96,9 @@ To signal an error in the response, throw a `GrpcServiceException` as shown in t
 
 [CustomerGrpcEndpointImpl.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-customer-registry/src/main/java/customer/api/CustomerGrpcEndpointImpl.java)
 ```java
-if (in.getCustomerId().isBlank())
-      throw new GrpcServiceException(
-          Status.INVALID_ARGUMENT.augmentDescription("Customer id must not be empty"));
+if (in.getCustomerId().isBlank()) throw new GrpcServiceException(
+  Status.INVALID_ARGUMENT.augmentDescription("Customer id must not be empty")
+);
 ```
 In addition to the special `GrpcServiceException` and `StatusRuntimeException`, exceptions are handled like this:
 
@@ -128,6 +128,7 @@ it will be injected by the SDK and can then be available for use when processing
 @GrpcEndpoint // (1)
 public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
 
+
   private static final Logger log = LoggerFactory.getLogger(CustomerGrpcEndpointImpl.class);
 
   private final ComponentClient componentClient;
@@ -136,39 +137,44 @@ public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
     this.componentClient = componentClient;
   }
 
+
   @Override
   public Customer getCustomer(GetCustomerRequest in) {
-    if (in.getCustomerId().isBlank())
-      throw new GrpcServiceException(
-          Status.INVALID_ARGUMENT.augmentDescription("Customer id must not be empty"));
+    if (in.getCustomerId().isBlank()) throw new GrpcServiceException(
+      Status.INVALID_ARGUMENT.augmentDescription("Customer id must not be empty")
+    );
 
     try {
-      var customer = componentClient.forEventSourcedEntity(in.getCustomerId()) // (3)
-          .method(CustomerEntity::getCustomer)
-          .invoke();
+      var customer = componentClient
+        .forEventSourcedEntity(in.getCustomerId()) // (3)
+        .method(CustomerEntity::getCustomer)
+        .invoke();
 
       return domainToApi(customer); // (4)
     } catch (Exception ex) {
-      if (ex.getMessage().contains("No customer found for id")) throw new GrpcServiceException(Status.NOT_FOUND);
+      if (
+        ex.getMessage().contains("No customer found for id")
+      ) throw new GrpcServiceException(Status.NOT_FOUND);
       else throw new RuntimeException(ex);
     }
   }
 
+
   private Customer domainToApi(customer.domain.Customer domainCustomer) {
     return Customer.newBuilder()
-        .setName(domainCustomer.name())
-        .setEmail(domainCustomer.email())
-        .setAddress(domainToApi(domainCustomer.address()))
-        .build();
+      .setName(domainCustomer.name())
+      .setEmail(domainCustomer.email())
+      .setAddress(domainToApi(domainCustomer.address()))
+      .build();
   }
 
   private Address domainToApi(customer.domain.Address domainAddress) {
     if (domainAddress == null) return null;
     else {
       return Address.newBuilder()
-          .setCity(domainAddress.city())
-          .setStreet(domainAddress.street())
-          .build();
+        .setCity(domainAddress.city())
+        .setStreet(domainAddress.street())
+        .build();
     }
   }
 ```
@@ -203,19 +209,18 @@ Then, the method in the endpoint interface will need to construct and return a `
 [CustomerGrpcEndpointImpl.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-customer-registry/src/main/java/customer/api/CustomerGrpcEndpointImpl.java)
 ```java
 @Override
-  public Source<CustomerSummary, NotUsed> customerByEmailStream(CustomerByEmailRequest in) {
-    // Shows of streaming consumption of a view, transforming
-    // each element and passing along to a streamed response
-    var customerSummarySource = componentClient.forView()
-        .stream(CustomersByEmailView::getCustomersStream)
-        .source(in.getEmail());
+public Source<CustomerSummary, NotUsed> customerByEmailStream(CustomerByEmailRequest in) {
+  // Shows of streaming consumption of a view, transforming
+  // each element and passing along to a streamed response
+  var customerSummarySource = componentClient
+    .forView()
+    .stream(CustomersByEmailView::getCustomersStream)
+    .source(in.getEmail());
 
-    return customerSummarySource.map(c ->
-      CustomerSummary.newBuilder()
-          .setName(c.name())
-          .setEmail(c.email())
-          .build());
-  }
+  return customerSummarySource.map(
+    c -> CustomerSummary.newBuilder().setName(c.name()).setEmail(c.email()).build()
+  );
+}
 ```
 
 |  | The above example depends on existing a View component that also returns a `Stream` of `Customer` messages. See [Streaming the result](views.html#_streaming_the_result) for more details. |
@@ -230,23 +235,23 @@ public class CustomerGrpcIntegrationTest extends TestKitSupport {
 
   @Test
   public void createCustomerCart() {
-
     var client = getGrpcEndpointClient(CustomerGrpcEndpointClient.class);
 
     var customerRequest = customer.api.proto.CreateCustomerRequest.newBuilder()
-        .setCustomerId("customer-abc")
-        .setCustomer(customer.api.proto.Customer.newBuilder()
-            .setEmail("abc@email.com")
-            .setName("John Doe")
-            .build())
-        .build();
+      .setCustomerId("customer-abc")
+      .setCustomer(
+        customer.api.proto.Customer.newBuilder()
+          .setEmail("abc@email.com")
+          .setName("John Doe")
+          .build()
+      )
+      .build();
 
     client.createCustomer(customerRequest);
 
-    var getCustomer =
-        client.getCustomer(customer.api.proto.GetCustomerRequest.newBuilder()
-            .setCustomerId("customer-abc")
-            .build());
+    var getCustomer = client.getCustomer(
+      customer.api.proto.GetCustomerRequest.newBuilder().setCustomerId("customer-abc").build()
+    );
     Assertions.assertEquals("John Doe", getCustomer.getName());
   }
 }

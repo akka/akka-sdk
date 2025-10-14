@@ -60,6 +60,7 @@ The `OrderEndpoint` acts as a controller for the Order Entity, creating a timer 
 ```java
 @HttpEndpoint("/orders")
 public class OrderEndpoint {
+
   private final TimerScheduler timerScheduler;
   private final ComponentClient componentClient;
 
@@ -74,24 +75,26 @@ public class OrderEndpoint {
 
   @Post
   public Order placeOrder(OrderRequest orderRequest) {
-
     var orderId = UUID.randomUUID().toString(); // (2)
 
     timerScheduler.createSingleTimer( // (3)
       timerName(orderId), // (4)
       Duration.ofSeconds// (10), // (5)
-      componentClient.forTimedAction()
-        .method(OrderTimedAction::expireOrder)
-        .deferred(orderId) // (6)
+      componentClient
+        .forTimedAction()
+        .method(OrderTimedAction::expireOrder) // (6)
+        .deferred(orderId)
     );
 
 
-    var order = componentClient.forKeyValueEntity(orderId)
-        .method(OrderEntity::placeOrder)
-        .invoke(orderRequest); // (7)
+    var order = componentClient
+      .forKeyValueEntity(orderId)
+      .method(OrderEntity::placeOrder)
+      .invoke(orderRequest); // (7)
 
     return order;
   }
+
 }
 ```
 
@@ -110,7 +113,8 @@ For reference, here is the `OrderEntity.placeOrder` method implementation.
 ```java
 @Component(id = "order")
 public class OrderEntity extends KeyValueEntity<Order> {
-   //...
+
+  //...
   public Effect<Order> placeOrder(OrderRequest orderRequest) { // (1)
     var orderId = commandContext().entityId();
     boolean placed = true;
@@ -120,17 +124,19 @@ public class OrderEntity extends KeyValueEntity<Order> {
       confirmed,
       placed, // (2)
       orderRequest.item(),
-      orderRequest.quantity());
+      orderRequest.quantity()
+    );
 
-    return effects()
-      .updateState(newOrder)
-      .thenReply(newOrder);
+    return effects().updateState(newOrder).thenReply(newOrder);
   }
+
 }
 ```
 
 | **1** | The `placeOrder` method initiates an order. |
 | **2** | Sets the `placed` field to `true`. |
+
+|  | Timers are unique by name across the entire cluster, so scheduling another timer will replace an existing one of the same name. |
 
 ## <a href="about:blank#_handling_the_timer_call"></a> Handling the timer call
 
@@ -148,19 +154,21 @@ public class OrderTimedAction extends TimedAction { // (2)
   }
 
   public Effect expireOrder(String orderId) {
-    var result = componentClient.forKeyValueEntity(orderId)
-        .method(OrderEntity::cancel) // (3)
-        .invoke();
+    var result = componentClient
+      .forKeyValueEntity(orderId)
+      .method(OrderEntity::cancel) // (3)
+      .invoke();
     return switch (result) { // (4)
       case OrderEntity.Result.Invalid ignored -> effects().done();
       case OrderEntity.Result.NotFound ignored -> effects().done();
       case OrderEntity.Result.Ok ignored -> effects().done();
     };
   }
+
 }
 ```
 
-| **1** | Uses the `@ComponentId` annotation to identify the component. |
+| **1** | Uses the `@Component` annotation to identify the component. |
 | **2** | Extends the `TimedAction` class. |
 | **3** | Call to `OrderEntity` to cancel the order. |
 | **4** | Determines if the call should recover or fail. If `NotFound` or `Invalid` is returned, the timer is marked obsolete and is not rescheduled. Other errors cause `expireOrder` to fail, and the timer is rescheduled. |
@@ -172,17 +180,20 @@ Here is the `OrderEntity.cancel` method for reference.
 ```java
 @Component(id = "order")
 public class OrderEntity extends KeyValueEntity<Order> {
-   //...
+
+  //...
   public Effect<Result> cancel() {
     var orderId = commandContext().entityId();
     if (!currentState().placed()) {
       return effects().reply(Result.NotFound.of("No order found for " + orderId)); // (1)
     } else if (currentState().confirmed()) {
-      return effects().reply(Result.Invalid.of("Cannot cancel an already confirmed order")); // (2)
+      return effects()
+        .reply(Result.Invalid.of("Cannot cancel an already confirmed order")); // (2)
     } else {
       return effects().updateState(emptyState()).thenReply(ok); // (3)
     }
   }
+
 }
 ```
 
@@ -205,24 +216,26 @@ Let’s review the implementation of the confirmation endpoint.
 ```java
 @HttpEndpoint("/orders")
 public class OrderEndpoint {
+
   // ...
 
   @Post("/{orderId}/confirm")
   public HttpResponse confirm(String orderId) {
-    var confirmResult = componentClient.forKeyValueEntity(orderId)
-        .method(OrderEntity::confirm).invoke(); // (1)
+    var confirmResult = componentClient
+      .forKeyValueEntity(orderId)
+      .method(OrderEntity::confirm)
+      .invoke(); // (1)
 
     return switch (confirmResult) {
       case OrderEntity.Result.Ok ignored -> {
         timerScheduler.delete(timerName(orderId)); // (2)
         yield HttpResponses.ok();
       }
-      case OrderEntity.Result.NotFound notFound ->
-          HttpResponses.notFound(notFound.message());
-      case OrderEntity.Result.Invalid invalid ->
-          HttpResponses.badRequest(invalid.message());
+      case OrderEntity.Result.NotFound notFound -> HttpResponses.notFound(notFound.message());
+      case OrderEntity.Result.Invalid invalid -> HttpResponses.badRequest(invalid.message());
     };
   }
+
 }
 ```
 
@@ -251,8 +264,8 @@ For example, suppose `OrderTimedAction` had a legacy method called `expire` that
 
 [OrderTimedAction.java](https://github.com/akka/akka-sdk/blob/main/samples/reliable-timers/src/main/java/com/example/application/OrderTimedAction.java)
 ```java
-public record ExpireOrder(String orderId) {
-}
+public record ExpireOrder(String orderId) {}
+
 public Effect expire(ExpireOrder orderId) {
   return expireOrder(orderId.orderId());
 }

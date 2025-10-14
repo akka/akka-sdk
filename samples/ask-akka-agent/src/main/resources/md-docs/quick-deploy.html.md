@@ -8,7 +8,7 @@
 
 |  | **New to Akka? Start here:**
 
-Use the [Author your first agentic service](author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
+Use the [Build your first agent](author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
 You’ve built and tried the service locally, it’s time to run it on the Akka Agentic Platform without having to change any code.
 
 1. If you have not already done so, [install the Akka CLI](../operations/cli/installation.html).
@@ -18,6 +18,8 @@ You’ve built and tried the service locally, it’s time to run it on the Akka 
 akka auth login
 ```
 3. Build a container image of your service:
+
+|  | The `mvn install` command of the Maven Docker plugin connects to the locally running Docker daemon. Check your active Docker context with `docker context list`. You may overwrite it through the `DOCKER_HOST` environment value. |
 
 ```command
 mvn clean install -DskipTests

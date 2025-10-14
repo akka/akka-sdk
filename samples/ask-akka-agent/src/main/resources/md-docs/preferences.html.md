@@ -1,7 +1,7 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
-- [Getting Started](../index.html)
-- [Build an AI multi-agent planner](index.html)
+- [Tutorials](../index.html)
+- [Multi-agent planner](index.html)
 - [User preferences](preferences.html)
 
 <!-- </nav> -->
@@ -10,7 +10,7 @@
 
 |  | **New to Akka? Start here:**
 
-Use the [Author your first agentic service](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
+Use the [Build your first agent](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
 
 ## <a href="about:blank#_overview"></a> Overview
 
@@ -38,12 +38,10 @@ PreferencesEntity.java
 import akka.Done;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
-
 import java.util.List;
 
 @Component(id = "preferences") // (2)
-public class PreferencesEntity
-    extends EventSourcedEntity<Preferences, PreferencesEvent> { // (1)
+public class PreferencesEntity extends EventSourcedEntity<Preferences, PreferencesEvent> { // (1)
 
   public record AddPreference(String preference) {}
 
@@ -54,8 +52,8 @@ public class PreferencesEntity
 
   public Effect<Done> addPreference(AddPreference command) { // (3)
     return effects()
-        .persist(new PreferencesEvent.PreferenceAdded(command.preference()))
-        .thenReply(__ -> Done.done());
+      .persist(new PreferencesEvent.PreferenceAdded(command.preference()))
+      .thenReply(__ -> Done.done());
   }
 
   public Effect<Preferences> getPreferences() { // (4)
@@ -65,10 +63,10 @@ public class PreferencesEntity
   @Override
   public Preferences applyEvent(PreferencesEvent event) { // (5)
     return switch (event) {
-      case PreferencesEvent.PreferenceAdded evt -> currentState().addPreference(evt.preference());
+      case PreferencesEvent.PreferenceAdded evt -> currentState()
+        .addPreference(evt.preference());
     };
   }
-
 }
 ```
 
@@ -104,8 +102,7 @@ import akka.javasdk.annotations.TypeName;
 
 public sealed interface PreferencesEvent {
   @TypeName("preference-added")
-  record PreferenceAdded(String preference) implements PreferencesEvent {
-  }
+  record PreferenceAdded(String preference) implements PreferencesEvent {}
 }
 ```
 
@@ -118,7 +115,6 @@ ActivityAgent.java
 import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
-
 import java.util.stream.Collectors;
 
 @Component(id = "activity-agent")
@@ -127,11 +123,11 @@ public class ActivityAgent extends Agent {
   public record Request(String userId, String message) {}
 
   private static final String SYSTEM_MESSAGE =
-      """
-      You are an activity agent. Your job is to suggest activities in the
-      real world. Like for example, a team building activity, sports, an
-      indoor or outdoor game, board games, a city trip, etc.
-      """.stripIndent();
+    """
+    You are an activity agent. Your job is to suggest activities in the
+    real world. Like for example, a team building activity, sports, an
+    indoor or outdoor game, board games, a city trip, etc.
+    """.stripIndent();
 
   private final ComponentClient componentClient;
 
@@ -140,26 +136,24 @@ public class ActivityAgent extends Agent {
   }
 
   public Effect<String> query(Request request) { // (2)
-    var allPreferences =
-      componentClient
-          .forEventSourcedEntity(request.userId())
-          .method(PreferencesEntity::getPreferences)
-          .invoke(); // (3)
+    var allPreferences = componentClient
+      .forEventSourcedEntity(request.userId())
+      .method(PreferencesEntity::getPreferences)
+      .invoke(); // (3)
 
     String userMessage;
     if (allPreferences.entries().isEmpty()) {
       userMessage = request.message();
     } else {
       userMessage = request.message() +
-          "\nPreferences:\n" +
-          allPreferences.entries().stream()
-              .collect(Collectors.joining("\n", "- ", ""));
+      "\nPreferences:\n" +
+      allPreferences.entries().stream().collect(Collectors.joining("\n", "- ", ""));
     }
 
     return effects()
-        .systemMessage(SYSTEM_MESSAGE)
-        .userMessage(userMessage)// (4)
-        .thenReply();
+      .systemMessage(SYSTEM_MESSAGE)
+      .userMessage(userMessage) // (4)
+      .thenReply();
   }
 }
 ```
@@ -176,14 +170,14 @@ We need to add the user id to the HTTP request.
 ActivityEndpoint.java
 ```java
 @Post("/activities/{userId}")
-  public String suggestActivities(String userId, Request request) { // (1)
-    var sessionId = UUID.randomUUID().toString();
-    return componentClient
-        .forAgent()
-        .inSession(sessionId)
-        .method(ActivityAgent::query)
-        .invoke(new ActivityAgent.Request(userId, request.message())); // (2)
-  }
+public String suggestActivities(String userId, Request request) { // (1)
+  var sessionId = UUID.randomUUID().toString();
+  return componentClient
+    .forAgent()
+    .inSession(sessionId)
+    .method(ActivityAgent::query)
+    .invoke(new ActivityAgent.Request(userId, request.message())); // (2)
+}
 ```
 
 | **1** | Add `userId` as a path parameter. |
@@ -195,18 +189,17 @@ To update the preferences, we add another method to the endpoint:
 
 ActivityEndpoint.java
 ```java
-public record AddPreference(String preference) {
-  }
+public record AddPreference(String preference) {}
 
-  @Post("/preferences/{userId}")
-  public HttpResponse addPreference(String userId, AddPreference request) { // (1)
-    componentClient
-        .forEventSourcedEntity(userId)
-        .method(PreferencesEntity::addPreference)
-        .invoke(new PreferencesEntity.AddPreference(request.preference())); // (2)
+@Post("/preferences/{userId}")
+public HttpResponse addPreference(String userId, AddPreference request) { // (1)
+  componentClient
+    .forEventSourcedEntity(userId)
+    .method(PreferencesEntity::addPreference)
+    .invoke(new PreferencesEntity.AddPreference(request.preference())); // (2)
 
-    return HttpResponses.created();
-  }
+  return HttpResponses.created();
+}
 ```
 
 | **1** | Add a method to add a preference. |

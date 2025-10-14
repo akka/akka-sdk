@@ -7,51 +7,54 @@
 
 # Saga patterns
 
-Saga patterns manage long-running business processes in distributed systems by dividing them into series of transactions. Each transaction either completes successfully or triggers compensating actions if something goes wrong. There are two main approaches to implementing Sagas: **choreography-based** and **orchestrator-based**. Both patterns ensure system consistency, but they differ in how coordination and control are handled.
+Saga patterns help manage long-running business processes in distributed systems by dividing them into a series of transactions. Each transaction either completes successfully or triggers compensating actions if something goes wrong.
 
-## <a href="about:blank#_choreography_based_saga_pattern"></a> Choreography-Based Saga pattern
+There are two common approaches to implementing Saga patterns: **choreography-based** and **orchestrator-based**. Both approaches ensure system consistency. They differ in how control and coordination are handled.
 
-In a choreography-based Saga, each service involved in the process listens for events and independently performs its actions. When a service completes a transaction, it emits an event that triggers the next service in the sequence. If a service encounters a failure, it is responsible for triggering compensating actions to undo the previous steps.
+## <a href="about:blank#_overview"></a> Overview
 
-Choreography provides a decentralized approach, with no central authority managing the process. This makes it well-suited for systems where loose coupling and scalability are key, as each service handles its own part of the transaction.
+| Orchestrator Pattern | Choreography Pattern |
+| --- | --- |
+| A central controller, or orchestrator, coordinates the process. It manages the sequence of steps to ensure that each transaction completes or that compensating actions are taken on failure. | Each service listens for events and acts independently. When it completes a transaction, it emits an event that triggers the next service. If a failure occurs, the service handles rollback logic. |
+| - Centralized control and logic
+  - Easier to track progress and transaction state
+  - Clear audit trail
+  - Can become a coordination bottleneck
+  - Tighter coupling between orchestrator and services | - Decentralized control
+  - Low coordination overhead
+  - Services are only coupled to events
+  - Increased complexity in ensuring proper failure handling
+  - Harder to debug and monitor long-running flows |
+| In Akka, you can implement this pattern using the [Workflow](../java/workflows.html) component. The Workflow defines each step and manages retries, timeouts, and compensating actions. | In Akka, you can implement this pattern by combining components such as [Entities](../java/event-sourced-entities.html) and [Consumers](../java/consuming-producing.html), each producing and reacting to events. |
+| Example: [Funds Transfer Workflow Between Two Wallets](https://github.com/akka-samples/transfer-workflow-orchestration) | Example: [User Registration Service](https://github.com/akka-samples/choreography-saga-quickstart) |
 
-**Advantages:**
+## <a href="about:blank#_choosing_the_right_pattern"></a> Choosing the right pattern
 
-- Decentralized control and lower coordination overhead.
-- Services operate independently, reacting to events.
-**Challenges:**
+When selecting a Saga pattern, consider the architecture of your system and the nature of the business process.
 
-- Increased complexity in ensuring all services handle failures correctly.
-- Harder to track and debug long-running processes without a central point of control.
-You can build choreography-based Sagas by combining Akka components such as Entities, Consumers, and Timers. Check out the Choreography Saga sample that can be downloaded as a [zip file](../java/_attachments/choreography-saga-quickstart.zip).
+Use choreography-based Sagas if:
 
-## <a href="about:blank#_orchestrator_based_saga_pattern"></a> Orchestrator-Based Saga pattern
+- Your services are autonomous and can handle failure independently
+- You prefer low coupling and high scalability
+- You are comfortable with distributed control and eventual consistency
+- You do not require central tracking of each step
+- You are confident the complexity will be manageable as the system grows
+Use orchestrator-based Sagas if:
 
-In an orchestrator-based Saga, a central controller (or orchestrator) coordinates the entire process. This orchestrator manages the sequence of steps, ensuring that each transaction completes successfully or triggers compensating actions if a failure occurs.
+- Your process includes tightly coordinated steps
+- You need centralized visibility and clear state tracking
+- Retrying, error handling, and compensation must be handled consistently
+- You are fine with introducing a central coordination point
+- You want assurance that complexity will scale more predictably as the system grows
 
-In Akka, *Workflows* implement the orchestrator-based approach. The Workflow defines each step of the process, invoking different Akka components or services. If a step fails, the orchestrator handles retries, timeouts, or compensating actions, maintaining overall control of the process.
+## <a href="about:blank#_how_to_decide"></a> How to decide
 
-**Advantages:**
+- If your services benefit from independent execution and localized failure logic, choreography is a good fit. Be mindful that as more components participate in the flow, managing event-driven coordination and compensating logic can become more difficult.
+- If your process requires clear visibility into progress and easier failure recovery, an orchestrator may be more suitable. Centralized coordination helps keep complexity manageable as the system evolves.
 
-- Centralized control simplifies managing the flow and handling failures.
-- Easier to track the progress and state of long-running processes.
-**Challenges:**
+## <a href="about:blank#_flexibility"></a> Flexibility
 
-- Single point of coordination may become a bottleneck.
-- Increased coupling between the orchestrator and individual services.
-For more information on implementing Saga patterns with Workflows, refer to the [Workflow documentation](../java/workflows.html).
-
-## <a href="about:blank#_choosing_the_right_saga_pattern"></a> Choosing the right saga pattern
-
-When deciding between choreography-based and orchestrator-based Saga patterns, consider the following:
-
-- **Choreography-Based Sagas** are ideal when you need loose coupling between services, high scalability, and decentralized control. This approach allows each service to react independently to events without relying on a central coordinator. It’s a good fit for systems where services need to be autonomous, and failure handling can be distributed. However, debugging and monitoring can be more challenging as there is no central point of control.
-- **Orchestrator-Based Sagas** are better suited when you require centralized control over the flow of the process. If the business process involves tightly coordinated steps, an orchestrator provides better visibility and control, making it easier to handle retries, failures, and compensating actions. This approach is also useful if your system needs to track the state of a long-running process or ensure consistency across multiple steps. However, it introduces more coupling between services and can become a bottleneck.
-**How to Choose**:
-
-- If your system benefits from **autonomous services** that can scale independently and handle their own failure logic, consider **choreography-based Sagas**.
-- If your process requires **centralized tracking**, **clear visibility** into the state of transactions, and **easier failure management**, use an **orchestrator-based Saga** like Workflows.
-While both the choreography-based and orchestrator-based Saga patterns have their unique strengths, it’s important to recognize that they aren’t mutually exclusive. In fact, depending on the use case, both patterns can be combined within the same application to handle different parts of a process. For instance, an orchestrator-based Saga might be used for the main flow, while an choreography-based approach can manage more complex edge cases or failure scenarios, providing flexibility and robustness in handling long-running business processes.
+It is possible to use both patterns in the same application. An orchestrator may manage the main business flow while individual services apply choreography to manage local side effects or edge cases. This combination allows a balanced trade-off between control and autonomy.
 
 <!-- <footer> -->
 <!-- <nav> -->

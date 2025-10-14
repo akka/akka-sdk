@@ -1,20 +1,20 @@
 <!-- <nav> -->
 - [Akka](../index.html)
 - [Understanding](index.html)
-- [Access Control List concepts](acls.html)
+- [Access control lists](acls.html)
 
 <!-- </nav> -->
 
-# Access Control List concepts
+# Access control lists
 
 Akka’s Access Control Lists (ACLs) provide a straightforward way to manage access to services within your projects, enabling fine-grained control over who or what can access each service or endpoint. ACLs allow you to define lists that specify permitted access sources, whether they are internal services or external internet clients.
 
-## <a href="about:blank#_key_capabilities_of_acls"></a> Key Capabilities of ACLs
+## <a href="about:blank#_key_capabilities_of_acls"></a> Key capabilities of ACLs
 
 - **Granular Access Control**: Configure ACLs at the service or method level to specify which entities can access your service or invoke specific methods. For example, you can set up an ACL that restricts a payment initiation method to accept requests solely from the shopping cart service.
 - **Internet Access Control**: Use ACLs to control which services or methods can be accessed over the internet, providing additional security for services exposed to external clients.
 
-## <a href="about:blank#_secure_inter_service_communication_with_mutual_tls_mtls"></a> Secure Inter-Service Communication with Mutual TLS (mTLS)
+## <a href="about:blank#_secure_inter_service_communication_with_mutual_tls_mtls"></a> Secure inter-service communication with mutual TLS (mTLS)
 
 In Akka, all inter-service communication within a project is secured using Mutual TLS (mTLS), which is automatically managed by Akka. This means:
 
@@ -40,7 +40,7 @@ To configure ACLs and secure your Akka services effectively, follow these steps:
 3. **Apply ACL Policies**: Use Akka’s ACL configurations to enforce these permissions. You can configure ACLs via the Akka Console or CLI, where you can define which services can interact with others or be accessed from the internet.
 For detailed configuration steps and examples, see the <a href="../java/access-control.html">Access Control Lists in the **Developing** section</a>.
 
-## <a href="about:blank#_practical_example"></a> Practical Example
+## <a href="about:blank#_practical_example"></a> Practical example
 
 Suppose you have a payment service and wish to restrict access to only requests from the shopping cart service. You would:
 
@@ -63,7 +63,7 @@ With ACLs, you can secure your Akka environment and ensure only authorized entit
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Building AI agents](ai-agents.html) [Developing](../java/index.html)
+[AI orchestration patterns](ms-agent-patterns.html) [Developing](../java/index.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

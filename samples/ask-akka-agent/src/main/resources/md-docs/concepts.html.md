@@ -43,6 +43,49 @@ You create a continuous incoming stream of events with the [HTTP Endpoint](../ja
 
 You create a stream processor to analyze and act against a stream of data with the [Consumer](../java/consuming-producing.html) component. |
 
+## <a href="about:blank#_components"></a> Components
+
+You build your application using <a href="../reference/glossary.html#component">Akka *Components*</a>. These offer structure and maintain responsiveness. All components except Endpoints are placed in your `application` package. Endpoints live in the `api` package. Use `@Component` or `@HttpEndpoint` to identify them to the runtime.
+
+| Component | Description |
+| --- | --- |
+| Agents | - Performs one focused AI task using a selected model and prompt.
+  - Maintains session memory for context.
+  - Stateless agents also possible.
+  - See [Agents](../java/agents.html). |
+| Workflows | - Durable execution with support for sequential, parallel, retry, and failure logic.
+  - Akka manages delivery, scaling, and recovery.
+  - See [Workflows](../java/workflows.html). |
+| HTTP Endpoints | - Exposes APIs over HTTP.
+  - Accepts input, triggers logic, and returns output.
+  - See [HTTP Endpoints](../java/http-endpoints.html). |
+| gRPC Endpoints | - Exposes APIs over gRPC using Protobuf contracts.
+  - Facilitates compatibility and structured communication.
+  - See [gRPC Endpoints](../java/grpc-endpoints.html). |
+| MCP Endpoints | - Exposes tools, resources and prompts over the MCP protocol.
+  - Used by agents to invoke logic and establish context.
+  - See [MCP Endpoints](../java/mcp-endpoints.html). |
+| Event Sourced Entities | - Durable memory component.
+  - Stores a sequence of events that represent state changes.
+  - The current state is reconstructed by replaying these events.
+  - Suitable for audit trails and event-driven logic.
+  - See [Event Sourced Entities](../java/event-sourced-entities.html). |
+| Key Value Entities | - Durable memory component.
+  - Stores full state snapshots indexed by a key.
+  - Each write replaces the entire object.
+  - Simpler to reason about and similar to row-based records.
+  - See [Key Value Entities](../java/key-value-entities.html). |
+| Views | - Indexes and queries entity data across IDs or attributes.
+  - Built from entity state, workflow state, or events.
+  - Enables efficient lookups, filtering, and real-time updates.
+  - See [Views](../java/views.html). |
+| Consumers (streaming) | - Listens for and processes events or messages from entities, workflows, or external systems.
+  - May emit output messages.
+  - See [Consuming and producing](../java/consuming-producing.html). |
+| Timers | - Schedules future actions with delivery guarantees.
+  - Used for reminders, retries, or timeout logic.
+  - See [Timed actions](../java/timed-actions.html). |
+
 ## <a href="about:blank#_composability"></a> Composability
 
 The services you build with Akka components are composable, which can be combined to design agentic, transactional, analytics, edge, and digital twin systems. You can create services with one component or many. Let Akka unlock your distributed systems artistry!
@@ -62,11 +105,11 @@ For example, when using Akka’s [Agent](../java/agents.html) component, you mig
 
 ```java
 public Effect<String> query(String question) {
-    return effects()
-      .systemMessage("You are a helpful...")
-      .userMessage(question)
-      .thenReply();
-  }
+  return effects()
+    .systemMessage("You are a helpful...")
+    .userMessage(question)
+    .thenReply();
+}
 ```
 
 ## <a href="about:blank#_akkas_design_goals"></a> Akka’s design goals
@@ -138,21 +181,49 @@ A distributed system is any system that distributes logic or state. Distributed 
 | Agility | The system can easily adapt to new requirements or changes in its environment with minimal effort. |
 | Responsiveness | Most importantly, the system consistently responds to users and events in a timely manner, maintaining a reliable experience. |
 
-## <a href="about:blank#_akka_components"></a> Akka components
+## <a href="about:blank#_agentic_runtimes"></a> Agentic runtimes
 
-Akka provides a basket of interoperable components that can be used to design and implement any potential autonomous agentic AI (or distributed) system.
+Autonomous AI systems require three types of runtimes:
 
-| Component | Description |
+| Runtime | Description |
 | --- | --- |
-| Agents | Performs one focused AI task using a selected model and prompt. Can hold context with session memory (stateful) or run stateless with no retained history. |
-| Workflows | Durable execution with support for sequential, parallel, looping, retry, and failure logic. |
-| HTTP Endpoints | Exposes APIs over Hypertext Transfer Protocol (HTTP). Processes input, triggers components, shapes responses, and returns results. |
-| gRPC Endpoints | Exposes APIs over gRPC Remote Procedure Calls (gRPC). Uses Protobuf contracts to ensure compatibility. Handles input, triggers logic, and returns results. |
-| MCP Endpoints | Exposes tools, resources, and prompts over Model Context Protocol (MCP) protocol. Enables agents to invoke logic, retrieve data, and establish context. |
-| Entities (memory) | Long term durable memory accessible by multiple agents, users, APIs, or 3rd party systems. |
-| Views | Indexes and queries entity data across IDs or attributes. Built from entity state or events. Enables efficient lookups, filtering, and real-time updates. |
-| Consumers (streaming) | Subscribes to and processes event streams or messages from entities, workflows, or external systems. |
-| Timers | Schedules future calls with at-least-once delivery. Useful for deferred actions, retries, and timeouts. |
+| Durable Execution | Long-lived, where the call-stack is persisted after every invocation to enable recovery and retries.
+
+This is utilized when you implement the [Workflow](../java/workflows.html) component. |
+| Transactional | Short-lived, high volume, concurrent execution.
+
+This is utilized when you implement [Endpoint](grpc-vs-http-endpoints.html), [View](../java/views.html), [Entity](state-model.html#_entity_state_models) and [Timer](../java/timed-actions.html) components. |
+| Streaming | Continuous, never-ending processes that handle streams of data.
+
+This is utilized when you implement the [Consumer](../java/consuming-producing.html) component or [SSE / gRPC streaming extension of an endpoint](grpc-vs-http-endpoints.html). |
+Akka provides support for all three runtimes within the same SDK. The runtime behavior is automatic within your service based upon the components that you use during development. All of these runtimes leverage an actor-based core, which is a concurrency model with strong isolation and asynchronous message passing between actors. When running a service that executes multiple runtimes, Akka maximizes efficiency of the underlying compute by executing actors for different runtimes concurrently, enabling node resource utilization up to 95%.
+
+## <a href="about:blank#_shared_distributed_state_memory"></a> Shared, distributed state (memory)
+
+There are a variety of shared data (memory) use cases within an agentic system.
+
+| Use Case | Provided by | Description |
+| --- | --- | --- |
+| Short-term | [Agent](../java/agents.html) component | Also called “episodic” and “traced” memory, this memory is an auditable record of each input and output that occurs between an agent and its client throughout a single “user” session. Agent clients may or may not be human.
+
+Akka also captures the input and output of every interaction between an agent and an LLM in a single enrichment loop, sometimes called “traced” memory. A single invocation of an agent from a client may cause that agent to invoke an LLM, function tools, or MCP tools many times. Akka’s short-term memory captures all of these interactions in an event log.
+
+Short-term memory is also automatically included when you create [an agent](../java/agents.html). Short-term memory can be compressed, optimized, replicated, and audited. |
+| Long-term | [Entity](../java/event-sourced-entities.html) component | Also called “shared” and “external” memory, this memory is an auditable record of state that is available to multiple agents, sessions, users, or Akka components.
+
+Use long-term memory to capture the history (often summarized or aggregated) of interactions for a single user across many sessions.
+
+Shared state is represented through an [Entity](../java/event-sourced-entities.html) component. Entities are event-sourced, making all of their changes published through an event stream and accessible by [Agents](../java/agents.html), [Endpoints](grpc-vs-http-endpoints.html), [Workflows](../java/workflows.html) or [Views](../java/views.html). |
+Akka treats all stateful memory as event-sourced objects. Event sourcing is a technique to capture sequential state changes. Akka’s persistence engine transparently persists each event into a durable store. Since all state is represented as an event, Akka’s event engine enables transparent import, export, broadcast, subscription, replication, and replay of events. These behaviors enable Akka to offer a resilience guarantee and multi-region replication, which enables real-time failover with a Recovery Time Objective (RTO) of <200ms.
+
+All events are stored in an event journal which can be inspected, analyzed, and replayed where appropriate.
+
+Akka’s runtime enables scaling memory across large numbers of nodes that can handle terabytes of data. At runtime, you create 1..n instances of your stateful services. The Akka runtime ensures that there is only a single copy of your data within any particular instance. Your service’s data is sharded across the various instances based upon the amount of RAM space available. Data that cannot fit within RAM is durably available on disk, and can be activated to memory when needed. The Akka runtime automatically routes requests for data to the node that has the data instance requested. For example, if a user “John” were interacting with an agent, “John’s” conversational history would have a unique identifier and exist within one of the instances that is executing the agent service.
+
+As an operator adds or removes physical nodes to the Akka runtime cluster, Akka will automatically rebalance all the stateful data to take advantage of the additional RAM. The clients or users that are interacting with the agent do not need to be aware of the rebalancing as Akka automatically routes each request to the instance with the correct data.
+
+![Sharded and Rebalanced Data](_images/shard-rebalance-data.png)
+
 
 ## <a href="about:blank#_component_interoperability"></a> Component interoperability
 
@@ -186,49 +257,31 @@ Endpoint → Workflow → Entity | A user sends a query to an Endpoint. An Agent
 Agent → Endpoint → Entity | A stream of data is processed by a Consumer, which writes to an Entity for long-term use. At the same time, an Agent invokes logic through an Endpoint and stores the result in an Entity. |
 Akka provides a way to connect components that is simple to use and reliable in production. By relying on message passing, virtual threads, and transparent routing, the platform helps you focus on what the system should do, rather than how its parts should reach each other.
 
-## <a href="about:blank#_agentic_runtimes"></a> Agentic runtimes
+## <a href="about:blank#_background_execution"></a> Background execution
 
-Autonomous AI systems require three types of runtimes:
+In Akka, [effects](../reference/glossary.html#effect) are processed in the background. When you call a component or a service within Akka, the default mode is synchronous, but you can opt-in to asynchronous for more control. You do not need to implement any asynchronous libraries, queues, promises, callbacks, await/async, futures, or event loops for Akka to behave this way.
 
-| Runtime | Description |
-| --- | --- |
-| Durable Execution | Long-lived, where the call-stack is persisted after every invocation to enable recovery and retries.
+Akka handles background processing using actors. Actors offer a lightweight model for concurrency, relying on asynchronous messaging rather than locks. This helps avoid shared mutable state and sidesteps many of the typical issues seen in multi-threaded programming, such as blocking, deadlocks, and race conditions.
 
-This is utilized when you implement the [Workflow](../java/workflows.html) component. |
-| Transactional | Short-lived, high volume, concurrent execution.
+Because the Actor runtime manages concurrency, you can write simple, synchronous code within your Akka components. There is little need to worry about performance or resource contention.
 
-This is utilized when you implement [Endpoint](grpc-vs-http-endpoints.html), [View](../java/views.html), [Entity](state-model.html) and [Timer](../java/timed-actions.html) components. |
-| Streaming | Continuous, never-ending processes that handle streams of data.
+This "share nothing" approach also makes it easier to reason about concurrent systems. It helps reduce the chance of deadlocks and supports the creation of systems that are more stable and easier to scale. Akka also includes built-in supervision and fault tolerance, so if an actor fails, the issue is contained and resolved locally. This avoids broader system failure and reduces the need for complex manual error handling, which is often required elsewhere.
 
-This is utilized when you implement the [Consumer](../java/consuming-producing.html) component or [SSE / gRPC streaming extension of an endpoint](grpc-vs-http-endpoints.html). |
-Akka provides support for all three runtimes within the same SDK. The runtime behavior is automatic within your service based upon the components that you use during development. All of these runtimes leverage an actor-based core, which is a concurrency model with strong isolation and asynchronous message passing between actors. When running a service that executes multiple runtimes, Akka maximizes efficiency of the underlying compute by executing actors for different runtimes concurrently, enabling node resource utilization up to 95%.
+When you use the [component client](../reference/glossary.html#component_client) to call another component, your code remains synchronous and returns regular objects. If those calls involve effects, the Akka runtime takes care of them in the background. Depending on where the component is located, the runtime may even do so across different locations.
 
-## <a href="about:blank#_shared_distributed_state_memory"></a> Shared, distributed state (memory)
+## <a href="about:blank#_synchronous_vs_asynchronous_component_invocation"></a> Synchronous vs asynchronous component invocation
 
-There are a variety of shared data (memory) use cases within an agentic system.
+You decide how the [component client](../reference/glossary.html#component_client) invokes the component, and the Akka runtime handles the request in the background. The following table summarizes the key differences between synchronous and asynchronous component invocation.
 
-| Use Case | Provided by | Description |
+|  | Synchronous | Asynchronous |
 | --- | --- | --- |
-| Short-term | [Agent](../java/agents.html) component | Also called “episodic” and “traced” memory, this memory is an auditable record of each input and output that occurs between an agent and its client throughout a single “user” session. Agent clients may or may not be human.
-
-Akka also captures the input and output of every interaction between an agent and an LLM in a single enrichment loop, sometimes called “traced” memory. A single invocation of an agent from a client may cause that agent to invoke an LLM, function tools, or MCP tools many times. Akka’s short-term memory captures all of these interactions in an event log.
-
-Short-term memory is also automatically included when you create [an agent](../java/agents.html). Short-term memory can be compressed, optimized, replicated, and audited. |
-| Long-term | [Entity](../java/event-sourced-entities.html) component | Also called “shared” and “external” memory, this memory is an auditable record of state that is available to multiple agents, sessions, users, or Akka components.
-
-Use long-term memory to capture the history (often summarized or aggregated) of interactions for a single user across many sessions.
-
-Shared state is represented through an [Entity](../java/event-sourced-entities.html) component. Entities are event-sourced, making all of their changes published through an event stream and accessible by [Agents](../java/agents.html), [Endpoints](grpc-vs-http-endpoints.html), [Workflows](../java/workflows.html) or [Views](../java/views.html). |
-Akka treats all stateful memory as event-sourced objects. Event sourcing is a technique to capture sequential state changes. Akka’s persistence engine transparently persists each event into a durable store. Since all state is represented as an event, Akka’s event engine enables transparent import, export, broadcast, subscription, replication, and replay of events. These behaviors enable Akka to offer a resilience guarantee and multi-region replication, which enables real-time failover with a Recovery Time Objective (RTO) of <200ms.
-
-All events are stored in an event journal which can be inspected, analyzed, and replayed where appropriate.
-
-Akka’s runtime enables scaling memory across large numbers of nodes that can handle terabytes of data. At runtime, you create 1..n instances of your stateful services. The Akka runtime ensures that there is only a single copy of your data within any particular instance. Your service’s data is sharded across the various instances based upon the amount of RAM space available. Data that cannot fit within RAM is durably available on disk, and can be activated to memory when needed. The Akka runtime automatically routes requests for data to the node that has the data instance requested. For example, if a user “John” were interacting with an agent, “John’s” conversational history would have a unique identifier and exist within one of the instances that is executing the agent service.
-
-As an operator adds or removes physical nodes to the Akka runtime cluster, Akka will automatically rebalance all the stateful data to take advantage of the additional RAM. The clients or users that are interacting with the agent do not need to be aware of the rebalancing as Akka automatically routes each request to the instance with the correct data.
-
-![Sharded and Rebalanced Data](_images/shard-rebalance-data.png)
-
+| When the component method returns | After the method finishes | Immediately |
+| Client behavior | Waits for the result before continuing | Continues immediately, must handle the result later |
+| Return type | Whatever the component method returns directly | A `CompletionStage<T>` representing the result at a later time |
+| Component execution | Always runs in the background | Always runs in the background |
+| Common use case | Calling a method and using the result in the next line of code | Starting multiple async tasks or implementing background, always-on processes (Ambient AI) |
+| Ideal for | Simple flows where the result is needed immediately | Parallel task execution, deferred response handling, or long-running background logic |
+For implementation guidance on invoking components, see [Component and service calls](../java/component-and-service-calls.html).
 
 ## <a href="about:blank#_service_packaging"></a> Service packaging
 
@@ -245,7 +298,7 @@ Optionally, you can deploy your agentic services into [Akka Automated Operations
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Understanding](index.html) [Distributed systems principles](distributed-systems.html)
+[Understanding](index.html) [Distributed systems](distributed-systems.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

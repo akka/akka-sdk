@@ -1,7 +1,7 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
-- [Getting Started](../index.html)
-- [Build an AI multi-agent planner](index.html)
+- [Tutorials](../index.html)
+- [Multi-agent planner](index.html)
 - [Weather agent](weather.html)
 
 <!-- </nav> -->
@@ -10,7 +10,7 @@
 
 |  | **New to Akka? Start here:**
 
-Use the [Author your first agentic service](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
+Use the [Build your first agent](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
 
 ## <a href="about:blank#_overview"></a> Overview
 
@@ -40,7 +40,6 @@ import akka.javasdk.annotations.Description;
 import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.http.HttpClientProvider;
-
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -49,15 +48,15 @@ import java.time.format.DateTimeFormatter;
 public class WeatherAgent extends Agent {
 
   private static final String SYSTEM_MESSAGE = // (1)
-      """
-      You are a weather agent.
-      Your job is to provide weather information.
-      You provide current weather, forecasts, and other related information.
-      
-      The responses from the weather services are in json format. You need to digest
-      it into human language. Be aware that Celsius temperature is in temp_c field.
-      Fahrenheit temperature is in temp_f field.
-      """.stripIndent();
+    """
+    You are a weather agent.
+    Your job is to provide weather information.
+    You provide current weather, forecasts, and other related information.
+
+    The responses from the weather services are in json format. You need to digest
+    it into human language. Be aware that Celsius temperature is in temp_c field.
+    Fahrenheit temperature is in temp_f field.
+    """.stripIndent();
 
   private final HttpClient httpClient;
 
@@ -66,27 +65,29 @@ public class WeatherAgent extends Agent {
   }
 
   public Effect<String> query(String message) {
-    return effects()
-        .systemMessage(SYSTEM_MESSAGE)
-        .userMessage(message)
-        .thenReply();
+    return effects().systemMessage(SYSTEM_MESSAGE).userMessage(message).thenReply();
   }
 
   @FunctionTool(description = "Returns the current weather forecast for a given city.")
   private String getCurrentWeather( // (3)
-      @Description("A location or city name.")
-      String location) {
-
+    @Description("A location or city name.") String location
+  ) {
     var date = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
 
     var encodedLocation = java.net.URLEncoder.encode(location, StandardCharsets.UTF_8);
     var apiKey = System.getenv("WEATHER_API_KEY");
     if (apiKey == null || apiKey.isBlank()) {
-      throw new RuntimeException("Make sure you have WEATHER_API_KEY defined as environment variable.");
+      throw new RuntimeException(
+        "Make sure you have WEATHER_API_KEY defined as environment variable."
+      );
     }
 
-    String url = String.format("/v1/current.json?&q=%s&aqi=no&key=%s&dt=%s",
-        encodedLocation, apiKey, date);
+    String url = String.format(
+      "/v1/current.json?&q=%s&aqi=no&key=%s&dt=%s",
+      encodedLocation,
+      apiKey,
+      date
+    );
     return httpClient.GET(url).invoke().body().utf8String();
   }
 }
@@ -110,11 +111,8 @@ Add a new file `WeatherAgentIntegrationTest.java` to `src/test/com/example/appli
 WeatherAgentIntegrationTest.java
 ```java
 import akka.javasdk.testkit.TestKitSupport;
-import org.junit.jupiter.api.Test;
-
 import java.util.UUID;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import org.junit.jupiter.api.Test;
 
 public class WeatherAgentIntegrationTest extends TestKitSupport { // (1)
 
@@ -122,12 +120,11 @@ public class WeatherAgentIntegrationTest extends TestKitSupport { // (1)
   public void testAgent() {
     var sessionId = UUID.randomUUID().toString();
     var message = "I am in Madrid";
-    var forecast =
-        componentClient
-        .forAgent()
-        .inSession(sessionId)
-        .method(WeatherAgent::query) // (2)
-        .invoke(message);
+    var forecast = componentClient
+      .forAgent()
+      .inSession(sessionId)
+      .method(WeatherAgent::query) // (2)
+      .invoke(message);
 
     System.out.println(forecast); // (3)
     assertThat(forecast).isNotBlank();
@@ -147,6 +144,16 @@ export WEATHER_API_KEY=your-openai-api-key
 Windows 10+
 ```command
 set WEATHER_API_KEY=your-openai-api-key
+```
+This test is using real LLM requests, and you must set your [OpenAI API key](https://platform.openai.com/api-keys) as an environment variable:
+
+Linux or macOS
+```command
+export OPENAI_API_KEY=your-openai-api-key
+```
+Windows 10+
+```command
+set OPENAI_API_KEY=your-openai-api-key
 ```
 Run the test with
 

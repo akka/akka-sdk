@@ -38,7 +38,7 @@ The steps necessary to implement an Event Sourced Entity include:
 
 1. Model the entity’s state and its domain events.
 2. Implementing behavior in command and event handlers.
-The following sections walk through these steps using a shopping cart service as an example (working sample can be downloaded from [Github](https://github.com/akka-samples/shopping-cart-quickstart)).
+The following sections walk through these steps using a shopping cart service as an example (working sample can be downloaded from [GitHub](https://github.com/akka-samples/shopping-cart-quickstart)).
 
 ## <a href="about:blank#_modeling_the_entity"></a> Modeling the entity
 
@@ -47,7 +47,6 @@ Through our "Shopping Cart" Event Sourced Entity we expect to manage our cart, a
 [ShoppingCart.java](https://github.com/akka/akka-sdk/blob/main/samples/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java)
 ```java
 public record ShoppingCart(String cartId, List<LineItem> items, boolean checkedOut) { // (1)
-
   public record LineItem(String productId, String name, int quantity) { // (2)
     public LineItem withQuantity(int quantity) {
       return new LineItem(productId, name, quantity);
@@ -66,19 +65,15 @@ Another fundamental aspect of our entity will be its domain events. For now, we 
 [ShoppingCartEvent.java](https://github.com/akka/akka-sdk/blob/main/samples/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCartEvent.java)
 ```java
 public sealed interface ShoppingCartEvent { // (1)
-
   @TypeName("item-added") // (2)
-  record ItemAdded(ShoppingCart.LineItem item) implements ShoppingCartEvent {
-  }
+  record ItemAdded(ShoppingCart.LineItem item) implements ShoppingCartEvent {}
 
 
   @TypeName("item-removed")
-  record ItemRemoved(String productId) implements ShoppingCartEvent {
-  }
+  record ItemRemoved(String productId) implements ShoppingCartEvent {}
 
   @TypeName("checked-out")
-  record CheckedOut() implements ShoppingCartEvent {
-  }
+  record CheckedOut() implements ShoppingCartEvent {}
 }
 ```
 
@@ -91,7 +86,7 @@ public sealed interface ShoppingCartEvent { // (1)
 
 In order to interact with an Entity in Akka, we need to assign a **component id** and an instance **id**:
 
-- **component id** is a unique identifier for all entities of a given type. To define the component id, the entity class must be annotated with `@ComponentId` and have a unique and stable identifier assigned.
+- **component id** is a unique identifier for all entities of a given type. To define the component id, the entity class must be annotated with `@Component` and have a unique and stable identifier assigned.
 - **id**, on the other hand, is unique per instance. The entity id is used in the component client when calling the entity from for example an Endpoint.
 As an example, an entity representing a customer could have the **component id** `customer` and a customer entity for a specific customer could have the UUID instance **id** `8C59E488-B6A8-4E6D-92F3-760315283B6E`.
 
@@ -121,14 +116,16 @@ The class signature for our shopping cart entity will look like this:
 [ShoppingCartEntity.java](https://github.com/akka/akka-sdk/blob/main/samples/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java)
 ```java
 @Component(id = "shopping-cart") // (2)
-public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, ShoppingCartEvent> { // (1)
+public class ShoppingCartEntity 
+  extends EventSourcedEntity<ShoppingCart, ShoppingCartEvent> { // (1)
+
 }
 ```
 
 | **1** | Create a class that extends `EventSourcedEntity<S, E>`, where `S` is the state type this entity will store (i.e. `ShoppingCart`) and `E` is the top type for the events it persists (i.e. `ShoppingCartEvent`). |
-| **2** | Make sure to annotate such class with `@ComponentId` and pass a stable unique identifier for this entity type. |
+| **2** | Make sure to annotate such class with `@Component` and pass a stable unique identifier for this entity type. |
 
-|  | The `@ComponentId` value `shopping-cart` is common for all instances of this entity but must be stable - cannot be changed after a production deploy - and unique across the different entity types in the service. |
+|  | The `@Component` value `shopping-cart` is common for all instances of this entity but must be stable - cannot be changed after a production deploy - and unique across the different entity types in the service. |
 
 ### <a href="about:blank#_updating_state"></a> Updating state
 
@@ -138,28 +135,29 @@ Having created the basis of our entity, we will now define how each command is h
 [ShoppingCartEntity.java](https://github.com/akka/akka-sdk/blob/main/samples/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java)
 ```java
 public Effect<Done> addItem(LineItem item) {
-    if (currentState().checkedOut()) {
-      logger.info("Cart id={} is already checked out.", entityId);
-      return effects().error("Cart is already checked out.");
-    }
-    if (item.quantity() <= 0) { // (1)
-      logger.info("Quantity for item {} must be greater than zero.", item.productId());
-      return effects().error("Quantity for item " + item.productId() + " must be greater than zero.");
-    }
-
-    var event = new ShoppingCartEvent.ItemAdded(item); // (2)
-
+  if (currentState().checkedOut()) {
+    logger.info("Cart id={} is already checked out.", entityId);
+    return effects().error("Cart is already checked out.");
+  }
+  if (item.quantity() <= 0) { // (1)
+    logger.info("Quantity for item {} must be greater than zero.", item.productId());
     return effects()
-        .persist(event) // (3)
-        .thenReply(newState -> Done.getInstance()); // (4)
+      .error("Quantity for item " + item.productId() + " must be greater than zero.");
   }
 
-  @Override
-  public ShoppingCart applyEvent(ShoppingCartEvent event) {
-    return switch (event) {
-      case ShoppingCartEvent.ItemAdded evt -> currentState().addItem(evt.item()); // (5)
-    };
-  }
+  var event = new ShoppingCartEvent.ItemAdded(item); // (2)
+
+  return effects()
+    .persist(event) // (3)
+    .thenReply(newState -> Done.getInstance()); // (4)
+}
+
+@Override
+public ShoppingCart applyEvent(ShoppingCartEvent event) {
+  return switch (event) {
+    case ShoppingCartEvent.ItemAdded evt -> currentState().addItem(evt.item()); // (5)
+  };
+}
 ```
 
 | **1** | The validation ensures the quantity of items added is greater than zero and it fails for calls with illegal values by returning an `Effect` with `effects().error`. |
@@ -186,14 +184,14 @@ private LineItem updateItem(LineItem item) {
 }
 
 private List<LineItem> removeItemByProductId(String productId) {
-  return items().stream()
+  return items()
+    .stream()
     .filter(lineItem -> !lineItem.productId().equals(productId))
     .collect(Collectors.toList());
 }
 
 public Optional<LineItem> findItemByProductId(String productId) {
-  Predicate<LineItem> lineItemExists =
-      lineItem -> lineItem.productId().equals(productId);
+  Predicate<LineItem> lineItemExists = lineItem -> lineItem.productId().equals(productId);
   return items.stream().filter(lineItemExists).findFirst();
 }
 ```
@@ -241,13 +239,12 @@ For certain use cases or for regulatory reasons the entity can be deleted.
 [ShoppingCartEntity.java](https://github.com/akka/akka-sdk/blob/main/samples/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java)
 ```java
 public Effect<Done> checkout() {
-  if (currentState().checkedOut())
-    return effects().reply(Done.getInstance());
+  if (currentState().checkedOut()) return effects().reply(Done.getInstance());
 
   return effects()
-      .persist(new ShoppingCartEvent.CheckedOut()) // (1)
-      .deleteEntity() // (2)
-      .thenReply(newState -> Done.getInstance());
+    .persist(new ShoppingCartEvent.CheckedOut()) // (1)
+    .deleteEntity() // (2)
+    .thenReply(newState -> Done.getInstance());
 }
 ```
 
@@ -325,23 +322,22 @@ The following snippet shows how the `EventSourcedTestKit` is used to test the `S
 ```java
 package shoppingcart.application;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import akka.Done;
 import akka.javasdk.testkit.EventSourcedTestKit;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import shoppingcart.domain.ShoppingCart;
-
-import java.util.List;
-
-import static shoppingcart.domain.ShoppingCartEvent.ItemAdded;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import shoppingcart.domain.ShoppingCartEvent.ItemAdded;
 
 public class ShoppingCartTest {
 
-  private final ShoppingCart.LineItem akkaTshirt = new ShoppingCart.LineItem("akka-tshirt", "Akka Tshirt", 10);
+  private final ShoppingCart.LineItem akkaTshirt = 
+    new ShoppingCart.LineItem("akka-tshirt", "Akka Tshirt", 10);
 
   @Test
   public void testAddLineItem() {
-
     var testKit = EventSourcedTestKit.of(ShoppingCartEntity::new); // (1)
 
     {
@@ -354,7 +350,9 @@ public class ShoppingCartTest {
 
     // actually we want more akka tshirts
     {
-      var result = testKit.method(ShoppingCartEntity::addItem).invoke(akkaTshirt.withQuantity// (5)); // (5)
+      var result = testKit
+        .method(ShoppingCartEntity::addItem)
+        .invoke(akkaTshirt.withQuantity// (5)); // (5)
       assertEquals(Done.getInstance(), result.getReply());
 
       var itemAdded = result.getNextEventOfType(ItemAdded.class);
@@ -366,11 +364,10 @@ public class ShoppingCartTest {
       var result = testKit.method(ShoppingCartEntity::getCart).invoke(); // (7)
       assertEquals(
         new ShoppingCart("testkit-entity-id", List.of(akkaTshirt.withQuantity// (15)), false),
-        result.getReply());
+        result.getReply()
+      );
     }
-
   }
-
 }
 ```
 
@@ -408,25 +405,21 @@ public class ShoppingCartIntegrationTest extends TestKitSupport { // (1)
 
   @Test
   public void createAndManageCart() {
-
     String cartId = "card-abc";
     var item1 = new LineItem("tv", "Super TV 55'", 1);
-    var response1 =
-        componentClient // (2)
-            .forEventSourcedEntity(cartId) // (3)
-            .method(ShoppingCartEntity::addItem) // (4)
-            .invoke(item1);
+    var response1 = componentClient // (2)
+      .forEventSourcedEntity(cartId) // (3)
+      .method(ShoppingCartEntity::addItem) // (4)
+      .invoke(item1);
     Assertions.assertNotNull(response1);
     // confirming only one product remains
-    ShoppingCart cartUpdated =
-        componentClient
-            .forEventSourcedEntity(cartId)
-            .method(ShoppingCartEntity::getCart) // (5)
-            .invoke();
+    ShoppingCart cartUpdated = componentClient
+      .forEventSourcedEntity(cartId)
+      .method(ShoppingCartEntity::getCart) // (5)
+      .invoke();
     Assertions.assertEquals(1, cartUpdated.items().size()); // (6)
     Assertions.assertEquals(item2, cartUpdated.items().get// (0));
   }
-
 }
 ```
 
@@ -441,7 +434,7 @@ public class ShoppingCartIntegrationTest extends TestKitSupport { // (1)
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Agents](agents.html) [Key Value Entities](key-value-entities.html)
+[Testing](agents/testing.html) [Key Value Entities](key-value-entities.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

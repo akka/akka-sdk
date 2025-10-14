@@ -13,19 +13,19 @@ Akka is ideally suited for the creation of *Microservices*. Microservices genera
 
 ## <a href="about:blank#_domain_driven_design"></a> Domain Driven Design
 
-Domain-driven design (DDD) is the concept that the structure and language of software code (class names, class methods, class variables) should match the business domain. For example, if a software processes loan applications, it might have classes such as LoanApplication and Customer, and methods such as AcceptOffer and Withdraw. — [Wikipedia](https://en.wikipedia.org/wiki/Domain-driven_design) Akka makes it easy and fast to build services using the concepts of Domain Driven Design (DDD). While it’s not necessary to understand all the ins and outs of Domain Driven Design, you’ll find a few of the concepts that make building services even more straightforward below. See [Service structure and layers](../concepts/architecture-model.html) for more information on the role of your domain model in Akka. Akkademy provides a free course on [Domain Driven Design](https://akkademy.akka.io/learn/courses/6/reactive-architecture2-domain-driven-design).
+Domain-driven design (DDD) is the concept that the structure and language of software code (class names, class methods, class variables) should match the business domain. For example, if a software processes loan applications, it might have classes such as LoanApplication and Customer, and methods such as AcceptOffer and Withdraw. — [Wikipedia](https://en.wikipedia.org/wiki/Domain-driven_design) Akka makes it easy and fast to build services using the concepts of Domain Driven Design (DDD). While it’s not necessary to understand all the ins and outs of Domain Driven Design, you’ll find a few of the concepts that make building services even more straightforward below. See [Project structure](../concepts/architecture-model.html) for more information on the role of your domain model in Akka. Akkademy provides a free course on [Domain Driven Design](https://akkademy.akka.io/learn/courses/6/reactive-architecture2-domain-driven-design).
 
 ### <a href="about:blank#bounded-context"></a> Bounded context
 
 [Bounded context](https://martinfowler.com/bliki/BoundedContext.html) is a concept that divides large domain models into smaller groups that are explicit about their interrelationships. Normally a microservice is a bounded context. You *may* choose to have multiple bounded contexts in a microservice.
 
-Each of these contexts will have autonomy to evolve the models it owns. Keeping each model within strict boundaries allows different modelling for entities that look similar but have slightly different meaning in each of the contexts. Each bounded context should have its own domain, application, and API layers as described in [Service structure and layers](../concepts/architecture-model.html).
+Each of these contexts will have autonomy to evolve the models it owns. Keeping each model within strict boundaries allows different modelling for entities that look similar but have slightly different meaning in each of the contexts. Each bounded context should have its own domain, application, and API layers as described in [Project structure](../concepts/architecture-model.html).
 
 ![Bounded Context](_images/bounded-context.svg)
 
 ### <a href="about:blank#_events_first"></a> Events first
 
-Defining your data structures first, and splitting them into bounded contexts, will also help you think about all the different interactions your data needs to have. These interactions, like `ItemAddedToShoppingCart` or `LightbulbTurnedOn` are the events that are persisted and processed in Akka. Defining your data structures first, makes it easier to think about which events are needed and where they fit into your design. These data structures and events will live in your domain model layer as described in [Service structure and layers](../concepts/architecture-model.html).
+Defining your data structures first, and splitting them into bounded contexts, will also help you think about all the different interactions your data needs to have. These interactions, like `ItemAddedToShoppingCart` or `LightbulbTurnedOn` are the events that are persisted and processed in Akka. Defining your data structures first, makes it easier to think about which events are needed and where they fit into your design. These data structures and events will live in your domain model layer as described in [Project structure](../concepts/architecture-model.html).
 
 ### <a href="about:blank#_message_migration"></a> Message migration
 
@@ -72,6 +72,7 @@ public class CustomerStore {
 
   public CompletionStage<Done> save(String customerId, Customer customer) {
   }
+
 }
 ```
 A consumer implementation that updates such a store is written in an idempotent way.
@@ -91,26 +92,43 @@ public class CustomerStoreUpdater extends Consumer {
   public Effect onEffect(CustomerEvent event) { // (1)
     var customerId = messageContext().eventSubject().get();
     return switch (event) {
-      case CustomerCreated created ->
-        effects().asyncDone(customerStore.save(customerId, new Customer(created.email(), created.name(), created.address())));
-
-      case NameChanged nameChanged ->
-        effects().asyncDone(customerStore.getById(customerId).thenCompose(customer -> {
-          if (customer.isPresent()) {
-            return customerStore.save(customerId, customer.get().withName(nameChanged.newName()));
-          } else {
-            throw new IllegalStateException("Customer not found: " + customerId);
-          }
-        }));
-
-      case AddressChanged addressChanged ->
-        effects().asyncDone(customerStore.getById(customerId).thenCompose(customer -> {
-          if (customer.isPresent()) {
-            return customerStore.save(customerId, customer.get().withAddress(addressChanged.address()));
-          } else {
-            throw new IllegalStateException("Customer not found: " + customerId);
-          }
-        }));
+      case CustomerCreated created -> effects()
+        .asyncDone(
+          customerStore.save(
+            customerId,
+            new Customer(created.email(), created.name(), created.address())
+          )
+        );
+      case NameChanged nameChanged -> effects()
+        .asyncDone(
+          customerStore
+            .getById(customerId)
+            .thenCompose(customer -> {
+              if (customer.isPresent()) {
+                return customerStore.save(
+                  customerId,
+                  customer.get().withName(nameChanged.newName())
+                );
+              } else {
+                throw new IllegalStateException("Customer not found: " + customerId);
+              }
+            })
+        );
+      case AddressChanged addressChanged -> effects()
+        .asyncDone(
+          customerStore
+            .getById(customerId)
+            .thenCompose(customer -> {
+              if (customer.isPresent()) {
+                return customerStore.save(
+                  customerId,
+                  customer.get().withAddress(addressChanged.address())
+                );
+              } else {
+                throw new IllegalStateException("Customer not found: " + customerId);
+              }
+            })
+        );
     };
   }
 }
@@ -134,23 +152,24 @@ Some updates are inherently not idempotent. A good example might be calculating 
 @Component(id = "counter-by-value")
 public class CounterByValueView extends View {
 
-  public record CounterByValue(String name, int value) {
-  }
+  public record CounterByValue(String name, int value) {}
 
   @Consume.FromEventSourcedEntity(CounterEntity.class)
   public static class CounterByValueUpdater extends TableUpdater<CounterByValue> {
+
     public Effect<CounterByValue> onEvent(CounterEvent counterEvent) {
       var name = updateContext().eventSubject().get();
       var currentRow = rowState();
       var currentValue = Optional.ofNullable(currentRow).map(CounterByValue::value).orElse// (0);
       return switch (counterEvent) {
-        case ValueIncreased increased -> effects().updateRow(
-          new CounterByValue(name, currentValue + increased.value())); // (1)
-        case ValueMultiplied multiplied -> effects().updateRow(
-          new CounterByValue(name, currentValue * multiplied.multiplier())); // (2)
+        case ValueIncreased increased -> effects()
+          .updateRow(new CounterByValue(name, currentValue + increased.value())); // (1)
+        case ValueMultiplied multiplied -> effects()
+          .updateRow(new CounterByValue(name, currentValue * multiplied.multiplier())); // (2)
       };
     }
   }
+
 }
 ```
 
@@ -163,11 +182,8 @@ Events modelling is a key part of the system design. A consumer that have all th
 [CounterEvent.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-counter-brokers/src/main/java/counter/domain/CounterEvent.java)
 ```java
 public sealed interface CounterEvent {
-
-  record ValueMultiplied(int multiplier,
-                         int updatedValue) // (1)
-    implements CounterEvent {
-  }
+  record ValueMultiplied(int multiplier, int updatedValue) // (1)
+    implements CounterEvent {}
 }
 ```
 
@@ -178,16 +194,18 @@ The updated version of the `CounterByValueUpdater` can be again idempotent.
 ```java
 @Consume.FromEventSourcedEntity(CounterEntity.class)
   public static class CounterByValueUpdater extends TableUpdater<CounterByValueEntry> {
+
     public Effect<CounterByValueEntry> onEvent(CounterEvent counterEvent) {
       var name = updateContext().eventSubject().get();
       return switch (counterEvent) {
-        case ValueIncreased increased -> effects().updateRow(
-          new CounterByValueEntry(name, increased.updatedValue())); // (1)
-        case ValueMultiplied multiplied -> effects().updateRow(
-          new CounterByValueEntry(name, multiplied.updatedValue())); // (1)
+        case ValueIncreased increased -> effects()
+          .updateRow(new CounterByValueEntry(name, increased.updatedValue())); // (1)
+        case ValueMultiplied multiplied -> effects()
+          .updateRow(new CounterByValueEntry(name, multiplied.updatedValue())); // (1)
       };
     }
   }
+
 }
 ```
 
@@ -214,20 +232,20 @@ Let’s assume that we want to populate a view storage outside Akka ecosystem. T
 
 [CounterStore.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-counter-brokers/src/main/java/counter/application/CounterStore.java)
 ```java
-public class CounterStore{
+public class CounterStore {
 
-  public record CounterEntry(String counterId, int value, long seqNum) { // (1)
-  }
+  public record CounterEntry(String counterId, int value, long seqNum) {} // (1)
 
   private Map<String, CounterEntry> store = new ConcurrentHashMap<>();
-
 
   public CompletionStage<Optional<CounterEntry>> getById(String counterId) {
     return completedFuture(Optional.ofNullable(store.get(counterId)));
   }
 
   public CompletionStage<Done> save(CounterEntry counterEntry) {
-    return completedFuture(store.put(counterEntry.counterId(), counterEntry)).thenApply(__ -> done());
+    return completedFuture(store.put(counterEntry.counterId(), counterEntry)).thenApply(
+      __ -> done()
+    );
   }
 
   public CompletionStage<Collection<CounterEntry>> getAll() {
@@ -251,36 +269,50 @@ public class CounterStoreUpdater extends Consumer {
     var counterId = messageContext().eventSubject().get();
     var newSeqNum = messageContext().metadata().asCloudEvent().sequence();
 
-    return effects().asyncEffect(
-      counterStore.getById(counterId) // (1)
-        .thenApply(counterEntry -> {
-          var currentSeqNum = counterEntry.map(CounterEntry::seqNum).orElse(0L);
-          if (!newSeqNum.isPresent()) { // (2)
-            // missing sequence number, can't deduplicate
-            return processEvent(counterEvent, counterEntry, 0L);
-          } else {
-            if (newSeqNum.get() <= currentSeqNum) {
-              //duplicate, can be ignored
-              return effects().ignore(); // (3)
+    return effects()
+      .asyncEffect(
+        counterStore
+          .getById(counterId) // (1)
+          .thenApply(counterEntry -> {
+            var currentSeqNum = counterEntry.map(CounterEntry::seqNum).orElse(0L);
+            if (!newSeqNum.isPresent()) { // (2)
+              // missing sequence number, can't deduplicate
+              return processEvent(counterEvent, counterEntry, 0L);
             } else {
-              // not a duplicate
-              return processEvent(counterEvent, counterEntry, newSeqNum.get()); // (4)
+              if (newSeqNum.get() <= currentSeqNum) {
+                //duplicate, can be ignored
+                return effects().ignore(); // (3)
+              } else {
+                // not a duplicate
+                return processEvent(counterEvent, counterEntry, newSeqNum.get()); // (4)
+              }
             }
-          }
-        })
-    );
+          })
+      );
   }
 
-  private Effect processEvent(CounterEvent counterEvent, Optional<CounterEntry> currentEntry, Long seqNum) {
+  private Effect processEvent(
+    CounterEvent counterEvent,
+    Optional<CounterEntry> currentEntry,
+    Long seqNum
+  ) {
     var counterId = messageContext().eventSubject().get();
     var currentValue = currentEntry.map(CounterEntry::value).orElse// (0);
     return switch (counterEvent) {
       case ValueIncreased increased -> {
-        var updatedEntry = new CounterEntry(counterId, currentValue + increased.value(), seqNum);
+        var updatedEntry = new CounterEntry(
+          counterId,
+          currentValue + increased.value(),
+          seqNum
+        );
         yield effects().asyncDone(counterStore.save(updatedEntry)); // (5)
       }
       case ValueMultiplied multiplied -> {
-        var updatedEntry = new CounterEntry(counterId, currentValue * multiplied.multiplier(), seqNum);
+        var updatedEntry = new CounterEntry(
+          counterId,
+          currentValue * multiplied.multiplier(),
+          seqNum
+        );
         yield effects().asyncDone(counterStore.save(updatedEntry)); // (5)
       }
     };
@@ -341,14 +373,14 @@ A different aspect of deduplication is how to deal with, possibly duplicated, in
 public class WalletEntity extends EventSourcedEntity<Wallet, WalletEvent> {
 
   public Effect<WalletResult> deposit(Deposit deposit) { // (1)
-    if (currentState().isEmpty()){
+    if (currentState().isEmpty()) {
       return effects().error("Wallet does not exist");
     } else {
       List<WalletEvent> events = currentState().handle(deposit);
-      return effects().persistAll(events)
-          .thenReply(__ -> new WalletResult.Success());
+      return effects().persistAll(events).thenReply(__ -> new WalletResult.Success());
     }
   }
+
 }
 ```
 
@@ -358,13 +390,11 @@ To secure the entity from processing the same command multiple times, we must st
 [WalletCommand.java](https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow-compensation/src/main/java/com/example/wallet/domain/WalletCommand.java)
 ```java
 public sealed interface WalletCommand {
-
   String commandId();
 
-  record Withdraw(String commandId, int amount) implements WalletCommand { // (1)
-  }
-  record Deposit(String commandId, int amount) implements WalletCommand { // (1)
-  }
+  record Withdraw(String commandId, int amount) implements WalletCommand {} // (1)
+
+  record Deposit(String commandId, int amount) implements WalletCommand {} // (1)
 }
 ```
 
@@ -374,7 +404,6 @@ The information about already processed commands must be stored in the entity st
 [Wallet.java](https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow-compensation/src/main/java/com/example/wallet/domain/Wallet.java)
 ```java
 public record Wallet(String id, int balance, LinkedHashSet<String> commandIds) { // (1)
-
   public static final int COMMAND_IDS_MAX_SIZE = 1000;
 
   public List<WalletEvent> handle(WalletCommand command) {
@@ -383,20 +412,31 @@ public record Wallet(String id, int balance, LinkedHashSet<String> commandIds) {
       return List.of();
     }
     return switch (command) {
-      case WalletCommand.Deposit deposit ->
-        List.of(new WalletEvent.Deposited(command.commandId(), deposit.amount())); // (3)
-      case WalletCommand.Withdraw withdraw ->
-        List.of(new WalletEvent.Withdrawn(command.commandId(), withdraw.amount())); // (3)
+      case WalletCommand.Deposit deposit -> List.of(
+        new WalletEvent.Deposited(command.commandId(), deposit.amount())
+      ); // (3)
+      case WalletCommand.Withdraw withdraw -> List.of(
+        new WalletEvent.Withdrawn(command.commandId(), withdraw.amount())
+      ); // (3)
     };
   }
   public Wallet applyEvent(WalletEvent event) {
     return switch (event) {
-      case WalletEvent.Created created ->
-        new Wallet(created.walletId(), created.initialBalance(), new LinkedHashSet<>());
-      case WalletEvent.Withdrawn withdrawn ->
-        new Wallet(id, balance - withdrawn.amount(), addCommandId(withdrawn.commandId()));
-      case WalletEvent.Deposited deposited ->
-        new Wallet(id, balance + deposited.amount(), addCommandId(deposited.commandId()));
+      case WalletEvent.Created created -> new Wallet(
+        created.walletId(),
+        created.initialBalance(),
+        new LinkedHashSet<>()
+      );
+      case WalletEvent.Withdrawn withdrawn -> new Wallet(
+        id,
+        balance - withdrawn.amount(),
+        addCommandId(withdrawn.commandId())
+      );
+      case WalletEvent.Deposited deposited -> new Wallet(
+        id,
+        balance + deposited.amount(),
+        addCommandId(deposited.commandId())
+      );
     };
   }
 
@@ -434,7 +474,7 @@ Keep in mind that using collection types not supported by the Jackson serializat
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Run a service locally](running-locally.html) [Using an AI coding assistant](ai-coding-assistant.html)
+[AI model provider configuration](model-provider-details.html) [Using an AI coding assistant](ai-coding-assistant.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

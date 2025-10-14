@@ -1,7 +1,7 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
-- [Getting Started](../index.html)
-- [Build an AI multi-agent planner](index.html)
+- [Tutorials](../index.html)
+- [Multi-agent planner](index.html)
 - [Activity agent](activity.html)
 
 <!-- </nav> -->
@@ -10,7 +10,7 @@
 
 |  | **New to Akka? Start here:**
 
-Use the [Author your first agentic service](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
+Use the [Build your first agent](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
 
 ## <a href="about:blank#_overview"></a> Overview
 
@@ -31,9 +31,23 @@ In this part of the guide you will:
 
 ## <a href="about:blank#_create_the_empty_project"></a> Create the empty project
 
-You already learned how to create an empty Akka project when you went through the guide to [author your first service](../author-your-first-service.html#clone_sample). You can continue from the `helloworld-agent` project.
+1. From a command line, use the Akka CLI to create a new project. See [installation instructions](../quick-install-cli.html) if you haven’t installed the CLI yet.
 
-|  | This guide is written assuming you will follow it as a tutorial to walk through all of the components, building them on your own. If at any time you want to compare your solution with the official sample, check out the [Github Repository](https://github.com/akka-samples/multi-agent). |
+```command
+akka code init --name helloworld-agent --repo akka-samples/empty.git
+```
+2. Navigate to the new project directory.
+3. Open it in your preferred IDE / Editor.
+Alternatively, you can clone the [GitHub Repository](https://github.com/akka-samples/empty) directly:
+
+```command
+git clone https://github.com/akka-samples/empty.git --depth 1
+```
+Then navigate to the new project directory and open it in your preferred IDE / Editor.
+
+You can continue from the `helloworld-agent` project.
+
+|  | This guide is written assuming you will follow it as a tutorial to walk through all of the components, building them on your own. If at any time you want to compare your solution with the official sample, check out the [GitHub Repository](https://github.com/akka-samples/multi-agent). |
 
 ## <a href="about:blank#_add_the_agent"></a> Add the Agent
 
@@ -46,23 +60,24 @@ import akka.javasdk.annotations.Component;
 
 @Component(id = "activity-agent") // (1)
 public class ActivityAgent extends Agent { // (2)
+
   private static final String SYSTEM_MESSAGE =
-      """
-      You are an activity agent. Your job is to suggest activities in the
-      real world. Like for example, a team building activity, sports, an
-      indoor or outdoor game, board games, a city trip, etc.
-      """.stripIndent();
+    """
+    You are an activity agent. Your job is to suggest activities in the
+    real world. Like for example, a team building activity, sports, an
+    indoor or outdoor game, board games, a city trip, etc.
+    """.stripIndent();
 
   public Effect<String> query(String message) { // (3)
     return effects()
-        .systemMessage(SYSTEM_MESSAGE) // (4)
-        .userMessage(message)// (5)
-        .thenReply();
+      .systemMessage(SYSTEM_MESSAGE) // (4)
+      .userMessage(message) // (5)
+      .thenReply();
   }
 }
 ```
 
-| **1** | Annotate the class with `@ComponentId` and pass a unique identifier for this agent type. |
+| **1** | Annotate the class with `@Component` and pass a unique identifier for this agent type. |
 | **2** | Class extends `Agent`. |
 | **3** | Define the command handler method. |
 | **4** | Define the system message as a constant, and use the system message in the effect builder. |
@@ -81,17 +96,16 @@ import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
-
 import java.util.UUID;
 
 // Opened up for access from the public internet to make the service easy to try out.
 // For actual services meant for production this must be carefully considered,
 // and often set more limited
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
-@HttpEndpoint()
+@HttpEndpoint
 public class ActivityEndpoint {
-  public record Request(String message) {
-  }
+
+  public record Request(String message) {}
 
   private final ComponentClient componentClient;
 
@@ -103,10 +117,10 @@ public class ActivityEndpoint {
   public String suggestActivities(Request request) {
     var sessionId = UUID.randomUUID().toString();
     return componentClient
-        .forAgent()
-        .inSession(sessionId)
-        .method(ActivityAgent::query) // (2)
-        .invoke(request.message());
+      .forAgent()
+      .inSession(sessionId)
+      .method(ActivityAgent::query) // (2)
+      .invoke(request.message());
   }
 }
 ```
@@ -171,7 +185,7 @@ guided walking tour through lively neighborhoods such as Malasaña and Chueca.
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Build an AI multi-agent planner](index.html) [User preferences](preferences.html)
+[Multi-agent planner](index.html) [User preferences](preferences.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

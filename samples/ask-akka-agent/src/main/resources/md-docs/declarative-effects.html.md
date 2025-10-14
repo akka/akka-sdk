@@ -20,11 +20,11 @@ For example, when using Akka’s [Agent](../java/agents.html) component, you mig
 
 ```java
 public Effect<String> query(String question) {
-    return effects()
-      .systemMessage("You are a helpful...")
-      .userMessage(question)
-      .thenReply();
-  }
+  return effects()
+    .systemMessage("You are a helpful...")
+    .userMessage(question)
+    .thenReply();
+}
 ```
 Each component defines its own Effect API offering predefined operations tailored to the component’s specific semantics. For example, [Event Sourced Entities](../java/event-sourced-entities.html) provide an Effect for persisting events, while a [Workflow](../java/workflows.html) Effect defines both what needs to be executed and how to handle the result to transition to the next step.
 
@@ -34,8 +34,8 @@ For example, with our Workflow component at the end of each step, you return an 
 
 ```java
 return effects()
-   .updateState(currentState().withStatus(WITHDRAW_SUCCEED))
-   .transitionTo("deposit", depositInput);
+ .updateState(currentState().withStatus(WITHDRAW_SUCCEED))
+ .transitionTo("deposit", depositInput);
 ```
 For details on the specific Effect types, refer to the documentation for each component.
 
@@ -51,7 +51,7 @@ For details on the specific Effect types, refer to the documentation for each co
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Development process](development-process.html) [Entity state models](state-model.html)
+[Background execution](background-execution.html) [Memory models](state-model.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

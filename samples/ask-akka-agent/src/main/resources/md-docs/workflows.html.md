@@ -22,16 +22,12 @@ The state of the stateful component instance is kept in memory as long as it is 
 
 ## <a href="about:blank#_effect_api"></a> Workflow’s Effect API
 
-The Workflow’s Effect defines the operations that Akka should perform when an incoming command is handled by a Workflow.
+Workflows have two distinct Effect APIs:
 
-A Workflow Effect can either:
+- **Effect API**: Used for handling external commands. Methods that are exposed as public command handlers (invoked via the component client) must return an `Effect`. This API allows you to update the workflow state, transition to a step, pause, end, delete, fail, or reply to commands.
+- **StepEffect API**: Used for internal workflow steps. Methods that implement workflow steps (typically private) must return a `StepEffect`. This API is similar in spirit to `Effect`, but is specialized for guiding the internal execution and transitions between workflow steps. It provides methods to update state, transition to the next step, pause, end, or delete the workflow.
+Workflow is the only component that has both APIs: `Effect` for external commands and `StepEffect` for internal steps. This separation allows workflows to clearly distinguish between external interactions and internal orchestration logic.
 
-- update the state of the workflow
-- define the next step to be executed (transition)
-- pause the workflow
-- end the workflow
-- fail the step or reject a command by returning an error
-- reply to incoming commands
 For additional details, refer to [Declarative Effects](../concepts/declarative-effects.html).
 
 ## <a href="about:blank#_skeleton"></a> Skeleton
@@ -42,63 +38,51 @@ A Workflow implementation has the following code structure.
 ```java
 @Component(id = "transfer") // (1)
 public class TransferWorkflow extends Workflow<TransferState> { // (2)
-  public record Withdraw(String from, int amount) {
-  }
+
+  public record Withdraw(String from, int amount) {}
 
   @Override
-  public WorkflowDef<TransferState> definition() { // (3)
-    return workflow()
-        .addStep(withdrawStep())
-        .addStep(depositStep());
+  public WorkflowSettings settings() { // (3)
+    return WorkflowSettings.builder()
+      .defaultStepTimeout(ofSeconds// (2))
+      .build();
   }
 
-  private Step withdrawStep() {
-    return
-        step("withdraw") // (4)
-            .call(() -> {// (5)
-              return null; // FIXME implement this
-            })
-            .andThen(() -> { // (6)
-              return effects()
-                  .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
-                  .transitionTo("deposit");
-            });
+  private StepEffect withdrawStep() { // (4)
+    // TODO: implement your step logic here
+    return stepEffects() // (5)
+      .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
+      .thenTransitionTo(TransferWorkflow::depositStep);
   }
 
-  private Step depositStep() {
-    return
-        step("deposit")
-            .call(() -> {
-              return null; // FIXME implement this
-            })
-            .andThen(() -> {
-              return effects()
-                  .updateState(currentState().withStatus(COMPLETED))
-                  .end();
-            });
+  private StepEffect depositStep() {
+    // TODO: implement your step logic here
+    return stepEffects()
+      .updateState(currentState().withStatus(COMPLETED))
+      .thenEnd();
   }
 
-  public Effect<Done> startTransfer(Transfer transfer) { // (7)
+  public Effect<Done> startTransfer(Transfer transfer) { // (6)
     TransferState initialState = new TransferState(transfer);
 
-    return effects()// (8)
-        .updateState(initialState)
-        .transitionTo("withdraw")
-        .thenReply(done());
+    return effects() // (7)
+      .updateState(initialState)
+      .transitionTo(TransferWorkflow::withdrawStep)
+      .thenReply(done());
   }
-
 }
 ```
 
-| **1** | Annotate the class with `@ComponentId` and pass a unique identifier for this workflow type. |
+| **1** | Annotate the class with `@Component` and pass a unique identifier for this workflow type. |
 | **2** | Class that extends `Workflow`. |
-| **3** | Define all steps that the workflow makes use of. |
-| **4** | Each step has a name. |
-| **5** | The step consists of a `call`, which is a lambda that will be called to execute the step. |
-| **6** | When the `call` has completed successfully the `andThen` lambda is called, and here you can update the state and transition to next step. |
-| **7** | The workflow has methods that can be called with the component client. |
-| **8** | Those methods return an effect, which can be instructions to update the state and transition to a certain step. |
-There must be at least one command handler method, which returns `Effect`. It is the command handler methods that can be called with the component client from other components, such as an endpoint. The workflow is started by the first command, which will transition to the initial step.
+| **3** | Define optional configuration. |
+| **4** | A step is a method that returns a `StepEffect`. |
+| **5** | The step executes a given code and returns the effect that will instruct the runtime what to do next. For instance, you can update the state and transition to next step. |
+| **6** | The workflow has methods that can be called with the component client. |
+| **7** | Those methods return an `Effect`, which can be instructions to update the state and transition to a certain step. |
+There must be at least one public command handler method, which returns `Effect`. It is the command handler methods that can be called with the component client from other components, such as an endpoint. The workflow is started by the first command, which will transition to the initial step.
+
+Step handler methods can be private and are used to implement the internal business logic of the workflow. Although the `StepEffect` looks similar to the `Effect`, it is not the same. The `StepEffect` has different set of available methods that will guide the workflow execution.
 
 ## <a href="about:blank#_modeling_state"></a> Modeling state
 
@@ -109,7 +93,6 @@ The `Wallet` class represents domain object that holds the wallet balance. We ca
 [Wallet.java](https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow/src/main/java/com/example/wallet/domain/Wallet.java)
 ```java
 public record Wallet(String id, int balance) {
-
   public Wallet withdraw(int amount) {
     return new Wallet(id, balance - amount);
   }
@@ -124,19 +107,14 @@ Domain events for creating and updating the wallet.
 [WalletEvent.java](https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow/src/main/java/com/example/wallet/domain/WalletEvent.java)
 ```java
 public sealed interface WalletEvent {
-
   @TypeName("created")
-  record Created(int initialBalance) implements WalletEvent {
-  }
+  record Created(int initialBalance) implements WalletEvent {}
 
   @TypeName("withdrawn")
-  record Withdrawn(int amount) implements WalletEvent {
-  }
+  record Withdrawn(int amount) implements WalletEvent {}
 
   @TypeName("deposited")
-  record Deposited(int amount) implements WalletEvent {
-  }
-
+  record Deposited(int amount) implements WalletEvent {}
 }
 ```
 The domain object is wrapped with a Event Sourced Entity component.
@@ -147,36 +125,35 @@ The domain object is wrapped with a Event Sourced Entity component.
 public class WalletEntity extends EventSourcedEntity<Wallet, WalletEvent> {
 
   public Effect<Done> create(int initialBalance) { // (1)
-    if (currentState() != null){
+    if (currentState() != null) {
       return effects().error("Wallet already exists");
     } else {
-      return effects().persist(new WalletEvent.Created(initialBalance))
+      return effects()
+        .persist(new WalletEvent.Created(initialBalance))
         .thenReply(__ -> done());
     }
   }
 
   public Effect<Done> withdraw(int amount) { // (2)
-    if (currentState() == null){
+    if (currentState() == null) {
       return effects().error("Wallet does not exist");
     } else if (currentState().balance() < amount) {
       return effects().error("Insufficient balance");
     } else {
-      return effects().persist(new WalletEvent.Withdrawn(amount))
-          .thenReply(__ -> done());
+      return effects().persist(new WalletEvent.Withdrawn(amount)).thenReply(__ -> done());
     }
   }
 
   public Effect<Done> deposit(int amount) { // (3)
-    if (currentState() == null){
+    if (currentState() == null) {
       return effects().error("Wallet does not exist");
     } else {
-      return effects().persist(new WalletEvent.Deposited(amount))
-        .thenReply(__ -> done());
+      return effects().persist(new WalletEvent.Deposited(amount)).thenReply(__ -> done());
     }
   }
 
   public Effect<Integer> get() { // (4)
-    if (currentState() == null){
+    if (currentState() == null) {
       return effects().error("Wallet does not exist");
     } else {
       return effects().reply(currentState().balance());
@@ -194,12 +171,12 @@ Now we can focus on the workflow implementation itself. A workflow has state, wh
 [TransferState.java](https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow/src/main/java/com/example/transfer/domain/TransferState.java)
 ```java
 public record TransferState(Transfer transfer, TransferStatus status) {
-
-  public record Transfer(String from, String to, int amount) { // (1)
-  }
+  public record Transfer(String from, String to, int amount) {} // (1)
 
   public enum TransferStatus { // (2)
-    STARTED, WITHDRAW_SUCCEEDED, COMPLETED
+    STARTED,
+    WITHDRAW_SUCCEEDED,
+    COMPLETED,
   }
 
   public TransferState(Transfer transfer) {
@@ -232,103 +209,92 @@ Let’s have a look at what our transfer workflow will look like for the first 2
 @Component(id = "transfer") // (1)
 public class TransferWorkflow extends Workflow<TransferState> { // (2)
 
-  public record Withdraw(String from, int amount) {
-  }
-
   public Effect<Done> startTransfer(Transfer transfer) { // (3)
     if (transfer.amount() <= 0) { // (4)
       return effects().error("transfer amount should be greater than zero");
     } else if (currentState() != null) {
       return effects().error("transfer already started");
     } else {
-
       TransferState initialState = new TransferState(transfer); // (5)
 
       Withdraw withdrawInput = new Withdraw(transfer.from(), transfer.amount());
 
       return effects()
         .updateState(initialState) // (6)
-        .transitionTo("withdraw", withdrawInput) // (7)
+        .transitionTo(TransferWorkflow::withdrawStep) // (7)
+        .withInput(withdrawInput)
         .thenReply(done()); // (8)
     }
   }
 ```
 
-| **1** | Annotate such class with `@ComponentId` and pass a unique identifier for this workflow type. |
+| **1** | Annotate such class with `@Component` and pass a unique identifier for this workflow type. |
 | **2** | Extend `Workflow<S>`, where `S` is the state type this workflow will store (i.e. `TransferState`). |
 | **3** | Create a method to start the workflow that returns an `Effect<Done>` class. |
 | **4** | The validation ensures the transfer amount is greater than zero and the workflow is not running already. Otherwise, we might corrupt the existing workflow. |
 | **5** | From the incoming data we create an initial `TransferState`. |
 | **6** | We instruct Akka to persist the new state. |
-| **7** | With the `transitionTo` method, we inform that the name of the first step is "withdraw" and the input for this step is a `Withdraw` object. |
+| **7** | With the `transitionTo` method, we inform that the first step is defined in `TransferWorkflow::withdrawStep` and the input for this step is a `Withdraw` object. |
 | **8** | The last instruction is to inform the caller that the workflow was successfully started. |
 
-|  | The `@ComponentId` value `transfer` is common for all instances of this workflow but must be stable - cannot be changed after a production deploy - and unique across the different workflow types. |
+|  | The `@Component` value `transfer` is common for all instances of this workflow but must be stable - cannot be changed after a production deploy - and unique across the different workflow types. |
 
-## <a href="about:blank#_workflow_definition"></a> Workflow definition
+## <a href="about:blank#_workflow_steps"></a> Workflow steps
 
-One missing piece of our transfer workflow implementation is a workflow `definition` method, which composes all steps connected with transitions. A workflow `Step` has a unique name, an action to perform (e.g. a call to an Akka component, or a call to an external service) and a transition to select the next step (or `end` transition to finish the workflow, in case of the last step).
+One missing piece of our transfer workflow implementation is the workflow steps implementation. A workflow `Step` has an action to perform (e.g. a call to an Akka component, or a call to an external service) and a transition to select the next step (or `end` transition to finish the workflow, in case of the last step).
 
 [TransferWorkflow.java](https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow/src/main/java/com/example/transfer/application/TransferWorkflow.java)
 ```java
-public record Deposit(String to, int amount) {
-}
+public record Withdraw(String from, int amount) {} // (1)
 
-final private ComponentClient componentClient;
+public record Deposit(String to, int amount) {} // (1)
+
+private final ComponentClient componentClient;
 
 public TransferWorkflow(ComponentClient componentClient) {
   this.componentClient = componentClient;
 }
 
-@Override
-public WorkflowDef<TransferState> definition() {
-  return workflow() // (1)
-    .addStep(withdrawStep())
-    .addStep(depositStep());
+@StepName("withdraw") // (2)
+private StepEffect withdrawStep(Withdraw withdraw) {
+  componentClient
+    .forEventSourcedEntity(withdraw.from)
+    .method(WalletEntity::withdraw)
+    .invoke(withdraw.amount); // (3)
+
+  String to = currentState().transfer().to(); // (4)
+  int amount = currentState().transfer().amount();
+  Deposit depositInput = new Deposit(to, amount);
+
+  return stepEffects()
+    .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
+    .thenTransitionTo(TransferWorkflow::depositStep) // (5)
+    .withInput(depositInput);
 }
 
-private Step withdrawStep() {
-  return
-      step("withdraw") // (2)
-          .call(Withdraw.class, cmd ->
-              componentClient.forEventSourcedEntity(cmd.from) // (3)
-                  .method(WalletEntity::withdraw)
-                  .invoke(cmd.amount)) // (4)
-          .andThen(() -> {
-            Deposit depositInput = new Deposit(currentState().transfer().to(), currentState().transfer().amount());
-            return effects()
-                .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
-                .transitionTo("deposit", depositInput); // (5)
-          });
-}
+@StepName("deposit") // (2)
+private StepEffect depositStep(Deposit deposit) { // (6)
+  componentClient
+    .forEventSourcedEntity(deposit.to)
+    .method(WalletEntity::deposit)
+    .invoke(deposit.amount);
 
-private Step depositStep() {
-  return
-      step("deposit") // (6)
-          .call(Deposit.class, cmd ->
-              componentClient.forEventSourcedEntity(cmd.to)
-                  .method(WalletEntity::deposit)
-                  .invoke(cmd.amount))
-          .andThen(() -> {
-            return effects()
-                .updateState(currentState().withStatus(COMPLETED))
-                .end(); // (7)
-          });
+  return stepEffects()
+    .updateState(currentState().withStatus(COMPLETED))
+    .thenEnd(); // (7)
 }
 ```
 
-| **1** | We collect all steps to form a workflow definition. |
-| **2** | Each step should have a unique name. |
-| **3** | Using the [ComponentClient](component-and-service-calls.html#_component_client), which is injected in the constructor. |
-| **4** | We instruct Akka to run a given call to withdraw funds from a wallet. |
-| **5** | After successful withdrawal we return an `Effect` that will update the workflow state and move to the next step called "deposit." An input parameter for this step is a `Deposit` record. |
-| **6** | Another workflow step action to deposit funds to a given wallet. |
-| **7** | This time we return an effect that will stop workflow processing, by using the special `end` method. |
-The step consists of two parts, a lambda that is called to execute the step, and a second lambda that is run when the call has completed successfully. In the `call` lamda you implement what should be executed in the step, and this may be retried until successful. In the `andThen` lambda you can update the state and decide (based on the `call` result) what the next step should be.
+| **1** | Step inputs definition. |
+| **2** | Optional `@StepName` can be used specify the step name, otherwise the method name will be used. |
+| **3** | Using the [ComponentClient](component-and-service-calls.html#_component_client), which is injected in the constructor, we instruct Akka to run a given call to withdraw funds from a wallet. |
+| **4** | The state of the workflow can be accessed with `currentState()` method. |
+| **5** | After successful withdrawal, we return a `StepEffect` that will update the workflow state and move to the next step defined in `TransferWorkflow::depositStep` method. An input parameter for this step is a `Deposit` record. |
+| **6** | Another workflow step implementation to deposit funds to a given wallet. |
+| **7** | This time we return an effect that will stop workflow processing, by using the special `thenEnd` method. |
+The step consists of two parts, an execution of the business logic and `StepEffect` construction, where you can update the state and decide (based on the business logic outcome) what the next step should be and provide input for it, if required.
 
-The workflow will automatically execute the steps in a reliable and durable way. This means that if a call in a step fails, it will be retried until it succeeds or the retry limit of the recovery strategy is reached and separate error handling can be performed. The state machine of the workflow is durable, which means that if the workflow is restarted for some reason it will continue from where it left off, i.e. execute the current non-completed step again.
-
-It is possible to pass input from `transitionTo` to the call in the next step. It’s also possible to pass the result from the call to the `andThen`. These inputs and outputs are optional, and you can use supplier lambdas without parameter, e.g. `call(() → {})`. The state of the workflow can be accessed with `currentState()` from both the `call` and the `andThen` lambdas, but it can only be updated from `andThen`.
+The workflow will automatically execute the steps in a reliable and durable way. This means that if a step fails, it will be retried until it succeeds or the retry limit of the recovery strategy is reached and separate error handling can be performed. The state machine of the workflow is durable, which means that if the workflow is restarted for some reason it will continue from where it left off, i.e. execute the current non-completed step again.
 
 |  | In the following example all `WalletEntity` interactions are not idempotent. It means that if the workflow step retries, it will make the deposit or withdraw again. In a real-world scenario, you should consider making all interactions idempotent with a proper deduplication mechanism. A very basic example of handling retries for workflows can be found in [this](https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow-compensation/src/main/java/com/example/wallet/domain/Wallet.java) sample. |
 
@@ -366,7 +332,7 @@ public Effect<Done> delete() {
 ```
 
 | **1** | Instruction to delete the workflow. |
-When you give the instruction to delete a running workflow it’s equivalent to ending and deleting a workflow. For already finished workflows, it is possible to delete them in the command handler. The actual removal of workflow state is delayed to give downstream consumers time to process all prior updates. Including the fact that the workflow has been deleted (via method annotated with `@DeleteHandler`). By default, the existence of the workflow is completely cleaned up after a week.
+When you give the instruction to delete a running workflow, it’s equivalent to ending and deleting a workflow. For already finished workflows, it is possible to delete them in the command handler. The actual removal of the workflow state is delayed to give downstream consumers time to process all prior updates. Including the fact that the workflow has been deleted (via method annotated with `@DeleteHandler`). By default, the existence of the workflow is completely cleaned up after a week.
 
 You can still handle read requests to the workflow until it has been completely removed, but the current state will be empty (or null). To check whether the workflow has been deleted, you can use the `isDeleted` method inherited from the `Workflow` class.
 
@@ -378,30 +344,32 @@ The Workflow can be used not only to orchestrate Akka components, but also to ca
 
 [TransferWorkflow.java](https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java)
 ```java
-private Step detectFraudsStep() {
-  return step("detect-frauds")
-    .call(() -> { // (1)
-      return fraudDetectionService.detectFrauds(currentState().transfer());
-    })
-    .andThen(FraudDetectionResult.class, result -> {
-      var transfer = currentState().transfer();
-      return switch (result) {
-        case ACCEPTED -> { // (2)
-          TransferState initialState = TransferState.create(workflowId, transfer);
-          Withdraw withdrawInput = new Withdraw(initialState.withdrawId(), transfer.amount());
-          yield effects()
-            .updateState(initialState)
-            .transitionTo("withdraw", withdrawInput);
-        }
-        case MANUAL_ACCEPTANCE_REQUIRED -> { // (3)
-          TransferState waitingForAcceptanceState = TransferState.create(workflowId, transfer)
-            .withStatus(WAITING_FOR_ACCEPTANCE);
-          yield effects()
-            .updateState(waitingForAcceptanceState)
-            .transitionTo("wait-for-acceptance");
-        }
-      };
-    });
+private StepEffect detectFraudsStep() {
+  FraudDetectionService.FraudDetectionResult result = fraudDetectionService.detectFrauds(
+    currentState().transfer()
+  ); // (1)
+
+  var workflowId = commandContext().workflowId();
+  var transfer = currentState().transfer();
+  return switch (result) {
+    case ACCEPTED -> { // (2)
+      TransferState initialState = TransferState.create(workflowId, transfer);
+      Withdraw withdrawInput = new Withdraw(initialState.withdrawId(), transfer.amount());
+      yield stepEffects()
+        .updateState(initialState)
+        .thenTransitionTo(TransferWorkflow::withdrawStep)
+        .withInput(withdrawInput);
+    }
+    case MANUAL_ACCEPTANCE_REQUIRED -> { // (3)
+      TransferState waitingForAcceptanceState = TransferState.create(
+        workflowId,
+        transfer
+      ).withStatus(WAITING_FOR_ACCEPTANCE);
+      yield stepEffects()
+        .updateState(waitingForAcceptanceState)
+        .thenTransitionTo(TransferWorkflow::waitForAcceptanceStep);
+    }
+  };
 }
 ```
 
@@ -415,28 +383,30 @@ A long-running workflow can be paused while waiting for some additional informat
 
 [TransferWorkflow.java](https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java)
 ```java
-private Step waitForAcceptanceStep() {
-  return step("wait-for-acceptance")
-    .call(() -> {
-      String transferId = currentState().transferId();
-      timers().createSingleTimer(
-        "acceptanceTimeout-" + transferId,
-        ofHours// (8),
-        componentClient.forWorkflow(transferId)
-          .method(TransferWorkflow::acceptanceTimeout)
-          .deferred()); // (1)
-    })
-    .andThen(() ->
-      effects().pause()); // (2)
+private StepEffect waitForAcceptanceStep() {
+  String transferId = currentState().transferId();
+  timers()
+    .createSingleTimer(
+      "acceptanceTimeout-" + transferId,
+      ofHours// (8),
+      componentClient
+        .forWorkflow(transferId)
+        .method(TransferWorkflow::acceptanceTimeout)
+        .deferred()
+    ); // (1)
+
+  return stepEffects().thenPause(); // (2)
 }
 ```
 
 | **1** | Schedules a timer as a Workflow step action. Make sure that the timer name is unique for every Workflow instance. |
 | **2** | Pauses the Workflow execution. |
 
-|  | Remember to cancel the timer once the Workflow is resumed. Also, adjust the workflow [timeout](about:blank#_timeouts), if it has been defined, to be longer than the longest expected pause. 8 hours in this example. |
-Exposing additional mutational method from the Workflow implementation should be done with special caution. Accepting a call to such method should only be possible when the Workflow is in the expected state.
+|  | Remember to cancel the timer once the Workflow is resumed. |
 
+|  | Exposing additional mutational methods from the Workflow implementation should be done with special caution.
+Accepting a call to such a method should only be possible when the Workflow is in the expected state. If the workflow
+ is in the middle of a step execution, such a call will be queued and only handled once the step completes. |
 [TransferWorkflow.java](https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java)
 ```java
 public Effect<String> accept() {
@@ -446,10 +416,12 @@ public Effect<String> accept() {
     Transfer transfer = currentState().transfer();
     Withdraw withdrawInput = new Withdraw(currentState().withdrawId(), transfer.amount());
     return effects()
-      .transitionTo("withdraw", withdrawInput)
+      .transitionTo(TransferWorkflow::withdrawStep)
+      .withInput(withdrawInput)
       .thenReply("transfer accepted");
   } else { // (2)
-    return effects().error("Cannot accept transfer with status: " + currentState().status());
+    return effects()
+      .error("Cannot accept transfer with status: " + currentState().status());
   }
 }
 ```
@@ -461,58 +433,46 @@ public Effect<String> accept() {
 
 Design for failure is one of the key attributes of all Akka components. Workflow has the richest set of configurations from all of them. It’s essential to build robust and reliable solutions.
 
-### <a href="about:blank#_timeouts"></a> Timeouts
+### <a href="about:blank#_step_timeouts"></a> Step Timeouts
 
-By default, a workflow run has no time limit. It can run forever, which in most cases is not desirable behavior. A workflow step, on the other hand, has a default timeout of 5 seconds. Both settings can be overridden at the workflow definition level or for a specific step configuration.
-
-[TransferWorkflow.java](https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java)
-```java
-return workflow()
-  .timeout(ofSeconds// (5)) // (1)
-  .defaultStepTimeout(ofSeconds// (2)) // (2)
-```
-
-| **1** | Sets a timeout for the duration of the entire workflow. When the timeout expires, the workflow is finished and no transitions are allowed. |
-| **2** | Sets a default timeout for all workflow steps. |
-A default step timeout can be overridden for an individual step.
+Each workflow step has a default timeout of 5 seconds. You can override this default for all steps in the workflow `settings` method, or set a custom timeout for individual steps.
 
 [TransferWorkflow.java](https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java)
 ```java
-private Step failoverHandlerStep() {
-  Step failoverHandler =
-    step("failover-handler")
-      .call(() -> {
-        return "handling failure";
-      })
-      .andThen(String.class, __ -> effects()
-        .updateState(currentState().withStatus(REQUIRES_MANUAL_INTERVENTION))
-        .end())
-      .timeout(ofSeconds// (1)); // (1)
-  return failoverHandler;
+@Override
+public WorkflowSettings settings() {
+  return WorkflowSettings.builder()
+    .defaultStepTimeout(ofSeconds// (2)) // (1)
+    .stepTimeout(TransferWorkflow::failoverHandlerStep, ofSeconds// (1)) // (2)
+    .build();
 }
 ```
 
-| **1** | Overrides the step timeout for a specific step. |
+| **1** | Sets a default timeout for all workflow steps. |
+| **2** | Overrides the step timeout for a specific step. |
+
+|  | If you need a global workflow timeout, consider using durable timers as described in the [Pausing workflow](about:blank#_pausing_workflow) section. |
 
 ### <a href="about:blank#_recover_strategy"></a> Recover strategy
 
-It’s time to define what should happen in case of timeout or any other unhandled error.
+It’s time to define what should happen in case of step timeout or any other unhandled error.
 
 [TransferWorkflow.java](https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java)
 ```java
-return workflow()
-  .failoverTo("failover-handler", maxRetries// (0)) // (1)
-  .defaultStepRecoverStrategy(maxRetries// (1).failoverTo("failover-handler")) // (2)
-  .addStep(detectFraudsStep())
-  .addStep(withdrawStep())
-  .addStep(depositStep(), maxRetries// (2).failoverTo("compensate-withdraw")) // (3)
+@Override
+public WorkflowSettings settings() {
+  return WorkflowSettings.builder()
+    .defaultStepRecovery(maxRetries// (1).failoverTo(TransferWorkflow::failoverHandlerStep)) // (1)
+    .stepRecovery(
+      TransferWorkflow::depositStep,
+      maxRetries// (2).failoverTo(TransferWorkflow::compensateWithdrawStep)
+    ) // (2)
+    .build();
+}
 ```
 
-| **1** | Set a failover transition in case of a workflow timeout. |
-| **2** | Set a default failover transition for all steps with maximum number of retries. |
-| **3** | Override the step recovery strategy for the `deposit` step. |
-
-|  | In case of a workflow timeout one last failover step can be performed. Transitions from that failover step will be ignored. |
+| **1** | Set a default failover transition for all steps with the maximum number of retries. |
+| **2** | Override the step recovery strategy for the `deposit` step. |
 
 ### <a href="about:blank#_compensation"></a> Compensation
 
@@ -520,52 +480,41 @@ The idea behind the Workflow error handling is that workflows should only fail d
 
 [TransferWorkflow.java](https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java)
 ```java
-private Step depositStep() {
-  return
-    step("deposit")
-      .call(Deposit.class, cmd -> {
-        return componentClient.forEventSourcedEntity(currentState().transfer().to())
-          .method(WalletEntity::deposit)
-          .invoke(cmd);
-      })
-      .andThen(WalletResult.class, result -> { // (1)
-        switch (result) {
-          case Success __ -> {
-            return effects()
-              .updateState(currentState().withStatus(COMPLETED))
-              .end(); // (2)
-          }
-          case Failure failure -> {
-            return effects()
-              .updateState(currentState().withStatus(DEPOSIT_FAILED))
-              .transitionTo("compensate-withdraw"); // (3)
-          }
-        }
-      });
+private StepEffect depositStep(Deposit deposit) {
+  String to = currentState().transfer().to();
+  WalletResult result = componentClient
+    .forEventSourcedEntity(to)
+    .method(WalletEntity::deposit) // (1)
+    .invoke(deposit);
+
+  return switch (result) {
+    case Success __ -> stepEffects() // (2)
+      .updateState(currentState().withStatus(COMPLETED))
+      .thenEnd();
+    case Failure failure -> {
+      yield stepEffects()
+        .updateState(currentState().withStatus(DEPOSIT_FAILED))
+        .thenTransitionTo(TransferWorkflow::compensateWithdrawStep); // (3)
+    }
+  };
 }
 
-private Step compensateWithdrawStep() {
-  return
-    step("compensate-withdraw") // (4)
-      .call(() -> {
-        var transfer = currentState().transfer();
-        String commandId = currentState().depositId();
-        return componentClient.forEventSourcedEntity(transfer.from())
-          .method(WalletEntity::deposit)
-          .invoke(new Deposit(commandId, transfer.amount()));
-      })
-      .andThen(WalletResult.class, result -> {
-        switch (result) {
-          case Success __ -> {
-            return effects()
-              .updateState(currentState().withStatus(COMPENSATION_COMPLETED))
-              .end(); // (5)
-          }
-          case Failure __ -> { // (6)
-            throw new IllegalStateException("Expecting succeed operation but received: " + result);
-          }
-        }
-      });
+private StepEffect compensateWithdrawStep() { // (4)
+  var transfer = currentState().transfer();
+  String commandId = currentState().depositId();
+  WalletResult result = componentClient
+    .forEventSourcedEntity(transfer.from())
+    .method(WalletEntity::deposit)
+    .invoke(new Deposit(commandId, transfer.amount()));
+
+  return switch (result) {
+    case Success __ -> stepEffects() // (5)
+      .updateState(currentState().withStatus(COMPENSATION_COMPLETED))
+      .thenEnd();
+    case Failure __ -> throw new IllegalStateException( // (6)
+      "Expecting succeed operation but received: " + result
+    );
+  };
 }
 ```
 
