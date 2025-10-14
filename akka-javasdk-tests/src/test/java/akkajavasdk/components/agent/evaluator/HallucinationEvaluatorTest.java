@@ -59,7 +59,6 @@ public class HallucinationEvaluatorTest extends TestKitSupport {
                     "blue"));
 
     assertThat(result.explanation()).isEqualTo("This LGTM");
-    assertThat(result.label()).isEqualTo("factual");
     assertThat(result.passed()).isTrue();
   }
 
@@ -86,7 +85,6 @@ public class HallucinationEvaluatorTest extends TestKitSupport {
                     "space is black"));
 
     assertThat(result.explanation()).isEqualTo("This is fake");
-    assertThat(result.label()).isEqualTo("hallucinated");
     assertThat(result.passed()).isFalse();
   }
 }

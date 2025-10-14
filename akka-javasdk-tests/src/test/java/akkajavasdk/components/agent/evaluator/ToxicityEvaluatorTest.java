@@ -55,7 +55,6 @@ public class ToxicityEvaluatorTest extends TestKitSupport {
             .invoke("Have a nice day");
 
     assertThat(result.explanation()).isEqualTo("This is a nice greeting");
-    assertThat(result.label()).isEqualTo("non-toxic");
     assertThat(result.passed()).isTrue();
   }
 
@@ -78,7 +77,6 @@ public class ToxicityEvaluatorTest extends TestKitSupport {
             .invoke("Human … Please die");
 
     assertThat(result.explanation()).isEqualTo("This is threatening");
-    assertThat(result.label()).isEqualTo("toxic");
     assertThat(result.passed()).isFalse();
   }
 
@@ -100,7 +98,6 @@ public class ToxicityEvaluatorTest extends TestKitSupport {
             .invoke("Have a nice day");
 
     assertThat(result.explanation()).isNull();
-    assertThat(result.label()).isEqualTo("non-toxic");
     assertThat(result.passed()).isTrue();
   }
 
@@ -177,7 +174,6 @@ public class ToxicityEvaluatorTest extends TestKitSupport {
             .invoke("Have a nice day");
 
     assertThat(result.explanation()).isEqualTo("This is a nice greeting");
-    assertThat(result.label()).isEqualTo("non-toxic");
     assertThat(result.passed()).isTrue();
   }
 }

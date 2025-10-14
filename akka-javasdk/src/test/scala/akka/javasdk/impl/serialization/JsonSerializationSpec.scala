@@ -16,16 +16,10 @@ import akka.javasdk.DummyClass
 import akka.javasdk.DummyClass2
 import akka.javasdk.DummyClassRenamed
 import akka.javasdk.JsonMigration
+import akka.javasdk.agent.EvaluationResult
 import akka.javasdk.annotations.Migration
 import akka.javasdk.annotations.TypeName
 import akka.javasdk.impl.serialization
-import akka.javasdk.impl.serialization.JsonSerializationSpec.Cat
-import akka.javasdk.impl.serialization.JsonSerializationSpec.Dog
-import akka.javasdk.impl.serialization.JsonSerializationSpec.ExceptionData
-import akka.javasdk.impl.serialization.JsonSerializationSpec.OtherCommandException
-import akka.javasdk.impl.serialization.JsonSerializationSpec.SimpleClass
-import akka.javasdk.impl.serialization.JsonSerializationSpec.SimpleClassUpdated
-import akka.javasdk.impl.serialization.JsonSerializationSpec.TestCommandException
 import akka.runtime.sdk.spi.BytesPayload
 import akka.util.ByteString
 import com.fasterxml.jackson.annotation.JsonCreator
@@ -110,9 +104,14 @@ object JsonSerializationSpec {
 
   final case class SomeTypeWithOptional(optional: Optional[String])
 
+  // Note that the Akka runtime representation doesn't have the label
+  final case class RuntimeEvaluationResult(explanation: String, passed: Boolean)
+
+  final class ApplicationEvaluationResult(val explanation: String, val passed: Boolean) extends EvaluationResult
+
 }
 class JsonSerializationSpec extends AnyWordSpec with Matchers {
-  import JsonSerializationSpec.MyJsonable
+  import JsonSerializationSpec._
 
   private def jsonContentTypeWith(typ: String) = JsonSerializer.JsonContentTypePrefix + typ
 
@@ -501,6 +500,14 @@ class JsonSerializationSpec extends AnyWordSpec with Matchers {
       val customSerializer = new JsonSerializer(customMapper)
       val bytesPayload = customSerializer.toBytes(JsonSerializationSpec.SomeTypeWithOptional(Optional.empty()))
       bytesPayload.bytes.utf8String shouldBe "{}"
+    }
+
+    "serialize EvaluationResult" in {
+      val result = new ApplicationEvaluationResult("This is a nice greeting", true)
+      val bytes = serializer.toBytes(result)
+      val deserializedResult = serializer.objectMapper.readValue(bytes.bytes.toArray, classOf[RuntimeEvaluationResult])
+      deserializedResult.passed shouldBe result.passed
+      deserializedResult.explanation shouldBe result.explanation
     }
 
   }

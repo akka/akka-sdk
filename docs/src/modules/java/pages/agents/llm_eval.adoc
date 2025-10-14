@@ -21,10 +21,13 @@ include::example$doc-snippets/src/main/java/com/example/evaluator/HumanVsAiEvalu
 ----
 <1> It's an ordinary `Agent`
 <2> It can have any type of request parameter
-<3> The return type must implement `EvaluationResult`, but may also include more information
-<4> Instructions of how to evaluate
-<5> The method with return type implementing `EvaluationResult`
-<6> The instructions are to use "correct" or "incorrect" in the label, and fail fast if that isn't followed by the model
+<3> The result from the model
+<4> The return type must implement `EvaluationResult`, but may also include more information
+<5> Instructions of how to evaluate
+<6> The method with return type implementing `EvaluationResult`
+<7> Transform the model result
+
+In this example, we use one result representation from the model, and a slightly different as the response type. These could be the same, but the model might be more accurate when using text labels instead of boolean values. It's also good to include validation in that transformation.
 
 Since the evaluator is an ordinary `Agent` you can call it with the component client in the same way as any other agent. For example, from a consumer of workflow state changes:
 

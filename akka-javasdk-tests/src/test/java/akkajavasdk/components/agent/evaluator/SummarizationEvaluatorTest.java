@@ -56,7 +56,6 @@ public class SummarizationEvaluatorTest extends TestKitSupport {
             .invoke(new SummarizationEvaluator.EvaluationRequest("today is sunny", "sunny"));
 
     assertThat(result.explanation()).isEqualTo("This is a good summary");
-    assertThat(result.label()).isEqualTo("good");
     assertThat(result.passed()).isTrue();
   }
 
@@ -81,7 +80,6 @@ public class SummarizationEvaluatorTest extends TestKitSupport {
                     "today is rainy", "same as yesterday"));
 
     assertThat(result.explanation()).isEqualTo("This is missing the point");
-    assertThat(result.label()).isEqualTo("bad");
     assertThat(result.passed()).isFalse();
   }
 
@@ -103,7 +101,6 @@ public class SummarizationEvaluatorTest extends TestKitSupport {
             .invoke(new SummarizationEvaluator.EvaluationRequest("today is sunny", "sunny"));
 
     assertThat(result.explanation()).isNull();
-    assertThat(result.label()).isEqualTo("good");
     assertThat(result.passed()).isTrue();
   }
 
@@ -180,7 +177,6 @@ public class SummarizationEvaluatorTest extends TestKitSupport {
             .invoke(new SummarizationEvaluator.EvaluationRequest("today is sunny", "sunny"));
 
     assertThat(result.explanation()).isEqualTo("This is a good summary");
-    assertThat(result.label()).isEqualTo("good");
     assertThat(result.passed()).isTrue();
   }
 }
