@@ -13,8 +13,9 @@ public class SimpleTimedActionTest {
 
   @Test
   public void testEchoCall() {
-    TimedActionTestkit<SimpleAction> actionUnitTestkit = TimedActionTestkit.of(SimpleAction::new);
-    TimedActionResult result = actionUnitTestkit.call(simpleAction -> simpleAction.echo("Hey"));
+    TimedActionTestkit<SimpleTimedAction> actionUnitTestkit =
+        TimedActionTestkit.of(SimpleTimedAction::new);
+    TimedActionResult result = actionUnitTestkit.method(SimpleTimedAction::echo).invoke("Hey");
     Assertions.assertTrue(result.isDone());
   }
 }

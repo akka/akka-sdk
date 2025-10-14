@@ -6,7 +6,7 @@ package akka.javasdk.testkit.actions;
 
 import akka.javasdk.timedaction.TimedAction;
 
-public class SimpleAction extends TimedAction {
+public class SimpleTimedAction extends TimedAction {
 
   public Effect echo(String msg) {
     return effects().done();
