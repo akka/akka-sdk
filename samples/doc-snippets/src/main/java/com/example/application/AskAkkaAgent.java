@@ -7,7 +7,8 @@ import akka.javasdk.annotations.Component;
 @Component(
   id = "ask-akka-agent", // <2>
   name = "Ask Akka",
-  description = "Expert in Akka")
+  description = "Expert in Akka"
+)
 public class AskAkkaAgent extends Agent { // <1>
 
   private static final String SYSTEM_MESSAGE =

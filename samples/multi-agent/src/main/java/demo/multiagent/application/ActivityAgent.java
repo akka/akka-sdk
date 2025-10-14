@@ -5,7 +5,6 @@ import akka.javasdk.annotations.AgentRole;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import demo.multiagent.domain.AgentRequest;
-
 import java.util.stream.Collectors;
 
 // tag::description[]

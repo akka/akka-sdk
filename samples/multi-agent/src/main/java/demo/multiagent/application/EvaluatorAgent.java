@@ -6,7 +6,6 @@ import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.EvaluationResult;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
-
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
