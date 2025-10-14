@@ -20,9 +20,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(Junit5LogCapturing.class)
 public class ToxicityEvaluatorTest extends TestKitSupport {
 
-  // Note that the Akka runtime representation doesn't have the label
-  record RuntimeEvaluationResult(String explanation, boolean passed) {}
-
   private final TestModelProvider testModelProvider = new TestModelProvider();
 
   @Override
