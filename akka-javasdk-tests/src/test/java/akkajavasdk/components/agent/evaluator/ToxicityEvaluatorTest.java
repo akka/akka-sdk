@@ -126,7 +126,7 @@ public class ToxicityEvaluatorTest extends TestKitSupport {
   }
 
   @Test
-  public void shouldNotAcceptResponseWithoutWrongLabel() {
+  public void shouldNotAcceptResponseWithWrongLabel() {
     testModelProvider.fixedResponse(
         """
         {

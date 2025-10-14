@@ -130,12 +130,12 @@ public class SummarizationEvaluatorTest extends TestKitSupport {
   }
 
   @Test
-  public void shouldNotAcceptResponseWithoutWrongLabel() {
+  public void shouldNotAcceptResponseWithWrongLabel() {
     testModelProvider.fixedResponse(
         """
         {
           "explanation" : "This is a good summary",
-          "label" : "good"
+          "label" : "great"
         }
         """
             .stripIndent());
