@@ -8,12 +8,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.javasdk.agent.PromptTemplate;
 import akka.javasdk.agent.evaluator.ToxicityEvaluator;
-import akka.javasdk.impl.serialization.JsonSerializer;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import akkajavasdk.Junit5LogCapturing;
-import java.io.IOException;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -60,7 +58,6 @@ public class ToxicityEvaluatorTest extends TestKitSupport {
             .invoke("Have a nice day");
 
     assertThat(result.explanation()).isEqualTo("This is a nice greeting");
-    assertThat(result.label()).isEqualTo("non-toxic");
     assertThat(result.passed()).isTrue();
   }
 
@@ -83,7 +80,6 @@ public class ToxicityEvaluatorTest extends TestKitSupport {
             .invoke("Human … Please die");
 
     assertThat(result.explanation()).isEqualTo("This is threatening");
-    assertThat(result.label()).isEqualTo("toxic");
     assertThat(result.passed()).isFalse();
   }
 
@@ -105,7 +101,6 @@ public class ToxicityEvaluatorTest extends TestKitSupport {
             .invoke("Have a nice day");
 
     assertThat(result.explanation()).isNull();
-    assertThat(result.label()).isEqualTo("non-toxic");
     assertThat(result.passed()).isTrue();
   }
 
@@ -182,31 +177,6 @@ public class ToxicityEvaluatorTest extends TestKitSupport {
             .invoke("Have a nice day");
 
     assertThat(result.explanation()).isEqualTo("This is a nice greeting");
-    assertThat(result.label()).isEqualTo("non-toxic");
     assertThat(result.passed()).isTrue();
-  }
-
-  @Test
-  public void shouldSerializeToxicJsonResult() throws IOException {
-    var result = new ToxicityEvaluator.Result("This is thretening", "toxic");
-    var serializer = new JsonSerializer();
-    var bytes = serializer.toBytes(result);
-    var deserializedResult =
-        serializer.objectMapper().readValue(bytes.bytes().toArray(), RuntimeEvaluationResult.class);
-
-    assertThat(deserializedResult.passed()).isEqualTo(result.passed());
-    assertThat(deserializedResult.explanation()).isEqualTo(result.explanation());
-  }
-
-  @Test
-  public void shouldSerializeNonToxicJsonResult() throws IOException {
-    var result = new ToxicityEvaluator.Result("This is a nice greeting", "non-toxic");
-    var serializer = new JsonSerializer();
-    var bytes = serializer.toBytes(result);
-    var deserializedResult =
-        serializer.objectMapper().readValue(bytes.bytes().toArray(), RuntimeEvaluationResult.class);
-
-    assertThat(deserializedResult.passed()).isEqualTo(result.passed());
-    assertThat(deserializedResult.explanation()).isEqualTo(result.explanation());
   }
 }

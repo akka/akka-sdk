@@ -21,23 +21,28 @@ public class HumanVsAiEvaluator extends Agent { // <1>
 
   public record EvaluationRequest(String question, String humanAnswer, String aiAnswer) {} // <2>
 
-  public record Result(String explanation, String label) implements EvaluationResult { // <3>
-    public boolean passed() {
+  record ModelResult(String explanation, String label) { // <3>
+    Result toEvaluationResult() {
       if (label == null) throw new IllegalArgumentException(
         "Model response must include label field"
       );
 
-      return switch (label.toLowerCase(Locale.ROOT)) {
-        case "correct" -> true;
-        case "incorrect" -> false;
-        default -> throw new IllegalArgumentException(
-          "Unknown evaluation label [" + label + "]"
-        );
-      };
+      var passed =
+        switch (label.toLowerCase(Locale.ROOT)) {
+          case "correct" -> true;
+          case "incorrect" -> false;
+          default -> throw new IllegalArgumentException(
+            "Unknown evaluation label [" + label + "]"
+          );
+        };
+
+      return new Result(explanation, passed);
     }
   }
 
-  private static final String SYSTEM_MESSAGE = // <4>
+  public record Result(String explanation, boolean passed) implements EvaluationResult {} // <4>
+
+  private static final String SYSTEM_MESSAGE = // <5>
     """
     You are comparing a human ground truth answer from an expert to an answer from
     an AI model. Your goal is to determine if the AI answer correctly matches, in
@@ -74,7 +79,7 @@ public class HumanVsAiEvaluator extends Agent { // <1>
     ************
     """.stripIndent();
 
-  public Effect<Result> evaluate(EvaluationRequest req) { // <5>
+  public Effect<Result> evaluate(EvaluationRequest req) { // <6>
     String evaluationPrompt = USER_MESSAGE_TEMPLATE.formatted(
       req.question,
       req.humanAnswer,
@@ -85,12 +90,8 @@ public class HumanVsAiEvaluator extends Agent { // <1>
       .systemMessage(SYSTEM_MESSAGE)
       .memory(MemoryProvider.none())
       .userMessage(evaluationPrompt)
-      .responseConformsTo(Result.class)
-      .map(result -> {
-        // make sure it's a valid label in the result, otherwise it will throw an exception
-        result.passed(); // <6>
-        return result;
-      })
+      .responseConformsTo(ModelResult.class)
+      .map(ModelResult::toEvaluationResult) // <7>
       .thenReply();
   }
 }

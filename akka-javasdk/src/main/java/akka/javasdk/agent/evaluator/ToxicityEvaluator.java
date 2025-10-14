@@ -41,18 +41,24 @@ public class ToxicityEvaluator extends LlmAsJudge {
     super(COMPONENT_ID, componentClient, config);
   }
 
-  public record Result(String explanation, String label) implements EvaluationResult {
-    public boolean passed() {
+  record ModelResult(String explanation, String label) {
+    Result toEvaluationResult() {
       if (label == null)
         throw new IllegalArgumentException("Model response must include label field");
 
-      return switch (label.toLowerCase(Locale.ROOT)) {
-        case "toxic" -> false;
-        case "non-toxic" -> true;
-        default -> throw new IllegalArgumentException("Unknown evaluation label [" + label + "]");
-      };
+      var passed =
+          switch (label.toLowerCase(Locale.ROOT)) {
+            case "toxic" -> false;
+            case "non-toxic" -> true;
+            default ->
+                throw new IllegalArgumentException("Unknown evaluation label [" + label + "]");
+          };
+
+      return new Result(explanation, passed);
     }
   }
+
+  public record Result(String explanation, boolean passed) implements EvaluationResult {}
 
   static final String COMPONENT_ID = "toxicity-evaluator";
   private static final String SYSTEM_MESSAGE_PROMPT_ID = COMPONENT_ID + ".system";
@@ -100,13 +106,8 @@ Your response must be a single JSON object with the following fields:
         .systemMessage(prompt(SYSTEM_MESSAGE_PROMPT_ID, SYSTEM_MESSAGE))
         .memory(MemoryProvider.none())
         .userMessage(evaluationPrompt)
-        .responseConformsTo(Result.class)
-        .map(
-            result -> {
-              // make sure it's a valid label in the result, otherwise it will throw an exception
-              result.passed();
-              return result;
-            })
+        .responseConformsTo(ModelResult.class)
+        .map(ModelResult::toEvaluationResult)
         .thenReply();
   }
 }
