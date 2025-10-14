@@ -4,6 +4,13 @@
 
 package akka.javasdk.impl
 
+import java.lang.reflect.AnnotatedElement
+import java.lang.reflect.Method
+import java.lang.reflect.ParameterizedType
+
+import scala.annotation.nowarn
+import scala.reflect.ClassTag
+
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
 import akka.javasdk.annotations.AgentDescription
@@ -44,12 +51,6 @@ import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
-
-import java.lang.reflect.AnnotatedElement
-import java.lang.reflect.Method
-import java.lang.reflect.ParameterizedType
-import scala.annotation.nowarn
-import scala.reflect.ClassTag
 
 /**
  * INTERNAL API

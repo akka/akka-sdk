@@ -4,12 +4,12 @@
 
 package akka.javasdk.impl
 
+import scala.annotation.nowarn
+
 import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.ComponentId
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-
-import scala.annotation.nowarn
 
 class ValidationsSpec extends AnyWordSpec with Matchers {
 

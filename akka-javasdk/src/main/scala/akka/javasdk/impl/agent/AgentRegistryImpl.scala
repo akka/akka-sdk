@@ -4,6 +4,11 @@
 
 package akka.javasdk.impl.agent
 
+import java.util.{ Set => JSet }
+
+import scala.annotation.nowarn
+import scala.jdk.CollectionConverters._
+
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentRegistry
@@ -11,10 +16,6 @@ import akka.javasdk.agent.AgentRegistry.AgentInfo
 import akka.javasdk.annotations.AgentDescription
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
-
-import java.util.{ Set => JSet }
-import scala.annotation.nowarn
-import scala.jdk.CollectionConverters._
 
 /**
  * INTERNAL API
