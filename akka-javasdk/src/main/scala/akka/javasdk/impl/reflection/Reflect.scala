@@ -22,6 +22,10 @@ import akka.Done
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.EvaluationResult
+import akka.javasdk.annotations.AgentDescription
+import akka.javasdk.annotations.AgentRole
+import akka.javasdk.annotations.Component
+import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.GrpcEndpoint
 import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
@@ -347,5 +351,45 @@ private[impl] object Reflect {
       .getActualTypeArguments
       .head
       .asInstanceOf[Class[_]]
+
+  @nowarn("cat=deprecation")
+  def readComponentId(clz: Class[_]): String = {
+    val componentAnn = clz.getAnnotation(classOf[akka.javasdk.annotations.Component])
+    if (componentAnn != null) componentAnn.id()
+    else {
+      val componentIdAnn = clz.getAnnotation(classOf[ComponentId])
+      if (componentIdAnn != null) componentIdAnn.value() else ""
+    }
+  }
+
+  def readComponentName(annotated: AnnotatedElement): Option[String] = {
+    val componentAnnotation = annotated.getAnnotation(classOf[Component])
+    if (componentAnnotation ne null) {
+      val name = componentAnnotation.name()
+      if (name.nonEmpty) Some(name) else None
+    } else {
+      None
+    }
+  }
+
+  def readComponentDescription(annotated: AnnotatedElement): Option[String] = {
+    val componentAnnotation = annotated.getAnnotation(classOf[Component])
+    if (componentAnnotation ne null) {
+      val description = componentAnnotation.description()
+      if (description.nonEmpty) Some(description) else None
+    } else {
+      None
+    }
+  }
+
+  def readAgentRole[A <: Agent](agentClass: Class[A]): Option[String] = {
+    val agentRoleAnn = agentClass.annotationOption[AgentRole]
+    @nowarn("cat=deprecation")
+    val agentDescAnno = agentClass.annotationOption[AgentDescription]
+
+    agentRoleAnn
+      .map(_.value())
+      .orElse(agentDescAnno.map(_.role()))
+  }
 
 }

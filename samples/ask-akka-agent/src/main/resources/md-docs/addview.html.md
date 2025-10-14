@@ -1,14 +1,16 @@
 <!-- <nav> -->
-- [Akka](../index.html)
-- [Shopping cart part 2: Authenticated user-specific lookup](addview.html)
+- [Akka](../../index.html)
+- [Tutorials](../index.html)
+- [Shopping cart](index.html)
+- [Authenticated user-specific lookup](addview.html)
 
 <!-- </nav> -->
 
-# Shopping cart part 2: Authenticated user-specific lookup
+# Authenticated user-specific lookup
 
 |  | **New to Akka? Start here:**
 
-Use the [Author your first agentic service](author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
+Use the [Build your first agent](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
 This guide walks you through the design and implementation of an enhancement to the shopping cart service example, illustrating model refactoring, the use of Views, and user authentication.
 
 ## <a href="about:blank#_overview"></a> Overview
@@ -25,7 +27,7 @@ In this step in the shopping cart sample tour, we’ll be taking a look at the e
 
 ## <a href="about:blank#_clone_the_sample"></a> Clone the sample
 
-1. Clone the full source code of the Shopping Cart (with View) sample from [Github](https://github.com/akka-samples/shopping-cart-with-view).
+1. Clone the full source code of the Shopping Cart (with View) sample from [GitHub](https://github.com/akka-samples/shopping-cart-with-view).
 
 ## <a href="about:blank#_re_evaluating_the_shopping_cart_structure"></a> Re-evaluating the shopping cart structure
 
@@ -57,8 +59,12 @@ To work on the separation of concerns, we’ll work our way in from the outermos
 
 [ShoppingCartEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/shopping-cart-with-view/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java)
 ```java
-public record LineItemRequest(String productId, String name, int quantity, String description) {
-}
+public record LineItemRequest(
+  String productId,
+  String name,
+  int quantity,
+  String description
+) {}
 ```
 From the client standpoint, they’re supplying both the name and description of the product in the request. In subsequent tutorials, we might illustrate a better place to put product metadata like that.
 
@@ -66,15 +72,19 @@ Next, we need a *command* type for the entity to handle. Remember that calling `
 
 [ShoppingCartEntity.java](https://github.com/akka/akka-sdk/blob/main/samples/shopping-cart-with-view/src/main/java/shoppingcart/application/ShoppingCartEntity.java)
 ```java
-public record AddLineItemCommand(String userId, String productId, String name, int quantity, String description) {
-}
+public record AddLineItemCommand(
+  String userId,
+  String productId,
+  String name,
+  int quantity,
+  String description
+) {}
 ```
 Next we modify the shape of the internal state used by the entity. To illustrate the different roles of entities and views, we’ve modified the state so that it doesn’t store the `name` or `description` fields, since those aren’t needed for decision making during command processing.
 
 [ShoppingCart.java](https://github.com/akka/akka-sdk/blob/main/samples/shopping-cart-with-view/src/main/java/shoppingcart/domain/ShoppingCart.java)
 ```java
 public record ShoppingCart(String cartId, List<LineItem> items, boolean checkedOut) {
-
   public record LineItem(String productId, int quantity) {
     public LineItem withQuantity(int quantity) {
       return new LineItem(productId, quantity);
@@ -100,16 +110,12 @@ public class ShoppingCartView extends View {
     return queryResult();
   }
 
-  @Query("SELECT * FROM shopping_carts WHERE " +
-      "userId = :userId AND checkedout = false") // (2)
+  @Query("SELECT * FROM shopping_carts WHERE " + "userId = :userId AND checkedout = false") // (2)
   public QueryEffect<Optional<Cart>> getUserCart(String userId) {
     return queryResult();
   }
 
-  public record Cart(String cartId,
-      String userId,
-      List<Item> items,
-      boolean checkedout) { // (3)
+  public record Cart(String cartId, String userId, List<Item> items, boolean checkedout) { // (3)
   }
 
   @Consume.FromEventSourcedEntity(ShoppingCartEntity.class) // (4)
@@ -126,21 +132,22 @@ public class ShoppingCartView extends View {
     Cart rowStateOrNew(String userId) {
       if (rowState() == null) {
         var cartId = updateContext().eventSubject().get();
-        return new Cart(
-            cartId,
-            userId,
-            new ArrayList<Cart.Item>(),
-            false);
+        return new Cart(cartId, userId, new ArrayList<Cart.Item>(), false);
       } else {
         return rowState();
       }
     }
 
     private Effect<Cart> addItem(ShoppingCartEvent.ItemAdded added) {
-      return effects().updateRow(
-          rowStateOrNew(added.userId()) // (5)
-              .addItem(added.productId(),
-                  added.name(), added.quantity(), added.description()));
+      return effects()
+        .updateRow(
+          rowStateOrNew(added.userId()).addItem( // (5)
+            added.productId(),
+            added.name(),
+            added.quantity(),
+            added.description()
+          )
+        );
     }
 
     private Effect<Cart> removeItem(ShoppingCartEvent.ItemRemoved removed) {
@@ -150,7 +157,6 @@ public class ShoppingCartView extends View {
     private Effect<Cart> checkout(ShoppingCartEvent.CheckedOut checkedOut) {
       return effects().updateRow(rowState().checkout());
     }
-
   }
 }
 ```
@@ -174,12 +180,12 @@ The user entity in this sample is quite small (but easily enhanced later). It ma
 ```java
 @Component(id = "user")
 public class UserEntity extends EventSourcedEntity<User, UserEvent> {
+
   private final String entityId;
 
   private static final Logger logger = LoggerFactory.getLogger(UserEntity.class);
 
-  public record CloseCartCommand(String cartId) {
-  }
+  public record CloseCartCommand(String cartId) {}
 
   public UserEntity(EventSourcedEntityContext context) {
     this.entityId = context.entityId();
@@ -191,8 +197,8 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
 
   public Effect<Done> closeCart(CloseCartCommand command) {
     return effects()
-        .persist(new UserEvent.UserCartClosed(entityId, command.cartId()))
-        .thenReply(__ -> Done.done());
+      .persist(new UserEvent.UserCartClosed(entityId, command.cartId()))
+      .thenReply(__ -> Done.done());
   }
 
   @Override
@@ -239,9 +245,10 @@ public class CartCloser extends Consumer {
   public Effect onCheckedOut(ShoppingCartEvent.CheckedOut event) {
     logger.debug("Closing cart for user {} due to checkout", event.userId());
 
-    componentClient.forEventSourcedEntity(event.userId())
-        .method(UserEntity::closeCart)
-        .invoke(new CloseCartCommand(event.cartId()));
+    componentClient
+      .forEventSourcedEntity(event.userId())
+      .method(UserEntity::closeCart)
+      .invoke(new CloseCartCommand(event.cartId()));
 
     return effects().done();
   }
@@ -252,7 +259,7 @@ public class CartCloser extends Consumer {
 
 Adding the concept of a user context to an endpoint in traditional applications can be a nightmare. The refactoring can bleed into all sorts of unexpected places and building or buying—​or both—​authentication and authorization solutions can bog down entire teams.
 
-In the following code, we add support for **[JWT](../java/auth-with-jwts.html)** -based bearer tokens to the HTTP endpoint with just a single line. While not shown here, you can define all kinds of rules based on the claims supplied in a token.
+In the following code, we add support for **[JWT](../../java/auth-with-jwts.html)** -based bearer tokens to the HTTP endpoint with just a single line. While not shown here, you can define all kinds of rules based on the claims supplied in a token.
 
 [ShoppingCartEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/shopping-cart-with-view/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java)
 ```java
@@ -267,19 +274,20 @@ Extracting the user ID from context is quite easy. Let’s modify the `get` func
 ```java
 @Get("/{cartId}")
 public ShoppingCartView.Cart get(String cartId) {
-    logger.info("Get cart id={}", cartId);
+  logger.info("Get cart id={}", cartId);
 
-    var userId = requestContext().getJwtClaims().subject().get();
+  var userId = requestContext().getJwtClaims().subject().get();
 
-    var cart=  componentClient.forView()
-      .method(ShoppingCartView::getCart) // (1)
-      .invoke(cartId);
+  var cart = componentClient
+    .forView()
+    .method(ShoppingCartView::getCart) // (1)
+    .invoke(cartId);
 
-    if (cart.userId().trim().equals(userId)) {
-      return cart;
-    } else {
-      throw HttpException.error(StatusCodes.NOT_FOUND, "no such cart");
-    }
+  if (cart.userId().trim().equals(userId)) {
+    return cart;
+  } else {
+    throw HttpException.error(StatusCodes.NOT_FOUND, "no such cart");
+  }
 }
 ```
 
@@ -292,15 +300,18 @@ We can also add a new convenience route, `/my`, which will retrieve the cart for
 ```java
 @Get("/my")
 public ShoppingCartView.Cart getByUser() {
-    var userId = requestContext().getJwtClaims().subject().get();
+  var userId = requestContext().getJwtClaims().subject().get();
 
-    logger.info("Get cart userId={}", userId);
+  logger.info("Get cart userId={}", userId);
 
-    var result = componentClient.forView()
-            .method(ShoppingCartView::getUserCart) // (1)
-            .invoke(userId);
+  var result = componentClient
+    .forView()
+    .method(ShoppingCartView::getUserCart) // (1)
+    .invoke(userId);
 
-    return result.orElseThrow(() -> HttpException.error(StatusCodes.NOT_FOUND, "no such cart"));
+  return result.orElseThrow(
+    () -> HttpException.error(StatusCodes.NOT_FOUND, "no such cart")
+  );
 }
 ```
 
@@ -330,10 +341,13 @@ curl http://localhost:9000/carts/my -H 'Authorization: Bearer eyJhbGciOiJIUzI1Ni
 Now that you’ve added a view *and* user authentication to the shopping cart sample, take your Akka skills to the next level:
 
 1. **Install and build**: Before moving on, download the code for this sample, compile it, and make sure you can run and utilize the new service.
-2. **Expand on your own**: Explore [other Akka components](../java/components/index.html) to enhance your application with additional features.
-3. **Explore other Akka samples**: Discover more about Akka by exploring [different use cases](samples.html) for inspiration.
+2. **Expand on your own**: Explore [other Akka components](../../java/components/index.html) to enhance your application with additional features.
+3. **Explore other Akka samples**: Discover more about Akka by exploring [different use cases](../samples.html) for inspiration.
 
 <!-- <footer> -->
+<!-- <nav> -->
+[A simple shopping cart service](build-and-deploy-shopping-cart.html) [Additional samples](../samples.html)
+<!-- </nav> -->
 
 <!-- </footer> -->
 

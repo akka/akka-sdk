@@ -4,7 +4,6 @@ package demo.multiagent.application;
 import akka.javasdk.JsonSupport;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.AgentRegistry;
-import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.Component;
 import demo.multiagent.domain.AgentSelection;
 import demo.multiagent.domain.Plan;
@@ -12,8 +11,8 @@ import demo.multiagent.domain.PlanStep;
 import java.util.List;
 
 // tag::class[]
-@Component(id = "planner-agent")
-@AgentDescription(
+@Component(
+  id = "planner-agent",
   name = "Planner",
   description = """
   An agent that analyzes the user request and available agents to plan the tasks

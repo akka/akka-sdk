@@ -1,7 +1,7 @@
 package demo.multiagent.application;
 
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.AgentDescription;
+import akka.javasdk.annotations.AgentRole;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.FunctionTool;
 import demo.multiagent.domain.AgentRequest;
@@ -9,15 +9,15 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 // tag::description[]
-@Component(id = "weather-agent")
-@AgentDescription(
+@Component(
+  id = "weather-agent",
   name = "Weather Agent",
   description = """
     An agent that provides weather information. It can provide current weather,
     forecasts, and other related information.
-  """,
-  role = "worker"
+  """
 )
+@AgentRole("worker")
 // tag::function-tool[]
 public class WeatherAgent extends Agent {
 

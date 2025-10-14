@@ -1,17 +1,17 @@
 package demo.multiagent.application;
 
 // tag::all[]
+
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.EvaluationResult;
-import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-@Component(id = "evaluator-agent")
-@AgentDescription(
+@Component(
+  id = "evaluator-agent",
   name = "Evaluator Agent",
   description = """
   An agent that acts as an LLM judge to evaluate the quality of AI responses.

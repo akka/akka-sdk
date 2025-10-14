@@ -1,23 +1,23 @@
 package demo.multiagent.application;
 
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.AgentDescription;
+import akka.javasdk.annotations.AgentRole;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import demo.multiagent.domain.AgentRequest;
 import java.util.stream.Collectors;
 
 // tag::description[]
-@Component(id = "activity-agent")
-@AgentDescription(
+@Component(
+  id = "activity-agent",
   name = "Activity Agent",
   description = """
     An agent that suggests activities in the real world. Like for example,
     a team building activity, sports, an indoor or outdoor game,
     board games, a city trip, etc.
-  """,
-  role = "worker"
+  """
 )
+@AgentRole("worker")
 public class ActivityAgent extends Agent {
 
   // end::description[]

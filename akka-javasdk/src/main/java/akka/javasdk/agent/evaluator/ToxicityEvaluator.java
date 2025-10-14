@@ -7,7 +7,7 @@ package akka.javasdk.agent.evaluator;
 import akka.javasdk.agent.EvaluationResult;
 import akka.javasdk.agent.MemoryProvider;
 import akka.javasdk.agent.PromptTemplate;
-import akka.javasdk.annotations.AgentDescription;
+import akka.javasdk.annotations.AgentRole;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import com.typesafe.config.Config;
@@ -26,15 +26,15 @@ import java.util.Locale;
  * used if these are not defined. The prompts can be initialized or updated with the {@link
  * PromptTemplate} entity.
  */
-@Component(id = ToxicityEvaluator.COMPONENT_ID)
-@AgentDescription(
+@Component(
+    id = ToxicityEvaluator.COMPONENT_ID,
     name = "Toxicity Evaluator Agent",
     description =
         """
         An agent that acts as an LLM judge to evaluate if an AI response or other text
         is racist, biased, or toxic.
-        """,
-    role = "evaluator")
+        """)
+@AgentRole("evaluator")
 public class ToxicityEvaluator extends LlmAsJudge {
 
   public ToxicityEvaluator(ComponentClient componentClient, Config config) {

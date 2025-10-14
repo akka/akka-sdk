@@ -1,14 +1,16 @@
 <!-- <nav> -->
-- [Akka](../index.html)
-- [Shopping cart part 1: Build a simple cart service](build-and-deploy-shopping-cart.html)
+- [Akka](../../index.html)
+- [Tutorials](../index.html)
+- [Shopping cart](index.html)
+- [A simple shopping cart service](build-and-deploy-shopping-cart.html)
 
 <!-- </nav> -->
 
-# Shopping cart part 1: Build a simple cart service
+# A simple shopping cart service
 
 |  | **New to Akka? Start here:**
 
-Use the [Author your first agentic service](author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
+Use the [Build your first agent](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
 This guide walks you through the design and implementation of a shopping cart service, illustrating the use of some of Akka’s components.
 
 ## <a href="about:blank#_overview"></a> Overview
@@ -18,8 +20,8 @@ This quickstart implements an HTTP endpoint and a shopping cart that supports ad
 In this guide you will:
 
 - Clone a completed shopping cart service repository to examine and run it locally.
-- Be introduced to key Akka concepts including [Event Sourced Entities](../java/event-sourced-entities.html).
-- See how the [project structure](../concepts/architecture-model.html) provides a clear separation of concerns in your microservices.
+- Be introduced to key Akka concepts including [Event Sourced Entities](../../java/event-sourced-entities.html).
+- See how the [project structure](../../concepts/architecture-model.html) provides a clear separation of concerns in your microservices.
 - Run the service locally and explore it with the local Akka console.
 - Deploy the service to [akka.io](https://console.akka.io/).
 
@@ -31,14 +33,23 @@ In this guide you will:
 - An [Akka account](https://console.akka.io/register)
 - [Docker Engine](https://docs.docker.com/get-started/get-docker/) 27 or later
 
-## <a href="about:blank#_clone_the_sample"></a> Clone the sample
+## <a href="about:blank#_create_the_empty_project"></a> Create the empty project
 
-1. Clone the full source code of the Shopping Cart sample from [Github](https://github.com/akka-samples/shopping-cart-quickstart), or use the Akka CLI command below to download and unzip this quickstart project.
+1. From a command line, use the Akka CLI to create a new project. See [installation instructions](../quick-install-cli.html) if you haven’t installed the CLI yet.
 
-```bash
-akka quickstart download shopping-cart
+```command
+akka code init --name helloworld-agent --repo akka-samples/empty.git
 ```
-2. Open the project in your favorite editor.
+2. Navigate to the new project directory.
+3. Open it in your preferred IDE / Editor.
+Alternatively, you can clone the [GitHub Repository](https://github.com/akka-samples/empty) directly:
+
+```command
+git clone https://github.com/akka-samples/empty.git --depth 1
+```
+Then navigate to the new project directory and open it in your preferred IDE / Editor.
+
+|  | This guide is written assuming you will follow it as a tutorial to walk through all of the components, building them on your own. If at any time you want to compare your solution with the official sample, check out the [GitHub Repository](https://github.com/akka-samples/shopping-cart-quickstart). |
 
 ## <a href="about:blank#_understanding_the_shopping_cart"></a> Understanding the shopping cart
 
@@ -56,10 +67,12 @@ The first concept to note is the domain class `ShoppingCart` in package `shoppin
 ```java
 package shoppingcart.domain;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
 
 public record ShoppingCart(String cartId, List<LineItem> items, boolean checkedOut) { // (1)
-
   public record LineItem(String productId, String name, int quantity) { // (2)
     public LineItem withQuantity(int quantity) {
       return new LineItem(productId, name, quantity);
@@ -79,11 +92,10 @@ package shoppingcart.domain;
 
 import akka.javasdk.annotations.TypeName;
 
-public sealed interface ShoppingCartEvent { // (1)
 
+public sealed interface ShoppingCartEvent { // (1)
   @TypeName("item-added") // (2)
-  record ItemAdded(ShoppingCart.LineItem item) implements ShoppingCartEvent {
-  }
+  record ItemAdded(ShoppingCart.LineItem item) implements ShoppingCartEvent {}
 
 }
 ```
@@ -111,14 +123,14 @@ private LineItem updateItem(LineItem item) {
 }
 
 private List<LineItem> removeItemByProductId(String productId) {
-  return items().stream()
+  return items()
+    .stream()
     .filter(lineItem -> !lineItem.productId().equals(productId))
     .collect(Collectors.toList());
 }
 
 public Optional<LineItem> findItemByProductId(String productId) {
-  Predicate<LineItem> lineItemExists =
-      lineItem -> lineItem.productId().equals(productId);
+  Predicate<LineItem> lineItemExists = lineItem -> lineItem.productId().equals(productId);
   return items.stream().filter(lineItemExists).findFirst();
 }
 ```
@@ -140,16 +152,17 @@ import akka.Done;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
+import java.util.Collections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import shoppingcart.domain.ShoppingCart;
 import shoppingcart.domain.ShoppingCart.LineItem;
 import shoppingcart.domain.ShoppingCartEvent;
 
-import java.util.Collections;
-
 @Component(id = "shopping-cart") // (2)
-public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, ShoppingCartEvent> { // (1)
+public class ShoppingCartEntity 
+  extends EventSourcedEntity<ShoppingCart, ShoppingCartEvent> { // (1)
+
 }
 ```
 
@@ -160,28 +173,29 @@ Inside `ShoppingCartEntity`, we define an `addItem` command handler to generate 
 [ShoppingCartEntity.java](https://github.com/akka/akka-sdk/blob/main/samples/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java)
 ```java
 public Effect<Done> addItem(LineItem item) {
-    if (currentState().checkedOut()) {
-      logger.info("Cart id={} is already checked out.", entityId);
-      return effects().error("Cart is already checked out.");
-    }
-    if (item.quantity() <= 0) { // (1)
-      logger.info("Quantity for item {} must be greater than zero.", item.productId());
-      return effects().error("Quantity for item " + item.productId() + " must be greater than zero.");
-    }
-
-    var event = new ShoppingCartEvent.ItemAdded(item); // (2)
-
+  if (currentState().checkedOut()) {
+    logger.info("Cart id={} is already checked out.", entityId);
+    return effects().error("Cart is already checked out.");
+  }
+  if (item.quantity() <= 0) { // (1)
+    logger.info("Quantity for item {} must be greater than zero.", item.productId());
     return effects()
-        .persist(event) // (3)
-        .thenReply(newState -> Done.getInstance()); // (4)
+      .error("Quantity for item " + item.productId() + " must be greater than zero.");
   }
 
-  @Override
-  public ShoppingCart applyEvent(ShoppingCartEvent event) {
-    return switch (event) {
-      case ShoppingCartEvent.ItemAdded evt -> currentState().addItem(evt.item()); // (5)
-    };
-  }
+  var event = new ShoppingCartEvent.ItemAdded(item); // (2)
+
+  return effects()
+    .persist(event) // (3)
+    .thenReply(newState -> Done.getInstance()); // (4)
+}
+
+@Override
+public ShoppingCart applyEvent(ShoppingCartEvent event) {
+  return switch (event) {
+    case ShoppingCartEvent.ItemAdded evt -> currentState().addItem(evt.item()); // (5)
+  };
+}
 ```
 
 | **1** | Validate the quantity of items added is greater than zero. |
@@ -229,7 +243,7 @@ package shoppingcart.api;
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.HttpEndpoint;
-import akka.javasdk.annotations.http.Get;
+import akka.javasdk.annotations.http.Post;
 import akka.javasdk.annotations.http.Put;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpResponses;
@@ -240,7 +254,8 @@ import shoppingcart.domain.ShoppingCart;
 
 
 // Opened up for access from the public internet to make the sample service easy to try out.
-// For actual services meant for production this must be carefully considered, and often set more limited
+// For actual services meant for production this must be carefully considered,
+// and often set more limited
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/carts") // (1)
 public class ShoppingCartEndpoint {
@@ -256,19 +271,22 @@ public class ShoppingCartEndpoint {
   @Get("/{cartId}") // (3)
   public ShoppingCart get(String cartId) {
     logger.info("Get cart id={}", cartId);
-    return componentClient.forEventSourcedEntity(cartId) // (4)
-        .method(ShoppingCartEntity::getCart)
-        .invoke(); // (5)
+    return componentClient
+      .forEventSourcedEntity(cartId) // (4)
+      .method(ShoppingCartEntity::getCart)
+      .invoke(); // (5)
   }
 
   @Put("/{cartId}/item") // (6)
   public HttpResponse addItem(String cartId, ShoppingCart.LineItem item) {
     logger.info("Adding item to cart id={} item={}", cartId, item);
-    componentClient.forEventSourcedEntity(cartId)
+    componentClient
+      .forEventSourcedEntity(cartId)
       .method(ShoppingCartEntity::addItem)
       .invoke(item);
     return HttpResponses.ok(); // (7)
   }
+
 
 }
 ```
@@ -321,7 +339,7 @@ curl localhost:9000/carts/123
 
 ## <a href="about:blank#_explore_the_local_console"></a> Explore the local console
 
-1. To get a clear view of your locally running service, [install the Akka CLI](../operations/cli/installation.html). It provides a local web-based management console.
+1. To get a clear view of your locally running service, [install the Akka CLI](../../operations/cli/installation.html). It provides a local web-based management console.
 2. Start the local console:
 
 ```command
@@ -339,7 +357,7 @@ Local console: http://localhost:9889
 ```
 3. Open [http://localhost:9889/](http://localhost:9889/) to see your local service in action:
 
-![local console first app events](_images/local-console-first-app-events.png)
+![local console first app events](../_images/local-console-first-app-events.png)
 
 
 Here, you can view not only the [current state of the cart](http://localhost:9889/services/shopping-cart-quickstart/components/shoppingcart.application.ShoppingCartEntity), but also <a href="http://localhost:9889/services/shopping-cart-quickstart/components/shoppingcart.application.ShoppingCartEntity/eventlog/123">**a detailed log of events**</a>, and the corresponding state changes that occurred along the way.
@@ -348,7 +366,7 @@ Here, you can view not only the [current state of the cart](http://localhost:988
 
 Now that you’ve built and started the shopping cart service locally, it’s time to run it on the Akka Agentic Platform without having to change any code.
 
-1. If you have not already done so, [install the Akka CLI](../operations/cli/installation.html).
+1. If you have not already done so, [install the Akka CLI](../../operations/cli/installation.html).
 2. Authenticate the CLI with your Akka account:
 
 ```command
@@ -404,8 +422,9 @@ You can use [cURL](https://curl.se/) to invoke your service, replacing URL with 
 1. Add an item to the shopping cart:
 
 ```command
-curl -i -XPUT -H "Content-Type: application/json" https://spring-tooth-3406.gcp-us-east1.akka.services/carts/123/item -d '
-{"productId":"akka-tshirt", "name":"Akka Tshirt", "quantity": 10}'
+curl -i -XPUT -H "Content-Type: application/json" \
+   https://spring-tooth-3406.gcp-us-east1.akka.services/carts/123/item \
+  -d '{"productId":"akka-tshirt", "name":"Akka Tshirt", "quantity": 10}'
 ```
 2. Get cart state:
 
@@ -419,7 +438,7 @@ curl https://spring-tooth-3406.gcp-us-east1.akka.services/carts/123
 2. Navigate to the **Project** where the Service is deployed.
 3. Click on the **Service** card of the Service. It shows detailed information about the running service.
 
-![console first app service](_images/console-first-app-service.png)
+![console first app service](../_images/console-first-app-service.png)
 
 
 ## <a href="about:blank#_next_steps"></a> Next steps
@@ -427,10 +446,13 @@ curl https://spring-tooth-3406.gcp-us-east1.akka.services/carts/123
 Now that you’ve built and deployed a shopping cart service, take your Akka skills to the next level:
 
 1. **Add a view**: Continue to the [next step](addview.html) in the tour.
-2. **Expand on your own**: Explore [other Akka components](../java/components/index.html) to enhance your application with additional features.
-3. **Explore other Akka samples**: Discover more about Akka by exploring [different use cases](samples.html) for inspiration.
+2. **Expand on your own**: Explore [other Akka components](../../java/components/index.html) to enhance your application with additional features.
+3. **Explore other Akka samples**: Discover more about Akka by exploring [different use cases](../samples.html) for inspiration.
 [1](about:blank#_footnoteref_1). Defined as a stateful behavior capable of acting on its own.
 <!-- <footer> -->
+<!-- <nav> -->
+[Shopping cart](index.html) [Authenticated user-specific lookup](addview.html)
+<!-- </nav> -->
 
 <!-- </footer> -->
 

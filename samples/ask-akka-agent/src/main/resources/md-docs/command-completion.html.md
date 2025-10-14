@@ -62,7 +62,7 @@ akka completion powershell | Out-String | Invoke-Expression
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Using the Akka CLI](using-cli.html) [Akka Automated Operations features](../platform-features.html)
+[Using the Akka CLI](using-cli.html) [Operator best practices](../operator-best-practices.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

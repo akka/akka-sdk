@@ -20,11 +20,11 @@ The main steps in developing a service with Akka are:
 
 ## <a href="about:blank#_create_a_project"></a> Create a project
 
-All services and applications start as a Java project. Akka has a getting started sample that makes this easier. You will code your service in this project. See [Author your first agentic service](../getting-started/author-your-first-service.html) for more details.
+All services and applications start as a Java project. Akka has a getting started sample that makes this easier. You will code your service in this project. See [Build your first agent](../getting-started/author-your-first-service.html) for more details.
 
 ## <a href="about:blank#_specify_service_interface_and_domain_model"></a> Specify service interface and domain model
 
-Creating services in Akka follows the model described in [concepts:architecture-model.adoc#_architecture](architecture-model.html#_architecture). You start with your domain model, which models your business domain in plain old Java objects. Then you will create Akka components to coordinate them.
+Creating services in Akka follows the model described in [Project structure](architecture-model.html). You start with your domain model, which models your business domain in plain old Java objects. Then you will create Akka components to coordinate them.
 
 The main components of an Akka service are:
 
@@ -132,7 +132,7 @@ The following topics may also be of interest.
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Deployment model](deployment-model.html) [Delegation with Effects](declarative-effects.html)
+[Deployment model](deployment-model.html) [Background execution](background-execution.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

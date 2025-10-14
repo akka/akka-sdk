@@ -30,7 +30,7 @@ import akka.annotation.DoNotInherit;
  *
  * <p>The query is executed by the runtime when a request is made to the View.
  *
- * <p>Concrete class must be annotated with {@link akka.javasdk.annotations.ComponentId}.
+ * <p>Concrete class must be annotated with {@link akka.javasdk.annotations.Component}.
  */
 public abstract class View {
 

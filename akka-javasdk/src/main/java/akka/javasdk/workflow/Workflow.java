@@ -55,7 +55,7 @@ import java.util.function.Supplier;
  *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider} from the service setup
  * </ul>
  *
- * <p>Concrete class must be annotated with {@link akka.javasdk.annotations.ComponentId}.
+ * <p>Concrete class must be annotated with {@link akka.javasdk.annotations.Component}.
  *
  * @param <S> The type of the state for this workflow.
  */

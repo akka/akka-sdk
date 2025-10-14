@@ -4,19 +4,19 @@ package com.example.evaluator;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.EvaluationResult;
 import akka.javasdk.agent.MemoryProvider;
-import akka.javasdk.annotations.AgentDescription;
+import akka.javasdk.annotations.AgentRole;
 import akka.javasdk.annotations.Component;
 import java.util.Locale;
 
-@Component(id = "human-vs-ai-evaluator")
-@AgentDescription(
+@Component(
+  id = "human-vs-ai-evaluator",
   name = "Human vs AI Evaluator Agent",
   description = """
   An agent that acts as an LLM judge to evaluate that the human ground
   truth matches the AI generated answer.
-  """,
-  role = "evaluator"
+  """
 )
+@AgentRole("evaluator")
 public class HumanVsAiEvaluator extends Agent { // <1>
 
   public record EvaluationRequest(String question, String humanAnswer, String aiAnswer) {} // <2>
