@@ -4,14 +4,14 @@
 
 package akka.javasdk.impl
 
+import scala.jdk.CollectionConverters.CollectionHasAsScala
+
 import akka.annotation.InternalApi
 import akka.javasdk.Sanitizer
 import akka.runtime.sdk.spi.SpiDataSanitizer
 import akka.runtime.sdk.spi.SpiDataSanitizerSettings
 import akka.runtime.sdk.spi.SpiSanitizerEngine
 import com.typesafe.config.Config
-
-import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 /**
  * INTERNAL API
