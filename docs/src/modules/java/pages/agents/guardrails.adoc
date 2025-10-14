@@ -21,8 +21,8 @@ Guardrails are enabled by configuration, to be able to enforce at deployment tim
 ----
 akka.javasdk.agent.guardrails {
   "pii guard" {                                     // <1>
-    class = "com.example.guardrail.PiiGuard"       // <2>
-    agent = ["planner-agent"]                       // <3>
+    class = "com.example.guardrail.PiiGuard"        // <2>
+    agents = ["planner-agent"]                      // <3>
     agent-roles = ["worker"]                        // <4>
     category = PII                                  // <5>
     use-for = ["model-request", "mcp-tool-request"] // <6>
