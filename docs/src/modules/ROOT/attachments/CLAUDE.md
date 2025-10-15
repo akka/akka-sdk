@@ -23,7 +23,7 @@ Read this documentation to answer questions about Akka.
 
 **CRITICAL: After completing each step below, you MUST STOP and WAIT for explicit user approval before proceeding to the next step. When you ask "Ready for X?", you are NOT allowed to continue until the user responds. NEVER create code for the next step until the user says "yes", "proceed", or similar.**
 
-Create one component and a corresponding test at a time, with user feedback inbetween. If there are several components involved in the task some steps below should be repeated for each component. For example: create an entity, create unit test for the entity, create view, create test for the view, create endpoint for the entity and view, create integration test for the endpoint.
+Create one component and a corresponding test at a time, with user feedback in between. If there are several components involved in the task some steps below should be repeated for each component. For example: create an entity, create unit test for the entity, create view, create test for the view, create endpoint for the entity and view, create integration test for the endpoint.
 
 1. **Always wait** for user approval between major steps - this is MANDATORY
 2. **If user says "proceed"/"yes","y"**, continue to next step
@@ -85,9 +85,9 @@ Ready for Entity?
 
 ### Step 3: Application Layer
 
-Create one component at a time, with user feedback inbetween.
+Create one component at a time, with user feedback in between.
 
-Create application components.  Verify with `mvn compile`.
+Create application components. Verify with `mvn compile`.
 
 Report briefly:
 ```markdown
@@ -103,9 +103,9 @@ Ready for tests?
 
 ### Step 4: Tests
 
-Create one test at a time, with user feedback inbetween.
+Create one test at a time, with user feedback in between.
 
-Create tests for the component in the previous step.  Verify with `mvn test` or with `mvn verify` for IntegrationTest.
+Create tests for the component in the previous step. Verify with `mvn test` or with `mvn verify` for IntegrationTest.
 
 Report briefly:
 ```markdown
@@ -121,7 +121,7 @@ Ready for API layer?
 
 ### Step 5: API Layer
 
-Create/update endpoint.  Verify with `mvn compile`.
+Create/update endpoint. Verify with `mvn compile`.
 
 Report briefly:
 ```markdown
@@ -140,7 +140,7 @@ Ready for integration tests?
 
 ### Step 6: API Layer integration tests
 
-Create tests for the endpoint in the previous step.  Verify with `mvn verify`.
+Create tests for the endpoint in the previous step. Verify with `mvn verify`.
 
 Report briefly:
 ```markdown
