@@ -12,11 +12,11 @@ import org.slf4j.LoggerFactory;
 
 // tag::object-mapper[]
 @Setup
-public class CustomerRegistrySetup implements ServiceSetup {
+public class Bootstrap implements ServiceSetup {
 
   // end::object-mapper[]
 
-  private static final Logger logger = LoggerFactory.getLogger(CustomerRegistrySetup.class);
+  private static final Logger logger = LoggerFactory.getLogger(Bootstrap.class);
 
   @Override
   public DependencyProvider createDependencyProvider() {

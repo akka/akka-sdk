@@ -10,9 +10,9 @@ This is done by creating a class implementing `akka.javasdk.ServiceSetup` and an
 Only one such class may exist in the same service.
 
 [source,java,indent=0]
-.{sample-base-url}/spring-dependency-injection/src/main/java/com/example/CounterSetup.java[CounterSetup.java]
+.{sample-base-url}/spring-dependency-injection/src/main/java/com/example/Bootstrap.java[Bootstrap.java]
 ----
-include::example$spring-dependency-injection/src/main/java/com/example/CounterSetup.java[tag=lifecycle]
+include::example$spring-dependency-injection/src/main/java/com/example/Bootstrap.java[tag=lifecycle]
 ----
 <1> One annotated implementation of `ServiceSetup`
 <2> A few different objects can be dependency injected, see below
@@ -123,9 +123,9 @@ inject the instance provided by the `DependencyProvider`.
 Or make use of an existing dependency injection framework, like this example leveraging Spring:
 
 [source,java,indent=0]
-.{sample-base-url}/spring-dependency-injection/src/main/java/com/example/CounterSetup.java[CounterSetup.java]
+.{sample-base-url}/spring-dependency-injection/src/main/java/com/example/Bootstrap.java[Bootstrap.java]
 ----
-include::example$spring-dependency-injection/src/main/java/com/example/CounterSetup.java[tag=spring]
+include::example$spring-dependency-injection/src/main/java/com/example/Bootstrap.java[tag=spring]
 ----
 <1> Set up a Spring `AnnotationConfigApplicationContext`
 <2> DependencyProvider is a SAM (single abstract method) type with signature `Class<T> -> T`, the method reference `AnnotationConfigApplicationContext#getBean` matches it.
