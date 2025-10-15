@@ -10,9 +10,9 @@ You need to make the messages, events, or the state of Akka components serializa
 
 Akka uses a predefined `Jackson` configuration, for serialization. Use the `JsonSupport` utility to update the `ObjectMapper` with your custom requirements. To minimize the number of `Jackson` annotations, Java classes are compiled with the `-parameters` flag.
 [source,java,indent=0]
-.{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/CustomerRegistrySetup.java[CustomerRegistrySetup.java]
+.{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/Bootstrap.java[Bootstrap.java]
 ----
-include::example$event-sourced-customer-registry/src/main/java/customer/CustomerRegistrySetup.java[tag=object-mapper]
+include::example$event-sourced-customer-registry/src/main/java/customer/Bootstrap.java[tag=object-mapper]
 ----
 <1> Sets custom `ObjectMapper` configuration.
 
