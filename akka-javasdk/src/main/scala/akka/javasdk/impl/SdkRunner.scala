@@ -362,7 +362,8 @@ private[javasdk] object Sdk {
       grpcClientProvider: GrpcClientProviderImpl,
       agentRegistry: AgentRegistryImpl,
       overrideModelProvider: OverrideModelProvider,
-      serializer: JsonSerializer)
+      serializer: JsonSerializer,
+      sanitizer: Sanitizer)
 
   private val platformManagedDependency = Set[Class[_]](
     classOf[ComponentClient],
@@ -839,7 +840,8 @@ private final class Sdk(
               grpcClientProvider,
               agentRegistry,
               overrideModelProvider,
-              serializer))
+              serializer,
+              sanitizer))
           Future.successful(Done)
         case Some(setup) =>
           if (dependencyProviderOpt.nonEmpty) {
@@ -856,7 +858,8 @@ private final class Sdk(
               grpcClientProvider,
               agentRegistry,
               overrideModelProvider,
-              serializer))
+              serializer,
+              sanitizer))
           Future.successful(Done)
       }
     }

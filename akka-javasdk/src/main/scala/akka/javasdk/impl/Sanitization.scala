@@ -23,21 +23,21 @@ private[impl] object Sanitization {
     val enabledPredefined = config
       .getStringList("akka.javasdk.sanitization.predefined-sanitizers")
       .asScala
-      .map(name => new SpiDataSanitizer.SpiPredefinedSanitizer(name))
+      .map(name => new SpiDataSanitizer.Predefined(name))
       .toVector
     val regexConfig = config.getObject("akka.javasdk.sanitization.regex-sanitizers")
 
     val regexEntries = regexConfig
       .keySet()
       .asScala
-      .map { key =>
-        val config = regexConfig.toConfig.getConfig(key)
+      .map { name =>
+        val config = regexConfig.toConfig.getConfig(name)
         if (!config.hasPath("pattern"))
           throw new IllegalArgumentException(
-            s"Sanitizer config for [akka.javasdk.sanitization.regex-sanitizers.$key] is missing the key 'pattern' (which should contain a Java regular expression)")
+            s"Sanitizer config for [akka.javasdk.sanitization.regex-sanitizers.$name] is missing the key 'pattern' (which should contain a Java regular expression)")
         val regex = config.getString("pattern").r
 
-        new SpiDataSanitizer.SpiRegexSanitizer(key, regex)
+        new SpiDataSanitizer.Regex(name, regex)
       }
       .toVector
 
@@ -51,5 +51,5 @@ private[impl] object Sanitization {
  */
 @InternalApi
 private[impl] final case class SanitizerImpl(spiSantizier: SpiSanitizerEngine) extends Sanitizer {
-  override def sanitize(string: String): String = spiSantizier.deIdentify(string)
+  override def sanitize(string: String): String = spiSantizier.sanitize(string)
 }
