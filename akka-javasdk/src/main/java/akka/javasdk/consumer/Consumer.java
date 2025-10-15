@@ -98,7 +98,7 @@ public abstract class Consumer {
    *
    * <p>For Event Sourced and Key Value Entity consumers, the entity id is available through the
    * metadata as the CloudEvent subject: {@code
-   * messageContext().metadata().asCloudEvent().subject().get()}
+   * messageContext().eventSubject().get()}
    *
    * <p>This method will throw an exception if accessed from the constructor. It is only available
    * when handling a message.
