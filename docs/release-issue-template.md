@@ -29,6 +29,7 @@ You can see the Akka Runtime version on prod [on grafana](https://grafana.sre.ka
 ### Update samples
 - [ ] Run https://github.com/akka/akka-sdk/actions/workflows/pr-akka-samples.yml from the release tag 
 - [ ] Merge auto-PRs in akka-samples https://github.com/orgs/akka-samples/repositories?q=sort%3Aname-asc
+- [ ] Bump the sdk [in this sample](https://github.com/docker/compose-for-agents/tree/main/akka), test that it works and create a PR with the new version
  
 ### Announcements
 
