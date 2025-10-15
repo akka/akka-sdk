@@ -99,7 +99,7 @@ Additionally, these model providers for locally running models are supported:
 
 Each model provider may have different settings and those are described in xref:model-provider-details.adoc[]
 
-It is also possible to plug in a custom model by implementing the link:_attachments/api/akka/javasdk/agent/ModelProvider.Custom.html[`ModelProvider.Custom`] interface and use it with `ModelProvider.custom`.
+It is also possible to plug in a custom model by implementing the link:_attachments/api/akka/javasdk/agent/ModelProvider.Custom.html[`ModelProvider.Custom`] interface and use it with `ModelProvider.custom`. That involves the underlying implementations of LangChain4J `ChatModel` and optionally `StreamingChatModel`. Refer to the  https://docs.langchain4j.dev[Langchain4j, window="new"] documentation or reference implementations for how to implement the `ChatModel` and `StreamingChatModel`.
 
 
 == Use ComponentClient in an agent

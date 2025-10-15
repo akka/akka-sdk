@@ -840,6 +840,14 @@ public sealed interface ModelProvider {
     return provider;
   }
 
+  /**
+   * Custom models can be added by implementing this interface and, and the underlying
+   * implementations of {@code dev.langchain4j.model.chat.ChatModel} and (optionally) {@code
+   * dev.langchain4j.model.chat.StreamingChatModel}.
+   *
+   * <p>Refer to the Langchain4j documentation or reference implementations for how to implement the
+   * {@code ChatModel} and {@code StreamingChatModel}.
+   */
   non-sealed interface Custom extends ModelProvider {
     /**
      * @return an instance of {@code dev.langchain4j.model.chat.ChatModel}
@@ -847,6 +855,8 @@ public sealed interface ModelProvider {
     Object createChatModel();
 
     /**
+     * If you don't need streaming you can throw an exception from this method.
+     *
      * @return an instance of {@code dev.langchain4j.model.chat.StreamingChatModel}
      */
     Object createStreamingChatModel();
