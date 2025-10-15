@@ -12,6 +12,103 @@ import java.util.List;
 
 public class EventSourcedEntitiesTestModels {
 
+  public sealed interface Event {
+
+    final class Event1 implements Event {}
+
+    final class Event2 implements Event {}
+  }
+
+  public static class NonSealedEvent {}
+
+  public static class ValidEntity extends EventSourcedEntity<String, Event> {
+    @Override
+    public String emptyState() {
+      return "";
+    }
+
+    public Effect<String> command1(String cmd) {
+      return effects().reply(cmd);
+    }
+
+    public Effect<String> command2(Integer cmd) {
+      return effects().reply(cmd.toString());
+    }
+
+    @Override
+    public String applyEvent(Event event) {
+      return "";
+    }
+  }
+
+  public static class EntityWithNonSealedEvent extends EventSourcedEntity<String, NonSealedEvent> {
+    @Override
+    public String emptyState() {
+      return "";
+    }
+
+    public Effect<String> command(String cmd) {
+      return effects().reply(cmd);
+    }
+
+    @Override
+    public String applyEvent(NonSealedEvent event) {
+      return "";
+    }
+  }
+
+  public static class EntityWithDuplicateCommandHandlers extends EventSourcedEntity<String, Event> {
+    @Override
+    public String emptyState() {
+      return "";
+    }
+
+    public Effect<String> command(String cmd) {
+      return effects().reply(cmd);
+    }
+
+    public Effect<String> command(Integer cmd) {
+      return effects().reply(cmd.toString());
+    }
+
+    @Override
+    public String applyEvent(Event event) {
+      return "";
+    }
+  }
+
+  public static class EntityWithTwoArgCommandHandler extends EventSourcedEntity<String, Event> {
+    @Override
+    public String emptyState() {
+      return "";
+    }
+
+    public Effect<String> command(String cmd, int i) {
+      return effects().reply(cmd);
+    }
+
+    @Override
+    public String applyEvent(Event event) {
+      return "";
+    }
+  }
+
+  public static class EntityWithNoEffectMethod extends EventSourcedEntity<String, Event> {
+    @Override
+    public String emptyState() {
+      return "";
+    }
+
+    public String command(String cmd) {
+      return cmd;
+    }
+
+    @Override
+    public String applyEvent(Event event) {
+      return "";
+    }
+  }
+
   public sealed interface CounterEvent {
     record IncrementCounter(int value) implements CounterEvent {}
 

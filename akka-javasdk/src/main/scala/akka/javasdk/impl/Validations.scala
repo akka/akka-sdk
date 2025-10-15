@@ -144,6 +144,7 @@ private[javasdk] object Validations {
   private def validateEventSourcedEntity(component: Class[_]) =
     when[EventSourcedEntity[_, _]](component) {
       eventSourcedEntityEventMustBeSealed(component) ++
+      hasEffectMethod(component, classOf[EventSourcedEntity.Effect[_]]) ++
       eventSourcedCommandHandlersMustBeUnique(component) ++
       commandHandlerArityShouldBeZeroOrOne(component, hasESEffectOutput)
     }
@@ -649,7 +650,7 @@ private[javasdk] object Validations {
         Invalid(errorMessage(component, "@ComponentId must not contain the pipe character '|'."))
       else Valid
     } else {
-      //missing annotation means that the component is disabled
+      // a missing annotation means that the component is disabled
       Valid
     }
   }
