@@ -287,7 +287,7 @@ private[javasdk] object Validations {
 
   private def validateTimedAction(component: Class[_]): Validation = {
     when[TimedAction](component) {
-      actionValidation(component) ++
+      hasEffectMethod(component, classOf[TimedAction.Effect]) ++
       commandHandlerArityShouldBeZeroOrOne(component, hasTimedActionEffectOutput)
     }
   }
@@ -309,6 +309,12 @@ private[javasdk] object Validations {
   private def actionValidation(component: Class[_]): Validation = {
     // Nothing here right now
     Valid
+  }
+
+  private def hasEffectMethod(component: Class[_], effectType: Class[_]) = {
+    if (component.getMethods.exists(_.getReturnType == effectType)) Valid
+    else
+      Invalid(s"No method returning ${effectType.getName} found in ${component.getName}")
   }
 
   private def validateView(component: Class[_]): Validation =
