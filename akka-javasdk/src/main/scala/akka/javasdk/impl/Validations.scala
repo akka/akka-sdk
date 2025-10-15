@@ -150,6 +150,7 @@ private[javasdk] object Validations {
 
   private def validateWorkflow(component: Class[_]) =
     when[Workflow[_]](component) {
+      hasEffectMethod(component, classOf[Workflow.Effect[_]]) ++
       commandHandlerArityShouldBeZeroOrOne(component, hasWorkflowEffectOutput)
     }
 

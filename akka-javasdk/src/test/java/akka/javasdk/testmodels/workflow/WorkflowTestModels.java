@@ -281,4 +281,28 @@ public class WorkflowTestModels {
           .andThen(Done.class, __ -> effects().end());
     }
   }
+
+  public static class ValidWorkflowWithNoArgCommandHandler extends Workflow<String> {
+    public Workflow.Effect<String> execute() {
+      return effects().reply("ok");
+    }
+  }
+
+  public static class ValidWorkflowWithOneArgCommandHandler extends Workflow<String> {
+    public Workflow.Effect<String> execute(String command) {
+      return effects().reply(command);
+    }
+  }
+
+  public static class InvalidWorkflowWithTwoArgCommandHandler extends Workflow<String> {
+    public Workflow.Effect<String> execute(String cmd, int i) {
+      return effects().reply(cmd);
+    }
+  }
+
+  public static class WorkflowWithNonEffectMethod extends Workflow<String> {
+    public String execute() {
+      return "ok";
+    }
+  }
 }
