@@ -4,8 +4,9 @@
 
 package akka.javasdk.impl
 
-import scala.annotation.nowarn
+import akka.Done
 
+import scala.annotation.nowarn
 import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.keyvalueentity.KeyValueEntity
@@ -21,42 +22,63 @@ import akka.javasdk.impl.ComponentAnnValidationSpec.InvalidPipeDeprecatedCompone
 import akka.javasdk.impl.ComponentAnnValidationSpec.NoComponentAnnotationComponent
 import akka.javasdk.impl.ComponentAnnValidationSpec.ValidComponentIdComponent
 import akka.javasdk.impl.ComponentAnnValidationSpec.ValidDeprecatedComponentIdComponent
+import akka.javasdk.keyvalueentity.KeyValueEntity.Effect
 
 object ComponentAnnValidationSpec {
   @nowarn("cat=deprecation")
   @Component(id = "new-id")
   @ComponentId("old-id")
-  class ConflictingComponent extends KeyValueEntity[String]
+  class ConflictingComponent extends KeyValueEntity[String] {
+    def done(): Effect[Done] = ???
+  }
 
   @Component(id = "")
-  class EmptyComponentIdComponent extends KeyValueEntity[String]
+  class EmptyComponentIdComponent extends KeyValueEntity[String] {
+    def done(): Effect[Done] = ???
+  }
 
   @Component(id = "   ")
-  class BlankComponentIdComponent extends KeyValueEntity[String]
+  class BlankComponentIdComponent extends KeyValueEntity[String] {
+    def done(): Effect[Done] = ???
+  }
 
   @Component(id = "invalid|pipe")
-  class InvalidPipeComponentIdComponent extends KeyValueEntity[String]
+  class InvalidPipeComponentIdComponent extends KeyValueEntity[String] {
+    def done(): Effect[Done] = ???
+  }
 
   @nowarn("cat=deprecation")
   @ComponentId("")
-  class EmptyDeprecatedComponentIdComponent extends KeyValueEntity[String]
+  class EmptyDeprecatedComponentIdComponent extends KeyValueEntity[String] {
+    def done(): Effect[Done] = ???
+  }
 
   @nowarn("cat=deprecation")
   @ComponentId("   ")
-  class BlankDeprecatedComponentIdComponent extends KeyValueEntity[String]
+  class BlankDeprecatedComponentIdComponent extends KeyValueEntity[String] {
+    def done(): Effect[Done] = ???
+  }
 
   @nowarn("cat=deprecation")
   @ComponentId("invalid|pipe")
-  class InvalidPipeDeprecatedComponentIdComponent extends KeyValueEntity[String]
+  class InvalidPipeDeprecatedComponentIdComponent extends KeyValueEntity[String] {
+    def done(): Effect[Done] = ???
+  }
 
   @Component(id = "valid-id")
-  class ValidComponentIdComponent extends KeyValueEntity[String]
+  class ValidComponentIdComponent extends KeyValueEntity[String] {
+    def done(): Effect[Done] = ???
+  }
 
   @nowarn("cat=deprecation")
   @ComponentId("valid-id")
-  class ValidDeprecatedComponentIdComponent extends KeyValueEntity[String]
+  class ValidDeprecatedComponentIdComponent extends KeyValueEntity[String] {
+    def done(): Effect[Done] = ???
+  }
 
-  class NoComponentAnnotationComponent extends KeyValueEntity[String]
+  class NoComponentAnnotationComponent extends KeyValueEntity[String] {
+    def done(): Effect[Done] = ???
+  }
 }
 
 class ComponentAnnValidationSpec extends AnyWordSpec with Matchers with ValidationSupportSpec {

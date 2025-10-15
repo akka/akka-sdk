@@ -249,6 +249,7 @@ private[javasdk] object Validations {
 
   private def validateValueEntity(component: Class[_]): Validation = when[KeyValueEntity[_]](component) {
     valueEntityCommandHandlersMustBeUnique(component) ++
+    hasEffectMethod(component, classOf[KeyValueEntity.Effect[_]]) ++
     commandHandlerArityShouldBeZeroOrOne(component, hasKVEEffectOutput)
   }
 
