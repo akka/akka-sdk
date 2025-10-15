@@ -211,7 +211,7 @@ See xref:reference:cli/akka-cli/index.adoc[`akka service deploy -h`] for details
 
 == Metadata
 
-For many use cases, a Consumer from Event Sourced or Key Value Entity will trigger other services and needs to pass the entity ID to the receiver. You can include this information in the event payload (or Key Value Entity state) or use built-in metadata to get this information. It is made available to the consumer via the metadata `messageContext().metadata().get("ce-subject")`. The same value can be also accessed via `CloudEvent` interface.
+For many use cases, a Consumer from Event Sourced or Key Value Entity will trigger other services and needs to pass the entity ID to the receiver. You can include this information in the event payload (or Key Value Entity state) or use built-in metadata to get this information. It is made available to the consumer via `messageContext().eventSubject()`.
 
 Using metadata is also possible when producing messages to a topic or a stream. You can pass some additional information which will be available to the consumer.
 
