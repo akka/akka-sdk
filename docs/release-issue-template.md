@@ -6,7 +6,7 @@
 - [ ] Check that the [latest build](https://github.com/akka/akka-sdk/actions?query=branch%3Amain) successfully finished
 - [ ] Make sure a version of the Akka Runtime that supports the protocol version the SDK expects has been deployed to production. You can check this on `Dependencies.scala`
 
-You can see the Akka Runtime version on prod [on grafana](https://grafana.sre.kalix.io/d/b30d0d8e-3894-4fbf-9627-9cb6088949ee/prod-kalix-metrics?orgId=1) or using [various other methods](https://github.com/lightbend/kalix/wiki/Versioning-and-how-to-determine-what-version-is-running).
+You can see the Akka Runtime version on prod [on grafana](https://app.groundcover.com/grafana/d/Kalix-Metrics/prod-kalix-metrics?orgId=6086&from=now-1h&to=now).
 
 ### Cutting the release 
 
@@ -29,6 +29,7 @@ You can see the Akka Runtime version on prod [on grafana](https://grafana.sre.ka
 ### Update samples
 - [ ] Run https://github.com/akka/akka-sdk/actions/workflows/pr-akka-samples.yml from the release tag 
 - [ ] Merge auto-PRs in akka-samples https://github.com/orgs/akka-samples/repositories?q=sort%3Aname-asc
+  - Easiest is to use the PR links from "Open PR with changes" in https://github.com/akka/akka-sdk/actions/workflows/pr-akka-samples.yml
  
 ### Announcements
 
