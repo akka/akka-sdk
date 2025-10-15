@@ -29,8 +29,8 @@ object Dependencies {
   val JUnitVersion = "4.13.2"
   val JUnitInterfaceVersion = "0.11"
   val JUnitJupiterVersion = "5.10.1"
-  val OpenTelemetryVersion = "1.39.0"
-  val OpenTelemetrySemConv = "1.25.0-alpha"
+  val OpenTelemetryVersion = "1.51.0"
+  val OpenTelemetrySemConv = "1.34.0"
 
   val CommonsIoVersion = "2.11.0"
   val MunitVersion = "0.7.29"
@@ -76,11 +76,11 @@ object Dependencies {
   private val deps = libraryDependencies
 
   private val sdkDeps = Seq(
-    opentelemetryApi,
-    opentelemetrySdk,
-    opentelemetryExporterOtlp,
-    opentelemetryContext,
-    opentelemetrySemConv,
+    opentelemetryApi % Provided,
+    opentelemetrySdk % Provided,
+    opentelemetryExporterOtlp % Provided,
+    opentelemetryContext % Provided,
+    opentelemetrySemConv % Provided,
     // akka-http is pulling akka-pki and akka-discovery, we need to force it to be same version
     akkaDependency("akka-pki"),
     akkaDependency("akka-discovery"),
