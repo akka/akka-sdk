@@ -42,28 +42,13 @@ jobs:
         with:
           jvm: temurin:1.21
 
-      - name: Determine SDK version
-        id: determine_sdk_version
-        run: |-
-          .github/determine-sdk-version.sh
-          SDK_VERSION="$(cat ~/akka-javasdk-version.txt)"
-          echo "SDK version: '${SDK_VERSION}'"
-          echo "sdk_version=${SDK_VERSION}" >> $GITHUB_OUTPUT
-
-      - name: Determine SDK version (manual triggered) # provisional until normal flow gets fixed)
-        if:  github.event_name == 'workflow_dispatch'
-        id: determine_sdk_version_manual_triggered
-        run: |-
-          .github/determine-sdk-version.sh
-          SDK_VERSION="$(cat ~/akka-javasdk-version.txt | sed 's/-.*//')" 
-          echo "SDK version: '${SDK_VERSION}'"
-          echo "sdk_version=${SDK_VERSION}" >> $GITHUB_OUTPUT
-
       - name: Create PR to update all sdk versions (samples, sbt and maven)
         env:
           SDK_VERSION: ${{ steps.determine_sdk_version.outputs.sdk_version || steps.determine_sdk_version_manual_triggered.outputs.sdk_version }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |-
+          sdk_version=`./docs/bin/version.sh`
+          export SDK_VERSION=${sdk_version}
           echo "Updating samples to version ${SDK_VERSION}"
           ./updateSdkVersions.sh all
           BRANCH=bump-sdk-versions-${SDK_VERSION}
