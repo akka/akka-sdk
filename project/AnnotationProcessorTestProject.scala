@@ -28,9 +28,11 @@ object AnnotationProcessorTestProject {
           .map(configureFunc)
 
       def findProjects: Seq[File] = {
-        file(pathToTests)
-          .listFiles()
-          .filter { file => file.isDirectory && file.getName.endsWith("descriptors") }
+        val dir = file(pathToTests)
+        if (dir.exists() && dir.isDirectory)
+          dir.listFiles().filter { file => file.isDirectory && file.getName.endsWith("descriptors") }.toSeq
+        else
+          Seq.empty
       }
     }
   }
