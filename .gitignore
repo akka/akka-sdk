@@ -59,3 +59,4 @@ sdk-version.txt
 
 .qodo
 akka-context/
+.claude/settings.local.json

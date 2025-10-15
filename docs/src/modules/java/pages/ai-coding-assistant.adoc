@@ -107,27 +107,14 @@ Make sure that you download the latest documentation regularly to make use of do
 
 === Claude code
 
-For https://www.anthropic.com/claude-code[Claude code] you need to define a `CLAUDE.md` file with the following instructions:
+For https://www.anthropic.com/claude-code[Claude code] you need to define a `CLAUDE.md` file with instructions.
 
-[source, md]
-----
-# CLAUDE.md
+* Download link:../_attachments/CLAUDE.md[CLAUDE.md] to `CLAUDE.md` file in the project directory.
+* Download link:../_attachments/AGENTS.md[AGENTS.md] to `AGENTS.md` file in the project directory.
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Note that `CLAUDE.md` includes the detailed instructions from `AGENTS.md`. The reason for the separation into two files is that you should be able to download updated versions of `AGENTS.md` and have your custom instructions in `CLAUDE.md`.
 
-## Build and Development Commands
-
-See @README.md for a project overview, and how to build, test and run the application.
-
-## Coding guidelines
-
-Use the guidelines in @akka-context/java/ai-coding-assistant-guidelines.html.md when writing code in this project.
-
-## Akka documentation
-
-You find the reference documentation of Akka in the akka-context directory and sub-directories.
-Read this documentation to answer questions about Akka or finding code templates for writing Akka code.
-----
+This `CLAUDE.md` also defines an iterative generation workflow. You can modify or remove that if you prefer another way of working with Claude.
 
 Download the markdown documentation files and include them in the project directory.
 
