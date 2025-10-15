@@ -1,17 +1,58 @@
 = Sanitization
 include::ROOT:partial$include.adoc[]
 
-overview of why
+When services process user-generated content, protecting personally identifiable information (PII) is both a legal requirement and a trust imperative. Regulations like GDPR, CCPA, and HIPAA mandate careful handling of personal data, while users expect their private information won't be exposed to support staff, analysts, or third parties unnecessarily.
+
+Text anonymization—detecting and masking sensitive details like names, emails, and phone numbers—enables legitimate use cases such as logging, analytics, and model training while minimizing privacy risks. It reduces the attack surface in case of breaches and demonstrates a privacy-respecting approach to data handling.
+
+Akka supports this by defining service wide sanitization. This is then automatically applied to text that is written in
+logs or passed to agent models, either from agent requests, or local tool or MCP tool output.
+
+Sanitization can also be programmatically applied to text in any component where it makes sense for a specific
+business case, for example before sending some text to a third party API or before writing a text in the state
+of an entity. This is done by injecting a `akka.javasdk.Sanitizer` in the component constructor and
+then using `akka.javasdk.Sanitizer#sanitize` on the text.
+
+Text matched by a sanitizer is replaced by a mask of `*` containing the same number of characters as the original string.
+
+There are two kinds of sanitizers, it is possible to mix and match both types in the same service:
 
 == Predefined sanitizers
 
-list of predefined
+A small set of common sanitizers is built into the Akka runtime and are enabled by name in config:
+
+ * `EMAIL` - email addresses
+ * `PHONE` - International and national phone numbers
+ * `CREDIT_CARD` - VISA, Mastercard, American Express, Diners, Discover, JBC, and generic credit card numbers
+ * `IBAN` - international bank account numbers
+ * `IP_ADDRESS` - ipv4 and ipv6 network addresses
+
+One or more of these are enabled in the service `application.conf` file like this:
+
+[source,hocon,indent=0]
+----
+akka.javasdk.sanitization {
+  predefined-sanitizers = ["IBAN", "CREDIT_CARD"]
+}
+----
 
 == Custom sanitizers
 
-explain, show config
+Custom, application specific sanitizers can be defined by adding a config block `akka.javasdk.sanitization.regex-sanitizers`
+with a name for each custom sanitizer followed by a config block with a single `pattern` key that has a value that is
+a valid Java regular expression that matches the type of text that should be masked.
+
+This example masks the colors red, orange and yellow, case-insensitive:
+
+[source,hocon,indent=0]
+----
+akka.javasdk.sanitization.regex-sanitizers = {
+"warm-colors" = { pattern = "(?i)(red|orange|yellow)" }
+}
+----
 
 
 == Testing sanitization
 
-explain testkit access
+In tests the sanitizer can be directly accessed from `akka.javasdk.testkit.TestKit#getSanitizer` to assert that expected
+texts are masked given the service sanitizer configuration.
