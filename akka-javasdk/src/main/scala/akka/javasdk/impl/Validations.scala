@@ -246,18 +246,18 @@ private[javasdk] object Validations {
     commandHandlersMustBeUnique(component, commandHandlers)
   }
 
-  def validateValueEntity(component: Class[_]): Validation = when[KeyValueEntity[_]](component) {
+  private def validateValueEntity(component: Class[_]): Validation = when[KeyValueEntity[_]](component) {
     valueEntityCommandHandlersMustBeUnique(component) ++
     commandHandlerArityShouldBeZeroOrOne(component, hasKVEEffectOutput)
   }
 
-  def valueEntityCommandHandlersMustBeUnique(component: Class[_]): Validation = {
+  private def valueEntityCommandHandlersMustBeUnique(component: Class[_]): Validation = {
     val commandHandlers = component.getMethods
       .filter(_.getReturnType == classOf[KeyValueEntity.Effect[_]])
     commandHandlersMustBeUnique(component, commandHandlers)
   }
 
-  def commandHandlersMustBeUnique(component: Class[_], commandHandlers: Array[Method]): Validation = {
+  private def commandHandlersMustBeUnique(component: Class[_], commandHandlers: Array[Method]): Validation = {
     val nonUnique = commandHandlers
       .groupBy(_.getName)
       .filter(_._2.length > 1)
@@ -295,8 +295,9 @@ private[javasdk] object Validations {
   private def validateConsumer(component: Class[_]): Validation = {
     when[Consumer](component) {
       hasConsumeAnnotation(component, "Consumer") ++
-      commonSubscriptionValidation(component, hasConsumerOutput) ++
-      actionValidation(component)
+      hasEffectMethod(component, classOf[Consumer.Effect]) ++
+      commandHandlerArityShouldBeZeroOrOne(component, hasConsumerOutput) ++
+      commonSubscriptionValidation(component, hasConsumerOutput)
     }
   }
 
@@ -304,11 +305,6 @@ private[javasdk] object Validations {
     when(!hasSubscription(component)) {
       Invalid(errorMessage(component, s"A $componentName must be annotated with `@Consume` annotation."))
     }
-  }
-
-  private def actionValidation(component: Class[_]): Validation = {
-    // Nothing here right now
-    Valid
   }
 
   private def hasEffectMethod(component: Class[_], effectType: Class[_]) = {
