@@ -1,31 +1,58 @@
 = Sanitization
 include::ROOT:partial$include.adoc[]
 
+== Overview
 When services process user-generated content, protecting personally identifiable information (PII) is both a legal requirement and a trust imperative. Regulations like GDPR, CCPA, and HIPAA mandate careful handling of personal data, while users expect their private information won't be exposed to support staff, analysts, or third parties unnecessarily.
 
 Text anonymization—detecting and masking sensitive details like names, emails, and phone numbers—enables legitimate use cases such as logging, analytics, and model training while minimizing privacy risks. It reduces the attack surface in case of breaches and demonstrates a privacy-respecting approach to data handling.
 
-Akka supports this by defining service wide sanitization. This is then automatically applied to text that is written in
-logs or passed to agent models, either from agent requests, or local tool or MCP tool output.
+Akka supports this through service-wide sanitization.
+
+The sanitization is automatically applied to text that:
+
+ * written to logs
+ * passed to agent models from agent requests
+ * passed to agent models from local tool or MCP tool output
+
+Text matched by a sanitizer is replaced by a mask of `*` containing the same number of characters as the original matched string.
+
+For example, with a credit card sanitizer enabled, the following text:
+
+[literal]
+I'm having problems using my credit card 5204 46025 0000 006
+
+Will be masked to:
+
+[literal]
+I'm having problems using my credit card *******************
+
+Before being written in logs or passed to agent models.
+
+=== Ad hoc sanitization
 
 Sanitization can also be programmatically applied to text in any component where it makes sense for a specific
 business case, for example before sending some text to a third party API or before writing a text in the state
 of an entity. This is done by injecting a `akka.javasdk.Sanitizer` in the component constructor and
 then using `akka.javasdk.Sanitizer#sanitize` on the text.
 
-Text matched by a sanitizer is replaced by a mask of `*` containing the same number of characters as the original string.
+== Sanitizer types
 
-There are two kinds of sanitizers, it is possible to mix and match both types in the same service:
+There are two types of sanitizers available, it is possible combine predefined and custom sanitizers in the same service:
 
-== Predefined sanitizers
+=== Predefined
 
 A small set of common sanitizers is built into the Akka runtime and are enabled by name in config:
 
- * `EMAIL` - email addresses
- * `PHONE` - International and national phone numbers
- * `CREDIT_CARD` - VISA, Mastercard, American Express, Diners, Discover, JBC, and generic credit card numbers
- * `IBAN` - international bank account numbers
- * `IP_ADDRESS` - ipv4 and ipv6 network addresses
+[options="header" cols="1,1"]
+|===
+| Name | Description
+
+|`EMAIL` | email addresses
+|`PHONE` | International and national phone numbers
+|`CREDIT_CARD`| VISA, Mastercard, American Express, Diners, Discover, JCB, and generic credit card numbers
+|`IBAN`| international bank account numbers
+|`IP_ADDRESS`| ipv4 and ipv6 network addresses
+|===
 
 One or more of these are enabled in the service `application.conf` file like this:
 
@@ -36,21 +63,40 @@ akka.javasdk.sanitization {
 }
 ----
 
-== Custom sanitizers
+=== Custom
+
+In many cases more application and business domain specific sanitizers are useful. Custom sanitizers allows defining
+regular expressions that define character sequences that should be masked.
 
 Custom, application specific sanitizers can be defined by adding a config block `akka.javasdk.sanitization.regex-sanitizers`
 with a name for each custom sanitizer followed by a config block with a single `pattern` key that has a value that is
 a valid Java regular expression that matches the type of text that should be masked.
 
-This example masks the colors red, orange and yellow, case-insensitive:
+This example masks an hypothetical customer id in the form S0123456789:
 
 [source,hocon,indent=0]
 ----
 akka.javasdk.sanitization.regex-sanitizers = {
-"warm-colors" = { pattern = "(?i)(red|orange|yellow)" }
+  "CUSTOMER_IDS" = { pattern = "S\\d{10}" }
 }
 ----
 
+This would lead to texts like:
+
+[literal]
+Customer S0847362951 reported an issue with their order
+
+Being masked to:
+
+[literal]
+Customer *********** reported an issue with their order
+
+Before being written in logs or passed to agent models.
+
+== Performance considerations
+
+Sanitization is applied to every log entry. In high-throughput applications, numerous sanitization rules or complex regular
+expressions may impact performance. Consider monitoring application performance and optimizing regex patterns if necessary.
 
 == Testing sanitization
 
