@@ -1,4 +1,5 @@
 //  Getting Started
+* xref:getting-started:starthere.adoc[Getting started]
 * xref:getting-started:index.adoc[]
 ** xref:getting-started:author-your-first-service.adoc[Hello world agent]
 ** xref:getting-started:planner-agent/index.adoc[Multi-agent planner]
