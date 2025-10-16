@@ -103,6 +103,7 @@ LLM
 LLMs
 lmdbjava
 lookups
+Mastercard
 matchers
 materializer
 maxInstances
