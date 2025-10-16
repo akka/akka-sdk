@@ -20,6 +20,7 @@ It is also possible to deploy a pre-built sample project in https://console.akka
 | <<Medical discharge summary tagging>>         | ✅ | ✅ |    |
 | <<IoT sensor monitoring>>                     |    | ✅ | ✅ | ✅
 | <<Release note summarizer>>                   | ✅ | ✅ |    |
+| <<Adaptive multi-agent orchestration>>        | ✅ | ✅ | ✅ |
 | <<Customer service chat workflow>>            | ✅ | ✅ | ✅ |
 | <<Trip booking with tools>>                   | ✅ | ✅ | ✅ | ✅
 | <<Multi-source health sensor analysis>>       |    | ✅ | ✅ | ✅
@@ -104,6 +105,15 @@ This sample is designed to run every time there is a release from configured Git
 **Concepts**: _Agent_, _Entity_, _Timed Action_, _Anthropic Claude_, _Tools_, _Summarization_
 **Level**: _Intermediate_
 link:https://github.com/akka-samples/changelog-agent[GitHub Repository, window="new"]
+
+== Adaptive multi-agent orchestration
+
+This sample models an outdoor activities planner. It demonstrates how to build a multi-agent system using Akka and an LLM model. It illustrates adaptive agent orchestration by implementing the MagenticOne pattern. It re-evaluates progress after each agent response and dynamically adjusts its strategy.
+
+[%hardbreaks]
+**Concepts**: _Agent_, _Workflow_, _Multi-agent_, _LLM_
+**Level**: _Advanced_
+link:https://github.com/akka-samples/adaptive-multi-agent[GitHub Repository, window="new"]
 
 == Customer service chat workflow
 The real-estate customer service agent demonstrates how to combine Akka features with an LLM model. It illustrates an agentic workflow for customer service. It processes incoming real-estate inquiries, analyzes the content to extract details, provides follow-up when needed and saves the collected information for future reference.
