@@ -165,6 +165,7 @@ RNGs
 runtimes
 runtime's
 (?i)RPC
+[Ss]anitization
 sbt
 (?i)Scala
 SDKs
