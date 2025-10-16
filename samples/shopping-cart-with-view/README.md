@@ -4,7 +4,18 @@ adds user authentication, more cleanly separates the data types across roles and
 
 
 ## Testing the Service
-Before trying to run this example, make sure that you have all of the pre-requisites installed, including a working JDK and running Docker engine.
+Before trying to run this example, make sure that you have all of the pre-requisites installed, including a working JDK, [Secure Repository Token](https://account.akka.io/token) and running Docker engine.
+
+---
+
+### Secure Repository Token
+
+To build you need to set up a token in one of two ways:
+
+1. Download the [Akka CLI](https://doc.akka.io/operations/cli/installation.html), run `akka code token` and follow the instructions.
+2. Set up the token manually as described [here](https://account.akka.io/token).
+
+---
 
 Running and testing this service works a bit differently than the first shopping cart. This sample requires JWT authentication for the service endpoint. However, the code doesn't require any specific issuer, so as long as you've created a valid JWT that includes both an `iss` and a `sub` field and is not expired, you can authenticate against the service.
 

@@ -9,6 +9,14 @@ This guide demonstrates how to implement a choreography Saga in Akka to ensure u
 - [Apache Maven](https://maven.apache.org/install.html)
 - [Docker Engine](https://docs.docker.com/get-started/get-docker/)
 - [`curl` command-line tool](https://curl.se/download.html)
+- A [Secure Repository Token](https://account.akka.io/token)
+
+### Secure Repository Token
+
+To build you need to set up a token in one of two ways:
+
+1. Download the [Akka CLI](https://doc.akka.io/operations/cli/installation.html), run `akka code token` and follow the instructions.
+2. Set up the token manually as described [here](https://account.akka.io/token).
 
 ## Concepts
 
