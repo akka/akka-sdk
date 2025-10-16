@@ -43,6 +43,7 @@
 - [Declarative effects](https://doc.akka.io/concepts/declarative-effects.html.md): Understanding how Akka's effect system enables composable, testable side effects.
 - [AI orchestration patterns](https://doc.akka.io/concepts/ms-agent-patterns.html.md): Patterns for composing agentic applications.
 - [Inter-agent communications](https://doc.akka.io/concepts/inter-agent-comms.html.md): Patterns for agent collaboration and communication.
+- [Santization](https://doc.akka.io/java/sanitization.html.md): Anonymization of personal information in texts.
 
 ## Tutorials
 

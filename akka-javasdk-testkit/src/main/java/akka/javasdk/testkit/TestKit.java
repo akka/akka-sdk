@@ -10,7 +10,11 @@ import akka.actor.typed.ActorSystem;
 import akka.grpc.javadsl.AkkaGrpcClient;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.model.HttpRequest;
-import akka.javasdk.*;
+import akka.javasdk.DependencyProvider;
+import akka.javasdk.Metadata;
+import akka.javasdk.Principal;
+import akka.javasdk.Sanitizer;
+import akka.javasdk.ServiceSetup;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.agent.ModelProvider;
@@ -702,6 +706,7 @@ public class TestKit {
       final JsonSerializer serializer = startupContext.serializer();
       dependencyProvider =
           Optional.ofNullable(startupContext.dependencyProvider().getOrElse(() -> null));
+      sanitizer = startupContext.sanitizer();
 
       settings.modelProvidersByAgentId.forEach(
           (agentId, modelProvider) ->
@@ -1066,11 +1071,13 @@ public class TestKit {
   }
 
   /**
-   * @return The configured sanitizer for the service, for test assertions that the expected anonymization is applied.
-   *         Will always return an instance, if no sanitization rules are configured, the returned sanitizer will
-   *         return all text fed to it as is.
+   * @return The configured sanitizer for the service, for test assertions that the expected
+   *     anonymization is applied. Will always return an instance, if no sanitization rules are
+   *     configured, the returned sanitizer will return all text fed to it as is.
    */
-  public Sanitizer getSanitizer() { return sanitizer; }
+  public Sanitizer getSanitizer() {
+    return sanitizer;
+  }
 
   /** Stop the testkit and local runtime. */
   public void stop() {

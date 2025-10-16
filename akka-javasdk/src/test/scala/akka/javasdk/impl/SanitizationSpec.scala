@@ -4,8 +4,7 @@
 
 package akka.javasdk.impl
 
-import akka.runtime.sdk.spi.SpiDataSanitizer.SpiPredefinedSanitizer
-import akka.runtime.sdk.spi.SpiDataSanitizer.SpiRegexSanitizer
+import akka.runtime.sdk.spi.SpiDataSanitizer
 import com.typesafe.config.ConfigFactory
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -22,8 +21,8 @@ class SanitizationSpec extends AnyWordSpec with Matchers {
         """)))
 
       result.sanitizers.map(entry => entry.getClass -> entry.name) shouldEqual Seq(
-        classOf[SpiPredefinedSanitizer] -> "CREDIT_CARD",
-        classOf[SpiPredefinedSanitizer] -> "IBAN")
+        classOf[SpiDataSanitizer.Predefined] -> "CREDIT_CARD",
+        classOf[SpiDataSanitizer.Predefined] -> "IBAN")
     }
 
     "load user defined regexes" in {
@@ -35,7 +34,8 @@ class SanitizationSpec extends AnyWordSpec with Matchers {
         }
         """)))
 
-      result.sanitizers.map(entry => (entry.name, entry.asInstanceOf[SpiRegexSanitizer].pattern.regex)) shouldEqual Seq(
+      result.sanitizers.map(entry =>
+        (entry.name, entry.asInstanceOf[SpiDataSanitizer.Regex].pattern.regex)) shouldEqual Seq(
         "warm-colors" -> "(?i)(red|orange|yellow)")
     }
 

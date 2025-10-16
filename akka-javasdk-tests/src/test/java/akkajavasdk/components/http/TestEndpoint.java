@@ -47,6 +47,6 @@ public class TestEndpoint extends AbstractHttpEndpoint {
 
   @Get("/sanitized")
   public String sanitized() {
-    return sanitizer.sanitize("Here's a couple of colors: red, yellow, orange");
+    return sanitizer.sanitize("Here's a string to sanitize: sanitizesanitizesanitize");
   }
 }

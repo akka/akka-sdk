@@ -8,7 +8,9 @@ Text anonymization—detecting and masking sensitive details like names, emails,
 
 Akka supports this through service-wide sanitization.
 
-The sanitization is automatically applied to text that:
+The sanitization disabled by default and can be selectively enabled through configuration.
+
+When enabled, sanitization is automatically applied to text that:
 
  * written to logs
  * passed to agent models from agent requests
@@ -100,5 +102,5 @@ expressions may impact performance. Consider monitoring application performance 
 
 == Testing sanitization
 
-In tests the sanitizer can be directly accessed from `akka.javasdk.testkit.TestKit#getSanitizer` to assert that expected
+In tests the sanitizer can be directly accessed from `getSanitizer` method in `TestKit` or `TestKitSupport` to assert that expected
 texts are masked given the service sanitizer configuration.

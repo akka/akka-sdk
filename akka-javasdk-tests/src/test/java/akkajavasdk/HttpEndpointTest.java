@@ -151,9 +151,11 @@ public class HttpEndpointTest extends TestKitSupport {
     // depends on custom sanitizer config, see test application.conf
     var response = httpClient.GET("/sanitized").responseBodyAs(String.class).invoke();
     assertThat(response.status()).isEqualTo(StatusCodes.OK);
-    assertThat(response.body()).isEqualTo("Here's a couple of colors: ***, ******, ******");
+    assertThat(response.body()).isEqualTo("Here's a string to sanitize: ************************");
 
-    var directUsageResult = testKit.getSanitizer().sanitize("Here's a couple of colors: red, yellow, orange");
-    assertThat(directUsageResult).isEqualTo("Here's a couple of colors: ***, ******, ******");
+    var directUsageResult =
+        getSanitizer().sanitize("Here's a string to sanitize: sanitizesanitizesanitize");
+    assertThat(directUsageResult)
+        .isEqualTo("Here's a string to sanitize: ************************");
   }
 }
