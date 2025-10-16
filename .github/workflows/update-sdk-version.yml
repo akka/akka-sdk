@@ -44,7 +44,6 @@ jobs:
 
       - name: Create PR to update all sdk versions (samples, sbt and maven)
         env:
-          SDK_VERSION: ${{ steps.determine_sdk_version.outputs.sdk_version || steps.determine_sdk_version_manual_triggered.outputs.sdk_version }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |-
           sdk_version=`./docs/bin/version.sh`
