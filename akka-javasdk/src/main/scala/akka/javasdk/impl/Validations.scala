@@ -612,7 +612,8 @@ private[javasdk] object Validations {
       component.getMethods.toIndexedSeq.filter(hasSubscriptionAndAcl).map { method =>
         errorMessage(
           method,
-          "Methods from classes annotated with Kalix @Consume annotations are for internal use only and cannot be annotated with ACL annotations.")
+          "Methods from classes annotated with Akka @Consume annotations are for internal use only and cannot be " +
+          "annotated with ACL annotations.")
       }
 
     Validation(messages)

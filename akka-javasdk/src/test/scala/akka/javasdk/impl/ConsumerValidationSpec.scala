@@ -120,7 +120,7 @@ class ConsumerValidationSpec extends AnyWordSpec with Matchers with ValidationSu
     "return Invalid for Consumer with method level ACL on subscription method" in {
       Validations
         .validate(classOf[ConsumerWithMethodLevelAcl])
-        .expectInvalid("Methods from classes annotated with Kalix @Consume annotations are for internal use only")
+        .expectInvalid("Methods from classes annotated with Akka @Consume annotations are for internal use only")
 
     }
 

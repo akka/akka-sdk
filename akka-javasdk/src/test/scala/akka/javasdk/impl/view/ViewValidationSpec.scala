@@ -179,5 +179,6 @@ class ViewValidationSpec extends AnyWordSpec with Matchers with ValidationSuppor
     "allow more than one query method" in {
       Validations.validate(classOf[ViewWithTwoQueries]).isValid shouldBe true
     }
+
   }
 }
