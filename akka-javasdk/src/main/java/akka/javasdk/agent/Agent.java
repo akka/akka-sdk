@@ -8,6 +8,7 @@ import akka.annotation.InternalApi;
 import akka.javasdk.CommandException;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.Metadata;
+import akka.javasdk.agent.Guardrail.GuardrailException;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.client.ComponentClient;
@@ -311,6 +312,7 @@ public abstract class Agent {
        *   <li>{@link ToolCallLimitReachedException} - Tool call limit exceeded
        *   <li>{@link ToolCallExecutionException} - Function tool execution errors
        *   <li>{@link McpToolCallExecutionException} - MCP tool execution errors
+       *   <li>{@link GuardrailException} - Guardrail violations
        * </ul>
        */
       FailureBuilder<String> onFailure(Function<Throwable, String> exceptionHandler);
@@ -350,6 +352,7 @@ public abstract class Agent {
        *   <li>{@link ToolCallLimitReachedException} - Tool call limit exceeded
        *   <li>{@link ToolCallExecutionException} - Function tool execution errors
        *   <li>{@link McpToolCallExecutionException} - MCP tool execution errors
+       *   <li>{@link GuardrailException} - Guardrail violations
        * </ul>
        */
       FailureBuilder<Result> onFailure(Function<Throwable, Result> exceptionHandler);
@@ -386,6 +389,7 @@ public abstract class Agent {
        *   <li>{@link ToolCallLimitReachedException} - Tool call limit exceeded
        *   <li>{@link ToolCallExecutionException} - Function tool execution errors
        *   <li>{@link McpToolCallExecutionException} - MCP tool execution errors
+       *   <li>{@link GuardrailException} - Guardrail violations
        * </ul>
        */
       FailureBuilder<Result> onFailure(Function<Throwable, Result> exceptionHandler);
