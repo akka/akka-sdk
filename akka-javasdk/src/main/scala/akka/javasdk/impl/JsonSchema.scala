@@ -4,17 +4,6 @@
 
 package akka.javasdk.impl
 
-import java.lang.annotation.Annotation
-import java.lang.reflect.Field
-import java.lang.reflect.GenericArrayType
-import java.lang.reflect.Method
-import java.lang.reflect.Parameter
-import java.lang.reflect.ParameterizedType
-import java.lang.reflect.Type
-import java.util.Optional
-
-import scala.util.control.NonFatal
-
 import akka.annotation.InternalApi
 import akka.http.javadsl.model.HttpEntity
 import akka.http.javadsl.model.HttpRequest
@@ -28,6 +17,16 @@ import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaString
 import org.slf4j.LoggerFactory
 
+import java.lang.annotation.Annotation
+import java.lang.reflect.Field
+import java.lang.reflect.GenericArrayType
+import java.lang.reflect.Method
+import java.lang.reflect.Parameter
+import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
+import java.util.Optional
+import scala.util.control.NonFatal
+
 /**
  * INTERNAL API
  */
@@ -35,6 +34,8 @@ import org.slf4j.LoggerFactory
 private[impl] object JsonSchema {
 
   private val log = LoggerFactory.getLogger(getClass)
+
+  val emptyObjectSchema = new JsonSchemaObject(None, Map.empty, Seq.empty)
 
   final case class TypedParameter(
       name: String,
@@ -56,6 +57,38 @@ private[impl] object JsonSchema {
       description = None,
       properties = parameters.map { case TypedParameter(name, _, schemaType, _) => name -> schemaType }.toMap,
       required = parameters.collect { case TypedParameter(name, _, _, true) => name }.sorted)
+  }
+
+  def jsonSchemaWithEntityId(objSchema: JsonSchemaObject): JsonSchemaObject = {
+
+    val requiredFields =
+      if (objSchema == emptyObjectSchema) Seq("entityId")
+      else Seq("entityId", "payload")
+
+    new JsonSchemaObject(
+      description = None,
+      properties = Map(
+        "entityId" -> new JsonSchemaString(
+          Some("a unique entity id identifying the entity to which the payload should be send")),
+        "payload"
+        -> objSchema),
+      required = requiredFields)
+  }
+
+  def jsonSchemaWithWorkflowId(objSchema: JsonSchemaObject): JsonSchemaObject = {
+
+    val requiredFields =
+      if (objSchema == emptyObjectSchema) Seq("workflowId")
+      else Seq("workflowId", "payload")
+
+    new JsonSchemaObject(
+      description = None,
+      properties = Map(
+        "workflowId" -> new JsonSchemaString(
+          Some("a unique workflow id identifying the workflow to which the payload should be send")),
+        "payload"
+        -> objSchema),
+      required = requiredFields)
   }
 
   def jsonSchemaFor(value: Class[_]): JsonSchemaDataType = {

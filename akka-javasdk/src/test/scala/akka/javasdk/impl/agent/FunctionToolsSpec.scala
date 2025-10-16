@@ -4,13 +4,30 @@
 
 package akka.javasdk.impl.agent
 
+import akka.Done
 import akka.javasdk.DependencyProvider
 import akka.javasdk.agent.Agent
 import akka.javasdk.annotations.FunctionTool
+import akka.javasdk.eventsourcedentity.EventSourcedEntity
+import akka.javasdk.impl.JsonSchema.emptyObjectSchema
+import akka.javasdk.impl.agent.FunctionToolsSpec.CustomNameTool
+import akka.javasdk.impl.agent.FunctionToolsSpec.ESEntityAsTool
+import akka.javasdk.impl.agent.FunctionToolsSpec.KVEntityAsTool
+import akka.javasdk.impl.agent.FunctionToolsSpec.MultipleMethodsTool
+import akka.javasdk.impl.agent.FunctionToolsSpec.PrivateMethodTool
+import akka.javasdk.impl.agent.FunctionToolsSpec.SecretAgent
+import akka.javasdk.impl.agent.FunctionToolsSpec.SimpleToolImpl
+import akka.javasdk.impl.agent.FunctionToolsSpec.SimpleToolWrapper
+import akka.javasdk.impl.agent.FunctionToolsSpec.TestDependencyProvider
+import akka.javasdk.impl.agent.FunctionToolsSpec.ViewAsTool
+import akka.javasdk.impl.agent.FunctionToolsSpec.WorkflowAsTool
+import akka.javasdk.keyvalueentity.KeyValueEntity
+import akka.javasdk.view.View
+import akka.javasdk.workflow.Workflow
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class FunctionToolsSpec extends AnyWordSpec with Matchers {
+object FunctionToolsSpec {
 
   trait SimpleTool {
     @FunctionTool(description = "Simple echo function")
@@ -29,6 +46,7 @@ class FunctionToolsSpec extends AnyWordSpec with Matchers {
   object SimpleToolWrapper {
     class SimpleToolImpl extends SimpleTool {
       override def echo(message: String): String = message
+
       override def echo(num: Int): String = num.toString
     }
   }
@@ -63,6 +81,7 @@ class FunctionToolsSpec extends AnyWordSpec with Matchers {
     def publicMethod(data: String): String = secretOperation(data)
 
   }
+
   // Custom dependency provider for testing
   class TestDependencyProvider extends DependencyProvider {
     override def getDependency[T](cls: Class[T]): T = {
@@ -72,6 +91,57 @@ class FunctionToolsSpec extends AnyWordSpec with Matchers {
         throw new IllegalArgumentException(s"Unknown dependency: ${cls.getName}")
     }
   }
+
+  class ESEntityAsTool extends EventSourcedEntity[String, String] {
+    @FunctionTool(description = "a method without arg")
+    def method(): EventSourcedEntity.Effect[Done] = effects().reply(Done)
+
+    @FunctionTool(description = "a method with 1 String arg")
+    def method(input: String): EventSourcedEntity.Effect[Done] = effects().reply(Done)
+
+    @FunctionTool(description = "a method with 1 Int arg")
+    def method(input: Int): EventSourcedEntity.Effect[Done] = effects().reply(Done)
+
+    override def applyEvent(event: String): String = ???
+  }
+
+  class KVEntityAsTool extends KeyValueEntity[String] {
+
+    @FunctionTool(description = "a method without arg")
+    def method(): KeyValueEntity.Effect[Done] = effects().reply(Done)
+
+    @FunctionTool(description = "a method with 1 String arg")
+    def method(input: String): KeyValueEntity.Effect[Done] = effects().reply(Done)
+
+    @FunctionTool(description = "a method with 1 Int arg")
+    def method(input: Int): KeyValueEntity.Effect[Done] = effects().reply(Done)
+
+  }
+
+  class WorkflowAsTool extends Workflow[String] {
+
+    @FunctionTool(description = "a method without arg")
+    def method(): Workflow.Effect[Done] = effects().reply(Done)
+
+    @FunctionTool(description = "a method with 1 String arg")
+    def method(input: String): Workflow.Effect[Done] = effects().reply(Done)
+
+    @FunctionTool(description = "a method with 1 Int arg")
+    def method(input: Int): Workflow.Effect[Done] = effects().reply(Done)
+
+  }
+
+  class ViewAsTool extends View {
+
+    @FunctionTool(description = "a method without arg")
+    def method(): View.QueryEffect[String] = queryResult()
+
+    @FunctionTool(description = "a method with 1 String arg")
+    def method(input: String): View.QueryEffect[String] = queryResult()
+
+  }
+}
+class FunctionToolsSpec extends AnyWordSpec with Matchers {
 
   "FunctionTools" should {
 
@@ -221,6 +291,123 @@ class FunctionToolsSpec extends AnyWordSpec with Matchers {
       }
 
       exception.getMessage should include("Duplicate tool names found:")
+    }
+
+    "throw exception when no tools found in an EventSourcedEntity class" in {
+      class NoToolsEntity extends EventSourcedEntity[Int, String] {
+        def method(): EventSourcedEntity.Effect[Done] = effects().reply(Done)
+        override def applyEvent(event: String): Int = ???
+      }
+
+      val exception = intercept[IllegalArgumentException] {
+        FunctionTools.descriptorsFor(classOf[NoToolsEntity])
+      }
+
+      exception.getMessage should include("No tools found in class")
+    }
+
+    "throw exception when no tools found in an KeyValueEntity class" in {
+      class NoToolsEntity extends KeyValueEntity[String] {
+        def method(): KeyValueEntity.Effect[Done] = effects().reply(Done)
+      }
+
+      val exception = intercept[IllegalArgumentException] {
+        FunctionTools.descriptorsFor(classOf[NoToolsEntity])
+      }
+
+      exception.getMessage should include("No tools found in class")
+    }
+
+    "find all tools in an EventSourcedEntity class" in {
+
+      val descriptors = FunctionTools.descriptorsFor(classOf[ESEntityAsTool])
+      descriptors.size shouldBe 3
+
+      val descMethodVoid = descriptors.find(_.name == "ESEntityAsTool_method").get
+      descMethodVoid.description shouldBe "a method without arg"
+      descMethodVoid.schema.required.contains("entityId") shouldBe true
+      descMethodVoid.schema.required.contains("payload") shouldBe false
+      descMethodVoid.schema.properties("payload") shouldBe emptyObjectSchema
+
+      val descMethodString = descriptors.find(_.name == "ESEntityAsTool_method_String").get
+      descMethodString.description shouldBe "a method with 1 String arg"
+
+      descMethodString.schema.required.contains("entityId") shouldBe true
+      descMethodString.schema.required.contains("payload") shouldBe true
+
+      val descMethodInt = descriptors.find(_.name == "ESEntityAsTool_method_int").get
+      descMethodInt.description shouldBe "a method with 1 Int arg"
+
+      descMethodInt.schema.required.contains("entityId") shouldBe true
+      descMethodInt.schema.required.contains("payload") shouldBe true
+
+    }
+
+    "find all tools in an KeyValueEntity class" in {
+
+      val descriptors = FunctionTools.descriptorsFor(classOf[KVEntityAsTool])
+      descriptors.size shouldBe 3
+
+      val descMethodVoid = descriptors.find(_.name == "KVEntityAsTool_method").get
+      descMethodVoid.description shouldBe "a method without arg"
+      descMethodVoid.schema.required.contains("entityId") shouldBe true
+      descMethodVoid.schema.required.contains("payload") shouldBe false
+      descMethodVoid.schema.properties("payload") shouldBe emptyObjectSchema
+
+      val descMethodString = descriptors.find(_.name == "KVEntityAsTool_method_String").get
+      descMethodString.description shouldBe "a method with 1 String arg"
+
+      descMethodString.schema.required.contains("entityId") shouldBe true
+      descMethodString.schema.required.contains("payload") shouldBe true
+
+      val descMethodInt = descriptors.find(_.name == "KVEntityAsTool_method_int").get
+      descMethodInt.description shouldBe "a method with 1 Int arg"
+
+      descMethodInt.schema.required.contains("entityId") shouldBe true
+      descMethodInt.schema.required.contains("payload") shouldBe true
+
+    }
+
+    "find all tools in an Workflow class" in {
+
+      val descriptors = FunctionTools.descriptorsFor(classOf[WorkflowAsTool])
+      descriptors.size shouldBe 3
+
+      val descMethodVoid = descriptors.find(_.name == "WorkflowAsTool_method").get
+      descMethodVoid.description shouldBe "a method without arg"
+
+      descMethodVoid.schema.required.contains("workflowId") shouldBe true
+      descMethodVoid.schema.required.contains("payload") shouldBe false
+      descMethodVoid.schema.properties("payload") shouldBe emptyObjectSchema
+
+      val descMethodString = descriptors.find(_.name == "WorkflowAsTool_method_String").get
+      descMethodString.description shouldBe "a method with 1 String arg"
+
+      descMethodString.schema.required.contains("workflowId") shouldBe true
+      descMethodString.schema.required.contains("payload") shouldBe true
+
+      val descMethodInt = descriptors.find(_.name == "WorkflowAsTool_method_int").get
+      descMethodInt.description shouldBe "a method with 1 Int arg"
+
+      descMethodInt.schema.required.contains("workflowId") shouldBe true
+      descMethodInt.schema.required.contains("payload") shouldBe true
+
+    }
+
+    "find all tools in a View class" in {
+
+      val descriptors = FunctionTools.descriptorsFor(classOf[ViewAsTool])
+      descriptors.size shouldBe 2
+
+      val descMethodVoid = descriptors.find(_.name == "ViewAsTool_method").get
+      descMethodVoid.description shouldBe "a method without arg"
+      descMethodVoid.schema shouldBe emptyObjectSchema
+
+      val descMethodString = descriptors.find(_.name == "ViewAsTool_method_String").get
+      descMethodString.description shouldBe "a method with 1 String arg"
+
+      descMethodString.schema.required.contains("input") shouldBe true
+
     }
   }
 }

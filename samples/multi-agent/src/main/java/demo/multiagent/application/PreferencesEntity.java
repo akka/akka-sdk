@@ -2,6 +2,7 @@ package demo.multiagent.application;
 
 import akka.Done;
 import akka.javasdk.annotations.Component;
+import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import demo.multiagent.domain.Preferences;
 import demo.multiagent.domain.PreferencesEvent;
@@ -17,6 +18,7 @@ public class PreferencesEntity extends EventSourcedEntity<Preferences, Preferenc
     return new Preferences(List.of());
   }
 
+  @FunctionTool(description = "Add user's preferences")
   public Effect<Done> addPreference(AddPreference command) {
     return effects()
       .persist(new PreferencesEvent.PreferenceAdded(command.preference()))
