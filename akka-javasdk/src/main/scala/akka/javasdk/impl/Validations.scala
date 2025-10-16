@@ -77,14 +77,12 @@ private[javasdk] object Validations {
     final def isInvalid: Boolean = !isInvalid
     def ++(validation: Validation): Validation
 
-    def failIfInvalid(): Unit
   }
 
   case object Valid extends Validation {
     override def isValid: Boolean = true
     override def ++(validation: Validation): Validation = validation
 
-    override def failIfInvalid(): Unit = ()
   }
 
   object Invalid {
@@ -100,8 +98,6 @@ private[javasdk] object Validations {
         case Valid      => this
         case i: Invalid => Invalid(this.messages ++ i.messages)
       }
-
-    override def failIfInvalid(): Unit = throwFailureSummary()
 
     def throwFailureSummary(): Nothing =
       throw ValidationException(messages.mkString(", "))
