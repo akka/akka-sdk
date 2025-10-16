@@ -76,11 +76,11 @@ object Dependencies {
   private val deps = libraryDependencies
 
   private val sdkDeps = Seq(
-    opentelemetryApi % Provided,
-    opentelemetrySdk % Provided,
-    opentelemetryExporterOtlp % Provided,
-    opentelemetryContext % Provided,
-    opentelemetrySemConv % Provided,
+    opentelemetryApi,
+    opentelemetrySdk,
+    opentelemetryExporterOtlp,
+    opentelemetryContext,
+    opentelemetrySemConv,
     // akka-http is pulling akka-pki and akka-discovery, we need to force it to be same version
     akkaDependency("akka-pki"),
     akkaDependency("akka-discovery"),
