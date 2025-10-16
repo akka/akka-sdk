@@ -21,10 +21,10 @@ Akka uses a predefined `Jackson` configuration, for serialization. Use the `Json
 @Setup
 public class CustomerRegistrySetup implements ServiceSetup {
 
+
   @Override
   public void onStartup() {
-      JsonSupport.getObjectMapper()
-            .configure(FAIL_ON_NULL_CREATOR_PROPERTIES, true); // (1)
+    JsonSupport.getObjectMapper().configure(FAIL_ON_NULL_CREATOR_PROPERTIES, true); // (1)
   }
 }
 ```
@@ -51,15 +51,14 @@ Old class:
 
 [CustomerEvent.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java)
 ```java
-record NameChanged(String newName) implements CustomerEvent {
-}
+record NameChanged(String newName) implements CustomerEvent {}
 ```
 New class with optional `oldName` and nullable `reason`.
 
 [CustomerEvent.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java)
 ```java
-record NameChanged(String newName, Optional<String> oldName, String reason) implements CustomerEvent {
-}
+record NameChanged(String newName, Optional<String> oldName, String reason)
+  implements CustomerEvent {}
 ```
 
 ### <a href="about:blank#_adding_a_mandatory_field"></a> Adding a mandatory field
@@ -98,8 +97,8 @@ The migration class must be linked to the updated model with the `@Migration` an
 [CustomerEvent.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java)
 ```java
 @Migration(NameChangedMigration.class) // (1)
-record NameChanged(String newName, Optional<String> oldName, String reason) implements CustomerEvent {
-}
+record NameChanged(String newName, Optional<String> oldName, String reason)
+  implements CustomerEvent {}
 ```
 
 | **1** | Links the migration implementation with the updated event. |
@@ -112,16 +111,14 @@ Old class:
 
 [CustomerEvent.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java)
 ```java
-record AddressChanged(Address address) implements CustomerEvent {
-}
+record AddressChanged(Address address) implements CustomerEvent {}
 ```
 New class:
 
 [CustomerEvent.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java)
 ```java
 @Migration(AddressChangedMigration.class)
-record AddressChanged(Address newAddress) implements CustomerEvent {
-}
+record AddressChanged(Address newAddress) implements CustomerEvent {}
 ```
 The migration implementation:
 
@@ -157,16 +154,16 @@ Old class:
 
 [CustomerEvent.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java)
 ```java
-record CustomerCreatedOld(String email, String name, String street, String city) implements CustomerEvent {
-}
+record CustomerCreatedOld(String email, String name, String street, String city)
+  implements CustomerEvent {}
 ```
 New class with the `Address` type:
 
 [CustomerEvent.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java)
 ```java
 @Migration(CustomerCreatedMigration.class)
-record CustomerCreated(String email, String name, Address address) implements CustomerEvent {
-}
+record CustomerCreated(String email, String name, Address address)
+  implements CustomerEvent {}
 ```
 The migration implementation:
 
@@ -226,7 +223,9 @@ It’s highly recommended to cover all schema changes with unit tests. In most c
 
 [CustomerEventSerializationTest.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-customer-registry/src/test/java/customer/domain/CustomerEventSerializationTest.java)
 ```java
-byte[] serialized = SerializationTestkit.serialize(new CustomerCreatedOld("bob@lightbend.com", "bob", "Wall Street", "New York"));
+byte[] serialized = SerializationTestkit.serialize(
+  new CustomerCreatedOld("bob@lightbend.com", "bob", "Wall Street", "New York")
+);
 var tmpDir = Files.createTempFile("customer-created-old", ".json");
 // save serialized to a file and remove `CustomerCreatedOld`
 Files.write(tmpDir.toAbsolutePath(), serialized); // (1)
@@ -240,8 +239,13 @@ Test example:
 @Test
 public void shouldDeserializeCustomerCreated_V0() throws IOException {
   // load serialized bytes and deserialize with the new schema
-  var serialized = getClass().getResourceAsStream("/customer-created-old.json").readAllBytes(); // (1)
-  CustomerCreated deserialized = SerializationTestkit.deserialize(CustomerCreated.class, serialized); // (2)
+  var serialized = getClass()
+    .getResourceAsStream("/customer-created-old.json")
+    .readAllBytes(); // (1)
+  CustomerCreated deserialized = SerializationTestkit.deserialize(
+    CustomerCreated.class,
+    serialized
+  ); // (2)
 
   assertEquals("Wall Street", deserialized.address().street());
   assertEquals("New York", deserialized.address().city());

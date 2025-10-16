@@ -54,6 +54,8 @@ There are protocols and standards rapidly evolving for ways agents can communica
 
 Whether you have 1 agent or 50, you still need to be able to do things like recover from network failure, handle timeouts, deal with failure responses, broken streams, and much more. Just for individual agents you will need an orchestrator if you want that agent to be resilient at scale. With dozens of agents working together with shared and isolated sessions, they will need to be managed by supervisors.
 
+For more detail on orchestration, check out our [agentic orchestration patterns](ms-agent-patterns.html) section.
+
 ## <a href="about:blank#_agent_evaluation"></a> Agent evaluation
 
 The answers your agents get from models are *non-deterministic*. They can seem random at times. Since you can’t predict the model output you can’t use traditional testing practices. Instead, we need to do what’s called **evaluation**. Evaluation involves iteratively refining a prompt.
@@ -80,7 +82,7 @@ Topics covered in the video include:
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Endpoints](grpc-vs-http-endpoints.html) [Access Control List concepts](acls.html)
+[Endpoints](grpc-vs-http-endpoints.html) [Inter-agent communications](inter-agent-comms.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

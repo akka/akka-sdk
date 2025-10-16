@@ -1,12 +1,10 @@
 package akka.ask.agent.application;
 
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.Component;
 
 // tag::class[]
-@Component(id = "ask-akka-agent")
-@AgentDescription(name = "Ask Akka", description = "Expert in Akka")
+@Component(id = "ask-akka-agent", name = "Ask Akka", description = "Expert in Akka")
 public class AskAkkaAgent extends Agent {
 
   private final Knowledge knowledge;

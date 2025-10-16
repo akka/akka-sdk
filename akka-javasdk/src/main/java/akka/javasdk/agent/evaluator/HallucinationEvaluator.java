@@ -7,7 +7,7 @@ package akka.javasdk.agent.evaluator;
 import akka.javasdk.agent.EvaluationResult;
 import akka.javasdk.agent.MemoryProvider;
 import akka.javasdk.agent.PromptTemplate;
-import akka.javasdk.annotations.AgentDescription;
+import akka.javasdk.annotations.AgentRole;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import com.typesafe.config.Config;
@@ -26,15 +26,15 @@ import java.util.Locale;
  * prompts are used if these are not defined. The prompts can be initialized or updated with the
  * {@link PromptTemplate} entity.
  */
-@Component(id = HallucinationEvaluator.COMPONENT_ID)
-@AgentDescription(
+@Component(
+    id = HallucinationEvaluator.COMPONENT_ID,
     name = "Hallucination Evaluator Agent",
     description =
         """
         An agent that acts as an LLM judge to evaluate whether an output contains information
         not available in the reference text given an input question.
-        """,
-    role = "evaluator")
+        """)
+@AgentRole("evaluator")
 public class HallucinationEvaluator extends LlmAsJudge {
 
   public HallucinationEvaluator(ComponentClient componentClient, Config config) {
@@ -43,18 +43,24 @@ public class HallucinationEvaluator extends LlmAsJudge {
 
   public record EvaluationRequest(String query, String referenceText, String answer) {}
 
-  public record Result(String explanation, String label) implements EvaluationResult {
-    public boolean passed() {
+  record ModelResult(String explanation, String label) {
+    Result toEvaluationResult() {
       if (label == null)
         throw new IllegalArgumentException("Model response must include label field");
 
-      return switch (label.toLowerCase(Locale.ROOT)) {
-        case "hallucinated" -> false;
-        case "factual" -> true;
-        default -> throw new IllegalArgumentException("Unknown evaluation label [" + label + "]");
-      };
+      var passed =
+          switch (label.toLowerCase(Locale.ROOT)) {
+            case "hallucinated" -> false;
+            case "factual" -> true;
+            default ->
+                throw new IllegalArgumentException("Unknown evaluation label [" + label + "]");
+          };
+
+      return new Result(explanation, passed);
     }
   }
+
+  public record Result(String explanation, boolean passed) implements EvaluationResult {}
 
   static final String COMPONENT_ID = "hallucination-evaluator";
   private static final String SYSTEM_MESSAGE_PROMPT_ID = COMPONENT_ID + ".system";
@@ -115,13 +121,8 @@ Your response must be a single JSON object with the following fields:
         .systemMessage(prompt(SYSTEM_MESSAGE_PROMPT_ID, SYSTEM_MESSAGE))
         .memory(MemoryProvider.none())
         .userMessage(evaluationPrompt)
-        .responseConformsTo(Result.class)
-        .map(
-            result -> {
-              // make sure it's a valid label in the result, otherwise it will throw an exception
-              result.passed();
-              return result;
-            })
+        .responseConformsTo(ModelResult.class)
+        .map(ModelResult::toEvaluationResult)
         .thenReply();
   }
 }

@@ -63,8 +63,8 @@ import java.util.concurrent.CompletionStage;
  *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider} from the service setup
  * </ul>
  *
- * <p>Concrete classes must be annotated with {@link akka.javasdk.annotations.ComponentId} and one
- * of the {@link akka.javasdk.annotations.Consume} annotations such as:
+ * <p>Concrete classes must be annotated with {@link akka.javasdk.annotations.Component} and one of
+ * the {@link akka.javasdk.annotations.Consume} annotations such as:
  *
  * <ul>
  *   <li>{@code @Consume.FromEventSourcedEntity} - to consume events from an Event Sourced Entity
@@ -97,8 +97,7 @@ public abstract class Consumer {
    * </ul>
    *
    * <p>For Event Sourced and Key Value Entity consumers, the entity id is available through the
-   * metadata as the CloudEvent subject: {@code
-   * messageContext().metadata().asCloudEvent().subject().get()}
+   * metadata as the CloudEvent subject: {@code messageContext().eventSubject().get()}
    *
    * <p>This method will throw an exception if accessed from the constructor. It is only available
    * when handling a message.

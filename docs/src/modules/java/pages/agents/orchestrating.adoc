@@ -44,7 +44,8 @@ include::example$multi-agent/src/main/java/demo/multiagent/application/SelectorA
 <2> Select the agents with the role `"worker"`.
 <3> Detailed instructions and include descriptions (as json) of the agents.
 
-The information about the agents in the `AgentRegistry` comes from the `@Component` and `@AgentDescription` annotations. When using it for planning like this it is important that the agents define those descriptions that the LLM can use to come up with a good plan.
+The information about the agents in the `AgentRegistry` comes from the `@Component` and `@AgentRole` annotations.
+When using it for planning like this, it is important that the agents define those descriptions that the LLM can use to come up with a good plan.
 
 The `WeatherAgent` has:
 [source,java,indent=0]
@@ -60,7 +61,8 @@ The `ActivityAgent` has:
 include::example$multi-agent/src/main/java/demo/multiagent/application/ActivityAgent.java[tag=description]
 ----
 
-Note that in image:concepts:steps-2.svg[width=20] of the `Selector` we retrieve a subset of the agents with a certain role. This role is also defined in the `@AgentDescription` annotation.
+Note that in image:concepts:steps-2.svg[width=20] of the `Selector` we retrieve a subset of the agents with a certain
+ role. This role is also defined in the `@AgentRole` annotation.
 
 The result from the `Selector` is a list of agent ids:
 [source,java,indent=0]

@@ -1,11 +1,11 @@
 <!-- <nav> -->
 - [Akka](../index.html)
-- [Getting Started](index.html)
-- [Author your first agentic service](author-your-first-service.html)
+- [Tutorials](index.html)
+- [Hello world agent](author-your-first-service.html)
 
 <!-- </nav> -->
 
-# Author your first agentic service
+# Build your first agent
 
 ## <a href="about:blank#_introduction"></a> Introduction
 
@@ -44,14 +44,6 @@ You produce events to a message broker with the [Producer](../java/consuming-pro
 You create a continuous incoming stream of events with the [HTTP Endpoint](../java/http-endpoints.html) or the [gRPC Endpoint](../java/grpc-endpoints.html) components.
 
 You create a stream processor to analyze and act against a stream of data with the [Consumer](../java/consuming-producing.html) component. |
-
-## <a href="about:blank#_composability"></a> Composability
-
-The services you build with Akka components are composable, which can be combined to design agentic, transactional, analytics, edge, and digital twin systems. You can create services with one component or many. Let Akka unlock your distributed systems artistry!
-
-![Akka Agentic Platform](../concepts/_images/component-composition.png)
-
-
 In this guide, you will:
 
 - Set up your development environment.
@@ -69,24 +61,23 @@ In this guide, you will:
 - <a href="https://curl.se/download.html">`curl` command-line tool</a>
 - Git
 - [OpenAI API key](https://platform.openai.com/api-keys)
-Akka has support for many AI providers, and this sample is using OpenAI.
-
-You can run this sample without an OpenAI API key, but it will be more fun if you have one. Sign up for free at [platform.openai.com/api-keys](https://platform.openai.com/api-keys). If you don’t provide an API key, it will use a predefined response instead of using AI.
+Akka has support for many AI providers, and this sample is using OpenAI. Sign up for free at [platform.openai.com/api-keys](https://platform.openai.com/api-keys).
 
 ## <a href="about:blank#clone_sample"></a> Clone the sample project
 
-1. From a command line, clone the [Github Repository](https://github.com/akka-samples/helloworld-agent) in a convenient location:
+1. From a command line, use the Akka CLI to create a new project. See [installation instructions](quick-install-cli.html) if you haven’t installed the CLI yet.
+
+```command
+akka code init --name helloworld-agent --repo akka-samples/helloworld-agent.git
+```
+2. Navigate to the new project directory.
+3. Open it in your preferred IDE / Editor.
+Alternatively, you can clone the [GitHub Repository](https://github.com/akka-samples/helloworld-agent) directly:
 
 ```command
 git clone https://github.com/akka-samples/helloworld-agent.git --depth 1
 ```
-2. Navigate to the new project directory.
-3. Open it in your preferred IDE / Editor.
-Another convenient way to download this and other samples is to use the Akka CLI. See [installation instructions](quick-install-cli.html).
-
-```command
-akka code init
-```
+Then navigate to the new project directory and open it in your preferred IDE / Editor.
 
 ## <a href="about:blank#_explore_the_agent"></a> Explore the Agent
 
@@ -100,34 +91,28 @@ HelloWorldAgent.java
 @Component(id = "hello-world-agent")
 public class HelloWorldAgent extends Agent {
 
- private static final String SYSTEM_MESSAGE =
-     """
-     You are a cheerful AI assistant with a passion for teaching greetings in new language.
-     
-     Guidelines for your responses:
-     - Start the response with a greeting in a specific language
-     - Always append the language you're using in parenthesis in English. E.g. "Hola (Spanish)"
-     - The first greeting should be in English
-     - In subsequent interactions the greeting should be in a different language than
-       the ones used before
-     - After the greeting phrase, add one or a few sentences in English
-     - Try to relate the response to previous interactions to make it a meaningful conversation
-     - Always respond with enthusiasm and warmth
-     - Add a touch of humor or wordplay when appropriate
-     - At the end, append a list of previous greetings
-     """.stripIndent();
+  private static final String SYSTEM_MESSAGE =
+    """
+    You are a cheerful AI assistant with a passion for teaching greetings in new language.
 
+    Guidelines for your responses:
+    - Start the response with a greeting in a specific language
+    - Always append the language you're using in parenthesis in English. E.g. "Hola (Spanish)"
+    - The first greeting should be in English
+    - In subsequent interactions the greeting should be in a different language than
+      the ones used before
+    - After the greeting phrase, add one or a few sentences in English
+    - Try to relate the response to previous interactions to make it a meaningful conversation
+    - Always respond with enthusiasm and warmth
+    - Add a touch of humor or wordplay when appropriate
+    - At the end, append a list of previous greetings
+    """.stripIndent();
 
   public Effect<String> greet(String userGreeting) {
-    if (System.getenv("OPENAI_API_KEY") == null || System.getenv("OPENAI_API_KEY").isEmpty()) {
-      return effects()
-          .reply("I have no idea how to respond, someone didn't give me an API key");
-    }
-
     return effects()
-        .systemMessage(SYSTEM_MESSAGE)
-        .userMessage(userGreeting)
-        .thenReply();
+      .systemMessage(SYSTEM_MESSAGE)
+      .userMessage(userGreeting)
+      .thenReply();
   }
 }
 ```
@@ -151,10 +136,12 @@ HelloWorldEndpoint.java
  * greetings in different languages.
  */
 // Opened up for access from the public internet to make the service easy to try out.
-// For actual services meant for production this must be carefully considered, and often set more limited
+// For actual services meant for production this must be carefully considered,
+// and often set more limited
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
-@HttpEndpoint()
+@HttpEndpoint
 public class HelloWorldEndpoint {
+
   public record Request(String user, String text) {}
 
   private final ComponentClient componentClient;
@@ -166,10 +153,10 @@ public class HelloWorldEndpoint {
   @Post("/hello")
   public String hello(Request request) {
     return componentClient
-        .forAgent()
-        .inSession(request.user)
-        .method(HelloWorldAgent::greet)
-        .invoke(request.text);
+      .forAgent()
+      .inSession(request.user)
+      .method(HelloWorldAgent::greet)
+      .invoke(request.text);
   }
 }
 ```
@@ -210,9 +197,9 @@ curl -i -XPOST --location "http://localhost:9000/hello" \
 Which will reply with an AI-generated greeting, such as:
 
 ```none
-Hello (English)! So great to meet you, Alice! I'm here to add some zest to our conversation with
-greetings from around the world. Let's have some fun learning them together! Feel free to ask about
-anything else too!
+Hello (English)! So great to meet you, Alice! I'm here to add some zest to our conversation
+with greetings from around the world. Let's have some fun learning them together!
+Feel free to ask about anything else too!
 
 Previous greetings:
 - Hello (English)
@@ -227,9 +214,9 @@ curl -i -XPOST --location "http://localhost:9000/hello" \
 The AI-generated reply might be:
 
 ```none
-Bonjour (French)! Ah, New York, the city that never sleeps! It's almost like you need a coffee the
-size of the Eiffel Tower to keep up with it. What's your favorite thing about living in such a vibrant
-city?
+Bonjour (French)! Ah, New York, the city that never sleeps! It's almost like you need a
+coffee the size of the Eiffel Tower to keep up with it.
+What's your favorite thing about living in such a vibrant city?
 
 Previous greetings:
 - Hello (English)
@@ -243,9 +230,9 @@ curl -i -XPOST --location "http://localhost:9000/hello" \
 ```
 
 ```none
-¡Hola (Spanish)! The botanical garden in New York must be a refreshing oasis amidst the hustle and
-bustle of the city. It's like taking a nature-themed vacation with just a subway ride! Do you have
-a favorite plant or flower that you like to see there?
+¡Hola (Spanish)! The botanical garden in New York must be a refreshing oasis amidst the
+hustle and bustle of the city. It's like taking a nature-themed vacation with just
+subway ride! Do you have a favorite plant or flower that you like to see there?
 
 Previous greetings:
 - Hello (English)
@@ -371,9 +358,11 @@ Now that you have a basic service running, it’s time to learn more about build
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Getting Started](index.html) [Build an AI multi-agent planner](planner-agent/index.html)
+[Tutorials](index.html) [Multi-agent planner](planner-agent/index.html)
 <!-- </nav> -->
 
 <!-- </footer> -->
+
+<!-- <aside> -->
 
 <!-- </aside> -->

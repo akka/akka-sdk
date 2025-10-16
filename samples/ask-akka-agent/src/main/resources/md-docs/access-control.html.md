@@ -13,7 +13,7 @@ specify lists of what can access your services, at multiple granularity. For exa
 initiates a payment on a payment service to only accept requests from the shopping cart service. You can also control
 whether services or methods can be invoked from the Internet.
 
-For a conceptual introduction, see [Access Control List concepts](../concepts/acls.html) in the **Concepts** section.
+For a conceptual introduction, see [Access control lists](../concepts/acls.html) in the **Concepts** section.
 
 ## <a href="about:blank#_principals"></a> Principals
 
@@ -43,6 +43,7 @@ Here is an example of an ACL added at the class level on an HTTP Endpoint:
 @Acl(allow = @Acl.Matcher(service = "service-a"))
 @HttpEndpoint("/user")
 public class UserEndpoint extends AbstractHttpEndpoint { // (1)
+
   // ...
 }
 ```
@@ -55,6 +56,7 @@ This rule can be overridden by an ACL on a method level. Here is an example ACL 
 @Acl(allow = @Acl.Matcher(service = "service-a"))
 @HttpEndpoint("/user")
 public class UserEndpoint extends AbstractHttpEndpoint { // (1)
+
   // ...
   @Post
   @Acl(allow = @Acl.Matcher(service = "service-b"))
@@ -62,6 +64,7 @@ public class UserEndpoint extends AbstractHttpEndpoint { // (1)
     //... create user logic
     return Done.getInstance();
   }
+
 }
 ```
 Note that an ACL defined on a method completely overrides an ACL defined at class level. It does not add to
@@ -71,8 +74,7 @@ You can combine `allow` and `deny` rules. In the following example, access is op
 
 [UserEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java)
 ```java
-@Acl(allow = @Acl.Matcher(service = "*"),
-     deny = @Acl.Matcher(service = "service-b"))
+@Acl(allow = @Acl.Matcher(service = "*"), deny = @Acl.Matcher(service = "service-b"))
 ```
 To allow all traffic:
 
@@ -90,9 +92,7 @@ To allow traffic from `service-a` and `service-b`:
 
 [UserEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java)
 ```java
-@Acl(allow = {
-  @Acl.Matcher(service = "service-a"),
-  @Acl.Matcher(service = "service-b")})
+@Acl(allow = { @Acl.Matcher(service = "service-a"), @Acl.Matcher(service = "service-b") })
 ```
 To block all traffic, an ACL with no allows can be configured:
 
@@ -120,6 +120,7 @@ For example, to make Akka reply with 404, `Not Found`:
      denyCode = 404)
 @HttpEndpoint("/user")
 public class UserEndpoint extends AbstractHttpEndpoint { // (1)
+
   // ...
 }
 ```
@@ -143,6 +144,7 @@ The current principal associated with a request can be accessed through the `Req
 ```java
 @HttpEndpoint("/user")
 public class UserEndpoint extends AbstractHttpEndpoint { // (1)
+
   // ...
     var principals = requestContext().getPrincipals();
 }
@@ -171,8 +173,7 @@ public String checkingPrincipals() {
   } else if (principals.isBackoffice()) {
     return "accessed from Backoffice API";
   } else {
-    return "accessed from another service: " +
-      principals.getLocalService();
+    return "accessed from another service: " + principals.getLocalService();
   }
 }
 ```
@@ -207,6 +208,7 @@ such:
 @Acl(allow = @Acl.Matcher(service = "shopping-cart"))
 @HttpEndpoint("/payments")
 public class PaymentEndpoint {
+
   //...
 }
 ```
@@ -253,7 +255,6 @@ public class UserEndpointIntegrationTest extends TestKitSupport {
   protected TestKit.Settings testKitSettings() {
     return super.testKitSettings().withAclDisabled();
   }
-
 }
 ```
 Calls made through the `ComponentClient` are internal to the service and therefore no ACL rule is applied.

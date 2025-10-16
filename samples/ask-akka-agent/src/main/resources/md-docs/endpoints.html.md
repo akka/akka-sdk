@@ -1,14 +1,16 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
-- [AI RAG agent part 4: Adding UI endpoints](endpoints.html)
+- [Tutorials](../index.html)
+- [RAG chat agent](index.html)
+- [Adding UI endpoints](endpoints.html)
 
 <!-- </nav> -->
 
-# AI RAG agent part 4: Adding UI endpoints
+# Adding UI endpoints
 
 |  | **New to Akka? Start here:**
 
-Use the [Author your first agentic service](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
+Use the [Build your first agent](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
 
 ## <a href="about:blank#_overview"></a> Overview
 
@@ -43,23 +45,26 @@ Add a new file `ConversationHistoryView.java` to `src/main/java/akka/ask/agent/a
 @Component(id = "view_chat_log")
 public class ConversationHistoryView extends View {
 
-  public record ConversationHistory(List<Session> sessions) {
-  }
+  public record ConversationHistory(List<Session> sessions) {}
 
-  public record Message(String message,
-      String origin, long timestamp) { // (1)
-  }
+  public record Message(String message, String origin, long timestamp) {} // (1)
 
-  public record Session(String userId,
-      String sessionId, long creationDate, List<Message> messages) {
+  public record Session(
+    String userId,
+    String sessionId,
+    long creationDate,
+    List<Message> messages
+  ) {
     public Session add(Message message) {
       messages.add(message);
       return this;
     }
   }
 
-  @Query("SELECT collect(*) as sessions FROM view_chat_log " +
-      "WHERE userId = :userId ORDER by creationDate DESC")
+  @Query(
+    "SELECT collect(*) as sessions FROM view_chat_log " +
+    "WHERE userId = :userId ORDER by creationDate DESC"
+  )
   public QueryEffect<ConversationHistory> getSessionsByUser(String userId) { // (2)
     return queryResult();
   }
@@ -76,13 +81,21 @@ public class ConversationHistoryView extends View {
     }
 
     private Effect<Session> aiMessage(SessionMemoryEntity.Event.AiMessageAdded added) {
-      Message newMessage = new Message(added.message(), "ai", added.timestamp().toEpochMilli());
+      Message newMessage = new Message(
+        added.message(),
+        "ai",
+        added.timestamp().toEpochMilli()
+      );
       var rowState = rowStateOrNew(userId(), sessionId());
       return effects().updateRow(rowState.add(newMessage));
     }
 
     private Effect<Session> userMessage(SessionMemoryEntity.Event.UserMessageAdded added) {
-      Message newMessage = new Message(added.message(), "user", added.timestamp().toEpochMilli());
+      Message newMessage = new Message(
+        added.message(),
+        "user",
+        added.timestamp().toEpochMilli()
+      );
       var rowState = rowStateOrNew(userId(), sessionId());
       return effects().updateRow(rowState.add(newMessage));
     }
@@ -96,18 +109,17 @@ public class ConversationHistoryView extends View {
     private String sessionId() {
       var agentSessionId = updateContext().eventSubject().get();
       int i = agentSessionId.indexOf("-");
-      return agentSessionId.substring(i+1);
+      return agentSessionId.substring(i + 1);
     }
 
     private Session rowStateOrNew(String userId, String sessionId) { // (3)
-      if (rowState() != null)
-        return rowState();
-      else
-        return new Session(
-            userId,
-            sessionId,
-            Instant.now().toEpochMilli(),
-            new ArrayList<>());
+      if (rowState() != null) return rowState();
+      else return new Session(
+        userId,
+        sessionId,
+        Instant.now().toEpochMilli(),
+        new ArrayList<>()
+      );
     }
   }
 }
@@ -135,10 +147,10 @@ public class UsersEndpoint {
 
   @Get("/users/{userId}/sessions/")
   public ConversationHistoryView.ConversationHistory getSession(String userId) {
-
-    return componentClient.forView()
-        .method(ConversationHistoryView::getSessionsByUser)
-        .invoke(userId);
+    return componentClient
+      .forView()
+      .method(ConversationHistoryView::getSessionsByUser)
+      .invoke(userId);
   }
 }
 ```
@@ -153,6 +165,7 @@ You can now add an endpoint that serves up the static UI. This is surprisingly s
 @HttpEndpoint
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 public class UiEndpoint {
+
   @Get("/")
   public HttpResponse index() {
     return HttpResponses.staticResource("index.html"); // (1)
@@ -183,6 +196,9 @@ Now that you’ve gone through the process of building the Ask Akka sample, you 
 Make sure you check out our thorough discussion of [agentic AI](https://akka.io/what-is-agentic-ai) and where Akka fits in the ecosystem.
 
 <!-- <footer> -->
+<!-- <nav> -->
+[Executing RAG queries](rag.html) [Shopping cart](../shopping-cart/index.html)
+<!-- </nav> -->
 
 <!-- </footer> -->
 

@@ -1,7 +1,7 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
-- [Getting Started](../index.html)
-- [Build an AI multi-agent planner](index.html)
+- [Tutorials](../index.html)
+- [Multi-agent planner](index.html)
 - [Evaluation on changes](eval.html)
 
 <!-- </nav> -->
@@ -10,7 +10,7 @@
 
 |  | **New to Akka? Start here:**
 
-Use the [Author your first agentic service](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
+Use the [Build your first agent](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
 
 ## <a href="about:blank#_overview"></a> Overview
 
@@ -37,114 +37,124 @@ Add a new file `EvaluatorAgent.java` to `src/main/java/com/example/application/`
 [EvaluatorAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/EvaluatorAgent.java)
 ```java
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.AgentDescription;
+import akka.javasdk.agent.EvaluationResult;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 
+import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
-@Component(id = "evaluator-agent")
-@AgentDescription(
-    name = "Evaluator Agent",
-    description = """
-        An agent that acts as an LLM judge to evaluate the quality of AI responses.
-        It assesses whether the final answer is appropriate for the original question
-        and checks for any deviations from user preferences.
-        """,
-    role = "worker"
+@Component(
+  id = "evaluator-agent",
+  name = "Evaluator Agent",
+  description = """
+  An agent that acts as an LLM judge to evaluate the quality of AI responses.
+  It assesses whether the final answer is appropriate for the original question
+  and checks for any deviations from user preferences.
+  """
 )
 public class EvaluatorAgent extends Agent {
 
-    public record EvaluationRequest(String userId, String originalRequest, String finalAnswer) {}
+  public record EvaluationRequest(
+    String userId,
+    String originalRequest,
+    String finalAnswer
+  ) {}
 
-    public record EvaluationResult(
-        int score,
-        String feedback
-    ) {}
+  public record Result(String explanation, String label) implements EvaluationResult {
+    public boolean passed() {
+      if (label == null) throw new IllegalArgumentException(
+        "Model response must include label field"
+      );
 
-    private static final String SYSTEM_MESSAGE = // (1)
-        """
-        You are an evaluator agent that acts as an LLM judge. Your job is to evaluate
-        the quality and appropriateness of AI-generated responses.
-        
-        Your evaluation should focus on:
-        1. Whether the final answer appropriately addresses the original question
-        2. Whether the answer respects and aligns with the user's stated preferences
-        3. The overall quality, relevance, and helpfulness of the response
-        4. Any potential deviations or inconsistencies with user preferences
-        
-        SCORING CRITERIA:
-        - Use a score from 1-5 where:
-          * 5 = Excellent response that fully addresses the question and respects all preferences
-          * 4 = Good response with minor issues but respects preferences
-          * 3 = Acceptable response that meets basic requirements and respects preferences
-          * 2 = Poor response with significant issues or minor preference violations
-          * 1 = Unacceptable response that fails to address the question or violates preferences
-        
-        IMPORTANT:
-        - A score of 3 or higher means the answer passes evaluation (acceptable)
-        - A score below 3 means the answer fails evaluation (unacceptable)
-        - Any violations of user preferences should result in a failing score (below 3) since 
-          respecting user preferences is the most important criteria
-        
-        Your response should be a JSON object with the following structure:
-        {
-          "score": <integer from 1-5>,
-          "feedback": "<specific feedback on what works well or deviations from preferences>",
-        }
-        
-        Do not include any explanations or text outside of the JSON structure.
-        """.stripIndent();
-
-    private final ComponentClient componentClient;
-
-    public EvaluatorAgent(ComponentClient componentClient) {
-        this.componentClient = componentClient;
-    }
-
-    public Effect<EvaluationResult> evaluate(EvaluationRequest request) {
-        var allPreferences =
-            componentClient
-                .forEventSourcedEntity(request.userId())
-                .method(PreferencesEntity::getPreferences)
-                .invoke(); // (2)
-
-        String evaluationPrompt = buildEvaluationPrompt(
-            request.originalRequest(),
-            request.finalAnswer(),
-            allPreferences.entries()
+      return switch (label.toLowerCase(Locale.ROOT)) {
+        case "correct" -> true;
+        case "incorrect" -> false;
+        default -> throw new IllegalArgumentException(
+          "Unknown evaluation result [" + label + "]"
         );
+      };
+    }
+  }
 
-        return effects()
-            .systemMessage(SYSTEM_MESSAGE)
-            .userMessage(evaluationPrompt)
-            .responseAs(EvaluationResult.class) // (3)
-            .thenReply();
+  private static final String SYSTEM_MESSAGE = // (1)
+    """
+    You are an evaluator agent that acts as an LLM judge. Your job is to evaluate
+    the quality and appropriateness of AI-generated responses.
+
+    Your evaluation should focus on:
+    1. Whether the final answer appropriately addresses the original question
+    2. Whether the answer respects and aligns with the user's stated preferences
+    3. The overall quality, relevance, and helpfulness of the response
+    4. Any potential deviations or inconsistencies with user preferences
+
+    A response is "Incorrect" if it meets ANY of the following failure conditions:
+    - poor response with significant issues or minor preference violations
+    - unacceptable response that fails to address the question or violates preferences
+
+    A response is "Correct" if it:
+    - fully addresses the question and respects all preferences
+    - good response with minor issues but respects preferences
+
+    IMPORTANT:
+    - Any violations of user preferences should result in an incorrect evaluation since
+      respecting user preferences is the most important criteria
+
+    Your response must be a single JSON object with the following fields:
+    - "explanation": Specific feedback on what works well or deviations from preferences.
+    - "label": A string, either "Correct" or "Incorrect".
+    """.stripIndent();
+
+  private final ComponentClient componentClient;
+
+  public EvaluatorAgent(ComponentClient componentClient) {
+    this.componentClient = componentClient;
+  }
+
+  public Effect<Result> evaluate(EvaluationRequest request) {
+    var allPreferences = componentClient
+      .forEventSourcedEntity(request.userId())
+      .method(PreferencesEntity::getPreferences)
+      .invoke(); // (2)
+
+    String evaluationPrompt = buildEvaluationPrompt(
+      request.originalRequest(),
+      request.finalAnswer(),
+      allPreferences.entries()
+    );
+
+    return effects()
+      .systemMessage(SYSTEM_MESSAGE)
+      .userMessage(evaluationPrompt)
+      .responseConformsTo(Result.class) // (3)
+      .thenReply();
+  }
+
+  private String buildEvaluationPrompt(
+    String originalRequest,
+    String finalAnswer,
+    List<String> preferences
+  ) {
+    StringBuilder prompt = new StringBuilder();
+
+    prompt.append("ORIGINAL REQUEST:\n").append(originalRequest).append("\n\n");
+
+    prompt.append("FINAL ANSWER TO EVALUATE:\n").append(finalAnswer).append("\n\n");
+
+    if (!preferences.isEmpty()) {
+      prompt
+        .append("USER PREFERENCES:\n")
+        .append(preferences.stream().collect(Collectors.joining("\n", "- ", "")))
+        .append("\n\n");
     }
 
-    private String buildEvaluationPrompt(String originalRequest, String finalAnswer, java.util.List<String> preferences) {
-        StringBuilder prompt = new StringBuilder();
+    prompt
+      .append("Please evaluate the final answer against the original request")
+      .append(preferences.isEmpty() ? "." : " and user preferences.");
 
-        prompt.append("ORIGINAL REQUEST:\n")
-            .append(originalRequest)
-            .append("\n\n");
-
-        prompt.append("FINAL ANSWER TO EVALUATE:\n")
-            .append(finalAnswer)
-            .append("\n\n");
-
-        if (!preferences.isEmpty()) {
-            prompt.append("USER PREFERENCES:\n")
-                .append(preferences.stream()
-                    .collect(Collectors.joining("\n", "- ", "")))
-                .append("\n\n");
-        }
-
-        prompt.append("Please evaluate the final answer against the original request")
-            .append(preferences.isEmpty() ? "." : " and user preferences.");
-
-        return prompt.toString();
-    }
+    return prompt.toString();
+  }
 }
 ```
 
@@ -154,7 +164,7 @@ public class EvaluatorAgent extends Agent {
 
 ## <a href="about:blank#_consumer_of_preference_events"></a> Consumer of preference events
 
-The `PreferencesEntity` emits events when the preferences are changed, and we can listen to these events and trigger the `EvaluatorAgent`.
+The `PreferencesEntity` emits events when the preferences are changed, and we can listen to these events and trigger the `LlmAsJudge`.
 
 Add a new file `PreferencesConsumer.java` to `src/main/java/com/example/application/`
 
@@ -186,42 +196,47 @@ public class PreferencesConsumer extends Consumer { // (2)
 
     // Get all activities (sessions) for this user from the ActivityView
     var activities = componentClient
-        .forView()
-        .method(ActivityView::getActivities)
-        .invoke(userId); // (3)
+      .forView()
+      .method(ActivityView::getActivities)
+      .invoke(userId); // (3)
 
     // Call EvaluatorAgent for each session
     for (var activity : activities.entries()) {
       if (activity.finalAnswer() != null && !activity.finalAnswer().isEmpty()) {
         var evaluationRequest = new EvaluatorAgent.EvaluationRequest(
-            userId,
-            activity.userQuestion(),
-            activity.finalAnswer()
+          userId,
+          activity.userQuestion(),
+          activity.finalAnswer()
         );
 
         var evaluationResult = componentClient
-            .forAgent()
-            .inSession(activity.sessionId())
-            .method(EvaluatorAgent::evaluate)
-            .invoke(evaluationRequest); // (4)
+          .forAgent()
+          .inSession(activity.sessionId())
+          .method(EvaluatorAgent::evaluate)
+          .invoke(evaluationRequest); // (4)
 
-        logger.info("Evaluation completed for session {}: score={}, feedback='{}'",
-            activity.sessionId(),
-            evaluationResult.score(),
-            evaluationResult.feedback());
+        logger.info(
+          "Evaluation completed for session {}: label={}, explanation='{}'",
+          activity.sessionId(),
+          evaluationResult.label(),
+          evaluationResult.explanation()
+        );
 
-        if (evaluationResult.score() < 3) {
+        if (!evaluationResult.passed()) {
           // run the workflow again to generate a better answer
 
           componentClient
-              .forWorkflow(activity.sessionId())
-              .method(AgentTeamWorkflow::runAgain) // (5)
-              .invoke();
+            .forWorkflow(activity.sessionId())
+            .method(AgentTeamWorkflow::runAgain) // (5)
+            .invoke();
 
-          logger.info("Started workflow {} for user {} to re-answer question: '{}'",
-              activity.sessionId(), userId, activity.userQuestion());
+          logger.info(
+            "Started workflow {} for user {} to re-answer question: '{}'",
+            activity.sessionId(),
+            userId,
+            activity.userQuestion()
+          );
         }
-
       }
     }
 
@@ -233,8 +248,8 @@ public class PreferencesConsumer extends Consumer { // (2)
 | **1** | Consume events from the `PreferencesEntity`. |
 | **2** | Extend `Consumer`. |
 | **3** | Retrieve previous activity suggestions for the user from the `ActivityView`. |
-| **4** | Call the `EvaluatorAgent` for each previous suggestion. |
-| **5** | Run the workflow again, using the new preferences when the evaluation score is below 3. |
+| **4** | Call the `LlmAsJudge` for each previous suggestion. |
+| **5** | Run the workflow again, using the new preferences when the suggested activities are evaluated to be incorrect. |
 This would probably be improved in a real application by not evaluating all previous suggestions, but only the ones that are still relevant, e.g. last 3 sorted by timestamp. The evaluations could also be made in parallel by using `invokeAsync` and compose the `CompletionStage` results.
 
 Add the new method to the `AgentTeamWorkflow:
@@ -242,15 +257,16 @@ Add the new method to the `AgentTeamWorkflow:
 [AgentTeamWorkflow.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java)
 ```java
 public Effect<Done> runAgain() {
-    if (currentState() != null) {
-      return effects()
-          .updateState(State.init(currentState().userId(), currentState().userQuery()))
-          .transitionTo(SELECT_AGENTS) // (3)
-          .thenReply(Done.getInstance());
-    } else {
-      return effects().error("Workflow '" + commandContext().workflowId() + "' has not been started");
-    }
+  if (currentState() != null) {
+    return effects()
+      .updateState(State.init(currentState().userId(), currentState().userQuery()))
+      .transitionTo(AgentTeamWorkflow::selectAgentsStep) // (3)
+      .thenReply(Done.getInstance());
+  } else {
+    return effects()
+      .error("Workflow '" + commandContext().workflowId() + "' has not been started");
   }
+}
 ```
 
 ## <a href="about:blank#_running_the_service"></a> Running the service
@@ -312,7 +328,7 @@ Congratulations, you have completed the tour of building a multi-agent system. N
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Dynamic orchestration](dynamic-team.html) [Additional Samples](../samples.html)
+[Dynamic orchestration](dynamic-team.html) [RAG chat agent](../ask-akka-agent/index.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

@@ -13,15 +13,15 @@ import org.slf4j.LoggerFactory;
 
 @akka.javasdk.annotations.Setup
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
-public class Setup implements ServiceSetup {
+public class Bootstrap implements ServiceSetup {
 
-  private static final Logger logger = LoggerFactory.getLogger(Setup.class);
+  private static final Logger logger = LoggerFactory.getLogger(Bootstrap.class);
 
   private final ComponentClient componentClient;
   private final TimerScheduler timerScheduler;
 
   // optional injected stuff
-  public Setup(ComponentClient componentClient, TimerScheduler timerScheduler) {
+  public Bootstrap(ComponentClient componentClient, TimerScheduler timerScheduler) {
     this.componentClient = componentClient;
     this.timerScheduler = timerScheduler;
   }

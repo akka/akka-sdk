@@ -5,11 +5,12 @@
 package akkajavasdk.components.agent;
 
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.Component;
 
-@Component(id = "structured-response-schema-agent")
-@AgentDescription(name = "Dummy Agent", description = "Not very smart agent")
+@Component(
+    id = "structured-response-schema-agent",
+    name = "Dummy Agent",
+    description = "Not very smart agent")
 public class SomeStructureResponseSchemaAgent extends Agent {
 
   public record StructuredResponse(String response, int count) {}

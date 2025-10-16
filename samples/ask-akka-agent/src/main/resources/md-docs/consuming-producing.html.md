@@ -45,9 +45,7 @@ public class CounterEventsConsumer extends Consumer { // (3)
 
   public Effect onEvent(CounterEvent event) { // (4)
     return switch (event) {
-      case ValueIncreased valueIncreased ->
-        //processing value increased event
-        effects().done(); // (5)
+      case ValueIncreased valueIncreased -> effects().done(); // (5)
       case ValueMultiplied valueMultiplied -> effects().ignore(); // (6)
     };
   }
@@ -171,22 +169,21 @@ The consuming side can be a Consumer or a View, annotated with `@Consume.FromStr
 @Component(id = "customers-by-name")
 public class CustomersByNameView extends View {
 
+
   @Consume.FromServiceStream( // (1)
-      service = "customer-registry", // (2)
-      id = "customer_events", // (3)
-      consumerGroup = "customer-by-name-view" // (4)
+    service = "customer-registry", // (2)
+    id = "customer_events" // (3)
   )
   public static class CustomersByNameUpdater extends TableUpdater<CustomerEntry> {
 
-    public Effect<CustomerEntry> onEvent( // (5)
-                                          CustomerPublicEvent.Created created) {
+    public Effect<CustomerEntry> onEvent( // (4)
+      CustomerPublicEvent.Created created
+    ) {
       var id = updateContext().eventSubject().get();
-      return effects().updateRow(
-          new CustomerEntry(id, created.email(), created.name()));
+      return effects().updateRow(new CustomerEntry(id, created.email(), created.name()));
     }
 
-    public Effect<CustomerEntry> onEvent(
-        CustomerPublicEvent.NameChanged nameChanged) {
+    public Effect<CustomerEntry> onEvent(CustomerPublicEvent.NameChanged nameChanged) {
       var updated = rowState().withName(nameChanged.newName());
       return effects().updateRow(updated);
     }
@@ -196,15 +193,13 @@ public class CustomersByNameView extends View {
   public QueryEffect<CustomerEntries> findByName(String name) {
     return queryResult();
   }
-
 }
 ```
 
 | **1** | Annotate the Table Updater with `@Consume.FromStream` to subscribe to an event stream from another Akka service. |
 | **2** | The name of the Akka service publishing the event stream. |
-| **3** | The public identifier of the specific stream. |
-| **4** | Consumer group is required in case many consumers subscribing to the same stream. |
-| **5** | Handler method per message type that the stream may contain. |
+| **3** | The public identifier of the specific stream. Corresponds to the `@Produce.ServiceStream id` in the service publishing the event stream. |
+| **4** | Handler method per message type that the stream may contain. |
 
 |  | If you’re looking to test this locally, you will likely need to run the 2 services with different ports. For more details, consult [Running multiple services](running-locally.html#multiple_services). |
 
@@ -324,7 +319,7 @@ Using metadata is also possible when producing messages to a topic or a stream. 
 ```java
 @Component(id = "counter-journal-to-topic-with-meta")
 @Consume.FromEventSourcedEntity(CounterEntity.class)
-@Produce.ToTopic("counter-events-with-meta")  // (1)
+@Produce.ToTopic("counter-events-with-meta") // (1)
 public class CounterJournalToTopicWithMetaConsumer extends Consumer {
 
   public Effect onEvent(CounterEvent event) {
@@ -375,8 +370,9 @@ public class CounterIntegrationTest extends TestKitSupport { // (1)
     eventsTopic = testKit.getTopicOutgoingMessages("counter-events");
   }
 
+
   @Test
-  public void verifyCounterEventSourcedPublishToTopic()  {
+  public void verifyCounterEventSourcedPublishToTopic() {
     var counterId = "test-topic";
     var increaseCmd = new IncreaseCounter(counterId, 3);
     var multipleCmd = new MultiplyCounter(counterId, 4);
@@ -390,6 +386,7 @@ public class CounterIntegrationTest extends TestKitSupport { // (1)
     assertEquals(increaseCmd.value(), eventIncreased.getPayload().value()); // (5)
     assertEquals(multipleCmd.value(), eventMultiplied.getPayload().multiplier());
   }
+
 }
 ```
 
@@ -408,11 +405,10 @@ Before running your test, make sure to configure the TestKit correctly.
 [CounterIntegrationTest.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-counter-brokers/src/test/java/counter/application/CounterIntegrationTest.java)
 ```java
 @Override
-  protected TestKit.Settings testKitSettings() {
-    return TestKit.Settings.DEFAULT
-            .withTopicIncomingMessages("counter-commands") // (1)
-            .withTopicOutgoingMessages("counter-events") // (2)
-  }
+protected TestKit.Settings testKitSettings() {
+  return TestKit.Settings.DEFAULT.withTopicIncomingMessages("counter-commands") // (1)
+    .withTopicOutgoingMessages("counter-events") // (2)
+}
 ```
 
 | **1** | Mock incoming messages from the `counter-commands` topic. |
@@ -430,9 +426,10 @@ public void verifyCounterCommandsAndPublishWithMetadata() {
   var increaseCmd = new IncreaseCounter(counterId, 10);
 
   var metadata = CloudEvent.of( // (1)
-      "cmd1",
-      URI.create("CounterTopicIntegrationTest"),
-      increaseCmd.getClass().getName())
+    "cmd1",
+    URI.create("CounterTopicIntegrationTest"),
+    increaseCmd.getClass().getName()
+  )
     .withSubject(counterId) // (2)
     .asMetadata()
     .add("Content-Type", "application/json"); // (3)
@@ -482,10 +479,11 @@ To run an integration test against a real instance of Google PubSub (or its Emul
 [CounterWithRealKafkaIntegrationTest.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-counter-brokers/src/test/java/counter/application/CounterWithRealKafkaIntegrationTest.java)
 ```java
 @Override
-  protected TestKit.Settings testKitSettings() {
-    return TestKit.Settings.DEFAULT
-      .withEventingSupport(TestKit.Settings.EventingSupport.KAFKA);
-  }
+protected TestKit.Settings testKitSettings() {
+  return TestKit.Settings.DEFAULT.withEventingSupport(
+    TestKit.Settings.EventingSupport.KAFKA
+  );
+}
 ```
 
 ## <a href="about:blank#_multi_region_replication"></a> Multi-region replication

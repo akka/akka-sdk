@@ -25,15 +25,15 @@ To create an MCP endpoint, a class is annotated with `@McpEndpoint` and ACL conf
 [ExampleMcpEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java)
 ```java
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
-@McpEndpoint(
-    serverName = "doc-snippets-mcp-sample",
-    serverVersion = "0.0.1")
+@McpEndpoint(serverName = "doc-snippets-mcp-sample", serverVersion = "0.0.1")
 public class ExampleMcpEndpoint {
+
   private ComponentClient componentClient;
 
   public ExampleMcpEndpoint(ComponentClient componentClient) {
     this.componentClient = componentClient;
   }
+
 }
 ```
 The service is available under the path `/mcp` by default, but it is possible to have multiple MCP endpoints in the same
@@ -56,13 +56,16 @@ All fields are marked as required in the schema by default, any non-required par
 [ExampleMcpEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java)
 ```java
 @McpTool(
-      name = "add", // (1)
-      description = "Adds the two given numbers and returns the result" // (2)
-  )
-  public String add(@Description("The first number") int n1, @Description("The second number") int n2) { // (3)
-    var result = n1 + n2;
-    return Integer.toString(result);
-  }
+  name = "add", // (1)
+  description = "Adds the two given numbers and returns the result" // (2)
+)
+public String add(
+  @Description("The first number") int n1,
+  @Description("The second number") int n2
+) { // (3)
+  var result = n1 + n2;
+  return Integer.toString(result);
+}
 ```
 
 | **1** | An optional tool name. If not defined, the method name is used. Must be unique in the MCP service if defined |
@@ -74,28 +77,28 @@ For full flexibility and more complex input types, it is also possible to specif
 ```java
 public record EchoToolRequest(String message) {}
 
-  @McpTool(
-      name = "echo",
-      description = "Echoes back whatever string is thrown at it",
-      inputSchema = """
-      {
-        "type":"object",
+@McpTool(
+  name = "echo",
+  description = "Echoes back whatever string is thrown at it",
+  inputSchema = """
+  {
+    "type":"object",
+    "properties": {
+      "input": {
+        "type": "object",
         "properties": {
-          "input": {
-            "type": "object",
-            "properties": {
-              "message": {"type":"string", "description":"A string to echo"}
-            },
-            "required": ["message"]
-          }
-         },
-         "required": ["input"]
+          "message": {"type":"string", "description":"A string to echo"}
+        },
+        "required": ["message"]
       }
-      """ // (1)
-    )
-  public String echo(EchoToolRequest input) {
-    return input.message;
+     },
+     "required": ["input"]
   }
+  """ // (1)
+)
+public String echo(EchoToolRequest input) {
+  return input.message;
+}
 ```
 
 | **1** | The entire JSON Schema string for the input |
@@ -109,17 +112,22 @@ A static resource is a public zero-parameter method returning text or bytes. The
 [ExampleMcpEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java)
 ```java
 @McpResource(
-      uri = "file:///background.png", // (1)
-      name = "Background image",
-      description = "A background image for Akka sites", mimeType = "image/png")
-  public byte[] backgroundImage() { // (2)
-    try (InputStream in = this.getClass().getResourceAsStream("/static-resources/images/background.png")) {
-      if (in == null) throw new RuntimeException("Could not find background image");
-      return in.readAllBytes();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+  uri = "file:///background.png", // (1)
+  name = "Background image",
+  description = "A background image for Akka sites",
+  mimeType = "image/png"
+)
+public byte[] backgroundImage() { // (2)
+  try (
+    InputStream in =
+      this.getClass().getResourceAsStream("/static-resources/images/background.png")
+  ) {
+    if (in == null) throw new RuntimeException("Could not find background image");
+    return in.readAllBytes();
+  } catch (IOException e) {
+    throw new RuntimeException(e);
   }
+}
 ```
 
 | **1** | A URI identifying the specific resource returned by this method |
@@ -129,23 +137,28 @@ A dynamic resource instead defines a URI template with placeholders for sections
 [ExampleMcpEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java)
 ```java
 @McpResource(
-      uriTemplate = "file:///images/{fileName}", // (1)
-      name = "Dynamic file",
-      description = "Fetch a specific image file",
-      // Note: there is no way to dynamically return a mime type, it has to be the same for all files
-      mimeType = "image/png")
-  public byte[] dynamicResource(String fileName) { // (2)
-    if (fileName.contains("..")) {
-      // Important to validate input
-      throw new RuntimeException("Invalid image file: " + fileName);
-    }
-    try (InputStream in = this.getClass().getResourceAsStream("/static-resources/images/" + fileName)) {
-      if (in == null) throw new RuntimeException("Could not find background image");
-      return in.readAllBytes();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+  uriTemplate = "file:///images/{fileName}", // (1)
+  name = "Dynamic file",
+  description = "Fetch a specific image file",
+  // Note: there is no way to dynamically return a mime type,
+  // it has to be the same for all files
+  mimeType = "image/png"
+)
+public byte[] dynamicResource(String fileName) { // (2)
+  if (fileName.contains("..")) {
+    // Important to validate input
+    throw new RuntimeException("Invalid image file: " + fileName);
   }
+  try (
+    InputStream in =
+      this.getClass().getResourceAsStream("/static-resources/images/" + fileName)
+  ) {
+    if (in == null) throw new RuntimeException("Could not find background image");
+    return in.readAllBytes();
+  } catch (IOException e) {
+    throw new RuntimeException(e);
+  }
+}
 ```
 
 | **1** | A URI template with placeholders |
@@ -158,9 +171,9 @@ Prompts are a way to provide example prompts to the MCP client given some input 
 [ExampleMcpEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java)
 ```java
 @McpPrompt(description = "Java code review prompt")
-  public String javaCodeReview(@Description("The Java code to review") String code) { // (1)
-    return "Please review this Java code:\\n" + code; // (2)
-  }
+public String javaCodeReview(@Description("The Java code to review") String code) { // (1)
+  return "Please review this Java code:\\n" + code; // (2)
+}
 ```
 
 | **1** | Zero or more string parameters to use in the prompts, annotated with `@Description` to describe the purpose of each |

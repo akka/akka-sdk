@@ -6,7 +6,7 @@ import akka.javasdk.annotations.Setup;
 import counter.application.CounterStore;
 
 @Setup
-public class CounterSetup implements ServiceSetup {
+public class Bootstrap implements ServiceSetup {
 
   @Override
   public DependencyProvider createDependencyProvider() {

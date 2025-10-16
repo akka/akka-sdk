@@ -80,7 +80,7 @@ import java.util.concurrent.CompletionStage;
  *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider} from the service setup
  * </ul>
  *
- * <p>Concrete classes must be annotated with {@link akka.javasdk.annotations.ComponentId} with a
+ * <p>Concrete classes must be annotated with {@link akka.javasdk.annotations.Component} with a
  * stable, unique identifier that cannot be changed after production deployment.
  *
  * <h2>Multi-region Replication</h2>

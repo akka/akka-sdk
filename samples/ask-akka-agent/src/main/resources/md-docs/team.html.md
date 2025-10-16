@@ -1,7 +1,7 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
-- [Getting Started](../index.html)
-- [Build an AI multi-agent planner](index.html)
+- [Tutorials](../index.html)
+- [Multi-agent planner](index.html)
 - [Orchestrate the agents](team.html)
 
 <!-- </nav> -->
@@ -10,7 +10,7 @@
 
 |  | **New to Akka? Start here:**
 
-Use the [Author your first agentic service](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
+Use the [Build your first agent](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
 
 ## <a href="about:blank#_overview"></a> Overview
 
@@ -38,15 +38,15 @@ AgentTeamWorkflow.java
 ```java
 import akka.Done;
 import akka.javasdk.annotations.Component;
+import akka.javasdk.annotations.StepName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
-
 @Component(id = "agent-team")
 public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
+
   private static final Logger logger = LoggerFactory.getLogger(AgentTeamWorkflow.class);
 
   public record Request(String userId, String message) {}
@@ -65,67 +65,61 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
 
   public Effect<Done> start(Request request) {
     return effects()
-        .updateState(new State(request.userId(), request.message(), ""))// (1)
-        .transitionTo("weather") // (2)
-        .thenReply(Done.getInstance());
+      .updateState(new State(request.userId(), request.message(), "")) // (1)
+      .transitionTo(AgentTeamWorkflow::askWeather) // (2)
+      .thenReply(Done.getInstance());
   }
 
   public Effect<String> getAnswer() {
     if (currentState() == null || currentState().finalAnswer.isEmpty()) {
-      return effects().error("Workflow '" + commandContext().workflowId() + "' not started, or not completed");
+      String workflowId = commandContext().workflowId();
+      return effects()
+        .error("Workflow '" + workflowId + "' not started, or not completed");
     } else {
       return effects().reply(currentState().finalAnswer);
     }
   }
 
   @Override
-  public WorkflowDef<State> definition() {
-    return workflow()
-        .addStep(askWeather())
-        .addStep(suggestActivities())
-        .addStep(error())
-        .defaultStepRecoverStrategy(maxRetries// (2).failoverTo("error"));
+  public WorkflowSettings settings() {
+    return WorkflowSettings.builder()
+      .stepTimeout(AgentTeamWorkflow::askWeather, ofSeconds// (60))
+      .stepTimeout(AgentTeamWorkflow::suggestActivities, ofSeconds// (60))
+      .defaultStepRecovery(maxRetries// (2).failoverTo(AgentTeamWorkflow::error))
+      .build();
   }
 
-  private Step askWeather() { // (3)
-    return step("weather")
-        .call(() ->
-            componentClient
-                .forAgent()
-                .inSession(sessionId())
-                .method(WeatherAgent::query)
-                .invoke(currentState().userQuery))
-        .andThen(String.class, forecast -> {
-          logger.info("Weather forecast: {}", forecast);
+  @StepName("weather")
+  private StepEffect askWeather() { // (3)
+    var forecast = componentClient
+      .forAgent()
+      .inSession(sessionId())
+      .method(WeatherAgent::query)
+      .invoke(currentState().userQuery);
 
-          return effects()
-              .transitionTo("activities"); // (4)
-        })
-        .timeout(Duration.ofSeconds// (60));
+    logger.info("Weather forecast: {}", forecast);
+
+    return stepEffects()
+      .thenTransitionTo(AgentTeamWorkflow::suggestActivities); // (4)
   }
 
-  private Step suggestActivities() {
-    return step("activities")
-        .call(() ->
-            componentClient
-              .forAgent()
-              .inSession(sessionId())
-              .method(ActivityAgent::query) // (5)
-              .invoke(new ActivityAgent.Request(currentState().userId() ,currentState().userQuery())))
-        .andThen(String.class, suggestion -> {
-          logger.info("Activities: {}", suggestion);
+  @StepName("activities")
+  private StepEffect suggestActivities() {
+    var suggestion = componentClient
+      .forAgent()
+      .inSession(sessionId())
+      .method(ActivityAgent::query) // (5)
+      .invoke(new ActivityAgent.Request(currentState().userId(), currentState().userQuery()));
 
-          return effects()
-              .updateState(currentState().withAnswer(suggestion)) // (6)
-              .end();
-        })
-        .timeout(Duration.ofSeconds// (60));
+    logger.info("Activities: {}", suggestion);
+
+    return stepEffects()
+      .updateState(currentState().withAnswer(suggestion)) // (6)
+      .thenEnd();
   }
 
-  private Step error() {
-    return step("error")
-        .call(() -> null)
-        .andThen(() -> effects().end());
+  private StepEffect error() {
+    return stepEffects().thenEnd();
   }
 
   private String sessionId() {
@@ -150,17 +144,16 @@ Let’s modify the endpoint to use the `AgentTeamWorkflow` workflow instead of c
 ActivityEndpoint.java
 ```java
 @Post("/activities/{userId}")
-  public HttpResponse suggestActivities(String userId, Request request) {
-    var sessionId = UUID.randomUUID().toString();
+public HttpResponse suggestActivities(String userId, Request request) {
+  var sessionId = UUID.randomUUID().toString();
 
-    var res =
-      componentClient
-      .forWorkflow(sessionId)
-        .method(AgentTeamWorkflow::start) // (1)
-        .invoke(new AgentTeamWorkflow.Request(userId, request.message()));
+  var res = componentClient
+    .forWorkflow(sessionId)
+    .method(AgentTeamWorkflow::start) // (1)
+    .invoke(new AgentTeamWorkflow.Request(userId, request.message()));
 
-    return HttpResponses.created(res, "/activities/" + userId + "/" + sessionId); // (2)
-  }
+  return HttpResponses.created(res, "/activities/" + userId + "/" + sessionId); // (2)
+}
 ```
 
 | **1** | Spawn the workflow by calling the `start` method. |
@@ -172,18 +165,17 @@ We need another method to retrieve the actual answer:
 ActivityEndpoint.java
 ```java
 @Get("/activities/{userId}/{sessionId}")
-  public HttpResponse getAnswer(String userId, String sessionId) {
-    var res =
-        componentClient
-            .forWorkflow(sessionId)
-            .method(AgentTeamWorkflow::getAnswer)
-            .invoke();
+public HttpResponse getAnswer(String userId, String sessionId) {
+  var res = componentClient
+    .forWorkflow(sessionId)
+    .method(AgentTeamWorkflow::getAnswer)
+    .invoke();
 
-    if (res.isEmpty())
-      return HttpResponses.notFound("Answer for '" + sessionId + "' not available (yet)");
-    else
-      return HttpResponses.ok(res);
-  }
+  if (res.isEmpty()) return HttpResponses.notFound(
+    "Answer for '" + sessionId + "' not available (yet)"
+  );
+  else return HttpResponses.ok(res);
+}
 ```
 
 ## <a href="about:blank#_running_the_service"></a> Running the service

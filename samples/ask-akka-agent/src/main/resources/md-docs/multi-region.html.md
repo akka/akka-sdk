@@ -133,7 +133,7 @@ Events are delivered to other regions over a brokerless, streaming gRPC transpor
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Entity state models](state-model.html) [Saga patterns](saga-patterns.html)
+[Memory models](state-model.html) [Saga patterns](saga-patterns.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

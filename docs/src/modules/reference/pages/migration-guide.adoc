@@ -2,6 +2,57 @@
 
 include::ROOT:partial$include.adoc[]
 
+== SDK 3.5.5
+
+Akka SDK 3.5.5 deprecates the `@AgentDescription` annotation in favor of using `@Component` for agent metadata (name and description) and the new `@AgentRole` annotation for specifying agent roles. This change aligns agent configuration with other component types and provides a more consistent API.
+
+=== Migrating from @AgentDescription to @Component and @AgentRole
+
+The `@AgentDescription` annotation is now deprecated. To migrate your agent classes:
+
+**For agent name and description**:
+
+- Remove the `@AgentDescription` annotation
+- If using `@AgentDescription.role` field, add an `@AgentRole` annotation instead.
+- Add or update the `@Component` annotation with `name` and `description` fields:
+
+.Before:
+[source,java]
+----
+@Component(id = "my-agent")
+@AgentDescription(
+    name = "My Agent",
+    description = "An agent that does something useful",
+    role = "worker")
+public class MyAgent extends Agent {
+    // ...
+}
+----
+
+.After:
+[source,java]
+----
+@Component(
+    id = "my-agent",
+    name = "My Agent",
+    description = "An agent that does something useful")
+@AgentRole("worker")
+public class MyAgent extends Agent {
+    // ...
+}
+----
+
+**Update imports**:
+
+- Add `import akka.javasdk.annotations.AgentRole;` if you're using agent roles
+- Keep `import akka.javasdk.annotations.Component;`
+
+**Backward compatibility**:
+
+- The framework will continue to support `@AgentDescription` for backward compatibility
+- However, you cannot use both the old and new annotations for the same fields (e.g., both `@AgentDescription.name` and `@Component.name` will cause a validation error)
+- New features and improvements will only be available with the new annotation style
+
 == SDK 3.5.4
 
 Akka SDK 3.5.4 introduces a new `@Component` annotation, replacing the legacy `@ComponentId` for identifying components. This change streamlines component configuration and enables new features and improvements. The migration is straightforward and ensures backward compatibility for existing codebases.

@@ -13,8 +13,6 @@ Akka Agentic Platform provides capabilities to manage, monitor and gather insigh
 
 Akka Automated Operations are based on a Kubernetes-based control plane and application plane for executing Akka services with fully-automated operations to enable elasticity, agility and resilience.
 
-- [Akka Automated Operations features](platform-features.html)
-
 ## <a href="about:blank#_deploying_and_managing_services"></a> Deploying and Managing Services
 
 Operating [Services](services/index.html) provides an overview of what services are and how to manage them.
