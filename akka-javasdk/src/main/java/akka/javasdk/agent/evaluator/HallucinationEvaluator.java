@@ -7,7 +7,7 @@ package akka.javasdk.agent.evaluator;
 import akka.javasdk.agent.EvaluationResult;
 import akka.javasdk.agent.MemoryProvider;
 import akka.javasdk.agent.PromptTemplate;
-import akka.javasdk.annotations.AgentDescription;
+import akka.javasdk.annotations.AgentRole;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import com.typesafe.config.Config;
@@ -26,15 +26,15 @@ import java.util.Locale;
  * prompts are used if these are not defined. The prompts can be initialized or updated with the
  * {@link PromptTemplate} entity.
  */
-@Component(id = HallucinationEvaluator.COMPONENT_ID)
-@AgentDescription(
+@Component(
+    id = HallucinationEvaluator.COMPONENT_ID,
     name = "Hallucination Evaluator Agent",
     description =
         """
         An agent that acts as an LLM judge to evaluate whether an output contains information
         not available in the reference text given an input question.
-        """,
-    role = "evaluator")
+        """)
+@AgentRole("evaluator")
 public class HallucinationEvaluator extends LlmAsJudge {
 
   public HallucinationEvaluator(ComponentClient componentClient, Config config) {

@@ -87,7 +87,11 @@ If the JWT token claim is an array of values, the token will be considered valid
 Multiple issuers may be allowed, by setting multiple `bearer_token_issuer` values:
 
 ```java
-@JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN, bearerTokenIssuers = {"my-issuer", "my-issuer2"}, staticClaims = @JWT.StaticClaim(claim = "sub", values = "my-subject"))
+@JWT(
+  validate = JWT.JwtMethodMode.BEARER_TOKEN,
+  bearerTokenIssuers = { "my-issuer", "my-issuer2" },
+  staticClaims = @JWT.StaticClaim(claim = "sub", values = "my-subject")
+)
 ```
 The token extracted from the bearer token must have one of the two issuers defined in the annotation.
 Akka will place the claims from the validated token in the [RequestContext](_attachments/api/akka/javasdk/http/RequestContext.html), so you can access them from your service via `getJwtClaims()`. The `RequestContext` is accessed by letting the endpoint extend [AbstractHttpEndpoint](_attachments/api/akka/javasdk/http/AbstractHttpEndpoint.html) which provides the method `requestContext()`, so you can retrieve the JWT claims like this:
@@ -95,11 +99,13 @@ Akka will place the claims from the validated token in the [RequestContext](_att
 [HelloJwtEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/endpoint-jwt/src/main/java/hellojwt/api/HelloJwtEndpoint.java)
 ```java
 import akka.javasdk.annotations.http.HttpEndpoint;
-import akka.javasdk.http.AbstractHttpEndpoint;
-
 public class HelloJwtEndpoint extends AbstractHttpEndpoint {
 
-  @JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN, bearerTokenIssuers = {"my-issuer", "my-issuer2"}, staticClaims = @JWT.StaticClaim(claim = "sub", values = "my-subject"))
+  @JWT(
+    validate = JWT.JwtMethodMode.BEARER_TOKEN,
+    bearerTokenIssuers = { "my-issuer", "my-issuer2" },
+    staticClaims = @JWT.StaticClaim(claim = "sub", values = "my-subject")
+  )
   @Get("/claims")
   public String helloClaims() {
     var claims = requestContext().getJwtClaims(); // (1)
@@ -107,7 +113,6 @@ public class HelloJwtEndpoint extends AbstractHttpEndpoint {
     var sub = claims.subject().get(); // (2)
     return "issuer: " + issuer + ", subject: " + sub;
   }
-
 }
 ```
 
@@ -126,24 +131,27 @@ When running integration tests, JWTs will still be enforced but its signature wi
 ```java
 @Test
 public void shouldReturnIssuerAndSubject() throws JsonProcessingException {
+  String bearerToken = bearerTokenWith(Map.of("iss", "my-issuer", "sub", "my-subject")); // (1)
 
-  String bearerToken = bearerTokenWith(
-          Map.of("iss", "my-issuer", "sub", "my-subject")); // (1)
-
-  StrictResponse<String> call = httpClient.GET("/hello/claims").addHeader("Authorization","Bearer "+ bearerToken) // (2)
-          .responseBodyAs(String.class)
-          .invoke();
+  StrictResponse<String> call = httpClient
+    .GET("/hello/claims")
+    .addHeader("Authorization", "Bearer " + bearerToken) // (2)
+    .responseBodyAs(String.class)
+    .invoke();
 
   assertThat(call.body()).isEqualTo("issuer: my-issuer, subject: my-subject");
 }
 
 private String bearerTokenWith(Map<String, String> claims) throws JsonProcessingException {
   // setting algorithm to none
-  String header = Base64.getEncoder().encodeToString("""
+  String header = Base64.getEncoder()
+    .encodeToString(
+      """
       {
         "alg": "none"
       }
-      """.getBytes()); // (3)
+      """.getBytes()
+    ); // (3)
   byte[] jsonClaims = JsonSupport.getObjectMapper().writeValueAsBytes(claims);
   String payload = Base64.getEncoder().encodeToString(jsonClaims);
 

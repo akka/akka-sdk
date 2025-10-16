@@ -45,7 +45,6 @@ import akka.javasdk.agent.SessionMemoryEntity
 import akka.javasdk.agent.evaluator.HallucinationEvaluator
 import akka.javasdk.agent.evaluator.SummarizationEvaluator
 import akka.javasdk.agent.evaluator.ToxicityEvaluator
-import akka.javasdk.annotations.AgentDescription
 import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.GrpcEndpoint
@@ -64,8 +63,6 @@ import akka.javasdk.http.QueryParams
 import akka.javasdk.http.RequestContext
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerDestination
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerSource
-import akka.javasdk.impl.ComponentDescriptorFactory.readComponentDescription
-import akka.javasdk.impl.ComponentDescriptorFactory.readComponentName
 import akka.javasdk.impl.Sdk.StartupContext
 import akka.javasdk.impl.Validations.Invalid
 import akka.javasdk.impl.Validations.Valid
@@ -544,7 +541,7 @@ private final class Sdk(
     .filter(hasComponentId)
     .foreach {
       case clz if Reflect.isEventSourcedEntity(clz) =>
-        val componentId = extractComponentId(clz)
+        val componentId = Reflect.readComponentId(clz)
 
         val readOnlyCommandNames =
           clz.getDeclaredMethods.collect {
@@ -581,11 +578,11 @@ private final class Sdk(
             readOnlyCommandNames,
             instanceFactory,
             keyValue = false,
-            name = readComponentName(clz),
-            description = readComponentDescription(clz))
+            name = Reflect.readComponentName(clz),
+            description = Reflect.readComponentDescription(clz))
 
       case clz if Reflect.isKeyValueEntity(clz) =>
-        val componentId = extractComponentId(clz)
+        val componentId = Reflect.readComponentId(clz)
 
         val readOnlyCommandNames =
           clz.getDeclaredMethods.collect {
@@ -620,11 +617,11 @@ private final class Sdk(
             readOnlyCommandNames,
             instanceFactory,
             keyValue = true,
-            name = readComponentName(clz),
-            description = readComponentDescription(clz))
+            name = Reflect.readComponentName(clz),
+            description = Reflect.readComponentDescription(clz))
 
       case clz if Reflect.isWorkflow(clz) =>
-        val componentId = extractComponentId(clz)
+        val componentId = Reflect.readComponentId(clz)
 
         // register known types
         serializer.registerTypeHints(Reflect.workflowStateType(clz))
@@ -644,11 +641,11 @@ private final class Sdk(
             clz.getName,
             readOnlyCommandNames,
             ctx => workflowInstanceFactory(componentId, ctx, clz.asInstanceOf[Class[Workflow[Nothing]]]),
-            name = readComponentName(clz),
-            description = readComponentDescription(clz))
+            name = Reflect.readComponentName(clz),
+            description = Reflect.readComponentDescription(clz))
 
       case clz if Reflect.isTimedAction(clz) =>
-        val componentId = extractComponentId(clz)
+        val componentId = Reflect.readComponentId(clz)
         val timedActionClass = clz.asInstanceOf[Class[TimedAction]]
         val timedActionSpi =
           new TimedActionImpl[TimedAction](
@@ -670,11 +667,11 @@ private final class Sdk(
             componentId,
             clz.getName,
             timedActionSpi,
-            name = readComponentName(clz),
-            description = readComponentDescription(clz))
+            name = Reflect.readComponentName(clz),
+            description = Reflect.readComponentDescription(clz))
 
       case clz if Reflect.isConsumer(clz) =>
-        val componentId = extractComponentId(clz)
+        val componentId = Reflect.readComponentId(clz)
         val consumerClass = clz.asInstanceOf[Class[Consumer]]
         val consumerDest = consumerDestination(consumerClass)
         val consumerSrc = consumerSource(consumerClass)
@@ -702,16 +699,15 @@ private final class Sdk(
             consumerSrc,
             consumerDestination(consumerClass),
             consumerSpi,
-            name = readComponentName(clz),
-            description = readComponentDescription(clz))
+            name = Reflect.readComponentName(clz),
+            description = Reflect.readComponentDescription(clz))
 
       case clz if Reflect.isAgent(clz) =>
-        val componentId = extractComponentId(clz)
-        val agentDescription = Option(clz.getAnnotation(classOf[AgentDescription]))
-
+        val componentId = Reflect.readComponentId(clz)
         val agentClass = clz.asInstanceOf[Class[Agent]]
 
-        val agentGuardrails = guardrailProvider.agentGuardrails(componentId, agentDescription.map(_.role))
+        val agentRoleOptValue = Reflect.readAgentRole(agentClass)
+        val agentGuardrails = guardrailProvider.agentGuardrails(componentId, agentRoleOptValue)
         agentGuardrails.entries.foreach { entry =>
           val guardrailName = entry.configuredGuardrail.name
           guardrailEnabledForComponent = guardrailEnabledForComponent.updated(
@@ -749,18 +745,11 @@ private final class Sdk(
             componentId,
             clz.getName,
             instanceFactory,
-            name = readComponentName(clz),
-            description = readComponentDescription(clz),
+            name = Reflect.readComponentName(clz),
+            description = Reflect.readComponentDescription(clz),
             evaluator = Reflect.isEvaluatorAgent(clz))
 
-        agentRegistryInfo :+=
-          (agentDescription match {
-            case Some(desc) =>
-              AgentRegistryImpl.AgentDetails(componentId, desc.name, desc.description, desc.role, agentClass)
-            case None =>
-              // defaults if AgentDescription is not defined
-              AgentRegistryImpl.AgentDetails(componentId, name = componentId, description = "", role = "", agentClass)
-          })
+        agentRegistryInfo :+= AgentRegistryImpl.agentDetailsFor(agentClass)
 
       case clz if Reflect.isView(clz) =>
         viewDescriptors :+= ViewDescriptorFactory(clz, serializer, regionInfo, sdkExecutionContext)
@@ -1118,14 +1107,4 @@ private final class Sdk(
       case None          => grpcClientProvider
       case Some(context) => grpcClientProvider.withTelemetryContext(context)
     }
-
-  @nowarn("cat=deprecation")
-  private def extractComponentId(clz: Class[_]): String = {
-    val componentAnn = clz.getAnnotation(classOf[akka.javasdk.annotations.Component])
-    if (componentAnn != null) componentAnn.id()
-    else {
-      val componentIdAnn = clz.getAnnotation(classOf[ComponentId])
-      if (componentIdAnn != null) componentIdAnn.value() else ""
-    }
-  }
 }

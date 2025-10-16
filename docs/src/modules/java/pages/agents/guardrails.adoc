@@ -56,7 +56,7 @@ Agents are selected by matching `agent` or `agent-role` configuration.
 
 If both `agents` and `agent-roles` are defined it's enough that one of them matches to enable the guardrail for an agent.
 
-This role is defined in the `@AgentDescription` annotation.
+This role is defined in the `@AgentRole` annotation.
 
 The name and the category are reported in logs, metrics and traces. The `category` should classify the type of validation. It can be any value, but a few recommended categories are JAILBREAK, PROMPT_INJECTION, PII, TOXIC, HALLUCINATED, NSFW, FORMAT.
 

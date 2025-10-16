@@ -44,7 +44,7 @@ public record Counter(int value) {
 
 In order to interact with an Entity in Akka, we need to assign a **component id** and an instance **id**:
 
-- **component id** is a unique identifier for all entities of a given type. To define the component id, the entity class must be annotated with `@ComponentId` and have a unique and stable identifier assigned.
+- **component id** is a unique identifier for all entities of a given type. To define the component id, the entity class must be annotated with `@Component` and have a unique and stable identifier assigned.
 - **id**, on the other hand, is unique per instance. The entity id is used in the component client when calling the entity from for example an Endpoint.
 As an example, an entity representing a customer could have the **component id** `customer` and a customer entity for a specific customer could have the UUID instance **id** `8C59E488-B6A8-4E6D-92F3-760315283B6E`.
 
@@ -83,16 +83,19 @@ public class CounterEntity extends KeyValueEntity<Counter> { // (2)
   }
 
   @Override
-  public Counter emptyState() { return new Counter// (0); } // (4)
+  public Counter emptyState() {
+    return new Counter// (0);
+  } // (4)
+
 }
 ```
 
-| **1** | Every Entity must be annotated with `@ComponentId` with a stable unique identifier for this entity type. |
+| **1** | Every Entity must be annotated with `@Component` with a stable unique identifier for this entity type. |
 | **2** | The `CounterEntity` class should extend `akka.javasdk.keyvalueentity.KeyValueEntity`. |
 | **3** | Stores the `entityId` on an internal attribute so we can use it later. Alternatively, if inside a command handler, `commandContext().entityId()` also provides such information. |
 | **4** | The initial state of each counter is defined with value 0. |
 
-|  | The `@ComponentId` value `counter` is common for all instances of this entity but must be stable - cannot be changed after a production deploy - and unique across the different entity types in the service. |
+|  | The `@Component` value `counter` is common for all instances of this entity but must be stable - cannot be changed after a production deploy - and unique across the different entity types in the service. |
 
 ### <a href="about:blank#_updating_state"></a> Updating state
 
@@ -103,15 +106,15 @@ We will now show how to add the command handlers for supporting the two desired 
 public Effect<Counter> set(int number) {
   Counter newCounter = new Counter(number);
   return effects()
-      .updateState(newCounter) // (1)
-      .thenReply(newCounter); // (2)
+    .updateState(newCounter) // (1)
+    .thenReply(newCounter); // (2)
 }
 
 public Effect<Counter> plusOne() {
   Counter newCounter = currentState().increment// (1); // (3)
   return effects()
-      .updateState(newCounter) // (4)
-      .thenReply(newCounter);
+    .updateState(newCounter) // (4)
+    .thenReply(newCounter);
 }
 ```
 
@@ -129,8 +132,7 @@ To have access to the current state of the entity we can use `currentState()` as
 [CounterEntity.java](https://github.com/akka/akka-sdk/blob/main/samples/key-value-counter/src/main/java/com/example/application/CounterEntity.java)
 ```java
 public ReadOnlyEffect<Counter> get() {
-  return effects()
-      .reply(currentState()); // (1)
+  return effects().reply(currentState()); // (1)
 }
 ```
 
@@ -147,8 +149,8 @@ The next example shows how to delete a Key Value Entity state by returning speci
 ```java
 public Effect<Done> delete() {
   return effects()
-      .deleteEntity() // (1)
-      .thenReply(done());
+    .deleteEntity() // (1)
+    .thenReply(done());
 }
 ```
 
@@ -246,29 +248,24 @@ public class CounterIntegrationTest extends TestKitSupport { // (1)
 
   @Test
   public void verifyCounterSetAndIncrease() {
-
-    Counter counterGet =
-        componentClient // (2)
-          .forKeyValueEntity("bar")
-          .method(CounterEntity::get) // (3)
-          .invoke();
+    Counter counterGet = componentClient // (2)
+      .forKeyValueEntity("bar")
+      .method(CounterEntity::get) // (3)
+      .invoke();
     Assertions.assertEquals(0, counterGet.value());
 
-    Counter counterPlusOne =
-        componentClient
-          .forKeyValueEntity("bar")
-          .method(CounterEntity::plusOne) // (4)
-          .invoke();
+    Counter counterPlusOne = componentClient
+      .forKeyValueEntity("bar")
+      .method(CounterEntity::plusOne) // (4)
+      .invoke();
     Assertions.assertEquals(1, counterPlusOne.value());
 
-    Counter counterGetAfter = // (5)
-        componentClient
-          .forKeyValueEntity("bar")
-          .method(CounterEntity::get)
-          .invoke();
+    Counter counterGetAfter = componentClient // (5)
+      .forKeyValueEntity("bar")
+      .method(CounterEntity::get)
+      .invoke();
     Assertions.assertEquals(1, counterGetAfter.value());
   }
-
 }
 ```
 

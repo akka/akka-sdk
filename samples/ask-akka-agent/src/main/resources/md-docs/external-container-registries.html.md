@@ -17,7 +17,7 @@ External container registries are configured by creating an Akka secret, and the
 
 There are four parameters you need to specify, depending on the registry you want to connect to:
 
-- Server: The first part of the container image URL. For example, if your image is at `us.gcr.io/my-project/my-image`, the server is `https://us.gcr.io` (*mandatory*).
+- Server: The first part of the container image URL. For example, if your image is at `us-central1-docker.pkg.dev/my-project/my-repo/my-image`, the server is `https://us-central1-docker.pkg.dev` (*mandatory*).
 - Username: The username (*optional*).
 - Email: The email address (*optional*).
 - Password: The password (*mandatory*).
@@ -51,8 +51,8 @@ akka docker list-credentials
 ```
 The results should look something like:
 
-NAME                STATUS  SERVER             EMAIL             USERNAME
-docker-credentials  OK      https://us.gcr.io  user@example.com  _json_key
+NAME                STATUS  SERVER                                  EMAIL             USERNAME
+docker-credentials  OK      https://us-central1-docker.pkg.dev     user@example.com  _json_key
 ## <a href="about:blank#_removing_credentials"></a> Removing credentials
 
 To remove container registry credentials from your Akka project, you can use the Akka CLI or the Akka Console.
@@ -93,13 +93,14 @@ When you use the Akka Console, you don’t need to provide the Server URL.
 
 Docker has [rate limits](https://docs.docker.com/docker-hub/download-rate-limit/) for unauthenticated and free Docker Hub usage. For unauthenticated users, pull rates are limited based on IP address (anonymous, or unauthenticated, users have a limit of 100 container image pulls per 6 hours per IP address). Akka leverages a limited set of IP addresses to connect to Docker Hub. This means that unauthenticated image pulls might be rate limited. The limit for unauthenticated pulls is shared by all users of Akka.
 
-### <a href="about:blank#_google_container_registry"></a> Google Container Registry
+### <a href="about:blank#_google_artifact_registry"></a> Google Artifact Registry
 
-To connect your Akka project to Google Container Registry (GCR), you’ll need:
+To connect your Akka project to Google Artifact Registry, you’ll need:
 
 - An active Google Cloud Platform account.
-- The Registry API enabled on your Google Cloud project.
+- The Artifact Registry API enabled on your Google Cloud project.
 - The ID that corresponds with your GCP project.
+- The location and name of your Artifact Registry repository.
 
   1. Create the service account.
 
@@ -108,14 +109,14 @@ In the following example the service account is named `akka-docker-reader`. Run 
 ```command
 gcloud iam service-accounts create akka-docker-reader
 ```
-  2. Grant the GCP storage object viewer role to the service account.
+  2. Grant the Artifact Registry Reader role to the service account.
 
 In the following example, replace `<gcp-project-id>` with the GCP project ID.
 
 ```command
 gcloud projects add-iam-policy-binding <gcp-project-id> \
   --member "serviceAccount:akka-docker-reader@<gcp-project-id>.iam.gserviceaccount.com" \
-  --role "roles/storage.objectViewer"
+  --role "roles/artifactregistry.reader"
 ```
   3. Generate the service account `_json_key`.
 
@@ -125,14 +126,16 @@ gcloud iam service-accounts keys create keyfile.json \
 ```
   4. Configure your Akka project to use these credentials, by passing the contents of the key file as the password.
 
+In the following example, replace `<location>` with your Artifact Registry location (e.g., `us-central1`, `us-east1`, `europe-west1`).
+
 ```command
-akka docker add-credentials --docker-server https://us.gcr.io \
+akka docker add-credentials --docker-server https://<location>-docker.pkg.dev \
   --docker-username _json_key \
   --docker-email anyemail@example.com \
   --docker-password "$(cat keyfile.json)"
 ```
 
-|  | Find detailed configuration instructions in the [Google documentation](https://cloud.google.com/container-registry/docs/advanced-authentication#json-key). |
+|  | Find detailed configuration instructions in the [Google documentation](https://cloud.google.com/artifact-registry/docs/docker/authentication#json-key). |
 
 ### <a href="about:blank#_azure_container_registry"></a> Azure Container Registry
 

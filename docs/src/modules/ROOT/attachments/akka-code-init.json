@@ -69,6 +69,12 @@
       "level": "Intermediate"
     },
     {
+      "title": "Adaptive multi-agent orchestration",
+      "description": "A sample application demonstrating how to build a multi-agent system using Akka and an LLM model. It illustrates adaptive agent orchestration by implementing the MagenticOne pattern,",
+      "language": "java",
+      "url": "https://github.com/akka-samples/adaptive-multi-agent"
+    },
+    {
       "title": "Customer service chat workflow",
       "description": "The real-estate customer service agent demonstrates how to combine Akka features with an LLM model. It illustrates an agentic workflow for customer service. It processes incoming real-estate inquiries, analyzes the content to extract details, provides follow-up when needed and saves the collected information for future reference.",
       "language": "java",

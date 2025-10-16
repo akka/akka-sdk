@@ -9,6 +9,7 @@ import akka.javasdk.CommandException;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.Metadata;
 import akka.javasdk.agent.Guardrail.GuardrailException;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.impl.agent.AgentStreamEffectImpl;
@@ -42,9 +43,9 @@ import java.util.function.Function;
  * shared between agents using the same session id.
  *
  * <p><strong>Component Identification:</strong> The agent must be annotated with {@link
- * akka.javasdk.annotations.ComponentId} to provide a unique identifier for the component class. For
- * multi-agent systems, use {@link akka.javasdk.annotations.AgentDescription} to provide metadata
- * for the {@link AgentRegistry}.
+ * akka.javasdk.annotations.Component} to provide a unique identifier for the component class. For
+ * multi-agent systems, use {@link Component#name()}, {@link Component#description()} and {@link
+ * akka.javasdk.annotations.AgentRole} to provide metadata for the {@link AgentRegistry}.
  *
  * <p><strong>Calling Agents:</strong> Agents are typically called from workflows, endpoints, or
  * consumers using the ComponentClient:

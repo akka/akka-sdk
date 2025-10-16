@@ -43,23 +43,24 @@ The result from the `SelectorAgent` is a list of agent ids. Add a new file `Agen
 include::java:example$multi-agent/src/main/java/demo/multiagent/domain/AgentSelection.java[tag=all]
 ----
 
-The information about the agents in the `AgentRegistry` comes from the `@Component` and `@AgentDescription` annotations. When using it for planning like this it is important that the agents define those descriptions that the LLM can use to come up with a good plan.
+The information about the agents in the `AgentRegistry` comes from the `@Component` and `@AgentRole` annotations. When
+using it for planning like this, it is important that the agents define those descriptions that the LLM can use to come up with a good plan.
 
-Add the `@AgentDescription` to the `WeatherAgent`:
+Add the `@Component` and `@AgentRole` to the `WeatherAgent`:
 [source,java,indent=0]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/WeatherAgent.java[WeatherAgent.java]
 ----
 include::java:example$multi-agent/src/main/java/demo/multiagent/application/WeatherAgent.java[tag=description]
 ----
 
-Add the `@AgentDescription` to the `ActivityAgent`:
+Add the `@Component` and `@AgentRole` to the `ActivityAgent`:
 [source,java,indent=0]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/ActivityAgent.java[ActivityAgent.java]
 ----
 include::java:example$multi-agent/src/main/java/demo/multiagent/application/ActivityAgent.java[tag=description]
 ----
 
-Note that in image:concepts:steps-2.svg[width=20] of the `SelectorAgent` we retrieve a subset of the agents with a certain role. This role is also defined in the `@AgentDescription` annotation.
+Note that in image:concepts:steps-2.svg[width=20] of the `SelectorAgent` we retrieve a subset of the agents with a certain role. This role is also defined in the `@AgentRole` annotation.
 
 After selecting agents, we use a `PlannerAgent` to decide in which order to use the agents and the precise request each agent should receive to perform its single task. Add a new file `PlannerAgent.java` to `src/main/java/com/example/application/`
 
@@ -187,4 +188,4 @@ Inspect the logs and notice the difference if you include "Beware of the weather
 == Next steps
 
 * Finally, let's use another agent to evaluate the previous suggestions when the user preferences are changed or if new suggestions should be created. Continue with xref:planner-agent/eval.adoc[] that will illustrate the Consumer component and "LLM as judge" pattern.
-
+* A more advanced sample illustrates link:https://github.com/akka-samples/adaptive-multi-agent[adaptive multi-agent orchestration, window="new"]. It re-evaluates progress after each agent response and dynamically adjusts its strategy.

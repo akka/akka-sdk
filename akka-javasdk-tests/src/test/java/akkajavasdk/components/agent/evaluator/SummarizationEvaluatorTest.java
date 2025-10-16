@@ -5,6 +5,7 @@
 package akkajavasdk.components.agent.evaluator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import akka.javasdk.agent.PromptTemplate;
 import akka.javasdk.agent.evaluator.SummarizationEvaluator;
@@ -114,41 +115,37 @@ public class SummarizationEvaluatorTest extends TestKitSupport {
         """
             .stripIndent());
 
-    try {
-      componentClient
-          .forAgent()
-          .inSession(newSessionId())
-          .method(SummarizationEvaluator::evaluate)
-          .invoke(new SummarizationEvaluator.EvaluationRequest("today is sunny", "sunny"));
-    } catch (Exception exc) {
-      // FIXME Is it right to throw CorrelatedRuntimeException when the response mapper throws?
-      //       The IllegalArgumentException isn't included as cause
-      assertThat(exc.getMessage()).startsWith("Response mapping error");
-    }
+    assertThatThrownBy(
+            () ->
+                componentClient
+                    .forAgent()
+                    .inSession(newSessionId())
+                    .method(SummarizationEvaluator::evaluate)
+                    .invoke(
+                        new SummarizationEvaluator.EvaluationRequest("today is sunny", "sunny")))
+        .hasMessageContaining("Response mapping error");
   }
 
   @Test
-  public void shouldNotAcceptResponseWithoutWrongLabel() {
+  public void shouldNotAcceptResponseWithWrongLabel() {
     testModelProvider.fixedResponse(
         """
         {
           "explanation" : "This is a good summary",
-          "label" : "good"
+          "label" : "great"
         }
         """
             .stripIndent());
 
-    try {
-      componentClient
-          .forAgent()
-          .inSession(newSessionId())
-          .method(SummarizationEvaluator::evaluate)
-          .invoke(new SummarizationEvaluator.EvaluationRequest("today is sunny", "sunny"));
-    } catch (Exception exc) {
-      // FIXME Is it right to throw CorrelatedRuntimeException when the response mapper throws?
-      //       The IllegalArgumentException isn't included as cause
-      assertThat(exc.getMessage()).startsWith("Response mapping error");
-    }
+    assertThatThrownBy(
+            () ->
+                componentClient
+                    .forAgent()
+                    .inSession(newSessionId())
+                    .method(SummarizationEvaluator::evaluate)
+                    .invoke(
+                        new SummarizationEvaluator.EvaluationRequest("today is sunny", "sunny")))
+        .hasMessageContaining("Response mapping error");
   }
 
   @Test

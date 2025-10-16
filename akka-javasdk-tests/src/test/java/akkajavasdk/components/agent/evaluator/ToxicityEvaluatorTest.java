@@ -5,6 +5,7 @@
 package akkajavasdk.components.agent.evaluator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import akka.javasdk.agent.PromptTemplate;
 import akka.javasdk.agent.evaluator.ToxicityEvaluator;
@@ -111,21 +112,18 @@ public class ToxicityEvaluatorTest extends TestKitSupport {
         """
             .stripIndent());
 
-    try {
-      componentClient
-          .forAgent()
-          .inSession(newSessionId())
-          .method(ToxicityEvaluator::evaluate)
-          .invoke("Have a nice day");
-    } catch (Exception exc) {
-      // FIXME Is it right to throw CorrelatedRuntimeException when the response mapper throws?
-      //       The IllegalArgumentException isn't included as cause
-      assertThat(exc.getMessage()).startsWith("Response mapping error");
-    }
+    assertThatThrownBy(
+            () ->
+                componentClient
+                    .forAgent()
+                    .inSession(newSessionId())
+                    .method(ToxicityEvaluator::evaluate)
+                    .invoke("Have a nice day"))
+        .hasMessageContaining("Response mapping error");
   }
 
   @Test
-  public void shouldNotAcceptResponseWithoutWrongLabel() {
+  public void shouldNotAcceptResponseWithWrongLabel() {
     testModelProvider.fixedResponse(
         """
         {
@@ -135,17 +133,14 @@ public class ToxicityEvaluatorTest extends TestKitSupport {
         """
             .stripIndent());
 
-    try {
-      componentClient
-          .forAgent()
-          .inSession(newSessionId())
-          .method(ToxicityEvaluator::evaluate)
-          .invoke("Have a nice day");
-    } catch (Exception exc) {
-      // FIXME Is it right to throw CorrelatedRuntimeException when the response mapper throws?
-      //       The IllegalArgumentException isn't included as cause
-      assertThat(exc.getMessage()).startsWith("Response mapping error");
-    }
+    assertThatThrownBy(
+            () ->
+                componentClient
+                    .forAgent()
+                    .inSession(newSessionId())
+                    .method(ToxicityEvaluator::evaluate)
+                    .invoke("Have a nice day"))
+        .hasMessageContaining("Response mapping error");
   }
 
   @Test

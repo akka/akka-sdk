@@ -4,7 +4,6 @@
 
 package akka.javasdk.agent;
 
-import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.Component;
 import java.util.List;
 
@@ -15,8 +14,7 @@ class DummyAgent1 extends Agent {
   }
 }
 
-@Component(id = "dummy2")
-@AgentDescription(name = "Dummy Agent", description = "Not very smart agent")
+@Component(id = "dummy2", name = "Dummy Agent", description = "Not very smart agent")
 class DummyAgent2 extends Agent {
   record Response(String result) {}
 
@@ -30,8 +28,7 @@ class DummyAgent2 extends Agent {
   }
 }
 
-@Component(id = "dummy3")
-@AgentDescription(name = "Dummy Agent", description = "Not very smart agent")
+@Component(id = "dummy3", name = "Dummy Agent", description = "Not very smart agent")
 class DummyAgent3 extends Agent {
   Effect<String> doSomethingElse(String question) {
     // customer memory
@@ -58,8 +55,7 @@ class DummyAgent3 extends Agent {
   }
 }
 
-@Component(id = "dummy4")
-@AgentDescription(name = "Dummy Agent", description = "Not very smart nor memorable agent")
+@Component(id = "dummy4", name = "Dummy Agent", description = "Not very smart nor memorable agent")
 class DummyAgent4 extends Agent {
   Effect<String> doSomething(String question) {
     return effects()

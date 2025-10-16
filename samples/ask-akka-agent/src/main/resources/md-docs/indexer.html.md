@@ -1,18 +1,20 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
-- [AI RAG agent part 2: Knowledge indexing with a workflow](indexer.html)
+- [Tutorials](../index.html)
+- [RAG chat agent](index.html)
+- [Knowledge indexing with a workflow](indexer.html)
 
 <!-- </nav> -->
 
-# AI RAG agent part 2: Knowledge indexing with a workflow
+# Knowledge indexing with a workflow
 
 |  | **New to Akka? Start here:**
 
-Use the [Author your first agentic service](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
+Use the [Build your first agent](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
 
 ## <a href="about:blank#_overview"></a> Overview
 
-The first step in building a RAG agent is *indexing*. Each time a user submits a query or prompt to the agent, the agent *retrieves* relevant documents by performing a semantic search on a vector database. Before we can perform that search, we need to populate the vector database with all of the knowledge that we want to make available to the agent.
+The first step in building a RAG agent is *indexing*. Each time a user submits a query or prompt to the agent, the agent *retrieves* relevant documents by performing a semantic search on a vector database. Before we can perform that search, we need to populate the vector database with all the knowledge that we want to make available to the agent.
 
 Populating the vector database by creating embeddings is the *indexing* step. In this guide we’re going to use an Akka workflow to manage the indexing of a large number of documents as a long-running process.
 
@@ -22,7 +24,7 @@ Populating the vector database by creating embeddings is the *indexing* step. In
 - [Apache Maven](https://maven.apache.org/install.html) version 3.9 or later
 - <a href="https://curl.se/download.html">`curl` command-line tool</a>
 - [OpenAI API key](https://platform.openai.com/api-keys)
-You will also need a [Mongo DB Atlas](https://www.mongodb.com/atlas) account. We’ll be using the vector indexing capability of this database for the retrieval portion of the RAG flow. You can do all of the indexing necessary for this sample with a free account. Once you’ve created the account, make note of the secure connection string as you’ll need it later.
+You can either create a [Mongo DB Atlas](https://www.mongodb.com/atlas) account or run MongoDB locally using Docker. We’ll be using the vector indexing capability of this database for the retrieval portion of the RAG flow. You can do all the indexing necessary for this sample with a free account if you choose so. Once you’ve created the account, make note of the secure connection string as you’ll need it later. If you choose to run a local instance, further instructions are provided in [Running the service](about:blank#_running_the_service).
 
 If you are following along with each step rather than using the completed solution, then you’ll need the code you wrote in the previous step.
 
@@ -37,13 +39,16 @@ We’re going to use `langchain4j` for this sample, so add those dependencies to
 [pom.xml](https://github.com/akka/akka-sdk/blob/main/samples/ask-akka-agent/pom.xml)
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.akka</groupId>
         <artifactId>akka-javasdk-parent</artifactId>
-        <version>3.4.1</version>
+        <version>3.5.4</version>
     </parent>
 
     <groupId>akka.ask</groupId>
@@ -53,7 +58,7 @@ We’re going to use `langchain4j` for this sample, so add those dependencies to
 
     <name>ask-akka</name>
     <properties>
-        <langchain4j.version>1.0.0</langchain4j.version>
+        <langchain4j.version>1.5.0</langchain4j.version>
     </properties>
     <dependencies>
         <dependency>
@@ -64,7 +69,7 @@ We’re going to use `langchain4j` for this sample, so add those dependencies to
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-mongodb-atlas</artifactId>
-            <version>1.0.0-beta5</version>
+            <version>1.1.0-beta7</version>
         </dependency>
     </dependencies>
 </project>
@@ -88,19 +93,15 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
 
   // metadata key used to store file name
   private final String srcKey = "src";
-  private static final String PROCESSING_FILE_STEP = "processing-file";
 
   public record State(List<Path> toProcess, List<Path> processed) { // (1)
-
     public static State of(List<Path> toProcess) {
       return new State(toProcess, new ArrayList<>());
     }
 
     public Optional<Path> head() { // (2)
-      if (toProcess.isEmpty())
-        return Optional.empty();
-      else
-        return Optional.of(toProcess.getFirst());
+      if (toProcess.isEmpty()) return Optional.empty();
+      else return Optional.of(toProcess.getFirst());
     }
 
     public State headProcessed() {
@@ -131,6 +132,7 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
   public State emptyState() {
     return State.of(new ArrayList<>());
   }
+
 }
 ```
 
@@ -141,32 +143,27 @@ The workflow definition for the document indexer is surprisingly simple:
 [RagIndexingWorkflow.java](https://github.com/akka/akka-sdk/blob/main/samples/ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java)
 ```java
 @Override
-public WorkflowDef<State> definition() {
-  return workflow()
-      .addStep(processingFileStep())
-      // the processing step might take a while
-      .defaultStepTimeout(Duration.of(1, MINUTES));
+public WorkflowSettings settings() {
+  return WorkflowSettings.builder()
+    .defaultStepTimeout(ofMinutes// (1))
+    .build();
 }
 
-private Step processingFileStep() {
-  return step(PROCESSING_FILE_STEP) // (1)
-      .call(() -> {
-        if (currentState().hasFilesToProcess()) {
-          indexFile(currentState().head().get());
-        }
-      })
-      .andThen(() -> {
-        // we need to check if it hasFilesToProcess, before moving the head
-        // because if workflow is aborted, the state is cleared, and we won't have
-        // anything in the list
-        if (currentState().hasFilesToProcess()) { // (2)
-          var newState = currentState().headProcessed();
-          logger.debug("Processed {}/{}", newState.totalProcessed(), newState.totalFiles());
-          return effects().updateState(newState).transitionTo(PROCESSING_FILE_STEP); // (3)
-        } else {
-          return effects().pause(); // (4)
-        }
-      });
+@StepName("processing-file")
+private StepEffect processingFileStep() { // (1)
+  if (currentState().hasFilesToProcess()) {
+    indexFile(currentState().head().get());
+  }
+
+  if (currentState().hasFilesToProcess()) { // (2)
+    var newState = currentState().headProcessed();
+    logger.debug("Processed {}/{}", newState.totalProcessed(), newState.totalFiles());
+    return stepEffects()
+      .updateState(newState)
+      .thenTransitionTo(RagIndexingWorkflow::processingFileStep); // (3)
+  } else {
+    return stepEffects().thenPause(); // (4)
+  }
 }
 ```
 
@@ -184,10 +181,17 @@ private void indexFile(Path path) {
   try (InputStream input = Files.newInputStream(path)) {
     // read file as input stream
     Document doc = new TextDocumentParser().parse(input);
-    var docWithMetadata = new DefaultDocument(doc.text(), Metadata.metadata(srcKey, path.getFileName().toString()));
+    var docWithMetadata = new DefaultDocument(
+      doc.text(),
+      Metadata.metadata(srcKey, path.getFileName().toString())
+    );
 
     var segments = splitter.split(docWithMetadata);
-    logger.debug("Created {} segments for document {}", segments.size(), path.getFileName());
+    logger.debug(
+      "Created {} segments for document {}",
+      segments.size(),
+      path.getFileName()
+    );
 
     segments.forEach(this::addSegment);
   } catch (BlankDocumentException e) {
@@ -205,10 +209,12 @@ private void addSegment(TextSegment seg) {
   var fileName = seg.metadata().getString(srcKey);
   var res = embeddingModel.embed(seg);
 
-  logger.debug("Segment embedded. Source file '{}'. Tokens usage: in {}, out {}",
-      fileName,
-      res.tokenUsage().inputTokenCount(),
-      res.tokenUsage().outputTokenCount());
+  logger.debug(
+    "Segment embedded. Source file '{}'. Tokens usage: in {}, out {}",
+    fileName,
+    res.tokenUsage().inputTokenCount(),
+    res.tokenUsage().outputTokenCount()
+  );
 
   embeddingStore.add(res.content(), seg); // (1)
 }
@@ -224,26 +230,29 @@ public Effect<Done> start() {
     return effects().error("Workflow is currently processing documents");
   } else {
     List<Path> documents;
-    var documentsDirectoryPath = getClass().getClassLoader().getResource("md-docs").getPath();
+    var documentsDirectoryPath = getClass()
+      .getClassLoader()
+      .getResource("md-docs")
+      .getPath();
 
     try (Stream<Path> paths = Files.walk(Paths.get(documentsDirectoryPath))) {
       documents = paths
-          .filter(Files::isRegularFile)
-          .filter(path -> path.toString().endsWith(".md"))
-          .toList();
+        .filter(Files::isRegularFile)
+        .filter(path -> path.toString().endsWith(".md"))
+        .toList();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
 
     return effects()
-        .updateState(State.of(documents))
-        .transitionTo(PROCESSING_FILE_STEP) // (1)
-        .thenReply(done());
+      .updateState(State.of(documents))
+      .transitionTo(RagIndexingWorkflow::processingFileStep) // (1)
+      .thenReply(done());
   }
 }
 ```
 
-| **1** | A workflow must always transition to a state on startup |
+| **1** | A workflow transition to processing file step on startup |
 
 ## <a href="about:blank#_injecting_the_mongodb_client"></a> Injecting the MongoDB client
 
@@ -254,12 +263,12 @@ If you’ve been following along, then you might be wondering how we inject an `
 public RagIndexingWorkflow(MongoClient mongoClient) {
   this.embeddingModel = OpenAiUtils.embeddingModel();
   this.embeddingStore = MongoDbEmbeddingStore.builder()
-      .fromClient(mongoClient)
-      .databaseName("akka-docs")
-      .collectionName("embeddings")
-      .indexName("default")
-      .createIndex(true)
-      .build();
+    .fromClient(mongoClient)
+    .databaseName("akka-docs")
+    .collectionName("embeddings")
+    .indexName("default")
+    .createIndex(true)
+    .build();
 
   this.splitter = new DocumentByCharacterSplitter(500, 50); // (1)
 }
@@ -272,17 +281,18 @@ The API endpoint to start the indexer creates an instance of the workflow throug
 ```java
 @Setup
 public class Bootstrap implements ServiceSetup {
-  public Bootstrap() {
-    if (!KeyUtils.hasValidKeys()) {
-      throw new IllegalStateException(
-          "No API keys found. Make sure you have OPENAI_API_KEY and MONGODB_ATLAS_URI defined as environment variable.");
-    }
+
+  private Config config;
+
+
+  public Bootstrap(Config config) {
+    this.config = config;
   }
+
 
   @Override
   public DependencyProvider createDependencyProvider() {
-    MongoClient mongoClient = MongoClients.create(KeyUtils.readMongoDbUri());
-
+    MongoClient mongoClient = MongoClients.create(config.getString("mongodb.uri"));
 
     return new DependencyProvider() {
       @Override
@@ -290,7 +300,6 @@ public class Bootstrap implements ServiceSetup {
         if (cls.equals(MongoClient.class)) {
           return (T) mongoClient;
         }
-
 
         return null;
       }
@@ -313,23 +322,18 @@ public class IndexerEndpoint {
   private final ComponentClient componentClient;
 
   public IndexerEndpoint(ComponentClient componentClient) {
-
     this.componentClient = componentClient;
   }
 
   @Post("/start")
   public HttpResponse startIndexation() {
-    componentClient.forWorkflow("indexing")
-      .method(RagIndexingWorkflow::start)
-      .invoke();
+    componentClient.forWorkflow("indexing").method(RagIndexingWorkflow::start).invoke();
     return HttpResponses.accepted();
   }
 
   @Post("/abort")
   public HttpResponse abortIndexation() {
-    componentClient.forWorkflow("indexing")
-      .method(RagIndexingWorkflow::abort)
-      .invoke();
+    componentClient.forWorkflow("indexing").method(RagIndexingWorkflow::abort).invoke();
     return HttpResponses.accepted();
   }
 }
@@ -343,6 +347,7 @@ For now, we suggest that you play around with indexing and the kind of results y
 
 Use the connection URL provided to you by MongoDB Atlas and set the `MONGODB_ATLAS_URI` environment variable to that connection string.
 
+|  | As an alternative, you can run MongoDB locally using Docker with `docker compose up -d`. See example [docker-compose.yml](https://github.com/akka/akka-sdk/blob/main/samples/ask-akka-agent/docker-compose.yml). |
 Start your service locally:
 
 ```command
@@ -361,6 +366,9 @@ The documentation files are located in `src/main/resources/md-docs/`. That said,
 Next we’ll [add the indexed knowledge to the agent](rag.html) to be able to run meaningful queries against the *Ask Akka* AI assistant!
 
 <!-- <footer> -->
+<!-- <nav> -->
+[Creating the agent](the-agent.html) [Executing RAG queries](rag.html)
+<!-- </nav> -->
 
 <!-- </footer> -->
 

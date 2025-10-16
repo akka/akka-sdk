@@ -20,7 +20,7 @@ In order to run your service locally, you’ll need to have the following prereq
 
 ## <a href="about:blank#_starting_your_service"></a> Starting your service
 
-As an example, we will use the [Shopping Cart](../getting-started/build-and-deploy-shopping-cart.html) sample.
+As an example, we will use the [Shopping Cart](../getting-started/shopping-cart/build-and-deploy-shopping-cart.html) sample.
 
 To start your service locally, run the following command from the root of your project:
 
@@ -78,7 +78,7 @@ Start one or more services as described in [Starting your service](about:blank#_
 ![local console](_images/local-console.png)
 
 
-## <a href="about:blank#_running_a_service_with_persistence_enabled"></a> Running a service with persistence enabled
+## <a href="about:blank#persistence-enabled"></a> Running a service with persistence enabled
 
 By default, when running locally, persistence is disabled. This means the Akka Runtime will use an in-memory data store for the state of your services. This is useful for local development since it allows you to quickly start and stop your service without having to worry about cleaning the database.
 
@@ -117,9 +117,72 @@ akka.javasdk.dev-mode.http-port=9001
 ```
 With both services configured, we can start them independently by running `mvn compile exec:java` in two separate terminals.
 
+## <a href="about:blank#local_cluster"></a> Running a local cluster
+
+For testing clustering behavior and high availability scenarios, you can run your Akka service as a local cluster with multiple nodes. This allows you to simulate a distributed environment on your local machine.
+
+### <a href="about:blank#_database_requirement"></a> Database requirement
+
+To run in cluster mode, you need a shared database that all nodes can connect to. The `local-nodeX.conf` files configure the application to connect to a PostgreSQL database.
+
+Before starting your cluster nodes, you must start a local PostgreSQL database. We recommend using Docker Compose for this purpose. Create a `docker-compose.yml` file with the following configuration:
+
+```yaml
+services:
+  postgres-db:
+    image: postgres:17
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-d", "postgres", "-U", "postgres"]
+      interval: 5s
+      retries: 5
+      start_period: 5s
+      timeout: 5s
+```
+Start the database with:
+
+```command
+docker compose up -d
+```
+
+### <a href="about:blank#_cluster_configuration"></a> Cluster configuration
+
+You can create a local cluster with up to 3 nodes. Each node requires its own configuration file and will run on a different HTTP port.
+
+To start each node, use the following commands in separate terminal windows:
+
+```command
+# Node 1 (runs on port 9000)
+mvn compile exec:java -Dconfig.resource=local-node1.conf
+
+# Node 2 (runs on port 9001)
+mvn compile exec:java -Dconfig.resource=local-node2.conf
+
+# Node 3 (runs on port 9002)
+mvn compile exec:java -Dconfig.resource=local-node3.conf
+```
+
+### <a href="about:blank#_port_assignment"></a> Port assignment
+
+The cluster nodes use sequential port numbering based on your configured HTTP port:
+
+- **Node 1**: Uses the standard HTTP port (default: 9000)
+- **Node 2**: Uses standard port + 1 (default: 9001)
+- **Node 3**: Uses standard port + 2 (default: 9002)
+If you have configured a custom HTTP port in your `application.conf` (for example, 9010), the cluster nodes will use:
+
+- **Node 1**: 9010
+- **Node 2**: 9011
+- **Node 3**: 9012
+This ensures that each node in the cluster has its own unique port while maintaining a predictable numbering scheme.
+
 <!-- <footer> -->
 <!-- <nav> -->
-[JSON Web Tokens (JWT)](auth-with-jwts.html) [Developer best practices](dev-best-practices.html)
+[JSON Web Tokens (JWT)](auth-with-jwts.html) [AI model provider configuration](model-provider-details.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

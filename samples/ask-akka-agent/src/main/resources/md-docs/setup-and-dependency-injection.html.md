@@ -20,7 +20,7 @@ Only one such class may exist in the same service.
 @Setup // (1)
 public class CounterSetup implements ServiceSetup {
 
-  private  final Logger logger = LoggerFactory.getLogger(getClass());
+  private final Logger logger = LoggerFactory.getLogger(getClass());
   private final ComponentClient componentClient;
 
   public CounterSetup(ComponentClient componentClient) { // (2)
@@ -30,9 +30,7 @@ public class CounterSetup implements ServiceSetup {
   @Override
   public void onStartup() { // (3)
     logger.info("Service starting up");
-    var result = componentClient.forEventSourcedEntity("123")
-        .method(Counter::get)
-        .invoke();
+    var result = componentClient.forEventSourcedEntity("123").method(Counter::get).invoke();
     logger.info("Initial value for entity 123 is [{}]", result);
   }
 ```
@@ -47,14 +45,14 @@ individually and independently, for example during a rolling upgrade. Each such 
 
 You can use `ServiceSetup` to disable components by overriding `disabledComponents` and returning a set of component classes to disable.
 
-[MyAppSetup.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/MyAppSetup.java)
+[Bootstrap.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/Bootstrap.java)
 ```java
 @Setup
-public class MyAppSetup implements ServiceSetup {
+public class Bootstrap implements ServiceSetup {
 
   private final Config appConfig;
 
-  public MyAppSetup(Config appConfig) {
+  public Bootstrap(Config appConfig) {
     this.appConfig = appConfig;
   }
 
@@ -118,22 +116,23 @@ individual component instances from running in parallel and cause throughput iss
 so should be avoided. |
 The implementation can be pure Java without any dependencies:
 
-[MyAppSetup.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/MyAppSetup.java)
+[Bootstrap.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/Bootstrap.java)
 ```java
 @Setup
-public class MyAppSetup implements ServiceSetup {
+public class Bootstrap implements ServiceSetup {
 
   private final Config appConfig;
 
-  public MyAppSetup(Config appConfig) {
+  public Bootstrap(Config appConfig) {
     this.appConfig = appConfig;
   }
 
 
   @Override
   public DependencyProvider createDependencyProvider() { // (1)
-    final var myAppSettings =
-        new MyAppSettings(appConfig.getBoolean("my-app.some-feature-flag")); // (2)
+    final var myAppSettings = new MyAppSettings(
+      appConfig.getBoolean("my-app.some-feature-flag")
+    ); // (2)
 
     return new DependencyProvider() { // (3)
       @Override
@@ -141,11 +140,12 @@ public class MyAppSetup implements ServiceSetup {
         if (clazz == MyAppSettings.class) {
           return (T) myAppSettings;
         } else {
-          throw new RuntimeException("No such dependency found: "+ clazz);
+          throw new RuntimeException("No such dependency found: " + clazz);
         }
       }
     };
   }
+
 }
 ```
 
@@ -165,8 +165,11 @@ public class CounterSetup implements ServiceSetup {
   @Override
   public DependencyProvider createDependencyProvider() {
     try {
-      AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(); // (1)
-      ResourcePropertySource resourcePropertySource = new ResourcePropertySource(new ClassPathResource("application.properties"));
+      AnnotationConfigApplicationContext context =
+        new AnnotationConfigApplicationContext(); // (1)
+      ResourcePropertySource resourcePropertySource = new ResourcePropertySource(
+        new ClassPathResource("application.properties")
+      );
       context.getEnvironment().getPropertySources().addFirst(resourcePropertySource);
       context.registerBean(ComponentClient.class, () -> componentClient);
       context.scan("com.example");
@@ -176,8 +179,6 @@ public class CounterSetup implements ServiceSetup {
       throw new RuntimeException(e);
     }
   }
-
-
 }
 ```
 
@@ -193,12 +194,13 @@ that mock instances of dependencies can be used in tests.
 ```java
 public class MyIntegrationTest extends TestKitSupport {
 
-  private static final DependencyProvider mockDependencyProvider = new DependencyProvider() { // (1)
+  private static final DependencyProvider mockDependencyProvider =
+    new DependencyProvider() { // (1)
     @SuppressWarnings("unchecked")
     @Override
     public <T> T getDependency(Class<T> clazz) {
       if (clazz.equals(MyAppSettings.class)) {
-           return (T) new MyAppSettings(true);
+        return (T) new MyAppSettings(true);
       } else {
         throw new IllegalArgumentException("Unknown dependency type: " + clazz);
       }
@@ -207,8 +209,7 @@ public class MyIntegrationTest extends TestKitSupport {
 
   @Override
   protected TestKit.Settings testKitSettings() {
-    return TestKit.Settings.DEFAULT
-        .withDependencyProvider(mockDependencyProvider); // (2)
+    return TestKit.Settings.DEFAULT.withDependencyProvider(mockDependencyProvider); // (2)
   }
 ```
 

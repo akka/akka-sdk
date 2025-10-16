@@ -33,8 +33,6 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL)) // (2)
 public class ExampleEndpoint extends AbstractHttpEndpoint { // (1)
 
-
-
   @Get("/hello") // (3)
   public String hello() {
     return "Hello World"; // (4)
@@ -55,14 +53,14 @@ The path can also contain one or more parameters, which are extracted and passed
 [ExampleEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java)
 ```java
 @Get("/hello/{name}") // (1)
-  public String hello(String name) { // (2)
-    return "Hello " + name;
-  }
+public String hello(String name) { // (2)
+  return "Hello " + name;
+}
 
-  @Get("/hello/{name}/{age}") // (3)
-  public String hello(String name, int age) { // (4)
-    return "Hello " + name + "! You are " + age + " years old";
-  }
+@Get("/hello/{name}/{age}") // (3)
+public String hello(String name, int age) { // (4)
+  return "Hello " + name + "! You are " + age + " years old";
+}
 ```
 
 | **1** | Path parameter `name` in expression. |
@@ -80,17 +78,18 @@ To accept an HTTP JSON body, specify a parameter that is a class that [Jackson](
 ```java
 public record GreetingRequest(String name, int age) {} // (1)
 
-  @Post("/hello")
-  public String hello(GreetingRequest greetingRequest) { // (2)
-    return "Hello " + greetingRequest.name + "! " +
-        "You are " + greetingRequest.age + " years old";
-  }
+@Post("/hello")
+public String hello(GreetingRequest greetingRequest) { // (2)
+  return "Hello " + greetingRequest.name + "! " + 
+         "You are " + greetingRequest.age + " years old";
+  
+}
 
-  @Post("/hello/{number}") // (3)
-  public String hello(int number, GreetingRequest greetingRequest) { // (4)
-    return number + " Hello " + greetingRequest.name + "! " +
-        "You are " + greetingRequest.age + " years old";
-  }
+@Post("/hello/{number}") // (3)
+public String hello(int number, GreetingRequest greetingRequest) { // (4)
+  return number + " Hello " + greetingRequest.name + "! " +
+         "You are " + greetingRequest.age + " years old";
+}
 ```
 
 | **1** | A class that Jackson can serialize and deserialize to JSON |
@@ -118,12 +117,16 @@ public class ExampleEndpoint extends AbstractHttpEndpoint { // (1)
 
   @Get("/hello-request-header-from-context")
   public String requestHeaderFromContext() {
-    var name = requestContext().requestHeader("X-my-special-header") // (2)
-        .map(HttpHeader::value)
-        .orElseThrow(() -> new IllegalArgumentException("Request is missing my special header"));
+    var name = requestContext()
+      .requestHeader("X-my-special-header") // (2)
+      .map(HttpHeader::value)
+      .orElseThrow(
+        () -> new IllegalArgumentException("Request is missing my special header")
+      );
 
     return "Hello " + name + "!";
   }
+
 }
 ```
 
@@ -137,10 +140,10 @@ Accessing query parameter is done through the `requestContext()`, inherited from
 [ExampleEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java)
 ```java
 @Get("/hello-query-params-from-context")
-  public String queryParamsFromContext() {
-    var name = requestContext().queryParams().getString("name").orElse(""); // (1)
-    return "Hello " + name + "!";
-  }
+public String queryParamsFromContext() {
+  var name = requestContext().queryParams().getString("name").orElse(""); // (1)
+  return "Hello " + name + "!";
+}
 ```
 
 | **1** | `queryParams().get("name")` returns an `Optional` which is empty if the query parameter is not present. |
@@ -153,10 +156,10 @@ To return response with JSON, the return value can be a class that Jackson can s
 ```java
 public record MyResponse(String name, int age) {}
 
-  @Get("/hello-response/{name}/{age}")
-  public MyResponse helloJson(String name, int age) {
-    return new MyResponse(name, age); // (1)
-  }
+@Get("/hello-response/{name}/{age}")
+public MyResponse helloJson(String name, int age) {
+  return new MyResponse(name, age); // (1)
+}
 ```
 
 | **1** | Returning an object that Jackson can serialize into JSON |
@@ -183,12 +186,12 @@ Responding with an error can be done by throwing one of the exceptions available
 [ExampleEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java)
 ```java
 @Get("/hello-code/{name}/{age}")
-  public String helloWithValidation(String name, int age) {
-    if (age > 130)
-      throw HttpException.badRequest("It is unlikely that you are " + age + " years old");  // (1)
-    else
-      return " Hello " + name + "!";  // (2)
-  }
+public String helloWithValidation(String name, int age) {
+  if (age > 130)
+    throw HttpException
+      .badRequest("It is unlikely that you are " + age + " years old"); // (1)
+  else return " Hello " + name + "!"; // (2)
+}
 ```
 
 | **1** | Throw one of the exceptions created through factory methods provided by `HttpException` to respond with a HTTP error |
@@ -235,16 +238,18 @@ public class ShoppingCartEndpoint {
   @Get("/{cartId}") // (3)
   public ShoppingCart get(String cartId) {
     logger.info("Get cart id={}", cartId);
-    return componentClient.forEventSourcedEntity(cartId) // (4)
-        .method(ShoppingCartEntity::getCart)
-        .invoke(); // (5)
+    return componentClient
+      .forEventSourcedEntity(cartId) // (4)
+      .method(ShoppingCartEntity::getCart)
+      .invoke(); // (5)
   }
 
 
   @Put("/{cartId}/item") // (6)
   public HttpResponse addItem(String cartId, ShoppingCart.LineItem item) {
     logger.info("Adding item to cart id={} item={}", cartId, item);
-    componentClient.forEventSourcedEntity(cartId)
+    componentClient
+      .forEventSourcedEntity(cartId)
       .method(ShoppingCartEntity::addItem)
       .invoke(item);
     return HttpResponses.ok(); // (7)
@@ -276,13 +281,14 @@ public class CustomerRegistryEndpoint {
   private final HttpClient httpClient;
   private final ComponentClient componentClient;
 
-  public record Address(String street, String city) { }
+  public record Address(String street, String city) {}
 
-  public record CreateCustomerRequest(String email, String name, Address address) { }
+  public record CreateCustomerRequest(String email, String name, Address address) {}
 
-
-  public CustomerRegistryEndpoint(HttpClientProvider webClientProvider, // (1)
-                                  ComponentClient componentClient) {
+  public CustomerRegistryEndpoint(
+    HttpClientProvider webClientProvider, // (1)
+    ComponentClient componentClient
+  ) {
     this.httpClient = webClientProvider.httpClientFor("customer-registry"); // (2)
     this.componentClient = componentClient;
   }
@@ -290,18 +296,21 @@ public class CustomerRegistryEndpoint {
   @Post("/{id}")
   public HttpResponse create(String id, CreateCustomerRequest createRequest) {
     log.info("Delegating customer creation to upstream service: {}", createRequest);
-    if (id == null || id.isBlank())
-      throw HttpException.badRequest("No id specified");
+    if (id == null || id.isBlank()) throw HttpException.badRequest("No id specified");
 
     // make call to customer-registry service
-    var response = httpClient.POST("/customer/" + id) // (3)
-        .withRequestBody(createRequest)
-        .invoke();
+    var response = httpClient
+      .POST("/customer/" + id) // (3)
+      .withRequestBody(createRequest)
+      .invoke();
 
     if (response.httpResponse().status() == StatusCodes.CREATED) {
       return HttpResponses.created(); // (4)
     } else {
-      throw new RuntimeException("Delegate call to create upstream customer failed, response status: " + response.httpResponse().status());
+      throw new RuntimeException(
+        "Delegate call to create upstream customer failed, response status: " +
+        response.httpResponse().status()
+      );
     }
   }
 ```
@@ -335,13 +344,13 @@ having to reach for the Akka HTTP model APIs directly:
 ```java
 record HelloResponse(String greeting) {}
 
-  @Get("/hello-low-level-response/{name}/{age}")
-  public HttpResponse lowLevelResponseHello(String name, int age) { // (1)
-    if (age > 130)
-      return HttpResponses.badRequest("It is unlikely that you are " + age + " years old");  // (2)
-    else
-      return HttpResponses.ok(new HelloResponse("Hello " + name + "!"));  // (3)
-  }
+@Get("/hello-low-level-response/{name}/{age}")
+public HttpResponse lowLevelResponseHello(String name, int age) { // (1)
+  if (age > 130)
+    return HttpResponses
+      .badRequest("It is unlikely that you are " + age + " years old"); // (2)
+  else return HttpResponses.ok(new HelloResponse("Hello " + name + "!")); // (3)
+}
 ```
 
 | **1** | Declare the return type as `akka.http.javadsl.model.HttpResponse` |
@@ -354,13 +363,13 @@ having to reach for the Akka HTTP model APIs directly:
 ```java
 record HelloResponse(String greeting) {}
 
-  @Get("/hello-low-level-response/{name}/{age}")
-  public HttpResponse lowLevelResponseHello(String name, int age) { // (1)
-    if (age > 130)
-      return HttpResponses.badRequest("It is unlikely that you are " + age + " years old");  // (2)
-    else
-      return HttpResponses.ok(new HelloResponse("Hello " + name + "!"));  // (3)
-  }
+@Get("/hello-low-level-response/{name}/{age}")
+public HttpResponse lowLevelResponseHello(String name, int age) { // (1)
+  if (age > 130)
+    return HttpResponses
+      .badRequest("It is unlikely that you are " + age + " years old"); // (2)
+  else return HttpResponses.ok(new HelloResponse("Hello " + name + "!")); // (3)
+}
 ```
 
 | **1** | Declare the return type as `akka.http.javadsl.model.HttpResponse` |
@@ -371,17 +380,18 @@ Dropping all the way down to the Akka HTTP API:
 [ExampleEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java)
 ```java
 @Get("/hello-lower-level-response/{name}/{age}")
-  public HttpResponse lowerLevelResponseHello(String name, int age) {
-    if (age > 130)
-      return HttpResponse.create()
-          .withStatus(StatusCodes.BAD_REQUEST)
-          .withEntity("It is unlikely that you are " + age + " years old");
-    else {
-        var jsonBytes = JsonSupport.encodeToAkkaByteString(new HelloResponse("Hello " + name + "!")); // (1)
-        return HttpResponse.create() // (2)
-            .withEntity(ContentTypes.APPLICATION_JSON, jsonBytes); // (3)
-    }
+public HttpResponse lowerLevelResponseHello(String name, int age) {
+  if (age > 130) return HttpResponse.create()
+    .withStatus(StatusCodes.BAD_REQUEST)
+    .withEntity("It is unlikely that you are " + age + " years old");
+  else {
+    var jsonBytes = JsonSupport.encodeToAkkaByteString(
+      new HelloResponse("Hello " + name + "!")
+    ); // (1)
+    return HttpResponse.create() // (2)
+      .withEntity(ContentTypes.APPLICATION_JSON, jsonBytes); // (3)
   }
+}
 ```
 
 | **1** | At this level there is no convenience, the response object must manually be rendered into JSON bytes |
@@ -395,15 +405,17 @@ for example to handle uploads of a custom media type:
 
 [ExampleEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java)
 ```java
-private final static ContentType IMAGE_JPEG = ContentTypes.create(MediaTypes.IMAGE_JPEG);
-  @Post("/post-image/{name}")
-  public String lowLevelRequestHello(String name, HttpEntity.Strict strictRequestBody) {
-    if (!strictRequestBody.getContentType().equals(IMAGE_JPEG)) // (1)
-      throw HttpException.badRequest("This service only accepts " + IMAGE_JPEG);
-    else {
-      return "Got " + strictRequestBody.getData().size() + " bytes for image name " + name;  // (2)
-    }
+private static final ContentType IMAGE_JPEG = ContentTypes.create(MediaTypes.IMAGE_JPEG);
+
+@Post("/post-image/{name}")
+public String lowLevelRequestHello(String name, HttpEntity.Strict strictRequestBody) {
+  if (
+    !strictRequestBody.getContentType().equals(IMAGE_JPEG)
+  ) throw HttpException.badRequest("This service only accepts " + IMAGE_JPEG);
+  else { // (1)
+    return "Got " + strictRequestBody.getData().size() + " bytes for image name " + name; // (2)
   }
+}
 ```
 
 | **1** | `HttpEntity.Strict` gives access to the request body content type |
@@ -423,7 +435,6 @@ constructor parameter of this type to have it injected by the SDK.
 ```java
 public class ExampleEndpoint extends AbstractHttpEndpoint { // (1)
 
-
   private final Materializer materializer;
 
   public ExampleEndpoint(Materializer materializer) { // (1)
@@ -433,15 +444,25 @@ public class ExampleEndpoint extends AbstractHttpEndpoint { // (1)
   @Get("/hello-request-header/{name}")
   public CompletionStage<String> lowerLevelRequestHello(String name, HttpRequest request) {
     if (request.getHeader("X-my-special-header").isEmpty()) {
-      return request.discardEntityBytes(materializer).completionStage().thenApply(__ -> { // (2)
-        throw HttpException.forbidden("Missing the special header");
-      });
+      return request
+        .discardEntityBytes(materializer)
+        .completionStage()
+        .thenApply(__ -> { // (2)
+          throw HttpException.forbidden("Missing the special header");
+        });
     } else {
-      return request.entity().toStrict(1000, materializer).thenApply(strictRequestBody ->  // (3)
-        " Hello " + name + "! " +
-            "We got your " + strictRequestBody.getData().size() + " bytes " +
-            "of type " + strictRequestBody.getContentType()
-      );
+      return request
+        .entity()
+        .toStrict(1000, materializer)
+        .thenApply(strictRequestBody -> // (3)
+          " Hello " +
+          name +
+          "! " +
+          "We got your " +
+          strictRequestBody.getData().size() +
+          " bytes " +
+          "of type " +
+          strictRequestBody.getContentType());
     }
   }
 ```
@@ -461,15 +482,14 @@ This can be done for a single filename:
 [StaticResourcesEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/StaticResourcesEndpoint.java)
 ```java
 @Get("/") // (1)
-  public HttpResponse index() {
-    return HttpResponses.staticResource("index.html"); // (2)
-  }
+public HttpResponse index() {
+  return HttpResponses.staticResource("index.html"); // (2)
+}
 
-  @Get("/favicon.ico") // (3)
-  public HttpResponse favicon() {
-    return HttpResponses.staticResource("favicon.ico"); // (4)
-
-  }
+@Get("/favicon.ico") // (3)
+public HttpResponse favicon() {
+  return HttpResponses.staticResource("favicon.ico"); // (4)
+}
 ```
 
 | **1** | The specific path `/` |
@@ -481,9 +501,9 @@ It is also possible to map an entire path subtree using `**` as a wildcard at th
 [StaticResourcesEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/StaticResourcesEndpoint.java)
 ```java
 @Get("/static/**") // (1)
-  public HttpResponse webPageResources(HttpRequest request) { // (2)
-    return HttpResponses.staticResource(request, "/static/"); // (3)
-  }
+public HttpResponse webPageResources(HttpRequest request) { // (2)
+  return HttpResponses.staticResource(request, "/static/"); // (3)
+}
 ```
 
 | **1** | Endpoint method for any path under `/static/` |
@@ -505,13 +525,15 @@ to make sure the response stream is kept alive through proxies and firewalls.
 [ExampleEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java)
 ```java
 @Get("/current-time")
-  public HttpResponse streamCurrentTime() {
-    Source<Long, Cancellable> timeSource =
-        Source.tick(Duration.ZERO, Duration.ofSeconds// (5), "tick") // (1)
-            .map(__ -> System.currentTimeMillis()); // (2)
+public HttpResponse streamCurrentTime() {
+  Source<Long, Cancellable> timeSource = Source.tick( // (1)
+    Duration.ZERO,
+    Duration.ofSeconds// (5),
+    "tick"
+  ).map(__ -> System.currentTimeMillis()); // (2)
 
-    return HttpResponses.serverSentEvents(timeSource); // (3)
-  }
+  return HttpResponses.serverSentEvents(timeSource); // (3)
+}
 ```
 
 | **1** | `Source.tick` emits the element `"tick"` immediately (after `Duration.ZERO`) and then every 5 seconds |
@@ -523,14 +545,15 @@ feature](views.html#_streaming_view_updates).
 [CustomerEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/key-value-customer-registry/src/main/java/customer/api/CustomerEndpoint.java)
 ```java
 @Get("/by-city-sse/{cityName}")
-  public HttpResponse continousByCityNameServerSentEvents(String cityName) {
-    // view will keep stream going, toggled with streamUpdates = true on the query
-    Source<Customer, NotUsed> customerSummarySource = componentClient.forView() // (1)
-        .stream(CustomersByCity::continuousCustomersInCity)
-        .source(cityName);
+public HttpResponse continousByCityNameServerSentEvents(String cityName) {
+  // view will keep stream going, toggled with streamUpdates = true on the query
+  Source<Customer, NotUsed> customerSummarySource = componentClient
+    .forView() // (1)
+    .stream(CustomersByCity::continuousCustomersInCity)
+    .source(cityName);
 
-    return HttpResponses.serverSentEvents(customerSummarySource); // (2)
-  }
+  return HttpResponses.serverSentEvents(customerSummarySource); // (2)
+}
 ```
 
 | **1** | The view is annotated with `@Query(value = [a query], streamUpdates = true)` to keep polling the database after the initial result is returned and return updates matching the query filter |
@@ -542,48 +565,62 @@ but only emit an element over SSE when the state changes:
 ```java
 private record CustomerStreamState(Optional<Customer> customer, boolean isSame) {}
 
-  @Get("/stream-customer-changes/{customerId}")
-  public HttpResponse streamCustomerChanges(String customerId) {
-    Source<Customer, Cancellable> stateEvery5Seconds =
-        // stream of ticks, one immediately, then one every five seconds
-        Source.tick(Duration.ZERO, Duration.ofSeconds// (5), "tick") // (1)
-          // for each tick, request the entity state
-          .mapAsync(1, __ ->
-            // Note: not safe to turn this into `.invoke()` in a stream `.map()`
-            componentClient.forKeyValueEntity(customerId)
-                .method(CustomerEntity::getCustomer)
-                .invokeAsync().handle((Customer customer, Throwable error) -> {
-                  if (error == null) {
-                    return Optional.of(customer);
-                  } else if (error instanceof IllegalArgumentException) {
-                    // calling getCustomer throws IllegalArgument if the customer does not exist
-                    // we want the stream to continue polling in that case, so turn it into an empty optional
-                    return Optional.<Customer>empty();
-                  } else {
-                    throw new RuntimeException("Unexpected error polling customer state", error);
-                  }
-                })
-          )
-          // then filter out the empty optionals and return the actual customer states for nonempty
-          // so that the stream contains only Customer elements
-          .filter(Optional::isPresent).map(Optional::get);
+@Get("/stream-customer-changes/{customerId}")
+public HttpResponse streamCustomerChanges(String customerId) {
+  Source<Customer, Cancellable> stateEvery5Seconds =
+    // stream of ticks, one immediately, then one every five seconds
+    Source.tick(Duration.ZERO, Duration.ofSeconds// (5), "tick") // (1)
+      // for each tick, request the entity state
+      .mapAsync(
+        1,
+        __ ->
+          // Note: not safe to turn this into `.invoke()` in a stream `.map()`
+          componentClient
+            .forKeyValueEntity(customerId)
+            .method(CustomerEntity::getCustomer)
+            .invokeAsync()
+            .handle((Customer customer, Throwable error) -> {
+              if (error == null) {
+                return Optional.of(customer);
+              } else if (error instanceof IllegalArgumentException) {
+                // calling getCustomer throws IllegalArgument if the customer does not exist
+                // we want the stream to continue polling in that case,
+                // so turn it into an empty optional
+                return Optional.<Customer>empty();
+              } else {
+                throw new RuntimeException(
+                  "Unexpected error polling customer state",
+                  error
+                );
+              }
+            })
+      )
+      // then filter out the empty optionals and return the actual
+      // customer states for nonempty so that the stream contains only Customer elements
+      .filter(Optional::isPresent)
+      .map(Optional::get);
 
-    // deduplicate, so that we don't emit if the state did not change from last time
-    Source<Customer, Cancellable> streamOfChanges = // (2)
-        stateEvery5Seconds.scan(new CustomerStreamState(Optional.empty(), true),
-          (state, newCustomer) ->
-            new CustomerStreamState(Optional.of(newCustomer), state.customer.isPresent() && state.customer.get().equals(newCustomer))
-        ).filterNot(state -> state.isSame || state.customer.isEmpty())
-        .map(state -> state.customer.get());
+  // deduplicate, so that we don't emit if the state did not change from last time
+  Source<Customer, Cancellable> streamOfChanges = stateEvery5Seconds // (2)
+    .scan(
+      new CustomerStreamState(Optional.empty(), true),
+      (state, newCustomer) ->
+        new CustomerStreamState(
+          Optional.of(newCustomer),
+          state.customer.isPresent() && state.customer.get().equals(newCustomer)
+        )
+    )
+    .filterNot(state -> state.isSame || state.customer.isEmpty())
+    .map(state -> state.customer.get());
 
-    // now turn each changed internal state representation into public API representation,
-    // just like get endpoint above
-    Source<ApiCustomer, Cancellable> streamOfChangesAsApiType = // (3)
-        streamOfChanges.map(customer -> toApiCustomer(customerId, customer));
+  // now turn each changed internal state representation into public API representation,
+  // just like get endpoint above
+  Source<ApiCustomer, Cancellable> streamOfChangesAsApiType = // (3)
+    streamOfChanges.map(customer -> toApiCustomer(customerId, customer));
 
-    // turn into server sent event response
-    return HttpResponses.serverSentEvents(streamOfChangesAsApiType); // (4)
-  }
+  // turn into server sent event response
+  return HttpResponses.serverSentEvents(streamOfChangesAsApiType); // (4)
+}
 ```
 
 | **1** | Right away, and then every 5 seconds, use the `ComponentClient` to call `CustomerEntity#getCustomer` to get the current state. |

@@ -37,7 +37,7 @@ Container registries are regional in Akka. If you decide to use [Configure an ex
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Akka Automated Operations features](platform-features.html) [Reference](../reference/index.html)
+[Enable CLI command completion](cli/command-completion.html) [Reference](../reference/index.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

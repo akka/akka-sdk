@@ -299,7 +299,7 @@ public class AgentIntegrationTest extends TestKitSupport {
     assertThat(someStructuredInfo.name()).isEqualTo("Dummy Agent");
     assertThat(someStructuredInfo.description()).isEqualTo("Not very smart agent");
 
-    // SomeAgent doesn't define AgentDescription but has default info
+    // SomeAgent doesn't define name and description but has default info
     var someInfo = testKit.getAgentRegistry().agentInfo("some-agent");
     assertThat(someInfo.id()).isEqualTo("some-agent");
     assertThat(someInfo.name()).isEqualTo("some-agent");

@@ -34,7 +34,8 @@ What are the core components of Akka?
 The AI response will look something like this…​
 
 ```none
-Akka is a toolkit for building highly concurrent, distributed, and resilient message-driven applications...
+Akka is a toolkit for building highly concurrent, distributed,
+and resilient message-driven applications...
 1. Actor System ...
 2. Actors ...
 ...
@@ -56,7 +57,13 @@ The markdown documentation is published according to the widely used standard pr
 
 ## <a href="about:blank#_setup_ai_assistant_to_use_the_akka_documentation"></a> Setup AI assistant to use the Akka documentation
 
-We need to make the AI coding assistant aware of the latest Akka documentation. Different assistants support this in different ways, and we will use Cursor and Qodo as two examples of how to do it.
+We need to make the AI coding assistant aware of the latest Akka documentation. Different assistants support this in different ways, and we will use a few as examples of how to do it.
+
+Another convenient way is to use the Akka CLI. See [installation instructions](../getting-started/quick-install-cli.html). It will download the markdown documentation.
+
+```command
+akka code init
+```
 
 ### <a href="about:blank#_cursor"></a> Cursor
 
@@ -83,7 +90,7 @@ In the chat window it is important that you include the Akka documentation as co
 
 Make sure that you download the latest documentation regularly to make use of documentation improvements and new features.
 
-## <a href="about:blank#_intellij_idea_ai_assistant"></a> IntelliJ IDEA AI assistant
+### <a href="about:blank#_intellij_idea_ai_assistant"></a> IntelliJ IDEA AI assistant
 
 For the AI assistant in IntelliJ IDEA you need to download the [llms-ctx.txt](https://doc.akka.io/llms-ctx.txt) file and place it in the root of the project directory. The AI assistant will include relevant information to the LLM.
 
@@ -93,7 +100,36 @@ It is important that you include the Akka documentation as context by enabling `
 
 Make sure that you download the latest documentation regularly to make use of documentation improvements and new features.
 
-### <a href="about:blank#_verify_that_it_works"></a> Verify that it works
+### <a href="about:blank#_claude_code"></a> Claude code
+
+For [Claude code](https://www.anthropic.com/claude-code) you need to define a `CLAUDE.md` file with the following instructions:
+
+```md
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Build and Development Commands
+
+See @README.md for a project overview, and how to build, test and run the application.
+
+## Coding guidelines
+
+Use the guidelines in @akka-context/java/ai-coding-assistant-guidelines.html.md when writing code in this project.
+
+## Akka documentation
+
+You find the reference documentation of Akka in the akka-context directory and sub-directories.
+Read this documentation to answer questions about Akka or finding code templates for writing Akka code.
+```
+Download the markdown documentation files and include them in the project directory.
+
+1. Download the [akka-docs-md.zip](../java/_attachments/akka-docs-md.zip).
+2. Unzip the content and place in a folder `akka-context/` in your development project.
+3. Add `akka-context/` to your `.gitignore` file, if you use git.
+Make sure that you download the latest documentation regularly to make use of documentation improvements and new features.
+
+## <a href="about:blank#_verify_that_it_works"></a> Verify that it works
 
 To verify that the assistant now knows about Akka, we can ask the question again:
 
@@ -113,8 +149,8 @@ it should answer with something like
 
 Even though the documentation includes comprehensive code snippets it can be good to include the full source code of one or a few samples. This makes it easier for the coding assistant to follow the same structure as the sample.
 
-1. Pick one or a few samples from [Additional Samples](../getting-started/samples.html), which are relevant to what you are developing. If you are just getting started learning Akka you can pick the Shopping Cart sample.
-2. Clone the sample Github repository. Pull latest if you have already cloned the repository before.
+1. Pick one or a few samples from [Additional samples](../getting-started/samples.html), which are relevant to what you are developing. If you are just getting started learning Akka you can pick the Shopping Cart sample.
+2. Clone the sample GitHub repository. Pull latest if you have already cloned the repository before.
 3. Copy the source code to a folder `akka-context/` in your development project, e.g. `akka-context/travel-agent/src`.
 4. Add `akka-context/` to your `.gitignore` file, if you use git.
 Include the samples (`akka-context/`) as context in the chat window.

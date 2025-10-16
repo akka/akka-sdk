@@ -1,14 +1,16 @@
 <!-- <nav> -->
 - [Akka](../../index.html)
-- [AI RAG agent part 3: Executing RAG queries](rag.html)
+- [Tutorials](../index.html)
+- [RAG chat agent](index.html)
+- [Executing RAG queries](rag.html)
 
 <!-- </nav> -->
 
-# AI RAG agent part 3: Executing RAG queries
+# Executing RAG queries
 
 |  | **New to Akka? Start here:**
 
-Use the [Author your first agentic service](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
+Use the [Build your first agent](../author-your-first-service.html) guide to get a simple agentic service running locally and interact with it. |
 
 ## <a href="about:blank#_overview"></a> Overview
 
@@ -46,20 +48,21 @@ import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.rag.query.Metadata;
 
 public class Knowledge {
+
   private final RetrievalAugmentor retrievalAugmentor;
   private final ContentInjector contentInjector = new DefaultContentInjector();
 
   public Knowledge(MongoClient mongoClient) {
     var contentRetriever = EmbeddingStoreContentRetriever.builder() // (1)
-        .embeddingStore(MongoDbUtils.embeddingStore(mongoClient))
-        .embeddingModel(OpenAiUtils.embeddingModel())
-        .maxResults// (10)
-        .minScore(0.1)
-        .build();
+      .embeddingStore(MongoDbUtils.embeddingStore(mongoClient))
+      .embeddingModel(OpenAiUtils.embeddingModel())
+      .maxResults// (10)
+      .minScore(0.1)
+      .build();
 
     this.retrievalAugmentor = DefaultRetrievalAugmentor.builder() // (2)
-        .contentRetriever(contentRetriever)
-        .build();
+      .contentRetriever(contentRetriever)
+      .build();
   }
 
   public String addKnowledge(String question) {
@@ -68,11 +71,12 @@ public class Knowledge {
     var augmentationRequest = new AugmentationRequest(chatMessage, metadata);
 
     var result = retrievalAugmentor.augment(augmentationRequest); // (4)
-    UserMessage augmented = (UserMessage) contentInjector
-        .inject(result.contents(), chatMessage); // (5)
+    UserMessage augmented = (UserMessage) contentInjector.inject(
+      result.contents(),
+      chatMessage
+    ); // (5)
     return augmented.singleText();
   }
-
 }
 ```
 
@@ -86,19 +90,19 @@ public class Knowledge {
 
 [AskAkkaAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/ask-akka-agent/src/main/java/akka/ask/agent/application/AskAkkaAgent.java)
 ```java
-@Component(id = "ask-akka-agent")
-@AgentDescription(name = "Ask Akka", description = "Expert in Akka")
+@Component(id = "ask-akka-agent", name = "Ask Akka", description = "Expert in Akka")
 public class AskAkkaAgent extends Agent {
+
   private final Knowledge knowledge;
 
   private static final String SYSTEM_MESSAGE =
-      """
-      You are a very enthusiastic Akka representative who loves to help people!
-      Given the following sections from the Akka SDK documentation, answer the question
-      using only that information, outputted in markdown format.
-      If you are unsure and the text is not explicitly written in the documentation, say:
-      Sorry, I don't know how to help with that.
-      """.stripIndent(); // (1)
+    """
+    You are a very enthusiastic Akka representative who loves to help people!
+    Given the following sections from the Akka SDK documentation, answer the question
+    using only that information, outputted in markdown format.
+    If you are unsure and the text is not explicitly written in the documentation, say:
+    Sorry, I don't know how to help with that.
+    """.stripIndent(); // (1)
 
   public AskAkkaAgent(Knowledge knowledge) { // (2)
     this.knowledge = knowledge;
@@ -108,11 +112,10 @@ public class AskAkkaAgent extends Agent {
     var enrichedQuestion = knowledge.addKnowledge(question); // (3)
 
     return streamEffects()
-        .systemMessage(SYSTEM_MESSAGE)
-        .userMessage(enrichedQuestion) // (4)
-        .thenReply();
+      .systemMessage(SYSTEM_MESSAGE)
+      .userMessage(enrichedQuestion) // (4)
+      .thenReply();
   }
-
 }
 ```
 
@@ -127,10 +130,12 @@ To be able to inject the `Knowledge` we need to add it to the `Bootstrap`:
 @Setup
 public class Bootstrap implements ServiceSetup {
 
+  private Config config;
+
+
   @Override
   public DependencyProvider createDependencyProvider() {
-    MongoClient mongoClient = MongoClients.create(KeyUtils.readMongoDbUri());
-
+    MongoClient mongoClient = MongoClients.create(config.getString("mongodb.uri"));
     Knowledge knowledge = new Knowledge(mongoClient);
 
     return new DependencyProvider() {
@@ -139,7 +144,6 @@ public class Bootstrap implements ServiceSetup {
         if (cls.equals(MongoClient.class)) {
           return (T) mongoClient;
         }
-
         if (cls.equals(Knowledge.class)) {
           return (T) knowledge;
         }
@@ -162,7 +166,8 @@ In another shell, you can now use `curl` to send requests to this Endpoint.
 
 ```command
 curl localhost:9000/api/ask --header "Content-Type: application/json" -XPOST \
---data '{ "userId": "001", "sessionId": "foo", "question":"What are the core components of Akka?"}'
+--data '{ "userId": "001", "sessionId": \
+          "foo", "question":"What are the core components of Akka?"}'
 ```
 In the first part of this guide, the AI model couldn’t answer that question meaningfully, but now it will answer something like:
 
@@ -178,6 +183,9 @@ In the first part of this guide, the AI model couldn’t answer that question me
 Next we’ll create [UI endpoints](endpoints.html).
 
 <!-- <footer> -->
+<!-- <nav> -->
+[Knowledge indexing with a workflow](indexer.html) [Adding UI endpoints](endpoints.html)
+<!-- </nav> -->
 
 <!-- </footer> -->
 

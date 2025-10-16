@@ -1,41 +1,103 @@
 <!-- <nav> -->
-- [Akka](../index.html)
-- [Developing](index.html)
-- [Integrations](integrations/index.html)
-- [Streaming](streaming.html)
+- [Akka](../../index.html)
+- [Developing](../index.html)
+- [Components](../components/index.html)
+- [Agents](../agents.html)
+- [Streaming responses](streaming.html)
 
 <!-- </nav> -->
 
-# Streaming
+# Streaming responses
 
-In many cases, Akka takes care of streaming and is using end-to-end backpressure automatically. Akka will also use the event journal or message brokers as durable buffers to decouple producers and consumers. You would typically only have to implement the functions to operate on the stream elements. For example:
+In AI chat applications, you’ve seen how responses are displayed word by word as they are generated. There are a few reasons for this. The first is that LLMs are *prediction* engines. Each time a token (usually a word) is streamed to the response, the LLM will attempt to *predict* the next word in the output. This causes the small delays between words.
 
-- Views are updated asynchronously from a stream of events. You implement the update handler, which is invoked for each event.
-- Views can stream the query results, and the receiver demands the pace.
-- Consumers process a stream of events. You implement a handler to process each event. Same approach when the source is an entity within the service, another service, or a message broker topic.
-- Consumers can produce events to other services or publish to a message broker topic. The downstream consumer or publisher defines the pace.
+The other reason why responses are streamed is that it can take a very long time to generate the full response, so the user experience is much better getting the answer as a live stream of tokens. To support this real-time user experience, the agent can stream the model response tokens to an endpoint. These tokens can then be pushed to the client using server-sent events (SSE).
 
-## <a href="about:blank#_using_akka_streams"></a> Using Akka Streams
+```java
+@Component(id = "streaming-activity-agent")
+public class StreamingActivityAgent extends Agent {
 
-Sometimes, the built-in streaming capabilities mentioned above are not enough for what you need, and then you can use Akka Streams. A few examples where Akka Streams would be a good solution:
+  private static final String SYSTEM_MESSAGE =
+    """
+    You are an activity agent. Your job is to suggest activities in the
+    real world. Like for example, a team building activity, sports, an
+    indoor or outdoor game, board games, a city trip, etc.
+    """.stripIndent();
 
-- Streaming from [Endpoints](http-endpoints.html#_advanced_http_requests_and_responses)
-- For each event in a [Consumer](consuming-producing.html) you need to materialize a finite stream to perform some actions in a streaming way instead of composing those actions with `CompletionStage` operations.
+  public StreamEffect query(String message) { // (1)
+    return streamEffects() // (2)
+      .systemMessage(SYSTEM_MESSAGE)
+      .userMessage(message)
+      .thenReply();
+  }
+}
+```
 
-  - the stream can be run from a [Consumer](consuming-producing.html) event handler
-  - e.g. for each event, download a file from AWS S3, unzip, for each row send a command to entity
-  - e.g. for each event, stream file from AWS S3 to Azure Blob
-- Streams that are continuously running and are executed per service instance.
+| **1** | The method returns `StreamEffect` instead of `Effect<T>`. |
+| **2** | Use the `streamEffects()` builder. |
+Consuming the stream from an HTTP endpoint:
 
-  - the stream can be started from the [Setup](setup-and-dependency-injection.html#_service_lifecycle)
-  - e.g. integration with AWS SQS
-For running Akka Streams you need a so-called materializer, which can be injected as a constructor parameter of the component, see [dependency injection](setup-and-dependency-injection.html#_dependency_injection).
+```java
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
+@HttpEndpoint("/api")
+public class ActivityHttpEndpoint {
 
-You find more information about Akka Streams in the [Akka libraries documentation](https://doc.akka.io/libraries/akka-core/current/stream/stream-introduction.html). Many streaming connectors are provided by [Alpakka](https://doc.akka.io/libraries/alpakka/current/).
+  public record Request(String sessionId, String question) {}
+
+  private final ComponentClient componentClient;
+
+  public ActivityHttpEndpoint(ComponentClient componentClient) {
+    this.componentClient = componentClient;
+  }
+
+  @Post("/ask")
+  public HttpResponse ask(Request request) {
+    var responseStream = componentClient
+      .forAgent()
+      .inSession(request.sessionId)
+      .tokenStream(StreamingActivityAgent::query) // (1)
+      .source(request.question); // (2)
+
+    return HttpResponses.serverSentEvents(responseStream); // (3)
+  }
+
+
+}
+```
+
+| **1** | Use `tokenStream` of the component client, instead of `method`, |
+| **2** | and invoke it with `source` to receive a stream of tokens. |
+| **3** | Return the stream of tokens as SSE. |
+The returned stream is a `Source<String, NotUsed>`, i.e. the tokens are always text strings.
+
+The granularity of a token varies by AI model, often representing a word or a short sequence of characters. To reduce the overhead of sending each token as a separate SSE, you can group multiple tokens together using the Akka streams `groupWithin` operator.
+
+```java
+@Post("/ask-grouped")
+public HttpResponse askGrouped(Request request) {
+  var tokenStream = componentClient
+    .forAgent()
+    .inSession(request.sessionId)
+    .tokenStream(StreamingActivityAgent::query)
+    .source(request.question);
+
+  var groupedTokenStream = tokenStream
+    .groupedWithin(20, Duration.ofMillis// (100)) // (1)
+    .map(group -> String.join("", group)); // (2)
+
+  return HttpResponses.serverSentEvents(groupedTokenStream); // (3)
+}
+```
+
+| **1** | Group at most 20 tokens or within 100 milliseconds, whatever happens first. |
+| **2** | Concatenate the list of string into a single string. |
+| **3** | Return the stream of grouped tokens as SSE. |
+
+|  | Token streams are designed for direct agent calls from an endpoint. You can’t use a token stream when you have an intermediate workflow between the endpoint and the agent. |
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Message broker integrations](message-brokers.html) [Retrieval-Augmented Generation (RAG)](rag.html)
+[Extending with function tools](extending.html) [Orchestrating multiple agents](orchestrating.html)
 <!-- </nav> -->
 
 <!-- </footer> -->
