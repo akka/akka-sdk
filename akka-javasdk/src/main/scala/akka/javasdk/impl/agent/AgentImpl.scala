@@ -4,16 +4,6 @@
 
 package akka.javasdk.impl.agent
 
-import java.time.Instant
-
-import scala.annotation.tailrec
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.concurrent.duration.Duration
-import scala.jdk.CollectionConverters._
-import scala.jdk.DurationConverters.JavaDurationOps
-import scala.util.control.NonFatal
-
 import akka.annotation.InternalApi
 import akka.http.scaladsl.model.HttpHeader
 import akka.javasdk.CommandException
@@ -58,6 +48,7 @@ import akka.javasdk.impl.agent.SessionMemoryClient.MemorySettings
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
+import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
@@ -85,6 +76,15 @@ import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
+
+import java.time.Instant
+import scala.annotation.tailrec
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.jdk.CollectionConverters._
+import scala.jdk.DurationConverters.JavaDurationOps
+import scala.util.control.NonFatal
 
 /**
  * INTERNAL API
@@ -247,6 +247,7 @@ private[impl] final class AgentImpl[A <: Agent](
             val functionTools =
               FunctionTools.toolInvokersFor(agent) ++
               req.toolInstancesOrClasses.flatMap {
+                case cls: Class[_] if Reflect.isToolCandidate(cls) => FunctionTools.toolComponentInvokersFor(cls)
                 case cls: Class[_] => FunctionTools.toolInvokersFor(cls, dependencyProvider)
                 case any           => FunctionTools.toolInvokersFor(any)
               }.toMap

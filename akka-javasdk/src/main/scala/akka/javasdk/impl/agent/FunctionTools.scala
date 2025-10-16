@@ -4,20 +4,20 @@
 
 package akka.javasdk.impl.agent
 
-import java.lang.reflect.InvocationTargetException
-import java.lang.reflect.Method
-import java.lang.reflect.Type
-
-import scala.util.control.Exception.Catcher
-
 import akka.annotation.InternalApi
 import akka.javasdk.DependencyProvider
 import akka.javasdk.agent.Agent
 import akka.javasdk.annotations.FunctionTool
 import akka.javasdk.impl.JsonSchema
+import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
 import akka.javasdk.impl.reflection.Reflect.Syntax.MethodOps
 import akka.runtime.sdk.spi.SpiAgent
+
+import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Method
+import java.lang.reflect.Type
+import scala.util.control.Exception.Catcher
 
 /**
  * INTERNAL API
@@ -37,6 +37,55 @@ object FunctionTools {
     def invoke(args: Array[Any]): Any
 
     def returnType: Class[_]
+  }
+
+  /**
+   * INTERNAL API
+   */
+  @InternalApi
+  private case class RegularFunctionToolInvoker(method: Method, instanceFactory: () => Any)
+      extends FunctionToolInvoker {
+
+    private val cls = method.getDeclaringClass
+
+    override def paramNames: Array[String] =
+      method.getParameters.map(_.getName)
+
+    override def types: Array[Type] =
+      method.getGenericParameterTypes
+
+    override def invoke(args: Array[Any]): Any = {
+      try {
+        if (isAgent(cls)) method.setAccessible(true)
+        val instance = instanceFactory()
+        method.invoke(instance, args: _*)
+      } catch unwrapInvocationTargetException()
+    }
+
+    override def returnType: Class[_] =
+      method.getReturnType
+  }
+
+  /**
+   * INTERNAL API
+   */
+  @InternalApi
+  private case class ComponentFunctionToolInvoker(method: Method) extends FunctionToolInvoker {
+    override def paramNames: Array[String] =
+      method.getParameters.map(_.getName)
+
+    override def types: Array[Type] =
+      method.getGenericParameterTypes
+
+    override def invoke(args: Array[Any]): Any = {
+      try {
+        //        val instance = instanceFactory()
+        //        method.invoke(instance, args: _*)
+      } catch unwrapInvocationTargetException()
+    }
+
+    override def returnType: Class[_] =
+      method.getReturnType
   }
 
   private def isAgent(cls: Class[_]): Boolean =
@@ -70,29 +119,16 @@ object FunctionTools {
     }
   }
 
+  def toolComponentInvokersFor(cls: Class[_]): Map[String, FunctionToolInvoker] = {
+    resolvedMethodNames(cls).map { case (name, method) =>
+      name -> ComponentFunctionToolInvoker(method)
+    }
+  }
+
   private def collectFunctionToolInvokers(cls: Class[_])(
       instanceFactory: () => Any): Map[String, FunctionToolInvoker] = {
-
     resolvedMethodNames(cls).map { case (name, method) =>
-      name ->
-        new FunctionToolInvoker {
-          override def paramNames: Array[String] =
-            method.getParameters.map(_.getName)
-
-          override def types: Array[Type] =
-            method.getGenericParameterTypes
-
-          override def invoke(args: Array[Any]): Any = {
-            try {
-              if (isAgent(cls)) method.setAccessible(true)
-              val instance = instanceFactory()
-              method.invoke(instance, args: _*)
-            } catch unwrapInvocationTargetException()
-          }
-
-          override def returnType: Class[_] =
-            method.getReturnType
-        }
+      name -> RegularFunctionToolInvoker(method, instanceFactory)
     }
   }
 
@@ -110,7 +146,14 @@ object FunctionTools {
       val toolAnno = method.getAnnotation(classOf[FunctionTool])
       val objSchema = JsonSchema.jsonSchemaFor(method)
 
-      new SpiAgent.ToolDescriptor(name, toolAnno.description(), schema = objSchema)
+      if (Reflect.isEntity(cls)) {
+        val objSchemaWithEntityId = JsonSchema.jsonSchemaWithEntityId(objSchema)
+        new SpiAgent.ToolDescriptor(name, toolAnno.description(), schema = objSchemaWithEntityId)
+      } else if (Reflect.isWorkflow(cls)) {
+        val objSchemaWithEntityId = JsonSchema.jsonSchemaWithWorkflowId(objSchema)
+        new SpiAgent.ToolDescriptor(name, toolAnno.description(), schema = objSchemaWithEntityId)
+      } else
+        new SpiAgent.ToolDescriptor(name, toolAnno.description(), schema = objSchema)
 
     }.toSeq
   }
@@ -150,7 +193,12 @@ object FunctionTools {
           // otherwise we need to create a unique name for each method based on its parameters
           methods.map { method =>
             val paramTypes = method.getParameterTypes.map(_.getSimpleName).mkString("_")
-            val resolvedName = s"${originalName}_$paramTypes"
+
+            val resolvedName =
+              if (paramTypes.nonEmpty)
+                s"${originalName}_$paramTypes"
+              else originalName
+
             (toolName(method, resolvedName), method)
           }.toMap
       }
