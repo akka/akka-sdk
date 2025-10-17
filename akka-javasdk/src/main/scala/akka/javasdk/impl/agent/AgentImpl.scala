@@ -247,7 +247,8 @@ private[impl] final class AgentImpl[A <: Agent](
             val functionTools =
               FunctionTools.toolInvokersFor(agent) ++
               req.toolInstancesOrClasses.flatMap {
-                case cls: Class[_] if Reflect.isToolCandidate(cls) => FunctionTools.toolComponentInvokersFor(cls)
+                case cls: Class[_] if Reflect.isToolCandidate(cls) =>
+                  FunctionTools.toolComponentInvokersFor(cls, componentClient(telemetryContext))
                 case cls: Class[_] => FunctionTools.toolInvokersFor(cls, dependencyProvider)
                 case any           => FunctionTools.toolInvokersFor(any)
               }.toMap

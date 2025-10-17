@@ -59,36 +59,22 @@ private[impl] object JsonSchema {
       required = parameters.collect { case TypedParameter(name, _, _, true) => name }.sorted)
   }
 
-  def jsonSchemaWithEntityId(objSchema: JsonSchemaObject): JsonSchemaObject = {
+  def jsonSchemaWitId(method: Method, idFieldName: String, idDescription: String): JsonSchemaObject = {
+    val requiredFields = Seq(idFieldName)
+    val objSchema = jsonSchemaFor(method)
 
-    val requiredFields =
-      if (objSchema == emptyObjectSchema) Seq("entityId")
-      else Seq("entityId", "payload")
-
-    new JsonSchemaObject(
-      description = None,
-      properties = Map(
-        "entityId" -> new JsonSchemaString(
-          Some("a unique entity id identifying the entity to which the payload should be send")),
-        "payload"
-        -> objSchema),
-      required = requiredFields)
-  }
-
-  def jsonSchemaWithWorkflowId(objSchema: JsonSchemaObject): JsonSchemaObject = {
-
-    val requiredFields =
-      if (objSchema == emptyObjectSchema) Seq("workflowId")
-      else Seq("workflowId", "payload")
-
-    new JsonSchemaObject(
-      description = None,
-      properties = Map(
-        "workflowId" -> new JsonSchemaString(
-          Some("a unique workflow id identifying the workflow to which the payload should be send")),
-        "payload"
-        -> objSchema),
-      required = requiredFields)
+    if (objSchema == emptyObjectSchema) {
+      new JsonSchemaObject(
+        description = None,
+        properties = Map(idFieldName -> new JsonSchemaString(Some(idDescription))),
+        required = requiredFields)
+    } else {
+      val (payloadArgName, payloadSchema) = objSchema.properties.head
+      new JsonSchemaObject(
+        description = None,
+        properties = Map(idFieldName -> new JsonSchemaString(Some(idDescription)), payloadArgName -> payloadSchema),
+        required = requiredFields :+ payloadArgName)
+    }
   }
 
   def jsonSchemaFor(value: Class[_]): JsonSchemaDataType = {
