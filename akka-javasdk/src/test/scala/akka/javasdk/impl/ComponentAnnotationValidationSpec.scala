@@ -12,19 +12,19 @@ import akka.javasdk.annotations.ComponentId
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import akka.javasdk.impl.ComponentAnnValidationSpec.BlankComponentIdComponent
-import akka.javasdk.impl.ComponentAnnValidationSpec.BlankDeprecatedComponentIdComponent
-import akka.javasdk.impl.ComponentAnnValidationSpec.ConflictingComponent
-import akka.javasdk.impl.ComponentAnnValidationSpec.EmptyComponentIdComponent
-import akka.javasdk.impl.ComponentAnnValidationSpec.EmptyDeprecatedComponentIdComponent
-import akka.javasdk.impl.ComponentAnnValidationSpec.InvalidPipeComponentIdComponent
-import akka.javasdk.impl.ComponentAnnValidationSpec.InvalidPipeDeprecatedComponentIdComponent
-import akka.javasdk.impl.ComponentAnnValidationSpec.NoComponentAnnotationComponent
-import akka.javasdk.impl.ComponentAnnValidationSpec.ValidComponentIdComponent
-import akka.javasdk.impl.ComponentAnnValidationSpec.ValidDeprecatedComponentIdComponent
+import akka.javasdk.impl.ComponentAnnotationValidationSpec.BlankComponentIdComponent
+import akka.javasdk.impl.ComponentAnnotationValidationSpec.BlankDeprecatedComponentIdComponent
+import akka.javasdk.impl.ComponentAnnotationValidationSpec.ConflictingComponent
+import akka.javasdk.impl.ComponentAnnotationValidationSpec.EmptyComponentIdComponent
+import akka.javasdk.impl.ComponentAnnotationValidationSpec.EmptyDeprecatedComponentIdComponent
+import akka.javasdk.impl.ComponentAnnotationValidationSpec.InvalidPipeComponentIdComponent
+import akka.javasdk.impl.ComponentAnnotationValidationSpec.InvalidPipeDeprecatedComponentIdComponent
+import akka.javasdk.impl.ComponentAnnotationValidationSpec.NoComponentAnnotationComponent
+import akka.javasdk.impl.ComponentAnnotationValidationSpec.ValidComponentIdComponent
+import akka.javasdk.impl.ComponentAnnotationValidationSpec.ValidDeprecatedComponentIdComponent
 import akka.javasdk.keyvalueentity.KeyValueEntity.Effect
 
-object ComponentAnnValidationSpec {
+object ComponentAnnotationValidationSpec {
   @nowarn("cat=deprecation")
   @Component(id = "new-id")
   @ComponentId("old-id")
@@ -81,7 +81,7 @@ object ComponentAnnValidationSpec {
   }
 }
 
-class ComponentAnnValidationSpec extends AnyWordSpec with Matchers with ValidationSupportSpec {
+class ComponentAnnotationValidationSpec extends AnyWordSpec with Matchers with ValidationSupportSpec {
 
   "Validations.mustHaveValidComponentId" should {
 
