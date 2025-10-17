@@ -99,7 +99,7 @@ In the chat window it is important that you include the Akka documentation as co
 
 === Notes about Qodo
 
-In the chat window it is important that you include the Akka documentation as context.  Use `@` to include the `akka-context` folder.
+In the chat window it is important that you include the Akka documentation as context. Use `@` to include the `akka-context` folder.
 
 === Notes about IntelliJ IDEA AI assistant
 
