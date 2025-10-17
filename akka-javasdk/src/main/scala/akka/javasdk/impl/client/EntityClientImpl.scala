@@ -4,11 +4,14 @@
 
 package akka.javasdk.impl.client
 
+import java.lang.reflect.Method
+
 import scala.concurrent.ExecutionContext
 import scala.jdk.FutureConverters.FutureOps
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
+
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.japi.function
@@ -39,8 +42,6 @@ import akka.runtime.sdk.spi.TimedActionType
 import akka.runtime.sdk.spi.WorkflowType
 import akka.runtime.sdk.spi.{ EntityClient => RuntimeEntityClient }
 import akka.runtime.sdk.spi.{ TimedActionClient => RuntimeTimedActionClient }
-
-import java.lang.reflect.Method
 
 /**
  * INTERNAL API
