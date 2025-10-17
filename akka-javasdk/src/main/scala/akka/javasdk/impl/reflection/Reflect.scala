@@ -4,6 +4,20 @@
 
 package akka.javasdk.impl.reflection
 
+import java.lang.annotation.Annotation
+import java.lang.reflect.AnnotatedElement
+import java.lang.reflect.Method
+import java.lang.reflect.Modifier
+import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
+import java.util
+import java.util.Optional
+
+import scala.annotation.nowarn
+import scala.annotation.tailrec
+import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.reflect.ClassTag
+
 import akka.Done
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
@@ -27,19 +41,6 @@ import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.Workflow.RunnableStep
 import com.fasterxml.jackson.annotation.JsonSubTypes
-
-import java.lang.annotation.Annotation
-import java.lang.reflect.AnnotatedElement
-import java.lang.reflect.Method
-import java.lang.reflect.Modifier
-import java.lang.reflect.ParameterizedType
-import java.lang.reflect.Type
-import java.util
-import java.util.Optional
-import scala.annotation.nowarn
-import scala.annotation.tailrec
-import scala.jdk.CollectionConverters.CollectionHasAsScala
-import scala.reflect.ClassTag
 
 /**
  * Class extension to facilitate some reflection common usages.
