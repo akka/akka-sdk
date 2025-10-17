@@ -70,11 +70,8 @@ private[impl] object ComponentDescriptorFactory {
     clazz.annotationOption[FromEventSourcedEntity]
 
   def hasConsumerOutput(javaMethod: Method): Boolean = {
-    if (javaMethod.isPublic) {
-      javaMethod.getReturnType.isAssignableFrom(classOf[Consumer.Effect])
-    } else {
-      false
-    }
+    javaMethod.isPublic &&
+    javaMethod.getReturnType.isAssignableFrom(classOf[Consumer.Effect])
   }
 
   def hasQueryEffectOutput(javaMethod: Method): Boolean = {

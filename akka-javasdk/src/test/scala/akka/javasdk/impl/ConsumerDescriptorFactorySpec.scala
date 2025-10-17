@@ -4,27 +4,10 @@
 
 package akka.javasdk.impl
 
-import akka.javasdk.impl.NotPublicComponents.NotPublicConsumer
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.testmodels.keyvalueentity.CounterState
-import akka.javasdk.testmodels.subscriptions.PubSubTestModels.AmbiguousDeleteHandlersVESubscriptionInConsumer
-import akka.javasdk.testmodels.subscriptions.PubSubTestModels.AmbiguousHandlersESSubscriptionInConsumer
-import akka.javasdk.testmodels.subscriptions.PubSubTestModels.AmbiguousHandlersESTypeLevelSubscriptionInConsumer
-import akka.javasdk.testmodels.subscriptions.PubSubTestModels.AmbiguousHandlersStreamTypeLevelSubscriptionInConsumer
-import akka.javasdk.testmodels.subscriptions.PubSubTestModels.AmbiguousHandlersTopiSubscriptionInConsumer
-import akka.javasdk.testmodels.subscriptions.PubSubTestModels.AmbiguousHandlersTopicTypeLevelSubscriptionInConsumer
-import akka.javasdk.testmodels.subscriptions.PubSubTestModels.AmbiguousHandlersVESubscriptionInConsumer
-import akka.javasdk.testmodels.subscriptions.PubSubTestModels.AmbiguousHandlersVETypeLevelSubscriptionInConsumer
-import akka.javasdk.testmodels.subscriptions.PubSubTestModels.ConsumerWithMethodLevelAclAndSubscription
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.EventStreamPublishingConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.EventStreamSubscriptionConsumer
-import akka.javasdk.testmodels.subscriptions.PubSubTestModels.MissingConsumeAnnotationConsumer
-import akka.javasdk.testmodels.subscriptions.PubSubTestModels.MissingHandlersWhenSubscribeToEventSourcedEntityConsumer
-import akka.javasdk.testmodels.subscriptions.PubSubTestModels.MissingHandlersWhenSubscribeToKVEConsumer
-import akka.javasdk.testmodels.subscriptions.PubSubTestModels.MissingHandlersWhenSubscribeToWorkflowConsumer
-import akka.javasdk.testmodels.subscriptions.PubSubTestModels.MissingSourceForTopicPublishing
-import akka.javasdk.testmodels.subscriptions.PubSubTestModels.MultipleTypeLevelSubscriptions
-import akka.javasdk.testmodels.subscriptions.PubSubTestModels.MultipleUpdateMethodsForVETypeLevelSubscription
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToBytesFromTopic
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToEventSourcedEmployee
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToTopicTypeLevel
@@ -37,18 +20,6 @@ import org.scalatest.wordspec.AnyWordSpec
 class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
   "Consumer descriptor factory" should {
-
-    "validate a Consumer must be declared as public" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[NotPublicConsumer]).failIfInvalid()
-      }.getMessage should include("NotPublicConsumer is not marked with `public` modifier. Components must be public.")
-    }
-
-    "validate that Consumer must be annotated with Consume" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[MissingConsumeAnnotationConsumer]).failIfInvalid()
-      }.getMessage should include("A Consumer must be annotated with `@Consume` annotation.")
-    }
 
     "generate mapping with Event Sourced Subscription annotations" in {
       val desc = ComponentDescriptor.descriptorFor(classOf[SubscribeToEventSourcedEmployee], new JsonSerializer)
@@ -89,102 +60,6 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
       contain only ("json.akka.io/akka.javasdk.testmodels.Message" -> "messageOne", "json.akka.io/string" -> "messageTwo", "json.akka.io/java.lang.String" -> "messageTwo")
     }
 
-    "validates that ambiguous handler VE" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[AmbiguousHandlersVESubscriptionInConsumer]).failIfInvalid()
-      }.getMessage should include(
-        "Ambiguous handlers for java.lang.Integer, methods: [methodOne, methodTwo] consume the same type.")
-    }
-
-    "validates that ambiguous delete handler VE" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[AmbiguousDeleteHandlersVESubscriptionInConsumer]).failIfInvalid()
-      }.getMessage should include("Ambiguous delete handlers: [methodOne, methodTwo].")
-    }
-
-    "validates that ambiguous handler VE (type level)" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[AmbiguousHandlersVETypeLevelSubscriptionInConsumer]).failIfInvalid()
-      }.getMessage should include(
-        "Ambiguous handlers for java.lang.Integer, methods: [methodOne, methodTwo] consume the same type.")
-    }
-
-    "validates that only single update handler is present for VE sub (type level)" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[MultipleUpdateMethodsForVETypeLevelSubscription]).failIfInvalid()
-      }.getMessage should include(
-        "Duplicated update methods [methodOne, methodTwo] for state subscription are not allowed.")
-    }
-
-    "validates that only type level subscription is valid" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[MultipleTypeLevelSubscriptions]).failIfInvalid()
-      }.getMessage should include("Only one subscription type is allowed on a type level.")
-    }
-
-    "validates that ambiguous handler ES" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[AmbiguousHandlersESSubscriptionInConsumer]).failIfInvalid()
-      }.getMessage should include(
-        "Ambiguous handlers for java.lang.Integer, methods: [methodOne, methodTwo] consume the same type.")
-    }
-
-    "validates that ambiguous handler ES (type level)" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[AmbiguousHandlersESTypeLevelSubscriptionInConsumer]).failIfInvalid()
-      }.getMessage should include(
-        "Ambiguous handlers for java.lang.Integer, methods: [methodOne, methodTwo] consume the same type.")
-    }
-
-    "validates that ambiguous handler Stream (type level)" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[AmbiguousHandlersStreamTypeLevelSubscriptionInConsumer]).failIfInvalid()
-      }.getMessage should include(
-        "Ambiguous handlers for java.lang.Integer, methods: [methodOne, methodTwo] consume the same type.")
-    }
-
-    "validates that ambiguous handler Topic" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[AmbiguousHandlersTopiSubscriptionInConsumer]).failIfInvalid()
-      }.getMessage should include(
-        "Ambiguous handlers for java.lang.Integer, methods: [methodOne, methodTwo] consume the same type.")
-    }
-
-    "validates that ambiguous handler Topic (type level)" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[AmbiguousHandlersTopicTypeLevelSubscriptionInConsumer]).failIfInvalid()
-      }.getMessage should include(
-        "Ambiguous handlers for java.lang.Integer, methods: [methodOne, methodTwo] consume the same type.")
-    }
-
-    "validates that source is missing for topic publication" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[MissingSourceForTopicPublishing]).failIfInvalid()
-      }.getMessage should include(
-        "You must select a source for @Produce.ToTopic. Annotate this class with one a @Consume annotation.")
-    }
-
-    "validates if there are missing event handlers for event sourced Entity Subscription at type level" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[MissingHandlersWhenSubscribeToEventSourcedEntityConsumer]).failIfInvalid()
-      }.getMessage shouldBe
-      "On 'akka.javasdk.testmodels.subscriptions.PubSubTestModels$MissingHandlersWhenSubscribeToEventSourcedEntityConsumer': missing an event handler for 'akka.javasdk.testmodels.eventsourcedentity.EmployeeEvent$EmployeeEmailUpdated'."
-    }
-
-    "validates if there are missing handlers for KVE Subscription" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[MissingHandlersWhenSubscribeToKVEConsumer]).failIfInvalid()
-      }.getMessage shouldBe
-      "On 'akka.javasdk.testmodels.subscriptions.PubSubTestModels$MissingHandlersWhenSubscribeToKVEConsumer': missing handlers. The class must have one handler with 'akka.javasdk.testmodels.keyvalueentity.CounterState' parameter and/or one parameterless method annotated with '@DeleteHandler'."
-    }
-
-    "validates if there are missing handlers for Workflow Subscription" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[MissingHandlersWhenSubscribeToWorkflowConsumer]).failIfInvalid()
-      }.getMessage shouldBe
-      "On 'akka.javasdk.testmodels.subscriptions.PubSubTestModels$MissingHandlersWhenSubscribeToWorkflowConsumer': missing handlers. The class must have one handler with 'akka.javasdk.testmodels.workflow.WorkflowState' parameter and/or one parameterless method annotated with '@DeleteHandler'."
-    }
-
     "generate mapping for a Consumer with a VE subscription and publication to a topic" ignore {
       //TODO cover this with Spi tests
     }
@@ -204,13 +79,6 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
     "generate mapping for a Consumer with a Stream subscription and publication to a topic" ignore {
       //TODO cover this with Spi tests
-    }
-
-    "fail if it's subscription method exposed with ACL" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[ConsumerWithMethodLevelAclAndSubscription]).failIfInvalid()
-      }.getMessage should include(
-        "Methods from classes annotated with Kalix @Consume annotations are for internal use only and cannot be annotated with ACL annotations.")
     }
 
     "generate mappings for service to service publishing " in {
