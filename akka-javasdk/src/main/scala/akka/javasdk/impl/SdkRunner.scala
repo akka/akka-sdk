@@ -120,6 +120,7 @@ import akka.runtime.sdk.spi.SpiGuardrailSetup
 import akka.runtime.sdk.spi.SpiMockedEventingSettings
 import akka.runtime.sdk.spi.SpiServiceInfo
 import akka.runtime.sdk.spi.SpiSettings
+import akka.runtime.sdk.spi.SpiTestSettings
 import akka.runtime.sdk.spi.SpiWorkflow
 import akka.runtime.sdk.spi.StartContext
 import akka.runtime.sdk.spi.TimedActionDescriptor
@@ -164,8 +165,6 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
   def applicationConfig: Config =
     ApplicationConfig.loadApplicationConf
 
-  // FIXME: remove nowarn with https://github.com/akka/akka-sdk/pull/401
-  @scala.annotation.nowarn("msg=deprecated")
   override def getSettings: SpiSettings = {
     val applicationConf = applicationConfig
 
@@ -192,16 +191,24 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
             serviceName = applicationConf.getString("akka.javasdk.dev-mode.service-name"),
             eventingSupport = extractBrokerConfig(applicationConf.getConfig("akka.javasdk.dev-mode.eventing")),
             mockedEventing = SpiMockedEventingSettings.empty,
-            testMode = false))
+            testSetting = new SpiTestSettings(testMode = false, debugTracing = false),
+            selfServiceName = None))
       else
         None
+
+    val agentInteractionLogEnabled =
+      devModeSettings.isDefined || // always enabled in dev mode
+      applicationConf.getBoolean("akka.javasdk.agent.interaction-log.enabled")
 
     new SpiSettings(
       eventSourcedEntitySnapshotEvery,
       cleanupDeletedEntityAfter,
       cleanupInterval,
       maxToolCallSteps,
-      devModeSettings)
+      agentInteractionLogEnabled,
+      devModeSettings,
+      sanitizerSettings = None // FIXME defined in other PR
+    )
   }
 
   private def extractBrokerConfig(eventingConf: Config): SpiEventingSupportSettings = {
