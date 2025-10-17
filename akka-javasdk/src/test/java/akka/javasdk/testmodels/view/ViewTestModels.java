@@ -504,6 +504,23 @@ public class ViewTestModels {
   }
 
   @Component(id = "users_view")
+  public static class ViewWithSubscriptionMethodAcl extends View {
+
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class Users extends TableUpdater<User> {
+      @Acl(allow = @Acl.Matcher(service = "test"))
+      public Effect<User> onUpdate(User user) {
+        return effects().updateRow(user);
+      }
+    }
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<User> getUser(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+  @Component(id = "users_view")
   public static class UserByEmailWithCollectionReturn extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
