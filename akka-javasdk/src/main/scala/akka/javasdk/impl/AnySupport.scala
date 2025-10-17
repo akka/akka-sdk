@@ -14,6 +14,7 @@ import scala.reflect.ClassTag
 import scala.util.Try
 
 import akka.annotation.InternalApi
+import akka.http.scaladsl.model.MediaTypes
 import com.google.common.base.CaseFormat
 import com.google.protobuf.ByteString
 import com.google.protobuf.CodedInputStream
@@ -124,6 +125,17 @@ private[akka] object AnySupport {
         stream.writeBool(KalixPrimitiveFieldNumber, t)
       override def read(stream: CodedInputStream) = stream.readBool()
     })
+
+  def typeUrlToContentType(typeUrl: String): String = {
+    if (typeUrl.startsWith(JsonTypeUrlPrefix))
+      MediaTypes.`application/json`.withParams(Map("type" -> typeUrl.stripPrefix(JsonTypeUrlPrefix))).value
+    else if (typeUrl.startsWith(DefaultTypeUrlPrefix))
+      MediaTypes.`application/grpc+proto`
+        .withParams(Map("message" -> typeUrl.drop(DefaultTypeUrlPrefix.length + 1)))
+        .value
+    else
+      typeUrl // hopefully already a content-type
+  }
 
   private final val ClassToPrimitives = Primitives
     .map(p => p.clazz -> p)
