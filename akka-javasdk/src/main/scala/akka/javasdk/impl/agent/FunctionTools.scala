@@ -17,6 +17,7 @@ import akka.javasdk.annotations.FunctionTool
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.JsonSchema
 import akka.javasdk.impl.client.EntityClientImpl
+import akka.javasdk.impl.client.ViewClientImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
 import akka.javasdk.impl.reflection.Reflect.Syntax.MethodOps
@@ -125,19 +126,16 @@ object FunctionTools {
       extends FunctionToolInvoker {
 
     private val cls = method.getDeclaringClass
-//    private val hasParams: Boolean = method.getParameters.nonEmpty
+    private val hasParams: Boolean = method.getParameters.nonEmpty
 
     override def paramNames: Array[String] = method.getParameters.map(_.getName)
     override def types: Array[Type] = method.getGenericParameterTypes
 
     override def invoke(args: Array[Any]): Any = {
       try {
-        // TODO: need methods ViewClientImpl
-//        val client =
-//          componentClient.forView().asInstanceOf[ViewClientImpl]
-//        if (hasParams) client.methodRefOneArg(method).invoke(args(1))
-//        else client.methodRefNoArg(method).invoke()
-
+        val client = componentClient.forView().asInstanceOf[ViewClientImpl]
+        if (hasParams) client.methodRefOneArg(method).invoke(args(1))
+        else client.methodRefNoArg(method).invoke()
       } catch unwrapInvocationTargetException()
     }
 
