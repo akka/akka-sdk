@@ -6,10 +6,8 @@ package akka.javasdk.impl
 
 import scala.annotation.nowarn
 
-import akka.javasdk.annotations.Component
 import akka.javasdk.agent.Agent
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpec
+import akka.javasdk.annotations.Component
 import akka.javasdk.impl.AgentValidationSpec.AgentWithStreamEffect
 import akka.javasdk.impl.AgentValidationSpec.AgentWithTooManyArgsCommandHandler
 import akka.javasdk.impl.AgentValidationSpec.AgentWithValidNoArgCommandHandler
@@ -25,6 +23,8 @@ import akka.javasdk.impl.AgentValidationSpec.MultipleCommandHandlerAgent
 import akka.javasdk.impl.AgentValidationSpec.NoCommandHandlerAgent
 import akka.javasdk.impl.AgentValidationSpec.ValidAgentDescriptionAgent
 import akka.javasdk.impl.AgentValidationSpec.ValidComponentAgent
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
 object AgentValidationSpec {
   @nowarn("cat=deprecation")

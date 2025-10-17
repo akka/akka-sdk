@@ -4,14 +4,11 @@
 
 package akka.javasdk.impl
 
-import akka.Done
-
 import scala.annotation.nowarn
+
+import akka.Done
 import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.ComponentId
-import akka.javasdk.keyvalueentity.KeyValueEntity
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpec
 import akka.javasdk.impl.ComponentAnnotationValidationSpec.BlankComponentIdComponent
 import akka.javasdk.impl.ComponentAnnotationValidationSpec.BlankDeprecatedComponentIdComponent
 import akka.javasdk.impl.ComponentAnnotationValidationSpec.ConflictingComponent
@@ -22,7 +19,10 @@ import akka.javasdk.impl.ComponentAnnotationValidationSpec.InvalidPipeDeprecated
 import akka.javasdk.impl.ComponentAnnotationValidationSpec.NoComponentAnnotationComponent
 import akka.javasdk.impl.ComponentAnnotationValidationSpec.ValidComponentIdComponent
 import akka.javasdk.impl.ComponentAnnotationValidationSpec.ValidDeprecatedComponentIdComponent
+import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.keyvalueentity.KeyValueEntity.Effect
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 
 object ComponentAnnotationValidationSpec {
   @nowarn("cat=deprecation")

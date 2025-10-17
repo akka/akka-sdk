@@ -4,8 +4,8 @@
 
 package akka.javasdk.impl.view
 
-import akka.javasdk.impl.Validations
 import akka.javasdk.impl.ValidationSupportSpec
+import akka.javasdk.impl.Validations
 import akka.javasdk.testmodels.view.ViewTestModels
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
