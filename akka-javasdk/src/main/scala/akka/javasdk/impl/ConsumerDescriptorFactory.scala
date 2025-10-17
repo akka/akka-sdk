@@ -36,8 +36,8 @@ private[impl] object ConsumerDescriptorFactory extends ComponentDescriptorFactor
         method.getParameterTypes.headOption match {
           case Some(inputType) =>
             val invoker = MethodInvoker(method)
-            if (method.getParameterTypes.last.isSealed) {
-              method.getParameterTypes.last.getPermittedSubclasses.toList
+            if (inputType.isSealed) {
+              inputType.getPermittedSubclasses.toList
                 .flatMap(subClass => {
                   serializer.contentTypesFor(subClass).map(typeUrl => typeUrl -> invoker)
                 })

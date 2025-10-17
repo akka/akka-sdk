@@ -154,6 +154,12 @@ class AnySupportSpec extends AnyWordSpec with Matchers with OptionValues {
       encoded.typeUrl should ===("type.googleapis.com/google.protobuf.StringValue")
       com.google.protobuf.wrappers.StringValue.parseFrom(encoded.value.newCodedInput()).value should ===(text)
     }
+
+    "turn internal type urls into valid content-type values" in {
+      AnySupport.typeUrlToContentType(
+        "type.googleapis.com/google.protobuf.BytesValue") shouldEqual "application/grpc+proto; message=google.protobuf.BytesValue"
+      AnySupport.typeUrlToContentType("json.akka.io/multiplied") shouldEqual "application/json; type=multiplied"
+    }
   }
 
 }
