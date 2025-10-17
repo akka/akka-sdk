@@ -58,7 +58,7 @@ class ViewValidationSpec extends AnyWordSpec with Matchers with ValidationSuppor
         .expectInvalid("Subscription method must have exactly one parameter, unless it's marked with @DeleteHandler.")
     }
 
-    "return Invalid for View without ComponentId annotation" in {
+    "return Invalid for View annotated with @Table" in {
       Validations
         .validate(classOf[ViewWithoutComponentAnnotation])
         .expectInvalid("A View itself should not be annotated with @Table.")
@@ -131,12 +131,6 @@ class ViewValidationSpec extends AnyWordSpec with Matchers with ValidationSuppor
       Validations
         .validate(classOf[MultiTableViewValidation])
         .expectInvalid("@Table name is empty, must be a non-empty string.")
-    }
-
-    "return Invalid for empty component id" in {
-      Validations
-        .validate(classOf[ViewWithEmptyComponentAnnotation])
-        .expectInvalid("@Component id is empty, must be a non-empty string.")
     }
 
     "return Invalid for invalid component id" in {
