@@ -4,15 +4,6 @@
 
 package akka.javasdk.impl.client
 
-import java.lang.reflect.Method
-import java.lang.reflect.ParameterizedType
-import java.lang.reflect.Type
-import java.util.Optional
-
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.jdk.FutureConverters.FutureOps
-
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.japi.function
@@ -32,6 +23,14 @@ import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.ViewRequest
 import akka.runtime.sdk.spi.ViewType
 import akka.runtime.sdk.spi.{ ViewClient => RuntimeViewClient }
+
+import java.lang.reflect.Method
+import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
+import java.util.Optional
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.jdk.FutureConverters.FutureOps
 
 /**
  * INTERNAL API

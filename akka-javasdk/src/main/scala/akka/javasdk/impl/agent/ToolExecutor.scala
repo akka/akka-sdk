@@ -4,12 +4,12 @@
 
 package akka.javasdk.impl.agent
 
-import java.util.Optional
-
 import akka.annotation.InternalApi
 import akka.javasdk.impl.agent.FunctionTools.FunctionToolInvoker
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.SpiAgent
+
+import java.util.Optional
 
 /**
  * INTERNAL API
@@ -52,4 +52,5 @@ class ToolExecutor(functionTools: Map[String, FunctionToolInvoker], serializer: 
     else
       mapper.writeValueAsString(toolResult)
   }
+
 }
