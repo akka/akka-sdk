@@ -221,4 +221,3 @@ akka project settings down-region gcp-us-east1 aws-us-east-2 --region gcp-us-eas
 ----
 akka service pause my-service --region gcp-us-east1
 ----
-. Contact Akka support for options of how to recover the failed and downed region.

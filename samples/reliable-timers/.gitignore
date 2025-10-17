@@ -26,3 +26,4 @@ effective-pom.xml
 db.mv.db
 
 akka-context/
+.claude/settings.local.json

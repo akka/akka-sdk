@@ -24,3 +24,4 @@ effective-pom.xml
 
 #local db
 db.mv.db
+.claude/settings.local.json

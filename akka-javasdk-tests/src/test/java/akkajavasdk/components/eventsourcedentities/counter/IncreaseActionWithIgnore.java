@@ -22,7 +22,7 @@ public class IncreaseActionWithIgnore extends Consumer {
   }
 
   public Effect oneShallPass(CounterEvent.ValueIncreased event) {
-    String entityId = this.messageContext().metadata().asCloudEvent().subject().get();
+    String entityId = messageContext().eventSubject().get();
     if (event.value() == 1234) {
       CompletionStage<Done> res =
           componentClient

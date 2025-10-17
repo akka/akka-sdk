@@ -27,7 +27,7 @@ public class CounterTopicView extends View {
   public static class CounterUpdater extends TableUpdater<CounterRow> {
 
     public Effect<CounterRow> onEvent(CounterEvent event) {
-      String counterId = updateContext().metadata().asCloudEvent().subject().get(); // <2>
+      String counterId = updateContext().eventSubject().get(); // <2>
       var newValue =
         switch (event) {
           case ValueIncreased increased -> increased.updatedValue();

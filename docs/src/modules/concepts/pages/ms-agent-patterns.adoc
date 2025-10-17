@@ -140,4 +140,6 @@ When we use workflows as ubiquitous coordinators and allow agents to be small, p
 === Examples
 In our xref:getting-started:planner-agent/dynamic-team.adoc[Akka dynamic orchestration] example, we illustrate a planning and evaluation loop, as well as re-planning.
 
+Additionally, the link:https://github.com/akka-samples/adaptive-multi-agent[Akka adaptive multi-agent sample, window="new"] implements the https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/magentic-one.html[MagenticOne pattern, window="new"].
+
 

@@ -15,13 +15,13 @@ import org.springframework.core.io.support.ResourcePropertySource;
 // tag::lifecycle[]
 @Setup // <1>
 // tag::spring[]
-public class CounterSetup implements ServiceSetup {
+public class Bootstrap implements ServiceSetup {
 
   // end::spring[]
   private final Logger logger = LoggerFactory.getLogger(getClass());
   private final ComponentClient componentClient;
 
-  public CounterSetup(ComponentClient componentClient) { // <2>
+  public Bootstrap(ComponentClient componentClient) { // <2>
     this.componentClient = componentClient;
   }
 

@@ -163,7 +163,7 @@ private[impl] object ComponentDescriptorFactory {
   def readComponentDescription(annotated: AnnotatedElement): Option[String] = {
     val componentAnnotation = annotated.getAnnotation(classOf[Component])
     if (componentAnnotation ne null) {
-      val description = componentAnnotation.description()
+      val description = componentAnnotation.description().stripIndent().trim()
       if (description.nonEmpty) Some(description) else None
     } else {
       None

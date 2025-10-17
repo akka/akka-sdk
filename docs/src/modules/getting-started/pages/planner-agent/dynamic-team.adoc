@@ -188,4 +188,4 @@ Inspect the logs and notice the difference if you include "Beware of the weather
 == Next steps
 
 * Finally, let's use another agent to evaluate the previous suggestions when the user preferences are changed or if new suggestions should be created. Continue with xref:planner-agent/eval.adoc[] that will illustrate the Consumer component and "LLM as judge" pattern.
-
+* A more advanced sample illustrates link:https://github.com/akka-samples/adaptive-multi-agent[adaptive multi-agent orchestration, window="new"]. It re-evaluates progress after each agent response and dynamically adjusts its strategy.

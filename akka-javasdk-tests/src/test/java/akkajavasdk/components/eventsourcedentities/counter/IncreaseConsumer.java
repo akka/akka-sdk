@@ -31,7 +31,7 @@ public class IncreaseConsumer extends Consumer {
   }
 
   public Effect printIncrease(CounterEvent.ValueIncreased event) {
-    String entityId = this.messageContext().metadata().asCloudEvent().subject().get();
+    String entityId = messageContext().eventSubject().get();
     if (event.value() == 42) {
       Metadata metadata;
       if (messageContext().metadata().has(CounterEntity.META_KEY)) {

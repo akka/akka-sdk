@@ -579,7 +579,8 @@ private final class Sdk(
             instanceFactory,
             keyValue = false,
             name = Reflect.readComponentName(clz),
-            description = Reflect.readComponentDescription(clz))
+            description = Reflect.readComponentDescription(clz),
+            provided = false)
 
       case clz if Reflect.isKeyValueEntity(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -618,7 +619,8 @@ private final class Sdk(
             instanceFactory,
             keyValue = true,
             name = Reflect.readComponentName(clz),
-            description = Reflect.readComponentDescription(clz))
+            description = Reflect.readComponentDescription(clz),
+            provided = false)
 
       case clz if Reflect.isWorkflow(clz) =>
         val componentId = Reflect.readComponentId(clz)

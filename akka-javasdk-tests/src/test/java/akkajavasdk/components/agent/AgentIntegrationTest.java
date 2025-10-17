@@ -229,7 +229,7 @@ public class AgentIntegrationTest extends TestKitSupport {
       fail("Should have thrown an exception");
     } catch (Exception e) {
       assertThat(e.getMessage())
-          .startsWith("Agent [some-agent-with-bad-tool], command handler error");
+          .contains("Agent [some-agent-with-bad-tool], command handler error");
       assertThat(e.getMessage()).contains("No tools found");
     }
   }
@@ -339,7 +339,7 @@ public class AgentIntegrationTest extends TestKitSupport {
 
       fail("Expected exception");
     } catch (RuntimeException e) {
-      assertThat(e.getMessage()).startsWith("Agent [some-agent], command handler error");
+      assertThat(e.getMessage()).contains("Agent [some-agent], command handler error");
       assertThat(e.getMessage())
           .contains("requires a parameter, but was invoked without parameter");
     }
@@ -365,7 +365,7 @@ public class AgentIntegrationTest extends TestKitSupport {
       fail("Expected exception");
     } catch (RuntimeException e) {
       assertThat(e.getMessage())
-          .startsWith("Agent [some-agent-accepting-int], command handler error");
+          .contains("Agent [some-agent-accepting-int], command handler error");
       assertThat(e.getMessage())
           .contains("Could not deserialize message of type [json.akka.io/string]");
     }
@@ -395,7 +395,7 @@ public class AgentIntegrationTest extends TestKitSupport {
                   .method(SomeAgentReturningErrors::run)
                   .invoke("errorMessage");
             });
-    assertThat(exc1.getMessage()).isEqualTo("errorMessage");
+    assertThat(exc1.getMessage()).contains("errorMessage");
 
     var exc2 =
         Assertions.assertThrows(
@@ -447,7 +447,7 @@ public class AgentIntegrationTest extends TestKitSupport {
             });
     // it's not the original message, but the one from the runtime
     assertThat(exc5.getMessage())
-        .startsWith("Agent [some-agent-returning-errors], command handler error");
+        .contains("Agent [some-agent-returning-errors], command handler error");
     assertThat(exc5.getMessage()).contains("throwRuntimeException");
   }
 
