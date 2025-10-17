@@ -35,6 +35,7 @@ import akka.javasdk.DependencyProvider
 import akka.javasdk.JwtClaims
 import akka.javasdk.Principals
 import akka.javasdk.Retries
+import akka.javasdk.Sanitizer
 import akka.javasdk.ServiceSetup
 import akka.javasdk.Tracing
 import akka.javasdk.agent.Agent
@@ -118,6 +119,7 @@ import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
 import akka.runtime.sdk.spi.SpiGuardrailSetup
 import akka.runtime.sdk.spi.SpiMockedEventingSettings
+import akka.runtime.sdk.spi.SpiSanitizerEngine
 import akka.runtime.sdk.spi.SpiServiceInfo
 import akka.runtime.sdk.spi.SpiSettings
 import akka.runtime.sdk.spi.SpiWorkflow
@@ -182,6 +184,8 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
       throw new IllegalArgumentException(
         "The value of `akka.javasdk.agent.max-tool-call-steps` must be greater than 0.")
 
+    val sanitizationSettings = Sanitization.loadSettings(applicationConf)
+
     val devModeSettings =
       if (applicationConf.getBoolean("akka.javasdk.dev-mode.enabled"))
         Some(
@@ -201,7 +205,9 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
       cleanupDeletedEntityAfter,
       cleanupInterval,
       maxToolCallSteps,
-      devModeSettings)
+      false, // FIXME agentInteractionLogEnabled
+      devModeSettings,
+      Some(sanitizationSettings))
   }
 
   private def extractBrokerConfig(eventingConf: Config): SpiEventingSupportSettings = {
@@ -228,7 +234,8 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
         dependencyProvider,
         disabledComponents,
         startedPromise,
-        getSettings.devMode.map(_.serviceName))
+        getSettings.devMode.map(_.serviceName),
+        startContext.sanitizer)
       Future.successful(app.spiComponents)
     } catch {
       case NonFatal(ex) =>
@@ -355,7 +362,8 @@ private[javasdk] object Sdk {
       grpcClientProvider: GrpcClientProviderImpl,
       agentRegistry: AgentRegistryImpl,
       overrideModelProvider: OverrideModelProvider,
-      serializer: JsonSerializer)
+      serializer: JsonSerializer,
+      sanitizer: Sanitizer)
 
   private val platformManagedDependency = Set[Class[_]](
     classOf[ComponentClient],
@@ -388,7 +396,8 @@ private final class Sdk(
     dependencyProviderOverride: Option[DependencyProvider],
     disabledComponents: Set[Class[_]],
     startedPromise: Promise[StartupContext],
-    serviceNameOverride: Option[String]) {
+    serviceNameOverride: Option[String],
+    runtimeSanitizer: SpiSanitizerEngine) {
 
   import Sdk._
 
@@ -446,6 +455,8 @@ private final class Sdk(
       logger.error("Invalid guardrails: {}", exc.getMessage, exc)
       throw exc
   }
+
+  lazy private val sanitizer = new SanitizerImpl(runtimeSanitizer)
 
   @nowarn("cat=deprecation")
   private def hasComponentId(clz: Class[_]): Boolean = {
@@ -569,6 +580,7 @@ private final class Sdk(
               wiredInstance(clz.asInstanceOf[Class[EventSourcedEntity[AnyRef, AnyRef]]]) {
                 // remember to update component type API doc and docs if changing the set of injectables
                 case p if p == classOf[EventSourcedEntityContext] => context
+                case s if s == classOf[Sanitizer]                 => sanitizer
               })
         }
         eventSourcedEntityDescriptors :+=
@@ -609,6 +621,7 @@ private final class Sdk(
               wiredInstance(clz.asInstanceOf[Class[KeyValueEntity[AnyRef]]]) {
                 // remember to update component type API doc and docs if changing the set of injectables
                 case p if p == classOf[KeyValueEntityContext] => context
+                case s if s == classOf[Sanitizer]             => sanitizer
               })
         }
         keyValueEntityDescriptors :+=
@@ -779,6 +792,7 @@ private final class Sdk(
     case e if e == classOf[Executor]           =>
       // The type does not guarantee this is a Java concurrent Executor, but we know it is, since supplied from runtime
       sdkExecutionContext.asInstanceOf[Executor]
+    case s if s == classOf[Sanitizer] => sanitizer
   }
 
   val spiComponents: SpiComponents = {
@@ -826,7 +840,8 @@ private final class Sdk(
               grpcClientProvider,
               agentRegistry,
               overrideModelProvider,
-              serializer))
+              serializer,
+              sanitizer))
           Future.successful(Done)
         case Some(setup) =>
           if (dependencyProviderOpt.nonEmpty) {
@@ -843,7 +858,8 @@ private final class Sdk(
               grpcClientProvider,
               agentRegistry,
               overrideModelProvider,
-              serializer))
+              serializer,
+              sanitizer))
           Future.successful(Done)
       }
     }
