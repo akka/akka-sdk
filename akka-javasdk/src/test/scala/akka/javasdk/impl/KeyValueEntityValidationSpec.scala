@@ -7,7 +7,10 @@ package akka.javasdk.impl
 import akka.javasdk.testmodels.keyvalueentity.ValueEntitiesTestModels.InvalidKeyValueEntityWithDuplicateHandlers
 import akka.javasdk.testmodels.keyvalueentity.ValueEntitiesTestModels.InvalidKeyValueEntityWithTwoArgCommandHandler
 import akka.javasdk.testmodels.keyvalueentity.ValueEntitiesTestModels.InvalidValueEntityWithOverloadedCommandHandler
+import akka.javasdk.testmodels.keyvalueentity.ValueEntitiesTestModels.KeyValueEntityWithFunctionToolOnNonEffectMethod
+import akka.javasdk.testmodels.keyvalueentity.ValueEntitiesTestModels.KeyValueEntityWithFunctionToolOnReadOnlyEffect
 import akka.javasdk.testmodels.keyvalueentity.ValueEntitiesTestModels.KeyValueEntityWithNoEffectMethod
+import akka.javasdk.testmodels.keyvalueentity.ValueEntitiesTestModels.KeyValueEntityWithValidFunctionTool
 import akka.javasdk.testmodels.keyvalueentity.ValueEntitiesTestModels.ValidKeyValueEntityWithNoArgCommandHandler
 import akka.javasdk.testmodels.keyvalueentity.ValueEntitiesTestModels.ValidKeyValueEntityWithOneArgCommandHandler
 import org.scalatest.matchers.should.Matchers
@@ -56,6 +59,21 @@ class KeyValueEntityValidationSpec extends AnyWordSpec with Matchers with Valida
         .validate(classOf[InvalidValueEntityWithOverloadedCommandHandler])
         .expectInvalid(
           "InvalidValueEntityWithOverloadedCommandHandler has 2 command handler methods named 'createEntity'. Command handlers must have unique names.")
+    }
+
+    "return Invalid for KeyValueEntity with @FunctionTool on non-Effect method" in {
+      Validations
+        .validate(classOf[KeyValueEntityWithFunctionToolOnNonEffectMethod])
+        .expectInvalid(
+          "@FunctionTool can only be used on command handler methods returning KeyValueEntity.Effect or KeyValueEntity.ReadOnlyEffect")
+    }
+
+    "allow @FunctionTool on valid Effect method" in {
+      Validations.validate(classOf[KeyValueEntityWithValidFunctionTool]).isValid shouldBe true
+    }
+
+    "allow @FunctionTool on ReadOnlyEffect method" in {
+      Validations.validate(classOf[KeyValueEntityWithFunctionToolOnReadOnlyEffect]).isValid shouldBe true
     }
   }
 }
