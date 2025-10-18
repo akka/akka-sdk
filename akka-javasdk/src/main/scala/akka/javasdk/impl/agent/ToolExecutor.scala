@@ -52,4 +52,5 @@ class ToolExecutor(functionTools: Map[String, FunctionToolInvoker], serializer: 
     else
       mapper.writeValueAsString(toolResult)
   }
+
 }

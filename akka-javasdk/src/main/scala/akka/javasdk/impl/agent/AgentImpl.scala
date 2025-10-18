@@ -58,6 +58,7 @@ import akka.javasdk.impl.agent.SessionMemoryClient.MemorySettings
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
+import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
@@ -247,6 +248,8 @@ private[impl] final class AgentImpl[A <: Agent](
             val functionTools =
               FunctionTools.toolInvokersFor(agent) ++
               req.toolInstancesOrClasses.flatMap {
+                case cls: Class[_] if Reflect.isToolCandidate(cls) =>
+                  FunctionTools.toolComponentInvokersFor(cls, componentClient(telemetryContext))
                 case cls: Class[_] => FunctionTools.toolInvokersFor(cls, dependencyProvider)
                 case any           => FunctionTools.toolInvokersFor(any)
               }.toMap

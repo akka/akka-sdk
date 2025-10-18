@@ -174,5 +174,22 @@ class ViewValidationSpec extends AnyWordSpec with Matchers with ValidationSuppor
       Validations.validate(classOf[ViewWithTwoQueries]).isValid shouldBe true
     }
 
+    "return Invalid for View with @FunctionTool on stream query method" in {
+      Validations
+        .validate(classOf[ViewWithFunctionToolOnStreamQuery])
+        .expectInvalid(
+          "@FunctionTool cannot be used on stream query methods (methods returning View.QueryStreamEffect)")
+    }
+
+    "return Invalid for View with @FunctionTool on non-query method" in {
+      Validations
+        .validate(classOf[ViewWithFunctionToolOnNonQueryMethod])
+        .expectInvalid("@FunctionTool can only be used on query methods returning View.QueryEffect")
+    }
+
+    "allow @FunctionTool on valid QueryEffect method" in {
+      Validations.validate(classOf[ViewWithValidFunctionTool]).isValid shouldBe true
+    }
+
   }
 }

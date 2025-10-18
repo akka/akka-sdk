@@ -59,6 +59,13 @@ private[impl] object Reflect {
           Option(clazz.getAnnotation(ev.runtimeClass.asInstanceOf[Class[A]]))
         else
           None
+
+      def methodsAnnotatedWith[A <: Annotation](implicit ev: ClassTag[A]): IndexedSeq[Method] = {
+        val annotationClass = ev.runtimeClass.asInstanceOf[Class[A]]
+        clazz.getMethods.toIndexedSeq.filter { m =>
+          m.getAnnotation(annotationClass) != null
+        }
+      }
     }
 
     implicit class MethodOps(javaMethod: Method) {
@@ -108,6 +115,12 @@ private[impl] object Reflect {
 
   def isAgent(cls: Class[_]): Boolean =
     classOf[Agent].isAssignableFrom(cls)
+
+  def isToolCandidate(cls: Class[_]): Boolean =
+    isEventSourcedEntity(cls) ||
+    isKeyValueEntity(cls) ||
+    isWorkflow(cls) ||
+    isView(cls)
 
   def isEvaluatorAgent(cls: Class[_]): Boolean = {
     isAgent(cls) && {

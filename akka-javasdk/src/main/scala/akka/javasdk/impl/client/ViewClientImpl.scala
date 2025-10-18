@@ -19,6 +19,8 @@ import akka.japi.function
 import akka.javasdk.Metadata
 import akka.javasdk.client.ComponentInvokeOnlyMethodRef
 import akka.javasdk.client.ComponentInvokeOnlyMethodRef1
+import akka.javasdk.client.ComponentMethodRef
+import akka.javasdk.client.ComponentMethodRef1
 import akka.javasdk.client.ComponentStreamMethodRef
 import akka.javasdk.client.ComponentStreamMethodRef1
 import akka.javasdk.client.NoEntryFoundException
@@ -63,8 +65,7 @@ private[javasdk] object ViewClientImpl {
       queryReturnType: Type,
       returnTypeOptional: Boolean)
 
-  private def validateAndExtractViewMethodProperties[R](lambda: AnyRef): ViewMethodProperties = {
-    val method = MethodRefResolver.resolveMethodRef(lambda)
+  private def validateAndExtractViewMethodProperties[R](method: Method): ViewMethodProperties = {
     ViewCallValidator.validate(method)
     // extract view id
     val declaringClass = method.getDeclaringClass
@@ -105,12 +106,22 @@ private[javasdk] final case class ViewClientImpl(
     extends ViewClient {
   import ViewClientImpl._
 
-  override def method[T, R](methodRef: function.Function[T, View.QueryEffect[R]]): ComponentInvokeOnlyMethodRef[R] =
-    createMethodRefForEitherArity(methodRef)
+  override def method[T, R](lambda: function.Function[T, View.QueryEffect[R]]): ComponentInvokeOnlyMethodRef[R] = {
+    val method = MethodRefResolver.resolveMethodRef(lambda)
+    createMethodRefForEitherArity(method)
+  }
 
   override def method[T, A1, R](
-      methodRef: function.Function2[T, A1, View.QueryEffect[R]]): ComponentInvokeOnlyMethodRef1[A1, R] =
-    createMethodRefForEitherArity(methodRef)
+      lambda: function.Function2[T, A1, View.QueryEffect[R]]): ComponentInvokeOnlyMethodRef1[A1, R] = {
+    val method = MethodRefResolver.resolveMethodRef(lambda)
+    createMethodRefForEitherArity(method)
+  }
+
+  def methodRefNoArg[R](method: Method): ComponentMethodRef[R] =
+    createMethodRefForEitherArity[Nothing, R](method)
+
+  def methodRefOneArg[A1, R](method: Method): ComponentMethodRef1[A1, R] =
+    createMethodRefForEitherArity(method)
 
   private def encodeArgument(method: Method, arg: Option[Any]): BytesPayload = arg match {
     case Some(arg) =>
@@ -130,9 +141,9 @@ private[javasdk] final case class ViewClientImpl(
       BytesPayload.empty
   }
 
-  private def createMethodRefForEitherArity[A1, R](lambda: AnyRef): ComponentMethodRefImpl[A1, R] = {
+  private def createMethodRefForEitherArity[A1, R](method: Method): ComponentMethodRefImpl[A1, R] = {
     import MetadataImpl.toSpi
-    val viewMethodProperties = validateAndExtractViewMethodProperties[R](lambda)
+    val viewMethodProperties = validateAndExtractViewMethodProperties[R](method)
 
     new ComponentMethodRefImpl[AnyRef, R](
       None,
@@ -185,8 +196,9 @@ private[javasdk] final case class ViewClientImpl(
 
   }
 
-  override def stream[T, R](methodRef: function.Function[T, View.QueryStreamEffect[R]]): ComponentStreamMethodRef[R] = {
-    val viewMethodProperties = validateAndExtractViewMethodProperties[R](methodRef)
+  override def stream[T, R](lambda: function.Function[T, View.QueryStreamEffect[R]]): ComponentStreamMethodRef[R] = {
+    val method = MethodRefResolver.resolveMethodRef(lambda)
+    val viewMethodProperties = validateAndExtractViewMethodProperties[R](method)
 
     () =>
       viewClient
@@ -204,8 +216,9 @@ private[javasdk] final case class ViewClientImpl(
   }
 
   override def stream[T, A1, R](
-      methodRef: function.Function2[T, A1, View.QueryStreamEffect[R]]): ComponentStreamMethodRef1[A1, R] = {
-    val viewMethodProperties = validateAndExtractViewMethodProperties[R](methodRef)
+      lambda: function.Function2[T, A1, View.QueryStreamEffect[R]]): ComponentStreamMethodRef1[A1, R] = {
+    val method = MethodRefResolver.resolveMethodRef(lambda)
+    val viewMethodProperties = validateAndExtractViewMethodProperties[R](method)
 
     (arg: A1) =>
       viewClient
