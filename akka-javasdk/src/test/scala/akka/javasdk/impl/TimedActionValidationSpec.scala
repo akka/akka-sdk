@@ -6,6 +6,7 @@ package akka.javasdk.impl
 
 import akka.javasdk.impl.NotPublicComponents.NotPublicAction
 import akka.javasdk.testmodels.action.ActionsTestModels.NotTimedAction
+import akka.javasdk.testmodels.action.ActionsTestModels.TimedActionWithFunctionTool
 import akka.javasdk.testmodels.action.ActionsTestModels.TimedActionWithNoArgMethod
 import akka.javasdk.testmodels.action.ActionsTestModels.TimedActionWithNoEffectMethod
 import akka.javasdk.testmodels.action.ActionsTestModels.TimedActionWithSingleArgMethod
@@ -48,6 +49,12 @@ class TimedActionValidationSpec extends AnyWordSpec with Matchers with Validatio
       Validations
         .validate(classOf[NotPublicAction])
         .expectInvalid("NotPublicAction is not marked with `public` modifier. Components must be public.")
+    }
+
+    "return Invalid for TimedAction with @FunctionTool annotation" in {
+      Validations
+        .validate(classOf[TimedActionWithFunctionTool])
+        .expectInvalid("@FunctionTool cannot be used in TimedAction components")
     }
   }
 }

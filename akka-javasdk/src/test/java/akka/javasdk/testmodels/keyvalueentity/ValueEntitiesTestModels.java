@@ -5,6 +5,7 @@
 package akka.javasdk.testmodels.keyvalueentity;
 
 import akka.javasdk.annotations.Component;
+import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.testmodels.Done;
 
@@ -52,6 +53,45 @@ public class ValueEntitiesTestModels {
   public static class KeyValueEntityWithNoEffectMethod extends KeyValueEntity<String> {
     public String execute() {
       return "ok";
+    }
+  }
+
+  // Test models for @FunctionTool validation
+
+  @Component(id = "entity_with_function_tool_on_non_effect")
+  public static class KeyValueEntityWithFunctionToolOnNonEffectMethod
+      extends KeyValueEntity<String> {
+
+    public KeyValueEntity.Effect<String> command(String cmd) {
+      return effects().reply(cmd);
+    }
+
+    @FunctionTool(description = "Helper method")
+    public String helperMethod() {
+      return "helper";
+    }
+  }
+
+  @Component(id = "entity_with_valid_function_tool")
+  public static class KeyValueEntityWithValidFunctionTool extends KeyValueEntity<String> {
+
+    @FunctionTool(description = "Execute command")
+    public KeyValueEntity.Effect<String> command(String cmd) {
+      return effects().reply(cmd);
+    }
+  }
+
+  @Component(id = "kve_with_function_tool_on_readonly_effect")
+  public static class KeyValueEntityWithFunctionToolOnReadOnlyEffect
+      extends KeyValueEntity<String> {
+
+    public KeyValueEntity.Effect<String> command(String cmd) {
+      return effects().reply(cmd);
+    }
+
+    @FunctionTool(description = "Get state")
+    public KeyValueEntity.ReadOnlyEffect<String> getState() {
+      return effects().reply(currentState());
     }
   }
 }

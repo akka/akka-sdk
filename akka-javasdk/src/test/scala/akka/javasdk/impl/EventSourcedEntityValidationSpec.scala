@@ -5,9 +5,12 @@
 package akka.javasdk.impl
 
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EntityWithDuplicateCommandHandlers
+import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EntityWithFunctionToolOnNonEffectMethod
+import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EntityWithFunctionToolOnReadOnlyEffect
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EntityWithNoEffectMethod
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EntityWithNonSealedEvent
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EntityWithTwoArgCommandHandler
+import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EntityWithValidFunctionTool
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.InvalidEventSourcedEntityWithOverloadedCommandHandler
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.ValidEntity
 import org.scalatest.matchers.should.Matchers
@@ -56,6 +59,21 @@ class EventSourcedEntityValidationSpec extends AnyWordSpec with Matchers with Va
       Validations
         .validate(classOf[NotPublicComponents.NotPublicEventSourced])
         .expectInvalid("is not marked with `public` modifier. Components must be public")
+    }
+
+    "return Invalid for EventSourcedEntity with @FunctionTool on non-Effect method" in {
+      Validations
+        .validate(classOf[EntityWithFunctionToolOnNonEffectMethod])
+        .expectInvalid("@FunctionTool can only be used on command handler methods returning EventSourcedEntity.Effect" +
+        " or EventSourcedEntity.ReadOnlyEffect")
+    }
+
+    "allow @FunctionTool on valid Effect method" in {
+      Validations.validate(classOf[EntityWithValidFunctionTool]).isValid shouldBe true
+    }
+
+    "allow @FunctionTool on ReadOnlyEffect method" in {
+      Validations.validate(classOf[EntityWithFunctionToolOnReadOnlyEffect]).isValid shouldBe true
     }
   }
 }

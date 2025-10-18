@@ -19,6 +19,7 @@ import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.Consume.FromKeyValueEntity
 import akka.javasdk.annotations.Consume.FromWorkflow
+import akka.javasdk.annotations.FunctionTool
 import akka.javasdk.annotations.Produce.ServiceStream
 import akka.javasdk.annotations.Query
 import akka.javasdk.annotations.Table
@@ -142,21 +143,58 @@ private[javasdk] object Validations {
       eventSourcedEntityEventMustBeSealed(component) ++
       hasEffectMethod(component, classOf[EventSourcedEntity.Effect[_]]) ++
       eventSourcedCommandHandlersMustBeUnique(component) ++
+      eventSourcedEntityFunctionToolsOnlyOnEffects(component) ++
       commandHandlerArityShouldBeZeroOrOne(component, hasESEffectOutput)
     }
 
   private def validateWorkflow(component: Class[_]) =
     when[Workflow[_]](component) {
       hasEffectMethod(component, classOf[Workflow.Effect[_]]) ++
+      workflowFunctionToolsOnlyOnEffects(component) ++
       commandHandlerArityShouldBeZeroOrOne(component, hasWorkflowEffectOutput)
     }
+
+  private def workflowFunctionToolsOnlyOnEffects(component: Class[_]): Validation = {
+    component.methodsAnnotatedWith[FunctionTool].foldLeft(Valid: Validation) { (validation, method) =>
+      val returnType = method.getReturnType
+
+      if (returnType == classOf[Workflow.StepEffect]) {
+        validation ++ Validation(
+          errorMessage(method, "@FunctionTool cannot be used on step methods (methods returning Workflow.StepEffect)"))
+      } else if (returnType != classOf[Workflow.Effect[_]] && returnType != classOf[Workflow.ReadOnlyEffect[_]]) {
+        validation ++ Validation(
+          errorMessage(
+            method,
+            "@FunctionTool can only be used on command handler methods returning Workflow.Effect " +
+            "or Workflow.ReadOnlyEffect"))
+      } else {
+        validation
+      }
+    }
+  }
 
   private def validateAgent(component: Class[_]) =
     when[Agent](component) {
       mustHaveValidAgentDescription(component) ++
       agentCommandHandlersMustBeOne(component) ++
-      commandHandlerArityShouldBeZeroOrOne(component, hasAgentEffectOutput)
+      commandHandlerArityShouldBeZeroOrOne(component, hasAgentEffectOutput) ++
+      agentFunctionToolsNotOnCommandHandlers(component)
     }
+
+  private def agentFunctionToolsNotOnCommandHandlers(component: Class[_]): Validation = {
+    component.methodsAnnotatedWith[FunctionTool].foldLeft(Valid: Validation) { (validation, method) =>
+      val returnType = method.getReturnType
+
+      if (returnType == classOf[Agent.Effect[_]] || returnType == classOf[Agent.StreamEffect]) {
+        validation ++ Validation(
+          errorMessage(
+            method,
+            "@FunctionTool cannot be used on Agent command handler methods (methods returning Agent.Effect or Agent.StreamEffect)"))
+      } else {
+        validation
+      }
+    }
+  }
 
   private def agentCommandHandlersMustBeOne(component: Class[_]): Validation = {
     val commandHandlers = component.getMethods
@@ -244,9 +282,27 @@ private[javasdk] object Validations {
     commandHandlersMustBeUnique(component, commandHandlers)
   }
 
+  private def eventSourcedEntityFunctionToolsOnlyOnEffects(component: Class[_]): Validation = {
+    component.methodsAnnotatedWith[FunctionTool].foldLeft(Valid: Validation) { (validation, method) =>
+      val returnType = method.getReturnType
+
+      if (returnType != classOf[EventSourcedEntity.Effect[_]] && returnType != classOf[
+          EventSourcedEntity.ReadOnlyEffect[_]]) {
+        validation ++ Validation(
+          errorMessage(
+            method,
+            "@FunctionTool can only be used on command handler methods returning EventSourcedEntity.Effect or " +
+            "EventSourcedEntity.ReadOnlyEffect"))
+      } else {
+        validation
+      }
+    }
+  }
+
   private def validateValueEntity(component: Class[_]): Validation = when[KeyValueEntity[_]](component) {
     valueEntityCommandHandlersMustBeUnique(component) ++
     hasEffectMethod(component, classOf[KeyValueEntity.Effect[_]]) ++
+    keyValueEntityFunctionToolsOnlyOnEffects(component) ++
     commandHandlerArityShouldBeZeroOrOne(component, hasKVEEffectOutput)
   }
 
@@ -254,6 +310,21 @@ private[javasdk] object Validations {
     val commandHandlers = component.getMethods
       .filter(_.getReturnType == classOf[KeyValueEntity.Effect[_]])
     commandHandlersMustBeUnique(component, commandHandlers)
+  }
+
+  private def keyValueEntityFunctionToolsOnlyOnEffects(component: Class[_]): Validation = {
+    component.methodsAnnotatedWith[FunctionTool].foldLeft(Valid: Validation) { (validation, method) =>
+      val returnType = method.getReturnType
+
+      if (returnType != classOf[KeyValueEntity.Effect[_]] && returnType != classOf[KeyValueEntity.ReadOnlyEffect[_]]) {
+        validation ++ Validation(
+          errorMessage(
+            method,
+            "@FunctionTool can only be used on command handler methods returning KeyValueEntity.Effect or KeyValueEntity.ReadOnlyEffect"))
+      } else {
+        validation
+      }
+    }
   }
 
   private def commandHandlersMustBeUnique(component: Class[_], commandHandlers: Array[Method]): Validation = {
@@ -287,7 +358,14 @@ private[javasdk] object Validations {
   private def validateTimedAction(component: Class[_]): Validation = {
     when[TimedAction](component) {
       hasEffectMethod(component, classOf[TimedAction.Effect]) ++
-      commandHandlerArityShouldBeZeroOrOne(component, hasTimedActionEffectOutput)
+      commandHandlerArityShouldBeZeroOrOne(component, hasTimedActionEffectOutput) ++
+      timedActionCannotUseFunctionTools(component)
+    }
+  }
+
+  private def timedActionCannotUseFunctionTools(component: Class[_]): Validation = {
+    component.methodsAnnotatedWith[FunctionTool].foldLeft(Valid: Validation) { (validation, method) =>
+      validation ++ Validation(errorMessage(method, "@FunctionTool cannot be used in TimedAction components"))
     }
   }
 
@@ -296,7 +374,14 @@ private[javasdk] object Validations {
       hasConsumeAnnotation(component, "Consumer") ++
       hasEffectMethod(component, classOf[Consumer.Effect]) ++
       commandHandlerArityShouldBeZeroOrOne(component, hasConsumerOutput) ++
-      commonSubscriptionValidation(component, hasConsumerOutput)
+      commonSubscriptionValidation(component, hasConsumerOutput) ++
+      consumerCannotUseFunctionTools(component)
+    }
+  }
+
+  private def consumerCannotUseFunctionTools(component: Class[_]): Validation = {
+    component.methodsAnnotatedWith[FunctionTool].foldLeft(Valid: Validation) { (validation, method) =>
+      validation ++ Validation(errorMessage(method, "@FunctionTool cannot be used in Consumer components"))
     }
   }
 
@@ -321,6 +406,7 @@ private[javasdk] object Validations {
       viewMustHaveAtLeastOneQueryMethod(component) ++
       validateQueryResultTypes(component) ++
       viewQueriesWithStreamUpdatesMustBeStreaming(component) ++
+      viewFunctionToolsOnlyOnQueryEffects(component) ++
       commandHandlerArityShouldBeZeroOrOne(component, hasQueryEffectOutput) ++
       viewMultipleTableUpdatersMustHaveTableAnnotations(tableUpdaters) ++
       tableUpdaters
@@ -427,6 +513,24 @@ private[javasdk] object Validations {
         errorMessage(
           incorrectMethod,
           s"Query methods marked with streamUpdates must return View.QueryStreamEffect<RowType>")))
+  }
+
+  private def viewFunctionToolsOnlyOnQueryEffects(component: Class[_]): Validation = {
+    component.methodsAnnotatedWith[FunctionTool].foldLeft(Valid: Validation) { (validation, method) =>
+      val returnType = method.getReturnType
+
+      if (returnType == classOf[View.QueryStreamEffect[_]]) {
+        validation ++ Validation(
+          errorMessage(
+            method,
+            "@FunctionTool cannot be used on stream query methods (methods returning View.QueryStreamEffect)"))
+      } else if (returnType != classOf[View.QueryEffect[_]]) {
+        validation ++ Validation(
+          errorMessage(method, "@FunctionTool can only be used on query methods returning View.QueryEffect"))
+      } else {
+        validation
+      }
+    }
   }
 
   private def viewMultipleTableUpdatersMustHaveTableAnnotations(tableUpdaters: Seq[Class[_]]): Validation =
