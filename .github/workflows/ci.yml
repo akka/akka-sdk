@@ -25,6 +25,18 @@ jobs:
     name: Basic checks
     runs-on: Akka-Default
     steps:
+      - name: Checkout Global Scripts
+        uses: actions/checkout@v4
+        with:
+          repository: akka/github-actions-scripts
+          path: scripts
+          fetch-depth: 0
+
+      - name: Setup global resolver
+        run: |
+          chmod +x ./scripts/setup_global_resolver.sh
+          ./scripts/setup_global_resolver.sh
+
       - name: Checkout
         # https://github.com/actions/checkout/releases
         # v4.1.1
@@ -100,6 +112,18 @@ jobs:
     name: Build and publish artifacts and plugins locally
     runs-on: Akka-Default
     steps:
+      - name: Checkout Global Scripts
+        uses: actions/checkout@v4
+        with:
+          repository: akka/github-actions-scripts
+          path: scripts
+          fetch-depth: 0
+
+      - name: Setup global resolver
+        run: |
+          chmod +x ./scripts/setup_global_resolver.sh
+          ./scripts/setup_global_resolver.sh
+
       - name: Checkout
         # https://github.com/actions/checkout/releases
         # v4.1.1
@@ -173,6 +197,18 @@ jobs:
     runs-on: Akka-Default
 
     steps:
+      - name: Checkout Global Scripts
+        uses: actions/checkout@v4
+        with:
+          repository: akka/github-actions-scripts
+          path: scripts
+          fetch-depth: 0
+
+      - name: Setup global resolver
+        run: |
+          chmod +x ./scripts/setup_global_resolver.sh
+          ./scripts/setup_global_resolver.sh
+
       - name: Checkout
         # https://github.com/actions/checkout/releases
         # v4.1.1
@@ -228,6 +264,18 @@ jobs:
     runs-on: Akka-Default
 
     steps:
+      - name: Checkout Global Scripts
+        uses: actions/checkout@v4
+        with:
+          repository: akka/github-actions-scripts
+          path: scripts
+          fetch-depth: 0
+
+      - name: Setup global resolver
+        run: |
+          chmod +x ./scripts/setup_global_resolver.sh
+          ./scripts/setup_global_resolver.sh
+
       - name: Checkout
         # https://github.com/actions/checkout/releases
         # v4.1.1
@@ -278,7 +326,7 @@ jobs:
         run: |-
           export SDK_VERSION=$(cat ~/akka-javasdk-version.txt)
           cd samples/shopping-cart-quickstart
-          mvn -s ../../.github/settings.xml install --no-transfer-progress
+          mvn install --no-transfer-progress
           echo "Docker image contents"
           tar tvf target/docker/shopping-cart-quickstart/latest/tmp/docker-build.tar
           tar tvf target/docker/shopping-cart-quickstart/latest/tmp/docker-build.tar > content-list.txt
@@ -289,9 +337,6 @@ jobs:
               exit 1
             fi
           done
-      
-          
-          
 
   maven-samples:
     name: Maven samples
@@ -334,6 +379,18 @@ jobs:
           - { sample: evaluation-playground, it: false, test: true }
 
     steps:
+      - name: Checkout Global Scripts
+        uses: actions/checkout@v4
+        with:
+          repository: akka/github-actions-scripts
+          path: scripts
+          fetch-depth: 0
+
+      - name: Setup global resolver
+        run: |
+          chmod +x ./scripts/setup_global_resolver.sh
+          ./scripts/setup_global_resolver.sh
+
       - name: Checkout
         # https://github.com/actions/checkout/releases
         # v4.1.1
@@ -388,7 +445,7 @@ jobs:
           export SDK_VERSION=$(cat ~/akka-javasdk-version.txt)
           cd samples/${DIR}
           echo "Running mvn formatting check on ${DIR} with SDK version: '${SDK_VERSION}'"
-          mvn -s ../../.github/settings.xml -Pformatting prettier:check
+          mvn -Pformatting prettier:check
 
       - name: ${{ matrix.sample }} test-compile
         env:
@@ -398,7 +455,7 @@ jobs:
           cd samples/${DIR}
           echo "Running mvn on ${DIR} with SDK version: '${SDK_VERSION}'"
           # must also compile without the profile!
-          mvn -s ../../.github/settings.xml test-compile --no-transfer-progress
+          mvn test-compile --no-transfer-progress
 
       - name: ${{ matrix.sample }} verify
         if: matrix.verify || matrix.it
@@ -410,14 +467,14 @@ jobs:
           ./updateSdkVersions.sh java samples/${DIR}
           cd samples/${DIR}
           if [ true == '${{matrix.test}}' ]; then
-            mvn -s ../../.github/settings.xml test --no-transfer-progress
+            mvn test --no-transfer-progress
           fi
           if [ true == '${{matrix.verify}}' ]; then
-            mvn -s ../../.github/settings.xml verify --no-transfer-progress
+            mvn verify --no-transfer-progress
           fi
           if [ true == '${{matrix.it}}' ]; then
             ${PRE_CMD}
-            KALIX_TESTKIT_DEBUG=true mvn -s ../../.github/settings.xml verify --no-transfer-progress
+            KALIX_TESTKIT_DEBUG=true mvn verify --no-transfer-progress
           fi
 
       - name: ${{ matrix.sample }} rm & test-compile
@@ -428,4 +485,4 @@ jobs:
           cd samples/${DIR}
           echo "==== Verifying that generated unmanaged sources compile ===="
           rm -rf src/main/java src/test/java
-          mvn -s ../../.github/settings.xml test-compile --no-transfer-progress
+          mvn test-compile --no-transfer-progress

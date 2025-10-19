@@ -19,6 +19,18 @@ jobs:
       should-publish: ${{ steps.check.outputs.should-publish }}
       latest-tag: ${{ steps.check.outputs.latest-tag }}
     steps:
+      - name: Checkout Global Scripts
+        uses: actions/checkout@v4
+        with:
+          repository: akka/github-actions-scripts
+          path: scripts
+          fetch-depth: 0
+
+      - name: Setup global resolver
+        run: |
+          chmod +x ./scripts/setup_global_resolver.sh
+          ./scripts/setup_global_resolver.sh
+
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
         with:
@@ -48,6 +60,18 @@ jobs:
     needs: validate-tag
     if: needs.validate-tag.outputs.should-publish == 'true'
     steps:
+      - name: Checkout Global Scripts
+        uses: actions/checkout@v4
+        with:
+          repository: akka/github-actions-scripts
+          path: scripts
+          fetch-depth: 0
+
+      - name: Setup global resolver
+        run: |
+          chmod +x ./scripts/setup_global_resolver.sh
+          ./scripts/setup_global_resolver.sh
+
       - name: Checkout
         # https://github.com/actions/checkout/releases
         # v4.1.1
@@ -90,4 +114,4 @@ jobs:
         run: |-
           cd samples/shopping-cart-quickstart
           echo "${{ secrets.PUBLISH_PASSWORD }}" | docker login --username "${{ secrets.PUBLISH_USER }}" --password-stdin registry.akka.io
-          mvn -s ../../.github/settings.xml --batch-mode deploy docker:push -DskipTests -Ddocker.image=registry.akka.io/shopping-cart-quickstart
+          mvn --batch-mode deploy docker:push -DskipTests -Ddocker.image=registry.akka.io/shopping-cart-quickstart
