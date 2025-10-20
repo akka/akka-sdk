@@ -125,6 +125,9 @@
                             <annotationProcessor>
                                 akka.javasdk.tooling.processor.ComponentAnnotationProcessor
                             </annotationProcessor>
+                            <annotationProcessor>
+                                akka.javasdk.tooling.processor.ComponentValidationProcessor
+                            </annotationProcessor>
                         </annotationProcessors>
                         <annotationProcessorPaths>
                             <path>
