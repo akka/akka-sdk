@@ -8,7 +8,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.Component;
-import akka.javasdk.client.ComponentClient;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
@@ -45,12 +44,6 @@ public class KeyValueEntityAsToolIntegrationTest extends TestKitSupport {
       name = "UserManagerAgent",
       description = "Agent that manages users using entity tools")
   public static class UserManagerAgent extends Agent {
-
-    private final ComponentClient componentClient;
-
-    public UserManagerAgent(ComponentClient componentClient) {
-      this.componentClient = componentClient;
-    }
 
     public record UserRequest(String userId, String name, String email) {}
 

@@ -8,7 +8,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.Component;
-import akka.javasdk.client.ComponentClient;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
@@ -45,12 +44,6 @@ public class EventSourcedEntityAsToolIntegrationTest extends TestKitSupport {
       name = "CounterManagerAgent",
       description = "Agent that manages counters using entity tools")
   public static class CounterManagerAgent extends Agent {
-
-    private final ComponentClient componentClient;
-
-    public CounterManagerAgent(ComponentClient componentClient) {
-      this.componentClient = componentClient;
-    }
 
     public record CounterRequest(String counterId, int increaseAmount) {}
 
