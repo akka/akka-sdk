@@ -4,7 +4,14 @@ This sample illustrates how to build an AI agent that performs a RAG workflow.
 
 ## Running the app
 
-This sample requires OpenAI API Key and a MongoDb Atlas URI.
+This sample requires a Secure Repository Token, OpenAI API Key and a MongoDb Atlas URI.
+
+### Secure Repository Token
+
+To build you need to set up a token in one of two ways:
+
+1. Download the [Akka CLI](https://doc.akka.io/operations/cli/installation.html), run `akka code token` and follow the instructions.
+2. Set up the token manually as described [here](https://account.akka.io/token).
 
 ### OpenAI API
 To get the OpenAI API key, sign up/log in to find the key at https://platform.openai.com/api-keys
