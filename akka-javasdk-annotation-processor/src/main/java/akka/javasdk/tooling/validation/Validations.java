@@ -31,7 +31,8 @@ public class Validations {
   public static Validation validateComponent(TypeElement element) {
     return componentMustBePublic(element)
         .combine(mustHaveValidComponentId(element))
-        .combine(validateTimedAction(element));
+        .combine(validateTimedAction(element))
+        .combine(validateConsumer(element));
   }
 
   /**
@@ -110,14 +111,43 @@ public class Validations {
    * @return a Validation result indicating success or failure
    */
   public static Validation validateTimedAction(TypeElement element) {
-    if (!isTimedAction(element)) {
-      return Validation.Valid.instance();
+
+    if (isTimedAction(element)) {
+      return hasEffectMethod(element, "akka.javasdk.timedaction.TimedAction.Effect")
+          .combine(
+              commandHandlerArityShouldBeZeroOrOne(
+                  element, "akka.javasdk.timedaction.TimedAction.Effect"));
     }
 
-    return hasEffectMethod(element, "akka.javasdk.timedaction.TimedAction.Effect")
-        .combine(
-            commandHandlerArityShouldBeZeroOrOne(
-                element, "akka.javasdk.timedaction.TimedAction.Effect"));
+    return Validation.Valid.instance();
+  }
+
+  /**
+   * Validates a Consumer component. Checks for: - Must have @Consume annotation - At least one
+   * method returning Consumer.Effect - Command handlers must have zero or one parameter -
+   * Subscription validation rules
+   *
+   * @param element the component class to validate
+   * @return a Validation result indicating success or failure
+   */
+  public static Validation validateConsumer(TypeElement element) {
+
+    if (isConsumer(element)) {
+      String effectType = "akka.javasdk.consumer.Consumer.Effect";
+      return hasEffectMethod(element, effectType)
+          .combine(hasConsumeAnnotation(element))
+          .combine(commandHandlerArityShouldBeZeroOrOne(element, effectType))
+          .combine(typeLevelSubscriptionValidation(element))
+          .combine(ambiguousHandlerValidations(element, effectType))
+          .combine(valueEntitySubscriptionValidations(element, effectType))
+          .combine(workflowSubscriptionValidations(element, effectType))
+          .combine(topicPublicationValidations(element))
+          .combine(publishStreamIdMustBeFilled(element))
+          .combine(noSubscriptionMethodWithAcl(element, effectType))
+          .combine(subscriptionMethodMustHaveOneParameter(element, effectType));
+    }
+
+    return Validation.Valid.instance();
   }
 
   /**
@@ -128,6 +158,16 @@ public class Validations {
    */
   private static boolean isTimedAction(TypeElement element) {
     return extendsClass(element, "akka.javasdk.timedaction.TimedAction");
+  }
+
+  /**
+   * Checks if a component extends Consumer.
+   *
+   * @param element the component class to check
+   * @return true if the component extends Consumer, false otherwise
+   */
+  private static boolean isConsumer(TypeElement element) {
+    return extendsClass(element, "akka.javasdk.consumer.Consumer");
   }
 
   /**
@@ -213,6 +253,25 @@ public class Validations {
   }
 
   /**
+   * Validates that a Consumer component has a @Consume annotation.
+   *
+   * @param element the component class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation hasConsumeAnnotation(TypeElement element) {
+    // Check for any annotation that starts with "akka.javasdk.annotations.Consume"
+    for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
+      String annotationType = mirror.getAnnotationType().toString();
+      if (annotationType.startsWith("akka.javasdk.annotations.Consume")) {
+        return Validation.Valid.instance();
+      }
+    }
+
+    return Validation.of(
+        errorMessage(element, "A Consumer must be annotated with `@Consume` annotation."));
+  }
+
+  /**
    * Finds an annotation on an element by its fully qualified name.
    *
    * @param element the element to search
@@ -261,5 +320,404 @@ public class Validations {
       elementStr = element.toString();
     }
     return "On '" + elementStr + "': " + message;
+  }
+
+  // ==================== Subscription Validation Methods ====================
+
+  /**
+   * Validates that only one type-level subscription is present.
+   *
+   * @param element the component class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation typeLevelSubscriptionValidation(TypeElement element) {
+    int subscriptionCount = 0;
+    if (hasKeyValueEntitySubscription(element)) subscriptionCount++;
+    if (hasWorkflowSubscription(element)) subscriptionCount++;
+    if (hasEventSourcedEntitySubscription(element)) subscriptionCount++;
+    if (hasStreamSubscription(element)) subscriptionCount++;
+    if (hasTopicSubscription(element)) subscriptionCount++;
+
+    if (subscriptionCount > 1) {
+      return Validation.of(
+          errorMessage(element, "Only one subscription type is allowed on a type level."));
+    }
+
+    return Validation.Valid.instance();
+  }
+
+  /**
+   * Validates that subscription methods have exactly one parameter (unless marked
+   * with @DeleteHandler).
+   *
+   * @param element the component class to validate
+   * @param effectTypeName the effect type name to identify subscription methods
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation subscriptionMethodMustHaveOneParameter(
+      TypeElement element, String effectTypeName) {
+    if (!hasSubscription(element)) {
+      return Validation.Valid.instance();
+    }
+
+    List<String> errors = new ArrayList<>();
+
+    for (Element enclosed : element.getEnclosedElements()) {
+      if (enclosed instanceof ExecutableElement method) {
+        String returnTypeName = method.getReturnType().toString();
+        if (returnTypeName.equals(effectTypeName)) {
+          // Skip methods marked with @DeleteHandler
+          if (hasHandleDeletes(method)) {
+            continue;
+          }
+
+          int paramCount = method.getParameters().size();
+          if (paramCount != 1) {
+            errors.add(
+                errorMessage(
+                    method,
+                    "Subscription method must have exactly one parameter, unless it's marked with"
+                        + " @DeleteHandler."));
+          }
+        }
+      }
+    }
+
+    return Validation.of(errors);
+  }
+
+  /**
+   * Validates that subscription methods with ACL annotations are not allowed.
+   *
+   * @param element the component class to validate
+   * @param effectTypeName the effect type name to identify subscription methods
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation noSubscriptionMethodWithAcl(
+      TypeElement element, String effectTypeName) {
+    if (!hasSubscription(element)) {
+      return Validation.Valid.instance();
+    }
+
+    List<String> errors = new ArrayList<>();
+
+    for (Element enclosed : element.getEnclosedElements()) {
+      if (enclosed instanceof ExecutableElement method) {
+        String returnTypeName = method.getReturnType().toString();
+        if (returnTypeName.equals(effectTypeName) && hasAcl(method)) {
+          errors.add(
+              errorMessage(
+                  method,
+                  "Methods from classes annotated with Akka @Consume annotations are for internal"
+                      + " use only and cannot be annotated with ACL annotations."));
+        }
+      }
+    }
+
+    return Validation.of(errors);
+  }
+
+  /**
+   * Validates that topic publication requires a subscription source.
+   *
+   * @param element the component class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation topicPublicationValidations(TypeElement element) {
+    if (hasTopicPublication(element) && !hasSubscription(element)) {
+      return Validation.of(
+          errorMessage(
+              element,
+              "You must select a source for @Produce.ToTopic. Annotate this class with one a"
+                  + " @Consume annotation."));
+    }
+
+    return Validation.Valid.instance();
+  }
+
+  /**
+   * Validates that @Produce.ServiceStream has a non-empty id.
+   *
+   * @param element the component class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation publishStreamIdMustBeFilled(TypeElement element) {
+    AnnotationMirror serviceStreamAnn =
+        findAnnotation(element, "akka.javasdk.annotations.Produce.ServiceStream");
+
+    if (serviceStreamAnn != null) {
+      String streamId = getAnnotationValue(serviceStreamAnn, "id");
+      if (streamId == null || streamId.isBlank()) {
+        return Validation.of("@Produce.ServiceStream id can not be an empty string");
+      }
+    }
+
+    return Validation.Valid.instance();
+  }
+
+  /**
+   * Validates ambiguous handlers for subscriptions. Checks that there are no multiple handlers for
+   * the same input type.
+   *
+   * @param element the component class to validate
+   * @param effectTypeName the effect type name to identify subscription methods
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation ambiguousHandlerValidations(
+      TypeElement element, String effectTypeName) {
+    if (!hasSubscription(element)) {
+      return Validation.Valid.instance();
+    }
+
+    // Group handlers by their last parameter type
+    java.util.Map<String, List<ExecutableElement>> handlersByType = new java.util.HashMap<>();
+
+    for (Element enclosed : element.getEnclosedElements()) {
+      if (enclosed instanceof ExecutableElement method) {
+        String returnTypeName = method.getReturnType().toString();
+        if (returnTypeName.equals(effectTypeName)) {
+          // Get the last parameter type (or empty string for parameterless methods)
+          String paramType = "";
+          if (!method.getParameters().isEmpty()) {
+            paramType =
+                method.getParameters().get(method.getParameters().size() - 1).asType().toString();
+          }
+
+          handlersByType.computeIfAbsent(paramType, k -> new ArrayList<>()).add(method);
+        }
+      }
+    }
+
+    List<String> errors = new ArrayList<>();
+
+    // Check for ambiguous handlers
+    for (java.util.Map.Entry<String, List<ExecutableElement>> entry : handlersByType.entrySet()) {
+      if (entry.getValue().size() > 1) {
+        String paramType = entry.getKey();
+        List<String> methodNames =
+            entry.getValue().stream().map(m -> m.getSimpleName().toString()).sorted().toList();
+
+        if (paramType.isEmpty()) {
+          // Multiple delete handlers
+          errors.add(
+              errorMessage(
+                  element, "Ambiguous delete handlers: [" + String.join(", ", methodNames) + "]."));
+        } else {
+          // Multiple handlers for the same type
+          errors.add(
+              errorMessage(
+                  element,
+                  "Ambiguous handlers for "
+                      + paramType
+                      + ", methods: ["
+                      + String.join(", ", methodNames)
+                      + "] consume the same type."));
+        }
+      }
+    }
+
+    return Validation.of(errors);
+  }
+
+  /**
+   * Validates state subscription rules for KeyValueEntity and Workflow subscriptions. Ensures: -
+   * Delete handlers have zero parameters - Only one update method is allowed - Only one delete
+   * handler is allowed
+   *
+   * @param element the component class to validate
+   * @param effectTypeName the effect type name to identify subscription methods
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation commonStateSubscriptionValidation(
+      TypeElement element, String effectTypeName) {
+    List<ExecutableElement> subscriptionMethods = new ArrayList<>();
+    List<ExecutableElement> updateMethods = new ArrayList<>();
+    List<ExecutableElement> deleteHandlers = new ArrayList<>();
+    List<ExecutableElement> deleteHandlersWithParams = new ArrayList<>();
+
+    // Collect subscription methods
+    for (Element enclosed : element.getEnclosedElements()) {
+      if (enclosed instanceof ExecutableElement method) {
+        String returnTypeName = method.getReturnType().toString();
+        if (returnTypeName.equals(effectTypeName)) {
+          subscriptionMethods.add(method);
+
+          if (hasHandleDeletes(method)) {
+            if (method.getParameters().isEmpty()) {
+              deleteHandlers.add(method);
+            } else {
+              deleteHandlersWithParams.add(method);
+            }
+          } else {
+            updateMethods.add(method);
+          }
+        }
+      }
+    }
+
+    List<String> errors = new ArrayList<>();
+
+    // Validate delete handlers must have zero arity
+    for (ExecutableElement method : deleteHandlersWithParams) {
+      int numParams = method.getParameters().size();
+      errors.add(
+          errorMessage(
+              method,
+              "Method annotated with '@DeleteHandler' must not have parameters. Found "
+                  + numParams
+                  + " method parameters."));
+    }
+
+    // Validate only one update method is allowed
+    if (updateMethods.size() >= 2) {
+      List<String> methodNames =
+          updateMethods.stream().map(m -> m.getSimpleName().toString()).toList();
+      errors.add(
+          errorMessage(
+              element,
+              "Duplicated update methods ["
+                  + String.join(", ", methodNames)
+                  + "] for state subscription are not allowed."));
+    }
+
+    // Validate only one delete handler is allowed
+    if (deleteHandlers.size() >= 2) {
+      for (ExecutableElement method : deleteHandlers) {
+        errors.add(
+            errorMessage(
+                method, "Multiple methods annotated with @DeleteHandler are not allowed."));
+      }
+    }
+
+    return Validation.of(errors);
+  }
+
+  /**
+   * Validates KeyValueEntity subscription-specific rules.
+   *
+   * @param element the component class to validate
+   * @param effectTypeName the effect type name to identify subscription methods
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation valueEntitySubscriptionValidations(
+      TypeElement element, String effectTypeName) {
+    if (!hasKeyValueEntitySubscription(element)) {
+      return Validation.Valid.instance();
+    }
+
+    return commonStateSubscriptionValidation(element, effectTypeName);
+  }
+
+  /**
+   * Validates Workflow subscription-specific rules.
+   *
+   * @param element the component class to validate
+   * @param effectTypeName the effect type name to identify subscription methods
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation workflowSubscriptionValidations(
+      TypeElement element, String effectTypeName) {
+    if (!hasWorkflowSubscription(element)) {
+      return Validation.Valid.instance();
+    }
+
+    return commonStateSubscriptionValidation(element, effectTypeName);
+  }
+
+  // ==================== Subscription Detection Helpers ====================
+
+  /**
+   * Checks if a component has a KeyValueEntity subscription.
+   *
+   * @param element the component class to check
+   * @return true if the component has @Consume.FromKeyValueEntity
+   */
+  private static boolean hasKeyValueEntitySubscription(TypeElement element) {
+    return findAnnotation(element, "akka.javasdk.annotations.Consume.FromKeyValueEntity") != null;
+  }
+
+  /**
+   * Checks if a component has a Workflow subscription.
+   *
+   * @param element the component class to check
+   * @return true if the component has @Consume.FromWorkflow
+   */
+  private static boolean hasWorkflowSubscription(TypeElement element) {
+    return findAnnotation(element, "akka.javasdk.annotations.Consume.FromWorkflow") != null;
+  }
+
+  /**
+   * Checks if a component has an EventSourcedEntity subscription.
+   *
+   * @param element the component class to check
+   * @return true if the component has @Consume.FromEventSourcedEntity
+   */
+  private static boolean hasEventSourcedEntitySubscription(TypeElement element) {
+    return findAnnotation(element, "akka.javasdk.annotations.Consume.FromEventSourcedEntity")
+        != null;
+  }
+
+  /**
+   * Checks if a component has a Stream subscription.
+   *
+   * @param element the component class to check
+   * @return true if the component has @Consume.FromServiceStream
+   */
+  private static boolean hasStreamSubscription(TypeElement element) {
+    return findAnnotation(element, "akka.javasdk.annotations.Consume.FromServiceStream") != null;
+  }
+
+  /**
+   * Checks if a component has a Topic subscription.
+   *
+   * @param element the component class to check
+   * @return true if the component has @Consume.FromTopic
+   */
+  private static boolean hasTopicSubscription(TypeElement element) {
+    return findAnnotation(element, "akka.javasdk.annotations.Consume.FromTopic") != null;
+  }
+
+  /**
+   * Checks if a component has any subscription annotation.
+   *
+   * @param element the component class to check
+   * @return true if the component has any @Consume annotation
+   */
+  private static boolean hasSubscription(TypeElement element) {
+    return hasKeyValueEntitySubscription(element)
+        || hasWorkflowSubscription(element)
+        || hasEventSourcedEntitySubscription(element)
+        || hasTopicSubscription(element)
+        || hasStreamSubscription(element);
+  }
+
+  /**
+   * Checks if a component has a Topic publication annotation.
+   *
+   * @param element the component class to check
+   * @return true if the component has @Produce.ToTopic
+   */
+  private static boolean hasTopicPublication(TypeElement element) {
+    return findAnnotation(element, "akka.javasdk.annotations.Produce.ToTopic") != null;
+  }
+
+  /**
+   * Checks if a method has a @DeleteHandler annotation.
+   *
+   * @param method the method to check
+   * @return true if the method has @DeleteHandler
+   */
+  private static boolean hasHandleDeletes(ExecutableElement method) {
+    return findAnnotation(method, "akka.javasdk.annotations.DeleteHandler") != null;
+  }
+
+  /**
+   * Checks if a method has an ACL annotation.
+   *
+   * @param method the method to check
+   * @return true if the method has @Acl
+   */
+  private static boolean hasAcl(ExecutableElement method) {
+    return findAnnotation(method, "akka.javasdk.annotations.Acl") != null;
   }
 }

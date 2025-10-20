@@ -38,8 +38,21 @@ trait CompilationTestSupport extends Matchers {
     val sourceFile = testSourcesDir.resolve(relativePath).toFile
     require(sourceFile.exists(), s"Test source file not found: ${sourceFile.getAbsolutePath}")
 
+    // Collect all files to compile (include dependency entity files)
+    val filesToCompile = collection.mutable.ListBuffer(sourceFile)
+
+    // Add entity/workflow files that are commonly referenced
+    val supportFiles = List("valid/MyKeyValueEntity.java", "valid/MyWorkflow.java", "valid/MyEventSourcedEntity.java")
+
+    supportFiles.foreach { supportFile =>
+      val file = testSourcesDir.resolve(supportFile).toFile
+      if (file.exists()) {
+        filesToCompile += file
+      }
+    }
+
     // Get compilation units
-    val compilationUnits = fileManager.getJavaFileObjectsFromFiles(List(sourceFile).asJava)
+    val compilationUnits = fileManager.getJavaFileObjectsFromFiles(filesToCompile.asJava)
 
     // Create output directory for compiled classes
     val outputDir = Files.createTempDirectory("component-validation-test")
