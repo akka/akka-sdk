@@ -415,7 +415,9 @@ private final class Sdk(
     system,
     None,
     remoteIdentification.map(ri => RawHeader(ri.headerName, ri.headerValue)),
-    sdkSettings)
+    sdkSettings,
+    // We know it is a dispatcher/executor
+    sdkExecutionContext.asInstanceOf[Executor])
 
   private lazy val userServiceConfig = {
     // hiding these paths from the config provided to user
