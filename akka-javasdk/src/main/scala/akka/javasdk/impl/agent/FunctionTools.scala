@@ -171,6 +171,7 @@ object FunctionTools {
   }
 
   def toolComponentInvokersFor(cls: Class[_], componentClient: ComponentClient): Map[String, FunctionToolInvoker] = {
+
     resolvedMethodNames(cls).map { case (name, method) =>
       if (Reflect.isView(cls))
         name -> ViewFunctionToolInvoker(method, componentClient)

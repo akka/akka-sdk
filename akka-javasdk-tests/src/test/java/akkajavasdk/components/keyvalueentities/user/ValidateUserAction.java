@@ -26,7 +26,7 @@ public class ValidateUserAction extends TimedAction {
         componentClient
             .forKeyValueEntity(createUser.user)
             .method(UserEntity::createUser)
-            .invokeAsync(new UserEntity.CreatedUser(createUser.name, createUser.email));
+            .invokeAsync(new UserEntity.CreateUser(createUser.name, createUser.email));
     return effects().done();
   }
 
