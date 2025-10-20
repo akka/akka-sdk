@@ -10,22 +10,22 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Represents the result of a validation operation.
- * Can be either Valid (no errors) or Invalid (contains error messages).
+ * Represents the result of a validation operation. Can be either Valid (no errors) or Invalid
+ * (contains error messages).
  */
 public sealed interface Validation permits Validation.Valid, Validation.Invalid {
 
   /**
-   * Creates a Validation from an array of messages.
-   * Returns Valid if messages is empty, otherwise Invalid with those messages.
+   * Creates a Validation from an array of messages. Returns Valid if messages is empty, otherwise
+   * Invalid with those messages.
    */
   static Validation of(String[] messages) {
     return of(Arrays.asList(messages));
   }
 
   /**
-   * Creates a Validation from a list of messages.
-   * Returns Valid if messages is empty, otherwise Invalid with those messages.
+   * Creates a Validation from a list of messages. Returns Valid if messages is empty, otherwise
+   * Invalid with those messages.
    */
   static Validation of(List<String> messages) {
     if (messages.isEmpty()) {
@@ -35,35 +35,26 @@ public sealed interface Validation permits Validation.Valid, Validation.Invalid 
     }
   }
 
-  /**
-   * Creates an Invalid validation with a single message.
-   */
+  /** Creates an Invalid validation with a single message. */
   static Validation of(String message) {
     return new Invalid(List.of(message));
   }
 
-  /**
-   * Returns true if this validation is successful (no errors).
-   */
+  /** Returns true if this validation is successful (no errors). */
   boolean isValid();
 
-  /**
-   * Returns true if this validation has errors.
-   */
+  /** Returns true if this validation has errors. */
   default boolean isInvalid() {
     return !isValid();
   }
 
   /**
-   * Combines this validation with another.
-   * If both are valid, returns Valid.
-   * If either is invalid, returns Invalid with combined messages.
+   * Combines this validation with another. If both are valid, returns Valid. If either is invalid,
+   * returns Invalid with combined messages.
    */
   Validation combine(Validation other);
 
-  /**
-   * Represents a successful validation with no errors.
-   */
+  /** Represents a successful validation with no errors. */
   final class Valid implements Validation {
 
     private static final Valid INSTANCE = new Valid();
@@ -72,9 +63,7 @@ public sealed interface Validation permits Validation.Valid, Validation.Invalid 
       // Private constructor to enforce singleton pattern
     }
 
-    /**
-     * Returns the singleton instance of Valid.
-     */
+    /** Returns the singleton instance of Valid. */
     public static Valid instance() {
       return INSTANCE;
     }
@@ -106,16 +95,12 @@ public sealed interface Validation permits Validation.Valid, Validation.Invalid 
     }
   }
 
-  /**
-   * Represents a failed validation containing one or more error messages.
-   */
+  /** Represents a failed validation containing one or more error messages. */
   final class Invalid implements Validation {
 
     private final List<String> messages;
 
-    /**
-     * Creates an Invalid validation with the given error messages.
-     */
+    /** Creates an Invalid validation with the given error messages. */
     public Invalid(List<String> messages) {
       if (messages == null || messages.isEmpty()) {
         throw new IllegalArgumentException("Invalid must have at least one message");
@@ -123,16 +108,12 @@ public sealed interface Validation permits Validation.Valid, Validation.Invalid 
       this.messages = Collections.unmodifiableList(new ArrayList<>(messages));
     }
 
-    /**
-     * Creates an Invalid validation with a single error message.
-     */
+    /** Creates an Invalid validation with a single error message. */
     public Invalid(String message) {
       this(List.of(message));
     }
 
-    /**
-     * Returns the list of error messages.
-     */
+    /** Returns the list of error messages. */
     public List<String> messages() {
       return messages;
     }
@@ -154,9 +135,7 @@ public sealed interface Validation permits Validation.Valid, Validation.Invalid 
       return this;
     }
 
-    /**
-     * Throws a RuntimeException with all error messages joined by ", ".
-     */
+    /** Throws a RuntimeException with all error messages joined by ", ". */
     public void throwFailureSummary() {
       throw new RuntimeException(String.join(", ", messages));
     }
