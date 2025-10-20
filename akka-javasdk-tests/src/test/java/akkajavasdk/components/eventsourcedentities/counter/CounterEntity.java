@@ -11,6 +11,7 @@ import akka.Done;
 import akka.javasdk.CommandException;
 import akka.javasdk.Metadata;
 import akka.javasdk.annotations.Component;
+import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akkajavasdk.Result;
 import akkajavasdk.components.MyException;
@@ -37,6 +38,7 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
     return new Counter(0);
   }
 
+  @FunctionTool(description = "Increases the value of this counter by the passed value")
   public Effect<Integer> increase(int value) {
     logger.info(
         "Increasing counter with commandName={} seqNr={} current={} value={} metadata={}",
@@ -124,6 +126,7 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
     return effects().reply(currentState().value());
   }
 
+  @FunctionTool(description = "Returns the value of this counter.")
   public ReadOnlyEffect<Counter> getState() {
     return effects().reply(currentState());
   }
