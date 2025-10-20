@@ -17,9 +17,13 @@ import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic;
 
 /**
- * Annotation processor that performs compile-time validation on classes annotated with @Component.
+ * Annotation processor that performs compile-time validation on classes annotated with @Component
+ * or deprecated @ComponentId.
  */
-@SupportedAnnotationTypes({"akka.javasdk.annotations.Component"})
+@SupportedAnnotationTypes({
+  "akka.javasdk.annotations.Component",
+  "akka.javasdk.annotations.ComponentId"
+})
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 public class ComponentValidationProcessor extends AbstractProcessor {
 

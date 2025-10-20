@@ -15,6 +15,8 @@ import scala.util.Using
 class ComponentValidationSpec extends AnyWordSpec with Matchers {
 
   "ComponentValidationProcessor" should {
+
+    // Valid components
     "accept valid public components" in {
       val result = compileTestSource("valid/ValidPublicComponent.java")
       result.success shouldBe true
@@ -27,6 +29,12 @@ class ComponentValidationSpec extends AnyWordSpec with Matchers {
       result.diagnostics.filter(_.getKind == Diagnostic.Kind.ERROR) shouldBe empty
     }
 
+    "accept valid component with deprecated @ComponentId" in {
+      val result = compileTestSource("valid/ValidDeprecatedComponentId.java")
+      assertCompilationSuccess(result)
+    }
+
+    // Public modifier validation
     "reject non-public component" in {
       val result = compileTestSource("invalid/NonPublicComponent.java")
       result.success shouldBe false
@@ -50,6 +58,66 @@ class ComponentValidationSpec extends AnyWordSpec with Matchers {
       val errorMessages = errors.map(_.getMessage(null)).mkString(" ")
       errorMessages should include("PackagePrivateComponent")
       errorMessages should include("not marked with `public` modifier")
+    }
+
+    // @Component id validation
+    "reject component with empty @Component id" in {
+      val result = compileTestSource("invalid/EmptyComponentId.java")
+      result.success shouldBe false
+
+      val errors = result.diagnostics.filter(_.getKind == Diagnostic.Kind.ERROR)
+      errors should not be empty
+
+      val errorMessages = errors.map(_.getMessage(null)).mkString(" ")
+      errorMessages should include("EmptyComponentId")
+      errorMessages should include("@Component id is empty")
+    }
+
+    "reject component with blank @Component id" in {
+      val result = compileTestSource("invalid/BlankComponentId.java")
+      assertCompilationFailure(result, "BlankComponentId", "@Component id is empty")
+    }
+
+    "reject component with pipe character in @Component id" in {
+      val result = compileTestSource("invalid/ComponentIdWithPipe.java")
+      result.success shouldBe false
+
+      val errors = result.diagnostics.filter(_.getKind == Diagnostic.Kind.ERROR)
+      errors should not be empty
+
+      val errorMessages = errors.map(_.getMessage(null)).mkString(" ")
+      errorMessages should include("ComponentIdWithPipe")
+      errorMessages should include("pipe character")
+    }
+
+    // Deprecated @ComponentId validation
+    "reject component with empty deprecated @ComponentId" in {
+      val result = compileTestSource("invalid/EmptyDeprecatedComponentId.java")
+      assertCompilationFailure(result, "EmptyDeprecatedComponentId", "@ComponentId name is empty")
+    }
+
+    "reject component with blank deprecated @ComponentId" in {
+      val result = compileTestSource("invalid/BlankDeprecatedComponentId.java")
+      assertCompilationFailure(result, "BlankDeprecatedComponentId", "@ComponentId name is empty")
+    }
+
+    "reject component with pipe character in deprecated @ComponentId" in {
+      val result = compileTestSource("invalid/DeprecatedComponentIdWithPipe.java")
+      assertCompilationFailure(result, "DeprecatedComponentIdWithPipe", "pipe character")
+    }
+
+    // Annotation conflicts
+    "reject component with both @Component and @ComponentId annotations" in {
+      val result = compileTestSource("invalid/BothComponentAndComponentId.java")
+      result.success shouldBe false
+
+      val errors = result.diagnostics.filter(_.getKind == Diagnostic.Kind.ERROR)
+      errors should not be empty
+
+      val errorMessages = errors.map(_.getMessage(null)).mkString(" ")
+      errorMessages should include("BothComponentAndComponentId")
+      errorMessages should include("both @Component and")
+      errorMessages should include("deprecated @ComponentId")
     }
   }
 
