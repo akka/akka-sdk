@@ -4,12 +4,6 @@
 
 package akka.javasdk.impl.agent
 
-import java.lang.reflect.InvocationTargetException
-import java.lang.reflect.Method
-import java.lang.reflect.Type
-
-import scala.util.control.Exception.Catcher
-
 import akka.annotation.InternalApi
 import akka.javasdk.DependencyProvider
 import akka.javasdk.agent.Agent
@@ -19,9 +13,14 @@ import akka.javasdk.impl.JsonSchema
 import akka.javasdk.impl.client.EntityClientImpl
 import akka.javasdk.impl.client.ViewClientImpl
 import akka.javasdk.impl.reflection.Reflect
-import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
+import akka.javasdk.impl.reflection.Reflect.Syntax.ClassOps
 import akka.javasdk.impl.reflection.Reflect.Syntax.MethodOps
 import akka.runtime.sdk.spi.SpiAgent
+
+import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Method
+import java.lang.reflect.Type
+import scala.util.control.Exception.Catcher
 
 /**
  * INTERNAL API
@@ -221,19 +220,11 @@ object FunctionTools {
   /**
    * Collects all methods annotated with `@FunctionTool` from the given class, including inherited methods.
    */
-  private def annotatedMethods(cls: Class[_]): Seq[Method] = {
-
-    def allMethods(c: Class[_]): Seq[Method] = {
-      if (c == null || c == classOf[Object]) Seq.empty
-      else c.getDeclaredMethods.toSeq ++ allMethods(c.getSuperclass) ++ c.getInterfaces.flatMap(allMethods)
-    }
-
-    allMethods(cls)
-      .filter(m => m.hasAnnotation[FunctionTool])
+  private def annotatedMethods(cls: Class[_]): Seq[Method] =
+    cls
+      .methodsAnnotatedWith[FunctionTool]
       // tool methods in agent don't need to be public
       .filter(m => m.isPublic || isAgent(cls))
-      .distinct
-  }
 
   private def resolvedMethodNames(cls: Class[_]): Map[String, Method] = {
 

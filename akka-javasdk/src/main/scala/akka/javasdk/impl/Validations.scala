@@ -134,7 +134,7 @@ private[javasdk] object Validations {
     validateConsumer(component) ++
     validateView(component) ++
     validateEventSourcedEntity(component) ++
-    validateValueEntity(component) ++
+    validateKeyValueEntity(component) ++
     validateWorkflow(component) ++
     validateAgent(component)
 
@@ -299,7 +299,7 @@ private[javasdk] object Validations {
     }
   }
 
-  private def validateValueEntity(component: Class[_]): Validation = when[KeyValueEntity[_]](component) {
+  private def validateKeyValueEntity(component: Class[_]): Validation = when[KeyValueEntity[_]](component) {
     valueEntityCommandHandlersMustBeUnique(component) ++
     hasEffectMethod(component, classOf[KeyValueEntity.Effect[_]]) ++
     keyValueEntityFunctionToolsOnlyOnEffects(component) ++

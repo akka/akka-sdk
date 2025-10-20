@@ -4,20 +4,6 @@
 
 package akka.javasdk.impl.reflection
 
-import java.lang.annotation.Annotation
-import java.lang.reflect.AnnotatedElement
-import java.lang.reflect.Method
-import java.lang.reflect.Modifier
-import java.lang.reflect.ParameterizedType
-import java.lang.reflect.Type
-import java.util
-import java.util.Optional
-
-import scala.annotation.nowarn
-import scala.annotation.tailrec
-import scala.jdk.CollectionConverters.CollectionHasAsScala
-import scala.reflect.ClassTag
-
 import akka.Done
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
@@ -42,6 +28,19 @@ import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.Workflow.RunnableStep
 import com.fasterxml.jackson.annotation.JsonSubTypes
 
+import java.lang.annotation.Annotation
+import java.lang.reflect.AnnotatedElement
+import java.lang.reflect.Method
+import java.lang.reflect.Modifier
+import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
+import java.util
+import java.util.Optional
+import scala.annotation.nowarn
+import scala.annotation.tailrec
+import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.reflect.ClassTag
+
 /**
  * Class extension to facilitate some reflection common usages.
  *
@@ -51,20 +50,29 @@ import com.fasterxml.jackson.annotation.JsonSubTypes
 private[impl] object Reflect {
   object Syntax {
 
-    implicit class ClassOps(clazz: Class[_]) {
-      def isPublic: Boolean = Modifier.isPublic(clazz.getModifiers)
+    implicit class ClassOps(cls: Class[_]) {
+      def isPublic: Boolean = Modifier.isPublic(cls.getModifiers)
 
       def annotationOption[A <: Annotation](implicit ev: ClassTag[A]): Option[A] =
-        if (clazz.isPublic)
-          Option(clazz.getAnnotation(ev.runtimeClass.asInstanceOf[Class[A]]))
+        if (cls.isPublic)
+          Option(cls.getAnnotation(ev.runtimeClass.asInstanceOf[Class[A]]))
         else
           None
 
+      /**
+       * Collects all methods annotated with passed annotation from the given class, including inherited methods.
+       */
       def methodsAnnotatedWith[A <: Annotation](implicit ev: ClassTag[A]): IndexedSeq[Method] = {
         val annotationClass = ev.runtimeClass.asInstanceOf[Class[A]]
-        clazz.getMethods.toIndexedSeq.filter { m =>
-          m.getAnnotation(annotationClass) != null
+
+        def allMethods(c: Class[_]): Seq[Method] = {
+          if (c == null || c == classOf[Object]) Seq.empty
+          else c.getDeclaredMethods.toSeq ++ allMethods(c.getSuperclass) ++ c.getInterfaces.flatMap(allMethods)
         }
+
+        allMethods(cls).toIndexedSeq
+          .filter(m => m.getAnnotation(annotationClass) != null)
+          .distinct
       }
     }
 
