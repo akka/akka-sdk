@@ -32,7 +32,8 @@ public class Validations {
     return componentMustBePublic(element)
         .combine(mustHaveValidComponentId(element))
         .combine(validateTimedAction(element))
-        .combine(validateConsumer(element));
+        .combine(validateConsumer(element))
+        .combine(validateAgent(element));
   }
 
   /**
@@ -151,6 +152,25 @@ public class Validations {
   }
 
   /**
+   * Validates an Agent component. Checks for: - Must have exactly one command handler (method
+   * returning Agent.Effect or Agent.StreamEffect) - Command handlers must have zero or one
+   * parameter - Valid AgentDescription configuration
+   *
+   * @param element the component class to validate
+   * @return a Validation result indicating success or failure
+   */
+  public static Validation validateAgent(TypeElement element) {
+
+    if (isAgent(element)) {
+      return mustHaveValidAgentDescription(element)
+          .combine(agentCommandHandlersMustBeOne(element))
+          .combine(commandHandlerArityShouldBeZeroOrOneForAgent(element));
+    }
+
+    return Validation.Valid.instance();
+  }
+
+  /**
    * Checks if a component extends TimedAction.
    *
    * @param element the component class to check
@@ -168,6 +188,16 @@ public class Validations {
    */
   private static boolean isConsumer(TypeElement element) {
     return extendsClass(element, "akka.javasdk.consumer.Consumer");
+  }
+
+  /**
+   * Checks if a component extends Agent.
+   *
+   * @param element the component class to check
+   * @return true if the component extends Agent, false otherwise
+   */
+  private static boolean isAgent(TypeElement element) {
+    return extendsClass(element, "akka.javasdk.agent.Agent");
   }
 
   /**
@@ -269,6 +299,149 @@ public class Validations {
 
     return Validation.of(
         errorMessage(element, "A Consumer must be annotated with `@Consume` annotation."));
+  }
+
+  /**
+   * Validates AgentDescription annotation configuration. Checks for conflicts with @Component
+   * and @AgentRole annotations.
+   *
+   * @param element the component class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation mustHaveValidAgentDescription(TypeElement element) {
+    AnnotationMirror agentDescAnn =
+        findAnnotation(element, "akka.javasdk.annotations.AgentDescription");
+
+    // If no @AgentDescription, validation passes (it's optional)
+    if (agentDescAnn == null) {
+      return Validation.Valid.instance();
+    }
+
+    List<String> errors = new ArrayList<>();
+
+    AnnotationMirror componentAnn = findAnnotation(element, "akka.javasdk.annotations.Component");
+    AnnotationMirror agentRoleAnn = findAnnotation(element, "akka.javasdk.annotations.AgentRole");
+
+    // @AgentDescription being used together with @Component
+    if (componentAnn != null) {
+      String componentName = getAnnotationValue(componentAnn, "name");
+      String componentDesc = getAnnotationValue(componentAnn, "description");
+
+      if (componentName != null && !componentName.isEmpty()) {
+        errors.add(
+            errorMessage(
+                element,
+                "Both @AgentDescription.name and @Component.name are defined. "
+                    + "Remove @AgentDescription.name and use only @Component.name."));
+      }
+
+      if (componentDesc != null && !componentDesc.isEmpty()) {
+        errors.add(
+            errorMessage(
+                element,
+                "Both @AgentDescription.description and @Component.description are defined. "
+                    + "Remove @AgentDescription.description and use only @Component.description."));
+      }
+    } else {
+      // @Component is not being used, check if @AgentDescription is properly configured
+      String agentDescName = getAnnotationValue(agentDescAnn, "name");
+      String agentDescDescription = getAnnotationValue(agentDescAnn, "description");
+
+      if (agentDescName == null || agentDescName.isBlank()) {
+        errors.add(
+            errorMessage(
+                element,
+                "@AgentDescription.name is empty. "
+                    + "Remove @AgentDescription annotation and use only @Component."));
+      }
+
+      if (agentDescDescription == null || agentDescDescription.isBlank()) {
+        errors.add(
+            errorMessage(
+                element,
+                "@AgentDescription.description is empty."
+                    + "Remove @AgentDescription annotation and use only @Component."));
+      }
+    }
+
+    // @AgentDescription being used together with @AgentRole
+    if (agentRoleAnn != null) {
+      String agentDescRole = getAnnotationValue(agentDescAnn, "role");
+      if (agentDescRole != null && !agentDescRole.isBlank()) {
+        errors.add(
+            errorMessage(
+                element,
+                "Both @AgentDescription.role and @AgentRole are defined. "
+                    + "Remove @AgentDescription.role and use only @AgentRole."));
+      }
+    }
+
+    return Validation.of(errors);
+  }
+
+  /**
+   * Validates that an Agent has exactly one command handler.
+   *
+   * @param element the component class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation agentCommandHandlersMustBeOne(TypeElement element) {
+    int count = 0;
+
+    for (Element enclosed : element.getEnclosedElements()) {
+      if (enclosed instanceof ExecutableElement method) {
+        String returnTypeName = method.getReturnType().toString();
+        // Check for Agent.Effect or Agent.StreamEffect
+        if (returnTypeName.startsWith("akka.javasdk.agent.Agent.Effect")
+            || returnTypeName.startsWith("akka.javasdk.agent.Agent.StreamEffect")) {
+          count++;
+        }
+      }
+    }
+
+    if (count == 1) {
+      return Validation.Valid.instance();
+    } else {
+      return Validation.of(
+          errorMessage(
+              element,
+              element.getSimpleName()
+                  + " has "
+                  + count
+                  + " command handlers. There must be one public method returning Agent.Effect."));
+    }
+  }
+
+  /**
+   * Validates that Agent command handlers have zero or one parameter.
+   *
+   * @param element the component class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation commandHandlerArityShouldBeZeroOrOneForAgent(TypeElement element) {
+    List<String> errors = new ArrayList<>();
+
+    for (Element enclosed : element.getEnclosedElements()) {
+      if (enclosed instanceof ExecutableElement method) {
+        String returnTypeName = method.getReturnType().toString();
+        // Check for Agent.Effect or Agent.StreamEffect
+        if (returnTypeName.startsWith("akka.javasdk.agent.Agent.Effect")
+            || returnTypeName.startsWith("akka.javasdk.agent.Agent.StreamEffect")) {
+          int paramCount = method.getParameters().size();
+          if (paramCount > 1) {
+            errors.add(
+                errorMessage(
+                    element,
+                    "Method ["
+                        + method.getSimpleName()
+                        + "] must have zero or one argument. If you need to pass more arguments,"
+                        + " wrap them in a class."));
+          }
+        }
+      }
+    }
+
+    return Validation.of(errors);
   }
 
   /**
