@@ -349,19 +349,19 @@ class FunctionToolsSpec extends AnyWordSpec with Matchers {
 
       val descMethodVoid = descriptors.find(_.name == "ESEntityAsTool_method").get
       descMethodVoid.description shouldBe "a method without arg"
-      descMethodVoid.schema.required.contains("entityId") shouldBe true
+      descMethodVoid.schema.required.contains("uniqueId") shouldBe true
       descMethodVoid.schema.required.size shouldBe 1
 
       val descMethodString = descriptors.find(_.name == "ESEntityAsTool_method_String").get
       descMethodString.description shouldBe "a method with 1 String arg"
 
-      descMethodString.schema.required.contains("entityId") shouldBe true
+      descMethodString.schema.required.contains("uniqueId") shouldBe true
       descMethodString.schema.required.contains("inputString") shouldBe true
 
       val descMethodInt = descriptors.find(_.name == "ESEntityAsTool_method_int").get
       descMethodInt.description shouldBe "a method with 1 Int arg"
 
-      descMethodInt.schema.required.contains("entityId") shouldBe true
+      descMethodInt.schema.required.contains("uniqueId") shouldBe true
       descMethodInt.schema.required.contains("inputInt") shouldBe true
 
     }
@@ -373,19 +373,19 @@ class FunctionToolsSpec extends AnyWordSpec with Matchers {
 
       val descMethodVoid = descriptors.find(_.name == "KVEntityAsTool_method").get
       descMethodVoid.description shouldBe "a method without arg"
-      descMethodVoid.schema.required.contains("entityId") shouldBe true
+      descMethodVoid.schema.required.contains("uniqueId") shouldBe true
       descMethodVoid.schema.required.size shouldBe 1
 
       val descMethodString = descriptors.find(_.name == "KVEntityAsTool_method_String").get
       descMethodString.description shouldBe "a method with 1 String arg"
 
-      descMethodString.schema.required.contains("entityId") shouldBe true
+      descMethodString.schema.required.contains("uniqueId") shouldBe true
       descMethodString.schema.required.contains("inputString") shouldBe true
 
       val descMethodInt = descriptors.find(_.name == "KVEntityAsTool_method_int").get
       descMethodInt.description shouldBe "a method with 1 Int arg"
 
-      descMethodInt.schema.required.contains("entityId") shouldBe true
+      descMethodInt.schema.required.contains("uniqueId") shouldBe true
       descMethodInt.schema.required.contains("inputInt") shouldBe true
 
     }
@@ -398,19 +398,19 @@ class FunctionToolsSpec extends AnyWordSpec with Matchers {
       val descMethodVoid = descriptors.find(_.name == "WorkflowAsTool_method").get
       descMethodVoid.description shouldBe "a method without arg"
 
-      descMethodVoid.schema.required.contains("entityId") shouldBe true
+      descMethodVoid.schema.required.contains("uniqueId") shouldBe true
       descMethodVoid.schema.required.size shouldBe 1
 
       val descMethodString = descriptors.find(_.name == "WorkflowAsTool_method_String").get
       descMethodString.description shouldBe "a method with 1 String arg"
 
-      descMethodString.schema.required.contains("entityId") shouldBe true
+      descMethodString.schema.required.contains("uniqueId") shouldBe true
       descMethodString.schema.required.contains("inputString") shouldBe true
 
       val descMethodInt = descriptors.find(_.name == "WorkflowAsTool_method_int").get
       descMethodInt.description shouldBe "a method with 1 Int arg"
 
-      descMethodInt.schema.required.contains("entityId") shouldBe true
+      descMethodInt.schema.required.contains("uniqueId") shouldBe true
       descMethodInt.schema.required.contains("inputInt") shouldBe true
 
     }

@@ -69,8 +69,7 @@ object FunctionTools {
       method.getReturnType
   }
 
-  private val entityIdField = "entityId"
-  private val workflowIdField = "entityId"
+  private val uniqueId = "uniqueId"
 
   /**
    * INTERNAL API
@@ -80,13 +79,10 @@ object FunctionTools {
       extends FunctionToolInvoker {
 
     private val cls = method.getDeclaringClass
-
-    private val isEntity = Reflect.isEntity(cls)
     private val hasParams: Boolean = method.getParameters.nonEmpty
 
     override def paramNames: Array[String] = {
-      val id = if (isEntity) entityIdField else workflowIdField
-      id +: method.getParameters.map(_.getName)
+      uniqueId +: method.getParameters.map(_.getName)
     }
 
     override def types: Array[Type] =
@@ -204,10 +200,8 @@ object FunctionTools {
       val toolAnno = method.getAnnotation(classOf[FunctionTool])
 
       val objSchema =
-        if (Reflect.isEntity(cls)) {
-          JsonSchema.jsonSchemaWitId(method, entityIdField, "the unique entity identifier")
-        } else if (Reflect.isWorkflow(cls)) {
-          JsonSchema.jsonSchemaWitId(method, workflowIdField, "the unique workflow identifier")
+        if (Reflect.isEntity(cls) || Reflect.isWorkflow(cls)) {
+          JsonSchema.jsonSchemaWitId(method, uniqueId, "the unique identifier")
         } else {
           JsonSchema.jsonSchemaFor(method)
         }
