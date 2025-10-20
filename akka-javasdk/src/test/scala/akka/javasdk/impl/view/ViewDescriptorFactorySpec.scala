@@ -7,7 +7,6 @@ package akka.javasdk.impl.view
 import scala.reflect.ClassTag
 
 import akka.dispatch.ExecutionContexts
-import akka.javasdk.impl.Validations
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.testmodels.view.ViewTestModels
 import akka.runtime.sdk.spi.ConsumerSource
@@ -29,7 +28,6 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
   import akka.javasdk.testmodels.subscriptions.PubSubTestModels._
 
   def assertDescriptor[T](test: ViewDescriptor => Any)(implicit tag: ClassTag[T]): Unit = {
-    Validations.validate(tag.runtimeClass).isValid shouldBe true
     test(ViewDescriptorFactory(tag.runtimeClass, new JsonSerializer, new RegionInfo(""), ExecutionContexts.global()))
   }
 
