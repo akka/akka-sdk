@@ -129,7 +129,7 @@ object FunctionTools {
     override def invoke(args: Array[Any]): Any = {
       try {
         val client = componentClient.forView().asInstanceOf[ViewClientImpl]
-        if (hasParams) client.methodRefOneArg(method).invoke(args(1))
+        if (hasParams) client.methodRefOneArg(method).invoke(args(0))
         else client.methodRefNoArg(method).invoke()
       } catch unwrapInvocationTargetException()
     }
