@@ -405,7 +405,30 @@ public abstract class EventSourcedEntity<S, E> {
        */
       OnSuccessBuilder<S> persistAllWithMetadata(List<EventWithMetadata<? extends E>> events);
 
-      /** Change the replication filter without persisting any events. */
+      /**
+       * Change the replication filter for this entity without persisting any events.
+       *
+       * <p>Events are by default replicated to all regions that have been enabled for the service.
+       * This method allows you to control which regions participate in the replication for this
+       * specific entity instance. This is useful for regulatory reasons or as cost optimization.
+       *
+       * <p>The replication filter can only be updated from the primary region of the entity, or the
+       * entity will become the primary if using the request-region primary selection strategy. The
+       * filter is durable for the specific entity instance and can be changed without deploying a
+       * new version.
+       *
+       * <p>The region where the update is made (the self region) is automatically included in the
+       * replication filter. The changes are additive, meaning that if you first update the filter
+       * to include one region and then later make another update to include a different region from
+       * the same entity, both regions are included.
+       *
+       * <p>After enabling replication filter with the {@code @EnableReplicationFilter} annotation,
+       * the entity will still replicate to all regions until the regions are defined with this
+       * method.
+       *
+       * @param filter the replication filter defining which regions to include or exclude
+       * @return an effect builder for chaining additional operations
+       */
       OnSuccessBuilder<S> updateReplicationFilter(ReplicationFilter filter);
 
       /**
@@ -476,7 +499,33 @@ public abstract class EventSourcedEntity<S, E> {
        */
       <T> Effect<T> thenReply(Function<S, T> replyMessage, Metadata metadata);
 
-      /** Change the replication filter combined with for example {@code persist} event. */
+      /**
+       * Change the replication filter for this entity, combined with persisting events.
+       *
+       * <p>Events are by default replicated to all regions that have been enabled for the service.
+       * This method allows you to control which regions participate in the replication for this
+       * specific entity instance. This is useful for regulatory reasons or as cost optimization.
+       *
+       * <p>This effect can be combined with persisting events. For example, you can persist an
+       * event and then update the replication filter in the same command handler.
+       *
+       * <p>The replication filter can only be updated from the primary region of the entity, or the
+       * entity will become the primary if using the request-region primary selection strategy. The
+       * filter is durable for the specific entity instance and can be changed without deploying a
+       * new version.
+       *
+       * <p>The region where the update is made (the self region) is automatically included in the
+       * replication filter. The changes are additive, meaning that if you first update the filter
+       * to include one region and then later make another update to include a different region from
+       * the same entity, both regions are included.
+       *
+       * <p>After enabling replication filter with the {@code @EnableReplicationFilter} annotation,
+       * the entity will still replicate to all regions until the regions are defined with this
+       * method.
+       *
+       * @param filter the replication filter defining which regions to include or exclude
+       * @return an effect builder for chaining additional operations
+       */
       OnSuccessBuilder<S> updateReplicationFilter(ReplicationFilter filter);
     }
   }
