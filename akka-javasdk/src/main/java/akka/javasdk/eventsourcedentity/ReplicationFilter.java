@@ -4,7 +4,7 @@
 
 package akka.javasdk.eventsourcedentity;
 
-import akka.javasdk.impl.eventsourcedentity.ReplicationFilterImpl;
+import akka.javasdk.impl.effect.ReplicationFilterImpl;
 import java.util.Set;
 
 public interface ReplicationFilter {

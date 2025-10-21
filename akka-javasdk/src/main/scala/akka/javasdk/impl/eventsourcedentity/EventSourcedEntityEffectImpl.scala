@@ -22,6 +22,7 @@ import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
 import akka.javasdk.impl.effect.SecondaryEffectImpl
 import akka.javasdk.eventsourcedentity.ReplicationFilter
+import akka.javasdk.impl.effect.ReplicationFilterImpl
 
 /**
  * INTERNAL API
