@@ -7,6 +7,7 @@ package akkajavasdk.components.keyvalueentities.user;
 import akka.javasdk.CommandException;
 import akka.javasdk.Metadata;
 import akka.javasdk.annotations.Component;
+import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akkajavasdk.Ok;
 import akkajavasdk.components.MyException;
@@ -20,7 +21,7 @@ public class UserEntity extends KeyValueEntity<User> {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
 
-  public record CreatedUser(String name, String email) {}
+  public record CreateUser(String name, String email) {}
   ;
 
   public record UpdateEmail(String newEmail) {}
@@ -32,30 +33,32 @@ public class UserEntity extends KeyValueEntity<User> {
   public record Restart() {}
   ;
 
+  @FunctionTool(description = "Get the current user information")
   public ReadOnlyEffect<User> getUser() {
     if (currentState() == null) return effects().error("User not found");
 
     return effects().reply(currentState());
   }
 
-  public Effect<Ok> createOrUpdateUser(CreatedUser createdUser) {
+  public Effect<Ok> createOrUpdateUser(CreateUser createUser) {
     var metadata = commandContext().metadata();
 
     if (metadata.has(META_KEY)) {
       var stateMetadata = Metadata.EMPTY.add(META_KEY, metadata.getLast(META_KEY).get());
       return effects()
-          .updateStateWithMetadata(new User(createdUser.name, createdUser.email), stateMetadata)
+          .updateStateWithMetadata(new User(createUser.name, createUser.email), stateMetadata)
           .thenReply(Ok.instance);
     } else {
       return effects()
-          .updateState(new User(createdUser.name, createdUser.email))
+          .updateState(new User(createUser.name, createUser.email))
           .thenReply(Ok.instance);
     }
   }
 
-  public Effect<Ok> createUser(CreatedUser createdUser) {
+  @FunctionTool(description = "Create a new user with name and email")
+  public Effect<Ok> createUser(CreateUser createUser) {
     return effects()
-        .updateState(new User(createdUser.name, createdUser.email))
+        .updateState(new User(createUser.name, createUser.email))
         .thenReply(Ok.instance);
   }
 

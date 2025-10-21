@@ -25,7 +25,7 @@ import akka.annotation.DoNotInherit;
  *       result as the type parameter of {@code QueryEffect&lt;T&gt;}
  * </ol>
  *
- * <p>The query strings and table field types defines which fields should be indexed and how the
+ * <p>The query strings and table field types define which fields should be indexed and how the
  * query will be executed.
  *
  * <p>The query is executed by the runtime when a request is made to the View.

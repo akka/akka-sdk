@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.client
 
+import java.lang.reflect.Method
+
 import scala.concurrent.ExecutionContext
 import scala.jdk.FutureConverters.FutureOps
 import scala.util.Failure
@@ -55,14 +57,19 @@ private[impl] sealed abstract class EntityClientImpl(
 
   // commands for methods that take a state as a first parameter and then the command
   protected def createMethodRef2[A1, R](lambda: akka.japi.function.Function2[_, _, _]): ComponentMethodRef1[A1, R] =
-    createMethodRefForEitherArity(lambda)
+    methodRefOneArg(MethodRefResolver.resolveMethodRef(lambda))
 
   protected def createMethodRef[R](lambda: akka.japi.function.Function[_, _]): ComponentMethodRef[R] =
-    createMethodRefForEitherArity[Nothing, R](lambda)
+    methodRefNoArg(MethodRefResolver.resolveMethodRef(lambda))
 
-  private def createMethodRefForEitherArity[A1, R](lambda: AnyRef): ComponentMethodRefImpl[A1, R] = {
+  def methodRefNoArg[R](method: Method): ComponentMethodRef[R] =
+    createMethodRefForEitherArity[Nothing, R](method)
+
+  def methodRefOneArg[A1, R](method: Method): ComponentMethodRef1[A1, R] =
+    createMethodRefForEitherArity(method)
+
+  private def createMethodRefForEitherArity[A1, R](method: Method): ComponentMethodRefImpl[A1, R] = {
     import MetadataImpl.toSpi
-    val method = MethodRefResolver.resolveMethodRef(lambda)
     val declaringClass = method.getDeclaringClass
     if (!expectedComponentSuperclass.isAssignableFrom(declaringClass)) {
       throw new IllegalArgumentException(s"$declaringClass is not a subclass of $expectedComponentSuperclass")
@@ -121,6 +128,7 @@ private[impl] sealed abstract class EntityClientImpl(
       }).asInstanceOf[ComponentMethodRefImpl[A1, R]]
 
   }
+
 }
 
 /**

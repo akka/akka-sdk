@@ -391,7 +391,7 @@ public class SdkIntegrationTest extends TestKitSupport {
             .forKeyValueEntity(user.id())
             .method(UserEntity::createOrUpdateUser)
             .withMetadata(Metadata.EMPTY.add(UserEntity.META_KEY, "test-meta"))
-            .invokeAsync(new UserEntity.CreatedUser(user.name(), user.email())));
+            .invokeAsync(new UserEntity.CreateUser(user.name(), user.email())));
 
     Awaitility.await()
         .ignoreExceptions()
@@ -450,7 +450,7 @@ public class SdkIntegrationTest extends TestKitSupport {
             componentClient
                 .forKeyValueEntity(user.id())
                 .method(UserEntity::createOrUpdateUser)
-                .invokeAsync(new UserEntity.CreatedUser(user.name(), user.email())));
+                .invokeAsync(new UserEntity.CreateUser(user.name(), user.email())));
     assertThat(userCreation).isEqualTo(Ok.instance);
   }
 
