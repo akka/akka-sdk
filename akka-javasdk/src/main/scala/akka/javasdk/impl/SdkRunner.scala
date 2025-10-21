@@ -47,7 +47,6 @@ import akka.javasdk.agent.evaluator.SummarizationEvaluator
 import akka.javasdk.agent.evaluator.ToxicityEvaluator
 import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.ComponentId
-import akka.javasdk.annotations.EnableReplicationFilter
 import akka.javasdk.annotations.GrpcEndpoint
 import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
@@ -589,7 +588,7 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            replicationFilterEnabled = clz.hasAnnotation[EnableReplicationFilter])
+            replicationFilterEnabled = Reflect.isReplicationFilterEnabled(clz))
 
       case clz if Reflect.isKeyValueEntity(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -630,7 +629,7 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            replicationFilterEnabled = clz.hasAnnotation[EnableReplicationFilter])
+            replicationFilterEnabled = Reflect.isReplicationFilterEnabled(clz))
 
       case clz if Reflect.isWorkflow(clz) =>
         val componentId = Reflect.readComponentId(clz)

@@ -13,7 +13,6 @@ import akka.annotation.InternalApi
 import akka.javasdk.CommandException
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
-import akka.javasdk.annotations.EnableReplicationFilter
 import akka.javasdk.eventsourcedentity.CommandContext
 import akka.javasdk.eventsourcedentity.EventContext
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
@@ -29,6 +28,7 @@ import akka.javasdk.impl.effect.NoSecondaryEffectImpl
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.EmitEvents
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.EmitEventsWithMetadata
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.NoPrimaryEffect
+import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
@@ -265,8 +265,6 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
   override def stateFromBytes(pb: BytesPayload): SpiEventSourcedEntity.State =
     serializer.fromBytes(entityStateType, pb).asInstanceOf[SpiEventSourcedEntity.State]
 
-  private def isReplicationFilterEnabled: Boolean = {
-    import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
-    entity.getClass.hasAnnotation[EnableReplicationFilter]
-  }
+  private def isReplicationFilterEnabled: Boolean =
+    Reflect.isReplicationFilterEnabled(entity.getClass)
 }
