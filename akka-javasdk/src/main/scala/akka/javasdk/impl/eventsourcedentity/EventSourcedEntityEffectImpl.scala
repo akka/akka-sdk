@@ -21,6 +21,8 @@ import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
 import akka.javasdk.impl.effect.SecondaryEffectImpl
+import akka.javasdk.eventsourcedentity.ReplicationFilter
+import akka.javasdk.impl.effect.ReplicationFilterImpl
 
 /**
  * INTERNAL API
@@ -54,6 +56,8 @@ private[javasdk] class EventSourcedEntityEffectImpl[S, E]
 
   private var _functionSecondaryEffect: Function[S, SecondaryEffectImpl] = _ => NoSecondaryEffectImpl
 
+  private var _replicationFilter: ReplicationFilterImpl = ReplicationFilterImpl.empty
+
   def primaryEffect: PrimaryEffectImpl = _primaryEffect
 
   def secondaryEffect(state: S): SecondaryEffectImpl =
@@ -61,6 +65,8 @@ private[javasdk] class EventSourcedEntityEffectImpl[S, E]
       case NoSecondaryEffectImpl => _secondaryEffect
       case newSecondary          => newSecondary
     }
+
+  def replFilter: ReplicationFilterImpl = _replicationFilter
 
   override def persist(event: E): EventSourcedEntityEffectImpl[S, E] =
     persistAll(Vector(event))
@@ -126,4 +132,8 @@ private[javasdk] class EventSourcedEntityEffectImpl[S, E]
     this.asInstanceOf[EventSourcedEntityEffectImpl[T, E]]
   }
 
+  override def updateReplicationFilter(filter: ReplicationFilter): OnSuccessBuilder[S] = {
+    _replicationFilter = filter.asInstanceOf[ReplicationFilterImpl]
+    this
+  }
 }
