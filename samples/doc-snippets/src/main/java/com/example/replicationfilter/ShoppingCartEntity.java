@@ -19,10 +19,11 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
   public Effect<Done> createCart(String userId) {
     var selfRegion = commandContext().selfRegion();
     return effects()
-        .persist(new CartCreated(commandContext().entityId(), userId))
-        .updateReplicationFilter(ReplicationFilter.includeRegion(selfRegion))
-        .thenReply(__ -> Done.getInstance());
+      .persist(new CartCreated(commandContext().entityId(), userId))
+      .updateReplicationFilter(ReplicationFilter.includeRegion(selfRegion))
+      .thenReply(__ -> Done.getInstance());
   }
+
   // end::replication-filter-event[]
   // tag::replication-filter[]
 
