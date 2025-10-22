@@ -90,8 +90,10 @@ trait CompilationTestSupport extends Matchers {
    * Asserts that compilation succeeded with no errors.
    */
   protected def assertCompilationSuccess(result: CompilationResult): Unit = {
-    result.success shouldBe true
-    result.diagnostics.filter(_.getKind == Diagnostic.Kind.ERROR) shouldBe empty
+    withClue(result.diagnostics) {
+      result.success shouldBe true
+      result.diagnostics.filter(_.getKind == Diagnostic.Kind.ERROR) shouldBe empty
+    }
   }
 
   /**

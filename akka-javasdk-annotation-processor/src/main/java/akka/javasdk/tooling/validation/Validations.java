@@ -5,6 +5,7 @@
 package akka.javasdk.tooling.validation;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import javax.lang.model.element.AnnotationMirror;
@@ -115,10 +116,9 @@ public class Validations {
   public static Validation validateTimedAction(TypeElement element) {
 
     if (isTimedAction(element)) {
-      return hasEffectMethod(element, "akka.javasdk.timedaction.TimedAction.Effect")
-          .combine(
-              commandHandlerArityShouldBeZeroOrOne(
-                  element, "akka.javasdk.timedaction.TimedAction.Effect"));
+      var effectType = "akka.javasdk.timedaction.TimedAction.Effect";
+      return hasEffectMethod(element, effectType)
+          .combine(commandHandlerArityShouldBeZeroOrOne(element, effectType));
     }
 
     return Validation.Valid.instance();
@@ -163,9 +163,14 @@ public class Validations {
   public static Validation validateAgent(TypeElement element) {
 
     if (isAgent(element)) {
+
+      var effectTypes =
+          new String[] {"akka.javasdk.agent.Agent.Effect", "akka.javasdk.agent.Agent.StreamEffect"};
+
       return mustHaveValidAgentDescription(element)
+          .combine(hasEffectMethod(element, effectTypes))
           .combine(agentCommandHandlersMustBeOne(element))
-          .combine(commandHandlerArityShouldBeZeroOrOneForAgent(element));
+          .combine(commandHandlerArityShouldBeZeroOrOne(element, effectTypes));
     }
 
     return Validation.Valid.instance();
@@ -265,53 +270,35 @@ public class Validations {
   }
 
   /**
-   * Validates that a component has at least one method returning the specified effect type.
+   * Validates that a component has at least one method returning the one of specified effect types.
    *
    * @param element the component class to validate
-   * @param effectTypeName the fully qualified effect type name
+   * @param effectTypeNames the fully qualified effect type names
    * @return a Validation result indicating success or failure
    */
-  private static Validation hasEffectMethod(TypeElement element, String effectTypeName) {
-    // Extract simple type name for matching (e.g., "Effect" from "...EventSourcedEntity.Effect")
-    String simpleTypeName = effectTypeName.substring(effectTypeName.lastIndexOf('.') + 1);
+  private static Validation hasEffectMethod(TypeElement element, String... effectTypeNames) {
 
     for (Element enclosed : element.getEnclosedElements()) {
       if (enclosed instanceof ExecutableElement method) {
         String returnTypeName = method.getReturnType().toString();
-        // Match either fully qualified name or simple name
-        if (returnTypeName.equals(effectTypeName)
-            || returnTypeName.equals(simpleTypeName)
-            || returnTypeName.startsWith(effectTypeName)) {
+        if (Arrays.stream(effectTypeNames).anyMatch(returnTypeName::startsWith)) {
           return Validation.Valid.instance();
         }
       }
     }
 
+    var names = String.join(", ", effectTypeNames);
     return Validation.of(
-        "No method returning " + effectTypeName + " found in " + element.getQualifiedName());
+        "No method returning " + names + " found in " + element.getQualifiedName());
   }
 
-  /**
-   * Validates that command handlers have zero or one parameter.
-   *
-   * @param element the component class to validate
-   * @param effectTypeName the fully qualified effect type name to identify command handlers
-   * @return a Validation result indicating success or failure
-   */
   private static Validation commandHandlerArityShouldBeZeroOrOne(
-      TypeElement element, String effectTypeName) {
-    // Extract simple type name for matching (e.g., "Effect" from "...EventSourcedEntity.Effect")
-    String simpleTypeName = effectTypeName.substring(effectTypeName.lastIndexOf('.') + 1);
-
+      TypeElement element, String... effectTypeNames) {
     List<String> errors = new ArrayList<>();
-
     for (Element enclosed : element.getEnclosedElements()) {
       if (enclosed instanceof ExecutableElement method) {
         String returnTypeName = method.getReturnType().toString();
-        // Match either fully qualified name or simple name
-        if (returnTypeName.equals(effectTypeName)
-            || returnTypeName.equals(simpleTypeName)
-            || returnTypeName.startsWith(effectTypeName)) {
+        if (Arrays.stream(effectTypeNames).anyMatch(returnTypeName::startsWith)) {
           int paramCount = method.getParameters().size();
           if (paramCount > 1) {
             errors.add(
@@ -457,38 +444,6 @@ public class Validations {
                   + count
                   + " command handlers. There must be one public method returning Agent.Effect."));
     }
-  }
-
-  /**
-   * Validates that Agent command handlers have zero or one parameter.
-   *
-   * @param element the component class to validate
-   * @return a Validation result indicating success or failure
-   */
-  private static Validation commandHandlerArityShouldBeZeroOrOneForAgent(TypeElement element) {
-    List<String> errors = new ArrayList<>();
-
-    for (Element enclosed : element.getEnclosedElements()) {
-      if (enclosed instanceof ExecutableElement method) {
-        String returnTypeName = method.getReturnType().toString();
-        // Check for Agent.Effect or Agent.StreamEffect
-        if (returnTypeName.startsWith("akka.javasdk.agent.Agent.Effect")
-            || returnTypeName.startsWith("akka.javasdk.agent.Agent.StreamEffect")) {
-          int paramCount = method.getParameters().size();
-          if (paramCount > 1) {
-            errors.add(
-                errorMessage(
-                    element,
-                    "Method ["
-                        + method.getSimpleName()
-                        + "] must have zero or one argument. If you need to pass more arguments,"
-                        + " wrap them in a class."));
-          }
-        }
-      }
-    }
-
-    return Validation.of(errors);
   }
 
   // ==================== EventSourcedEntity Validation Methods ====================
