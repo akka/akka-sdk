@@ -31,7 +31,7 @@ public class WeatherAgent extends Agent {
     this.httpClient = httpClientProvider.httpClientFor("https://api.weatherapi.com");
   }
 
-  public Effect<String> query(String message) {
+  public Effect<String> query(String message, String anotherMessage) {
     return effects().systemMessage(SYSTEM_MESSAGE).userMessage(message).thenReply();
   }
 

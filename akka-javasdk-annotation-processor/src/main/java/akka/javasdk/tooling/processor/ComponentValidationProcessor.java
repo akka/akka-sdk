@@ -7,7 +7,6 @@ package akka.javasdk.tooling.processor;
 import akka.javasdk.tooling.validation.Validation;
 import akka.javasdk.tooling.validation.Validations;
 import java.util.Set;
-import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
@@ -30,6 +29,7 @@ public class ComponentValidationProcessor extends BaseAkkaProcessor {
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
 
+    boolean hasErrors = false;
     info("Validating Akka components...");
     for (TypeElement annotation : annotations) {
       var annotatedElements = roundEnv.getElementsAnnotatedWith(annotation);
@@ -39,15 +39,20 @@ public class ComponentValidationProcessor extends BaseAkkaProcessor {
         Validation validation = Validations.validateComponent(element);
 
         if (validation.isInvalid() && validation instanceof Validation.Invalid invalid) {
+          debug("Component " + element.getSimpleName() + " is invalid");
+          hasErrors = true;
           // Report each validation error as a compile-time error
           for (String message : invalid.messages()) {
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message, element);
           }
+        } else {
+          debug("Component " + element.getSimpleName() + " is valid");
         }
       }
     }
 
-    return false; // Allow other processors to process these annotations
+    // if false, it will allow other processors to process these annotations
+    // otherwise we can shortcut it because build will fail
+    return hasErrors;
   }
-
 }

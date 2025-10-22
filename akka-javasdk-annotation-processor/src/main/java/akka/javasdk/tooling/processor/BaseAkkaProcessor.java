@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
+ */
+
 package akka.javasdk.tooling.processor;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -10,7 +14,6 @@ public abstract class BaseAkkaProcessor extends AbstractProcessor {
     // can be passed to compiler: `mvn compile -Dakka-component-processor.debug=true`
     debugEnabled = Boolean.getBoolean("akka-component-processor.debug");
   }
-
 
   protected void debug(Object msg) {
     if (debugEnabled)
