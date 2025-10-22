@@ -22,24 +22,28 @@ class ViewValidationSpec extends AnyWordSpec with Matchers with ValidationSuppor
         .expectInvalid("NotPublicView is not marked with `public` modifier. Components must be public.")
     }
 
+    // TODO(compile-time-validation): remove after compile-time validation is enabled
     "return Invalid for View without any Table updater" in {
       Validations
         .validate(classOf[ViewWithNoTableUpdater])
         .expectInvalid("A view must contain at least one public static TableUpdater subclass.")
     }
 
+    // TODO(compile-time-validation): remove after compile-time validation is enabled
     "return Invalid for View with an invalid row type" in {
       Validations
         .validate(classOf[ViewWithInvalidRowType])
         .expectInvalid("View row type java.lang.String is not supported")
     }
 
+    // TODO(compile-time-validation): remove after compile-time validation is enabled
     "return Invalid for View with an invalid query result type" in {
       Validations
         .validate(classOf[WrongQueryEffectReturnType])
         .expectInvalid("View query result type java.lang.String is not supported")
     }
 
+    // TODO(compile-time-validation): remove after compile-time validation is enabled
     "return Invalid for View with Table annotation" in {
       Validations
         .validate(classOf[ViewWithTableName])
@@ -58,6 +62,7 @@ class ViewValidationSpec extends AnyWordSpec with Matchers with ValidationSuppor
         .expectInvalid("Subscription method must have exactly one parameter, unless it's marked with @DeleteHandler.")
     }
 
+    // TODO(compile-time-validation): remove after compile-time validation is enabled
     "return Invalid for View annotated with @Table" in {
       Validations
         .validate(classOf[ViewWithoutComponentAnnotation])
@@ -70,6 +75,7 @@ class ViewValidationSpec extends AnyWordSpec with Matchers with ValidationSuppor
         .expectInvalid("@Component id is empty, must be a non-empty string.")
     }
 
+    // TODO(compile-time-validation): remove after compile-time validation is enabled
     "return Invalid for View with a query with more than 1 param" in {
       Validations
         .validate(classOf[ViewQueryWithTooManyArguments])
@@ -77,6 +83,7 @@ class ViewValidationSpec extends AnyWordSpec with Matchers with ValidationSuppor
           "Method [getUser] must have zero or one argument. If you need to pass more arguments, wrap them in a class.")
     }
 
+    // TODO(compile-time-validation): remove after compile-time validation is enabled
     "return Invalid for method level handle deletes without class level subscription" in {
       Validations
         .validate(classOf[ViewWithoutSubscription])
@@ -95,12 +102,14 @@ class ViewValidationSpec extends AnyWordSpec with Matchers with ValidationSuppor
         .expectInvalid("Method annotated with '@DeleteHandler' must not have parameters.")
     }
 
+    // TODO(compile-time-validation): remove after compile-time validation is enabled
     "return Invalid for View with no query method" in {
       Validations
         .validate(classOf[ViewWithNoQuery])
         .expectInvalid("A view must contain at least one public static TableUpdater subclass")
     }
 
+    // TODO(compile-time-validation): remove after compile-time validation is enabled
     "return Invalid for stream updates not returning View.QueryStreamEffect<T>" in {
       Validations
         .validate(classOf[ViewTestModels.ViewWithIncorrectQueries])
@@ -121,12 +130,14 @@ class ViewValidationSpec extends AnyWordSpec with Matchers with ValidationSuppor
           "missing an event handler for 'akka.javasdk.testmodels.eventsourcedentity.EmployeeEvent$EmployeeEmailUpdated'")
     }
 
+    // TODO(compile-time-validation): remove after compile-time validation is enabled
     "return Invalid for multiple TableUpdater without Table annotation" in {
       Validations
         .validate(classOf[MultiTableViewValidation])
         .expectInvalid("When there are multiple table updater, each must be annotated with @Table.")
     }
 
+    // TODO(compile-time-validation): remove after compile-time validation is enabled
     "return Invalid for TableUpdater with empty Table name" in {
       Validations
         .validate(classOf[MultiTableViewValidation])
@@ -139,6 +150,7 @@ class ViewValidationSpec extends AnyWordSpec with Matchers with ValidationSuppor
         .expectInvalid("must not contain the pipe character")
     }
 
+    // TODO(compile-time-validation): remove after compile-time validation is enabled
     "return Invalid for multi table view without query method" in {
       Validations
         .validate(classOf[MultiTableViewWithoutQuery])

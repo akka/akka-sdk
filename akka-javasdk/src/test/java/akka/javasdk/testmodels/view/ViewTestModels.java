@@ -110,6 +110,7 @@ public class ViewTestModels {
     }
   }
 
+  // TODO(compile-time-validation): remove after compile-time validation is enabled
   @Component(id = "view_query_with_too_many_arguments")
   public static class ViewQueryWithTooManyArguments extends View {
 
@@ -146,6 +147,7 @@ public class ViewTestModels {
     }
   }
 
+  // TODO(compile-time-validation): remove after compile-time validation is enabled
   @Component(id = "users_view")
   public static class ViewWithNoTableUpdater extends View {
 
@@ -155,6 +157,7 @@ public class ViewTestModels {
     }
   }
 
+  // TODO(compile-time-validation): remove after compile-time validation is enabled
   @Component(id = "users_view")
   @Table("users")
   public static class ViewWithTableName extends View {
@@ -180,6 +183,7 @@ public class ViewTestModels {
     }
   }
 
+  // TODO(compile-time-validation): remove after compile-time validation is enabled
   @Component(id = "users_view")
   public static class WrongQueryEffectReturnType extends View {
 
@@ -233,6 +237,7 @@ public class ViewTestModels {
     }
   }
 
+  // TODO(compile-time-validation): remove after compile-time validation is enabled
   @Component(id = "users_view")
   public static class ViewWithInvalidRowType extends View {
 
@@ -302,6 +307,7 @@ public class ViewTestModels {
     }
   }
 
+  // TODO(compile-time-validation): remove after compile-time validation is enabled
   @Component(id = "users_view")
   public static class ViewWithoutSubscription extends View {
 
@@ -362,6 +368,7 @@ public class ViewTestModels {
     }
   }
 
+  // TODO(compile-time-validation): remove after compile-time validation is enabled
   @Component(id = "users_view")
   public static class ViewWithNoQuery extends View {}
 
@@ -382,6 +389,7 @@ public class ViewTestModels {
     }
   }
 
+  // TODO(compile-time-validation): remove after compile-time validation is enabled
   @Component(id = "users_view")
   public static class ViewWithIncorrectQueries extends View {
 
@@ -544,6 +552,7 @@ public class ViewTestModels {
     }
   }
 
+  // TODO(compile-time-validation): remove after compile-time validation is enabled
   @Component(id = "users_view")
   public static class MultiTableViewValidation extends View {
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -563,6 +572,7 @@ public class ViewTestModels {
     }
   }
 
+  // TODO(compile-time-validation): remove after compile-time validation is enabled
   @Component(id = "multi-table-view-without-query")
   public static class MultiTableViewWithoutQuery extends View {
     @Table("users")

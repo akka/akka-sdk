@@ -37,7 +37,8 @@ public class Validations {
         .combine(validateAgent(element))
         .combine(validateEventSourcedEntity(element))
         .combine(validateKeyValueEntity(element))
-        .combine(validateWorkflow(element));
+        .combine(validateWorkflow(element))
+        .combine(validateView(element));
   }
 
   /**
@@ -241,6 +242,49 @@ public class Validations {
   }
 
   /**
+   * Validates a View component. Checks for: - View must not have @Table annotation - Must have at
+   * least one TableUpdater nested class - Must have at least one @Query method - Query methods must
+   * return correct types - And many more View-specific rules
+   *
+   * @param element the component class to validate
+   * @return a Validation result indicating success or failure
+   */
+  public static Validation validateView(TypeElement element) {
+
+    if (isView(element)) {
+      // Get all TableUpdater nested classes
+      List<TypeElement> tableUpdaters =
+          element.getEnclosedElements().stream()
+              .filter(enclosed -> enclosed instanceof TypeElement)
+              .map(enclosed -> (TypeElement) enclosed)
+              .filter(Validations::isViewTableUpdater)
+              .toList();
+
+      // Validate View-level rules
+      Validation viewValidation =
+          viewMustNotHaveTableAnnotation(element)
+              .combine(viewMustHaveAtLeastOneViewTableUpdater(element))
+              .combine(viewMustHaveAtLeastOneQueryMethod(element))
+              .combine(validateQueryResultTypes(element))
+              .combine(viewQueriesWithStreamUpdatesMustBeStreaming(element))
+              .combine(viewQueryMethodArityShouldBeZeroOrOne(element))
+              .combine(viewMultipleTableUpdatersMustHaveTableAnnotations(element));
+
+      // Validate each TableUpdater
+      for (TypeElement updater : tableUpdaters) {
+        viewValidation =
+            viewValidation
+                .combine(validateViewTableUpdater(updater))
+                .combine(viewTableAnnotationMustNotBeEmptyString(updater));
+      }
+
+      return viewValidation;
+    }
+
+    return Validation.Valid.instance();
+  }
+
+  /**
    * Checks if a component extends TimedAction.
    *
    * @param element the component class to check
@@ -298,6 +342,16 @@ public class Validations {
    */
   private static boolean isWorkflow(TypeElement element) {
     return extendsClass(element, "akka.javasdk.workflow.Workflow");
+  }
+
+  /**
+   * Checks if a component extends View.
+   *
+   * @param element the component class to check
+   * @return true if the component extends View, false otherwise
+   */
+  private static boolean isView(TypeElement element) {
+    return extendsClass(element, "akka.javasdk.view.View");
   }
 
   /**
@@ -589,6 +643,338 @@ public class Validations {
     }
 
     return Validation.of(errors);
+  }
+
+  // ==================== View Validation Methods ====================
+
+  /**
+   * Validates that a View itself is not annotated with @Table.
+   *
+   * @param element the View class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation viewMustNotHaveTableAnnotation(TypeElement element) {
+    AnnotationMirror tableAnn = findAnnotation(element, "akka.javasdk.annotations.Table");
+    if (tableAnn != null) {
+      return Validation.of(
+          errorMessage(element, "A View itself should not be annotated with @Table."));
+    }
+    return Validation.Valid.instance();
+  }
+
+  /**
+   * Validates that a View has at least one TableUpdater nested class.
+   *
+   * @param element the View class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation viewMustHaveAtLeastOneViewTableUpdater(TypeElement element) {
+    // Get all enclosed elements (nested classes)
+    long tableUpdaterCount =
+        element.getEnclosedElements().stream()
+            .filter(enclosed -> enclosed instanceof TypeElement)
+            .map(enclosed -> (TypeElement) enclosed)
+            .filter(Validations::isViewTableUpdater)
+            .count();
+
+    if (tableUpdaterCount < 1) {
+      return Validation.of(
+          errorMessage(
+              element, "A view must contain at least one public static TableUpdater subclass."));
+    }
+
+    return Validation.Valid.instance();
+  }
+
+  /**
+   * Checks if a nested class is a View TableUpdater.
+   *
+   * @param element the nested class to check
+   * @return true if it extends View.TableUpdater
+   */
+  private static boolean isViewTableUpdater(TypeElement element) {
+    // Check if it's public and static
+    if (!element.getModifiers().contains(Modifier.PUBLIC)
+        || !element.getModifiers().contains(Modifier.STATIC)) {
+      return false;
+    }
+
+    // Check if it extends TableUpdater
+    return extendsClass(element, "akka.javasdk.view.TableUpdater");
+  }
+
+  /**
+   * Validates that a View has at least one method annotated with @Query.
+   *
+   * @param element the View class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation viewMustHaveAtLeastOneQueryMethod(TypeElement element) {
+    boolean hasAtLeastOneQuery =
+        element.getEnclosedElements().stream()
+            .filter(enclosed -> enclosed instanceof ExecutableElement)
+            .anyMatch(method -> findAnnotation(method, "akka.javasdk.annotations.Query") != null);
+
+    if (!hasAtLeastOneQuery) {
+      return Validation.of(
+          errorMessage(
+              element,
+              "No valid query method found. Views should have at least one method annotated with"
+                  + " @Query."));
+    }
+
+    return Validation.Valid.instance();
+  }
+
+  /**
+   * Validates query result types - must return QueryEffect or QueryStreamEffect, and result type
+   * cannot be a primitive wrapper.
+   *
+   * @param element the View class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation validateQueryResultTypes(TypeElement element) {
+    List<String> errors = new ArrayList<>();
+
+    for (Element enclosed : element.getEnclosedElements()) {
+      if (enclosed instanceof ExecutableElement method) {
+        AnnotationMirror queryAnn = findAnnotation(method, "akka.javasdk.annotations.Query");
+        if (queryAnn != null) {
+          String returnTypeName = method.getReturnType().toString();
+
+          // Check if return type is QueryEffect or QueryStreamEffect
+          boolean isQueryEffect = returnTypeName.startsWith("akka.javasdk.view.View.QueryEffect");
+          boolean isQueryStreamEffect =
+              returnTypeName.startsWith("akka.javasdk.view.View.QueryStreamEffect");
+
+          if (!isQueryEffect && !isQueryStreamEffect) {
+            errors.add(
+                errorMessage(
+                    method,
+                    "Query methods must return View.QueryEffect<RowType> or"
+                        + " View.QueryStreamEffect<RowType> (was "
+                        + returnTypeName
+                        + ")."));
+          } else {
+            // Check if the result type is a primitive wrapper
+            TypeMirror returnType = method.getReturnType();
+            if (returnType instanceof DeclaredType declaredType) {
+              List<? extends TypeMirror> typeArgs = declaredType.getTypeArguments();
+              if (!typeArgs.isEmpty()) {
+                TypeMirror resultType = typeArgs.get(0);
+                if (isPrimitiveWrapper(resultType)) {
+                  errors.add(
+                      errorMessage(
+                          method, "View query result type " + resultType + " is not supported"));
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return Validation.of(errors);
+  }
+
+  /**
+   * Validates that queries marked with streamUpdates return QueryStreamEffect.
+   *
+   * @param element the View class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation viewQueriesWithStreamUpdatesMustBeStreaming(TypeElement element) {
+    List<String> errors = new ArrayList<>();
+
+    for (Element enclosed : element.getEnclosedElements()) {
+      if (enclosed instanceof ExecutableElement method) {
+        AnnotationMirror queryAnn = findAnnotation(method, "akka.javasdk.annotations.Query");
+        if (queryAnn != null) {
+          // Check if streamUpdates is true
+          String streamUpdatesValue = getAnnotationValue(queryAnn, "streamUpdates");
+          if ("true".equals(streamUpdatesValue)) {
+            String returnTypeName = method.getReturnType().toString();
+            if (!returnTypeName.startsWith("akka.javasdk.view.View.QueryStreamEffect")) {
+              errors.add(
+                  errorMessage(
+                      method,
+                      "Query methods marked with streamUpdates must return"
+                          + " View.QueryStreamEffect<RowType>"));
+            }
+          }
+        }
+      }
+    }
+
+    return Validation.of(errors);
+  }
+
+  /**
+   * Validates that View query methods have zero or one parameter.
+   *
+   * @param element the View class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation viewQueryMethodArityShouldBeZeroOrOne(TypeElement element) {
+    List<String> errors = new ArrayList<>();
+
+    for (Element enclosed : element.getEnclosedElements()) {
+      if (enclosed instanceof ExecutableElement method) {
+        AnnotationMirror queryAnn = findAnnotation(method, "akka.javasdk.annotations.Query");
+        if (queryAnn != null) {
+          int paramCount = method.getParameters().size();
+          if (paramCount > 1) {
+            errors.add(
+                errorMessage(
+                    element,
+                    "Method ["
+                        + method.getSimpleName()
+                        + "] must have zero or one argument. If you need to pass more arguments,"
+                        + " wrap them in a class."));
+          }
+        }
+      }
+    }
+
+    return Validation.of(errors);
+  }
+
+  /**
+   * Validates that when there are multiple TableUpdaters, each must have @Table annotation.
+   *
+   * @param element the View class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation viewMultipleTableUpdatersMustHaveTableAnnotations(TypeElement element) {
+    List<TypeElement> tableUpdaters =
+        element.getEnclosedElements().stream()
+            .filter(enclosed -> enclosed instanceof TypeElement)
+            .map(enclosed -> (TypeElement) enclosed)
+            .filter(Validations::isViewTableUpdater)
+            .toList();
+
+    if (tableUpdaters.size() > 1) {
+      for (TypeElement updater : tableUpdaters) {
+        AnnotationMirror tableAnn = findAnnotation(updater, "akka.javasdk.annotations.Table");
+        if (tableAnn == null) {
+          return Validation.of(
+              errorMessage(
+                  updater,
+                  "When there are multiple table updater, each must be annotated with @Table."));
+        }
+      }
+    }
+
+    return Validation.Valid.instance();
+  }
+
+  /**
+   * Checks if a TypeMirror represents a primitive wrapper type.
+   *
+   * @param type the type to check
+   * @return true if it's a primitive wrapper
+   */
+  private static boolean isPrimitiveWrapper(TypeMirror type) {
+    if (!(type instanceof DeclaredType declaredType)) {
+      return false;
+    }
+
+    Element element = declaredType.asElement();
+    if (!(element instanceof TypeElement typeElement)) {
+      return false;
+    }
+
+    String typeName = typeElement.getQualifiedName().toString();
+    return typeName.equals("java.lang.Integer")
+        || typeName.equals("java.lang.Long")
+        || typeName.equals("java.lang.Float")
+        || typeName.equals("java.lang.Double")
+        || typeName.equals("java.lang.Byte")
+        || typeName.equals("java.lang.Short")
+        || typeName.equals("java.lang.Boolean")
+        || typeName.equals("java.lang.Character")
+        || typeName.equals("java.lang.String");
+  }
+
+  /**
+   * Validates a TableUpdater nested class.
+   *
+   * @param tableUpdater the TableUpdater class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation validateViewTableUpdater(TypeElement tableUpdater) {
+    return viewTableUpdaterMustHaveConsumeAnnotation(tableUpdater)
+        .combine(validateViewUpdaterRowType(tableUpdater));
+  }
+
+  /**
+   * Validates that TableUpdater has @Consume annotation.
+   *
+   * @param tableUpdater the TableUpdater class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation viewTableUpdaterMustHaveConsumeAnnotation(TypeElement tableUpdater) {
+    // Check for all @Consume.From* annotations
+    boolean hasConsumeAnnotation =
+        findAnnotation(tableUpdater, "akka.javasdk.annotations.Consume.FromTopic") != null
+            || findAnnotation(tableUpdater, "akka.javasdk.annotations.Consume.FromKeyValueEntity")
+                != null
+            || findAnnotation(
+                    tableUpdater, "akka.javasdk.annotations.Consume.FromEventSourcedEntity")
+                != null
+            || findAnnotation(tableUpdater, "akka.javasdk.annotations.Consume.FromServiceStream")
+                != null;
+
+    if (!hasConsumeAnnotation) {
+      return Validation.of(
+          errorMessage(
+              tableUpdater,
+              "A TableUpdater subclass must be annotated with `@Consume` annotation."));
+    }
+
+    return Validation.Valid.instance();
+  }
+
+  /**
+   * Validates that the TableUpdater row type is not a primitive wrapper.
+   *
+   * @param tableUpdater the TableUpdater class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation validateViewUpdaterRowType(TypeElement tableUpdater) {
+    // Get the generic superclass (View.TableUpdater<RowType>)
+    TypeMirror superclass = tableUpdater.getSuperclass();
+    if (superclass instanceof DeclaredType declaredType) {
+      List<? extends TypeMirror> typeArgs = declaredType.getTypeArguments();
+      if (!typeArgs.isEmpty()) {
+        TypeMirror rowType = typeArgs.get(0);
+        if (isPrimitiveWrapper(rowType)) {
+          return Validation.of(
+              errorMessage(tableUpdater, "View row type " + rowType + " is not supported"));
+        }
+      }
+    }
+
+    return Validation.Valid.instance();
+  }
+
+  /**
+   * Validates that @Table annotation value is not empty.
+   *
+   * @param tableUpdater the TableUpdater class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation viewTableAnnotationMustNotBeEmptyString(TypeElement tableUpdater) {
+    AnnotationMirror tableAnn = findAnnotation(tableUpdater, "akka.javasdk.annotations.Table");
+    if (tableAnn != null) {
+      String tableName = getAnnotationValue(tableAnn, "value");
+      if (tableName != null && tableName.isBlank()) {
+        return Validation.of(
+            errorMessage(tableUpdater, "@Table name is empty, must be a non-empty string."));
+      }
+    }
+
+    return Validation.Valid.instance();
   }
 
   // ==================== KeyValueEntity Validation Methods ====================
