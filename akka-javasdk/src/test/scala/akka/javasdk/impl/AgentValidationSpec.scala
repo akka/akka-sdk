@@ -27,67 +27,82 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 object AgentValidationSpec {
+  // for removal - ported to compile time validation
   @nowarn("cat=deprecation")
   @akka.javasdk.annotations.AgentDescription(name = "Agent", description = "desc", role = "role1")
   @akka.javasdk.annotations.AgentRole("role2")
   class ConflictingRolesAgent extends Agent
 
+  // for removal - ported to compile time validation
   @nowarn("cat=deprecation")
   @akka.javasdk.annotations.AgentDescription(name = "AgentName", description = "desc")
   @Component(id = "id", name = "OtherName")
   class ConflictingNameAgent extends Agent
 
+  // for removal - ported to compile time validation
   @nowarn("cat=deprecation")
   @akka.javasdk.annotations.AgentDescription(name = "Agent", description = "desc1")
   @Component(id = "id", description = "desc2")
   class ConflictingDescriptionAgent extends Agent
 
+  // for removal - ported to compile time validation
   @nowarn("cat=deprecation")
   @akka.javasdk.annotations.AgentDescription(name = "", description = "desc")
   class EmptyNameAgent extends Agent
 
+  // for removal - ported to compile time validation
   @nowarn("cat=deprecation")
   @akka.javasdk.annotations.AgentDescription(name = "Agent", description = "")
   class EmptyDescriptionAgent extends Agent
 
+  // for removal - ported to compile time validation
   @nowarn("cat=deprecation")
   @akka.javasdk.annotations.AgentDescription(name = "   ", description = "desc")
   class BlankNameAgent extends Agent
 
+  // for removal - ported to compile time validation
   @nowarn("cat=deprecation")
   @akka.javasdk.annotations.AgentDescription(name = "Agent", description = "   ")
   class BlankDescriptionAgent extends Agent
 
+  // for removal - ported to compile time validation
   @nowarn("cat=deprecation")
   @akka.javasdk.annotations.AgentDescription(name = "Agent", description = "desc")
   class ValidAgentDescriptionAgent extends Agent {
     def handle(): Agent.Effect[String] = effects.reply("ok")
   }
 
+  // for removal - ported to compile time validation
   @Component(id = "agent-id", name = "AgentName", description = "Agent description")
   class ValidComponentAgent extends Agent {
     def handle(): Agent.Effect[String] = effects.reply("ok")
   }
 
+  // for removal - ported to compile time validation
   class NoCommandHandlerAgent extends Agent
 
+  // for removal - ported to compile time validation
   class MultipleCommandHandlerAgent extends Agent {
     def handleFirst(): Agent.Effect[String] = effects.reply("first")
     def handleSecond(): Agent.Effect[String] = effects.reply("second")
   }
 
+  // for removal - ported to compile time validation
   class AgentWithStreamEffect extends Agent {
     def handleStream(): Agent.StreamEffect = streamEffects().reply("one")
   }
 
+  // for removal - ported to compile time validation
   class AgentWithTooManyArgsCommandHandler extends Agent {
     def handle(arg1: String, arg2: String): Agent.Effect[String] = effects.reply("ok")
   }
 
+  // for removal - ported to compile time validation
   class AgentWithValidSingleArgCommandHandler extends Agent {
     def handle(request: String): Agent.Effect[String] = effects.reply(request)
   }
 
+  // for removal - ported to compile time validation
   class AgentWithValidNoArgCommandHandler extends Agent {
     def handle(): Agent.Effect[String] = effects.reply("ok")
   }

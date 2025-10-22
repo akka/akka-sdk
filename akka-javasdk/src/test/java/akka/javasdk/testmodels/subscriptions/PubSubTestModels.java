@@ -130,6 +130,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  // for removal - ported to compile time validation
   @Consume.FromKeyValueEntity(Counter.class)
   public static class AmbiguousHandlersVESubscriptionInConsumer extends Consumer {
 
@@ -142,6 +143,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  // for removal - ported to compile time validation
   @Consume.FromKeyValueEntity(value = Counter.class)
   public static class AmbiguousDeleteHandlersVESubscriptionInConsumer extends Consumer {
 
@@ -156,6 +158,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  // for removal - ported to compile time validation
   @Consume.FromEventSourcedEntity(EmployeeEntity.class)
   public static class AmbiguousHandlersESSubscriptionInConsumer extends Consumer {
 
@@ -168,6 +171,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  // for removal - ported to compile time validation
   @Consume.FromServiceStream(id = "source", service = "a")
   public static class AmbiguousHandlersStreamTypeLevelSubscriptionInConsumer extends Consumer {
 
@@ -379,12 +383,14 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
 
   // Validation spec test models
 
+  // for removal - ported to compile time validation
   public static class ConsumerWithoutConsumeAnnotation extends Consumer {
     public Consumer.Effect handle(String msg) {
       return effects().done();
     }
   }
 
+  // for removal - ported to compile time validation
   @Consume.FromTopic("test-topic")
   public static class ValidConsumerWithTopicSubscription extends Consumer {
     public Consumer.Effect handle(String msg) {
@@ -392,6 +398,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  // for removal - ported to compile time validation
   @Consume.FromKeyValueEntity(Counter.class)
   public static class ValidConsumerWithKVESubscription extends Consumer {
     public Consumer.Effect onUpdate(CounterState state) {
@@ -399,6 +406,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  // for removal - ported to compile time validation
   @Consume.FromEventSourcedEntity(EmployeeEntity.class)
   public static class ValidConsumerWithESSubscription extends Consumer {
     public Consumer.Effect onCreated(EmployeeCreated event) {
@@ -410,6 +418,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  // for removal - ported to compile time validation
   @Consume.FromKeyValueEntity(Counter.class)
   public static class ConsumerWithoutHandler extends Consumer {
     public String handle(CounterState state) {
@@ -417,6 +426,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  // for removal - ported to compile time validation
   @Consume.FromKeyValueEntity(Counter.class)
   public static class ConsumerWithTooManyArgsMethod extends Consumer {
     public Consumer.Effect handle(CounterState state, String arg2) {
@@ -424,6 +434,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  // for removal - ported to compile time validation
   @Consume.FromTopic("test")
   public static class ConsumerWithAmbiguousHandlers extends Consumer {
     public Consumer.Effect handleOne(String msg) {
@@ -435,6 +446,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  // for removal - ported to compile time validation
   @Consume.FromKeyValueEntity(Counter.class)
   @Consume.FromEventSourcedEntity(EmployeeEntity.class)
   public static class ConsumerWithMultipleTypeLevelSubscriptions extends Consumer {
@@ -443,6 +455,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  // for removal - ported to compile time validation
   @Consume.FromKeyValueEntity(Counter.class)
   public static class ConsumerWithMultipleUpdateMethods extends Consumer {
     public Consumer.Effect handleInt(CounterState msg) {
@@ -454,6 +467,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  // for removal - ported to compile time validation
   @Consume.FromKeyValueEntity(Counter.class)
   public static class ConsumerWithMultipleDeleteHandlers extends Consumer {
     @DeleteHandler
@@ -467,6 +481,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  // for removal - ported to compile time validation
   @Consume.FromKeyValueEntity(Counter.class)
   public static class ConsumerWithValidDeleteHandler extends Consumer {
     public Consumer.Effect onUpdate(CounterState state) {
@@ -479,6 +494,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  // for removal - ported to compile time validation
   @Consume.FromKeyValueEntity(Counter.class)
   public static class ConsumerWithDeleteHandlerWithParams extends Consumer {
     public Consumer.Effect onUpdate(CounterState state) {
@@ -491,6 +507,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  // for removal - ported to compile time validation
   @Produce.ToTopic("output-topic")
   public static class ConsumerWithTopicPublishingButNoSource extends Consumer {
     public Consumer.Effect handle(String msg) {
@@ -498,6 +515,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  // for removal - ported to compile time validation
   @Consume.FromTopic("input-topic")
   @Produce.ToTopic("output-topic")
   public static class ValidConsumerWithTopicPublishing extends Consumer {
@@ -506,6 +524,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  // for removal - ported to compile time validation
   @Consume.FromKeyValueEntity(Counter.class)
   public static class ConsumerWithMethodLevelAcl extends Consumer {
     @Acl(allow = @Acl.Matcher(service = "test"))
@@ -514,6 +533,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  // requires runtime validation
   @Consume.FromKeyValueEntity(Counter.class)
   public static class ConsumerMissingHandlerForKVE extends Consumer {
     public Consumer.Effect wrongHandler(String msg) {
@@ -521,6 +541,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  // requires runtime validation
   @Consume.FromWorkflow(TransferWorkflow.class)
   public static class ConsumerMissingHandlerForWorkflow extends Consumer {
     public Consumer.Effect wrongHandler(String msg) {
@@ -528,6 +549,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  // requires runtime validation
   @Consume.FromEventSourcedEntity(CounterEventSourcedEntity.class)
   public static class ConsumerMissingHandlerForES extends Consumer {
     public Consumer.Effect wrongHandler(String msg) {
@@ -535,6 +557,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  // for removal - ported to compile time validation
   @Consume.FromTopic("test")
   public static class ConsumerWithMethodWithNoParameters extends Consumer {
     public Consumer.Effect handle() {
@@ -542,6 +565,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  // for removal - ported to compile time validation
   @Consume.FromServiceStream(id = "stream-id", service = "test-service")
   public static class ValidConsumerWithStreamSubscription extends Consumer {
     public Consumer.Effect handle(String msg) {
@@ -549,6 +573,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  // for removal - ported to compile time validation
   @Consume.FromTopic("test")
   @Produce.ServiceStream(id = "")
   public static class ConsumerWithEmptyStreamId extends Consumer {
@@ -557,6 +582,7 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  // for removal - ported to compile time validation
   @Consume.FromTopic("test")
   @Produce.ServiceStream(id = "valid-stream-id")
   public static class ValidConsumerWithStreamPublishing extends Consumer {
