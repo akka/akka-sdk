@@ -35,7 +35,8 @@ public class Validations {
         .combine(validateTimedAction(element))
         .combine(validateConsumer(element))
         .combine(validateAgent(element))
-        .combine(validateEventSourcedEntity(element));
+        .combine(validateEventSourcedEntity(element))
+        .combine(validateKeyValueEntity(element));
   }
 
   /**
@@ -198,6 +199,26 @@ public class Validations {
   }
 
   /**
+   * Validates a KeyValueEntity component. Checks for: - Command handlers must have unique names -
+   * At least one method returning KeyValueEntity.Effect - Command handlers must have zero or one
+   * parameter
+   *
+   * @param element the component class to validate
+   * @return a Validation result indicating success or failure
+   */
+  public static Validation validateKeyValueEntity(TypeElement element) {
+
+    if (isKeyValueEntity(element)) {
+      String effectType = "akka.javasdk.keyvalueentity.KeyValueEntity.Effect";
+      return keyValueEntityCommandHandlersMustBeUnique(element)
+          .combine(hasEffectMethod(element, effectType))
+          .combine(commandHandlerArityShouldBeZeroOrOne(element, effectType));
+    }
+
+    return Validation.Valid.instance();
+  }
+
+  /**
    * Checks if a component extends TimedAction.
    *
    * @param element the component class to check
@@ -235,6 +256,16 @@ public class Validations {
    */
   private static boolean isEventSourcedEntity(TypeElement element) {
     return extendsClass(element, "akka.javasdk.eventsourcedentity.EventSourcedEntity");
+  }
+
+  /**
+   * Checks if a component extends KeyValueEntity.
+   *
+   * @param element the component class to check
+   * @return true if the component extends KeyValueEntity, false otherwise
+   */
+  private static boolean isKeyValueEntity(TypeElement element) {
+    return extendsClass(element, "akka.javasdk.keyvalueentity.KeyValueEntity");
   }
 
   /**
@@ -500,6 +531,51 @@ public class Validations {
         String returnTypeName = method.getReturnType().toString();
         // Match both fully qualified and simple names for Effect
         if (returnTypeName.startsWith("akka.javasdk.eventsourcedentity.EventSourcedEntity.Effect")
+            || returnTypeName.equals("Effect")) {
+          String methodName = method.getSimpleName().toString();
+          handlersByName.computeIfAbsent(methodName, k -> new ArrayList<>()).add(method);
+        }
+      }
+    }
+
+    // Find methods with duplicate names
+    List<String> errors = new ArrayList<>();
+    for (java.util.Map.Entry<String, List<ExecutableElement>> entry : handlersByName.entrySet()) {
+      if (entry.getValue().size() > 1) {
+        String methodName = entry.getKey();
+        int count = entry.getValue().size();
+        errors.add(
+            errorMessage(
+                element,
+                element.getSimpleName()
+                    + " has "
+                    + count
+                    + " command handler methods named '"
+                    + methodName
+                    + "'. Command handlers must have unique names."));
+      }
+    }
+
+    return Validation.of(errors);
+  }
+
+  // ==================== KeyValueEntity Validation Methods ====================
+
+  /**
+   * Validates that KeyValueEntity command handlers have unique names (no overloading).
+   *
+   * @param element the KeyValueEntity class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation keyValueEntityCommandHandlersMustBeUnique(TypeElement element) {
+    // Collect all command handlers (methods returning KeyValueEntity.Effect)
+    java.util.Map<String, List<ExecutableElement>> handlersByName = new java.util.HashMap<>();
+
+    for (Element enclosed : element.getEnclosedElements()) {
+      if (enclosed instanceof ExecutableElement method) {
+        String returnTypeName = method.getReturnType().toString();
+        // Match both fully qualified and simple names for Effect
+        if (returnTypeName.startsWith("akka.javasdk.keyvalueentity.KeyValueEntity.Effect")
             || returnTypeName.equals("Effect")) {
           String methodName = method.getSimpleName().toString();
           handlersByName.computeIfAbsent(methodName, k -> new ArrayList<>()).add(method);
