@@ -25,6 +25,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 object ComponentAnnotationValidationSpec {
+  // for removal - ported to compile time validation
   @nowarn("cat=deprecation")
   @Component(id = "new-id")
   @ComponentId("old-id")
@@ -32,44 +33,52 @@ object ComponentAnnotationValidationSpec {
     def done(): Effect[Done] = ???
   }
 
+  // for removal - ported to compile time validation
   @Component(id = "")
   class EmptyComponentIdComponent extends KeyValueEntity[String] {
     def done(): Effect[Done] = ???
   }
 
+  // for removal - ported to compile time validation
   @Component(id = "   ")
   class BlankComponentIdComponent extends KeyValueEntity[String] {
     def done(): Effect[Done] = ???
   }
 
+  // for removal - ported to compile time validation
   @Component(id = "invalid|pipe")
   class InvalidPipeComponentIdComponent extends KeyValueEntity[String] {
     def done(): Effect[Done] = ???
   }
 
+  // for removal - ported to compile time validation
   @nowarn("cat=deprecation")
   @ComponentId("")
   class EmptyDeprecatedComponentIdComponent extends KeyValueEntity[String] {
     def done(): Effect[Done] = ???
   }
 
+  // for removal - ported to compile time validation
   @nowarn("cat=deprecation")
   @ComponentId("   ")
   class BlankDeprecatedComponentIdComponent extends KeyValueEntity[String] {
     def done(): Effect[Done] = ???
   }
 
+  // for removal - ported to compile time validation
   @nowarn("cat=deprecation")
   @ComponentId("invalid|pipe")
   class InvalidPipeDeprecatedComponentIdComponent extends KeyValueEntity[String] {
     def done(): Effect[Done] = ???
   }
 
+  // for removal - ported to compile time validation
   @Component(id = "valid-id")
   class ValidComponentIdComponent extends KeyValueEntity[String] {
     def done(): Effect[Done] = ???
   }
 
+  // for removal - ported to compile time validation
   @nowarn("cat=deprecation")
   @ComponentId("valid-id")
   class ValidDeprecatedComponentIdComponent extends KeyValueEntity[String] {

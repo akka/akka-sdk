@@ -13,6 +13,8 @@ import akka.javasdk.testmodels.keyvalueentity.ValueEntitiesTestModels.ValidKeyVa
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
+// TODO: REMOVE - Validation logic has been ported to compile-time.
+//  See KeyValueEntityValidationSpec in akka-javasdk-annotation-processor-tests
 class KeyValueEntityValidationSpec extends AnyWordSpec with Matchers with ValidationSupportSpec {
 
   "KeyValueEntity validation" should {

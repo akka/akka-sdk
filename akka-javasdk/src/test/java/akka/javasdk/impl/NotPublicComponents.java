@@ -18,6 +18,7 @@ import akka.javasdk.workflow.Workflow;
 // need to be in the same package as the corresponding test
 public class NotPublicComponents {
 
+  // for removal - ported to compile time validation
   @Component(id = "not-public")
   static class NotPublicAction extends TimedAction {
     public Effect message() {
@@ -25,6 +26,7 @@ public class NotPublicComponents {
     }
   }
 
+  // for removal - ported to compile time validation
   @Component(id = "not-public")
   static class NotPublicConsumer extends Consumer {
     public Effect message() {

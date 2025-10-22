@@ -13,6 +13,8 @@ import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
+// TODO: REMOVE - Validation logic has been ported to compile-time.
+//  See EventSourcedEntityValidationSpec in akka-javasdk-annotation-processor-tests
 class EventSourcedEntityValidationSpec extends AnyWordSpec with Matchers with ValidationSupportSpec {
 
   "EventSourcedEntity validation" should {

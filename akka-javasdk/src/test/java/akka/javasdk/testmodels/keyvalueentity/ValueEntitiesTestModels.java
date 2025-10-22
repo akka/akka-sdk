@@ -8,6 +8,8 @@ import akka.javasdk.annotations.Component;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.testmodels.Done;
 
+// TODO: REMOVE - Validation logic has been ported to compile-time.
+//  See KeyValueEntityValidationSpec in akka-javasdk-annotation-processor-tests
 public class ValueEntitiesTestModels {
 
   @Component(id = "user")

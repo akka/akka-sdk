@@ -23,24 +23,28 @@ public class ActionsTestModels {
     }
   }
 
+  // for removal - ported to compile time validation
   public static class TimedActionWithNoArgMethod extends TimedAction {
     public TimedAction.Effect foo() {
       return effects().done();
     }
   }
 
+  // for removal - ported to compile time validation
   public static class TimedActionWithSingleArgMethod extends TimedAction {
     public TimedAction.Effect foo(String arg) {
       return effects().done();
     }
   }
 
+  // for removal - ported to compile time validation
   public static class TimedActionWithTooManyArgsMethod extends TimedAction {
     public TimedAction.Effect foo(String a, int b) {
       return effects().done();
     }
   }
 
+  // for removal - ported to compile time validation
   public static class TimedActionWithNoEffectMethod extends TimedAction {
     public String bar() {
       return "ok";
