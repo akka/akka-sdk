@@ -78,5 +78,19 @@ class ComponentValidationSpec extends AnyWordSpec with CompilationTestSupport {
       val result = compileTestSource("invalid/BothComponentAndComponentId.java")
       assertCompilationFailure(result, "BothComponentAndComponentId", "both @Component and", "deprecated @ComponentId")
     }
+
+    // Multiple errors - verify all errors are reported together
+    "report all validation errors for a component with multiple issues" in {
+      val result = compileTestSource("invalid/MultipleErrorsComponent.java")
+      assertCompilationFailure(
+        result,
+        "MultipleErrorsComponent",
+        "not marked with `public` modifier",
+        "@Component id is empty")
+
+      // Verify that multiple errors are in the diagnostic list
+      val errors = result.diagnostics.filter(_.getKind == javax.tools.Diagnostic.Kind.ERROR)
+      errors.length should be >= 2
+    }
   }
 }

@@ -29,7 +29,9 @@ public class ComponentValidationProcessor extends BaseAkkaProcessor {
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
 
-    boolean hasErrors = false;
+    // Collect all validation errors before reporting them
+    java.util.List<ValidationError> allErrors = new java.util.ArrayList<>();
+
     info("Validating Akka components...");
     for (TypeElement annotation : annotations) {
       var annotatedElements = roundEnv.getElementsAnnotatedWith(annotation);
@@ -40,10 +42,9 @@ public class ComponentValidationProcessor extends BaseAkkaProcessor {
 
         if (validation.isInvalid() && validation instanceof Validation.Invalid invalid) {
           debug("Component " + element.getSimpleName() + " is invalid");
-          hasErrors = true;
-          // Report each validation error as a compile-time error
+          // Collect errors instead of reporting immediately
           for (String message : invalid.messages()) {
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message, element);
+            allErrors.add(new ValidationError(element, message));
           }
         } else {
           debug("Component " + element.getSimpleName() + " is valid");
@@ -51,8 +52,21 @@ public class ComponentValidationProcessor extends BaseAkkaProcessor {
       }
     }
 
-    // if false, it will allow other processors to process these annotations
-    // otherwise we can shortcut it because build will fail
-    return hasErrors;
+    // Report all errors at once
+    if (!allErrors.isEmpty()) {
+      info("Found " + allErrors.size() + " validation error(s):");
+      for (ValidationError error : allErrors) {
+        processingEnv
+            .getMessager()
+            .printMessage(Diagnostic.Kind.ERROR, error.message, error.element);
+      }
+    }
+
+    // if empty, we should return false to allow other processors to process these annotations
+    // otherwise we can shortcut it because the build will fail anyway
+    return !allErrors.isEmpty();
   }
+
+  // Helper class to store validation errors
+  private record ValidationError(TypeElement element, String message) {}
 }
