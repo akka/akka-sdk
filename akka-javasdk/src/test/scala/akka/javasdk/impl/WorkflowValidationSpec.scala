@@ -11,6 +11,8 @@ import akka.javasdk.testmodels.workflow.WorkflowTestModels.WorkflowWithNonEffect
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
+// TODO: REMOVE - Validation logic has been ported to compile-time.
+//  See WorkflowValidationSpec in akka-javasdk-annotation-processor-tests
 class WorkflowValidationSpec extends AnyWordSpec with Matchers with ValidationSupportSpec {
 
   "Workflow validation" should {

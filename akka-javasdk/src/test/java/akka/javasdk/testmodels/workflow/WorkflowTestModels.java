@@ -12,6 +12,8 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.concurrent.CompletableFuture;
 
+// TODO: REMOVE - Validation logic has been ported to compile-time.
+//  See WorkflowValidationSpec in akka-javasdk-annotation-processor-tests
 public class WorkflowTestModels {
 
   @Component(id = "transfer-workflow")

@@ -36,7 +36,8 @@ public class Validations {
         .combine(validateConsumer(element))
         .combine(validateAgent(element))
         .combine(validateEventSourcedEntity(element))
-        .combine(validateKeyValueEntity(element));
+        .combine(validateKeyValueEntity(element))
+        .combine(validateWorkflow(element));
   }
 
   /**
@@ -219,6 +220,27 @@ public class Validations {
   }
 
   /**
+   * Validates a Workflow component. Checks for: - At least one method returning Workflow.Effect -
+   * Command handlers must have zero or one parameter - Step methods (returning StepEffect) must
+   * have zero or one parameter
+   *
+   * @param element the component class to validate
+   * @return a Validation result indicating success or failure
+   */
+  public static Validation validateWorkflow(TypeElement element) {
+
+    if (isWorkflow(element)) {
+      String effectType = "akka.javasdk.workflow.Workflow.Effect";
+      String stepEffectType = "akka.javasdk.workflow.Workflow.StepEffect";
+      return hasEffectMethod(element, effectType)
+          .combine(commandHandlerArityShouldBeZeroOrOne(element, effectType))
+          .combine(commandHandlerArityShouldBeZeroOrOne(element, stepEffectType));
+    }
+
+    return Validation.Valid.instance();
+  }
+
+  /**
    * Checks if a component extends TimedAction.
    *
    * @param element the component class to check
@@ -266,6 +288,16 @@ public class Validations {
    */
   private static boolean isKeyValueEntity(TypeElement element) {
     return extendsClass(element, "akka.javasdk.keyvalueentity.KeyValueEntity");
+  }
+
+  /**
+   * Checks if a component extends Workflow.
+   *
+   * @param element the component class to check
+   * @return true if the component extends Workflow, false otherwise
+   */
+  private static boolean isWorkflow(TypeElement element) {
+    return extendsClass(element, "akka.javasdk.workflow.Workflow");
   }
 
   /**
