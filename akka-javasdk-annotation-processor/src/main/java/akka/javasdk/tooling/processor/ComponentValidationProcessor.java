@@ -25,14 +25,17 @@ import javax.tools.Diagnostic;
   "akka.javasdk.annotations.ComponentId"
 })
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
-public class ComponentValidationProcessor extends AbstractProcessor {
+public class ComponentValidationProcessor extends BaseAkkaProcessor {
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+
+    info("Validating Akka components...");
     for (TypeElement annotation : annotations) {
       var annotatedElements = roundEnv.getElementsAnnotatedWith(annotation);
 
       for (TypeElement element : ElementFilter.typesIn(annotatedElements)) {
+        debug("Validating " + element.getSimpleName());
         Validation validation = Validations.validateComponent(element);
 
         if (validation.isInvalid() && validation instanceof Validation.Invalid invalid) {
@@ -46,4 +49,5 @@ public class ComponentValidationProcessor extends AbstractProcessor {
 
     return false; // Allow other processors to process these annotations
   }
+
 }
