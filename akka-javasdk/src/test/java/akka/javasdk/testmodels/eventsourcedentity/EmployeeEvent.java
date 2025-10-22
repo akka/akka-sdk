@@ -7,6 +7,8 @@ package akka.javasdk.testmodels.eventsourcedentity;
 import akka.javasdk.annotations.Migration;
 import akka.javasdk.annotations.TypeName;
 
+// TODO: REMOVE - Validation logic has been ported to compile-time.
+//  See EventSourcedEntityValidationSpec in akka-javasdk-annotation-processor-tests
 public sealed interface EmployeeEvent {
 
   @TypeName("created")

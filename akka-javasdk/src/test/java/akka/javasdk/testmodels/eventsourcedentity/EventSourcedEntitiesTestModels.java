@@ -10,6 +10,8 @@ import akka.javasdk.annotations.Migration;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import java.util.List;
 
+// TODO: REMOVE - Validation logic has been ported to compile-time.
+//  See EventSourcedEntityValidationSpec in akka-javasdk-annotation-processor-tests
 public class EventSourcedEntitiesTestModels {
 
   public sealed interface Event {

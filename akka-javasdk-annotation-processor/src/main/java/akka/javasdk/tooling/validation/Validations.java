@@ -33,7 +33,8 @@ public class Validations {
         .combine(mustHaveValidComponentId(element))
         .combine(validateTimedAction(element))
         .combine(validateConsumer(element))
-        .combine(validateAgent(element));
+        .combine(validateAgent(element))
+        .combine(validateEventSourcedEntity(element));
   }
 
   /**
@@ -171,6 +172,27 @@ public class Validations {
   }
 
   /**
+   * Validates an EventSourcedEntity component. Checks for: - Event type must be sealed - At least
+   * one method returning EventSourcedEntity.Effect - Command handlers must have unique names -
+   * Command handlers must have zero or one parameter
+   *
+   * @param element the component class to validate
+   * @return a Validation result indicating success or failure
+   */
+  public static Validation validateEventSourcedEntity(TypeElement element) {
+
+    if (isEventSourcedEntity(element)) {
+      String effectType = "akka.javasdk.eventsourcedentity.EventSourcedEntity.Effect";
+      return eventSourcedEntityEventMustBeSealed(element)
+          .combine(hasEffectMethod(element, effectType))
+          .combine(eventSourcedCommandHandlersMustBeUnique(element))
+          .combine(commandHandlerArityShouldBeZeroOrOne(element, effectType));
+    }
+
+    return Validation.Valid.instance();
+  }
+
+  /**
    * Checks if a component extends TimedAction.
    *
    * @param element the component class to check
@@ -201,6 +223,16 @@ public class Validations {
   }
 
   /**
+   * Checks if a component extends EventSourcedEntity.
+   *
+   * @param element the component class to check
+   * @return true if the component extends EventSourcedEntity, false otherwise
+   */
+  private static boolean isEventSourcedEntity(TypeElement element) {
+    return extendsClass(element, "akka.javasdk.eventsourcedentity.EventSourcedEntity");
+  }
+
+  /**
    * Checks if a component extends a specific class.
    *
    * @param element the component class to check
@@ -214,7 +246,10 @@ public class Validations {
     }
 
     String superclassName = superclass.toString();
-    if (superclassName.equals(className)) {
+    // Handle generic types by checking if the superclass name starts with the expected class name
+    // e.g., "akka.javasdk.eventsourcedentity.EventSourcedEntity<String,Event>" should match
+    // "akka.javasdk.eventsourcedentity.EventSourcedEntity"
+    if (superclassName.equals(className) || superclassName.startsWith(className + "<")) {
       return true;
     }
 
@@ -237,10 +272,16 @@ public class Validations {
    * @return a Validation result indicating success or failure
    */
   private static Validation hasEffectMethod(TypeElement element, String effectTypeName) {
+    // Extract simple type name for matching (e.g., "Effect" from "...EventSourcedEntity.Effect")
+    String simpleTypeName = effectTypeName.substring(effectTypeName.lastIndexOf('.') + 1);
+
     for (Element enclosed : element.getEnclosedElements()) {
       if (enclosed instanceof ExecutableElement method) {
         String returnTypeName = method.getReturnType().toString();
-        if (returnTypeName.equals(effectTypeName)) {
+        // Match either fully qualified name or simple name
+        if (returnTypeName.equals(effectTypeName)
+            || returnTypeName.equals(simpleTypeName)
+            || returnTypeName.startsWith(effectTypeName)) {
           return Validation.Valid.instance();
         }
       }
@@ -259,12 +300,18 @@ public class Validations {
    */
   private static Validation commandHandlerArityShouldBeZeroOrOne(
       TypeElement element, String effectTypeName) {
+    // Extract simple type name for matching (e.g., "Effect" from "...EventSourcedEntity.Effect")
+    String simpleTypeName = effectTypeName.substring(effectTypeName.lastIndexOf('.') + 1);
+
     List<String> errors = new ArrayList<>();
 
     for (Element enclosed : element.getEnclosedElements()) {
       if (enclosed instanceof ExecutableElement method) {
         String returnTypeName = method.getReturnType().toString();
-        if (returnTypeName.equals(effectTypeName)) {
+        // Match either fully qualified name or simple name
+        if (returnTypeName.equals(effectTypeName)
+            || returnTypeName.equals(simpleTypeName)
+            || returnTypeName.startsWith(effectTypeName)) {
           int paramCount = method.getParameters().size();
           if (paramCount > 1) {
             errors.add(
@@ -438,6 +485,88 @@ public class Validations {
                         + " wrap them in a class."));
           }
         }
+      }
+    }
+
+    return Validation.of(errors);
+  }
+
+  // ==================== EventSourcedEntity Validation Methods ====================
+
+  /**
+   * Validates that the EventSourcedEntity event type parameter is a sealed interface.
+   *
+   * @param element the EventSourcedEntity class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation eventSourcedEntityEventMustBeSealed(TypeElement element) {
+    // Get the event type from the generic parameter of EventSourcedEntity
+    TypeMirror superclass = element.getSuperclass();
+    if (superclass instanceof DeclaredType declaredType) {
+      if (!declaredType.getTypeArguments().isEmpty()) {
+        // EventSourcedEntity has two type parameters: State and Event
+        // Event is the second one (index 1)
+        if (declaredType.getTypeArguments().size() >= 2) {
+          TypeMirror eventType = declaredType.getTypeArguments().get(1);
+          if (eventType instanceof DeclaredType eventDeclaredType) {
+            Element eventElement = eventDeclaredType.asElement();
+            if (eventElement instanceof TypeElement eventTypeElement) {
+              // Check if the event type is sealed
+              if (!eventTypeElement.getModifiers().contains(Modifier.SEALED)) {
+                return Validation.of(
+                    "The event type of an EventSourcedEntity is required to be a sealed interface."
+                        + " Event '"
+                        + eventTypeElement.getQualifiedName()
+                        + "' in '"
+                        + element.getQualifiedName()
+                        + "' is not sealed.");
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return Validation.Valid.instance();
+  }
+
+  /**
+   * Validates that EventSourcedEntity command handlers have unique names (no overloading).
+   *
+   * @param element the EventSourcedEntity class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation eventSourcedCommandHandlersMustBeUnique(TypeElement element) {
+    // Collect all command handlers (methods returning EventSourcedEntity.Effect)
+    java.util.Map<String, List<ExecutableElement>> handlersByName = new java.util.HashMap<>();
+
+    for (Element enclosed : element.getEnclosedElements()) {
+      if (enclosed instanceof ExecutableElement method) {
+        String returnTypeName = method.getReturnType().toString();
+        // Match both fully qualified and simple names for Effect
+        if (returnTypeName.startsWith("akka.javasdk.eventsourcedentity.EventSourcedEntity.Effect")
+            || returnTypeName.equals("Effect")) {
+          String methodName = method.getSimpleName().toString();
+          handlersByName.computeIfAbsent(methodName, k -> new ArrayList<>()).add(method);
+        }
+      }
+    }
+
+    // Find methods with duplicate names
+    List<String> errors = new ArrayList<>();
+    for (java.util.Map.Entry<String, List<ExecutableElement>> entry : handlersByName.entrySet()) {
+      if (entry.getValue().size() > 1) {
+        String methodName = entry.getKey();
+        int count = entry.getValue().size();
+        errors.add(
+            errorMessage(
+                element,
+                element.getSimpleName()
+                    + " has "
+                    + count
+                    + " command handler methods named '"
+                    + methodName
+                    + "'. Command handlers must have unique names."));
       }
     }
 
