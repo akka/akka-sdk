@@ -123,10 +123,10 @@
                         </compilerArgs>
                         <annotationProcessors>
                             <annotationProcessor>
-                                akka.javasdk.tooling.processor.ComponentAnnotationProcessor
+                                akka.javasdk.tooling.processor.ComponentValidationProcessor
                             </annotationProcessor>
                             <annotationProcessor>
-                                akka.javasdk.tooling.processor.ComponentValidationProcessor
+                                akka.javasdk.tooling.processor.ComponentAnnotationProcessor
                             </annotationProcessor>
                         </annotationProcessors>
                         <annotationProcessorPaths>
