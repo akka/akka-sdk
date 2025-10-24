@@ -7,7 +7,6 @@
 ** xref:release-notes.adoc[Release notes]
 ** xref:migration-guide.adoc[Migration guide]
 ** xref:api-docs.adoc[]
-** xref:java:views.adoc#query[View query language]
 ** xref:views/index.adoc[View reference]
 *** xref:views/syntax/index.adoc[View query syntax]
 **** xref:views/syntax/query.adoc[Query]
