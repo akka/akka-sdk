@@ -14,4 +14,41 @@
   <packaging>jar</packaging>
 
   <name>doc-snippets</name>
+
+  <!-- example of including third party protobuf messages available in a jar -->
+  <!-- tag::third-party-proto-jar[] -->
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>unpack-additional-proto-dependencies</id>
+            <!-- Note: bound to unorthodox phase needed to make sure it happens
+                       before the grpc code generation -->
+            <phase>initialize</phase>
+            <goals>
+              <goal>unpack</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>com.google.api.grpc</groupId>
+                  <artifactId>proto-google-common-protos</artifactId>
+                  <version>2.61.3</version>
+                  <type>jar</type>
+                  <overWrite>true</overWrite>
+                  <outputDirectory>${project.build.directory}/proto</outputDirectory>
+                  <includes>**/*.proto</includes>
+                </artifactItem>
+              </artifactItems>
+              <overWriteReleases>false</overWriteReleases>
+              <overWriteSnapshots>true</overWriteSnapshots>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+  <!-- end::third-party-proto-jar[] -->
 </project>
