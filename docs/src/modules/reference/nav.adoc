@@ -44,6 +44,7 @@
 **** xref:views/concepts/pagination.adoc[Pagination]
 **** xref:views/concepts/advanced-views.adoc[Advanced views]
 ** xref:jwts.adoc[JSON Web Tokens (JWTs)]
+** xref:security/oidc-setup.adoc[OpenID Connect Setup]
 ** xref:cli/akka-cli/index.adoc[]
 *** xref:cli/akka-cli/akka.adoc[]
 *** xref:cli/akka-cli/akka_auth.adoc[]
