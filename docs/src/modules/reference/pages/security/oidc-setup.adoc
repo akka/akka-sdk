@@ -95,7 +95,7 @@ Additional help/notes can be found by using the Akka CLI’s “help” feature,
 
 [source,command line]
 ----
-akka organization auth openid add --help
+akka organization auth add openid --help
 ----
 
 Upon successful execution of the above command, the console output will include the following details:
@@ -141,8 +141,49 @@ Note that after verification, you can remove this domain challenge DNS record fr
 
 == Migrate your user(s) over to external authentication
 
-After Akka has successfully verified the ownership of the DNS domain name associated with your Akka organization, any new users that authenticate to Akka using an email address matching your organization’s email domain name (e.g. `user@company.com` matches `company.com`) will automatically be directed to your OpenID Connect identity provider on first (and all subsequent logins). Those users are “tied” to the Akka organization, and linked to the OpenID Connect provider from creation.
+After Akka has successfully verified the ownership of the DNS domain name associated with your Akka organization, any *new users that authenticate* to Akka using an email address matching your organization’s email domain name (e.g. `user@company.com` matches `company.com`) will automatically be directed to your OpenID Connect identity provider on first (and all subsequent logins). Those users are “tied” to the Akka organization, and linked to the OpenID Connect provider from creation.
 
-For users which already existed in the organization previously, and have a matching email (domain) address associated with their Akka user account, they will begin being prompted to migrate over to using external authentication via the configured OpenID Connect provider on each subsequent login.
+For *users which already existed* in the organization previously, and have a matching email (domain) address associated with their Akka user account, they will begin being prompted to migrate over to using external authentication via the configured OpenID Connect provider on each subsequent login.
 
 Choosing to “migrate your account” will redirect the existing user to the OpenID Connect provider for initial authentication, and if successful, the user will then be tied to the organization and linked to the OpenID Connect provider for authentication.
+
+== Creating OIDC groups for Akka access
+
+Akka roles are defined at either the *organization or project level*. A group can have one or more roles and be applied to an organization and/or projects. It is important to note that only one role can be added to a group at a time via individual CLI commands.
+
+=== Assigning an organization-level role
+
+The available organizational roles are: `superuser`, `project-admin`, `billing-admin`, and `member`. See xref:operations:organizations/manage-users.adoc[].
+
+An example of creating an OIDC group called `akka-project-admins` with a role of project-admin:
+[source,command line]
+----
+akka organization user add-binding --group akka-project-admins --role project-admin
+----
+
+=== Assigning a project-level role
+
+The available project roles are: `admin`, `developer`, `viewer` and `backoffice`. A different command is used to create groups at the project level. See xref:operations:projects/manage-project-access.adoc[].
+
+An example of creating a group called `akka-dev-admin` with a role of `admin` that is then assigned to three different projects:
+[source,command line]
+----
+akka roles add-binding --group akka-dev-admin --role admin --project project1
+akka roles add-binding --group akka-dev-admin --role admin --project project2
+akka roles add-binding --group akka-dev-admin --role admin --project project3
+----
+
+An example of creating a group called `akka-read-only` with a role of `viewer` that is then assigned to two different projects:
+[source,command line]
+----
+akka roles add-binding --group akka-dev-admin --role viewer admin --project project1
+akka roles add-binding --group akka-dev-admin --role viewer --project project2
+----
+
+== See also
+
+- xref:operations:organizations/manage-users.adoc[]
+- xref:operations:projects/manage-project-access.adoc[]
+- xref:reference:cli/akka-cli/akka_organizations_users.adoc#_see_also[`akka organization users` commands]
+- xref:reference:cli/akka-cli/akka_roles.adoc#_see_also[`akka roles` commands]
+- xref:reference:cli/akka-cli/akka_organizations_auth_add_openid.adoc[`akka organization auth add openid` command]
