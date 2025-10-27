@@ -544,6 +544,13 @@ private final class Sdk(
   // guardrail name => component ids
   private var guardrailEnabledForComponent = Map.empty[String, Set[String]]
 
+  private def isProvided(clz: Class[_]): Boolean =
+    classOf[PromptTemplate].isAssignableFrom(clz) ||
+    classOf[ToxicityEvaluator].isAssignableFrom(clz) ||
+    classOf[SummarizationEvaluator].isAssignableFrom(clz) ||
+    classOf[HallucinationEvaluator].isAssignableFrom(clz) ||
+    classOf[SessionMemoryEntity].isAssignableFrom(clz)
+
   componentClasses
     .filter(hasComponentId)
     .foreach {
@@ -587,7 +594,7 @@ private final class Sdk(
             keyValue = false,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            provided = false)
+            provided = isProvided(clz))
 
       case clz if Reflect.isKeyValueEntity(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -756,7 +763,8 @@ private final class Sdk(
             instanceFactory,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            evaluator = Reflect.isEvaluatorAgent(clz))
+            evaluator = Reflect.isEvaluatorAgent(clz),
+            provided = isProvided(clz))
 
         agentRegistryInfo :+= AgentRegistryImpl.agentDetailsFor(agentClass)
 
