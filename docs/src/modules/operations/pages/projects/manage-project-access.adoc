@@ -57,6 +57,8 @@ akka config set project <project name>
 
 == Granting a role
 
+NOTE: When using _OpenID Connect_ (OIDC), see xref:reference:security/oidc-setup.adoc#assigning_project_level_roles[OIDC setup].
+
 You can grant a project role to a user in two ways:
 
 === 1. Invite a user to the project by e-mail
