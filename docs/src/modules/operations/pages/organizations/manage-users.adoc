@@ -45,6 +45,8 @@ fd21044c-b973-4220-8f65-0f7d317bb23b   superuser   jane.citizen   jane.citizen@e
 
 == Granting a role
 
+NOTE: When using _OpenID Connect_ (OIDC), see xref:reference:security/oidc-setup.adoc#assigning_organization_level_roles[OIDC setup].
+
 You can grant a role to a user in two ways:
 
 === 1. Invite a User by Email

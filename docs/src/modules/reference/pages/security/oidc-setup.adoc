@@ -151,7 +151,8 @@ Choosing to “migrate your account” will redirect the existing user to the Op
 
 Akka roles are defined at either the *organization or project level*. A group can have one or more roles and be applied to an organization and/or projects. It is important to note that only one role can be added to a group at a time via individual CLI commands.
 
-=== Assigning an organization-level role
+[#assigning_organization_level_roles]
+=== Assigning an organization-level roles
 
 The available organizational roles are: `superuser`, `project-admin`, `billing-admin`, and `member`. See xref:operations:organizations/manage-users.adoc[].
 
@@ -161,6 +162,7 @@ An example of creating an OIDC group called `akka-project-admins` with a role of
 akka organization user add-binding --group akka-project-admins --role project-admin
 ----
 
+[#assigning_project_level_roles]
 === Assigning a project-level role
 
 The available project roles are: `admin`, `developer`, `viewer` and `backoffice`. A different command is used to create groups at the project level. See xref:operations:projects/manage-project-access.adoc[].
