@@ -382,10 +382,10 @@ private[impl] final class AgentImpl[A <: Agent](
           val requests = res.toolRequests.map { req =>
             new ToolCallRequest(req.id, req.name, req.arguments)
           }.asJava
-          new AiMessage(res.timestamp.getOrElse(timestamp), res.content, componentId, requests)
+          new AiMessage(res.timestamp, res.content, componentId, requests)
 
         case res: SpiAgent.ToolCallResponse =>
-          new ToolCallResponse(res.timestamp.getOrElse(timestamp), componentId, res.id, res.name, res.content)
+          new ToolCallResponse(res.timestamp, componentId, res.id, res.name, res.content)
       }
 
     sessionMemoryClient.addInteraction(
