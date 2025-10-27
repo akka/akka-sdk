@@ -658,7 +658,8 @@ private final class Sdk(
             readOnlyCommandNames,
             ctx => workflowInstanceFactory(componentId, ctx, clz.asInstanceOf[Class[Workflow[Nothing]]]),
             name = Reflect.readComponentName(clz),
-            description = Reflect.readComponentDescription(clz))
+            description = Reflect.readComponentDescription(clz),
+            provided = false)
 
       case clz if Reflect.isTimedAction(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -684,7 +685,8 @@ private final class Sdk(
             clz.getName,
             timedActionSpi,
             name = Reflect.readComponentName(clz),
-            description = Reflect.readComponentDescription(clz))
+            description = Reflect.readComponentDescription(clz),
+            provided = false)
 
       case clz if Reflect.isConsumer(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -716,7 +718,8 @@ private final class Sdk(
             consumerDestination(consumerClass),
             consumerSpi,
             name = Reflect.readComponentName(clz),
-            description = Reflect.readComponentDescription(clz))
+            description = Reflect.readComponentDescription(clz),
+            provided = false)
 
       case clz if Reflect.isAgent(clz) =>
         val componentId = Reflect.readComponentId(clz)
