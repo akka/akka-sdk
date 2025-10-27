@@ -373,8 +373,6 @@ private[impl] final class AgentImpl[A <: Agent](
       userMessageAt: Instant,
       responses: Seq[SpiAgent.Response]): Unit = {
 
-    val timestamp = Instant.now()
-
     // AiMessages and ToolCallResponses
     val responseMessages: Seq[SessionMessage] =
       responses.map {
