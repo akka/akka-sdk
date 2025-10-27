@@ -306,3 +306,11 @@ Views are not replicated directly in the same way as for example xref:event-sour
 The origin of an event is the region where a message was first created. You can see the origin from `updateContext().hasLocalOrigin()` or `updateContext().originRegion()` and perform conditional processing of the event depending on the origin, such as ignoring events from other regions than the local region where the View is running. The local region can be retrieved with `messageContext().selfRegion()`.
 
 A View can also be built from a message broker topic, and that could be regional or global depending on how the message broker is configured.
+
+== View limits
+
+There is no limit to how many entries a view can contain, however, all queries are limited to return at
+most 10 000 entries, if a query returns a larger result the view will throw an exception.
+
+To handle views with large numbers of entries it is important to make sure that queries filter their
+results enough that they do not hit this limit.
