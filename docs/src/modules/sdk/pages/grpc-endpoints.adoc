@@ -188,7 +188,7 @@ updates to the code wherever it is accessing the old field.
 == External protobuf message types
 
 The set of common message types defined in the protobuf package `google.protobuf`, for example `google.protobuf.Timestamp`
-and `google.protobuf.google.protobuf`, are always available for use in projects with gRPC endpoints.
+and `google.protobuf.StringValue`, are always available for use in projects with gRPC endpoints.
 
 Sometimes a service needs to use other protobuf message definitions, that do not specifically belong to the service itself,
 for example when an Akka service calls a gRPC endpoint in another Akka service in the same Akka project, or a third party
