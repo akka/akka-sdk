@@ -281,6 +281,8 @@ Another example where we have selected `anthropic` with `claude-sonnet-4` as the
 include::java:example$doc-snippets/src/main/resources/application.conf[tags=agent-model-config2]
 ----
 
+The API key can be defined with an environment variable, `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` in the above examples.
+
 == Reference configurations
 The following is a list of the various reference configurations for each of the AI models
 
