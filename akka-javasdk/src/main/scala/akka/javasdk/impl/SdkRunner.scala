@@ -282,6 +282,13 @@ private object ComponentLocator {
 
   private val logger = LoggerFactory.getLogger(getClass)
 
+  val providedComponents: Seq[Class[_]] = Seq(
+    classOf[SessionMemoryEntity],
+    classOf[PromptTemplate],
+    classOf[ToxicityEvaluator],
+    classOf[SummarizationEvaluator],
+    classOf[HallucinationEvaluator])
+
   case class LocatedClasses(components: Seq[Class[_]], service: Option[Class[_]])
 
   def locateUserComponents(system: ActorSystem[_]): LocatedClasses = {
@@ -331,9 +338,8 @@ private object ComponentLocator {
     }.toSeq
 
     val withBuildInComponents = if (components.exists(classOf[Agent].isAssignableFrom)) {
-      logger.debug("Agent component detected, adding built-in components")
-      classOf[SessionMemoryEntity] +: classOf[PromptTemplate] +: classOf[ToxicityEvaluator] +: classOf[
-        SummarizationEvaluator] +: classOf[HallucinationEvaluator] +: components
+      logger.debug("Agent component detected, adding provided components")
+      providedComponents ++ components
     } else {
       components
     }
@@ -544,12 +550,7 @@ private final class Sdk(
   // guardrail name => component ids
   private var guardrailEnabledForComponent = Map.empty[String, Set[String]]
 
-  private def isProvided(clz: Class[_]): Boolean =
-    classOf[PromptTemplate].isAssignableFrom(clz) ||
-    classOf[ToxicityEvaluator].isAssignableFrom(clz) ||
-    classOf[SummarizationEvaluator].isAssignableFrom(clz) ||
-    classOf[HallucinationEvaluator].isAssignableFrom(clz) ||
-    classOf[SessionMemoryEntity].isAssignableFrom(clz)
+  private def isProvided(clz: Class[_]): Boolean = ComponentLocator.providedComponents.contains(clz)
 
   componentClasses
     .filter(hasComponentId)
