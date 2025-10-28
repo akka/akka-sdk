@@ -732,6 +732,8 @@ public abstract class Workflow<S> {
     Optional<RecoverStrategy<?>> defaultStepRecoverStrategy();
 
     List<StepSettings> stepSettings();
+
+    Optional<Duration> passivationDelay();
   }
 
   /** INTERNAL API */
@@ -774,6 +776,11 @@ public abstract class Workflow<S> {
     }
 
     @Override
+    public Optional<Duration> passivationDelay() {
+      return Optional.empty();
+    }
+
+    @Override
     public Optional<Duration> defaultStepTimeout() {
       return legacyDefinition.getStepTimeout();
     }
@@ -782,7 +789,8 @@ public abstract class Workflow<S> {
   private record WorkflowSettingsImpl(
       Optional<Duration> defaultStepTimeout,
       Optional<RecoverStrategy<?>> defaultStepRecoverStrategy,
-      Map<String, StepSettings> stepSettingsMap)
+      Map<String, StepSettings> stepSettingsMap,
+      Optional<Duration> passivationDelay)
       implements WorkflowSettings {
 
     @Override
@@ -796,30 +804,34 @@ public abstract class Workflow<S> {
     private final Optional<Duration> defaultStepTimeout;
     private final Optional<RecoverStrategy<?>> defaultStepRecoverStrategy;
     private final Map<String, StepSettings> stepSettingsMap;
+    private final Optional<Duration> passivationDelay;
 
     public WorkflowSettingsBuilder(
         Optional<Duration> defaultStepTimeout,
         Optional<RecoverStrategy<?>> defaultStepRecoverStrategy,
-        Map<String, StepSettings> stepSettingsMap) {
+        Map<String, StepSettings> stepSettingsMap,
+        Optional<Duration> passivationDelay) {
       this.defaultStepTimeout = defaultStepTimeout;
       this.defaultStepRecoverStrategy = defaultStepRecoverStrategy;
       this.stepSettingsMap = stepSettingsMap;
+      this.passivationDelay = passivationDelay;
     }
 
     public static WorkflowSettingsBuilder newBuilder() {
-      return new WorkflowSettingsBuilder(Optional.empty(), Optional.empty(), Map.of());
+      return new WorkflowSettingsBuilder(
+          Optional.empty(), Optional.empty(), Map.of(), Optional.empty());
     }
 
     /** Define a default timeout duration for all steps. Can be overridden per step. */
     public WorkflowSettingsBuilder defaultStepTimeout(Duration timeout) {
       return new WorkflowSettingsBuilder(
-          Optional.of(timeout), defaultStepRecoverStrategy, stepSettingsMap);
+          Optional.of(timeout), defaultStepRecoverStrategy, stepSettingsMap, passivationDelay);
     }
 
     /** Define a default recovery strategy for all steps. Can be overridden per step. */
     public WorkflowSettingsBuilder defaultStepRecovery(RecoverStrategy<?> recoverStrategy) {
       return new WorkflowSettingsBuilder(
-          defaultStepTimeout, Optional.of(recoverStrategy), stepSettingsMap);
+          defaultStepTimeout, Optional.of(recoverStrategy), stepSettingsMap, passivationDelay);
     }
 
     /**
@@ -874,6 +886,22 @@ public abstract class Workflow<S> {
       return addStepRecovery(stepName, recovery);
     }
 
+    /**
+     * A paused (or finished) workflow will be kept in memory for the given delay before being
+     * passivated. This improves the performance of resuming such a workflow because it doesn't have
+     * to be recovered from the storage.
+     *
+     * <p>Define a passivation delay for the workflow. When workflow becomes idle, it will be
+     * passivated after the given delay.
+     */
+    public <W, I> WorkflowSettingsBuilder passivationDelay(Duration delay) {
+      return new WorkflowSettingsBuilder(
+          defaultStepTimeout,
+          defaultStepRecoverStrategy,
+          stepSettingsMap,
+          Optional.ofNullable(delay));
+    }
+
     private WorkflowSettingsBuilder addStepTimeout(String stepName, Duration timeout) {
       var settings = stepSettingsMap.getOrDefault(stepName, StepSettings.empty(stepName));
       var updatedSettings = settings.withTimeout(timeout);
@@ -890,7 +918,7 @@ public abstract class Workflow<S> {
       var mutableMap = new HashMap<>(stepSettingsMap);
       mutableMap.put(settings.stepName(), settings);
       return new WorkflowSettingsBuilder(
-          defaultStepTimeout, defaultStepRecoverStrategy, Map.copyOf(mutableMap));
+          defaultStepTimeout, defaultStepRecoverStrategy, Map.copyOf(mutableMap), passivationDelay);
     }
 
     /**
@@ -900,7 +928,7 @@ public abstract class Workflow<S> {
      */
     public WorkflowSettings build() {
       return new WorkflowSettingsImpl(
-          defaultStepTimeout, defaultStepRecoverStrategy, stepSettingsMap);
+          defaultStepTimeout, defaultStepRecoverStrategy, stepSettingsMap, passivationDelay);
     }
   }
 
