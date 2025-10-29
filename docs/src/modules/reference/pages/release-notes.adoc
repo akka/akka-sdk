@@ -16,6 +16,9 @@ Current versions
 - BigDecimal support in endpoints and views
 - Santization/anonymization in logs and agents
 
+* Akka Runtime 1.5.19
+- Agent interaction log
+
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.5[Akka SDK 3.5.5]
 - Include `EvaluatorResult.passed` in json response
 - Use `@Compont` and new `@AgentRole` annotations instead of `@AgentDescriptor`
