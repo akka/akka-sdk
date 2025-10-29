@@ -890,9 +890,6 @@ public abstract class Workflow<S> {
      * A paused (or finished) workflow will be kept in memory for the given delay before being
      * passivated. This improves the performance of resuming such a workflow because it doesn't have
      * to be recovered from the storage.
-     *
-     * <p>Define a passivation delay for the workflow. When workflow becomes idle, it will be
-     * passivated after the given delay.
      */
     public <W, I> WorkflowSettingsBuilder passivationDelay(Duration delay) {
       return new WorkflowSettingsBuilder(
