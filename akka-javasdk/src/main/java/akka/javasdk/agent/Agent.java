@@ -140,9 +140,16 @@ public abstract class Agent {
        * Class} is provided, it will be instantiated at runtime using the configured {@link
        * DependencyProvider}.
        *
+       * <p>Workflows, Event Sourced Entities, Key Value Entities, and Views can also be used as
+       * tools. Unlike regular objects, component instances cannot be passed to this method.
+       * Instead, you must pass the component {@link Class} object.
+       *
        * <p>Each instance or class must have at least one public method annotated with {@link
        * FunctionTool}. If no such method is found, an {@link IllegalArgumentException} will be
        * thrown. These methods will be available as tools for the AI model to invoke.
+       *
+       * <p>When using components as tools, special rules apply to which methods can be annotated
+       * with {@link FunctionTool}. See {@link FunctionTool} for details.
        *
        * @return this builder for method chaining
        */
@@ -155,9 +162,16 @@ public abstract class Agent {
        * a {@link Class} is provided, it will be instantiated at runtime using the configured {@link
        * DependencyProvider}.
        *
+       * <p>Workflows, Event Sourced Entities, Key Value Entities, and Views can also be used as
+       * tools. Unlike regular objects, component instances cannot be passed to this method.
+       * Instead, you must pass the component {@link Class} object.
+       *
        * <p>Each instance or class must have at least one public method annotated with {@link
        * FunctionTool}. If no such method is found, an {@link IllegalArgumentException} will be
        * thrown. These methods will be available as tools for the AI model to invoke.
+       *
+       * <p>When using components as tools, special rules apply to which methods can be annotated
+       * with {@link FunctionTool}. See {@link FunctionTool} for details.
        *
        * @param toolInstancesOrClasses one or more objects or classes exposing tool methods
        * @return this builder for method chaining
