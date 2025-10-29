@@ -36,8 +36,6 @@ private[impl] object JsonSchema {
 
   private val log = LoggerFactory.getLogger(getClass)
 
-  val emptyObjectSchema = new JsonSchemaObject(None, Map.empty, Seq.empty)
-
   final case class TypedParameter(
       name: String,
       parameterType: Type,
@@ -58,24 +56,6 @@ private[impl] object JsonSchema {
       description = None,
       properties = parameters.map { case TypedParameter(name, _, schemaType, _) => name -> schemaType }.toMap,
       required = parameters.collect { case TypedParameter(name, _, _, true) => name }.sorted)
-  }
-
-  def jsonSchemaWitId(method: Method, idFieldName: String, idDescription: String): JsonSchemaObject = {
-    val requiredFields = Seq(idFieldName)
-    val objSchema = jsonSchemaFor(method)
-
-    if (objSchema == emptyObjectSchema) {
-      new JsonSchemaObject(
-        description = None,
-        properties = Map(idFieldName -> new JsonSchemaString(Some(idDescription))),
-        required = requiredFields)
-    } else {
-      val (payloadArgName, payloadSchema) = objSchema.properties.head
-      new JsonSchemaObject(
-        description = None,
-        properties = Map(idFieldName -> new JsonSchemaString(Some(idDescription)), payloadArgName -> payloadSchema),
-        required = requiredFields :+ payloadArgName)
-    }
   }
 
   def jsonSchemaFor(value: Class[_]): JsonSchemaDataType = {

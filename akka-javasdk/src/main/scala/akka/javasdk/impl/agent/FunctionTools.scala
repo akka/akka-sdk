@@ -16,12 +16,15 @@ import akka.javasdk.agent.Agent
 import akka.javasdk.annotations.FunctionTool
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.JsonSchema
+import akka.javasdk.impl.JsonSchema.jsonSchemaFor
 import akka.javasdk.impl.client.EntityClientImpl
 import akka.javasdk.impl.client.ViewClientImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.ClassOps
 import akka.javasdk.impl.reflection.Reflect.Syntax.MethodOps
 import akka.runtime.sdk.spi.SpiAgent
+import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
+import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaString
 
 /**
  * INTERNAL API
@@ -196,17 +199,35 @@ object FunctionTools {
     else toolAnno.name()
   }
 
+  private def jsonSchemaWitId(method: Method): JsonSchemaObject = {
+
+    val idDescription = "the unique identifier"
+    val requiredFields = Seq(uniqueId)
+    val objSchema = jsonSchemaFor(method)
+
+    if (objSchema.properties.nonEmpty) {
+      val (payloadArgName, payloadSchema) = objSchema.properties.head
+      new JsonSchemaObject(
+        description = None,
+        properties = Map(uniqueId -> new JsonSchemaString(Some(idDescription)), payloadArgName -> payloadSchema),
+        required = requiredFields :+ payloadArgName)
+    } else {
+      new JsonSchemaObject(
+        description = None,
+        properties = Map(uniqueId -> new JsonSchemaString(Some(idDescription))),
+        required = requiredFields)
+    }
+  }
   private def toToolDescriptors(cls: Class[_]): Seq[SpiAgent.ToolDescriptor] = {
 
     resolvedMethodNames(cls).map { case (name, method) =>
       val toolAnno = method.getAnnotation(classOf[FunctionTool])
 
       val objSchema =
-        if (Reflect.isEntity(cls) || Reflect.isWorkflow(cls)) {
-          JsonSchema.jsonSchemaWitId(method, uniqueId, "the unique identifier")
-        } else {
+        if (Reflect.isEntity(cls) || Reflect.isWorkflow(cls))
+          jsonSchemaWitId(method)
+        else
           JsonSchema.jsonSchemaFor(method)
-        }
 
       new SpiAgent.ToolDescriptor(name, toolAnno.description(), schema = objSchema)
 

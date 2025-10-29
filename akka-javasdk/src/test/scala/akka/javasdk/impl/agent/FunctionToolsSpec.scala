@@ -9,7 +9,6 @@ import akka.javasdk.DependencyProvider
 import akka.javasdk.agent.Agent
 import akka.javasdk.annotations.FunctionTool
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
-import akka.javasdk.impl.JsonSchema.emptyObjectSchema
 import akka.javasdk.impl.agent.FunctionToolsSpec.CustomNameTool
 import akka.javasdk.impl.agent.FunctionToolsSpec.ESEntityAsTool
 import akka.javasdk.impl.agent.FunctionToolsSpec.KVEntityAsTool
@@ -422,7 +421,7 @@ class FunctionToolsSpec extends AnyWordSpec with Matchers {
 
       val descMethodVoid = descriptors.find(_.name == "ViewAsTool_method").get
       descMethodVoid.description shouldBe "a method without arg"
-      descMethodVoid.schema shouldBe emptyObjectSchema
+      descMethodVoid.schema.properties shouldBe empty
 
       val descMethodString = descriptors.find(_.name == "ViewAsTool_method_String").get
       descMethodString.description shouldBe "a method with 1 String arg"
