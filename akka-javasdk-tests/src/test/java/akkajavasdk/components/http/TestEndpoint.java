@@ -50,7 +50,7 @@ public class TestEndpoint extends AbstractHttpEndpoint {
   public String sanitized() {
     return sanitizer.sanitize("Here's a string to sanitize: sanitizesanitizesanitize");
   }
-  
+
   public record BigDecimalRequest(BigDecimal value) {}
 
   @Post("/big-decimal")

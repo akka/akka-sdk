@@ -158,7 +158,7 @@ public class HttpEndpointTest extends TestKitSupport {
     assertThat(directUsageResult)
         .isEqualTo("Here's a string to sanitize: ************************");
   }
-  
+
   @Test
   public void shouldHandleBigDecimalOutOfTheBox() {
     var bigDecimal = new java.math.BigDecimal("12345678901234567890.12345678901234567890");
