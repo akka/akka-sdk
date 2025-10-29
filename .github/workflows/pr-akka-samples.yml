@@ -95,6 +95,7 @@ jobs:
           BRANCH=update-sdk-$sdk_version-$timestamp
           git checkout -b $BRANCH
           rm -rf ./src/*
+          if [ -f "../docs/build/bundle/${{ matrix.sample }}/pom.xml" ]; then cat ../docs/build/bundle/${{ matrix.sample }}/pom.xml; fi
           rsync -av ../docs/build/bundle/${{ matrix.sample }}/ ./
           rm -f .bundleignore
           
