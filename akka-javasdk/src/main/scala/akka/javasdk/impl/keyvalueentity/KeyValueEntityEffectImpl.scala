@@ -46,11 +46,15 @@ private[javasdk] final class KeyValueEntityEffectImpl[S]
   def secondaryEffect: SecondaryEffectImpl = _secondaryEffect
 
   override def updateState(newState: S): KeyValueEntityEffectImpl[S] = {
+    if (newState == null)
+      throw new IllegalStateException("Updated state must not be null")
     _primaryEffect = UpdateState(newState, metadata = None)
     this
   }
 
   override def updateStateWithMetadata(newState: S, metadata: Metadata): OnSuccessBuilder[S] = {
+    if (newState == null)
+      throw new IllegalStateException("Updated state must not be null")
     _primaryEffect = UpdateState(newState, Option(metadata))
     this
   }

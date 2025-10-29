@@ -77,14 +77,12 @@ private[javasdk] object Validations {
     final def isInvalid: Boolean = !isInvalid
     def ++(validation: Validation): Validation
 
-    def failIfInvalid(): Unit
   }
 
   case object Valid extends Validation {
     override def isValid: Boolean = true
     override def ++(validation: Validation): Validation = validation
 
-    override def failIfInvalid(): Unit = ()
   }
 
   object Invalid {
@@ -100,8 +98,6 @@ private[javasdk] object Validations {
         case Valid      => this
         case i: Invalid => Invalid(this.messages ++ i.messages)
       }
-
-    override def failIfInvalid(): Unit = throwFailureSummary()
 
     def throwFailureSummary(): Nothing =
       throw ValidationException(messages.mkString(", "))
@@ -144,12 +140,14 @@ private[javasdk] object Validations {
   private def validateEventSourcedEntity(component: Class[_]) =
     when[EventSourcedEntity[_, _]](component) {
       eventSourcedEntityEventMustBeSealed(component) ++
+      hasEffectMethod(component, classOf[EventSourcedEntity.Effect[_]]) ++
       eventSourcedCommandHandlersMustBeUnique(component) ++
       commandHandlerArityShouldBeZeroOrOne(component, hasESEffectOutput)
     }
 
   private def validateWorkflow(component: Class[_]) =
     when[Workflow[_]](component) {
+      hasEffectMethod(component, classOf[Workflow.Effect[_]]) ++
       commandHandlerArityShouldBeZeroOrOne(component, hasWorkflowEffectOutput)
     }
 
@@ -246,18 +244,19 @@ private[javasdk] object Validations {
     commandHandlersMustBeUnique(component, commandHandlers)
   }
 
-  def validateValueEntity(component: Class[_]): Validation = when[KeyValueEntity[_]](component) {
+  private def validateValueEntity(component: Class[_]): Validation = when[KeyValueEntity[_]](component) {
     valueEntityCommandHandlersMustBeUnique(component) ++
+    hasEffectMethod(component, classOf[KeyValueEntity.Effect[_]]) ++
     commandHandlerArityShouldBeZeroOrOne(component, hasKVEEffectOutput)
   }
 
-  def valueEntityCommandHandlersMustBeUnique(component: Class[_]): Validation = {
+  private def valueEntityCommandHandlersMustBeUnique(component: Class[_]): Validation = {
     val commandHandlers = component.getMethods
       .filter(_.getReturnType == classOf[KeyValueEntity.Effect[_]])
     commandHandlersMustBeUnique(component, commandHandlers)
   }
 
-  def commandHandlersMustBeUnique(component: Class[_], commandHandlers: Array[Method]): Validation = {
+  private def commandHandlersMustBeUnique(component: Class[_], commandHandlers: Array[Method]): Validation = {
     val nonUnique = commandHandlers
       .groupBy(_.getName)
       .filter(_._2.length > 1)
@@ -287,7 +286,7 @@ private[javasdk] object Validations {
 
   private def validateTimedAction(component: Class[_]): Validation = {
     when[TimedAction](component) {
-      actionValidation(component) ++
+      hasEffectMethod(component, classOf[TimedAction.Effect]) ++
       commandHandlerArityShouldBeZeroOrOne(component, hasTimedActionEffectOutput)
     }
   }
@@ -295,8 +294,9 @@ private[javasdk] object Validations {
   private def validateConsumer(component: Class[_]): Validation = {
     when[Consumer](component) {
       hasConsumeAnnotation(component, "Consumer") ++
-      commonSubscriptionValidation(component, hasConsumerOutput) ++
-      actionValidation(component)
+      hasEffectMethod(component, classOf[Consumer.Effect]) ++
+      commandHandlerArityShouldBeZeroOrOne(component, hasConsumerOutput) ++
+      commonSubscriptionValidation(component, hasConsumerOutput)
     }
   }
 
@@ -306,9 +306,10 @@ private[javasdk] object Validations {
     }
   }
 
-  private def actionValidation(component: Class[_]): Validation = {
-    // Nothing here right now
-    Valid
+  private def hasEffectMethod(component: Class[_], effectType: Class[_]) = {
+    if (component.getMethods.exists(_.getReturnType == effectType)) Valid
+    else
+      Invalid(s"No method returning ${effectType.getName} found in ${component.getName}")
   }
 
   private def validateView(component: Class[_]): Validation =
@@ -611,7 +612,8 @@ private[javasdk] object Validations {
       component.getMethods.toIndexedSeq.filter(hasSubscriptionAndAcl).map { method =>
         errorMessage(
           method,
-          "Methods from classes annotated with Kalix @Consume annotations are for internal use only and cannot be annotated with ACL annotations.")
+          "Methods from classes annotated with Akka @Consume annotations are for internal use only and cannot be " +
+          "annotated with ACL annotations.")
       }
 
     Validation(messages)
@@ -645,7 +647,7 @@ private[javasdk] object Validations {
         Invalid(errorMessage(component, "@ComponentId must not contain the pipe character '|'."))
       else Valid
     } else {
-      //missing annotation means that the component is disabled
+      // a missing annotation means that the component is disabled
       Valid
     }
   }

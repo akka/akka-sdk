@@ -94,6 +94,7 @@ JUnit
 (?i)JWTs
 [Kk]afka
 [Kk]alix
+Keycloak
 keyId
 Kolesnikov
 Lagom

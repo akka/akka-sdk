@@ -271,7 +271,7 @@ You can define a default model in `application.conf`:
 include::java:example$doc-snippets/src/main/resources/application.conf[tags=agent-model-config]
 ----
 
-The `model-provider` property points to name of another configuration section, in this case `akka.javasdk.agent.openai`. That configuration section contains the actual configuration for the model provider, according to the properties described in below xref:#_reference_configurations[].
+The `model-provider` property points to the name of another configuration section, in this case `akka.javasdk.agent.openai`. That configuration section contains the actual configuration for the model provider, according to the properties described in below xref:#_reference_configurations[].
 
 Another example where we have selected `anthropic` with `claude-sonnet-4` as the default model provider:
 
@@ -280,6 +280,8 @@ Another example where we have selected `anthropic` with `claude-sonnet-4` as the
 ----
 include::java:example$doc-snippets/src/main/resources/application.conf[tags=agent-model-config2]
 ----
+
+The API key can be defined with an environment variable, `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` in the above examples.
 
 == Reference configurations
 The following is a list of the various reference configurations for each of the AI models

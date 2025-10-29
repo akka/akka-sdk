@@ -69,7 +69,7 @@ lazy val akkaJavaSdkTests =
     .enablePlugins(AkkaGrpcPlugin)
     .dependsOn(akkaJavaSdk, akkaJavaSdkTestKit)
     .settings(
-      name := "akka-javasdk-testkit",
+      name := "akka-javasdk-tests",
       crossPaths := false,
       Test / parallelExecution := false,
       Test / fork := true,

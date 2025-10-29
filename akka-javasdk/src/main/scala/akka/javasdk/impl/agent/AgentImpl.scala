@@ -259,6 +259,8 @@ private[impl] final class AgentImpl[A <: Agent](
               else
                 None
 
+            val userMessageAt = Instant.now()
+
             new SpiAgent.RequestModelEffect(
               modelProvider = spiModelProvider,
               systemMessage = systemMessage,
@@ -272,7 +274,7 @@ private[impl] final class AgentImpl[A <: Agent](
               responseMapping = req.responseMapping,
               failureMapping = req.failureMapping.map(mapSpiAgentException),
               replyMetadata = metadata,
-              onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, results),
+              onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, userMessageAt, results),
               requestGuardrails = guardrails.modelRequestGuardrails,
               responseGuardrails = guardrails.modelResponseGuardrails)
 
@@ -368,9 +370,8 @@ private[impl] final class AgentImpl[A <: Agent](
   private def onSuccess(
       sessionMemoryClient: SessionMemory,
       userMessage: String,
+      userMessageAt: Instant,
       responses: Seq[SpiAgent.Response]): Unit = {
-
-    val timestamp = Instant.now()
 
     // AiMessages and ToolCallResponses
     val responseMessages: Seq[SessionMessage] =
@@ -379,15 +380,15 @@ private[impl] final class AgentImpl[A <: Agent](
           val requests = res.toolRequests.map { req =>
             new ToolCallRequest(req.id, req.name, req.arguments)
           }.asJava
-          new AiMessage(timestamp, res.content, componentId, requests)
+          new AiMessage(res.timestamp, res.content, componentId, requests)
 
         case res: SpiAgent.ToolCallResponse =>
-          new ToolCallResponse(timestamp, componentId, res.id, res.name, res.content)
+          new ToolCallResponse(res.timestamp, componentId, res.id, res.name, res.content)
       }
 
     sessionMemoryClient.addInteraction(
       sessionId,
-      new UserMessage(timestamp, userMessage, componentId),
+      new UserMessage(userMessageAt, userMessage, componentId),
       responseMessages.asJava)
   }
 

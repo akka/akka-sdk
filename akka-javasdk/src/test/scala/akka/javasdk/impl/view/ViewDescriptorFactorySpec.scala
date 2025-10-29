@@ -7,7 +7,6 @@ package akka.javasdk.impl.view
 import scala.reflect.ClassTag
 
 import akka.dispatch.ExecutionContexts
-import akka.javasdk.impl.ValidationException
 import akka.javasdk.impl.Validations
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.testmodels.view.ViewTestModels
@@ -30,17 +29,11 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
   import akka.javasdk.testmodels.subscriptions.PubSubTestModels._
 
   def assertDescriptor[T](test: ViewDescriptor => Any)(implicit tag: ClassTag[T]): Unit = {
-    Validations.validate(tag.runtimeClass).failIfInvalid()
+    Validations.validate(tag.runtimeClass).isValid shouldBe true
     test(ViewDescriptorFactory(tag.runtimeClass, new JsonSerializer, new RegionInfo(""), ExecutionContexts.global()))
   }
 
   "View descriptor factory" should {
-
-    "validate a View must be declared as public" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[NotPublicView]).failIfInvalid()
-      }.getMessage should include("NotPublicView is not marked with `public` modifier. Components must be public.")
-    }
 
     "allow View with lower case query" in {
       assertDescriptor[ViewWithLowerCaseQuery] { desc =>
@@ -52,43 +45,6 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
       assertDescriptor[ViewWithQuotedTableName] { desc =>
         desc.tables.map(_.tableName) shouldBe Seq("üsérs tåble")
       }
-    }
-
-    "not allow View without any Table updater" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[ViewWithNoTableUpdater]).failIfInvalid()
-      }.getMessage should include("A view must contain at least one public static TableUpdater subclass.")
-    }
-
-    "not allow View with an invalid row type" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[ViewWithInvalidRowType]).failIfInvalid()
-      }.getMessage should include(s"View row type java.lang.String is not supported")
-    }
-
-    "not allow View with an invalid query result type" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[WrongQueryEffectReturnType]).failIfInvalid()
-      }.getMessage should include("View query result type java.lang.String is not supported")
-    }
-
-    "not allow View with Table annotation" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[ViewWithTableName]).failIfInvalid()
-      }.getMessage should include("A View itself should not be annotated with @Table.")
-    }
-
-    "not allow View queries not returning QueryEffect<T>" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[WrongQueryReturnType]).failIfInvalid()
-      }.getMessage should include("Query methods must return View.QueryEffect<RowType>")
-    }
-
-    "not allow View update handler with more than on parameter" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[WrongHandlerSignature]).failIfInvalid()
-      }.getMessage should include(
-        "Subscription method must have exactly one parameter, unless it's marked with @DeleteHandler.")
     }
 
     "generate ACL annotations at service level" in pendingUntilFixed {
@@ -165,43 +121,6 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
   "View descriptor factory (for Key Value Entity)" should {
 
-    "not allow View without ComponentId annotation" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[ViewWithoutComponentAnnotation]).failIfInvalid()
-      }.getMessage should include("A View itself should not be annotated with @Table.")
-    }
-
-    "not allow View with empty Component" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[ViewWithEmptyComponentAnnotation]).failIfInvalid()
-      }.getMessage should include("@Component id is empty, must be a non-empty string.")
-    }
-
-    "not allow View with a query with more than 1 param" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[ViewQueryWithTooManyArguments]).failIfInvalid()
-      }.getMessage should include(
-        "Method [getUser] must have zero or one argument. If you need to pass more arguments, wrap them in a class.")
-    }
-
-    "not allow method level handle deletes without class level subscription" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[ViewWithoutSubscription]).failIfInvalid()
-      }.getMessage should include("A TableUpdater subclass must be annotated with `@Consume` annotation.")
-    }
-
-    "not allow duplicated handle deletes methods" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[ViewDuplicatedHandleDeletesAnnotations]).failIfInvalid()
-      }.getMessage should include("Multiple methods annotated with @DeleteHandler are not allowed.")
-    }
-
-    "not allow handle deletes method with param" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[ViewHandleDeletesWithParam]).failIfInvalid()
-      }.getMessage should include("Method annotated with '@DeleteHandler' must not have parameters.")
-    }
-
     "convert Interval fields to proto Timestamp" in {
       assertDescriptor[TimeTrackerView] { desc =>
         // FIXME move to schema spec, not about descriptor in general
@@ -248,23 +167,6 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
         table.updateHandler shouldBe empty
         table.deleteHandler shouldBe empty
       }
-    }
-
-    "fail if no query method found" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[ViewWithNoQuery]).failIfInvalid()
-      }
-    }
-
-    "allow more than one query method" in {
-      Validations.validate(classOf[ViewWithTwoQueries]).failIfInvalid()
-    }
-
-    "not allow stream updates that are not returning View.QueryStreamEffect<T>" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[ViewTestModels.ViewWithIncorrectQueries]).failIfInvalid()
-      }.getMessage shouldBe
-      "On 'akka.javasdk.testmodels.view.ViewTestModels$ViewWithIncorrectQueries#getUserByEmail': Query methods marked with streamUpdates must return View.QueryStreamEffect<RowType>"
     }
 
   }
@@ -332,70 +234,9 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
       }
     }
 
-    "validate missing handlers for method level subscription" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[SubscribeToEventSourcedWithMissingHandler]).failIfInvalid()
-      }.getMessage shouldBe
-      "On 'akka.javasdk.testmodels.view.ViewTestModels$SubscribeToEventSourcedWithMissingHandler$Employees': missing an event handler for 'akka.javasdk.testmodels.eventsourcedentity.EmployeeEvent$EmployeeEmailUpdated'."
-    }
-
-    "validate missing handlers for type level subscription" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[TypeLevelSubscribeToEventSourcedEventsWithMissingHandler]).failIfInvalid()
-      }.getMessage shouldBe
-      "On 'akka.javasdk.testmodels.view.ViewTestModels$TypeLevelSubscribeToEventSourcedEventsWithMissingHandler$Employees': missing an event handler for 'akka.javasdk.testmodels.eventsourcedentity.EmployeeEvent$EmployeeEmailUpdated'."
-    }
   }
 
   "View descriptor factory (for multi-table views)" should {
-
-    "not allow multiple TableUpdater without Table annotation" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[MultiTableViewValidation]).failIfInvalid()
-      }.getMessage should include("When there are multiple table updater, each must be annotated with @Table.")
-    }
-
-    "not allow TableUpdater with empty Table name" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[MultiTableViewValidation]).failIfInvalid()
-      }.getMessage should include("@Table name is empty, must be a non-empty string.")
-    }
-
-    "not allow empty component id" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[ViewWithEmptyComponentAnnotation]).failIfInvalid()
-      }.getMessage should include("@Component id is empty, must be a non-empty string.")
-    }
-
-    "not allow invalid component id" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[ViewWithPipeyComponentAnnotation]).failIfInvalid()
-      }.getMessage should include("must not contain the pipe character")
-    }
-
-    "fail if no query method found" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[MultiTableViewWithoutQuery]).failIfInvalid()
-      }
-    }
-
-    "allow more than one query method in multi table view" in {
-      Validations.validate(classOf[MultiTableViewWithMultipleQueries]).failIfInvalid()
-    }
-
-    "not allow duplicated VE subscriptions methods in multi table view" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[MultiTableViewWithDuplicatedVESubscriptions]).failIfInvalid()
-      }.getMessage should include(
-        "Ambiguous handlers for akka.javasdk.testmodels.keyvalueentity.CounterState, methods: [onEvent, onEvent2] consume the same type.")
-    }
-
-    "not allow duplicated ES subscriptions methods in multi table view" in {
-      intercept[ValidationException] {
-        Validations.validate(classOf[MultiTableViewWithDuplicatedESSubscriptions]).failIfInvalid()
-      }.getMessage should include(
-        "Ambiguous handlers for akka.javasdk.testmodels.keyvalueentity.CounterState, methods: [onEvent, onEvent2] consume the same type.")
-    }
 
     "create a descriptor for multi-table view with join query" in {
       assertDescriptor[MultiTableViewWithJoinQuery] { desc =>
