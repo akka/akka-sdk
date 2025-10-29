@@ -8,6 +8,9 @@ import scala.annotation.nowarn
 
 import akka.javasdk.agent.Agent
 import akka.javasdk.annotations.Component
+import akka.javasdk.annotations.FunctionTool
+import akka.javasdk.impl.AgentValidationSpec.AgentWithFunctionToolOnCommandHandler
+import akka.javasdk.impl.AgentValidationSpec.AgentWithFunctionToolOnHelperMethod
 import akka.javasdk.impl.AgentValidationSpec.AgentWithStreamEffect
 import akka.javasdk.impl.AgentValidationSpec.AgentWithTooManyArgsCommandHandler
 import akka.javasdk.impl.AgentValidationSpec.AgentWithValidNoArgCommandHandler
@@ -90,6 +93,20 @@ object AgentValidationSpec {
 
   class AgentWithValidNoArgCommandHandler extends Agent {
     def handle(): Agent.Effect[String] = effects.reply("ok")
+  }
+
+  @Component(id = "agent-with-function-tool-on-command-handler")
+  class AgentWithFunctionToolOnCommandHandler extends Agent {
+    @FunctionTool(description = "Invalid function tool on command handler")
+    def handle(request: String): Agent.Effect[String] = effects.reply(request)
+  }
+
+  @Component(id = "agent-with-function-tool-on-helper")
+  class AgentWithFunctionToolOnHelperMethod extends Agent {
+    def handle(request: String): Agent.Effect[String] = effects.reply(request)
+
+    @FunctionTool(description = "Valid function tool on helper method")
+    def helperMethod(): String = "helper"
   }
 }
 
@@ -181,6 +198,18 @@ class AgentValidationSpec extends AnyWordSpec with Matchers with ValidationSuppo
 
     "return Valid for Agent command handler with no arguments" in {
       val result = Validations.validate(classOf[AgentWithValidNoArgCommandHandler])
+      result.isValid shouldBe true
+    }
+
+    "return Invalid for Agent with @FunctionTool on command handler" in {
+      Validations
+        .validate(classOf[AgentWithFunctionToolOnCommandHandler])
+        .expectInvalid(
+          "@FunctionTool cannot be used on Agent command handler methods (methods returning Agent.Effect or Agent.StreamEffect)")
+    }
+
+    "return Valid for Agent with @FunctionTool on helper method" in {
+      val result = Validations.validate(classOf[AgentWithFunctionToolOnHelperMethod])
       result.isValid shouldBe true
     }
   }

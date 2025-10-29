@@ -10,6 +10,7 @@ package akkajavasdk.components.views.counter;
 
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
+import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
@@ -49,6 +50,7 @@ public class CountersByValue extends View {
     return new QueryParameters(value);
   }
 
+  @FunctionTool(description = "Retrieves a counter by value")
   @Query("SELECT * FROM counters WHERE value = :value")
   public QueryEffect<Optional<Counter>> getCounterByValue(QueryParameters params) {
     return queryResult();

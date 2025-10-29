@@ -15,6 +15,7 @@ import akka.javasdk.testmodels.subscriptions.PubSubTestModels.ConsumerMissingHan
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.ConsumerWithAmbiguousHandlers
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.ConsumerWithDeleteHandlerWithParams
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.ConsumerWithEmptyStreamId
+import akka.javasdk.testmodels.subscriptions.PubSubTestModels.ConsumerWithFunctionTool
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.ConsumerWithMethodLevelAcl
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.ConsumerWithMethodWithNoParameters
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.ConsumerWithMultipleDeleteHandlers
@@ -189,6 +190,12 @@ class ConsumerValidationSpec extends AnyWordSpec with Matchers with ValidationSu
         .validate(classOf[AmbiguousHandlersStreamTypeLevelSubscriptionInConsumer])
         .expectInvalid(
           "Ambiguous handlers for java.lang.Integer, methods: [methodOne, methodTwo] consume the same type.")
+    }
+
+    "return Invalid for Consumer with @FunctionTool annotation" in {
+      Validations
+        .validate(classOf[ConsumerWithFunctionTool])
+        .expectInvalid("@FunctionTool cannot be used in Consumer components")
     }
 
   }

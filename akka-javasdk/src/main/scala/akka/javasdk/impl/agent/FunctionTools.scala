@@ -14,10 +14,17 @@ import akka.annotation.InternalApi
 import akka.javasdk.DependencyProvider
 import akka.javasdk.agent.Agent
 import akka.javasdk.annotations.FunctionTool
+import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.JsonSchema
-import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
+import akka.javasdk.impl.JsonSchema.jsonSchemaFor
+import akka.javasdk.impl.client.EntityClientImpl
+import akka.javasdk.impl.client.ViewClientImpl
+import akka.javasdk.impl.reflection.Reflect
+import akka.javasdk.impl.reflection.Reflect.Syntax.ClassOps
 import akka.javasdk.impl.reflection.Reflect.Syntax.MethodOps
 import akka.runtime.sdk.spi.SpiAgent
+import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
+import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaString
 
 /**
  * INTERNAL API
@@ -37,6 +44,103 @@ object FunctionTools {
     def invoke(args: Array[Any]): Any
 
     def returnType: Class[_]
+  }
+
+  /**
+   * INTERNAL API
+   */
+  @InternalApi
+  private case class RegularFunctionToolInvoker(method: Method, instanceFactory: () => Any)
+      extends FunctionToolInvoker {
+
+    private val cls = method.getDeclaringClass
+
+    override def paramNames: Array[String] =
+      method.getParameters.map(_.getName)
+
+    override def types: Array[Type] =
+      method.getGenericParameterTypes
+
+    override def invoke(args: Array[Any]): Any = {
+      try {
+        if (isAgent(cls)) method.setAccessible(true)
+        val instance = instanceFactory()
+        method.invoke(instance, args: _*)
+      } catch unwrapInvocationTargetException()
+    }
+
+    override def returnType: Class[_] =
+      method.getReturnType
+  }
+
+  private val uniqueId = "uniqueId"
+
+  /**
+   * INTERNAL API
+   */
+  @InternalApi
+  private case class EntityFunctionToolInvoker(method: Method, componentClient: ComponentClient)
+      extends FunctionToolInvoker {
+
+    private val cls = method.getDeclaringClass
+    private val hasParams: Boolean = method.getParameters.nonEmpty
+
+    override def paramNames: Array[String] = {
+      uniqueId +: method.getParameters.map(_.getName)
+    }
+
+    override def types: Array[Type] =
+      classOf[String] +: method.getGenericParameterTypes
+
+    override def invoke(args: Array[Any]): Any = {
+      try {
+        val id = args(0).toString
+        val client: EntityClientImpl =
+          if (Reflect.isKeyValueEntity(cls)) {
+            componentClient.forKeyValueEntity(id).asInstanceOf[EntityClientImpl]
+          } else if (Reflect.isEventSourcedEntity(cls)) {
+            componentClient.forEventSourcedEntity(id).asInstanceOf[EntityClientImpl]
+          } else if (Reflect.isWorkflow(cls)) {
+            componentClient.forWorkflow(id).asInstanceOf[EntityClientImpl]
+          } else {
+            // should not happen because it's validated beforehand
+            throw new IllegalArgumentException("Component: [" + cls.getName + "] can't be used as tool")
+          }
+        if (hasParams) client.methodRefOneArg(method).invoke(args(1))
+        else client.methodRefNoArg(method).invoke()
+
+      } catch unwrapInvocationTargetException()
+    }
+
+    override def returnType: Class[_] =
+      Reflect.getReturnClass(cls, method)
+
+  }
+
+  /**
+   * INTERNAL API
+   */
+  @InternalApi
+  private case class ViewFunctionToolInvoker(method: Method, componentClient: ComponentClient)
+      extends FunctionToolInvoker {
+
+    private val cls = method.getDeclaringClass
+    private val hasParams: Boolean = method.getParameters.nonEmpty
+
+    override def paramNames: Array[String] = method.getParameters.map(_.getName)
+    override def types: Array[Type] = method.getGenericParameterTypes
+
+    override def invoke(args: Array[Any]): Any = {
+      try {
+        val client = componentClient.forView().asInstanceOf[ViewClientImpl]
+        if (hasParams) client.methodRefOneArg(method).invoke(args(0))
+        else client.methodRefNoArg(method).invoke()
+      } catch unwrapInvocationTargetException()
+    }
+
+    override def returnType: Class[_] =
+      Reflect.getReturnClass(cls, method)
+
   }
 
   private def isAgent(cls: Class[_]): Boolean =
@@ -70,29 +174,20 @@ object FunctionTools {
     }
   }
 
-  private def collectFunctionToolInvokers(cls: Class[_])(
-      instanceFactory: () => Any): Map[String, FunctionToolInvoker] = {
+  def toolComponentInvokersFor(cls: Class[_], componentClient: ComponentClient): Map[String, FunctionToolInvoker] = {
 
     resolvedMethodNames(cls).map { case (name, method) =>
-      name ->
-        new FunctionToolInvoker {
-          override def paramNames: Array[String] =
-            method.getParameters.map(_.getName)
+      if (Reflect.isView(cls))
+        name -> ViewFunctionToolInvoker(method, componentClient)
+      else
+        name -> EntityFunctionToolInvoker(method, componentClient)
+    }
+  }
 
-          override def types: Array[Type] =
-            method.getGenericParameterTypes
-
-          override def invoke(args: Array[Any]): Any = {
-            try {
-              if (isAgent(cls)) method.setAccessible(true)
-              val instance = instanceFactory()
-              method.invoke(instance, args: _*)
-            } catch unwrapInvocationTargetException()
-          }
-
-          override def returnType: Class[_] =
-            method.getReturnType
-        }
+  private def collectFunctionToolInvokers(cls: Class[_])(
+      instanceFactory: () => Any): Map[String, FunctionToolInvoker] = {
+    resolvedMethodNames(cls).map { case (name, method) =>
+      name -> RegularFunctionToolInvoker(method, instanceFactory)
     }
   }
 
@@ -104,11 +199,35 @@ object FunctionTools {
     else toolAnno.name()
   }
 
+  private def jsonSchemaWitId(method: Method): JsonSchemaObject = {
+
+    val idDescription = "the unique identifier"
+    val requiredFields = Seq(uniqueId)
+    val objSchema = jsonSchemaFor(method)
+
+    if (objSchema.properties.nonEmpty) {
+      val (payloadArgName, payloadSchema) = objSchema.properties.head
+      new JsonSchemaObject(
+        description = None,
+        properties = Map(uniqueId -> new JsonSchemaString(Some(idDescription)), payloadArgName -> payloadSchema),
+        required = requiredFields :+ payloadArgName)
+    } else {
+      new JsonSchemaObject(
+        description = None,
+        properties = Map(uniqueId -> new JsonSchemaString(Some(idDescription))),
+        required = requiredFields)
+    }
+  }
   private def toToolDescriptors(cls: Class[_]): Seq[SpiAgent.ToolDescriptor] = {
 
     resolvedMethodNames(cls).map { case (name, method) =>
       val toolAnno = method.getAnnotation(classOf[FunctionTool])
-      val objSchema = JsonSchema.jsonSchemaFor(method)
+
+      val objSchema =
+        if (Reflect.isEntity(cls) || Reflect.isWorkflow(cls))
+          jsonSchemaWitId(method)
+        else
+          JsonSchema.jsonSchemaFor(method)
 
       new SpiAgent.ToolDescriptor(name, toolAnno.description(), schema = objSchema)
 
@@ -118,19 +237,11 @@ object FunctionTools {
   /**
    * Collects all methods annotated with `@FunctionTool` from the given class, including inherited methods.
    */
-  private def annotatedMethods(cls: Class[_]): Seq[Method] = {
-
-    def allMethods(c: Class[_]): Seq[Method] = {
-      if (c == null || c == classOf[Object]) Seq.empty
-      else c.getDeclaredMethods.toSeq ++ allMethods(c.getSuperclass) ++ c.getInterfaces.flatMap(allMethods)
-    }
-
-    allMethods(cls)
-      .filter(m => m.hasAnnotation[FunctionTool])
+  private def annotatedMethods(cls: Class[_]): Seq[Method] =
+    cls
+      .methodsAnnotatedWith[FunctionTool]
       // tool methods in agent don't need to be public
       .filter(m => m.isPublic || isAgent(cls))
-      .distinct
-  }
 
   private def resolvedMethodNames(cls: Class[_]): Map[String, Method] = {
 
@@ -150,7 +261,12 @@ object FunctionTools {
           // otherwise we need to create a unique name for each method based on its parameters
           methods.map { method =>
             val paramTypes = method.getParameterTypes.map(_.getSimpleName).mkString("_")
-            val resolvedName = s"${originalName}_$paramTypes"
+
+            val resolvedName =
+              if (paramTypes.nonEmpty)
+                s"${originalName}_$paramTypes"
+              else originalName
+
             (toolName(method, resolvedName), method)
           }.toMap
       }

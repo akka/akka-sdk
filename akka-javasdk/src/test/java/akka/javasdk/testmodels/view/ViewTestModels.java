@@ -8,6 +8,7 @@ import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.DeleteHandler;
+import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.annotations.Table;
 import akka.javasdk.testmodels.eventsourcedentity.Employee;
@@ -749,6 +750,48 @@ public class ViewTestModels {
     @Query("SELECT * FROM rows")
     public QueryStreamEffect<Employee> allRows() {
       return queryStreamResult();
+    }
+  }
+
+  // Test models for @FunctionTool validation
+
+  @Component(id = "view_with_function_tool_on_stream")
+  public static class ViewWithFunctionToolOnStreamQuery extends View {
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UsersTable extends TableUpdater<User> {}
+
+    @Query(value = "SELECT * FROM users", streamUpdates = true)
+    @FunctionTool(description = "Get all users as stream")
+    public QueryStreamEffect<User> getAllUsers() {
+      return queryStreamResult();
+    }
+  }
+
+  @Component(id = "view_with_function_tool_on_non_query")
+  public static class ViewWithFunctionToolOnNonQueryMethod extends View {
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UsersTable extends TableUpdater<User> {}
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<User> getUser(ByEmail byEmail) {
+      return queryResult();
+    }
+
+    @FunctionTool(description = "Helper method")
+    public String helperMethod() {
+      return "helper";
+    }
+  }
+
+  @Component(id = "view_with_valid_function_tool")
+  public static class ViewWithValidFunctionTool extends View {
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UsersTable extends TableUpdater<User> {}
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    @FunctionTool(description = "Get user by email")
+    public QueryEffect<User> getUser(ByEmail byEmail) {
+      return queryResult();
     }
   }
 }

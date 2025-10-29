@@ -583,7 +583,7 @@ public class ViewIntegrationTest extends TestKitSupport {
             componentClient
                 .forKeyValueEntity(user.id())
                 .method(UserEntity::createOrUpdateUser)
-                .invokeAsync(new UserEntity.CreatedUser(user.name(), user.email())));
+                .invokeAsync(new UserEntity.CreateUser(user.name(), user.email())));
     assertThat(userCreation).isEqualTo(Ok.instance);
   }
 
@@ -593,7 +593,7 @@ public class ViewIntegrationTest extends TestKitSupport {
             componentClient
                 .forKeyValueEntity(user.id())
                 .method(UserEntity::createOrUpdateUser)
-                .invokeAsync(new UserEntity.CreatedUser(user.name(), user.email())));
+                .invokeAsync(new UserEntity.CreateUser(user.name(), user.email())));
 
     assertThat(userUpdate).isEqualTo(Ok.instance);
   }
