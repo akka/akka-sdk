@@ -22,6 +22,7 @@ import akka.runtime.sdk.spi.SpiSchema.SpiInteger
 import akka.runtime.sdk.spi.SpiSchema.SpiList
 import akka.runtime.sdk.spi.SpiSchema.SpiLong
 import akka.runtime.sdk.spi.SpiSchema.SpiNestableType
+import akka.runtime.sdk.spi.SpiSchema.SpiNumeric
 import akka.runtime.sdk.spi.SpiSchema.SpiOptional
 import akka.runtime.sdk.spi.SpiSchema.SpiString
 import akka.runtime.sdk.spi.SpiSchema.SpiTimestamp
@@ -56,7 +57,8 @@ private[view] object ViewSchema {
     // Note: intentionally not supporting timezone-less-types for now (to make it possible to add support in the future,
     // would require runtime changes)
     classOf[java.time.Instant] -> SpiTimestamp,
-    classOf[java.time.ZonedDateTime] -> SpiTimestamp)
+    classOf[java.time.ZonedDateTime] -> SpiTimestamp,
+    classOf[java.math.BigDecimal] -> SpiNumeric)
 
   def apply(rootType: Type): SpiType = {
     // Note: not tail recursive but trees should not ever be deep enough that it is a problem

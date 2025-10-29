@@ -22,6 +22,7 @@ import akka.javasdk.testmodels.keyvalueentity.User;
 import akka.javasdk.testmodels.keyvalueentity.UserEntity;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -45,7 +46,8 @@ public class ViewTestModels {
       Optional<String> optionalString,
       List<String> repeatedString,
       ByEmail nestedMessage,
-      AnEnum anEnum) {}
+      AnEnum anEnum,
+      BigDecimal bigDecimal) {}
 
   public enum AnEnum {
     ONE,
