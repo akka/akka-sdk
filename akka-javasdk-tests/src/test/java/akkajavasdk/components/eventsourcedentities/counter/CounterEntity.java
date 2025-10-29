@@ -14,6 +14,7 @@ import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akkajavasdk.Result;
 import akkajavasdk.components.MyException;
+import java.math.BigDecimal;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,6 +91,16 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
 
   public ReadOnlyEffect<Boolean> commandHandlerIsOnVirtualThread() {
     return effects().reply(Thread.currentThread().isVirtual());
+  }
+
+  public ReadOnlyEffect<BigDecimal> passBigDecimalThrough(BigDecimal value) {
+    return effects().reply(value);
+  }
+
+  public record WrappedBigDecimal(BigDecimal value) {}
+
+  public ReadOnlyEffect<WrappedBigDecimal> passWrappedBigDecimalThrough(WrappedBigDecimal value) {
+    return effects().reply(value);
   }
 
   public Effect<Integer> set(int value) {
