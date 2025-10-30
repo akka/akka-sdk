@@ -22,7 +22,7 @@ public sealed interface MemoryProvider {
   /**
    * Creates a configuration-based memory provider based on configuration defaults.
    *
-   * @return A configuration-based model provider
+   * @return A configuration-based memory provider
    */
   static MemoryProvider fromConfig() {
     return fromConfig("");
@@ -33,7 +33,7 @@ public sealed interface MemoryProvider {
    *
    * @param configPath Path to the configuration. If empty, uses the default path
    *     "akka.javasdk.agent.memory"
-   * @return A configuration-based model provider
+   * @return A configuration-based memory provider
    */
   static MemoryProvider fromConfig(String configPath) {
     return new MemoryProvider.FromConfig(configPath);
