@@ -19,7 +19,7 @@ The `akka.javasdk.client.ComponentClient` is a utility for making type-safe call
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[CounterEndpoint.java]
 ----
-include::java:example$event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[tag=endpoint-component-interaction]
+include::sdk:example$event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[tag=endpoint-component-interaction]
 ----
 <1> Accept the `ComponentClient` as a constructor argument and keep it in a field.
 <2> Use a specific request builder for the component you want to call.
@@ -51,7 +51,7 @@ Obviously, just writing simple synchronous code is easier to read and maintain. 
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[CounterEndpoint.java]
 ----
-include::java:example$event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[tag=concurrent-endpoint-component-interaction]
+include::sdk:example$event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[tag=concurrent-endpoint-component-interaction]
 ----
 <1> Call `invokeAsync()` and collect each `CompletionStage<T>`.
 <2> When all tasks have been started, wait for all tasks to complete.
@@ -82,7 +82,7 @@ In our delegating service implementation:
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/callanotherservice/DelegatingServiceEndpoint.java[DelegatingServiceEndpoint.java]
 ----
-include::java:example$doc-snippets/src/main/java/com/example/callanotherservice/DelegatingServiceEndpoint.java[tag=delegating-endpoint]
+include::sdk:example$doc-snippets/src/main/java/com/example/callanotherservice/DelegatingServiceEndpoint.java[tag=delegating-endpoint]
 ----
 <1> Accept a `HttpClientProvider` parameter for the constructor.
 <2> Use it to look up a client for the `counter` service.
@@ -99,7 +99,7 @@ Calling external services deployed on *different* Akka projects or any other ext
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/callanotherservice/CallExternalServiceEndpoint.java[CallExternalServiceEndpoint.java]
 ----
-include::java:example$doc-snippets/src/main/java/com/example/callanotherservice/CallExternalServiceEndpoint.java[]
+include::sdk:example$doc-snippets/src/main/java/com/example/callanotherservice/CallExternalServiceEndpoint.java[]
 ----
 <1> Accept a `HttpClientProvider` parameter for the constructor.
 <2> Look up a `HttpClient` for a service using `http` protocol and server name.
@@ -126,7 +126,7 @@ In our delegating service implementation:
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-customer-registry-subscriber/src/main/java/customer/api/DelegateCustomerGrpcEndpointImpl.java[DelegateCustomerGrpcEndpointImpl.java]
 ----
-include::java:example$event-sourced-customer-registry-subscriber/src/main/java/customer/api/DelegateCustomerGrpcEndpointImpl.java[tag=delegate]
+include::sdk:example$event-sourced-customer-registry-subscriber/src/main/java/customer/api/DelegateCustomerGrpcEndpointImpl.java[tag=delegate]
 ----
 <1> Accept a `GrpcClientProvider` parameter for the constructor.
 <2> Use the generated gRPC client interface for the service (`CustomerGrpcEndpointClient.class`) and the service name (`customer-registry`) to look up a client.
@@ -148,7 +148,7 @@ Calling gRPC services deployed on *different* Akka projects or any other externa
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/callanotherservice/CallExternalGrpcEndpointImpl.java[CallExternalGrpcEndpointImpl.java]
 ----
-include::java:example$doc-snippets/src/main/java/com/example/callanotherservice/CallExternalGrpcEndpointImpl.java[tag=call-external-endpoint]
+include::sdk:example$doc-snippets/src/main/java/com/example/callanotherservice/CallExternalGrpcEndpointImpl.java[tag=call-external-endpoint]
 ----
 <1> Accept a `GrpcClientProvider` parameter for the constructor.
 <2> Use the generated gRPC client interface for the service (`ExampleGrpcEndpointClient.class`) and the service name (`doc-snippets`) to look up a client.
@@ -164,5 +164,5 @@ specifically for tests):
 [source,json,indent=0]
 .{sample-base-url}/doc-snippets/src/main/resources/application.conf[application.conf]
 ----
-include::java:example$doc-snippets/src/main/resources/application.conf[tags=customize-grpc-client]
+include::sdk:example$doc-snippets/src/main/resources/application.conf[tags=customize-grpc-client]
 ----

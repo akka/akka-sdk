@@ -27,7 +27,7 @@ Add a new file `EvaluatorAgent.java` to `src/main/java/com/example/application/`
 [source,java,indent=0]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/EvaluatorAgent.java[EvaluatorAgent.java]
 ----
-include::java:example$multi-agent/src/main/java/demo/multiagent/application/EvaluatorAgent.java[tag=all]
+include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/EvaluatorAgent.java[tag=all]
 ----
 <1> Detailed instructions of how to evaluate and especially pay attention to the user preferences.
 <2> Retrieve user preferences.
@@ -42,7 +42,7 @@ Add a new file `PreferencesConsumer.java` to `src/main/java/com/example/applicat
 [source,java,indent=0]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/PreferencesConsumer.java[PreferencesConsumer.java]
 ----
-include::java:example$multi-agent/src/main/java/demo/multiagent/application/PreferencesConsumer.java[tag=all]
+include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/PreferencesConsumer.java[tag=all]
 ----
 <1> Consume events from the `PreferencesEntity`.
 <2> Extend `Consumer`.
@@ -57,7 +57,7 @@ Add the new method to the `AgentTeamWorkflow:
 [source,java,indent=0]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[AgentTeamWorkflow.java]
 ----
-include::java:example$multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[tag=runAgain]
+include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[tag=runAgain]
 ----
 
 == Running the service

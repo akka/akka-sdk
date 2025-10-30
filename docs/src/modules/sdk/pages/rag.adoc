@@ -18,7 +18,7 @@ There are many libraries that can be used for integrating with vector databases.
 [source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/application/Knowledge.java[Knowledge.java]
 ----
-include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/application/Knowledge.java[tag=class]
+include::sdk:example$ask-akka-agent/src/main/java/akka/ask/agent/application/Knowledge.java[tag=class]
 ----
 <1> We use the RAG support from Langchain4j, which consist of a `ContentRetriever`
 <2> and a `RetrievalAugmentor`.

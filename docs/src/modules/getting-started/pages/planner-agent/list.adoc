@@ -25,7 +25,7 @@ Add a new file `ActivityView.java` to `src/main/java/com/example/application/`
 [source,java,indent=0]
 .ActivityView.java
 ----
-include::java:example$doc-snippets/src/main/java/agent_guide/part5/ActivityView.java[tag=all]
+include::sdk:example$doc-snippets/src/main/java/agent_guide/part5/ActivityView.java[tag=all]
 ----
 <1> The query selects all rows for a given user id.
 <2> The view is updated from the state changes of the workflow.
@@ -37,7 +37,7 @@ Add a new method that asks the view for a given user id.
 
 [source,java,indent=0]
 ----
-include::java:example$doc-snippets/src/main/java/agent_guide/part5/ActivityEndpoint.java[tag=list]
+include::sdk:example$doc-snippets/src/main/java/agent_guide/part5/ActivityEndpoint.java[tag=list]
 ----
 
 == Running the service

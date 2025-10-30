@@ -50,7 +50,7 @@ To work on the separation of concerns, we'll work our way in from the outermost 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-with-view/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
 ----
-include::java:example$shopping-cart-with-view/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tags=newpubapi]
+include::sdk:example$shopping-cart-with-view/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tags=newpubapi]
 ----
 
 From the client standpoint, they're supplying both the name and description of the product in the request. In subsequent tutorials, we might illustrate a better place to put product metadata like that.
@@ -60,7 +60,7 @@ Next, we need a _command_ type for the entity to handle. Remember that calling `
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-with-view/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
 ----
-include::java:example$shopping-cart-with-view/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tags=newentityapi]
+include::sdk:example$shopping-cart-with-view/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tags=newentityapi]
 ----
 
 Next we modify the shape of the internal state used by the entity. To illustrate the different roles of entities and views, we've modified the state so that it doesn't store the `name` or `description` fields, since those aren't needed for decision making during command processing.
@@ -68,7 +68,7 @@ Next we modify the shape of the internal state used by the entity. To illustrate
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-with-view/src/main/java/shoppingcart/domain/ShoppingCart.java[ShoppingCart.java]
 ----
-include::java:example$shopping-cart-with-view/src/main/java/shoppingcart/domain/ShoppingCart.java[tags=domain]
+include::sdk:example$shopping-cart-with-view/src/main/java/shoppingcart/domain/ShoppingCart.java[tags=domain]
 ----
 
 == Adding a shopping cart view
@@ -80,7 +80,7 @@ For our new view, we want all of the information on the shopping cart contents, 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-with-view/src/main/java/shoppingcart/application/ShoppingCartView.java[ShoppingCartView.java]
 ----
-include::java:example$shopping-cart-with-view/src/main/java/shoppingcart/application/ShoppingCartView.java[tag=view]
+include::sdk:example$shopping-cart-with-view/src/main/java/shoppingcart/application/ShoppingCartView.java[tag=view]
 ----
 <1> Return a single shopping cart based on its unique ID.
 <2> Return a single shopping cart based on its user ID.
@@ -99,7 +99,7 @@ The user entity in this sample is quite small (but easily enhanced later). It ma
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-with-view/src/main/java/shoppingcart/application/UserEntity.java[UserEntity.java]
 ----
-include::java:example$shopping-cart-with-view/src/main/java/shoppingcart/application/UserEntity.java[tag=entity]
+include::sdk:example$shopping-cart-with-view/src/main/java/shoppingcart/application/UserEntity.java[tag=entity]
 ----
 
 Incrementing the cart ID is done simply in the `onCartClosed` function of the `User`:
@@ -116,7 +116,7 @@ Given the preceding entity, we still need _something_ to call the `closeCart` fu
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-with-view/src/main/java/shoppingcart/application/CartCloser.java[CartCloser.java]
 ----
-include::java:example$shopping-cart-with-view/src/main/java/shoppingcart/application/CartCloser.java[tag=consumer]
+include::sdk:example$shopping-cart-with-view/src/main/java/shoppingcart/application/CartCloser.java[tag=consumer]
 ----
 
 === Securing the HTTP endpoint
@@ -128,7 +128,7 @@ In the following code, we add support for **xref:sdk:auth-with-jwts.adoc[JWT]**-
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-with-view/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
 ----
-include::java:example$shopping-cart-with-view/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tag=top]
+include::sdk:example$shopping-cart-with-view/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tag=top]
 ----
 
 Extracting the user ID from context is quite easy. Let's modify the `get` function so that it rejects attempts to query a shopping cart that doesn't belong to the caller.
@@ -136,7 +136,7 @@ Extracting the user ID from context is quite easy. Let's modify the `get` functi
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-with-view/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
 ----
-include::java:example$shopping-cart-with-view/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tag=get]
+include::sdk:example$shopping-cart-with-view/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tag=get]
 ----
 <1> Invoke the view's `getCart` function to retrieve by cart ID
 
@@ -147,7 +147,7 @@ We can also add a new convenience route, `/my`, which will retrieve the cart for
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-with-view/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
 ----
-include::java:example$shopping-cart-with-view/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tag=getmy]
+include::sdk:example$shopping-cart-with-view/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tag=getmy]
 ----
 <1> Invoke the view's `getUserCart` function to retrieve the cart by user ID
 

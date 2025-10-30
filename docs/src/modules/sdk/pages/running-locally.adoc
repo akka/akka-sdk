@@ -121,7 +121,7 @@ This port is configured in `akka.javasdk.dev-mode.http-port` property in the
 
 [source,xml,indent=0]
 ----
-include::java:example$event-sourced-customer-registry-subscriber/src/main/resources/application.conf[tag=custom-port]
+include::sdk:example$event-sourced-customer-registry-subscriber/src/main/resources/application.conf[tag=custom-port]
 ----
 
 With both services configured, we can start them independently by running `mvn compile exec:java` in two separate terminals.

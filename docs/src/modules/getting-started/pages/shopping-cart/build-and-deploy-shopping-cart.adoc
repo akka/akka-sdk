@@ -45,7 +45,7 @@ The first concept to note is the domain class `ShoppingCart` in package `shoppin
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[ShoppingCart.java]
 ----
-include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tags=first-app-top-part-1;domain]
+include::sdk:example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tags=first-app-top-part-1;domain]
 ----
 <1> Our `ShoppingCart` is fairly simple, being composed only by a `cartId` and a list of line items.
 <2> A `LineItem` represents a single product and the quantity we intend to buy.
@@ -55,7 +55,7 @@ Next, we have a domain event for adding items to the cart. Here we've created an
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCartEvent.java[ShoppingCartEvent.java]
 ----
-include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCartEvent.java[tags=top;domain]
+include::sdk:example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCartEvent.java[tags=top;domain]
 ----
 <1> `ItemAdded` event derives from the `ShoppingCartEvent` interface.
 <2> Specifying a logical type name, required for serialization.
@@ -67,7 +67,7 @@ Jumping back to the `ShoppingCart` domain class, there is also business logic fo
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[ShoppingCart.java]
 ----
-include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tag=addItem]
+include::sdk:example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tag=addItem]
 ----
 <1> For an existing item, we make sure to sum the existing quantity with the incoming one.
 <2> Returns an updated list of items without the existing item.
@@ -81,7 +81,7 @@ To go with our domain data and our events, we have an entity named `ShoppingCart
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
 ----
-include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tags=top;class]
+include::sdk:example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tags=top;class]
 ----
 <1> Extend `EventSourcedEntity<ShoppingCart, ShoppingCartEvent>`, where `ShoppingCart` is the type of state this entity stores, and `ShoppingCartEvent` is the interface for the events it persists.
 <2> Annotate the class so Akka can identify it as an event-sourced entity.
@@ -91,7 +91,7 @@ Inside `ShoppingCartEntity`, we define an `addItem` command handler to generate 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
 ----
-include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tag=addItem]
+include::sdk:example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tag=addItem]
 ----
 <1> Validate the quantity of items added is greater than zero.
 <2> Create a new `ItemAdded` event representing the change to the state of the cart.
@@ -104,7 +104,7 @@ Inside `ShoppingCartEntity`, we also define a `getCart` command handler to retri
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
 ----
-include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tag=getCart]
+include::sdk:example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tag=getCart]
 ----
 <1> Store the `entityId` in an internal attribute, to be used elsewhere.
 <2> Define the initial state.
@@ -121,7 +121,7 @@ It is a class named `ShoppingCartEndpoint` in package `shoppingcart.api`. This c
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
 ----
-include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tags=top;class;get;addItem]
+include::sdk:example$shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tags=top;class;get;addItem]
 ----
 <1> Annotate the class so Akka can identify it as an endpoint with a common path prefix for all methods `/carts`.
 <2> The `ComponentClient` utility enables components to interact with each other.

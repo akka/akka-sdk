@@ -241,7 +241,7 @@ Following up on the counter entity example used above, let's consider an example
 
 ifdef::todo[TODO: convert this diagram once we have a standard language for this]
 
-image::java:eventing-testkit-sample.svg[]
+image::eventing-testkit-sample.svg[]
 
 In this example:
 

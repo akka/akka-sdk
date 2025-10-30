@@ -25,7 +25,7 @@ Add a new file `WeatherAgent.java` to `src/main/java/com/example/application/`
 [source,java,indent=0]
 .WeatherAgent.java
 ----
-include::java:example$doc-snippets/src/main/java/agent_guide/part3/WeatherAgent.java[tag=all]
+include::sdk:example$doc-snippets/src/main/java/agent_guide/part3/WeatherAgent.java[tag=all]
 ----
 <1> Instructions for the weather agent.
 <2> Inject the `HttpClientProvider`.
@@ -46,7 +46,7 @@ Add a new file `WeatherAgentIntegrationTest.java` to `src/test/com/example/appli
 [source,java,indent=0]
 .WeatherAgentIntegrationTest.java
 ----
-include::java:example$doc-snippets/src/test/java/agent_guide/part3/WeatherAgentIntegrationTest.java[tag=all]
+include::sdk:example$doc-snippets/src/test/java/agent_guide/part3/WeatherAgentIntegrationTest.java[tag=all]
 ----
 <1> Extend `TestKitSupport`.
 <2> Use the component client to call the agent.
