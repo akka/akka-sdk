@@ -16,7 +16,7 @@ Follow the detailed steps to configure the desired message broker service for us
 
 We continuously evaluate additional integrations for potential built-in support in Akka. If you have specific requirements, please contact us at mailto:support@akka.io[].
 
-For running Akka services that integrate with a message broker locally, see xref:java:running-locally.adoc#_local_broker_support[running a service with broker support].
+For running Akka services that integrate with a message broker locally, see xref:sdk:running-locally.adoc#_local_broker_support[running a service with broker support].
 
 [#_see_also]
 == See also

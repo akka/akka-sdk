@@ -70,4 +70,4 @@ Understanding the relationship between entities and views is key to effective mo
 == Related Documentation
 
 * xref:reference:views/syntax/index.adoc[View Query Syntax] - Complete reference for the View query language
-* xref:java:views.adoc[Implementing Views] - How to implement Views in your application
+* xref:sdk:views.adoc[Implementing Views] - How to implement Views in your application

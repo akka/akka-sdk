@@ -62,7 +62,7 @@ How do we actually communicate with other agents and do it the right way?
 
 ## <a href="about:blank#_workflow_orchestration"></a> Workflow orchestration
 
-The structure, sequence, scale, and resilience of multi-agent collaborations should be done through the Akka [Workflow](https://doc.akka.io/java/workflows.html) component. See the [official documentation](https://doc.akka.io/java/workflows.html) for guides on general Workflow use as well as how to build agentic workflows with sequential, parallel, state-transition, and event-driven logic. Implement Workflows across long-running processes with an unknown stop time by incorporating retries and failure logic within the orchestration.
+The structure, sequence, scale, and resilience of multi-agent collaborations should be done through the Akka [Workflow](https://doc.akka.io/sdk/workflows.html) component. See the [official documentation](https://doc.akka.io/sdk/workflows.html) for guides on general Workflow use as well as how to build agentic workflows with sequential, parallel, state-transition, and event-driven logic. Implement Workflows across long-running processes with an unknown stop time by incorporating retries and failure logic within the orchestration.
 
 ## <a href="about:blank#_component_client"></a> Component client
 

@@ -1,0 +1,26 @@
+= Message broker integrations
+include::ROOT:partial$include.adoc[]
+
+Akka offers built-in message broker integrations for use with the Akka Consumer and Producer component. These built-in integrations are available for Google Cloud Pub/Sub and hosted Kafka services. For other broker technologies, Java client libraries can be used directly to implement publishing of messages.
+
+== Using built-in integrations
+
+For the built-in technologies, Akka decouples the broker configuration from the implementation of the consumer or producer. The topic name is referenced independently of the broker technology, as demonstrated in xref:consuming-producing.adoc#consume_topic[Consume from a message broker Topic] and xref:consuming-producing.adoc#topic_producing[Producing to a message broker Topic].
+
+All connection details are managed at the Akka project level. For configuration instructions, refer to xref:operations:projects/message-brokers.adoc[Configure message brokers].
+
+The Akka SDK testkit has built-in support for simulating message brokers. See xref:sdk:consuming-producing.adoc#testing[Testing the Integration] for more details. For running locally with a broker, refer to xref:sdk:running-locally.adoc#_local_broker_support[running a service with broker support].
+
+== Producing to other broker technologies
+
+Other message broker technologies can be integrated into an Akka service by utilizing their respective client libraries. Additionally, the https://doc.akka.io/libraries/alpakka/current[Akka libraries Alpakka project] provides Akka-native solutions for integrating various services.
+
+We continuously evaluate additional integrations for potential built-in support in Akka. If you have specific requirements, please contact us at mailto:support@akka.io[].
+
+
+[#_see_also]
+== See also
+
+- xref:operations:projects/message-brokers.adoc[]
+- xref:reference:cli/akka-cli/akka_projects_config.adoc#_see_also[`akka projects config` commands]
+- https://doc.akka.io/libraries/alpakka/current[Akka integrations through Alpakka]

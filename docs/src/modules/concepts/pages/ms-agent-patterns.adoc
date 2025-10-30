@@ -71,7 +71,7 @@ The following code snippet shows how easily we can create a workflow step that c
 [source,java,indent=0]
 .ConcurrentWorkflow.java
 ----
-include::java:example$doc-snippets/src/main/java/patterns/ConcurrentWorkflow.java[tag=concurrent-step]
+include::sdk:example$doc-snippets/src/main/java/patterns/ConcurrentWorkflow.java[tag=concurrent-step]
 ----
 <1> Call the `WeatherAgent` and `TrafficAgent` with `invokeAsync`, which immediately returns a `CompletionStage` of the future result.
 <2> Collect the results from the two agents.

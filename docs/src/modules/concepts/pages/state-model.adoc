@@ -4,7 +4,7 @@ include::ROOT:partial$include.adoc[]
 
 Akka provides an in-memory, durable store for stateful data. Stateful data can be scoped to a single agent, or made available system-wide. Stateful data is persisted in an embedded event store that tracks incremental state changes, which enables recovery of system state (resilience) to its last known modification. State is automatically sharded and rebalanced across Akka nodes running in a cluster to support elastic scaling to terabytes of memory. State can also be replicated across regions for failover and disaster recovery.
 
-Memory in Akka is structured around xref:reference:glossary.adoc#entity[entities]. An entity holds a particular slice of application state and evolves it over time according to a defined xref:reference:glossary.adoc#state_model[state model]. These state models determine how state is stored, updated, and replicated. This approach provides consistency and durability across the system, even in the face of failure. xref:java:agents.adoc[Agents], for example, manage their memory through entities, whether for short-lived context or persistent behavior.
+Memory in Akka is structured around xref:reference:glossary.adoc#entity[entities]. An entity holds a particular slice of application state and evolves it over time according to a defined xref:reference:glossary.adoc#state_model[state model]. These state models determine how state is stored, updated, and replicated. This approach provides consistency and durability across the system, even in the face of failure. xref:sdk:agents.adoc[Agents], for example, manage their memory through entities, whether for short-lived context or persistent behavior.
 
 Akka uses an architectural pattern called _Event Sourcing_. Following this pattern, all changes to an application's state are stored as a sequence of immutable events. Instead of saving the current state directly, Akka stores the history of what happened to it. The current state is derived by replaying those events. Memory is saved in an event journal managed by Akka, with events recorded both sequentially and via periodic snapshots for faster recovery.
 
@@ -19,7 +19,7 @@ Akka uses an architectural pattern called _Event Sourcing_. Following this patte
 | FundsWithdrawn  | -$400             | $1,200
 |===
 
-Akka uses the Event Sourcing pattern for many internal stateful operations. For example, xref:java:workflows.adoc[Workflows] rely on Event Sourcing to record each step as it progresses. This provides a complete history of execution, which can be useful for auditing, debugging, or recovery.
+Akka uses the Event Sourcing pattern for many internal stateful operations. For example, xref:sdk:workflows.adoc[Workflows] rely on Event Sourcing to record each step as it progresses. This provides a complete history of execution, which can be useful for auditing, debugging, or recovery.
 
 [cols="1,2,2", options="header"]
 |===
@@ -37,7 +37,7 @@ Tracking all state changes as a sequence of events allows you to create agentic 
 
 image:concepts:event-actions.png[Event Actions,width=300]
 
-Memory is managed automatically by the xref:java:agents.adoc[Agent] component. By default, each agent has session memory that stores interaction history and context using an xref:java:event-sourced-entities.adoc[Event Sourced Entity]. This memory is durable and retained across invocations. If needed, memory behavior can be customized or disabled xref:java:agents.adoc#_session_memory_configuration[through configuration].
+Memory is managed automatically by the xref:sdk:agents.adoc[Agent] component. By default, each agent has session memory that stores interaction history and context using an xref:sdk:event-sourced-entities.adoc[Event Sourced Entity]. This memory is durable and retained across invocations. If needed, memory behavior can be customized or disabled xref:sdk:agents.adoc#_session_memory_configuration[through configuration].
 
 == Entity state models
 
@@ -103,5 +103,5 @@ NOTE: Although Key Value Entities are planned to support a Last Writer Wins (LWW
 
 == Related documentation
 
-- xref:java:event-sourced-entities.adoc[Event Sourced Entities]
-- xref:java:key-value-entities.adoc[Key Value Entities]
+- xref:sdk:event-sourced-entities.adoc[Event Sourced Entities]
+- xref:sdk:key-value-entities.adoc[Key Value Entities]

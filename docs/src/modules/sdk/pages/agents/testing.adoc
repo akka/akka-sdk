@@ -1,0 +1,78 @@
+= Testing the agent
+
+include::ROOT:partial$include.adoc[]
+
+Testing agents built with Generative AI involves two complementary approaches: evaluating the quality of the non-deterministic model behavior and writing deterministic unit tests for the agent's and surrounding components' logic. Evaluations is described in xref:sdk:agents/llm_eval.adoc[], and here we will cover the deterministic testing.
+
+== Mocking responses from the model
+
+For predictable and repeatable tests of your agent's business logic and component integrations, it's essential to use deterministic responses. This allows you to verify that your agent behaves correctly when it receives a known model output.
+
+Use the `TestKitSupport` and the `ComponentClient` to call the components from the test. The `ModelProvider` of the agents can be replaced with link:_attachments/testkit/akka/javasdk/testkit/TestModelProvider.html[TestModelProvider], which provides ways to mock the responses without using the real AI model.
+
+[source,java,indent=0]
+.{sample-base-url}/multi-agent/src/test/java/demo/multiagent/application/AgentTeamWorkflowTest.java[AgentTeamWorkflowTest.java]
+----
+include::example$multi-agent/src/test/java/demo/multiagent/application/AgentTeamWorkflowTest.java[tag=class]
+----
+<1> Extend `TestKitSupport` to gain access to testing utilities for Akka components.
+<2> Create one or more `TestModelProvider`. Using one per agent allows for distinct mock behaviors, while sharing one is useful for testing general responses.
+<3> Use the settings of the `TestKit` to replace the agent's real `ModelProvider` with your test instance.
+<4> For simple tests, define a single, fixed response that the mock model will always return.
+<5> For more complex scenarios, define a response that is only returned if the user message matches a specific condition. This is useful for testing different logic paths within your agent.
+<6> Call the components with the `componentClient`.
+
+== Mocked model in a deployed service
+
+In some scenarios it can be useful to run the service deployed but without interacting with an actual agent. For example,
+a load test that exercises the service with heavy load to verify scalability could quickly consume a large number of tokens
+when the exact answer from the model is not very important, one or a few different predefined responses and responding with
+a slight delay to simulate model processing time could be good enough.
+
+It is possible to implement a custom model provider using `akka.javasdk.agent.ModelProvider.Custom`, such a mock provider
+however, side steps quite a bit of the infrastructure involved in agent interactions, a more realistic mock model can be implemented
+by building a separate Akka service with a single xref:http-endpoints.adoc[HTTP endpoint] mimicking the model endpoint and
+configuring the deployed agentic service to use that.
+
+Here is an example endpoint returning a static response over the OpenAI protocol:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/MockOpenAI.java[MockOpenAI.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/MockOpenAI.java[tag=class]
+----
+
+For more elaborate scenarios, the mock model endpoint may have to parse the request to decide which hard coded answer out of a few
+or to create a reply in a more dynamic fashion.
+
+Deploying this service as `mock-openai` allows other services containing agents in the same xref:operations:projects/index.adoc[Akka project].
+Using the deployed mock service from an agent in another service can be done with a config like this:
+
+[source,hocon,indent=0]
+.application.conf
+----
+akka.javasdk {
+  agent {
+    model-provider = openai
+
+    openai {
+      model-name = "gpt-4o-mini"
+      base-url = "http://mock-openai" // <1>
+    }
+  }
+}
+
+----
+1. The service name the mock was deployed as.
+
+Note that you should use `http`, and not `https`, the connection will be encrypted with TLS, but that is handled by the platform.
+
+== Log model request and response
+
+To see exactly what is sent to and received from the AI model, you can enable the following logger in `include-dev-loggers.xml`:
+
+[source]
+----
+  <logger name="kalix.runtime.agent.AkkaLangChain4jHttpClient" level="TRACE"/>
+----
+

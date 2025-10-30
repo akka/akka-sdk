@@ -10,7 +10,7 @@ See @README.md for a project overview, and how to build, test and run the applic
 
 Use the detailed instructions in @AGENTS.md when writing Akka code.
 
-Use the guidelines in @akka-context/java/ai-coding-assistant-guidelines.html.md when writing code in this project.
+Use the guidelines in @akka-context/sdk/ai-coding-assistant-guidelines.html.md when writing code in this project.
 
 ## Akka documentation
 
@@ -37,7 +37,7 @@ This approach enables early validation, catches issues before coding, and allows
 ### Step 0: Documentation Check (complex components only)
 
 For first-time or complex components:
-1. Read relevant `akka-context/java/*.html.md`
+1. Read relevant `akka-context/sdk/*.html.md`
 2. Extract code examples, verify imports/patterns
 3. Brief note: "📚 Reviewed {doc}"
 

@@ -35,15 +35,15 @@ Akka is a platform for building, running and evaluating agentic systems. It incl
 [.grid-item]
 --
 [discrete]
-== xref:java:index.adoc[Developing]
+== xref:sdk:index.adoc[Developing]
 
 **Implementation guidance** for key components and development patterns.
 
-* xref:java:workflows.adoc[Orchestration]
-* xref:java:agents.adoc[Agents]
-* xref:java:event-sourced-entities.adoc[Memory]
-* xref:java:consuming-producing.adoc[Streaming]
-* xref:java:running-locally.adoc[Set up your local dev environment]
+* xref:sdk:workflows.adoc[Orchestration]
+* xref:sdk:agents.adoc[Agents]
+* xref:sdk:event-sourced-entities.adoc[Memory]
+* xref:sdk:consuming-producing.adoc[Streaming]
+* xref:sdk:running-locally.adoc[Set up your local dev environment]
 --
 
 [.grid-item]

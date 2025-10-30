@@ -70,7 +70,7 @@ You can try running the image locally with docker compose:
 +
 [source,yml]
 ----
-include::java:example$doc-snippets/standalone/docker-compose.yml[]
+include::sdk:example$doc-snippets/standalone/docker-compose.yml[]
 ----
 
 Update the `image:` of the `shopping-cart-service` in the `docker-compose.yml` with the specific image name and version you installed.
@@ -92,7 +92,7 @@ You need the following Kubernetes files:
 +
 [source,yml]
 ----
-include::java:example$doc-snippets/standalone/namespace.yml[]
+include::sdk:example$doc-snippets/standalone/namespace.yml[]
 ----
 
 . rbac.yml
@@ -101,14 +101,14 @@ For Akka Cluster bootstrap and rolling updates we need to define role based acce
 +
 [source,yaml]
 ----
-include::java:example$doc-snippets/standalone/rbac.yml[]
+include::sdk:example$doc-snippets/standalone/rbac.yml[]
 ----
 
 . deployment.yml
 +
 [source,yaml]
 ----
-include::java:example$doc-snippets/standalone/deployment.yml[]
+include::sdk:example$doc-snippets/standalone/deployment.yml[]
 ----
 +
 Update the `image:` in the `deployment.yml` with the specific image version and location you published.
@@ -117,7 +117,7 @@ Update the `image:` in the `deployment.yml` with the specific image version and 
 +
 [source,yaml]
 ----
-include::java:example$doc-snippets/standalone/service.yml[]
+include::sdk:example$doc-snippets/standalone/service.yml[]
 ----
 
 Update all `shopping-cart` naming to your own names.

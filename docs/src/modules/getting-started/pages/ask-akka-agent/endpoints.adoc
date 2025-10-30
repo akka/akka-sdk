@@ -32,7 +32,7 @@ Add a new file `ConversationHistoryView.java` to `src/main/java/akka/ask/agent/a
 [source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/application/ConversationHistoryView.java[ConversationHistoryView.java]
 ----
-include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/application/ConversationHistoryView.java[tag=top]
+include::sdk:example$ask-akka-agent/src/main/java/akka/ask/agent/application/ConversationHistoryView.java[tag=top]
 ----
 <1> We're using a view-specific message type here to avoid bleeding logic across tiers
 <2> Retrieves a full history of all sessions for a given user
@@ -45,7 +45,7 @@ There is a convenience endpoint that you can use to query the list of sessions f
 [source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/api/UsersEndpoint.java[UsersEndpoint.java]
 ----
-include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/api/UsersEndpoint.java[tag=endpoint]
+include::sdk:example$ask-akka-agent/src/main/java/akka/ask/agent/api/UsersEndpoint.java[tag=endpoint]
 ----
 
 One subtle thing worth pointing out here is that both the streaming RAG endpoint and the user view query endpoint have the exact same route as defined in `@HttpEndpoint("/api")`.
@@ -57,7 +57,7 @@ You can now add an endpoint that serves up the static UI. This is surprisingly s
 [source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/api/UiEndpoint.java[UiEndpoint.java]
 ----
-include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/api/UiEndpoint.java[tag=endpoint]
+include::sdk:example$ask-akka-agent/src/main/java/akka/ask/agent/api/UiEndpoint.java[tag=endpoint]
 ----
 <1> The `staticResource` function serves up a file from `main/resources/static-resources`
 

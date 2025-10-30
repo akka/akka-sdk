@@ -63,7 +63,7 @@ The _Agent_ is implemented with:
 [source,java,indent=0]
 .HelloWorldAgent.java
 ----
-include::java:example$helloworld-agent/src/main/java/com/example/application/HelloWorldAgent.java[tag=class]
+include::sdk:example$helloworld-agent/src/main/java/com/example/application/HelloWorldAgent.java[tag=class]
 ----
 
 The system message provides system-level instructions to the AI model that defines its behavior and context. The system message acts as a foundational prompt that establishes the AI's role, constraints, and operational parameters. It is processed before user messages and helps maintain consistent behavior throughout the interactions.
@@ -83,7 +83,7 @@ The _Endpoint_ is implemented with:
 [source,java,indent=0]
 .HelloWorldEndpoint.java
 ----
-include::java:example$helloworld-agent/src/main/java/com/example/api/HelloWorldEndpoint.java[tag=class]
+include::sdk:example$helloworld-agent/src/main/java/com/example/api/HelloWorldEndpoint.java[tag=class]
 ----
 
 The `ComponentClient` is the way to call the agent or other components. The agent may participate in a session, which is used for the agent's memory and can also be shared between multiple agents that are collaborating on the same goal.
