@@ -106,7 +106,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
       defaultStepTimeout = defaultStepTimeout,
       defaultStepRecoverStrategy = defaultStepRecoverStrategy,
       stepConfigs = stepConfigs,
-      passivationDelay = None)
+      passivationDelay = workflowConfig.passivationDelay().toScala.map(_.toScala))
   }
 
   private def commandContext(commandName: String, telemetryContext: Option[OtelContext], metadata: Metadata) =
