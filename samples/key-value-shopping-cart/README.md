@@ -7,7 +7,7 @@ To understand the Akka concepts behind this example, see [Development Process](h
 ## Developing
 
 This project demonstrates the use of Key Value Entity and View components.
-To understand more about these components, see [Developing services](https://doc.akka.io/java/index.html).
+To understand more about these components, see [Developing services](https://doc.akka.io/sdk/index.html).
 
 ## Building
 

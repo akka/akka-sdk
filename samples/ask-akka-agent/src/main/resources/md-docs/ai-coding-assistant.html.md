@@ -46,7 +46,7 @@ We need to give the LLM knowledge about the latest Akka documentation.
 
 ## <a href="about:blank#_llm_friendly_documentation"></a> LLM-friendly documentation
 
-In addition to human-readable HTML, the Akka documentation is also published in markdown format that an LLM can understand in a good and efficient way. Each page has a corresponding `.md` page, for example [event-sourced-entities.html.md](https://doc.akka.io/java/event-sourced-entities.html.md).
+In addition to human-readable HTML, the Akka documentation is also published in markdown format that an LLM can understand in a good and efficient way. Each page has a corresponding `.md` page, for example [event-sourced-entities.html.md](https://doc.akka.io/sdk/event-sourced-entities.html.md).
 
 The markdown documentation is published according to the widely used standard proposal [llmstxt](https://llmstxt.org/):
 
@@ -71,7 +71,7 @@ Cursor can use documentation from a custom website, and include relevant informa
 
 You can point it directly to `https://doc.akka.io/llms-full.txt`, which is already in LLM-friendly markdown format.
 
-Alternatively, you could use `https://doc.akka.io/java/` as the base URL of the custom docs, and it would crawl the HTML pages. It’s important to point at `https://doc.akka.io/java/`, and not `https://doc.akka.io/` since the latter also includes documentation about the Akka libraries that you don’t want to use when developing with the Akka SDK.
+Alternatively, you could use `https://doc.akka.io/sdk/` as the base URL of the custom docs, and it would crawl the HTML pages. It’s important to point at `https://doc.akka.io/sdk/`, and not `https://doc.akka.io/` since the latter also includes documentation about the Akka libraries that you don’t want to use when developing with the Akka SDK.
 
 You find the settings for custom documentation in: Cursor Settings > Features > Docs
 
@@ -168,7 +168,7 @@ Don't generate any code yet, but remember the following guidelines and use them 
 
 <paste guidelines>
 ```
-You can copy-paste the guidelines from [ai-coding-assistant-guidelines.html.md](https://doc.akka.io/java/ai-coding-assistant-guidelines.html.md)
+You can copy-paste the guidelines from [ai-coding-assistant-guidelines.html.md](https://doc.akka.io/sdk/ai-coding-assistant-guidelines.html.md)
 
 ## <a href="about:blank#_prompt_examples"></a> Prompt examples
 

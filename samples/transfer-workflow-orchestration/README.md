@@ -4,7 +4,7 @@ This guide demonstrates how to create a simple workflow for transferring funds b
 `WalletService` is an external service that manages wallets. The main focus of this sample is to demonstrate the 
 orchestration part of the `Workflow` component and the human in the loop aspect (accepting the transfer when the 
 amount is high). Other aspects like error handling, retry strategy, compensation are covered in the [documentation]
-(https://doc.akka.io/java/workflows.html#_error_handling).  
+(https://doc.akka.io/sdk/workflows.html#_error_handling).  
 
 
 ## Prerequisites

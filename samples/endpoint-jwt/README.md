@@ -8,7 +8,7 @@ To understand the Akka concepts behind this example, see [Development Process](h
 ## Developing
 
 This project demonstrates the use of JWT in a HTTP Endpoint.
-To understand more, read [JSON Web Tokens (JWT)](https://doc.akka.io/java/auth-with-jwts.html) in the documentation.
+To understand more, read [JSON Web Tokens (JWT)](https://doc.akka.io/sdk/auth-with-jwts.html) in the documentation.
 
 ## Building
 

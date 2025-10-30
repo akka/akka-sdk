@@ -7,7 +7,7 @@ To understand the Akka concepts that are the basis for this example, see [Develo
 ## Developing
 
 This project demonstrates the use of an Event Sourced Entity and the different ways to consume and produce from/to a broker. This sample provides configuration to run with either Kafka or Google PubSub emulator.
-Note that, currently, only one broker can be configured per service. To understand more about these consumers and producers, see [Consuming and Producing](https://doc.akka.io/java/consuming-producing.html).
+Note that, currently, only one broker can be configured per service. To understand more about these consumers and producers, see [Consuming and Producing](https://doc.akka.io/sdk/consuming-producing.html).
 
 ## Building
 
