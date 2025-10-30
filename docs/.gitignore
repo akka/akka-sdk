@@ -6,4 +6,8 @@
 /src/modules/java/attachments/
 /src/modules/java/partials/attributes.adoc
 /src/modules/ROOT/partials/attributes.adoc
+# above /src/modules/.. ignores can be dropped later
+/src/modules/sdk/examples/
+/src/modules/sdk/attachments/
+/src/modules/sdk/partials/attributes.adoc
 /src-managed/
