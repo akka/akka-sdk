@@ -51,14 +51,30 @@ import com.fasterxml.jackson.annotation.JsonSubTypes
 private[impl] object Reflect {
   object Syntax {
 
-    implicit class ClassOps(clazz: Class[_]) {
-      def isPublic: Boolean = Modifier.isPublic(clazz.getModifiers)
+    implicit class ClassOps(cls: Class[_]) {
+      def isPublic: Boolean = Modifier.isPublic(cls.getModifiers)
 
       def annotationOption[A <: Annotation](implicit ev: ClassTag[A]): Option[A] =
-        if (clazz.isPublic)
-          Option(clazz.getAnnotation(ev.runtimeClass.asInstanceOf[Class[A]]))
+        if (cls.isPublic)
+          Option(cls.getAnnotation(ev.runtimeClass.asInstanceOf[Class[A]]))
         else
           None
+
+      /**
+       * Collects all methods annotated with passed annotation from the given class, including inherited methods.
+       */
+      def methodsAnnotatedWith[A <: Annotation](implicit ev: ClassTag[A]): IndexedSeq[Method] = {
+        val annotationClass = ev.runtimeClass.asInstanceOf[Class[A]]
+
+        def allMethods(c: Class[_]): Seq[Method] = {
+          if (c == null || c == classOf[Object]) Seq.empty
+          else c.getDeclaredMethods.toSeq ++ allMethods(c.getSuperclass) ++ c.getInterfaces.flatMap(allMethods)
+        }
+
+        allMethods(cls).toIndexedSeq
+          .filter(m => m.getAnnotation(annotationClass) != null)
+          .distinct
+      }
     }
 
     implicit class MethodOps(javaMethod: Method) {
@@ -108,6 +124,12 @@ private[impl] object Reflect {
 
   def isAgent(cls: Class[_]): Boolean =
     classOf[Agent].isAssignableFrom(cls)
+
+  def isToolCandidate(cls: Class[_]): Boolean =
+    isEventSourcedEntity(cls) ||
+    isKeyValueEntity(cls) ||
+    isWorkflow(cls) ||
+    isView(cls)
 
   def isEvaluatorAgent(cls: Class[_]): Boolean = {
     isAgent(cls) && {

@@ -25,6 +25,16 @@ public class ComponentAnnotationTest {
   @ComponentId("old-component")
   static class OldComponentEntity extends KeyValueEntity<String> {}
 
+  @Component(
+      id = "multiline-component",
+      name = "Test Component",
+      description =
+          """
+          A test component with
+          multiline description
+          """)
+  static class MultiLineComponentDescriptionEntity extends KeyValueEntity<String> {}
+
   static class NoAnnotationEntity extends KeyValueEntity<String> {}
 
   @Test
@@ -51,6 +61,15 @@ public class ComponentAnnotationTest {
 
     var description = ComponentDescriptorFactory.readComponentDescription(OldComponentEntity.class);
     assertFalse(description.isDefined());
+  }
+
+  @Test
+  public void testMultiLineComponentDescription() {
+    var description =
+        ComponentDescriptorFactory.readComponentDescription(
+            MultiLineComponentDescriptionEntity.class);
+    assertTrue(description.isDefined());
+    assertEquals("A test component with\nmultiline description", description.get());
   }
 
   @Test

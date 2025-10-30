@@ -5,6 +5,7 @@
 package akkajavasdk.components.workflowentities;
 
 import akka.javasdk.annotations.Component;
+import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +15,7 @@ public class WalletEntity extends KeyValueEntity<Wallet> {
 
   private static final Logger logger = LoggerFactory.getLogger(WalletEntity.class);
 
+  @FunctionTool(description = "Create a new wallet with the given amount.")
   public Effect<String> create(int amount) {
     return effects().updateState(new Wallet(commandContext().entityId(), amount)).thenReply("Ok");
   }
@@ -32,6 +34,7 @@ public class WalletEntity extends KeyValueEntity<Wallet> {
     return effects().updateState(currentState().deposit(amount)).thenReply("Ok");
   }
 
+  @FunctionTool(description = "Get wallet's balance.")
   public Effect<Balance> get() {
     return effects().reply(new Balance(currentState().balance));
   }

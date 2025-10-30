@@ -60,6 +60,18 @@ Akka provides integration with several backend AI models, and you have to select
 include::java:example$doc-snippets/src/main/resources/application.conf[tags=agent-model-config]
 ----
 
+The `model-provider` property points to the name of another configuration section, in this case `akka.javasdk.agent.openai`. That configuration section contains the actual configuration for the model provider, according to the properties described in xref:model-provider-details.adoc#_reference_configurations[model provider reference configurations].
+
+Another example where we have selected `anthropic` with `claude-sonnet-4` as the default model provider:
+
+[source,json,indent=0]
+.src/main/resources/application.conf
+----
+include::java:example$doc-snippets/src/main/resources/application.conf[tags=agent-model-config2]
+----
+
+The API key can be defined with an environment variable, `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` in the above examples.
+
 The default model will be used if the agent doesn't specify another model. Different agents can use different models by defining the `ModelProvider` in the Agent effect:
 
 [source,java,indent=0]

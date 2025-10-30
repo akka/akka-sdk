@@ -70,11 +70,8 @@ private[impl] object ComponentDescriptorFactory {
     clazz.annotationOption[FromEventSourcedEntity]
 
   def hasConsumerOutput(javaMethod: Method): Boolean = {
-    if (javaMethod.isPublic) {
-      javaMethod.getReturnType.isAssignableFrom(classOf[Consumer.Effect])
-    } else {
-      false
-    }
+    javaMethod.isPublic &&
+    javaMethod.getReturnType.isAssignableFrom(classOf[Consumer.Effect])
   }
 
   def hasQueryEffectOutput(javaMethod: Method): Boolean = {
@@ -166,7 +163,7 @@ private[impl] object ComponentDescriptorFactory {
   def readComponentDescription(annotated: AnnotatedElement): Option[String] = {
     val componentAnnotation = annotated.getAnnotation(classOf[Component])
     if (componentAnnotation ne null) {
-      val description = componentAnnotation.description()
+      val description = componentAnnotation.description().stripIndent().trim()
       if (description.nonEmpty) Some(description) else None
     } else {
       None

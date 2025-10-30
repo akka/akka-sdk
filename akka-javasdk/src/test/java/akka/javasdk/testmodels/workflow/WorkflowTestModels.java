@@ -6,6 +6,7 @@ package akka.javasdk.testmodels.workflow;
 
 import akka.Done;
 import akka.javasdk.annotations.Component;
+import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.annotations.StepName;
 import akka.javasdk.workflow.Workflow;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -279,6 +280,80 @@ public class WorkflowTestModels {
       return step("run-transaction")
           .call(Transaction.class, __ -> Done.getInstance())
           .andThen(Done.class, __ -> effects().end());
+    }
+  }
+
+  public static class ValidWorkflowWithNoArgCommandHandler extends Workflow<String> {
+    public Workflow.Effect<String> execute() {
+      return effects().reply("ok");
+    }
+  }
+
+  public static class ValidWorkflowWithOneArgCommandHandler extends Workflow<String> {
+    public Workflow.Effect<String> execute(String command) {
+      return effects().reply(command);
+    }
+  }
+
+  public static class InvalidWorkflowWithTwoArgCommandHandler extends Workflow<String> {
+    public Workflow.Effect<String> execute(String cmd, int i) {
+      return effects().reply(cmd);
+    }
+  }
+
+  public static class WorkflowWithNonEffectMethod extends Workflow<String> {
+    public String execute() {
+      return "ok";
+    }
+  }
+
+  // Test models for @FunctionTool validation
+
+  @Component(id = "workflow_with_function_tool_on_step_effect")
+  public static class WorkflowWithFunctionToolOnStepEffect extends Workflow<String> {
+
+    public Workflow.Effect<String> command(String cmd) {
+      return effects().reply(cmd);
+    }
+
+    @FunctionTool(description = "Step method")
+    public StepEffect stepMethod() {
+      return null;
+    }
+  }
+
+  @Component(id = "workflow_with_function_tool_on_non_effect")
+  public static class WorkflowWithFunctionToolOnNonEffectMethod extends Workflow<String> {
+
+    public Workflow.Effect<String> command(String cmd) {
+      return effects().reply(cmd);
+    }
+
+    @FunctionTool(description = "Helper method")
+    public String helperMethod() {
+      return "helper";
+    }
+  }
+
+  @Component(id = "workflow_with_valid_function_tool")
+  public static class WorkflowWithValidFunctionTool extends Workflow<String> {
+
+    @FunctionTool(description = "Execute command")
+    public Workflow.Effect<String> command(String cmd) {
+      return effects().reply(cmd);
+    }
+  }
+
+  @Component(id = "workflow_with_function_tool_on_readonly_effect")
+  public static class WorkflowWithFunctionToolOnReadOnlyEffect extends Workflow<String> {
+
+    public Workflow.Effect<String> command(String cmd) {
+      return effects().reply(cmd);
+    }
+
+    @FunctionTool(description = "Get state")
+    public Workflow.ReadOnlyEffect<String> getState() {
+      return effects().reply("state");
     }
   }
 }

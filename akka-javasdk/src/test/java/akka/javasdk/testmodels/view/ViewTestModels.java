@@ -8,6 +8,7 @@ import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.DeleteHandler;
+import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.annotations.Table;
 import akka.javasdk.testmodels.eventsourcedentity.Employee;
@@ -22,6 +23,7 @@ import akka.javasdk.testmodels.keyvalueentity.User;
 import akka.javasdk.testmodels.keyvalueentity.UserEntity;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -45,7 +47,8 @@ public class ViewTestModels {
       Optional<String> optionalString,
       List<String> repeatedString,
       ByEmail nestedMessage,
-      AnEnum anEnum) {}
+      AnEnum anEnum,
+      BigDecimal bigDecimal) {}
 
   public enum AnEnum {
     ONE,
@@ -504,6 +507,23 @@ public class ViewTestModels {
   }
 
   @Component(id = "users_view")
+  public static class ViewWithSubscriptionMethodAcl extends View {
+
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class Users extends TableUpdater<User> {
+      @Acl(allow = @Acl.Matcher(service = "test"))
+      public Effect<User> onUpdate(User user) {
+        return effects().updateRow(user);
+      }
+    }
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<User> getUser(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+  @Component(id = "users_view")
   public static class UserByEmailWithCollectionReturn extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -730,6 +750,48 @@ public class ViewTestModels {
     @Query("SELECT * FROM rows")
     public QueryStreamEffect<Employee> allRows() {
       return queryStreamResult();
+    }
+  }
+
+  // Test models for @FunctionTool validation
+
+  @Component(id = "view_with_function_tool_on_stream")
+  public static class ViewWithFunctionToolOnStreamQuery extends View {
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UsersTable extends TableUpdater<User> {}
+
+    @Query(value = "SELECT * FROM users", streamUpdates = true)
+    @FunctionTool(description = "Get all users as stream")
+    public QueryStreamEffect<User> getAllUsers() {
+      return queryStreamResult();
+    }
+  }
+
+  @Component(id = "view_with_function_tool_on_non_query")
+  public static class ViewWithFunctionToolOnNonQueryMethod extends View {
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UsersTable extends TableUpdater<User> {}
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<User> getUser(ByEmail byEmail) {
+      return queryResult();
+    }
+
+    @FunctionTool(description = "Helper method")
+    public String helperMethod() {
+      return "helper";
+    }
+  }
+
+  @Component(id = "view_with_valid_function_tool")
+  public static class ViewWithValidFunctionTool extends View {
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UsersTable extends TableUpdater<User> {}
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    @FunctionTool(description = "Get user by email")
+    public QueryEffect<User> getUser(ByEmail byEmail) {
+      return queryResult();
     }
   }
 }

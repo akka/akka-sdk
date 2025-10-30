@@ -58,6 +58,7 @@ import akka.javasdk.impl.agent.SessionMemoryClient.MemorySettings
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
+import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
@@ -247,6 +248,8 @@ private[impl] final class AgentImpl[A <: Agent](
             val functionTools =
               FunctionTools.toolInvokersFor(agent) ++
               req.toolInstancesOrClasses.flatMap {
+                case cls: Class[_] if Reflect.isToolCandidate(cls) =>
+                  FunctionTools.toolComponentInvokersFor(cls, componentClient(telemetryContext))
                 case cls: Class[_] => FunctionTools.toolInvokersFor(cls, dependencyProvider)
                 case any           => FunctionTools.toolInvokersFor(any)
               }.toMap
@@ -258,6 +261,8 @@ private[impl] final class AgentImpl[A <: Agent](
                 Some(JsonSchema.jsonSchemaFor(req.responseType))
               else
                 None
+
+            val userMessageAt = Instant.now()
 
             new SpiAgent.RequestModelEffect(
               modelProvider = spiModelProvider,
@@ -272,7 +277,7 @@ private[impl] final class AgentImpl[A <: Agent](
               responseMapping = req.responseMapping,
               failureMapping = req.failureMapping.map(mapSpiAgentException),
               replyMetadata = metadata,
-              onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, results),
+              onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, userMessageAt, results),
               requestGuardrails = guardrails.modelRequestGuardrails,
               responseGuardrails = guardrails.modelResponseGuardrails)
 
@@ -368,9 +373,8 @@ private[impl] final class AgentImpl[A <: Agent](
   private def onSuccess(
       sessionMemoryClient: SessionMemory,
       userMessage: String,
+      userMessageAt: Instant,
       responses: Seq[SpiAgent.Response]): Unit = {
-
-    val timestamp = Instant.now()
 
     // AiMessages and ToolCallResponses
     val responseMessages: Seq[SessionMessage] =
@@ -379,15 +383,15 @@ private[impl] final class AgentImpl[A <: Agent](
           val requests = res.toolRequests.map { req =>
             new ToolCallRequest(req.id, req.name, req.arguments)
           }.asJava
-          new AiMessage(timestamp, res.content, componentId, requests)
+          new AiMessage(res.timestamp, res.content, componentId, requests)
 
         case res: SpiAgent.ToolCallResponse =>
-          new ToolCallResponse(timestamp, componentId, res.id, res.name, res.content)
+          new ToolCallResponse(res.timestamp, componentId, res.id, res.name, res.content)
       }
 
     sessionMemoryClient.addInteraction(
       sessionId,
-      new UserMessage(timestamp, userMessage, componentId),
+      new UserMessage(userMessageAt, userMessage, componentId),
       responseMessages.asJava)
   }
 

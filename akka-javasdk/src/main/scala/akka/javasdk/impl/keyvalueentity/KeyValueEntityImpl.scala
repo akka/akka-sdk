@@ -203,8 +203,12 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
     throw new IllegalStateException("handleEvent not expected for KeyValueEntity")
   }
 
-  override def stateToBytes(obj: SpiEventSourcedEntity.State): BytesPayload =
-    serializer.toBytes(obj)
+  override def stateToBytes(obj: SpiEventSourcedEntity.State): BytesPayload = {
+    if (obj eq null)
+      BytesPayload.empty
+    else
+      serializer.toBytes(obj)
+  }
 
   override def stateFromBytes(pb: BytesPayload): SpiEventSourcedEntity.State =
     serializer.fromBytes(entityStateType, pb).asInstanceOf[SpiEventSourcedEntity.State]

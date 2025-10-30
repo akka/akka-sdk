@@ -5,6 +5,7 @@
 package akka.javasdk.testmodels.action;
 
 import akka.javasdk.annotations.Component;
+import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.timedaction.TimedAction;
 
 public class ActionsTestModels {
@@ -19,6 +20,44 @@ public class ActionsTestModels {
   @Component(id = "test-action-1")
   public static class ActionWithOneParam extends TimedAction {
     public Effect message(String one) {
+      return effects().done();
+    }
+  }
+
+  public static class TimedActionWithNoArgMethod extends TimedAction {
+    public TimedAction.Effect foo() {
+      return effects().done();
+    }
+  }
+
+  public static class TimedActionWithSingleArgMethod extends TimedAction {
+    public TimedAction.Effect foo(String arg) {
+      return effects().done();
+    }
+  }
+
+  public static class TimedActionWithTooManyArgsMethod extends TimedAction {
+    public TimedAction.Effect foo(String a, int b) {
+      return effects().done();
+    }
+  }
+
+  public static class TimedActionWithNoEffectMethod extends TimedAction {
+    public String bar() {
+      return "ok";
+    }
+  }
+
+  public static class NotTimedAction {
+    public String foo(String a, int b) {
+      return "ok";
+    }
+  }
+
+  @Component(id = "timed-action-with-function-tool")
+  public static class TimedActionWithFunctionTool extends TimedAction {
+    @FunctionTool(description = "Invalid function tool")
+    public TimedAction.Effect performAction() {
       return effects().done();
     }
   }

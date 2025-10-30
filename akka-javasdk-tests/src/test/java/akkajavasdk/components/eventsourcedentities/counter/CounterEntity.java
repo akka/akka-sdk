@@ -11,9 +11,11 @@ import akka.Done;
 import akka.javasdk.CommandException;
 import akka.javasdk.Metadata;
 import akka.javasdk.annotations.Component;
+import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akkajavasdk.Result;
 import akkajavasdk.components.MyException;
+import java.math.BigDecimal;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +39,7 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
     return new Counter(0);
   }
 
+  @FunctionTool(description = "Increases the value of this counter by the passed value")
   public Effect<Integer> increase(int value) {
     logger.info(
         "Increasing counter with commandName={} seqNr={} current={} value={} metadata={}",
@@ -92,6 +95,16 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
     return effects().reply(Thread.currentThread().isVirtual());
   }
 
+  public ReadOnlyEffect<BigDecimal> passBigDecimalThrough(BigDecimal value) {
+    return effects().reply(value);
+  }
+
+  public record WrappedBigDecimal(BigDecimal value) {}
+
+  public ReadOnlyEffect<WrappedBigDecimal> passWrappedBigDecimalThrough(WrappedBigDecimal value) {
+    return effects().reply(value);
+  }
+
   public Effect<Integer> set(int value) {
     return effects().persist(new CounterEvent.ValueSet(value)).thenReply(Counter::value);
   }
@@ -124,6 +137,7 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
     return effects().reply(currentState().value());
   }
 
+  @FunctionTool(description = "Returns the value of this counter.")
   public ReadOnlyEffect<Counter> getState() {
     return effects().reply(currentState());
   }
