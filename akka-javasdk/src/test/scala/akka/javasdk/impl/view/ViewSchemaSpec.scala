@@ -16,6 +16,7 @@ import akka.runtime.sdk.spi.SpiSchema.SpiFloat
 import akka.runtime.sdk.spi.SpiSchema.SpiInteger
 import akka.runtime.sdk.spi.SpiSchema.SpiList
 import akka.runtime.sdk.spi.SpiSchema.SpiLong
+import akka.runtime.sdk.spi.SpiSchema.SpiNumeric
 import akka.runtime.sdk.spi.SpiSchema.SpiOptional
 import akka.runtime.sdk.spi.SpiSchema.SpiString
 import akka.runtime.sdk.spi.SpiSchema.SpiTimestamp
@@ -51,7 +52,8 @@ class ViewSchemaSpec extends AnyWordSpec with Matchers {
             "nestedMessage" -> new SpiClass(
               classOf[ViewTestModels.ByEmail].getName,
               Seq(new SpiField("email", SpiString))),
-            "anEnum" -> new SpiEnum(classOf[ViewTestModels.AnEnum].getName))
+            "anEnum" -> new SpiEnum(classOf[ViewTestModels.AnEnum].getName),
+            "bigDecimal" -> SpiNumeric)
           clazz.fields should have size expectedFields.size
 
           expectedFields.foreach { case (name, expectedType) =>

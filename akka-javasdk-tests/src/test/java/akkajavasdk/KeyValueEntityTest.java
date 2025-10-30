@@ -211,7 +211,7 @@ public class KeyValueEntityTest extends TestKitSupport {
         componentClient
             .forKeyValueEntity(user.id())
             .method(UserEntity::createUser)
-            .invokeAsync(new UserEntity.CreatedUser(user.name(), user.email())));
+            .invokeAsync(new UserEntity.CreateUser(user.name(), user.email())));
   }
 
   private void changeEmail(TestUser user) {

@@ -128,7 +128,8 @@ private[impl] object ViewDescriptorFactory {
       // FIXME reintroduce ACLs (does JWT make any sense here? I don't think so)
       componentOptions = new ComponentOptions(None, None),
       name = readComponentName(viewClass),
-      description = readComponentDescription(viewClass))
+      description = readComponentDescription(viewClass),
+      provided = false)
   }
 
   private case class QueryMethod(descriptor: QueryDescriptor, queryString: String)

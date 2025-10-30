@@ -341,7 +341,8 @@ object McpEndpointDescriptorFactory {
       tools = tools.sortBy(_.toolDescription.name),
       componentOptions = new ComponentOptions(
         deriveAclOptions(Option(mcpEndpointClass.getAnnotation(classOf[Acl]))),
-        deriveJWTOptions(Option(mcpEndpointClass.getAnnotation(classOf[JWT])), mcpEndpointClass.getCanonicalName)))
+        deriveJWTOptions(Option(mcpEndpointClass.getAnnotation(classOf[JWT])), mcpEndpointClass.getCanonicalName)),
+      provided = false)
   }
 
   private def methodsWithAnnotation[T <: Annotation](clazz: Class[_])(implicit

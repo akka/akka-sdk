@@ -6,6 +6,7 @@ package akka.javasdk.testmodels.eventsourcedentity;
 
 import akka.javasdk.JsonMigration;
 import akka.javasdk.annotations.Component;
+import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.annotations.Migration;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import java.util.List;
@@ -220,6 +221,75 @@ public class EventSourcedEntitiesTestModels {
     @Override
     public Employee applyEvent(EmployeeEvent event) {
       return null;
+    }
+  }
+
+  // Test models for @FunctionTool validation
+
+  @Component(id = "entity_with_function_tool_on_non_effect")
+  public static class EntityWithFunctionToolOnNonEffectMethod
+      extends EventSourcedEntity<String, Event> {
+
+    @Override
+    public String emptyState() {
+      return "";
+    }
+
+    public Effect<String> command(String cmd) {
+      return effects().reply(cmd);
+    }
+
+    @FunctionTool(description = "Helper method")
+    public String helperMethod() {
+      return "helper";
+    }
+
+    @Override
+    public String applyEvent(Event event) {
+      return "";
+    }
+  }
+
+  @Component(id = "entity_with_valid_function_tool")
+  public static class EntityWithValidFunctionTool extends EventSourcedEntity<String, Event> {
+
+    @Override
+    public String emptyState() {
+      return "";
+    }
+
+    @FunctionTool(description = "Execute command")
+    public Effect<String> command(String cmd) {
+      return effects().reply(cmd);
+    }
+
+    @Override
+    public String applyEvent(Event event) {
+      return "";
+    }
+  }
+
+  @Component(id = "entity_with_function_tool_on_readonly_effect")
+  public static class EntityWithFunctionToolOnReadOnlyEffect
+      extends EventSourcedEntity<String, Event> {
+
+    @Override
+    public String emptyState() {
+      return "";
+    }
+
+    public Effect<String> command(String cmd) {
+      return effects().reply(cmd);
+    }
+
+    @FunctionTool(description = "Get state")
+    public ReadOnlyEffect<String> getState() {
+      return effects().reply(currentState());
+    }
+
+    @Override
+    public String applyEvent(Event event) {
+      return "";
     }
   }
 }

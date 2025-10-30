@@ -8,6 +8,7 @@ import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.DeleteHandler;
+import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.annotations.Produce;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.consumer.Consumer;
@@ -562,6 +563,15 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
   public static class ValidConsumerWithStreamPublishing extends Consumer {
     public Consumer.Effect handle(String msg) {
       return effects().produce(msg);
+    }
+  }
+
+  @Component(id = "consumer-with-function-tool")
+  @Consume.FromTopic("test")
+  public static class ConsumerWithFunctionTool extends Consumer {
+    @FunctionTool(description = "Invalid function tool")
+    public Consumer.Effect handle(String msg) {
+      return effects().done();
     }
   }
 }

@@ -4,16 +4,24 @@
 
 package akkajavasdk.components.http;
 
+import akka.javasdk.Sanitizer;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.http.AbstractHttpEndpoint;
+import java.math.BigDecimal;
 import java.util.List;
 
 @HttpEndpoint()
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 public class TestEndpoint extends AbstractHttpEndpoint {
+
+  private final Sanitizer sanitizer;
+
+  public TestEndpoint(Sanitizer sanitizer) {
+    this.sanitizer = sanitizer;
+  }
 
   private boolean constructedOnVt = Thread.currentThread().isVirtual();
 
@@ -36,5 +44,17 @@ public class TestEndpoint extends AbstractHttpEndpoint {
   public String getOnVirtual() {
     if (Thread.currentThread().isVirtual() && constructedOnVt) return "ok";
     else throw new RuntimeException("Endpoint not executing on virtual thread");
+  }
+
+  @Get("/sanitized")
+  public String sanitized() {
+    return sanitizer.sanitize("Here's a string to sanitize: sanitizesanitizesanitize");
+  }
+
+  public record BigDecimalRequest(BigDecimal value) {}
+
+  @Post("/big-decimal")
+  public BigDecimalRequest postBigDecimal(BigDecimalRequest request) {
+    return request;
   }
 }

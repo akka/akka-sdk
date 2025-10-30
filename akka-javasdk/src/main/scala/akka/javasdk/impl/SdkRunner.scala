@@ -35,6 +35,7 @@ import akka.javasdk.DependencyProvider
 import akka.javasdk.JwtClaims
 import akka.javasdk.Principals
 import akka.javasdk.Retries
+import akka.javasdk.Sanitizer
 import akka.javasdk.ServiceSetup
 import akka.javasdk.Tracing
 import akka.javasdk.agent.Agent
@@ -118,6 +119,7 @@ import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
 import akka.runtime.sdk.spi.SpiGuardrailSetup
 import akka.runtime.sdk.spi.SpiMockedEventingSettings
+import akka.runtime.sdk.spi.SpiSanitizerEngine
 import akka.runtime.sdk.spi.SpiServiceInfo
 import akka.runtime.sdk.spi.SpiSettings
 import akka.runtime.sdk.spi.SpiTestSettings
@@ -181,6 +183,8 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
       throw new IllegalArgumentException(
         "The value of `akka.javasdk.agent.max-tool-call-steps` must be greater than 0.")
 
+    val sanitizationSettings = Sanitization.loadSettings(applicationConf)
+
     val devModeSettings =
       if (applicationConf.getBoolean("akka.javasdk.dev-mode.enabled"))
         Some(
@@ -207,8 +211,7 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
       maxToolCallSteps,
       agentInteractionLogEnabled,
       devModeSettings,
-      sanitizerSettings = None // FIXME defined in other PR
-    )
+      Some(sanitizationSettings))
   }
 
   private def extractBrokerConfig(eventingConf: Config): SpiEventingSupportSettings = {
@@ -235,7 +238,8 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
         dependencyProvider,
         disabledComponents,
         startedPromise,
-        getSettings.devMode.map(_.serviceName))
+        getSettings.devMode.map(_.serviceName),
+        startContext.sanitizer)
       Future.successful(app.spiComponents)
     } catch {
       case NonFatal(ex) =>
@@ -281,6 +285,13 @@ private object ComponentLocator {
   private val DescriptorServiceSetupEntryPath = "akka.javasdk.service-setup"
 
   private val logger = LoggerFactory.getLogger(getClass)
+
+  val providedComponents: Seq[Class[_]] = Seq(
+    classOf[SessionMemoryEntity],
+    classOf[PromptTemplate],
+    classOf[ToxicityEvaluator],
+    classOf[SummarizationEvaluator],
+    classOf[HallucinationEvaluator])
 
   case class LocatedClasses(components: Seq[Class[_]], service: Option[Class[_]])
 
@@ -331,9 +342,8 @@ private object ComponentLocator {
     }.toSeq
 
     val withBuildInComponents = if (components.exists(classOf[Agent].isAssignableFrom)) {
-      logger.debug("Agent component detected, adding built-in components")
-      classOf[SessionMemoryEntity] +: classOf[PromptTemplate] +: classOf[ToxicityEvaluator] +: classOf[
-        SummarizationEvaluator] +: classOf[HallucinationEvaluator] +: components
+      logger.debug("Agent component detected, adding provided components")
+      providedComponents ++ components
     } else {
       components
     }
@@ -362,7 +372,8 @@ private[javasdk] object Sdk {
       grpcClientProvider: GrpcClientProviderImpl,
       agentRegistry: AgentRegistryImpl,
       overrideModelProvider: OverrideModelProvider,
-      serializer: JsonSerializer)
+      serializer: JsonSerializer,
+      sanitizer: Sanitizer)
 
   private val platformManagedDependency = Set[Class[_]](
     classOf[ComponentClient],
@@ -395,7 +406,8 @@ private final class Sdk(
     dependencyProviderOverride: Option[DependencyProvider],
     disabledComponents: Set[Class[_]],
     startedPromise: Promise[StartupContext],
-    serviceNameOverride: Option[String]) {
+    serviceNameOverride: Option[String],
+    runtimeSanitizer: SpiSanitizerEngine) {
 
   import Sdk._
 
@@ -453,6 +465,8 @@ private final class Sdk(
       logger.error("Invalid guardrails: {}", exc.getMessage, exc)
       throw exc
   }
+
+  lazy private val sanitizer = new SanitizerImpl(runtimeSanitizer)
 
   @nowarn("cat=deprecation")
   private def hasComponentId(clz: Class[_]): Boolean = {
@@ -544,6 +558,8 @@ private final class Sdk(
   // guardrail name => component ids
   private var guardrailEnabledForComponent = Map.empty[String, Set[String]]
 
+  private def isProvided(clz: Class[_]): Boolean = ComponentLocator.providedComponents.contains(clz)
+
   componentClasses
     .filter(hasComponentId)
     .foreach {
@@ -576,6 +592,7 @@ private final class Sdk(
               wiredInstance(clz.asInstanceOf[Class[EventSourcedEntity[AnyRef, AnyRef]]]) {
                 // remember to update component type API doc and docs if changing the set of injectables
                 case p if p == classOf[EventSourcedEntityContext] => context
+                case s if s == classOf[Sanitizer]                 => sanitizer
               })
         }
         eventSourcedEntityDescriptors :+=
@@ -587,7 +604,7 @@ private final class Sdk(
             keyValue = false,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            provided = false)
+            provided = isProvided(clz))
 
       case clz if Reflect.isKeyValueEntity(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -616,6 +633,7 @@ private final class Sdk(
               wiredInstance(clz.asInstanceOf[Class[KeyValueEntity[AnyRef]]]) {
                 // remember to update component type API doc and docs if changing the set of injectables
                 case p if p == classOf[KeyValueEntityContext] => context
+                case s if s == classOf[Sanitizer]             => sanitizer
               })
         }
         keyValueEntityDescriptors :+=
@@ -651,7 +669,8 @@ private final class Sdk(
             readOnlyCommandNames,
             ctx => workflowInstanceFactory(componentId, ctx, clz.asInstanceOf[Class[Workflow[Nothing]]]),
             name = Reflect.readComponentName(clz),
-            description = Reflect.readComponentDescription(clz))
+            description = Reflect.readComponentDescription(clz),
+            provided = false)
 
       case clz if Reflect.isTimedAction(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -677,7 +696,8 @@ private final class Sdk(
             clz.getName,
             timedActionSpi,
             name = Reflect.readComponentName(clz),
-            description = Reflect.readComponentDescription(clz))
+            description = Reflect.readComponentDescription(clz),
+            provided = false)
 
       case clz if Reflect.isConsumer(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -709,7 +729,8 @@ private final class Sdk(
             consumerDestination(consumerClass),
             consumerSpi,
             name = Reflect.readComponentName(clz),
-            description = Reflect.readComponentDescription(clz))
+            description = Reflect.readComponentDescription(clz),
+            provided = false)
 
       case clz if Reflect.isAgent(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -756,7 +777,8 @@ private final class Sdk(
             instanceFactory,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            evaluator = Reflect.isEvaluatorAgent(clz))
+            evaluator = Reflect.isEvaluatorAgent(clz),
+            provided = isProvided(clz))
 
         agentRegistryInfo :+= AgentRegistryImpl.agentDetailsFor(agentClass)
 
@@ -786,6 +808,7 @@ private final class Sdk(
     case e if e == classOf[Executor]           =>
       // The type does not guarantee this is a Java concurrent Executor, but we know it is, since supplied from runtime
       sdkExecutionContext.asInstanceOf[Executor]
+    case s if s == classOf[Sanitizer] => sanitizer
   }
 
   val spiComponents: SpiComponents = {
@@ -833,7 +856,8 @@ private final class Sdk(
               grpcClientProvider,
               agentRegistry,
               overrideModelProvider,
-              serializer))
+              serializer,
+              sanitizer))
           Future.successful(Done)
         case Some(setup) =>
           if (dependencyProviderOpt.nonEmpty) {
@@ -850,7 +874,8 @@ private final class Sdk(
               grpcClientProvider,
               agentRegistry,
               overrideModelProvider,
-              serializer))
+              serializer,
+              sanitizer))
           Future.successful(Done)
       }
     }

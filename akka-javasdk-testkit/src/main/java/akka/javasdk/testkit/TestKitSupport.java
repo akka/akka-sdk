@@ -6,6 +6,7 @@ package akka.javasdk.testkit;
 
 import akka.grpc.javadsl.AkkaGrpcClient;
 import akka.javasdk.Principal;
+import akka.javasdk.Sanitizer;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.timer.TimerScheduler;
@@ -103,5 +104,14 @@ public abstract class TestKitSupport extends AsyncCallsSupport {
   public <T extends AkkaGrpcClient> T getGrpcEndpointClient(
       Class<T> grpcClientClass, Principal requestPrincipal) {
     return testKit.getGrpcEndpointClient(grpcClientClass, requestPrincipal);
+  }
+
+  /**
+   * @return The configured sanitizer for the service, for test assertions that the expected
+   *     anonymization is applied. Will always return an instance, if no sanitization rules are
+   *     configured, the returned sanitizer will return all text fed to it as is.
+   */
+  public Sanitizer getSanitizer() {
+    return testKit.getSanitizer();
   }
 }

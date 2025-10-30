@@ -5,6 +5,7 @@
 package akka.javasdk.testmodels.action;
 
 import akka.javasdk.annotations.Component;
+import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.timedaction.TimedAction;
 
 public class ActionsTestModels {
@@ -50,6 +51,14 @@ public class ActionsTestModels {
   public static class NotTimedAction {
     public String foo(String a, int b) {
       return "ok";
+    }
+  }
+
+  @Component(id = "timed-action-with-function-tool")
+  public static class TimedActionWithFunctionTool extends TimedAction {
+    @FunctionTool(description = "Invalid function tool")
+    public TimedAction.Effect performAction() {
+      return effects().done();
     }
   }
 }
