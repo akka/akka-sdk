@@ -18,7 +18,7 @@ To understand the Akka concepts behind this example, see [Development Process](h
 
 ### Developing
 
-This project demonstrates the use of Workflow and Event Sourced Entity components. For more information, see [Developing Services](https://doc.akka.io/java/index.html).
+This project demonstrates the use of Workflow and Event Sourced Entity components. For more information, see [Developing Services](https://doc.akka.io/sdk/index.html).
 
 ## Build
 

@@ -19,7 +19,7 @@ Static primary selection mode impacts Key Value Entities by specifying one regio
 
 Changing primary regions is a serious operation and should be thought out carefully. Ideally you plan this ahead of time and synchronize the regions by allowing the replication lag to drop to zero. You can put the project into a read only mode that will stop any writes from happening if you want to be sure that there will be zero data collisions when you change the primary.
 
-NOTE: At this time xref:java:key-value-entities.adoc[Key Value Entities] do not replicate data between regions, but Akka will route all traffic to the correct region for reads and writes. If you change the primary region on a project with Key Value Entities the current state of the entities will be lost. 
+NOTE: At this time xref:sdk:key-value-entities.adoc[Key Value Entities] do not replicate data between regions, but Akka will route all traffic to the correct region for reads and writes. If you change the primary region on a project with Key Value Entities the current state of the entities will be lost.
 
 === Container registries
 Container registries are regional in Akka. If you decide to use xref:operations:projects/external-container-registries.adoc[] be aware that you should have container registries in or near each of the regions in your project. If you only have your container images in one place and that place becomes unavailable your services will not be able to start new instances. 

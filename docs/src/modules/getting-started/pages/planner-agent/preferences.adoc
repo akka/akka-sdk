@@ -26,7 +26,7 @@ Add a new file `PreferencesEntity.java` to `src/main/java/com/example/applicatio
 [source,java,indent=0]
 .PreferencesEntity.java
 ----
-include::java:example$doc-snippets/src/main/java/agent_guide/part2/PreferencesEntity.java[tag=all]
+include::sdk:example$doc-snippets/src/main/java/agent_guide/part2/PreferencesEntity.java[tag=all]
 ----
 <1> Extend `EventSourcedEntity`, with the type of state this entity represents, and the interface for the events it persists.
 <2> Annotate the class so Akka can identify it as an event-sourced entity.
@@ -41,7 +41,7 @@ Add a new file `Preferences.java` to `src/main/java/com/example/domain/`
 [source,java,indent=0]
 .Preferences.java
 ----
-include::java:example$doc-snippets/src/main/java/agent_guide/part2/Preferences.java[tag=all]
+include::sdk:example$doc-snippets/src/main/java/agent_guide/part2/Preferences.java[tag=all]
 ----
 
 Here we use plain text for the preferences, but it could be more structured information.
@@ -51,7 +51,7 @@ Add a new file `PreferencesEvent.java` to `src/main/java/com/example/domain/`
 [source,java,indent=0]
 .PreferencesEvent.java
 ----
-include::java:example$doc-snippets/src/main/java/agent_guide/part2/PreferencesEvent.java[tag=all]
+include::sdk:example$doc-snippets/src/main/java/agent_guide/part2/PreferencesEvent.java[tag=all]
 ----
 
 == Use from the agent
@@ -61,7 +61,7 @@ To use the preferences in the `ActivityAgent` we need to inject the component cl
 [source,java,indent=0]
 .ActivityAgent.java
 ----
-include::java:example$doc-snippets/src/main/java/agent_guide/part2/ActivityAgent.java[tag=all]
+include::sdk:example$doc-snippets/src/main/java/agent_guide/part2/ActivityAgent.java[tag=all]
 ----
 <1> Inject `ComponentClient`.
 <2> Include user id in the request to the agent.
@@ -75,7 +75,7 @@ We need to add the user id to the HTTP request.
 [source,java,indent=0]
 .ActivityEndpoint.java
 ----
-include::java:example$doc-snippets/src/main/java/agent_guide/part2/ActivityEndpoint.java[tag=userId]
+include::sdk:example$doc-snippets/src/main/java/agent_guide/part2/ActivityEndpoint.java[tag=userId]
 ----
 <1> Add `userId` as a path parameter.
 <2> Call the agent with the new `ActivityAgent.Request` record that includes the `userId`.
@@ -86,7 +86,7 @@ To update the preferences, we add another method to the endpoint:
 [source,java,indent=0]
 .ActivityEndpoint.java
 ----
-include::java:example$doc-snippets/src/main/java/agent_guide/part2/ActivityEndpoint.java[tag=addPreference]
+include::sdk:example$doc-snippets/src/main/java/agent_guide/part2/ActivityEndpoint.java[tag=addPreference]
 ----
 <1> Add a method to add a preference.
 <2> Call the `PreferenceEntity` for the given user id.
@@ -146,5 +146,5 @@ Does it take your preferences into account for the suggestions?
 == Next steps
 
 * Activities may depend on the weather forecast. Continue with xref:planner-agent/weather.adoc[] that will make use of agent function tools.
-* Learn more about the xref:java:event-sourced-entities.adoc[`EventSourceEntity` component].
+* Learn more about the xref:sdk:event-sourced-entities.adoc[`EventSourceEntity` component].
 

@@ -1,0 +1,9 @@
+= Integrations
+include::ROOT:partial$include.adoc[]
+
+Akka enables seamless communication between services, components and external systems. The following integration options are available:
+
+* xref:sdk:component-and-service-calls.adoc[Component and Service Calls]: Directly invoke other services or components within your application.
+* xref:sdk:message-brokers.adoc[Message Brokers]: Publish to and subscribe to events from external message brokers like Kafka or Pulsar.
+* xref:sdk:streaming.adoc[Streaming]: Built-in support for processing and reacting to streams of data.
+* xref:sdk:rag.adoc[]: Enrich the context to an AI model with relevant content, using semantic search on a vector database, or retrieve structured information from entities and views.

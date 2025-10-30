@@ -1101,7 +1101,7 @@ private final class Sdk(
               throw new IllegalStateException(
                 s"Could not inject dependency [${anyOther.getName}] required by [${constructor.getDeclaringClass.getName}] as no DependencyProvider was configured." +
                 "Please provide a DependencyProvider to supply dependencies. " +
-                "See https://doc.akka.io/java/setup-and-dependency-injection.html#_custom_dependency_injection");
+                "See https://doc.akka.io/sdk/setup-and-dependency-injection.html#_custom_dependency_injection");
           }
 
       }

@@ -70,7 +70,7 @@ for file in $(find . -name "*.adoc"); do
 
       # State 2: Expect the include::example line
       if $expect_include_line; then
-        if [[ "$line" =~ include::(example|java:example)\$(.*)\[.*\] ]]; then
+        if [[ "$line" =~ include::(example|sdk:example)\$(.*)\[.*\] ]]; then
           include_path="${BASH_REMATCH[2]}"
           echo "    Found include::example path: $include_path"
 

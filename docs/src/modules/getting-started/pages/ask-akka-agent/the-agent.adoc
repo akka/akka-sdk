@@ -36,7 +36,7 @@ Add a new file `AskAkkaAgent.java` to `src/main/java/akka/ask/agent/application/
 [source,java,indent=0]
 .AskAkkaAgent.java
 ----
-include::java:example$doc-snippets/src/main/java/com/example/application/AskAkkaAgent.java[tag=class]
+include::sdk:example$doc-snippets/src/main/java/com/example/application/AskAkkaAgent.java[tag=class]
 ----
 <1> Create a class that extends `Agent`.
 <2> Make sure to annotate such class with `@Component` and pass a unique identifier for this agent type.
@@ -57,7 +57,7 @@ Add a new file `AskHttpEndpoint.java` to `src/main/java/akka/ask/agent/api/`
 [source,java,ident=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/api/AskHttpEndpoint.java[AskHttpEndpoint.java]
 ----
-include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/api/AskHttpEndpoint.java[tag=endpoint]
+include::sdk:example$ask-akka-agent/src/main/java/akka/ask/agent/api/AskHttpEndpoint.java[tag=endpoint]
 ----
 <1> Inject the `ComponentClient`, which is used to call the agent.
 <2> Call the `AskAkkaAgent created in the previous step
@@ -72,7 +72,7 @@ Akka has support for many AI providers, and this sample is using OpenAI. This is
 [source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/resources/application.conf[application.conf]
 ----
-include::java:example$ask-akka-agent/src/main/resources/application.conf[]
+include::sdk:example$ask-akka-agent/src/main/resources/application.conf[]
 ----
 
 Set your https://platform.openai.com/api-keys[OpenAI API key, window="new"] as an environment variable:

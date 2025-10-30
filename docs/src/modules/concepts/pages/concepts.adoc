@@ -18,31 +18,31 @@ a|
 * Performs one focused AI task using a selected model and prompt.
 * Maintains session memory for context.
 * Stateless agents also possible.
-* See xref:java:agents.adoc[Agents].
+* See xref:sdk:agents.adoc[Agents].
 
 .^|Workflows
 a|
 * Durable execution with support for sequential, parallel, retry, and failure logic.
 * Akka manages delivery, scaling, and recovery.
-* See xref:java:workflows.adoc[Workflows].
+* See xref:sdk:workflows.adoc[Workflows].
 
 .^|HTTP Endpoints
 a|
 * Exposes APIs over HTTP.
 * Accepts input, triggers logic, and returns output.
-* See xref:java:http-endpoints.adoc[HTTP Endpoints].
+* See xref:sdk:http-endpoints.adoc[HTTP Endpoints].
 
 .^|gRPC Endpoints
 a|
 * Exposes APIs over gRPC using Protobuf contracts.
 * Facilitates compatibility and structured communication.
-* See xref:java:grpc-endpoints.adoc[gRPC Endpoints].
+* See xref:sdk:grpc-endpoints.adoc[gRPC Endpoints].
 
 .^|MCP Endpoints
 a|
 * Exposes tools, resources and prompts over the MCP protocol.
 * Used by agents to invoke logic and establish context.
-* See xref:java:mcp-endpoints.adoc[MCP Endpoints].
+* See xref:sdk:mcp-endpoints.adoc[MCP Endpoints].
 
 .^|Event Sourced Entities
 a|
@@ -50,7 +50,7 @@ a|
 * Stores a sequence of events that represent state changes.
 * The current state is reconstructed by replaying these events.
 * Suitable for audit trails and event-driven logic.
-* See xref:java:event-sourced-entities.adoc[Event Sourced Entities].
+* See xref:sdk:event-sourced-entities.adoc[Event Sourced Entities].
 
 .^|Key Value Entities
 a|
@@ -58,26 +58,26 @@ a|
 * Stores full state snapshots indexed by a key.
 * Each write replaces the entire object.
 * Simpler to reason about and similar to row-based records.
-* See xref:java:key-value-entities.adoc[Key Value Entities].
+* See xref:sdk:key-value-entities.adoc[Key Value Entities].
 
 .^|Views
 a|
 * Indexes and queries entity data across IDs or attributes.
 * Built from entity state, workflow state, or events.
 * Enables efficient lookups, filtering, and real-time updates.
-* See xref:java:views.adoc[Views].
+* See xref:sdk:views.adoc[Views].
 
 .^|Consumers (streaming)
 a|
 * Listens for and processes events or messages from entities, workflows, or external systems.
 * May emit output messages.
-* See xref:java:consuming-producing.adoc[].
+* See xref:sdk:consuming-producing.adoc[].
 
 .^|Timers
 a|
 * Schedules future actions with delivery guarantees.
 * Used for reminders, retries, or timeout logic.
-* See xref:java:timed-actions.adoc[Timed actions].
+* See xref:sdk:timed-actions.adoc[Timed actions].
 |===
 
 == Composability
@@ -156,46 +156,46 @@ image:concepts:agentic-ai-system-anatomy.png[Akka Agentic Platform]
 |Agents
 |Components that integrate with AI to perceive their environment, make decisions and take actions toward a specific goal
 
-You implement agents in Akka with the xref:java:agents.adoc[Agent] component.
+You implement agents in Akka with the xref:sdk:agents.adoc[Agent] component.
 
 |Tools
 |Functionality, local or remote, that agents may call upon to perform tasks beyond their core logic.
 
-You invoke tools in Akka through _embedded agent function calls_ or by _invoking a remote MCP tool_. You can implement MCP servers with the xref:java:mcp-endpoints.adoc[MCP Endpoints] component.
+You invoke tools in Akka through _embedded agent function calls_ or by _invoking a remote MCP tool_. You can implement MCP servers with the xref:sdk:mcp-endpoints.adoc[MCP Endpoints] component.
 
 |Endpoints
 |Externally accessible entry points through which agents are launched and controlled.
 
-You implement Endpoints in Akka using either xref:java:http-endpoints.adoc[HTTP], xref:java:grpc-endpoints.adoc[gRPC] or xref:java:mcp-endpoints.adoc[MCP] Endpoint components.
+You implement Endpoints in Akka using either xref:sdk:http-endpoints.adoc[HTTP], xref:sdk:grpc-endpoints.adoc[gRPC] or xref:sdk:mcp-endpoints.adoc[MCP] Endpoint components.
 
 |Goals
 |Clear objectives or outcomes that agents continuously work toward by making decisions and taking actions on their own.
 
-You implement goals in Akka by implementing a multi-agent system _with a planner agent_ using a xref:java:workflows.adoc[Workflow] component to orchestrate the cross-agent interactions.
+You implement goals in Akka by implementing a multi-agent system _with a planner agent_ using a xref:sdk:workflows.adoc[Workflow] component to orchestrate the cross-agent interactions.
 
 |Guardians
 |Components that monitor, protect and evaluate the system against its goals and constraints.
 
-You will soon be able to implements guardians in Akka with an xref:java:agents.adoc#_evaluating_ai_model_quality[Agent evaluation workbench].
+You will soon be able to implements guardians in Akka with an xref:sdk:agents.adoc#_evaluating_ai_model_quality[Agent evaluation workbench].
 |Adaptation
 |Continuous, real-time streams from users or the environment which can alter the context, memory or semantic knowledge used by an agentic system.
 
-You implement adaptation in Akka by processing a stream of data from external sensors, either with the xref:java:consuming-producing.adoc[Consumer] component or through streaming HTTP or gRPC interfaces. xref:java:consuming-producing.adoc[Consumers] can modify an agent’s goals, memory, or guardians to affect the behavior of the system.
+You implement adaptation in Akka by processing a stream of data from external sensors, either with the xref:sdk:consuming-producing.adoc[Consumer] component or through streaming HTTP or gRPC interfaces. xref:sdk:consuming-producing.adoc[Consumers] can modify an agent’s goals, memory, or guardians to affect the behavior of the system.
 
 |Orchestration
 |The ability to execute, persist and recover long-running tasks made possible through _durable execution_.
 
-You implement orchestration in Akka with the xref:java:workflows.adoc[Workflow] component.
+You implement orchestration in Akka with the xref:sdk:workflows.adoc[Workflow] component.
 
 |Memory
 |Data that enables agents to reason over time, track context, make correct decisions and learn from experience.
 
-You inherit agentic and episodic (short-term) durable memory automatically when you implement a stateful xref:java:agents.adoc[Agent] component. You can get long-term, multi-agent memory by implementing xref:java:event-sourced-entities.adoc[Event Sourced Entity] or xref:java:key-value-entities.adoc[Key Value Entity] components.
+You inherit agentic and episodic (short-term) durable memory automatically when you implement a stateful xref:sdk:agents.adoc[Agent] component. You can get long-term, multi-agent memory by implementing xref:sdk:event-sourced-entities.adoc[Event Sourced Entity] or xref:sdk:key-value-entities.adoc[Key Value Entity] components.
 
 |Registry
 |A built-in directory that stores information about all agents so they can be discovered and called upon in multi-agent systems.
 
-You use the registry provided by Akka by xref:java:agents.adoc#_creating_dynamic_plans[annotating each agent], which allows Akka to automatically register and use them as needed.
+You use the registry provided by Akka by xref:sdk:agents.adoc#_creating_dynamic_plans[annotating each agent], which allows Akka to automatically register and use them as needed.
 |===
 
 == Properties of a distributed system
@@ -227,16 +227,16 @@ Autonomous AI systems require three types of runtimes:
 |Durable Execution
 |Long-lived, where the call-stack is persisted after every invocation to enable recovery and retries.
 
-This is utilized when you implement the xref:java:workflows.adoc[Workflow] component.
+This is utilized when you implement the xref:sdk:workflows.adoc[Workflow] component.
 
 |Transactional
 |Short-lived, high volume, concurrent execution.
 
-This is utilized when you implement xref:concepts:grpc-vs-http-endpoints.adoc[Endpoint], xref:java:views.adoc[View], xref:concepts:state-model.adoc#_entity_state_models[Entity] and xref:java:timed-actions.adoc[Timer] components.
+This is utilized when you implement xref:concepts:grpc-vs-http-endpoints.adoc[Endpoint], xref:sdk:views.adoc[View], xref:concepts:state-model.adoc#_entity_state_models[Entity] and xref:sdk:timed-actions.adoc[Timer] components.
 |Streaming
 |Continuous, never-ending processes that handle streams of data.
 
-This is utilized when you implement the xref:java:consuming-producing.adoc[Consumer] component or xref:concepts:grpc-vs-http-endpoints.adoc[SSE / gRPC streaming extension of an endpoint].
+This is utilized when you implement the xref:sdk:consuming-producing.adoc[Consumer] component or xref:concepts:grpc-vs-http-endpoints.adoc[SSE / gRPC streaming extension of an endpoint].
 |===
 
 Akka provides support for all three runtimes within the same SDK. The runtime behavior is automatic within your service based upon the components that you use during development. All of these runtimes leverage an actor-based core, which is a concurrency model with strong isolation and asynchronous message passing between actors. When running a service that executes multiple runtimes, Akka maximizes efficiency of the underlying compute by executing actors for different runtimes concurrently, enabling node resource utilization up to 95%.
@@ -250,20 +250,20 @@ There are a variety of shared data (memory) use cases within an agentic system.
 |===
 |Use Case |Provided by |Description
 |Short-term
-|xref:java:agents.adoc[Agent] component
+|xref:sdk:agents.adoc[Agent] component
 |Also called “episodic” and “traced” memory, this memory is an auditable record of each input and output that occurs between an agent and its client throughout a single “user” session. Agent clients may or may not be human.
 
 Akka also captures the input and output of every interaction between an agent and an LLM in a single enrichment loop, sometimes called “traced” memory. A single invocation of an agent from a client may cause that agent to invoke an LLM, function tools, or MCP tools many times. Akka’s short-term memory captures all of these interactions in an event log.
 
-Short-term memory is also automatically included when you create xref:java:agents.adoc[an agent]. Short-term memory can be compressed, optimized, replicated, and audited.
+Short-term memory is also automatically included when you create xref:sdk:agents.adoc[an agent]. Short-term memory can be compressed, optimized, replicated, and audited.
 
 |Long-term
-|xref:java:event-sourced-entities.adoc[Entity] component
+|xref:sdk:event-sourced-entities.adoc[Entity] component
 |Also called “shared” and “external” memory, this memory is an auditable record of state that is available to multiple agents, sessions, users, or Akka components.
 
 Use long-term memory to capture the history (often summarized or aggregated) of interactions for a single user across many sessions.
 
-Shared state is represented through an xref:java:event-sourced-entities.adoc[Entity] component. Entities are event-sourced, making all of their changes published through an event stream and accessible by xref:java:agents.adoc[Agents], xref:concepts:grpc-vs-http-endpoints.adoc[Endpoints], xref:java:workflows.adoc[Workflows] or xref:java:views.adoc[Views].
+Shared state is represented through an xref:sdk:event-sourced-entities.adoc[Entity] component. Entities are event-sourced, making all of their changes published through an event stream and accessible by xref:sdk:agents.adoc[Agents], xref:concepts:grpc-vs-http-endpoints.adoc[Endpoints], xref:sdk:workflows.adoc[Workflows] or xref:sdk:views.adoc[Views].
 |===
 
 Akka treats all stateful memory as event-sourced objects. Event sourcing is a technique to capture sequential state changes. Akka’s persistence engine transparently persists each event into a durable store. Since all state is represented as an event, Akka’s event engine enables transparent import, export, broadcast, subscription, replication, and replay of events. These behaviors enable Akka to offer a resilience guarantee and multi-region replication, which enables real-time failover with a Recovery Time Objective (RTO) of <200ms.
@@ -289,7 +289,7 @@ Akka supports two primary ways for components to interact, either with each othe
 |===
 |Client Type |Description
 
-|xref:java:component-and-service-calls.adoc[ComponentClient]
+|xref:sdk:component-and-service-calls.adoc[ComponentClient]
 |One component can invoke another using a direct call. The Akka runtime handles this communication in a non-blocking way using lightweight virtual threads. Although a call may wait for a reply before continuing, the code remains simple and synchronous. There is no need to use futures, callbacks or other asynchronous programming techniques.
 
 A common example is a Workflow that invokes an Agent to perform a specific task, then waits for the Agent to finish. The syntax is simple and resembles a regular method call.
@@ -334,6 +334,6 @@ include::ROOT:partial$background-execution.adoc[]
 
 include::ROOT:partial$sync-vs-async.adoc[]
 
-For implementation guidance on invoking components, see xref:java:component-and-service-calls.adoc[Component and service calls].
+For implementation guidance on invoking components, see xref:sdk:component-and-service-calls.adoc[Component and service calls].
 
 include::ROOT:partial$service-packaging.adoc[]

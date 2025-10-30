@@ -21,7 +21,7 @@ import com.example.transfer.domain.TransferState;
  * accepting transfers that exceed a certain amount.
  * <p>
  * For other aspects like error handling, retry strategy, compensation
- * @see <a href="https://doc.akka.io/java/workflows.html#_error_handling">documentation</a>.
+ * @see <a href="https://doc.akka.io/sdk/workflows.html#_error_handling">documentation</a>.
  */
 @Component(id = "transfer-workflow")
 public class TransferWorkflow extends Workflow<TransferState> {

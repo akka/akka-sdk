@@ -1,0 +1,111 @@
+= Orchestrating multiple agents
+
+include::ROOT:partial$include.adoc[]
+
+A single agent performs one well-defined task. Several agents can collaborate to achieve a common goal. The agents should be orchestrated from a predefined workflow or a dynamically created plan.
+
+== Using a predefined workflow
+
+Let's first look at how to define a workflow that orchestrates several agents in a predefined steps. This is similar to the xref:sdk:agents/calling.adoc[`ActivityAgentManager`] that was illustrated above, but it uses both the `WeatherAgent` and the `ActivityAgent`. First it retrieves the weather forecast and then it finds suitable activities.
+
+[source,java,indent=0]
+----
+include::example$doc-snippets/src/main/java/com/example/application/AgentTeamWorkflow.java[tag=all]
+----
+<1> The workflow starts by asking for the weather forecast.
+<2> Weather forecast is retrieved by the `WeatherAgent`, which must extract the location and date from the user query.
+<3> The forecast is stored in the state of the workflow.
+<4> The forecast is included in the request to the `ActivityAgent`.
+<5> The final result is stored in the workflow state.
+
+In image:concepts:steps-4.svg[width=20] we explicitly include the forecast in the request to the `ActivityAgent`. That is not strictly necessary because the agents share the same session memory and thereby the `ActivityAgent` will already have the weather forecast in the context that is sent to the AI model.
+
+The workflow will automatically execute the steps in a reliable and durable way. This means that if a call in a step fails, it will be retried until it succeeds or the retry limit of the recovery strategy is reached and separate error handling can be performed. The state machine of the workflow is durable, which means that if the workflow is restarted for some reason it will continue from where it left off, i.e. execute the current non-completed step again.
+
+== Creating dynamic plans
+
+To create a more flexible and autonomous agentic system you want to analyze the problem and dynamically come up with a plan. The agentic system should identify the tasks to achieve the goal by itself. Decide which agents to use and in which order to execute them. Coordinate input and output between agents and adjust the plan along the way.
+
+There are several approaches for the planning, such as using deterministic algorithms or using AI also for the planning. We will look at how we can use AI for analyzing a request, selecting agents and in which order to use them.
+
+We split the planning into two steps and use two separate agents for these tasks. It's not always necessary to use several steps for the planning. You have to experiment with what works best for your problem domain.
+
+. Select agents that are useful for a certain problem.
+. Decide in which order to use the agents and give each agent precise instructions for its task.
+
+The `SelectorAgent` decides which agents to use:
+
+[source,java,indent=0]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/SelectorAgent.java[SelectorAgent.java]
+----
+include::example$multi-agent/src/main/java/demo/multiagent/application/SelectorAgent.java[tag=class]
+----
+<1> The `AgentRegistry` contains information about all agents.
+<2> Select the agents with the role `"worker"`.
+<3> Detailed instructions and include descriptions (as json) of the agents.
+
+The information about the agents in the `AgentRegistry` comes from the `@Component` and `@AgentRole` annotations.
+When using it for planning like this, it is important that the agents define those descriptions that the LLM can use to come up with a good plan.
+
+The `WeatherAgent` has:
+[source,java,indent=0]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/WeatherAgent.java[WeatherAgent.java]
+----
+include::example$multi-agent/src/main/java/demo/multiagent/application/WeatherAgent.java[tag=description]
+----
+
+The `ActivityAgent` has:
+[source,java,indent=0]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/ActivityAgent.java[ActivityAgent.java]
+----
+include::example$multi-agent/src/main/java/demo/multiagent/application/ActivityAgent.java[tag=description]
+----
+
+Note that in image:concepts:steps-2.svg[width=20] of the `Selector` we retrieve a subset of the agents with a certain
+ role. This role is also defined in the `@AgentRole` annotation.
+
+The result from the `Selector` is a list of agent ids:
+[source,java,indent=0]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/domain/AgentSelection.java[AgentSelection.java]
+----
+include::example$multi-agent/src/main/java/demo/multiagent/domain/AgentSelection.java[tag=all]
+----
+
+After selecting agents, we use a `PlannerAgent` to decide in which order to use the agents and what precise request that each agent should receive to perform its single task.
+
+[source,java,indent=0]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/PlannerAgent.java[PlannerAgent.java]
+----
+include::example$multi-agent/src/main/java/demo/multiagent/application/PlannerAgent.java[tag=class]
+----
+<1> Lookup the agent information for the selected agents from the `AgentRegistry.
+<2> Detailed instructions and include descriptions (as json) of the agents.
+
+That's the two agents that perform the planning, but we also need to connect them and execute the plan. This orchestration is the job of a workflow, called `AgentTeamWorkflow`.
+
+[source,java,indent=0]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[AgentTeamWorkflow.java]
+----
+include::example$multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[tag=plan]
+----
+<1> It's a workflow, with reliable and durable execution.
+<2> The steps are select - plan - execute - summarize.
+<3> The workflow starts by selecting agents.
+<4> which is performed by the `SelectorAgent`.
+<5> Continue with making the actual plan
+<6> which is performed by the `PlannerAgent`, using the selection from the previous step.
+<7> Continue with executing the plan.
+<8> Take the next task in the plan.
+<9> Call the agent for the task.
+<10> Continue executing the plan until no tasks are remaining.
+
+When executing the plan and calling the agents we know the id of the agent to call, but not the agent class. It can be the `WeatherAgent` or `ActivityAgent`. Therefore, we can't use the ordinary `method` of the `ComponentClient. Instead, we use the `dynamicCall` with the id of the agent. We don't have compile time safety for those dynamic calls, but we know that these agents take a String parameter and return AgentResponse. If we used it with the wrong types, it would be a runtime exception.
+
+[source,java,indent=0]
+----
+include::example$multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[tag=dynamicCall]
+----
+
+You find the full source code for this multi-agent sample in the link:https://github.com/akka-samples/multi-agent[akka-samples/multi-agent GitHub Repository].
+
+A more advanced sample illustrates link:https://github.com/akka-samples/adaptive-multi-agent[adaptive multi-agent orchestration, window="new"]. It re-evaluates progress after each agent response and dynamically adjusts its strategy.

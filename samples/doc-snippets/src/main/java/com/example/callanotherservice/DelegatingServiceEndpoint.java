@@ -8,7 +8,7 @@ import akka.javasdk.http.HttpClientProvider;
 
 // Allow all other Akka services deployed in the same project to access the components of this
 // Akka service, but disallow access from the internet.
-// Documentation at https://doc.akka.io/java/access-control.html
+// Documentation at https://doc.akka.io/sdk/access-control.html
 // tag::delegating-endpoint[]
 @Acl(allow = @Acl.Matcher(service = "*"))
 @HttpEndpoint

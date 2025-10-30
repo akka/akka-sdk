@@ -18,7 +18,7 @@ To understand the Akka concepts behind this example, see [Development Process](h
 
 ### Developing
 
-In the steps below, you will see how this project demonstrates the use of many different Akka components. For more information, see [Developing Services](https://doc.akka.io/java/index.html).
+In the steps below, you will see how this project demonstrates the use of many different Akka components. For more information, see [Developing Services](https://doc.akka.io/sdk/index.html).
 
 You may also wish to review the [Saga pattern](https://doc.akka.io/concepts/saga-patterns.html) concept.
 

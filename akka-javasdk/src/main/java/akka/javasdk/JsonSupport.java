@@ -279,7 +279,7 @@ public final class JsonSupport {
             + "] could not be decoded into a ["
             + valueClass.getName()
             + "]. Make sure that changes are backwards compatible or apply a @Migration mechanism"
-            + " (https://doc.akka.io/java/serialization.html#_schema_evolution).",
+            + " (https://doc.akka.io/sdk/serialization.html#_schema_evolution).",
         e);
   }
 
