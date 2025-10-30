@@ -105,7 +105,8 @@ class WorkflowImpl[S, W <: Workflow[S]](
       failoverRecoverStrategy = workflowRecoverStrategy,
       defaultStepTimeout = defaultStepTimeout,
       defaultStepRecoverStrategy = defaultStepRecoverStrategy,
-      stepConfigs = stepConfigs)
+      stepConfigs = stepConfigs,
+      passivationDelay = None)
   }
 
   private def commandContext(commandName: String, telemetryContext: Option[OtelContext], metadata: Metadata) =

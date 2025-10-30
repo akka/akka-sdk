@@ -286,6 +286,13 @@ private object ComponentLocator {
 
   private val logger = LoggerFactory.getLogger(getClass)
 
+  val providedComponents: Seq[Class[_]] = Seq(
+    classOf[SessionMemoryEntity],
+    classOf[PromptTemplate],
+    classOf[ToxicityEvaluator],
+    classOf[SummarizationEvaluator],
+    classOf[HallucinationEvaluator])
+
   case class LocatedClasses(components: Seq[Class[_]], service: Option[Class[_]])
 
   def locateUserComponents(system: ActorSystem[_]): LocatedClasses = {
@@ -335,9 +342,8 @@ private object ComponentLocator {
     }.toSeq
 
     val withBuildInComponents = if (components.exists(classOf[Agent].isAssignableFrom)) {
-      logger.debug("Agent component detected, adding built-in components")
-      classOf[SessionMemoryEntity] +: classOf[PromptTemplate] +: classOf[ToxicityEvaluator] +: classOf[
-        SummarizationEvaluator] +: classOf[HallucinationEvaluator] +: components
+      logger.debug("Agent component detected, adding provided components")
+      providedComponents ++ components
     } else {
       components
     }
@@ -552,6 +558,8 @@ private final class Sdk(
   // guardrail name => component ids
   private var guardrailEnabledForComponent = Map.empty[String, Set[String]]
 
+  private def isProvided(clz: Class[_]): Boolean = ComponentLocator.providedComponents.contains(clz)
+
   componentClasses
     .filter(hasComponentId)
     .foreach {
@@ -596,7 +604,7 @@ private final class Sdk(
             keyValue = false,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            provided = false)
+            provided = isProvided(clz))
 
       case clz if Reflect.isKeyValueEntity(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -661,7 +669,8 @@ private final class Sdk(
             readOnlyCommandNames,
             ctx => workflowInstanceFactory(componentId, ctx, clz.asInstanceOf[Class[Workflow[Nothing]]]),
             name = Reflect.readComponentName(clz),
-            description = Reflect.readComponentDescription(clz))
+            description = Reflect.readComponentDescription(clz),
+            provided = false)
 
       case clz if Reflect.isTimedAction(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -687,7 +696,8 @@ private final class Sdk(
             clz.getName,
             timedActionSpi,
             name = Reflect.readComponentName(clz),
-            description = Reflect.readComponentDescription(clz))
+            description = Reflect.readComponentDescription(clz),
+            provided = false)
 
       case clz if Reflect.isConsumer(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -719,7 +729,8 @@ private final class Sdk(
             consumerDestination(consumerClass),
             consumerSpi,
             name = Reflect.readComponentName(clz),
-            description = Reflect.readComponentDescription(clz))
+            description = Reflect.readComponentDescription(clz),
+            provided = false)
 
       case clz if Reflect.isAgent(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -766,7 +777,8 @@ private final class Sdk(
             instanceFactory,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            evaluator = Reflect.isEvaluatorAgent(clz))
+            evaluator = Reflect.isEvaluatorAgent(clz),
+            provided = isProvided(clz))
 
         agentRegistryInfo :+= AgentRegistryImpl.agentDetailsFor(agentClass)
 
