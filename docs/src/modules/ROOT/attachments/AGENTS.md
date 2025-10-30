@@ -15,28 +15,28 @@ Generate components with correct:
 You find the reference documentation of Akka in the akka-context directory and sub-directories.
 
 Access these documentation files for detailed patterns:
-- `akka-context/java/agents.html.md` - AI agents with LLMs
-- `akka-context/java/agents/prompt.html.md` - Choosing the prompts for agents.
-- `akka-context/java/agents/calling.html.md` - Calling agents from Akka components
-- `akka-context/java/agents/memory.html.md` - Managing agent session memory
-- `akka-context/java/agents/structured.html.md` - Structured LLM responses
-- `akka-context/java/agents/failures.html.md` - Handling agent failures
-- `akka-context/java/agents/extending.html.md` - Extending agents with function tools
-- `akka-context/java/agents/streaming.html.md` - Streaming model responses with agents
-- `akka-context/java/agents/orchestrating.html.md` - Orchestrating multiple agents
-- `akka-context/java/agents/guardrails.html.md` - Constraining and controlling agent behavior with guardrails
-- `akka-context/java/agents/evaluating.html.md` - Evaluating and judging the responses from LLMs via agents
-- `akka-context/java/agents/testing.html.md` - Testing agents
+- `akka-context/sdk/agents.html.md` - AI agents with LLMs
+- `akka-context/sdk/agents/prompt.html.md` - Choosing the prompts for agents.
+- `akka-context/sdk/agents/calling.html.md` - Calling agents from Akka components
+- `akka-context/sdk/agents/memory.html.md` - Managing agent session memory
+- `akka-context/sdk/agents/structured.html.md` - Structured LLM responses
+- `akka-context/sdk/agents/failures.html.md` - Handling agent failures
+- `akka-context/sdk/agents/extending.html.md` - Extending agents with function tools
+- `akka-context/sdk/agents/streaming.html.md` - Streaming model responses with agents
+- `akka-context/sdk/agents/orchestrating.html.md` - Orchestrating multiple agents
+- `akka-context/sdk/agents/guardrails.html.md` - Constraining and controlling agent behavior with guardrails
+- `akka-context/sdk/agents/evaluating.html.md` - Evaluating and judging the responses from LLMs via agents
+- `akka-context/sdk/agents/testing.html.md` - Testing agents
 - `akka-context/getting-started/planner-agent/dynamic-team.html.md` - Dynamic agent planning and orchestration
-- `akka-context/java/event-sourced-entities.html.md` - Event sourced entity
-- `akka-context/java/key-value-entities.html.md` - Key value entity, simple state management
-- `akka-context/java/views.html.md` - Query models and projections
-- `akka-context/java/workflows.html.md` - Saga patterns and orchestration
-- `akka-context/java/consuming-producing.html.md` - Event consumption and topics
-- `akka-context/java/http-endpoints.html.md` - RESTful APIs
-- `akka-context/java/grpc-endpoints.html.md` - Protocol buffer APIs
-- `akka-context/java/timed-actions.html.md` - Scheduling and timers
-- `akka-context/java/setup-and-dependency-injection.html.md` - Service bootstrap and dependency injection 
+- `akka-context/sdk/event-sourced-entities.html.md` - Event sourced entity
+- `akka-context/sdk/key-value-entities.html.md` - Key value entity, simple state management
+- `akka-context/sdk/views.html.md` - Query models and projections
+- `akka-context/sdk/workflows.html.md` - Saga patterns and orchestration
+- `akka-context/sdk/consuming-producing.html.md` - Event consumption and topics
+- `akka-context/sdk/http-endpoints.html.md` - RESTful APIs
+- `akka-context/sdk/grpc-endpoints.html.md` - Protocol buffer APIs
+- `akka-context/sdk/timed-actions.html.md` - Scheduling and timers
+- `akka-context/sdk/setup-and-dependency-injection.html.md` - Service bootstrap and dependency injection 
 - `ai-coding-assistant-guidelines.html.md` - Best practices
 
 ### When to Read Documentation

@@ -115,7 +115,7 @@ See @README.md for a project overview, and how to build, test and run the applic
 
 ## Coding guidelines
 
-Use the guidelines in @akka-context/java/ai-coding-assistant-guidelines.html.md when writing code in this project.
+Use the guidelines in @akka-context/sdk/ai-coding-assistant-guidelines.html.md when writing code in this project.
 
 ## Akka documentation
 
