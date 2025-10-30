@@ -158,7 +158,7 @@ Make sure that you pull the latest samples regularly to make use of improvements
 
 == Coding guidelines
 
-The coding assistant will generate more accurate code if we give it some detailed instructions. We have prepared such xref:java:ai-coding-assistant-guidelines.adoc[guidelines] that you can use as a template.
+The coding assistant will generate more accurate code if we give it some detailed instructions. We have prepared such xref:sdk:ai-coding-assistant-guidelines.adoc[guidelines] that you can use as a template.
 
 At the beginning of your chat session include a prompt like this:
 

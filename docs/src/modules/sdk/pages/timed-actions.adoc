@@ -25,7 +25,7 @@ When a timer is triggered, it initiates the scheduled call. If the call succeeds
 
 You can schedule calls to any method accessible through the `ComponentClient`, including command handlers on Event Sourced Entities, Key-Value Entities, Workflows, and Timed Actions.
 
-To schedule a call, inject both `TimerScheduler` and `ComponentClient` into your component. These dependencies are available for injection in Service Setup, Endpoints, Consumers, Timed Actions, and Workflows. For more details, see xref:java:setup-and-dependency-injection.adoc#_dependency_injection[dependency injection].
+To schedule a call, inject both `TimerScheduler` and `ComponentClient` into your component. These dependencies are available for injection in Service Setup, Endpoints, Consumers, Timed Actions, and Workflows. For more details, see xref:sdk:setup-and-dependency-injection.adoc#_dependency_injection[dependency injection].
 
 == Timed Actions
 

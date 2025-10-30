@@ -1,4 +1,4 @@
-You would normally not expose Entities, Workflows and Views directly to the outside world, but have an xref:java:http-endpoints.adoc[Endpoint] or xref:java:consuming-producing.adoc[Consumer] in front of it.
+You would normally not expose Entities, Workflows and Views directly to the outside world, but have an xref:sdk:http-endpoints.adoc[Endpoint] or xref:sdk:consuming-producing.adoc[Consumer] in front of it.
 
 However, a built-in HTTP endpoint for the component can be enabled. The primary purpose of this component endpoint is for convenience in local development so that you can try the entity with `curl` without having to define the final `HttpEndpoint`.
 

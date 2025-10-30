@@ -116,7 +116,7 @@ It is also possible to plug in a custom model by implementing the link:_attachme
 
 == Use ComponentClient in an agent
 
-xref:java:setup-and-dependency-injection.adoc#_dependency_injection[Dependency injection] can be used in an
+xref:sdk:setup-and-dependency-injection.adoc#_dependency_injection[Dependency injection] can be used in an
 Agent. For example, injecting the `ComponentClient` to be able to enrich the request to the AI model with
 information from entities or views may look like this:
 

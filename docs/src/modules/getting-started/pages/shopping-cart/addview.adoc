@@ -123,7 +123,7 @@ include::java:example$shopping-cart-with-view/src/main/java/shoppingcart/applica
 
 Adding the concept of a user context to an endpoint in traditional applications can be a nightmare. The refactoring can bleed into all sorts of unexpected places and building or buying--or both--authentication and authorization solutions can bog down entire teams.
 
-In the following code, we add support for **xref:java:auth-with-jwts.adoc[JWT]**-based bearer tokens to the HTTP endpoint with just a single line. While not shown here, you can define all kinds of rules based on the claims supplied in a token.
+In the following code, we add support for **xref:sdk:auth-with-jwts.adoc[JWT]**-based bearer tokens to the HTTP endpoint with just a single line. While not shown here, you can define all kinds of rules based on the claims supplied in a token.
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-with-view/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
@@ -192,7 +192,7 @@ curl http://localhost:9000/carts/my -H 'Authorization: Bearer eyJhbGciOiJIUzI1Ni
 Now that you've added a view _and_ user authentication to the shopping cart sample, take your Akka skills to the next level:
 
 . *Install and build*: Before moving on, download the code for this sample, compile it, and make sure you can run and utilize the new service.
-. *Expand on your own*: Explore xref:java:components/index.adoc[other Akka components] to enhance your application with additional features.
+. *Expand on your own*: Explore xref:sdk:components/index.adoc[other Akka components] to enhance your application with additional features.
 . *Explore other Akka samples*: Discover more about Akka by exploring xref:samples.adoc[different use cases] for inspiration.
 
 

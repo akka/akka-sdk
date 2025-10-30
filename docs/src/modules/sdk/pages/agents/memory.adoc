@@ -55,7 +55,7 @@ The link:_attachments/api/akka/javasdk/agent/MemoryProvider.html[`MemoryProvider
 
 == Accessing session memory
 
-The default implementation of Session Memory is backed by a regular xref:java:event-sourced-entities.adoc[Event Sourced Entity] called `SessionMemoryEntity`, which allows you to interact directly with it as you would do with any other entities in your application. This includes the possibility to directly modify or access it through the `ComponentClient` but also the ability to subscribe to changes in the session memory, as shown below:
+The default implementation of Session Memory is backed by a regular xref:sdk:event-sourced-entities.adoc[Event Sourced Entity] called `SessionMemoryEntity`, which allows you to interact directly with it as you would do with any other entities in your application. This includes the possibility to directly modify or access it through the `ComponentClient` but also the ability to subscribe to changes in the session memory, as shown below:
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/application/SessionMemoryConsumer.java[SessionMemoryConsumer.java]

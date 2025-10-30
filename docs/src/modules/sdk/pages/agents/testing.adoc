@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Testing agents built with Generative AI involves two complementary approaches: evaluating the quality of the non-deterministic model behavior and writing deterministic unit tests for the agent's and surrounding components' logic. Evaluations is described in xref:java:agents/llm_eval.adoc[], and here we will cover the deterministic testing.
+Testing agents built with Generative AI involves two complementary approaches: evaluating the quality of the non-deterministic model behavior and writing deterministic unit tests for the agent's and surrounding components' logic. Evaluations is described in xref:sdk:agents/llm_eval.adoc[], and here we will cover the deterministic testing.
 
 == Mocking responses from the model
 

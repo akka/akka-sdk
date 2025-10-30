@@ -28,7 +28,7 @@ include::java:example$event-sourced-counter-brokers/src/main/java/counter/api/Co
 
 The component client can call command handlers on Event Sourced Entities, Key Value Entities, Workflows, Timed Actions, and query methods on Views.
 
-The component client is available for injection only in Service Setup, Agents, Endpoints, Consumers, Timed Actions, and Workflows. For more information, see xref:java:setup-and-dependency-injection.adoc#_dependency_injection[dependency injection].
+The component client is available for injection only in Service Setup, Agents, Endpoints, Consumers, Timed Actions, and Workflows. For more information, see xref:sdk:setup-and-dependency-injection.adoc#_dependency_injection[dependency injection].
 
 NOTE:: For component client error handling, see xref:errors-and-failures.adoc[Errors and failures] section.
 

@@ -124,8 +124,8 @@ curl http://localhost:9000/activities/alice | jq
 
 Congratulations, you have completed the tour of building a multi-agent system. Now you can take your Akka skills to the next level:
 
-* Learn more about the xref:java:consuming-producing.adoc[`Consumer` component].
+* Learn more about the xref:sdk:consuming-producing.adoc[`Consumer` component].
 * xref:quick-deploy.adoc[]
-* *Expand on your own*: Learn more details of the xref:java:components/index.adoc[Akka components] to enhance your application with additional features.
+* *Expand on your own*: Learn more details of the xref:sdk:components/index.adoc[Akka components] to enhance your application with additional features.
 * *Explore other Akka samples*: Discover more about Akka by exploring xref:samples.adoc[different use cases] for inspiration.
 

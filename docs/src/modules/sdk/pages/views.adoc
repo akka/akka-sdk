@@ -54,7 +54,7 @@ As well as a Key Value Entity component `CustomerEntity.java` that will produce 
 
 === Define the View
 
-You implement a View by extending `akka.javasdk.view.View` and subscribing to changes from an entity. You specify how to query it by providing one or more methods annotated with `@Query`, which can then be made accessible via an xref:java:http-endpoints.adoc[HTTP Endpoint].
+You implement a View by extending `akka.javasdk.view.View` and subscribing to changes from an entity. You specify how to query it by providing one or more methods annotated with `@Query`, which can then be made accessible via an xref:sdk:http-endpoints.adoc[HTTP Endpoint].
 
 [source,java,indent=0]
 .{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomersByEmail.java[CustomersByEmail.java]
@@ -178,7 +178,7 @@ include::example$transfer-workflow/src/main/java/com/example/transfer/applicatio
 
 The source of a View can be a topic. It works the same way as shown in <<event-sourced-entity>> or <<value-entity>>, but you define it with `@Consume.FromTopic` instead.
 
-NOTE: For the messages to be correctly consumed in the view, there must be a `ce-subject` metadata associated with each message. This is required because for each message consumed from the topic there will be a corresponding view row. That view row is selected based on such `ce-subject`. For an example on how to pass such metadata when producing to a topic, see page xref:java:consuming-producing.adoc#_metadata[Metadata].
+NOTE: For the messages to be correctly consumed in the view, there must be a `ce-subject` metadata associated with each message. This is required because for each message consumed from the topic there will be a corresponding view row. That view row is selected based on such `ce-subject`. For an example on how to pass such metadata when producing to a topic, see page xref:sdk:consuming-producing.adoc#_metadata[Metadata].
 
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/application/CounterTopicView.java[CounterTopicView.java]
@@ -262,7 +262,7 @@ Some specific scenarios might require a complete rebuild of the View, for exampl
 
 Such changes require you to define a new View. Akka will then rebuild it from the source event log or value changes.
 
-TIP: You should be able to test if a change is compatible locally by running the service with xref:java:running-locally.adoc#persistence-enabled[persistence mode enabled], producing some data, and then changing the View query and re-running the service. If the service boots up correctly and is able to serve the new query, the change is compatible.
+TIP: You should be able to test if a change is compatible locally by running the service with xref:sdk:running-locally.adoc#persistence-enabled[persistence mode enabled], producing some data, and then changing the View query and re-running the service. If the service boots up correctly and is able to serve the new query, the change is compatible.
 
 Rebuilding a new View may take some time if there are many events that have to be processed. The recommended way when changing a View is multi-step, with two deployments:
 

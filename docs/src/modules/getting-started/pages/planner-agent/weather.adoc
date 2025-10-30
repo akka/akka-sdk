@@ -86,5 +86,5 @@ mvn verify
 == Next steps
 
 * Introduce a workflow that orchestrates the calls between the agents. Continue with xref:planner-agent/team.adoc[]
-* Learn more about more possibilities of xref:java:agents.adoc#tools[extending agents with function tools].
+* Learn more about more possibilities of xref:sdk:agents.adoc#tools[extending agents with function tools].
 

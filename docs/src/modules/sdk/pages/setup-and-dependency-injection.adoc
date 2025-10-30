@@ -70,7 +70,7 @@ The following types can be injected in Service Setup, HTTP Endpoints, gRPC Endpo
 | An executor which runs each task in a virtual thread, and is safe to use for blocking async work, for example with `CompletableFuture.supplyAsync(() -> blocking, executor)`
 |===
 
-The `akka.javasdk.Sanitizer` can be injected in all component types, see xref:java:sanitization.adoc[].
+The `akka.javasdk.Sanitizer` can be injected in all component types, see xref:sdk:sanitization.adoc[].
 
 Furthermore, the following component specific types can also be injected:
 

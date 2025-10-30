@@ -6,7 +6,7 @@ A single agent performs one well-defined task. Several agents can collaborate to
 
 == Using a predefined workflow
 
-Let's first look at how to define a workflow that orchestrates several agents in a predefined steps. This is similar to the xref:java:agents/calling.adoc[`ActivityAgentManager`] that was illustrated above, but it uses both the `WeatherAgent` and the `ActivityAgent`. First it retrieves the weather forecast and then it finds suitable activities.
+Let's first look at how to define a workflow that orchestrates several agents in a predefined steps. This is similar to the xref:sdk:agents/calling.adoc[`ActivityAgentManager`] that was illustrated above, but it uses both the `WeatherAgent` and the `ActivityAgent`. First it retrieves the weather forecast and then it finds suitable activities.
 
 [source,java,indent=0]
 ----

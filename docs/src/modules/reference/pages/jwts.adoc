@@ -4,7 +4,7 @@ include::ROOT:partial$include.adoc[]
 
 JWTs allow authentication and authorization of requests, especially for internet-facing applications and inter-service communication. JWTs provide a trusted mechanism for validating identities and permissions, ensuring secure interactions between services, users, and devices.
 
-This section presents how you create and manage JWTs with Akka. Using JWTs to secure services is presented in xref:java:auth-with-jwts.adoc[Authentication with JWTs in the Akka SDK].
+This section presents how you create and manage JWTs with Akka. Using JWTs to secure services is presented in xref:sdk:auth-with-jwts.adoc[Authentication with JWTs in the Akka SDK].
 
 == Key Concepts of JWTs
 * *Claims*: JWTs consist of claims and a signature. Claims represent user identity, roles, permissions, or access rights, allowing services to interpret what actions the JWT holder can perform.
@@ -171,9 +171,9 @@ The public and private keys must be PEM encoded keys, either RSA, ECDSA or Ed255
 
 Once configured, JWTs can be used for endpoint-specific authentication and authorization.
 
-* *Specify Required JWTs for Endpoints*: Define which endpoints require JWTs and specify validation criteria for claims. Refer to the xref:java:auth-with-jwts.adoc[Authentication with JWTs in the Akka SDK] for using endpoint security.
+* *Specify Required JWTs for Endpoints*: Define which endpoints require JWTs and specify validation criteria for claims. Refer to the xref:sdk:auth-with-jwts.adoc[Authentication with JWTs in the Akka SDK] for using endpoint security.
 
 == See also
-* xref:java:auth-with-jwts.adoc[Authentication with JWTs in the Akka SDK]
+* xref:sdk:auth-with-jwts.adoc[Authentication with JWTs in the Akka SDK]
 * xref:reference:cli/akka-cli/akka_services_jwts.adoc#_see_also[`akka service jwt` commands]
 * xref:reference:cli/akka-cli/akka_secrets.adoc#_see_also[`akka secrets` commands]

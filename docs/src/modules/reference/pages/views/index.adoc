@@ -143,9 +143,9 @@ public class CustomerView extends View {
 }
 ----
 
-For detailed information, see xref:java:views.adoc[implementing Views in your application].
+For detailed information, see xref:sdk:views.adoc[implementing Views in your application].
 
 == Related documentation
 
-* xref:java:views.adoc[Implementing Views] - Comprehensive guide to implementing Views
+* xref:sdk:views.adoc[Implementing Views] - Comprehensive guide to implementing Views
 * xref:reference:views/concepts/advanced-views.adoc[Advanced Views] - Advanced usage patterns and features

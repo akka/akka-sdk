@@ -14,7 +14,7 @@ This quickstart implements an HTTP endpoint and a shopping cart that supports ad
 In this guide you will:
 
 * Clone a completed shopping cart service repository to examine and run it locally.
-* Be introduced to key Akka concepts including xref:java:event-sourced-entities.adoc[Event Sourced Entities].
+* Be introduced to key Akka concepts including xref:sdk:event-sourced-entities.adoc[Event Sourced Entities].
 * See how the xref:concepts:architecture-model.adoc[project structure] provides a clear separation of concerns in your microservices.
 * Run the service locally and explore it with the local Akka console.
 * Deploy the service to https://console.akka.io[akka.io].
@@ -311,5 +311,5 @@ image:console-first-app-service.png[]
 Now that you've built and deployed a shopping cart service, take your Akka skills to the next level:
 
 . *Add a view*: Continue to the xref:shopping-cart/addview.adoc[next step] in the tour.
-. *Expand on your own*: Explore xref:java:components/index.adoc[other Akka components] to enhance your application with additional features.
+. *Expand on your own*: Explore xref:sdk:components/index.adoc[other Akka components] to enhance your application with additional features.
 . *Explore other Akka samples*: Discover more about Akka by exploring xref:samples.adoc[different use cases] for inspiration.

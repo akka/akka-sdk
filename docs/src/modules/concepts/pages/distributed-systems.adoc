@@ -69,7 +69,7 @@ The foundation of Akka is detailed in the https://content.akka.io/guide/principl
 - Failure signaling and supervision, allowing systems to self-heal and degrade gracefully.
 - Automatic and transparent self-replication of agents and services for failover, redundancy, and scale. 
 
-These constructs are operationalized in Akka’s runtime through xref:java:agents.adoc[Agents], xref:java:event-sourced-entities.adoc[Entities], xref:java:views.adoc[Views], xref:java:http-endpoints.adoc[Endpoints], xref:java:workflows.adoc[Workflows], and xref:java:consuming-producing.adoc[Consumers] backed by actors, event-sourced persistence, multi-region replication, durable streaming real-time projections, and sharded clusters—all battle-tested in production systems across industries for over a decade, providing a tuned and proven runtime for enterprise-grade services. 
+These constructs are operationalized in Akka’s runtime through xref:sdk:agents.adoc[Agents], xref:sdk:event-sourced-entities.adoc[Entities], xref:sdk:views.adoc[Views], xref:sdk:http-endpoints.adoc[Endpoints], xref:sdk:workflows.adoc[Workflows], and xref:sdk:consuming-producing.adoc[Consumers] backed by actors, event-sourced persistence, multi-region replication, durable streaming real-time projections, and sharded clusters—all battle-tested in production systems across industries for over a decade, providing a tuned and proven runtime for enterprise-grade services.
 
 == Designed for multi-agent AI 
 
@@ -77,10 +77,10 @@ Multi-agent AI systems combine the inherent _nondeterminism_ of distributed syst
 
 The demands of multi-agent AI systems—which involve large numbers of autonomous, stateful, and often long-lived agents—require managing complexity around orchestration, streaming, memory, and temporal behaviors while being able to reason about the system as a whole and embrace its stochastic and non-deterministic nature. Akka’s approach to multi-agent architectures includes:
 
-- Actor-based isolation and concurrency control for stateful xref:java:agents.adoc[Agents] that must reason and act independently while coordinating with others.
-- Asynchronous messaging and streaming decouple computation from communication, allowing for flow control and resilient communication between xref:java:agents.adoc[Agents], critical for latency-sensitive inference or decision-making.
-- Operational resilience, with fully replicated stateful xref:java:agents.adoc[Agents] that restart and recover in place.
-- Automatic short-term (session) and long-term memory through the xref:java:agents.adoc[Agent's] built-in durable in-memory storage, allowing replayability through event logs, ensuring agents can recover, reflect, reason, and explain past behavior.
+- Actor-based isolation and concurrency control for stateful xref:sdk:agents.adoc[Agents] that must reason and act independently while coordinating with others.
+- Asynchronous messaging and streaming decouple computation from communication, allowing for flow control and resilient communication between xref:sdk:agents.adoc[Agents], critical for latency-sensitive inference or decision-making.
+- Operational resilience, with fully replicated stateful xref:sdk:agents.adoc[Agents] that restart and recover in place.
+- Automatic short-term (session) and long-term memory through the xref:sdk:agents.adoc[Agent's] built-in durable in-memory storage, allowing replayability through event logs, ensuring agents can recover, reflect, reason, and explain past behavior.
 - Dynamic scaling and routing are done through automatic and transparent sharding and cluster management.
 - Loose coupling and evolvability, aided by schema-versioned messages and contract-first APIs.
 - Multi-region replication based on CRDTs for collaborative knowledge sharing and eventual consistency without global locking.

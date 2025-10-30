@@ -4,7 +4,7 @@ include::ROOT:partial$include.adoc[]
 
 Guardrails can protect against harmful inputs, such as jailbreak attempts, and damaging output, such as mentions of a competitor's product.
 
-NOTE: For protecting sensitive information like PII, see xref:java:sanitization.adoc[Sanitization].
+NOTE: For protecting sensitive information like PII, see xref:sdk:sanitization.adoc[Sanitization].
 
 A specific guardrail implements the link:_attachments/api/akka/javasdk/agent/TextGuardrail.html[`TextGuardrail` interface]. It takes the input or output text as a parameter and a result if it passed the validation or not, including an explanation of why the decision was made. These results are included in metrics and traces. A guardrail can abort the interaction with the model, or only report the problem and continue anyway.
 

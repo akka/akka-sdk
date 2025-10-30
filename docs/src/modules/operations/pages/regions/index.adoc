@@ -40,7 +40,7 @@ NOTE: Project region assignment is restricted to users that have `project-admin`
 [[selecting-primary]]
 === Selecting primary for stateful components
 
-Stateful components like Event Sourced Entities and Workflows can be replicated to other regions. For each stateful component instance there is a primary region, which handles all write requests. Read requests can be served from any region. See xref:java:event-sourced-entities.adoc#_replication[Event Sourced Entity replication], xref:java:key-value-entities.adoc#_replication[Key Value Entity replication] and xref:java:workflows.adoc#_replication[Workflow replication] for more information about read and write requests.
+Stateful components like Event Sourced Entities and Workflows can be replicated to other regions. For each stateful component instance there is a primary region, which handles all write requests. Read requests can be served from any region. See xref:sdk:event-sourced-entities.adoc#_replication[Event Sourced Entity replication], xref:sdk:key-value-entities.adoc#_replication[Key Value Entity replication] and xref:sdk:workflows.adoc#_replication[Workflow replication] for more information about read and write requests.
 
 There are two operational choices for deciding where the primary is located:
 

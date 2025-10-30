@@ -30,7 +30,7 @@ public class CustomerView extends View {
 }
 ----
 
-For a full view sample see xref:java:views.adoc#value-entity[Creating a View from a Key Value Entity]
+For a full view sample see xref:sdk:views.adoc#value-entity[Creating a View from a Key Value Entity]
 
 == Table Naming
 
@@ -61,7 +61,7 @@ Subscribe to state changes from Key Value Entities:
 @Consume.FromKeyValueEntity(CustomerEntity.class)
 ----
 
-For a full sample see xref:java:views.adoc#value-entity[Creating a View from a Key Value Entity]
+For a full sample see xref:sdk:views.adoc#value-entity[Creating a View from a Key Value Entity]
 
 === Event Sourced Entities
 
@@ -72,7 +72,7 @@ Subscribe to events from Event Sourced Entities:
 @Consume.FromEventSourcedEntity(CustomerEntity.class)
 ----
 
-For a full sample see xref:java:views.adoc#event-sourced-entity[Creating a View from an Event Sourced Entity]
+For a full sample see xref:sdk:views.adoc#event-sourced-entity[Creating a View from an Event Sourced Entity]
 
 === Workflows
 
@@ -83,7 +83,7 @@ Subscribe to state changes from Workflows:
 @Consume.FromWorkflow(TransferWorkflow.class)
 ----
 
-For a full sample see xref:java:views.adoc#workflow[Creating a View from a Workflow]
+For a full sample see xref:sdk:views.adoc#workflow[Creating a View from a Workflow]
 
 === Service to service eventing
 
@@ -94,7 +94,7 @@ Subscribe to events from an Event Sourced entity made available by another Akka 
 @Consume.FromServiceStream("service-name", "stream-id")
 ----
 
-For more details see xref:java:consuming-producing.adoc#s2s-eventing[Service to Service Eventing]
+For more details see xref:sdk:consuming-producing.adoc#s2s-eventing[Service to Service Eventing]
 
 === Topics
 
@@ -105,7 +105,7 @@ Subscribe to messages from a topic:
 @Consume.FromTopic("customer-events")
 ----
 
-For a full sample see xref:java:views.adoc#topic-view[Creating a View from a topic]
+For a full sample see xref:sdk:views.adoc#topic-view[Creating a View from a topic]
 
 == Generic Type Parameter
 
@@ -140,7 +140,7 @@ public static class CustomerSummaries extends TableUpdater<CustomerSummary> {
 }
 ----
 
-For a few examples of different table update handlers see xref:java:views.adoc[]
+For a few examples of different table update handlers see xref:sdk:views.adoc[]
 
 == Effect Types
 
