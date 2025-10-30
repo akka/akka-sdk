@@ -47,7 +47,7 @@
         <maven.compiler.target>21</maven.compiler.target>
         <maven.compiler.release>21</maven.compiler.release>
         <!-- keep in sync with
-         docs/build/src/managed/modules/java/partials/attributes.adoc#L4
+         Makefile#L49
         -->
         <maven.version>3.9.0</maven.version>
 
