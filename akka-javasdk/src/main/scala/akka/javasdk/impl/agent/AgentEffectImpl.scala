@@ -13,6 +13,7 @@ import scala.jdk.FunctionConverters.enrichAsScalaFromFunction
 import akka.annotation.InternalApi
 import akka.javasdk.CommandException
 import akka.javasdk.Metadata
+import akka.javasdk.agent
 import akka.javasdk.agent.Agent.Effect
 import akka.javasdk.agent.Agent.Effect.Builder
 import akka.javasdk.agent.Agent.Effect.FailureBuilder
@@ -22,6 +23,7 @@ import akka.javasdk.agent.Agent.Effect.OnSuccessBuilder
 import akka.javasdk.agent.MemoryProvider
 import akka.javasdk.agent.ModelProvider
 import akka.javasdk.agent.RemoteMcpTools
+import akka.javasdk.agent.UserMessage
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.PrimaryEffectImpl
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.RequestModel
 import akka.javasdk.impl.effect.ErrorReplyImpl
@@ -41,7 +43,7 @@ private[javasdk] object BaseAgentEffectBuilder {
       RequestModel(
         modelProvider = ModelProvider.fromConfig(),
         systemMessage = ConstantSystemMessage(""),
-        userMessage = "",
+        userMessage = UserMessage.from(""),
         responseType = classOf[String],
         includeJsonSchema = false,
         responseMapping = None,
@@ -59,7 +61,7 @@ private[javasdk] object BaseAgentEffectBuilder {
   final case class RequestModel(
       modelProvider: ModelProvider,
       systemMessage: SystemMessage,
-      userMessage: String,
+      userMessage: UserMessage,
       responseType: Class[_],
       includeJsonSchema: Boolean,
       responseMapping: Option[Function1[Any, Any]],
@@ -168,7 +170,13 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
     this
   }
 
-  override def userMessage(message: String): OnSuccessBuilder = {
+  override def userMessage(text: String): OnSuccessBuilder = {
+    updateRequestModel(_.copy(userMessage = UserMessage.from(text)))
+    this
+  }
+
+  override def userMessage(message: agent.UserMessage): OnSuccessBuilder = {
+
     updateRequestModel(_.copy(userMessage = message))
     this
   }
@@ -226,7 +234,6 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
     updateRequestModel(_.addTools(toolInstancesOrClasses.asScala.toSeq))
     this
   }
-
 }
 
 /**

@@ -11,6 +11,7 @@ import akka.actor.testkit.typed.javadsl.LoggingTestKit;
 import akka.javasdk.CommandException;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.agent.AgentRegistry;
+import akka.javasdk.agent.MessageContent;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
@@ -59,6 +60,7 @@ public class AgentIntegrationTest extends TestKitSupport {
         .withModelProvider(SomeStructureResponseSchemaAgent.class, testModelProvider)
         .withModelProvider(SomeStreamingAgent.class, testModelProvider)
         .withModelProvider(SomeAgentWithBadlyConfiguredTool.class, testModelProvider)
+        .withModelProvider(SomeMultiModalUserMessageAgent.class, testModelProvider)
         .withDependencyProvider(depsProvider);
   }
 
@@ -86,6 +88,34 @@ public class AgentIntegrationTest extends TestKitSupport {
 
     // then
     assertThat(result.response()).isEqualTo("123456");
+  }
+
+  @Test
+  public void shouldTestMultiModalUserMessage() {
+    // given
+    String response = "multi modal user message";
+    testModelProvider
+        .whenUserMessage(
+            userMessage ->
+                ((MessageContent.TextMessageContent) userMessage.contents().get(0))
+                        .text()
+                        .equals("testing")
+                    && ((MessageContent.ImageUrlMessageContent) userMessage.contents().get(1))
+                        .url()
+                        .toString()
+                        .equals("https://example.com"))
+        .reply(response);
+
+    // when
+    String result =
+        componentClient
+            .forAgent()
+            .inSession(newSessionId())
+            .method(SomeMultiModalUserMessageAgent::ask)
+            .invoke();
+
+    // then
+    assertThat(result).isEqualTo(response);
   }
 
   @Test

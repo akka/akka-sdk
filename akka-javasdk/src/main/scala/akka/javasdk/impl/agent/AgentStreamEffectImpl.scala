@@ -13,6 +13,7 @@ import akka.javasdk.agent.Agent.StreamEffect
 import akka.javasdk.agent.MemoryProvider
 import akka.javasdk.agent.ModelProvider
 import akka.javasdk.agent.RemoteMcpTools
+import akka.javasdk.agent.UserMessage
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
@@ -87,7 +88,7 @@ private[javasdk] final class AgentStreamEffectImpl
   }
 
   override def userMessage(message: String): StreamEffect.OnSuccessBuilder = {
-    updateRequestModel(_.copy(userMessage = message))
+    updateRequestModel(_.copy(userMessage = UserMessage.from(message)))
     this
   }
 

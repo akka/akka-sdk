@@ -53,6 +53,23 @@ public final class SessionMemoryClient implements SessionMemory {
 
   @Override
   public void addInteraction(
+      String sessionId,
+      SessionMessage.CompoundUserMessage userMessage,
+      List<SessionMessage> messages) {
+    if (memorySettings.write()) {
+      logger.debug("Adding interaction to sessionId [{}]", sessionId);
+      componentClient
+          .forEventSourcedEntity(sessionId)
+          .method(SessionMemoryEntity::addCompoundInteraction)
+          .invoke(new SessionMemoryEntity.AddCompoundInteractionCmd(userMessage, messages));
+    } else {
+      logger.debug(
+          "Memory writing is disabled, interaction not added to sessionId [{}]", sessionId);
+    }
+  }
+
+  @Override
+  public void addInteraction(
       String sessionId, SessionMessage.UserMessage userMessage, List<SessionMessage> messages) {
     if (memorySettings.write()) {
       logger.debug("Adding interaction to sessionId [{}]", sessionId);

@@ -42,6 +42,12 @@ class DummyAgent3 extends Agent {
               List<SessionMessage> messages) {}
 
           @Override
+          public void addInteraction(
+              String sessionId,
+              SessionMessage.CompoundUserMessage userMessage,
+              List<SessionMessage> messages) {}
+
+          @Override
           public SessionHistory getHistory(String sessionId) {
             return null;
           }

@@ -13,7 +13,6 @@ import akka.javasdk.agent.MemoryFilter;
 import akka.javasdk.agent.SessionHistory;
 import akka.javasdk.agent.SessionMemoryEntity;
 import akka.javasdk.agent.SessionMemoryEntity.AddInteractionCmd;
-import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.agent.SessionMessage.AiMessage;
 import akka.javasdk.agent.SessionMessage.UserMessage;
 import akka.javasdk.impl.agent.AgentRegistryImpl;
@@ -226,9 +225,14 @@ public class SessionMemoryEntityTest {
         testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
 
     // then
-    assertThat(historyResult2.getReply().messages().stream().map(SessionMessage::text).toList())
-        .containsExactly(
-            userMessage2.text(), aiMessage2.text(), userMessage3.text(), aiMessage3.text());
+    UserMessage m1 = (UserMessage) historyResult2.getReply().messages().get(0);
+    AiMessage m2 = (AiMessage) historyResult2.getReply().messages().get(1);
+    UserMessage m3 = (UserMessage) historyResult2.getReply().messages().get(2);
+    AiMessage m4 = (AiMessage) historyResult2.getReply().messages().get(3);
+    assertThat(m1.text()).isEqualTo(userMessage2.text());
+    assertThat(m2.text()).isEqualTo(aiMessage2.text());
+    assertThat(m3.text()).isEqualTo(userMessage3.text());
+    assertThat(m4.text()).isEqualTo(aiMessage3.text());
   }
 
   @Test
