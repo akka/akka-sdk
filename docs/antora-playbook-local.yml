@@ -14,14 +14,14 @@ content:
 
 ui:
   bundle:
-    url: ./supplemental_ui/bundle/akka-theme-ui-008-bundle.zip
+    url: ./supplemental_ui/bundle/akka-theme-ui-009-bundle.zip
     snapshot: true
   default_layout: notification
   supplemental_files: ./supplemental_ui
 
 runtime:
   fetch: true
- 
+
 asciidoc:
   attributes:
     # the following two attributes cause review and todo notes to display
@@ -35,7 +35,7 @@ asciidoc:
 antora:
   extensions:
   - require: '@antora/lunr-extension'
-  
+
 output:
   destinations:
     - provider: fs
