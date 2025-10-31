@@ -560,7 +560,7 @@ private final class Sdk(
 
   private def isProvided(clz: Class[_]): Boolean = {
     sys.props.get("akka.javasdk.dev-mode.show-hidden-components").isEmpty &&
-      ComponentLocator.providedComponents.contains(clz)
+    ComponentLocator.providedComponents.contains(clz)
   }
 
   componentClasses
