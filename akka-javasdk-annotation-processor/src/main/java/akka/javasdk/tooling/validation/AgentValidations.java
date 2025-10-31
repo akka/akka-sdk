@@ -32,7 +32,8 @@ public class AgentValidations {
     return mustHaveValidAgentDescription(element)
         .combine(Validations.hasEffectMethod(element, effectTypes))
         .combine(agentCommandHandlersMustBeOne(element))
-        .combine(Validations.commandHandlerArityShouldBeZeroOrOne(element, effectTypes));
+        .combine(Validations.commandHandlerArityShouldBeZeroOrOne(element, effectTypes))
+        .combine(commandHandlerCannotHaveFunctionTool(element));
   }
 
   /**
@@ -140,5 +141,35 @@ public class AgentValidations {
                   + count
                   + " command handlers. There must be one public method returning Agent.Effect."));
     }
+  }
+
+  /**
+   * Validates that the Agent command handler method is not annotated with @FunctionTool.
+   *
+   * @param element the Agent class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation commandHandlerCannotHaveFunctionTool(TypeElement element) {
+    List<String> errors = new ArrayList<>();
+
+    for (Element enclosed : element.getEnclosedElements()) {
+      if (enclosed instanceof ExecutableElement method) {
+        String returnTypeName = method.getReturnType().toString();
+        // Check if this is a command handler (returns Effect or StreamEffect)
+        if (returnTypeName.startsWith("akka.javasdk.agent.Agent.Effect")
+            || returnTypeName.startsWith("akka.javasdk.agent.Agent.StreamEffect")) {
+          // Check if it has @FunctionTool annotation
+          if (Validations.findAnnotation(method, "akka.javasdk.annotations.FunctionTool") != null) {
+            errors.add(
+                Validations.errorMessage(
+                    method,
+                    "Agent command handler methods cannot be annotated with @FunctionTool. "
+                        + "Only non-command handler methods can be annotated with @FunctionTool."));
+          }
+        }
+      }
+    }
+
+    return Validation.of(errors);
   }
 }

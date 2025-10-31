@@ -44,5 +44,17 @@ class EventSourcedEntityValidationSpec extends AnyWordSpec with Matchers with Co
         result,
         "NotPublicEventSourcedEntity is not marked with `public` modifier. Components must be public")
     }
+
+    "accept EventSourcedEntity with @FunctionTool on Effect and ReadOnlyEffect" in {
+      val result = compileTestSource("valid/ValidEventSourcedEntityWithFunctionTool.java")
+      assertCompilationSuccess(result)
+    }
+
+    "reject EventSourcedEntity with @FunctionTool on non-Effect methods" in {
+      val result = compileTestSource("invalid/EventSourcedEntityWithFunctionToolOnInvalidMethod.java")
+      assertCompilationFailure(
+        result,
+        "EventSourcedEntity methods annotated with @FunctionTool must return Effect or ReadOnlyEffect")
+    }
   }
 }
