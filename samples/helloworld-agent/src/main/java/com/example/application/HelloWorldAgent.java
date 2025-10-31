@@ -26,10 +26,17 @@ public class HelloWorldAgent extends Agent {
 
   public Effect<String> greet(String userGreeting) {
     // prettier-ignore
+//    TextContent.from("What do you see?"),
+//      ImageContent.from("https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png")
     return effects()
-      .systemMessage(SYSTEM_MESSAGE)
-      .userMessage(userGreeting)
-      .thenReply();
+      .systemMessage("testing")
+      .userMessage("generate nice images of cats and dogs")
+      .responseAsMultiModal()
+      .map(multi -> {
+        System.out.println(multi.contents().size());
+        System.out.println(multi.contents());
+        return "mutli";
+      }).thenReply();
   }
 }
 // end::class[]

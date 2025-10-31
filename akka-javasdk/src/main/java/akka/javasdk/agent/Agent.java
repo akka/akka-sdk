@@ -14,6 +14,7 @@ import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.impl.agent.AgentStreamEffectImpl;
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder;
+import akka.runtime.sdk.spi.SpiAgent;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
@@ -228,6 +229,8 @@ public abstract class Agent {
        */
       OnSuccessBuilder userMessage(String message);
 
+      OnSuccessBuilder userMessage(UserMessage message);
+
       /**
        * Create a message reply without calling the model.
        *
@@ -296,6 +299,8 @@ public abstract class Agent {
        * @see #responseConformsTo
        */
       <T> MappingResponseBuilder<T> responseAs(Class<T> responseType);
+
+      MappingResponseBuilder<SpiAgent.MultiModalResponse> responseAsMultiModal();
 
       /**
        * Parse the response from the model into a structured response of a given responseType. The
