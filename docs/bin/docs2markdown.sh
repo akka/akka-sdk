@@ -18,7 +18,7 @@ cp docs/src/modules/ROOT/pages/llms.txt target/site/
 
 mkdir -p target/docs-md
 rsync -av --prune-empty-dirs --include="*/" --include="*.html.md" --exclude="*" target/site/ target/docs-md/
-(cd target/docs-md && zip -r ../../target/site/java/_attachments/akka-docs-md.zip .)
+(cd target/docs-md && zip -r ../../target/site/sdk/_attachments/akka-docs-md.zip .)
 
 # update ask-akka-agent
 #find target/site -name "index.html.md" -prune -o -type f -name "*.html.md" -exec cp {} samples/ask-akka-agent/src/main/resources/md-docs/ \;
