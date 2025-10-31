@@ -20,6 +20,7 @@ import akka.javasdk.CommandException
 import akka.javasdk.DependencyProvider
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
+import akka.javasdk.agent
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
 import akka.javasdk.agent.Guardrail
@@ -27,6 +28,7 @@ import akka.javasdk.agent.InternalServerException
 import akka.javasdk.agent.JsonParsingException
 import akka.javasdk.agent.McpToolCallExecutionException
 import akka.javasdk.agent.MemoryProvider
+import akka.javasdk.agent.MessageContent.ImageMessageContent
 import akka.javasdk.agent.ModelException
 import akka.javasdk.agent.ModelProvider
 import akka.javasdk.agent.ModelTimeoutException
@@ -76,14 +78,14 @@ import akka.runtime.sdk.spi.SpiAgent.TimeoutFailure
 import akka.runtime.sdk.spi.SpiAgent.ToolCallExecutionFailure
 import akka.runtime.sdk.spi.SpiAgent.ToolCallLimitReachedFailure
 import akka.runtime.sdk.spi.SpiAgent.UnsupportedFeatureFailure
-import akka.runtime.sdk.spi.SpiAgent.{ AgentException => SpiAgentException }
+import akka.runtime.sdk.spi.SpiAgent.{AgentException => SpiAgentException}
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.util.ByteString
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigException
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
-import io.opentelemetry.context.{ Context => OtelContext }
+import io.opentelemetry.context.{Context => OtelContext}
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
@@ -267,7 +269,7 @@ private[impl] final class AgentImpl[A <: Agent](
             new SpiAgent.RequestModelEffect(
               modelProvider = spiModelProvider,
               systemMessage = systemMessage,
-              userMessage = req.userMessage,
+              userMessage = toSpiUserMessage(req.userMessage),
               additionalContext = additionalContext,
               toolDescriptors = toolDescriptors,
               callToolFunction = request => Future(toolExecutor.execute(request))(sdkExecutionContext),
@@ -277,7 +279,8 @@ private[impl] final class AgentImpl[A <: Agent](
               responseMapping = req.responseMapping,
               failureMapping = req.failureMapping.map(mapSpiAgentException),
               replyMetadata = metadata,
-              onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, userMessageAt, results),
+              //FIXME
+              onSuccess = results => onSuccess(sessionMemoryClient, "req.userMessage", userMessageAt, results),
               requestGuardrails = guardrails.modelRequestGuardrails,
               responseGuardrails = guardrails.modelResponseGuardrails)
 
@@ -306,6 +309,33 @@ private[impl] final class AgentImpl[A <: Agent](
       }
 
     }(sdkExecutionContext)
+
+  private def toSpiUserMessage(userMessage: agent.UserMessage): SpiAgent.UserMessage = {
+    val contents = userMessage.contents().asScala.map(asd => toSpiMessageContent(asd))
+    new SpiAgent.UserMessage(contents.toSeq)
+  }
+
+  private def toSpiMessageContent(messageContent: agent.MessageContent): SpiAgent.MessageContent = {
+    messageContent match {
+      case content: agent.MessageContent.ImageMessageContent =>
+        new SpiAgent.MessageContent.ImageMessageContent(
+          content.uri(),
+          content.bytes(),
+          content.mimeType(),
+          toSpiDetailLevel(content.detailLevel()))
+      case content: agent.MessageContent.TextMessageContent =>
+        new SpiAgent.MessageContent.TextMessageContent(content.text())
+    }
+  }
+
+  private def toSpiDetailLevel(
+      level: ImageMessageContent.DetailLevel): SpiAgent.MessageContent.ImageMessageContent.DetailLevel = {
+    level match {
+      case ImageMessageContent.DetailLevel.LOW  => new SpiAgent.MessageContent.ImageMessageContent.Low()
+      case ImageMessageContent.DetailLevel.HIGH => new SpiAgent.MessageContent.ImageMessageContent.High()
+      case ImageMessageContent.DetailLevel.AUTO => new SpiAgent.MessageContent.ImageMessageContent.Auto()
+    }
+  }
 
   private def toSpiMcpEndpoints(remoteMcpTools: Seq[RemoteMcpTools]): Seq[SpiAgent.McpToolEndpointDescriptor] =
     remoteMcpTools.map {
