@@ -558,7 +558,10 @@ private final class Sdk(
   // guardrail name => component ids
   private var guardrailEnabledForComponent = Map.empty[String, Set[String]]
 
-  private def isProvided(clz: Class[_]): Boolean = ComponentLocator.providedComponents.contains(clz)
+  private def isProvided(clz: Class[_]): Boolean = {
+    sys.props.get("akka.javasdk.dev-mode.show-hidden-components").isEmpty &&
+    ComponentLocator.providedComponents.contains(clz)
+  }
 
   componentClasses
     .filter(hasComponentId)
