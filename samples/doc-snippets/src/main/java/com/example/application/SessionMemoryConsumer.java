@@ -44,7 +44,7 @@ public class SessionMemoryConsumer extends Consumer {
           var history = componentClient
             .forEventSourcedEntity(sessionId)
             .method(SessionMemoryEntity::getHistory) // <2>
-            .invoke(new SessionMemoryEntity.GetHistoryCmd(Optional.empty()));
+            .invoke(new SessionMemoryEntity.GetHistoryCmd());
 
           var summary = componentClient
             .forAgent()
@@ -58,7 +58,7 @@ public class SessionMemoryConsumer extends Consumer {
             .method(SessionMemoryEntity::compactHistory) // <4>
             .invoke(
               new SessionMemoryEntity.CompactionCmd(
-                new SessionMessage.UserMessage(now, summary.userMessage(), ""),
+                new SessionMessage.UserMessage(now, summary.userMessage()),
                 new SessionMessage.AiMessage(now, summary.aiMessage(), ""),
                 history.sequenceNumber() // <5>
               )
