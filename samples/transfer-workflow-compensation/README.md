@@ -115,10 +115,6 @@ If you encounter issues, ensure that:
 - Your `curl` commands are formatted correctly.
 - The wallet IDs ('a' and 'b') match the ones you created.
 
-## Need help?
-
-For questions or assistance, please refer to our [online support resources](https://doc.akka.io/support/index.html).
-
 ## Deploying
 
 You can use the [Akka Console](https://console.akka.io) to create a project and see the status of your service.
@@ -150,4 +146,4 @@ Now that you've built a basic transfer workflow, consider these next steps:
 
 1. **Study the compensation mechanism**: Examine `TransferWorkflow.java` and `TransferWorkflowIntegrationTest.java` to understand how compensating actions are implemented when the deposit step fails after a successful withdrawal.
 2. **Explore other Akka components**: Dive deeper into Akka's ecosystem to enhance your application.
-3. **Join the community**: Visit the [Support page](https://doc.akka.io/support/index.html) to find resources where you can connect with other Akka developers and expand your knowledge.
+3. **Explore other Akka samples**: Discover more about Akka by exploring [different use cases](https://doc.akka.io/getting-started/samples.html) for inspiration.

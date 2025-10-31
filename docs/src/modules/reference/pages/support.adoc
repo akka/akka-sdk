@@ -1,0 +1,13 @@
+= Support resources
+
+include::ROOT:partial$include.adoc[]
+
+* Post a question in our https://discord.com/channels/1369366774923002047/1392463726782971934[Discord Akka forum]
+* Reach out to our https://akka.io/contact-us[support team]
+* xref:glossary.adoc[]
+* xref:getting-started:samples.adoc[] might show you what you're looking for
+
+== See also
+
+* https://status.akka.io/[Akka platform status]
+* xref:security-announcements/index.adoc[]
