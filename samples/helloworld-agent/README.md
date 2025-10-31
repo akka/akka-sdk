@@ -8,6 +8,17 @@ To understand the Akka concepts that are the basis for this example, see [Develo
 
 This project contains the skeleton to create an Akka service. To understand more about these components, see [Developing services](https://doc.akka.io/sdk/index.html).
 
+---
+
+### Secure Repository Token
+
+To build you need to set up a token in one of two ways:
+
+1. Download the [Akka CLI](https://doc.akka.io/operations/cli/installation.html), run `akka code token` and follow the instructions.
+2. Set up the token manually as described [here](https://account.akka.io/token).
+
+---
+
 Use Maven to build your project:
 
 ```shell

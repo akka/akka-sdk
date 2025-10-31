@@ -71,8 +71,20 @@ Note that the agents selected depend on the user's query and the available agent
 ### Prerequisites
 - Java 21 or higher
 - Maven 3.6 or higher
+- A [Secure Repository Token](https://account.akka.io/token)
 
 ### Build and run
+
+---
+
+### Secure Repository Token
+
+To build you need to set up a token in one of two ways:
+
+1. Download the [Akka CLI](https://doc.akka.io/operations/cli/installation.html), run `akka code token` and follow the instructions.
+2. Set up the token manually as described [here](https://account.akka.io/token).
+
+---
 
 To run the application, you need to provide the following environment variables:
 - `OPENAI_API_KEY`: Your OpenAI API key. If you prefer to use a different LLM model, follow the instructions in `application.conf` to change it.
