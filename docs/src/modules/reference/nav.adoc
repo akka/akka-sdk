@@ -5,6 +5,7 @@
 ** xref:glossary.adoc[Glossary of terms]
 ** xref:security-announcements/index.adoc[Security announcements]
 ** xref:release-notes.adoc[Release notes]
+** xref:support.adoc[Support resources]
 ** xref:migration-guide.adoc[Migration guide]
 ** xref:api-docs.adoc[]
 ** xref:views/index.adoc[View reference]
