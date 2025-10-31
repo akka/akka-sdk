@@ -132,7 +132,12 @@ public class CompactionAgentIntegrationTest extends TestKitSupport {
         .method(SessionMemoryEntity::addInteraction)
         .invoke(
           new SessionMemoryEntity.AddInteractionCmd(
-            new SessionMessage.UserMessage(Instant.now(), userMessages.get(i), "my-agent"),
+            new SessionMessage.UserMessage(
+              Instant.now(),
+              userMessages.get(i),
+              "my-agent",
+              Optional.empty()
+            ),
             new SessionMessage.AiMessage(Instant.now(), aiMessages.get(i), "my-agent")
           )
         );
@@ -141,7 +146,7 @@ public class CompactionAgentIntegrationTest extends TestKitSupport {
     var history = componentClient
       .forEventSourcedEntity(sessionId)
       .method(SessionMemoryEntity::getHistory)
-      .invoke(new SessionMemoryEntity.GetHistoryCmd(Optional.empty()));
+      .invoke(new SessionMemoryEntity.GetHistoryCmd());
 
     var summary = componentClient
       .forAgent()
@@ -158,10 +163,10 @@ public class CompactionAgentIntegrationTest extends TestKitSupport {
     // Akka comprises core components like Entities, Endpoints, Timed Actions,
     // Views, and Workflows for building applications. Event Sourced Entities
     // maintain state through event journals, featuring commands and snapshots
-    // for efficiency. Key Value Entities store only current state without history,
-    // making them simpler for direct state needs. Use Event Sourced Entities to
-    // track change history and Key Value Entities for performance when only current
-    // state matters.,
+    // for efficiency. Key Value Entities store only the current state without history,
+    // simplifying them for direct state needs. Use Event Sourced Entities to
+    // track change history and Key Value Entities for performance when only the current
+    // state matters.
 
     assertThat(summary.userMessage()).isNotEmpty();
     assertThat(summary.aiMessage()).isNotEmpty();

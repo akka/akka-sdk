@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -153,13 +154,19 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     record LimitedWindowSet(Instant timestamp, int maxSizeInBytes) implements Event {}
 
     @TypeName("akka-memory-user-message-added")
-    record UserMessageAdded(Instant timestamp, String componentId, String message, int sizeInBytes)
+    record UserMessageAdded(
+        Instant timestamp,
+        String componentId,
+        Optional<String> agentRole,
+        String message,
+        int sizeInBytes)
         implements Event {}
 
     @TypeName("akka-memory-ai-message-added")
     record AiMessageAdded(
         Instant timestamp,
         String componentId,
+        Optional<String> agentRole,
         String message,
         int sizeInBytes,
         long historySizeInBytes,
@@ -168,7 +175,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
 
       AiMessageAdded withHistorySizeInBytes(long newSize) {
         return new AiMessageAdded(
-            timestamp, componentId, message, sizeInBytes, newSize, toolCallRequests);
+            timestamp, componentId, agentRole, message, sizeInBytes, newSize, toolCallRequests);
       }
     }
 
@@ -176,6 +183,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     record ToolResponseMessageAdded(
         Instant timestamp,
         String componentId,
+        Optional<String> agentRole,
         String id,
         String name,
         String content,
@@ -227,6 +235,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                             new Event.AiMessageAdded(
                                 aiMessage.timestamp(),
                                 aiMessage.componentId(),
+                                aiMessage.agentRole(),
                                 aiMessage.text(),
                                 aiMessage.size(),
                                 0L, // filled in later
@@ -236,6 +245,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                             new Event.ToolResponseMessageAdded(
                                 toolCallResponse.timestamp(),
                                 toolCallResponse.componentId(),
+                                toolCallResponse.agentRole(),
                                 toolCallResponse.id(),
                                 toolCallResponse.name(),
                                 toolCallResponse.text(),
@@ -251,6 +261,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
         new Event.UserMessageAdded(
             cmd.userMessage.timestamp(),
             cmd.userMessage.componentId(),
+            cmd.userMessage.agentRole(),
             cmd.userMessage.text(),
             cmd.userMessage.size());
 
@@ -263,10 +274,50 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     return effects().persistAll(allEventsWithSize).thenReply(__ -> done());
   }
 
-  public record GetHistoryCmd(Optional<Integer> lastNMessages) {}
+  public record GetHistoryCmd(Optional<Integer> lastNMessages, List<MemoryFilter> memoryFilters) {
+
+    public GetHistoryCmd() {
+      this(Optional.empty(), List.of());
+    }
+
+    public GetHistoryCmd(Optional<Integer> lastNMessages) {
+      this(lastNMessages, List.of());
+    }
+
+    public GetHistoryCmd(List<MemoryFilter> memoryFilters) {
+      this(Optional.empty(), memoryFilters);
+    }
+  }
+
+  private List<SessionMessage> applyFilter(List<SessionMessage> messages, MemoryFilter filter) {
+    return switch (filter) {
+      case MemoryFilter.IncludeFromAgentId(Set<String> ids) ->
+          messages.stream().filter(message -> ids.contains(message.componentId())).toList();
+
+      case MemoryFilter.ExcludeFromAgentId(Set<String> ids) ->
+          messages.stream().filter(message -> !ids.contains(message.componentId())).toList();
+
+      case MemoryFilter.IncludeFromAgentRole(Set<String> roles) ->
+          messages.stream()
+              .filter(message -> message.agentRole().filter(roles::contains).isPresent())
+              .toList();
+
+      case MemoryFilter.ExcludeFromAgentRole(Set<String> roles) ->
+          messages.stream()
+              .filter(
+                  message -> message.agentRole().filter(role -> !roles.contains(role)).isPresent())
+              .toList();
+    };
+  }
+
+  private List<SessionMessage> filteredMessages(List<MemoryFilter> memoryFilters) {
+    List<SessionMessage> messages = currentState().messages();
+    return memoryFilters.stream().reduce(messages, this::applyFilter, (acc, filter) -> acc);
+  }
 
   public ReadOnlyEffect<SessionHistory> getHistory(GetHistoryCmd cmd) {
-    List<SessionMessage> messages = currentState().messages();
+    List<SessionMessage> messages = filteredMessages(cmd.memoryFilters);
+
     if (cmd.lastNMessages != null
         && cmd.lastNMessages.isPresent()
         && messages.size() > cmd.lastNMessages.get()) {
@@ -295,12 +346,14 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
         new Event.UserMessageAdded(
             cmd.userMessage.timestamp(),
             componentId,
+            cmd.userMessage.agentRole(),
             cmd.userMessage.text(),
             cmd.userMessage.size()));
     events.add(
         new Event.AiMessageAdded(
             cmd.aiMessage.timestamp(),
             componentId,
+            cmd.aiMessage.agentRole(),
             cmd.aiMessage.text(),
             cmd.aiMessage.size(),
             0L, // filled in later
@@ -320,6 +373,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                         new Event.UserMessageAdded(
                             userMessage.timestamp(),
                             userMessage.componentId(),
+                            userMessage.agentRole(),
                             userMessage.text(),
                             userMessage.size()));
                   }
@@ -329,6 +383,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                         new Event.ToolResponseMessageAdded(
                             toolCallResponse.timestamp(),
                             toolCallResponse.componentId(),
+                            toolCallResponse.agentRole(),
                             toolCallResponse.id(),
                             toolCallResponse.name(),
                             toolCallResponse.text(),
@@ -340,6 +395,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                         new Event.AiMessageAdded(
                             aiMessage.timestamp(),
                             aiMessage.componentId(),
+                            aiMessage.agentRole(),
                             aiMessage.text(),
                             aiMessage.size(),
                             0L, // filled in later
@@ -403,13 +459,21 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
       case Event.UserMessageAdded userMsg ->
           currentState()
               .addMessage(
-                  new UserMessage(userMsg.timestamp(), userMsg.message(), userMsg.componentId));
+                  new UserMessage(
+                      userMsg.timestamp(),
+                      userMsg.message(),
+                      userMsg.componentId,
+                      userMsg.agentRole()));
 
       case Event.AiMessageAdded aiMsg ->
           currentState()
               .addMessage(
                   new AiMessage(
-                      aiMsg.timestamp, aiMsg.message, aiMsg.componentId, aiMsg.toolCallRequests));
+                      aiMsg.timestamp,
+                      aiMsg.message,
+                      aiMsg.componentId,
+                      aiMsg.agentRole,
+                      aiMsg.toolCallRequests));
 
       case Event.ToolResponseMessageAdded toolMsg ->
           currentState()
@@ -417,6 +481,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                   new ToolCallResponse(
                       toolMsg.timestamp(),
                       toolMsg.componentId,
+                      toolMsg.agentRole,
                       toolMsg.id(),
                       toolMsg.name,
                       toolMsg.content()));

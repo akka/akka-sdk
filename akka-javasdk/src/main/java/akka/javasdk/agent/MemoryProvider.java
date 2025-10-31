@@ -4,7 +4,10 @@
 
 package akka.javasdk.agent;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * Interface for configuring memory management in agent systems.
@@ -22,7 +25,7 @@ public sealed interface MemoryProvider {
   /**
    * Creates a configuration-based memory provider based on configuration defaults.
    *
-   * @return A configuration-based model provider
+   * @return A configuration-based memory provider
    */
   static MemoryProvider fromConfig() {
     return fromConfig("");
@@ -33,7 +36,7 @@ public sealed interface MemoryProvider {
    *
    * @param configPath Path to the configuration. If empty, uses the default path
    *     "akka.javasdk.agent.memory"
-   * @return A configuration-based model provider
+   * @return A configuration-based memory provider
    */
   static MemoryProvider fromConfig(String configPath) {
     return new MemoryProvider.FromConfig(configPath);
@@ -67,7 +70,7 @@ public sealed interface MemoryProvider {
    * @return A new limited window memory provider with default settings
    */
   static LimitedWindowMemoryProvider limitedWindow() {
-    return new LimitedWindowMemoryProvider(Optional.empty(), true, true);
+    return new LimitedWindowMemoryProvider(Optional.empty(), true, true, List.of());
   }
 
   /**
@@ -79,9 +82,11 @@ public sealed interface MemoryProvider {
    *   <li>Use only last N messages from the history
    *   <li>Whether reading from memory is enabled
    *   <li>Whether writing to memory is enabled
+   *   <li>Applies memory filters {@link MemoryFilter}
    * </ul>
    */
-  record LimitedWindowMemoryProvider(Optional<Integer> readLastN, boolean read, boolean write)
+  record LimitedWindowMemoryProvider(
+      Optional<Integer> readLastN, boolean read, boolean write, List<MemoryFilter> filters)
       implements MemoryProvider {
 
     /**
@@ -92,7 +97,23 @@ public sealed interface MemoryProvider {
      * @return A new memory provider with writing disabled
      */
     public MemoryProvider readOnly() {
-      return new LimitedWindowMemoryProvider(readLastN, true, false);
+      return new LimitedWindowMemoryProvider(readLastN, true, false, List.of());
+    }
+
+    /**
+     * Creates a read-only version of this memory provider.
+     *
+     * <p>The returned provider will allow reading from memory but disable writing.
+     *
+     * @return A new memory provider with writing disabled
+     */
+    public MemoryProvider readOnly(MemoryFilter filter) {
+      return new LimitedWindowMemoryProvider(readLastN, true, false, List.of(filter));
+    }
+
+    public MemoryProvider readOnly(MemoryFilter filter, MemoryFilter... filters) {
+      var allFilters = Stream.concat(Stream.of(filter), Arrays.stream(filters)).toList();
+      return new LimitedWindowMemoryProvider(readLastN, true, false, allFilters);
     }
 
     /**
@@ -103,7 +124,7 @@ public sealed interface MemoryProvider {
      * @return A new memory provider with reading disabled
      */
     public MemoryProvider writeOnly() {
-      return new LimitedWindowMemoryProvider(readLastN, false, true);
+      return new LimitedWindowMemoryProvider(readLastN, false, true, List.of());
     }
 
     /**
@@ -116,7 +137,25 @@ public sealed interface MemoryProvider {
      * @return A new memory provider with the specified history limit
      */
     public MemoryProvider readLast(int onlyLastN) {
-      return new LimitedWindowMemoryProvider(Optional.of(onlyLastN), read, write);
+      return new LimitedWindowMemoryProvider(Optional.of(onlyLastN), read, write, List.of());
+    }
+
+    public MemoryProvider readLast(int onlyLastN, MemoryFilter filter) {
+      return new LimitedWindowMemoryProvider(Optional.of(onlyLastN), read, write, List.of(filter));
+    }
+
+    public MemoryProvider readLast(int onlyLastN, MemoryFilter filter, MemoryFilter... filters) {
+      var allFilters = Stream.concat(Stream.of(filter), Arrays.stream(filters)).toList();
+      return new LimitedWindowMemoryProvider(Optional.of(onlyLastN), read, write, allFilters);
+    }
+
+    public MemoryProvider filtered(MemoryFilter filter) {
+      return new LimitedWindowMemoryProvider(Optional.empty(), read, write, List.of(filter));
+    }
+
+    public MemoryProvider filtered(MemoryFilter filter, MemoryFilter... filters) {
+      var allFilters = Stream.concat(Stream.of(filter), Arrays.stream(filters)).toList();
+      return new LimitedWindowMemoryProvider(Optional.empty(), read, write, allFilters);
     }
   }
 
