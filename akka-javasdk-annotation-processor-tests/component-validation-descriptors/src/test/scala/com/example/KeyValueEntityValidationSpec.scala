@@ -49,5 +49,17 @@ class KeyValueEntityValidationSpec extends AnyWordSpec with Matchers with Compil
         result,
         "KeyValueEntityOverloaded has 2 command handler methods named 'createEntity'. Command handlers must have unique names.")
     }
+
+    "accept KeyValueEntity with @FunctionTool on Effect and ReadOnlyEffect" in {
+      val result = compileTestSource("valid/ValidKeyValueEntityWithFunctionTool.java")
+      assertCompilationSuccess(result)
+    }
+
+    "reject KeyValueEntity with @FunctionTool on non-Effect methods" in {
+      val result = compileTestSource("invalid/KeyValueEntityWithFunctionToolOnInvalidMethod.java")
+      assertCompilationFailure(
+        result,
+        "KeyValueEntity methods annotated with @FunctionTool must return Effect or ReadOnlyEffect")
+    }
   }
 }

@@ -45,7 +45,8 @@ public class ViewValidations {
             .combine(validateQueryResultTypes(element))
             .combine(viewQueriesWithStreamUpdatesMustBeStreaming(element))
             .combine(viewQueryMethodArityShouldBeZeroOrOne(element))
-            .combine(viewMultipleTableUpdatersMustHaveTableAnnotations(element));
+            .combine(viewMultipleTableUpdatersMustHaveTableAnnotations(element))
+            .combine(functionToolOnlyOnQueryEffect(element));
 
     // Validate each TableUpdater
     for (TypeElement updater : tableUpdaters) {
@@ -781,5 +782,37 @@ public class ViewValidations {
     }
 
     return Validation.Valid.instance();
+  }
+
+  /**
+   * Validates that @FunctionTool is only used on methods returning QueryEffect, not
+   * QueryStreamEffect.
+   *
+   * @param element the View class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation functionToolOnlyOnQueryEffect(TypeElement element) {
+    List<String> errors = new ArrayList<>();
+
+    for (Element enclosed : element.getEnclosedElements()) {
+      if (enclosed instanceof ExecutableElement method) {
+        if (Validations.findAnnotation(method, "akka.javasdk.annotations.FunctionTool") != null) {
+          String returnTypeName = method.getReturnType().toString();
+
+          // Check if it's a QueryStreamEffect (not allowed)
+          if (returnTypeName.equals("akka.javasdk.view.View.QueryStreamEffect")
+              || returnTypeName.startsWith("akka.javasdk.view.View.QueryStreamEffect<")) {
+            errors.add(
+                Validations.errorMessage(
+                    method,
+                    "View methods annotated with @FunctionTool cannot return QueryStreamEffect."
+                        + " Only methods returning QueryEffect can be annotated with"
+                        + " @FunctionTool."));
+          }
+        }
+      }
+    }
+
+    return Validation.of(errors);
   }
 }

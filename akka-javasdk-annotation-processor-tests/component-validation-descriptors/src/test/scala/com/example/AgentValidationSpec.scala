@@ -31,6 +31,11 @@ class AgentValidationSpec extends AnyWordSpec with CompilationTestSupport {
       assertCompilationSuccess(result)
     }
 
+    "accept valid Agent with @FunctionTool on non-command handler methods" in {
+      val result = compileTestSource("valid/ValidAgentWithFunctionTool.java")
+      assertCompilationSuccess(result)
+    }
+
     // Command handler validations
     "reject Agent without Effect method" in {
       val result = compileTestSource("invalid/AgentWithoutEffectMethod.java")
@@ -61,6 +66,11 @@ class AgentValidationSpec extends AnyWordSpec with CompilationTestSupport {
         result,
         "Method [query] must have zero or one argument",
         "If you need to pass more arguments, wrap them in a class")
+    }
+
+    "reject Agent with @FunctionTool on command handler" in {
+      val result = compileTestSource("invalid/AgentWithFunctionToolOnCommandHandler.java")
+      assertCompilationFailure(result, "Agent command handler methods cannot be annotated with @FunctionTool.")
     }
 
     "reject Agent with both @AgentDescription and @Component name/description" in {

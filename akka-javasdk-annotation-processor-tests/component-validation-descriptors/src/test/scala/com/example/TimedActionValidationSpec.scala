@@ -24,6 +24,11 @@ class TimedActionValidationSpec extends AnyWordSpec with CompilationTestSupport 
       assertCompilationFailure(result, "Method [invalidMethod] must have zero or one argument", "wrap them in a class")
     }
 
+    "reject TimedAction with @FunctionTool annotation" in {
+      val result = compileTestSource("invalid/TimedActionWithFunctionTool.java")
+      assertCompilationFailure(result, "TimedAction methods cannot be annotated with @FunctionTool")
+    }
+
     "return Valid for TimedAction with 0-arity method returning TimedAction.Effect" in {
       val result = compileTestSource("valid/ValidTimedActionNoArg.java")
       assertCompilationSuccess(result)

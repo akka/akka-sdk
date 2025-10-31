@@ -27,9 +27,11 @@ public class KeyValueEntityValidations {
     }
 
     String effectType = "akka.javasdk.keyvalueentity.KeyValueEntity.Effect";
+    String readOnlyEffectType = "akka.javasdk.keyvalueentity.KeyValueEntity.ReadOnlyEffect";
     return keyValueEntityCommandHandlersMustBeUnique(element)
         .combine(Validations.hasEffectMethod(element, effectType))
-        .combine(Validations.commandHandlerArityShouldBeZeroOrOne(element, effectType));
+        .combine(Validations.commandHandlerArityShouldBeZeroOrOne(element, effectType))
+        .combine(functionToolOnlyOnValidEffectTypes(element, effectType, readOnlyEffectType));
   }
 
   /**
@@ -69,6 +71,44 @@ public class KeyValueEntityValidations {
                     + " command handler methods named '"
                     + methodName
                     + "'. Command handlers must have unique names."));
+      }
+    }
+
+    return Validation.of(errors);
+  }
+
+  /**
+   * Validates that @FunctionTool is only used on methods returning Effect or ReadOnlyEffect.
+   *
+   * @param element the KeyValueEntity class to validate
+   * @param effectType the Effect type name
+   * @param readOnlyEffectType the ReadOnlyEffect type name
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation functionToolOnlyOnValidEffectTypes(
+      TypeElement element, String effectType, String readOnlyEffectType) {
+    List<String> errors = new ArrayList<>();
+
+    for (Element enclosed : element.getEnclosedElements()) {
+      if (enclosed instanceof ExecutableElement method) {
+        if (Validations.findAnnotation(method, "akka.javasdk.annotations.FunctionTool") != null) {
+          String returnTypeName = method.getReturnType().toString();
+
+          // Check if the return type is Effect or ReadOnlyEffect
+          boolean isValidEffectType =
+              returnTypeName.equals(effectType)
+                  || returnTypeName.startsWith(effectType + "<")
+                  || returnTypeName.equals(readOnlyEffectType)
+                  || returnTypeName.startsWith(readOnlyEffectType + "<");
+
+          if (!isValidEffectType) {
+            errors.add(
+                Validations.errorMessage(
+                    method,
+                    "KeyValueEntity methods annotated with @FunctionTool must return Effect or"
+                        + " ReadOnlyEffect."));
+          }
+        }
       }
     }
 

@@ -184,5 +184,15 @@ class ViewValidationSpec extends AnyWordSpec with Matchers with CompilationTestS
         "If your intention is to transform the type, you should add a method like",
         "Effect<")
     }
+
+    "accept View with @FunctionTool on QueryEffect" in {
+      val result = compileTestSource("valid/ValidViewWithFunctionTool.java")
+      assertCompilationSuccess(result)
+    }
+
+    "reject View with @FunctionTool on QueryStreamEffect" in {
+      val result = compileTestSource("invalid/ViewWithFunctionToolOnQueryStreamEffect.java")
+      assertCompilationFailure(result, "View methods annotated with @FunctionTool cannot return QueryStreamEffect.")
+    }
   }
 }

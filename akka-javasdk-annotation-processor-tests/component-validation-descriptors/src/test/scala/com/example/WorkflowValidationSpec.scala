@@ -57,5 +57,18 @@ class WorkflowValidationSpec extends AnyWordSpec with Matchers with CompilationT
         result,
         "NotPublicWorkflow is not marked with `public` modifier. Components must be public.")
     }
+
+    "accept Workflow with @FunctionTool on Effect and ReadOnlyEffect" in {
+      val result = compileTestSource("valid/ValidWorkflowWithFunctionTool.java")
+      assertCompilationSuccess(result)
+    }
+
+    "reject Workflow with @FunctionTool on StepEffect" in {
+      val result = compileTestSource("invalid/WorkflowWithFunctionToolOnStepEffect.java")
+      assertCompilationFailure(
+        result,
+        "Workflow methods annotated with @FunctionTool cannot return StepEffect.",
+        "Only methods returning Effect or ReadOnlyEffect can be annotated with @FunctionTool.")
+    }
   }
 }
