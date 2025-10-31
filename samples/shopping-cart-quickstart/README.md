@@ -114,6 +114,5 @@ for more information.
 
 Now that you've built and deployed a shopping cart service, take your Akka skills to the next level:
 
-- **Expand the service**: Explore [other Akka components](https://doc.akka.io/concepts/architecture-model.html#_akka_components) to enhance your application with additional features.
-- **Explore other Akka samples**: Discover more about Akka by exploring [different use cases](https://doc.akka.io/sdk/samples.html) for inspiration.
-- **Join the community**: Visit the [Support page](https://doc.akka.io/support/index.html) to find resources where you can connect with other Akka developers and expand your knowledge.
+- **Expand the service**: Explore [other Akka components](https://doc.akka.io/concepts/architecture-model.html) to enhance your application with additional features.
+- **Explore other Akka samples**: Discover more about Akka by exploring [different use cases](https://doc.akka.io/getting-started/samples.html) for inspiration.

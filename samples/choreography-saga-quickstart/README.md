@@ -154,4 +154,4 @@ Congratulations, you've learned how to implement a Choreography Saga in Akka for
 
 1. **Extend the Saga**: Add additional steps, such as sending a confirmation email to the user after successful registration.
 2. **Explore Akka's Workflow component**: Workflows offer an alternative, orchestrator-based approach to implementing Sagas.
-3. **Join the community**: Visit the [Support page](https://doc.akka.io/support/index.html) to find resources where you can connect with other Akka developers and expand your knowledge.
+3. **Explore other Akka samples**: Discover more about Akka by exploring [different use cases](https://doc.akka.io/getting-started/samples.html) for inspiration.
