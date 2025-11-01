@@ -1,0 +1,38 @@
+/*
+ * Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
+ */
+
+package com.example;
+
+import akka.javasdk.annotations.Acl;
+import akka.javasdk.annotations.Component;
+import akka.javasdk.annotations.Consume;
+import akka.javasdk.annotations.Query;
+import akka.javasdk.view.TableUpdater;
+import akka.javasdk.view.View;
+
+@Component(id = "view-with-subscription-method-acl")
+public class ViewWithSubscriptionMethodAcl extends View {
+
+  @Query("SELECT * FROM users")
+  public QueryEffect<UserRow> getUsers() {
+    return null;
+  }
+
+  public static class UserRow {
+    public String name;
+    public String email;
+  }
+
+  @Consume.FromTopic("users-topic")
+  public static class Users extends TableUpdater<UserRow> {
+    @Acl(allow = @Acl.Matcher(service = "test"))
+    public Effect<UserRow> onEvent(UserEvent event) {
+      return effects().updateRow(new UserRow());
+    }
+  }
+
+  public static class UserEvent {
+    public String name;
+  }
+}

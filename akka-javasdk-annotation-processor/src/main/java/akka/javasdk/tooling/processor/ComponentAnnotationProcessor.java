@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
@@ -28,7 +27,6 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.util.ElementFilter;
-import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 
@@ -43,7 +41,7 @@ import javax.tools.StandardLocation;
   "akka.javasdk.annotations.Setup"
 })
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
-public class ComponentAnnotationProcessor extends AbstractProcessor {
+public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
 
   private static final String COMPONENT_DESCRIPTOR_FILE_PATH =
       "META-INF/akka-javasdk-components.conf";
@@ -81,13 +79,7 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
           AGENT_KEY,
           SERVICE_SETUP_KEY);
 
-  private final boolean debugEnabled;
   private boolean alreadyRan = false;
-
-  public ComponentAnnotationProcessor() {
-    // can be passed to compiler: `mvn compile -Dakka-component-processor.debug=true`
-    debugEnabled = Boolean.getBoolean("akka-component-processor.debug");
-  }
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -296,22 +288,5 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
       writer.write(configAsString);
       writer.flush();
     }
-  }
-
-  private void debug(Object msg) {
-    if (debugEnabled)
-      processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, msg.toString());
-  }
-
-  private void info(Object msg) {
-    processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, msg.toString());
-  }
-
-  private void warning(Object msg) {
-    processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, msg.toString());
-  }
-
-  private void error(Object msg) {
-    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg.toString());
   }
 }
