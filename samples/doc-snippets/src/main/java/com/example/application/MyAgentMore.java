@@ -1,6 +1,7 @@
 package com.example.application;
 
 import akka.javasdk.agent.Agent;
+import akka.javasdk.agent.MemoryFilter;
 import akka.javasdk.agent.MemoryProvider;
 import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.annotations.Component;
@@ -52,5 +53,56 @@ public interface MyAgentMore {
         .thenReply();
     }
     // end::read-last[]
+  }
+
+  @Component(id = "my-agent-filter")
+  public class MyAgentWithFilter extends Agent {
+
+    // tag::filter-include[]
+    public Effect<String> ask(String question) {
+      return effects()
+        .memory(
+          MemoryProvider.limitedWindow()
+            .filtered(MemoryFilter.includeFromAgentId("summarizer-agent")) // <1>
+        )
+        .systemMessage("You are a helpful...")
+        .userMessage(question)
+        .thenReply();
+    }
+    // end::filter-include[]
+  }
+
+  @Component(id = "my-agent-filter-exclude")
+  public class MyAgentWithFilterExclude extends Agent {
+
+    // tag::filter-exclude[]
+    public Effect<String> ask(String question) {
+      return effects()
+        .memory(
+          MemoryProvider.limitedWindow()
+            .filtered(MemoryFilter.excludeFromAgentRole("internal")) // <1>
+        )
+        .systemMessage("You are a helpful...")
+        .userMessage(question)
+        .thenReply();
+    }
+    // end::filter-exclude[]
+  }
+
+  @Component(id = "my-agent-filter-readlast")
+  public class MyAgentWithFilterAndReadLast extends Agent {
+
+    // tag::filter-readlast[]
+    public Effect<String> ask(String question) {
+      return effects()
+        .memory(
+          MemoryProvider.limitedWindow()
+            .readLast(10, MemoryFilter.excludeFromAgentId("debug-agent")) // <1>
+        )
+        .systemMessage("You are a helpful...")
+        .userMessage(question)
+        .thenReply();
+    }
+    // end::filter-readlast[]
   }
 }

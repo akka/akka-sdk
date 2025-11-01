@@ -51,7 +51,57 @@ The link:_attachments/api/akka/javasdk/agent/MemoryProvider.html[`MemoryProvider
   ** Setup **read only** memory, in which the agent reads the memory but does not allow write any interactions to it. This is ideal for multi-agent sessions where some agents can store memory and others can't.
   ** Setup **write only** memory, in which the agent register the interactions to the session memory but does not take those in consideration when processing the user message.
   ** Limit the amount of messages used as context in each interaction, i.e. use only the last N number of messages for context (good for token usage control).
+  ** Apply **filters** to selectively include or exclude messages based on agent component ID or role.
 * `MemoryProvider.custom()` - Allows you to provide a custom implementation for the `SessionMemory` interface and store the session memory externally in a database / service of your preference.
+
+=== Filtering memory
+
+In multi-agent scenarios, you may want to control which messages from the session history are visible to specific agents. The link:_attachments/api/akka/javasdk/agent/MemoryFilter.html[`MemoryFilter`] API allows you to filter messages based on the agent component ID or role that produced them.
+
+==== Filter by agent component ID
+
+You can include only messages from specific agents:
+
+[source,java,indent=0]
+----
+include::example$doc-snippets/src/main/java/com/example/application/MyAgentMore.java[tag=filter-include]
+----
+<1> Only messages from the "summarizer-agent" will be included in the context.
+
+Or exclude messages from specific agents:
+
+[source,java,indent=0]
+----
+include::example$doc-snippets/src/main/java/com/example/application/MyAgentMore.java[tag=filter-exclude]
+----
+<1> Messages from agents with the "internal" role will be excluded from the context.
+
+==== Combining filters with other options
+
+Filters can be combined with other memory provider options, such as limiting the number of messages:
+
+[source,java,indent=0]
+----
+include::example$doc-snippets/src/main/java/com/example/application/MyAgentMore.java[tag=filter-readlast]
+----
+<1> Read the last 10 messages, excluding those from the "debug-agent".
+
+When combining filters with `readLast()`, the filter is applied first to select matching messages, and then the limit is enforced on the filtered results.
+
+==== Available filter types
+
+The `MemoryFilter` interface provides several static factory methods:
+
+* `MemoryFilter.includeFromAgentId(String id)` - Include only messages from the specified agent component ID
+* `MemoryFilter.includeFromAgentId(Set<String> ids)` - Include only messages from multiple agent component IDs
+* `MemoryFilter.excludeFromAgentId(String id)` - Exclude messages from the specified agent component ID
+* `MemoryFilter.excludeFromAgentId(Set<String> ids)` - Exclude messages from multiple agent component IDs
+* `MemoryFilter.includeFromAgentRole(String role)` - Include only messages from agents with the specified role
+* `MemoryFilter.includeFromAgentRole(Set<String> roles)` - Include only messages from agents with multiple roles
+* `MemoryFilter.excludeFromAgentRole(String role)` - Exclude messages from agents with the specified role
+* `MemoryFilter.excludeFromAgentRole(Set<String> roles)` - Exclude messages from agents with multiple roles
+
+Multiple filters can be applied simultaneously by passing them as varargs to methods like `filtered()`, `readOnly()`, or `readLast()`.
 
 == Accessing session memory
 
