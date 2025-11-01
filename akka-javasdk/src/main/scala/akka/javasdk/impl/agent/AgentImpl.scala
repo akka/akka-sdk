@@ -12,6 +12,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.jdk.CollectionConverters._
 import scala.jdk.DurationConverters.JavaDurationOps
+import scala.jdk.OptionConverters.RichOption
 import scala.util.control.NonFatal
 
 import akka.annotation.InternalApi
@@ -264,6 +265,7 @@ private[impl] final class AgentImpl[A <: Agent](
 
             val userMessageAt = Instant.now()
 
+            val agentRole = Reflect.readAgentRole(agent.getClass)
             new SpiAgent.RequestModelEffect(
               modelProvider = spiModelProvider,
               systemMessage = systemMessage,
@@ -277,7 +279,7 @@ private[impl] final class AgentImpl[A <: Agent](
               responseMapping = req.responseMapping,
               failureMapping = req.failureMapping.map(mapSpiAgentException),
               replyMetadata = metadata,
-              onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, userMessageAt, results),
+              onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, userMessageAt, agentRole, results),
               requestGuardrails = guardrails.modelRequestGuardrails,
               responseGuardrails = guardrails.modelResponseGuardrails)
 
@@ -355,7 +357,7 @@ private[impl] final class AgentImpl[A <: Agent](
       case p: MemoryProvider.LimitedWindowMemoryProvider =>
         new SessionMemoryClient(
           componentClient(telemetryContext),
-          new MemorySettings(p.read(), p.write(), p.readLastN()))
+          new MemorySettings(p.read(), p.write(), p.readLastN(), p.filters()))
 
       case p: MemoryProvider.CustomMemoryProvider =>
         p.sessionMemory()
@@ -374,6 +376,7 @@ private[impl] final class AgentImpl[A <: Agent](
       sessionMemoryClient: SessionMemory,
       userMessage: String,
       userMessageAt: Instant,
+      agentRole: Option[String],
       responses: Seq[SpiAgent.Response]): Unit = {
 
     // AiMessages and ToolCallResponses
@@ -383,15 +386,15 @@ private[impl] final class AgentImpl[A <: Agent](
           val requests = res.toolRequests.map { req =>
             new ToolCallRequest(req.id, req.name, req.arguments)
           }.asJava
-          new AiMessage(res.timestamp, res.content, componentId, requests)
+          new AiMessage(res.timestamp, res.content, componentId, agentRole.toJava, requests)
 
         case res: SpiAgent.ToolCallResponse =>
-          new ToolCallResponse(res.timestamp, componentId, res.id, res.name, res.content)
+          new ToolCallResponse(res.timestamp, componentId, agentRole.toJava, res.id, res.name, res.content)
       }
 
     sessionMemoryClient.addInteraction(
       sessionId,
-      new UserMessage(userMessageAt, userMessage, componentId),
+      new UserMessage(userMessageAt, userMessage, componentId, agentRole.toJava),
       responseMessages.asJava)
   }
 
