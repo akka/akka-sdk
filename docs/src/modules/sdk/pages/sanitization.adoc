@@ -34,7 +34,7 @@ Before being written in logs or passed to agent models.
 
 Sanitization can also be programmatically applied to text in any component where it makes sense for a specific
 business case, for example before sending some text to a third party API or before writing a text in the state
-of an entity. This is done by injecting a `akka.javasdk.Sanitizer` in the component constructor and
+of an entity. This is done by xref:setup-and-dependency-injection.adoc[injecting] a `akka.javasdk.Sanitizer` in the component constructor and
 then using `akka.javasdk.Sanitizer#sanitize` on the text.
 
 [source,java,indent=0]
