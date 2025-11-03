@@ -27,7 +27,7 @@ Our workflow should first retrieve the weather forecast and then find suitable a
 [source,java,indent=0]
 .AgentTeamWorkflow.java
 ----
-include::java:example$doc-snippets/src/main/java/agent_guide/part4/AgentTeamWorkflow.java[tag=all]
+include::sdk:example$doc-snippets/src/main/java/agent_guide/part4/AgentTeamWorkflow.java[tag=all]
 ----
 <1> The workflow starts, and keeps track of the user id and original query in the state of the workflow.
 <2> First step is for the weather forecast.
@@ -45,7 +45,7 @@ Let's modify the endpoint to use the `AgentTeamWorkflow` workflow instead of cal
 [source,java,indent=0]
 .ActivityEndpoint.java
 ----
-include::java:example$doc-snippets/src/main/java/agent_guide/part4/ActivityEndpoint.java[tag=workflow]
+include::sdk:example$doc-snippets/src/main/java/agent_guide/part4/ActivityEndpoint.java[tag=workflow]
 ----
 <1> Spawn the workflow by calling the `start` method.
 <2> Since the workflow is running in the background we can't wait for the final answer, but instead reply with a HTTP `CREATED` status code.
@@ -57,7 +57,7 @@ We need another method to retrieve the actual answer:
 [source,java,indent=0]
 .ActivityEndpoint.java
 ----
-include::java:example$doc-snippets/src/main/java/agent_guide/part4/ActivityEndpoint.java[tag=get]
+include::sdk:example$doc-snippets/src/main/java/agent_guide/part4/ActivityEndpoint.java[tag=get]
 ----
 
 == Running the service
@@ -90,5 +90,5 @@ Does it take the current weather forecast into account? You should see the `Weat
 == Next steps
 
 * It would be nice to see all previous suggestions for a user. Continue with xref:planner-agent/list.adoc[]
-* Learn more about the xref:java:workflows.adoc[`Workflow` component].
+* Learn more about the xref:sdk:workflows.adoc[`Workflow` component].
 

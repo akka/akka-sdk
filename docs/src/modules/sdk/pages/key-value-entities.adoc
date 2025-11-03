@@ -1,0 +1,173 @@
+= Implementing key value entities
+
+include::ROOT:partial$include.adoc[]
+
+image:ROOT:key-value-entity.png[Key value entity,width=100,float=left] xref:reference:glossary.adoc#key_value_entity[Key Value Entities] are entities that persist the full state on every change. Only the latest state is stored, so we don’t have access to any of the history of changes, unlike the event sourced storage used by xref:sdk:event-sourced-entities.adoc[Event Sourced Entities].
+
+// break the paragraph to avoid floating "Important" on the image above.
+++++
+<br style="clear:both">
+++++
+
+include::partial$entity-sharding.adoc[]
+
+Akka needs to serialize that data to send it to the underlying data store. However, we recommend that you do not persist your service's public API messages. Persisting private API messages may introduce some overhead when converting from a public message to an internal one but it allows the logic of the service public interface to evolve independently of the data storage format, which should be private.
+
+The steps necessary to implement a Key Value Entity include:
+
+. Defining the API and model the entity's state.
+. Creating and initializing the Entity.
+. Implementing behavior in command handlers.
+
+The following sections walk through these steps using a counter service as an example.
+
+== Modeling the entity
+
+As mentioned above, to help us illustrate a Key Value Entity, you will be implementing a Counter service. For such service, you will want to be able to set the initial counter value but also to increase the counter modifying its state. The state will be a simple `Integer` but you will use a wrapper class `Counter` as the domain model, as shown below:
+
+[source,java,indent=0]
+.{sample-base-url}/key-value-counter/src/main/java/com/example/domain/Counter.java[Counter.java]
+----
+include::example$key-value-counter/src/main/java/com/example/domain/Counter.java[tag=domain]
+----
+
+NOTE: Above we are taking advantage of the Java `record` to reduce the amount of boilerplate code, but you can use regular classes so long as they can be serialized to JSON (e.g. using Jackson annotations). See xref:serialization.adoc[Serialization].
+
+include::partial$entity-ids.adoc[]
+
+[#_effect_api]
+== Key value entity's effect API
+
+The Key Value Entity's Effect defines the operations that Akka should perform when an incoming command is handled by a Key Value Entity.
+
+A Key Value Entity Effect can either:
+
+* update the entity state and send a reply to the caller
+* directly reply to the caller if the command is not requesting any state change
+* instruct Akka to delete the entity
+* return an error message
+
+For additional details, refer to xref:concepts:declarative-effects.adoc[Declarative Effects].
+
+[#entity-behavior]
+== Implementing behavior
+
+Now that we have our Entity state defined, the remaining steps can be summarized as follows:
+
+- Declare your entity and pick an entity id (it needs to be a unique identifier).
+- Initialize your entity state
+- Implement how each command is handled.
+
+The class signature for our counter entity will look like this:
+
+[source,java,indent=0]
+.{sample-base-url}/key-value-counter/src/main/java/com/example/application/CounterEntity.java[CounterEntity.java]
+----
+include::example$key-value-counter/src/main/java/com/example/application/CounterEntity.java[tags=declarations]
+----
+<1> Every Entity must be annotated with `@Component` with a stable unique identifier for this entity type.
+<2> The `CounterEntity` class should extend `akka.javasdk.keyvalueentity.KeyValueEntity`.
+<3> Stores the `entityId` on an internal attribute so we can use it later. Alternatively, if inside a command handler, `commandContext().entityId()` also provides such information.
+<4> The initial state of each counter is defined with value 0.
+
+NOTE: The `@Component` value `counter` is common for all instances of this entity but must be stable - cannot be changed after a production deploy - and unique across the different entity types in the service.
+
+=== Updating state
+
+We will now show how to add the command handlers for supporting the two desired operations (`set` and `plusOne`). Command handlers are implemented as methods on the entity class but are also exposed for external interactions and always return an `Effect` of some type.
+
+.src/main/java/com/example/application/CounterEntity.java
+[source,java,indent=0]
+.{sample-base-url}/key-value-counter/src/main/java/com/example/application/CounterEntity.java[CounterEntity.java]
+----
+include::example$key-value-counter/src/main/java/com/example/application/CounterEntity.java[tags=behaviour]
+----
+<1> Set the new counter value to the value received from the command request.
+<2> Reply with the new counter value wrapped within a `Counter` object.
+<3> `plusOne` increases the counter by adding 1 to the current state.
+<4> Finally, using the Effect API, you instruct Akka to persist the new state, and build a reply with the wrapper object.
+
+IMPORTANT: The **only** way for a command handler to modify the Entity's state is using the `updateState` effect. Any modifications made directly to the state (or instance variables) from the command handler are not persisted. When the Entity is passivated and reloaded, those modifications will not be present.
+
+=== Retrieving state
+
+To have access to the current state of the entity we can use `currentState()` as you have probably noticed from the examples above. The following example shows the implementation of the read-only command handler `get` to retrieve the value for a specific counter:
+
+[source,java,indent=0]
+.{sample-base-url}/key-value-counter/src/main/java/com/example/application/CounterEntity.java[CounterEntity.java]
+----
+include::example$key-value-counter/src/main/java/com/example/application/CounterEntity.java[tags=query]
+----
+<1> Reply with the current state.
+
+What if this is the first command we are receiving for this entity? The initial state is provided by overriding `emptyState()`. That is optional and if not doing it, be careful to deal with a `currentState()` with a `null` value when receiving the first command.
+
+IMPORTANT: We are returning the internal state directly back to the requester. In the endpoint, it's usually best to convert this internal domain model into a public model so the internal representation is free to evolve without breaking clients code.
+
+[#deleting-state]
+=== Deleting state
+
+The next example shows how to delete a Key Value Entity state by returning special `deleteEntity()` effect.
+
+[source,java,indent=0]
+.{sample-base-url}/key-value-counter/src/main/java/com/example/application/CounterEntity.java[CounterEntity.java]
+----
+include::example$key-value-counter/src/main/java/com/example/application/CounterEntity.java[tags=delete]
+----
+<1> We delete the state by returning an `Effect` with `effects().deleteEntity()`.
+
+When you give the instruction to delete the entity it will still exist with an empty state for some time. The actual removal happens later to give downstream consumers time to process the change. By default, the existence of the entity is completely cleaned up after a week.
+
+It is not allowed to make further changes after the entity has been "marked" as deleted. You can still handle read requests to the entity until it has been completely removed, but the current state will be empty. To check whether the entity has been deleted, you can use the `isDeleted` method inherited from the `KeyValueEntity` class.
+
+NOTE: If you don't want to permanently delete an entity, you can instead use the `updateState` effect with an empty state. This will work the same as resetting the entity to its initial state.
+
+It is best to not reuse the same entity id after deletion, but if that happens after the entity has been completely removed it will be instantiated as a completely new entity without any knowledge of previous state.
+
+Note that xref:views.adoc#ve_delete[deleting View state] must be handled explicitly.
+
+[#_replication]
+include::partial$mutli-region-replication.adoc[]
+
+== Side effects
+
+An entity doesn't perform any external side effects aside from persisting state changes and replying to the request. Side effects can be handled from the Workflow, Consumer, or Endpoint components that are calling the entity.
+
+== Testing the entity
+
+include::partial$testing-entity.adoc[]
+
+=== Unit tests
+
+The following snippet shows how the `KeyValueEntityTestKit` is used to test the `CountertEntity` implementation. Akka provides two main APIs for unit tests, the `KeyValueEntityTestKit` and the `KeyValueEntityResult`. The former gives us the overall state of the entity and the ability to call the command handlers while the latter only holds the effects produced for each individual call to the Entity.
+
+[source,java,indent=0]
+.{sample-base-url}/key-value-counter/src/test/java/com/example/CounterTest.java[CounterTest.java]
+----
+include::example$key-value-counter/src/test/java/com/example/CounterTest.java[tags=example]
+----
+<1> Creates the TestKit passing the constructor of the Entity.
+<2> Calls the method `set` from the Entity in the `KeyValueEntityTestKit` with value `10`.
+<3> Asserts the reply value is `10`.
+<4> Calls the method `plusOne` from the Entity in the `KeyValueEntityTestKit` and assert reply value of `11`.
+<5> Asserts the state value after both operations is `11`.
+
+NOTE: The `KeyValueEntityTestKit` is stateful, and it holds the state of a single entity instance in memory. If you want to test more than one entity in a test, you need to create multiple instance of `KeyValueEntityTestKit`.
+
+=== Integration tests
+
+The skeleton of an Integration Test is included in the xref:getting-started:author-your-first-service.adoc[getting started sample]. Let's see what it could look like to test our Counter Entity:
+
+[source,java,indent=0]
+.{sample-base-url}/key-value-counter/src/test/java/com/example/CounterIntegrationTest.java[CounterIntegrationTest.java]
+----
+include::example$key-value-counter/src/test/java/com/example/CounterIntegrationTest.java[tags=sample-it]
+----
+<1> Note the test class must extend `TestKitSupport`.
+<2> A built-in component client is provided to interact with the components.
+<3> Get the current value of the counter named `bar`. Initial value of counter is expected to be `0`.
+<4> Request to increase the value of counter `bar`. Response should have value `1`.
+<5> Explicitly request current value of `bar`. It should be `1`.
+
+NOTE: The integration tests in samples can be run using `mvn verify`.
+

@@ -25,8 +25,8 @@ a| * Decentralized control
 * Increased complexity in ensuring proper failure handling
 * Harder to debug and monitor long-running flows
 
-| In Akka, you can implement this pattern using the xref:java:workflows.adoc[Workflow] component. The Workflow defines each step and manages retries, timeouts, and compensating actions.
-| In Akka, you can implement this pattern by combining components such as xref:java:event-sourced-entities.adoc[Entities] and xref:java:consuming-producing.adoc[Consumers], each producing and reacting to events.
+| In Akka, you can implement this pattern using the xref:sdk:workflows.adoc[Workflow] component. The Workflow defines each step and manages retries, timeouts, and compensating actions.
+| In Akka, you can implement this pattern by combining components such as xref:sdk:event-sourced-entities.adoc[Entities] and xref:sdk:consuming-producing.adoc[Consumers], each producing and reacting to events.
 | Example: https://github.com/akka-samples/transfer-workflow-orchestration[Funds Transfer Workflow Between Two Wallets, window="new"] 
 | Example: https://github.com/akka-samples/choreography-saga-quickstart[User Registration Service, window="new"]
 

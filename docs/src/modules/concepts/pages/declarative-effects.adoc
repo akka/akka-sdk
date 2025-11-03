@@ -6,7 +6,7 @@ image:concepts:component-effects.png[Akka Agentic Platform]
 
 include::ROOT:partial$declaring-behavior.adoc[]
 
-Each component defines its own Effect API offering predefined operations tailored to the component’s specific semantics. For example, xref:java:event-sourced-entities.adoc[Event Sourced Entities] provide an Effect for persisting events, while a xref:java:workflows.adoc[Workflow] Effect defines both what needs to be executed and how to handle the result to transition to the next step.
+Each component defines its own Effect API offering predefined operations tailored to the component’s specific semantics. For example, xref:sdk:event-sourced-entities.adoc[Event Sourced Entities] provide an Effect for persisting events, while a xref:sdk:workflows.adoc[Workflow] Effect defines both what needs to be executed and how to handle the result to transition to the next step.
 
 This model simplifies development by removing the need to handle persistence, distribution, serialization, cache management, replication, and other distributed system concerns. Developers can focus on business logic — defining what needs to be persisted, how to respond to the caller, transitioning to different steps, rejecting commands, and more — while the Akka runtime takes care of the rest.
 
@@ -25,12 +25,12 @@ For details on the specific Effect types, refer to the documentation for each co
 |===
 | Component | Available Effects
 
-| xref:java:agents.adoc#_effect_api[Agents] | Model, Memory, Tools, System and User Message,  Reply, Error
-| xref:java:event-sourced-entities.adoc#_effect_api[Event Sourced Entities] | Persist Events, Reply, Delete Entity, Error
-| xref:java:key-value-entities.adoc#_effect_api[Key Value Entities] | Update State, Reply, Delete State, Error 
-| xref:java:views.adoc#_effect_api[Views] | Update State, Delete State, Ignore
-| xref:java:workflows.adoc#_effect_api[Workflows] |  Update State, Transition, Pause, End, Reject Command, Reply
-| xref:java:timed-actions.adoc#_effect_api[Timers] | Confirm Scheduled Call, Error
-| xref:java:consuming-producing.adoc#_effect_api[Consumers] | Publish to Topic, Confirm Message, Ignore
+| xref:sdk:agents.adoc#_effect_api[Agents] | Model, Memory, Tools, System and User Message,  Reply, Error
+| xref:sdk:event-sourced-entities.adoc#_effect_api[Event Sourced Entities] | Persist Events, Reply, Delete Entity, Error
+| xref:sdk:key-value-entities.adoc#_effect_api[Key Value Entities] | Update State, Reply, Delete State, Error
+| xref:sdk:views.adoc#_effect_api[Views] | Update State, Delete State, Ignore
+| xref:sdk:workflows.adoc#_effect_api[Workflows] |  Update State, Transition, Pause, End, Reject Command, Reply
+| xref:sdk:timed-actions.adoc#_effect_api[Timers] | Confirm Scheduled Call, Error
+| xref:sdk:consuming-producing.adoc#_effect_api[Consumers] | Publish to Topic, Confirm Message, Ignore
 
 |===

@@ -52,6 +52,14 @@ RedirectMatch 301 ^/docs/akka/2.5.(\d+)/scala.html$      https://doc.akka.io/lib
 RedirectMatch 301 ^/docs/akka/2.5.(\d+)/java.html$       https://doc.akka.io/libraries/akka-core/2.5/?language=java
 
 # ===================================
+# Akka SDK
+# ===================================
+Redirect 302 ^/support/(.*)                              https://doc.akka.io/reference/support.html
+# 2025-10-30 rename '/java' to '/sdk'
+Redirect 301 ^/java/(.*)                                 https://doc.akka.io/sdk/$1
+
+
+# ===================================
 # Akka core
 # ===================================
 Redirect 301 /docs/akka/current/contrib/cluster-singleton.html   https://doc.akka.io/libraries/akka-core/current/cluster-singleton.html
@@ -70,11 +78,9 @@ RedirectMatch 301 ^/docs/akka/(current|snapshot|2.5[^/]+)/contrib/distributed-pu
 
 # Old Akka documentation entrypoint
 Redirect 301 /docs/akka/scala                              https://doc.akka.io/libraries/akka-core/current?language=scala
-Redirect 301 /docs/akka/java                               https://doc.akka.io/libraries/akka-core/current?language=java
 Redirect 301 /docs/akka/current/scala.html                 https://doc.akka.io/libraries/akka-core/current/?language=scala
 Redirect 301 /docs/akka/current/java.html                  https://doc.akka.io/libraries/akka-core/current/?language=java
 RedirectMatch 301 ^/actors-scala$                          https://doc.akka.io/libraries/akka-core/current/actors.html?language=scala
-RedirectMatch 301 ^/java/$                                 https://doc.akka.io/libraries/akka-core/current/index.html?language=java
 RedirectMatch 301 ^/docs/akka/scala/stream/(.*)            https://doc.akka.io/libraries/akka-core/current/stream/$1?language=scala
 
 # ===================================

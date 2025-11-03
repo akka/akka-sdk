@@ -32,7 +32,7 @@ To configure ACLs and secure your Akka services effectively, follow these steps:
 . *Define Principals and Permissions*: Specify which principals (services or internet) are permitted to access the identified service or method.
 . *Apply ACL Policies*: Use Akka’s ACL configurations to enforce these permissions. You can configure ACLs via the Akka Console or CLI, where you can define which services can interact with others or be accessed from the internet.
 
-For detailed configuration steps and examples, see the xref:java:access-control.adoc[Access Control Lists in the *Developing* section].
+For detailed configuration steps and examples, see the xref:sdk:access-control.adoc[Access Control Lists in the *Developing* section].
 
 == Practical example
 Suppose you have a payment service and wish to restrict access to only requests from the shopping cart service. You would:
@@ -53,4 +53,4 @@ With ACLs, you can secure your Akka environment and ensure only authorized entit
 == See also
 
 * xref:operations:tls-certificates.adoc[]
-* xref:java:access-control.adoc[] in the *Developing* section
+* xref:sdk:access-control.adoc[] in the *Developing* section

@@ -143,8 +143,8 @@ Akka has support for many AI providers, and this sample is using OpenAI. This is
 ```java
 akka.javasdk {
   agent {
-    # Other AI models can be configured, see https://doc.akka.io/java/agents.html#model
-    # and https://doc.akka.io/java/model-provider-details.html for the reference configurations.
+    # Other AI models can be configured, see https://doc.akka.io/sdk/agents.html#model
+    # and https://doc.akka.io/sdk/model-provider-details.html for the reference configurations.
     model-provider = openai
 
     openai {

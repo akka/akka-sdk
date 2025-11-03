@@ -27,7 +27,7 @@ Add a new file `EvaluatorAgent.java` to `src/main/java/com/example/application/`
 [source,java,indent=0]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/EvaluatorAgent.java[EvaluatorAgent.java]
 ----
-include::java:example$multi-agent/src/main/java/demo/multiagent/application/EvaluatorAgent.java[tag=all]
+include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/EvaluatorAgent.java[tag=all]
 ----
 <1> Detailed instructions of how to evaluate and especially pay attention to the user preferences.
 <2> Retrieve user preferences.
@@ -42,7 +42,7 @@ Add a new file `PreferencesConsumer.java` to `src/main/java/com/example/applicat
 [source,java,indent=0]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/PreferencesConsumer.java[PreferencesConsumer.java]
 ----
-include::java:example$multi-agent/src/main/java/demo/multiagent/application/PreferencesConsumer.java[tag=all]
+include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/PreferencesConsumer.java[tag=all]
 ----
 <1> Consume events from the `PreferencesEntity`.
 <2> Extend `Consumer`.
@@ -57,7 +57,7 @@ Add the new method to the `AgentTeamWorkflow:
 [source,java,indent=0]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[AgentTeamWorkflow.java]
 ----
-include::java:example$multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[tag=runAgain]
+include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[tag=runAgain]
 ----
 
 == Running the service
@@ -124,8 +124,8 @@ curl http://localhost:9000/activities/alice | jq
 
 Congratulations, you have completed the tour of building a multi-agent system. Now you can take your Akka skills to the next level:
 
-* Learn more about the xref:java:consuming-producing.adoc[`Consumer` component].
+* Learn more about the xref:sdk:consuming-producing.adoc[`Consumer` component].
 * xref:quick-deploy.adoc[]
-* *Expand on your own*: Learn more details of the xref:java:components/index.adoc[Akka components] to enhance your application with additional features.
+* *Expand on your own*: Learn more details of the xref:sdk:components/index.adoc[Akka components] to enhance your application with additional features.
 * *Explore other Akka samples*: Discover more about Akka by exploring xref:samples.adoc[different use cases] for inspiration.
 

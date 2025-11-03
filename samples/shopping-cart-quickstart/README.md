@@ -1,6 +1,6 @@
 # Build a Shopping Cart
 
-The section [Build your first application](https://doc.akka.io/java/build-your-first-application.html) shows how to build this Shopping Cart service step by step.
+The section [Build your first application](https://doc.akka.io/sdk/build-your-first-application.html) shows how to build this Shopping Cart service step by step.
 
 ## Prerequisites
 
@@ -18,7 +18,7 @@ To understand the Akka concepts behind this example, see [Development Process](h
 
 ### Developing
 
-Please follow [Build your first application](https://doc.akka.io/java/build-your-first-application.html) to understand the details of this service implementation.
+Please follow [Build your first application](https://doc.akka.io/sdk/build-your-first-application.html) to understand the details of this service implementation.
 
 ## Building
 
@@ -114,6 +114,5 @@ for more information.
 
 Now that you've built and deployed a shopping cart service, take your Akka skills to the next level:
 
-- **Expand the service**: Explore [other Akka components](https://doc.akka.io/concepts/architecture-model.html#_akka_components) to enhance your application with additional features.
-- **Explore other Akka samples**: Discover more about Akka by exploring [different use cases](https://doc.akka.io/java/samples.html) for inspiration.
-- **Join the community**: Visit the [Support page](https://doc.akka.io/support/index.html) to find resources where you can connect with other Akka developers and expand your knowledge.
+- **Expand the service**: Explore [other Akka components](https://doc.akka.io/concepts/architecture-model.html) to enhance your application with additional features.
+- **Explore other Akka samples**: Discover more about Akka by exploring [different use cases](https://doc.akka.io/getting-started/samples.html) for inspiration.

@@ -10,7 +10,7 @@ mvn compile
 
 When running an Akka service locally.
 
-This sample is using OpenAI. Other AI models can be configured, see [Agent model provider](https://doc.akka.io/java/agents.html#_model).
+This sample is using OpenAI. Other AI models can be configured, see [Agent model provider](https://doc.akka.io/sdk/agents.html#_model).
 
 Set your [OpenAI API key](https://platform.openai.com/api-keys) as an environment variable:
 

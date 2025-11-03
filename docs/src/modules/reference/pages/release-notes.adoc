@@ -6,7 +6,7 @@ Akka constantly gets updates and improvements enabling new features and expandin
 
 Current versions
 
-* xref:java:index.adoc[Akka SDK {akka-javasdk-version}]
+* xref:sdk:index.adoc[Akka SDK {akka-javasdk-version}]
 * Akka CLI {akka-cli-version}
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
 
@@ -98,7 +98,7 @@ Current versions
 
 AI agents integrate with AI to perceive their environment, make decisions, and take actions toward a specific goal. Agents can have varying degrees of human intervention from none (completely autonomous) to requiring a human to approve each action the agent takes.
 
-The new xref:java:agents.adoc[Agent] component is typically backed by a large language model (LLM). It maintains contextual history in a session memory, which may be shared between multiple agents that are collaborating on the same goal. It may provide function tools and call them as requested by the model.
+The new xref:sdk:agents.adoc[Agent] component is typically backed by a large language model (LLM). It maintains contextual history in a session memory, which may be shared between multiple agents that are collaborating on the same goal. It may provide function tools and call them as requested by the model.
 
 Several agents can collaborate to achieve a common goal, and they can be orchestrated from a predefined workflow or a dynamically created plan.
 
@@ -141,7 +141,7 @@ This short, self-paced course introduces the foundational concepts of the Akka S
 == May 2025
 
 * https://github.com/akka/akka-sdk/releases/tag/v3.3.2[Akka SDK 3.3.2]
-  - xref:java:ai-coding-assistant.adoc[AI coding assistant instructions]
+  - xref:sdk:ai-coding-assistant.adoc[AI coding assistant instructions]
   - Support deletion of workflows
   - Validation for missing handler when consuming from Key Value Entity or Workflow
 
@@ -225,11 +225,11 @@ The xref:getting-started:shopping-cart/build-and-deploy-shopping-cart.adoc#_the_
 
 **Replication of Key Value Entities**
 
-Akka now supports multi-region replication of xref:java:key-value-entities.adoc[Key Value Entities]. No code changes are needed for activating replication. This feature is disabled until the next full restart of your service (`akka service pause/resume`). It's recommended to add the `ReadOnlyEffect` as described in xref:java:key-value-entities.adoc#_replication[Key Value Entity replication].
+Akka now supports multi-region replication of xref:sdk:key-value-entities.adoc[Key Value Entities]. No code changes are needed for activating replication. This feature is disabled until the next full restart of your service (`akka service pause/resume`). It's recommended to add the `ReadOnlyEffect` as described in xref:sdk:key-value-entities.adoc#_replication[Key Value Entity replication].
 
 **Service-to-service eventing for Key Value Entities**
 
-xref:java:consuming-producing.adoc#s2s-eventing[Service to service eventing] is now supported for xref:java:key-value-entities.adoc[Key Value Entities]. Key value changes are captured as events which can propagate state changes and information between Akka services within the same project.
+xref:sdk:consuming-producing.adoc#s2s-eventing[Service to service eventing] is now supported for xref:sdk:key-value-entities.adoc[Key Value Entities]. Key value changes are captured as events which can propagate state changes and information between Akka services within the same project.
 
 **New primary selection mode**
 
@@ -237,7 +237,7 @@ xref:concepts:multi-region.adoc[Request-region primary selection mode]: The prim
 
 **Automatic deduplication for view updates**
 
-When subscribing to entities and service-to-service eventing from a view, updates are now guaranteed to be processed exactly-once. This is not applicable when subscribing to topics. Additionally, a new section describing different xref:java:dev-best-practices.adoc#message-deduplication[message deduplication] strategies has been added to the best practices guide.
+When subscribing to entities and service-to-service eventing from a view, updates are now guaranteed to be processed exactly-once. This is not applicable when subscribing to topics. Additionally, a new section describing different xref:sdk:dev-best-practices.adoc#message-deduplication[message deduplication] strategies has been added to the best practices guide.
 
 ****
 
@@ -269,7 +269,7 @@ When subscribing to entities and service-to-service eventing from a view, update
     - updated runtime base docker image
 
 * https://github.com/akka/akka-sdk/releases/tag/v3.2.1[Akka SDK 3.2.1]
-    - make it possible to filter message by region origin, see xref:java:consuming-producing.adoc#_multi_region_replication[Consumer documentation]
+    - make it possible to filter message by region origin, see xref:sdk:consuming-producing.adoc#_multi_region_replication[Consumer documentation]
     - checking serialization in entity testkits
     - shutdown immediately if runtime fails at startup
     - Akka Chess sample
@@ -300,15 +300,15 @@ When subscribing to entities and service-to-service eventing from a view, update
 
 **gRPC endpoints**
 
-Akka now supports xref:java:grpc-endpoints.adoc[gRPC endpoints] complementing xref:java:http-endpoints.adoc[HTTP endpoints]. gRPC services enable contract-first development where interfaces can be defined with the protobuf specification. The underlying protobuf serialization format supports backward and forward compatibility avoiding tight coupling by making it easier to evolve services without breaking existing clients. Additionally, gRPC's supports unary and streaming calls making it a good choice for high-performance service-to-service communication.
+Akka now supports xref:sdk:grpc-endpoints.adoc[gRPC endpoints] complementing xref:sdk:http-endpoints.adoc[HTTP endpoints]. gRPC services enable contract-first development where interfaces can be defined with the protobuf specification. The underlying protobuf serialization format supports backward and forward compatibility avoiding tight coupling by making it easier to evolve services without breaking existing clients. Additionally, gRPC's supports unary and streaming calls making it a good choice for high-performance service-to-service communication.
 
 **Serving static resources from HTTP endpoints**
 
-HTTP endpoints can now serve static content. This enables hosting web pages, client-side applications, and other resources within the endpoint. The static content is accessible through a convenience method: xref:java:http-endpoints.adoc#_serving_static_content[Serving static content]. xref:java:http-endpoints.adoc#glob_static_content[Subtree "glob" paths] allow serving path hierarchies.
+HTTP endpoints can now serve static content. This enables hosting web pages, client-side applications, and other resources within the endpoint. The static content is accessible through a convenience method: xref:sdk:http-endpoints.adoc#_serving_static_content[Serving static content]. xref:sdk:http-endpoints.adoc#glob_static_content[Subtree "glob" paths] allow serving path hierarchies.
 
 **Server-sent events**
 
-Server-sent events (SSE) is a way to push a stream of elements through a single HTTP response enabling an HTTP client to see each element one-by-one rather than waiting for an entire response to complete. This is useful for streaming events from a View or monitoring state changes of an entity. We have introduced an API to simplify deferred HTTP responses as a stream of xref:java:http-endpoints.adoc#sse[Server-sent Events (SSE)].
+Server-sent events (SSE) is a way to push a stream of elements through a single HTTP response enabling an HTTP client to see each element one-by-one rather than waiting for an entire response to complete. This is useful for streaming events from a View or monitoring state changes of an entity. We have introduced an API to simplify deferred HTTP responses as a stream of xref:sdk:http-endpoints.adoc#sse[Server-sent Events (SSE)].
 
 ****
 

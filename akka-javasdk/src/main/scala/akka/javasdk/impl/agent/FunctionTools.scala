@@ -169,7 +169,7 @@ object FunctionTools {
           throw new IllegalArgumentException(
             s"Could not instantiate [${cls.getName}] as no DependencyProvider was configured. " +
             "Please provide a DependencyProvider to supply dependencies. " +
-            "See https://doc.akka.io/java/setup-and-dependency-injection.html#_custom_dependency_injection")
+            "See https://doc.akka.io/sdk/setup-and-dependency-injection.html#_custom_dependency_injection")
         }
     }
   }

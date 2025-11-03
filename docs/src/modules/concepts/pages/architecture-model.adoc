@@ -40,7 +40,7 @@ To maintain modularity:
 - The API layer should not call the domain layer directly.
 - Inner layers should not depend on or be aware of outer layers.
 
-For more on coding structure and practical considerations, see the xref:java:ai-coding-assistant-guidelines.adoc[coding guidelines].
+For more on coding structure and practical considerations, see the xref:sdk:ai-coding-assistant-guidelines.adoc[coding guidelines].
 
 === Domain
 
@@ -58,11 +58,11 @@ Most classes in this layer are based on Akka-provided building blocks. The domai
 
 This layer connects your service to the outside world. It defines endpoints that expose application functionality over HTTP or gRPC. Requests are handled here and passed on to the application layer.
 
-Endpoints use xref:java:component-and-service-calls.adoc#_component_client[`ComponentClient`] to call Akka components in the application layer. This maintains separation of concerns and ensures runtime boundaries are respected.
+Endpoints use xref:sdk:component-and-service-calls.adoc#_component_client[`ComponentClient`] to call Akka components in the application layer. This maintains separation of concerns and ensures runtime boundaries are respected.
 
 The API layer may also expose public event models over Kafka or other channels. External systems should interact with your service only through this layer.
 
-Access control and request validation also belong here. For HTTP-specific guidance, see xref:java:http-endpoints.adoc[Designing HTTP Endpoints].
+Access control and request validation also belong here. For HTTP-specific guidance, see xref:sdk:http-endpoints.adoc[Designing HTTP Endpoints].
 
 == Akka Services
 
@@ -75,6 +75,6 @@ Once familiar with the project structure, continue with:
 - xref:deployment-model.adoc[Akka Deployment Model]
 - xref:development-process.adoc[Development process]
 - xref:state-model.adoc[]
-- xref:java:dev-best-practices.adoc[Development best practices]
+- xref:sdk:dev-best-practices.adoc[Development best practices]
 
-You may also begin development right away using the xref:java:index.adoc[Akka SDK].
+You may also begin development right away using the xref:sdk:index.adoc[Akka SDK].

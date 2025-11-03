@@ -1,0 +1,136 @@
+= Implementing agents
+
+include::ROOT:partial$include.adoc[]
+
+image:ROOT:agent.png[Agent,width=100,float=left]An Agent interacts with an AI model to perform a specific task. It is typically backed by a large language model (LLM). It maintains contextual history in a session memory, which may be shared between multiple agents that are collaborating on the same goal. It may provide function tools and call them as requested by the model.
+
+== Identify the agent
+Every component in Akka needs to be identifiable by the rest of the system. This usually involves two different forms of identification: a **component ID** an **instance ID**. We use component IDs as a way to identify the component _class_ and distinguish it from others. Instance identifiers are, as the name implies, unique identifiers for an instance of a component.
+
+As with all other components, we supply an identifier for the component class using the `@Component` annotation.
+
+In the case of agents, we don't supply a unique identifier for the instance of the agent. Instead, we supply an identifier for the _session_ to which the agent is bound. This lets you have multiple components with different component IDs all performing various agentic tasks within the same shared session.
+
+[#_effect_api]
+== Agent's effect API
+
+Effects are declarative in nature. When components handle commands, they can return an `Effect`. Some components can produce only a few effects while others, such as the Agent, can produce a wide variety.
+
+The Agent's Effect defines the operations that Akka should perform when an incoming command is handled by an Agent. These effects can be any of the following:
+
+* declare which model will be used
+* specify system messages, user messages and additional context (prompts)
+* configure session memory
+* define available tools
+* fail a command by returning an error
+* return an error message
+* transform responses from a model and reply to incoming commands
+
+For additional details, refer to xref:concepts:declarative-effects.adoc[Declarative Effects].
+
+== Skeleton
+
+An agent implementation has the following code structure.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/MyAgent.java[MyAgent.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/MyAgent.java[tag=class]
+----
+<1> Create a class that extends `Agent`.
+<2> Make sure to annotate the class with `@Component` and pass a unique identifier for this agent type.
+<3> Define the command handler method.
+
+NOTE: The `@Component` value `my-agent` is common for all instances of this agent and must be unique across the different components in the service.
+
+An agent must have one command handler method that is public and returns `Effect<T>`, where `T` it the type of the reply. Alternatively it can return `StreamEffect` for xref:agents/streaming.adoc[streaming responses].
+
+Command handlers in Akka may take one or no parameters as input. If you need multiple parameters for a command, you can wrap them in a record class and pass an instance of that to the command handler as the sole parameter.
+
+There can only be one command handler because the agent is supposed to perform one single well-defined task.
+
+[#model]
+== Configuring the model
+
+Akka provides integration with several backend AI models, and you have to select which model to use. You can define a default model in `application.conf`:
+
+[source,json,indent=0]
+.src/main/resources/application.conf
+----
+include::sdk:example$doc-snippets/src/main/resources/application.conf[tags=agent-model-config]
+----
+
+The `model-provider` property points to the name of another configuration section, in this case `akka.javasdk.agent.openai`. That configuration section contains the actual configuration for the model provider, according to the properties described in xref:model-provider-details.adoc#_reference_configurations[model provider reference configurations].
+
+Another example where we have selected `anthropic` with `claude-sonnet-4` as the default model provider:
+
+[source,json,indent=0]
+.src/main/resources/application.conf
+----
+include::sdk:example$doc-snippets/src/main/resources/application.conf[tags=agent-model-config2]
+----
+
+The API key can be defined with an environment variable, `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` in the above examples.
+
+The default model will be used if the agent doesn't specify another model. Different agents can use different models by defining the `ModelProvider` in the Agent effect:
+
+[source,java,indent=0]
+.MyAgent.java
+----
+include::example$doc-snippets/src/main/java/com/example/application/MyAgentMore.java[tag=model]
+----
+<1> Define the model provider in code.
+
+NOTE: With `ModelProvider.fromConfig` you can define several models in configuration and use different models in different agents.
+
+
+Available model providers for hosted models are:
+
+[options="header" cols="1,1"]
+|===
+| Provider
+| Site
+
+| Anthropic | link:https://www.anthropic.com/[anthropic.com]
+| GoogleAIGemini | link:https://gemini.google.com/[gemini.google.com]
+| Hugging Face | link:https://huggingface.co[huggingface.co]
+| OpenAi | link:https://openai.com/[openai.com]
+
+|===
+
+Additionally, these model providers for locally running models are supported:
+
+[options="header" cols="1,1"]
+|===
+| Provider
+| Site
+
+| LocalAI | link:https://localai.io/[localai.io]
+| Ollama | link:https://ollama.com/[ollama.com]
+|===
+
+Each model provider may have different settings and those are described in xref:model-provider-details.adoc[]
+
+It is also possible to plug in a custom model by implementing the link:_attachments/api/akka/javasdk/agent/ModelProvider.Custom.html[`ModelProvider.Custom`] interface and use it with `ModelProvider.custom`. That involves the underlying implementations of LangChain4J `ChatModel` and optionally `StreamingChatModel`. Refer to the  https://docs.langchain4j.dev[Langchain4j, window="new"] documentation or reference implementations for how to implement the `ChatModel` and `StreamingChatModel`.
+
+
+== Use ComponentClient in an agent
+
+xref:sdk:setup-and-dependency-injection.adoc#_dependency_injection[Dependency injection] can be used in an
+Agent. For example, injecting the `ComponentClient` to be able to enrich the request to the AI model with
+information from entities or views may look like this:
+
+[source,java,indent=0]
+.ActivityAgent.java
+----
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgentMore.java[tag=di]
+----
+<1> Inject the `ComponentClient` as a constructor parameter.
+<2> Retrieve preferences from an entity.
+<3> Enrich the user message with the preferences.
+
+This also illustrates the important point that the context of the request to the AI model can be built from additional information in the service and doesn't only have to come from the session memory.
+
+The ability to reach into the rest of a distributed Akka application to _augment_ requests makes behavior like Retrieval Augmented Generation (RAG) simple and less error prone than doing things manually without Akka.
+
+

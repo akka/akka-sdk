@@ -47,7 +47,7 @@
         <maven.compiler.target>21</maven.compiler.target>
         <maven.compiler.release>21</maven.compiler.release>
         <!-- keep in sync with
-         docs/build/src/managed/modules/java/partials/attributes.adoc#L4
+         Makefile#L49
         -->
         <maven.version>3.9.0</maven.version>
 
@@ -83,23 +83,6 @@
         <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
 
     </properties>
-
-
-    <pluginRepositories>
-        <pluginRepository>
-            <id>akka-repository</id>
-            <url>https://repo.akka.io/maven</url>
-        </pluginRepository>
-    </pluginRepositories>
-
-    <repositories>
-        <repository>
-            <id>akka-repository</id>
-            <name>Akka repository</name>
-            <url>https://repo.akka.io/maven</url>
-        </repository>
-    </repositories>
-
 
     <build>
         <extensions>

@@ -20,7 +20,7 @@ To understand the Akka concepts behind this example, see [Development Process](h
 
 ### Developing
 
-This project demonstrates the use of Workflow and Event Sourced Entity components. For more information, see [Developing Services](https://doc.akka.io/java/index.html).
+This project demonstrates the use of Workflow and Event Sourced Entity components. For more information, see [Developing Services](https://doc.akka.io/sdk/index.html).
 
 ## Build
 
@@ -123,10 +123,6 @@ If you encounter issues, ensure that:
 - Your `curl` commands are formatted correctly.
 - The wallet IDs ('a' and 'b') match the ones you created.
 
-## Need help?
-
-For questions or assistance, please refer to our [online support resources](https://doc.akka.io/support/index.html).
-
 ## Deploying
 
 You can use the [Akka Console](https://console.akka.io) to create a project and see the status of your service.
@@ -158,4 +154,5 @@ Congratulations, you've successfully implemented a workflow between two wallets 
 Now that you've built a basic transfer workflow, consider these next steps:
 
 1. **Explore other Akka components**: Dive deeper into Akka's ecosystem to enhance your application.
-2. **Join the community**: Visit the [Support page](https://doc.akka.io/support/index.html) to find resources where you can connect with other Akka developers and expand your knowledge.
+2. **Expand the service**: Explore [other Akka components](https://doc.akka.io/concepts/architecture-model.html) to enhance your application with additional features.
+3. **Explore other Akka samples**: Discover more about Akka by exploring [different use cases](https://doc.akka.io/getting-started/samples.html) for inspiration.

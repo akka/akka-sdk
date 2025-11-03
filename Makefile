@@ -9,8 +9,8 @@ sources  := src build/src/managed
 
 src_managed := docs/src-managed
 
-java_managed_attachments := ${src_managed}/modules/java/attachments
-java_managed_examples := ${src_managed}/modules/java/examples
+java_managed_attachments := ${src_managed}/modules/sdk/attachments
+java_managed_examples := ${src_managed}/modules/sdk/examples
 managed_partials := ${src_managed}/modules/ROOT/partials
 
 antora_docker_image := local/antora-doc
@@ -22,10 +22,6 @@ BASE_PATH := $(shell git rev-parse --show-prefix)
 build: managed local open
 
 clean:
-	rm -rf "docs/src/modules/java/attachments"
-	rm -rf "docs/src/modules/java/examples"
-	rm -rf "docs/src/modules/ROOT/partials/attributes.adoc"
-	# above can eventually be removed, left for a smooth transition to managed files
 	rm -rf "${src_managed}"
 	rm -rf target/site
 

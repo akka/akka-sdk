@@ -6,7 +6,7 @@ A Java variation of this sample is explained in [Author your first agentic servi
 
 To understand the Akka concepts that are the basis for this example, see [Development Process](https://doc.akka.io/concepts/development-process.html) in the documentation.
 
-This project contains the skeleton to create an Akka service using the Kotlin language. To understand more about these components, see [Developing services](https://doc.akka.io/java/index.html).
+This project contains the skeleton to create an Akka service using the Kotlin language. To understand more about these components, see [Developing services](https://doc.akka.io/sdk/index.html).
 
 Use Maven to build your project:
 
@@ -16,7 +16,7 @@ mvn compile
 
 When running an Akka service locally.
 
-This sample is using OpenAI. Other AI models can be configured, see [Agent model provider](https://doc.akka.io/java/agents.html#_model).
+This sample is using OpenAI. Other AI models can be configured, see [Agent model provider](https://doc.akka.io/sdk/agents.html#_model).
 
 Set your [OpenAI API key](https://platform.openai.com/api-keys) as an environment variable:
 
