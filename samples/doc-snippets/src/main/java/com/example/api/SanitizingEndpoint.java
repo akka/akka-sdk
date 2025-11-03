@@ -23,10 +23,10 @@ public class SanitizingEndpoint {
     String sanitizedText = sanitizer.sanitize(someText);
     return sanitizedText;
   }
+
   // end::ad-hoc-sanitization[]
 
   private String loadText() {
     return "";
   }
-
 }
