@@ -54,9 +54,9 @@ RedirectMatch 301 ^/docs/akka/2.5.(\d+)/java.html$       https://doc.akka.io/lib
 # ===================================
 # Akka SDK
 # ===================================
-Redirect 302 ^/support/(.*)                              https://doc.akka.io/reference/support.html
+RedirectMatch 302 ^/support/(.*)                              https://doc.akka.io/reference/support.html
 # 2025-10-30 rename '/java' to '/sdk'
-Redirect 301 ^/java/(.*)                                 https://doc.akka.io/sdk/$1
+RedirectMatch 301 ^/java/(.*)                                 https://doc.akka.io/sdk/$1
 
 
 # ===================================
