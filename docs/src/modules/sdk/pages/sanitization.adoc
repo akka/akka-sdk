@@ -8,9 +8,9 @@ Text anonymization—detecting and masking sensitive details like names, emails,
 
 Akka supports this through service-wide sanitization.
 
-The sanitization disabled by default and can be selectively enabled through configuration.
+The sanitization is disabled by default and can be selectively enabled through configuration.
 
-When enabled, sanitization is automatically applied to text that:
+When enabled, sanitization is automatically applied to text that is:
 
  * written to logs
  * passed to agent models from agent requests
@@ -36,6 +36,13 @@ Sanitization can also be programmatically applied to text in any component where
 business case, for example before sending some text to a third party API or before writing a text in the state
 of an entity. This is done by injecting a `akka.javasdk.Sanitizer` in the component constructor and
 then using `akka.javasdk.Sanitizer#sanitize` on the text.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/SanitizingEndpoint.java[SanitizingEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/SanitizingEndpoint.java[tag=ad-hoc-sanitization]
+----
+
 
 == Sanitizer types
 
