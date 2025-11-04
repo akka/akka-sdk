@@ -34,6 +34,9 @@ import java.util.concurrent.CompletionStage;
  * API defines the operations that Akka should perform when an incoming message is delivered to the
  * Consumer.
  *
+ * <p>A consumer can have a method accepting `byte[]` to ingest raw event bytes. If no other
+ * consumer method matches an incoming message, it will be passed to such a method.
+ *
  * <p><b>Example usage:</b>
  *
  * <pre>{@code

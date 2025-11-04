@@ -625,10 +625,13 @@ private[javasdk] object Validations {
           method.getParameterTypes.lastOption.contains(stateType))
     }
 
+    val hasRawEventHandler =
+      methods.filter(_.getParameterTypes.headOption.contains(Array.emptyByteArray.getClass)).nonEmpty
+
     if (hasEventSourcedEntitySubscription(component)) {
       val classLevel = eventSourcedEntitySubscription(component).get
       val eventType = Reflect.eventSourcedEntityEventType(classLevel.value())
-      if (!classLevel.ignoreUnknown() && eventType.isSealed) {
+      if (!classLevel.ignoreUnknown() && !hasRawEventHandler && eventType.isSealed) {
         val effectMethodsInputParams: Seq[Class[_]] = methods
           .filter(updateMethodPredicate)
           .map(_.getParameterTypes.last) //last because it could be a view update methods with 2 params
@@ -642,7 +645,7 @@ private[javasdk] object Validations {
       val handlers = findStateHandlers(stateType)
       if (handlers.isEmpty &&
         !classOf[TableUpdater[_]]
-          .isAssignableFrom(component)) { //Table updater is a special case, might not have any handlers
+          .isAssignableFrom(component) && !hasRawEventHandler) { //Table updater is a special case, might not have any handlers
         missingStateHandlers(stateType)
       } else {
         Valid
@@ -651,7 +654,7 @@ private[javasdk] object Validations {
       val workflowClass = findWorkflowClass(component)
       val stateType = Reflect.workflowStateType(workflowClass)
       val handlers = findStateHandlers(stateType)
-      if (handlers.isEmpty) {
+      if (handlers.isEmpty && !hasRawEventHandler) {
         missingStateHandlers(stateType)
       } else {
         Valid

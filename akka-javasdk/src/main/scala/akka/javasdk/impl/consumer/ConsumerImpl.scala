@@ -20,6 +20,7 @@ import akka.javasdk.consumer.Consumer
 import akka.javasdk.consumer.MessageContext
 import akka.javasdk.consumer.MessageEnvelope
 import akka.javasdk.impl.AbstractContext
+import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.MetadataImpl
@@ -85,7 +86,16 @@ private[impl] final class ConsumerImpl[C <: Consumer](
       consumesFromTopic = consumerSource.isInstanceOf[TopicSource])
 
   override def handleMessage(message: Message): Future[Effect] = {
-    val metadata = MetadataImpl.of(message.metadata)
+    val metadata = {
+      val asIs = MetadataImpl.of(message.metadata)
+      message.payload match {
+        case Some(payload) =>
+          // or else we get 'application/vnd.kalix.protobuf.any' from the runtime
+          // FIXME should maybe be sorted in the runtime which unwraps the payload?
+          asIs.set(MetadataImpl.CeDatacontenttype, AnySupport.typeUrlToContentType(payload.contentType))
+        case None => asIs
+      }
+    }
     val telemetryContext = Option(message.telemetryContext)
     val traceId = telemetryContext.flatMap { context =>
       Option(Span.fromContextOrNull(context)).map(_.getSpanContext.getTraceId)
