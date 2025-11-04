@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
+ */
+
 package akka.javasdk.impl.agent
 
 import java.util
@@ -17,28 +21,66 @@ private[javasdk] class MemoryFiltersSupplierImpl(val filters: List[MemoryFilter]
   def this(filter: MemoryFilter) = this(List(filter))
 
   override def includeFromAgentId(id: String): MemoryFilterSupplier =
-    new MemoryFiltersSupplierImpl(filters :+ new MemoryFilter.IncludeFromAgentId(util.Set.of(id)))
+    addFilter(new MemoryFilter.IncludeFromAgentId(util.Set.of(id)))
 
   override def includeFromAgentId(ids: util.Set[String]): MemoryFilterSupplier =
-    new MemoryFiltersSupplierImpl(filters :+ new MemoryFilter.IncludeFromAgentId(ids))
+    addFilter(new MemoryFilter.IncludeFromAgentId(ids))
 
   override def excludeFromAgentId(id: String): MemoryFilterSupplier =
-    new MemoryFiltersSupplierImpl(filters :+ new MemoryFilter.ExcludeFromAgentId(util.Set.of(id)))
+    addFilter(new MemoryFilter.ExcludeFromAgentId(util.Set.of(id)))
 
   override def excludeFromAgentId(ids: util.Set[String]): MemoryFilterSupplier =
-    new MemoryFiltersSupplierImpl(filters :+ new MemoryFilter.ExcludeFromAgentId(ids))
+    addFilter(new MemoryFilter.ExcludeFromAgentId(ids))
 
   override def includeFromAgentRole(role: String): MemoryFilterSupplier =
-    new MemoryFiltersSupplierImpl(filters :+ new MemoryFilter.IncludeFromAgentRole(util.Set.of(role)))
+    addFilter(new MemoryFilter.IncludeFromAgentRole(util.Set.of(role)))
 
   override def includeFromAgentRole(roles: util.Set[String]): MemoryFilterSupplier =
-    new MemoryFiltersSupplierImpl(filters :+ new MemoryFilter.IncludeFromAgentRole(roles))
+    addFilter(new MemoryFilter.IncludeFromAgentRole(roles))
 
   override def excludeFromAgentRole(role: String): MemoryFilterSupplier =
-    new MemoryFiltersSupplierImpl(filters :+ new MemoryFilter.ExcludeFromAgentRole(util.Set.of(role)))
+    addFilter(new MemoryFilter.ExcludeFromAgentRole(util.Set.of(role)))
 
   override def excludeFromAgentRole(roles: util.Set[String]): MemoryFilterSupplier =
-    new MemoryFiltersSupplierImpl(filters :+ new MemoryFilter.ExcludeFromAgentRole(roles))
+    addFilter(new MemoryFilter.ExcludeFromAgentRole(roles))
+
+  private def addFilter(filter: MemoryFilter): MemoryFilterSupplier = {
+
+    def concatList(l1: util.Set[String], l2: util.Set[String]) = {
+      val newList = new util.HashSet(l1)
+      newList.addAll(l2)
+      newList
+    }
+
+    val newFilters =
+      if (filters.exists(_.getClass == filter.getClass)) {
+        filters
+          .map {
+            case f: MemoryFilter.IncludeFromAgentId if f.getClass == filter.getClass =>
+              val ids = filter.asInstanceOf[MemoryFilter.IncludeFromAgentId].ids()
+              new MemoryFilter.IncludeFromAgentId(concatList(f.ids(), ids))
+
+            case f: MemoryFilter.ExcludeFromAgentId if f.getClass == filter.getClass =>
+              val ids = filter.asInstanceOf[MemoryFilter.ExcludeFromAgentId].ids()
+              new MemoryFilter.ExcludeFromAgentId(concatList(f.ids(), ids))
+
+            case f: MemoryFilter.IncludeFromAgentRole if f.getClass == filter.getClass =>
+              val roles = filter.asInstanceOf[MemoryFilter.IncludeFromAgentRole].roles()
+              new MemoryFilter.IncludeFromAgentRole(concatList(f.roles(), roles))
+
+            case f: MemoryFilter.ExcludeFromAgentRole if f.getClass == filter.getClass =>
+              val roles = filter.asInstanceOf[MemoryFilter.ExcludeFromAgentRole].roles()
+              new MemoryFilter.ExcludeFromAgentRole(concatList(f.roles(), roles))
+
+            case any => any // making compiler happy
+          }
+      } else {
+        filters :+ filter // Append the new filter to preserve existing filters
+      }
+
+    new MemoryFiltersSupplierImpl(newFilters)
+  }
 
   override def get(): util.List[MemoryFilter] = filters.asJava
+
 }

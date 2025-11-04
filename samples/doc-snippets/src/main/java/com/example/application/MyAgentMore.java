@@ -105,4 +105,25 @@ public interface MyAgentMore {
     }
     // end::filter-readlast[]
   }
+
+  @Component(id = "my-agent-filter-multiple")
+  public class MyAgentWithMultipleFilters extends Agent {
+
+    // tag::filter-multiple[]
+    public Effect<String> ask(String question) {
+      return effects()
+        .memory(
+          MemoryProvider.limitedWindow()
+            .filtered(
+              MemoryFilter.includeFromAgentId("agent-1")
+                .includeFromAgentId("agent-2")
+                .excludeFromAgentRole("internal") // <1>
+            )
+        )
+        .systemMessage("You are a helpful...")
+        .userMessage(question)
+        .thenReply();
+    }
+    // end::filter-multiple[]
+  }
 }

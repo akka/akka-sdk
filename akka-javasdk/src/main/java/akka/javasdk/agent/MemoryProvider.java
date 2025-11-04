@@ -4,11 +4,9 @@
 
 package akka.javasdk.agent;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 /**
  * Interface for configuring memory management in agent systems.
@@ -85,6 +83,36 @@ public sealed interface MemoryProvider {
    *   <li>Whether writing to memory is enabled
    *   <li>Applies memory filters {@link MemoryFilter}
    * </ul>
+   *
+   * <p><strong>Filter Ordering:</strong> When multiple filters are specified, filters of the same
+   * type are automatically merged. The merged filters are then applied in the order that each
+   * filter type first appears. Each filter type operates on the result of the previous filter type.
+   *
+   * <p>Example usage with filters:
+   *
+   * <pre>{@code
+   * // Single filter - include only messages from a specific agent
+   * MemoryProvider.limitedWindow()
+   *     .readOnly(MemoryFilter.includeFromAgentId("agent-1"));
+   *
+   * // Multiple filters - include messages from agent-1 but exclude internal role
+   * // includeFromAgentId is applied first, then excludeFromAgentRole
+   * MemoryProvider.limitedWindow()
+   *     .readOnly(MemoryFilter.includeFromAgentId("agent-1")
+   *                           .excludeFromAgentRole("internal"));
+   *
+   * // Combined with readLast - last 10 messages from specific agents
+   * // The two includeFromAgentId calls are merged, then filters applied, then limit to last 10
+   * MemoryProvider.limitedWindow()
+   *     .readLast(10, MemoryFilter.includeFromAgentId("agent-1")
+   *                               .includeFromAgentId("agent-2"));
+   *
+   * // Using filtered() for read-write with filters
+   * // The two excludeFromAgentRole calls are merged into a single filter
+   * MemoryProvider.limitedWindow()
+   *     .filtered(MemoryFilter.excludeFromAgentRole("internal")
+   *                           .excludeFromAgentRole("debug"));
+   * }</pre>
    */
   record LimitedWindowMemoryProvider(
       Optional<Integer> readLastN, boolean read, boolean write, List<MemoryFilter> filters)
@@ -119,6 +147,24 @@ public sealed interface MemoryProvider {
      * <p>The returned provider will allow reading from memory but disable writing. The specified
      * filters control which messages are included when reading from memory.
      *
+     * <p>Filters of the same type are automatically merged. The merged filters are then applied in
+     * the order that each filter type first appears. Each filter type operates on the result of the
+     * previous filter type.
+     *
+     * <p>Example usage:
+     *
+     * <pre>{@code
+     * // Single filter
+     * MemoryProvider.limitedWindow()
+     *     .readOnly(MemoryFilter.includeFromAgentId("agent-1"));
+     *
+     * // Multiple chained filters - same types are merged
+     * MemoryProvider.limitedWindow()
+     *     .readOnly(MemoryFilter.includeFromAgentId("agent-1")
+     *                           .excludeFromAgentRole("internal"));
+     * }</pre>
+     *
+     * @param filtersSupplier a supplier that provides the list of filters to apply
      * @return A new memory provider with writing disabled and the specified filters
      */
     public MemoryProvider readOnly(Supplier<List<MemoryFilter>> filtersSupplier) {
@@ -165,14 +211,30 @@ public sealed interface MemoryProvider {
     /**
      * Creates a new memory provider with an updated history limit and multiple filters applied.
      *
-     * <p>The history limit controls the maximum number of messages to read from memory. The filters
-     * are applied first, then the limit is enforced on the filtered results.
+     * <p>The history limit controls the maximum number of messages to read from memory. Filters of
+     * the same type are automatically merged, then applied in the order that each filter type first
+     * appears, and finally, the limit is enforced on the filtered results.
+     *
+     * <p>Example usage:
+     *
+     * <pre>{@code
+     * // Last 10 messages from a specific agent
+     * MemoryProvider.limitedWindow()
+     *     .readLast(10, MemoryFilter.includeFromAgentId("agent-1"));
+     *
+     * // Last 5 messages excluding internal agents
+     * // Both excludeFromAgentRole calls are merged, applied, then limit to last 5
+     * MemoryProvider.limitedWindow()
+     *     .readLast(5, MemoryFilter.excludeFromAgentRole("internal")
+     *                              .excludeFromAgentRole("debug"));
+     * }</pre>
      *
      * @param onlyLastN the maximum number of most recent messages to read from memory
+     * @param filtersSupplier a supplier that provides the list of filters to apply
      * @return A new memory provider with the specified history limit and filters
      */
     public MemoryProvider readLast(int onlyLastN, Supplier<List<MemoryFilter>> filtersSupplier) {
-      return readLast(onlyLastN,filtersSupplier.get());
+      return readLast(onlyLastN, filtersSupplier.get());
     }
 
     /**
@@ -190,13 +252,32 @@ public sealed interface MemoryProvider {
     /**
      * Creates a new memory provider with multiple filters applied.
      *
-     * <p>The specified filters control which messages are included when reading from memory, based
-     * on agent component ID or role.
+     * <p>The specified filters control which messages are included when reading from memory.
      *
+     * <p>Filters of the same type are automatically merged. The merged filters are then applied in
+     * the order that each filter type first appears. Each filter type operates on the result of the
+     * previous filter type.
+     *
+     * <p>Example usage:
+     *
+     * <pre>{@code
+     * // Filter to exclude internal messages while maintaining read-write
+     * MemoryProvider.limitedWindow()
+     *     .filtered(MemoryFilter.excludeFromAgentRole("internal"));
+     *
+     * // Multiple filters - same types are merged
+     * // Both includeFromAgentId calls are merged, then excludeFromAgentRole applied
+     * MemoryProvider.limitedWindow()
+     *     .filtered(MemoryFilter.includeFromAgentId("agent-1")
+     *                           .includeFromAgentId("agent-2")
+     *                           .excludeFromAgentRole("debug"));
+     * }</pre>
+     *
+     * @param filtersSupplier a supplier that provides the list of filters to apply
      * @return A new memory provider with the specified filters
      */
     public MemoryProvider filtered(Supplier<List<MemoryFilter>> filtersSupplier) {
-    return filtered(filtersSupplier.get());
+      return filtered(filtersSupplier.get());
     }
   }
 
