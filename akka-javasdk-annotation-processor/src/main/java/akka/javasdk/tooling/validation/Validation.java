@@ -60,7 +60,7 @@ public sealed interface Validation permits Validation.Valid, Validation.Invalid 
     private static final Valid INSTANCE = new Valid();
 
     private Valid() {
-      // Private constructor to enforce singleton pattern
+      // Private constructor to enforce a singleton pattern
     }
 
     /** Returns the singleton instance of Valid. */
@@ -75,7 +75,7 @@ public sealed interface Validation permits Validation.Valid, Validation.Invalid 
 
     @Override
     public Validation combine(Validation other) {
-      // Valid combined with anything returns that other validation
+      // Valid combined with anything returning that other validation
       return other;
     }
 
@@ -96,9 +96,7 @@ public sealed interface Validation permits Validation.Valid, Validation.Invalid 
   }
 
   /** Represents a failed validation containing one or more error messages. */
-  final class Invalid implements Validation {
-
-    private final List<String> messages;
+  record Invalid(List<String> messages) implements Validation {
 
     /** Creates an Invalid validation with the given error messages. */
     public Invalid(List<String> messages) {
@@ -114,6 +112,7 @@ public sealed interface Validation permits Validation.Valid, Validation.Invalid 
     }
 
     /** Returns the list of error messages. */
+    @Override
     public List<String> messages() {
       return messages;
     }
@@ -150,11 +149,6 @@ public sealed interface Validation permits Validation.Valid, Validation.Invalid 
       if (this == obj) return true;
       if (!(obj instanceof Invalid other)) return false;
       return messages.equals(other.messages);
-    }
-
-    @Override
-    public int hashCode() {
-      return messages.hashCode();
     }
   }
 }
