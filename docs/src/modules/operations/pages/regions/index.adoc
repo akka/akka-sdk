@@ -186,17 +186,7 @@ You might want to change the pinned-region primary for stateful components if yo
 . Follow instructions in <<_setting_the_primary_region_of_a_project>>.
 . Change to `pinned-region` primary selection mode.
 
-=== Change primary region for disaster recovery
-
-If a region is failing you might want to fail over to another region that is working.
-
-. If the failing region is the primary region, follow instructions in <<_setting_the_primary_region_of_a_project>> and change the primary to a non-failing region.
-. If you are using `request-region` primary selection you should <<_switch_from_request_region_to_pinned_region_primary_selection_mode_for_stateful_components>>. Depending on how responsive the failing region is this might not be possible to deploy to the failing region, but you should deploy it to the non-failing regions. The reason for this is that otherwise write requests will still be routed to the failing region for component instances that have their primary in the failing region.
-. Be aware that events that were written in the failing region and had not been replicated to other regions before the hard failover will be replicated when the regions are connected again. There are no guarantees regarding the order of these "old" events and any new events written by the new primary, which could lead to conflicting states across regions.
-
-For faster fail over you can consider the alternative of xref:#_fast_downing_of_region_for_disaster_recovery[], but the drawback is that is more difficult to recover the failed region.
-
-=== Fast downing of region for disaster recovery
+=== Downing of region for disaster recovery
 
 If the communication with a region is failing or it is completely unresponsive, you might want to take out the failing region, without re-deploying the services in the healthy regions.
 
@@ -221,3 +211,29 @@ akka project settings down-region gcp-us-east1 aws-us-east-2 --region gcp-us-eas
 ----
 akka service pause my-service --region gcp-us-east1
 ----
+
+=== Bring up region for disaster recovery
+
+When the problems have been solved after xref:#_fast_downing_of_region_for_disaster_recovery[] you can bring up the failed region again.
+
+. Use `bring-up-region` from the CLI:
++
+[source, command line]
+----
+akka project settings bring-up-region gcp-us-east1 --region aws-us-east-2
+----
++
+In the above example, `gcp-us-east1` is the region that was previously downed. The CLI command is sent to `aws-us-east-2`.
+. You can send the same command to all regions, including the previously failed region.
++
+[source, command line]
+----
+akka project settings bring-up-region gcp-us-east1 --region gcp-us-east1
+----
+
+Events that were written in the failing region and had not been replicated to other regions before the failover will be replicated when the regions are connected again. This means that there is a possibility of conflicting events since events for an entity instance could have been persisted in the respective region without being aware of events from the other region. Thereby violating the single-writer principle of the entity. On an entity instance level, there is a process to automatically handle such conflicts:
+
+* If there were no new writes in the non-downed regions, the events from downed region that hadn't been replicated before are now replicated and applied as normal.
+* Conflicting events are detected by using https://en.wikipedia.org/wiki/Version_vector[version vectors, window="new"]. Conflicting events are still stored in the event journal, but not immediately applied to the state of the entity.
+* The entity instance has a primary region in the non-downed regions that has the authority to resolve the conflicts. It replays all events and selectively applies them to the state based on collected conflicts and where the event was originally written. Meaning that conflicting events from the previously downed region are discarded.
+* The resolved state is persisted and used by other regions.
