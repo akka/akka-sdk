@@ -6,11 +6,11 @@ package com.example
 
 import java.nio.file.Files
 import java.nio.file.Paths
+import javax.tools._
 
 import scala.jdk.CollectionConverters._
 import scala.util.Using
 
-import javax.tools._
 import org.scalatest.matchers.should.Matchers
 
 /**
