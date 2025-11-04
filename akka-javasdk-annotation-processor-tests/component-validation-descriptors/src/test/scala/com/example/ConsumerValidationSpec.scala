@@ -51,6 +51,21 @@ class ConsumerValidationSpec extends AnyWordSpec with CompilationTestSupport {
       assertCompilationSuccess(result)
     }
 
+    "accept valid Consumer with raw event handler for EventSourcedEntity" in {
+      val result = compileTestSource("valid/ValidConsumerWithRawEventHandlerES.java")
+      assertCompilationSuccess(result)
+    }
+
+    "accept valid Consumer with raw event handler for KeyValueEntity" in {
+      val result = compileTestSource("valid/ValidConsumerWithRawEventHandlerKVE.java")
+      assertCompilationSuccess(result)
+    }
+
+    "accept valid Consumer with raw event handler for Workflow" in {
+      val result = compileTestSource("valid/ValidConsumerWithRawEventHandlerWorkflow.java")
+      assertCompilationSuccess(result)
+    }
+
     // Invalid consumers - basic validations
     "reject Consumer without @Consume annotation" in {
       val result = compileTestSource("invalid/ConsumerWithoutConsumeAnnotation.java")

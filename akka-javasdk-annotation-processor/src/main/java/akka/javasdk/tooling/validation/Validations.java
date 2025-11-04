@@ -610,6 +610,7 @@ public class Validations {
       // Check if there's a handler for the state type or a delete handler
       boolean hasStateHandler = false;
       boolean hasDeleteHandler = false;
+      boolean hasRawHandler = false;
 
       for (Element enclosed : element.getEnclosedElements()) {
         if (enclosed instanceof ExecutableElement method) {
@@ -621,13 +622,15 @@ public class Validations {
               TypeMirror paramType = method.getParameters().get(0).asType();
               if (paramType.toString().equals(stateType.toString())) {
                 hasStateHandler = true;
+              } else if ("byte[]".equals(paramType.toString())) {
+                hasRawHandler = true;
               }
             }
           }
         }
       }
 
-      if (!hasStateHandler && !hasDeleteHandler) {
+      if (!hasStateHandler && !hasDeleteHandler && !hasRawHandler) {
         return Validation.of(
             Validations.errorMessage(
                 element,
@@ -693,6 +696,7 @@ public class Validations {
       // Check if there's a handler for the state type or a delete handler
       boolean hasStateHandler = false;
       boolean hasDeleteHandler = false;
+      boolean hasRawHandler = false;
 
       for (Element enclosed : element.getEnclosedElements()) {
         if (enclosed instanceof ExecutableElement method) {
@@ -704,13 +708,15 @@ public class Validations {
               TypeMirror paramType = method.getParameters().get(0).asType();
               if (paramType.toString().equals(stateType.toString())) {
                 hasStateHandler = true;
+              } else if ("byte[]".equals(paramType.toString())) {
+                hasRawHandler = true;
               }
             }
           }
         }
       }
 
-      if (!hasStateHandler && !hasDeleteHandler) {
+      if (!hasStateHandler && !hasDeleteHandler && !hasRawHandler) {
         return Validation.of(
             Validations.errorMessage(
                 element,
@@ -749,6 +755,13 @@ public class Validations {
           Validations.getAnnotationValue(subscriptionAnnotation, "ignoreUnknown");
       if ("true".equals(ignoreUnknown)) {
         // If ignoreUnknown is true, we don't validate missing handlers
+        return Validation.Valid.instance();
+      }
+
+      // Check if there's a raw event handler (byte[] parameter)
+      boolean hasRawHandler = hasRawEventHandler(element, effectTypeName);
+      if (hasRawHandler) {
+        // If there's a raw event handler, we don't validate missing handlers
         return Validation.Valid.instance();
       }
 
@@ -811,5 +824,30 @@ public class Validations {
     }
 
     return Validation.Valid.instance();
+  }
+
+  /**
+   * Checks if a component has a raw event handler (a method that takes byte[] as the first
+   * parameter).
+   *
+   * @param element the component class to check
+   * @param effectTypeName the effect type name to identify subscription methods
+   * @return true if the component has at least one method with byte[] as the first parameter
+   */
+  static boolean hasRawEventHandler(TypeElement element, String effectTypeName) {
+    for (Element enclosed : element.getEnclosedElements()) {
+      if (enclosed instanceof ExecutableElement method) {
+        String returnTypeName = method.getReturnType().toString();
+        if ((returnTypeName.equals(effectTypeName)
+                || returnTypeName.startsWith(effectTypeName + "<"))
+            && !method.getParameters().isEmpty()) {
+          String firstParamType = method.getParameters().getFirst().asType().toString();
+          if ("byte[]".equals(firstParamType)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 }
