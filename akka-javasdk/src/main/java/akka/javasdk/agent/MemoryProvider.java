@@ -7,6 +7,7 @@ package akka.javasdk.agent;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -106,11 +107,10 @@ public sealed interface MemoryProvider {
      * <p>The returned provider will allow reading from memory but disable writing. The specified
      * filter controls which messages are included when reading from memory.
      *
-     * @param filter the memory filter to apply when reading history
      * @return A new memory provider with writing disabled and the specified filter
      */
-    public MemoryProvider readOnly(MemoryFilter filter) {
-      return new LimitedWindowMemoryProvider(readLastN, true, false, List.of(filter));
+    public MemoryProvider readOnly(List<MemoryFilter> filters) {
+      return new LimitedWindowMemoryProvider(readLastN, true, false, filters);
     }
 
     /**
@@ -119,13 +119,10 @@ public sealed interface MemoryProvider {
      * <p>The returned provider will allow reading from memory but disable writing. The specified
      * filters control which messages are included when reading from memory.
      *
-     * @param filter the first memory filter to apply when reading history
-     * @param filters additional memory filters to apply when reading history
      * @return A new memory provider with writing disabled and the specified filters
      */
-    public MemoryProvider readOnly(MemoryFilter filter, MemoryFilter... filters) {
-      var allFilters = Stream.concat(Stream.of(filter), Arrays.stream(filters)).toList();
-      return new LimitedWindowMemoryProvider(readLastN, true, false, allFilters);
+    public MemoryProvider readOnly(Supplier<List<MemoryFilter>> filtersSupplier) {
+      return readOnly(filtersSupplier.get());
     }
 
     /**
@@ -159,11 +156,10 @@ public sealed interface MemoryProvider {
      * is applied first, then the limit is enforced on the filtered results.
      *
      * @param onlyLastN the maximum number of most recent messages to read from memory
-     * @param filter the memory filter to apply when reading history
      * @return A new memory provider with the specified history limit and filter
      */
-    public MemoryProvider readLast(int onlyLastN, MemoryFilter filter) {
-      return new LimitedWindowMemoryProvider(Optional.of(onlyLastN), read, write, List.of(filter));
+    public MemoryProvider readLast(int onlyLastN, List<MemoryFilter> filters) {
+      return new LimitedWindowMemoryProvider(Optional.of(onlyLastN), read, write, filters);
     }
 
     /**
@@ -173,13 +169,10 @@ public sealed interface MemoryProvider {
      * are applied first, then the limit is enforced on the filtered results.
      *
      * @param onlyLastN the maximum number of most recent messages to read from memory
-     * @param filter the first memory filter to apply when reading history
-     * @param filters additional memory filters to apply when reading history
      * @return A new memory provider with the specified history limit and filters
      */
-    public MemoryProvider readLast(int onlyLastN, MemoryFilter filter, MemoryFilter... filters) {
-      var allFilters = Stream.concat(Stream.of(filter), Arrays.stream(filters)).toList();
-      return new LimitedWindowMemoryProvider(Optional.of(onlyLastN), read, write, allFilters);
+    public MemoryProvider readLast(int onlyLastN, Supplier<List<MemoryFilter>> filtersSupplier) {
+      return readLast(onlyLastN,filtersSupplier.get());
     }
 
     /**
@@ -188,11 +181,10 @@ public sealed interface MemoryProvider {
      * <p>The specified filter controls which messages are included when reading from memory, based
      * on agent component ID or role.
      *
-     * @param filter the memory filter to apply when reading history
      * @return A new memory provider with the specified filter
      */
-    public MemoryProvider filtered(MemoryFilter filter) {
-      return new LimitedWindowMemoryProvider(Optional.empty(), read, write, List.of(filter));
+    public MemoryProvider filtered(List<MemoryFilter> filters) {
+      return new LimitedWindowMemoryProvider(Optional.empty(), read, write, filters);
     }
 
     /**
@@ -201,13 +193,10 @@ public sealed interface MemoryProvider {
      * <p>The specified filters control which messages are included when reading from memory, based
      * on agent component ID or role.
      *
-     * @param filter the first memory filter to apply when reading history
-     * @param filters additional memory filters to apply when reading history
      * @return A new memory provider with the specified filters
      */
-    public MemoryProvider filtered(MemoryFilter filter, MemoryFilter... filters) {
-      var allFilters = Stream.concat(Stream.of(filter), Arrays.stream(filters)).toList();
-      return new LimitedWindowMemoryProvider(Optional.empty(), read, write, allFilters);
+    public MemoryProvider filtered(Supplier<List<MemoryFilter>> filtersSupplier) {
+    return filtered(filtersSupplier.get());
     }
   }
 

@@ -4,9 +4,13 @@
 
 package akka.javasdk.agent;
 
+import akka.javasdk.impl.agent.MemoryFiltersSupplierImpl;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Filters for controlling which messages are included when retrieving session history from memory.
@@ -35,6 +39,103 @@ import java.util.Set;
   @JsonSubTypes.Type(value = MemoryFilter.ExcludeFromAgentRole.class, name = "exclude-from-role")
 })
 public sealed interface MemoryFilter {
+
+
+  interface MemoryFilterSupplier extends Supplier<List<MemoryFilter>> {
+
+    MemoryFilterSupplier includeFromAgentId(String id);
+    MemoryFilterSupplier includeFromAgentId(Set<String> ids);
+
+    MemoryFilterSupplier excludeFromAgentId(String id);
+    MemoryFilterSupplier excludeFromAgentId(Set<String> ids);
+
+    MemoryFilterSupplier includeFromAgentRole(String role);
+    MemoryFilterSupplier includeFromAgentRole(Set<String> roles);
+
+    MemoryFilterSupplier excludeFromAgentRole(String role);
+    MemoryFilterSupplier excludeFromAgentRole(Set<String> roles);
+  }
+
+  /**
+   * Creates a filter that includes only messages from the specified agent component id.
+   *
+   * @param id the agent component id to include messages from
+   * @return a filter that includes only messages from the specified agent
+   */
+  static MemoryFilterSupplier includeFromAgentId(String id) {
+    return new MemoryFiltersSupplierImpl(new MemoryFilter.IncludeFromAgentId(Set.of(id)));
+  }
+  
+  /**
+   * Creates a filter that includes only messages from the specified agent component ids.
+   *
+   * @param ids the set of agent component ids to include messages from
+   * @return a filter that includes only messages from the specified agents
+   */
+  static MemoryFilterSupplier includeFromAgentId(Set<String> ids) {
+    return new MemoryFiltersSupplierImpl(new MemoryFilter.IncludeFromAgentId(ids));
+  }
+
+  /**
+   * Creates a filter that excludes messages from the specified agent component id.
+   *
+   * @param id the agent component id to exclude messages from
+   * @return a filter that excludes messages from the specified agent
+   */
+  static MemoryFilterSupplier excludeFromAgentId(String id) {
+    return new MemoryFiltersSupplierImpl(new MemoryFilter.ExcludeFromAgentId(Set.of(id)));
+  }
+
+  /**
+   * Creates a filter that excludes messages from the specified agent component ids.
+   *
+   * @param ids the set of agent component ids to exclude messages from
+   * @return a filter that excludes messages from the specified agents
+   */
+  static MemoryFilterSupplier excludeFromAgentId(Set<String> ids) {
+    return new MemoryFiltersSupplierImpl(new MemoryFilter.ExcludeFromAgentId(ids));
+  }
+
+  /**
+   * Creates a filter that includes only messages from agents with the specified role.
+   *
+   * @param role the agent role to include messages from
+   * @return a filter that includes only messages from agents with the specified role
+   */
+  static MemoryFilterSupplier includeFromAgentRole(String role) {
+    return new MemoryFiltersSupplierImpl(new MemoryFilter.IncludeFromAgentRole(Set.of(role)));
+  }
+
+  /**
+   * Creates a filter that includes only messages from agents with the specified roles.
+   *
+   * @param roles the set of agent roles to include messages from
+   * @return a filter that includes only messages from agents with the specified roles
+   */
+  static MemoryFilterSupplier includeFromAgentRole(Set<String> roles) {
+    return new MemoryFiltersSupplierImpl(new MemoryFilter.IncludeFromAgentRole(roles));
+  }
+
+  /**
+   * Creates a filter that excludes messages from agents with the specified role.
+   *
+   * @param role the agent role to exclude messages from
+   * @return a filter that excludes messages from agents with the specified role
+   */
+  static MemoryFilterSupplier excludeFromAgentRole(String role) {
+    return new MemoryFiltersSupplierImpl(new MemoryFilter.ExcludeFromAgentRole(Set.of(role)));
+  }
+
+  /**
+   * Creates a filter that excludes messages from agents with the specified roles.
+   *
+   * @param roles the set of agent roles to exclude messages from
+   * @return a filter that excludes messages from agents with the specified roles
+   */
+  static MemoryFilterSupplier excludeFromAgentRole(Set<String> roles) {
+    return new MemoryFiltersSupplierImpl(new MemoryFilter.ExcludeFromAgentRole(roles));
+  }
+
   /**
    * Filter that includes only messages from agents with the specified component ids.
    *
@@ -75,83 +176,4 @@ public sealed interface MemoryFilter {
    */
   record ExcludeFromAgentRole(Set<String> roles) implements MemoryFilter {}
 
-  /**
-   * Creates a filter that includes only messages from the specified agent component id.
-   *
-   * @param id the agent component id to include messages from
-   * @return a filter that includes only messages from the specified agent
-   */
-  static MemoryFilter includeFromAgentId(String id) {
-    return new IncludeFromAgentId(Set.of(id));
-  }
-
-  /**
-   * Creates a filter that includes only messages from the specified agent component ids.
-   *
-   * @param ids the set of agent component ids to include messages from
-   * @return a filter that includes only messages from the specified agents
-   */
-  static MemoryFilter includeFromAgentId(Set<String> ids) {
-    return new IncludeFromAgentId(ids);
-  }
-
-  /**
-   * Creates a filter that excludes messages from the specified agent component id.
-   *
-   * @param id the agent component id to exclude messages from
-   * @return a filter that excludes messages from the specified agent
-   */
-  static MemoryFilter excludeFromAgentId(String id) {
-    return new ExcludeFromAgentId(Set.of(id));
-  }
-
-  /**
-   * Creates a filter that excludes messages from the specified agent component ids.
-   *
-   * @param ids the set of agent component ids to exclude messages from
-   * @return a filter that excludes messages from the specified agents
-   */
-  static MemoryFilter excludeFromAgentId(Set<String> ids) {
-    return new ExcludeFromAgentId(ids);
-  }
-
-  /**
-   * Creates a filter that includes only messages from agents with the specified role.
-   *
-   * @param role the agent role to include messages from
-   * @return a filter that includes only messages from agents with the specified role
-   */
-  static MemoryFilter includeFromAgentRole(String role) {
-    return new IncludeFromAgentRole(Set.of(role));
-  }
-
-  /**
-   * Creates a filter that includes only messages from agents with the specified roles.
-   *
-   * @param roles the set of agent roles to include messages from
-   * @return a filter that includes only messages from agents with the specified roles
-   */
-  static MemoryFilter includeFromAgentRole(Set<String> roles) {
-    return new IncludeFromAgentRole(roles);
-  }
-
-  /**
-   * Creates a filter that excludes messages from agents with the specified role.
-   *
-   * @param role the agent role to exclude messages from
-   * @return a filter that excludes messages from agents with the specified role
-   */
-  static MemoryFilter excludeFromAgentRole(String role) {
-    return new ExcludeFromAgentRole(Set.of(role));
-  }
-
-  /**
-   * Creates a filter that excludes messages from agents with the specified roles.
-   *
-   * @param roles the set of agent roles to exclude messages from
-   * @return a filter that excludes messages from agents with the specified roles
-   */
-  static MemoryFilter excludeFromAgentRole(Set<String> roles) {
-    return new ExcludeFromAgentRole(roles);
-  }
 }

@@ -244,7 +244,7 @@ public class SessionMemoryEntityTest {
     // Check event - ignoring timestamp comparison
     var events = clearResult.getAllEvents();
     assertThat(events).hasSize(1);
-    assertThat(events.get(0)).isInstanceOf(SessionMemoryEntity.Event.Deleted.class);
+    assertThat(events.getFirst()).isInstanceOf(SessionMemoryEntity.Event.Deleted.class);
 
     // when retrieving history after clearing
     EventSourcedResult<SessionHistory> historyResult =
@@ -515,12 +515,12 @@ public class SessionMemoryEntityTest {
         .method(SessionMemoryEntity::addInteraction)
         .invoke(new AddInteractionCmd(userMessage3, aiMessage3));
 
-    // when - filter to include only messages from agent-1
-    var filter = MemoryFilter.includeFromAgentId(componentId1);
+    // when - filterSupplier to include only messages from agent-1
+    var filterSupplier = MemoryFilter.includeFromAgentId(componentId1);
     EventSourcedResult<SessionHistory> result =
         testKit
             .method(SessionMemoryEntity::getHistory)
-            .invoke(new SessionMemoryEntity.GetHistoryCmd(List.of(filter)));
+            .invoke(new SessionMemoryEntity.GetHistoryCmd(filterSupplier.get()));
 
     // then - only messages from agent-1 should be present
     assertThat(result.getReply().messages()).containsExactly(userMessage1, aiMessage1);
@@ -561,12 +561,12 @@ public class SessionMemoryEntityTest {
         .method(SessionMemoryEntity::addInteraction)
         .invoke(new AddInteractionCmd(userMessage3, aiMessage3));
 
-    // when - filter to exclude messages from agent-2
-    var filter = MemoryFilter.excludeFromAgentId(componentId2);
+    // when - filterSupplier to exclude messages from agent-2
+    var filterSupplier = MemoryFilter.excludeFromAgentId(componentId2);
     EventSourcedResult<SessionHistory> result =
         testKit
             .method(SessionMemoryEntity::getHistory)
-            .invoke(new SessionMemoryEntity.GetHistoryCmd(List.of(filter)));
+            .invoke(new SessionMemoryEntity.GetHistoryCmd(filterSupplier.get()));
 
     // then - messages from agent-1 and agent-3 should be present
     assertThat(result.getReply().messages())
@@ -623,11 +623,11 @@ public class SessionMemoryEntityTest {
         .invoke(new AddInteractionCmd(userMessage3, aiMessage3));
 
     // when - filter to include only messages from a summarizer role
-    var filter = MemoryFilter.includeFromAgentRole(role1);
+    var filterSupplier = MemoryFilter.includeFromAgentRole(role1);
     EventSourcedResult<SessionHistory> result =
         testKit
             .method(SessionMemoryEntity::getHistory)
-            .invoke(new SessionMemoryEntity.GetHistoryCmd(List.of(filter)));
+            .invoke(new SessionMemoryEntity.GetHistoryCmd(filterSupplier.get()));
 
     // then - only messages from a summarizer role should be present
     assertThat(result.getReply().messages()).containsExactly(userMessage1, aiMessage1);
@@ -682,12 +682,12 @@ public class SessionMemoryEntityTest {
         .method(SessionMemoryEntity::addInteraction)
         .invoke(new AddInteractionCmd(userMessage3, aiMessage3));
 
-    // when - filter to exclude messages from a translator role
-    var filter = MemoryFilter.excludeFromAgentRole(role2);
+    // when - filterSupplier to exclude messages from a translator role
+    var filterSupplier = MemoryFilter.excludeFromAgentRole(role2);
     EventSourcedResult<SessionHistory> result =
         testKit
             .method(SessionMemoryEntity::getHistory)
-            .invoke(new SessionMemoryEntity.GetHistoryCmd(List.of(filter)));
+            .invoke(new SessionMemoryEntity.GetHistoryCmd(filterSupplier.get()));
 
     // then - messages from summarizer and analyzer roles should be present
     assertThat(result.getReply().messages())
@@ -738,12 +738,12 @@ public class SessionMemoryEntityTest {
         .method(SessionMemoryEntity::addInteraction)
         .invoke(new AddInteractionCmd(userMessage4, aiMessage4));
 
-    // when - filter to include only messages from agent-1 AND limit to last 2 messages
-    var filter = MemoryFilter.includeFromAgentId(componentId1);
+    // when - filterBuild to include only messages from agent-1 AND limit to last 2 messages
+    var filterBuild = MemoryFilter.includeFromAgentId(componentId1);
     EventSourcedResult<SessionHistory> result =
         testKit
             .method(SessionMemoryEntity::getHistory)
-            .invoke(new SessionMemoryEntity.GetHistoryCmd(Optional.of(2), List.of(filter)));
+            .invoke(new SessionMemoryEntity.GetHistoryCmd(Optional.of(2), filterBuild.get()));
 
     // then - only the last 2 messages from agent-1 should be present
     // The filtered list would be: [userMessage1, aiMessage1, userMessage3, aiMessage3,
