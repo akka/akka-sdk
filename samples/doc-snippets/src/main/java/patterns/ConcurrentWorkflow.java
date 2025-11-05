@@ -1,8 +1,10 @@
 package patterns;
 
 import agent_guide.part3.WeatherAgent;
+import akka.Done;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.workflow.Workflow;
 import java.util.concurrent.TimeUnit;
 
@@ -33,6 +35,10 @@ public class ConcurrentWorkflow extends Workflow<ConcurrentWorkflow.State> {
 
   public ConcurrentWorkflow(ComponentClient componentClient) {
     this.componentClient = componentClient;
+  }
+
+  public Effect<Done> start() {
+    return effects().reply(Done.getInstance());
   }
 
   // tag::concurrent-step[]
