@@ -40,10 +40,12 @@ Obtain a free key at https://akka.io/key.
 
 == Security Updates
 
-We run automated security vulnerability and license policy scanning of dependencies.
-No vulnerabilities or upstream vulnerabilities have been found since Akka 25.10.
+We run automated security vulnerability and license policy scanning of dependencies. Several dependencies have been updated to fix security vulnerabilities and keep up with latest improvements.
 
-FIXME double check
+The following CVE’s are addressed in this build.
+
+* https://nvd.nist.gov/vuln/detail/CVE-2025-24970[CVE-2025-24970]
+* https://nvd.nist.gov/vuln/detail/CVE-2025-53393[CVE-2025-53393]
 
 == Bug fixes
 
