@@ -4,6 +4,7 @@
 
 package akka.javasdk.agent;
 
+import akka.annotation.DoNotInherit;
 import akka.javasdk.impl.agent.MemoryFiltersSupplierImpl;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -56,8 +57,12 @@ public sealed interface MemoryFilter {
    * {@link MemoryProvider.LimitedWindowMemoryProvider#readOnly(Supplier)} and {@link
    * MemoryProvider.LimitedWindowMemoryProvider#filtered(Supplier)}.
    *
+   * This is an internal API, and we do not recommend inheriting from it. To have access to an implementation, use
+   * the factory methods in {@link MemoryFilter}
+   *
    * @see MemoryProvider.LimitedWindowMemoryProvider for usage examples
    */
+  @DoNotInherit
   interface MemoryFilterSupplier extends Supplier<List<MemoryFilter>> {
 
     /**

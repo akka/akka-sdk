@@ -6,7 +6,6 @@ package akka.javasdk.agent;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 /**
  * Interface for configuring memory management in agent systems.
@@ -130,18 +129,6 @@ public sealed interface MemoryProvider {
     }
 
     /**
-     * Creates a read-only version of this memory provider with a filter applied.
-     *
-     * <p>The returned provider will allow reading from memory but disable writing. The specified
-     * filter controls which messages are included when reading from memory.
-     *
-     * @return A new memory provider with writing disabled and the specified filter
-     */
-    public MemoryProvider readOnly(List<MemoryFilter> filters) {
-      return new LimitedWindowMemoryProvider(readLastN, true, false, filters);
-    }
-
-    /**
      * Creates a read-only version of this memory provider with multiple filters applied.
      *
      * <p>The returned provider will allow reading from memory but disable writing. The specified
@@ -167,8 +154,8 @@ public sealed interface MemoryProvider {
      * @param filtersSupplier a supplier that provides the list of filters to apply
      * @return A new memory provider with writing disabled and the specified filters
      */
-    public MemoryProvider readOnly(Supplier<List<MemoryFilter>> filtersSupplier) {
-      return readOnly(filtersSupplier.get());
+    public MemoryProvider readOnly(MemoryFilter.MemoryFilterSupplier filtersSupplier) {
+      return new LimitedWindowMemoryProvider(readLastN, true, false, filtersSupplier.get());
     }
 
     /**
@@ -196,19 +183,6 @@ public sealed interface MemoryProvider {
     }
 
     /**
-     * Creates a new memory provider with an updated history limit and a filter applied.
-     *
-     * <p>The history limit controls the maximum number of messages to read from memory. The filter
-     * is applied first, then the limit is enforced on the filtered results.
-     *
-     * @param onlyLastN the maximum number of most recent messages to read from memory
-     * @return A new memory provider with the specified history limit and filter
-     */
-    public MemoryProvider readLast(int onlyLastN, List<MemoryFilter> filters) {
-      return new LimitedWindowMemoryProvider(Optional.of(onlyLastN), read, write, filters);
-    }
-
-    /**
      * Creates a new memory provider with an updated history limit and multiple filters applied.
      *
      * <p>The history limit controls the maximum number of messages to read from memory. Filters of
@@ -233,20 +207,8 @@ public sealed interface MemoryProvider {
      * @param filtersSupplier a supplier that provides the list of filters to apply
      * @return A new memory provider with the specified history limit and filters
      */
-    public MemoryProvider readLast(int onlyLastN, Supplier<List<MemoryFilter>> filtersSupplier) {
-      return readLast(onlyLastN, filtersSupplier.get());
-    }
-
-    /**
-     * Creates a new memory provider with a filter applied.
-     *
-     * <p>The specified filter controls which messages are included when reading from memory, based
-     * on agent component ID or role.
-     *
-     * @return A new memory provider with the specified filter
-     */
-    public MemoryProvider filtered(List<MemoryFilter> filters) {
-      return new LimitedWindowMemoryProvider(Optional.empty(), read, write, filters);
+    public MemoryProvider readLast(int onlyLastN, MemoryFilter.MemoryFilterSupplier filtersSupplier) {
+      return new LimitedWindowMemoryProvider(Optional.of(onlyLastN), read, write, filtersSupplier.get());
     }
 
     /**
@@ -276,8 +238,8 @@ public sealed interface MemoryProvider {
      * @param filtersSupplier a supplier that provides the list of filters to apply
      * @return A new memory provider with the specified filters
      */
-    public MemoryProvider filtered(Supplier<List<MemoryFilter>> filtersSupplier) {
-      return filtered(filtersSupplier.get());
+    public MemoryProvider filtered(MemoryFilter.MemoryFilterSupplier filtersSupplier) {
+      return new LimitedWindowMemoryProvider(Optional.empty(), read, write, filtersSupplier.get());
     }
   }
 
