@@ -319,6 +319,7 @@ public class ViewValidations {
     String effectType = "akka.javasdk.view.TableUpdater.Effect";
     return viewTableUpdaterMustHaveConsumeAnnotation(element)
         .combine(validateViewUpdaterRowType(element))
+        .combine(viewDeleteHandlerValidation(element))
         .combine(viewCommonStateSubscriptionValidation(element))
         .combine(viewMustHaveCorrectUpdateHandlerWhenTransformingViewUpdates(element))
         .combine(Validations.ambiguousHandlerValidations(element, effectType))
@@ -469,6 +470,39 @@ public class ViewValidations {
     if (Validations.hasKeyValueEntitySubscription(element)
         || Validations.hasWorkflowSubscription(element)) {
 
+      // First, check if this is a passthrough scenario (state type matches row type)
+      // In passthrough scenarios, no handlers are required
+      TypeMirror tableType = extractTableTypeFromTableUpdater(element);
+      TypeMirror stateType = null;
+
+      if (Validations.hasKeyValueEntitySubscription(element)) {
+        AnnotationMirror subscriptionAnnotation =
+            Validations.findAnnotation(
+                element, "akka.javasdk.annotations.Consume.FromKeyValueEntity");
+        if (subscriptionAnnotation != null) {
+          TypeMirror entityClass = getAnnotationClassValue(subscriptionAnnotation, "value");
+          if (entityClass != null) {
+            stateType = extractStateTypeFromKeyValueEntity(entityClass);
+          }
+        }
+      } else if (Validations.hasWorkflowSubscription(element)) {
+        AnnotationMirror subscriptionAnnotation =
+            Validations.findAnnotation(element, "akka.javasdk.annotations.Consume.FromWorkflow");
+        if (subscriptionAnnotation != null) {
+          TypeMirror workflowClass = getAnnotationClassValue(subscriptionAnnotation, "value");
+          if (workflowClass != null) {
+            stateType = extractStateTypeFromWorkflow(workflowClass);
+          }
+        }
+      }
+
+      // If types match, it's a passthrough scenario - no handlers required
+      if (tableType != null
+          && stateType != null
+          && tableType.toString().equals(stateType.toString())) {
+        return Validation.Valid.instance();
+      }
+
       // Check if there's any update handler or delete handler
       boolean hasAnyHandler = false;
 
@@ -487,34 +521,8 @@ public class ViewValidations {
       }
 
       if (!hasAnyHandler) {
-        // Get the state type for the error message
-        String stateTypeName = "state";
-        if (Validations.hasKeyValueEntitySubscription(element)) {
-          AnnotationMirror subscriptionAnnotation =
-              Validations.findAnnotation(
-                  element, "akka.javasdk.annotations.Consume.FromKeyValueEntity");
-          if (subscriptionAnnotation != null) {
-            TypeMirror entityClass = getAnnotationClassValue(subscriptionAnnotation, "value");
-            if (entityClass != null) {
-              TypeMirror stateType = extractStateTypeFromKeyValueEntity(entityClass);
-              if (stateType != null) {
-                stateTypeName = stateType.toString();
-              }
-            }
-          }
-        } else if (Validations.hasWorkflowSubscription(element)) {
-          AnnotationMirror subscriptionAnnotation =
-              Validations.findAnnotation(element, "akka.javasdk.annotations.Consume.FromWorkflow");
-          if (subscriptionAnnotation != null) {
-            TypeMirror workflowClass = getAnnotationClassValue(subscriptionAnnotation, "value");
-            if (workflowClass != null) {
-              TypeMirror stateType = extractStateTypeFromWorkflow(workflowClass);
-              if (stateType != null) {
-                stateTypeName = stateType.toString();
-              }
-            }
-          }
-        }
+        // Use the already-extracted stateType for the error message
+        String stateTypeName = (stateType != null) ? stateType.toString() : "state";
 
         return Validation.of(
             Validations.errorMessage(
@@ -673,20 +681,17 @@ public class ViewValidations {
   }
 
   /**
-   * Validates subscription rules specific to View TableUpdaters.
+   * Validates delete handler constraints for all View TableUpdaters. Delete handlers must: - Have
+   * zero parameters - Be unique (only one delete handler allowed)
    *
    * @param tableUpdater the TableUpdater class to validate
    * @return a Validation result indicating success or failure
    */
-  private static Validation viewCommonStateSubscriptionValidation(TypeElement tableUpdater) {
-    // This validation only applies to KeyValueEntity and Workflow subscriptions (state-based)
-    // EventSourcedEntity subscriptions don't have these constraints
-    if (!Validations.hasKeyValueEntitySubscription(tableUpdater)
-        && !Validations.hasWorkflowSubscription(tableUpdater)) {
+  private static Validation viewDeleteHandlerValidation(TypeElement tableUpdater) {
+    if (Validations.doesNotHaveSubscription(tableUpdater)) {
       return Validation.Valid.instance();
     }
 
-    List<ExecutableElement> updateMethods = new ArrayList<>();
     List<ExecutableElement> deleteHandlers = new ArrayList<>();
     List<ExecutableElement> deleteHandlersWithParams = new ArrayList<>();
 
@@ -694,15 +699,12 @@ public class ViewValidations {
       if (enclosed instanceof ExecutableElement method) {
         String returnTypeName = method.getReturnType().toString();
         if (returnTypeName.startsWith("akka.javasdk.view.TableUpdater.Effect")) {
-
           if (Validations.hasHandleDeletes(method)) {
             if (method.getParameters().isEmpty()) {
               deleteHandlers.add(method);
             } else {
               deleteHandlersWithParams.add(method);
             }
-          } else {
-            updateMethods.add(method);
           }
         }
       }
@@ -720,6 +722,46 @@ public class ViewValidations {
                   + " method parameters."));
     }
 
+    if (deleteHandlers.size() >= 2) {
+      for (ExecutableElement method : deleteHandlers) {
+        errors.add(
+            Validations.errorMessage(
+                method, "Multiple methods annotated with @DeleteHandler are not allowed."));
+      }
+    }
+
+    return Validation.of(errors);
+  }
+
+  /**
+   * Validates subscription rules specific to state-based View TableUpdaters (KVE/Workflow). For
+   * state subscriptions, only one update method is allowed.
+   *
+   * @param tableUpdater the TableUpdater class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation viewCommonStateSubscriptionValidation(TypeElement tableUpdater) {
+    // This validation only applies to KeyValueEntity and Workflow subscriptions (state-based)
+    if (!Validations.hasKeyValueEntitySubscription(tableUpdater)
+        && !Validations.hasWorkflowSubscription(tableUpdater)) {
+      return Validation.Valid.instance();
+    }
+
+    List<ExecutableElement> updateMethods = new ArrayList<>();
+
+    for (Element enclosed : tableUpdater.getEnclosedElements()) {
+      if (enclosed instanceof ExecutableElement method) {
+        String returnTypeName = method.getReturnType().toString();
+        if (returnTypeName.startsWith("akka.javasdk.view.TableUpdater.Effect")) {
+          if (!Validations.hasHandleDeletes(method)) {
+            updateMethods.add(method);
+          }
+        }
+      }
+    }
+
+    List<String> errors = new ArrayList<>();
+
     if (updateMethods.size() >= 2) {
       List<String> methodNames =
           updateMethods.stream().map(m -> m.getSimpleName().toString()).toList();
@@ -729,14 +771,6 @@ public class ViewValidations {
               "Duplicated update methods ["
                   + String.join(", ", methodNames)
                   + "] for state subscription are not allowed."));
-    }
-
-    if (deleteHandlers.size() >= 2) {
-      for (ExecutableElement method : deleteHandlers) {
-        errors.add(
-            Validations.errorMessage(
-                method, "Multiple methods annotated with @DeleteHandler are not allowed."));
-      }
     }
 
     return Validation.of(errors);

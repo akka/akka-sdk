@@ -26,6 +26,16 @@ class ViewValidationSpec extends AnyWordSpec with Matchers with CompilationTestS
       assertCompilationSuccess(result)
     }
 
+    "accept View with empty TableUpdater for KeyValueEntity passthrough scenario" in {
+      val result = compileTestSource("valid/ValidViewWithEmptyTableUpdater.java")
+      assertCompilationSuccess(result)
+    }
+
+    "accept View with empty TableUpdater for Workflow passthrough scenario" in {
+      val result = compileTestSource("valid/ValidViewWithEmptyTableUpdaterWorkflow.java")
+      assertCompilationSuccess(result)
+    }
+
     "reject View that is not public" in {
       val result = compileTestSource("invalid/NotPublicView.java")
       assertCompilationFailure(result, "NotPublicView is not marked with `public` modifier. Components must be public")
