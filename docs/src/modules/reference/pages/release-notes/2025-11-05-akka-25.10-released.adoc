@@ -77,15 +77,15 @@ Akka libraries now depend on Scala 2.13.17. Because of this, Scala sbt projects 
 * https://github.com/akka/akka-http/releases[Akka HTTP 10.7.x]
 * https://github.com/akka/akka-grpc/releases[Akka gRPC 2.5.x]
 * https://github.com/akka/akka-management/releases[Akka Management 1.6.x]
-* https://github.com/akka/alpakka-kafka/releases[Alpakka Kafka 7.0.x]
-* https://github.com/akka/alpakka/releases[Alpakka 9.0.x]
+* https://github.com/akka/alpakka-kafka/releases[Alpakka Kafka 8.0.x]
+* https://github.com/akka/alpakka/releases[Alpakka 10.0.x]
 * https://github.com/akka/akka-persistence-r2dbc/releases[Akka Persistence R2DBC 1.3.x]
 * https://github.com/akka/akka-persistence-dynamodb/releases[Akka Persistence DynamoDB 2.0.x]
 * https://github.com/akka/akka-persistence-jdbc/releases[Akka Persistence JDBC 5.5.x]
 * https://github.com/akka/akka-persistence-cassandra/releases[Akka Persistence Cassandra 1.3.x]
 * https://github.com/akka/akka-projection/releases[Akka Projections 1.6.x]
 * https://github.com/akka/akka-diagnostics/releases[Akka Diagnostics 2.2.x]
-* https://doc.akka.io/libraries/akka-insights/current/project/release-notes.html[Akka Insights 2.21.x]
+* https://doc.akka.io/libraries/akka-insights/current/project/release-notes.html[Akka Insights 2.22.x]
 
 Licensing and support options are available from https://akka.io/[Akka].
 
