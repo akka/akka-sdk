@@ -66,11 +66,10 @@ The following CVE’s are addressed in this build.
 == Compatibility
 
 All modules of Akka 25.10 are backwards compatible with Akka 25.05.
-
-FIXME something explicitly about Scala 2.13 projects needing to bump to 2.13.17?
-
 No configuration changes are needed.
 Rolling update of Akka Cluster is fully supported.
+
+Akka libraries now depend on Scala 2.13.17. Because of this, Scala sbt projects on Scala 2.13 will need to bump their Scala version to 2.13.7 to avoid errors from sbt.
 
 == Detailed release notes:
 
