@@ -16,9 +16,9 @@ import akka.javasdk.agent.MemoryFilter.MemoryFilterSupplier
  * INTERNAL API
  */
 @InternalApi
-private[javasdk] class MemoryFiltersSupplierImpl(val filters: List[MemoryFilter]) extends MemoryFilterSupplier {
+private[javasdk] class MemoryFiltersSupplierImpl(val filters: Vector[MemoryFilter]) extends MemoryFilterSupplier {
 
-  def this(filter: MemoryFilter) = this(List(filter))
+  def this(filter: MemoryFilter) = this(Vector(filter))
 
   override def includeFromAgentId(id: String): MemoryFilterSupplier =
     addFilter(new MemoryFilter.IncludeFromAgentId(util.Set.of(id)))
