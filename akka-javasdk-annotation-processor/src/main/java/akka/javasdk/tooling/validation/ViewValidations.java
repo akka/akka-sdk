@@ -4,10 +4,11 @@
 
 package akka.javasdk.tooling.validation;
 
+import static akka.javasdk.tooling.validation.Validations.getAnnotationClassValue;
+
 import java.util.ArrayList;
 import java.util.List;
 import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -171,7 +172,7 @@ public class ViewValidations {
             if (returnType instanceof DeclaredType declaredType) {
               List<? extends TypeMirror> typeArgs = declaredType.getTypeArguments();
               if (!typeArgs.isEmpty()) {
-                TypeMirror resultType = typeArgs.get(0);
+                TypeMirror resultType = typeArgs.getFirst();
                 if (isPrimitiveWrapper(resultType)) {
                   errors.add(
                       Validations.errorMessage(
@@ -421,7 +422,7 @@ public class ViewValidations {
             if (returnType instanceof DeclaredType declaredType) {
               List<? extends TypeMirror> typeArgs = declaredType.getTypeArguments();
               if (!typeArgs.isEmpty()) {
-                TypeMirror updateHandlerType = typeArgs.get(0);
+                TypeMirror updateHandlerType = typeArgs.getFirst();
                 if (updateHandlerType.toString().equals(tableType.toString())) {
                   hasTransformationHandler = true;
                   break;
@@ -470,14 +471,12 @@ public class ViewValidations {
 
       // Check if there's any update handler or delete handler
       boolean hasAnyHandler = false;
-      boolean hasDeleteHandler = false;
 
       for (Element enclosed : element.getEnclosedElements()) {
         if (enclosed instanceof ExecutableElement method) {
           String returnTypeName = method.getReturnType().toString();
           if (returnTypeName.startsWith(effectTypeName)) {
             if (Validations.hasHandleDeletes(method)) {
-              hasDeleteHandler = true;
               hasAnyHandler = true;
             } else if (!method.getParameters().isEmpty()) {
               // Any handler with parameters counts
@@ -488,7 +487,7 @@ public class ViewValidations {
       }
 
       if (!hasAnyHandler) {
-        // Get the state type for error message
+        // Get the state type for the error message
         String stateTypeName = "state";
         if (Validations.hasKeyValueEntitySubscription(element)) {
           AnnotationMirror subscriptionAnnotation =
@@ -546,7 +545,7 @@ public class ViewValidations {
       if (superclassName.equals("akka.javasdk.view.TableUpdater")) {
         List<? extends TypeMirror> typeArgs = declaredType.getTypeArguments();
         if (!typeArgs.isEmpty()) {
-          return typeArgs.get(0);
+          return typeArgs.getFirst();
         }
       }
     }
@@ -606,33 +605,12 @@ public class ViewValidations {
       if (superclassName.equals(expectedSuperclass)) {
         List<? extends TypeMirror> typeArgs = declaredType.getTypeArguments();
         if (!typeArgs.isEmpty()) {
-          return typeArgs.get(0);
+          return typeArgs.getFirst();
         }
       }
       // Recursively check parent classes
       if (declaredType.asElement() instanceof TypeElement parentType) {
         return extractSingleTypeParameter(parentType, expectedSuperclass);
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Gets the class value from an annotation attribute.
-   *
-   * @param annotation the annotation mirror
-   * @param attributeName the attribute name
-   * @return the TypeMirror representing the class value, or null if not found
-   */
-  private static TypeMirror getAnnotationClassValue(
-      AnnotationMirror annotation, String attributeName) {
-    for (java.util.Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :
-        annotation.getElementValues().entrySet()) {
-      if (entry.getKey().getSimpleName().toString().equals(attributeName)) {
-        Object value = entry.getValue().getValue();
-        if (value instanceof TypeMirror) {
-          return (TypeMirror) value;
-        }
       }
     }
     return null;
@@ -682,7 +660,7 @@ public class ViewValidations {
     if (superclass instanceof DeclaredType declaredType) {
       List<? extends TypeMirror> typeArgs = declaredType.getTypeArguments();
       if (!typeArgs.isEmpty()) {
-        TypeMirror rowType = typeArgs.get(0);
+        TypeMirror rowType = typeArgs.getFirst();
         if (isPrimitiveWrapper(rowType)) {
           return Validation.of(
               Validations.errorMessage(
@@ -701,11 +679,10 @@ public class ViewValidations {
    * @return a Validation result indicating success or failure
    */
   private static Validation viewCommonStateSubscriptionValidation(TypeElement tableUpdater) {
-    if (!Validations.hasSubscription(tableUpdater)) {
+    if (Validations.doesNotHaveSubscription(tableUpdater)) {
       return Validation.Valid.instance();
     }
 
-    List<ExecutableElement> subscriptionMethods = new ArrayList<>();
     List<ExecutableElement> updateMethods = new ArrayList<>();
     List<ExecutableElement> deleteHandlers = new ArrayList<>();
     List<ExecutableElement> deleteHandlersWithParams = new ArrayList<>();
@@ -714,7 +691,6 @@ public class ViewValidations {
       if (enclosed instanceof ExecutableElement method) {
         String returnTypeName = method.getReturnType().toString();
         if (returnTypeName.startsWith("akka.javasdk.view.TableUpdater.Effect")) {
-          subscriptionMethods.add(method);
 
           if (Validations.hasHandleDeletes(method)) {
             if (method.getParameters().isEmpty()) {

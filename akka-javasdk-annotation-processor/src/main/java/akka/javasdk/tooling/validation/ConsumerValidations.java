@@ -90,7 +90,7 @@ public class ConsumerValidations {
    * @return a Validation result indicating success or failure
    */
   private static Validation topicPublicationValidations(TypeElement element) {
-    if (hasTopicPublication(element) && !Validations.hasSubscription(element)) {
+    if (hasTopicPublication(element) && Validations.doesNotHaveSubscription(element)) {
       return Validation.of(
           Validations.errorMessage(
               element,
@@ -168,7 +168,6 @@ public class ConsumerValidations {
    */
   private static Validation commonStateSubscriptionValidation(
       TypeElement element, String effectTypeName) {
-    List<ExecutableElement> subscriptionMethods = new ArrayList<>();
     List<ExecutableElement> updateMethods = new ArrayList<>();
     List<ExecutableElement> deleteHandlers = new ArrayList<>();
     List<ExecutableElement> deleteHandlersWithParams = new ArrayList<>();
@@ -178,7 +177,6 @@ public class ConsumerValidations {
       if (enclosed instanceof ExecutableElement method) {
         String returnTypeName = method.getReturnType().toString();
         if (returnTypeName.equals(effectTypeName)) {
-          subscriptionMethods.add(method);
 
           if (Validations.hasHandleDeletes(method)) {
             if (method.getParameters().isEmpty()) {

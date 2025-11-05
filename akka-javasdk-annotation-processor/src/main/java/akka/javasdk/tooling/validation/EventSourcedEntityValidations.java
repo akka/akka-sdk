@@ -39,7 +39,7 @@ public class EventSourcedEntityValidations {
   }
 
   /**
-   * Validates that the event type of an EventSourcedEntity is sealed.
+   * Validates that the event type of EventSourcedEntity is sealed.
    *
    * @param element the EventSourcedEntity class to validate
    * @return a Validation result indicating success or failure
@@ -49,8 +49,8 @@ public class EventSourcedEntityValidations {
     TypeMirror superclass = element.getSuperclass();
     if (superclass instanceof DeclaredType declaredType) {
       if (!declaredType.getTypeArguments().isEmpty()) {
-        // EventSourcedEntity has two type parameters: State and Event
-        // Event is the second one (index 1)
+        // EventSourcedEntity has two type parameters: State and Event.
+        // The Event is the second one (index 1)
         if (declaredType.getTypeArguments().size() >= 2) {
           TypeMirror eventType = declaredType.getTypeArguments().get(1);
           if (eventType instanceof DeclaredType eventDeclaredType) {

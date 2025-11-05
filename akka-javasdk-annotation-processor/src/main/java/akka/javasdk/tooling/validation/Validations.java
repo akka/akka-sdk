@@ -123,7 +123,7 @@ public class Validations {
 
     String superclassName = superclass.toString();
     // Handle generic types by checking if the superclass name starts with the expected class name
-    // e.g., "akka.javasdk.eventsourcedentity.EventSourcedEntity<String,Event>" should match
+    // e.g., "akka.javasdk.eventsourcedentity.EventSourcedEntity<String, Event>" should match
     // "akka.javasdk.eventsourcedentity.EventSourcedEntity"
     if (superclassName.equals(className) || superclassName.startsWith(className + "<")) {
       return true;
@@ -250,7 +250,7 @@ public class Validations {
    */
   static Validation subscriptionMethodMustHaveOneParameter(
       TypeElement element, String effectTypeName) {
-    if (!hasSubscription(element)) {
+    if (doesNotHaveSubscription(element)) {
       return Validation.Valid.instance();
     }
 
@@ -290,7 +290,7 @@ public class Validations {
    * @return a Validation result indicating success or failure
    */
   static Validation noSubscriptionMethodWithAcl(TypeElement element, String effectTypeName) {
-    if (!hasSubscription(element)) {
+    if (doesNotHaveSubscription(element)) {
       return Validation.Valid.instance();
     }
 
@@ -324,7 +324,7 @@ public class Validations {
    * @return a Validation result indicating success or failure
    */
   static Validation ambiguousHandlerValidations(TypeElement element, String effectTypeName) {
-    if (!hasSubscription(element)) {
+    if (doesNotHaveSubscription(element)) {
       return Validation.Valid.instance();
     }
 
@@ -340,8 +340,7 @@ public class Validations {
           // Get the last parameter type (or empty string for parameterless methods)
           String paramType = "";
           if (!method.getParameters().isEmpty()) {
-            paramType =
-                method.getParameters().get(method.getParameters().size() - 1).asType().toString();
+            paramType = method.getParameters().getLast().asType().toString();
           }
 
           handlersByType.computeIfAbsent(paramType, k -> new ArrayList<>()).add(method);
@@ -383,20 +382,20 @@ public class Validations {
   // ==================== Subscription Detection Helpers ====================
 
   /**
-   * Checks if a component has any subscription annotation.
+   * Checks if a component doesn't have any subscription annotation.
    *
    * @param element the component class to check
-   * @return true if the component has any @Consume annotation
+   * @return false if the component has any @Consume annotation
    */
-  static boolean hasSubscription(TypeElement element) {
+  static boolean doesNotHaveSubscription(TypeElement element) {
     // Check for any annotation that starts with "akka.javasdk.annotations.Consume"
     for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
       String annotationType = mirror.getAnnotationType().toString();
       if (annotationType.startsWith("akka.javasdk.annotations.Consume")) {
-        return true;
+        return false;
       }
     }
-    return false;
+    return true;
   }
 
   /**
@@ -464,9 +463,9 @@ public class Validations {
    * @param attributeName the attribute name
    * @return the TypeMirror representing the class value, or null if not found
    */
-  private static TypeMirror getAnnotationClassValue(
+  public static TypeMirror getAnnotationClassValue(
       AnnotationMirror annotation, String attributeName) {
-    // First check explicit values
+    // First, check explicit values
     for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :
         annotation.getElementValues().entrySet()) {
       if (entry.getKey().getSimpleName().toString().equals(attributeName)) {
@@ -518,7 +517,7 @@ public class Validations {
       if (superclassName.equals("akka.javasdk.eventsourcedentity.EventSourcedEntity")) {
         List<? extends TypeMirror> typeArgs = declaredType.getTypeArguments();
         if (typeArgs.size() >= 2) {
-          return typeArgs.get(1); // Second parameter is Event
+          return typeArgs.get(1); // The second parameter is Event
         }
       }
       // Recursively check parent classes
@@ -565,7 +564,7 @@ public class Validations {
       if (superclassName.equals(expectedSuperclass)) {
         List<? extends TypeMirror> typeArgs = declaredType.getTypeArguments();
         if (!typeArgs.isEmpty()) {
-          return typeArgs.get(0);
+          return typeArgs.getFirst();
         }
       }
       // Recursively check parent classes
@@ -619,7 +618,7 @@ public class Validations {
             if (Validations.hasHandleDeletes(method)) {
               hasDeleteHandler = true;
             } else if (!method.getParameters().isEmpty()) {
-              TypeMirror paramType = method.getParameters().get(0).asType();
+              TypeMirror paramType = method.getParameters().getFirst().asType();
               if (paramType.toString().equals(stateType.toString())) {
                 hasStateHandler = true;
               } else if ("byte[]".equals(paramType.toString())) {
@@ -705,7 +704,7 @@ public class Validations {
             if (Validations.hasHandleDeletes(method)) {
               hasDeleteHandler = true;
             } else if (!method.getParameters().isEmpty()) {
-              TypeMirror paramType = method.getParameters().get(0).asType();
+              TypeMirror paramType = method.getParameters().getFirst().asType();
               if (paramType.toString().equals(stateType.toString())) {
                 hasStateHandler = true;
               } else if ("byte[]".equals(paramType.toString())) {
@@ -772,7 +771,7 @@ public class Validations {
 
       // Extract the event type from EventSourcedEntity<State, Event>
       TypeMirror eventType = extractEventTypeFromEventSourcedEntity(entityClass);
-      if (eventType == null || !(eventType instanceof DeclaredType)) {
+      if (!(eventType instanceof DeclaredType)) {
         return Validation.Valid.instance();
       }
 
@@ -795,7 +794,7 @@ public class Validations {
           if ((returnTypeName.equals(effectTypeName)
                   || returnTypeName.startsWith(effectTypeName + "<"))
               && !method.getParameters().isEmpty()) {
-            TypeMirror paramType = method.getParameters().get(0).asType();
+            TypeMirror paramType = method.getParameters().getFirst().asType();
             handlerTypes.add(paramType.toString());
           }
         }
