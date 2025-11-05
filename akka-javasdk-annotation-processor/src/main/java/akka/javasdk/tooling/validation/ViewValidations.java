@@ -679,7 +679,10 @@ public class ViewValidations {
    * @return a Validation result indicating success or failure
    */
   private static Validation viewCommonStateSubscriptionValidation(TypeElement tableUpdater) {
-    if (Validations.doesNotHaveSubscription(tableUpdater)) {
+    // This validation only applies to KeyValueEntity and Workflow subscriptions (state-based)
+    // EventSourcedEntity subscriptions don't have these constraints
+    if (!Validations.hasKeyValueEntitySubscription(tableUpdater)
+        && !Validations.hasWorkflowSubscription(tableUpdater)) {
       return Validation.Valid.instance();
     }
 
