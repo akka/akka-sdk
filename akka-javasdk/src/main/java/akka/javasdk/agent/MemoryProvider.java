@@ -207,8 +207,10 @@ public sealed interface MemoryProvider {
      * @param filtersSupplier a supplier that provides the list of filters to apply
      * @return A new memory provider with the specified history limit and filters
      */
-    public MemoryProvider readLast(int onlyLastN, MemoryFilter.MemoryFilterSupplier filtersSupplier) {
-      return new LimitedWindowMemoryProvider(Optional.of(onlyLastN), read, write, filtersSupplier.get());
+    public MemoryProvider readLast(
+        int onlyLastN, MemoryFilter.MemoryFilterSupplier filtersSupplier) {
+      return new LimitedWindowMemoryProvider(
+          Optional.of(onlyLastN), read, write, filtersSupplier.get());
     }
 
     /**

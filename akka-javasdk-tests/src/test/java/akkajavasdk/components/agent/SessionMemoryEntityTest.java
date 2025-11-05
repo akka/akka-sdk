@@ -527,6 +527,60 @@ public class SessionMemoryEntityTest {
   }
 
   @Test
+  public void shouldFilterMessagesIncludingIdAndRole() {
+    // given
+    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
+    var timestamp = Instant.now();
+
+    String componentId1 = "agent-1";
+    String componentId2 = "agent-2";
+    String componentId3 = "agent-3";
+    String role3 = "worker";
+
+    // Add messages from different agents
+    var userMessage1 =
+        new UserMessage(timestamp, "Message from agent 1", componentId1, Optional.empty());
+    var aiMessage1 = new AiMessage(timestamp, "Response from agent 1", componentId1);
+
+    var userMessage2 =
+        new UserMessage(
+            timestamp.plusMillis(1), "Message from agent 2", componentId2, Optional.empty());
+    var aiMessage2 = new AiMessage(timestamp.plusMillis(1), "Response from agent 2", componentId2);
+
+    var userMessage3 =
+        new UserMessage(
+            timestamp.plusMillis(2), "Message from agent 3", componentId3, Optional.of(role3));
+    var aiMessage3 =
+        new AiMessage(
+            timestamp.plusMillis(2),
+            "Response from agent 3",
+            componentId3,
+            Optional.of(role3),
+            List.of());
+
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage1, aiMessage1));
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage2, aiMessage2));
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage3, aiMessage3));
+
+    // when - filterSupplier to include only messages from agent-1
+    var filterSupplier = MemoryFilter.includeFromAgentId(componentId1).includeFromAgentRole(role3);
+    EventSourcedResult<SessionHistory> result =
+        testKit
+            .method(SessionMemoryEntity::getHistory)
+            .invoke(new SessionMemoryEntity.GetHistoryCmd(filterSupplier.get()));
+
+    // then - only messages from agent-2 and agent-3 should be present
+    assertThat(result.getReply().messages())
+        .containsExactly(userMessage1, aiMessage1, userMessage3, aiMessage3);
+  }
+
+  @Test
   public void shouldFilterMessagesExcludingFromAgentId() {
     // given
     var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
@@ -581,7 +635,6 @@ public class SessionMemoryEntityTest {
 
     String role1 = "summarizer";
     String role2 = "translator";
-    String role3 = "analyzer";
 
     // Add messages from different agent roles
     var userMessage1 =
@@ -603,13 +656,13 @@ public class SessionMemoryEntityTest {
 
     var userMessage3 =
         new UserMessage(
-            timestamp.plusMillis(2), "Message from analyzer", COMPONENT_ID, Optional.of(role3));
+            timestamp.plusMillis(2), "Message from analyzer", COMPONENT_ID, Optional.empty());
     var aiMessage3 =
         new AiMessage(
             timestamp.plusMillis(2),
             "Response from analyzer",
             COMPONENT_ID,
-            Optional.of(role3),
+            Optional.empty(),
             List.of());
 
     testKit
@@ -641,7 +694,6 @@ public class SessionMemoryEntityTest {
 
     String role1 = "summarizer";
     String role2 = "translator";
-    String role3 = "analyzer";
 
     // Add messages from different agent roles
     var userMessage1 =
@@ -663,13 +715,13 @@ public class SessionMemoryEntityTest {
 
     var userMessage3 =
         new UserMessage(
-            timestamp.plusMillis(2), "Message from analyzer", COMPONENT_ID, Optional.of(role3));
+            timestamp.plusMillis(2), "Message from analyzer", COMPONENT_ID, Optional.empty());
     var aiMessage3 =
         new AiMessage(
             timestamp.plusMillis(2),
             "Response from analyzer",
             COMPONENT_ID,
-            Optional.of(role3),
+            Optional.empty(),
             List.of());
 
     testKit
@@ -692,6 +744,60 @@ public class SessionMemoryEntityTest {
     // then - messages from summarizer and analyzer roles should be present
     assertThat(result.getReply().messages())
         .containsExactly(userMessage1, aiMessage1, userMessage3, aiMessage3);
+  }
+
+  @Test
+  public void shouldFilterMessagesExcludingIdAndRole() {
+    // given
+    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
+    var timestamp = Instant.now();
+
+    String componentId1 = "agent-1";
+    String componentId2 = "agent-2";
+    String role2 = "worker";
+    String componentId3 = "agent-3";
+
+    // Add messages from different agents
+    var userMessage1 =
+        new UserMessage(timestamp, "Message from agent 1", componentId1, Optional.empty());
+    var aiMessage1 = new AiMessage(timestamp, "Response from agent 1", componentId1);
+
+    var userMessage2 =
+        new UserMessage(
+            timestamp.plusMillis(1), "Message from agent 2", componentId2, Optional.of(role2));
+    var aiMessage2 =
+        new AiMessage(
+            timestamp.plusMillis(1),
+            "Response from agent 2",
+            componentId2,
+            Optional.of(role2),
+            List.of());
+
+    var userMessage3 =
+        new UserMessage(
+            timestamp.plusMillis(2), "Message from agent 3", componentId3, Optional.empty());
+    var aiMessage3 = new AiMessage(timestamp.plusMillis(2), "Response from agent 3", componentId3);
+
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage1, aiMessage1));
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage2, aiMessage2));
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage3, aiMessage3));
+
+    // when - filterSupplier to include only messages from agent-1
+    var filterSupplier = MemoryFilter.excludeFromAgentId(componentId1).excludeFromAgentRole(role2);
+
+    EventSourcedResult<SessionHistory> result =
+        testKit
+            .method(SessionMemoryEntity::getHistory)
+            .invoke(new SessionMemoryEntity.GetHistoryCmd(filterSupplier.get()));
+
+    // then - only messages from agent-2 should be present
+    assertThat(result.getReply().messages()).containsExactly(userMessage3, aiMessage3);
   }
 
   @Test

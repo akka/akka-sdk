@@ -8,6 +8,7 @@ import akka.annotation.DoNotInherit;
 import akka.javasdk.impl.agent.MemoryFiltersSupplierImpl;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -40,10 +41,8 @@ import java.util.function.Supplier;
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "@type")
 @JsonSubTypes({
-  @JsonSubTypes.Type(value = MemoryFilter.IncludeFromAgentId.class, name = "include-from-id"),
-  @JsonSubTypes.Type(value = MemoryFilter.ExcludeFromAgentId.class, name = "exclude-from-id"),
-  @JsonSubTypes.Type(value = MemoryFilter.IncludeFromAgentRole.class, name = "include-from-role"),
-  @JsonSubTypes.Type(value = MemoryFilter.ExcludeFromAgentRole.class, name = "exclude-from-role")
+  @JsonSubTypes.Type(value = MemoryFilter.Include.class, name = "include-filter"),
+  @JsonSubTypes.Type(value = MemoryFilter.Exclude.class, name = "exclude-filter"),
 })
 public sealed interface MemoryFilter {
 
@@ -54,11 +53,11 @@ public sealed interface MemoryFilter {
    * provides builder methods for chaining additional filter operations.
    *
    * <p>This supplier is designed to be used directly with {@link MemoryProvider} methods such as
-   * {@link MemoryProvider.LimitedWindowMemoryProvider#readOnly(Supplier)} and {@link
-   * MemoryProvider.LimitedWindowMemoryProvider#filtered(Supplier)}.
+   * {@link MemoryProvider.LimitedWindowMemoryProvider#readOnly(MemoryFilterSupplier)} and {@link
+   * MemoryProvider.LimitedWindowMemoryProvider#filtered(MemoryFilterSupplier)}.
    *
-   * This is an internal API, and we do not recommend inheriting from it. To have access to an implementation, use
-   * the factory methods in {@link MemoryFilter}
+   * <p>This is an internal API, and we do not recommend inheriting from it. To have access to an
+   * implementation, use the factory methods in {@link MemoryFilter}
    *
    * @see MemoryProvider.LimitedWindowMemoryProvider for usage examples
    */
@@ -140,7 +139,7 @@ public sealed interface MemoryFilter {
    * @return a filter supplier for building and composing filters
    */
   static MemoryFilterSupplier includeFromAgentId(String id) {
-    return new MemoryFiltersSupplierImpl(new MemoryFilter.IncludeFromAgentId(Set.of(id)));
+    return new MemoryFiltersSupplierImpl(MemoryFilter.Include.agentId(id));
   }
 
   /**
@@ -153,7 +152,7 @@ public sealed interface MemoryFilter {
    * @return a filter supplier for building and composing filters
    */
   static MemoryFilterSupplier includeFromAgentIds(Set<String> ids) {
-    return new MemoryFiltersSupplierImpl(new MemoryFilter.IncludeFromAgentId(ids));
+    return new MemoryFiltersSupplierImpl(MemoryFilter.Include.agentIds(ids));
   }
 
   /**
@@ -166,7 +165,7 @@ public sealed interface MemoryFilter {
    * @return a filter supplier for building and composing filters
    */
   static MemoryFilterSupplier excludeFromAgentId(String id) {
-    return new MemoryFiltersSupplierImpl(new MemoryFilter.ExcludeFromAgentId(Set.of(id)));
+    return new MemoryFiltersSupplierImpl(MemoryFilter.Exclude.agentId(id));
   }
 
   /**
@@ -179,7 +178,7 @@ public sealed interface MemoryFilter {
    * @return a filter supplier for building and composing filters
    */
   static MemoryFilterSupplier excludeFromAgentIds(Set<String> ids) {
-    return new MemoryFiltersSupplierImpl(new MemoryFilter.ExcludeFromAgentId(ids));
+    return new MemoryFiltersSupplierImpl(MemoryFilter.Exclude.agentIds(ids));
   }
 
   /**
@@ -192,7 +191,7 @@ public sealed interface MemoryFilter {
    * @return a filter supplier for building and composing filters
    */
   static MemoryFilterSupplier includeFromAgentRole(String role) {
-    return new MemoryFiltersSupplierImpl(new MemoryFilter.IncludeFromAgentRole(Set.of(role)));
+    return new MemoryFiltersSupplierImpl(MemoryFilter.Include.agentRole(role));
   }
 
   /**
@@ -205,7 +204,7 @@ public sealed interface MemoryFilter {
    * @return a filter supplier for building and composing filters
    */
   static MemoryFilterSupplier includeFromAgentRoles(Set<String> roles) {
-    return new MemoryFiltersSupplierImpl(new MemoryFilter.IncludeFromAgentRole(roles));
+    return new MemoryFiltersSupplierImpl(MemoryFilter.Include.agentRoles(roles));
   }
 
   /**
@@ -218,7 +217,7 @@ public sealed interface MemoryFilter {
    * @return a filter supplier for building and composing filters
    */
   static MemoryFilterSupplier excludeFromAgentRole(String role) {
-    return new MemoryFiltersSupplierImpl(new MemoryFilter.ExcludeFromAgentRole(Set.of(role)));
+    return new MemoryFiltersSupplierImpl(MemoryFilter.Exclude.agentRole(role));
   }
 
   /**
@@ -231,46 +230,105 @@ public sealed interface MemoryFilter {
    * @return a filter supplier for building and composing filters
    */
   static MemoryFilterSupplier excludeFromAgentRoles(Set<String> roles) {
-    return new MemoryFiltersSupplierImpl(new MemoryFilter.ExcludeFromAgentRole(roles));
+    return new MemoryFiltersSupplierImpl(MemoryFilter.Exclude.agentRoles(roles));
+  }
+
+  private static Set<String> concat(Set<String> set1, Set<String> set2) {
+    var newList = new HashSet<String>(set1);
+    newList.addAll(set2);
+    return Set.copyOf(newList);
   }
 
   /**
-   * Filter that includes only messages from agents with the specified component ids.
+   * Filter that includes messages from agents with the specified component IDs or roles.
    *
-   * <p>When applied, only messages where the component id matches one of the component ids in this
-   * filter will be included in the result. All other messages will be excluded.
+   * <p>This filter uses OR logic: a message is included if either its component ID is in the {@code
+   * ids} set OR its agent role is in the {@code roles} set.
    *
-   * @param ids the set of agent component ids to include
+   * <p>When multiple Include filters are chained together using {@link MemoryFilter}, they are
+   * automatically merged into a single Include filter with the union of all IDs and roles.
+   *
+   * <p><strong>Example:</strong> An Include filter with {@code ids={"agent-1", "agent-2"}} and
+   * {@code roles={"summarizer"}} will include:
+   *
+   * <ul>
+   *   <li>All messages from "agent-1" (regardless of role)
+   *   <li>All messages from "agent-2" (regardless of role)
+   *   <li>All messages with a role "summarizer" (regardless of component ID)
+   * </ul>
+   *
+   * <p>Messages that match none of these criteria are excluded.
+   *
+   * @param ids the set of agent component IDs to include messages from
+   * @param roles the set of agent roles to include messages from
    */
-  record IncludeFromAgentId(Set<String> ids) implements MemoryFilter {}
+  record Include(Set<String> ids, Set<String> roles) implements MemoryFilter {
+
+    public Include merge(Include other) {
+      return new Include(concat(ids, other.ids), concat(roles, other.roles));
+    }
+
+    public static MemoryFilter agentId(String id) {
+      return new Include(Set.of(id), Set.of());
+    }
+
+    public static MemoryFilter agentIds(Set<String> ids) {
+      return new Include(ids, Set.of());
+    }
+
+    public static MemoryFilter agentRole(String role) {
+      return new Include(Set.of(), Set.of(role));
+    }
+
+    public static MemoryFilter agentRoles(Set<String> roles) {
+      return new Include(Set.of(), roles);
+    }
+  }
 
   /**
-   * Filter that excludes messages from agents with the specified component ids.
+   * Filter that excludes messages from agents with the specified component IDs or roles.
    *
-   * <p>When applied, messages where the component id matches one of the component ids in this
-   * filter will be excluded from the result. All other messages will be included.
+   * <p>This filter uses OR logic for exclusion: a message is excluded if either its component ID is
+   * in the {@code ids} set OR its agent role is in the {@code roles} set. A message is excluded
+   * only if any conditions are met:
    *
-   * @param ids the set of agent component ids to exclude
+   * <p>When multiple Exclude filters are chained together using {@link MemoryFilter}, they are
+   * automatically merged into a single Exclude filter with the union of all IDs and roles.
+   *
+   * <p><strong>Example:</strong> An Exclude filter with {@code ids={"agent-1"}} and {@code
+   * roles={"worker"}} will exclude:
+   *
+   * <ul>
+   *   <li>All messages from "agent-1" (regardless of role)
+   *   <li>All messages with a role "worker" (regardless of component ID)
+   * </ul>
+   *
+   * <p>Messages that don't match any of these exclusion criteria are included. Messages with no
+   * agent role are only excluded if their component ID is in the {@code ids} set.
+   *
+   * @param ids the set of agent component IDs to exclude messages from
+   * @param roles the set of agent roles to exclude messages from
    */
-  record ExcludeFromAgentId(Set<String> ids) implements MemoryFilter {}
+  record Exclude(Set<String> ids, Set<String> roles) implements MemoryFilter {
 
-  /**
-   * Filter that includes only messages from agents with the specified roles.
-   *
-   * <p>When applied, only messages where the agent role matches one of the roles in this filter
-   * will be included in the result. All other messages will be excluded.
-   *
-   * @param roles the set of agent roles to include
-   */
-  record IncludeFromAgentRole(Set<String> roles) implements MemoryFilter {}
+    public Exclude merge(Exclude other) {
+      return new Exclude(concat(ids, other.ids), concat(roles, other.roles));
+    }
 
-  /**
-   * Filter that excludes messages from agents with the specified roles.
-   *
-   * <p>When applied, messages where the agent role matches one of the roles in this filter will be
-   * excluded from the result. All other messages will be included.
-   *
-   * @param roles the set of agent roles to exclude
-   */
-  record ExcludeFromAgentRole(Set<String> roles) implements MemoryFilter {}
+    public static MemoryFilter agentId(String id) {
+      return new Exclude(Set.of(id), Set.of());
+    }
+
+    public static MemoryFilter agentIds(Set<String> ids) {
+      return new Exclude(ids, Set.of());
+    }
+
+    public static MemoryFilter agentRole(String role) {
+      return new Exclude(Set.of(), Set.of(role));
+    }
+
+    public static MemoryFilter agentRoles(Set<String> roles) {
+      return new Exclude(Set.of(), roles);
+    }
+  }
 }

@@ -25,9 +25,9 @@ class MemoryFilterSupplierSpec extends AnyWordSpec with Matchers {
 
       // then - should have a single filter with both IDs in order
       filters should have size 1
-      filters.head shouldBe a[MemoryFilter.IncludeFromAgentId]
+      filters.head shouldBe a[MemoryFilter.Include]
 
-      val filter = filters.head.asInstanceOf[MemoryFilter.IncludeFromAgentId]
+      val filter = filters.head.asInstanceOf[MemoryFilter.Include]
       filter.ids().asScala should contain theSameElementsAs Set("agent-1", "agent-2")
     }
 
@@ -43,9 +43,9 @@ class MemoryFilterSupplierSpec extends AnyWordSpec with Matchers {
 
       // then - should merge all into one filter preserving the order
       filters should have size 1
-      filters.head shouldBe a[MemoryFilter.IncludeFromAgentId]
+      filters.head shouldBe a[MemoryFilter.Include]
 
-      val filter = filters.head.asInstanceOf[MemoryFilter.IncludeFromAgentId]
+      val filter = filters.head.asInstanceOf[MemoryFilter.Include]
       filter.ids().asScala should contain theSameElementsAs Set("agent-1", "agent-2", "agent-3", "agent-4", "agent-5")
     }
 
@@ -61,9 +61,9 @@ class MemoryFilterSupplierSpec extends AnyWordSpec with Matchers {
 
       // then
       filters should have size 1
-      filters.head shouldBe a[MemoryFilter.ExcludeFromAgentId]
+      filters.head shouldBe a[MemoryFilter.Exclude]
 
-      val filter = filters.head.asInstanceOf[MemoryFilter.ExcludeFromAgentId]
+      val filter = filters.head.asInstanceOf[MemoryFilter.Exclude]
       filter.ids().asScala should contain theSameElementsAs Set("agent-1", "agent-2", "agent-3")
     }
 
@@ -79,9 +79,9 @@ class MemoryFilterSupplierSpec extends AnyWordSpec with Matchers {
 
       // then
       filters should have size 1
-      filters.head shouldBe a[MemoryFilter.IncludeFromAgentRole]
+      filters.head shouldBe a[MemoryFilter.Include]
 
-      val filter = filters.head.asInstanceOf[MemoryFilter.IncludeFromAgentRole]
+      val filter = filters.head.asInstanceOf[MemoryFilter.Include]
       filter.roles().asScala should contain theSameElementsAs Set("summarizer", "translator", "analyzer")
     }
 
@@ -97,9 +97,9 @@ class MemoryFilterSupplierSpec extends AnyWordSpec with Matchers {
 
       // then
       filters should have size 1
-      filters.head shouldBe a[MemoryFilter.ExcludeFromAgentRole]
+      filters.head shouldBe a[MemoryFilter.Exclude]
 
-      val filter = filters.head.asInstanceOf[MemoryFilter.ExcludeFromAgentRole]
+      val filter = filters.head.asInstanceOf[MemoryFilter.Exclude]
       filter.roles().asScala should contain theSameElementsAs Set("debug", "internal", "test")
     }
 
@@ -117,19 +117,16 @@ class MemoryFilterSupplierSpec extends AnyWordSpec with Matchers {
       val filters = filterSupplier.get().asScala.toList
 
       // then - should have 3 filters with merged same-type filters
-      filters should have size 3
-      filters.head shouldBe a[MemoryFilter.IncludeFromAgentId]
-      filters(1) shouldBe a[MemoryFilter.ExcludeFromAgentRole]
-      filters(2) shouldBe a[MemoryFilter.IncludeFromAgentRole]
+      filters should have size 2
+      filters.head shouldBe a[MemoryFilter.Include]
+      filters(1) shouldBe a[MemoryFilter.Exclude]
 
-      val filter0 = filters.head.asInstanceOf[MemoryFilter.IncludeFromAgentId]
+      val filter0 = filters.head.asInstanceOf[MemoryFilter.Include]
       filter0.ids().asScala should contain theSameElementsAs Set("agent-1", "agent-2")
+      filter0.roles().asScala should contain theSameElementsAs Set("summarizer")
 
-      val filter1 = filters(1).asInstanceOf[MemoryFilter.ExcludeFromAgentRole]
+      val filter1 = filters(1).asInstanceOf[MemoryFilter.Exclude]
       filter1.roles().asScala should contain theSameElementsAs Set("debug", "internal")
-
-      val filter2 = filters(2).asInstanceOf[MemoryFilter.IncludeFromAgentRole]
-      filter2.roles().asScala should contain theSameElementsAs Set("summarizer")
     }
 
     "work with single filter" in {
@@ -141,9 +138,9 @@ class MemoryFilterSupplierSpec extends AnyWordSpec with Matchers {
 
       // then
       filters should have size 1
-      filters.head shouldBe a[MemoryFilter.IncludeFromAgentId]
+      filters.head shouldBe a[MemoryFilter.Include]
 
-      val filter = filters.head.asInstanceOf[MemoryFilter.IncludeFromAgentId]
+      val filter = filters.head.asInstanceOf[MemoryFilter.Include]
       filter.ids().asScala.toList shouldBe List("agent-1")
     }
 
@@ -159,23 +156,17 @@ class MemoryFilterSupplierSpec extends AnyWordSpec with Matchers {
       val filters = filterSupplier.get().asScala.toList
 
       // then - should have 4 separate filters since they are all different types
-      filters should have size 4
-      filters.head shouldBe a[MemoryFilter.IncludeFromAgentId]
-      filters(1) shouldBe a[MemoryFilter.ExcludeFromAgentId]
-      filters(2) shouldBe a[MemoryFilter.IncludeFromAgentRole]
-      filters(3) shouldBe a[MemoryFilter.ExcludeFromAgentRole]
+      filters should have size 2
+      filters.head shouldBe a[MemoryFilter.Include]
+      filters(1) shouldBe a[MemoryFilter.Exclude]
 
-      val filter0 = filters.head.asInstanceOf[MemoryFilter.IncludeFromAgentId]
+      val filter0 = filters.head.asInstanceOf[MemoryFilter.Include]
       filter0.ids().asScala should contain theSameElementsAs Set("agent-1")
+      filter0.roles().asScala should contain theSameElementsAs Set("summarizer")
 
-      val filter1 = filters(1).asInstanceOf[MemoryFilter.ExcludeFromAgentId]
+      val filter1 = filters(1).asInstanceOf[MemoryFilter.Exclude]
       filter1.ids().asScala should contain theSameElementsAs Set("agent-2")
-
-      val filter2 = filters(2).asInstanceOf[MemoryFilter.IncludeFromAgentRole]
-      filter2.roles().asScala should contain theSameElementsAs Set("summarizer")
-
-      val filter3 = filters(3).asInstanceOf[MemoryFilter.ExcludeFromAgentRole]
-      filter3.roles().asScala should contain theSameElementsAs Set("debug")
+      filter1.roles().asScala should contain theSameElementsAs Set("debug")
     }
 
   }

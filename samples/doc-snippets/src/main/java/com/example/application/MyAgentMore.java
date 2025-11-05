@@ -115,8 +115,9 @@ public interface MyAgentMore {
         .memory(
           MemoryProvider.limitedWindow()
             .filtered(
-              MemoryFilter.includeFromAgentId("activity-agent")
-                .includeFromAgentId("weather-agent") // <1>
+              MemoryFilter.includeFromAgentId("activity-agent").includeFromAgentId(
+                "weather-agent"
+              ) // <1>
             )
         )
         .systemMessage("You are a helpful...")

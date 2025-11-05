@@ -21,56 +21,40 @@ private[javasdk] class MemoryFiltersSupplierImpl(val filters: Vector[MemoryFilte
   def this(filter: MemoryFilter) = this(Vector(filter))
 
   override def includeFromAgentId(id: String): MemoryFilterSupplier =
-    addFilter(new MemoryFilter.IncludeFromAgentId(util.Set.of(id)))
+    addFilter(MemoryFilter.Include.agentId(id))
 
   override def includeFromAgentIds(ids: util.Set[String]): MemoryFilterSupplier =
-    addFilter(new MemoryFilter.IncludeFromAgentId(ids))
+    addFilter(MemoryFilter.Include.agentIds(ids))
 
   override def excludeFromAgentId(id: String): MemoryFilterSupplier =
-    addFilter(new MemoryFilter.ExcludeFromAgentId(util.Set.of(id)))
+    addFilter(MemoryFilter.Exclude.agentId(id))
 
   override def excludeFromAgentIds(ids: util.Set[String]): MemoryFilterSupplier =
-    addFilter(new MemoryFilter.ExcludeFromAgentId(ids))
+    addFilter(MemoryFilter.Exclude.agentIds(ids))
 
   override def includeFromAgentRole(role: String): MemoryFilterSupplier =
-    addFilter(new MemoryFilter.IncludeFromAgentRole(util.Set.of(role)))
+    addFilter(MemoryFilter.Include.agentRole(role))
 
   override def includeFromAgentRoles(roles: util.Set[String]): MemoryFilterSupplier =
-    addFilter(new MemoryFilter.IncludeFromAgentRole(roles))
+    addFilter(MemoryFilter.Include.agentRoles(roles))
 
   override def excludeFromAgentRole(role: String): MemoryFilterSupplier =
-    addFilter(new MemoryFilter.ExcludeFromAgentRole(util.Set.of(role)))
+    addFilter(MemoryFilter.Exclude.agentRole(role))
 
   override def excludeFromAgentRoles(roles: util.Set[String]): MemoryFilterSupplier =
-    addFilter(new MemoryFilter.ExcludeFromAgentRole(roles))
+    addFilter(MemoryFilter.Exclude.agentRoles(roles))
 
   private def addFilter(filter: MemoryFilter): MemoryFilterSupplier = {
-
-    def concatList(l1: util.Set[String], l2: util.Set[String]) = {
-      val newList = new util.HashSet(l1)
-      newList.addAll(l2)
-      newList
-    }
 
     val newFilters =
       if (filters.exists(_.getClass == filter.getClass)) {
         filters
           .map {
-            case f: MemoryFilter.IncludeFromAgentId if f.getClass == filter.getClass =>
-              val ids = filter.asInstanceOf[MemoryFilter.IncludeFromAgentId].ids()
-              new MemoryFilter.IncludeFromAgentId(concatList(f.ids(), ids))
+            case f: MemoryFilter.Include if f.getClass == filter.getClass =>
+              f.merge(filter.asInstanceOf[MemoryFilter.Include])
 
-            case f: MemoryFilter.ExcludeFromAgentId if f.getClass == filter.getClass =>
-              val ids = filter.asInstanceOf[MemoryFilter.ExcludeFromAgentId].ids()
-              new MemoryFilter.ExcludeFromAgentId(concatList(f.ids(), ids))
-
-            case f: MemoryFilter.IncludeFromAgentRole if f.getClass == filter.getClass =>
-              val roles = filter.asInstanceOf[MemoryFilter.IncludeFromAgentRole].roles()
-              new MemoryFilter.IncludeFromAgentRole(concatList(f.roles(), roles))
-
-            case f: MemoryFilter.ExcludeFromAgentRole if f.getClass == filter.getClass =>
-              val roles = filter.asInstanceOf[MemoryFilter.ExcludeFromAgentRole].roles()
-              new MemoryFilter.ExcludeFromAgentRole(concatList(f.roles(), roles))
+            case f: MemoryFilter.Exclude if f.getClass == filter.getClass =>
+              f.merge(filter.asInstanceOf[MemoryFilter.Exclude])
 
             case any => any // making compiler happy
           }

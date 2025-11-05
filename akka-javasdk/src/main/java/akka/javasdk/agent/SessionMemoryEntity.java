@@ -291,21 +291,22 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
 
   private List<SessionMessage> applyFilter(List<SessionMessage> messages, MemoryFilter filter) {
     return switch (filter) {
-      case MemoryFilter.IncludeFromAgentId(Set<String> ids) ->
-          messages.stream().filter(message -> ids.contains(message.componentId())).toList();
-
-      case MemoryFilter.ExcludeFromAgentId(Set<String> ids) ->
-          messages.stream().filter(message -> !ids.contains(message.componentId())).toList();
-
-      case MemoryFilter.IncludeFromAgentRole(Set<String> roles) ->
-          messages.stream()
-              .filter(message -> message.agentRole().filter(roles::contains).isPresent())
-              .toList();
-
-      case MemoryFilter.ExcludeFromAgentRole(Set<String> roles) ->
+      case MemoryFilter.Include(Set<String> ids, Set<String> roles) ->
           messages.stream()
               .filter(
-                  message -> message.agentRole().filter(role -> !roles.contains(role)).isPresent())
+                  message -> {
+                    return ids.contains(message.componentId())
+                        || message.agentRole().filter(roles::contains).isPresent();
+                  })
+              .toList();
+
+      case MemoryFilter.Exclude(Set<String> ids, Set<String> roles) ->
+          messages.stream()
+              .filter(
+                  message -> {
+                    return !ids.contains(message.componentId())
+                        && message.agentRole().filter(roles::contains).isEmpty();
+                  })
               .toList();
     };
   }
