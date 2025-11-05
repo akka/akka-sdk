@@ -23,25 +23,25 @@ private[javasdk] class MemoryFiltersSupplierImpl(val filters: Vector[MemoryFilte
   override def includeFromAgentId(id: String): MemoryFilterSupplier =
     addFilter(new MemoryFilter.IncludeFromAgentId(util.Set.of(id)))
 
-  override def includeFromAgentId(ids: util.Set[String]): MemoryFilterSupplier =
+  override def includeFromAgentIds(ids: util.Set[String]): MemoryFilterSupplier =
     addFilter(new MemoryFilter.IncludeFromAgentId(ids))
 
   override def excludeFromAgentId(id: String): MemoryFilterSupplier =
     addFilter(new MemoryFilter.ExcludeFromAgentId(util.Set.of(id)))
 
-  override def excludeFromAgentId(ids: util.Set[String]): MemoryFilterSupplier =
+  override def excludeFromAgentIds(ids: util.Set[String]): MemoryFilterSupplier =
     addFilter(new MemoryFilter.ExcludeFromAgentId(ids))
 
   override def includeFromAgentRole(role: String): MemoryFilterSupplier =
     addFilter(new MemoryFilter.IncludeFromAgentRole(util.Set.of(role)))
 
-  override def includeFromAgentRole(roles: util.Set[String]): MemoryFilterSupplier =
+  override def includeFromAgentRoles(roles: util.Set[String]): MemoryFilterSupplier =
     addFilter(new MemoryFilter.IncludeFromAgentRole(roles))
 
   override def excludeFromAgentRole(role: String): MemoryFilterSupplier =
     addFilter(new MemoryFilter.ExcludeFromAgentRole(util.Set.of(role)))
 
-  override def excludeFromAgentRole(roles: util.Set[String]): MemoryFilterSupplier =
+  override def excludeFromAgentRoles(roles: util.Set[String]): MemoryFilterSupplier =
     addFilter(new MemoryFilter.ExcludeFromAgentRole(roles))
 
   private def addFilter(filter: MemoryFilter): MemoryFilterSupplier = {

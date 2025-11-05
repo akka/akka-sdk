@@ -79,7 +79,7 @@ public sealed interface MemoryFilter {
      * @param ids the set of agent component ids to include messages from
      * @return this supplier with the additional filter
      */
-    MemoryFilterSupplier includeFromAgentId(Set<String> ids);
+    MemoryFilterSupplier includeFromAgentIds(Set<String> ids);
 
     /**
      * Adds a filter to exclude messages from the specified agent component id.
@@ -95,7 +95,7 @@ public sealed interface MemoryFilter {
      * @param ids the set of agent component ids to exclude messages from
      * @return this supplier with the additional filter
      */
-    MemoryFilterSupplier excludeFromAgentId(Set<String> ids);
+    MemoryFilterSupplier excludeFromAgentIds(Set<String> ids);
 
     /**
      * Adds a filter to include only messages from agents with the specified role.
@@ -111,7 +111,7 @@ public sealed interface MemoryFilter {
      * @param roles the set of agent roles to include messages from
      * @return this supplier with the additional filter
      */
-    MemoryFilterSupplier includeFromAgentRole(Set<String> roles);
+    MemoryFilterSupplier includeFromAgentRoles(Set<String> roles);
 
     /**
      * Adds a filter to exclude messages from agents with the specified role.
@@ -127,7 +127,7 @@ public sealed interface MemoryFilter {
      * @param roles the set of agent roles to exclude messages from
      * @return this supplier with the additional filter
      */
-    MemoryFilterSupplier excludeFromAgentRole(Set<String> roles);
+    MemoryFilterSupplier excludeFromAgentRoles(Set<String> roles);
   }
 
   /**
@@ -152,7 +152,7 @@ public sealed interface MemoryFilter {
    * @param ids the set of agent component ids to include messages from
    * @return a filter supplier for building and composing filters
    */
-  static MemoryFilterSupplier includeFromAgentId(Set<String> ids) {
+  static MemoryFilterSupplier includeFromAgentIds(Set<String> ids) {
     return new MemoryFiltersSupplierImpl(new MemoryFilter.IncludeFromAgentId(ids));
   }
 
@@ -178,7 +178,7 @@ public sealed interface MemoryFilter {
    * @param ids the set of agent component ids to exclude messages from
    * @return a filter supplier for building and composing filters
    */
-  static MemoryFilterSupplier excludeFromAgentId(Set<String> ids) {
+  static MemoryFilterSupplier excludeFromAgentIds(Set<String> ids) {
     return new MemoryFiltersSupplierImpl(new MemoryFilter.ExcludeFromAgentId(ids));
   }
 
@@ -204,7 +204,7 @@ public sealed interface MemoryFilter {
    * @param roles the set of agent roles to include messages from
    * @return a filter supplier for building and composing filters
    */
-  static MemoryFilterSupplier includeFromAgentRole(Set<String> roles) {
+  static MemoryFilterSupplier includeFromAgentRoles(Set<String> roles) {
     return new MemoryFiltersSupplierImpl(new MemoryFilter.IncludeFromAgentRole(roles));
   }
 
@@ -230,7 +230,7 @@ public sealed interface MemoryFilter {
    * @param roles the set of agent roles to exclude messages from
    * @return a filter supplier for building and composing filters
    */
-  static MemoryFilterSupplier excludeFromAgentRole(Set<String> roles) {
+  static MemoryFilterSupplier excludeFromAgentRoles(Set<String> roles) {
     return new MemoryFiltersSupplierImpl(new MemoryFilter.ExcludeFromAgentRole(roles));
   }
 

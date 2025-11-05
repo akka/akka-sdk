@@ -34,9 +34,9 @@ class MemoryFilterSupplierSpec extends AnyWordSpec with Matchers {
     "merge same-type filters with lists and preserve order" in {
       // given - chain filters with lists
       val filterSupplier = MemoryFilter
-        .includeFromAgentId(Set("agent-1", "agent-2").asJava)
+        .includeFromAgentIds(Set("agent-1", "agent-2").asJava)
         .includeFromAgentId("agent-3")
-        .includeFromAgentId(Set("agent-4", "agent-5").asJava)
+        .includeFromAgentIds(Set("agent-4", "agent-5").asJava)
 
       // when
       val filters = filterSupplier.get().asScala.toList
