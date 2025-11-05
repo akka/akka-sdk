@@ -223,8 +223,14 @@ When the problems have been solved after xref:#_fast_downing_of_region_for_disas
 akka project settings bring-up-region gcp-us-east1 --region aws-us-east-2
 ----
 +
-In the above example, `gcp-us-east1` is the region that was previously downed. The CLI command is sent to `aws-us-east-2`.
-. You can send the same command to all regions, including the previously failed region.
+In the above example, `gcp-us-east1` is the region that was previously downed. The CLI command is sent to `aws-us-east-2`. You should send the same command to all regions.
+. If the services were paused in the previously downed region, you can resume them.
++
+[source, command line]
+----
+akka service resume my-service --region gcp-us-east1
+----
+. After resuming the services you should also send the same `bring-up-region` command to the previously failed region.
 +
 [source, command line]
 ----
