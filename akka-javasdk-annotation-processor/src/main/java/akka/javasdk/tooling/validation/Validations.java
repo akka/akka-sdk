@@ -168,6 +168,11 @@ public class Validations {
     List<String> errors = new ArrayList<>();
     for (Element enclosed : element.getEnclosedElements()) {
       if (enclosed instanceof ExecutableElement method) {
+        // Only validate public methods - private methods are not command handlers
+        if (!method.getModifiers().contains(Modifier.PUBLIC)) {
+          continue;
+        }
+
         String returnTypeName = method.getReturnType().toString();
         if (Arrays.stream(effectTypeNames).anyMatch(returnTypeName::startsWith)) {
           int paramCount = method.getParameters().size();
@@ -258,6 +263,12 @@ public class Validations {
 
     for (Element enclosed : element.getEnclosedElements()) {
       if (enclosed instanceof ExecutableElement method) {
+
+        // Only validate public methods - private methods are not command handlers
+        if (!method.getModifiers().contains(Modifier.PUBLIC)) {
+          continue;
+        }
+
         String returnTypeName = method.getReturnType().toString();
         // Use startsWith to handle generic types like Effect<T>
         if (returnTypeName.equals(effectTypeName)
