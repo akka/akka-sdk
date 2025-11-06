@@ -10,6 +10,12 @@ Current versions
 * Akka CLI {akka-cli-version}
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
 
+== November 2025
+
+* Akka libraries 25.10 releases
+- overview in xref:release-notes/2025-11-05-akka-25.10-released.adoc[]
+
+
 == October 2025
 
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.6[Akka SDK 3.5.6]
