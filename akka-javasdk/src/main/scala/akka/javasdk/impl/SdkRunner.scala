@@ -523,7 +523,7 @@ private final class Sdk(
     .filter(Reflect.isGrpcEndpoint)
     .map { grpcEndpointClass =>
       val anyRefClass = grpcEndpointClass.asInstanceOf[Class[AnyRef]]
-      GrpcEndpointDescriptorFactory(anyRefClass, grpcEndpointFactory(anyRefClass))(system)
+      GrpcEndpointDescriptorFactory(anyRefClass, grpcEndpointFactory(anyRefClass), sdkMaterializer)(system)
     }
 
   private val mcpEndpoints = componentClasses
@@ -593,7 +593,9 @@ private final class Sdk(
             keyValue = false,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            provided = isProvided(clz))
+            provided = isProvided(clz),
+            replicationFilterEnabled = false // FIXME: add replication filters
+          )
 
       case clz if Reflect.isKeyValueEntity(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -634,7 +636,9 @@ private final class Sdk(
             keyValue = true,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            provided = false)
+            provided = false,
+            replicationFilterEnabled = false // FIXME: add replication filters
+          )
 
       case clz if Reflect.isWorkflow(clz) =>
         val componentId = Reflect.readComponentId(clz)
