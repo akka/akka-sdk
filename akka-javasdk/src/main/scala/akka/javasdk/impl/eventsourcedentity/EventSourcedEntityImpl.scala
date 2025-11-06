@@ -180,7 +180,9 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
                 reply,
                 metadata,
                 deleteEntity,
-                eventsMetadata.iterator.map(MetadataImpl.toSpi).toVector))
+                eventsMetadata.iterator.map(MetadataImpl.toSpi).toVector,
+                SpiEventSourcedEntity.ChangeReplicationFilter.empty // FIXME: add replication filter
+              ))
         }
       }
 
