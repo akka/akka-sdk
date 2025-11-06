@@ -583,7 +583,7 @@ private final class Sdk(
               wiredInstance(clz.asInstanceOf[Class[EventSourcedEntity[AnyRef, AnyRef]]]) {
                 // remember to update component type API doc and docs if changing the set of injectables
                 case p if p == classOf[EventSourcedEntityContext]              => context
-                case s if s == classOf[Sanitizer] && isSessionMemoryEntity     => sanitizer
+                case s if s == classOf[Sanitizer]                              => sanitizer
                 case r if r == classOf[AgentRegistry] && isSessionMemoryEntity => agentRegistry
               })
         }
