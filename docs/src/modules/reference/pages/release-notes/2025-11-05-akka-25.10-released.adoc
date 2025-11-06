@@ -22,7 +22,7 @@ Akka 25.10 consists of the following module versions:
 
 
 
-As reference of versions that go together for Akka 25.10, please see https://doc.akka.io/libraries/akka-dependencies/25.10/[Akka module versions 25.10].
+As reference of versions that go together for Akka 25.10, please see https://doc.akka.io/libraries/akka-dependencies/25.10/[Akka library versions 25.10].
 
 == Java 25 support
 
@@ -65,9 +65,9 @@ The following CVE’s are addressed in this build.
 
 == Compatibility
 
-All modules of Akka 25.10 are backwards compatible with Akka 25.05.
-No configuration changes are needed.
-Rolling update of Akka Cluster is fully supported.
+* All modules of Akka 25.10 are backwards compatible with Akka 25.05.
+* No configuration changes are needed.
+* Rolling update of Akka Cluster is fully supported.
 
 Akka libraries now depend on Scala 2.13.17. Because of this, Scala sbt projects on Scala 2.13 will need to bump their Scala version to 2.13.7 to avoid errors from sbt.
 
