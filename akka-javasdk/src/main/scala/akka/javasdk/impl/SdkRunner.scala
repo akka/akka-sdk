@@ -65,9 +65,6 @@ import akka.javasdk.http.RequestContext
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerDestination
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerSource
 import akka.javasdk.impl.Sdk.StartupContext
-import akka.javasdk.impl.Validations.Invalid
-import akka.javasdk.impl.Validations.Valid
-import akka.javasdk.impl.Validations.Validation
 import akka.javasdk.impl.agent.AgentImpl
 import akka.javasdk.impl.agent.AgentImpl.AgentContextImpl
 import akka.javasdk.impl.agent.AgentRegistryImpl
@@ -445,17 +442,6 @@ private final class Sdk(
     remoteIdentification.map(ri => GrpcClientProviderImpl.AuthHeaders(ri.headerName, ri.headerValue)))
 
   private lazy val overrideModelProvider = new OverrideModelProvider
-
-  // validate service classes before instantiating
-  private val validation = componentClasses.foldLeft(Valid: Validation) { case (validations, cls) =>
-    validations ++ Validations.validate(cls)
-  }
-  validation match { // if any invalid component, log and throw
-    case Valid => ()
-    case invalid: Invalid =>
-      invalid.messages.foreach { msg => logger.error(msg) }
-      invalid.throwFailureSummary()
-  }
 
   val guardrailProvider = new GuardrailProvider(system, applicationConfig)
   try {
