@@ -95,7 +95,11 @@ public sealed interface Validation permits Validation.Valid, Validation.Invalid 
     }
   }
 
-  /** Represents a failed validation containing one or more error messages. */
+  /**
+   * Represents a failed validation containing one or more error messages.
+   *
+   * @param messages the list of error messages
+   */
   record Invalid(List<String> messages) implements Validation {
 
     /** Creates an Invalid validation with the given error messages. */

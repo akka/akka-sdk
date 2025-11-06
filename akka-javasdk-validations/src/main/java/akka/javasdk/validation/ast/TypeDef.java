@@ -142,4 +142,20 @@ public interface TypeDef {
    * @return list of superclass type arguments, empty if superclass is not generic
    */
   List<TypeRefDef> getSuperclassTypeArguments();
+
+  /**
+   * Returns all nested types (inner classes/interfaces) declared in this type.
+   *
+   * @return list of nested types
+   */
+  List<TypeDef> getNestedTypes();
+
+  /**
+   * Checks if this type is static.
+   *
+   * <p>This is primarily useful for nested classes to determine if they are static inner classes.
+   *
+   * @return true if the type has static modifier
+   */
+  boolean isStatic();
 }

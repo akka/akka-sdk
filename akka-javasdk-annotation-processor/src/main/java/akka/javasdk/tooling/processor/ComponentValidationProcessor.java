@@ -6,6 +6,7 @@ package akka.javasdk.tooling.processor;
 
 import akka.javasdk.tooling.validation.Validation;
 import akka.javasdk.tooling.validation.Validations;
+import akka.javasdk.validation.ast.compiletime.CompileTimeTypeDef;
 import java.util.Set;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
@@ -38,12 +39,15 @@ public class ComponentValidationProcessor extends BaseAkkaProcessor {
 
       for (TypeElement element : ElementFilter.typesIn(annotatedElements)) {
         debug("Validating " + element.getSimpleName());
-        Validation validation = Validations.validateComponent(element);
 
-        if (validation.isInvalid() && validation instanceof Validation.Invalid invalid) {
+        // Wrap TypeElement in CompileTimeTypeDef
+        CompileTimeTypeDef typeDef = new CompileTimeTypeDef(element);
+        Validation validation = Validations.validateComponent(typeDef);
+
+        if (validation instanceof Validation.Invalid(java.util.List<String> errorMessages)) {
           debug("Component " + element.getSimpleName() + " is invalid");
           // Collect errors instead of reporting immediately
-          for (String message : invalid.messages()) {
+          for (String message : errorMessages) {
             allErrors.add(new ValidationError(element, message));
           }
         } else {

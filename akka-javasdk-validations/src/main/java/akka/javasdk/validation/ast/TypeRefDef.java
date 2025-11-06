@@ -17,7 +17,7 @@ public interface TypeRefDef {
    * Returns the fully qualified name of this type.
    *
    * <p>For generic types like {@code List<String>}, this returns the full representation including
-   * type parameters (e.g., "java.util.List<java.lang.String>").
+   * type parameters (e.g., {@code "java.util.List<java.lang.String>"}).
    *
    * @return the fully qualified type name
    */
@@ -27,7 +27,7 @@ public interface TypeRefDef {
    * Returns the raw (non-generic) fully qualified name of this type.
    *
    * <p>For generic types like {@code List<String>}, this returns just the raw type without
-   * parameters (e.g., "java.util.List").
+   * parameters (e.g., {@code "java.util.List"}).
    *
    * @return the raw fully qualified type name
    */
