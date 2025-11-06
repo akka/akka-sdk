@@ -4,6 +4,7 @@
 
 package akka.javasdk.agent;
 
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -57,4 +58,13 @@ public interface AgentRegistry {
    * defined with the {@link akka.javasdk.annotations.AgentRole} annotation on the agent class.
    */
   AgentInfo agentInfo(String agentId);
+
+  /**
+   * Information about a given agent. The agent id, name, and description are defined with the
+   * {@link akka.javasdk.annotations.Component} annotation on the agent class. The agent role is
+   * defined with the {@link akka.javasdk.annotations.AgentRole} annotation on the agent class.
+   *
+   * <p>Returns an empty Optional if agentId is unknown
+   */
+  Optional<AgentInfo> agentInfoOption(String agentId);
 }

@@ -58,7 +58,7 @@ public class SessionMemoryConsumer extends Consumer {
             .method(SessionMemoryEntity::compactHistory) // <4>
             .invoke(
               new SessionMemoryEntity.CompactionCmd(
-                new SessionMessage.UserMessage(now, summary.userMessage()),
+                new SessionMessage.UserMessage(now, summary.userMessage(), ""),
                 new SessionMessage.AiMessage(now, summary.aiMessage(), ""),
                 history.sequenceNumber() // <5>
               )

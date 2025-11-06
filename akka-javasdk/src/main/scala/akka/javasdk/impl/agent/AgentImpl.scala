@@ -12,7 +12,6 @@ import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.jdk.CollectionConverters._
 import scala.jdk.DurationConverters.JavaDurationOps
-import scala.jdk.OptionConverters.RichOption
 import scala.util.control.NonFatal
 
 import akka.annotation.InternalApi
@@ -386,15 +385,15 @@ private[impl] final class AgentImpl[A <: Agent](
           val requests = res.toolRequests.map { req =>
             new ToolCallRequest(req.id, req.name, req.arguments)
           }.asJava
-          new AiMessage(res.timestamp, res.content, componentId, agentRole.toJava, requests)
+          new AiMessage(res.timestamp, res.content, componentId, requests)
 
         case res: SpiAgent.ToolCallResponse =>
-          new ToolCallResponse(res.timestamp, componentId, agentRole.toJava, res.id, res.name, res.content)
+          new ToolCallResponse(res.timestamp, componentId, res.id, res.name, res.content)
       }
 
     sessionMemoryClient.addInteraction(
       sessionId,
-      new UserMessage(userMessageAt, userMessage, componentId, agentRole.toJava),
+      new UserMessage(userMessageAt, userMessage, componentId),
       responseMessages.asJava)
   }
 

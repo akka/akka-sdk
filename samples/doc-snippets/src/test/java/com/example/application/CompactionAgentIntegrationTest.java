@@ -132,12 +132,7 @@ public class CompactionAgentIntegrationTest extends TestKitSupport {
         .method(SessionMemoryEntity::addInteraction)
         .invoke(
           new SessionMemoryEntity.AddInteractionCmd(
-            new SessionMessage.UserMessage(
-              Instant.now(),
-              userMessages.get(i),
-              "my-agent",
-              Optional.empty()
-            ),
+            new SessionMessage.UserMessage(Instant.now(), userMessages.get(i), "my-agent"),
             new SessionMessage.AiMessage(Instant.now(), aiMessages.get(i), "my-agent")
           )
         );

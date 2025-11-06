@@ -71,10 +71,13 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
 
   private final Config config;
   private final String sessionId;
+  public final AgentRegistry agentRegistry;
 
-  public SessionMemoryEntity(Config config, EventSourcedEntityContext context) {
+  public SessionMemoryEntity(
+      Config config, EventSourcedEntityContext context, AgentRegistry agentRegistry) {
     this.config = config;
     this.sessionId = context.entityId();
+    this.agentRegistry = agentRegistry;
   }
 
   public record State(
@@ -154,19 +157,13 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     record LimitedWindowSet(Instant timestamp, int maxSizeInBytes) implements Event {}
 
     @TypeName("akka-memory-user-message-added")
-    record UserMessageAdded(
-        Instant timestamp,
-        String componentId,
-        Optional<String> agentRole,
-        String message,
-        int sizeInBytes)
+    record UserMessageAdded(Instant timestamp, String componentId, String message, int sizeInBytes)
         implements Event {}
 
     @TypeName("akka-memory-ai-message-added")
     record AiMessageAdded(
         Instant timestamp,
         String componentId,
-        Optional<String> agentRole,
         String message,
         int sizeInBytes,
         long historySizeInBytes,
@@ -175,7 +172,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
 
       AiMessageAdded withHistorySizeInBytes(long newSize) {
         return new AiMessageAdded(
-            timestamp, componentId, agentRole, message, sizeInBytes, newSize, toolCallRequests);
+            timestamp, componentId, message, sizeInBytes, newSize, toolCallRequests);
       }
     }
 
@@ -183,7 +180,6 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     record ToolResponseMessageAdded(
         Instant timestamp,
         String componentId,
-        Optional<String> agentRole,
         String id,
         String name,
         String content,
@@ -235,7 +231,6 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                             new Event.AiMessageAdded(
                                 aiMessage.timestamp(),
                                 aiMessage.componentId(),
-                                aiMessage.agentRole(),
                                 aiMessage.text(),
                                 aiMessage.size(),
                                 0L, // filled in later
@@ -245,7 +240,6 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                             new Event.ToolResponseMessageAdded(
                                 toolCallResponse.timestamp(),
                                 toolCallResponse.componentId(),
-                                toolCallResponse.agentRole(),
                                 toolCallResponse.id(),
                                 toolCallResponse.name(),
                                 toolCallResponse.text(),
@@ -261,7 +255,6 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
         new Event.UserMessageAdded(
             cmd.userMessage.timestamp(),
             cmd.userMessage.componentId(),
-            cmd.userMessage.agentRole(),
             cmd.userMessage.text(),
             cmd.userMessage.size());
 
@@ -289,6 +282,12 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     }
   }
 
+  private Optional<String> lookUpAgentRole(String componentId) {
+    return agentRegistry
+        .agentInfoOption(componentId)
+        .flatMap(agentInfo -> Optional.ofNullable(agentInfo.role()).filter(r -> !r.isBlank()));
+  }
+
   private List<SessionMessage> applyFilter(List<SessionMessage> messages, MemoryFilter filter) {
     return switch (filter) {
       case MemoryFilter.Include(Set<String> ids, Set<String> roles) ->
@@ -296,7 +295,9 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
               .filter(
                   message -> {
                     return ids.contains(message.componentId())
-                        || message.agentRole().filter(roles::contains).isPresent();
+                        || lookUpAgentRole(message.componentId())
+                            .filter(roles::contains)
+                            .isPresent();
                   })
               .toList();
 
@@ -305,7 +306,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
               .filter(
                   message -> {
                     return !ids.contains(message.componentId())
-                        && message.agentRole().filter(roles::contains).isEmpty();
+                        && lookUpAgentRole(message.componentId()).filter(roles::contains).isEmpty();
                   })
               .toList();
     };
@@ -347,14 +348,12 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
         new Event.UserMessageAdded(
             cmd.userMessage.timestamp(),
             componentId,
-            cmd.userMessage.agentRole(),
             cmd.userMessage.text(),
             cmd.userMessage.size()));
     events.add(
         new Event.AiMessageAdded(
             cmd.aiMessage.timestamp(),
             componentId,
-            cmd.aiMessage.agentRole(),
             cmd.aiMessage.text(),
             cmd.aiMessage.size(),
             0L, // filled in later
@@ -374,7 +373,6 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                         new Event.UserMessageAdded(
                             userMessage.timestamp(),
                             userMessage.componentId(),
-                            userMessage.agentRole(),
                             userMessage.text(),
                             userMessage.size()));
                   }
@@ -384,7 +382,6 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                         new Event.ToolResponseMessageAdded(
                             toolCallResponse.timestamp(),
                             toolCallResponse.componentId(),
-                            toolCallResponse.agentRole(),
                             toolCallResponse.id(),
                             toolCallResponse.name(),
                             toolCallResponse.text(),
@@ -396,7 +393,6 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                         new Event.AiMessageAdded(
                             aiMessage.timestamp(),
                             aiMessage.componentId(),
-                            aiMessage.agentRole(),
                             aiMessage.text(),
                             aiMessage.size(),
                             0L, // filled in later
@@ -460,21 +456,13 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
       case Event.UserMessageAdded userMsg ->
           currentState()
               .addMessage(
-                  new UserMessage(
-                      userMsg.timestamp(),
-                      userMsg.message(),
-                      userMsg.componentId,
-                      userMsg.agentRole()));
+                  new UserMessage(userMsg.timestamp(), userMsg.message(), userMsg.componentId));
 
       case Event.AiMessageAdded aiMsg ->
           currentState()
               .addMessage(
                   new AiMessage(
-                      aiMsg.timestamp,
-                      aiMsg.message,
-                      aiMsg.componentId,
-                      aiMsg.agentRole,
-                      aiMsg.toolCallRequests));
+                      aiMsg.timestamp, aiMsg.message, aiMsg.componentId, aiMsg.toolCallRequests));
 
       case Event.ToolResponseMessageAdded toolMsg ->
           currentState()
@@ -482,7 +470,6 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                   new ToolCallResponse(
                       toolMsg.timestamp(),
                       toolMsg.componentId,
-                      toolMsg.agentRole,
                       toolMsg.id(),
                       toolMsg.name,
                       toolMsg.content()));

@@ -8,6 +8,7 @@ import static akka.Done.done;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.Done;
+import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.agent.MemoryFilter;
 import akka.javasdk.agent.SessionHistory;
 import akka.javasdk.agent.SessionMemoryEntity;
@@ -15,6 +16,7 @@ import akka.javasdk.agent.SessionMemoryEntity.AddInteractionCmd;
 import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.agent.SessionMessage.AiMessage;
 import akka.javasdk.agent.SessionMessage.UserMessage;
+import akka.javasdk.impl.agent.AgentRegistryImpl;
 import akka.javasdk.testkit.EventSourcedResult;
 import akka.javasdk.testkit.EventSourcedTestKit;
 import com.typesafe.config.Config;
@@ -22,12 +24,14 @@ import com.typesafe.config.ConfigFactory;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 public class SessionMemoryEntityTest {
 
   private static final String COMPONENT_ID = "test-component";
   private static final Config config = ConfigFactory.load();
+  private static final AgentRegistry agentRegistryEmpty = AgentRegistryImpl.fromJavaSet(Set.of());
 
   private final SessionMemoryEntity.GetHistoryCmd emptyGetHistory =
       new SessionMemoryEntity.GetHistoryCmd();
@@ -35,11 +39,13 @@ public class SessionMemoryEntityTest {
   @Test
   public void shouldAddMessageToHistory() {
     // given
-    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
     var timestamp = Instant.now();
     String userMsg = "Hello, how are you?";
     String aiMsg = "I'm fine, thanks for asking!";
-    UserMessage userMessage = new UserMessage(timestamp, userMsg, COMPONENT_ID, Optional.empty());
+    UserMessage userMessage = new UserMessage(timestamp, userMsg, COMPONENT_ID);
     var aiMessage = new AiMessage(timestamp, aiMsg, COMPONENT_ID);
 
     // when
@@ -80,17 +86,18 @@ public class SessionMemoryEntityTest {
   @Test
   public void shouldAddMultipleMessagesToHistory() {
     // given
-    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
     var timestamp = Instant.now();
     String userMsg1 = "Hello";
     String aiMsg1 = "Hi there!";
     String userMsg2 = "How are you?";
     String aiMsg2 = "I'm doing great!";
 
-    var userMessage1 = new UserMessage(timestamp, userMsg1, COMPONENT_ID, Optional.empty());
+    var userMessage1 = new UserMessage(timestamp, userMsg1, COMPONENT_ID);
     var aiMessage1 = new AiMessage(timestamp, aiMsg1, COMPONENT_ID);
-    var userMessage2 =
-        new UserMessage(timestamp.plusMillis(1), userMsg2, COMPONENT_ID, Optional.empty());
+    var userMessage2 = new UserMessage(timestamp.plusMillis(1), userMsg2, COMPONENT_ID);
     var aiMessage2 = new AiMessage(timestamp.plusMillis(1), aiMsg2, COMPONENT_ID);
 
     // when
@@ -124,10 +131,12 @@ public class SessionMemoryEntityTest {
   @Test
   public void shouldBeCompactable() {
     // given
-    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
     var timestamp = Instant.now();
 
-    var userMessage1 = new UserMessage(timestamp, "Hello", COMPONENT_ID, Optional.empty());
+    var userMessage1 = new UserMessage(timestamp, "Hello", COMPONENT_ID);
     var aiMessage1 = new AiMessage(timestamp, "Hi there!", COMPONENT_ID);
 
     testKit
@@ -139,7 +148,7 @@ public class SessionMemoryEntityTest {
         testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
     var sequenceNumber = historyResult.getReply().sequenceNumber();
     assertThat(sequenceNumber).isEqualTo(2L);
-    var userMessage2 = new UserMessage(timestamp, "Hey", COMPONENT_ID, Optional.empty());
+    var userMessage2 = new UserMessage(timestamp, "Hey", COMPONENT_ID);
     var aiMessage2 = new AiMessage(timestamp, "Hi!", COMPONENT_ID);
     var cmd = new SessionMemoryEntity.CompactionCmd(userMessage2, aiMessage2, sequenceNumber);
     EventSourcedResult<Done> compactResult =
@@ -169,10 +178,12 @@ public class SessionMemoryEntityTest {
   @Test
   public void shouldHandleConcurrentUpdatesWhenCompacting() {
     // given
-    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
     var timestamp = Instant.now();
 
-    var userMessage1 = new UserMessage(timestamp, "Hello", COMPONENT_ID, Optional.empty());
+    var userMessage1 = new UserMessage(timestamp, "Hello", COMPONENT_ID);
     var aiMessage1 = new AiMessage(timestamp, "Hi there!", COMPONENT_ID);
 
     testKit
@@ -184,12 +195,12 @@ public class SessionMemoryEntityTest {
         testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
     var sequenceNumber = historyResult.getReply().sequenceNumber();
     assertThat(sequenceNumber).isEqualTo(2L);
-    var userMessage2 = new UserMessage(timestamp, "Hey", COMPONENT_ID, Optional.empty());
+    var userMessage2 = new UserMessage(timestamp, "Hey", COMPONENT_ID);
     var aiMessage2 = new AiMessage(timestamp, "Hi!", COMPONENT_ID);
     var cmd = new SessionMemoryEntity.CompactionCmd(userMessage2, aiMessage2, sequenceNumber);
 
     // but before making the compaction update, there is some other update
-    var userMessage3 = new UserMessage(timestamp, "I'm Alice", COMPONENT_ID, Optional.empty());
+    var userMessage3 = new UserMessage(timestamp, "I'm Alice", COMPONENT_ID);
     var aiMessage3 = new AiMessage(timestamp, "Hi Alice, I'm bot", COMPONENT_ID);
     testKit
         .method(SessionMemoryEntity::addInteraction)
@@ -223,12 +234,14 @@ public class SessionMemoryEntityTest {
   @Test
   public void shouldBeDeletable() {
     // given
-    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
     var timestamp = Instant.now();
     String userMsg = "Hello";
     String aiMsg = "Hi there!";
 
-    var userMessage = new UserMessage(timestamp, userMsg, COMPONENT_ID, Optional.empty());
+    var userMessage = new UserMessage(timestamp, userMsg, COMPONENT_ID);
     var aiMessage = new AiMessage(timestamp, aiMsg, COMPONENT_ID);
 
     testKit
@@ -257,7 +270,9 @@ public class SessionMemoryEntityTest {
   @Test
   public void shouldGetEmptyHistoryWhenNoMessagesAdded() {
     // given
-    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
 
     // when
     EventSourcedResult<SessionHistory> historyResult =
@@ -270,7 +285,9 @@ public class SessionMemoryEntityTest {
   @Test
   public void shouldRemoveOldestMessagesWhenLimitIsReached() {
     // given
-    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
     var timestamp = Instant.now();
 
     // Calculate the total bytes needed for each message
@@ -279,10 +296,9 @@ public class SessionMemoryEntityTest {
     String userMsg2 = "Second message"; // 14 bytes
     String aiMsg2 = "Second response"; // 15 bytes
 
-    var userMessage1 = new UserMessage(timestamp, userMsg1, COMPONENT_ID, Optional.empty());
+    var userMessage1 = new UserMessage(timestamp, userMsg1, COMPONENT_ID);
     var aiMessage1 = new AiMessage(timestamp, aiMsg1, COMPONENT_ID);
-    var userMessage2 =
-        new UserMessage(timestamp.plusMillis(1), userMsg2, COMPONENT_ID, Optional.empty());
+    var userMessage2 = new UserMessage(timestamp.plusMillis(1), userMsg2, COMPONENT_ID);
     var aiMessage2 = new AiMessage(timestamp.plusMillis(1), aiMsg2, COMPONENT_ID);
 
     // Set buffer size to just fit 1.5 interaction
@@ -315,7 +331,9 @@ public class SessionMemoryEntityTest {
   @Test
   public void shouldMaintainCorrectSizeAfterMultipleOperations() {
     // given
-    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
     var timestamp = Instant.now();
 
     // Calculate the total bytes needed for each message
@@ -326,13 +344,11 @@ public class SessionMemoryEntityTest {
     String userMsg3 = "Third message"; // 13 bytes
     String aiMsg3 = "Third response"; // 14 bytes
 
-    var userMessage1 = new UserMessage(timestamp, userMsg1, COMPONENT_ID, Optional.empty());
+    var userMessage1 = new UserMessage(timestamp, userMsg1, COMPONENT_ID);
     var aiMessage1 = new AiMessage(timestamp, aiMsg1, COMPONENT_ID);
-    var userMessage2 =
-        new UserMessage(timestamp.plusMillis(1), userMsg2, COMPONENT_ID, Optional.empty());
+    var userMessage2 = new UserMessage(timestamp.plusMillis(1), userMsg2, COMPONENT_ID);
     var aiMessage2 = new AiMessage(timestamp.plusMillis(1), aiMsg2, COMPONENT_ID);
-    var userMessage3 =
-        new UserMessage(timestamp.plusMillis(2), userMsg3, COMPONENT_ID, Optional.empty());
+    var userMessage3 = new UserMessage(timestamp.plusMillis(2), userMsg3, COMPONENT_ID);
     var aiMessage3 = new AiMessage(timestamp.plusMillis(2), aiMsg3, COMPONENT_ID);
 
     // Set buffer size to just fit messages 1 and 2 (total 56 bytes)
@@ -350,7 +366,7 @@ public class SessionMemoryEntityTest {
     // then
     assertThat(result1.getReply().messages())
         .containsExactly(
-            new UserMessage(timestamp, userMsg1, COMPONENT_ID, Optional.empty()),
+            new UserMessage(timestamp, userMsg1, COMPONENT_ID),
             new AiMessage(timestamp, aiMsg1, COMPONENT_ID));
     assertThat(result1.getReply().messages().size()).isEqualTo(2);
 
@@ -364,9 +380,9 @@ public class SessionMemoryEntityTest {
     // then
     assertThat(result2.getReply().messages())
         .containsExactly(
-            new UserMessage(timestamp, userMsg1, COMPONENT_ID, Optional.empty()),
+            new UserMessage(timestamp, userMsg1, COMPONENT_ID),
             new AiMessage(timestamp, aiMsg1, COMPONENT_ID),
-            new UserMessage(timestamp.plusMillis(1), userMsg2, COMPONENT_ID, Optional.empty()),
+            new UserMessage(timestamp.plusMillis(1), userMsg2, COMPONENT_ID),
             new AiMessage(timestamp.plusMillis(1), aiMsg2, COMPONENT_ID));
     assertThat(result2.getReply().messages().size()).isEqualTo(4);
 
@@ -380,9 +396,9 @@ public class SessionMemoryEntityTest {
     // then - first interaction should be removed
     assertThat(result3.getReply().messages())
         .containsExactly(
-            new UserMessage(timestamp.plusMillis(1), userMsg2, COMPONENT_ID, Optional.empty()),
+            new UserMessage(timestamp.plusMillis(1), userMsg2, COMPONENT_ID),
             new AiMessage(timestamp.plusMillis(1), aiMsg2, COMPONENT_ID),
-            new UserMessage(timestamp.plusMillis(2), userMsg3, COMPONENT_ID, Optional.empty()),
+            new UserMessage(timestamp.plusMillis(2), userMsg3, COMPONENT_ID),
             new AiMessage(timestamp.plusMillis(2), aiMsg3, COMPONENT_ID));
     assertThat(result3.getReply().messages().size()).isEqualTo(4);
   }
@@ -390,7 +406,9 @@ public class SessionMemoryEntityTest {
   @Test
   public void shouldRejectInvalidBufferSize() {
     // given
-    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
     var invalidBuffer = new SessionMemoryEntity.LimitedWindow(0);
 
     // when
@@ -404,12 +422,14 @@ public class SessionMemoryEntityTest {
 
   @Test
   public void shouldSkipWhenFirstMessageGreaterBySize() {
-    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
     var timestamp = Instant.now();
     // Create a message larger than the buffer
     String largeUserMsg = "A".repeat(100);
     String largeAiMsg = "B".repeat(100);
-    var userMessage = new UserMessage(timestamp, largeUserMsg, COMPONENT_ID, Optional.empty());
+    var userMessage = new UserMessage(timestamp, largeUserMsg, COMPONENT_ID);
     var aiMessage = new AiMessage(timestamp, largeAiMsg, COMPONENT_ID);
 
     // Set buffer size smaller than a single message
@@ -433,7 +453,9 @@ public class SessionMemoryEntityTest {
   public void shouldReturnOnlyLastNMessages() {
     // Create test kit with the configuration
     EventSourcedTestKit<SessionMemoryEntity.State, SessionMemoryEntity.Event, SessionMemoryEntity>
-        testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
+        testKit =
+            EventSourcedTestKit.of(
+                (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
     var timestamp = Instant.now();
 
     // Add several interactions
@@ -444,7 +466,7 @@ public class SessionMemoryEntityTest {
           .method(SessionMemoryEntity::addInteraction)
           .invoke(
               new AddInteractionCmd(
-                  new UserMessage(timestamp, userMsgs[i], COMPONENT_ID, Optional.empty()),
+                  new UserMessage(timestamp, userMsgs[i], COMPONENT_ID),
                   new AiMessage(timestamp, aiMsgs[i], COMPONENT_ID)));
     }
 
@@ -458,9 +480,9 @@ public class SessionMemoryEntityTest {
     // The expected last 4 messages
     var expected =
         List.of(
-            new UserMessage(timestamp, "U3", COMPONENT_ID, Optional.empty()),
+            new UserMessage(timestamp, "U3", COMPONENT_ID),
             new AiMessage(timestamp, "A3", COMPONENT_ID),
-            new UserMessage(timestamp, "U4", COMPONENT_ID, Optional.empty()),
+            new UserMessage(timestamp, "U4", COMPONENT_ID),
             new AiMessage(timestamp, "A4", COMPONENT_ID));
 
     assertThat(result.getReply().messages()).containsExactlyElementsOf(expected);
@@ -469,7 +491,9 @@ public class SessionMemoryEntityTest {
   @Test
   public void shouldReturnEmptyHistoryWithLastN() {
     EventSourcedTestKit<SessionMemoryEntity.State, SessionMemoryEntity.Event, SessionMemoryEntity>
-        testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
+        testKit =
+            EventSourcedTestKit.of(
+                (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
 
     var lastN = 4;
     EventSourcedResult<SessionHistory> result =
@@ -480,29 +504,41 @@ public class SessionMemoryEntityTest {
     assertThat(result.getReply().messages()).isEmpty();
   }
 
+  private AgentRegistryImpl.AgentDetails agentDetails(String componentId) {
+    return agentDetails(componentId, "");
+  }
+
+  private AgentRegistryImpl.AgentDetails agentDetails(String componentId, String role) {
+    return new AgentRegistryImpl.AgentDetails(componentId, "", "", role, null);
+  }
+
   @Test
   public void shouldFilterMessagesIncludingFromAgentId() {
-    // given
-    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
-    var timestamp = Instant.now();
 
     String componentId1 = "agent-1";
     String componentId2 = "agent-2";
     String componentId3 = "agent-3";
 
+    var agentDetails =
+        Set.of(agentDetails(componentId1), agentDetails(componentId2), agentDetails(componentId3));
+    // given
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) ->
+                new SessionMemoryEntity(
+                    config, context, AgentRegistryImpl.fromJavaSet(agentDetails)));
+    var timestamp = Instant.now();
+
     // Add messages from different agents
-    var userMessage1 =
-        new UserMessage(timestamp, "Message from agent 1", componentId1, Optional.empty());
+    var userMessage1 = new UserMessage(timestamp, "Message from agent 1", componentId1);
     var aiMessage1 = new AiMessage(timestamp, "Response from agent 1", componentId1);
 
     var userMessage2 =
-        new UserMessage(
-            timestamp.plusMillis(1), "Message from agent 2", componentId2, Optional.empty());
+        new UserMessage(timestamp.plusMillis(1), "Message from agent 2", componentId2);
     var aiMessage2 = new AiMessage(timestamp.plusMillis(1), "Response from agent 2", componentId2);
 
     var userMessage3 =
-        new UserMessage(
-            timestamp.plusMillis(2), "Message from agent 3", componentId3, Optional.empty());
+        new UserMessage(timestamp.plusMillis(2), "Message from agent 3", componentId3);
     var aiMessage3 = new AiMessage(timestamp.plusMillis(2), "Response from agent 3", componentId3);
 
     testKit
@@ -528,35 +564,36 @@ public class SessionMemoryEntityTest {
 
   @Test
   public void shouldFilterMessagesIncludingIdAndRole() {
-    // given
-    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
-    var timestamp = Instant.now();
 
     String componentId1 = "agent-1";
     String componentId2 = "agent-2";
     String componentId3 = "agent-3";
     String role3 = "worker";
+    var agentDetails =
+        Set.of(
+            agentDetails(componentId1),
+            agentDetails(componentId2),
+            agentDetails(componentId3, role3));
+    // given
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) ->
+                new SessionMemoryEntity(
+                    config, context, AgentRegistryImpl.fromJavaSet(agentDetails)));
+    var timestamp = Instant.now();
 
     // Add messages from different agents
-    var userMessage1 =
-        new UserMessage(timestamp, "Message from agent 1", componentId1, Optional.empty());
+    var userMessage1 = new UserMessage(timestamp, "Message from agent 1", componentId1);
     var aiMessage1 = new AiMessage(timestamp, "Response from agent 1", componentId1);
 
     var userMessage2 =
-        new UserMessage(
-            timestamp.plusMillis(1), "Message from agent 2", componentId2, Optional.empty());
+        new UserMessage(timestamp.plusMillis(1), "Message from agent 2", componentId2);
     var aiMessage2 = new AiMessage(timestamp.plusMillis(1), "Response from agent 2", componentId2);
 
     var userMessage3 =
-        new UserMessage(
-            timestamp.plusMillis(2), "Message from agent 3", componentId3, Optional.of(role3));
+        new UserMessage(timestamp.plusMillis(2), "Message from agent 3", componentId3);
     var aiMessage3 =
-        new AiMessage(
-            timestamp.plusMillis(2),
-            "Response from agent 3",
-            componentId3,
-            Optional.of(role3),
-            List.of());
+        new AiMessage(timestamp.plusMillis(2), "Response from agent 3", componentId3, List.of());
 
     testKit
         .method(SessionMemoryEntity::addInteraction)
@@ -582,27 +619,30 @@ public class SessionMemoryEntityTest {
 
   @Test
   public void shouldFilterMessagesExcludingFromAgentId() {
-    // given
-    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
-    var timestamp = Instant.now();
-
     String componentId1 = "agent-1";
     String componentId2 = "agent-2";
     String componentId3 = "agent-3";
 
+    var agentDetails =
+        Set.of(agentDetails(componentId1), agentDetails(componentId2), agentDetails(componentId3));
+    // given
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) ->
+                new SessionMemoryEntity(
+                    config, context, AgentRegistryImpl.fromJavaSet(agentDetails)));
+    var timestamp = Instant.now();
+
     // Add messages from different agents
-    var userMessage1 =
-        new UserMessage(timestamp, "Message from agent 1", componentId1, Optional.empty());
+    var userMessage1 = new UserMessage(timestamp, "Message from agent 1", componentId1);
     var aiMessage1 = new AiMessage(timestamp, "Response from agent 1", componentId1);
 
     var userMessage2 =
-        new UserMessage(
-            timestamp.plusMillis(1), "Message from agent 2", componentId2, Optional.empty());
+        new UserMessage(timestamp.plusMillis(1), "Message from agent 2", componentId2);
     var aiMessage2 = new AiMessage(timestamp.plusMillis(1), "Response from agent 2", componentId2);
 
     var userMessage3 =
-        new UserMessage(
-            timestamp.plusMillis(2), "Message from agent 3", componentId3, Optional.empty());
+        new UserMessage(timestamp.plusMillis(2), "Message from agent 3", componentId3);
     var aiMessage3 = new AiMessage(timestamp.plusMillis(2), "Response from agent 3", componentId3);
 
     testKit
@@ -629,41 +669,39 @@ public class SessionMemoryEntityTest {
 
   @Test
   public void shouldFilterMessagesIncludingFromAgentRole() {
-    // given
-    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
-    var timestamp = Instant.now();
 
+    String componentId1 = "agent-1";
+    String componentId2 = "agent-2";
+    String componentId3 = "agent-3";
     String role1 = "summarizer";
     String role2 = "translator";
+    var agentDetails =
+        Set.of(
+            agentDetails(componentId1, role1),
+            agentDetails(componentId2, role2),
+            agentDetails(componentId3));
+
+    // given
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) ->
+                new SessionMemoryEntity(
+                    config, context, AgentRegistryImpl.fromJavaSet(agentDetails)));
+    var timestamp = Instant.now();
 
     // Add messages from different agent roles
-    var userMessage1 =
-        new UserMessage(timestamp, "Message from summarizer", COMPONENT_ID, Optional.of(role1));
-    var aiMessage1 =
-        new AiMessage(
-            timestamp, "Response from summarizer", COMPONENT_ID, Optional.of(role1), List.of());
+    var userMessage1 = new UserMessage(timestamp, "Message from summarizer", componentId1);
+    var aiMessage1 = new AiMessage(timestamp, "Response from summarizer", componentId1, List.of());
 
     var userMessage2 =
-        new UserMessage(
-            timestamp.plusMillis(1), "Message from translator", COMPONENT_ID, Optional.of(role2));
+        new UserMessage(timestamp.plusMillis(1), "Message from translator", componentId2);
     var aiMessage2 =
-        new AiMessage(
-            timestamp.plusMillis(1),
-            "Response from translator",
-            COMPONENT_ID,
-            Optional.of(role2),
-            List.of());
+        new AiMessage(timestamp.plusMillis(1), "Response from translator", COMPONENT_ID, List.of());
 
     var userMessage3 =
-        new UserMessage(
-            timestamp.plusMillis(2), "Message from analyzer", COMPONENT_ID, Optional.empty());
+        new UserMessage(timestamp.plusMillis(2), "Message from analyzer", componentId3);
     var aiMessage3 =
-        new AiMessage(
-            timestamp.plusMillis(2),
-            "Response from analyzer",
-            COMPONENT_ID,
-            Optional.empty(),
-            List.of());
+        new AiMessage(timestamp.plusMillis(2), "Response from analyzer", componentId3, List.of());
 
     testKit
         .method(SessionMemoryEntity::addInteraction)
@@ -688,41 +726,38 @@ public class SessionMemoryEntityTest {
 
   @Test
   public void shouldFilterMessagesExcludingFromAgentRole() {
-    // given
-    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
-    var timestamp = Instant.now();
 
+    String componentId1 = "agent-1";
+    String componentId2 = "agent-2";
+    String componentId3 = "agent-3";
     String role1 = "summarizer";
     String role2 = "translator";
+    var agentDetails =
+        Set.of(
+            agentDetails(componentId1, role1),
+            agentDetails(componentId2, role2),
+            agentDetails(componentId3));
+    // given
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) ->
+                new SessionMemoryEntity(
+                    config, context, AgentRegistryImpl.fromJavaSet(agentDetails)));
+    var timestamp = Instant.now();
 
     // Add messages from different agent roles
-    var userMessage1 =
-        new UserMessage(timestamp, "Message from summarizer", COMPONENT_ID, Optional.of(role1));
-    var aiMessage1 =
-        new AiMessage(
-            timestamp, "Response from summarizer", COMPONENT_ID, Optional.of(role1), List.of());
+    var userMessage1 = new UserMessage(timestamp, "Message from summarizer", componentId1);
+    var aiMessage1 = new AiMessage(timestamp, "Response from summarizer", componentId1, List.of());
 
     var userMessage2 =
-        new UserMessage(
-            timestamp.plusMillis(1), "Message from translator", COMPONENT_ID, Optional.of(role2));
+        new UserMessage(timestamp.plusMillis(1), "Message from translator", componentId2);
     var aiMessage2 =
-        new AiMessage(
-            timestamp.plusMillis(1),
-            "Response from translator",
-            COMPONENT_ID,
-            Optional.of(role2),
-            List.of());
+        new AiMessage(timestamp.plusMillis(1), "Response from translator", componentId2, List.of());
 
     var userMessage3 =
-        new UserMessage(
-            timestamp.plusMillis(2), "Message from analyzer", COMPONENT_ID, Optional.empty());
+        new UserMessage(timestamp.plusMillis(2), "Message from analyzer", componentId3);
     var aiMessage3 =
-        new AiMessage(
-            timestamp.plusMillis(2),
-            "Response from analyzer",
-            COMPONENT_ID,
-            Optional.empty(),
-            List.of());
+        new AiMessage(timestamp.plusMillis(2), "Response from analyzer", componentId3, List.of());
 
     testKit
         .method(SessionMemoryEntity::addInteraction)
@@ -748,34 +783,36 @@ public class SessionMemoryEntityTest {
 
   @Test
   public void shouldFilterMessagesExcludingIdAndRole() {
-    // given
-    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
-    var timestamp = Instant.now();
-
     String componentId1 = "agent-1";
     String componentId2 = "agent-2";
-    String role2 = "worker";
     String componentId3 = "agent-3";
+    String role2 = "worker";
+
+    var agentDetails =
+        Set.of(
+            agentDetails(componentId1),
+            agentDetails(componentId2, role2),
+            agentDetails(componentId3));
+
+    // given
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) ->
+                new SessionMemoryEntity(
+                    config, context, AgentRegistryImpl.fromJavaSet(agentDetails)));
+    var timestamp = Instant.now();
 
     // Add messages from different agents
-    var userMessage1 =
-        new UserMessage(timestamp, "Message from agent 1", componentId1, Optional.empty());
+    var userMessage1 = new UserMessage(timestamp, "Message from agent 1", componentId1);
     var aiMessage1 = new AiMessage(timestamp, "Response from agent 1", componentId1);
 
     var userMessage2 =
-        new UserMessage(
-            timestamp.plusMillis(1), "Message from agent 2", componentId2, Optional.of(role2));
+        new UserMessage(timestamp.plusMillis(1), "Message from agent 2", componentId2);
     var aiMessage2 =
-        new AiMessage(
-            timestamp.plusMillis(1),
-            "Response from agent 2",
-            componentId2,
-            Optional.of(role2),
-            List.of());
+        new AiMessage(timestamp.plusMillis(1), "Response from agent 2", componentId2, List.of());
 
     var userMessage3 =
-        new UserMessage(
-            timestamp.plusMillis(2), "Message from agent 3", componentId3, Optional.empty());
+        new UserMessage(timestamp.plusMillis(2), "Message from agent 3", componentId3);
     var aiMessage3 = new AiMessage(timestamp.plusMillis(2), "Response from agent 3", componentId3);
 
     testKit
@@ -802,32 +839,35 @@ public class SessionMemoryEntityTest {
 
   @Test
   public void shouldCombineFilterWithLastNMessages() {
-    // given
-    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
-    var timestamp = Instant.now();
 
     String componentId1 = "agent-1";
     String componentId2 = "agent-2";
 
+    var agentDetails = Set.of(agentDetails(componentId1), agentDetails(componentId2));
+
+    // given
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) ->
+                new SessionMemoryEntity(
+                    config, context, AgentRegistryImpl.fromJavaSet(agentDetails)));
+    var timestamp = Instant.now();
+
     // Add multiple messages from different agents
-    var userMessage1 =
-        new UserMessage(timestamp, "Message 1 from agent 1", componentId1, Optional.empty());
+    var userMessage1 = new UserMessage(timestamp, "Message 1 from agent 1", componentId1);
     var aiMessage1 = new AiMessage(timestamp, "Response 1 from agent 1", componentId1);
 
     var userMessage2 =
-        new UserMessage(
-            timestamp.plusMillis(1), "Message from agent 2", componentId2, Optional.empty());
+        new UserMessage(timestamp.plusMillis(1), "Message from agent 2", componentId2);
     var aiMessage2 = new AiMessage(timestamp.plusMillis(1), "Response from agent 2", componentId2);
 
     var userMessage3 =
-        new UserMessage(
-            timestamp.plusMillis(2), "Message 2 from agent 1", componentId1, Optional.empty());
+        new UserMessage(timestamp.plusMillis(2), "Message 2 from agent 1", componentId1);
     var aiMessage3 =
         new AiMessage(timestamp.plusMillis(2), "Response 2 from agent 1", componentId1);
 
     var userMessage4 =
-        new UserMessage(
-            timestamp.plusMillis(3), "Message 3 from agent 1", componentId1, Optional.empty());
+        new UserMessage(timestamp.plusMillis(3), "Message 3 from agent 1", componentId1);
     var aiMessage4 =
         new AiMessage(timestamp.plusMillis(3), "Response 3 from agent 1", componentId1);
 

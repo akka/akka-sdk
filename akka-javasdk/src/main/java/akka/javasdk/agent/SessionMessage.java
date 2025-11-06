@@ -11,9 +11,8 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
-/** Interface for message representation used inside SessionMemoryEntity state. */
+/** Interface for message representation used inside the SessionMemoryEntity state. */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "@type")
 @JsonSubTypes({
   @JsonSubTypes.Type(value = UserMessage.class, name = "UM"),
@@ -31,13 +30,10 @@ public sealed interface SessionMessage {
 
   String componentId();
 
-  Optional<String> agentRole();
+  record UserMessage(Instant timestamp, String text, String componentId) implements SessionMessage {
 
-  record UserMessage(Instant timestamp, String text, String componentId, Optional<String> agentRole)
-      implements SessionMessage {
-
-    public UserMessage(Instant timestamp, String text) {
-      this(timestamp, text, "", Optional.empty());
+    public UserMessage(Instant now, String text) {
+      this(now, text, "");
     }
 
     @Override
@@ -49,15 +45,11 @@ public sealed interface SessionMessage {
   record ToolCallRequest(String id, String name, String arguments) {}
 
   record AiMessage(
-      Instant timestamp,
-      String text,
-      String componentId,
-      Optional<String> agentRole,
-      List<ToolCallRequest> toolCallRequests)
+      Instant timestamp, String text, String componentId, List<ToolCallRequest> toolCallRequests)
       implements SessionMessage {
 
     public AiMessage(Instant timestamp, String text, String componentId) {
-      this(timestamp, text, componentId, Optional.empty(), List.of());
+      this(timestamp, text, componentId, List.of());
     }
 
     @Override
@@ -79,12 +71,7 @@ public sealed interface SessionMessage {
   }
 
   record ToolCallResponse(
-      Instant timestamp,
-      String componentId,
-      Optional<String> agentRole,
-      String id,
-      String name,
-      String text)
+      Instant timestamp, String componentId, String id, String name, String text)
       implements SessionMessage {
     @Override
     public int size() {

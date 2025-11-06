@@ -4,10 +4,12 @@
 
 package akka.javasdk.impl.agent
 
+import java.util.Optional
 import java.util.{ Set => JSet }
 
 import scala.jdk.CollectionConverters.SetHasAsJava
 import scala.jdk.CollectionConverters.SetHasAsScala
+import scala.jdk.OptionConverters.RichOption
 
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
@@ -80,4 +82,6 @@ private[javasdk] object AgentRegistryImpl {
         "The agent id is defined with the @Component annotation."))
   }
 
+  override def agentInfoOption(agentId: String): Optional[AgentInfo] =
+    agentInfoById.get(agentId).toJava
 }
