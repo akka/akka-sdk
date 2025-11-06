@@ -4,18 +4,18 @@
 
 package akka.javasdk.impl.agent
 
+import java.util.Optional
 import java.util.{ Set => JSet }
 
-import scala.annotation.nowarn
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.SetHasAsJava
+import scala.jdk.CollectionConverters.SetHasAsScala
+import scala.jdk.OptionConverters.RichOption
 
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentRegistry
 import akka.javasdk.agent.AgentRegistry.AgentInfo
-import akka.javasdk.annotations.AgentDescription
 import akka.javasdk.impl.reflection.Reflect
-import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
 
 /**
  * INTERNAL API
@@ -29,22 +29,19 @@ private[javasdk] object AgentRegistryImpl {
 
   def agentDetailsFor[A <: Agent](agentClass: Class[A]): AgentRegistryImpl.AgentDetails = {
 
-    @nowarn("cat=deprecation")
-    val agentDescAnno = agentClass.annotationOption[AgentDescription]
-
+    val agentDescAnno = Reflect.readAgentDescription(agentClass)
     val agentRoleOptValue = Reflect.readAgentRole(agentClass)
 
     val componentId = Reflect.readComponentId(agentClass)
     val agentName =
       Reflect
-        .readComponentName(agentClass)
-        .orElse(agentDescAnno.map(_.name))
+        .readAgentName(agentClass)
         .getOrElse(componentId)
 
     val agentDescription =
       Reflect
         .readComponentDescription(agentClass)
-        .orElse(agentDescAnno.map(_.description))
+        .orElse(agentDescAnno)
         .getOrElse("")
 
     AgentRegistryImpl
@@ -57,6 +54,9 @@ private[javasdk] object AgentRegistryImpl {
 
   }
 
+  // convenience method for SessionMemoryEntityTest
+  def fromJavaSet(agents: JSet[AgentRegistryImpl.AgentDetails]): AgentRegistryImpl =
+    new AgentRegistryImpl(agents.asScala.toSet)
 }
 
 /**
@@ -82,4 +82,6 @@ private[javasdk] object AgentRegistryImpl {
         "The agent id is defined with the @Component annotation."))
   }
 
+  override def agentInfoOption(agentId: String): Optional[AgentInfo] =
+    agentInfoById.get(agentId).toJava
 }

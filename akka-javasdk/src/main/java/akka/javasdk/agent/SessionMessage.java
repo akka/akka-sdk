@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.time.Instant;
 import java.util.List;
 
-/** Interface for message representation used inside SessionMemoryEntity state. */
+/** Interface for message representation used inside the SessionMemoryEntity state. */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "@type")
 @JsonSubTypes({
   @JsonSubTypes.Type(value = UserMessage.class, name = "UM"),
@@ -28,7 +28,13 @@ public sealed interface SessionMessage {
 
   String text();
 
+  String componentId();
+
   record UserMessage(Instant timestamp, String text, String componentId) implements SessionMessage {
+
+    public UserMessage(Instant now, String text) {
+      this(now, text, "");
+    }
 
     @Override
     public int size() {

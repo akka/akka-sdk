@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,10 +71,13 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
 
   private final Config config;
   private final String sessionId;
+  public final AgentRegistry agentRegistry;
 
-  public SessionMemoryEntity(Config config, EventSourcedEntityContext context) {
+  public SessionMemoryEntity(
+      Config config, EventSourcedEntityContext context, AgentRegistry agentRegistry) {
     this.config = config;
     this.sessionId = context.entityId();
+    this.agentRegistry = agentRegistry;
   }
 
   public record State(
@@ -263,10 +267,59 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     return effects().persistAll(allEventsWithSize).thenReply(__ -> done());
   }
 
-  public record GetHistoryCmd(Optional<Integer> lastNMessages) {}
+  public record GetHistoryCmd(Optional<Integer> lastNMessages, List<MemoryFilter> memoryFilters) {
+
+    public GetHistoryCmd() {
+      this(Optional.empty(), List.of());
+    }
+
+    public GetHistoryCmd(Optional<Integer> lastNMessages) {
+      this(lastNMessages, List.of());
+    }
+
+    public GetHistoryCmd(List<MemoryFilter> memoryFilters) {
+      this(Optional.empty(), memoryFilters);
+    }
+  }
+
+  private Optional<String> lookUpAgentRole(String componentId) {
+    return agentRegistry
+        .agentInfoOption(componentId)
+        .flatMap(agentInfo -> Optional.ofNullable(agentInfo.role()).filter(r -> !r.isBlank()));
+  }
+
+  private List<SessionMessage> applyFilter(List<SessionMessage> messages, MemoryFilter filter) {
+    return switch (filter) {
+      case MemoryFilter.Include(Set<String> ids, Set<String> roles) ->
+          messages.stream()
+              .filter(
+                  message -> {
+                    return ids.contains(message.componentId())
+                        || lookUpAgentRole(message.componentId())
+                            .filter(roles::contains)
+                            .isPresent();
+                  })
+              .toList();
+
+      case MemoryFilter.Exclude(Set<String> ids, Set<String> roles) ->
+          messages.stream()
+              .filter(
+                  message -> {
+                    return !ids.contains(message.componentId())
+                        && lookUpAgentRole(message.componentId()).filter(roles::contains).isEmpty();
+                  })
+              .toList();
+    };
+  }
+
+  private List<SessionMessage> filteredMessages(List<MemoryFilter> memoryFilters) {
+    List<SessionMessage> messages = currentState().messages();
+    return memoryFilters.stream().reduce(messages, this::applyFilter, (acc, filter) -> acc);
+  }
 
   public ReadOnlyEffect<SessionHistory> getHistory(GetHistoryCmd cmd) {
-    List<SessionMessage> messages = currentState().messages();
+    List<SessionMessage> messages = filteredMessages(cmd.memoryFilters);
+
     if (cmd.lastNMessages != null
         && cmd.lastNMessages.isPresent()
         && messages.size() > cmd.lastNMessages.get()) {
