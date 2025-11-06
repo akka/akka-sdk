@@ -58,6 +58,8 @@ apidocs: prepare
 	rsync -a akka-javasdk/target/api/ "${java_managed_attachments}/api/"
 	rsync -a akka-javasdk-testkit/target/api/ "${java_managed_attachments}/testkit/"
 	docs/bin/version.sh > "${java_managed_attachments}/latest-version.txt"
+	# also keep version in previous location for the Runtime version check (Runtimes < 1.5.21)
+	docs/bin/version.sh > "${src_managed}/modules/java/attachments/latest-version.txt"
 
 examples: prepare
 	mkdir -p "${java_managed_examples}"
