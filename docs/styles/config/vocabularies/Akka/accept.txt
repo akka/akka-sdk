@@ -198,6 +198,7 @@ substream
 subtree
 Szymanski
 [Tt]elemedicine
+Temurin
 [Tt]estKit
 text_search
 [Tt]imeframe

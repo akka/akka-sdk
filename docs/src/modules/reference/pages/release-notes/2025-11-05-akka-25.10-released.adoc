@@ -1,0 +1,94 @@
+= Akka 25.10 Released
+
+Dear hakkers,
+
+We are excited to announce the availability of the Akka libraries 25.10 release, setting a new baseline of Akka library versions that go together.
+
+Akka 25.10 consists of the following module versions:
+
+* Akka core 2.10.11
+* Akka HTTP 10.7.3
+* Akka Management 1.6.4
+* Akka Projections 1.6.16
+* Akka gRPC 2.5.8
+* Akka Persistence Cassandra 1.3.3
+* Akka Persistence DynamoDB 2.0.10
+* Akka Persistence JDBC 5.5.4
+* Akka Persistence R2DBC 1.3.8
+* Alpakka 10.0.0
+* Alpakka kafka 8.0.0
+* Akka Diagnostics 2.2.2
+* Akka Insights 2.22.0
+
+
+
+As reference of versions that go together for Akka 25.10, please see https://doc.akka.io/libraries/akka-dependencies/25.10/[Akka library versions 25.10].
+
+== Java 25 support
+
+With this release https://adoptium.net/en-GB/marketplace/?version=25&os=any&arch=any[Temurin 25] builds and Red Hat Enterprise Linux builds of OpenJDK 25 are https://doc.akka.io/libraries/akka-dependencies/current/java-versions.html[certified] for use with all Akka libraries.
+
+Each of the Akka libraries are continuously tested on Java 25 to ensure compatibility.
+
+== License key
+
+Akka requires a license key for use in production.
+
+Read about the motivation in the blog post https://akka.io/blog/akka-license-keys-and-no-spam-promise[Akka License Keys && a No SPAM Promise].
+
+Obtain a free key at https://akka.io/key.
+
+== Security Updates
+
+We run automated security vulnerability and license policy scanning of dependencies. Several dependencies have been updated to fix security vulnerabilities and keep up with latest improvements.
+
+The following CVE’s are addressed in this build.
+
+* https://nvd.nist.gov/vuln/detail/CVE-2025-24970[CVE-2025-24970]
+* https://nvd.nist.gov/vuln/detail/CVE-2025-53393[CVE-2025-53393]
+
+== Bug fixes
+
+ * Java server logic always invoked on the specified execution context in akka-grpc
+
+== Other improvements
+
+ * API for specifying restart settings for projections
+ * Internal Java projection callbacks on Akka dispatcher
+
+== Dependency updates
+
+ * Kafka Clients 4.1.0
+ * Scala 2.13.17 and 3.3.7
+ * r2dbc-postgresql 1.1.0
+ * grpc-java 1.76.0
+
+== Compatibility
+
+* All modules of Akka 25.10 are backwards compatible with Akka 25.05.
+* No configuration changes are needed.
+* Rolling update of Akka Cluster is fully supported.
+
+Akka libraries now depend on Scala 2.13.17. Because of this, Scala sbt projects on Scala 2.13 will need to bump their Scala version to 2.13.7 to avoid errors from sbt.
+
+== Detailed release notes:
+
+* https://github.com/akka/akka/releases[Akka core 2.10.x]
+* https://github.com/akka/akka-http/releases[Akka HTTP 10.7.x]
+* https://github.com/akka/akka-grpc/releases[Akka gRPC 2.5.x]
+* https://github.com/akka/akka-management/releases[Akka Management 1.6.x]
+* https://github.com/akka/alpakka-kafka/releases[Alpakka Kafka 8.0.x]
+* https://github.com/akka/alpakka/releases[Alpakka 10.0.x]
+* https://github.com/akka/akka-persistence-r2dbc/releases[Akka Persistence R2DBC 1.3.x]
+* https://github.com/akka/akka-persistence-dynamodb/releases[Akka Persistence DynamoDB 2.0.x]
+* https://github.com/akka/akka-persistence-jdbc/releases[Akka Persistence JDBC 5.5.x]
+* https://github.com/akka/akka-persistence-cassandra/releases[Akka Persistence Cassandra 1.3.x]
+* https://github.com/akka/akka-projection/releases[Akka Projections 1.6.x]
+* https://github.com/akka/akka-diagnostics/releases[Akka Diagnostics 2.2.x]
+* https://doc.akka.io/libraries/akka-insights/current/project/release-notes.html[Akka Insights 2.22.x]
+
+Licensing and support options are available from https://akka.io/[Akka].
+
+Happy hakking!
+
+-- The Akka Team
