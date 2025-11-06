@@ -8,6 +8,7 @@ import akka.annotation.DoNotInherit;
 import akka.javasdk.impl.agent.MemoryFiltersSupplierImpl;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -233,10 +234,10 @@ public sealed interface MemoryFilter {
     return new MemoryFiltersSupplierImpl(MemoryFilter.Exclude.agentRoles(roles));
   }
 
-  private static Set<String> concat(Set<String> set1, Set<String> set2) {
-    var newList = new HashSet<String>(set1);
-    newList.addAll(set2);
-    return Set.copyOf(newList);
+  private static Set<String> union(Set<String> set1, Set<String> set2) {
+    var newSet = new HashSet<String>(set1);
+    newSet.addAll(set2);
+    return Collections.unmodifiableSet(newSet);
   }
 
   /**
@@ -265,7 +266,7 @@ public sealed interface MemoryFilter {
   record Include(Set<String> ids, Set<String> roles) implements MemoryFilter {
 
     public Include merge(Include other) {
-      return new Include(concat(ids, other.ids), concat(roles, other.roles));
+      return new Include(union(ids, other.ids), union(roles, other.roles));
     }
 
     public static MemoryFilter agentId(String id) {
@@ -312,7 +313,7 @@ public sealed interface MemoryFilter {
   record Exclude(Set<String> ids, Set<String> roles) implements MemoryFilter {
 
     public Exclude merge(Exclude other) {
-      return new Exclude(concat(ids, other.ids), concat(roles, other.roles));
+      return new Exclude(union(ids, other.ids), union(roles, other.roles));
     }
 
     public static MemoryFilter agentId(String id) {
