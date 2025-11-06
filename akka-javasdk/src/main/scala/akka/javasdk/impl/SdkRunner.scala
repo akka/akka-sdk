@@ -523,7 +523,7 @@ private final class Sdk(
     .filter(Reflect.isGrpcEndpoint)
     .map { grpcEndpointClass =>
       val anyRefClass = grpcEndpointClass.asInstanceOf[Class[AnyRef]]
-      GrpcEndpointDescriptorFactory(anyRefClass, grpcEndpointFactory(anyRefClass))(system)
+      GrpcEndpointDescriptorFactory(anyRefClass, grpcEndpointFactory(anyRefClass), sdkMaterializer)(system)
     }
 
   private val mcpEndpoints = componentClasses
