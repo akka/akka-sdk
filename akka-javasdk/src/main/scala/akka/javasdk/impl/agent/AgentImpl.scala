@@ -264,6 +264,7 @@ private[impl] final class AgentImpl[A <: Agent](
 
             val userMessageAt = Instant.now()
 
+            val agentRole = Reflect.readAgentRole(agent.getClass)
             new SpiAgent.RequestModelEffect(
               modelProvider = spiModelProvider,
               systemMessage = systemMessage,
@@ -277,7 +278,7 @@ private[impl] final class AgentImpl[A <: Agent](
               responseMapping = req.responseMapping,
               failureMapping = req.failureMapping.map(mapSpiAgentException),
               replyMetadata = metadata,
-              onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, userMessageAt, results),
+              onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, userMessageAt, agentRole, results),
               requestGuardrails = guardrails.modelRequestGuardrails,
               responseGuardrails = guardrails.modelResponseGuardrails)
 
@@ -355,7 +356,7 @@ private[impl] final class AgentImpl[A <: Agent](
       case p: MemoryProvider.LimitedWindowMemoryProvider =>
         new SessionMemoryClient(
           componentClient(telemetryContext),
-          new MemorySettings(p.read(), p.write(), p.readLastN()))
+          new MemorySettings(p.read(), p.write(), p.readLastN(), p.filters()))
 
       case p: MemoryProvider.CustomMemoryProvider =>
         p.sessionMemory()
@@ -374,6 +375,7 @@ private[impl] final class AgentImpl[A <: Agent](
       sessionMemoryClient: SessionMemory,
       userMessage: String,
       userMessageAt: Instant,
+      agentRole: Option[String],
       responses: Seq[SpiAgent.Response]): Unit = {
 
     // AiMessages and ToolCallResponses

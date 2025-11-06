@@ -44,7 +44,7 @@ public class SessionMemoryConsumer extends Consumer {
           var history = componentClient
             .forEventSourcedEntity(sessionId)
             .method(SessionMemoryEntity::getHistory) // <2>
-            .invoke(new SessionMemoryEntity.GetHistoryCmd(Optional.empty()));
+            .invoke(new SessionMemoryEntity.GetHistoryCmd());
 
           var summary = componentClient
             .forAgent()

@@ -571,6 +571,8 @@ private final class Sdk(
 
         val entityStateType: Class[AnyRef] = Reflect.eventSourcedEntityStateType(clz).asInstanceOf[Class[AnyRef]]
 
+        val isSessionMemoryEntity = clz == classOf[SessionMemoryEntity]
+
         val instanceFactory: SpiEventSourcedEntity.FactoryContext => SpiEventSourcedEntity = { factoryContext =>
           new EventSourcedEntityImpl[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]](
             sdkTracerFactory,
@@ -583,8 +585,9 @@ private final class Sdk(
             context =>
               wiredInstance(clz.asInstanceOf[Class[EventSourcedEntity[AnyRef, AnyRef]]]) {
                 // remember to update component type API doc and docs if changing the set of injectables
-                case p if p == classOf[EventSourcedEntityContext] => context
-                case s if s == classOf[Sanitizer]                 => sanitizer
+                case p if p == classOf[EventSourcedEntityContext]              => context
+                case s if s == classOf[Sanitizer]                              => sanitizer
+                case r if r == classOf[AgentRegistry] && isSessionMemoryEntity => agentRegistry
               })
         }
         eventSourcedEntityDescriptors :+=
@@ -1082,7 +1085,7 @@ private final class Sdk(
             case _ if platformManagedDependency(anyOther) =>
               // if we allow for a given dependency, we should cover it in the partial function for the component
               throw new IllegalArgumentException(
-                s"[${constructor.getDeclaringClass.getName}] are not allowed to have a dependency on ${anyOther.getName}");
+                s"[${constructor.getDeclaringClass.getName}] are not allowed to have a dependency on [${anyOther.getName}]");
             case Some(dependencyProvider) =>
               dependencyProvider.getDependency(anyOther)
             case None =>
