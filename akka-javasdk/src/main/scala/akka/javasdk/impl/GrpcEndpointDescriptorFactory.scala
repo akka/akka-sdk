@@ -5,7 +5,9 @@
 package akka.javasdk.impl
 
 import java.util.concurrent.CompletionException
+
 import scala.concurrent.Future
+
 import akka.actor.typed.ActorSystem
 import akka.grpc.ServiceDescription
 import akka.grpc.Trailers
