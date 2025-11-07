@@ -98,7 +98,7 @@
       "level": "Intermediate"
     },
     {
-      "title": "Akka Chess",
+      "title": "Akka chess",
       "description": "Embedded UI, Entity, Workflow, View, Timed Action",
       "language": "java",
       "url": "https://github.com/akka-samples/akka-chess",
