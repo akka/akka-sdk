@@ -55,7 +55,7 @@ public class CompactionAgent extends Agent {
         return switch (msg) {
           case SessionMessage.UserMessage userMsg -> "\n\nUSER:\n" + userMsg.text(); // <3>
           // end::compaction[]
-          case SessionMessage.CompoundUserMessage compoundUserMsg -> compoundUserMsg
+          case SessionMessage.MultimodalUserMessage multimodalUserMsg -> multimodalUserMsg
             .contents()
             .stream()
             .map(content ->

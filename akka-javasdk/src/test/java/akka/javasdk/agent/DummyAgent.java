@@ -44,7 +44,7 @@ class DummyAgent3 extends Agent {
           @Override
           public void addInteraction(
               String sessionId,
-              SessionMessage.CompoundUserMessage userMessage,
+              SessionMessage.MultimodalUserMessage userMessage,
               List<SessionMessage> messages) {}
 
           @Override

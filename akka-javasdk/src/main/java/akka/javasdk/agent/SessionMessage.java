@@ -5,7 +5,7 @@
 package akka.javasdk.agent;
 
 import akka.javasdk.agent.SessionMessage.AiMessage;
-import akka.javasdk.agent.SessionMessage.CompoundUserMessage;
+import akka.javasdk.agent.SessionMessage.MultimodalUserMessage;
 import akka.javasdk.agent.SessionMessage.ToolCallResponse;
 import akka.javasdk.agent.SessionMessage.UserMessage;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -20,7 +20,7 @@ import java.util.Optional;
   @JsonSubTypes.Type(value = UserMessage.class, name = "UM"),
   @JsonSubTypes.Type(value = AiMessage.class, name = "AIM"),
   @JsonSubTypes.Type(value = ToolCallResponse.class, name = "TCR"),
-  @JsonSubTypes.Type(value = CompoundUserMessage.class, name = "CUM")
+  @JsonSubTypes.Type(value = MultimodalUserMessage.class, name = "MUM")
 })
 public sealed interface SessionMessage {
   static int sizeInBytes(String text) {
@@ -46,7 +46,7 @@ public sealed interface SessionMessage {
   }
 
   // need to introduce new message to keep backward compatibility
-  record CompoundUserMessage(Instant timestamp, List<MessageContent> contents, String componentId)
+  record MultimodalUserMessage(Instant timestamp, List<MessageContent> contents, String componentId)
       implements SessionMessage {
 
     /** returns text from the first MessageContent.TextMessageContent */

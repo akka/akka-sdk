@@ -10,7 +10,7 @@ import akka.Done;
 import akka.javasdk.agent.SessionMemoryEntity.Event;
 import akka.javasdk.agent.SessionMemoryEntity.State;
 import akka.javasdk.agent.SessionMessage.AiMessage;
-import akka.javasdk.agent.SessionMessage.CompoundUserMessage;
+import akka.javasdk.agent.SessionMessage.MultimodalUserMessage;
 import akka.javasdk.agent.SessionMessage.ToolCallResponse;
 import akka.javasdk.agent.SessionMessage.UserMessage;
 import akka.javasdk.annotations.Component;
@@ -130,11 +130,11 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
             maxSize);
       }
 
-      // remove all messages that are not UserMessage or CompoundUserMessage since those were driven
-      // by the deleted UserMessage
+      // remove all messages that are not UserMessage or MultimodalUserMessage since those were
+      // driven by the deleted UserMessage
       while (!messages.isEmpty()
           && !(messages.getFirst() instanceof UserMessage
-              || messages.getFirst() instanceof CompoundUserMessage)) {
+              || messages.getFirst() instanceof MultimodalUserMessage)) {
         freedSpace += messages.removeFirst().size();
         logger.debug(
             "Removed orphan message for sessionId [{}]. Remaining size [{}], maxSizeInBytes [{}]",
@@ -163,8 +163,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     record UserMessageAdded(Instant timestamp, String componentId, String message, int sizeInBytes)
         implements Event {}
 
-    @TypeName("akka-compound-memory-user-message-added")
-    record CompoundUserMessageAdded(
+    @TypeName("akka-memory-multimodal-user-message-added")
+    record MultimodalUserMessageAdded(
         Instant timestamp,
         String componentId,
         List<SessionMessage.MessageContent> contents,
@@ -223,12 +223,12 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     }
   }
 
-  public record AddCompoundInteractionCmd(
-      CompoundUserMessage userMessage, List<SessionMessage> messages) {}
+  public record AddMultimodalInteractionCmd(
+      MultimodalUserMessage userMessage, List<SessionMessage> messages) {}
 
-  public Effect<Done> addCompoundInteraction(AddCompoundInteractionCmd cmd) {
+  public Effect<Done> addMultimodalInteraction(AddMultimodalInteractionCmd cmd) {
     var userMessageEvent =
-        new Event.CompoundUserMessageAdded(
+        new Event.MultimodalUserMessageAdded(
             cmd.userMessage.timestamp(),
             cmd.userMessage.componentId(),
             cmd.userMessage.contents(),
@@ -362,7 +362,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     }
   }
 
-  // keeping UserMessage instead of CompoundUserMessage for compaction
+  // keeping UserMessage instead of MultimodalUserMessage for compaction
   public record CompactionCmd(UserMessage userMessage, AiMessage aiMessage, long sequenceNumber) {}
 
   public Effect<Done> compactHistory(CompactionCmd cmd) {
@@ -427,13 +427,13 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                             0L, // filled in later
                             aiMessage.toolCallRequests()));
                   }
-                  case CompoundUserMessage compoundUserMessage -> {
+                  case MultimodalUserMessage multimodalUserMessage -> {
                     events.add(
-                        new Event.CompoundUserMessageAdded(
-                            compoundUserMessage.timestamp(),
-                            compoundUserMessage.componentId(),
-                            compoundUserMessage.contents(),
-                            compoundUserMessage.size()));
+                        new Event.MultimodalUserMessageAdded(
+                            multimodalUserMessage.timestamp(),
+                            multimodalUserMessage.componentId(),
+                            multimodalUserMessage.contents(),
+                            multimodalUserMessage.size()));
                   }
                 }
               });
@@ -457,7 +457,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
           size += evt.sizeInBytes();
           result.add(evt);
         }
-        case Event.CompoundUserMessageAdded evt -> {
+        case Event.MultimodalUserMessageAdded evt -> {
           size += evt.sizeInBytes();
           result.add(evt);
         }
@@ -498,13 +498,13 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
           currentState()
               .addMessage(new UserMessage(userMsg.timestamp, userMsg.message, userMsg.componentId));
 
-      case Event.CompoundUserMessageAdded compoundUserMsg ->
+      case Event.MultimodalUserMessageAdded multimodalUserMsg ->
           currentState()
               .addMessage(
-                  new CompoundUserMessage(
-                      compoundUserMsg.timestamp,
-                      compoundUserMsg.contents,
-                      compoundUserMsg.componentId));
+                  new MultimodalUserMessage(
+                      multimodalUserMsg.timestamp,
+                      multimodalUserMsg.contents,
+                      multimodalUserMsg.componentId));
 
       case Event.AiMessageAdded aiMsg ->
           currentState()

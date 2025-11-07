@@ -25,7 +25,7 @@ import akka.javasdk.agent
 import akka.javasdk.agent.MessageContent.ImageMessageContent
 import akka.javasdk.agent.MessageContent.ImageUrlMessageContent
 import akka.javasdk.agent.SessionMessage.AiMessage
-import akka.javasdk.agent.SessionMessage.CompoundUserMessage
+import akka.javasdk.agent.SessionMessage.MultimodalUserMessage
 import akka.javasdk.agent.SessionMessage.ToolCallRequest
 import akka.javasdk.agent.SessionMessage.ToolCallResponse
 import akka.javasdk.agent.SessionMessage.UserMessage
@@ -414,7 +414,7 @@ private[impl] final class AgentImpl[A <: Agent](
         .asJava
       sessionMemoryClient.addInteraction(
         sessionId,
-        new CompoundUserMessage(userMessageAt, contents, componentId),
+        new MultimodalUserMessage(userMessageAt, contents, componentId),
         responseMessages.asJava)
     }
   }
@@ -447,7 +447,7 @@ private[impl] final class AgentImpl[A <: Agent](
         case m: UserMessage =>
           new SpiAgent.ContextMessage.UserMessage(m.text())
 
-        case m: CompoundUserMessage =>
+        case m: MultimodalUserMessage =>
           val contents = m
             .contents()
             .asScala
