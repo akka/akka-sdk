@@ -6,6 +6,7 @@ package akka.javasdk.agent;
 
 import com.typesafe.config.Config;
 import java.time.Duration;
+import java.util.Map;
 
 /**
  * Configuration interface for AI model providers used by agents.
@@ -860,5 +861,279 @@ public sealed interface ModelProvider {
      * @return an instance of {@code dev.langchain4j.model.chat.StreamingChatModel}
      */
     Object createStreamingChatModel();
+  }
+
+  /** Settings for the Bedrock Large Language Model provider. */
+  static Bedrock bedrock() {
+    return new Bedrock(
+        "",
+        "",
+        false,
+        false,
+        -1,
+        -1,
+        Map.of(),
+        "",
+        Double.NaN,
+        Double.NaN,
+        -1,
+        Duration.ofMinutes(1),
+        2);
+  }
+
+  record Bedrock(
+      String region,
+      String modelId,
+      boolean returnThinking,
+      boolean sendThinking,
+      int maxOutputTokens,
+      int reasoningTokenBudget,
+      Map<String, Object> additionalModelRequestFields,
+      String accessToken,
+      double temperature,
+      double topP,
+      int maxTokens,
+      Duration responseTimeout,
+      int maxRetries)
+      implements ModelProvider {
+
+    public static Bedrock fromConfig(Config config) {
+      return new Bedrock(
+          config.getString("region"),
+          config.getString("model-id"),
+          false,
+          false,
+          config.getInt("max-output-tokens"),
+          config.getInt("reasoning-token-budget"),
+          config.getConfig("additional-model-request-fields").root().unwrapped(),
+          config.getString("access-token"),
+          config.getDouble("temperature"),
+          config.getDouble("top-p"),
+          config.getInt("max-tokens"),
+          config.getDuration("response-timeout"),
+          config.getInt("max-retries"));
+    }
+
+    public Bedrock withRegion(String region) {
+      return new Bedrock(
+          region,
+          this.modelId,
+          this.returnThinking,
+          this.sendThinking,
+          this.maxOutputTokens,
+          this.reasoningTokenBudget,
+          this.additionalModelRequestFields,
+          this.accessToken,
+          this.temperature,
+          this.topP,
+          this.maxTokens,
+          this.responseTimeout,
+          this.maxRetries);
+    }
+
+    public Bedrock withModelId(String modelId) {
+      return new Bedrock(
+          this.region,
+          modelId,
+          this.returnThinking,
+          this.sendThinking,
+          this.maxOutputTokens,
+          this.reasoningTokenBudget,
+          this.additionalModelRequestFields,
+          this.accessToken,
+          this.temperature,
+          this.topP,
+          this.maxTokens,
+          this.responseTimeout,
+          this.maxRetries);
+    }
+
+    public Bedrock withReturnThinking(Boolean returnThinking) {
+      return new Bedrock(
+          this.region,
+          this.modelId,
+          returnThinking,
+          this.sendThinking,
+          this.maxOutputTokens,
+          this.reasoningTokenBudget,
+          this.additionalModelRequestFields,
+          this.accessToken,
+          this.temperature,
+          this.topP,
+          this.maxTokens,
+          this.responseTimeout,
+          this.maxRetries);
+    }
+
+    public Bedrock withSendThinking(Boolean sendThinking) {
+      return new Bedrock(
+          this.region,
+          this.modelId,
+          this.returnThinking,
+          sendThinking,
+          this.maxOutputTokens,
+          this.reasoningTokenBudget,
+          this.additionalModelRequestFields,
+          this.accessToken,
+          this.temperature,
+          this.topP,
+          this.maxTokens,
+          this.responseTimeout,
+          this.maxRetries);
+    }
+
+    public Bedrock withMaxOutputTokens(int maxOutputTokens) {
+      return new Bedrock(
+          this.region,
+          this.modelId,
+          this.returnThinking,
+          this.sendThinking,
+          maxOutputTokens,
+          this.reasoningTokenBudget,
+          this.additionalModelRequestFields,
+          this.accessToken,
+          this.temperature,
+          this.topP,
+          this.maxTokens,
+          this.responseTimeout,
+          this.maxRetries);
+    }
+
+    public Bedrock withReasoningTokenBudget(int reasoningTokenBudget) {
+      return new Bedrock(
+          this.region,
+          this.modelId,
+          this.returnThinking,
+          this.sendThinking,
+          this.maxOutputTokens,
+          reasoningTokenBudget,
+          this.additionalModelRequestFields,
+          this.accessToken,
+          this.temperature,
+          this.topP,
+          this.maxTokens,
+          this.responseTimeout,
+          this.maxRetries);
+    }
+
+    public Bedrock withAdditionalModelRequestFields(
+        Map<String, Object> additionalModelRequestFields) {
+      return new Bedrock(
+          this.region,
+          this.modelId,
+          this.returnThinking,
+          this.sendThinking,
+          this.maxOutputTokens,
+          this.reasoningTokenBudget,
+          additionalModelRequestFields,
+          this.accessToken,
+          this.temperature,
+          this.topP,
+          this.maxTokens,
+          this.responseTimeout,
+          this.maxRetries);
+    }
+
+    public Bedrock withAccessToken(String accessToken) {
+      return new Bedrock(
+          this.region,
+          this.modelId,
+          this.returnThinking,
+          this.sendThinking,
+          this.maxOutputTokens,
+          this.reasoningTokenBudget,
+          this.additionalModelRequestFields,
+          accessToken,
+          this.temperature,
+          this.topP,
+          this.maxTokens,
+          this.responseTimeout,
+          this.maxRetries);
+    }
+
+    public Bedrock withTemperature(double temperature) {
+      return new Bedrock(
+          this.region,
+          this.modelId,
+          this.returnThinking,
+          this.sendThinking,
+          this.maxOutputTokens,
+          this.reasoningTokenBudget,
+          this.additionalModelRequestFields,
+          this.accessToken,
+          temperature,
+          this.topP,
+          this.maxTokens,
+          this.responseTimeout,
+          this.maxRetries);
+    }
+
+    public Bedrock withTopP(double topP) {
+      return new Bedrock(
+          this.region,
+          this.modelId,
+          this.returnThinking,
+          this.sendThinking,
+          this.maxOutputTokens,
+          this.reasoningTokenBudget,
+          this.additionalModelRequestFields,
+          this.accessToken,
+          this.temperature,
+          topP,
+          this.maxTokens,
+          this.responseTimeout,
+          this.maxRetries);
+    }
+
+    public Bedrock withMaxTokens(int maxTokens) {
+      return new Bedrock(
+          this.region,
+          this.modelId,
+          this.returnThinking,
+          this.sendThinking,
+          this.maxOutputTokens,
+          this.reasoningTokenBudget,
+          this.additionalModelRequestFields,
+          this.accessToken,
+          this.temperature,
+          this.topP,
+          maxTokens,
+          this.responseTimeout,
+          this.maxRetries);
+    }
+
+    public Bedrock withResponseTimeout(Duration responseTimeout) {
+      return new Bedrock(
+          this.region,
+          this.modelId,
+          this.returnThinking,
+          this.sendThinking,
+          this.maxOutputTokens,
+          this.reasoningTokenBudget,
+          this.additionalModelRequestFields,
+          this.accessToken,
+          this.temperature,
+          this.topP,
+          this.maxTokens,
+          responseTimeout,
+          this.maxRetries);
+    }
+
+    public Bedrock withMaxRetries(int maxRetries) {
+      return new Bedrock(
+          this.region,
+          this.modelId,
+          this.returnThinking,
+          this.sendThinking,
+          this.maxOutputTokens,
+          this.reasoningTokenBudget,
+          this.additionalModelRequestFields,
+          this.accessToken,
+          this.temperature,
+          this.topP,
+          this.maxTokens,
+          this.responseTimeout,
+          maxRetries);
+    }
   }
 }
