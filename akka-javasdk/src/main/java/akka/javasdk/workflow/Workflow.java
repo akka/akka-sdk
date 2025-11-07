@@ -236,6 +236,12 @@ public abstract class Workflow<S> {
       Transitional pause();
 
       /**
+       * Pause the workflow execution with a reason description and wait for an external input, e.g.
+       * via command handler.
+       */
+      Transitional pause(String reason);
+
+      /**
        * Defines the next step to which the workflow should transition to.
        *
        * <p>The step definition identified by {@code stepName} must have an input parameter of type
@@ -396,6 +402,12 @@ public abstract class Workflow<S> {
       Transitional pause();
 
       /**
+       * Pause the workflow execution with a reason description and wait for an external input, e.g.
+       * via command handler.
+       */
+      Transitional pause(String reason);
+
+      /**
        * Defines the next step to which the workflow should transition to.
        *
        * <p>The step definition identified by {@code stepName} must have an input parameter of type
@@ -481,6 +493,12 @@ public abstract class Workflow<S> {
       StepEffect thenPause();
 
       /**
+       * Pause the workflow execution with a reason description and wait for an external input, e.g.
+       * via command handler.
+       */
+      StepEffect thenPause(String reason);
+
+      /**
        * Defines the next step to which the workflow should transition to.
        *
        * <p>The step is identified by a method reference that accepts no input parameters.
@@ -522,6 +540,12 @@ public abstract class Workflow<S> {
 
       /** Pause the workflow execution and wait for an external input, e.g. via command handler. */
       StepEffect thenPause();
+
+      /**
+       * Pause the workflow execution with a reason description and wait for an external input, e.g.
+       * via command handler.
+       */
+      StepEffect thenPause(String reason);
 
       /**
        * Defines the next step to which the workflow should transition to.

@@ -25,6 +25,7 @@ import akka.javasdk.impl.workflow.WorkflowEffects.End
 import akka.javasdk.impl.workflow.WorkflowEffects.NoPersistence
 import akka.javasdk.impl.workflow.WorkflowEffects.NoTransition
 import akka.javasdk.impl.workflow.WorkflowEffects.Pause
+import akka.javasdk.impl.workflow.WorkflowEffects.PauseWithReason
 import akka.javasdk.impl.workflow.WorkflowEffects.Persistence
 import akka.javasdk.impl.workflow.WorkflowEffects.StepTransition
 import akka.javasdk.impl.workflow.WorkflowEffects.Transition
@@ -313,10 +314,11 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     transition match {
       case StepTransition(stepName, input) =>
         new SpiWorkflow.StepTransition(stepName, input.map(serializer.toBytes))
-      case Pause        => SpiWorkflow.Pause
-      case NoTransition => SpiWorkflow.NoTransition
-      case End          => SpiWorkflow.End
-      case Delete       => SpiWorkflow.Delete
+      case Pause                   => SpiWorkflow.Pause
+      case PauseWithReason(reason) => new SpiWorkflow.PauseWithReason(reason)
+      case NoTransition            => SpiWorkflow.NoTransition
+      case End                     => SpiWorkflow.End
+      case Delete                  => SpiWorkflow.Delete
     }
 
   @nowarn("msg=deprecated")
