@@ -8,7 +8,13 @@ import Dependencies.AkkaGrpcVersion
 
 lazy val `akka-javasdk-root` = project
   .in(file("."))
-  .aggregate(akkaJavaSdkValidations, akkaJavaSdkAnnotationProcessor, akkaJavaSdk, akkaJavaSdkTestKit, akkaJavaSdkTests, akkaJavaSdkParent)
+  .aggregate(
+    akkaJavaSdkValidations,
+    akkaJavaSdkAnnotationProcessor,
+    akkaJavaSdk,
+    akkaJavaSdkTestKit,
+    akkaJavaSdkTests,
+    akkaJavaSdkParent)
   // samplesCompilationProject and annotationProcessorTestProject are composite project
   // to aggregate them we need to map over them
   .aggregate(samplesCompilationProject.componentProjects.map(p => p: ProjectReference): _*)
@@ -27,9 +33,7 @@ lazy val akkaJavaSdkValidations =
   Project(id = "akka-javasdk-validations", base = file("akka-javasdk-validations"))
     .enablePlugins(Publish)
     .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
-    .settings(
-      name := "akka-javasdk-validations",
-      crossPaths := false)
+    .settings(name := "akka-javasdk-validations", crossPaths := false)
 
 lazy val akkaJavaSdk =
   Project(id = "akka-javasdk", base = file("akka-javasdk"))
