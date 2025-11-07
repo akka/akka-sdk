@@ -20,11 +20,11 @@ import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.WorkflowStepNotFound
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.WorkflowStepNotSupported
-import akka.javasdk.impl.workflow.WorkflowEffects.Delete
-import akka.javasdk.impl.workflow.WorkflowEffects.End
+import akka.javasdk.impl.workflow.WorkflowEffects.DeleteTransition
+import akka.javasdk.impl.workflow.WorkflowEffects.EndTransition
 import akka.javasdk.impl.workflow.WorkflowEffects.NoPersistence
 import akka.javasdk.impl.workflow.WorkflowEffects.NoTransition
-import akka.javasdk.impl.workflow.WorkflowEffects.Pause
+import akka.javasdk.impl.workflow.WorkflowEffects.PauseTransition
 import akka.javasdk.impl.workflow.WorkflowEffects.Persistence
 import akka.javasdk.impl.workflow.WorkflowEffects.StepTransition
 import akka.javasdk.impl.workflow.WorkflowEffects.Transition
@@ -313,10 +313,12 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     transition match {
       case StepTransition(stepName, input) =>
         new SpiWorkflow.StepTransition(stepName, input.map(serializer.toBytes))
-      case Pause        => SpiWorkflow.Pause
-      case NoTransition => SpiWorkflow.NoTransition
-      case End          => SpiWorkflow.End
-      case Delete       => SpiWorkflow.Delete
+      case NoTransition                   => SpiWorkflow.NoTransition
+      case PauseTransition(reason)        => new SpiWorkflow.PauseTransition(reason)
+      case EndTransition(None)            => SpiWorkflow.End
+      case EndTransition(Some(reason))    => new SpiWorkflow.EndTransition(reason)
+      case DeleteTransition(None)         => SpiWorkflow.Delete
+      case DeleteTransition(Some(reason)) => new SpiWorkflow.DeleteTransition(reason)
     }
 
   @nowarn("msg=deprecated")
