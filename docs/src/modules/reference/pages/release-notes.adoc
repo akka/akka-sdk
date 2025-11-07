@@ -17,9 +17,9 @@ Current versions
 
 * Akka Cli release 3.0.32 release
 - `akka local cluster` - New command for launching a local cluster from a project
-- `akka local console` - Updated with a new TUI
-- `akka code token` - Command for provisioning a Akka download token
-- `akka code init` - Command for quickly creating a new Akka SDK project
+- `akka local console` - Multiple UI updates
+- `akka code token` - Provision an Akka download token
+- `akka code init` - Initiated a new Akka SDK project
 
 == October 2025
 
