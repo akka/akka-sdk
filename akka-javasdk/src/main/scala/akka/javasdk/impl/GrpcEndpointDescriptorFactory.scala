@@ -69,12 +69,7 @@ object GrpcEndpointDescriptorFactory {
         s"Could not access static description from gRPC service interface [${serviceDefinitionClass.getName}]")
 
     val routeFactory: (HttpRequest => T) => PartialFunction[HttpRequest, Future[HttpResponse]] = { serviceFactory =>
-      handlerFactory.partialInstancePerRequest(
-        serviceFactory,
-        description.name,
-        unwrapFailedCompletion(),
-        system,
-        materializer)
+      handlerFactory.partialInstancePerRequest(serviceFactory, description.name, unwrapFailedCompletion(), system)
     }
 
     val componentOptions =

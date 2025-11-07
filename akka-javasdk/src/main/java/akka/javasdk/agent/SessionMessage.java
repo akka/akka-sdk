@@ -29,6 +29,8 @@ public sealed interface SessionMessage {
 
   int size();
 
+  String componentId();
+
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
   @JsonSubTypes({
     @JsonSubTypes.Type(value = MessageContent.TextMessageContent.class, name = "T"),
@@ -69,8 +71,6 @@ public sealed interface SessionMessage {
           .sum();
     }
   }
-
-  String componentId();
 
   record UserMessage(Instant timestamp, String text, String componentId) implements SessionMessage {
 
