@@ -95,7 +95,11 @@ public sealed interface Validation permits Validation.Valid, Validation.Invalid 
     }
   }
 
-  /** Represents a failed validation containing one or more error messages. */
+  /**
+   * Represents a failed validation containing one or more error messages.
+   *
+   * @param messages the list of error messages
+   */
   record Invalid(List<String> messages) implements Validation {
 
     /** Creates an Invalid validation with the given error messages. */
@@ -126,9 +130,9 @@ public sealed interface Validation permits Validation.Valid, Validation.Invalid 
     public Validation combine(Validation other) {
       if (other instanceof Valid) {
         return this;
-      } else if (other instanceof Invalid otherInvalid) {
+      } else if (other instanceof Invalid(List<String> otherMessages)) {
         List<String> combinedMessages = new ArrayList<>(this.messages);
-        combinedMessages.addAll(otherInvalid.messages());
+        combinedMessages.addAll(otherMessages);
         return new Invalid(combinedMessages);
       }
       return this;
@@ -147,8 +151,8 @@ public sealed interface Validation permits Validation.Valid, Validation.Invalid 
     @Override
     public boolean equals(Object obj) {
       if (this == obj) return true;
-      if (!(obj instanceof Invalid other)) return false;
-      return messages.equals(other.messages);
+      if (!(obj instanceof Invalid(List<String> otherMessages))) return false;
+      return messages.equals(otherMessages);
     }
   }
 }
