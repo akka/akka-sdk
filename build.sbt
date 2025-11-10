@@ -1,10 +1,11 @@
 import Dependencies.Kalix
 import Dependencies.AkkaRuntimeVersion
+
 import scala.xml.Elem
 import scala.xml.Node
 import scala.xml.TopScope
-
 import Dependencies.AkkaGrpcVersion
+import Dependencies.GoogleProtobufVersion
 
 lazy val `akka-javasdk-root` = project
   .in(file("."))
@@ -143,10 +144,15 @@ lazy val akkaJavaSdkParent =
         // completely replace with our pom.xml
         val pom = scala.xml.XML.loadFile(baseDirectory.value / "pom.xml")
         // but use the current version
-        updatePomVersion(pom, version.value, AkkaRuntimeVersion, AkkaGrpcVersion)
+        updatePomVersion(pom, version.value, AkkaRuntimeVersion, AkkaGrpcVersion, GoogleProtobufVersion)
       })
 
-def updatePomVersion(node: Elem, v: String, runtimeVersion: String, akkaGrpcVersion: String): Elem = {
+def updatePomVersion(
+    node: Elem,
+    v: String,
+    runtimeVersion: String,
+    akkaGrpcVersion: String,
+    googleProtobufVersion: String): Elem = {
   def updateElements(seq: Seq[Node]): Seq[Node] = {
     seq.map {
       case version @ <version>{_}</version> =>
@@ -160,6 +166,8 @@ def updatePomVersion(node: Elem, v: String, runtimeVersion: String, akkaGrpcVers
               <akka-javasdk.version>{v}</akka-javasdk.version>
             case <akka.grpc.version>{_}</akka.grpc.version> =>
               <akka.grpc.version>{akkaGrpcVersion}</akka.grpc.version>
+            case <protobuf-java.version>{_}</protobuf-java.version> =>
+              <protobuf-java.version>{googleProtobufVersion}</protobuf-java.version>
             case other =>
               other
           }

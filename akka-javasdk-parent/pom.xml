@@ -82,8 +82,7 @@
         <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
         <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
 
-        <!-- FIXME must be aligned with sdk/runtime/akka-grpc -->
-        <protobuf-java.version>3.25.5</protobuf-java.version>
+        <protobuf-java.version>REPLACED_BY_BUILD</protobuf-java.version>
     </properties>
 
     <build>
