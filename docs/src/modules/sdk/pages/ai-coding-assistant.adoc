@@ -75,7 +75,7 @@ Make sure that you download the latest documentation regularly to make use of do
 akka code ai-assistance-update .
 ----
 
-The `akka-context` documentation bundle is also available as link:../java/_attachments/akka-docs-md.zip[akka-docs-md.zip] if you prefer that.
+The `akka-context` documentation bundle is also available as link:../sdk/_attachments/akka-docs-md.zip[akka-docs-md.zip] if you prefer that.
 
 Add `akka-context` to your `.gitignore` file, if you use git.
 
@@ -153,7 +153,7 @@ Make sure that you pull the latest samples regularly to make use of improvements
 
 == Coding guidelines
 
-The coding assistant will generate more accurate code if we give it some detailed instructions. We have prepared such xref:java:ai-coding-assistant-guidelines.adoc[guidelines] that you can use as a template. You find even more detailed instructions in link:../_attachments/AGENTS.md[AGENTS.md, window="new"]
+The coding assistant will generate more accurate code if we give it some detailed instructions. We have prepared such xref:sdk:ai-coding-assistant-guidelines.adoc[guidelines] that you can use as a template. You find even more detailed instructions in link:../_attachments/AGENTS.md[AGENTS.md, window="new"]
 
 For some assistants you can define instructions in configuration settings or files like `AGENTS.md` or `CLAUDE.md`.
 
@@ -166,7 +166,7 @@ Don't generate any code yet, but remember the following guidelines and use them 
 <paste guidelines>
 ----
 
-You can copy-paste the guidelines from https://doc.akka.io/java/ai-coding-assistant-guidelines.html.md[ai-coding-assistant-guidelines.html.md, window="new"]
+You can copy-paste the guidelines from https://doc.akka.io/sdk/ai-coding-assistant-guidelines.html.md[ai-coding-assistant-guidelines.html.md, window="new"]
 
 == Prompt examples
 
