@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.http
 
+import java.util.concurrent.Executor
+
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 import scala.util.control.NonFatal
@@ -28,7 +30,8 @@ private[akka] final class HttpClientProviderImpl(
     system: ActorSystem[_],
     telemetryContext: Option[OtelContext],
     remoteIdentificationHeader: Option[RawHeader],
-    settings: Settings)
+    settings: Settings,
+    sdkExecutor: Executor)
     extends HttpClientProvider {
 
   private val log = LoggerFactory.getLogger(classOf[HttpClientProvider])
@@ -98,10 +101,10 @@ private[akka] final class HttpClientProviderImpl(
       else
         // arbitrary http request
         otelTraceHeaders
-    new HttpClientImpl(system, baseUrl, defaultHeaders)
+    new HttpClientImpl(system, baseUrl, defaultHeaders, sdkExecutor)
   }
 
   def withTelemetryContext(telemetryContext: OtelContext): HttpClientProvider =
-    new HttpClientProviderImpl(system, Some(telemetryContext), remoteIdentificationHeader, settings)
+    new HttpClientProviderImpl(system, Some(telemetryContext), remoteIdentificationHeader, settings, sdkExecutor)
 
 }

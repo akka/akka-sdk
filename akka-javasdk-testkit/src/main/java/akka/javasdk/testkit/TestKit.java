@@ -781,7 +781,10 @@ public class TestKit {
               runtimeActorSystem);
       agentRegistry = startupContext.agentRegistry();
       selfHttpClient =
-          new HttpClientImpl(runtimeActorSystem, "http://" + runtimeHost + ":" + runtimePort);
+          new HttpClientImpl(
+              runtimeActorSystem,
+              "http://" + runtimeHost + ":" + runtimePort,
+              runtimeActorSystem.executionContext());
       httpClientProvider = startupContext.httpClientProvider();
       grpcClientProvider = startupContext.grpcClientProvider();
       timerScheduler = new TimerSchedulerImpl(componentClients.timerClient(), Metadata.EMPTY);
