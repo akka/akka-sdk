@@ -45,6 +45,8 @@ object WorkflowEffects {
 
   object Delete extends Transition
 
+  case class DeleteWithReason(reason: String) extends Transition
+
   sealed trait Persistence[+S]
 
   final case class UpdateState[S](newState: S) extends Persistence[S]
@@ -101,6 +103,11 @@ object WorkflowEffects {
 
       override def delete(): Transitional =
         TransitionalEffectImpl(persistence, Delete)
+
+      override def delete(reason: String): Transitional = {
+        validateReason(reason)
+        TransitionalEffectImpl(persistence, DeleteWithReason(reason))
+      }
 
       override def transitionTo[I](stepName: String, input: I): Transitional =
         TransitionalEffectImpl(persistence, StepTransition(stepName, Some(input)))
@@ -171,6 +178,11 @@ object WorkflowEffects {
     override def delete(): Transitional =
       TransitionalEffectImpl(NoPersistence, Delete)
 
+    override def delete(reason: String): Transitional = {
+      validateReason(reason)
+      TransitionalEffectImpl(NoPersistence, DeleteWithReason(reason))
+    }
+
     override def reply[R](reply: R): ReadOnlyEffect[R] =
       ReadOnlyEffectImpl().reply(reply)
 
@@ -235,6 +247,11 @@ object WorkflowEffects {
       override def thenDelete(): StepEffect =
         WorkflowStepEffectImpl(persistence, Delete)
 
+      override def thenDelete(reason: String): StepEffect = {
+        validateReason(reason)
+        WorkflowStepEffectImpl(persistence, DeleteWithReason(reason))
+      }
+
       override def thenEnd(): StepEffect =
         WorkflowStepEffectImpl(persistence, End)
 
@@ -287,6 +304,11 @@ object WorkflowEffects {
 
     override def thenDelete(): StepEffect =
       WorkflowStepEffectImpl(NoPersistence, Delete)
+
+    override def thenDelete(reason: String): StepEffect = {
+      validateReason(reason)
+      WorkflowStepEffectImpl(NoPersistence, DeleteWithReason(reason))
+    }
 
   }
 

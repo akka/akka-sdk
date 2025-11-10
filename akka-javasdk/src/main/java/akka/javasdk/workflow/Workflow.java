@@ -312,6 +312,13 @@ public abstract class Workflow<S> {
       Transitional delete();
 
       /**
+       * Finish and delete the workflow execution with a reason description. After transition to
+       * {@code delete}, no more transitions are allowed. The actual workflow state deletion is done
+       * with a configurable delay to allow downstream consumers to observe that fact.
+       */
+      Transitional delete(String reason);
+
+      /**
        * Create a message reply.
        *
        * @param replyMessage The payload of the reply.
@@ -484,6 +491,13 @@ public abstract class Workflow<S> {
        * delay to allow downstream consumers to observe that fact.
        */
       Transitional delete();
+
+      /**
+       * Finish and delete the workflow execution with a reason description. After transition to
+       * {@code delete}, no more transitions are allowed. The actual workflow state deletion is done
+       * with a configurable delay to allow downstream consumers to observe that fact.
+       */
+      Transitional delete(String reason);
     }
   }
 
@@ -552,6 +566,13 @@ public abstract class Workflow<S> {
        * delay to allow downstream consumers to observe that fact.
        */
       StepEffect thenDelete();
+
+      /**
+       * Finish and delete the workflow execution with a reason description. After transition to
+       * {@code delete}, no more transitions are allowed. The actual workflow state deletion is done
+       * with a configurable delay to allow downstream consumers to observe that fact.
+       */
+      StepEffect thenDelete(String reason);
     }
 
     interface PersistenceEffectBuilder {
@@ -608,6 +629,13 @@ public abstract class Workflow<S> {
        * delay to allow downstream consumers to observe that fact.
        */
       StepEffect thenDelete();
+
+      /**
+       * Finish and delete the workflow execution with a reason description. After transition to
+       * {@code delete}, no more transitions are allowed. The actual workflow state deletion is done
+       * with a configurable delay to allow downstream consumers to observe that fact.
+       */
+      StepEffect thenDelete(String reason);
     }
   }
 
