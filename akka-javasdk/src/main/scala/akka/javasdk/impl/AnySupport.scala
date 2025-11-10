@@ -6,6 +6,7 @@ package akka.javasdk.impl
 
 import java.io.ByteArrayOutputStream
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.concurrent.TrieMap
@@ -15,6 +16,7 @@ import scala.util.Try
 
 import akka.annotation.InternalApi
 import akka.http.scaladsl.model.MediaTypes
+import akka.runtime.sdk.spi.BytesPayload
 import com.google.common.base.CaseFormat
 import com.google.protobuf.ByteString
 import com.google.protobuf.CodedInputStream
@@ -211,6 +213,22 @@ private[akka] object AnySupport {
           descriptor.getDependencies.asScala.toSeq ++ descriptor.getPublicDependencies.asScala)
       }
     }
+
+  // avoids reflection on each message of a given type
+  private val parserCache = new ConcurrentHashMap[Class[_], Parser[AnyRef]]()
+
+  // Note: T must only be a GeneratedMessageV3, not enforceable through typesystem
+  def decodeJavaProtobuf[T](payload: BytesPayload, cls: Class[T]): T = {
+    if (payload.contentType.startsWith(AnySupport.DefaultTypeUrlPrefix)) {
+      val parser =
+        parserCache.computeIfAbsent(cls, cls => cls.getMethod("parser").invoke(null).asInstanceOf[Parser[AnyRef]])
+      parser.parseFrom(payload.bytes.toArrayUnsafe()).asInstanceOf[T]
+    } else {
+      // FIXME support parsing proto-JSON if that's what we will emit for proto based service to service between Akka services
+      throw new IllegalArgumentException(
+        s"Protobuf message parsing from type url [${payload.contentType}] not supported")
+    }
+  }
 
 }
 

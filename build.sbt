@@ -39,7 +39,7 @@ lazy val akkaJavaSdkValidations =
 lazy val akkaJavaSdk =
   Project(id = "akka-javasdk", base = file("akka-javasdk"))
     .dependsOn(akkaJavaSdkValidations)
-    .enablePlugins(BuildInfoPlugin, Publish)
+    .enablePlugins(BuildInfoPlugin, Publish, AkkaGrpcPlugin)
     .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
     .settings(
       name := "akka-javasdk",
@@ -55,7 +55,8 @@ lazy val akkaJavaSdk =
         "akkaVersion" -> Dependencies.AkkaVersion),
       buildInfoPackage := "akka.javasdk",
       Test / javacOptions ++= Seq("-parameters"), // for Jackson
-      Test / envVars ++= Map("ENV" -> "value1", "ENV2" -> "value2"))
+      Test / envVars ++= Map("ENV" -> "value1", "ENV2" -> "value2"),
+      Test / akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Java))
     .settings(DocSettings.forModule("Akka SDK"))
     .settings(Dependencies.javaSdk)
 

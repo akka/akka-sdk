@@ -21,6 +21,7 @@ import akka.javasdk.testmodels.keyvalueentity.Counter;
 import akka.javasdk.testmodels.keyvalueentity.CounterState;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
+import protoconsumer.EventsForConsumer;
 
 public
 class PubSubTestModels { // TODO shall we remove this class and move things to ActionTestModels and
@@ -136,6 +137,18 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
 
     public Effect transform(EmployeeEmailUpdated emailUpdated) {
       return effects().produce(emailUpdated.toString());
+    }
+  }
+
+  @Consume.FromServiceStream(service = "some_service", id = "some_events", ignoreUnknown = true)
+  public static class ProtobufEventStreamConsumer extends Consumer {
+
+    public Effect transform(EventsForConsumer.EventForConsumer1 event1) {
+      return effects().produce(event1.toString());
+    }
+
+    public Effect transform(EventsForConsumer.EventForConsumer2 event2) {
+      return effects().produce(event2.toString());
     }
   }
 
