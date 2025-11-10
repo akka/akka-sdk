@@ -15,6 +15,11 @@ Current versions
 * Akka libraries 25.10 releases
 - overview in xref:release-notes/2025-11-05-akka-25.10-released.adoc[]
 
+* Akka CLI release 3.0.32 release
+- `akka local cluster` - New command for launching a local cluster from a project
+- `akka local console` - Multiple UI updates
+- `akka code token` - Provision an Akka download token
+- `akka code init` - Initiated a new Akka SDK project
 
 == October 2025
 
