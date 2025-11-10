@@ -194,14 +194,14 @@ Sometimes a service needs to use other protobuf message definitions, that do not
 for example when an Akka service calls a gRPC endpoint in another Akka service in the same Akka project, or a third party
 gRPC service across the public internet.
 
-**Handling such protobuf files can be in different ways:**
+**Handling such protobuf files can be done in different ways:**
 
-Copy the needed messages and service descriptors into the project and keep them in version control. gRPC and protobuf
+Copy the needed messages and service descriptors into the project and keep them in version control. gRPC and proto messages
 should let the upstream service evolve without breaking the protocol. The consuming service updates its set of protobuf
 files once it needs to use new features in the upstream service.
 
 If the upstream service uses Java, packages and provides a published Java package, it is possible to let maven download the jar
-and unpack it so that the message types and gRPC service definitions are available. This requires a bit of extra configuration
+and unpack the protobuf files from that to make the message types and gRPC service definitions available. This requires a bit of extra configuration
 in the maven project `pom.xml`:
 
 [source,xml,indent=0]
