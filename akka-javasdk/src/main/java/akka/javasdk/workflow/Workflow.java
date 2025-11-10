@@ -299,6 +299,12 @@ public abstract class Workflow<S> {
       Transitional end();
 
       /**
+       * Finish the workflow execution with a reason description. After transition to {@code end},
+       * no more transitions are allowed.
+       */
+      Transitional end(String reason);
+
+      /**
        * Finish and delete the workflow execution. After transition to {@code delete}, no more
        * transitions are allowed. The actual workflow state deletion is done with a configurable
        * delay to allow downstream consumers to observe that fact.
@@ -467,6 +473,12 @@ public abstract class Workflow<S> {
       Transitional end();
 
       /**
+       * Finish the workflow execution with a reason description. After transition to {@code end},
+       * no more transitions are allowed.
+       */
+      Transitional end(String reason);
+
+      /**
        * Finish and delete the workflow execution. After transition to {@code delete}, no more
        * transitions are allowed. The actual workflow state deletion is done with a configurable
        * delay to allow downstream consumers to observe that fact.
@@ -529,6 +541,12 @@ public abstract class Workflow<S> {
       StepEffect thenEnd();
 
       /**
+       * Finish the workflow execution with a reason description. After transition to {@code end},
+       * no more transitions are allowed.
+       */
+      StepEffect thenEnd(String reason);
+
+      /**
        * Finish and delete the workflow execution. After transition to {@code delete}, no more
        * transitions are allowed. The actual workflow state deletion is done with a configurable
        * delay to allow downstream consumers to observe that fact.
@@ -577,6 +595,12 @@ public abstract class Workflow<S> {
        * allowed.
        */
       StepEffect thenEnd();
+
+      /**
+       * Finish the workflow execution with a reason description. After transition to {@code end},
+       * no more transitions are allowed.
+       */
+      StepEffect thenEnd(String reason);
 
       /**
        * Finish and delete the workflow execution. After transition to {@code delete}, no more

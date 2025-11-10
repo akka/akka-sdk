@@ -22,6 +22,7 @@ import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.WorkflowStepNotFound
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.WorkflowStepNotSupported
 import akka.javasdk.impl.workflow.WorkflowEffects.Delete
 import akka.javasdk.impl.workflow.WorkflowEffects.End
+import akka.javasdk.impl.workflow.WorkflowEffects.EndWithReason
 import akka.javasdk.impl.workflow.WorkflowEffects.NoPersistence
 import akka.javasdk.impl.workflow.WorkflowEffects.NoTransition
 import akka.javasdk.impl.workflow.WorkflowEffects.Pause
@@ -318,6 +319,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       case PauseWithReason(reason) => new SpiWorkflow.PauseWithReason(reason)
       case NoTransition            => SpiWorkflow.NoTransition
       case End                     => SpiWorkflow.End
+      case EndWithReason(reason)   => new SpiWorkflow.EndWithReason(reason)
       case Delete                  => SpiWorkflow.Delete
     }
 

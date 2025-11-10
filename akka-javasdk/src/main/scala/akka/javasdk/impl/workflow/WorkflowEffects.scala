@@ -41,6 +41,8 @@ object WorkflowEffects {
 
   object End extends Transition
 
+  case class EndWithReason(reason: String) extends Transition
+
   object Delete extends Transition
 
   sealed trait Persistence[+S]
@@ -86,6 +88,9 @@ object WorkflowEffects {
 
       override def end(): Transitional =
         TransitionalEffectImpl(persistence, End)
+
+      override def end(reason: String): Transitional =
+        TransitionalEffectImpl(persistence, EndWithReason(reason))
 
       override def delete(): Transitional =
         TransitionalEffectImpl(persistence, Delete)
@@ -148,6 +153,9 @@ object WorkflowEffects {
 
     override def end(): Transitional =
       TransitionalEffectImpl(NoPersistence, End)
+
+    override def end(reason: String): Transitional =
+      TransitionalEffectImpl(NoPersistence, EndWithReason(reason))
 
     override def delete(): Transitional =
       TransitionalEffectImpl(NoPersistence, Delete)
@@ -217,6 +225,9 @@ object WorkflowEffects {
       override def thenEnd(): StepEffect =
         WorkflowStepEffectImpl(persistence, End)
 
+      override def thenEnd(reason: String): StepEffect =
+        WorkflowStepEffectImpl(persistence, EndWithReason(reason))
+
     }
   }
 
@@ -251,6 +262,9 @@ object WorkflowEffects {
 
     override def thenEnd(): StepEffect =
       WorkflowStepEffectImpl(NoPersistence, End)
+
+    override def thenEnd(reason: String): StepEffect =
+      WorkflowStepEffectImpl(NoPersistence, EndWithReason(reason))
 
     override def thenDelete(): StepEffect =
       WorkflowStepEffectImpl(NoPersistence, Delete)
