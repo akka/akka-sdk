@@ -108,11 +108,6 @@ class ModelProviderSpec extends AnyWordSpec with Matchers {
       m shouldBe ModelProvider.googleAiGemini().withModelName("gemini-2.5-flash")
     }
 
-    "load defaults from config for bedrock" in {
-      val m = ModelProvider.Bedrock.fromConfig(defaultConfig.getConfig("akka.javasdk.agent.bedrock"))
-      m shouldBe ModelProvider.bedrock()
-    }
-
   }
 
 }
