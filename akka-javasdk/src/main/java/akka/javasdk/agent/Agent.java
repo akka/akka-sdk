@@ -229,6 +229,26 @@ public abstract class Agent {
       OnSuccessBuilder userMessage(String message);
 
       /**
+       * The user message to the AI model, supporting multimodal content.
+       *
+       * <p>This overload accepts a {@link UserMessage} which can contain multiple content types,
+       * currently text and images.
+       *
+       * <p>Example with text and image:
+       *
+       * <pre>{@code
+       * UserMessage message = UserMessage.from(
+       *     MessageContent.TextMessageContent.from("What's in this image?"),
+       *     ImageMessageContent.from("https://example.com/image.jpg")
+       * );
+       * }</pre>
+       *
+       * @param message The user message containing multimodal content (text, images, etc.)
+       * @return The next builder stage for configuring the effect
+       */
+      OnSuccessBuilder userMessage(UserMessage message);
+
+      /**
        * Create a message reply without calling the model.
        *
        * @param message The payload of the reply.

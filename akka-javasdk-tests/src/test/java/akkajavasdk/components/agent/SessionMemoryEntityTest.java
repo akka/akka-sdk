@@ -10,11 +10,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 import akka.Done;
 import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.agent.MemoryFilter;
+import akka.javasdk.agent.MessageContent;
 import akka.javasdk.agent.SessionHistory;
 import akka.javasdk.agent.SessionMemoryEntity;
 import akka.javasdk.agent.SessionMemoryEntity.AddInteractionCmd;
+import akka.javasdk.agent.SessionMemoryEntity.AddMultimodalInteractionCmd;
 import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.agent.SessionMessage.AiMessage;
+import akka.javasdk.agent.SessionMessage.MessageContent.ImageUriMessageContent;
+import akka.javasdk.agent.SessionMessage.MessageContent.TextMessageContent;
+import akka.javasdk.agent.SessionMessage.MultimodalUserMessage;
 import akka.javasdk.agent.SessionMessage.UserMessage;
 import akka.javasdk.impl.agent.AgentRegistryImpl;
 import akka.javasdk.testkit.EventSourcedResult;
@@ -64,6 +69,58 @@ public class SessionMemoryEntityTest {
     var userEvent = (SessionMemoryEntity.Event.UserMessageAdded) events.getFirst();
     assertThat(userEvent.componentId()).isEqualTo(COMPONENT_ID);
     assertThat(userEvent.message()).isEqualTo(userMsg);
+    assertThat(userEvent.sizeInBytes()).isEqualTo(userMessage.size());
+    assertThat(userEvent.timestamp()).isEqualTo(timestamp);
+
+    assertThat(events.get(1)).isInstanceOf(SessionMemoryEntity.Event.AiMessageAdded.class);
+    var aiEvent = (SessionMemoryEntity.Event.AiMessageAdded) events.get(1);
+    assertThat(aiEvent.componentId()).isEqualTo(COMPONENT_ID);
+    assertThat(aiEvent.message()).isEqualTo(aiMsg);
+    assertThat(aiEvent.sizeInBytes()).isEqualTo(aiMessage.size());
+    assertThat(aiEvent.historySizeInBytes()).isEqualTo(userMessage.size() + aiMessage.size());
+    assertThat(aiEvent.timestamp()).isEqualTo(timestamp);
+
+    // when retrieving history
+    EventSourcedResult<SessionHistory> historyResult =
+        testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
+
+    // then
+    assertThat(historyResult.getReply().messages()).containsExactly(userMessage, aiMessage);
+  }
+
+  @Test
+  public void shouldAddMultiModalMessageToHistory() {
+    // given
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
+    var timestamp = Instant.now();
+    String aiMsg = "I'm fine, thanks for asking!";
+    SessionMessage.MessageContent text = new TextMessageContent("Hello, how are you?");
+    SessionMessage.MessageContent image =
+        new ImageUriMessageContent("uri", MessageContent.ImageMessageContent.DetailLevel.AUTO);
+    var contents = List.of(text, image);
+    MultimodalUserMessage userMessage =
+        new MultimodalUserMessage(timestamp, contents, COMPONENT_ID);
+    var aiMessage = new AiMessage(timestamp, aiMsg, COMPONENT_ID);
+
+    // when
+    EventSourcedResult<Done> result =
+        testKit
+            .method(SessionMemoryEntity::addMultimodalInteraction)
+            .invoke(new AddMultimodalInteractionCmd(userMessage, List.of(aiMessage)));
+
+    // then
+    assertThat(result.getReply()).isEqualTo(done());
+
+    // Check events - ignoring timestamp comparison
+    var events = result.getAllEvents();
+    assertThat(events).hasSize(2);
+    assertThat(events.getFirst())
+        .isInstanceOf(SessionMemoryEntity.Event.MultimodalUserMessageAdded.class);
+    var userEvent = (SessionMemoryEntity.Event.MultimodalUserMessageAdded) events.getFirst();
+    assertThat(userEvent.componentId()).isEqualTo(COMPONENT_ID);
+    assertThat(userEvent.contents()).isEqualTo(contents);
     assertThat(userEvent.sizeInBytes()).isEqualTo(userMessage.size());
     assertThat(userEvent.timestamp()).isEqualTo(timestamp);
 
@@ -143,11 +200,22 @@ public class SessionMemoryEntityTest {
         .method(SessionMemoryEntity::addInteraction)
         .invoke(new AddInteractionCmd(userMessage1, aiMessage1));
 
+    SessionMessage.MessageContent text = new TextMessageContent("Hello, how are you?");
+    SessionMessage.MessageContent image =
+        new ImageUriMessageContent("uri", MessageContent.ImageMessageContent.DetailLevel.AUTO);
+    var contents = List.of(text, image);
+    MultimodalUserMessage userMessage =
+        new MultimodalUserMessage(timestamp, contents, COMPONENT_ID);
+
+    testKit
+        .method(SessionMemoryEntity::addMultimodalInteraction)
+        .invoke(new AddMultimodalInteractionCmd(userMessage, List.of(aiMessage1)));
+
     // when
     EventSourcedResult<SessionHistory> historyResult =
         testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
     var sequenceNumber = historyResult.getReply().sequenceNumber();
-    assertThat(sequenceNumber).isEqualTo(2L);
+    assertThat(sequenceNumber).isEqualTo(4L);
     var userMessage2 = new UserMessage(timestamp, "Hey", COMPONENT_ID);
     var aiMessage2 = new AiMessage(timestamp, "Hi!", COMPONENT_ID);
     var cmd = new SessionMemoryEntity.CompactionCmd(userMessage2, aiMessage2, sequenceNumber);
@@ -226,9 +294,14 @@ public class SessionMemoryEntityTest {
         testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
 
     // then
-    assertThat(historyResult2.getReply().messages().stream().map(SessionMessage::text).toList())
-        .containsExactly(
-            userMessage2.text(), aiMessage2.text(), userMessage3.text(), aiMessage3.text());
+    UserMessage m1 = (UserMessage) historyResult2.getReply().messages().get(0);
+    AiMessage m2 = (AiMessage) historyResult2.getReply().messages().get(1);
+    UserMessage m3 = (UserMessage) historyResult2.getReply().messages().get(2);
+    AiMessage m4 = (AiMessage) historyResult2.getReply().messages().get(3);
+    assertThat(m1.text()).isEqualTo(userMessage2.text());
+    assertThat(m2.text()).isEqualTo(aiMessage2.text());
+    assertThat(m3.text()).isEqualTo(userMessage3.text());
+    assertThat(m4.text()).isEqualTo(aiMessage3.text());
   }
 
   @Test
@@ -459,8 +532,8 @@ public class SessionMemoryEntityTest {
     var timestamp = Instant.now();
 
     // Add several interactions
-    String[] userMsgs = {"U1", "U2", "U3", "U4"};
-    String[] aiMsgs = {"A1", "A2", "A3", "A4"};
+    String[] userMsgs = {"U1", "U2"};
+    String[] aiMsgs = {"A1", "A2"};
     for (int i = 0; i < userMsgs.length; i++) {
       testKit
           .method(SessionMemoryEntity::addInteraction)
@@ -468,6 +541,18 @@ public class SessionMemoryEntityTest {
               new AddInteractionCmd(
                   new UserMessage(timestamp, userMsgs[i], COMPONENT_ID),
                   new AiMessage(timestamp, aiMsgs[i], COMPONENT_ID)));
+    }
+    SessionMessage.MessageContent[] textContents = {
+      new TextMessageContent("U3"), new TextMessageContent("U4")
+    };
+    String[] aiMsgs2 = {"A3", "A4"};
+    for (int i = 0; i < textContents.length; i++) {
+      testKit
+          .method(SessionMemoryEntity::addMultimodalInteraction)
+          .invoke(
+              new AddMultimodalInteractionCmd(
+                  new MultimodalUserMessage(timestamp, List.of(textContents[i]), COMPONENT_ID),
+                  List.of(new AiMessage(timestamp, aiMsgs2[i], COMPONENT_ID))));
     }
 
     // Request only the last 4 messages (should be: U3, A3, U4, A4)
@@ -480,9 +565,9 @@ public class SessionMemoryEntityTest {
     // The expected last 4 messages
     var expected =
         List.of(
-            new UserMessage(timestamp, "U3", COMPONENT_ID),
+            new MultimodalUserMessage(timestamp, List.of(textContents[0]), COMPONENT_ID),
             new AiMessage(timestamp, "A3", COMPONENT_ID),
-            new UserMessage(timestamp, "U4", COMPONENT_ID),
+            new MultimodalUserMessage(timestamp, List.of(textContents[1]), COMPONENT_ID),
             new AiMessage(timestamp, "A4", COMPONENT_ID));
 
     assertThat(result.getReply().messages()).containsExactlyElementsOf(expected);

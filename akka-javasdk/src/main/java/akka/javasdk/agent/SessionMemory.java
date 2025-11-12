@@ -43,6 +43,23 @@ public interface SessionMemory {
       String sessionId, SessionMessage.UserMessage userMessage, List<SessionMessage> messages);
 
   /**
+   * Adds an interaction between a user and an AI model to the session history for the specified
+   * session, supporting multimodal content.
+   *
+   * <p>This overload accepts a {@link SessionMessage.MultimodalUserMessage} which can contain
+   * multiple content types including text and images, enabling multimodal interactions.
+   *
+   * @param sessionId The unique identifier for the contextual session
+   * @param userMessage The user message containing multimodal content (text, images, etc.)
+   * @param messages All other messages generated during this interaction, typically AiMessage but
+   *     also Tool Call responses.
+   */
+  void addInteraction(
+      String sessionId,
+      SessionMessage.MultimodalUserMessage userMessage,
+      List<SessionMessage> messages);
+
+  /**
    * Retrieves the complete session history for the specified session. For very long sessions, this
    * might return a compacted version of the history.
    *

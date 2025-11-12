@@ -5,9 +5,12 @@
 package akka.javasdk.testkit;
 
 import akka.japi.Pair;
+import akka.javasdk.agent.MessageContent;
 import akka.javasdk.agent.ModelProvider;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.ImageContent;
+import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
@@ -15,6 +18,7 @@ import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.model.output.FinishReason;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -67,7 +71,30 @@ public final class TestModelProvider implements ModelProvider.Custom {
   }
 
   /** Represents a user message. */
-  public record UserMessage(String content) implements InputMessage {}
+  public record UserMessage(List<MessageContent> contents) implements InputMessage {
+
+    public UserMessage(String content) {
+      this(List.of(MessageContent.TextMessageContent.from(content)));
+    }
+
+    @Override
+    public String content() {
+      if (isTextOnly()) {
+        return text();
+      } else {
+        throw new IllegalStateException("This is not text only user message");
+      }
+    }
+
+    public boolean isTextOnly() {
+      return contents.size() == 1
+          && contents.getFirst() instanceof MessageContent.TextMessageContent;
+    }
+
+    public String text() {
+      return ((MessageContent.TextMessageContent) contents.getFirst()).text();
+    }
+  }
 
   /** Represents a tool result. This is used to simulate a response from a tool invocation. */
   public record ToolResult(String name, String content) implements InputMessage {}
@@ -203,13 +230,52 @@ public final class TestModelProvider implements ModelProvider.Custom {
         .map(
             chatMessage -> {
               if (chatMessage instanceof dev.langchain4j.data.message.UserMessage userMessage) {
-                return new UserMessage(userMessage.singleText());
+                List<MessageContent> contents =
+                    userMessage.contents().stream()
+                        .<MessageContent>map(
+                            content ->
+                                switch (content) {
+                                  case TextContent textContent ->
+                                      MessageContent.TextMessageContent.from(textContent.text());
+                                  case ImageContent imageContent -> {
+                                    if (imageContent.image().url() != null) {
+                                      try {
+                                        yield MessageContent.ImageMessageContent.fromUrl(
+                                            imageContent.image().url().toURL(),
+                                            toDetailLevel(imageContent.detailLevel()));
+                                      } catch (MalformedURLException e) {
+                                        throw new RuntimeException(
+                                            "Can't transform "
+                                                + imageContent.image().url()
+                                                + " to URL",
+                                            e);
+                                      }
+                                    } else {
+                                      throw new IllegalStateException(
+                                          "Not supported image content without url.");
+                                    }
+                                  }
+                                  default ->
+                                      throw new IllegalStateException(
+                                          "Not supported content type: " + content);
+                                })
+                        .toList();
+                return new UserMessage(contents);
               } else {
                 ToolExecutionResultMessage result = (ToolExecutionResultMessage) chatMessage;
                 return new ToolResult(result.toolName(), result.text());
               }
             })
         .orElseThrow(() -> new RuntimeException("No input message found"));
+  }
+
+  private MessageContent.ImageMessageContent.DetailLevel toDetailLevel(
+      ImageContent.DetailLevel detailLevel) {
+    return switch (detailLevel) {
+      case LOW -> MessageContent.ImageMessageContent.DetailLevel.LOW;
+      case HIGH -> MessageContent.ImageMessageContent.DetailLevel.HIGH;
+      case AUTO -> MessageContent.ImageMessageContent.DetailLevel.AUTO;
+    };
   }
 
   /** Retrieves the AI response for a given input message based on the defined predicates. */
