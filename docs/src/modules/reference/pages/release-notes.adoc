@@ -12,6 +12,24 @@ Current versions
 
 == November 2025
 
+* https://github.com/akka/akka-sdk/releases/tag/v3.5.7[Akka SDK 3.5.7]
+- component as agent functinon tool
+- agent memory filters
+- workflow passivation settings
+- compile time validations
+- direct consumption of protobuf messages in consumer
+- include basic protos and document external protos
+- updated AI coding assistant docs
+- Runtime 1.5.22
+
+* Akka Runtime 1.5.20 - 1.5.22
+- fix gRPC virtual thread regression
+- sampling priority for debug tracing
+- Akka libraries 25.10 dependencies
+- Recreate state for entity with mutable state
+- filter out messages from unknown tools
+- improvements of metrics and tracing
+
 * Akka libraries 25.10 releases
 - overview in xref:release-notes/2025-11-05-akka-25.10-released.adoc[]
 
