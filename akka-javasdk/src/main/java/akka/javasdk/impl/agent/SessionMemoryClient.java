@@ -5,6 +5,7 @@
 package akka.javasdk.impl.agent;
 
 import akka.annotation.InternalApi;
+import akka.javasdk.agent.MemoryFilter;
 import akka.javasdk.agent.SessionHistory;
 import akka.javasdk.agent.SessionMemory;
 import akka.javasdk.agent.SessionMemoryEntity;
@@ -20,13 +21,18 @@ import org.slf4j.LoggerFactory;
 @InternalApi
 public final class SessionMemoryClient implements SessionMemory {
 
-  public record MemorySettings(boolean read, boolean write, Optional<Integer> historyLimit) {
+  public record MemorySettings(
+      boolean read,
+      boolean write,
+      Optional<Integer> historyLimit,
+      List<MemoryFilter> memoryFilters) {
+
     static MemorySettings disabled() {
-      return new MemorySettings(false, false, Optional.empty());
+      return new MemorySettings(false, false, Optional.empty(), List.of());
     }
 
     static MemorySettings enabled() {
-      return new MemorySettings(true, true, Optional.empty());
+      return new MemorySettings(true, true, Optional.empty(), List.of());
     }
   }
 
@@ -67,7 +73,9 @@ public final class SessionMemoryClient implements SessionMemory {
           componentClient
               .forEventSourcedEntity(sessionId)
               .method(SessionMemoryEntity::getHistory)
-              .invoke(new SessionMemoryEntity.GetHistoryCmd(memorySettings.historyLimit));
+              .invoke(
+                  new SessionMemoryEntity.GetHistoryCmd(
+                      memorySettings.historyLimit, memorySettings.memoryFilters));
       logger.debug(
           "History retrieved for sessionId [{}], size [{}]", sessionId, history.messages().size());
       return history;

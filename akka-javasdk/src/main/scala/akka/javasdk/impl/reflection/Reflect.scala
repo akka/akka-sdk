@@ -404,6 +404,24 @@ private[impl] object Reflect {
     }
   }
 
+  def readAgentName[A <: Agent](agentClass: Class[A]): Option[String] = {
+    val nameOpt = readComponentName(agentClass)
+    nameOpt.orElse {
+      @nowarn("cat=deprecation")
+      val agentDescAnno = agentClass.annotationOption[AgentDescription]
+      agentDescAnno.map(_.name())
+    }
+  }
+
+  def readAgentDescription[A <: Agent](agentClass: Class[A]): Option[String] = {
+    val descOpt = readComponentDescription(agentClass)
+    descOpt.orElse {
+      @nowarn("cat=deprecation")
+      val agentDescAnno = agentClass.annotationOption[AgentDescription]
+      agentDescAnno.map(_.description())
+    }
+  }
+
   def readAgentRole[A <: Agent](agentClass: Class[A]): Option[String] = {
     val agentRoleAnn = agentClass.annotationOption[AgentRole]
     @nowarn("cat=deprecation")
