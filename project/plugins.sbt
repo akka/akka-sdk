@@ -2,6 +2,9 @@ addSbtPlugin("com.github.sbt" % "sbt-dynver" % "5.0.1")
 // Note: akka-grpc must be carefully kept in sync with the version used in the runtime.
 addSbtPlugin("com.lightbend.akka.grpc" % "sbt-akka-grpc" % "2.5.9")
 addSbtPlugin("com.github.sbt" % "sbt-java-formatter" % "0.10.0")
+// sbt-java-formatter 0.10.0 pulls in version that does not work with Java 25
+libraryDependencies += "com.google.googlejavaformat" % "google-java-format" % "1.32.0"
+
 addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.4.6")
 addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.10.0")
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.13.1")

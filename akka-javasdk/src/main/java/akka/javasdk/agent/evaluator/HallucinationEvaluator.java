@@ -67,8 +67,8 @@ public class HallucinationEvaluator extends LlmAsJudge {
   private static final String USER_MESSAGE_PROMPT_ID = COMPONENT_ID + ".user";
 
   private static final String SYSTEM_MESSAGE =
-      // tag::prompt[]
-      """
+          // tag::prompt[]
+"""
 In this task, you will be presented with a [Query], a [Reference text] and an [Answer].
 The answer is generated to the question based on the reference text. The answer may contain
 false information. You must use the reference text to determine if the answer to the question

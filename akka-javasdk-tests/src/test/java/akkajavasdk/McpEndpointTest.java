@@ -37,7 +37,7 @@ public class McpEndpointTest extends TestKitSupport {
     assertThat(listingResult.status()).isEqualTo(StatusCodes.OK);
     assertThat(listingResult.body().utf8String())
         .isEqualTo(
-            """
+"""
 {"jsonrpc":"2.0","id":1,"result":{"tools":[{"name":"echo","description":"A method that returns what is fed to it","inputSchema":{"type":"object","properties":{"echo":{"type":"string","description":"the string to echo"}},"required":["echo"]}}]}}
 """
                 .trim());
@@ -50,7 +50,7 @@ public class McpEndpointTest extends TestKitSupport {
             .POST("/mcp")
             .withRequestBody(
                 ContentTypes.APPLICATION_JSON,
-                """
+"""
 {"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"echo","arguments":{"echo":"hello world"}}}}}
 """
                     .getBytes(StandardCharsets.UTF_8))
@@ -59,7 +59,7 @@ public class McpEndpointTest extends TestKitSupport {
     assertThat(listingResult.status()).isEqualTo(StatusCodes.OK);
     assertThat(listingResult.body().utf8String())
         .isEqualTo(
-            """
+"""
 {"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"hello world"}],"isError":false}}
 """
                 .trim());
@@ -85,7 +85,7 @@ public class McpEndpointTest extends TestKitSupport {
     assertThat(listingResult.status()).isEqualTo(StatusCodes.OK);
     assertThat(listingResult.body().utf8String())
         .isEqualTo(
-            """
+"""
 {"jsonrpc":"2.0","id":3,"result":{"resourceTemplates":[{"uriTemplate":"file:///dynamic/{path}","name":"Dynamic resource","mimeType":"text/plain"}]}}
 """
                 .trim());
@@ -98,7 +98,7 @@ public class McpEndpointTest extends TestKitSupport {
             .POST("/mcp")
             .withRequestBody(
                 ContentTypes.APPLICATION_JSON,
-                """
+"""
 {"jsonrpc": "2.0","id": 2,"method": "resources/read","params": {"uri": "file:///dynamic/example.txt"}}
 """
                     .getBytes(StandardCharsets.UTF_8))
@@ -107,7 +107,7 @@ public class McpEndpointTest extends TestKitSupport {
     assertThat(listingResult.status()).isEqualTo(StatusCodes.OK);
     assertThat(listingResult.body().utf8String())
         .isEqualTo(
-            """
+"""
 {"jsonrpc":"2.0","id":2,"result":{"contents":[{"text":"This is a dynamic resource for example.txt","uri":"file:///dynamic/example.txt","mimeType":"text/plain"}]}}
 """
                 .trim());
@@ -129,7 +129,7 @@ public class McpEndpointTest extends TestKitSupport {
     assertThat(listingResult.status()).isEqualTo(StatusCodes.OK);
     assertThat(listingResult.body().utf8String())
         .isEqualTo(
-            """
+"""
 {"jsonrpc":"2.0","id":1,"result":{"resources":[{"uri":"file:///example.pdf","name":"example binary resource","description":"a pdf as sample of a binary resource","mimeType":"application/pdf"},{"uri":"file:///example.txt","name":"example text","description":"a sample text file","mimeType":"text/plain"}]}}
 """
                 .trim());
@@ -142,7 +142,7 @@ public class McpEndpointTest extends TestKitSupport {
             .POST("/mcp")
             .withRequestBody(
                 ContentTypes.APPLICATION_JSON,
-                """
+"""
 {"jsonrpc": "2.0","id": 2,"method": "resources/read","params": {"uri": "file:///example.txt"}}
 """
                     .getBytes(StandardCharsets.UTF_8))
@@ -151,7 +151,7 @@ public class McpEndpointTest extends TestKitSupport {
     assertThat(listingResult.status()).isEqualTo(StatusCodes.OK);
     assertThat(listingResult.body().utf8String())
         .isEqualTo(
-            """
+"""
 {"jsonrpc":"2.0","id":2,"result":{"contents":[{"text":"This is an example resource","uri":"file:///example.txt","mimeType":"text/plain"}]}}
 """
                 .trim());
@@ -164,7 +164,7 @@ public class McpEndpointTest extends TestKitSupport {
             .POST("/mcp")
             .withRequestBody(
                 ContentTypes.APPLICATION_JSON,
-                """
+"""
 {"jsonrpc": "2.0","id": 2,"method": "resources/read","params": {"uri": "file:///example.pdf"}}
 """
                     .getBytes(StandardCharsets.UTF_8))
@@ -200,7 +200,7 @@ public class McpEndpointTest extends TestKitSupport {
     assertThat(listingResult.status()).isEqualTo(StatusCodes.OK);
     assertThat(listingResult.body().utf8String())
         .isEqualTo(
-            """
+"""
 {"jsonrpc":"2.0","id":1,"result":{"prompts":[{"name":"code_review","description":"Code review prompt","arguments":[{"name":"code","description":"a prompt argument","required":true}]}]}}
 """
                 .trim());
@@ -232,7 +232,7 @@ public class McpEndpointTest extends TestKitSupport {
     assertThat(listingResult.status()).isEqualTo(StatusCodes.OK);
     assertThat(listingResult.body().utf8String())
         .isEqualTo(
-            """
+"""
 {"jsonrpc":"2.0","id":2,"result":{"description":"","messages":[{"content":{"type":"text","text":"Please review this Python code:\\\\ndef hello():\\n    print('world')"},"role":"user"}]}}
 """
                 .trim());

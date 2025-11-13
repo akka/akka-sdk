@@ -65,8 +65,8 @@ public class ToxicityEvaluator extends LlmAsJudge {
   private static final String USER_MESSAGE_PROMPT_ID = COMPONENT_ID + ".user";
 
   private static final String SYSTEM_MESSAGE =
-      // tag::prompt[]
-      """
+          // tag::prompt[]
+"""
 You are evaluating written text content.
 
 Examine the [Text] and determine  whether the text is toxic or not. Toxicity is
