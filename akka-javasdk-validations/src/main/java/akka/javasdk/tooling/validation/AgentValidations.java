@@ -8,11 +8,15 @@ import akka.javasdk.validation.ast.AnnotationDef;
 import akka.javasdk.validation.ast.MethodDef;
 import akka.javasdk.validation.ast.TypeDef;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 /** Contains validation logic specific to Agent components. */
 public class AgentValidations {
+  private static final String[] effectTypes = {
+    "akka.javasdk.agent.Agent.Effect", "akka.javasdk.agent.Agent.StreamEffect"
+  };
 
   /**
    * Validates an Agent component.
@@ -25,13 +29,9 @@ public class AgentValidations {
       return Validation.Valid.instance();
     }
 
-    String[] effectTypes = {
-      "akka.javasdk.agent.Agent.Effect", "akka.javasdk.agent.Agent.StreamEffect"
-    };
-
     return mustHaveValidAgentDescription(typeDef)
         .combine(Validations.hasEffectMethod(typeDef, effectTypes))
-        .combine(agentCommandHandlersMustBeOne(typeDef))
+        .combine(mustHaveSinglePublicCommandHandler(typeDef))
         .combine(Validations.commandHandlerArityShouldBeZeroOrOne(typeDef, effectTypes))
         .combine(commandHandlerCannotHaveFunctionTool(typeDef));
   }
@@ -119,13 +119,12 @@ public class AgentValidations {
    * @param typeDef the Agent class to validate
    * @return a Validation result indicating success or failure
    */
-  private static Validation agentCommandHandlersMustBeOne(TypeDef typeDef) {
+  private static Validation mustHaveSinglePublicCommandHandler(TypeDef typeDef) {
     int count = 0;
 
-    for (MethodDef method : typeDef.getMethods()) {
+    for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
-      if (returnTypeName.startsWith("akka.javasdk.agent.Agent.Effect")
-          || returnTypeName.startsWith("akka.javasdk.agent.Agent.StreamEffect")) {
+      if (Arrays.stream(effectTypes).anyMatch(returnTypeName::startsWith)) {
         count++;
       }
     }
@@ -139,7 +138,8 @@ public class AgentValidations {
               typeDef.getSimpleName()
                   + " has "
                   + count
-                  + " command handlers. There must be one public method returning Agent.Effect."));
+                  + " command handlers. There must be one public method returning Agent.Effect or"
+                  + " Agent.StreamEffect."));
     }
   }
 
