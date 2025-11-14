@@ -30,9 +30,11 @@ public class KeyValueEntityValidations {
     String[] effectTypes = {effectType, readOnlyEffectType};
 
     return Validations.hasEffectMethod(typeDef, effectType)
-        .combine(Validations.commandHandlerArityShouldBeZeroOrOne(typeDef, effectTypes))
+        .combine(
+            Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne(typeDef, effectTypes))
         .combine(commandHandlersMustHaveUniqueNames(typeDef, effectTypes))
-        .combine(functionToolMustBeOnEffectMethods(typeDef));
+        .combine(functionToolMustBeOnEffectMethods(typeDef))
+        .combine(Validations.functionToolMustNotBeOnPrivateMethods(typeDef));
   }
 
   /**
@@ -87,9 +89,10 @@ public class KeyValueEntityValidations {
   private static Validation functionToolMustBeOnEffectMethods(TypeDef typeDef) {
     List<String> errors = new ArrayList<>();
 
+    // check on non-public
     for (MethodDef method : typeDef.getMethods()) {
       if (method.hasAnnotation("akka.javasdk.annotations.FunctionTool")) {
-        boolean isEffectMethod = isIsEffectMethod(method);
+        boolean isEffectMethod = isEffectMethod(method);
 
         if (!isEffectMethod) {
           errors.add(
@@ -104,14 +107,11 @@ public class KeyValueEntityValidations {
     return Validation.of(errors);
   }
 
-  private static boolean isIsEffectMethod(MethodDef method) {
+  private static boolean isEffectMethod(MethodDef method) {
     String returnTypeName = method.getReturnType().getQualifiedName();
-    boolean isEffectMethod =
-        returnTypeName.equals("akka.javasdk.keyvalueentity.KeyValueEntity.Effect")
-            || returnTypeName.startsWith("akka.javasdk.keyvalueentity.KeyValueEntity.Effect<")
-            || returnTypeName.equals("akka.javasdk.keyvalueentity.KeyValueEntity.ReadOnlyEffect")
-            || returnTypeName.startsWith(
-                "akka.javasdk.keyvalueentity.KeyValueEntity.ReadOnlyEffect<");
-    return isEffectMethod;
+    return returnTypeName.equals("akka.javasdk.keyvalueentity.KeyValueEntity.Effect")
+        || returnTypeName.startsWith("akka.javasdk.keyvalueentity.KeyValueEntity.Effect<")
+        || returnTypeName.equals("akka.javasdk.keyvalueentity.KeyValueEntity.ReadOnlyEffect")
+        || returnTypeName.startsWith("akka.javasdk.keyvalueentity.KeyValueEntity.ReadOnlyEffect<");
   }
 }

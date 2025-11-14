@@ -70,5 +70,12 @@ class WorkflowValidationSpec extends AnyWordSpec with Matchers with CompilationT
         "Workflow methods annotated with @FunctionTool cannot return StepEffect.",
         "Only methods returning Effect or ReadOnlyEffect can be annotated with @FunctionTool.")
     }
+
+    "reject Workflow with @FunctionTool on private methods" in {
+      val result = compileTestSource("invalid/WorkflowWithFunctionToolOnPrivateMethod.java")
+      assertCompilationFailure(
+        result,
+        "Methods annotated with @FunctionTool must be public. Private methods cannot be annotated with @FunctionTool")
+    }
   }
 }

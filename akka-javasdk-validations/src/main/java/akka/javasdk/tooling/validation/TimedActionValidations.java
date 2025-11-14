@@ -25,8 +25,10 @@ public class TimedActionValidations {
 
     String effectType = "akka.javasdk.timedaction.TimedAction.Effect";
     return Validations.hasEffectMethod(typeDef, effectType)
-        .combine(Validations.commandHandlerArityShouldBeZeroOrOne(typeDef, effectType))
-        .combine(timedActionCannotHaveFunctionTools(typeDef));
+        .combine(
+            Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne(typeDef, effectType))
+        .combine(timedActionCannotHaveFunctionTools(typeDef))
+        .combine(Validations.functionToolMustNotBeOnPrivateMethods(typeDef));
   }
 
   /**

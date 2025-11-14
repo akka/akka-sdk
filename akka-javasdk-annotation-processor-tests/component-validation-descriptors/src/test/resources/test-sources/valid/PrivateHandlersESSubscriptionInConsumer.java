@@ -6,13 +6,13 @@ import akka.javasdk.consumer.Consumer;
 
 @Component(id = "consumer-ambiguous-es")
 @Consume.FromEventSourcedEntity(SimpleEventSourcedEntity.class)
-public class AmbiguousHandlersESSubscriptionInConsumer extends Consumer {
+public class PrivateHandlersESSubscriptionInConsumer extends Consumer {
 
-  public Effect methodOne(Integer message) {
+  public Effect onEvent(SimpleEventSourcedEntity.CounterEvent message) {
     return effects().produce(message);
   }
 
-  public Effect methodTwo(Integer message) {
+  Effect onEvent(Integer message) {
     return effects().produce(message);
   }
 }
