@@ -9,5 +9,5 @@ git fetch --tags --quiet 2> /dev/null || true
 
 readonly prefix="v"
 # Get the latest tag from all tags (not just those reachable from current commit)
-readonly tag=$(git tag -l "$prefix[0-9]*" | sort -V | tail -n 1)
+readonly tag=$(git tag -l "$prefix[0-9]*" 2> /dev/null | sort -V | tail -n 1)
 [ -n "$tag" ] && echo "${tag#$prefix}" || echo "0.0.0"
