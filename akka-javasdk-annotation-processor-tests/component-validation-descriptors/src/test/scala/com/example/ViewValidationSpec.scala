@@ -204,5 +204,12 @@ class ViewValidationSpec extends AnyWordSpec with Matchers with CompilationTestS
       val result = compileTestSource("invalid/ViewWithFunctionToolOnQueryStreamEffect.java")
       assertCompilationFailure(result, "View methods annotated with @FunctionTool cannot return QueryStreamEffect.")
     }
+
+    "reject View with @FunctionTool on private methods" in {
+      val result = compileTestSource("invalid/ViewWithFunctionToolOnPrivateMethod.java")
+      assertCompilationFailure(
+        result,
+        "Methods annotated with @FunctionTool must be public. Private methods cannot be annotated with @FunctionTool")
+    }
   }
 }

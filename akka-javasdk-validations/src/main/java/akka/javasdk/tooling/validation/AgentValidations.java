@@ -32,7 +32,8 @@ public class AgentValidations {
     return mustHaveValidAgentDescription(typeDef)
         .combine(Validations.hasEffectMethod(typeDef, effectTypes))
         .combine(mustHaveSinglePublicCommandHandler(typeDef))
-        .combine(Validations.commandHandlerArityShouldBeZeroOrOne(typeDef, effectTypes))
+        .combine(
+            Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne(typeDef, effectTypes))
         .combine(commandHandlerCannotHaveFunctionTool(typeDef));
   }
 
@@ -152,7 +153,7 @@ public class AgentValidations {
   private static Validation commandHandlerCannotHaveFunctionTool(TypeDef typeDef) {
     List<String> errors = new ArrayList<>();
 
-    for (MethodDef method : typeDef.getMethods()) {
+    for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
       // Check if this is a command handler (returns Effect or StreamEffect)
       if (returnTypeName.startsWith("akka.javasdk.agent.Agent.Effect")

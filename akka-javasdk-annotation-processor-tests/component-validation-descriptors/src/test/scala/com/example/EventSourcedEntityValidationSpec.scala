@@ -56,5 +56,12 @@ class EventSourcedEntityValidationSpec extends AnyWordSpec with Matchers with Co
         result,
         "EventSourcedEntity methods annotated with @FunctionTool must return Effect or ReadOnlyEffect")
     }
+
+    "reject EventSourcedEntity with @FunctionTool on private methods" in {
+      val result = compileTestSource("invalid/EventSourcedEntityWithFunctionToolOnPrivateMethod.java")
+      assertCompilationFailure(
+        result,
+        "Methods annotated with @FunctionTool must be public. Private methods cannot be annotated with @FunctionTool")
+    }
   }
 }

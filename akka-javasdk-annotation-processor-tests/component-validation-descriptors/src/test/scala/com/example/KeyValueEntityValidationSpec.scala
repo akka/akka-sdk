@@ -61,5 +61,12 @@ class KeyValueEntityValidationSpec extends AnyWordSpec with Matchers with Compil
         result,
         "KeyValueEntity methods annotated with @FunctionTool must return Effect or ReadOnlyEffect")
     }
+
+    "reject KeyValueEntity with @FunctionTool on private methods" in {
+      val result = compileTestSource("invalid/KeyValueEntityWithFunctionToolOnPrivateMethod.java")
+      assertCompilationFailure(
+        result,
+        "Methods annotated with @FunctionTool must be public. Private methods cannot be annotated with @FunctionTool")
+    }
   }
 }

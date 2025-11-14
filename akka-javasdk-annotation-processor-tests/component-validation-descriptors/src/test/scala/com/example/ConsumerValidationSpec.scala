@@ -172,6 +172,11 @@ class ConsumerValidationSpec extends AnyWordSpec with CompilationTestSupport {
       assertCompilationFailure(result, "Ambiguous delete handlers: [methodOne, methodTwo].")
     }
 
+    "accept Consumer with with multiple private command handlers for EventSourcedEntity" in {
+      val result = compileTestSource("valid/PrivateHandlersESSubscriptionInConsumer.java")
+      assertCompilationSuccess(result)
+    }
+
     "reject Consumer with ambiguous handlers for EventSourcedEntity" in {
       val result = compileTestSource("invalid/AmbiguousHandlersESSubscriptionInConsumer.java")
       assertCompilationFailure(
@@ -216,6 +221,13 @@ class ConsumerValidationSpec extends AnyWordSpec with CompilationTestSupport {
     "reject Consumer missing handler for EventSourcedEntity subscription" in {
       val result = compileTestSource("invalid/ConsumerMissingHandlerForES.java")
       assertCompilationFailure(result, "missing an event handler")
+    }
+
+    "reject Consumer with @FunctionTool on private methods" in {
+      val result = compileTestSource("invalid/ConsumerWithFunctionToolOnPrivateMethod.java")
+      assertCompilationFailure(
+        result,
+        "Methods annotated with @FunctionTool must be public. Private methods cannot be annotated with @FunctionTool")
     }
   }
 }

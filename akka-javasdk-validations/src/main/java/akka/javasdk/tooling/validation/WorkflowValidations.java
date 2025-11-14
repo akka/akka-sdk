@@ -23,15 +23,26 @@ public class WorkflowValidations {
       return Validation.Valid.instance();
     }
 
-    String[] effectTypes = {
-      "akka.javasdk.workflow.Workflow.Effect",
-      "akka.javasdk.workflow.Workflow.StepEffect",
-      "akka.javasdk.workflow.Workflow.ReadOnlyEffect"
+    String stepEffectType = "akka.javasdk.workflow.Workflow.StepEffect";
+
+    String[] strictlyPublicEffectTypes = {
+      "akka.javasdk.workflow.Workflow.Effect", "akka.javasdk.workflow.Workflow.ReadOnlyEffect"
     };
 
-    return Validations.hasEffectMethod(typeDef, effectTypes)
-        .combine(Validations.commandHandlerArityShouldBeZeroOrOne(typeDef, effectTypes))
-        .combine(functionToolMustNotBeOnStepEffect(typeDef));
+    return Validations
+        // a workflow is not required to have step methods,
+        // but must have at least one Effect or ReadOnlyEffect
+        // although a single ReadOnlyEffect is questionable
+        .hasEffectMethod(typeDef, strictlyPublicEffectTypes)
+        // method returning Effect or ReadOnlyEffect must be public
+        // users can still have private methods with arity > 1
+        .combine(
+            Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne(
+                typeDef, strictlyPublicEffectTypes))
+        // method returning StepEffect can be private and therefore must comply with arity rule
+        .combine(Validations.commandHandlerArityShouldBeZeroOrOne(typeDef, stepEffectType))
+        .combine(functionToolMustNotBeOnStepEffect(typeDef))
+        .combine(Validations.functionToolMustNotBeOnPrivateMethods(typeDef));
   }
 
   /**

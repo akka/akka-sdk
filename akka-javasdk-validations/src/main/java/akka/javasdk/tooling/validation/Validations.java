@@ -177,7 +177,7 @@ public class Validations {
     // Group handlers by their last parameter type
     java.util.Map<String, List<MethodDef>> handlersByType = new java.util.HashMap<>();
 
-    for (MethodDef method : typeDef.getMethods()) {
+    for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
       // Use startsWith to handle generic types like Effect<T>
       if (returnTypeName.equals(effectTypeName)
@@ -250,7 +250,7 @@ public class Validations {
 
     // Check for raw byte array handler
     boolean hasRawHandler = false;
-    for (MethodDef method : typeDef.getMethods()) {
+    for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
       if (returnTypeName.equals(effectTypeName)
           || returnTypeName.startsWith(effectTypeName + "<")) {
@@ -266,7 +266,7 @@ public class Validations {
 
     // Collect all handler parameter types (excluding raw handler and DeleteHandler)
     List<TypeRefDef> handlerParamTypes = new ArrayList<>();
-    for (MethodDef method : typeDef.getMethods()) {
+    for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
       if (returnTypeName.equals(effectTypeName)
           || returnTypeName.startsWith(effectTypeName + "<")) {
@@ -376,7 +376,7 @@ public class Validations {
     boolean hasDeleteHandler = false;
     boolean hasRawHandler = false;
 
-    for (MethodDef method : typeDef.getMethods()) {
+    for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
       if (returnTypeName.equals(effectTypeName)) {
         if (hasHandleDeletes(method)) {
@@ -396,7 +396,7 @@ public class Validations {
       return Validation.of(
           Validations.errorMessage(
               typeDef,
-              "missing handlers. The class must have one handler with '"
+              "missing handlers. The class must have one public handler with '"
                   + expectedStateType
                   + "' parameter and/or one parameterless method annotated with"
                   + " '@DeleteHandler'."));
@@ -442,7 +442,7 @@ public class Validations {
     boolean hasDeleteHandler = false;
     boolean hasRawHandler = false;
 
-    for (MethodDef method : typeDef.getMethods()) {
+    for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
       if (returnTypeName.equals(effectTypeName)) {
         if (hasHandleDeletes(method)) {
@@ -496,7 +496,7 @@ public class Validations {
 
     // Check if there's a raw event handler
     boolean hasRawHandler = false;
-    for (MethodDef method : typeDef.getMethods()) {
+    for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
       if ((returnTypeName.equals(effectTypeName) || returnTypeName.startsWith(effectTypeName + "<"))
           && !method.getParameters().isEmpty()) {
@@ -562,7 +562,7 @@ public class Validations {
 
   private static List<String> getHandlerParamTypes(TypeDef typeDef, String effectTypeName) {
     List<String> handlerParamTypes = new ArrayList<>();
-    for (MethodDef method : typeDef.getMethods()) {
+    for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
       if (returnTypeName.equals(effectTypeName)
           || returnTypeName.startsWith(effectTypeName + "<")) {
@@ -653,7 +653,7 @@ public class Validations {
    * @return a Validation result indicating success or failure
    */
   public static Validation hasEffectMethod(TypeDef typeDef, String... effectTypeNames) {
-    for (MethodDef method : typeDef.getMethods()) {
+    for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
       if (Arrays.stream(effectTypeNames).anyMatch(returnTypeName::startsWith)) {
         return Validation.Valid.instance();
@@ -666,7 +666,21 @@ public class Validations {
   }
 
   /**
-   * Validates that command handlers have zero or one the parameter.
+   * Validates that strictly public command handlers have zero or one the parameter.
+   *
+   * @param typeDef the component class to validate
+   * @param effectTypeNames the fully qualified effect type names
+   * @return a Validation result indicating success or failure
+   */
+  public static Validation strictlyPublicCommandHandlerArityShouldBeZeroOrOne(
+      TypeDef typeDef, String... effectTypeNames) {
+    return commandHandlerArityShouldBeZeroOrOne(
+        typeDef, typeDef.getPublicMethods(), effectTypeNames);
+  }
+
+  /**
+   * Validates that command handlers have zero or one the parameter. We mostly validate again public
+   * method, but workflows may have private StepEffect methods
    *
    * @param typeDef the component class to validate
    * @param effectTypeNames the fully qualified effect type names
@@ -674,9 +688,14 @@ public class Validations {
    */
   public static Validation commandHandlerArityShouldBeZeroOrOne(
       TypeDef typeDef, String... effectTypeNames) {
+    return commandHandlerArityShouldBeZeroOrOne(typeDef, typeDef.getMethods(), effectTypeNames);
+  }
+
+  private static Validation commandHandlerArityShouldBeZeroOrOne(
+      TypeDef typeDef, List<MethodDef> methods, String... effectTypeNames) {
     List<String> errors = new ArrayList<>();
 
-    for (MethodDef method : typeDef.getPublicMethods()) {
+    for (MethodDef method : methods) {
       String returnTypeName = method.getReturnType().getQualifiedName();
       if (Arrays.stream(effectTypeNames).anyMatch(returnTypeName::startsWith)) {
         int paramCount = method.getParameters().size();
@@ -689,6 +708,31 @@ public class Validations {
                       + "] must have zero or one argument. If you need to pass more arguments,"
                       + " wrap them in a class."));
         }
+      }
+    }
+
+    return Validation.of(errors);
+  }
+
+  /**
+   * Validates that @FunctionTool is not used on private methods.
+   *
+   * <p>This validation applies to all components except Agents. Agents have their own validation
+   * logic that allows @FunctionTool on private methods but not on command handlers.
+   *
+   * @param typeDef the component class to validate
+   * @return a Validation result indicating success or failure
+   */
+  public static Validation functionToolMustNotBeOnPrivateMethods(TypeDef typeDef) {
+    List<String> errors = new ArrayList<>();
+
+    for (MethodDef method : typeDef.getMethods()) {
+      if (!method.isPublic() && method.hasAnnotation("akka.javasdk.annotations.FunctionTool")) {
+        errors.add(
+            errorMessage(
+                method,
+                "Methods annotated with @FunctionTool must be public. Private methods cannot be"
+                    + " annotated with @FunctionTool."));
       }
     }
 

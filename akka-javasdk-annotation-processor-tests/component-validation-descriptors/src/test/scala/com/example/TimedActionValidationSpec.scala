@@ -29,6 +29,13 @@ class TimedActionValidationSpec extends AnyWordSpec with CompilationTestSupport 
       assertCompilationFailure(result, "TimedAction methods cannot be annotated with @FunctionTool")
     }
 
+    "reject TimedAction with @FunctionTool on private methods" in {
+      val result = compileTestSource("invalid/TimedActionWithFunctionToolOnPrivateMethod.java")
+      assertCompilationFailure(
+        result,
+        "Methods annotated with @FunctionTool must be public. Private methods cannot be annotated with @FunctionTool")
+    }
+
     "return Valid for TimedAction with 0-arity method returning TimedAction.Effect" in {
       val result = compileTestSource("valid/ValidTimedActionNoArg.java")
       assertCompilationSuccess(result)
