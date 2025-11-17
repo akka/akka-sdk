@@ -37,7 +37,12 @@ class AgentValidationSpec extends AnyWordSpec with CompilationTestSupport {
     }
 
     "accept Agent with multiple private command handlers" in {
-      val result = compileTestSource("invalid/AgentWithMultipleCommandPrivateHandlers.java")
+      val result = compileTestSource("valid/AgentWithMultipleCommandPrivateHandlers.java")
+      assertCompilationSuccess(result)
+    }
+
+    "accept Agent with @FunctionTool on private methods" in {
+      val result = compileTestSource("valid/AgentWithFunctionToolOnPrivateMethod.java")
       assertCompilationSuccess(result)
     }
 
