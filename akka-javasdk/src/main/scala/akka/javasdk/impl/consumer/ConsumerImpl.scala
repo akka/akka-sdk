@@ -9,11 +9,13 @@ import java.util.concurrent.TimeoutException
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.Promise
 import scala.jdk.DurationConverters.JavaDurationOps
 import scala.jdk.OptionConverters.RichOption
 import scala.util.control.NonFatal
 
 import akka.actor.ActorSystem
+import akka.actor.Cancellable
 import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
 import akka.javasdk.Metadata
@@ -147,11 +149,15 @@ private[impl] final class ConsumerImpl[C <: Consumer](
               metadata = MetadataImpl.toSpi(metadata)))
         }
       case AsyncEffect(futureEffect) =>
+        val (timeoutCancellable, timeoutFuture) = asyncEffectTimeoutFor(message)
         Future
-          .firstCompletedOf(
-            Seq(futureEffect, akka.pattern.after(asyncResultTimeout) { throw timeoutErrorFor(message) }))
-          .flatMap { effect => toSpiEffect(message, effect) }
+          .firstCompletedOf(Seq(futureEffect, timeoutFuture))
+          .flatMap { effect =>
+            timeoutCancellable.cancel()
+            toSpiEffect(message, effect)
+          }
           .recover { case NonFatal(ex) =>
+            timeoutCancellable.cancel()
             handleUnexpectedException(message, ex)
           }
       case unknown =>
@@ -159,16 +165,21 @@ private[impl] final class ConsumerImpl[C <: Consumer](
     }
   }
 
-  private def timeoutErrorFor(message: Message) = {
-    val cloudEvent = MetadataImpl.of(message.metadata)
-    val additionalDetails =
-      Seq(
-        message.payload.map(p => s"contentType: ${p.contentType}"),
-        cloudEvent.subjectScala.map(s => s"subject: [$s]"),
-        cloudEvent.getScala("ce-sequence").map(s => s"sequence: [$s]")).flatten.mkString(", ")
+  private def asyncEffectTimeoutFor(message: Message): (Cancellable, Future[Consumer.Effect]) = {
+    val promise = Promise[Consumer.Effect]()
+    val cancellable = system.scheduler.scheduleOnce(asyncResultTimeout) {
+      val cloudEvent = MetadataImpl.of(message.metadata)
+      val additionalDetails =
+        Seq(
+          message.payload.map(p => s"contentType: ${p.contentType}"),
+          cloudEvent.subjectScala.map(s => s"subject: [$s]"),
+          cloudEvent.getScala("ce-sequence").map(s => s"sequence: [$s]")).flatten.mkString(", ")
 
-    new TimeoutException(
-      s"Event to consumer [${consumerClass.getName}], $additionalDetails did not complete within $asyncResultTimeout")
+      promise.failure(new TimeoutException(
+        s"Event to consumer [${consumerClass.getName}], $additionalDetails did not complete within $asyncResultTimeout"))
+    }
+
+    (cancellable, promise.future)
   }
 
   private def handleUnexpectedException(message: Message, ex: Throwable): Effect = {
