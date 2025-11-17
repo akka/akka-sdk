@@ -13,8 +13,10 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Patch;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.http.AbstractHttpEndpoint;
 import akka.javasdk.http.HttpException;
 import akka.javasdk.http.HttpResponses;
+import akka.javasdk.view.EntryWithMetadata;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import customer.application.CustomerEntity;
@@ -27,6 +29,7 @@ import customer.application.CustomersListByName;
 import customer.domain.Address;
 import customer.domain.Customer;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,7 +38,7 @@ import java.util.Optional;
 // Note: Called in customer-registry-subscriber integration test so must be allowed also from the other service or test will fail
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 @HttpEndpoint("/customer")
-public class CustomerEndpoint {
+public class CustomerEndpoint extends AbstractHttpEndpoint {
 
   private final ComponentClient componentClient;
 
@@ -131,12 +134,12 @@ public class CustomerEndpoint {
   @Get("/by-city-sse/{cityName}")
   public HttpResponse continousByCityNameServerSentEvents(String cityName) {
     // view will keep stream going, toggled with streamUpdates = true on the query
-    Source<Customer, NotUsed> customerSummarySource = componentClient
+    Source<EntryWithMetadata<Customer>, NotUsed> customerSummarySource = componentClient
       .forView() // <1>
-      .stream(CustomersByCity::continuousCustomersInCity)
-      .source(cityName);
+      .moreSpecificStream(CustomersByCity::continuousCustomersInCity)
+      .entriesSource(cityName, Instant.parse(requestContext().lastSeenSseEventId().get()));
 
-    return HttpResponses.serverSentEvents(customerSummarySource); // <2>
+    return HttpResponses.serverSentEventsForView(customerSummarySource); // <2>
   }
 
   // end::sse-view-updates[]
