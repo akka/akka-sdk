@@ -39,7 +39,8 @@ public class ViewValidations {
             .combine(viewQueriesWithStreamUpdatesMustBeStreaming(typeDef))
             .combine(viewQueryMethodArityShouldBeZeroOrOne(typeDef))
             .combine(viewMultipleTableUpdatersMustHaveTableAnnotations(typeDef))
-            .combine(functionToolOnlyOnQueryEffect(typeDef));
+            .combine(functionToolOnlyOnQueryEffect(typeDef))
+            .combine(Validations.functionToolMustNotBeOnPrivateMethods(typeDef));
 
     // Validate each TableUpdater
     for (TypeDef updater : tableUpdaters) {
@@ -106,7 +107,7 @@ public class ViewValidations {
    */
   private static Validation viewMustHaveAtLeastOneQueryMethod(TypeDef typeDef) {
     boolean hasAtLeastOneQuery =
-        typeDef.getMethods().stream()
+        typeDef.getPublicMethods().stream()
             .anyMatch(method -> method.hasAnnotation("akka.javasdk.annotations.Query"));
 
     if (!hasAtLeastOneQuery) {
@@ -130,7 +131,7 @@ public class ViewValidations {
   private static Validation validateQueryResultTypes(TypeDef typeDef) {
     List<String> errors = new ArrayList<>();
 
-    for (MethodDef method : typeDef.getMethods()) {
+    for (MethodDef method : typeDef.getPublicMethods()) {
       if (method.hasAnnotation("akka.javasdk.annotations.Query")) {
         String returnTypeName = method.getReturnType().getQualifiedName();
 
@@ -195,7 +196,7 @@ public class ViewValidations {
   private static Validation viewQueriesWithStreamUpdatesMustBeStreaming(TypeDef typeDef) {
     List<String> errors = new ArrayList<>();
 
-    for (MethodDef method : typeDef.getMethods()) {
+    for (MethodDef method : typeDef.getPublicMethods()) {
       Optional<AnnotationDef> queryAnn = method.findAnnotation("akka.javasdk.annotations.Query");
       if (queryAnn.isPresent()) {
         Optional<Boolean> streamUpdates = queryAnn.get().getBooleanValue("streamUpdates");
@@ -224,7 +225,7 @@ public class ViewValidations {
   private static Validation viewQueryMethodArityShouldBeZeroOrOne(TypeDef typeDef) {
     List<String> errors = new ArrayList<>();
 
-    for (MethodDef method : typeDef.getMethods()) {
+    for (MethodDef method : typeDef.getPublicMethods()) {
       if (method.hasAnnotation("akka.javasdk.annotations.Query")) {
         int paramCount = method.getParameters().size();
         if (paramCount > 1) {
@@ -280,7 +281,9 @@ public class ViewValidations {
         .combine(viewCommonStateSubscriptionValidation(tableUpdater))
         .combine(viewMustHaveCorrectUpdateHandlerWhenTransformingViewUpdates(tableUpdater))
         .combine(Validations.ambiguousHandlerValidations(tableUpdater, effectType))
-        .combine(Validations.commandHandlerArityShouldBeZeroOrOne(tableUpdater, effectType))
+        .combine(
+            Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne(
+                tableUpdater, effectType))
         .combine(viewMissingHandlerValidations(tableUpdater, effectType))
         .combine(Validations.noSubscriptionMethodWithAcl(tableUpdater, effectType))
         .combine(Validations.subscriptionMethodMustHaveOneParameter(tableUpdater, effectType));
@@ -370,7 +373,7 @@ public class ViewValidations {
       // Types differ - need to check for transformation handler
       boolean hasTransformationHandler = false;
 
-      for (MethodDef method : tableUpdater.getMethods()) {
+      for (MethodDef method : tableUpdater.getPublicMethods()) {
         String returnTypeName = method.getReturnType().getQualifiedName();
         if (returnTypeName.startsWith("akka.javasdk.view.TableUpdater.Effect")) {
           // Check if the return type's generic parameter matches the table type
@@ -457,7 +460,7 @@ public class ViewValidations {
       // Check if there's any update handler or delete handler
       boolean hasAnyHandler = false;
 
-      for (MethodDef method : tableUpdater.getMethods()) {
+      for (MethodDef method : tableUpdater.getPublicMethods()) {
         String returnTypeName = method.getReturnType().getQualifiedName();
         if (returnTypeName.startsWith(effectTypeName)) {
           if (Validations.hasHandleDeletes(method)) {
@@ -601,7 +604,7 @@ public class ViewValidations {
     List<MethodDef> deleteHandlers = new ArrayList<>();
     List<MethodDef> deleteHandlersWithParams = new ArrayList<>();
 
-    for (MethodDef method : tableUpdater.getMethods()) {
+    for (MethodDef method : tableUpdater.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
       if (returnTypeName.startsWith("akka.javasdk.view.TableUpdater.Effect")) {
         if (Validations.hasHandleDeletes(method)) {
@@ -653,7 +656,7 @@ public class ViewValidations {
 
     List<MethodDef> updateMethods = new ArrayList<>();
 
-    for (MethodDef method : tableUpdater.getMethods()) {
+    for (MethodDef method : tableUpdater.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
       if (returnTypeName.startsWith("akka.javasdk.view.TableUpdater.Effect")) {
         if (!Validations.hasHandleDeletes(method)) {
