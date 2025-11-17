@@ -9,8 +9,7 @@ import static org.assertj.core.api.Assertions.*;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.model.*;
 import akka.http.javadsl.model.headers.RawHeader;
-import akka.http.scaladsl.unmarshalling.sse.LineParser;
-import akka.http.scaladsl.unmarshalling.sse.ServerSentEventParser;
+import akka.http.scaladsl.unmarshalling.sse.EventStreamParser;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.stream.javadsl.Sink;
 import akka.util.ByteString;
@@ -179,7 +178,7 @@ public class HttpEndpointTest extends TestKitSupport {
 
   @Test
   public void shouldSupportSseIds() {
-    // FIXME: no testkit/http client support for SSE, testing currently requires Akka HTTP internals
+    // FIXME: no convenient testkit/http client support for SSE
     var url = "http://" + testKit.getHost() + ":" + testKit.getPort() + "/serversentevents";
     var initialResult =
         await(
@@ -196,8 +195,7 @@ public class HttpEndpointTest extends TestKitSupport {
             initialResult
                 .entity()
                 .getDataBytes()
-                .via(new LineParser(1024)) // FIXME internal Akka HTTP api
-                .via(new ServerSentEventParser(1024, true)) // FIXME internal Akka HTTP api
+                .via(EventStreamParser.apply(1024, 1024))
                 .take(2)
                 .runWith(Sink.seq(), testKit.getMaterializer()));
 
@@ -225,8 +223,7 @@ public class HttpEndpointTest extends TestKitSupport {
             reconnectResponse
                 .entity()
                 .getDataBytes()
-                .via(new LineParser(1024)) // FIXME internal Akka HTTP api
-                .via(new ServerSentEventParser(1024, true)) // FIXME internal Akka HTTP api
+                .via(EventStreamParser.apply(1024, 1024))
                 .take(1)
                 .runWith(Sink.seq(), testKit.getMaterializer()));
 
