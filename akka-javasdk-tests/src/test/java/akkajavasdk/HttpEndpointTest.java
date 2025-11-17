@@ -4,10 +4,14 @@
 
 package akkajavasdk;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 
+import akka.http.javadsl.Http;
 import akka.http.javadsl.model.*;
+import akka.http.javadsl.model.headers.RawHeader;
+import akka.http.scaladsl.unmarshalling.sse.EventStreamParser;
 import akka.javasdk.testkit.TestKitSupport;
+import akka.stream.javadsl.Sink;
 import akka.util.ByteString;
 import akkajavasdk.components.http.ResourcesEndpoint;
 import akkajavasdk.components.http.TestEndpoint;
@@ -170,5 +174,61 @@ public class HttpEndpointTest extends TestKitSupport {
             .invoke();
     assertThat(response.status()).isEqualTo(StatusCodes.OK);
     assertThat(response.body().value()).isEqualTo(bigDecimal);
+  }
+
+  @Test
+  public void shouldSupportSseIds() {
+    // FIXME: no convenient testkit/http client support for SSE
+    var url = "http://" + testKit.getHost() + ":" + testKit.getPort() + "/serversentevents";
+    var initialResult =
+        await(
+            Http.get(testKit.getActorSystem())
+                .singleRequest(
+                    HttpRequest.GET(url).addHeader(RawHeader.create("Accept", "text/event-stream")))
+                .toCompletableFuture());
+
+    assertThat(initialResult.status()).isEqualTo(StatusCodes.OK);
+    assertThat(initialResult.entity().getContentType())
+        .isEqualTo(ContentTypes.parse("text/event-stream"));
+    var firstEvents =
+        await(
+            initialResult
+                .entity()
+                .getDataBytes()
+                .via(EventStreamParser.apply(1024, 1024))
+                .take(2)
+                .runWith(Sink.seq(), testKit.getMaterializer()));
+
+    assertThat(firstEvents).hasSize(2);
+    assertThat(firstEvents.get(0).id().get()).isEqualTo("1");
+    assertThat(firstEvents.get(1).id().get()).isEqualTo("2");
+
+    // Note: not stateful, does not depend on the previous call, just together because otherwise
+    // related
+    var reconnectResponse =
+        await(
+            Http.get(testKit.getActorSystem())
+                .singleRequest(
+                    HttpRequest.GET(url)
+                        .addHeader(RawHeader.create("Accept", "text/event-stream"))
+                        .addHeader(RawHeader.create("Last-Event-ID", "2")))
+                .toCompletableFuture());
+
+    assertThat(reconnectResponse.status()).isEqualTo(StatusCodes.OK);
+    assertThat(reconnectResponse.entity().getContentType())
+        .isEqualTo(ContentTypes.parse("text/event-stream"));
+
+    var reconnectEvents =
+        await(
+            reconnectResponse
+                .entity()
+                .getDataBytes()
+                .via(EventStreamParser.apply(1024, 1024))
+                .take(1)
+                .runWith(Sink.seq(), testKit.getMaterializer()));
+
+    assertThat(reconnectEvents).hasSize(1);
+    assertThat(reconnectEvents.get(0).id().get())
+        .isEqualTo("3"); // starts from the reported Last-Event-ID
   }
 }
