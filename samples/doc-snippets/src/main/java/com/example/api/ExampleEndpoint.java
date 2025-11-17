@@ -1,5 +1,6 @@
 package com.example.api;
 
+import akka.NotUsed;
 import akka.actor.Cancellable;
 import akka.http.javadsl.model.ContentType;
 import akka.http.javadsl.model.ContentTypes;
@@ -22,6 +23,8 @@ import akka.javasdk.http.HttpResponses;
 import akka.stream.Materializer;
 import akka.stream.javadsl.Source;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 // tag::basic-endpoint[]
@@ -212,7 +215,38 @@ public class ExampleEndpoint extends AbstractHttpEndpoint { // <1>
 
     return HttpResponses.serverSentEvents(timeSource); // <3>
   }
+
   // end::basic-sse[]
+
+  // tag::sse-with-id[]
+  record ChatMessage(
+    Instant timestamp, // <1>
+    String message
+  ) {}
+
+  public interface ChatRoom {
+    Source<ChatMessage, NotUsed> streamChat(Optional<Instant> startFrom); // <1>
+  }
+
+  private final ChatRoom chatRoom = // end::sse-with-id[]
+    null;
+
+  // tag::sse-with-id[]
+
+  @Get("/chatroom")
+  public HttpResponse resumableStream() {
+    Optional<Instant> startFrom = requestContext()
+      .lastSeenSseEventId() // <3>
+      .map(Instant::parse);
+    Source<ChatMessage, NotUsed> chatMessageStream = chatRoom.streamChat(startFrom);
+
+    return HttpResponses.serverSentEvents(
+      chatMessageStream,
+      chatMessage -> chatMessage.timestamp().toString()
+    ); // <2>
+  }
+  // end::sse-with-id[]
+
   // tag::header-access[]
 }
 // end::header-access[]

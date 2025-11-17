@@ -76,4 +76,10 @@ public interface RequestContext extends Context {
    * @return The query parameters of the current request.
    */
   QueryParams queryParams();
+
+  /**
+   * @return The last seen SSE id sent by the client on reconnects. If that is not sent by the
+   *     client Optional.empty is returned.
+   */
+  Optional<String> lastSeenSseEventId();
 }

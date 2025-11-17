@@ -324,6 +324,16 @@ Any Akka stream `Source` of elements where the elements can be serialized to JSO
 be turned into an SSE endpoint method. If the stream is idle, a heartbeat is emitted every 5 seconds
 to make sure the response stream is kept alive through proxies and firewalls.
 
+==== Streaming responses requires extra thought
+
+Streaming responses from an HTTP endpoint is tied to the specific instance they where connected to when the request was first made.
+
+Akka is a distributed system, which means that services instances can start and stop based on decisions the infrastructure makes, because the service upgrading, or  other unanticipated issues. Connections are also
+forcibly disconnected at an interval to make sure connected clients are alive and that the connections
+are rebalanced over the instances of the service.
+
+Browsers implementing SSE has reconnecting built in, but it important that SSE endpoint methods are designed with restarts in mind and does not rely on the stream itself to keep a local JVM object alive. A reconnect may not end up in the same service instance as the original connection.
+
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
 ----
@@ -333,7 +343,22 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java
 <2> Every time a tick is seen, we turn it into a system clock timestamp
 <3> Passing the `Source` to `serverSentEvents` returns a `HttpResponse` for the endpoint method.
 
-A more realistic use case would be to stream the changes from a view, using the xref:views.adoc#_streaming_view_updates[stream view updates view
+For this example reconnects are fine, since they will just continue from the point in time they reconnected. The endpoint
+does not need any additional logic for this.
+
+In many cases you will want to continue the stream from the event the client saw last, this is built into the SSE support
+in browsers but requires some extra care in HTTP endpoints:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=sse-with-id]
+----
+<1> An imagined chat room service returning a stream of chat messages, potentially starting from a given timestamp.
+<2> `HttpResponses.serverSentEvent` overload accepting a function that extracts a value to use as id for the SSE event
+<3> On incoming requests, if the request is a client reconnecting, the last seen id is available through `RequestContext.lastSeenSseEventId`
+
+It is possible to stream a query result and then additional updates whenever the view progresses, using the xref:views.adoc#_streaming_view_updates[stream view updates view
 feature].
 
 [source,java,indent=0]
@@ -343,6 +368,8 @@ include::example$key-value-customer-registry/src/main/java/customer/api/Customer
 ----
 <1> The view is annotated with `@Query(value = [a query], streamUpdates = true)` to keep polling the database after the initial result is returned and return updates matching the query filter
 <2> The stream of view entries and then updates are turned into an SSE response.
+
+Note that on client reconnects, this example will start the reconnected stream issuing the full query, and then start streaming individual updates.
 
 Another realistic example is to periodically poll an entity for its state,
 but only emit an element over SSE when the state changes:
@@ -358,6 +385,10 @@ include::example$key-value-customer-registry/src/main/java/customer/api/Customer
 <4> Turn the stream to a SSE response
 
 This uses more advanced Akka stream operators, you can find more details of those in the link:https://doc.akka.io/libraries/akka-core/current/stream/operators/index.html[Akka libraries documentation].
+
+Note that on client reconnects, this example will start the reconnected stream with the full state, and then stream partial changes. Depending
+on the use case it might be possible to continue just emitting changes by extracting event ids and handle a `RequestContext.lastSeenSseEventId`
+being present in the request.
 
 == See also
 

@@ -973,6 +973,9 @@ private final class Sdk(
           QueryParamsImpl(context.httpRequest.uri.query())
         }
 
+        override def lastSeenSseEventId(): Optional[String] =
+          context.requestHeaders.header("Last-Event-ID").map(_.value()).toJava
+
         override def selfRegion(): String = regionInfo.selfRegion
       }
       val instance = wiredInstance(httpEndpointClass) {
