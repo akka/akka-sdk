@@ -271,7 +271,7 @@ private[impl] final class AgentImpl[A <: Agent](
             new SpiAgent.RequestModelEffect(
               modelProvider = spiModelProvider,
               systemMessage = systemMessage,
-              userMessage = req.userMessage,
+              userMessage = new SpiAgent.UserMessage(req.userMessage),
               additionalContext = additionalContext,
               toolDescriptors = toolDescriptors,
               callToolFunction = request => Future(toolExecutor.execute(request))(sdkExecutionContext),
