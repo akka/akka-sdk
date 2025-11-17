@@ -7,6 +7,7 @@ package akka.javasdk.impl.client
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
+import java.time.Instant
 import java.util.Optional
 
 import scala.concurrent.ExecutionContext
@@ -25,12 +26,18 @@ import akka.javasdk.client.ComponentStreamMethodRef
 import akka.javasdk.client.ComponentStreamMethodRef1
 import akka.javasdk.client.NoEntryFoundException
 import akka.javasdk.client.ViewClient
+import akka.javasdk.client.ViewStreamMethodRef
+import akka.javasdk.client.ViewStreamMethodRef1
 import akka.javasdk.impl.ComponentDescriptorFactory
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.view.ViewStreamMethodRefImpl
+import akka.javasdk.impl.view.ViewStreamMethodRefImpl1
+import akka.javasdk.view.EntryWithMetadata
 import akka.javasdk.view.View
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiMetadata
+import akka.runtime.sdk.spi.SpiMetadataEntry
 import akka.runtime.sdk.spi.ViewRequest
 import akka.runtime.sdk.spi.ViewType
 import akka.runtime.sdk.spi.{ ViewClient => RuntimeViewClient }
@@ -233,5 +240,58 @@ private[javasdk] final case class ViewClientImpl(
           serializer.fromBytes(viewMethodProperties.queryReturnType.asInstanceOf[Class[R]], viewResult.payload)
         }
         .asJava
+  }
+
+  override def moreSpecificStream[T, R](
+      lambda: function.Function[T, View.QueryStreamEffect[R]]): ViewStreamMethodRef[R] = {
+    val method = MethodRefResolver.resolveMethodRef(lambda)
+    val viewMethodProperties = validateAndExtractViewMethodProperties[R](method)
+
+    new ViewStreamMethodRefImpl[R]((startFrom: Option[Instant]) =>
+      viewClient
+        .queryStream(
+          new ViewRequest(
+            viewMethodProperties.componentId,
+            viewMethodProperties.methodName,
+            encodeArgument(viewMethodProperties.method, None),
+            startFrom match {
+              case Some(instant) =>
+                new SpiMetadata(Vector(new SpiMetadataEntry("starting-offset", instant.toString))) // ISO-8601 instant
+              case None => SpiMetadata.empty
+            }))
+        .map { viewResult =>
+          // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
+          new EntryWithMetadata(
+            serializer.fromBytes(viewMethodProperties.queryReturnType.asInstanceOf[Class[R]], viewResult.payload),
+            MetadataImpl.of(viewResult.metadata))
+        }
+        .asJava)
+  }
+
+  override def moreSpecificStream[T, A1, R](
+      lambda: function.Function2[T, A1, View.QueryStreamEffect[R]]): ViewStreamMethodRef1[A1, R] = {
+    val method = MethodRefResolver.resolveMethodRef(lambda)
+    val viewMethodProperties = validateAndExtractViewMethodProperties[R](method)
+
+    new ViewStreamMethodRefImpl1[A1, R]((arg: A1, startFrom: Option[Instant]) =>
+      viewClient
+        .queryStream(
+          new ViewRequest(
+            viewMethodProperties.componentId,
+            viewMethodProperties.methodName,
+            encodeArgument(viewMethodProperties.method, Some(arg)),
+            startFrom match {
+              case Some(instant) =>
+                new SpiMetadata(Vector(new SpiMetadataEntry("starting-offset", instant.toString))) // ISO-8601 instant
+              case None => SpiMetadata.empty
+            }))
+        .map { viewResult =>
+          // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
+          new EntryWithMetadata(
+            serializer.fromBytes(viewMethodProperties.queryReturnType.asInstanceOf[Class[R]], viewResult.payload),
+            MetadataImpl.of(viewResult.metadata))
+        }
+        .asJava)
+
   }
 }
