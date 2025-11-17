@@ -37,4 +37,21 @@ public interface ViewClient {
    */
   <T, A1, R> ComponentStreamMethodRef1<A1, R> stream(
       Function2<T, A1, View.QueryStreamEffect<R>> methodRef);
+
+  // FIXME method names names
+  //  best would be to replace existing stream, that's not quite source compatible but maybe ok
+  // anyway?
+  //  (since users not expected to keep the returned ComponentStreamMethodRef in a field)
+
+  /** Pass in a View query method reference, e.g. {@code UserByCity::findAllInCity} */
+  <T, R> ViewStreamMethodRef<R> moreSpecificStream(
+      Function<T, View.QueryStreamEffect<R>> methodRef);
+
+  /**
+   * Pass in a View query method reference, e.g. {@code UserByCity::findAllInCity}
+   *
+   * @param <A1> the type of parameter expected by the call
+   */
+  <T, A1, R> ViewStreamMethodRef1<A1, R> moreSpecificStream(
+      Function2<T, A1, View.QueryStreamEffect<R>> methodRef);
 }
