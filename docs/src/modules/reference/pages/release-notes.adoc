@@ -12,6 +12,9 @@ Current versions
 
 == November 2025
 
+* https://github.com/akka/akka-sdk/releases/tag/v3.5.8[Akka SDK 3.5.8]
+- fix compile time validation for Agent handlers
+
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.7[Akka SDK 3.5.7]
 - component as agent function tool
 - agent memory filters

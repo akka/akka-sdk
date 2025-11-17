@@ -34,10 +34,12 @@ public class ConsumerValidations {
         .combine(topicPublicationValidations(typeDef))
         .combine(publishStreamIdMustBeFilled(typeDef))
         .combine(Validations.ambiguousHandlerValidations(typeDef, effectType))
-        .combine(Validations.commandHandlerArityShouldBeZeroOrOne(typeDef, effectType))
+        .combine(
+            Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne(typeDef, effectType))
         .combine(Validations.missingHandlerValidations(typeDef, effectType))
         .combine(Validations.noSubscriptionMethodWithAcl(typeDef, effectType))
-        .combine(Validations.subscriptionMethodMustHaveOneParameter(typeDef, effectType));
+        .combine(Validations.subscriptionMethodMustHaveOneParameter(typeDef, effectType))
+        .combine(Validations.functionToolMustNotBeOnPrivateMethods(typeDef));
   }
 
   /**
@@ -170,7 +172,7 @@ public class ConsumerValidations {
     List<MethodDef> deleteHandlersWithParams = new ArrayList<>();
 
     // Collect subscription methods
-    for (MethodDef method : typeDef.getMethods()) {
+    for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
       if (returnTypeName.equals(effectTypeName)) {
 

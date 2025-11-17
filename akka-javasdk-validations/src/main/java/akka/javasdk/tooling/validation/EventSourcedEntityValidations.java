@@ -32,10 +32,12 @@ public class EventSourcedEntityValidations {
     String[] effectTypes = {effectType, readOnlyEffectType};
 
     return Validations.hasEffectMethod(typeDef, effectType)
-        .combine(Validations.commandHandlerArityShouldBeZeroOrOne(typeDef, effectTypes))
+        .combine(
+            Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne(typeDef, effectTypes))
         .combine(commandHandlersMustHaveUniqueNames(typeDef, effectTypes))
         .combine(eventTypeMustBeSealed(typeDef))
-        .combine(functionToolMustBeOnEffectMethods(typeDef));
+        .combine(functionToolMustBeOnEffectMethods(typeDef))
+        .combine(Validations.functionToolMustNotBeOnPrivateMethods(typeDef));
   }
 
   /**
