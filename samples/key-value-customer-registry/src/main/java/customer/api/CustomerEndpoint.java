@@ -136,10 +136,10 @@ public class CustomerEndpoint extends AbstractHttpEndpoint {
     // view will keep stream going, toggled with streamUpdates = true on the query
     Source<EntryWithMetadata<Customer>, NotUsed> customerSummarySource = componentClient
       .forView() // <1>
-      .moreSpecificStream(CustomersByCity::continuousCustomersInCity)
-      .entriesSource(cityName, Instant.parse(requestContext().lastSeenSseEventId().get()));
+      .stream(CustomersByCity::continuousCustomersInCity)
+      .entriesSource(cityName, requestContext().lastSeenSseEventId().map(Instant::parse)); // <2>
 
-    return HttpResponses.serverSentEventsForView(customerSummarySource); // <2>
+    return HttpResponses.serverSentEventsForView(customerSummarySource); // <3>
   }
 
   // end::sse-view-updates[]

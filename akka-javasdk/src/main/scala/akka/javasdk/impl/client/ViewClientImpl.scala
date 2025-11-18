@@ -7,7 +7,6 @@ package akka.javasdk.impl.client
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
-import java.time.Instant
 import java.util.Optional
 
 import scala.concurrent.ExecutionContext
@@ -22,8 +21,6 @@ import akka.javasdk.client.ComponentInvokeOnlyMethodRef
 import akka.javasdk.client.ComponentInvokeOnlyMethodRef1
 import akka.javasdk.client.ComponentMethodRef
 import akka.javasdk.client.ComponentMethodRef1
-import akka.javasdk.client.ComponentStreamMethodRef
-import akka.javasdk.client.ComponentStreamMethodRef1
 import akka.javasdk.client.NoEntryFoundException
 import akka.javasdk.client.ViewClient
 import akka.javasdk.client.ViewStreamMethodRef
@@ -33,11 +30,8 @@ import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.view.ViewStreamMethodRefImpl
 import akka.javasdk.impl.view.ViewStreamMethodRefImpl1
-import akka.javasdk.view.EntryWithMetadata
 import akka.javasdk.view.View
 import akka.runtime.sdk.spi.BytesPayload
-import akka.runtime.sdk.spi.SpiMetadata
-import akka.runtime.sdk.spi.SpiMetadataEntry
 import akka.runtime.sdk.spi.ViewRequest
 import akka.runtime.sdk.spi.ViewType
 import akka.runtime.sdk.spi.{ ViewClient => RuntimeViewClient }
@@ -64,7 +58,7 @@ private[javasdk] object ViewClientImpl {
    * @param queryReturnType
    *   Un-nested return type, so would be T1 for `QueryEffect[Optional[T1]]` or T2 for `QueryEffect[T2]`
    */
-  private case class ViewMethodProperties(
+  private[impl] case class ViewMethodProperties(
       componentId: String,
       method: Method,
       methodName: String,
@@ -100,6 +94,25 @@ private[javasdk] object ViewClientImpl {
     }
   }
 
+  private[impl] def encodeArgument(serializer: JsonSerializer, method: Method, arg: Option[Any]): BytesPayload =
+    arg match {
+      case Some(arg) =>
+        // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
+        if (arg.getClass.isPrimitive || primitiveObjects.contains(arg.getClass)) {
+          val bytes = serializer.encodeDynamicToAkkaByteString(method.getParameters.head.getName, arg)
+          new BytesPayload(bytes, JsonSerializer.JsonContentTypePrefix + "object")
+        } else if (classOf[java.util.Collection[_]].isAssignableFrom(arg.getClass)) {
+          val bytes = serializer.encodeDynamicCollectionToAkkaByteString(
+            method.getParameters.head.getName,
+            arg.asInstanceOf[java.util.Collection[_]])
+          new BytesPayload(bytes, JsonSerializer.JsonContentTypePrefix + "object")
+        } else {
+          serializer.toBytes(arg)
+        }
+      case None =>
+        BytesPayload.empty
+    }
+
 }
 
 /**
@@ -109,6 +122,7 @@ private[javasdk] object ViewClientImpl {
 private[javasdk] final case class ViewClientImpl(
     viewClient: RuntimeViewClient,
     serializer: JsonSerializer,
+    // Note: not actually passed through to query
     callMetadata: Option[Metadata])(implicit val executionContext: ExecutionContext, system: ActorSystem[_])
     extends ViewClient {
   import ViewClientImpl._
@@ -130,24 +144,6 @@ private[javasdk] final case class ViewClientImpl(
   def methodRefOneArg[A1, R](method: Method): ComponentMethodRef1[A1, R] =
     createMethodRefForEitherArity(method)
 
-  private def encodeArgument(method: Method, arg: Option[Any]): BytesPayload = arg match {
-    case Some(arg) =>
-      // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-      if (arg.getClass.isPrimitive || primitiveObjects.contains(arg.getClass)) {
-        val bytes = serializer.encodeDynamicToAkkaByteString(method.getParameters.head.getName, arg)
-        new BytesPayload(bytes, JsonSerializer.JsonContentTypePrefix + "object")
-      } else if (classOf[java.util.Collection[_]].isAssignableFrom(arg.getClass)) {
-        val bytes = serializer.encodeDynamicCollectionToAkkaByteString(
-          method.getParameters.head.getName,
-          arg.asInstanceOf[java.util.Collection[_]])
-        new BytesPayload(bytes, JsonSerializer.JsonContentTypePrefix + "object")
-      } else {
-        serializer.toBytes(arg)
-      }
-    case None =>
-      BytesPayload.empty
-  }
-
   private def createMethodRefForEitherArity[A1, R](method: Method): ComponentMethodRefImpl[A1, R] = {
     import MetadataImpl.toSpi
     val viewMethodProperties = validateAndExtractViewMethodProperties[R](method)
@@ -157,7 +153,7 @@ private[javasdk] final case class ViewClientImpl(
       callMetadata,
       { (maybeMetadata, maybeRetrySettings, maybeArg) =>
         // Note: same path for 0 and 1 arg calls
-        val serializedPayload = encodeArgument(viewMethodProperties.method, maybeArg)
+        val serializedPayload = encodeArgument(serializer, viewMethodProperties.method, maybeArg)
 
         def callView(metadata: Metadata): Future[R] = {
           viewClient
@@ -203,95 +199,16 @@ private[javasdk] final case class ViewClientImpl(
 
   }
 
-  override def stream[T, R](lambda: function.Function[T, View.QueryStreamEffect[R]]): ComponentStreamMethodRef[R] = {
+  override def stream[T, R](lambda: function.Function[T, View.QueryStreamEffect[R]]): ViewStreamMethodRef[R] = {
     val method = MethodRefResolver.resolveMethodRef(lambda)
     val viewMethodProperties = validateAndExtractViewMethodProperties[R](method)
-
-    () =>
-      viewClient
-        .queryStream(
-          new ViewRequest(
-            viewMethodProperties.componentId,
-            viewMethodProperties.methodName,
-            encodeArgument(viewMethodProperties.method, None),
-            SpiMetadata.empty))
-        .map { viewResult =>
-          // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-          serializer.fromBytes(viewMethodProperties.queryReturnType.asInstanceOf[Class[R]], viewResult.payload)
-        }
-        .asJava
+    new ViewStreamMethodRefImpl[R](viewClient, serializer, viewMethodProperties)
   }
 
   override def stream[T, A1, R](
-      lambda: function.Function2[T, A1, View.QueryStreamEffect[R]]): ComponentStreamMethodRef1[A1, R] = {
-    val method = MethodRefResolver.resolveMethodRef(lambda)
-    val viewMethodProperties = validateAndExtractViewMethodProperties[R](method)
-
-    (arg: A1) =>
-      viewClient
-        .queryStream(
-          new ViewRequest(
-            viewMethodProperties.componentId,
-            viewMethodProperties.methodName,
-            encodeArgument(viewMethodProperties.method, Some(arg)),
-            SpiMetadata.empty))
-        .map { viewResult =>
-          // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-          serializer.fromBytes(viewMethodProperties.queryReturnType.asInstanceOf[Class[R]], viewResult.payload)
-        }
-        .asJava
-  }
-
-  override def moreSpecificStream[T, R](
-      lambda: function.Function[T, View.QueryStreamEffect[R]]): ViewStreamMethodRef[R] = {
-    val method = MethodRefResolver.resolveMethodRef(lambda)
-    val viewMethodProperties = validateAndExtractViewMethodProperties[R](method)
-
-    new ViewStreamMethodRefImpl[R]((startFrom: Option[Instant]) =>
-      viewClient
-        .queryStream(
-          new ViewRequest(
-            viewMethodProperties.componentId,
-            viewMethodProperties.methodName,
-            encodeArgument(viewMethodProperties.method, None),
-            startFrom match {
-              case Some(instant) =>
-                new SpiMetadata(Vector(new SpiMetadataEntry("starting-offset", instant.toString))) // ISO-8601 instant
-              case None => SpiMetadata.empty
-            }))
-        .map { viewResult =>
-          // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-          new EntryWithMetadata(
-            serializer.fromBytes(viewMethodProperties.queryReturnType.asInstanceOf[Class[R]], viewResult.payload),
-            MetadataImpl.of(viewResult.metadata))
-        }
-        .asJava)
-  }
-
-  override def moreSpecificStream[T, A1, R](
       lambda: function.Function2[T, A1, View.QueryStreamEffect[R]]): ViewStreamMethodRef1[A1, R] = {
     val method = MethodRefResolver.resolveMethodRef(lambda)
     val viewMethodProperties = validateAndExtractViewMethodProperties[R](method)
-
-    new ViewStreamMethodRefImpl1[A1, R]((arg: A1, startFrom: Option[Instant]) =>
-      viewClient
-        .queryStream(
-          new ViewRequest(
-            viewMethodProperties.componentId,
-            viewMethodProperties.methodName,
-            encodeArgument(viewMethodProperties.method, Some(arg)),
-            startFrom match {
-              case Some(instant) =>
-                new SpiMetadata(Vector(new SpiMetadataEntry("starting-offset", instant.toString))) // ISO-8601 instant
-              case None => SpiMetadata.empty
-            }))
-        .map { viewResult =>
-          // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-          new EntryWithMetadata(
-            serializer.fromBytes(viewMethodProperties.queryReturnType.asInstanceOf[Class[R]], viewResult.payload),
-            MetadataImpl.of(viewResult.metadata))
-        }
-        .asJava)
-
+    new ViewStreamMethodRefImpl1[A1, R](viewClient, serializer, viewMethodProperties)
   }
 }
