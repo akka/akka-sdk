@@ -342,7 +342,8 @@ public class HttpResponses {
         source
             .map(
                 elem -> {
-                  var jsonPayload = JsonSupport.getObjectMapper().writeValueAsString(elem);
+                  var jsonPayload =
+                      JsonSupport.getObjectMapper().writeValueAsString(extractValue.apply(elem));
                   var eventId = extractEventId.map(f -> f.apply(elem));
                   var eventType = extractEventType.map(f -> f.apply(elem));
                   return ServerSentEvent.create(
