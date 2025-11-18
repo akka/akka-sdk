@@ -9,6 +9,7 @@ import akka.annotation.DoNotInherit;
 import akka.javasdk.view.EntryWithMetadata;
 import akka.stream.javadsl.Source;
 import java.time.Instant;
+import java.util.Optional;
 
 /**
  * Zero argument component call representation, query is not executed until stream is materialized.
@@ -19,10 +20,20 @@ import java.time.Instant;
  * @param <R> The type of entries in the view
  */
 @DoNotInherit
-public interface ViewStreamMethodRef<R> {
+public interface ViewStreamMethodRef<R> extends ComponentStreamMethodRef<R> {
+  /**
+   * @return A stream of view entries.
+   */
   Source<R, NotUsed> source();
 
+  /**
+   * @return A stream of view entries, including metadata.
+   */
   Source<EntryWithMetadata<R>, NotUsed> entriesSource();
 
-  Source<EntryWithMetadata<R>, NotUsed> entriesSource(Instant updatedAfter);
+  /**
+   * @param updatedAfter If not empty, only return rows updated later than this time.
+   * @return A stream of view entries, including metadata.
+   */
+  Source<EntryWithMetadata<R>, NotUsed> entriesSource(Optional<Instant> updatedAfter);
 }
