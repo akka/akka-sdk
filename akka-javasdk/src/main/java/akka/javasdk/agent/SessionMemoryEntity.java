@@ -61,7 +61,7 @@ import org.slf4j.LoggerFactory;
     id = "akka-session-memory",
     name = "Agent Session Memory",
     description =
-        """
+"""
 Stores the recent conversation history for each agent session, including user, AI, and tool messages.
 Use this component to view or inspect the memory that the agents uses for context during interactions.
 """)
