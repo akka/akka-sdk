@@ -21,13 +21,10 @@ import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.WorkflowStepNotFound
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.WorkflowStepNotSupported
 import akka.javasdk.impl.workflow.WorkflowEffects.Delete
-import akka.javasdk.impl.workflow.WorkflowEffects.DeleteWithReason
 import akka.javasdk.impl.workflow.WorkflowEffects.End
-import akka.javasdk.impl.workflow.WorkflowEffects.EndWithReason
 import akka.javasdk.impl.workflow.WorkflowEffects.NoPersistence
 import akka.javasdk.impl.workflow.WorkflowEffects.NoTransition
 import akka.javasdk.impl.workflow.WorkflowEffects.Pause
-import akka.javasdk.impl.workflow.WorkflowEffects.PauseWithReason
 import akka.javasdk.impl.workflow.WorkflowEffects.Persistence
 import akka.javasdk.impl.workflow.WorkflowEffects.StepTransition
 import akka.javasdk.impl.workflow.WorkflowEffects.Transition
@@ -316,13 +313,13 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     transition match {
       case StepTransition(stepName, input) =>
         new SpiWorkflow.StepTransition(stepName, input.map(serializer.toBytes))
-      case Pause                    => SpiWorkflow.Pause
-      case PauseWithReason(reason)  => new SpiWorkflow.PauseTransition(Some(reason))
-      case NoTransition             => SpiWorkflow.NoTransition
-      case End                      => SpiWorkflow.End
-      case EndWithReason(reason)    => new SpiWorkflow.EndTransition(reason)
-      case Delete                   => SpiWorkflow.Delete
-      case DeleteWithReason(reason) => new SpiWorkflow.DeleteTransition(reason)
+      case Pause(Some(reason))  => new SpiWorkflow.PauseTransition(Some(reason))
+      case Pause(_)             => SpiWorkflow.Pause
+      case NoTransition         => SpiWorkflow.NoTransition
+      case End(Some(reason))    => new SpiWorkflow.EndTransition(reason)
+      case End(_)               => SpiWorkflow.End
+      case Delete(Some(reason)) => new SpiWorkflow.DeleteTransition(reason)
+      case Delete(_)            => SpiWorkflow.Delete
     }
 
   @nowarn("msg=deprecated")

@@ -33,19 +33,13 @@ object WorkflowEffects {
 
   case class StepTransition[I](stepName: String, input: Option[I]) extends Transition
 
-  object Pause extends Transition
-
-  case class PauseWithReason(reason: String) extends Transition
+  case class Pause(reason: Option[String] = None) extends Transition
 
   object NoTransition extends Transition
 
-  object End extends Transition
+  case class End(reason: Option[String] = None) extends Transition
 
-  case class EndWithReason(reason: String) extends Transition
-
-  object Delete extends Transition
-
-  case class DeleteWithReason(reason: String) extends Transition
+  case class Delete(reason: Option[String] = None) extends Transition
 
   sealed trait Persistence[+S]
 
@@ -53,9 +47,9 @@ object WorkflowEffects {
 
   case object NoPersistence extends Persistence[Nothing]
 
-  def createEffectBuilder[S](): WorkflowEffectImpl[S, S] = WorkflowEffectImpl(NoPersistence, Pause, NoReply)
+  def createEffectBuilder[S](): WorkflowEffectImpl[S, S] = WorkflowEffectImpl(NoPersistence, Pause(), NoReply)
 
-  def createStepEffectBuilder[S](): WorkflowStepEffectImpl[S] = WorkflowStepEffectImpl(NoPersistence, Pause)
+  def createStepEffectBuilder[S](): WorkflowStepEffectImpl[S] = WorkflowStepEffectImpl(NoPersistence, Pause())
 
   private def validateReason(reason: String): Unit =
     require(reason != null, "Given reason must not be null")
@@ -86,27 +80,27 @@ object WorkflowEffects {
       }
 
       override def pause(): Transitional =
-        TransitionalEffectImpl(persistence, Pause)
+        TransitionalEffectImpl(persistence, Pause())
 
       override def pause(reason: String): Transitional = {
         validateReason(reason)
-        TransitionalEffectImpl(persistence, PauseWithReason(reason))
+        TransitionalEffectImpl(persistence, Pause(Some(reason)))
       }
 
       override def end(): Transitional =
-        TransitionalEffectImpl(persistence, End)
+        TransitionalEffectImpl(persistence, End())
 
       override def end(reason: String): Transitional = {
         validateReason(reason)
-        TransitionalEffectImpl(persistence, EndWithReason(reason))
+        TransitionalEffectImpl(persistence, End(Some(reason)))
       }
 
       override def delete(): Transitional =
-        TransitionalEffectImpl(persistence, Delete)
+        TransitionalEffectImpl(persistence, Delete())
 
       override def delete(reason: String): Transitional = {
         validateReason(reason)
-        TransitionalEffectImpl(persistence, DeleteWithReason(reason))
+        TransitionalEffectImpl(persistence, Delete(Some(reason)))
       }
 
       override def transitionTo[I](stepName: String, input: I): Transitional =
@@ -154,11 +148,11 @@ object WorkflowEffects {
       PersistenceEffectBuilderImpl(UpdateState(newState))
 
     override def pause(): Transitional =
-      TransitionalEffectImpl(NoPersistence, Pause)
+      TransitionalEffectImpl(NoPersistence, Pause())
 
     override def pause(reason: String): Transitional = {
       validateReason(reason)
-      TransitionalEffectImpl(NoPersistence, PauseWithReason(reason))
+      TransitionalEffectImpl(NoPersistence, Pause(Some(reason)))
     }
 
     override def transitionTo[I](stepName: String, input: I): Transitional =
@@ -168,19 +162,19 @@ object WorkflowEffects {
       TransitionalEffectImpl(NoPersistence, StepTransition(stepName, None))
 
     override def end(): Transitional =
-      TransitionalEffectImpl(NoPersistence, End)
+      TransitionalEffectImpl(NoPersistence, End())
 
     override def end(reason: String): Transitional = {
       validateReason(reason)
-      TransitionalEffectImpl(NoPersistence, EndWithReason(reason))
+      TransitionalEffectImpl(NoPersistence, End(Some(reason)))
     }
 
     override def delete(): Transitional =
-      TransitionalEffectImpl(NoPersistence, Delete)
+      TransitionalEffectImpl(NoPersistence, Delete())
 
     override def delete(reason: String): Transitional = {
       validateReason(reason)
-      TransitionalEffectImpl(NoPersistence, DeleteWithReason(reason))
+      TransitionalEffectImpl(NoPersistence, Delete(Some(reason)))
     }
 
     override def reply[R](reply: R): ReadOnlyEffect[R] =
@@ -237,27 +231,27 @@ object WorkflowEffects {
       }
 
       override def thenPause(): StepEffect =
-        WorkflowStepEffectImpl(persistence, Pause)
+        WorkflowStepEffectImpl(persistence, Pause())
 
       override def thenPause(reason: String): StepEffect = {
         validateReason(reason)
-        WorkflowStepEffectImpl(persistence, PauseWithReason(reason))
+        WorkflowStepEffectImpl(persistence, Pause(Some(reason)))
       }
 
       override def thenDelete(): StepEffect =
-        WorkflowStepEffectImpl(persistence, Delete)
+        WorkflowStepEffectImpl(persistence, Delete())
 
       override def thenDelete(reason: String): StepEffect = {
         validateReason(reason)
-        WorkflowStepEffectImpl(persistence, DeleteWithReason(reason))
+        WorkflowStepEffectImpl(persistence, Delete(Some(reason)))
       }
 
       override def thenEnd(): StepEffect =
-        WorkflowStepEffectImpl(persistence, End)
+        WorkflowStepEffectImpl(persistence, End())
 
       override def thenEnd(reason: String): StepEffect = {
         validateReason(reason)
-        WorkflowStepEffectImpl(persistence, EndWithReason(reason))
+        WorkflowStepEffectImpl(persistence, End(Some(reason)))
       }
 
     }
@@ -275,11 +269,11 @@ object WorkflowEffects {
       WorkflowStepEffectImpl.PersistenceEffectBuilderImpl(UpdateState(newState))
 
     override def thenPause(): StepEffect =
-      WorkflowStepEffectImpl(NoPersistence, Pause)
+      WorkflowStepEffectImpl(NoPersistence, Pause())
 
     override def thenPause(reason: String): StepEffect = {
       validateReason(reason)
-      WorkflowStepEffectImpl(NoPersistence, PauseWithReason(reason))
+      WorkflowStepEffectImpl(NoPersistence, Pause(Some(reason)))
     }
 
     def thenTransitionTo[W](lambda: Function[W, Workflow.StepEffect]): Workflow.StepEffect = {
@@ -295,19 +289,19 @@ object WorkflowEffects {
     }
 
     override def thenEnd(): StepEffect =
-      WorkflowStepEffectImpl(NoPersistence, End)
+      WorkflowStepEffectImpl(NoPersistence, End())
 
     override def thenEnd(reason: String): StepEffect = {
       validateReason(reason)
-      WorkflowStepEffectImpl(NoPersistence, EndWithReason(reason))
+      WorkflowStepEffectImpl(NoPersistence, End(Some(reason)))
     }
 
     override def thenDelete(): StepEffect =
-      WorkflowStepEffectImpl(NoPersistence, Delete)
+      WorkflowStepEffectImpl(NoPersistence, Delete())
 
     override def thenDelete(reason: String): StepEffect = {
       validateReason(reason)
-      WorkflowStepEffectImpl(NoPersistence, DeleteWithReason(reason))
+      WorkflowStepEffectImpl(NoPersistence, Delete(Some(reason)))
     }
 
   }
