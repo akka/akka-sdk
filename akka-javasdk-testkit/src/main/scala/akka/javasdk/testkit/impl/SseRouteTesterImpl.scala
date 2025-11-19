@@ -4,6 +4,13 @@
 
 package akka.javasdk.testkit.impl
 
+import java.time.Duration
+import java.util
+
+import scala.concurrent.Await
+import scala.jdk.CollectionConverters.SeqHasAsJava
+import scala.jdk.DurationConverters.JavaDurationOps
+
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.http.javadsl.model.HttpMethod
@@ -13,18 +20,12 @@ import akka.http.scaladsl.model.HttpHeader
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.MediaRange
 import akka.http.scaladsl.model.MediaType
-import akka.http.scaladsl.model.{ HttpMethod => ScalaHttpMethod }
 import akka.http.scaladsl.model.headers.Accept
 import akka.http.scaladsl.model.headers.RawHeader
+import akka.http.scaladsl.model.{ HttpMethod => ScalaHttpMethod }
 import akka.http.scaladsl.unmarshalling.sse.EventStreamParser
 import akka.javasdk.testkit.SseRouteTester
 import akka.stream.scaladsl.Sink
-
-import java.time.Duration
-import java.util
-import scala.concurrent.Await
-import scala.jdk.CollectionConverters.SeqHasAsJava
-import scala.jdk.DurationConverters.JavaDurationOps
 
 /**
  * INTERNAL API Used by the testkit
