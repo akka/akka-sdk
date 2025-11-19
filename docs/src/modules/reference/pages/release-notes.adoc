@@ -12,6 +12,11 @@ Current versions
 
 == November 2025
 
+* Akka CLI 3.0.40
+- New: `akka organization auth test` command
+- Better support for Podman
+- Bug fixes
+
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.9[Akka SDK 3.5.9]
 - fix compile time validation for private methods
 

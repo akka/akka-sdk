@@ -105,6 +105,7 @@ The xref:reference:cli/akka-cli/akka_organizations.adoc[akka organization] comma
 * xref:reference:cli/akka-cli/akka_organizations_auth_list.adoc[akka organizations auth list]
 * xref:reference:cli/akka-cli/akka_organizations_auth_remove.adoc[akka organizations auth remove]
 * xref:reference:cli/akka-cli/akka_organizations_auth_show.adoc[akka organizations auth show]
+* xref:reference:cli/akka-cli/akka_organizations_auth_test.adoc[akka organizations auth test]
 * xref:reference:cli/akka-cli/akka_organizations_auth_update.adoc[akka organizations auth update]
 * xref:reference:cli/akka-cli/akka_organizations_auth_update_openid.adoc[akka organizations auth update openid]
 * xref:reference:cli/akka-cli/akka_organizations_get.adoc[akka organizations get]
@@ -296,6 +297,7 @@ The `akka local` commands allow you to run and manage locally running Akka servi
 
 The xref:reference:cli/akka-cli/akka_local.adoc[akka local] command includes the following options:
 
+* xref:reference:cli/akka-cli/akka_local_cluster.adoc[akka local cluster]
 * xref:reference:cli/akka-cli/akka_local_console.adoc[akka local console]
 * xref:reference:cli/akka-cli/akka_local_remote.adoc[akka local remote]
 * xref:reference:cli/akka-cli/akka_local_remote_add.adoc[akka local remote add]
