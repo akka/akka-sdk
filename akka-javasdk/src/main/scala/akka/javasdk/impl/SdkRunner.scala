@@ -570,8 +570,6 @@ private final class Sdk(
 
         val entityStateType: Class[AnyRef] = Reflect.eventSourcedEntityStateType(clz).asInstanceOf[Class[AnyRef]]
 
-        val isSessionMemoryEntity = clz == classOf[SessionMemoryEntity]
-
         val instanceFactory: SpiEventSourcedEntity.FactoryContext => SpiEventSourcedEntity = { factoryContext =>
           new EventSourcedEntityImpl[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]](
             sdkTracerFactory,
@@ -584,9 +582,9 @@ private final class Sdk(
             context =>
               wiredInstance(clz.asInstanceOf[Class[EventSourcedEntity[AnyRef, AnyRef]]]) {
                 // remember to update component type API doc and docs if changing the set of injectables
-                case p if p == classOf[EventSourcedEntityContext]              => context
-                case s if s == classOf[Sanitizer]                              => sanitizer
-                case r if r == classOf[AgentRegistry] && isSessionMemoryEntity => agentRegistry
+                case p if p == classOf[EventSourcedEntityContext] => context
+                case s if s == classOf[Sanitizer]                 => sanitizer
+                case r if r == classOf[AgentRegistry]             => agentRegistry
               })
         }
         eventSourcedEntityDescriptors :+=
@@ -630,6 +628,7 @@ private final class Sdk(
                 // remember to update component type API doc and docs if changing the set of injectables
                 case p if p == classOf[KeyValueEntityContext] => context
                 case s if s == classOf[Sanitizer]             => sanitizer
+                case r if r == classOf[AgentRegistry]         => agentRegistry
               })
         }
         keyValueEntityDescriptors :+=

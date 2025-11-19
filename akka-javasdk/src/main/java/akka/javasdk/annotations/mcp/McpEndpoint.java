@@ -36,6 +36,8 @@ import java.lang.annotation.*;
  *   <li>{@link akka.stream.Materializer}
  *   <li>{@link com.typesafe.config.Config}
  *   <li>{@link io.opentelemetry.api.trace.Span}
+ *   <li>{@link akka.javasdk.agent.AgentRegistry} - contains information about all agents
+ *   <li>{@link akka.javasdk.Sanitizer} - allows for applying sanitization
  *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider}
  * </ul>
  *
