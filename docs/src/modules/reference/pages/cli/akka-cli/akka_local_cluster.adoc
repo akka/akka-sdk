@@ -1,23 +1,20 @@
-= akka services components list
+= akka local cluster
 
-List the components served by this service.
+Start and manage a local Akka cluster
 
 == Synopsis
 
-The `akka service components list` command lists the components served by this service.
+Start and manage a local Akka cluster for development and testing.
+This command requires that docker is installed and started, docker is used to launch the Akka Persistence layer before starting the Akka cluster.
 
 ----
-akka services components list SERVICE [flags]
+akka local cluster [flags]
 ----
 
 == Options
 
 ----
-  -h, --help               help for list
-      --include-provided   Whether to include Runtime components in the list.
-      --owner string       the owner of the project to use, needed if you have two projects with the same name from different owners
-      --project string     project to use if not using the default configured project
-      --region string      region to use if project has more than one region
+  -h, --help   help for cluster
 ----
 
 == Options inherited from parent commands
@@ -38,7 +35,7 @@ akka services components list SERVICE [flags]
 
 == SEE ALSO
 
-* link:akka_services_components.html[akka services components]	 - Inspect components of a service.
+* link:akka_local.html[akka local]	 - Interact with and manage Akka services running locally.
 
 [discrete]
 
