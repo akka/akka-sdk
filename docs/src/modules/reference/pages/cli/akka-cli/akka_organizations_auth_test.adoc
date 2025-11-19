@@ -1,23 +1,20 @@
-= akka services components list
+= akka organizations auth test
 
-List the components served by this service.
+Create a link for testing a given authentication domain
 
 == Synopsis
 
-The `akka service components list` command lists the components served by this service.
+The `akka organizations auth test _domain-id_` command creates a link for testing an authentication domain.
 
 ----
-akka services components list SERVICE [flags]
+akka organizations auth test DOMAIN-ID [flags]
 ----
 
 == Options
 
 ----
-  -h, --help               help for list
-      --include-provided   Whether to include Runtime components in the list.
-      --owner string       the owner of the project to use, needed if you have two projects with the same name from different owners
-      --project string     project to use if not using the default configured project
-      --region string      region to use if project has more than one region
+  -h, --help                  help for test
+      --organization string   name or ID for organization
 ----
 
 == Options inherited from parent commands
@@ -38,7 +35,7 @@ akka services components list SERVICE [flags]
 
 == SEE ALSO
 
-* link:akka_services_components.html[akka services components]	 - Inspect components of a service.
+* link:akka_organizations_auth.html[akka organizations auth]	 - Manage authentication for your organization on Akka
 
 [discrete]
 
