@@ -196,13 +196,15 @@ public interface ActivityAgentMore {
     @Get("/ask/{sessionId}")
     public HttpResponse ask(String sessionId) {
       var question = requestContext().queryParams().getString("question");
-      if (question.isEmpty()) return HttpResponses.badRequest("Missing 'question' query parameter");
+      if (question.isEmpty()) return HttpResponses.badRequest(
+        "Missing 'question' query parameter"
+      );
       else {
         var responseStream = componentClient
-            .forAgent()
-            .inSession(sessionId)
-            .tokenStream(StreamingActivityAgent::query) // <1>
-            .source(question.get()); // <2>
+          .forAgent()
+          .inSession(sessionId)
+          .tokenStream(StreamingActivityAgent::query) // <1>
+          .source(question.get()); // <2>
 
         return HttpResponses.serverSentEvents(responseStream); // <3>
       }
@@ -213,17 +215,19 @@ public interface ActivityAgentMore {
     @Get("/ask-grouped/{sessionId}")
     public HttpResponse askGrouped(String sessionId) {
       var question = requestContext().queryParams().getString("question");
-      if (question.isEmpty()) return HttpResponses.badRequest("Missing 'question' query parameter");
+      if (question.isEmpty()) return HttpResponses.badRequest(
+        "Missing 'question' query parameter"
+      );
       else {
         var tokenStream = componentClient
-            .forAgent()
-            .inSession(sessionId)
-            .tokenStream(StreamingActivityAgent::query)
-            .source(question.get());
+          .forAgent()
+          .inSession(sessionId)
+          .tokenStream(StreamingActivityAgent::query)
+          .source(question.get());
 
         var groupedTokenStream = tokenStream
-            .groupedWithin(20, Duration.ofMillis(100)) // <1>
-            .map(group -> String.join("", group)); // <2>
+          .groupedWithin(20, Duration.ofMillis(100)) // <1>
+          .map(group -> String.join("", group)); // <2>
 
         return HttpResponses.serverSentEvents(groupedTokenStream); // <3>
       }
