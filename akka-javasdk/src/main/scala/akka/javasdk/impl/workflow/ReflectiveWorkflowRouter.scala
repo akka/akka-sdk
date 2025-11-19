@@ -313,10 +313,13 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     transition match {
       case StepTransition(stepName, input) =>
         new SpiWorkflow.StepTransition(stepName, input.map(serializer.toBytes))
-      case Pause        => SpiWorkflow.Pause
-      case NoTransition => SpiWorkflow.NoTransition
-      case End          => SpiWorkflow.End
-      case Delete       => SpiWorkflow.Delete
+      case Pause(Some(reason))  => new SpiWorkflow.PauseTransition(Some(reason))
+      case Pause(_)             => SpiWorkflow.Pause
+      case NoTransition         => SpiWorkflow.NoTransition
+      case End(Some(reason))    => new SpiWorkflow.EndTransition(reason)
+      case End(_)               => SpiWorkflow.End
+      case Delete(Some(reason)) => new SpiWorkflow.DeleteTransition(reason)
+      case Delete(_)            => SpiWorkflow.Delete
     }
 
   @nowarn("msg=deprecated")
