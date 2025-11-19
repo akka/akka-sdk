@@ -13,16 +13,15 @@ import scala.jdk.DurationConverters.JavaDurationOps
 
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
-import akka.http.javadsl.model.HttpMethod
 import akka.http.javadsl.model.sse.ServerSentEvent
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpHeader
+import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.MediaRange
 import akka.http.scaladsl.model.MediaType
 import akka.http.scaladsl.model.headers.Accept
 import akka.http.scaladsl.model.headers.RawHeader
-import akka.http.scaladsl.model.{ HttpMethod => ScalaHttpMethod }
 import akka.http.scaladsl.unmarshalling.sse.EventStreamParser
 import akka.javasdk.testkit.SseRouteTester
 import akka.stream.scaladsl.Sink
@@ -37,7 +36,6 @@ private[testkit] final class SseRouteTesterImpl(runtimeHost: String, runtimePort
 
   private def consumeN(
       path: String,
-      method: HttpMethod,
       timeout: Duration,
       count: Int,
       additionalHeaders: Seq[HttpHeader] = Seq.empty): Seq[ServerSentEvent] = {
@@ -46,10 +44,7 @@ private[testkit] final class SseRouteTesterImpl(runtimeHost: String, runtimePort
     val response = Await.result(
       Http(system)
         .singleRequest(
-          HttpRequest(
-            uri = url,
-            method = method.asInstanceOf[ScalaHttpMethod],
-            headers = Seq(acceptHeader) ++ additionalHeaders)),
+          HttpRequest(uri = url, method = HttpMethods.GET, headers = Seq(acceptHeader) ++ additionalHeaders)),
       timeout.toScala)
 
     val futureSeq = response.entity.dataBytes
@@ -61,18 +56,13 @@ private[testkit] final class SseRouteTesterImpl(runtimeHost: String, runtimePort
     Await.result(futureSeq, timeout.toScala)
   }
 
-  override def receiveFirstN(
-      path: String,
-      method: HttpMethod,
-      count: Int,
-      timeout: Duration): util.List[ServerSentEvent] =
-    consumeN(path, method, timeout, count).asJava
+  override def receiveFirstN(path: String, count: Int, timeout: Duration): util.List[ServerSentEvent] =
+    consumeN(path, timeout, count).asJava
 
   override def receiveNFromOffset(
       path: String,
-      method: HttpMethod,
       count: Int,
       startFromId: String,
       timeout: Duration): util.List[ServerSentEvent] =
-    consumeN(path, method, timeout, count, Seq(RawHeader("Last-Event-ID", startFromId))).asJava
+    consumeN(path, timeout, count, Seq(RawHeader("Last-Event-ID", startFromId))).asJava
 }

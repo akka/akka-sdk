@@ -7,7 +7,6 @@ package akkajavasdk;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.http.javadsl.model.ContentTypes;
-import akka.http.javadsl.model.HttpMethods;
 import akka.http.javadsl.model.StatusCodes;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.util.ByteString;
@@ -178,9 +177,7 @@ public class HttpEndpointTest extends TestKitSupport {
   @Test
   public void shouldSupportSseIds() {
     var sseRouteTester = testKit.getSelfSseRouteTester();
-    var firstEvents =
-        sseRouteTester.receiveFirstN(
-            "/serversentevents", HttpMethods.GET, 2, Duration.ofSeconds(5));
+    var firstEvents = sseRouteTester.receiveFirstN("/serversentevents", 2, Duration.ofSeconds(5));
     assertThat(firstEvents).hasSize(2);
     assertThat(firstEvents.get(0).getId().get()).isEqualTo("1");
     assertThat(firstEvents.get(1).getId().get()).isEqualTo("2");
@@ -190,7 +187,6 @@ public class HttpEndpointTest extends TestKitSupport {
     var reconnectEvents =
         sseRouteTester.receiveNFromOffset(
             "/serversentevents",
-            HttpMethods.GET,
             1,
             "2", // start from id
             Duration.ofSeconds(5));

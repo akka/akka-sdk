@@ -320,6 +320,9 @@ NOTE: This is convenient for service documentation or small self-contained servi
 link:https://html.spec.whatwg.org/multipage/server-sent-events.html#server-sent-events[Server-sent events (SSE)] is a way to push a stream of elements through a single HTTP response
 that the client can see one by one rather than have to wait for the entire response to complete.
 
+Note that browsers only use HTTP GET requests for SSE. Other HTTP methods will not be possible to consume through
+the `ServerSentEvent` Javascript API in browsers, even though they can be accessed with command line tools like `curl`.
+
 Any Akka stream `Source` of elements where the elements can be serialized to JSON using Jackson can
 be turned into an SSE endpoint method. If the stream is idle, a heartbeat is emitted every 5 seconds
 to make sure the response stream is kept alive through proxies and firewalls.

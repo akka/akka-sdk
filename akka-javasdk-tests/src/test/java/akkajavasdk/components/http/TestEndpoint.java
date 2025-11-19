@@ -17,6 +17,7 @@ import akka.stream.javadsl.Source;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @HttpEndpoint()
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
@@ -65,8 +66,10 @@ public class TestEndpoint extends AbstractHttpEndpoint {
 
   public record MyEvent(String id, String payload) {}
 
+  record SseRequestPayload(String text) {}
+
   @Get("/serversentevents")
-  public HttpResponse sse() {
+  public HttpResponse sse(Optional<SseRequestPayload> payload) {
     final Source<MyEvent, NotUsed> source;
     if (requestContext().lastSeenSseEventId().isPresent()) {
       var lastSeenId = Long.parseLong(requestContext().lastSeenSseEventId().get());
