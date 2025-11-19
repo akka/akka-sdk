@@ -10,10 +10,12 @@ import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Description;
 import akka.javasdk.annotations.TypeName;
+import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
+import akka.javasdk.http.AbstractHttpEndpoint;
 import akka.javasdk.http.HttpResponses;
 import java.time.Duration;
 
@@ -183,9 +185,7 @@ public interface ActivityAgentMore {
   // tag::stream-endpoint[]
   @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
   @HttpEndpoint("/api")
-  public class ActivityHttpEndpoint {
-
-    public record Request(String sessionId, String question) {}
+  public class ActivityHttpEndpoint extends AbstractHttpEndpoint {
 
     private final ComponentClient componentClient;
 
@@ -193,32 +193,40 @@ public interface ActivityAgentMore {
       this.componentClient = componentClient;
     }
 
-    @Post("/ask")
-    public HttpResponse ask(Request request) {
-      var responseStream = componentClient
-        .forAgent()
-        .inSession(request.sessionId)
-        .tokenStream(StreamingActivityAgent::query) // <1>
-        .source(request.question); // <2>
+    @Get("/ask/{sessionId}")
+    public HttpResponse ask(String sessionId) {
+      var question = requestContext().queryParams().getString("question");
+      if (question.isEmpty()) return HttpResponses.badRequest("Missing 'question' query parameter");
+      else {
+        var responseStream = componentClient
+            .forAgent()
+            .inSession(sessionId)
+            .tokenStream(StreamingActivityAgent::query) // <1>
+            .source(question.get()); // <2>
 
-      return HttpResponses.serverSentEvents(responseStream); // <3>
+        return HttpResponses.serverSentEvents(responseStream); // <3>
+      }
     }
 
     // end::stream-endpoint[]
     // tag::stream-group[]
-    @Post("/ask-grouped")
-    public HttpResponse askGrouped(Request request) {
-      var tokenStream = componentClient
-        .forAgent()
-        .inSession(request.sessionId)
-        .tokenStream(StreamingActivityAgent::query)
-        .source(request.question);
+    @Get("/ask-grouped/{sessionId}")
+    public HttpResponse askGrouped(String sessionId) {
+      var question = requestContext().queryParams().getString("question");
+      if (question.isEmpty()) return HttpResponses.badRequest("Missing 'question' query parameter");
+      else {
+        var tokenStream = componentClient
+            .forAgent()
+            .inSession(sessionId)
+            .tokenStream(StreamingActivityAgent::query)
+            .source(question.get());
 
-      var groupedTokenStream = tokenStream
-        .groupedWithin(20, Duration.ofMillis(100)) // <1>
-        .map(group -> String.join("", group)); // <2>
+        var groupedTokenStream = tokenStream
+            .groupedWithin(20, Duration.ofMillis(100)) // <1>
+            .map(group -> String.join("", group)); // <2>
 
-      return HttpResponses.serverSentEvents(groupedTokenStream); // <3>
+        return HttpResponses.serverSentEvents(groupedTokenStream); // <3>
+      }
     }
     // end::stream-group[]
     // tag::stream-endpoint[]
