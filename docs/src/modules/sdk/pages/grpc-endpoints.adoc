@@ -87,7 +87,16 @@ For more details see xref:component-and-service-calls.adoc[].
 
 == Streaming
 
-gRPC supports streaming requests and responses, with which either the client or the server (or both) can send multiple messages. In this section, we will show how to stream the results of a request but the remaining combinations are similar.
+gRPC supports streaming requests and responses, with which either the client or the server (or both) can send multiple messages. In this section, we will show how to stream the results of a request, but the remaining combinations are similar.
+
+Akka is a distributed system, which means that services instances can start and stop based on decisions the infrastructure makes, because the service upgrading, or  other unanticipated issues. Connections are also
+forcibly disconnected at an interval to make sure connected clients are alive and that the connections
+are rebalanced over the instances of the service.
+
+Streaming gRPC calls do not have resuming of a stream built in, so it is important that streaming gRPC services are designed
+with this in mind. For example, accepting an offset of some sort to let a client resume from the last event it saw emitted
+in the stream. Streaming gRPC endpoint methods cannot rely on a stream itself to keep a local JVM object alive.
+A reconnected client may not end up in the same service instance as the original connection.
 
 To stream the results of a request, mark the return type of the method as `stream` in the `.proto` file:
 
