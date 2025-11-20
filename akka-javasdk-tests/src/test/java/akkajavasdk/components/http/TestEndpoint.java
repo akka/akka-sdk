@@ -63,6 +63,11 @@ public class TestEndpoint extends AbstractHttpEndpoint {
     return request;
   }
 
+  @Get("/streamingtext/{numbers}")
+  public HttpResponse streamText(int numbers) {
+    return HttpResponses.streamText(Source.range(1, numbers).map(Object::toString));
+  }
+
   public record MyEvent(String id, String payload) {}
 
   @Get("/serversentevents")

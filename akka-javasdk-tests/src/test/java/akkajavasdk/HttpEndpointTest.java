@@ -6,14 +6,19 @@ package akkajavasdk;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import akka.http.javadsl.Http;
 import akka.http.javadsl.model.ContentTypes;
+import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.StatusCodes;
+import akka.http.javadsl.model.headers.RawHeader;
 import akka.javasdk.testkit.TestKitSupport;
+import akka.stream.javadsl.Sink;
 import akka.util.ByteString;
 import akkajavasdk.components.http.ResourcesEndpoint;
 import akkajavasdk.components.http.TestEndpoint;
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.OptionalLong;
 import java.util.Set;
@@ -172,6 +177,32 @@ public class HttpEndpointTest extends TestKitSupport {
             .invoke();
     assertThat(response.status()).isEqualTo(StatusCodes.OK);
     assertThat(response.body().value()).isEqualTo(bigDecimal);
+  }
+
+  @Test
+  public void shouldSupportStreamingText() {
+    // Note: no streaming support in the HTTP client abstraction, so we need to do it manually
+    var url = "http://" + testKit.getHost() + ":" + testKit.getPort() + "/streamingtext/5";
+    var response =
+        await(
+            Http.get(testKit.getActorSystem())
+                .singleRequest(
+                    HttpRequest.GET(url).addHeader(RawHeader.create("Accept", "text/event-stream")))
+                .toCompletableFuture());
+
+    assertThat(response.entity().getContentType()).isEqualTo(ContentTypes.TEXT_PLAIN_UTF8);
+    assertThat(response.entity().isChunked()).isTrue();
+    assertThat(response.status()).isEqualTo(StatusCodes.OK);
+
+    var text =
+        await(
+            response
+                .entity()
+                .getDataBytes()
+                .map(t -> t.utf8String())
+                .runWith(Sink.seq(), testKit.getMaterializer()));
+
+    assertThat(text).isEqualTo(Arrays.asList("1", "2", "3", "4", "5"));
   }
 
   @Test

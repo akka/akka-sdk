@@ -21,7 +21,7 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 ----
 <1> Use `tokenStream` of the component client, instead of `method`,
 <2> and invoke it with `source` to receive a stream of tokens.
-<3> Return the stream of tokens as SSE.
+<3> Return the stream of tokens as a streaming HTTP response.
 
 The returned stream is a `Source<String, NotUsed>`, i.e. the tokens are always text strings.
 
@@ -33,7 +33,7 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 ----
 <1> Group at most 20 tokens or within 100 milliseconds, whatever happens first.
 <2> Concatenate the list of string into a single string.
-<3> Return the stream of grouped tokens as SSE.
+<3> Return the stream of grouped tokens as a streaming HTTP response.
 
 NOTE: Token streams are designed for direct agent calls from an endpoint. You can't use a token stream when you have an intermediate workflow between the endpoint and the agent.
 
