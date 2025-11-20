@@ -8,13 +8,11 @@ public class ConfigIntegrationTest extends TestKitSupport {
 
   @Override
   protected TestKit.Settings testKitSettings() {
-    return TestKit.Settings.DEFAULT
-        .withAdditionalConfig(
-            """
-            akka.javasdk.agent.openai.api-key = n/a
-            """
-        );
+    return TestKit.Settings.DEFAULT.withAdditionalConfig(
+      """
+      akka.javasdk.agent.openai.api-key = n/a
+      """
+    );
   }
-
 }
 // end::config[]
