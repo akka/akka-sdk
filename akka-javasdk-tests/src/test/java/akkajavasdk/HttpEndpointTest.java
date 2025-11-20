@@ -6,15 +6,19 @@ package akkajavasdk;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import akka.http.javadsl.Http;
 import akka.http.javadsl.model.ContentTypes;
+import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.StatusCodes;
+import akka.http.javadsl.model.headers.RawHeader;
 import akka.javasdk.testkit.TestKitSupport;
+import akka.stream.javadsl.Sink;
 import akka.util.ByteString;
 import akkajavasdk.components.http.ResourcesEndpoint;
 import akkajavasdk.components.http.TestEndpoint;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.OptionalLong;
 import java.util.Set;
