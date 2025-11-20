@@ -237,6 +237,18 @@ public class HttpResponses {
     return staticResource(strippedPath);
   }
 
+  /**
+   * @param source A stream of text
+   * @return A chunked HTTP response that will emit the text as it arrives rather than collect all
+   *     before responding
+   */
+  public static HttpResponse streamText(Source<String, ?> source) {
+    return HttpResponse.create()
+        .withStatus(StatusCodes.OK)
+        .withEntity(
+            HttpEntities.create(ContentTypes.TEXT_PLAIN_UTF8, source.map(ByteString::fromString)));
+  }
+
   private static final ContentType TEXT_EVENT_STREAM = ContentTypes.parse("text/event-stream");
 
   /**

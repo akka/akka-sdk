@@ -262,16 +262,6 @@
   // User session cookie name
   const USER_COOKIE = "ai_chat_user_id";
 
-  // Utility function to parse SSE response
-  const parseSSE = (data) => {
-    if (!data) return null;
-    if (data.startsWith('data:')) {
-      return data.substring(5).trim();
-    }
-    return data;
-  };
-
-
   // Main App component
   function App() {
     const [userId, setUserId] = useState("");
@@ -622,7 +612,7 @@
           throw new Error(`HTTP error ${response.status}`);
         }
 
-        // Handle SSE streaming response
+        // Handle chunked text streaming response
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let aiResponseText = "";
@@ -631,40 +621,15 @@
           const { value, done } = await reader.read();
           if (done) break;
 
-          // Decode the chunk and handle SSE format
+          // Decode the chunk and append directly
           const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n').filter(line => line.trim() !== '');
+          aiResponseText += chunk;
 
-          for (const line of lines) {
-            let parsedData = parseSSE(line);
-            if (parsedData) {
-              try {
-                // Try to JSON parse if it looks like a JSON string
-                if (parsedData.startsWith('"') && parsedData.endsWith('"')) {
-                  parsedData = JSON.parse(parsedData);
-                }
-              } catch (e) {
-                // If JSON parsing fails, just use the string as is
-                console.log("JSON parse failed, using raw string");
-              }
-
-              // Also try to handle the case where we get quoted strings with commas between them
-              if (typeof parsedData === 'string') {
-                // This regex finds patterns like "text","more text" and cleans them up
-                parsedData = parsedData.replace(/"([^"]*)"\s*,\s*"([^"]*)"/g, '$1$2');
-                // Remove any remaining quotes at beginning/end
-                parsedData = parsedData.replace(/^"|"$/g, '');
-              }
-
-              aiResponseText += parsedData;
-
-              // Update UI with current text
-              setMessages([
-                ...updatedMessages,
-                { type: "ai", message: aiResponseText }
-              ]);
-            }
-          }
+          // Update UI with current text
+          setMessages([
+            ...updatedMessages,
+            { type: "ai", message: aiResponseText }
+          ]);
         }
 
         // Final update once streaming is complete
