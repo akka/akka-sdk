@@ -5,6 +5,7 @@
 package akkajavasdk;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchException;
 
 import akka.http.javadsl.Http;
 import akka.http.javadsl.model.ContentTypes;
@@ -14,10 +15,12 @@ import akka.http.javadsl.model.headers.RawHeader;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.stream.javadsl.Sink;
 import akka.util.ByteString;
+import akkajavasdk.components.eventsourcedentities.counter.CounterEntity;
 import akkajavasdk.components.http.ResourcesEndpoint;
 import akkajavasdk.components.http.TestEndpoint;
 import java.io.InputStream;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.OptionalLong;
@@ -226,5 +229,43 @@ public class HttpEndpointTest extends TestKitSupport {
         .isEqualTo("3"); // starts from the reported Last-Event-ID
   }
 
-  // FIXME resumable stream updates test coverage after rebase on top of SSE testkit
+  @Test
+  public void shouldSupportResumableSseForViewStreamUpdates() throws InterruptedException {
+    var sseRouteTester = testKit.getSelfSseRouteTester();
+    componentClient.forEventSourcedEntity("sse-one").method(CounterEntity::increase).invoke(1);
+
+    var firstEvents =
+        sseRouteTester.receiveFirstN(
+            "/serversentevents/counterbyid/sse-one", 1, Duration.ofSeconds(5));
+    assertThat(firstEvents).hasSize(1);
+    var firstId = firstEvents.get(0).getId().get();
+    assertThat(firstEvents.get(0).getData())
+        .isEqualTo(
+            """
+            {"id":"sse-one","latestEvent":"ValueIncreased[value=1]"}\
+            """);
+
+    // only sees new updates, there are no new updates
+    catchException(
+        () -> {
+          sseRouteTester.receiveNFromOffset(
+              "/serversentevents/counterbyid/sse-one", 1, firstId, Duration.ofMillis(200));
+        });
+
+    componentClient.forEventSourcedEntity("sse-one").method(CounterEntity::increase).invoke(1);
+
+    // only sees new updates, now there is a new update
+    var newEvents =
+        sseRouteTester.receiveNFromOffset(
+            "/serversentevents/counterbyid/sse-one", 2, firstId, Duration.ofSeconds(5));
+    assertThat(newEvents.get(0).getData())
+        .isEqualTo(
+            """
+            {"id":"sse-one","latestEvent":"ValueIncreased[value=2]"}\
+            """);
+    var firstInstant = Instant.parse(firstId);
+    var secondInstant = Instant.parse(newEvents.get(0).getId().get());
+
+    assertThat(firstInstant).isBefore(secondInstant);
+  }
 }

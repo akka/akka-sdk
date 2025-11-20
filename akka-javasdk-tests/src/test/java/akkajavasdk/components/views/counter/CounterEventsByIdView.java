@@ -19,13 +19,14 @@ import akkajavasdk.components.eventsourcedentities.counter.CounterEvent;
 @Component(id = "counters_by_id")
 public class CounterEventsByIdView extends View {
 
-  public record CounterEntry(String id, CounterEvent latestEvent) {}
+  public record CounterEntry(String id, String latestEvent) {}
 
   @Consume.FromEventSourcedEntity(CounterEntity.class)
   public static class Counters extends TableUpdater<CounterEntry> {
 
     public Effect<CounterEntry> onEvent(CounterEvent event) {
-      return effects().updateRow(new CounterEntry(updateContext().eventSubject().get(), event));
+      return effects()
+          .updateRow(new CounterEntry(updateContext().eventSubject().get(), event.toString()));
     }
 
     @Override
