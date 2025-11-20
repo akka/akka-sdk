@@ -225,4 +225,6 @@ public class HttpEndpointTest extends TestKitSupport {
     assertThat(reconnectEvents.get(0).getId().get())
         .isEqualTo("3"); // starts from the reported Last-Event-ID
   }
+
+  // FIXME resumable stream updates test coverage after rebase on top of SSE testkit
 }
