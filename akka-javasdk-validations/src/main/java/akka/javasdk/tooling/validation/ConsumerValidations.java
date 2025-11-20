@@ -39,7 +39,7 @@ public class ConsumerValidations {
         .combine(Validations.missingHandlerValidations(typeDef, effectType))
         .combine(Validations.noSubscriptionMethodWithAcl(typeDef, effectType))
         .combine(Validations.subscriptionMethodMustHaveOneParameter(typeDef, effectType))
-        .combine(Validations.functionToolMustNotBeOnPrivateMethods(typeDef));
+        .combine(consumerCannotHaveFunctionTools(typeDef));
   }
 
   /**
@@ -252,5 +252,25 @@ public class ConsumerValidations {
    */
   private static boolean hasTopicPublication(TypeDef typeDef) {
     return typeDef.hasAnnotation("akka.javasdk.annotations.Produce.ToTopic");
+  }
+
+  /**
+   * Validates that Consumer methods are not annotated with @FunctionTool.
+   *
+   * @param typeDef the Consumer class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation consumerCannotHaveFunctionTools(TypeDef typeDef) {
+    List<String> errors = new ArrayList<>();
+
+    for (MethodDef method : typeDef.getMethods()) {
+      if (method.hasAnnotation("akka.javasdk.annotations.FunctionTool")) {
+        errors.add(
+            Validations.errorMessage(
+                method, "Consumer methods cannot be annotated with @FunctionTool."));
+      }
+    }
+
+    return Validation.of(errors);
   }
 }

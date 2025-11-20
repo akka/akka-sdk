@@ -9,17 +9,13 @@ import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.consumer.Consumer;
 
-@Component(id = "consumer-with-function-tool-on-private-method")
+@Component(id = "consumer-with-function-tool")
 @Consume.FromTopic("my-topic")
-public class ConsumerWithFunctionToolOnPrivateMethod extends Consumer {
+public class ConsumerWithFunctionTool extends Consumer {
 
+  @FunctionTool(description = "This should not be allowed")
   public Effect onEvent(String event) {
     return effects().done();
   }
 
-  // @FunctionTool is not allowed on private methods
-  @FunctionTool(description = "This should not be allowed on private methods")
-  private Effect privateMethod() {
-    return effects().done();
-  }
 }

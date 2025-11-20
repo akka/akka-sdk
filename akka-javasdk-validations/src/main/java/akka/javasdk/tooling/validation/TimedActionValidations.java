@@ -27,8 +27,7 @@ public class TimedActionValidations {
     return Validations.hasEffectMethod(typeDef, effectType)
         .combine(
             Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne(typeDef, effectType))
-        .combine(timedActionCannotHaveFunctionTools(typeDef))
-        .combine(Validations.functionToolMustNotBeOnPrivateMethods(typeDef));
+        .combine(timedActionCannotHaveFunctionTools(typeDef));
   }
 
   /**

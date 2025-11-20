@@ -223,11 +223,9 @@ class ConsumerValidationSpec extends AnyWordSpec with CompilationTestSupport {
       assertCompilationFailure(result, "missing an event handler")
     }
 
-    "reject Consumer with @FunctionTool on private methods" in {
-      val result = compileTestSource("invalid/ConsumerWithFunctionToolOnPrivateMethod.java")
-      assertCompilationFailure(
-        result,
-        "Methods annotated with @FunctionTool must be public. Private methods cannot be annotated with @FunctionTool")
+    "reject Consumer with @FunctionTool annotation" in {
+      val result = compileTestSource("invalid/ConsumerWithFunctionTool.java")
+      assertCompilationFailure(result, "Consumer methods cannot be annotated with @FunctionTool.")
     }
   }
 }
