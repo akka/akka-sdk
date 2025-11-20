@@ -110,6 +110,9 @@ import java.util.function.Function;
  *
  * <ul>
  *   <li>{@link EventSourcedEntityContext} - provides entity context information
+ *   <li>{@link com.typesafe.config.Config}
+ *   <li>{@link akka.javasdk.agent.AgentRegistry} - contains information about all agents
+ *   <li>{@link akka.javasdk.Sanitizer} - allows for applying sanitization
  *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider} from the service setup
  * </ul>
  *

@@ -27,6 +27,8 @@ import java.util.concurrent.CompletionStage;
  *   <li>{@link akka.javasdk.timer.TimerScheduler}
  *   <li>{@link akka.stream.Materializer}
  *   <li>{@link com.typesafe.config.Config}
+ *   <li>{@link akka.javasdk.agent.AgentRegistry}
+ *   <li>{@link akka.javasdk.Sanitizer}
  *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider} from the service setup
  * </ul>
  *
