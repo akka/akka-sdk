@@ -332,7 +332,7 @@ Akka is a distributed system, which means that services instances can start and 
 forcibly disconnected at an interval to make sure connected clients are alive and that the connections
 are rebalanced over the instances of the service.
 
-Browsers implementing SSE has reconnecting built in, but it important that SSE endpoint methods are designed with restarts in mind and does not rely on the stream itself to keep a local JVM object alive. A reconnect may not end up in the same service instance as the original connection.
+Browsers implementing SSE have reconnecting built in, but it is important that SSE endpoint methods are designed with restarts in mind and do not rely on the stream itself to keep a local JVM object alive. A reconnect may not end up in the same service instance as the original connection.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
@@ -343,10 +343,10 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java
 <2> Every time a tick is seen, we turn it into a system clock timestamp
 <3> Passing the `Source` to `serverSentEvents` returns a `HttpResponse` for the endpoint method.
 
-For this example reconnects are fine, since they will just continue from the point in time they reconnected. The endpoint
+For this example, reconnects are fine, since they will just continue from the point in time they reconnected. The endpoint
 does not need any additional logic for this.
 
-In many cases you will want to continue the stream from the event the client saw last, this is built into the SSE support
+In many cases, you will want to continue the stream from the event the client saw last. This is built into the SSE support
 in browsers but requires some extra care in HTTP endpoints:
 
 [source,java,indent=0]
