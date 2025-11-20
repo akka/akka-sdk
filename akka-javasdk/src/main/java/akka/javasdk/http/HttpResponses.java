@@ -244,6 +244,8 @@ public class HttpResponses {
    * href="https://html.spec.whatwg.org/multipage/server-sent-events.html">See the Living HTML
    * standard for more details on SSE</a>
    *
+   * <p><b>Note</b> that browsers only support consuming SSE using HTTP GET requests.
+   *
    * <p><b>Note</b> in most cases you should use one of the overloads extracting an event id so that
    * clients can reconnect and continue the stream form the last seen event in case the response
    * connection is lost. This overload of the method can only be used in scenarios where a
@@ -262,6 +264,8 @@ public class HttpResponses {
    * href="https://html.spec.whatwg.org/multipage/server-sent-events.html">See the Living HTML
    * standard for more details on SSE</a>
    *
+   * <p><b>Note</b> that browsers only support consuming SSE using HTTP GET requests.
+   *
    * @param extractEventId A function to extract a unique id or offset from the events to include in
    *     the stream as SSE event id. This is then used by clients, passed as a header, in an HTTP
    *     endpoint this will be available from {@link RequestContext#lastSeenSseEventId()} in the
@@ -277,9 +281,11 @@ public class HttpResponses {
   }
 
   /**
-   * Return a stream of events as an HTTP SSE response. <a
+   * Return a stream of events as an HTTP Server Sent Events (SSE) response. <a
    * href="https://html.spec.whatwg.org/multipage/server-sent-events.html">See the Living HTML
-   * standard for more details on SSE</a>
+   * standard for more details on SSE</a>.
+   *
+   * <p><b>Note</b> that browsers only support consuming SSE using HTTP GET requests.
    *
    * @param extractEventId A function to extract a unique id or offset from the events to include in
    *     the stream as SSE event id. This is then used by clients, passed as a header, in an HTTP
