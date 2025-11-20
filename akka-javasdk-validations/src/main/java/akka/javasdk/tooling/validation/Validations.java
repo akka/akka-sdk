@@ -110,8 +110,7 @@ public class Validations {
     for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
       // Use startsWith to handle generic types like Effect<T>
-      if (returnTypeName.equals(effectTypeName)
-          || returnTypeName.startsWith(effectTypeName + "<")) {
+      if (returnTypeName.startsWith(effectTypeName)) {
         // Skip methods marked with @DeleteHandler
         if (hasHandleDeletes(method)) {
           continue;
@@ -147,8 +146,7 @@ public class Validations {
 
     for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
-      if (returnTypeName.equals(effectTypeName)
-          || returnTypeName.startsWith(effectTypeName + "<")) {
+      if (returnTypeName.startsWith(effectTypeName)) {
         if (method.hasAnnotation("akka.javasdk.annotations.Acl")) {
           errors.add(
               Validations.errorMessage(
@@ -180,8 +178,7 @@ public class Validations {
     for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
       // Use startsWith to handle generic types like Effect<T>
-      if (returnTypeName.equals(effectTypeName)
-          || returnTypeName.startsWith(effectTypeName + "<")) {
+      if (returnTypeName.startsWith(effectTypeName)) {
         // Get the last parameter type (or empty string for parameterless methods)
         String paramType = "";
         if (!method.getParameters().isEmpty()) {
@@ -252,8 +249,7 @@ public class Validations {
     boolean hasRawHandler = false;
     for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
-      if (returnTypeName.equals(effectTypeName)
-          || returnTypeName.startsWith(effectTypeName + "<")) {
+      if (returnTypeName.startsWith(effectTypeName)) {
         if (method.getParameters().size() == 1) {
           String paramType = method.getParameters().getFirst().getType().getQualifiedName();
           if (paramType.equals("byte[]")) {
@@ -268,8 +264,7 @@ public class Validations {
     List<TypeRefDef> handlerParamTypes = new ArrayList<>();
     for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
-      if (returnTypeName.equals(effectTypeName)
-          || returnTypeName.startsWith(effectTypeName + "<")) {
+      if (returnTypeName.startsWith(effectTypeName)) {
         if (!hasHandleDeletes(method) && method.getParameters().size() == 1) {
           TypeRefDef paramType = method.getParameters().getFirst().getType();
           if (!paramType.getQualifiedName().equals("byte[]")) {
@@ -378,7 +373,7 @@ public class Validations {
 
     for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
-      if (returnTypeName.equals(effectTypeName)) {
+      if (returnTypeName.startsWith(effectTypeName)) {
         if (hasHandleDeletes(method)) {
           hasDeleteHandler = true;
         } else if (!method.getParameters().isEmpty()) {
@@ -444,7 +439,7 @@ public class Validations {
 
     for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
-      if (returnTypeName.equals(effectTypeName)) {
+      if (returnTypeName.startsWith(effectTypeName)) {
         if (hasHandleDeletes(method)) {
           hasDeleteHandler = true;
         } else if (!method.getParameters().isEmpty()) {
@@ -498,8 +493,7 @@ public class Validations {
     boolean hasRawHandler = false;
     for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
-      if ((returnTypeName.equals(effectTypeName) || returnTypeName.startsWith(effectTypeName + "<"))
-          && !method.getParameters().isEmpty()) {
+      if ((returnTypeName.startsWith(effectTypeName)) && !method.getParameters().isEmpty()) {
         String paramType = method.getParameters().getFirst().getType().getQualifiedName();
         if (paramType.equals("byte[]")) {
           hasRawHandler = true;
@@ -564,8 +558,7 @@ public class Validations {
     List<String> handlerParamTypes = new ArrayList<>();
     for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
-      if (returnTypeName.equals(effectTypeName)
-          || returnTypeName.startsWith(effectTypeName + "<")) {
+      if (returnTypeName.startsWith(effectTypeName)) {
         if (!method.getParameters().isEmpty()) {
           String paramType = method.getParameters().getFirst().getType().getQualifiedName();
           if (!paramType.equals("byte[]")) {
