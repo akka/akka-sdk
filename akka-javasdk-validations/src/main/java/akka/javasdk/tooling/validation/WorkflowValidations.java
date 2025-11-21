@@ -4,6 +4,10 @@
 
 package akka.javasdk.tooling.validation;
 
+import static akka.javasdk.tooling.validation.Validations.commandHandlerArityShouldBeZeroOrOne;
+import static akka.javasdk.tooling.validation.Validations.functionToolMustNotBeOnPrivateMethods;
+import static akka.javasdk.tooling.validation.Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne;
+
 import akka.javasdk.validation.ast.MethodDef;
 import akka.javasdk.validation.ast.TypeDef;
 import java.util.ArrayList;
@@ -37,12 +41,14 @@ public class WorkflowValidations {
         // method returning Effect or ReadOnlyEffect must be public
         // users can still have private methods with arity > 1
         .combine(
-            Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne(
-                typeDef, strictlyPublicEffectTypes))
+            strictlyPublicCommandHandlerArityShouldBeZeroOrOne(typeDef, strictlyPublicEffectTypes))
         // method returning StepEffect can be private and therefore must comply with arity rule
-        .combine(Validations.commandHandlerArityShouldBeZeroOrOne(typeDef, stepEffectType))
-        .combine(functionToolMustNotBeOnStepEffect(typeDef))
-        .combine(Validations.functionToolMustNotBeOnPrivateMethods(typeDef));
+        .combine(commandHandlerArityShouldBeZeroOrOne(typeDef, stepEffectType))
+        .combine(
+            // we should not validate on StepEffect and on private
+            // if functionToolMustNotBeOnStepEffect returns Invalid, we can stop
+            functionToolMustNotBeOnStepEffect(typeDef)
+                .or(functionToolMustNotBeOnPrivateMethods(typeDef)));
   }
 
   /**
@@ -56,8 +62,7 @@ public class WorkflowValidations {
 
     for (MethodDef method : typeDef.getMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
-      if (returnTypeName.equals("akka.javasdk.workflow.Workflow.StepEffect")
-          || returnTypeName.startsWith("akka.javasdk.workflow.Workflow.StepEffect<")) {
+      if (returnTypeName.startsWith("akka.javasdk.workflow.Workflow.StepEffect")) {
         if (method.hasAnnotation("akka.javasdk.annotations.FunctionTool")) {
           errors.add(
               Validations.errorMessage(
