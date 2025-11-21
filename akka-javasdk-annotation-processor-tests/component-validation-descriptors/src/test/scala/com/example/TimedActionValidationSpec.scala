@@ -16,7 +16,7 @@ class TimedActionValidationSpec extends AnyWordSpec with CompilationTestSupport 
 
     "reject TimedAction without Effect methods" in {
       val result = compileTestSource("invalid/TimedActionWithoutEffect.java")
-      assertCompilationFailure(result, "No method returning akka.javasdk.timedaction.TimedAction.Effect found")
+      assertCompilationFailure(result, "No public method returning akka.javasdk.timedaction.TimedAction.Effect found")
     }
 
     "reject TimedAction with command handler having too many parameters" in {

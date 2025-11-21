@@ -35,7 +35,7 @@ class EventSourcedEntityValidationSpec extends AnyWordSpec with Matchers with Co
       val result = compileTestSource("invalid/NoEffectMethod.java")
       assertCompilationFailure(
         result,
-        "No method returning akka.javasdk.eventsourcedentity.EventSourcedEntity.Effect found")
+        "No public method returning akka.javasdk.eventsourcedentity.EventSourcedEntity.Effect found")
     }
 
     "reject EventSourcedEntity that is not public" in {

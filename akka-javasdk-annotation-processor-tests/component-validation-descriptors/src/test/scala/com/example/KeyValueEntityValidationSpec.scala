@@ -33,7 +33,9 @@ class KeyValueEntityValidationSpec extends AnyWordSpec with Matchers with Compil
 
     "reject KeyValueEntity with no Effect method" in {
       val result = compileTestSource("invalid/KeyValueEntityNoEffect.java")
-      assertCompilationFailure(result, "No method returning akka.javasdk.keyvalueentity.KeyValueEntity.Effect found")
+      assertCompilationFailure(
+        result,
+        "No public method returning akka.javasdk.keyvalueentity.KeyValueEntity.Effect found")
     }
 
     "reject KeyValueEntity that is not public" in {

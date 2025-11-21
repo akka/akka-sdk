@@ -74,7 +74,7 @@ class ConsumerValidationSpec extends AnyWordSpec with CompilationTestSupport {
 
     "reject Consumer without Effect methods" in {
       val result = compileTestSource("invalid/ConsumerWithoutEffectMethod.java")
-      assertCompilationFailure(result, "No method returning akka.javasdk.consumer.Consumer.Effect found")
+      assertCompilationFailure(result, "No public method returning akka.javasdk.consumer.Consumer.Effect found")
     }
 
     "reject Consumer with command handler having too many parameters" in {

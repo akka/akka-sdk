@@ -639,7 +639,8 @@ public class Validations {
   }
 
   /**
-   * Validates that a component has at least one method returning one of the specified effect types.
+   * Validates that a component has at least one public method returning one of the specified effect
+   * types.
    *
    * @param typeDef the component class to validate
    * @param effectTypeNames the fully qualified effect type names
@@ -655,7 +656,7 @@ public class Validations {
 
     var names = String.join(", ", effectTypeNames);
     return Validation.of(
-        "No method returning " + names + " found in " + typeDef.getQualifiedName());
+        "No public method returning " + names + " found in " + typeDef.getQualifiedName());
   }
 
   /**

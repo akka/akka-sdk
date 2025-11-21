@@ -48,7 +48,7 @@ class WorkflowValidationSpec extends AnyWordSpec with Matchers with CompilationT
 
     "reject Workflow with no Effect method" in {
       val result = compileTestSource("invalid/WorkflowNoEffect.java")
-      assertCompilationFailure(result, "No method returning akka.javasdk.workflow.Workflow.Effect")
+      assertCompilationFailure(result, "No public method returning akka.javasdk.workflow.Workflow.Effect")
     }
 
     "reject Workflow that is not public" in {
