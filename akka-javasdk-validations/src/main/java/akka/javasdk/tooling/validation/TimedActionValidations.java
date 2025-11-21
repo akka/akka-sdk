@@ -4,6 +4,9 @@
 
 package akka.javasdk.tooling.validation;
 
+import static akka.javasdk.tooling.validation.Validations.hasEffectMethod;
+import static akka.javasdk.tooling.validation.Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne;
+
 import akka.javasdk.validation.ast.MethodDef;
 import akka.javasdk.validation.ast.TypeDef;
 import java.util.ArrayList;
@@ -24,9 +27,8 @@ public class TimedActionValidations {
     }
 
     String effectType = "akka.javasdk.timedaction.TimedAction.Effect";
-    return Validations.hasEffectMethod(typeDef, effectType)
-        .combine(
-            Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne(typeDef, effectType))
+    return hasEffectMethod(typeDef, effectType)
+        .combine(strictlyPublicCommandHandlerArityShouldBeZeroOrOne(typeDef, effectType))
         .combine(timedActionCannotHaveFunctionTools(typeDef));
   }
 
