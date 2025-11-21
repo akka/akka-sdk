@@ -5,7 +5,7 @@
 package akka.javasdk.tooling.validation;
 
 import static akka.javasdk.tooling.validation.Validations.commandHandlerArityShouldBeZeroOrOne;
-import static akka.javasdk.tooling.validation.Validations.functionToolMustNotBeOnPrivateMethods;
+import static akka.javasdk.tooling.validation.Validations.functionToolMustNotBeOnNonPublicMethods;
 import static akka.javasdk.tooling.validation.Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne;
 
 import akka.javasdk.validation.ast.MethodDef;
@@ -48,7 +48,7 @@ public class WorkflowValidations {
             // we should not validate on StepEffect and on private
             // if functionToolMustNotBeOnStepEffect returns Invalid, we can stop
             functionToolMustNotBeOnStepEffect(typeDef)
-                .or(functionToolMustNotBeOnPrivateMethods(typeDef)));
+                .or(functionToolMustNotBeOnNonPublicMethods(typeDef)));
   }
 
   /**

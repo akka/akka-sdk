@@ -708,7 +708,7 @@ public class Validations {
   }
 
   /**
-   * Validates that @FunctionTool is not used on private methods.
+   * Validates that @FunctionTool is not used on non-public methods.
    *
    * <p>This validation applies to all components except Agents. Agents have their own validation
    * logic that allows @FunctionTool on private methods but not on command handlers.
@@ -716,16 +716,18 @@ public class Validations {
    * @param typeDef the component class to validate
    * @return a Validation result indicating success or failure
    */
-  public static Validation functionToolMustNotBeOnPrivateMethods(TypeDef typeDef) {
+  public static Validation functionToolMustNotBeOnNonPublicMethods(TypeDef typeDef) {
     List<String> errors = new ArrayList<>();
 
-    for (MethodDef method : typeDef.getMethods()) {
-      if (!method.isPublic() && method.hasAnnotation("akka.javasdk.annotations.FunctionTool")) {
+    for (MethodDef method : typeDef.getNonPublicMethods()) {
+      if (method.hasAnnotation("akka.javasdk.annotations.FunctionTool")) {
         errors.add(
             errorMessage(
                 method,
-                "Methods annotated with @FunctionTool must be public. Private methods cannot be"
-                    + " annotated with @FunctionTool."));
+                "Methods annotated with @FunctionTool must be public. "
+                    + "Method ["
+                    + method.getName()
+                    + "] cannot be annotated with @FunctionTool."));
       }
     }
 

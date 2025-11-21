@@ -209,7 +209,7 @@ class ViewValidationSpec extends AnyWordSpec with Matchers with CompilationTestS
       val result = compileTestSource("invalid/ViewWithFunctionToolOnPrivateMethod.java")
       assertCompilationFailure(
         result,
-        "Methods annotated with @FunctionTool must be public. Private methods cannot be annotated with @FunctionTool")
+        "Methods annotated with @FunctionTool must be public. Method [privateMethod] cannot be annotated with @FunctionTool")
     }
   }
 }

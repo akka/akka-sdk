@@ -4,6 +4,10 @@
 
 package akka.javasdk.tooling.validation;
 
+import static akka.javasdk.tooling.validation.Validations.functionToolMustNotBeOnNonPublicMethods;
+import static akka.javasdk.tooling.validation.Validations.hasEffectMethod;
+import static akka.javasdk.tooling.validation.Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne;
+
 import akka.javasdk.validation.ast.MethodDef;
 import akka.javasdk.validation.ast.TypeDef;
 import akka.javasdk.validation.ast.TypeRefDef;
@@ -31,13 +35,12 @@ public class EventSourcedEntityValidations {
     String readOnlyEffectType = "akka.javasdk.eventsourcedentity.EventSourcedEntity.ReadOnlyEffect";
     String[] effectTypes = {effectType, readOnlyEffectType};
 
-    return Validations.hasEffectMethod(typeDef, effectType)
-        .combine(
-            Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne(typeDef, effectTypes))
+    return hasEffectMethod(typeDef, effectType)
+        .combine(strictlyPublicCommandHandlerArityShouldBeZeroOrOne(typeDef, effectTypes))
         .combine(commandHandlersMustHaveUniqueNames(typeDef, effectTypes))
         .combine(eventTypeMustBeSealed(typeDef))
         .combine(functionToolMustBeOnEffectMethods(typeDef))
-        .combine(Validations.functionToolMustNotBeOnPrivateMethods(typeDef));
+        .combine(functionToolMustNotBeOnNonPublicMethods(typeDef));
   }
 
   /**

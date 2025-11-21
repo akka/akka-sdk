@@ -4,6 +4,10 @@
 
 package akka.javasdk.tooling.validation;
 
+import static akka.javasdk.tooling.validation.Validations.functionToolMustNotBeOnNonPublicMethods;
+import static akka.javasdk.tooling.validation.Validations.hasEffectMethod;
+import static akka.javasdk.tooling.validation.Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne;
+
 import akka.javasdk.validation.ast.MethodDef;
 import akka.javasdk.validation.ast.TypeDef;
 import java.util.ArrayList;
@@ -29,12 +33,11 @@ public class KeyValueEntityValidations {
     String readOnlyEffectType = "akka.javasdk.keyvalueentity.KeyValueEntity.ReadOnlyEffect";
     String[] effectTypes = {effectType, readOnlyEffectType};
 
-    return Validations.hasEffectMethod(typeDef, effectType)
-        .combine(
-            Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne(typeDef, effectTypes))
+    return hasEffectMethod(typeDef, effectType)
+        .combine(strictlyPublicCommandHandlerArityShouldBeZeroOrOne(typeDef, effectTypes))
         .combine(commandHandlersMustHaveUniqueNames(typeDef, effectTypes))
         .combine(functionToolMustBeOnEffectMethods(typeDef))
-        .combine(Validations.functionToolMustNotBeOnPrivateMethods(typeDef));
+        .combine(functionToolMustNotBeOnNonPublicMethods(typeDef));
   }
 
   /**

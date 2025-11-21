@@ -66,7 +66,7 @@ class KeyValueEntityValidationSpec extends AnyWordSpec with Matchers with Compil
       val result = compileTestSource("invalid/KeyValueEntityWithFunctionToolOnPrivateMethod.java")
       assertCompilationFailure(
         result,
-        "Methods annotated with @FunctionTool must be public. Private methods cannot be annotated with @FunctionTool")
+        "Methods annotated with @FunctionTool must be public. Method [privateMethod] cannot be annotated with @FunctionTool")
     }
   }
 }
