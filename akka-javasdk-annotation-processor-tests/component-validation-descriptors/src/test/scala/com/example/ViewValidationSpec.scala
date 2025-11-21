@@ -182,7 +182,7 @@ class ViewValidationSpec extends AnyWordSpec with Matchers with CompilationTestS
         "You are using a type level annotation in this TableUpdater and that requires the TableUpdater type",
         "to match the type",
         "If your intention is to transform the type, you should add a method like",
-        "Effect<")
+        "Effect<com.example.ViewMissingKVETransformationHandler.ViewRow>")
     }
 
     "reject View missing Workflow transformation handler" in {
@@ -192,7 +192,7 @@ class ViewValidationSpec extends AnyWordSpec with Matchers with CompilationTestS
         "You are using a type level annotation in this TableUpdater and that requires the TableUpdater type",
         "to match the type",
         "If your intention is to transform the type, you should add a method like",
-        "Effect<")
+        "Effect<com.example.ViewMissingWorkflowTransformationHandler.ViewRow>")
     }
 
     "accept View with @FunctionTool on QueryEffect" in {
