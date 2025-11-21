@@ -56,6 +56,9 @@ The pinned-region mode is used by default. To use request-region mode you need t
 name: my-service
 service:
   image: my-container-uri/container-name:tag-name
+  resources:
+    runtime:
+      mode: embedded
   replication:
     mode: replicated-read
     replicatedRead:
@@ -73,6 +76,9 @@ To use this read-only mode for all regions you set `primarySelectionMode` to `no
 name: my-service
 service:
   image: my-container-uri/container-name:tag-name
+  resources:
+    runtime:
+      mode: embedded
   replication:
     mode: replicated-read
     replicatedRead:
@@ -86,6 +92,9 @@ To use the pinned-region primary selection mode again you set `pinned-region` in
 name: my-service
 service:
   image: my-container-uri/container-name:tag-name
+  resources:
+    runtime:
+      mode: embedded
   replication:
     mode: replicated-read
     replicatedRead:
