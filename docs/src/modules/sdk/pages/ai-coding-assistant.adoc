@@ -83,9 +83,13 @@ If your AI coding assistant isn't included in the Akka CLI you can use the https
 
 === Notes about Claude code
 
-For https://www.anthropic.com/claude-code[Claude code, window="new"] the `CLAUDE.md` from the Akka CLI includes the detailed instructions from `AGENTS.md`. The reason for the separation into two files is that you should be able to download updated versions of `AGENTS.md` and have your custom instructions in `CLAUDE.md`.
+For https://www.anthropic.com/claude-code[Claude code, window="new"] the `CLAUDE.md` from the Akka CLI includes the detailed instructions from `AGENTS.md`. The reason for the separation into two files is that you should be able to download updated versions of `AGENTS.md` and have your custom instructions in `CLAUDE.md` remain unchanged.
 
 This `CLAUDE.md` also defines an iterative generation workflow. You can modify or remove that if you prefer another way of working with Claude.
+
+=== Notes about Copilot
+
+If you are using https://github.com/features/copilot[Github Copilot, window="new"] as a standalone editor or https://docs.github.com/en/copilot/concepts/agents/about-copilot-cli[as a CLI, window="new"], then it should automatically detect the context from the files used during code initialization. If it is not using the `akka-context` directory, then you can manually add this directory by attaching it to context in your copilot chat, either with the paperclip (📎) icon in the IDE or with the `#` prefix in either app.
 
 === Notes about Cursor
 
