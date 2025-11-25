@@ -1,0 +1,38 @@
+== Compile-time validations
+
+The Akka Java SDK validates KeyValueEntity components at compile time to catch configuration errors early.
+
+include::compile-time-validations-common.adoc[tag=intro]
+
+=== KeyValueEntity-specific validations
+
+In addition to the xref:compile-time-validations-common.adoc[common validations], KeyValueEntities have the following specific requirements:
+
+==== Unique command handler names
+
+KeyValueEntity command handlers must have unique names. Method overloading is not supported for command handlers.
+
+==== @FunctionTool only on Effect methods
+
+The `@FunctionTool` annotation can only be used on methods that return `KeyValueEntity.Effect` or `KeyValueEntity.ReadOnlyEffect`. It cannot be used on other methods or private methods.
+
+==== Command handler arity
+
+Command handlers (methods returning `Effect` or `ReadOnlyEffect`) must have zero or one parameter.
+
+=== Key-value entity patterns
+
+KeyValueEntity is designed for simpler state management compared to EventSourcedEntity:
+
+* **Direct state updates**: No event sourcing, just update the state directly
+* **No sealed type requirements**: State can be any serializable type
+* **Read and write separation**: Use `Effect` for writes, `ReadOnlyEffect` for reads
+
+=== Why these validations matter
+
+These validations ensure:
+
+* **Clear API**: Unique command names prevent confusion and routing errors
+* **Proper tool exposure**: Only command handlers can be exposed as tools for AI agents
+* **Simple command design**: Limited parameters encourage thoughtful API design
+* **Type safety**: Compile-time checks prevent runtime errors

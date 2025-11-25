@@ -1,0 +1,42 @@
+== Compile-time validations
+
+The Akka Java SDK validates Agent components at compile time to catch configuration errors early.
+
+include::compile-time-validations-common.adoc[tag=intro]
+
+=== Agent-specific validations
+
+In addition to the xref:compile-time-validations-common.adoc[common validations], Agents have the following specific requirements:
+
+==== Single command handler
+
+An Agent must have exactly one public method returning either `Agent.Effect` or `Agent.StreamEffect`. This is the main entry point for the agent.
+
+==== Agent metadata
+
+Use `@Component` (with `name` and `description` parameters) and `@AgentRole` to specify agent metadata:
+
+* `@Component.name` - the display name of the agent
+* `@Component.description` - a description of what the agent does
+* `@AgentRole` - the role of the agent (e.g., "assistant", "helper")
+
+==== @FunctionTool restrictions for agents
+
+Unlike other components, Agents have special rules for `@FunctionTool`:
+
+* Command handlers (methods returning `Agent.Effect` or `Agent.StreamEffect`) cannot be annotated with `@FunctionTool`
+* Helper methods can be annotated with `@FunctionTool` to expose them as tools for the agent
+* Private methods _can_ be annotated with `@FunctionTool` (this is unique to Agents)
+
+==== Command handler arity
+
+Agent command handlers follow the common rule: they must have zero or one parameter.
+
+=== Why these validations matter
+
+These validations ensure:
+
+* **Clear agent interface**: A single entry point makes the agent's purpose unambiguous
+* **Proper tool definition**: Only helper methods can be tools, not the main command handler
+* **Consistent metadata**: Agent descriptions come from one source, preventing conflicts
+* **Simplified implementation**: Catching these issues at compile time saves debugging time
