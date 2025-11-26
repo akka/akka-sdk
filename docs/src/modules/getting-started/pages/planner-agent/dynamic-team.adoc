@@ -187,7 +187,7 @@ Inspect the logs and notice the difference if you include "Beware of the weather
 
 If you'd rather use the visual request builder in the console, you can create this request and see all of the components involved in handling the request:
 
-image:multi-agent-flowview.png[]
+image:multi-agent-flowview.png[Flow view for the Multi agent]
 
 == Next steps
 
