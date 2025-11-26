@@ -265,11 +265,17 @@ http://localhost:9889[window="new"]
 
 . Navigate to your service's Endpoint, which will be available http://localhost:9889/services/helloworld-agent/components/com.example.api.HelloWorldEndpoint[here, window="new"].
 
-image:hello-world-local-console.png[]
+image:hello-world-local-console.png["Hello World" Endpoint in the Local Console]
 
 You can also see the details of the session in the `SessionMemoryEntity`.
 
-image:hello-world-session-memory.png[]
+image:hello-world-session-memory.png[Session memory in the Local Console]
+
+If you're curious about which components are called and for how long when you make a request of this agent, you can use the request creation console feature. Simply click on the `HelloworldEndpoint` and you will see the _Create a request_ box. Fill in the fields the way you might if you were manually using `curl`. After the request executes (it could take a few seconds), you will see an analysis of the request, as shown in this screenshot:
+
+image:flowview_helloworld.png[An HTTP post calls the agent]
+
+A key insight to take away from this image is that 99.9% of the request's execution time was spent talking to OpenAI.
 
 This is a simple Hello World service, so there isn't much to see here yet. However, as you build more complex services, the console will become a more valuable tool for monitoring and debugging.
 
