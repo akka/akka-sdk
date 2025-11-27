@@ -16,7 +16,7 @@ class TimedActionValidationSpec extends AnyWordSpec with CompilationTestSupport 
 
     "reject TimedAction without Effect methods" in {
       val result = compileTestSource("invalid/TimedActionWithoutEffect.java")
-      assertCompilationFailure(result, "No method returning akka.javasdk.timedaction.TimedAction.Effect found")
+      assertCompilationFailure(result, "No public method returning akka.javasdk.timedaction.TimedAction.Effect found")
     }
 
     "reject TimedAction with command handler having too many parameters" in {
@@ -27,13 +27,6 @@ class TimedActionValidationSpec extends AnyWordSpec with CompilationTestSupport 
     "reject TimedAction with @FunctionTool annotation" in {
       val result = compileTestSource("invalid/TimedActionWithFunctionTool.java")
       assertCompilationFailure(result, "TimedAction methods cannot be annotated with @FunctionTool")
-    }
-
-    "reject TimedAction with @FunctionTool on private methods" in {
-      val result = compileTestSource("invalid/TimedActionWithFunctionToolOnPrivateMethod.java")
-      assertCompilationFailure(
-        result,
-        "Methods annotated with @FunctionTool must be public. Private methods cannot be annotated with @FunctionTool")
     }
 
     "return Valid for TimedAction with 0-arity method returning TimedAction.Effect" in {

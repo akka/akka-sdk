@@ -72,6 +72,15 @@ public interface TypeDef {
   }
 
   /**
+   * Returns only the non-public methods declared in this type.
+   *
+   * @return list of non-public methods
+   */
+  default List<MethodDef> getNonPublicMethods() {
+    return getMethods().stream().filter(m -> !m.isPublic()).toList();
+  }
+
+  /**
    * Returns all annotations present on this type.
    *
    * @return list of annotations

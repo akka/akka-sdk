@@ -48,7 +48,7 @@ class WorkflowValidationSpec extends AnyWordSpec with Matchers with CompilationT
 
     "reject Workflow with no Effect method" in {
       val result = compileTestSource("invalid/WorkflowNoEffect.java")
-      assertCompilationFailure(result, "No method returning akka.javasdk.workflow.Workflow.Effect")
+      assertCompilationFailure(result, "No public method returning akka.javasdk.workflow.Workflow.Effect")
     }
 
     "reject Workflow that is not public" in {
@@ -71,11 +71,21 @@ class WorkflowValidationSpec extends AnyWordSpec with Matchers with CompilationT
         "Only methods returning Effect or ReadOnlyEffect can be annotated with @FunctionTool.")
     }
 
+    "reject Workflow with @FunctionTool on private StepEffect" in {
+      val result = compileTestSource("invalid/WorkflowWithFunctionToolOnPrivateStepEffect.java")
+      assertCompilationFailure(
+        result,
+        "Workflow methods annotated with @FunctionTool cannot return StepEffect.",
+        "Only methods returning Effect or ReadOnlyEffect can be annotated with @FunctionTool.")
+
+      assertCompilationFailureNotContain(result, "Methods annotated with @FunctionTool must be public.")
+    }
+
     "reject Workflow with @FunctionTool on private methods" in {
       val result = compileTestSource("invalid/WorkflowWithFunctionToolOnPrivateMethod.java")
       assertCompilationFailure(
         result,
-        "Methods annotated with @FunctionTool must be public. Private methods cannot be annotated with @FunctionTool")
+        "Methods annotated with @FunctionTool must be public. Method [privateMethod] cannot be annotated with @FunctionTool")
     }
   }
 }

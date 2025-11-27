@@ -110,8 +110,7 @@ public class Validations {
     for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
       // Use startsWith to handle generic types like Effect<T>
-      if (returnTypeName.equals(effectTypeName)
-          || returnTypeName.startsWith(effectTypeName + "<")) {
+      if (returnTypeName.startsWith(effectTypeName)) {
         // Skip methods marked with @DeleteHandler
         if (hasHandleDeletes(method)) {
           continue;
@@ -147,8 +146,7 @@ public class Validations {
 
     for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
-      if (returnTypeName.equals(effectTypeName)
-          || returnTypeName.startsWith(effectTypeName + "<")) {
+      if (returnTypeName.startsWith(effectTypeName)) {
         if (method.hasAnnotation("akka.javasdk.annotations.Acl")) {
           errors.add(
               Validations.errorMessage(
@@ -180,8 +178,7 @@ public class Validations {
     for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
       // Use startsWith to handle generic types like Effect<T>
-      if (returnTypeName.equals(effectTypeName)
-          || returnTypeName.startsWith(effectTypeName + "<")) {
+      if (returnTypeName.startsWith(effectTypeName)) {
         // Get the last parameter type (or empty string for parameterless methods)
         String paramType = "";
         if (!method.getParameters().isEmpty()) {
@@ -252,8 +249,7 @@ public class Validations {
     boolean hasRawHandler = false;
     for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
-      if (returnTypeName.equals(effectTypeName)
-          || returnTypeName.startsWith(effectTypeName + "<")) {
+      if (returnTypeName.startsWith(effectTypeName)) {
         if (method.getParameters().size() == 1) {
           String paramType = method.getParameters().getFirst().getType().getQualifiedName();
           if (paramType.equals("byte[]")) {
@@ -268,8 +264,7 @@ public class Validations {
     List<TypeRefDef> handlerParamTypes = new ArrayList<>();
     for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
-      if (returnTypeName.equals(effectTypeName)
-          || returnTypeName.startsWith(effectTypeName + "<")) {
+      if (returnTypeName.startsWith(effectTypeName)) {
         if (!hasHandleDeletes(method) && method.getParameters().size() == 1) {
           TypeRefDef paramType = method.getParameters().getFirst().getType();
           if (!paramType.getQualifiedName().equals("byte[]")) {
@@ -378,7 +373,7 @@ public class Validations {
 
     for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
-      if (returnTypeName.equals(effectTypeName)) {
+      if (returnTypeName.startsWith(effectTypeName)) {
         if (hasHandleDeletes(method)) {
           hasDeleteHandler = true;
         } else if (!method.getParameters().isEmpty()) {
@@ -444,7 +439,7 @@ public class Validations {
 
     for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
-      if (returnTypeName.equals(effectTypeName)) {
+      if (returnTypeName.startsWith(effectTypeName)) {
         if (hasHandleDeletes(method)) {
           hasDeleteHandler = true;
         } else if (!method.getParameters().isEmpty()) {
@@ -498,8 +493,7 @@ public class Validations {
     boolean hasRawHandler = false;
     for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
-      if ((returnTypeName.equals(effectTypeName) || returnTypeName.startsWith(effectTypeName + "<"))
-          && !method.getParameters().isEmpty()) {
+      if ((returnTypeName.startsWith(effectTypeName)) && !method.getParameters().isEmpty()) {
         String paramType = method.getParameters().getFirst().getType().getQualifiedName();
         if (paramType.equals("byte[]")) {
           hasRawHandler = true;
@@ -564,8 +558,7 @@ public class Validations {
     List<String> handlerParamTypes = new ArrayList<>();
     for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
-      if (returnTypeName.equals(effectTypeName)
-          || returnTypeName.startsWith(effectTypeName + "<")) {
+      if (returnTypeName.startsWith(effectTypeName)) {
         if (!method.getParameters().isEmpty()) {
           String paramType = method.getParameters().getFirst().getType().getQualifiedName();
           if (!paramType.equals("byte[]")) {
@@ -646,7 +639,8 @@ public class Validations {
   }
 
   /**
-   * Validates that a component has at least one method returning one of the specified effect types.
+   * Validates that a component has at least one public method returning one of the specified effect
+   * types.
    *
    * @param typeDef the component class to validate
    * @param effectTypeNames the fully qualified effect type names
@@ -662,7 +656,7 @@ public class Validations {
 
     var names = String.join(", ", effectTypeNames);
     return Validation.of(
-        "No method returning " + names + " found in " + typeDef.getQualifiedName());
+        "No public method returning " + names + " found in " + typeDef.getQualifiedName());
   }
 
   /**
@@ -715,7 +709,7 @@ public class Validations {
   }
 
   /**
-   * Validates that @FunctionTool is not used on private methods.
+   * Validates that @FunctionTool is not used on non-public methods.
    *
    * <p>This validation applies to all components except Agents. Agents have their own validation
    * logic that allows @FunctionTool on private methods but not on command handlers.
@@ -723,16 +717,18 @@ public class Validations {
    * @param typeDef the component class to validate
    * @return a Validation result indicating success or failure
    */
-  public static Validation functionToolMustNotBeOnPrivateMethods(TypeDef typeDef) {
+  public static Validation functionToolMustNotBeOnNonPublicMethods(TypeDef typeDef) {
     List<String> errors = new ArrayList<>();
 
-    for (MethodDef method : typeDef.getMethods()) {
-      if (!method.isPublic() && method.hasAnnotation("akka.javasdk.annotations.FunctionTool")) {
+    for (MethodDef method : typeDef.getNonPublicMethods()) {
+      if (method.hasAnnotation("akka.javasdk.annotations.FunctionTool")) {
         errors.add(
             errorMessage(
                 method,
-                "Methods annotated with @FunctionTool must be public. Private methods cannot be"
-                    + " annotated with @FunctionTool."));
+                "Methods annotated with @FunctionTool must be public. "
+                    + "Method ["
+                    + method.getName()
+                    + "] cannot be annotated with @FunctionTool."));
       }
     }
 

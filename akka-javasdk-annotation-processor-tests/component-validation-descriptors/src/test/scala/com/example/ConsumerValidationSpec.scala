@@ -74,7 +74,7 @@ class ConsumerValidationSpec extends AnyWordSpec with CompilationTestSupport {
 
     "reject Consumer without Effect methods" in {
       val result = compileTestSource("invalid/ConsumerWithoutEffectMethod.java")
-      assertCompilationFailure(result, "No method returning akka.javasdk.consumer.Consumer.Effect found")
+      assertCompilationFailure(result, "No public method returning akka.javasdk.consumer.Consumer.Effect found")
     }
 
     "reject Consumer with command handler having too many parameters" in {
@@ -223,11 +223,9 @@ class ConsumerValidationSpec extends AnyWordSpec with CompilationTestSupport {
       assertCompilationFailure(result, "missing an event handler")
     }
 
-    "reject Consumer with @FunctionTool on private methods" in {
-      val result = compileTestSource("invalid/ConsumerWithFunctionToolOnPrivateMethod.java")
-      assertCompilationFailure(
-        result,
-        "Methods annotated with @FunctionTool must be public. Private methods cannot be annotated with @FunctionTool")
+    "reject Consumer with @FunctionTool annotation" in {
+      val result = compileTestSource("invalid/ConsumerWithFunctionTool.java")
+      assertCompilationFailure(result, "Consumer methods cannot be annotated with @FunctionTool.")
     }
   }
 }

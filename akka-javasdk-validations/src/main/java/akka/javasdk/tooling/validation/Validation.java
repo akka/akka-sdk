@@ -54,6 +54,8 @@ public sealed interface Validation permits Validation.Valid, Validation.Invalid 
    */
   Validation combine(Validation other);
 
+  Validation or(Validation other);
+
   /** Represents a successful validation with no errors. */
   final class Valid implements Validation {
 
@@ -77,6 +79,11 @@ public sealed interface Validation permits Validation.Valid, Validation.Invalid 
     public Validation combine(Validation other) {
       // Valid combined with anything returning that other validation
       return other;
+    }
+
+    @Override
+    public Validation or(Validation other) {
+      return combine(other);
     }
 
     @Override
@@ -135,6 +142,11 @@ public sealed interface Validation permits Validation.Valid, Validation.Invalid 
         combinedMessages.addAll(otherMessages);
         return new Invalid(combinedMessages);
       }
+      return this;
+    }
+
+    @Override
+    public Validation or(Validation other) {
       return this;
     }
 

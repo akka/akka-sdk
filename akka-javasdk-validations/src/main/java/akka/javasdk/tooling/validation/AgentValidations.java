@@ -4,6 +4,9 @@
 
 package akka.javasdk.tooling.validation;
 
+import static akka.javasdk.tooling.validation.Validations.hasEffectMethod;
+import static akka.javasdk.tooling.validation.Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne;
+
 import akka.javasdk.validation.ast.AnnotationDef;
 import akka.javasdk.validation.ast.MethodDef;
 import akka.javasdk.validation.ast.TypeDef;
@@ -30,10 +33,9 @@ public class AgentValidations {
     }
 
     return mustHaveValidAgentDescription(typeDef)
-        .combine(Validations.hasEffectMethod(typeDef, effectTypes))
+        .combine(hasEffectMethod(typeDef, effectTypes))
         .combine(mustHaveSinglePublicCommandHandler(typeDef))
-        .combine(
-            Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne(typeDef, effectTypes))
+        .combine(strictlyPublicCommandHandlerArityShouldBeZeroOrOne(typeDef, effectTypes))
         .combine(commandHandlerCannotHaveFunctionTool(typeDef));
   }
 

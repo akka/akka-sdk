@@ -4,6 +4,12 @@
 
 package akka.javasdk.tooling.validation;
 
+import static akka.javasdk.tooling.validation.Validations.ambiguousHandlerValidations;
+import static akka.javasdk.tooling.validation.Validations.functionToolMustNotBeOnNonPublicMethods;
+import static akka.javasdk.tooling.validation.Validations.noSubscriptionMethodWithAcl;
+import static akka.javasdk.tooling.validation.Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne;
+import static akka.javasdk.tooling.validation.Validations.subscriptionMethodMustHaveOneParameter;
+
 import akka.javasdk.validation.ast.AnnotationDef;
 import akka.javasdk.validation.ast.MethodDef;
 import akka.javasdk.validation.ast.TypeDef;
@@ -40,7 +46,7 @@ public class ViewValidations {
             .combine(viewQueryMethodArityShouldBeZeroOrOne(typeDef))
             .combine(viewMultipleTableUpdatersMustHaveTableAnnotations(typeDef))
             .combine(functionToolOnlyOnQueryEffect(typeDef))
-            .combine(Validations.functionToolMustNotBeOnPrivateMethods(typeDef));
+            .combine(functionToolMustNotBeOnNonPublicMethods(typeDef));
 
     // Validate each TableUpdater
     for (TypeDef updater : tableUpdaters) {
@@ -280,13 +286,11 @@ public class ViewValidations {
         .combine(viewDeleteHandlerValidation(tableUpdater))
         .combine(viewCommonStateSubscriptionValidation(tableUpdater))
         .combine(viewMustHaveCorrectUpdateHandlerWhenTransformingViewUpdates(tableUpdater))
-        .combine(Validations.ambiguousHandlerValidations(tableUpdater, effectType))
-        .combine(
-            Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne(
-                tableUpdater, effectType))
+        .combine(ambiguousHandlerValidations(tableUpdater, effectType))
+        .combine(strictlyPublicCommandHandlerArityShouldBeZeroOrOne(tableUpdater, effectType))
         .combine(viewMissingHandlerValidations(tableUpdater, effectType))
-        .combine(Validations.noSubscriptionMethodWithAcl(tableUpdater, effectType))
-        .combine(Validations.subscriptionMethodMustHaveOneParameter(tableUpdater, effectType));
+        .combine(noSubscriptionMethodWithAcl(tableUpdater, effectType))
+        .combine(subscriptionMethodMustHaveOneParameter(tableUpdater, effectType));
   }
 
   /**
@@ -716,8 +720,7 @@ public class ViewValidations {
         String returnTypeName = method.getReturnType().getQualifiedName();
 
         // Check if it's a QueryStreamEffect (not allowed)
-        if (returnTypeName.equals("akka.javasdk.view.View.QueryStreamEffect")
-            || returnTypeName.startsWith("akka.javasdk.view.View.QueryStreamEffect<")) {
+        if (returnTypeName.startsWith("akka.javasdk.view.View.QueryStreamEffect")) {
           errors.add(
               Validations.errorMessage(
                   method,
