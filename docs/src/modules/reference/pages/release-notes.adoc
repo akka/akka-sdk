@@ -61,7 +61,7 @@ Current versions
 
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.5[Akka SDK 3.5.5]
 - Include `EvaluatorResult.passed` in json response
-- Use `@Compont` and new `@AgentRole` annotations instead of `@AgentDescriptor`
+- Use `@Component` and new `@AgentRole` annotations instead of `@AgentDescriptor`
 - Comprehensive CLAUDE.md
 
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.4[Akka SDK 3.5.4]
