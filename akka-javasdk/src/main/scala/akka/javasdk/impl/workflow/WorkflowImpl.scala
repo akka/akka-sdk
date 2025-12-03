@@ -13,6 +13,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.control.NonFatal
 
+import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.CommandException
 import akka.javasdk.Metadata
@@ -30,9 +31,11 @@ import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.Workflow.LegacyWorkflowTimeout
+import akka.javasdk.workflow.Workflow.WorkflowSettings
 import akka.javasdk.workflow.Workflow.{ RecoverStrategy => SdkRecoverStrategy }
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi.BytesPayload
+import akka.runtime.sdk.spi.ComponentClients
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiEntity
 import akka.runtime.sdk.spi.SpiMetadata
@@ -62,13 +65,19 @@ class WorkflowImpl[S, W <: Workflow[S]](
     sdkExecutionContext: ExecutionContext,
     tracerFactory: () => Tracer,
     regionInfo: RegionInfo,
-    instanceFactory: Function[WorkflowContext, W])
+    runtimeComponentClients: ComponentClients,
+    instanceFactory: Function[WorkflowContext, W])(implicit system: ActorSystem[_])
     extends SpiWorkflow {
 
   private val log: Logger = LoggerFactory.getLogger(workflowClass)
 
   private val router =
-    new ReflectiveWorkflowRouter[S, W](instanceFactory, componentDescriptor.methodInvokers, serializer)
+    new ReflectiveWorkflowRouter[S, W](
+      instanceFactory,
+      componentDescriptor.methodInvokers,
+      serializer,
+      sdkExecutionContext,
+      runtimeComponentClients)
 
   override def configuration: SpiWorkflow.WorkflowConfig = {
     val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, None, tracerFactory)
@@ -94,7 +103,8 @@ class WorkflowImpl[S, W <: Workflow[S]](
       workflowConfig match {
         case c: LegacyWorkflowTimeout =>
           (c.workflowTimeout.toScala.map(_.toScala), c.workflowRecoverStrategy().toScala.map(toRecovery))
-        case _ => (None, None)
+        case s: WorkflowSettings =>
+          (s.workflowTimeout.toScala.map(_.toScala), s.workflowRecoverStrategy().toScala.map(toRecovery))
       }
 
     val defaultStepTimeout = workflowConfig.defaultStepTimeout().toScala.map(_.toScala)
@@ -153,7 +163,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
         Future.successful(new SpiWorkflow.ErrorEffect(new SpiEntity.Error(msg, None)))
       case e: WorkflowException => throw e
       case NonFatal(error) =>
-        throw WorkflowException(workflowId, command.name, s"Unexpected failure: $error", Some(error))
+        throw WorkflowException(workflowId, command.name, s"unexpected failure: $error", Some(error))
     } finally {
       if (traceId.isDefined) MDC.remove(Telemetry.TRACE_ID)
     }
