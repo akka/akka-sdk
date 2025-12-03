@@ -51,6 +51,8 @@ class TimedActionImplSpec
         maxRetries: Int,
         deferredRequest: DeferredRequest): Future[Done] = ???
     override def removeTimer(name: String): Future[Done] = ???
+
+    override def isTimerActive(name: String): Future[Boolean] = ???
   }
 
   def create(componentDescriptor: ComponentDescriptor): TimedActionImpl[TestTimedAction] = {

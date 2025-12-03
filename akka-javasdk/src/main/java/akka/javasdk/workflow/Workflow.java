@@ -4,6 +4,7 @@
 
 package akka.javasdk.workflow;
 
+import akka.Done;
 import akka.annotation.InternalApi;
 import akka.javasdk.CommandException;
 import akka.javasdk.Metadata;
@@ -241,6 +242,8 @@ public abstract class Workflow<S> {
        */
       Transitional pause(String reason);
 
+      Transitional pause(PauseSettings pauseSettings);
+
       /**
        * Defines the next step to which the workflow should transition to.
        *
@@ -420,6 +423,8 @@ public abstract class Workflow<S> {
        */
       Transitional pause(String reason);
 
+      Transitional pause(PauseSettings pauseSettings);
+
       /**
        * Defines the next step to which the workflow should transition to.
        *
@@ -524,6 +529,8 @@ public abstract class Workflow<S> {
        */
       StepEffect thenPause(String reason);
 
+      StepEffect thenPause(PauseSettings pauseSettings);
+
       /**
        * Defines the next step to which the workflow should transition to.
        *
@@ -585,6 +592,8 @@ public abstract class Workflow<S> {
        * via command handler.
        */
       StepEffect thenPause(String reason);
+
+      StepEffect thenPause(PauseSettings pauseSettings);
 
       /**
        * Defines the next step to which the workflow should transition to.
@@ -797,6 +806,54 @@ public abstract class Workflow<S> {
     }
   }
 
+  public sealed interface TimeoutHandler {
+    record UnaryTimeoutHandler(akka.japi.function.Function<?, Effect<Done>> pauseTimeoutHandler)
+        implements TimeoutHandler {}
+
+    record BinaryTimeoutHandler(
+        akka.japi.function.Function2<?, ?, Effect<Done>> pauseTimeoutHandler, Object input)
+        implements TimeoutHandler {}
+  }
+
+  public record PauseSettings(
+      Optional<String> reason, Duration duration, TimeoutHandler timeoutHandler) {}
+
+  public class PauseSettingsBuilder {
+
+    private final Duration duration;
+    private final Optional<String> reason;
+
+    public PauseSettingsBuilder(Duration duration) {
+      this.duration = duration;
+      this.reason = Optional.empty();
+    }
+
+    public PauseSettingsBuilder(Duration duration, Optional<String> reason) {
+      this.duration = duration;
+      this.reason = reason;
+    }
+
+    public PauseSettingsBuilder reason(String reason) {
+      return new PauseSettingsBuilder(duration, Optional.of(reason));
+    }
+
+    public <W> PauseSettings timeoutHandler(
+        akka.japi.function.Function<W, Effect<Done>> timeoutHandler) {
+      return new PauseSettings(
+          reason, duration, new TimeoutHandler.UnaryTimeoutHandler(timeoutHandler));
+    }
+
+    public <W, I> PauseSettings timeoutHandler(
+        akka.japi.function.Function2<W, I, Effect<Done>> timeoutHandler, I input) {
+      return new PauseSettings(
+          reason, duration, new TimeoutHandler.BinaryTimeoutHandler(timeoutHandler, input));
+    }
+  }
+
+  public PauseSettingsBuilder pauseSetting(Duration duration) {
+    return new PauseSettingsBuilder(duration);
+  }
+
   public sealed interface WorkflowSettings {
 
     static WorkflowSettingsBuilder builder() {
@@ -810,6 +867,10 @@ public abstract class Workflow<S> {
     List<StepSettings> stepSettings();
 
     Optional<Duration> passivationDelay();
+
+    Optional<Duration> workflowTimeout();
+
+    Optional<RecoverStrategy<?>> workflowRecoverStrategy();
   }
 
   /** INTERNAL API */
@@ -866,7 +927,9 @@ public abstract class Workflow<S> {
       Optional<Duration> defaultStepTimeout,
       Optional<RecoverStrategy<?>> defaultStepRecoverStrategy,
       Map<String, StepSettings> stepSettingsMap,
-      Optional<Duration> passivationDelay)
+      Optional<Duration> passivationDelay,
+      Optional<Duration> workflowTimeout,
+      Optional<RecoverStrategy<?>> workflowRecoverStrategy)
       implements WorkflowSettings {
 
     @Override
@@ -881,33 +944,100 @@ public abstract class Workflow<S> {
     private final Optional<RecoverStrategy<?>> defaultStepRecoverStrategy;
     private final Map<String, StepSettings> stepSettingsMap;
     private final Optional<Duration> passivationDelay;
+    private final Optional<Duration> workflowTimeout;
+    private final Optional<RecoverStrategy<?>> workflowRecoveryStrategy;
 
     public WorkflowSettingsBuilder(
         Optional<Duration> defaultStepTimeout,
         Optional<RecoverStrategy<?>> defaultStepRecoverStrategy,
         Map<String, StepSettings> stepSettingsMap,
-        Optional<Duration> passivationDelay) {
+        Optional<Duration> passivationDelay,
+        Optional<Duration> workflowTimeout,
+        Optional<RecoverStrategy<?>> workflowRecoveryStrategy) {
       this.defaultStepTimeout = defaultStepTimeout;
       this.defaultStepRecoverStrategy = defaultStepRecoverStrategy;
       this.stepSettingsMap = stepSettingsMap;
       this.passivationDelay = passivationDelay;
+      this.workflowTimeout = workflowTimeout;
+      this.workflowRecoveryStrategy = workflowRecoveryStrategy;
     }
 
     public static WorkflowSettingsBuilder newBuilder() {
       return new WorkflowSettingsBuilder(
-          Optional.empty(), Optional.empty(), Map.of(), Optional.empty());
+          Optional.empty(),
+          Optional.empty(),
+          Map.of(),
+          Optional.empty(),
+          Optional.empty(),
+          Optional.empty());
+    }
+
+    /**
+     * Define a timeout for the duration of the entire workflow. When the timeout expires, the
+     * workflow is finished and no transitions are allowed.
+     *
+     * @param timeout Timeout duration
+     */
+    public WorkflowSettingsBuilder timeout(Duration timeout) {
+      return new WorkflowSettingsBuilder(
+          defaultStepTimeout,
+          defaultStepRecoverStrategy,
+          stepSettingsMap,
+          passivationDelay,
+          Optional.of(timeout),
+          workflowRecoveryStrategy);
+    }
+
+    public <W> WorkflowSettingsBuilder timeout(
+        Duration timeout, akka.japi.function.Function<W, StepEffect> timeoutFailoverStep) {
+      var method = MethodRefResolver.resolveMethodRef(timeoutFailoverStep);
+      var stepName = WorkflowDescriptor.stepMethodName(method);
+      var workflowRecovery = new RecoverStrategy<>(0, stepName, Optional.empty());
+      return new WorkflowSettingsBuilder(
+          defaultStepTimeout,
+          defaultStepRecoverStrategy,
+          stepSettingsMap,
+          passivationDelay,
+          Optional.of(timeout),
+          Optional.of(workflowRecovery));
+    }
+
+    public <W, I> WorkflowSettingsBuilder timeout(
+        Duration timeout,
+        akka.japi.function.Function2<W, I, StepEffect> timeoutFailoverStep,
+        I input) {
+      var method = MethodRefResolver.resolveMethodRef(timeoutFailoverStep);
+      var stepName = WorkflowDescriptor.stepMethodName(method);
+      var workflowRecovery = new RecoverStrategy<>(0, stepName, Optional.of(input));
+      return new WorkflowSettingsBuilder(
+          defaultStepTimeout,
+          defaultStepRecoverStrategy,
+          stepSettingsMap,
+          passivationDelay,
+          Optional.of(timeout),
+          Optional.of(workflowRecovery));
     }
 
     /** Define a default timeout duration for all steps. Can be overridden per step. */
     public WorkflowSettingsBuilder defaultStepTimeout(Duration timeout) {
       return new WorkflowSettingsBuilder(
-          Optional.of(timeout), defaultStepRecoverStrategy, stepSettingsMap, passivationDelay);
+          Optional.of(timeout),
+          defaultStepRecoverStrategy,
+          stepSettingsMap,
+          passivationDelay,
+          workflowTimeout,
+          workflowRecoveryStrategy);
     }
 
     /** Define a default recovery strategy for all steps. Can be overridden per step. */
     public WorkflowSettingsBuilder defaultStepRecovery(RecoverStrategy<?> recoverStrategy) {
       return new WorkflowSettingsBuilder(
-          defaultStepTimeout, Optional.of(recoverStrategy), stepSettingsMap, passivationDelay);
+          defaultStepTimeout,
+          Optional.of(recoverStrategy),
+          stepSettingsMap,
+          passivationDelay,
+          workflowTimeout,
+          workflowRecoveryStrategy);
     }
 
     /**
@@ -972,7 +1102,9 @@ public abstract class Workflow<S> {
           defaultStepTimeout,
           defaultStepRecoverStrategy,
           stepSettingsMap,
-          Optional.ofNullable(delay));
+          Optional.ofNullable(delay),
+          workflowTimeout,
+          workflowRecoveryStrategy);
     }
 
     private WorkflowSettingsBuilder addStepTimeout(String stepName, Duration timeout) {
@@ -991,7 +1123,12 @@ public abstract class Workflow<S> {
       var mutableMap = new HashMap<>(stepSettingsMap);
       mutableMap.put(settings.stepName(), settings);
       return new WorkflowSettingsBuilder(
-          defaultStepTimeout, defaultStepRecoverStrategy, Map.copyOf(mutableMap), passivationDelay);
+          defaultStepTimeout,
+          defaultStepRecoverStrategy,
+          Map.copyOf(mutableMap),
+          passivationDelay,
+          workflowTimeout,
+          workflowRecoveryStrategy);
     }
 
     /**
@@ -1001,7 +1138,12 @@ public abstract class Workflow<S> {
      */
     public WorkflowSettings build() {
       return new WorkflowSettingsImpl(
-          defaultStepTimeout, defaultStepRecoverStrategy, stepSettingsMap, passivationDelay);
+          defaultStepTimeout,
+          defaultStepRecoverStrategy,
+          stepSettingsMap,
+          passivationDelay,
+          workflowTimeout,
+          workflowRecoveryStrategy);
     }
   }
 
