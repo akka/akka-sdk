@@ -4,6 +4,13 @@
 
 package akka.javasdk.tooling.validation;
 
+import static akka.javasdk.tooling.validation.Validations.ambiguousHandlerValidations;
+import static akka.javasdk.tooling.validation.Validations.hasEffectMethod;
+import static akka.javasdk.tooling.validation.Validations.missingHandlerValidations;
+import static akka.javasdk.tooling.validation.Validations.noSubscriptionMethodWithAcl;
+import static akka.javasdk.tooling.validation.Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne;
+import static akka.javasdk.tooling.validation.Validations.subscriptionMethodMustHaveOneParameter;
+
 import akka.javasdk.validation.ast.AnnotationDef;
 import akka.javasdk.validation.ast.MethodDef;
 import akka.javasdk.validation.ast.TypeDef;
@@ -26,20 +33,19 @@ public class ConsumerValidations {
     }
 
     String effectType = "akka.javasdk.consumer.Consumer.Effect";
-    return Validations.hasEffectMethod(typeDef, effectType)
+    return hasEffectMethod(typeDef, effectType)
         .combine(hasConsumeAnnotation(typeDef))
         .combine(typeLevelSubscriptionValidation(typeDef))
         .combine(valueEntitySubscriptionValidations(typeDef, effectType))
         .combine(workflowSubscriptionValidations(typeDef, effectType))
         .combine(topicPublicationValidations(typeDef))
         .combine(publishStreamIdMustBeFilled(typeDef))
-        .combine(Validations.ambiguousHandlerValidations(typeDef, effectType))
-        .combine(
-            Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne(typeDef, effectType))
-        .combine(Validations.missingHandlerValidations(typeDef, effectType))
-        .combine(Validations.noSubscriptionMethodWithAcl(typeDef, effectType))
-        .combine(Validations.subscriptionMethodMustHaveOneParameter(typeDef, effectType))
-        .combine(Validations.functionToolMustNotBeOnPrivateMethods(typeDef));
+        .combine(ambiguousHandlerValidations(typeDef, effectType))
+        .combine(strictlyPublicCommandHandlerArityShouldBeZeroOrOne(typeDef, effectType))
+        .combine(missingHandlerValidations(typeDef, effectType))
+        .combine(noSubscriptionMethodWithAcl(typeDef, effectType))
+        .combine(subscriptionMethodMustHaveOneParameter(typeDef, effectType))
+        .combine(consumerCannotHaveFunctionTools(typeDef));
   }
 
   /**
@@ -252,5 +258,25 @@ public class ConsumerValidations {
    */
   private static boolean hasTopicPublication(TypeDef typeDef) {
     return typeDef.hasAnnotation("akka.javasdk.annotations.Produce.ToTopic");
+  }
+
+  /**
+   * Validates that Consumer methods are not annotated with @FunctionTool.
+   *
+   * @param typeDef the Consumer class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation consumerCannotHaveFunctionTools(TypeDef typeDef) {
+    List<String> errors = new ArrayList<>();
+
+    for (MethodDef method : typeDef.getMethods()) {
+      if (method.hasAnnotation("akka.javasdk.annotations.FunctionTool")) {
+        errors.add(
+            Validations.errorMessage(
+                method, "Consumer methods cannot be annotated with @FunctionTool."));
+      }
+    }
+
+    return Validation.of(errors);
   }
 }

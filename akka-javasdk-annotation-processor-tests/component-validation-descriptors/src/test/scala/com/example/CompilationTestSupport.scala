@@ -118,4 +118,26 @@ trait CompilationTestSupport extends Matchers {
       }
     }
   }
+
+  /**
+   * Asserts that compilation failed and does not contain unexpected error messages.
+   *
+   * @param result
+   *   compilation result
+   * @param notExpectedMessages
+   *   unexpected substrings in error messages
+   */
+  protected def assertCompilationFailureNotContain(result: CompilationResult, notExpectedMessages: String*): Unit = {
+    withClue(result.diagnostics) {
+      result.success shouldBe false
+
+      val errors = result.diagnostics.filter(_.getKind == Diagnostic.Kind.ERROR)
+      errors should not be empty
+
+      val errorMessages = errors.map(_.getMessage(null)).mkString(" ")
+      notExpectedMessages.foreach { expected =>
+        errorMessages shouldNot include(expected)
+      }
+    }
+  }
 }

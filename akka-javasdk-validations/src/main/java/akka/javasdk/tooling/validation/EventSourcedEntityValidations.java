@@ -4,6 +4,10 @@
 
 package akka.javasdk.tooling.validation;
 
+import static akka.javasdk.tooling.validation.Validations.functionToolMustNotBeOnNonPublicMethods;
+import static akka.javasdk.tooling.validation.Validations.hasEffectMethod;
+import static akka.javasdk.tooling.validation.Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne;
+
 import akka.javasdk.validation.ast.MethodDef;
 import akka.javasdk.validation.ast.TypeDef;
 import akka.javasdk.validation.ast.TypeRefDef;
@@ -31,13 +35,12 @@ public class EventSourcedEntityValidations {
     String readOnlyEffectType = "akka.javasdk.eventsourcedentity.EventSourcedEntity.ReadOnlyEffect";
     String[] effectTypes = {effectType, readOnlyEffectType};
 
-    return Validations.hasEffectMethod(typeDef, effectType)
-        .combine(
-            Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne(typeDef, effectTypes))
+    return hasEffectMethod(typeDef, effectType)
+        .combine(strictlyPublicCommandHandlerArityShouldBeZeroOrOne(typeDef, effectTypes))
         .combine(commandHandlersMustHaveUniqueNames(typeDef, effectTypes))
         .combine(eventTypeMustBeSealed(typeDef))
         .combine(functionToolMustBeOnEffectMethods(typeDef))
-        .combine(Validations.functionToolMustNotBeOnPrivateMethods(typeDef));
+        .combine(functionToolMustNotBeOnNonPublicMethods(typeDef));
   }
 
   /**
@@ -56,8 +59,7 @@ public class EventSourcedEntityValidations {
     for (MethodDef method : typeDef.getPublicMethods()) {
       String returnTypeName = method.getReturnType().getQualifiedName();
       for (String effectTypeName : effectTypeNames) {
-        if (returnTypeName.equals(effectTypeName)
-            || returnTypeName.startsWith(effectTypeName + "<")) {
+        if (returnTypeName.startsWith(effectTypeName)) {
           String methodName = method.getName();
           methodNameCounts.merge(methodName, 1, Integer::sum);
           break;
@@ -122,17 +124,13 @@ public class EventSourcedEntityValidations {
   private static Validation functionToolMustBeOnEffectMethods(TypeDef typeDef) {
     List<String> errors = new ArrayList<>();
 
-    for (MethodDef method : typeDef.getMethods()) {
+    for (MethodDef method : typeDef.getPublicMethods()) {
       if (method.hasAnnotation("akka.javasdk.annotations.FunctionTool")) {
         String returnTypeName = method.getReturnType().getQualifiedName();
         boolean isEffectMethod =
             returnTypeName.equals("akka.javasdk.eventsourcedentity.EventSourcedEntity.Effect")
-                || returnTypeName.startsWith(
-                    "akka.javasdk.eventsourcedentity.EventSourcedEntity.Effect<")
                 || returnTypeName.equals(
-                    "akka.javasdk.eventsourcedentity.EventSourcedEntity.ReadOnlyEffect")
-                || returnTypeName.startsWith(
-                    "akka.javasdk.eventsourcedentity.EventSourcedEntity.ReadOnlyEffect<");
+                    "akka.javasdk.eventsourcedentity.EventSourcedEntity.ReadOnlyEffect");
 
         if (!isEffectMethod) {
           errors.add(

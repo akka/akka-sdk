@@ -59,7 +59,7 @@ class AgentValidationSpec extends AnyWordSpec with CompilationTestSupport {
       val result = compileTestSource("invalid/AgentWithoutEffectMethod.java")
       assertCompilationFailure(
         result,
-        "No method returning akka.javasdk.agent.Agent.Effect, akka.javasdk.agent.Agent.StreamEffect found")
+        "No public method returning akka.javasdk.agent.Agent.Effect, akka.javasdk.agent.Agent.StreamEffect found")
     }
 
     "reject Agent with command handler having too many parameters" in {
