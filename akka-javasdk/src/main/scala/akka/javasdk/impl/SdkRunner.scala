@@ -518,6 +518,7 @@ private final class Sdk(
       sdkExecutionContext,
       sdkTracerFactory,
       regionInfo,
+      runtimeComponentClients,
       { context =>
 
         val workflow = wiredInstance(clz) {
@@ -530,7 +531,7 @@ private final class Sdk(
         // need to run this each time because it depends on runtime Workflow.definitions
         Reflect.workflowKnownInputTypes(workflow).foreach(serializer.registerTypeHints)
         workflow
-      })
+      })(system)
   }
 
   // collect all Endpoints and compose them to build a larger router

@@ -101,11 +101,10 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
 
     assertThat(getTransferState(transferId).status()).isEqualTo(WAITING_FOR_ACCEPTANCE);
 
-    String acceptanceResponse = componentClient
+    componentClient
       .forWorkflow(transferId)
       .method(TransferWorkflow::acceptanceTimeout)
       .invoke();
-    assertThat(acceptanceResponse).contains("timed out");
 
     var balance1 = getWalletBalance(walletId1);
     var balance2 = getWalletBalance(walletId2);

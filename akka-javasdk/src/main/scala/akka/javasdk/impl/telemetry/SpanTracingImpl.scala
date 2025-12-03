@@ -18,7 +18,7 @@ import io.opentelemetry.context.{ Context => OtelContext }
  * INTERNAL API
  */
 @InternalApi
-final class SpanTracingImpl(context: Option[OtelContext], tracerFactory: () => Tracer) extends Tracing {
+final class SpanTracingImpl(val context: Option[OtelContext], tracerFactory: () => Tracer) extends Tracing {
   override def startSpan(name: String): Optional[Span] =
     context.map { parent =>
       tracerFactory()
