@@ -43,7 +43,8 @@ To start a source code project for a new Akka Service, the `akka code init` comm
 Using it, you can select from the samples catalog or create an empty source code project including instructions for your favorite AI
 assistant.
 
-* xref:reference:cli/akka-cli/akka_code_ai-assistance-update.adoc[akka code ai-assistance-update]
+* xref:reference:cli/akka-cli/akka_code_check.adoc[akka code check]
+* xref:reference:cli/akka-cli/akka_code_context-update.adoc[akka code context-update]
 * xref:reference:cli/akka-cli/akka_code_init.adoc[akka code init]
 * xref:reference:cli/akka-cli/akka_code_token.adoc[akka code token]
 
