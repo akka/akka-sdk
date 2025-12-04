@@ -14,8 +14,10 @@ Current versions
 
 * Akka CLI 3.0.43
 - Support for configuring Azure observability
-- Project level descriptors
-- `akka init check`, check if project is ready for local development
+- Project level descriptors through `akka project export`, `akka project apply`
+- `akka code check`, check if project is ready for local development
+- option to wrap log lines in `akka local cluster`
+- fixed issue when shutting down a local cluster
 
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.10[Akka SDK 3.5.10]
 - image input support in Agents
