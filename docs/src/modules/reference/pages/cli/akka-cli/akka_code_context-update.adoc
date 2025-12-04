@@ -1,22 +1,19 @@
-= akka local cluster
+= akka code context-update
 
-Start and manage a local Akka cluster
+Updates the Akka SDK context directory in the given project directory.
 
 == Synopsis
 
-Start and manage a local Akka cluster for development and testing.
-This command requires that docker is installed and started, docker is used to launch the Akka Persistence layer before starting the Akka cluster.
+The `akka code context-update <directory>` command creates or updates the Akka SDK context in the specified project directory by downloading the latest version from the official Akka source, and creates or updates the 'akka-context' subdirectory within the provided project location.
 
 ----
-akka local cluster [flags]
+akka code context-update [flags]
 ----
 
 == Options
 
 ----
-  -D, --define stringArray   Pass -D properties to Maven (e.g., -Dfoo=bar)
-  -h, --help                 help for cluster
-  -n, --num-nodes int        Number of nodes to start (1-3)
+  -h, --help   help for context-update
 ----
 
 == Options inherited from parent commands
@@ -37,7 +34,7 @@ akka local cluster [flags]
 
 == SEE ALSO
 
-* link:akka_local.html[akka local]	 - Interact with and manage Akka services running locally.
+* link:akka_code.html[akka code]	 - Develop Akka services
 
 [discrete]
 

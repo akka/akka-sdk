@@ -1,19 +1,19 @@
-= akka code ai-assistance-update
+= akka code check
 
-Updates the Akka AI Assistance context directory in the given project directory.
+Check if your environment is ready for Akka development
 
 == Synopsis
 
-The `akka code ai-assistance-update <directory>` command creates or updates the Akka AI Assistance context in the specified project directory by downloading the latest version from the official Akka source, and creates or updates the 'akka-context' subdirectory within the provided project location.
+Diagnose your development environment and verify all prerequisites are met for building and running Akka projects.
 
 ----
-akka code ai-assistance-update [flags]
+akka code check [flags]
 ----
 
 == Options
 
 ----
-  -h, --help   help for ai-assistance-update
+  -h, --help   help for check
 ----
 
 == Options inherited from parent commands
