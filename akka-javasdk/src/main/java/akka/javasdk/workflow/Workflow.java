@@ -917,6 +917,9 @@ public abstract class Workflow<S> {
      * @param reason pause reason
      */
     public PauseSettingsBuilder reason(String reason) {
+      if (reason == null || reason.isBlank()){
+        throw new IllegalArgumentException("reason is null or blank");
+      }
       return new PauseSettingsBuilder(duration, Optional.of(reason));
     }
 
