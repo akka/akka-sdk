@@ -898,17 +898,17 @@ public abstract class Workflow<S> {
     }
   }
 
-  public sealed interface TimeoutHandler {
-    record UnaryTimeoutHandler(akka.japi.function.Function<?, Effect<Done>> pauseTimeoutHandler)
-        implements TimeoutHandler {}
+  public sealed interface CommandHandler {
+    record UnaryCommandHandler(akka.japi.function.Function<?, Effect<Done>> handler)
+        implements CommandHandler {}
 
-    record BinaryTimeoutHandler(
-        akka.japi.function.Function2<?, ?, Effect<Done>> pauseTimeoutHandler, Object input)
-        implements TimeoutHandler {}
+    record BinaryCommandHandler(
+        akka.japi.function.Function2<?, ?, Effect<Done>> handler, Object input)
+        implements CommandHandler {}
   }
 
   public record PauseSettings(
-      Optional<String> reason, Duration duration, TimeoutHandler timeoutHandler) {}
+      Optional<String> reason, Duration duration, CommandHandler timeoutHandler) {}
 
   public record PauseSettingsBuilder(Duration duration, Optional<String> reason) {
 
@@ -940,7 +940,7 @@ public abstract class Workflow<S> {
     public <W> PauseSettings timeoutHandler(
         akka.japi.function.Function<W, Effect<Done>> timeoutHandler) {
       return new PauseSettings(
-          reason, duration, new TimeoutHandler.UnaryTimeoutHandler(timeoutHandler));
+          reason, duration, new CommandHandler.UnaryCommandHandler(timeoutHandler));
     }
 
     /**
@@ -958,7 +958,7 @@ public abstract class Workflow<S> {
     public <W, I> PauseSettings timeoutHandler(
         akka.japi.function.Function2<W, I, Effect<Done>> timeoutHandler, I input) {
       return new PauseSettings(
-          reason, duration, new TimeoutHandler.BinaryTimeoutHandler(timeoutHandler, input));
+          reason, duration, new CommandHandler.BinaryCommandHandler(timeoutHandler, input));
     }
   }
 

@@ -21,12 +21,14 @@ import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.Reply
 import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.TransitionalEffectImpl
 import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowStepEffectImpl.toPauseStepEffect
 import akka.javasdk.workflow.Workflow
+import akka.javasdk.workflow.Workflow.CommandHandler
+import akka.javasdk.workflow.Workflow.CommandHandler.BinaryCommandHandler
+import akka.javasdk.workflow.Workflow.CommandHandler.UnaryCommandHandler
 import akka.javasdk.workflow.Workflow.Effect
 import akka.javasdk.workflow.Workflow.Effect.PersistenceEffectBuilder
 import akka.javasdk.workflow.Workflow.Effect.Transitional
 import akka.javasdk.workflow.Workflow.ReadOnlyEffect
 import akka.javasdk.workflow.Workflow.StepEffect
-import akka.javasdk.workflow.Workflow.TimeoutHandler
 import akka.javasdk.workflow.Workflow.WithInput
 
 /**
@@ -38,12 +40,12 @@ object WorkflowEffects {
 
   case class StepTransition[I](stepName: String, input: Option[I]) extends Transition
 
-  sealed trait TimeoutHandler
-  case class UnaryTimeoutHandler(handler: akka.japi.function.Function[_, Effect[_]]) extends TimeoutHandler
-  case class BinaryTimeoutHandler(handler: akka.japi.function.Function2[_, _, Effect[_]], input: Any)
-      extends TimeoutHandler
+  sealed trait CommandHandler
+  case class UnaryCommandHandler(handler: akka.japi.function.Function[_, Effect[_]]) extends CommandHandler
+  case class BinaryCommandHandler(handler: akka.japi.function.Function2[_, _, Effect[_]], input: Any)
+      extends CommandHandler
 
-  case class PauseSettings(duration: FiniteDuration, timeoutHandler: TimeoutHandler)
+  case class PauseSettings(duration: FiniteDuration, timeoutHandler: CommandHandler)
 
   case class Pause(reason: Option[String] = None, pauseSettings: Option[PauseSettings] = None) extends Transition
 
@@ -66,12 +68,12 @@ object WorkflowEffects {
   private def validateReason(reason: String): Unit =
     require(reason != null && reason.nonEmpty, "Given reason must not be null or empty")
 
-  private def toTimeoutHandler(handler: Workflow.TimeoutHandler) = {
+  private def toTimeoutHandler(handler: Workflow.CommandHandler) = {
     handler match {
-      case handler: TimeoutHandler.UnaryTimeoutHandler =>
-        UnaryTimeoutHandler(handler.pauseTimeoutHandler())
-      case handler: TimeoutHandler.BinaryTimeoutHandler =>
-        BinaryTimeoutHandler(handler.pauseTimeoutHandler(), handler.input())
+      case handler: CommandHandler.UnaryCommandHandler =>
+        UnaryCommandHandler(handler.handler())
+      case handler: CommandHandler.BinaryCommandHandler =>
+        BinaryCommandHandler(handler.handler(), handler.input())
     }
   }
 

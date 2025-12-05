@@ -339,13 +339,13 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       case Pause(reason, None) => new SpiWorkflow.PauseTransition(reason, None)
       case Pause(reason, Some(settings)) =>
         val deferredReg = settings.timeoutHandler match {
-          case WorkflowEffects.UnaryTimeoutHandler(handler) =>
+          case WorkflowEffects.UnaryCommandHandler(handler) =>
             workflowClient.map(
               _.method(handler.asInstanceOf[akka.japi.function.Function[_, Workflow.Effect[Any]]])
                 .deferred()
                 .asInstanceOf[DeferredCallImpl[_, _]]
                 .deferredRequest())
-          case WorkflowEffects.BinaryTimeoutHandler(handler, input) =>
+          case WorkflowEffects.BinaryCommandHandler(handler, input) =>
             workflowClient.map(
               _.method(handler.asInstanceOf[akka.japi.function.Function2[_, Any, Workflow.Effect[Any]]])
                 .deferred(input)
