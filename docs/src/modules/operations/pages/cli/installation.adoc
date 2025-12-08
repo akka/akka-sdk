@@ -9,7 +9,28 @@ The Akka CLI, `akka` enables you to interact with Akka projects. To install it, 
 Linux::
 +
 --
-Download and install the latest version of `akka`:
+**Recommended approach**
+
+The recommended approach to install `akka` on Linux is using the Debian package repository:
+
+[source,bash,subs="attributes"]
+----
+curl -1sLf \
+  'https://dl.cloudsmith.io/public/lightbend/public-akka/setup.deb.sh' \
+  | sudo -E bash
+sudo apt install akka
+----
+
+If `akka` is already installed, and you want to upgrade to the latest version, you can run:
+
+[source,bash]
+----
+sudo apt update
+sudo apt install --only-upgrade akka
+----
+
+**Alternative approach**
+
 [source,bash]
 ....
 curl -sL https://doc.akka.io/install-cli.sh | bash
@@ -30,8 +51,6 @@ You can pass options to the installer script with `-s --` e.g.:
 curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix=$HOME --version={akka-cli-version} --verbose
 curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v {akka-cli-version} -V
 ....
-
-For manual installation, download https://downloads.akka.io/{akka-cli-version}/akka_linux_amd64_{akka-cli-version}.tar.gz[akka_linux_amd64_{akka-cli-version}.tar.gz], extract the `akka` executable and make it available on your PATH.
 
 --
 macOS::
@@ -71,6 +90,23 @@ curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v {akka-cli-v
 Windows::
 +
 --
+**Recommended approach**
+
+The recommended approach to install `akka` on Windows is using https://learn.microsoft.com/en-us/windows/package-manager/winget/[winget]:
+
+[source,powershell]
+----
+winget install Akka.AkkaCli
+----
+
+If `akka` is already installed, and you want to upgrade to the latest version, you can run:
+
+[source,powershell]
+----
+winget upgrade Akka.AkkaCli
+----
+
+**Alternative approach**
 
 . Download the latest version of `akka` from https://downloads.akka.io/latest/akka_windows_amd64.zip[https://downloads.akka.io/latest/akka_windows_amd64.zip]
 
