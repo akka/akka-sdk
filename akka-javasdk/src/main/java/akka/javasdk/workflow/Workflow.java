@@ -238,6 +238,12 @@ public abstract class Workflow<S> {
       Transitional pause();
 
       /**
+       * Pause the workflow execution with a reason description and wait for an external input, e.g.
+       * via command handler.
+       */
+      Transitional pause(String reason);
+
+      /**
        * Defines the next step to which the workflow should transition to.
        *
        * <p>The step definition identified by {@code stepName} must have an input parameter of type
@@ -295,11 +301,24 @@ public abstract class Workflow<S> {
       Transitional end();
 
       /**
+       * Finish the workflow execution with a reason description. After transition to {@code end},
+       * no more transitions are allowed.
+       */
+      Transitional end(String reason);
+
+      /**
        * Finish and delete the workflow execution. After transition to {@code delete}, no more
        * transitions are allowed. The actual workflow state deletion is done with a configurable
        * delay to allow downstream consumers to observe that fact.
        */
       Transitional delete();
+
+      /**
+       * Finish and delete the workflow execution with a reason description. After transition to
+       * {@code delete}, no more transitions are allowed. The actual workflow state deletion is done
+       * with a configurable delay to allow downstream consumers to observe that fact.
+       */
+      Transitional delete(String reason);
 
       /**
        * Create a message reply.
@@ -398,6 +417,12 @@ public abstract class Workflow<S> {
       Transitional pause();
 
       /**
+       * Pause the workflow execution with a reason description and wait for an external input, e.g.
+       * via command handler.
+       */
+      Transitional pause(String reason);
+
+      /**
        * Defines the next step to which the workflow should transition to.
        *
        * <p>The step definition identified by {@code stepName} must have an input parameter of type
@@ -457,11 +482,24 @@ public abstract class Workflow<S> {
       Transitional end();
 
       /**
+       * Finish the workflow execution with a reason description. After transition to {@code end},
+       * no more transitions are allowed.
+       */
+      Transitional end(String reason);
+
+      /**
        * Finish and delete the workflow execution. After transition to {@code delete}, no more
        * transitions are allowed. The actual workflow state deletion is done with a configurable
        * delay to allow downstream consumers to observe that fact.
        */
       Transitional delete();
+
+      /**
+       * Finish and delete the workflow execution with a reason description. After transition to
+       * {@code delete}, no more transitions are allowed. The actual workflow state deletion is done
+       * with a configurable delay to allow downstream consumers to observe that fact.
+       */
+      Transitional delete(String reason);
     }
   }
 
@@ -481,6 +519,12 @@ public abstract class Workflow<S> {
 
       /** Pause the workflow execution and wait for an external input, e.g. via command handler. */
       StepEffect thenPause();
+
+      /**
+       * Pause the workflow execution with a reason description and wait for an external input, e.g.
+       * via command handler.
+       */
+      StepEffect thenPause(String reason);
 
       /**
        * Defines the next step to which the workflow should transition to.
@@ -513,17 +557,36 @@ public abstract class Workflow<S> {
       StepEffect thenEnd();
 
       /**
+       * Finish the workflow execution with a reason description. After transition to {@code end},
+       * no more transitions are allowed.
+       */
+      StepEffect thenEnd(String reason);
+
+      /**
        * Finish and delete the workflow execution. After transition to {@code delete}, no more
        * transitions are allowed. The actual workflow state deletion is done with a configurable
        * delay to allow downstream consumers to observe that fact.
        */
       StepEffect thenDelete();
+
+      /**
+       * Finish and delete the workflow execution with a reason description. After transition to
+       * {@code delete}, no more transitions are allowed. The actual workflow state deletion is done
+       * with a configurable delay to allow downstream consumers to observe that fact.
+       */
+      StepEffect thenDelete(String reason);
     }
 
     interface PersistenceEffectBuilder {
 
       /** Pause the workflow execution and wait for an external input, e.g. via command handler. */
       StepEffect thenPause();
+
+      /**
+       * Pause the workflow execution with a reason description and wait for an external input, e.g.
+       * via command handler.
+       */
+      StepEffect thenPause(String reason);
 
       /**
        * Defines the next step to which the workflow should transition to.
@@ -557,11 +620,24 @@ public abstract class Workflow<S> {
       StepEffect thenEnd();
 
       /**
+       * Finish the workflow execution with a reason description. After transition to {@code end},
+       * no more transitions are allowed.
+       */
+      StepEffect thenEnd(String reason);
+
+      /**
        * Finish and delete the workflow execution. After transition to {@code delete}, no more
        * transitions are allowed. The actual workflow state deletion is done with a configurable
        * delay to allow downstream consumers to observe that fact.
        */
       StepEffect thenDelete();
+
+      /**
+       * Finish and delete the workflow execution with a reason description. After transition to
+       * {@code delete}, no more transitions are allowed. The actual workflow state deletion is done
+       * with a configurable delay to allow downstream consumers to observe that fact.
+       */
+      StepEffect thenDelete(String reason);
     }
   }
 
