@@ -6,11 +6,13 @@ package akka.javasdk.impl.agent
 
 import java.net.URI
 import java.time.Instant
+import java.util.concurrent.TimeUnit
 
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
+import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
 import scala.jdk.DurationConverters.JavaDurationOps
 import scala.util.control.NonFatal
@@ -122,6 +124,7 @@ private[impl] object AgentImpl {
         case "ollama"          => ModelProvider.Ollama.fromConfig(providerConfig)
         case "openai"          => ModelProvider.OpenAi.fromConfig(providerConfig)
         case "local-ai"        => ModelProvider.LocalAI.fromConfig(providerConfig)
+        case "bedrock"         => ModelProvider.Bedrock.fromConfig(providerConfig)
         case other =>
           throw new IllegalArgumentException(s"Unknown model provider [$other] in config [$resolvedConfigPath]")
       }
@@ -555,6 +558,23 @@ private[impl] final class AgentImpl[A <: Agent](
           new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()))
       case p: ModelProvider.Custom =>
         new SpiAgent.ModelProvider.Custom(() => p.createChatModel(), () => p.createStreamingChatModel())
+      case p: ModelProvider.Bedrock =>
+        new SpiAgent.ModelProvider.Bedrock(
+          region = p.region,
+          modelId = p.modelId,
+          returnThinking = p.returnThinking,
+          sendThinking = p.sendThinking,
+          maxOutputTokens = p.maxOutputTokens,
+          reasoningTokenBudget = p.reasoningTokenBudget,
+          additionalModelRequestFields = p.additionalModelRequestFields.asScala.toMap,
+          accessToken = p.accessToken,
+          temperature = p.temperature,
+          topP = p.topP,
+          maxTokens = p.maxTokens,
+          modelSettings = new SpiAgent.ModelSettings(
+            FiniteDuration.apply(30, TimeUnit.SECONDS),
+            p.responseTimeout().toScala,
+            p.maxRetries()))
     }
   }
 

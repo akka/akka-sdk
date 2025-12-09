@@ -20,6 +20,8 @@ import java.util.Set;
  *   <li>{@link akka.javasdk.timer.TimerScheduler}
  *   <li>{@link akka.stream.Materializer}
  *   <li>{@link com.typesafe.config.Config}
+ *   <li>{@link akka.javasdk.agent.AgentRegistry}
+ *   <li>{@link akka.javasdk.Sanitizer}
  * </ul>
  */
 public interface ServiceSetup {

@@ -8,6 +8,7 @@ import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.testmodels.keyvalueentity.CounterState
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.EventStreamPublishingConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.EventStreamSubscriptionConsumer
+import akka.javasdk.testmodels.subscriptions.PubSubTestModels.ProtobufEventStreamConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToBytesFromTopic
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToEventSourcedEmployee
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToTopicTypeLevel
@@ -16,6 +17,7 @@ import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEn
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEntityWithDeletes
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import protoconsumer.EventsForConsumer
 
 class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
@@ -90,6 +92,14 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
     "generate mappings for service to service subscription " in {
       val desc = ComponentDescriptor.descriptorFor(classOf[EventStreamSubscriptionConsumer], new JsonSerializer)
       desc.methodInvokers should have size 3
+    }
+
+    "generate mappings for service to service subscription with protobuf events, for Kalix interop" in {
+      val desc = ComponentDescriptor.descriptorFor(classOf[ProtobufEventStreamConsumer], new JsonSerializer)
+      desc.methodInvokers should have size 2
+      desc.methodInvokers.keySet shouldEqual Set(
+        AnySupport.DefaultTypeUrlPrefix + "/" + EventsForConsumer.EventForConsumer1.getDescriptor.getFullName,
+        AnySupport.DefaultTypeUrlPrefix + "/" + EventsForConsumer.EventForConsumer2.getDescriptor.getFullName)
     }
   }
 

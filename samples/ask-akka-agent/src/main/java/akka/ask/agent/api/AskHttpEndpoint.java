@@ -33,7 +33,7 @@ public class AskHttpEndpoint {
       .tokenStream(AskAkkaAgent::ask)
       .source(request.question); // <2>
 
-    return HttpResponses.serverSentEvents(responseStream); // <3>
+    return HttpResponses.streamText(responseStream); // <3>
   }
 }
 // end::endpoint[]

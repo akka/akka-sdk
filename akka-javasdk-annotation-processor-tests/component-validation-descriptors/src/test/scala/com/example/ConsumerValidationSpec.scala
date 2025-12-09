@@ -74,7 +74,7 @@ class ConsumerValidationSpec extends AnyWordSpec with CompilationTestSupport {
 
     "reject Consumer without Effect methods" in {
       val result = compileTestSource("invalid/ConsumerWithoutEffectMethod.java")
-      assertCompilationFailure(result, "No method returning akka.javasdk.consumer.Consumer.Effect found")
+      assertCompilationFailure(result, "No public method returning akka.javasdk.consumer.Consumer.Effect found")
     }
 
     "reject Consumer with command handler having too many parameters" in {
@@ -172,6 +172,11 @@ class ConsumerValidationSpec extends AnyWordSpec with CompilationTestSupport {
       assertCompilationFailure(result, "Ambiguous delete handlers: [methodOne, methodTwo].")
     }
 
+    "accept Consumer with with multiple private command handlers for EventSourcedEntity" in {
+      val result = compileTestSource("valid/PrivateHandlersESSubscriptionInConsumer.java")
+      assertCompilationSuccess(result)
+    }
+
     "reject Consumer with ambiguous handlers for EventSourcedEntity" in {
       val result = compileTestSource("invalid/AmbiguousHandlersESSubscriptionInConsumer.java")
       assertCompilationFailure(
@@ -216,6 +221,11 @@ class ConsumerValidationSpec extends AnyWordSpec with CompilationTestSupport {
     "reject Consumer missing handler for EventSourcedEntity subscription" in {
       val result = compileTestSource("invalid/ConsumerMissingHandlerForES.java")
       assertCompilationFailure(result, "missing an event handler")
+    }
+
+    "reject Consumer with @FunctionTool annotation" in {
+      val result = compileTestSource("invalid/ConsumerWithFunctionTool.java")
+      assertCompilationFailure(result, "Consumer methods cannot be annotated with @FunctionTool.")
     }
   }
 }

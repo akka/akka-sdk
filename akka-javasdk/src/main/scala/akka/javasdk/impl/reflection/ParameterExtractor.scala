@@ -5,8 +5,10 @@
 package akka.javasdk.impl.reflection
 
 import akka.annotation.InternalApi
+import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.BytesPayload
+import com.google.protobuf.GeneratedMessageV3
 
 /**
  * INTERNAL API
@@ -17,6 +19,8 @@ private[impl] object ParameterExtractors {
   private def decodeParam[T](payload: BytesPayload, cls: Class[T], serializer: JsonSerializer): T = {
     if (cls == classOf[Array[Byte]]) {
       payload.bytes.toArrayUnsafe().asInstanceOf[T]
+    } else if (classOf[GeneratedMessageV3].isAssignableFrom(cls)) {
+      AnySupport.decodeJavaProtobuf(payload, cls)
     } else {
       serializer.fromBytes(cls, payload)
     }
@@ -29,4 +33,5 @@ private[impl] object ParameterExtractors {
       decodeParam(payload, cls, serializer)
     }
   }
+
 }

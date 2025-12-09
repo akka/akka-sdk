@@ -25,7 +25,7 @@ abstract class MultiAgentSample {
     private final AgentRegistry registry;
 
     private final String systemMessageTemplate =
-        """
+"""
 Your job is to analyse the user request and the list of agents and devise which agents to use
 and the best order in which the agents should be called in order to produce a suitable answer
 to the user.

@@ -1,14 +1,21 @@
 import Dependencies.Kalix
 import Dependencies.AkkaRuntimeVersion
+
 import scala.xml.Elem
 import scala.xml.Node
 import scala.xml.TopScope
-
 import Dependencies.AkkaGrpcVersion
+import Dependencies.GoogleProtobufVersion
 
 lazy val `akka-javasdk-root` = project
   .in(file("."))
-  .aggregate(akkaJavaSdkAnnotationProcessor, akkaJavaSdk, akkaJavaSdkTestKit, akkaJavaSdkTests, akkaJavaSdkParent)
+  .aggregate(
+    akkaJavaSdkValidations,
+    akkaJavaSdkAnnotationProcessor,
+    akkaJavaSdk,
+    akkaJavaSdkTestKit,
+    akkaJavaSdkTests,
+    akkaJavaSdkParent)
   // samplesCompilationProject and annotationProcessorTestProject are composite project
   // to aggregate them we need to map over them
   .aggregate(samplesCompilationProject.componentProjects.map(p => p: ProjectReference): _*)
@@ -23,9 +30,16 @@ lazy val `akka-javasdk-root` = project
     crossScalaVersions := Nil,
     scalaVersion := Dependencies.ScalaVersion)
 
+lazy val akkaJavaSdkValidations =
+  Project(id = "akka-javasdk-validations", base = file("akka-javasdk-validations"))
+    .enablePlugins(Publish)
+    .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
+    .settings(name := "akka-javasdk-validations", crossPaths := false)
+
 lazy val akkaJavaSdk =
   Project(id = "akka-javasdk", base = file("akka-javasdk"))
-    .enablePlugins(BuildInfoPlugin, Publish)
+    .dependsOn(akkaJavaSdkValidations)
+    .enablePlugins(BuildInfoPlugin, Publish, AkkaGrpcPlugin)
     .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
     .settings(
       name := "akka-javasdk",
@@ -41,7 +55,8 @@ lazy val akkaJavaSdk =
         "akkaVersion" -> Dependencies.AkkaVersion),
       buildInfoPackage := "akka.javasdk",
       Test / javacOptions ++= Seq("-parameters"), // for Jackson
-      Test / envVars ++= Map("ENV" -> "value1", "ENV2" -> "value2"))
+      Test / envVars ++= Map("ENV" -> "value1", "ENV2" -> "value2"),
+      Test / akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Java))
     .settings(DocSettings.forModule("Akka SDK"))
     .settings(Dependencies.javaSdk)
 
@@ -98,6 +113,7 @@ lazy val samplesCompilationProject: CompositeProject =
 
 lazy val akkaJavaSdkAnnotationProcessor =
   Project(id = "akka-javasdk-annotation-processor", base = file("akka-javasdk-annotation-processor"))
+    .dependsOn(akkaJavaSdkValidations)
     .enablePlugins(Publish)
     .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
     .settings(name := "akka-javasdk-annotation-processor", crossPaths := false)
@@ -129,10 +145,15 @@ lazy val akkaJavaSdkParent =
         // completely replace with our pom.xml
         val pom = scala.xml.XML.loadFile(baseDirectory.value / "pom.xml")
         // but use the current version
-        updatePomVersion(pom, version.value, AkkaRuntimeVersion, AkkaGrpcVersion)
+        updatePomVersion(pom, version.value, AkkaRuntimeVersion, AkkaGrpcVersion, GoogleProtobufVersion)
       })
 
-def updatePomVersion(node: Elem, v: String, runtimeVersion: String, akkaGrpcVersion: String): Elem = {
+def updatePomVersion(
+    node: Elem,
+    v: String,
+    runtimeVersion: String,
+    akkaGrpcVersion: String,
+    googleProtobufVersion: String): Elem = {
   def updateElements(seq: Seq[Node]): Seq[Node] = {
     seq.map {
       case version @ <version>{_}</version> =>
@@ -146,6 +167,8 @@ def updatePomVersion(node: Elem, v: String, runtimeVersion: String, akkaGrpcVers
               <akka-javasdk.version>{v}</akka-javasdk.version>
             case <akka.grpc.version>{_}</akka.grpc.version> =>
               <akka.grpc.version>{akkaGrpcVersion}</akka.grpc.version>
+            case <protobuf-java.version>{_}</protobuf-java.version> =>
+              <protobuf-java.version>{googleProtobufVersion}</protobuf-java.version>
             case other =>
               other
           }

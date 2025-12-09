@@ -6,12 +6,19 @@ package akkajavasdk;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import akka.http.javadsl.model.*;
+import akka.http.javadsl.Http;
+import akka.http.javadsl.model.ContentTypes;
+import akka.http.javadsl.model.HttpRequest;
+import akka.http.javadsl.model.StatusCodes;
+import akka.http.javadsl.model.headers.RawHeader;
 import akka.javasdk.testkit.TestKitSupport;
+import akka.stream.javadsl.Sink;
 import akka.util.ByteString;
 import akkajavasdk.components.http.ResourcesEndpoint;
 import akkajavasdk.components.http.TestEndpoint;
 import java.io.InputStream;
+import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.OptionalLong;
 import java.util.Set;
@@ -170,5 +177,52 @@ public class HttpEndpointTest extends TestKitSupport {
             .invoke();
     assertThat(response.status()).isEqualTo(StatusCodes.OK);
     assertThat(response.body().value()).isEqualTo(bigDecimal);
+  }
+
+  @Test
+  public void shouldSupportStreamingText() {
+    // Note: no streaming support in the HTTP client abstraction, so we need to do it manually
+    var url = "http://" + testKit.getHost() + ":" + testKit.getPort() + "/streamingtext/5";
+    var response =
+        await(
+            Http.get(testKit.getActorSystem())
+                .singleRequest(
+                    HttpRequest.GET(url).addHeader(RawHeader.create("Accept", "text/event-stream")))
+                .toCompletableFuture());
+
+    assertThat(response.entity().getContentType()).isEqualTo(ContentTypes.TEXT_PLAIN_UTF8);
+    assertThat(response.entity().isChunked()).isTrue();
+    assertThat(response.status()).isEqualTo(StatusCodes.OK);
+
+    var text =
+        await(
+            response
+                .entity()
+                .getDataBytes()
+                .map(t -> t.utf8String())
+                .runWith(Sink.seq(), testKit.getMaterializer()));
+
+    assertThat(text).isEqualTo(Arrays.asList("1", "2", "3", "4", "5"));
+  }
+
+  @Test
+  public void shouldSupportSseIds() {
+    var sseRouteTester = testKit.getSelfSseRouteTester();
+    var firstEvents = sseRouteTester.receiveFirstN("/serversentevents", 2, Duration.ofSeconds(5));
+    assertThat(firstEvents).hasSize(2);
+    assertThat(firstEvents.get(0).getId().get()).isEqualTo("1");
+    assertThat(firstEvents.get(1).getId().get()).isEqualTo("2");
+
+    // Note: not stateful, does not depend on the previous call, just together because otherwise
+    // related
+    var reconnectEvents =
+        sseRouteTester.receiveNFromOffset(
+            "/serversentevents",
+            1,
+            "2", // start from id
+            Duration.ofSeconds(5));
+    assertThat(reconnectEvents).hasSize(1);
+    assertThat(reconnectEvents.get(0).getId().get())
+        .isEqualTo("3"); // starts from the reported Last-Event-ID
   }
 }

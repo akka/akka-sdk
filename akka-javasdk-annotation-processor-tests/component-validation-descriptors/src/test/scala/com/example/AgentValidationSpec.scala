@@ -36,20 +36,14 @@ class AgentValidationSpec extends AnyWordSpec with CompilationTestSupport {
       assertCompilationSuccess(result)
     }
 
-    // Command handler validations
-    "reject Agent without Effect method" in {
-      val result = compileTestSource("invalid/AgentWithoutEffectMethod.java")
-      assertCompilationFailure(
-        result,
-        "No method returning akka.javasdk.agent.Agent.Effect, akka.javasdk.agent.Agent.StreamEffect found")
+    "accept Agent with multiple private command handlers" in {
+      val result = compileTestSource("valid/AgentWithMultipleCommandPrivateHandlers.java")
+      assertCompilationSuccess(result)
     }
 
-    "reject Agent without command handler" in {
-      val result = compileTestSource("invalid/AgentWithNoCommandHandler.java")
-      assertCompilationFailure(
-        result,
-        "has 0 command handlers",
-        "There must be one public method returning Agent.Effect")
+    "accept Agent with @FunctionTool on private methods" in {
+      val result = compileTestSource("valid/AgentWithFunctionToolOnPrivateMethod.java")
+      assertCompilationSuccess(result)
     }
 
     "reject Agent with multiple command handlers" in {
@@ -58,6 +52,14 @@ class AgentValidationSpec extends AnyWordSpec with CompilationTestSupport {
         result,
         "has 2 command handlers",
         "There must be one public method returning Agent.Effect")
+    }
+
+    // Command handler validations
+    "reject Agent without Effect method" in {
+      val result = compileTestSource("invalid/AgentWithoutEffectMethod.java")
+      assertCompilationFailure(
+        result,
+        "No public method returning akka.javasdk.agent.Agent.Effect, akka.javasdk.agent.Agent.StreamEffect found")
     }
 
     "reject Agent with command handler having too many parameters" in {

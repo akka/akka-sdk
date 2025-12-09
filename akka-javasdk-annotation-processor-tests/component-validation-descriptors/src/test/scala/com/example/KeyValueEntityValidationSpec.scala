@@ -33,7 +33,9 @@ class KeyValueEntityValidationSpec extends AnyWordSpec with Matchers with Compil
 
     "reject KeyValueEntity with no Effect method" in {
       val result = compileTestSource("invalid/KeyValueEntityNoEffect.java")
-      assertCompilationFailure(result, "No method returning akka.javasdk.keyvalueentity.KeyValueEntity.Effect found")
+      assertCompilationFailure(
+        result,
+        "No public method returning akka.javasdk.keyvalueentity.KeyValueEntity.Effect found")
     }
 
     "reject KeyValueEntity that is not public" in {
@@ -60,6 +62,13 @@ class KeyValueEntityValidationSpec extends AnyWordSpec with Matchers with Compil
       assertCompilationFailure(
         result,
         "KeyValueEntity methods annotated with @FunctionTool must return Effect or ReadOnlyEffect")
+    }
+
+    "reject KeyValueEntity with @FunctionTool on private methods" in {
+      val result = compileTestSource("invalid/KeyValueEntityWithFunctionToolOnPrivateMethod.java")
+      assertCompilationFailure(
+        result,
+        "Methods annotated with @FunctionTool must be public. Method [privateMethod] cannot be annotated with @FunctionTool")
     }
   }
 }

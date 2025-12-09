@@ -208,7 +208,8 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
       maxToolCallSteps,
       agentInteractionLogEnabled,
       devModeSettings,
-      Some(sanitizationSettings))
+      Some(sanitizationSettings),
+      None)
   }
 
   private def extractBrokerConfig(eventingConf: Config): SpiEventingSupportSettings = {
@@ -424,7 +425,9 @@ private final class Sdk(
     system,
     None,
     remoteIdentification.map(ri => RawHeader(ri.headerName, ri.headerValue)),
-    sdkSettings)
+    sdkSettings,
+    // We know it is a dispatcher/executor
+    sdkExecutionContext.asInstanceOf[Executor])
 
   private lazy val userServiceConfig = {
     // hiding these paths from the config provided to user
@@ -568,8 +571,6 @@ private final class Sdk(
 
         val entityStateType: Class[AnyRef] = Reflect.eventSourcedEntityStateType(clz).asInstanceOf[Class[AnyRef]]
 
-        val isSessionMemoryEntity = clz == classOf[SessionMemoryEntity]
-
         val instanceFactory: SpiEventSourcedEntity.FactoryContext => SpiEventSourcedEntity = { factoryContext =>
           new EventSourcedEntityImpl[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]](
             sdkTracerFactory,
@@ -582,9 +583,9 @@ private final class Sdk(
             context =>
               wiredInstance(clz.asInstanceOf[Class[EventSourcedEntity[AnyRef, AnyRef]]]) {
                 // remember to update component type API doc and docs if changing the set of injectables
-                case p if p == classOf[EventSourcedEntityContext]              => context
-                case s if s == classOf[Sanitizer]                              => sanitizer
-                case r if r == classOf[AgentRegistry] && isSessionMemoryEntity => agentRegistry
+                case p if p == classOf[EventSourcedEntityContext] => context
+                case s if s == classOf[Sanitizer]                 => sanitizer
+                case r if r == classOf[AgentRegistry]             => agentRegistry
               })
         }
         eventSourcedEntityDescriptors :+=
@@ -628,6 +629,7 @@ private final class Sdk(
                 // remember to update component type API doc and docs if changing the set of injectables
                 case p if p == classOf[KeyValueEntityContext] => context
                 case s if s == classOf[Sanitizer]             => sanitizer
+                case r if r == classOf[AgentRegistry]         => agentRegistry
               })
         }
         keyValueEntityDescriptors :+=
@@ -970,6 +972,9 @@ private final class Sdk(
         override def queryParams(): QueryParams = {
           QueryParamsImpl(context.httpRequest.uri.query())
         }
+
+        override def lastSeenSseEventId(): Optional[String] =
+          context.requestHeaders.header("Last-Event-ID").map(_.value()).toJava
 
         override def selfRegion(): String = regionInfo.selfRegion
       }

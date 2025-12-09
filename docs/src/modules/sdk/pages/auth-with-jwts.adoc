@@ -30,7 +30,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsImtpZCI6ImtleTEifQ.eyJpc3MiOiJteS1pc3N
 
 You can check in https://jwt.io/[window="new"] that this token contains the claim in the payload `iss: my-issuer`.
 
-WARNING: It is recommended that `bearerTokenIssuers` contains the issuer that you use in your JWT key configuration. See https://doc.akka.io/security/jwts.html[window="new"]. Otherwise, any services with a trusted key can impersonate the issuer.
+WARNING: It is recommended that `bearerTokenIssuers` contains the issuer that you use in your JWT key configuration. See https://doc.akka.io/reference/jwts.html[window="new"]. Otherwise, any services with a trusted key can impersonate the issuer.
 
 === Configuring JWT at class level or method level
 

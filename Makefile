@@ -40,7 +40,7 @@ attributes: prepare
 		> "${managed_partials}/attributes.adoc"
 	docs/bin/version.sh | xargs -0  printf ":akka-javasdk-version: %s" \
 		> "${managed_partials}/attributes.adoc"
-	echo ":akka-cli-version: 3.0.30" >> "${managed_partials}/attributes.adoc"
+	echo ":akka-cli-version: 3.0.42" >> "${managed_partials}/attributes.adoc"
 	echo ":akka-cli-min-version: 3.0.4" >> "${managed_partials}/attributes.adoc"
 	# see https://adoptium.net/marketplace/
 	echo ":java-version: 21" \
@@ -59,7 +59,8 @@ apidocs: prepare
 	rsync -a akka-javasdk-testkit/target/api/ "${java_managed_attachments}/testkit/"
 	docs/bin/version.sh > "${java_managed_attachments}/latest-version.txt"
 	# also keep version in previous location for the Runtime version check (Runtimes < 1.5.21)
-	docs/bin/version.sh > "${src_managed}/modules/sdk/attachments/latest-version.txt"
+	mkdir -p "${src_managed}/modules/java/attachments"
+	docs/bin/version.sh > "${src_managed}/modules/java/attachments/latest-version.txt"
 
 examples: prepare
 	mkdir -p "${java_managed_examples}"

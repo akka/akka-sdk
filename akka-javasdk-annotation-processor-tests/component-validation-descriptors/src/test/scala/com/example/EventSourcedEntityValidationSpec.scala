@@ -35,7 +35,7 @@ class EventSourcedEntityValidationSpec extends AnyWordSpec with Matchers with Co
       val result = compileTestSource("invalid/NoEffectMethod.java")
       assertCompilationFailure(
         result,
-        "No method returning akka.javasdk.eventsourcedentity.EventSourcedEntity.Effect found")
+        "No public method returning akka.javasdk.eventsourcedentity.EventSourcedEntity.Effect found")
     }
 
     "reject EventSourcedEntity that is not public" in {
@@ -55,6 +55,13 @@ class EventSourcedEntityValidationSpec extends AnyWordSpec with Matchers with Co
       assertCompilationFailure(
         result,
         "EventSourcedEntity methods annotated with @FunctionTool must return Effect or ReadOnlyEffect")
+    }
+
+    "reject EventSourcedEntity with @FunctionTool on private methods" in {
+      val result = compileTestSource("invalid/EventSourcedEntityWithFunctionToolOnPrivateMethod.java")
+      assertCompilationFailure(
+        result,
+        "Methods annotated with @FunctionTool must be public. Method [privateMethod] cannot be annotated with @FunctionTool")
     }
   }
 }
