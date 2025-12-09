@@ -252,19 +252,31 @@ public class HttpEndpointTest extends TestKitSupport {
               "/serversentevents/counterbyid/sse-one", 1, firstId, Duration.ofMillis(200));
         });
 
-    componentClient.forEventSourcedEntity("sse-one").method(CounterEntity::increase).invoke(1);
+    componentClient.forEventSourcedEntity("sse-one").method(CounterEntity::increase).invoke(2);
 
     // only sees new updates, now there is a new update
     var newEvents =
         sseRouteTester.receiveNFromOffset(
             "/serversentevents/counterbyid/sse-one", 2, firstId, Duration.ofSeconds(5));
+    assertThat(newEvents).hasSize(2);
+
+    // we always get a duplicate, because offset is a timestamp, and there could have been multiple
+    // entries with the same timestamp, but the previous stream failed after seeing the first
     assertThat(newEvents.get(0).getData())
+        .isEqualTo(
+            """
+            {"id":"sse-one","latestEvent":"ValueIncreased[value=1]"}\
+            """);
+
+    // the updated event
+    assertThat(newEvents.get(1).getData())
         .isEqualTo(
             """
             {"id":"sse-one","latestEvent":"ValueIncreased[value=2]"}\
             """);
+
     var firstInstant = Instant.parse(firstId);
-    var secondInstant = Instant.parse(newEvents.get(0).getId().get());
+    var secondInstant = Instant.parse(newEvents.get(1).getId().get());
 
     assertThat(firstInstant).isBefore(secondInstant);
   }

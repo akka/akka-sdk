@@ -375,6 +375,9 @@ include::example$key-value-customer-registry/src/main/java/customer/api/Customer
 
 If the connection is lost, the client will reconnect and start from the last seen updates.
 
+The offset tracking is timestamp-based, multiple entries can potentially have the exact same last change timestamp.
+Because of this, to make sure no updates are missed, a restarted stream will always include the entries which were seen last by the previous connection. A SSE client will likely have to deduplicate those.
+
 Another realistic example is to periodically poll an entity for its state,
 but only emit an element over SSE when the state changes:
 
