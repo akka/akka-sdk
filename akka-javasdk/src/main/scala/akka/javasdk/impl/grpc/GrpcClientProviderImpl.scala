@@ -8,9 +8,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executor
 
 import scala.annotation.nowarn
-import scala.concurrent.Await
 import scala.concurrent.Future
-import scala.concurrent.duration.DurationInt
 import scala.jdk.CollectionConverters._
 import scala.jdk.FutureConverters._
 import scala.util.control.NonFatal
@@ -20,7 +18,6 @@ import akka.actor.ClassicActorSystemProvider
 import akka.actor.CoordinatedShutdown
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
-import akka.discovery.Discovery
 import akka.grpc.GrpcClientSettings
 import akka.grpc.javadsl.AkkaGrpcClient
 import akka.javasdk.grpc.GrpcClientProvider
@@ -202,17 +199,9 @@ private[akka] final class GrpcClientProviderImpl(
     try {
       // The runtime has set up an Akka discovery mechanism that finds locally running
       // services. Since in dev mode only blocking is fine for now.
-      val result = Await.result(Discovery(system).discovery.lookup(serviceName, 5.seconds), 5.seconds)
-      val address = result.addresses.head
-      // port is always set
-      val port = address.port.get
-      log.debug(
-        "Creating dev mode gRPC client for Akka service [{}] found through local discovery at [{}:{}]",
-        serviceName,
-        address.address,
-        port)
+      log.debug("Creating dev mode gRPC client for Akka service [{}] using local discovery", serviceName)
       GrpcClientSettings
-        .connectToServiceAt(address.host, port)(system)
+        .usingServiceDiscovery(serviceName)(system)
         // (No TLS locally)
         .withTls(false)
 
