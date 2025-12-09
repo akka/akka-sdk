@@ -111,6 +111,8 @@ maxInstances
 migratable
 minInstances
 mountPath
+multimodal
+Multimodal
 mutator
 mutators
 namespace
@@ -133,6 +135,7 @@ passivates
 passivation
 passwordHashes
 plaintext
+Podman
 Postgres
 PostgreSQL
 precalculated

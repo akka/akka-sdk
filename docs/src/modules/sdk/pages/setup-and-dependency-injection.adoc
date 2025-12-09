@@ -43,6 +43,21 @@ The Akka SDK provides injection of types related to capabilities the SDK provide
 
 Injection is done as constructor parameters for the component implementation class.
 
+The following types can be injected in all component types:
+
+[options="header" cols="1,1"]
+|===
+| Injectable class
+| Description
+
+|`akka.javasdk.agent.AgentRegistry`
+| Contains information about all agents, see xref:agents.adoc[]
+| `com.typesafe.config.Config`
+| Access the user defined configuration picked up from `application.conf`
+| `akka.javasdk.Sanitizer`
+| Allows for applying sanitization, see xref:sdk:sanitization.adoc[]
+|===
+
 The following types can be injected in Service Setup, HTTP Endpoints, gRPC Endpoints, Agents, Consumers, Timed Actions, and Workflows:
 
 [options="header" cols="1,1"]
@@ -51,26 +66,20 @@ The following types can be injected in Service Setup, HTTP Endpoints, gRPC Endpo
 | Description
 
 |`akka.javasdk.client.ComponentClient`
-| for interaction between components, see xref:component-and-service-calls.adoc[]
-|`akka.javasdk.agent.AgentRegistry`
-| contains information about all agents, see xref:agents.adoc[]
+| For interaction between components, see xref:component-and-service-calls.adoc[]
 | `akka.javasdk.http.HttpClientProvider`
-| for creating clients to make calls between Akka services and also to other HTTP servers, see xref:component-and-service-calls.adoc[]
+| For creating clients to make calls between Akka services and also to other HTTP servers, see xref:component-and-service-calls.adoc[]
 | `akka.javasdk.grpc.GrpcClientProvider`
-| for creating clients to make calls between Akka services and also to other gRPC servers, see xref:component-and-service-calls.adoc[]
+| For creating clients to make calls between Akka services and also to other gRPC servers, see xref:component-and-service-calls.adoc[]
 | `akka.javasdk.timer.TimerScheduler`
-| for scheduling timed actions, see xref:timed-actions.adoc[]
+| For scheduling timed actions, see xref:timed-actions.adoc[]
 | `akka.stream.Materializer`
 |Used for running Akka streams
-| `com.typesafe.config.Config`
-| Access the user defined configuration picked up from `application.conf`
 | `akka.javasdk.Retries`
 | Utility for retrying calls
 | `java.util.concurrent.Executor`
 | An executor which runs each task in a virtual thread, and is safe to use for blocking async work, for example with `CompletableFuture.supplyAsync(() -> blocking, executor)`
 |===
-
-The `akka.javasdk.Sanitizer` can be injected in all component types, see xref:sdk:sanitization.adoc[].
 
 Furthermore, the following component specific types can also be injected:
 
@@ -149,3 +158,49 @@ Any component injection happening during the test will now use the custom `Depen
 
 The test specific `DependencyProvider` must be able to provide all custom dependencies used by
 all components that the test interacts with.
+
+== Configuration
+
+Configuration properties for the service, or adjustments to the Akka default configuration, can be defined in `src/main/resources/application.conf` in https://github.com/lightbend/config/blob/main/HOCON.md[HOCON format, window="new"].
+
+[source,json,indent=0]
+.src/main/resources/application.conf
+----
+include::sdk:example$doc-snippets/src/main/resources/application.conf[tags=full-example]
+----
+
+`${?ENVIRONMENT}` and `${?OPENAI_API_KEY}` means that if an environment variable is defined with the given name it will override the configuration property.
+
+To access the configuration in application code you can use a constructor parameter `com.typesafe.config.Config` in all components and the `ServiceSetup` class. An example of this is shown in xref:setup-and-dependency-injection.adoc#_disabling_components[].
+
+WARNING: Don't use `ConfigFactory.load()` since that will not load the `application.conf` as you intended. Use dependency injection of `Config` instead.
+
+=== Test configuration
+
+Test that are using the `TestKitSupport` are loading configuration from `src/test/resourced/application-test.conf` if that exists, otherwise from `application.conf`.
+
+[source,json,indent=0]
+.src/test/resources/application-test.conf
+----
+include::sdk:example$doc-snippets/src/test/resources/application-test.conf[]
+----
+
+Alternatively, the configuration of the test can be overridden in the `testKitSettings`:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/ConfigIntegrationTest.java[ConfigIntegrationTest.java]
+----
+include::example$doc-snippets/src/test/java/com/example/ConfigIntegrationTest.java[tag=config]
+----
+
+=== Reference configuration
+
+The default configuration of the Akka SDK:
+
+[source,hocon,indent=0]
+----
+include::example$akka-javasdk/src/main/resources/reference.conf[tag=reference]
+----
+
+In addition, there is also xref:sdk:model-provider-details.adoc[AI model provider configuration].
+

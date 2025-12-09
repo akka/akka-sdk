@@ -16,13 +16,20 @@ import Settings.DevModeSettings
 private[impl] object Settings {
 
   def apply(sdkConfig: Config): Settings = {
+    val showProvidedComponents = {
+      val key = "dev-mode.show-hidden-components"
+      // hidden config, not in reference.conf
+      if (sdkConfig.hasPath(key)) sdkConfig.getBoolean(key) else false
+    }
+
     Settings(devModeSettings = Option.when(sdkConfig.getBoolean("dev-mode.enabled"))(
       DevModeSettings(
         serviceName = sdkConfig.getString("dev-mode.service-name"),
-        httpPort = sdkConfig.getInt("dev-mode.http-port"))))
+        httpPort = sdkConfig.getInt("dev-mode.http-port"),
+        showProvidedComponents)))
   }
 
-  final case class DevModeSettings(serviceName: String, httpPort: Int)
+  final case class DevModeSettings(serviceName: String, httpPort: Int, showProvidedComponents: Boolean)
 }
 
 /**

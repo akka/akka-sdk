@@ -5,19 +5,22 @@
 package akka.javasdk.agent;
 
 import akka.javasdk.agent.SessionMessage.AiMessage;
+import akka.javasdk.agent.SessionMessage.MultimodalUserMessage;
 import akka.javasdk.agent.SessionMessage.ToolCallResponse;
 import akka.javasdk.agent.SessionMessage.UserMessage;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 /** Interface for message representation used inside the SessionMemoryEntity state. */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "@type")
 @JsonSubTypes({
   @JsonSubTypes.Type(value = UserMessage.class, name = "UM"),
   @JsonSubTypes.Type(value = AiMessage.class, name = "AIM"),
-  @JsonSubTypes.Type(value = ToolCallResponse.class, name = "TCR")
+  @JsonSubTypes.Type(value = ToolCallResponse.class, name = "TCR"),
+  @JsonSubTypes.Type(value = MultimodalUserMessage.class, name = "MUM")
 })
 public sealed interface SessionMessage {
   static int sizeInBytes(String text) {
@@ -26,7 +29,48 @@ public sealed interface SessionMessage {
 
   int size();
 
-  String text();
+  String componentId();
+
+  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+  @JsonSubTypes({
+    @JsonSubTypes.Type(value = MessageContent.TextMessageContent.class, name = "T"),
+    @JsonSubTypes.Type(value = MessageContent.ImageUriMessageContent.class, name = "IU")
+  })
+  sealed interface MessageContent {
+
+    record TextMessageContent(String text) implements MessageContent {}
+
+    record ImageUriMessageContent(
+        String uri, akka.javasdk.agent.MessageContent.ImageMessageContent.DetailLevel detailLevel)
+        implements MessageContent {}
+  }
+
+  // need to introduce new message to keep backward compatibility
+  record MultimodalUserMessage(Instant timestamp, List<MessageContent> contents, String componentId)
+      implements SessionMessage {
+
+    /** returns text from the first MessageContent.TextMessageContent */
+    public Optional<String> text() {
+      return contents.stream()
+          .filter(c -> c instanceof MessageContent.TextMessageContent)
+          .map(c -> ((MessageContent.TextMessageContent) c).text())
+          .findFirst();
+    }
+
+    @Override
+    public int size() {
+      return contents.stream()
+          .map(
+              content ->
+                  switch (content) {
+                    case MessageContent.TextMessageContent text -> sizeInBytes(text.text());
+                    case MessageContent.ImageUriMessageContent image ->
+                        sizeInBytes(image.uri()) + sizeInBytes(image.detailLevel().toString());
+                  })
+          .mapToInt(Integer::intValue)
+          .sum();
+    }
+  }
 
   String componentId();
 

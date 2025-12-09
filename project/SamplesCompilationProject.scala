@@ -14,6 +14,7 @@ object SamplesCompilationProject {
 
   private val LangChain4JVersion = "1.1.0"
   private val additionalDeps = Map(
+    "doc-snippets" -> Seq("com.google.api.grpc" % "proto-google-common-protos" % "2.61.3" % "protobuf"),
     "spring-dependency-injection" -> Seq("org.springframework" % "spring-context" % "6.2.8"),
     "ask-akka-agent" -> Seq(
       "dev.langchain4j" % "langchain4j-open-ai" % LangChain4JVersion,
@@ -38,50 +39,51 @@ object SamplesCompilationProject {
 
       lazy val innerProjects =
         findSamples
-          .map { dir =>
-            val formatIfNeeded = taskKey[Unit]("Format with prettier-maven-plugin if needed")
-            val proj = Project("sample-" + dir.getName, dir)
-              // JavaFormatterPlugin must be disabled
-              // samples use prettier-maven-plugin from the parent pom
-              .disablePlugins(HeaderPlugin, JavaFormatterPlugin)
-              .enablePlugins(AkkaGrpcPlugin)
-              .settings(
-                publish / skip := true,
-                publishTo := None,
-                Test / unmanagedSourceDirectories += baseDirectory.value / "src" / "it" / "java",
-                akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Java),
-                akkaGrpcCodeGeneratorSettings ++= CommonSettings.serviceGrpcGeneratorSettings,
-                // Disable tests for composite projects since they're primarily for compilation verification
-                // Maven sets akka.javasdk.dev-mode.project-artifact-id automatically but SBT composite projects don't have this
-                Test / test := {},
-                Test / testOnly := {},
-                // Only run prettier-maven-plugin if there are sources to compile
-                formatIfNeeded := {
-                  val srcs = (Compile / sources).value.filter(_.getName.endsWith(".java"))
-                  val classDir = (Compile / classDirectory).value
+          .collect {
+            case dir if dir.getName != "target" =>
+              val formatIfNeeded = taskKey[Unit]("Format with prettier-maven-plugin if needed")
+              val proj = Project("sample-" + dir.getName, dir)
+                // JavaFormatterPlugin must be disabled
+                // samples use prettier-maven-plugin from the parent pom
+                .disablePlugins(HeaderPlugin, JavaFormatterPlugin)
+                .enablePlugins(AkkaGrpcPlugin)
+                .settings(
+                  publish / skip := true,
+                  publishTo := None,
+                  Test / unmanagedSourceDirectories += baseDirectory.value / "src" / "it" / "java",
+                  akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Java),
+                  akkaGrpcCodeGeneratorSettings ++= CommonSettings.serviceGrpcGeneratorSettings,
+                  // Disable tests for composite projects since they're primarily for compilation verification
+                  // Maven sets akka.javasdk.dev-mode.project-artifact-id automatically but SBT composite projects don't have this
+                  Test / test := {},
+                  Test / testOnly := {},
+                  // Only run prettier-maven-plugin if there are sources to compile
+                  formatIfNeeded := {
+                    val srcs = (Compile / sources).value.filter(_.getName.endsWith(".java"))
+                    val classDir = (Compile / classDirectory).value
 
-                  val shouldFormat =
-                    if (classDir.exists) {
-                      // Check if any source files are newer than the class directory
-                      val lastCompileTime = classDir.lastModified()
-                      srcs.exists(_.lastModified() > lastCompileTime)
-                    } else {
-                      // No previous compilation output means first compilation
-                      srcs.nonEmpty
+                    val shouldFormat =
+                      if (classDir.exists) {
+                        // Check if any source files are newer than the class directory
+                        val lastCompileTime = classDir.lastModified()
+                        srcs.exists(_.lastModified() > lastCompileTime)
+                      } else {
+                        // No previous compilation output means first compilation
+                        srcs.nonEmpty
+                      }
+
+                    if (shouldFormat) {
+                      println(s"[info] Running: mvn -Pformatting prettier:write in ${baseDirectory.value}")
+                      val process = scala.sys.process.Process("mvn -Pformatting prettier:write", baseDirectory.value)
+                      val outputLines = process.lineStream_!
+                      outputLines.foreach { line =>
+                        if (line.contains("[INFO] Reformatted file:")) println(line)
+                      }
                     }
+                  },
+                  Compile / compile := (Compile / compile).dependsOn(formatIfNeeded).value)
 
-                  if (shouldFormat) {
-                    println(s"[info] Running: mvn -Pformatting prettier:write in ${baseDirectory.value}")
-                    val process = scala.sys.process.Process("mvn -Pformatting prettier:write", baseDirectory.value)
-                    val outputLines = process.lineStream_!
-                    outputLines.foreach { line =>
-                      if (line.contains("[INFO] Reformatted file:")) println(line)
-                    }
-                  }
-                },
-                Compile / compile := (Compile / compile).dependsOn(formatIfNeeded).value)
-
-            additionalDeps.get(dir.getName).fold(proj)(deps => proj.settings(libraryDependencies ++= deps))
+              additionalDeps.get(dir.getName).fold(proj)(deps => proj.settings(libraryDependencies ++= deps))
           }
           .map(configureFunc)
 

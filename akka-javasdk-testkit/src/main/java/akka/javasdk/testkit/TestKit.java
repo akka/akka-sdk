@@ -34,6 +34,7 @@ import akka.javasdk.impl.serialization.JsonSerializer;
 import akka.javasdk.impl.timer.TimerSchedulerImpl;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
+import akka.javasdk.testkit.impl.SseRouteTesterImpl;
 import akka.javasdk.timer.TimerScheduler;
 import akka.javasdk.workflow.Workflow;
 import akka.pattern.Patterns;
@@ -781,7 +782,10 @@ public class TestKit {
               runtimeActorSystem);
       agentRegistry = startupContext.agentRegistry();
       selfHttpClient =
-          new HttpClientImpl(runtimeActorSystem, "http://" + runtimeHost + ":" + runtimePort);
+          new HttpClientImpl(
+              runtimeActorSystem,
+              "http://" + runtimeHost + ":" + runtimePort,
+              runtimeActorSystem.executionContext());
       httpClientProvider = startupContext.httpClientProvider();
       grpcClientProvider = startupContext.grpcClientProvider();
       timerScheduler = new TimerSchedulerImpl(componentClients.timerClient(), Metadata.EMPTY);
@@ -905,6 +909,10 @@ public class TestKit {
    */
   public HttpClient getSelfHttpClient() {
     return selfHttpClient;
+  }
+
+  public SseRouteTester getSelfSseRouteTester() {
+    return new SseRouteTesterImpl(runtimeHost, runtimePort, runtimeActorSystem);
   }
 
   /**

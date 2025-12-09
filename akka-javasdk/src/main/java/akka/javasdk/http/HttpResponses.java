@@ -19,6 +19,9 @@ import akka.util.ByteString;
 import com.google.common.net.HttpHeaders;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.function.Function;
 
 /**
  * Factory class for creating common HTTP responses in endpoint methods.
@@ -234,19 +237,100 @@ public class HttpResponses {
     return staticResource(strippedPath);
   }
 
+  /**
+   * @param source A stream of text
+   * @return A chunked HTTP response that will emit the text as it arrives rather than collect all
+   *     before responding
+   */
+  public static HttpResponse streamText(Source<String, ?> source) {
+    return HttpResponse.create()
+        .withStatus(StatusCodes.OK)
+        .withEntity(
+            HttpEntities.create(ContentTypes.TEXT_PLAIN_UTF8, source.map(ByteString::fromString)));
+  }
+
   private static final ContentType TEXT_EVENT_STREAM = ContentTypes.parse("text/event-stream");
 
   /**
+   * Return a stream of events as an HTTP SSE response. <a
+   * href="https://html.spec.whatwg.org/multipage/server-sent-events.html">See the Living HTML
+   * standard for more details on SSE</a>
+   *
+   * <p><b>Note</b> that browsers only support consuming SSE using HTTP GET requests.
+   *
+   * <p><b>Note</b> in most cases you should use one of the overloads extracting an event id so that
+   * clients can reconnect and continue the stream form the last seen event in case the response
+   * connection is lost. This overload of the method can only be used in scenarios where a
+   * reconnecting client without any offset to start from is fine.
+   *
    * @return A HttpResponse with a server sent events (SSE) stream response. The HTTP response will
    *     contain each element in the source, rendered to JSON using jackson. An SSE keepalive
    *     element is emitted every 10 seconds if the stream is idle.
    */
   public static <T> HttpResponse serverSentEvents(Source<T, ?> source) {
+    return serverSentEvents(source, Optional.empty(), Optional.empty());
+  }
+
+  /**
+   * Return a stream of events as an HTTP SSE response. <a
+   * href="https://html.spec.whatwg.org/multipage/server-sent-events.html">See the Living HTML
+   * standard for more details on SSE</a>
+   *
+   * <p><b>Note</b> that browsers only support consuming SSE using HTTP GET requests.
+   *
+   * @param extractEventId A function to extract a unique id or offset from the events to include in
+   *     the stream as SSE event id. This is then used by clients, passed as a header, in an HTTP
+   *     endpoint this will be available from {@link RequestContext#lastSeenSseEventId()} in the
+   *     HTTP endpoint. The extracted string id must not contain the null character, line feed or
+   *     carriage return.
+   * @return A HttpResponse with a server sent events (SSE) stream response. The HTTP response will
+   *     contain each element in the source, rendered to JSON using jackson. An SSE keepalive
+   *     element is emitted every 10 seconds if the stream is idle.
+   */
+  public static <T> HttpResponse serverSentEvents(
+      Source<T, ?> source, Function<T, String> extractEventId) {
+    return serverSentEvents(source, Optional.of(extractEventId), Optional.empty());
+  }
+
+  /**
+   * Return a stream of events as an HTTP Server Sent Events (SSE) response. <a
+   * href="https://html.spec.whatwg.org/multipage/server-sent-events.html">See the Living HTML
+   * standard for more details on SSE</a>.
+   *
+   * <p><b>Note</b> that browsers only support consuming SSE using HTTP GET requests.
+   *
+   * @param extractEventId A function to extract a unique id or offset from the events to include in
+   *     the stream as SSE event id. This is then used by clients, passed as a header, in an HTTP
+   *     endpoint this will be available from {@link RequestContext#lastSeenSseEventId()} in the
+   *     HTTP endpoint. The extracted string id must not contain the null character, line feed or
+   *     carriage return.
+   * @param extractEventType A function extracting an event type for the event, making it easier for
+   *     the SSE client to distinguish between a set of different kinds of events emitted.
+   * @return A HttpResponse with a server sent events (SSE) stream response. The HTTP response will
+   *     contain each element in the source, rendered to JSON using jackson. An SSE keepalive
+   *     element is emitted every 10 seconds if the stream is idle.
+   */
+  public static <T> HttpResponse serverSentEvents(
+      Source<T, ?> source,
+      Function<T, String> extractEventId,
+      Function<T, String> extractEventType) {
+    return serverSentEvents(source, Optional.of(extractEventId), Optional.of(extractEventType));
+  }
+
+  private static <T> HttpResponse serverSentEvents(
+      Source<T, ?> source,
+      Optional<Function<T, String>> extractEventId,
+      Optional<Function<T, String>> extractEventType) {
     var sseSource =
         source
             .map(
-                elem ->
-                    ServerSentEvent.create(JsonSupport.getObjectMapper().writeValueAsString(elem)))
+                elem -> {
+                  var jsonPayload = JsonSupport.getObjectMapper().writeValueAsString(elem);
+                  var eventId = extractEventId.map(f -> f.apply(elem));
+                  var eventType = extractEventType.map(f -> f.apply(elem));
+                  return ServerSentEvent.create(
+                      jsonPayload, eventType, eventId, OptionalInt.empty());
+                })
             .keepAlive(Duration.ofSeconds(10), ServerSentEvent::heartbeat)
             .map(ServerSentEvent::encode)
             .recoverWith(
@@ -258,7 +342,7 @@ public class HttpResponses {
                           //       so we recover/complete stream and log error
                           SdkRunner.userServiceLog()
                               .error("HTTP endpoint SSE stream failed with error", ex);
-                          return Source.empty();
+                          return Source.<ByteString>empty();
                         })
                     .build());
 

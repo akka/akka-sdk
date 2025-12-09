@@ -24,6 +24,7 @@ import akka.runtime.sdk.spi.ComponentOptions
 import akka.runtime.sdk.spi.GrpcEndpointDescriptor
 import akka.runtime.sdk.spi.GrpcEndpointRequestConstructionContext
 import akka.runtime.sdk.spi.MethodOptions
+import akka.stream.Materializer
 
 object GrpcEndpointDescriptorFactory {
 
@@ -36,8 +37,10 @@ object GrpcEndpointDescriptorFactory {
     case e                                            => throw e
   }
 
-  def apply[T](grpcEndpointClass: Class[T], factory: GrpcEndpointRequestConstructionContext => T)(implicit
-      system: ActorSystem[_]): GrpcEndpointDescriptor[T] = {
+  def apply[T](
+      grpcEndpointClass: Class[T],
+      factory: GrpcEndpointRequestConstructionContext => T,
+      materializer: Materializer)(implicit system: ActorSystem[_]): GrpcEndpointDescriptor[T] = {
     // FIXME now way right now to know that it is a gRPC service interface
     val serviceDefinitionClass: Class[_] = {
       val interfaces = grpcEndpointClass.getInterfaces
@@ -66,7 +69,12 @@ object GrpcEndpointDescriptorFactory {
         s"Could not access static description from gRPC service interface [${serviceDefinitionClass.getName}]")
 
     val routeFactory: (HttpRequest => T) => PartialFunction[HttpRequest, Future[HttpResponse]] = { serviceFactory =>
-      handlerFactory.partialInstancePerRequest(serviceFactory, description.name, unwrapFailedCompletion(), system)
+      handlerFactory.partialInstancePerRequest(
+        serviceFactory,
+        description.name,
+        unwrapFailedCompletion(),
+        system,
+        materializer)
     }
 
     val componentOptions =

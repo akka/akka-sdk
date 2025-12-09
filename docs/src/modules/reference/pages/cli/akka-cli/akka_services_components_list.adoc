@@ -13,10 +13,11 @@ akka services components list SERVICE [flags]
 == Options
 
 ----
-  -h, --help             help for list
-      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
-      --project string   project to use if not using the default configured project
-      --region string    region to use if project has more than one region
+  -h, --help               help for list
+      --include-provided   Whether to include Runtime components in the list.
+      --owner string       the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string     project to use if not using the default configured project
+      --region string      region to use if project has more than one region
 ----
 
 == Options inherited from parent commands

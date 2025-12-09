@@ -146,7 +146,9 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
                   reply,
                   metadata,
                   deleteEntity = false,
-                  stateMetadata))
+                  stateMetadata,
+                  SpiEventSourcedEntity.ChangeReplicationFilter.empty // FIXME: add replication filter
+                ))
           }
 
         case DeleteEntity =>
@@ -161,7 +163,9 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
                   reply,
                   metadata,
                   deleteEntity = true,
-                  Vector.empty))
+                  Vector.empty,
+                  SpiEventSourcedEntity.ChangeReplicationFilter.empty // FIXME: add replication filter
+                ))
           }
 
         case NoPrimaryEffect =>

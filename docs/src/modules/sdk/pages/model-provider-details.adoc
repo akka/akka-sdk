@@ -77,6 +77,65 @@ The following is a list of all natively supported model configurations. Remember
 
 See link:_attachments/api/akka/javasdk/agent/ModelProvider.Anthropic.html[`ModelProvider.Anthropic`] for programmatic settings.
 
+=== Bedrock
+
+[cols="1m,1,4"]
+|===
+| Property | Type | Description
+
+| provider
+| "bedrock"
+| Name of the provider. Must always be `bedrock`
+
+| region
+| String
+| The region to be used, e.g. "us-east-1"
+
+
+| model-id
+| String
+| The Bedrock model id, e.g. "ai21.jamba-1-5-large-v1:0"
+
+| send-thinking
+| boolean
+| Send thinking can be enabled
+
+| return-thinking
+| boolean
+| Return thinking can be enabled
+
+| max-output-tokens
+| Integer
+| Max token _output_ quota. Leave as –1 for model default
+
+| reasoning-token-budget
+| Integer
+| Max reasoning token budget. Leave as –1 for model default
+
+| additional-model-request-fields
+| Map<String, Object>
+| Send additional fields, e.g. _additional-model-request-fields.key=value_
+
+| access-token
+| String
+| The access token for authentication with the Bedrock API
+
+| temperature
+| Float
+| Model randomness. The default is not supplied so check with the model documentation for default behavior
+
+| top-p
+| Float
+| Nucleus sampling parameter
+
+| max-tokens
+| Integer
+| Maximum number of tokens to generate. Leave as –1 for model default
+
+|===
+
+See link:_attachments/api/akka/javasdk/agent/ModelProvider.Bedrock.html[`ModelProvider.Bedrock`] for programmatic settings.
+
 === Gemini
 
 [cols="1m,1,4"]
@@ -311,6 +370,12 @@ gpt-o3 {
 [source,hocon,indent=0]
 ----
 include::example$akka-javasdk/src/main/resources/reference.conf[tag=anthropic]
+----
+
+=== Bedrock
+[source,hocon,indent=0]
+----
+include::example$akka-javasdk/src/main/resources/reference.conf[tag=bedrock]
 ----
 
 === Gemini

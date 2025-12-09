@@ -201,7 +201,7 @@ public interface ActivityAgentMore {
         .tokenStream(StreamingActivityAgent::query) // <1>
         .source(request.question); // <2>
 
-      return HttpResponses.serverSentEvents(responseStream); // <3>
+      return HttpResponses.streamText(responseStream); // <3>
     }
 
     // end::stream-endpoint[]
@@ -218,7 +218,7 @@ public interface ActivityAgentMore {
         .groupedWithin(20, Duration.ofMillis(100)) // <1>
         .map(group -> String.join("", group)); // <2>
 
-      return HttpResponses.serverSentEvents(groupedTokenStream); // <3>
+      return HttpResponses.streamText(groupedTokenStream); // <3>
     }
     // end::stream-group[]
     // tag::stream-endpoint[]

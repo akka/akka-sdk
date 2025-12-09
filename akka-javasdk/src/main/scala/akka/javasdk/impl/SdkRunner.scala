@@ -8,6 +8,7 @@ import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.util
+import java.util.Locale
 import java.util.Optional
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.Executor
@@ -65,9 +66,7 @@ import akka.javasdk.http.RequestContext
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerDestination
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerSource
 import akka.javasdk.impl.Sdk.StartupContext
-import akka.javasdk.impl.Validations.Invalid
-import akka.javasdk.impl.Validations.Valid
-import akka.javasdk.impl.Validations.Validation
+import akka.javasdk.impl.SdkRunner.extractSpiSettings
 import akka.javasdk.impl.agent.AgentImpl
 import akka.javasdk.impl.agent.AgentImpl.AgentContextImpl
 import akka.javasdk.impl.agent.AgentRegistryImpl
@@ -114,6 +113,7 @@ import akka.runtime.sdk.spi.RemoteIdentification
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiComponents
 import akka.runtime.sdk.spi.SpiConfiguredGuardrail
+import akka.runtime.sdk.spi.SpiDeployedEventingSettings
 import akka.runtime.sdk.spi.SpiDevModeSettings
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
@@ -147,30 +147,9 @@ object SdkRunner {
   val userServiceLog: Logger = LoggerFactory.getLogger("akka.javasdk.ServiceLog")
 
   val FutureDone: Future[Done] = Future.successful(Done)
-}
 
-/**
- * INTERNAL API
- */
-@InternalApi
-class SdkRunner private (dependencyProvider: Option[DependencyProvider], disabledComponents: Set[Class[_]])
-    extends akka.runtime.sdk.spi.Runner {
-  private val startedPromise = Promise[StartupContext]()
-
-  // default constructor for runtime creation
-  def this() = this(None, Set.empty[Class[_]])
-
-  // constructor for testkit
-  def this(dependencyProvider: java.util.Optional[DependencyProvider], disabledComponents: java.util.Set[Class[_]]) =
-    this(dependencyProvider.toScala, disabledComponents.asScala.toSet)
-
-  def applicationConfig: Config =
-    ApplicationConfig.loadApplicationConf
-
-  override def getSettings: SpiSettings = {
-    val applicationConf = applicationConfig
-
-    val eventSourcedEntitySnapshotEvery = applicationConfig.getInt("akka.javasdk.event-sourced-entity.snapshot-every")
+  def extractSpiSettings(applicationConf: Config): SpiSettings = {
+    val eventSourcedEntitySnapshotEvery = applicationConf.getInt("akka.javasdk.event-sourced-entity.snapshot-every")
     val cleanupDeletedEntityAfter =
       applicationConf.getDuration("akka.javasdk.entity.cleanup-deleted-after")
 
@@ -204,6 +183,8 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
       devModeSettings.isDefined || // always enabled in dev mode
       applicationConf.getBoolean("akka.javasdk.agent.interaction-log.enabled")
 
+    val spiDeployedEventingSettings = extractDeployedEventingSettings(applicationConf)
+
     new SpiSettings(
       eventSourcedEntitySnapshotEvery,
       cleanupDeletedEntityAfter,
@@ -211,7 +192,8 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
       maxToolCallSteps,
       agentInteractionLogEnabled,
       devModeSettings,
-      Some(sanitizationSettings))
+      Some(sanitizationSettings),
+      Some(spiDeployedEventingSettings))
   }
 
   private def extractBrokerConfig(eventingConf: Config): SpiEventingSupportSettings = {
@@ -223,6 +205,40 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
       else
         ConfigFactory.empty())
   }
+
+  private def extractDeployedEventingSettings(applicationConf: Config): SpiDeployedEventingSettings = {
+
+    val googlePubSubMode =
+      applicationConf.getString("akka.javasdk.eventing.google-pubsub.mode").toLowerCase(Locale.ROOT) match {
+        case "automatic"              => SpiDeployedEventingSettings.Automatic
+        case "automatic-subscription" => SpiDeployedEventingSettings.AutomaticSubscription
+        case "manual"                 => SpiDeployedEventingSettings.Manual
+      }
+
+    new SpiDeployedEventingSettings(Seq(new SpiDeployedEventingSettings.GooglePubSubOverrides(Some(googlePubSubMode))))
+  }
+}
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+class SdkRunner private (dependencyProvider: Option[DependencyProvider], disabledComponents: Set[Class[_]])
+    extends akka.runtime.sdk.spi.Runner {
+  private val startedPromise = Promise[StartupContext]()
+
+  // default constructor for runtime creation
+  def this() = this(None, Set.empty[Class[_]])
+
+  // constructor for testkit
+  def this(dependencyProvider: java.util.Optional[DependencyProvider], disabledComponents: java.util.Set[Class[_]]) =
+    this(dependencyProvider.toScala, disabledComponents.asScala.toSet)
+
+  def applicationConfig: Config =
+    ApplicationConfig.loadApplicationConf
+
+  override def getSettings: SpiSettings =
+    extractSpiSettings(applicationConfig)
 
   override def start(startContext: StartContext): Future[SpiComponents] = {
     try {
@@ -286,6 +302,13 @@ private object ComponentLocator {
 
   private val logger = LoggerFactory.getLogger(getClass)
 
+  val providedComponents: Seq[Class[_]] = Seq(
+    classOf[SessionMemoryEntity],
+    classOf[PromptTemplate],
+    classOf[ToxicityEvaluator],
+    classOf[SummarizationEvaluator],
+    classOf[HallucinationEvaluator])
+
   case class LocatedClasses(components: Seq[Class[_]], service: Option[Class[_]])
 
   def locateUserComponents(system: ActorSystem[_]): LocatedClasses = {
@@ -335,9 +358,8 @@ private object ComponentLocator {
     }.toSeq
 
     val withBuildInComponents = if (components.exists(classOf[Agent].isAssignableFrom)) {
-      logger.debug("Agent component detected, adding built-in components")
-      classOf[SessionMemoryEntity] +: classOf[PromptTemplate] +: classOf[ToxicityEvaluator] +: classOf[
-        SummarizationEvaluator] +: classOf[HallucinationEvaluator] +: components
+      logger.debug("Agent component detected, adding provided components")
+      providedComponents ++ components
     } else {
       components
     }
@@ -421,7 +443,9 @@ private final class Sdk(
     system,
     None,
     remoteIdentification.map(ri => RawHeader(ri.headerName, ri.headerValue)),
-    sdkSettings)
+    sdkSettings,
+    // We know it is a dispatcher/executor
+    sdkExecutionContext.asInstanceOf[Executor])
 
   private lazy val userServiceConfig = {
     // hiding these paths from the config provided to user
@@ -439,17 +463,6 @@ private final class Sdk(
     remoteIdentification.map(ri => GrpcClientProviderImpl.AuthHeaders(ri.headerName, ri.headerValue)))
 
   private lazy val overrideModelProvider = new OverrideModelProvider
-
-  // validate service classes before instantiating
-  private val validation = componentClasses.foldLeft(Valid: Validation) { case (validations, cls) =>
-    validations ++ Validations.validate(cls)
-  }
-  validation match { // if any invalid component, log and throw
-    case Valid => ()
-    case invalid: Invalid =>
-      invalid.messages.foreach { msg => logger.error(msg) }
-      invalid.throwFailureSummary()
-  }
 
   val guardrailProvider = new GuardrailProvider(system, applicationConfig)
   try {
@@ -531,7 +544,7 @@ private final class Sdk(
     .filter(Reflect.isGrpcEndpoint)
     .map { grpcEndpointClass =>
       val anyRefClass = grpcEndpointClass.asInstanceOf[Class[AnyRef]]
-      GrpcEndpointDescriptorFactory(anyRefClass, grpcEndpointFactory(anyRefClass))(system)
+      GrpcEndpointDescriptorFactory(anyRefClass, grpcEndpointFactory(anyRefClass), sdkMaterializer)(system)
     }
 
   private val mcpEndpoints = componentClasses
@@ -552,6 +565,11 @@ private final class Sdk(
   // guardrail name => component ids
   private var guardrailEnabledForComponent = Map.empty[String, Set[String]]
 
+  private def isProvided(clz: Class[_]): Boolean = {
+    !sdkSettings.devModeSettings.exists(_.showProvidedComponents) &&
+    ComponentLocator.providedComponents.contains(clz)
+  }
+
   componentClasses
     .filter(hasComponentId)
     .foreach {
@@ -571,8 +589,6 @@ private final class Sdk(
 
         val entityStateType: Class[AnyRef] = Reflect.eventSourcedEntityStateType(clz).asInstanceOf[Class[AnyRef]]
 
-        val isSessionMemoryEntity = clz == classOf[SessionMemoryEntity]
-
         val instanceFactory: SpiEventSourcedEntity.FactoryContext => SpiEventSourcedEntity = { factoryContext =>
           new EventSourcedEntityImpl[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]](
             sdkTracerFactory,
@@ -585,9 +601,9 @@ private final class Sdk(
             context =>
               wiredInstance(clz.asInstanceOf[Class[EventSourcedEntity[AnyRef, AnyRef]]]) {
                 // remember to update component type API doc and docs if changing the set of injectables
-                case p if p == classOf[EventSourcedEntityContext]              => context
-                case s if s == classOf[Sanitizer]                              => sanitizer
-                case r if r == classOf[AgentRegistry] && isSessionMemoryEntity => agentRegistry
+                case p if p == classOf[EventSourcedEntityContext] => context
+                case s if s == classOf[Sanitizer]                 => sanitizer
+                case r if r == classOf[AgentRegistry]             => agentRegistry
               })
         }
         eventSourcedEntityDescriptors :+=
@@ -599,7 +615,9 @@ private final class Sdk(
             keyValue = false,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            provided = false)
+            provided = isProvided(clz),
+            replicationFilterEnabled = false // FIXME: add replication filters
+          )
 
       case clz if Reflect.isKeyValueEntity(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -629,6 +647,7 @@ private final class Sdk(
                 // remember to update component type API doc and docs if changing the set of injectables
                 case p if p == classOf[KeyValueEntityContext] => context
                 case s if s == classOf[Sanitizer]             => sanitizer
+                case r if r == classOf[AgentRegistry]         => agentRegistry
               })
         }
         keyValueEntityDescriptors :+=
@@ -640,7 +659,9 @@ private final class Sdk(
             keyValue = true,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            provided = false)
+            provided = false,
+            replicationFilterEnabled = false // FIXME: add replication filters
+          )
 
       case clz if Reflect.isWorkflow(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -664,7 +685,8 @@ private final class Sdk(
             readOnlyCommandNames,
             ctx => workflowInstanceFactory(componentId, ctx, clz.asInstanceOf[Class[Workflow[Nothing]]]),
             name = Reflect.readComponentName(clz),
-            description = Reflect.readComponentDescription(clz))
+            description = Reflect.readComponentDescription(clz),
+            provided = false)
 
       case clz if Reflect.isTimedAction(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -690,7 +712,8 @@ private final class Sdk(
             clz.getName,
             timedActionSpi,
             name = Reflect.readComponentName(clz),
-            description = Reflect.readComponentDescription(clz))
+            description = Reflect.readComponentDescription(clz),
+            provided = false)
 
       case clz if Reflect.isConsumer(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -722,7 +745,8 @@ private final class Sdk(
             consumerDestination(consumerClass),
             consumerSpi,
             name = Reflect.readComponentName(clz),
-            description = Reflect.readComponentDescription(clz))
+            description = Reflect.readComponentDescription(clz),
+            provided = false)
 
       case clz if Reflect.isAgent(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -769,7 +793,8 @@ private final class Sdk(
             instanceFactory,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            evaluator = Reflect.isEvaluatorAgent(clz))
+            evaluator = Reflect.isEvaluatorAgent(clz),
+            provided = isProvided(clz))
 
         agentRegistryInfo :+= AgentRegistryImpl.agentDetailsFor(agentClass)
 
@@ -965,6 +990,9 @@ private final class Sdk(
         override def queryParams(): QueryParams = {
           QueryParamsImpl(context.httpRequest.uri.query())
         }
+
+        override def lastSeenSseEventId(): Optional[String] =
+          context.requestHeaders.header("Last-Event-ID").map(_.value()).toJava
 
         override def selfRegion(): String = regionInfo.selfRegion
       }

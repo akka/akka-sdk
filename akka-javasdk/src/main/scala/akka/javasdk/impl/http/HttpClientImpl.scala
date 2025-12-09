@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.util
 import java.util.concurrent.CompletionStage
+import java.util.concurrent.Executor
 import java.util.function.Function
 
 import scala.concurrent.ExecutionException
@@ -54,19 +55,22 @@ private[akka] final class HttpClientImpl(
     baseUrl: String,
     materializer: Materializer,
     timeout: FiniteDuration,
-    defaultHeaders: Seq[HttpHeader])
+    defaultHeaders: Seq[HttpHeader],
+    sdkExecutor: Executor)
     extends HttpClient {
 
-  def this(system: ActorSystem[_], baseUrl: String, defaultHeaders: Seq[HttpHeader]) =
+  def this(system: ActorSystem[_], baseUrl: String, defaultHeaders: Seq[HttpHeader], sdkExecutor: Executor) =
     this(
       Http(system),
       baseUrl,
       SystemMaterializer.get(system).materializer,
       // 10s higher than configured timeout, so configured timeout always win
       system.settings.config.getDuration("akka.http.server.request-timeout").toScala + 10.seconds,
-      defaultHeaders)
+      defaultHeaders,
+      sdkExecutor)
 
-  def this(system: ActorSystem[_], baseUrl: String) = this(system, baseUrl, Seq.empty)
+  def this(system: ActorSystem[_], baseUrl: String, sdkExecutor: Executor) =
+    this(system, baseUrl, Seq.empty, sdkExecutor)
 
   override def GET(uri: String): RequestBuilder[ByteString] = forMethod(uri, HttpMethods.GET)
 
@@ -86,7 +90,8 @@ private[akka] final class HttpClientImpl(
       timeout,
       req.withHeaders(defaultHeaders.asJava),
       new StrictResponse[ByteString](_, _),
-      None)
+      None,
+      sdkExecutor)
   }
 }
 
@@ -100,7 +105,8 @@ private[akka] final case class RequestBuilderImpl[R](
     timeout: FiniteDuration,
     request: HttpRequest,
     bodyParser: (HttpResponse, ByteString) => StrictResponse[R],
-    retrySettings: Option[RetrySettings])
+    retrySettings: Option[RetrySettings],
+    sdkExecutor: Executor)
     extends RequestBuilder[R] {
 
   override def withRequest(request: HttpRequest): RequestBuilder[R] = copy(request = request)
@@ -116,7 +122,7 @@ private[akka] final case class RequestBuilderImpl[R](
     request.addCredentials(credentials))
 
   override def withTimeout(timeout: Duration) =
-    new RequestBuilderImpl[R](http, materializer, timeout.toScala, request, bodyParser, retrySettings)
+    copy(timeout = timeout.toScala)
 
   override def modifyRequest(adapter: Function[HttpRequest, HttpRequest]): RequestBuilder[R] = withRequest(
     adapter.apply(request))
@@ -153,10 +159,12 @@ private[akka] final case class RequestBuilderImpl[R](
 
     def callHttp(): CompletionStage[StrictResponse[R]] = http
       .singleRequest(request)
-      .thenCompose((response: HttpResponse) =>
-        response.entity
-          .toStrict(timeout.toMillis, materializer)
-          .thenApply((entity: HttpEntity.Strict) => bodyParser.apply(response, entity.getData)))
+      .thenComposeAsync(
+        (response: HttpResponse) =>
+          response.entity
+            .toStrict(timeout.toMillis, materializer)
+            .thenApplyAsync((entity: HttpEntity.Strict) => bodyParser.apply(response, entity.getData), sdkExecutor),
+        sdkExecutor)
 
     retrySettings match {
       case Some(settings) => Patterns.retry(() => callHttp(), settings, materializer.system)
@@ -198,39 +206,28 @@ private[akka] final case class RequestBuilderImpl[R](
         throw new RuntimeException(e)
     }
 
-  override def responseBodyAs[T](classType: Class[T]): RequestBuilder[T] = new RequestBuilderImpl[T](
-    http,
-    materializer,
-    timeout,
-    request,
-    (res: HttpResponse, bytes: ByteString) => bodyParserInternal(classType, res, bytes),
-    retrySettings)
+  override def responseBodyAs[T](classType: Class[T]): RequestBuilder[T] =
+    withBodyParser((res: HttpResponse, bytes: ByteString) => bodyParserInternal(classType, res, bytes))
 
   override def responseBodyAsListOf[T](elementType: Class[T]): RequestBuilder[util.List[T]] =
-    new RequestBuilderImpl[util.List[T]](
-      http,
-      materializer,
-      timeout,
-      request,
-      { (res: HttpResponse, bytes: ByteString) =>
-        try if (res.status.isFailure) {
-          onResponseError(res, bytes)
-        } else if (res.entity.getContentType == ContentTypes.APPLICATION_JSON)
-          new StrictResponse[util.List[T]](
-            res,
-            JsonSupport.getObjectMapper
-              .readerForListOf(elementType)
-              .readValue(bytes.toArrayUnsafe())
-              .asInstanceOf[util.List[T]])
-        else
-          throw new RuntimeException(
-            "Expected the response for " + request.getUri + " to be of type " + ContentTypes.APPLICATION_JSON + " but response content type is " + res.entity.getContentType)
-        catch {
-          case e: IOException =>
-            throw new RuntimeException(e)
-        }
-      },
-      retrySettings)
+    withBodyParser[util.List[T]] { (res: HttpResponse, bytes: ByteString) =>
+      try if (res.status.isFailure) {
+        onResponseError(res, bytes)
+      } else if (res.entity.getContentType == ContentTypes.APPLICATION_JSON)
+        new StrictResponse[util.List[T]](
+          res,
+          JsonSupport.getObjectMapper
+            .readerForListOf(elementType)
+            .readValue(bytes.toArrayUnsafe())
+            .asInstanceOf[util.List[T]])
+      else
+        throw new RuntimeException(
+          "Expected the response for " + request.getUri + " to be of type " + ContentTypes.APPLICATION_JSON + " but response content type is " + res.entity.getContentType)
+      catch {
+        case e: IOException =>
+          throw new RuntimeException(e)
+      }
+    }
 
   private def onResponseError(response: HttpResponse, bytes: ByteString) = {
     // FIXME should we have a better way to deal with failure?
@@ -246,13 +243,7 @@ private[akka] final case class RequestBuilderImpl[R](
   }
 
   override def parseResponseBody[T](parse: Function[Array[Byte], T]) =
-    new RequestBuilderImpl[T](
-      http,
-      materializer,
-      timeout,
-      request,
-      (res: HttpResponse, bytes: ByteString) => new StrictResponse[T](res, parse.apply(bytes.toArray)),
-      retrySettings)
+    withBodyParser((res: HttpResponse, bytes: ByteString) => new StrictResponse[T](res, parse.apply(bytes.toArray)))
 
   override def addQueryParameter(key: String, value: String): RequestBuilder[R] = {
     val query = request.getUri.query().withParam(key, value)
@@ -260,11 +251,13 @@ private[akka] final case class RequestBuilderImpl[R](
     withRequest(request.withUri(uriWithQuery))
   }
 
-  override def withRetry(retrySettings: RetrySettings): RequestBuilder[R] = {
-    new RequestBuilderImpl[R](http, materializer, timeout, request, bodyParser, Some(retrySettings))
-  }
+  override def withRetry(retrySettings: RetrySettings): RequestBuilder[R] =
+    copy(retrySettings = Some(retrySettings))
 
-  override def withRetry(maxRetries: Int): RequestBuilder[R] = {
-    new RequestBuilderImpl[R](http, materializer, timeout, request, bodyParser, Some(RetrySettings(maxRetries)))
-  }
+  override def withRetry(maxRetries: Int): RequestBuilder[R] =
+    copy(retrySettings = Some(RetrySettings(maxRetries)))
+
+  private def withBodyParser[T](parser: (HttpResponse, ByteString) => StrictResponse[T]): RequestBuilderImpl[T] =
+    new RequestBuilderImpl[T](http, materializer, timeout, request, parser, retrySettings, sdkExecutor)
+
 }

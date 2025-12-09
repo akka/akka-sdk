@@ -4,13 +4,18 @@
 
 package akkajavasdk.components.http;
 
+import akka.NotUsed;
+import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.Sanitizer;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.http.AbstractHttpEndpoint;
+import akka.javasdk.http.HttpResponses;
+import akka.stream.javadsl.Source;
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.List;
 
 @HttpEndpoint()
@@ -56,5 +61,28 @@ public class TestEndpoint extends AbstractHttpEndpoint {
   @Post("/big-decimal")
   public BigDecimalRequest postBigDecimal(BigDecimalRequest request) {
     return request;
+  }
+
+  @Get("/streamingtext/{numbers}")
+  public HttpResponse streamText(int numbers) {
+    return HttpResponses.streamText(Source.range(1, numbers).map(Object::toString));
+  }
+
+  public record MyEvent(String id, String payload) {}
+
+  @Get("/serversentevents")
+  public HttpResponse sse() {
+    final Source<MyEvent, NotUsed> source;
+    if (requestContext().lastSeenSseEventId().isPresent()) {
+      var lastSeenId = Long.parseLong(requestContext().lastSeenSseEventId().get());
+      source =
+          Source.single(new MyEvent(Long.toString(lastSeenId + 1), "text")).concat(Source.maybe());
+    } else {
+      source =
+          Source.from(Arrays.asList(new MyEvent("1", "text"), new MyEvent("2", "text")))
+              .concat(Source.maybe());
+    }
+
+    return HttpResponses.serverSentEvents(source, MyEvent::id, event -> "sometype");
   }
 }

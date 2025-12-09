@@ -80,6 +80,8 @@ Windows::
 
 --
 
+NOTE: By downloading and using this software you agree to Akka's https://akka.io/legal/privacy[Privacy Policy] and https://trust.akka.io/cloud-terms-of-service[Software Terms of Use].
+
 Verify that the Akka CLI has been installed successfully by running the following to list all available commands:
 
 [source, command window]

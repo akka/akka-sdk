@@ -185,6 +185,10 @@ curl -i -XGET --location "http://localhost:9000/activities/alice/{sessionId}"
 
 Inspect the logs and notice the difference if you include "Beware of the weather" in the request or not.
 
+If you'd rather use the visual request builder in the console, you can create this request and see all of the components involved in handling the request:
+
+image:multi-agent-flowview.png[Flow view for the Multi agent]
+
 == Next steps
 
 * Finally, let's use another agent to evaluate the previous suggestions when the user preferences are changed or if new suggestions should be created. Continue with xref:planner-agent/eval.adoc[] that will illustrate the Consumer component and "LLM as judge" pattern.

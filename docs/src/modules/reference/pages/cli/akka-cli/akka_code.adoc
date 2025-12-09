@@ -31,7 +31,8 @@ The 'code' command provides tools for developing Akka services, including AI ass
 == SEE ALSO
 
 * link:akka.html[akka]	 - Akka control
-* link:akka_code_ai-assistance-update.html[akka code ai-assistance-update]	 - Updates the Akka AI Assistance context directory in the given project directory.
+* link:akka_code_check.html[akka code check]	 - Check if your environment is ready for Akka development
+* link:akka_code_context-update.html[akka code context-update]	 - Updates the Akka SDK context directory in the given project directory.
 * link:akka_code_init.html[akka code init]	 - Initialize a new Akka SDK project.
 * link:akka_code_token.html[akka code token]	 - The token command allow you to provision a resolver for Akka dependency downloads.
 

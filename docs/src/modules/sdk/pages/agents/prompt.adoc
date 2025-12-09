@@ -20,6 +20,23 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 
 Keep in mind that some models have preferences in how you wrap or label user input within the system prompt and you'll need to take that into account when defining your system message.
 
+== Multimodal user message
+
+Multimodal AI models can process not only text but also images, enabling agents to analyze visual content, extract information from diagrams, or answer questions about images.
+
+To send images along with text to an AI model, use the `UserMessage` class which supports multimodal content:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/ImageProcessingAgent.java[ImageProcessingAgent.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/ImageProcessingAgent.java[tag=multimodal-user-message]
+----
+<1> Create a `UserMessage` with multiple content elements
+<2> Add text content using `TextMessageContent.from()`
+<3> Add image content using `ImageMessageContent.from()`
+
+NOTE: Not all AI models support vision capabilities. Ensure your configured model provider supports image inputs before using multimodal messages.
+
 == Using dynamic prompts with templates
 
 As an alternative to hard-coded prompts, there is a built-in prompt template entity. The advantage of using the prompt template entity is that you can change the prompts at runtime without restarting or redeploying the service. Because the prompt template is managed as an entity, you retain full change history.

@@ -5,6 +5,7 @@ import akka.javasdk.agent.MemoryProvider;
 import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.agent.SessionHistory;
 import akka.javasdk.agent.SessionMessage;
+import akka.javasdk.agent.SessionMessage.MessageContent;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import java.util.stream.Collectors;
@@ -53,6 +54,18 @@ public class CompactionAgent extends Agent {
       .map(msg -> {
         return switch (msg) {
           case SessionMessage.UserMessage userMsg -> "\n\nUSER:\n" + userMsg.text(); // <3>
+          // end::compaction[]
+          case SessionMessage.MultimodalUserMessage multimodalUserMsg -> multimodalUserMsg
+            .contents()
+            .stream()
+            .map(content ->
+              switch (content) {
+                case MessageContent.ImageUriMessageContent image -> "image from " +
+                image.uri();
+                case MessageContent.TextMessageContent text -> text.text();
+              })
+            .reduce("", (acc, text) -> "\n\nUSER:\n" + text, String::concat);
+          // tag::compaction[]
           case SessionMessage.AiMessage aiMessage -> {
             var aiText = "\n\nAI:\n" + aiMessage.text();
             yield aiMessage

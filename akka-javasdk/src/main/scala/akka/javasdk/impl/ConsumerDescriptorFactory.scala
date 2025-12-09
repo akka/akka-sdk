@@ -9,6 +9,7 @@ import akka.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
 import akka.javasdk.impl.ComponentDescriptorFactory._
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.JsonSerializer
+import com.google.protobuf.GeneratedMessageV3
 
 /**
  * INTERNAL API
@@ -36,11 +37,19 @@ private[impl] object ConsumerDescriptorFactory extends ComponentDescriptorFactor
         method.getParameterTypes.headOption match {
           case Some(inputType) =>
             val invoker = MethodInvoker(method)
-            if (method.getParameterTypes.last.isSealed) {
-              method.getParameterTypes.last.getPermittedSubclasses.toList
+            if (inputType.isSealed) {
+              inputType.getPermittedSubclasses.toList
                 .flatMap(subClass => {
                   serializer.contentTypesFor(subClass).map(typeUrl => typeUrl -> invoker)
                 })
+            } else if (classOf[GeneratedMessageV3].isAssignableFrom(inputType)) {
+              // special handling of protobuf message types
+              val descriptor = inputType
+                .getMethod("getDescriptor")
+                .invoke(null)
+                .asInstanceOf[com.google.protobuf.Descriptors.Descriptor]
+
+              Seq(AnySupport.DefaultTypeUrlPrefix + "/" + descriptor.getFullName -> invoker)
             } else {
               val typeUrls = serializer.contentTypesFor(inputType)
               typeUrls.map(_ -> invoker)

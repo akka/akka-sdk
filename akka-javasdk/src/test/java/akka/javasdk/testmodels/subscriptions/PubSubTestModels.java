@@ -4,29 +4,24 @@
 
 package akka.javasdk.testmodels.subscriptions;
 
-import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.DeleteHandler;
-import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.annotations.Produce;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.consumer.Consumer;
 import akka.javasdk.testmodels.Done;
 import akka.javasdk.testmodels.Message;
-import akka.javasdk.testmodels.Message2;
 import akka.javasdk.testmodels.eventsourcedentity.Employee;
 import akka.javasdk.testmodels.eventsourcedentity.EmployeeEvent;
 import akka.javasdk.testmodels.eventsourcedentity.EmployeeEvent.EmployeeCreated;
 import akka.javasdk.testmodels.eventsourcedentity.EmployeeEvent.EmployeeEmailUpdated;
-import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels;
-import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.CounterEventSourcedEntity;
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EmployeeEntity;
 import akka.javasdk.testmodels.keyvalueentity.Counter;
 import akka.javasdk.testmodels.keyvalueentity.CounterState;
-import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflow;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
+import protoconsumer.EventsForConsumer;
 
 public
 class PubSubTestModels { // TODO shall we remove this class and move things to ActionTestModels and
@@ -65,156 +60,6 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
-  public static class MissingConsumeAnnotationConsumer extends Consumer {
-
-    public Effect methodOne(EmployeeCreated message) {
-      return effects().produce(message);
-    }
-
-    public Effect methodTwo(EmployeeEmailUpdated message) {
-      return effects().produce(message);
-    }
-  }
-
-  @Consume.FromEventSourcedEntity(CounterEventSourcedEntity.class)
-  public static class SubscribeToEventSourcedEntity extends Consumer {
-
-    public Effect methodOne(EventSourcedEntitiesTestModels.CounterEvent.IncrementCounter evt) {
-      return effects().produce(evt.value());
-    }
-
-    public Effect methodTwo(EventSourcedEntitiesTestModels.CounterEvent.DecrementCounter evt) {
-      return effects().produce(evt.value());
-    }
-  }
-
-  @Consume.FromTopic(value = "topicXYZ", ignoreUnknown = true)
-  public static class SubscribeToTopicsActionTypeLevel extends Consumer {
-
-    public Effect methodOne(Message message) {
-      return effects().produce(message);
-    }
-
-    public Effect methodTwo(Message2 message) {
-      return effects().produce(message);
-    }
-  }
-
-  @Consume.FromEventSourcedEntity(value = CounterEventSourcedEntity.class, ignoreUnknown = true)
-  public static class SubscribeOnlyOneToEventSourcedEntity extends Consumer {
-
-    public Effect methodOne(Integer message) {
-      return effects().produce(message);
-    }
-  }
-
-  @Consume.FromKeyValueEntity(Counter.class)
-  @Consume.FromEventSourcedEntity(EmployeeEntity.class)
-  @Consume.FromTopic("topic")
-  @Consume.FromServiceStream(id = "source", service = "abc")
-  public static class MultipleTypeLevelSubscriptions extends Consumer {
-
-    public Effect methodOne(Integer message) {
-      return effects().produce(message);
-    }
-  }
-
-  @Consume.FromKeyValueEntity(Counter.class)
-  public static class MultipleUpdateMethodsForVETypeLevelSubscription extends Consumer {
-
-    public Effect methodOne(Integer message) {
-      return effects().produce(message);
-    }
-
-    public Effect methodTwo(String message) {
-      return effects().produce(message);
-    }
-  }
-
-  @Consume.FromKeyValueEntity(Counter.class)
-  public static class AmbiguousHandlersVESubscriptionInConsumer extends Consumer {
-
-    public Effect methodOne(Integer message) {
-      return effects().produce(message);
-    }
-
-    public Effect methodTwo(Integer message) {
-      return effects().produce(message);
-    }
-  }
-
-  @Consume.FromKeyValueEntity(value = Counter.class)
-  public static class AmbiguousDeleteHandlersVESubscriptionInConsumer extends Consumer {
-
-    @DeleteHandler
-    public Effect methodOne() {
-      return effects().ignore();
-    }
-
-    @DeleteHandler
-    public Effect methodTwo() {
-      return effects().ignore();
-    }
-  }
-
-  @Consume.FromEventSourcedEntity(EmployeeEntity.class)
-  public static class AmbiguousHandlersESSubscriptionInConsumer extends Consumer {
-
-    public Effect methodOne(Integer message) {
-      return effects().produce(message);
-    }
-
-    public Effect methodTwo(Integer message) {
-      return effects().produce(message);
-    }
-  }
-
-  @Consume.FromServiceStream(id = "source", service = "a")
-  public static class AmbiguousHandlersStreamTypeLevelSubscriptionInConsumer extends Consumer {
-
-    public Effect methodOne(Integer message) {
-      return effects().produce(message);
-    }
-
-    public Effect methodTwo(Integer message) {
-      return effects().produce(message);
-    }
-  }
-
-  @Produce.ToTopic("test")
-  public static class MissingSourceForTopicPublishing extends Consumer {
-
-    public Effect methodOne(String message) {
-      return effects().produce(message);
-    }
-  }
-
-  @Consume.FromEventSourcedEntity(value = EmployeeEntity.class)
-  public static class MissingHandlersWhenSubscribeToEventSourcedEntityConsumer extends Consumer {
-
-    public Effect methodOne(Integer message) {
-      return effects().produce(message);
-    }
-
-    public Effect onEvent(EmployeeCreated message) {
-      return effects().produce(message.toString());
-    }
-  }
-
-  @Consume.FromKeyValueEntity(value = Counter.class)
-  public static class MissingHandlersWhenSubscribeToKVEConsumer extends Consumer {
-    public Effect wrongHandler(Integer message) {
-      return effects().produce(message);
-    }
-  }
-
-  @Consume.FromWorkflow(value = TransferWorkflow.class)
-  public static class MissingHandlersWhenSubscribeToWorkflowConsumer extends Consumer {
-    public Effect wrongHandler(Integer message) {
-      return effects().produce(message);
-    }
-  }
-
   @Consume.FromTopic(value = "topicXYZ", consumerGroup = "cg")
   public static class SubscribeToTopicTypeLevel extends Consumer {
 
@@ -240,67 +85,6 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
 
     public Effect consume(byte[] bytes) {
       return effects().produce(Done.instance);
-    }
-  }
-
-  @Consume.FromKeyValueEntity(Counter.class)
-  @Produce.ToTopic("foobar")
-  public static class VEWithPublishToTopic extends Consumer {
-
-    public Effect messageOne(String msg) {
-      return effects().produce(new Message(msg));
-    }
-
-    @DeleteHandler
-    public Effect messageTwo() {
-      return effects().ignore();
-    }
-  }
-
-  @Consume.FromEventSourcedEntity(EmployeeEntity.class)
-  @Produce.ToTopic("foobar")
-  public static class ESWithPublishToTopicConsumer extends Consumer {
-
-    public Effect messageOne(EmployeeCreated created) {
-      return effects().produce(new Message(created.firstName));
-    }
-
-    public Effect messageTwo(EmployeeEmailUpdated updated) {
-      return effects().ignore();
-    }
-  }
-
-  @Consume.FromTopic("source")
-  @Produce.ToTopic("foobar")
-  public static class TypeLevelTopicSubscriptionWithPublishToTopic extends Consumer {
-
-    public Effect messageOne(String msg) {
-      return effects().produce(new Message(msg));
-    }
-
-    public Effect messageTwo(Integer msg) {
-      return effects().ignore();
-    }
-  }
-
-  @Consume.FromServiceStream(id = "source", service = "abc")
-  @Produce.ToTopic("foobar")
-  public static class StreamSubscriptionWithPublishToTopic extends Consumer {
-
-    public Effect messageOne(String msg) {
-      return effects().produce(new Message(msg));
-    }
-
-    public Effect messageTwo(Integer msg) {
-      return effects().ignore();
-    }
-  }
-
-  @Consume.FromKeyValueEntity(Counter.class)
-  public static class ConsumerWithMethodLevelAclAndSubscription extends Consumer {
-    @Acl(allow = @Acl.Matcher(service = "test"))
-    public Effect messageOne(Message message) {
-      return effects().done();
     }
   }
 
@@ -356,6 +140,18 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  @Consume.FromServiceStream(service = "some_service", id = "some_events", ignoreUnknown = true)
+  public static class ProtobufEventStreamConsumer extends Consumer {
+
+    public Effect transform(EventsForConsumer.EventForConsumer1 event1) {
+      return effects().produce(event1.toString());
+    }
+
+    public Effect transform(EventsForConsumer.EventForConsumer2 event2) {
+      return effects().produce(event2.toString());
+    }
+  }
+
   @Component(id = "employee_view")
   public static class EventStreamSubscriptionView extends View {
 
@@ -375,203 +171,6 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     @Query("SELECT * FROM employees WHERE email = :email")
     public QueryEffect<Employee> getEmployeeByEmail(ByEmail byEmail) {
       return queryResult();
-    }
-  }
-
-  // Validation spec test models
-
-  public static class ConsumerWithoutConsumeAnnotation extends Consumer {
-    public Consumer.Effect handle(String msg) {
-      return effects().done();
-    }
-  }
-
-  @Consume.FromTopic("test-topic")
-  public static class ValidConsumerWithTopicSubscription extends Consumer {
-    public Consumer.Effect handle(String msg) {
-      return effects().done();
-    }
-  }
-
-  @Consume.FromKeyValueEntity(Counter.class)
-  public static class ValidConsumerWithKVESubscription extends Consumer {
-    public Consumer.Effect onUpdate(CounterState state) {
-      return effects().done();
-    }
-  }
-
-  @Consume.FromEventSourcedEntity(EmployeeEntity.class)
-  public static class ValidConsumerWithESSubscription extends Consumer {
-    public Consumer.Effect onCreated(EmployeeCreated event) {
-      return effects().done();
-    }
-
-    public Consumer.Effect onUpdated(EmployeeEmailUpdated event) {
-      return effects().done();
-    }
-  }
-
-  @Consume.FromKeyValueEntity(Counter.class)
-  public static class ConsumerWithoutHandler extends Consumer {
-    public String handle(CounterState state) {
-      return "not an effect";
-    }
-  }
-
-  @Consume.FromKeyValueEntity(Counter.class)
-  public static class ConsumerWithTooManyArgsMethod extends Consumer {
-    public Consumer.Effect handle(CounterState state, String arg2) {
-      return effects().done();
-    }
-  }
-
-  @Consume.FromTopic("test")
-  public static class ConsumerWithAmbiguousHandlers extends Consumer {
-    public Consumer.Effect handleOne(String msg) {
-      return effects().done();
-    }
-
-    public Consumer.Effect handleTwo(String msg) {
-      return effects().done();
-    }
-  }
-
-  @Consume.FromKeyValueEntity(Counter.class)
-  @Consume.FromEventSourcedEntity(EmployeeEntity.class)
-  public static class ConsumerWithMultipleTypeLevelSubscriptions extends Consumer {
-    public Consumer.Effect handle(String msg) {
-      return effects().done();
-    }
-  }
-
-  @Consume.FromKeyValueEntity(Counter.class)
-  public static class ConsumerWithMultipleUpdateMethods extends Consumer {
-    public Consumer.Effect handleInt(CounterState msg) {
-      return effects().done();
-    }
-
-    public Consumer.Effect handleString(String msg) {
-      return effects().done();
-    }
-  }
-
-  @Consume.FromKeyValueEntity(Counter.class)
-  public static class ConsumerWithMultipleDeleteHandlers extends Consumer {
-    @DeleteHandler
-    public Consumer.Effect deleteOne() {
-      return effects().done();
-    }
-
-    @DeleteHandler
-    public Consumer.Effect deleteTwo() {
-      return effects().done();
-    }
-  }
-
-  @Consume.FromKeyValueEntity(Counter.class)
-  public static class ConsumerWithValidDeleteHandler extends Consumer {
-    public Consumer.Effect onUpdate(CounterState state) {
-      return effects().done();
-    }
-
-    @DeleteHandler
-    public Consumer.Effect onDelete() {
-      return effects().done();
-    }
-  }
-
-  @Consume.FromKeyValueEntity(Counter.class)
-  public static class ConsumerWithDeleteHandlerWithParams extends Consumer {
-    public Consumer.Effect onUpdate(CounterState state) {
-      return effects().done();
-    }
-
-    @DeleteHandler
-    public Consumer.Effect onDelete(String param) {
-      return effects().done();
-    }
-  }
-
-  @Produce.ToTopic("output-topic")
-  public static class ConsumerWithTopicPublishingButNoSource extends Consumer {
-    public Consumer.Effect handle(String msg) {
-      return effects().produce(msg);
-    }
-  }
-
-  @Consume.FromTopic("input-topic")
-  @Produce.ToTopic("output-topic")
-  public static class ValidConsumerWithTopicPublishing extends Consumer {
-    public Consumer.Effect handle(String msg) {
-      return effects().produce(msg);
-    }
-  }
-
-  @Consume.FromKeyValueEntity(Counter.class)
-  public static class ConsumerWithMethodLevelAcl extends Consumer {
-    @Acl(allow = @Acl.Matcher(service = "test"))
-    public Consumer.Effect handle(CounterState state) {
-      return effects().done();
-    }
-  }
-
-  @Consume.FromKeyValueEntity(Counter.class)
-  public static class ConsumerMissingHandlerForKVE extends Consumer {
-    public Consumer.Effect wrongHandler(String msg) {
-      return effects().done();
-    }
-  }
-
-  @Consume.FromWorkflow(TransferWorkflow.class)
-  public static class ConsumerMissingHandlerForWorkflow extends Consumer {
-    public Consumer.Effect wrongHandler(String msg) {
-      return effects().done();
-    }
-  }
-
-  @Consume.FromEventSourcedEntity(CounterEventSourcedEntity.class)
-  public static class ConsumerMissingHandlerForES extends Consumer {
-    public Consumer.Effect wrongHandler(String msg) {
-      return effects().done();
-    }
-  }
-
-  @Consume.FromTopic("test")
-  public static class ConsumerWithMethodWithNoParameters extends Consumer {
-    public Consumer.Effect handle() {
-      return effects().done();
-    }
-  }
-
-  @Consume.FromServiceStream(id = "stream-id", service = "test-service")
-  public static class ValidConsumerWithStreamSubscription extends Consumer {
-    public Consumer.Effect handle(String msg) {
-      return effects().done();
-    }
-  }
-
-  @Consume.FromTopic("test")
-  @Produce.ServiceStream(id = "")
-  public static class ConsumerWithEmptyStreamId extends Consumer {
-    public Consumer.Effect handle(String msg) {
-      return effects().produce(msg);
-    }
-  }
-
-  @Consume.FromTopic("test")
-  @Produce.ServiceStream(id = "valid-stream-id")
-  public static class ValidConsumerWithStreamPublishing extends Consumer {
-    public Consumer.Effect handle(String msg) {
-      return effects().produce(msg);
-    }
-  }
-
-  @Component(id = "consumer-with-function-tool")
-  @Consume.FromTopic("test")
-  public static class ConsumerWithFunctionTool extends Consumer {
-    @FunctionTool(description = "Invalid function tool")
-    public Consumer.Effect handle(String msg) {
-      return effects().done();
     }
   }
 }

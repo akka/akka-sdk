@@ -11,6 +11,7 @@ import akka.javasdk.JsonSupport
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.consumer.MessageContext
 import akka.javasdk.consumer.MessageEnvelope
+import akka.javasdk.impl.AnySupport.BytesPrimitive
 import akka.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
 import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.impl.reflection.ParameterExtractors
@@ -33,6 +34,8 @@ private[impl] class ReflectiveConsumerRouter[A <: Consumer](
     if (consumesFromTopic) new JsonSerializer(JsonSupport.getObjectMapper)
     //  non-topic is internal, so non-configurable
     else internalSerializer
+
+  private val rawPayloadInvoker: Option[MethodInvoker] = methodInvokers.get(BytesPrimitive.fullName)
 
   def handleCommand(message: MessageEnvelope[BytesPayload], context: MessageContext): Consumer.Effect = {
     // only set, never cleared, to allow access from other threads in async callbacks in the consumer
@@ -60,6 +63,13 @@ private[impl] class ReflectiveConsumerRouter[A <: Consumer](
               .invokeDirectly(consumer, decodedPayload)
               .asInstanceOf[Consumer.Effect]
         }
+      case None
+          if rawPayloadInvoker.isDefined && inputTypeUrl != BytesPayload.EmptyContentType && inputTypeUrl != ProtobufEmptyTypeUrl =>
+        // always allow consuming arbitrary payload types, except delete events, as raw bytes, if there was no method for the content type
+        rawPayloadInvoker.get
+          // FIXME do we need a defensive copy or can we avoid that since we don't care about the payload after this?
+          .invokeDirectly(consumer, payload.bytes.toArrayUnsafe())
+          .asInstanceOf[Consumer.Effect]
       case None if ignoreUnknown => ConsumerEffectImpl.Builder.ignore()
       case None =>
         inputTypeUrl match {
