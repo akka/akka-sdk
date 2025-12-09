@@ -11,7 +11,7 @@ Linux::
 --
 **Recommended approach**
 
-The recommended approach to install `akka` on Linux is using the Debian package repository:
+The recommended approach to install the `akka` CLI on Linux is using the Debian package repository:
 
 [source,bash,subs="attributes"]
 ----
@@ -21,7 +21,7 @@ curl -1sLf \
 sudo apt install akka
 ----
 
-If `akka` is already installed, and you want to upgrade to the latest version, you can run:
+If the `akka` CLI is already installed, and you want to upgrade to the latest version, you can run:
 
 [source,bash]
 ----
@@ -92,14 +92,14 @@ Windows::
 --
 **Recommended approach**
 
-The recommended approach to install `akka` on Windows is using https://learn.microsoft.com/en-us/windows/package-manager/winget/[winget]:
+The recommended approach to install the `akka` CLI on Windows is using https://learn.microsoft.com/en-us/windows/package-manager/winget/[winget]:
 
 [source,powershell]
 ----
 winget install Akka.AkkaCli
 ----
 
-If `akka` is already installed, and you want to upgrade to the latest version, you can run:
+If the `akka` CLI is already installed, and you want to upgrade to the latest version, you can run:
 
 [source,powershell]
 ----
