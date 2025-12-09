@@ -6,7 +6,9 @@ package akka.javasdk.impl.view
 
 import java.time.Instant
 import java.util.Optional
+
 import scala.jdk.OptionConverters.RichOptional
+
 import akka.NotUsed
 import akka.annotation.InternalApi
 import akka.javasdk.client.ViewStreamMethodRef
