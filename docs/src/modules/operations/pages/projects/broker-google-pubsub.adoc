@@ -103,6 +103,47 @@ gcloud pubsub topics create TOPIC_ID
 You can now use the topic to connect with Akka
 --
 
+=== Topic and subscription in separate projects
+
+A service might need to consume events from a topic that belongs to some other GCP project than the service key
+project. This can be done by specifying a full path for the topic name in the consumer or view annotation:
+
+[source, java]
+----
+@Consume.FromTopic("projects/the-other-project-id/topics/the-topic-id")
+----
+
+In addition to this, the subscription may be local to the service itself, when a full path is specified as the
+consumer group, that will be used as the exact subscription name:
+
+[source, java]
+----
+@Consume.FromTopic(
+    value = "projects/the-other-project-id/topics/the-topic-id",
+    consumerGroup = "projects/my-project-id/subscriptions/my-subscr-id")
+----
+
+The configured service account will need to have permissions to consume from the topic, and to use the subscription.
+
+=== Topic and subscription management options
+
+By default, a deployed service expects the topic to exist, but that it can create the subscription if it does not exist yet.
+
+It is possible to configure this in three ways, through the `application.conf` setting `akka.javasdk.broker.google-pubsub.mode`:
+
+[source,hocon]
+----
+akka.javasdk.eventing.google-pubsub.mode = "automatic-subscription"
+----
+
+The following three values are valid:
+
+ * **automatic** - runtime creates topic and subscription if they do not exist
+ * **automatic-subscription** - runtime creates subscription if it do not exist, topic must be manually created
+ * **manual** - both topic and subscription must be manually created
+
+The service account must have permissions to perform the operations for the selected mode.
+
 == Delivery characteristics
 
 When your application consumes messages from Google Pub/Sub, it will try to deliver messages to your service in 'at-least-once' fashion while preserving order.
