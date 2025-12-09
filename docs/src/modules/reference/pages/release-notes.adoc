@@ -14,7 +14,7 @@ Current versions
 
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.10[Akka SDK 3.5.10]
 - image input support in Agents
-- Agent text streaming improvements
+- Streaming HTTP endpoint improvements
 
 * Akka Runtime 1.5.22 - 1.5.27
 - many improvements around Consumers/Views subscriptions
