@@ -208,7 +208,8 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
       maxToolCallSteps,
       agentInteractionLogEnabled,
       devModeSettings,
-      Some(sanitizationSettings))
+      Some(sanitizationSettings),
+      None)
   }
 
   private def extractBrokerConfig(eventingConf: Config): SpiEventingSupportSettings = {
