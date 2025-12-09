@@ -5,13 +5,17 @@
 package akka.javasdk.impl.consumer
 
 import java.util.Optional
+import java.util.concurrent.TimeoutException
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.jdk.DurationConverters.JavaDurationOps
 import scala.jdk.OptionConverters.RichOption
 import scala.util.control.NonFatal
 
 import akka.actor.ActorSystem
+import akka.actor.Cancellable
 import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
 import akka.javasdk.Metadata
@@ -70,6 +74,9 @@ private[impl] final class ConsumerImpl[C <: Consumer](
 
   private implicit val executionContext: ExecutionContext = sdkExecutionContext
   implicit val system: ActorSystem = _system
+
+  private val asyncResultTimeout =
+    system.settings.config.getDuration("akka.javasdk.consumer.async-result-timeout").toScala
 
   private val resultSerializer =
     // producing to topic, external json format, so mapper configurable by user
@@ -142,14 +149,37 @@ private[impl] final class ConsumerImpl[C <: Consumer](
               metadata = MetadataImpl.toSpi(metadata)))
         }
       case AsyncEffect(futureEffect) =>
-        futureEffect
-          .flatMap { effect => toSpiEffect(message, effect) }
+        val (timeoutCancellable, timeoutFuture) = asyncEffectTimeoutFor(message)
+        Future
+          .firstCompletedOf(Seq(futureEffect, timeoutFuture))
+          .flatMap { effect =>
+            timeoutCancellable.cancel()
+            toSpiEffect(message, effect)
+          }
           .recover { case NonFatal(ex) =>
+            timeoutCancellable.cancel()
             handleUnexpectedException(message, ex)
           }
       case unknown =>
         throw new IllegalArgumentException(s"Unknown TimedAction.Effect type ${unknown.getClass}")
     }
+  }
+
+  private def asyncEffectTimeoutFor(message: Message): (Cancellable, Future[Consumer.Effect]) = {
+    val promise = Promise[Consumer.Effect]()
+    val cancellable = system.scheduler.scheduleOnce(asyncResultTimeout) {
+      val cloudEvent = MetadataImpl.of(message.metadata)
+      val additionalDetails =
+        Seq(
+          message.payload.map(p => s"contentType: ${p.contentType}"),
+          cloudEvent.subjectScala.map(s => s"subject: [$s]"),
+          cloudEvent.getScala("ce-sequence").map(s => s"sequence: [$s]")).flatten.mkString(", ")
+
+      promise.failure(new TimeoutException(
+        s"Event to consumer [${consumerClass.getName}], $additionalDetails did not complete within $asyncResultTimeout"))
+    }
+
+    (cancellable, promise.future)
   }
 
   private def handleUnexpectedException(message: Message, ex: Throwable): Effect = {
