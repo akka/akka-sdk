@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl.agent
 
+import java.net.URI
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 
@@ -22,28 +23,15 @@ import akka.javasdk.CommandException
 import akka.javasdk.DependencyProvider
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
-import akka.javasdk.agent.Agent
-import akka.javasdk.agent.AgentContext
-import akka.javasdk.agent.Guardrail
-import akka.javasdk.agent.InternalServerException
-import akka.javasdk.agent.JsonParsingException
-import akka.javasdk.agent.McpToolCallExecutionException
-import akka.javasdk.agent.MemoryProvider
-import akka.javasdk.agent.ModelException
-import akka.javasdk.agent.ModelProvider
-import akka.javasdk.agent.ModelTimeoutException
-import akka.javasdk.agent.RateLimitException
-import akka.javasdk.agent.RemoteMcpTools
-import akka.javasdk.agent.SessionHistory
-import akka.javasdk.agent.SessionMemory
-import akka.javasdk.agent.SessionMessage
+import akka.javasdk.agent
+import akka.javasdk.agent.MessageContent.ImageMessageContent
+import akka.javasdk.agent.MessageContent.ImageUrlMessageContent
 import akka.javasdk.agent.SessionMessage.AiMessage
+import akka.javasdk.agent.SessionMessage.MultimodalUserMessage
 import akka.javasdk.agent.SessionMessage.ToolCallRequest
 import akka.javasdk.agent.SessionMessage.ToolCallResponse
 import akka.javasdk.agent.SessionMessage.UserMessage
-import akka.javasdk.agent.ToolCallExecutionException
-import akka.javasdk.agent.ToolCallLimitReachedException
-import akka.javasdk.agent.UnsupportedFeatureException
+import akka.javasdk.agent._
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
@@ -271,7 +259,7 @@ private[impl] final class AgentImpl[A <: Agent](
             new SpiAgent.RequestModelEffect(
               modelProvider = spiModelProvider,
               systemMessage = systemMessage,
-              userMessage = new SpiAgent.UserMessage(req.userMessage),
+              userMessage = toSpiUserMessage(req.userMessage),
               additionalContext = additionalContext,
               toolDescriptors = toolDescriptors,
               callToolFunction = request => Future(toolExecutor.execute(request))(sdkExecutionContext),
@@ -310,6 +298,28 @@ private[impl] final class AgentImpl[A <: Agent](
       }
 
     }(sdkExecutionContext)
+
+  private def toSpiUserMessage(userMessage: agent.UserMessage): SpiAgent.UserMessage = {
+    val contents = userMessage.contents().asScala.map(asd => toSpiMessageContent(asd))
+    new SpiAgent.UserMessage(contents.toSeq)
+  }
+
+  private def toSpiMessageContent(messageContent: MessageContent): SpiAgent.MessageContent = {
+    messageContent match {
+      case content: ImageUrlMessageContent =>
+        new SpiAgent.ImageUriMessageContent(content.url().toURI, toSpiDetailLevel(content.detailLevel()))
+      case content: MessageContent.TextMessageContent =>
+        new SpiAgent.TextMessageContent(content.text())
+    }
+  }
+
+  private def toSpiDetailLevel(level: ImageMessageContent.DetailLevel): SpiAgent.ImageMessageContent.DetailLevel = {
+    level match {
+      case ImageMessageContent.DetailLevel.LOW  => SpiAgent.ImageMessageContent.Low
+      case ImageMessageContent.DetailLevel.HIGH => SpiAgent.ImageMessageContent.High
+      case ImageMessageContent.DetailLevel.AUTO => SpiAgent.ImageMessageContent.Auto
+    }
+  }
 
   private def toSpiMcpEndpoints(remoteMcpTools: Seq[RemoteMcpTools]): Seq[SpiAgent.McpToolEndpointDescriptor] =
     remoteMcpTools.map {
@@ -376,7 +386,7 @@ private[impl] final class AgentImpl[A <: Agent](
 
   private def onSuccess(
       sessionMemoryClient: SessionMemory,
-      userMessage: String,
+      userMessage: agent.UserMessage,
       userMessageAt: Instant,
       agentRole: Option[String],
       responses: Seq[SpiAgent.Response]): Unit = {
@@ -394,10 +404,31 @@ private[impl] final class AgentImpl[A <: Agent](
           new ToolCallResponse(res.timestamp, componentId, res.id, res.name, res.content)
       }
 
-    sessionMemoryClient.addInteraction(
-      sessionId,
-      new UserMessage(userMessageAt, userMessage, componentId),
-      responseMessages.asJava)
+    if (userMessage.isTextOnly) {
+      sessionMemoryClient.addInteraction(
+        sessionId,
+        new UserMessage(userMessageAt, userMessage.text(), componentId),
+        responseMessages.asJava)
+    } else {
+      val contents = userMessage
+        .contents()
+        .asScala
+        .map(s => toSessionMemoryContent(s))
+        .asJava
+      sessionMemoryClient.addInteraction(
+        sessionId,
+        new MultimodalUserMessage(userMessageAt, contents, componentId),
+        responseMessages.asJava)
+    }
+  }
+
+  private def toSessionMemoryContent(messageContent: MessageContent): SessionMessage.MessageContent = {
+    messageContent match {
+      case content: MessageContent.TextMessageContent =>
+        new SessionMessage.MessageContent.TextMessageContent(content.text)
+      case content: ImageUrlMessageContent =>
+        new SessionMessage.MessageContent.ImageUriMessageContent(content.url().toString, content.detailLevel())
+    }
   }
 
   private def toSpiContextMessages(sessionHistory: SessionHistory): Vector[SpiAgent.ContextMessage] = {
@@ -418,6 +449,19 @@ private[impl] final class AgentImpl[A <: Agent](
           new SpiAgent.ContextMessage.AiMessage(m.text(), toolRequests)
         case m: UserMessage =>
           new SpiAgent.ContextMessage.UserMessage(m.text())
+
+        case m: MultimodalUserMessage =>
+          val contents = m
+            .contents()
+            .asScala
+            .map {
+              case content: SessionMessage.MessageContent.TextMessageContent =>
+                new SpiAgent.TextMessageContent(content.text())
+              case content: SessionMessage.MessageContent.ImageUriMessageContent =>
+                new SpiAgent.ImageUriMessageContent(URI.create(content.uri()), toSpiDetailLevel(content.detailLevel()))
+            }
+            .toSeq
+          new SpiAgent.ContextMessage.UserMessage(contents)
         case m: ToolCallResponse =>
           new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), m.text())
         case m =>

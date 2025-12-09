@@ -111,6 +111,8 @@ maxInstances
 migratable
 minInstances
 mountPath
+multimodal
+Multimodal
 mutator
 mutators
 namespace

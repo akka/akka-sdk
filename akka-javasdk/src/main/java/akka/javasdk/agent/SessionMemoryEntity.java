@@ -10,6 +10,7 @@ import akka.Done;
 import akka.javasdk.agent.SessionMemoryEntity.Event;
 import akka.javasdk.agent.SessionMemoryEntity.State;
 import akka.javasdk.agent.SessionMessage.AiMessage;
+import akka.javasdk.agent.SessionMessage.MultimodalUserMessage;
 import akka.javasdk.agent.SessionMessage.ToolCallResponse;
 import akka.javasdk.agent.SessionMessage.UserMessage;
 import akka.javasdk.annotations.Component;
@@ -129,9 +130,11 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
             maxSize);
       }
 
-      // remove all messages that are not UserMessage since those were driven by the deleted
-      // UserMessage
-      while (!messages.isEmpty() && !(messages.getFirst() instanceof UserMessage)) {
+      // remove all messages that are not UserMessage or MultimodalUserMessage since those were
+      // driven by the deleted UserMessage
+      while (!messages.isEmpty()
+          && !(messages.getFirst() instanceof UserMessage
+              || messages.getFirst() instanceof MultimodalUserMessage)) {
         freedSpace += messages.removeFirst().size();
         logger.debug(
             "Removed orphan message for sessionId [{}]. Remaining size [{}], maxSizeInBytes [{}]",
@@ -158,6 +161,14 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
 
     @TypeName("akka-memory-user-message-added")
     record UserMessageAdded(Instant timestamp, String componentId, String message, int sizeInBytes)
+        implements Event {}
+
+    @TypeName("akka-memory-multimodal-user-message-added")
+    record MultimodalUserMessageAdded(
+        Instant timestamp,
+        String componentId,
+        List<SessionMessage.MessageContent> contents,
+        int sizeInBytes)
         implements Event {}
 
     @TypeName("akka-memory-ai-message-added")
@@ -212,17 +223,41 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     }
   }
 
+  public record AddMultimodalInteractionCmd(
+      MultimodalUserMessage userMessage, List<SessionMessage> messages) {}
+
+  public Effect<Done> addMultimodalInteraction(AddMultimodalInteractionCmd cmd) {
+    var userMessageEvent =
+        new Event.MultimodalUserMessageAdded(
+            cmd.userMessage.timestamp(),
+            cmd.userMessage.componentId(),
+            cmd.userMessage.contents(),
+            cmd.userMessage.size());
+    return addInteraction(cmd.messages, cmd.userMessage.componentId(), userMessageEvent);
+  }
+
   public Effect<Done> addInteraction(AddInteractionCmd cmd) {
 
-    if (cmd.messages.stream()
+    var userMessageEvent =
+        new Event.UserMessageAdded(
+            cmd.userMessage.timestamp(),
+            cmd.userMessage.componentId(),
+            cmd.userMessage.text(),
+            cmd.userMessage.size());
+    return addInteraction(cmd.messages, cmd.userMessage.componentId(), userMessageEvent);
+  }
+
+  private Effect<Done> addInteraction(
+      List<SessionMessage> messages, String componentId, Event userMessageEvent) {
+    if (messages.stream()
         .filter(msg -> msg instanceof AiMessage)
         .map(msg -> ((AiMessage) msg).componentId())
-        .anyMatch(aiComponentId -> !cmd.userMessage.componentId().equals(aiComponentId))) {
+        .anyMatch(aiComponentId -> !componentId.equals(aiComponentId))) {
       return effects().error("componentId in userMessage must be the same as in all aiMessages");
     }
 
     var modelAndToolEvents =
-        cmd.messages.stream()
+        messages.stream()
             .map(
                 msg -> {
                   return (Event)
@@ -236,7 +271,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                                 0L, // filled in later
                                 aiMessage.toolCallRequests());
 
-                        case SessionMessage.ToolCallResponse toolCallResponse ->
+                        case ToolCallResponse toolCallResponse ->
                             new Event.ToolResponseMessageAdded(
                                 toolCallResponse.timestamp(),
                                 toolCallResponse.componentId(),
@@ -250,13 +285,6 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                       };
                 })
             .toList();
-
-    var userMessageEvent =
-        new Event.UserMessageAdded(
-            cmd.userMessage.timestamp(),
-            cmd.userMessage.componentId(),
-            cmd.userMessage.text(),
-            cmd.userMessage.size());
 
     List<Event> allEvents = new ArrayList<>();
     allEvents.add(userMessageEvent);
@@ -334,6 +362,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     }
   }
 
+  // keeping UserMessage instead of MultimodalUserMessage for compaction
   public record CompactionCmd(UserMessage userMessage, AiMessage aiMessage, long sequenceNumber) {}
 
   public Effect<Done> compactHistory(CompactionCmd cmd) {
@@ -398,13 +427,21 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                             0L, // filled in later
                             aiMessage.toolCallRequests()));
                   }
+                  case MultimodalUserMessage multimodalUserMessage -> {
+                    events.add(
+                        new Event.MultimodalUserMessageAdded(
+                            multimodalUserMessage.timestamp(),
+                            multimodalUserMessage.componentId(),
+                            multimodalUserMessage.contents(),
+                            multimodalUserMessage.size()));
+                  }
                 }
               });
     }
 
     var eventsWithSize = updateHistorySize(events);
 
-    return effects().persistAll(eventsWithSize).thenReply(__ -> Done.done());
+    return effects().persistAll(eventsWithSize).thenReply(__ -> done());
   }
 
   private List<Event> updateHistorySize(List<Event> events) {
@@ -417,6 +454,10 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
           result.add(evt);
         }
         case Event.UserMessageAdded evt -> {
+          size += evt.sizeInBytes();
+          result.add(evt);
+        }
+        case Event.MultimodalUserMessageAdded evt -> {
           size += evt.sizeInBytes();
           result.add(evt);
         }
@@ -455,8 +496,15 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
 
       case Event.UserMessageAdded userMsg ->
           currentState()
+              .addMessage(new UserMessage(userMsg.timestamp, userMsg.message, userMsg.componentId));
+
+      case Event.MultimodalUserMessageAdded multimodalUserMsg ->
+          currentState()
               .addMessage(
-                  new UserMessage(userMsg.timestamp(), userMsg.message(), userMsg.componentId));
+                  new MultimodalUserMessage(
+                      multimodalUserMsg.timestamp,
+                      multimodalUserMsg.contents,
+                      multimodalUserMsg.componentId));
 
       case Event.AiMessageAdded aiMsg ->
           currentState()
@@ -468,11 +516,11 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
           currentState()
               .addMessage(
                   new ToolCallResponse(
-                      toolMsg.timestamp(),
+                      toolMsg.timestamp,
                       toolMsg.componentId,
-                      toolMsg.id(),
+                      toolMsg.id,
                       toolMsg.name,
-                      toolMsg.content()));
+                      toolMsg.content));
 
       case Event.HistoryCleared __ -> currentState().clear();
 
