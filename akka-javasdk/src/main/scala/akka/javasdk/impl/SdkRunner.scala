@@ -8,6 +8,7 @@ import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.util
+import java.util.Locale
 import java.util.Optional
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.Executor
@@ -65,6 +66,7 @@ import akka.javasdk.http.RequestContext
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerDestination
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerSource
 import akka.javasdk.impl.Sdk.StartupContext
+import akka.javasdk.impl.SdkRunner.extractSpiSettings
 import akka.javasdk.impl.agent.AgentImpl
 import akka.javasdk.impl.agent.AgentImpl.AgentContextImpl
 import akka.javasdk.impl.agent.AgentRegistryImpl
@@ -111,6 +113,7 @@ import akka.runtime.sdk.spi.RemoteIdentification
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiComponents
 import akka.runtime.sdk.spi.SpiConfiguredGuardrail
+import akka.runtime.sdk.spi.SpiDeployedEventingSettings
 import akka.runtime.sdk.spi.SpiDevModeSettings
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
@@ -144,30 +147,9 @@ object SdkRunner {
   val userServiceLog: Logger = LoggerFactory.getLogger("akka.javasdk.ServiceLog")
 
   val FutureDone: Future[Done] = Future.successful(Done)
-}
 
-/**
- * INTERNAL API
- */
-@InternalApi
-class SdkRunner private (dependencyProvider: Option[DependencyProvider], disabledComponents: Set[Class[_]])
-    extends akka.runtime.sdk.spi.Runner {
-  private val startedPromise = Promise[StartupContext]()
-
-  // default constructor for runtime creation
-  def this() = this(None, Set.empty[Class[_]])
-
-  // constructor for testkit
-  def this(dependencyProvider: java.util.Optional[DependencyProvider], disabledComponents: java.util.Set[Class[_]]) =
-    this(dependencyProvider.toScala, disabledComponents.asScala.toSet)
-
-  def applicationConfig: Config =
-    ApplicationConfig.loadApplicationConf
-
-  override def getSettings: SpiSettings = {
-    val applicationConf = applicationConfig
-
-    val eventSourcedEntitySnapshotEvery = applicationConfig.getInt("akka.javasdk.event-sourced-entity.snapshot-every")
+  def extractSpiSettings(applicationConf: Config): SpiSettings = {
+    val eventSourcedEntitySnapshotEvery = applicationConf.getInt("akka.javasdk.event-sourced-entity.snapshot-every")
     val cleanupDeletedEntityAfter =
       applicationConf.getDuration("akka.javasdk.entity.cleanup-deleted-after")
 
@@ -201,6 +183,8 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
       devModeSettings.isDefined || // always enabled in dev mode
       applicationConf.getBoolean("akka.javasdk.agent.interaction-log.enabled")
 
+    val spiDeployedEventingSettings = extractDeployedEventingSettings(applicationConf)
+
     new SpiSettings(
       eventSourcedEntitySnapshotEvery,
       cleanupDeletedEntityAfter,
@@ -209,7 +193,7 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
       agentInteractionLogEnabled,
       devModeSettings,
       Some(sanitizationSettings),
-      None)
+      Some(spiDeployedEventingSettings))
   }
 
   private def extractBrokerConfig(eventingConf: Config): SpiEventingSupportSettings = {
@@ -221,6 +205,40 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
       else
         ConfigFactory.empty())
   }
+
+  private def extractDeployedEventingSettings(applicationConf: Config): SpiDeployedEventingSettings = {
+
+    val googlePubSubMode =
+      applicationConf.getString("akka.javasdk.eventing.google-pubsub.mode").toLowerCase(Locale.ROOT) match {
+        case "automatic"              => SpiDeployedEventingSettings.Automatic
+        case "automatic-subscription" => SpiDeployedEventingSettings.AutomaticSubscription
+        case "manual"                 => SpiDeployedEventingSettings.Manual
+      }
+
+    new SpiDeployedEventingSettings(Seq(new SpiDeployedEventingSettings.GooglePubSubOverrides(Some(googlePubSubMode))))
+  }
+}
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+class SdkRunner private (dependencyProvider: Option[DependencyProvider], disabledComponents: Set[Class[_]])
+    extends akka.runtime.sdk.spi.Runner {
+  private val startedPromise = Promise[StartupContext]()
+
+  // default constructor for runtime creation
+  def this() = this(None, Set.empty[Class[_]])
+
+  // constructor for testkit
+  def this(dependencyProvider: java.util.Optional[DependencyProvider], disabledComponents: java.util.Set[Class[_]]) =
+    this(dependencyProvider.toScala, disabledComponents.asScala.toSet)
+
+  def applicationConfig: Config =
+    ApplicationConfig.loadApplicationConf
+
+  override def getSettings: SpiSettings =
+    extractSpiSettings(applicationConfig)
 
   override def start(startContext: StartContext): Future[SpiComponents] = {
     try {
