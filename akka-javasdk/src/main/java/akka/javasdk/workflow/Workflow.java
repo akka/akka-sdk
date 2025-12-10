@@ -1109,6 +1109,15 @@ public abstract class Workflow<S> {
           workflowRecoveryStrategy);
     }
 
+    /**
+     * Define a timeout for the duration of the entire workflow with a timeout handler step. When
+     * the timeout expires, the specified timeout handler step will be executed to handle the
+     * timeout gracefully (e.g., cleanup, logging, or compensation). The timeout handler step must
+     * end the workflow - no further step transitions are allowed after a global timeout.
+     *
+     * @param timeout Timeout duration
+     * @param timeoutFailoverStep Reference to the timeout handler step method
+     */
     public <W> WorkflowSettingsBuilder timeout(
         Duration timeout, akka.japi.function.Function<W, StepEffect> timeoutFailoverStep) {
       var method = MethodRefResolver.resolveMethodRef(timeoutFailoverStep);
@@ -1123,6 +1132,17 @@ public abstract class Workflow<S> {
           Optional.of(workflowRecovery));
     }
 
+    /**
+     * Define a timeout for the duration of the entire workflow with a timeout handler step that
+     * accepts input. When the timeout expires, the specified timeout handler step will be executed
+     * with the provided input to handle the timeout gracefully (e.g., cleanup, logging, or
+     * compensation). The timeout handler step must end the workflow - no further step transitions
+     * are allowed after a global timeout.
+     *
+     * @param timeout Timeout duration
+     * @param timeoutFailoverStep Reference to the timeout handler step method
+     * @param input Input parameter to pass to the timeout handler step
+     */
     public <W, I> WorkflowSettingsBuilder timeout(
         Duration timeout,
         akka.japi.function.Function2<W, I, StepEffect> timeoutFailoverStep,
