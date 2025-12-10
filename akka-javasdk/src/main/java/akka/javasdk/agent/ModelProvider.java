@@ -257,7 +257,7 @@ public sealed interface ModelProvider {
   /** Settings for the Google AI Gemini Large Language Model provider. */
   static GoogleAIGemini googleAiGemini() {
     return new GoogleAIGemini(
-        "", "", Double.NaN, Double.NaN, -1, Duration.ofSeconds(15), Duration.ofMinutes(1), 2);
+        "", "", Double.NaN, Double.NaN, -1, Duration.ofSeconds(15), Duration.ofMinutes(1), 2, "");
   }
 
   /** Settings for the Google AI Gemini Large Language Model provider. */
@@ -269,8 +269,35 @@ public sealed interface ModelProvider {
       int maxOutputTokens,
       Duration connectionTimeout,
       Duration responseTimeout,
-      int maxRetries)
+      int maxRetries,
+      String baseUrl)
       implements ModelProvider {
+
+    /**
+     * @deprecated Use constructor with baseUrl parameter, or the static factory method and {@code
+     *     with} methods.
+     */
+    @Deprecated
+    public GoogleAIGemini(
+        String apiKey,
+        String modelName,
+        Double temperature,
+        Double topP,
+        int maxOutputTokens,
+        Duration connectionTimeout,
+        Duration responseTimeout,
+        int maxRetries) {
+      this(
+          apiKey,
+          modelName,
+          temperature,
+          topP,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          "");
+    }
 
     public static GoogleAIGemini fromConfig(Config config) {
       return new GoogleAIGemini(
@@ -281,7 +308,8 @@ public sealed interface ModelProvider {
           config.getInt("max-output-tokens"),
           config.getDuration("connection-timeout"),
           config.getDuration("response-timeout"),
-          config.getInt("max-retries"));
+          config.getInt("max-retries"),
+          config.getString("base-url"));
     }
 
     public GoogleAIGemini withApiKey(String apiKey) {
@@ -293,7 +321,8 @@ public sealed interface ModelProvider {
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
-          maxRetries);
+          maxRetries,
+          baseUrl);
     }
 
     public GoogleAIGemini withModelName(String modelName) {
@@ -305,7 +334,21 @@ public sealed interface ModelProvider {
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
-          maxRetries);
+          maxRetries,
+          baseUrl);
+    }
+
+    public GoogleAIGemini witBaseUrl(String baseUrl) {
+      return new GoogleAIGemini(
+          apiKey,
+          modelName,
+          temperature,
+          topP,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          baseUrl);
     }
 
     public GoogleAIGemini withTemperature(double temperature) {
@@ -317,7 +360,8 @@ public sealed interface ModelProvider {
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
-          maxRetries);
+          maxRetries,
+          baseUrl);
     }
 
     public GoogleAIGemini withTopP(double topP) {
@@ -329,7 +373,8 @@ public sealed interface ModelProvider {
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
-          maxRetries);
+          maxRetries,
+          baseUrl);
     }
 
     public GoogleAIGemini withMaxOutputTokens(int maxOutputTokens) {
@@ -341,7 +386,8 @@ public sealed interface ModelProvider {
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
-          maxRetries);
+          maxRetries,
+          baseUrl);
     }
 
     public GoogleAIGemini withConnectionTimeout(Duration connectionTimeout) {
@@ -353,7 +399,8 @@ public sealed interface ModelProvider {
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
-          maxRetries);
+          maxRetries,
+          baseUrl);
     }
 
     public GoogleAIGemini withResponseTimeout(Duration responseTimeout) {
@@ -365,7 +412,8 @@ public sealed interface ModelProvider {
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
-          maxRetries);
+          maxRetries,
+          baseUrl);
     }
 
     public GoogleAIGemini withMaxRetries(int maxRetries) {
@@ -377,7 +425,8 @@ public sealed interface ModelProvider {
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
-          maxRetries);
+          maxRetries,
+          baseUrl);
     }
   }
 
