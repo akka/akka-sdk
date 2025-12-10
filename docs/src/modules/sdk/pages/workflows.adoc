@@ -188,7 +188,7 @@ include::example$transfer-workflow-compensation/src/main/java/com/example/transf
 
 == Pausing workflow
 
-A long-running workflow can be paused while waiting for some additional information to continue processing. A special `pause` transition can be used to inform Akka that the execution of the Workflow should be postponed. By launching a Workflow command handler, the user can then resume the processing. Optionally, you can specify a pause timeout and timeout handler that will be automatically invoked to inform the Workflow that the expected time for the additional data has passed.
+A long-running workflow can be paused while waiting for some additional information to continue processing. A special `pause` transition can be used to inform Akka that the execution of the Workflow should be postponed. By launching a Workflow command handler, the user can then resume the processing. Optionally, you can specify a pause timeout and timeout handler that will be automatically invoked to inform the Workflow that the expected time for the additional input has passed.
 
 [source,java,indent=0]
 .{sample-base-url}/transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java[TransferWorkflow.java]
@@ -219,18 +219,18 @@ Design for failure is one of the key attributes of all Akka components. Workflow
 
 Each workflow step has a default timeout of 5 seconds. You can override this default for all steps in the workflow `settings` method, or set a custom timeout for individual steps. You can also specify global workflow duration timeout with optional timeout command handler.
 
-NOTE:: Workflow timeout should be greater than the step timeout.
+NOTE:: Workflow timeout should be greater than the step timeout. Otherwise, the workflow settings validation will report an exception at runtime.
 
 [source,java,indent=0]
 .{sample-base-url}/transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java[TransferWorkflow.java]
 ----
 include::example$transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java[tag=step-timeout]
 ----
-<1> Sets a workflow timeout.
+<1> Sets a global workflow timeout.
 <2> Sets a default timeout for all workflow steps.
 <3> Overrides the step timeout for a specific step.
 
-NOTE: If you need a global workflow timeout, consider using durable timers as described in the xref:#_pausing_workflow[] section.
+NOTE: When a global workflow timeout occurs, the workflow finishes and no further transitions are allowed. You can optionally define a timeout handler that executes one final step to handle the timeout situation gracefully, but that step must end the workflow (other transitions will be ignored).
 
 === Recover strategy
 
