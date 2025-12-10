@@ -14,6 +14,7 @@ import akka.japi.pf.Match;
 import akka.javasdk.JsonSupport;
 import akka.javasdk.impl.SdkRunner;
 import akka.javasdk.impl.http.HttpClassPathResource;
+import akka.javasdk.view.EntryWithMetadata;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import com.google.common.net.HttpHeaders;
@@ -268,7 +269,7 @@ public class HttpResponses {
    *     element is emitted every 10 seconds if the stream is idle.
    */
   public static <T> HttpResponse serverSentEvents(Source<T, ?> source) {
-    return serverSentEvents(source, Optional.empty(), Optional.empty());
+    return serverSentEvents(source, t -> t, Optional.empty(), Optional.empty());
   }
 
   /**
@@ -289,7 +290,7 @@ public class HttpResponses {
    */
   public static <T> HttpResponse serverSentEvents(
       Source<T, ?> source, Function<T, String> extractEventId) {
-    return serverSentEvents(source, Optional.of(extractEventId), Optional.empty());
+    return serverSentEvents(source, t -> t, Optional.of(extractEventId), Optional.empty());
   }
 
   /**
@@ -314,18 +315,35 @@ public class HttpResponses {
       Source<T, ?> source,
       Function<T, String> extractEventId,
       Function<T, String> extractEventType) {
-    return serverSentEvents(source, Optional.of(extractEventId), Optional.of(extractEventType));
+    return serverSentEvents(
+        source, t -> t, Optional.of(extractEventId), Optional.of(extractEventType));
+  }
+
+  /**
+   * Convenience for emitting a streaming-updates view query as resume-able SSE stream, where the
+   * latest seen event is where the query continues on reconnect.
+   *
+   * @param source A source from the view component client
+   * @return An HTTP stream with the events from the query
+   * @param <T> The type of the entries in the view
+   */
+  public static <T> HttpResponse serverSentEventsForView(Source<EntryWithMetadata<T>, ?> source) {
+    Function<EntryWithMetadata<T>, String> extractId = entry -> entry.lastUpdated().toString();
+    return serverSentEvents(
+        source, EntryWithMetadata::entry, Optional.of(extractId), Optional.empty());
   }
 
   private static <T> HttpResponse serverSentEvents(
       Source<T, ?> source,
+      Function<T, Object> extractValue,
       Optional<Function<T, String>> extractEventId,
       Optional<Function<T, String>> extractEventType) {
     var sseSource =
         source
             .map(
                 elem -> {
-                  var jsonPayload = JsonSupport.getObjectMapper().writeValueAsString(elem);
+                  var jsonPayload =
+                      JsonSupport.getObjectMapper().writeValueAsString(extractValue.apply(elem));
                   var eventId = extractEventId.map(f -> f.apply(elem));
                   var eventType = extractEventType.map(f -> f.apply(elem));
                   return ServerSentEvent.create(
