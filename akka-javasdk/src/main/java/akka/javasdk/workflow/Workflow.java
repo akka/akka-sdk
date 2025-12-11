@@ -909,6 +909,14 @@ public abstract class Workflow<S> {
         implements CommandHandler {}
   }
 
+  public sealed interface StepHandler {
+    record UnaryStepHandler(akka.japi.function.Function<?, StepEffect> handler)
+        implements StepHandler {}
+
+    record BinaryStepHandler(akka.japi.function.Function2<?, ?, StepEffect> handler, Object input)
+        implements StepHandler {}
+  }
+
   public record PauseSettings(
       Optional<String> reason, Duration duration, CommandHandler timeoutHandler) {}
 
@@ -1019,7 +1027,8 @@ public abstract class Workflow<S> {
                 // when failoverStepName exists, maxRetries must exist
                 var maxRetries = legacyDefinition.getFailoverMaxRetries().get().maxRetries;
                 var failoverStepInput = legacyDefinition.getFailoverStepInput();
-                return new RecoverStrategy<>(maxRetries, stepName, failoverStepInput);
+                return new RecoverStrategy<>(
+                    maxRetries, stepName, failoverStepInput, Optional.empty());
               });
     }
 
@@ -1113,7 +1122,12 @@ public abstract class Workflow<S> {
         Duration timeout, akka.japi.function.Function<W, StepEffect> timeoutFailoverStep) {
       var method = MethodRefResolver.resolveMethodRef(timeoutFailoverStep);
       var stepName = WorkflowDescriptor.stepMethodName(method);
-      var workflowRecovery = new RecoverStrategy<>(0, stepName, Optional.empty());
+      var workflowRecovery =
+          new RecoverStrategy<>(
+              0,
+              stepName,
+              Optional.empty(),
+              Optional.of(new StepHandler.UnaryStepHandler(timeoutFailoverStep)));
       return new WorkflowSettingsBuilder(
           defaultStepTimeout,
           defaultStepRecoverStrategy,
@@ -1129,7 +1143,12 @@ public abstract class Workflow<S> {
         I input) {
       var method = MethodRefResolver.resolveMethodRef(timeoutFailoverStep);
       var stepName = WorkflowDescriptor.stepMethodName(method);
-      var workflowRecovery = new RecoverStrategy<>(0, stepName, Optional.of(input));
+      var workflowRecovery =
+          new RecoverStrategy<>(
+              0,
+              stepName,
+              Optional.of(input),
+              Optional.of(new StepHandler.BinaryStepHandler(timeoutFailoverStep, input)));
       return new WorkflowSettingsBuilder(
           defaultStepTimeout,
           defaultStepRecoverStrategy,
@@ -1151,6 +1170,7 @@ public abstract class Workflow<S> {
     }
 
     /** Define a default recovery strategy for all steps. Can be overridden per step. */
+    @Deprecated
     public WorkflowSettingsBuilder defaultStepRecovery(RecoverStrategy<?> recoverStrategy) {
       return new WorkflowSettingsBuilder(
           defaultStepTimeout,
@@ -1197,7 +1217,7 @@ public abstract class Workflow<S> {
         akka.japi.function.Function<W, StepEffect> lambda, RecoverStrategy<?> recovery) {
       var method = MethodRefResolver.resolveMethodRef(lambda);
       var stepName = WorkflowDescriptor.stepMethodName(method);
-      return addStepRecovery(stepName, recovery);
+      return addStepRecovery(stepName, lambda, recovery);
     }
 
     /**
@@ -1210,7 +1230,7 @@ public abstract class Workflow<S> {
         akka.japi.function.Function2<W, I, StepEffect> lambda, RecoverStrategy<?> recovery) {
       var method = MethodRefResolver.resolveMethodRef(lambda);
       var stepName = WorkflowDescriptor.stepMethodName(method);
-      return addStepRecovery(stepName, recovery);
+      return addStepRecovery(stepName, lambda, recovery);
     }
 
     /**
@@ -1234,9 +1254,10 @@ public abstract class Workflow<S> {
       return updateStepSettings(updatedSettings);
     }
 
-    private WorkflowSettingsBuilder addStepRecovery(String stepName, RecoverStrategy<?> recovery) {
+    private WorkflowSettingsBuilder addStepRecovery(
+        String stepName, Object stepLambda, RecoverStrategy<?> recovery) {
       var settings = stepSettingsMap.getOrDefault(stepName, StepSettings.empty(stepName));
-      var updatedSettings = settings.withRecovery(recovery);
+      var updatedSettings = settings.withRecovery(recovery, stepLambda);
       return updateStepSettings(updatedSettings);
     }
 
@@ -1424,7 +1445,16 @@ public abstract class Workflow<S> {
   }
 
   public record StepSettings(
-      String stepName, Optional<Duration> timeout, Optional<RecoverStrategy<?>> recovery) {
+      String stepName,
+      Optional<Duration> timeout,
+      Optional<RecoverStrategy<?>> recovery,
+      Optional<Object> stepLambda) {
+
+    @Deprecated() // TODO
+    StepSettings(
+        String stepName, Optional<Duration> timeout, Optional<RecoverStrategy<?>> recovery) {
+      this(stepName, timeout, recovery, Optional.empty());
+    }
 
     public static StepSettings empty(String name) {
       return new StepSettings(name, Optional.empty(), Optional.empty());
@@ -1434,8 +1464,8 @@ public abstract class Workflow<S> {
       return new StepSettings(stepName, Optional.of(timeout), recovery);
     }
 
-    public StepSettings withRecovery(RecoverStrategy<?> recovery) {
-      return new StepSettings(stepName, timeout, Optional.of(recovery));
+    public StepSettings withRecovery(RecoverStrategy<?> recovery, Object stepLambda) {
+      return new StepSettings(stepName, timeout, Optional.of(recovery), Optional.of(stepLambda));
     }
   }
 
@@ -1450,12 +1480,20 @@ public abstract class Workflow<S> {
   }
 
   public record RecoverStrategy<T>(
-      int maxRetries, String failoverStepName, Optional<T> failoverStepInput) {
+      int maxRetries,
+      String failoverStepName,
+      Optional<T> failoverStepInput,
+      Optional<StepHandler> stepHandler) {
 
-    public record RecoveryInput<I>(int maxRetries, String stepName)
+    public record RecoveryInput<I>(
+        int maxRetries, String stepName, akka.japi.function.Function2<?, I, StepEffect> lambda)
         implements WithInput<I, RecoverStrategy<I>> {
       public RecoverStrategy<I> withInput(I input) {
-        return new RecoverStrategy<>(maxRetries, stepName, Optional.of(input));
+        return new RecoverStrategy<>(
+            maxRetries,
+            stepName,
+            Optional.of(input),
+            Optional.of(new StepHandler.BinaryStepHandler(lambda, input)));
       }
     }
 
@@ -1467,7 +1505,8 @@ public abstract class Workflow<S> {
        */
       @Deprecated
       public RecoverStrategy<?> failoverTo(String stepName) {
-        return new RecoverStrategy<>(maxRetries, stepName, Optional.<Void>empty());
+        return new RecoverStrategy<>(
+            maxRetries, stepName, Optional.<Void>empty(), Optional.empty());
       }
 
       /**
@@ -1481,7 +1520,11 @@ public abstract class Workflow<S> {
           akka.japi.function.Function<W, StepEffect> lambda) {
         var method = MethodRefResolver.resolveMethodRef(lambda);
         var stepName = WorkflowDescriptor.stepMethodName(method);
-        return new RecoverStrategy<>(maxRetries, stepName, Optional.<Void>empty());
+        return new RecoverStrategy<>(
+            maxRetries,
+            stepName,
+            Optional.empty(),
+            Optional.of(new StepHandler.UnaryStepHandler(lambda)));
       }
 
       /**
@@ -1489,7 +1532,7 @@ public abstract class Workflow<S> {
        */
       @Deprecated
       public <T> RecoverStrategy<T> failoverTo(String stepName, T input) {
-        return new RecoverStrategy<>(maxRetries, stepName, Optional.of(input));
+        return new RecoverStrategy<>(maxRetries, stepName, Optional.of(input), Optional.empty());
       }
 
       /**
@@ -1504,7 +1547,7 @@ public abstract class Workflow<S> {
           akka.japi.function.Function2<W, I, StepEffect> lambda) {
         var method = MethodRefResolver.resolveMethodRef(lambda);
         var stepName = WorkflowDescriptor.stepMethodName(method);
-        return new RecoveryInput<>(maxRetries, stepName);
+        return new RecoveryInput<>(maxRetries, stepName, lambda);
       }
     }
 
@@ -1521,7 +1564,7 @@ public abstract class Workflow<S> {
      */
     @Deprecated
     public static RecoverStrategy<?> failoverTo(String stepName) {
-      return new RecoverStrategy<>(0, stepName, Optional.<Void>empty());
+      return new RecoverStrategy<>(0, stepName, Optional.<Void>empty(), Optional.empty());
     }
 
     /**
@@ -1535,7 +1578,8 @@ public abstract class Workflow<S> {
         akka.japi.function.Function<W, StepEffect> lambda) {
       var method = MethodRefResolver.resolveMethodRef(lambda);
       var stepName = WorkflowDescriptor.stepMethodName(method);
-      return new RecoverStrategy<>(0, stepName, Optional.<Void>empty());
+      return new RecoverStrategy<>(
+          0, stepName, Optional.empty(), Optional.of(new StepHandler.UnaryStepHandler(lambda)));
     }
 
     /**
@@ -1543,7 +1587,7 @@ public abstract class Workflow<S> {
      */
     @Deprecated
     public static <T> RecoverStrategy<T> failoverTo(String stepName, T input) {
-      return new RecoverStrategy<>(0, stepName, Optional.of(input));
+      return new RecoverStrategy<>(0, stepName, Optional.of(input), Optional.empty());
     }
 
     /**
@@ -1559,7 +1603,7 @@ public abstract class Workflow<S> {
         akka.japi.function.Function2<W, I, StepEffect> lambda) {
       var method = MethodRefResolver.resolveMethodRef(lambda);
       var stepName = WorkflowDescriptor.stepMethodName(method);
-      return new RecoveryInput<>(0, stepName);
+      return new RecoveryInput<>(0, stepName, lambda);
     }
   }
 }
