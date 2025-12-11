@@ -289,7 +289,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
         val (replyBytes, spiMetadata) =
           reply match {
             case ReplyValue(null, _) =>
-              throw new IllegalStateException("the reply should not be null")
+              throw new IllegalStateException("the reply must not be null")
             case ReplyValue(value, metadata) => (serializer.toBytes(value), MetadataImpl.toSpi(metadata))
             // FIXME: WorkflowEffectImpl never contain a NoReply
             case NoReply => (BytesPayload.empty, SpiMetadata.empty)
