@@ -8,6 +8,7 @@ import static akkajavasdk.components.workflowentities.TransferConsumer.TRANSFER_
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import akka.actor.testkit.typed.javadsl.LoggingTestKit;
 import akka.javasdk.CommandException;
 import akka.javasdk.testkit.TestKitSupport;
 import akkajavasdk.components.MyException;
@@ -21,6 +22,10 @@ import akkajavasdk.components.workflowentities.TransferState;
 import akkajavasdk.components.workflowentities.TransferWorkflow;
 import akkajavasdk.components.workflowentities.TransferWorkflowWithFraudDetection;
 import akkajavasdk.components.workflowentities.WalletEntity;
+import akkajavasdk.components.workflowentities.WorkflowCallingOtherWorkflowCommandHandler;
+import akkajavasdk.components.workflowentities.WorkflowCallingOtherWorkflowStep;
+import akkajavasdk.components.workflowentities.WorkflowSettingCallingOtherWorkflowStep;
+import akkajavasdk.components.workflowentities.WorkflowTimeoutSettingCallingOtherWorkflowStep;
 import akkajavasdk.components.workflowentities.WorkflowWithDefaultRecoverStrategy;
 import akkajavasdk.components.workflowentities.WorkflowWithRecoverStrategy;
 import akkajavasdk.components.workflowentities.WorkflowWithStepTimeout;
@@ -34,6 +39,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import kalix.runtime.CorrelatedRuntimeException;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -722,6 +728,78 @@ public class WorkflowTest extends TestKitSupport {
             .method(TransferWorkflow::commandHandlerIsOnVirtualThread)
             .invoke();
     assertThat(result).isTrue();
+  }
+
+  @Test
+  public void failWhenCallingOtherWorkflowStep() {
+
+    var exc1 =
+        Assertions.assertThrows(
+            CorrelatedRuntimeException.class,
+            () ->
+                componentClient
+                    .forWorkflow(randomId())
+                    .method(WorkflowCallingOtherWorkflowStep::start)
+                    .invoke());
+
+    assertThat(exc1.getMessage())
+        .contains(
+            "Workflow [akkajavasdk.components.workflowentities.WorkflowCallingOtherWorkflow] calls"
+                + " step [counterStep] from another class"
+                + " [akkajavasdk.components.workflowentities.WorkflowWithTimeout], which is not"
+                + " allowed.");
+  }
+
+  @Test
+  public void failWhenWorkflowTimeoutSettingCallingOtherWorkflowStep() {
+
+    LoggingTestKit.error(
+            "Workflow"
+                + " [akkajavasdk.components.workflowentities.WorkflowTimeoutSettingCallingOtherWorkflowStep]"
+                + " settings refers to step [counterStep] from another class"
+                + " [akkajavasdk.components.workflowentities.WorkflowWithTimeout], which is not"
+                + " allowed.")
+        .expect(
+            testKit.getActorSystem(),
+            () ->
+                componentClient
+                    .forWorkflow(randomId())
+                    .method(WorkflowTimeoutSettingCallingOtherWorkflowStep::start)
+                    .invokeAsync());
+  }
+
+  @Test
+  public void failWhenWorkflowStepSettingCallingOtherWorkflowStep() {
+
+    LoggingTestKit.error(
+            "Workflow"
+                + " [akkajavasdk.components.workflowentities.WorkflowSettingCallingOtherWorkflowStep]"
+                + " settings refers to step [counterStep] from another class"
+                + " [akkajavasdk.components.workflowentities.WorkflowWithTimeout], which is not"
+                + " allowed.")
+        .expect(
+            testKit.getActorSystem(),
+            () ->
+                componentClient
+                    .forWorkflow(randomId())
+                    .method(WorkflowSettingCallingOtherWorkflowStep::start)
+                    .invokeAsync());
+  }
+
+  @Test
+  public void failWhenCallingOtherWorkflowCommandHandler() {
+
+    var exc1 =
+        Assertions.assertThrows(
+            CorrelatedRuntimeException.class,
+            () ->
+                componentClient
+                    .forWorkflow(randomId())
+                    .method(WorkflowCallingOtherWorkflowCommandHandler::start)
+                    .invoke());
+
+    assertThat(exc1.getMessage())
+        .contains("Workflow [akkajavasdk.components.workflowentities.WorkflowCallingOtherWorkflowCommandHandler] calls command handler [test] from another class [akkajavasdk.components.workflowentities.WorkflowWithTimeout], which is not allowed.");
   }
 
   @Test
