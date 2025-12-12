@@ -72,6 +72,18 @@ The following is a list of all natively supported model configurations. Remember
 | Integer
 | Max token quota. Leave as –1 for model default
 
+| connection-timeout
+| Duration
+| Fail the request if connecting to the model API takes longer than this
+
+| response-timeout
+| Duration
+| Fail the request if getting a response from the model API takes longer than this
+
+| max-retries
+| Integer
+| Retry this many times if the request to the model fails
+
 |===
 
 
@@ -132,6 +144,14 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.Anthropic.html[`Model
 | Integer
 | Maximum number of tokens to generate. Leave as –1 for model default
 
+| response-timeout
+| Duration
+| Fail the request if getting a response from the model API takes longer than this
+
+| max-retries
+| Integer
+| Retry this many times if the request to the model fails
+
 |===
 
 See link:_attachments/api/akka/javasdk/agent/ModelProvider.Bedrock.html[`ModelProvider.Bedrock`] for programmatic settings.
@@ -170,6 +190,18 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.Bedrock.html[`ModelPr
 | Integer
 | Max token _output_ quota. Leave as –1 for model default
 
+| connection-timeout
+| Duration
+| Fail the request if connecting to the model API takes longer than this
+
+| response-timeout
+| Duration
+| Fail the request if getting a response from the model API takes longer than this
+
+| max-retries
+| Integer
+| Retry this many times if the request to the model fails
+
 |===
 
 See link:_attachments/api/akka/javasdk/agent/ModelProvider.GoogleAIGemini.html[`ModelProvider.GoogleAIGemini`] for programmatic settings.
@@ -207,6 +239,18 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.GoogleAIGemini.html[`
 | max-new-tokens
 | Integer
 | Max number of tokens to generate (–1 for model default)
+
+| connection-timeout
+| Duration
+| Fail the request if connecting to the model API takes longer than this
+
+| response-timeout
+| Duration
+| Fail the request if getting a response from the model API takes longer than this
+
+| max-retries
+| Integer
+| Retry this many times if the request to the model fails
 
 |===
 
@@ -272,6 +316,18 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.LocalAI.html[`ModelPr
 | Float
 | Nucleus sampling parameter
 
+| connection-timeout
+| Duration
+| Fail the request if connecting to the model API takes longer than this
+
+| response-timeout
+| Duration
+| Fail the request if getting a response from the model API takes longer than this
+
+| max-retries
+| Integer
+| Retry this many times if the request to the model fails
+
 |===
 
 See link:_attachments/api/akka/javasdk/agent/ModelProvider.Ollama.html[`ModelProvider.Ollama`] for programmatic settings.
@@ -313,6 +369,18 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.Ollama.html[`ModelPro
 | max-completion-tokens
 | Integer
 | Max token quota. Leave as –1 for model default
+
+| connection-timeout
+| Duration
+| Fail the request if connecting to the model API takes longer than this
+
+| response-timeout
+| Duration
+| Fail the request if getting a response from the model API takes longer than this
+
+| max-retries
+| Integer
+| Retry this many times if the request to the model fails
 
 |===
 
