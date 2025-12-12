@@ -7,6 +7,7 @@ package akka.javasdk.testkit;
 import static java.util.Optional.ofNullable;
 
 import akka.annotation.ApiMayChange;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.workflow.Workflow;
 import io.opentelemetry.api.common.AttributeKey;
@@ -77,6 +78,12 @@ public class TelemetryReader {
   }
 
   private String getComponentId(Class<?> componentClass) {
+    Component componentAnnotation = componentClass.getAnnotation(Component.class);
+    if (componentAnnotation != null) {
+      return componentAnnotation.id();
+    }
+
+    // Fallback to the old ComponentId annotation for backward compatibility
     return componentClass.getAnnotation(ComponentId.class).value();
   }
 
