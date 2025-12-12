@@ -338,7 +338,7 @@ public sealed interface ModelProvider {
           baseUrl);
     }
 
-    public GoogleAIGemini witBaseUrl(String baseUrl) {
+    public GoogleAIGemini withBaseUrl(String baseUrl) {
       return new GoogleAIGemini(
           apiKey,
           modelName,
