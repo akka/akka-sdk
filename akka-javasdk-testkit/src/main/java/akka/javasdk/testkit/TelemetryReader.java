@@ -17,6 +17,14 @@ import java.util.List;
 import java.util.Optional;
 import kalix.runtime.telemetry.tracing.TracingSetup;
 
+/**
+ * A test utility for reading and inspecting telemetry data captured during test execution.
+ *
+ * <p>TelemetryReader provides access to OpenTelemetry spans collected by the in-memory span
+ * exporter during integration tests. This allows you to verify workflow execution, agent
+ * interactions, and other instrumented operations.
+ *
+ */
 @ApiMayChange
 public class TelemetryReader {
 
@@ -26,6 +34,17 @@ public class TelemetryReader {
     this.inMemorySpanExporter = inMemorySpanExporter;
   }
 
+  /**
+   * Retrieves the sequence of workflow steps executed for a specific workflow instance.
+   *
+   * <p>Returns a list of step names in the order they were executed, based on telemetry data
+   * collected during the workflow execution. This is useful for verifying that workflows execute
+   * the expected steps in the correct order.
+   *
+   * @param workflow The workflow class to query
+   * @param workflowId The unique identifier of the workflow instance
+   * @return A list of step names in execution order, or an empty list if no steps were found
+   */
   @ApiMayChange
   public List<String> getWorkflowSteps(Class<? extends Workflow<?>> workflow, String workflowId) {
     String componentId = getComponentId(workflow);
@@ -35,6 +54,16 @@ public class TelemetryReader {
     return workflowStepsFrom(spanDatas);
   }
 
+  /**
+   * Retrieves the list of agents that were invoked during an operation.
+   *
+   * <p>Returns a list of agent IDs in the order they were invoked, based on telemetry data
+   * collected during test execution. This is useful for verifying that the expected agents were
+   * called during a test scenario.
+   *
+   * @param debugId The debug identifier used to trace the operation
+   * @return A list of agent IDs in invocation order, or an empty list if no agents were found
+   */
   @ApiMayChange
   public List<String> getAgents(String debugId) {
     List<SpanData> spanDatas = spansFor(debugId);
@@ -44,6 +73,16 @@ public class TelemetryReader {
     return collectAttributeValues(spanDatas, agentToolAttributeKey);
   }
 
+  /**
+   * Retrieves the list of tools used by agents during an operation.
+   *
+   * <p>Returns a list of tool names in the order they were invoked, based on telemetry data
+   * collected during test execution. This is useful for verifying that agents used the expected
+   * tools to accomplish their tasks.
+   *
+   * @param debugId The debug identifier used to trace the operation
+   * @return A list of tool names in invocation order, or an empty list if no tools were found
+   */
   @ApiMayChange
   public List<String> getAgentTools(String debugId) {
     List<SpanData> spanDatas = spansFor(debugId);
@@ -53,6 +92,17 @@ public class TelemetryReader {
     return collectAttributeValues(spanDatas, agentToolAttributeKey);
   }
 
+  /**
+   * Retrieves the sequence of workflow steps executed for an operation traced by a debug ID.
+   *
+   * <p>Returns a list of step names in the order they were executed, based on telemetry data
+   * collected during workflow execution. This method uses the debug ID to find all spans
+   * associated with the traced operation, making it useful when you don't have direct access to
+   * the workflow class or workflow ID.
+   *
+   * @param debugId The debug identifier used to trace the workflow execution
+   * @return A list of step names in execution order, or an empty list if no steps were found
+   */
   @ApiMayChange
   public List<String> getWorkflowSteps(String debugId) {
     List<SpanData> spanDatas = spansFor(debugId);
