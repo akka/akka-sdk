@@ -23,7 +23,6 @@ import kalix.runtime.telemetry.tracing.TracingSetup;
  * <p>TelemetryReader provides access to OpenTelemetry spans collected by the in-memory span
  * exporter during integration tests. This allows you to verify workflow execution, agent
  * interactions, and other instrumented operations.
- *
  */
 @ApiMayChange
 public class TelemetryReader {
@@ -96,9 +95,9 @@ public class TelemetryReader {
    * Retrieves the sequence of workflow steps executed for an operation traced by a debug ID.
    *
    * <p>Returns a list of step names in the order they were executed, based on telemetry data
-   * collected during workflow execution. This method uses the debug ID to find all spans
-   * associated with the traced operation, making it useful when you don't have direct access to
-   * the workflow class or workflow ID.
+   * collected during workflow execution. This method uses the debug ID to find all spans associated
+   * with the traced operation, making it useful when you don't have direct access to the workflow
+   * class or workflow ID.
    *
    * @param debugId The debug identifier used to trace the workflow execution
    * @return A list of step names in execution order, or an empty list if no steps were found
