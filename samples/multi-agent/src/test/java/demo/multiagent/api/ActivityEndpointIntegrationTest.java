@@ -9,7 +9,12 @@ import akka.javasdk.agent.evaluator.ToxicityEvaluator;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
-import demo.multiagent.application.*;
+import demo.multiagent.application.ActivityAgent;
+import demo.multiagent.application.EvaluatorAgent;
+import demo.multiagent.application.PlannerAgent;
+import demo.multiagent.application.SelectorAgent;
+import demo.multiagent.application.SummarizerAgent;
+import demo.multiagent.application.WeatherAgent;
 import demo.multiagent.domain.AgentSelection;
 import demo.multiagent.domain.Plan;
 import demo.multiagent.domain.PlanStep;
@@ -52,10 +57,14 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
     // Setup initial AI model responses
     setupInitialModelResponses();
 
+    //debug id for correlating tracing information
+    String debugId = "12345";
+
     // 1. Call suggestActivities endpoint
     var suggestResponse = httpClient
       .POST("/activities/" + userId)
       .withRequestBody(new ActivityEndpoint.Request(query))
+      .addHeader("akka-debug-id", debugId)
       .invoke();
 
     assertThat(suggestResponse.status()).isEqualTo(StatusCodes.CREATED);
@@ -103,13 +112,33 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
         var suggestion = activitiesList.suggestions().getFirst();
         assertThat(suggestion.userQuestion()).isEqualTo(query);
         assertThat(suggestion.answer()).contains("bike tour");
+
+        var steps = telemetryReader.getWorkflowSteps(debugId);
+        assertThat(steps).containsOnly(
+          "select-agents",
+          "create-plan",
+          "execute-plan",
+          "execute-plan",
+          "summarize"
+        );
+
+        var tools = telemetryReader.getAgents(debugId);
+        assertThat(tools).containsOnly(
+          "selector-agent",
+          "planner-agent",
+          "weather-agent",
+          "activity-agent",
+          "summarizer-agent"
+        );
       });
 
     // 4. Add preference that invalidates previous suggestion
     setupUpdatedModelResponsesForPreference();
 
+    var nextDebugId = "67890";
     var preferenceResponse = httpClient
       .POST("/preferences/" + userId)
+      .addHeader("akka-debug-id", nextDebugId)
       .withRequestBody(
         new ActivityEndpoint.AddPreference(
           "I hate outdoor activities and prefer indoor museums"
@@ -135,6 +164,15 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
         assertThat(updatedAnswer).contains("Vasa Museum");
         assertThat(updatedAnswer).contains("indoor");
         assertThat(updatedAnswer).doesNotContain("bike tour");
+
+        assertThat(telemetryReader.getAgents(nextDebugId)).containsOnly(
+          "evaluator-agent",
+          "selector-agent",
+          "planner-agent",
+          "weather-agent",
+          "activity-agent",
+          "summarizer-agent"
+        );
       });
   }
 

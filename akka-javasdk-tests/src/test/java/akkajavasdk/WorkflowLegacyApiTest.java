@@ -32,8 +32,8 @@ public class WorkflowLegacyApiTest extends TestKitSupport {
 
   @Test
   public void shouldNotStartTransferForWithNegativeAmount() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     createWallet(walletId1, 100);
     createWallet(walletId2, 100);
     var transferId = randomTransferId();
@@ -50,8 +50,8 @@ public class WorkflowLegacyApiTest extends TestKitSupport {
 
   @Test
   public void shouldTransferMoneyAndDelete() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     createWallet(walletId1, 100);
     createWallet(walletId2, 100);
     var transferId = randomTransferId();
@@ -105,8 +105,8 @@ public class WorkflowLegacyApiTest extends TestKitSupport {
 
   @Test
   public void shouldUpdateAndDelete() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     var transferId = randomTransferId();
     var transfer = new Transfer(walletId1, walletId2, 10);
 
@@ -122,8 +122,8 @@ public class WorkflowLegacyApiTest extends TestKitSupport {
 
   @Test
   public void shouldTransferMoneyWithoutStepInputs() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     createWallet(walletId1, 100);
     createWallet(walletId2, 100);
     var transferId = randomTransferId();
@@ -152,8 +152,8 @@ public class WorkflowLegacyApiTest extends TestKitSupport {
 
   @Test
   public void shouldTransferAsyncMoneyWithoutStepInputs() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     createWallet(walletId1, 100);
     createWallet(walletId2, 100);
     var transferId = randomTransferId();
@@ -182,8 +182,8 @@ public class WorkflowLegacyApiTest extends TestKitSupport {
 
   @Test
   public void shouldTransferMoneyWithFraudDetection() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     createWallet(walletId1, 100);
     createWallet(walletId2, 100);
     var transferId = randomTransferId();
@@ -212,8 +212,8 @@ public class WorkflowLegacyApiTest extends TestKitSupport {
 
   @Test
   public void shouldTransferMoneyWithFraudDetectionAndManualAcceptance() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     createWallet(walletId1, 100000);
     createWallet(walletId2, 100000);
     var transferId = randomTransferId();
@@ -271,8 +271,8 @@ public class WorkflowLegacyApiTest extends TestKitSupport {
 
   @Test
   public void shouldNotTransferMoneyWhenFraudDetectionRejectTransfer() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     createWallet(walletId1, 100);
     createWallet(walletId2, 100);
     var transferId = randomTransferId();

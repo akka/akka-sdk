@@ -18,7 +18,11 @@ public class ActivityView extends View {
     String sessionId,
     String userQuestion,
     String finalAnswer
-  ) {}
+  ) {
+    public boolean hasFinalAnswer() {
+      return finalAnswer != null && !finalAnswer.isEmpty();
+    }
+  }
 
   @Query("SELECT * AS entries FROM activities WHERE userId = :userId")
   public QueryEffect<ActivityEntries> getActivities(String userId) {
