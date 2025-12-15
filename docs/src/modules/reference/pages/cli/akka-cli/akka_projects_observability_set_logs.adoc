@@ -31,6 +31,7 @@ The `akka project observability set logs` command sets the logs exporter for you
 == SEE ALSO
 
 * link:akka_projects_observability_set.html[akka projects observability set]	 - Set the observability settings for your Akka project.
+* link:akka_projects_observability_set_logs_azure-monitor.html[akka projects observability set logs azure-monitor]	 - Set your project to export logs to Azure Monitor.
 * link:akka_projects_observability_set_logs_google-cloud.html[akka projects observability set logs google-cloud]	 - Set your project to export logs to Google Cloud.
 * link:akka_projects_observability_set_logs_otlp.html[akka projects observability set logs otlp]	 - Set your project to export logs to an OTLP gRPC collector.
 * link:akka_projects_observability_set_logs_otlp-http.html[akka projects observability set logs otlp-http]	 - Set your project to export logs to an OTLP HTTP collector.

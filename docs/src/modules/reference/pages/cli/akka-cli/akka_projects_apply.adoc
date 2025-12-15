@@ -1,15 +1,31 @@
-= akka projects observability set traces
+= akka projects apply
 
-Set the traces exporter for your Akka project.
+Apply a project descriptor.
 
 == Synopsis
 
-The `akka project observability set traces` command sets the traces exporter for your Akka project.
+The `akka project apply` command applies a project descriptor containing multiple services, creating or updating them as appropriate.
+
+----
+akka projects apply [flags]
+----
+
+== Examples
+
+----
+akka project apply -f project.yaml
+----
 
 == Options
 
 ----
-  -h, --help   help for traces
+      --all-regions      run the command on all regions
+      --dry-run          Validate and show what would be applied without making changes
+  -f, --file string      The YAML file to apply. If not supplied, will read from stdin.
+  -h, --help             help for apply
+      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string   project to use if not using the default configured project
+      --region string    region to use if project has more than one region
 ----
 
 == Options inherited from parent commands
@@ -30,11 +46,7 @@ The `akka project observability set traces` command sets the traces exporter for
 
 == SEE ALSO
 
-* link:akka_projects_observability_set.html[akka projects observability set]	 - Set the observability settings for your Akka project.
-* link:akka_projects_observability_set_traces_azure-monitor.html[akka projects observability set traces azure-monitor]	 - Set your project to export traces to Azure Monitor.
-* link:akka_projects_observability_set_traces_google-cloud.html[akka projects observability set traces google-cloud]	 - Set your project to export traces to Google Cloud.
-* link:akka_projects_observability_set_traces_otlp.html[akka projects observability set traces otlp]	 - Set your project to export traces to an OTLP gRPC collector.
-* link:akka_projects_observability_set_traces_otlp-http.html[akka projects observability set traces otlp-http]	 - Set your project to export traces to an OTLP HTTP collector.
+* link:akka_projects.html[akka projects]	 - Manage your Akka projects.
 
 [discrete]
 
