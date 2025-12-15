@@ -1,15 +1,21 @@
-= akka projects observability set traces
+= akka projects observability set metrics azure-monitor
 
-Set the traces exporter for your Akka project.
+Set your project to export metrics to Azure Monitor.
 
-== Synopsis
-
-The `akka project observability set traces` command sets the traces exporter for your Akka project.
+----
+akka projects observability set metrics azure-monitor [flags]
+----
 
 == Options
 
 ----
-  -h, --help   help for traces
+      --connection-string string   The Azure Monitor connection string
+      --force-global               force an existing regional resource to be configured as a global resource
+      --force-regional             force an existing global resource to be configured as a regional resource
+  -h, --help                       help for azure-monitor
+      --owner string               the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string             project to use if not using the default configured project
+      --region string              region to use if project has more than one region
 ----
 
 == Options inherited from parent commands
@@ -30,11 +36,7 @@ The `akka project observability set traces` command sets the traces exporter for
 
 == SEE ALSO
 
-* link:akka_projects_observability_set.html[akka projects observability set]	 - Set the observability settings for your Akka project.
-* link:akka_projects_observability_set_traces_azure-monitor.html[akka projects observability set traces azure-monitor]	 - Set your project to export traces to Azure Monitor.
-* link:akka_projects_observability_set_traces_google-cloud.html[akka projects observability set traces google-cloud]	 - Set your project to export traces to Google Cloud.
-* link:akka_projects_observability_set_traces_otlp.html[akka projects observability set traces otlp]	 - Set your project to export traces to an OTLP gRPC collector.
-* link:akka_projects_observability_set_traces_otlp-http.html[akka projects observability set traces otlp-http]	 - Set your project to export traces to an OTLP HTTP collector.
+* link:akka_projects_observability_set_metrics.html[akka projects observability set metrics]	 - Set the metrics exporter for your Akka project.
 
 [discrete]
 

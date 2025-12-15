@@ -33,8 +33,10 @@ For more details on projects, see https://doc.akka.io/operations/projects/index.
 == SEE ALSO
 
 * link:akka.html[akka]	 - Akka control
+* link:akka_projects_apply.html[akka projects apply]	 - Apply a project descriptor.
 * link:akka_projects_config.html[akka projects config]	 - Manage project configs.
 * link:akka_projects_delete.html[akka projects delete]	 - Delete a project.
+* link:akka_projects_export.html[akka projects export]	 - Export project resources as a descriptor.
 * link:akka_projects_get.html[akka projects get]	 - Get project information.
 * link:akka_projects_hostnames.html[akka projects hostnames]	 - Manage hostnames for your Akka project.
 * link:akka_projects_list.html[akka projects list]	 - List all projects.

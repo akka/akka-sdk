@@ -35,6 +35,7 @@ Setting a default exporter will unset all other exporters configured for your pr
 * link:akka_projects_observability_set.html[akka projects observability set]	 - Set the observability settings for your Akka project.
 * link:akka_projects_observability_set_default_akka-console.html[akka projects observability set default akka-console]	 - Set your project to export metrics to the Akka console.
 This will unset all other exporter configuration.
+* link:akka_projects_observability_set_default_azure-monitor.html[akka projects observability set default azure-monitor]	 - Set your project to export default to Azure Monitor.
 * link:akka_projects_observability_set_default_google-cloud.html[akka projects observability set default google-cloud]	 - Set your project to export default to Google Cloud.
 * link:akka_projects_observability_set_default_otlp.html[akka projects observability set default otlp]	 - Set your project to export default to an OTLP gRPC collector.
 * link:akka_projects_observability_set_default_otlp-http.html[akka projects observability set default otlp-http]	 - Set your project to export default to an OTLP HTTP collector.
