@@ -12,6 +12,11 @@ Current versions
 
 == December 2025
 
+* Akka CLI 3.0.43
+- Support for configuring Azure observability
+- Project level descriptors
+- `akka init check`, check if project is ready for local development
+
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.10[Akka SDK 3.5.10]
 - image input support in Agents
 - Streaming HTTP endpoint improvements
