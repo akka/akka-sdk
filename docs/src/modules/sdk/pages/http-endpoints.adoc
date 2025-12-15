@@ -69,9 +69,9 @@ Additionally, the request body parameter can be of the following types:
 
 === Request headers ===
 
-Accessing request headers is done through the link:_attachments/api/akka/javasdk/http/RequestContext.html[RequestContext] methods `requestHeader(String headerName)` and `allRequestHeaders()`.
+Accessing request headers is done through the link:{attachmentsdir}/api/akka/javasdk/http/RequestContext.html[RequestContext] methods `requestHeader(String headerName)` and `allRequestHeaders()`.
 
-By letting the endpoint extend link:_attachments/api/akka/javasdk/http/AbstractHttpEndpoint.html[AbstractHttpEndpoint] request context is available through the method `requestContext()`.
+By letting the endpoint extend link:{attachmentsdir}/api/akka/javasdk/http/AbstractHttpEndpoint.html[AbstractHttpEndpoint] request context is available through the method `requestContext()`.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
@@ -83,7 +83,7 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java
 
 === Query parameters ===
 
-Accessing query parameter is done through the `requestContext()`, inherited from link:_attachments/api/akka/javasdk/http/AbstractHttpEndpoint.html[AbstractHttpEndpoint].
+Accessing query parameter is done through the `requestContext()`, inherited from link:{attachmentsdir}/api/akka/javasdk/http/AbstractHttpEndpoint.html[AbstractHttpEndpoint].
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
@@ -285,7 +285,7 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java
 
 Static resources such as HTML, CSS files can be packaged together with the service. This is done
 by placing the resource files in `src/main/resources/static-resources` and returning them from an endpoint
-method using link:_attachments/api/akka/javasdk/http/HttpResponses.html#staticResource[HttpResponses.staticResource].
+method using link:{attachmentsdir}/api/akka/javasdk/http/HttpResponses.html#staticResource[HttpResponses.staticResource].
 
 This can be done for a single filename:
 
