@@ -4,6 +4,9 @@
 
 package akka.javasdk.impl.workflow
 
+import scala.concurrent.duration.FiniteDuration
+import scala.jdk.DurationConverters.JavaDurationOps
+
 import akka.annotation.InternalApi
 import akka.japi.function
 import akka.japi.function.Function
@@ -16,7 +19,10 @@ import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.Persistence
 import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.ReadOnlyEffectImpl
 import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.Reply
 import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.TransitionalEffectImpl
+import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowStepEffectImpl.toPauseStepEffect
 import akka.javasdk.workflow.Workflow
+import akka.javasdk.workflow.Workflow.CommandHandler.NoArgCommandHandler
+import akka.javasdk.workflow.Workflow.CommandHandler.OneArgCommandHandler
 import akka.javasdk.workflow.Workflow.Effect
 import akka.javasdk.workflow.Workflow.Effect.PersistenceEffectBuilder
 import akka.javasdk.workflow.Workflow.Effect.Transitional
@@ -33,7 +39,14 @@ object WorkflowEffects {
 
   case class StepTransition[I](stepName: String, input: Option[I]) extends Transition
 
-  case class PauseTransition(reason: Option[String]) extends Transition
+  sealed trait CommandHandler
+  case class UnaryCommandHandler(handler: akka.japi.function.Function[_, Effect[_]]) extends CommandHandler
+  case class BinaryCommandHandler(handler: akka.japi.function.Function2[_, _, Effect[_]], input: Any)
+      extends CommandHandler
+
+  case class PauseSettings(duration: FiniteDuration, timeoutHandler: CommandHandler)
+
+  case class PauseTransition(reason: Option[String], pauseSettings: Option[PauseSettings] = None) extends Transition
   object PauseTransition {
     val noReason: PauseTransition = PauseTransition(None)
     def withReason(reason: String): PauseTransition = PauseTransition(Some(reason))
@@ -65,7 +78,16 @@ object WorkflowEffects {
     WorkflowStepEffectImpl(NoPersistence, PauseTransition(None))
 
   private def validateReason(reason: String): Unit =
-    require(reason != null, "Given reason must not be null")
+    require(reason != null && reason.nonEmpty, "Given reason must not be null or empty")
+
+  private def toTimeoutHandler(handler: Workflow.CommandHandler) = {
+    handler match {
+      case handler: NoArgCommandHandler =>
+        UnaryCommandHandler(handler.handler())
+      case handler: OneArgCommandHandler =>
+        BinaryCommandHandler(handler.handler(), handler.input())
+    }
+  }
 
   /**
    * INTERNAL API
@@ -98,6 +120,16 @@ object WorkflowEffects {
       override def pause(reason: String): Transitional = {
         validateReason(reason)
         TransitionalEffectImpl(persistence, PauseTransition.withReason(reason))
+      }
+
+      override def pause(pauseSettings: Workflow.PauseSettings): Transitional = {
+        TransitionalEffectImpl(
+          persistence,
+          PauseTransition(
+            None,
+            Some(
+              WorkflowEffects
+                .PauseSettings(pauseSettings.timeout().toScala, toTimeoutHandler(pauseSettings.timeoutHandler())))))
       }
 
       override def end(): Transitional =
@@ -166,6 +198,16 @@ object WorkflowEffects {
     override def pause(reason: String): Transitional = {
       validateReason(reason)
       TransitionalEffectImpl(NoPersistence, PauseTransition.withReason(reason))
+    }
+
+    override def pause(pauseSettings: Workflow.PauseSettings): Transitional = {
+      TransitionalEffectImpl(
+        persistence,
+        PauseTransition(
+          None,
+          Some(
+            WorkflowEffects
+              .PauseSettings(pauseSettings.timeout().toScala, toTimeoutHandler(pauseSettings.timeoutHandler())))))
     }
 
     override def transitionTo[I](stepName: String, input: I): Transitional =
@@ -251,6 +293,10 @@ object WorkflowEffects {
         WorkflowStepEffectImpl(persistence, PauseTransition.withReason(reason))
       }
 
+      override def thenPause(pauseSettings: Workflow.PauseSettings): StepEffect = {
+        toPauseStepEffect(persistence, pauseSettings)
+      }
+
       override def thenDelete(): StepEffect =
         WorkflowStepEffectImpl(persistence, DeleteTransition.noReason)
 
@@ -266,7 +312,16 @@ object WorkflowEffects {
         validateReason(reason)
         WorkflowStepEffectImpl(persistence, EndTransition.withReason(reason))
       }
+    }
 
+    private def toPauseStepEffect[S](persistence: Persistence[S], pauseSettings: Workflow.PauseSettings) = {
+      WorkflowStepEffectImpl(
+        persistence,
+        PauseTransition(
+          None,
+          Some(
+            WorkflowEffects
+              .PauseSettings(pauseSettings.timeout().toScala, toTimeoutHandler(pauseSettings.timeoutHandler())))))
     }
   }
 
@@ -287,6 +342,10 @@ object WorkflowEffects {
     override def thenPause(reason: String): StepEffect = {
       validateReason(reason)
       WorkflowStepEffectImpl(NoPersistence, PauseTransition.withReason(reason))
+    }
+
+    override def thenPause(pauseSettings: Workflow.PauseSettings): StepEffect = {
+      toPauseStepEffect(persistence, pauseSettings)
     }
 
     def thenTransitionTo[W](lambda: Function[W, Workflow.StepEffect]): Workflow.StepEffect = {

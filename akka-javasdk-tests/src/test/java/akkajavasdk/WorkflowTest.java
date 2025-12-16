@@ -520,7 +520,7 @@ public class WorkflowTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               Integer counterValue = getFailingCounterValue(counterId);
-              assertThat(counterValue).isEqualTo(3);
+              assertThat(counterValue).isEqualTo(12345);
             });
 
     Awaitility.await()
@@ -562,6 +562,38 @@ public class WorkflowTest extends TestKitSupport {
                       .invoke();
 
               assertThat(state.value()).isEqualTo(2);
+              assertThat(state.finished()).isTrue();
+            });
+  }
+
+  @Test
+  public void shouldRecoverWorkflowPauseTimeout() {
+    // given
+    var counterId = randomId();
+    var workflowId = randomId();
+
+    // when
+    Message response =
+        componentClient
+            .forWorkflow(workflowId)
+            .method(WorkflowWithStepTimeout::startPausedCounter)
+            .invoke(counterId);
+
+    assertThat(response.text()).isEqualTo("workflow started");
+
+    // then
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(20, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              var state =
+                  componentClient
+                      .forWorkflow(workflowId)
+                      .method(WorkflowWithStepTimeout::get)
+                      .invoke();
+
+              assertThat(state.value()).isEqualTo(1234);
               assertThat(state.finished()).isTrue();
             });
   }
@@ -748,7 +780,9 @@ public class WorkflowTest extends TestKitSupport {
                     .invoke("throwRuntimeException"));
 
     assertThat(exc5.getMessage())
-        .contains("Unexpected failure: java.lang.RuntimeException: throwRuntimeException");
+        .contains(
+            "exception while processing [Run]: unexpected failure: java.lang.RuntimeException:"
+                + " throwRuntimeException");
   }
 
   private String randomTransferId() {

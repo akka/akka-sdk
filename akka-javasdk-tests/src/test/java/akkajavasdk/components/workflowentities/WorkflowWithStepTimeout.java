@@ -4,8 +4,10 @@
 
 package akkajavasdk.components.workflowentities;
 
+import static akka.Done.done;
 import static java.time.Duration.ofMillis;
 
+import akka.Done;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.workflow.Workflow;
 import akkajavasdk.components.actions.echo.Message;
@@ -28,6 +30,19 @@ public class WorkflowWithStepTimeout extends Workflow<FailingCounterState> {
         .updateState(new FailingCounterState(counterId, 0, false))
         .transitionTo(WorkflowWithStepTimeout::counterStep)
         .thenReply(new Message("workflow started"));
+  }
+
+  public Effect<Message> startPausedCounter(String counterId) {
+    return effects()
+        .updateState(new FailingCounterState(counterId, 0, false))
+        .pause(
+            pauseSetting(ofMillis(20))
+                .timeoutHandler(WorkflowWithStepTimeout::timeoutHandler, 1234))
+        .thenReply(new Message("workflow started"));
+  }
+
+  public Effect<Done> timeoutHandler(int finalValue) {
+    return effects().updateState(currentState().asFinished(finalValue)).end().thenReply(done());
   }
 
   private StepEffect counterStep() throws InterruptedException {

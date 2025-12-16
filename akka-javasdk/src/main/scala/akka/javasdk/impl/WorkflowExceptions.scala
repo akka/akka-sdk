@@ -13,7 +13,7 @@ import akka.annotation.InternalApi
 private[javasdk] object WorkflowExceptions {
 
   final case class WorkflowException(workflowId: String, commandName: String, message: String, cause: Option[Throwable])
-      extends RuntimeException(message, cause.orNull) {
+      extends RuntimeException(s"exception while processing [$commandName]: " + message, cause.orNull) {
     def this(workflowId: String, commandName: String, message: String) =
       this(workflowId, commandName, message, None)
   }
