@@ -22,6 +22,8 @@ import akka.javasdk.impl.Settings
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
+import akka.javasdk.impl.effect.ReplicationFilterImpl
+import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
@@ -130,6 +132,11 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
         }
       }
 
+      if ((commandEffect.replFilter ne ReplicationFilterImpl.empty) && !isReplicationFilterEnabled) {
+        throw new IllegalStateException(
+          "To use replication filters the EventSourcedEntity class must be annotated with @EnableReplicationFilter.")
+      }
+
       commandEffect.primaryEffect match {
         case UpdateState(updatedState, metadataOpt) =>
           errorOrReply match {
@@ -147,8 +154,7 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
                   metadata,
                   deleteEntity = false,
                   stateMetadata,
-                  SpiEventSourcedEntity.ChangeReplicationFilter.empty // FIXME: add replication filter
-                ))
+                  replicationFilter = commandEffect.replFilter.toSpi))
           }
 
         case DeleteEntity =>
@@ -164,8 +170,7 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
                   metadata,
                   deleteEntity = true,
                   Vector.empty,
-                  SpiEventSourcedEntity.ChangeReplicationFilter.empty // FIXME: add replication filter
-                ))
+                  replicationFilter = commandEffect.replFilter.toSpi))
           }
 
         case NoPrimaryEffect =>
@@ -216,4 +221,7 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
 
   override def stateFromBytes(pb: BytesPayload): SpiEventSourcedEntity.State =
     serializer.fromBytes(entityStateType, pb).asInstanceOf[SpiEventSourcedEntity.State]
+
+  private def isReplicationFilterEnabled: Boolean =
+    Reflect.isReplicationFilterEnabled(entity.getClass)
 }
