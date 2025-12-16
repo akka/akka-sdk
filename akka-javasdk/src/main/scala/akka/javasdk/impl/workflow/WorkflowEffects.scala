@@ -22,8 +22,8 @@ import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.Transitiona
 import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowStepEffectImpl.toPauseStepEffect
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.Workflow.CommandHandler
-import akka.javasdk.workflow.Workflow.CommandHandler.BinaryCommandHandler
-import akka.javasdk.workflow.Workflow.CommandHandler.UnaryCommandHandler
+import akka.javasdk.workflow.Workflow.CommandHandler.NoArgCommandHandler
+import akka.javasdk.workflow.Workflow.CommandHandler.OneArgCommandHandler
 import akka.javasdk.workflow.Workflow.Effect
 import akka.javasdk.workflow.Workflow.Effect.PersistenceEffectBuilder
 import akka.javasdk.workflow.Workflow.Effect.Transitional
@@ -83,9 +83,9 @@ object WorkflowEffects {
 
   private def toTimeoutHandler(handler: Workflow.CommandHandler) = {
     handler match {
-      case handler: CommandHandler.UnaryCommandHandler =>
+      case handler: NoArgCommandHandler =>
         UnaryCommandHandler(handler.handler())
-      case handler: CommandHandler.BinaryCommandHandler =>
+      case handler: OneArgCommandHandler =>
         BinaryCommandHandler(handler.handler(), handler.input())
     }
   }
