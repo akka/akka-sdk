@@ -21,7 +21,6 @@ import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.Reply
 import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.TransitionalEffectImpl
 import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowStepEffectImpl.toPauseStepEffect
 import akka.javasdk.workflow.Workflow
-import akka.javasdk.workflow.Workflow.CommandHandler
 import akka.javasdk.workflow.Workflow.CommandHandler.NoArgCommandHandler
 import akka.javasdk.workflow.Workflow.CommandHandler.OneArgCommandHandler
 import akka.javasdk.workflow.Workflow.Effect
