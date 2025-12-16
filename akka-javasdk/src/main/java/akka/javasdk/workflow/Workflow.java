@@ -254,17 +254,6 @@ public abstract class Workflow<S> {
        * <p>Use the {@link Workflow#pauseSetting(Duration)} method to start building the {@link
        * PauseSettings}.
        *
-       * <p>Example:
-       *
-       * <pre>{@code
-       * return effects()
-       *   .updateState(newState)
-       *   .pause(
-       *     pauseSetting(Duration.ofSeconds(10))
-       *       .timeoutHandler(MyWorkflow::handleTimeout())
-       *   );
-       * }</pre>
-       *
        * @param pauseSettings Configuration for the pause including timeout duration and handler
        */
       Transitional pause(PauseSettings pauseSettings);
@@ -458,17 +447,6 @@ public abstract class Workflow<S> {
        * <p>Use the {@link Workflow#pauseSetting(Duration)} method to start building the {@link
        * PauseSettings}.
        *
-       * <p>Example:
-       *
-       * <pre>{@code
-       * return effects()
-       *   .updateState(newState)
-       *   .pause(
-       *     pauseSetting(Duration.ofSeconds(10))
-       *       .timeoutHandler(MyWorkflow::handleTimeout())
-       *   );
-       * }</pre>
-       *
        * @param pauseSettings Configuration for the pause including timeout duration and handler
        */
       Transitional pause(PauseSettings pauseSettings);
@@ -587,17 +565,6 @@ public abstract class Workflow<S> {
        * <p>Use the {@link Workflow#pauseSetting(Duration)} method to start building the {@link
        * PauseSettings}.
        *
-       * <p>Example:
-       *
-       * <pre>{@code
-       * return stepEffect()
-       *   .updateState(newState)
-       *   .thenPause(
-       *     pauseSetting(Duration.ofSeconds(10))
-       *       .timeoutHandler(MyWorkflow::handleTimeout())
-       *   );
-       * }</pre>
-       *
        * @param pauseSettings Configuration for the pause including timeout duration and handler
        */
       StepEffect thenPause(PauseSettings pauseSettings);
@@ -673,17 +640,6 @@ public abstract class Workflow<S> {
        *
        * <p>Use the {@link Workflow#pauseSetting(Duration)} method to start building the {@link
        * PauseSettings}.
-       *
-       * <p>Example:
-       *
-       * <pre>{@code
-       * return stepEffect()
-       *   .updateState(newState)
-       *   .thenPause(
-       *     pauseSetting(Duration.ofSeconds(10))
-       *       .timeoutHandler(MyWorkflow::handleTimeout())
-       *   );
-       * }</pre>
        *
        * @param pauseSettings Configuration for the pause including timeout duration and handler
        */
@@ -910,12 +866,12 @@ public abstract class Workflow<S> {
   }
 
   public record PauseSettings(
-      Optional<String> reason, Duration duration, CommandHandler timeoutHandler) {}
+      Optional<String> reason, Duration timeout, CommandHandler timeoutHandler) {}
 
-  public record PauseSettingsBuilder(Duration duration, Optional<String> reason) {
+  public record PauseSettingsBuilder(Duration timeout, Optional<String> reason) {
 
-    public PauseSettingsBuilder(Duration duration) {
-      this(duration, Optional.empty());
+    public PauseSettingsBuilder(Duration timeout) {
+      this(timeout, Optional.empty());
     }
 
     /**
@@ -927,7 +883,7 @@ public abstract class Workflow<S> {
       if (reason == null || reason.isBlank()) {
         throw new IllegalArgumentException("reason is null or blank");
       }
-      return new PauseSettingsBuilder(duration, Optional.of(reason));
+      return new PauseSettingsBuilder(timeout, Optional.of(reason));
     }
 
     /**
@@ -942,7 +898,7 @@ public abstract class Workflow<S> {
     public <W> PauseSettings timeoutHandler(
         akka.japi.function.Function<W, Effect<Done>> timeoutHandler) {
       return new PauseSettings(
-          reason, duration, new CommandHandler.NoArgCommandHandler(timeoutHandler));
+          reason, timeout, new CommandHandler.NoArgCommandHandler(timeoutHandler));
     }
 
     /**
@@ -960,7 +916,7 @@ public abstract class Workflow<S> {
     public <W, I> PauseSettings timeoutHandler(
         akka.japi.function.Function2<W, I, Effect<Done>> timeoutHandler, I input) {
       return new PauseSettings(
-          reason, duration, new CommandHandler.OneArgCommandHandler(timeoutHandler, input));
+          reason, timeout, new CommandHandler.OneArgCommandHandler(timeoutHandler, input));
     }
   }
 
@@ -971,8 +927,8 @@ public abstract class Workflow<S> {
    * handler that will be invoked when the timeout expires. The builder allows you to optionally
    * specify a reason for the pause and configure the timeout handler.
    */
-  public PauseSettingsBuilder pauseSetting(Duration duration) {
-    return new PauseSettingsBuilder(duration);
+  public PauseSettingsBuilder pauseSetting(Duration timeout) {
+    return new PauseSettingsBuilder(timeout);
   }
 
   public sealed interface WorkflowSettings {

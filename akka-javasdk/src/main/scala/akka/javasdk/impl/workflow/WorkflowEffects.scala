@@ -129,7 +129,7 @@ object WorkflowEffects {
             None,
             Some(
               WorkflowEffects
-                .PauseSettings(pauseSettings.duration().toScala, toTimeoutHandler(pauseSettings.timeoutHandler())))))
+                .PauseSettings(pauseSettings.timeout().toScala, toTimeoutHandler(pauseSettings.timeoutHandler())))))
       }
 
       override def end(): Transitional =
@@ -207,7 +207,7 @@ object WorkflowEffects {
           None,
           Some(
             WorkflowEffects
-              .PauseSettings(pauseSettings.duration().toScala, toTimeoutHandler(pauseSettings.timeoutHandler())))))
+              .PauseSettings(pauseSettings.timeout().toScala, toTimeoutHandler(pauseSettings.timeoutHandler())))))
     }
 
     override def transitionTo[I](stepName: String, input: I): Transitional =
@@ -321,7 +321,7 @@ object WorkflowEffects {
           None,
           Some(
             WorkflowEffects
-              .PauseSettings(pauseSettings.duration().toScala, toTimeoutHandler(pauseSettings.timeoutHandler())))))
+              .PauseSettings(pauseSettings.timeout().toScala, toTimeoutHandler(pauseSettings.timeoutHandler())))))
     }
   }
 
