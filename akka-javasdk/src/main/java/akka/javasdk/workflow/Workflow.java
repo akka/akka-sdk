@@ -954,8 +954,8 @@ public abstract class Workflow<S> {
      * <p>The handler function should be specified as a Java method reference, e.g.
      * MyWorkflow::pauseTimeoutHandler
      *
-     * <p>This overload allows you to pass additional input to the timeout handler, when
-     * additional context or data that should be captured at the time of pause configuration.
+     * <p>This overload allows you to pass additional input to the timeout handler, when additional
+     * context or data that should be captured at the time of pause configuration.
      */
     public <W, I> PauseSettings timeoutHandler(
         akka.japi.function.Function2<W, I, Effect<Done>> timeoutHandler, I input) {
