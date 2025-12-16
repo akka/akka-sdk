@@ -799,7 +799,12 @@ public class WorkflowTest extends TestKitSupport {
                     .invoke());
 
     assertThat(exc1.getMessage())
-        .contains("Workflow [akkajavasdk.components.workflowentities.WorkflowCallingOtherWorkflowCommandHandler] calls command handler [test] from another class [akkajavasdk.components.workflowentities.WorkflowWithTimeout], which is not allowed.");
+        .contains(
+            "Workflow"
+                + " [akkajavasdk.components.workflowentities.WorkflowCallingOtherWorkflowCommandHandler]"
+                + " calls command handler [test] from another class"
+                + " [akkajavasdk.components.workflowentities.WorkflowWithTimeout], which is not"
+                + " allowed.");
   }
 
   @Test

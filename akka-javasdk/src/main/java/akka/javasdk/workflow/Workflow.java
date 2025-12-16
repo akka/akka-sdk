@@ -866,10 +866,10 @@ public abstract class Workflow<S> {
   }
 
   public sealed interface StepHandler {
-    record UnaryStepHandler(akka.japi.function.Function<?, StepEffect> handler)
+    record NoArgStepHandler(akka.japi.function.Function<?, StepEffect> handler)
         implements StepHandler {}
 
-    record BinaryStepHandler(akka.japi.function.Function2<?, ?, StepEffect> handler, Object input)
+    record OneArgStepHandler(akka.japi.function.Function2<?, ?, StepEffect> handler, Object input)
         implements StepHandler {}
   }
 
@@ -1092,7 +1092,7 @@ public abstract class Workflow<S> {
               0,
               stepName,
               Optional.empty(),
-              Optional.of(new StepHandler.UnaryStepHandler(timeoutFailoverStep)));
+              Optional.of(new StepHandler.NoArgStepHandler(timeoutFailoverStep)));
       return new WorkflowSettingsBuilder(
           defaultStepTimeout,
           defaultStepRecoverStrategy,
@@ -1124,7 +1124,7 @@ public abstract class Workflow<S> {
               0,
               stepName,
               Optional.of(input),
-              Optional.of(new StepHandler.BinaryStepHandler(timeoutFailoverStep, input)));
+              Optional.of(new StepHandler.OneArgStepHandler(timeoutFailoverStep, input)));
       return new WorkflowSettingsBuilder(
           defaultStepTimeout,
           defaultStepRecoverStrategy,
@@ -1469,7 +1469,7 @@ public abstract class Workflow<S> {
             maxRetries,
             stepName,
             Optional.of(input),
-            Optional.of(new StepHandler.BinaryStepHandler(lambda, input)));
+            Optional.of(new StepHandler.OneArgStepHandler(lambda, input)));
       }
     }
 
@@ -1500,7 +1500,7 @@ public abstract class Workflow<S> {
             maxRetries,
             stepName,
             Optional.empty(),
-            Optional.of(new StepHandler.UnaryStepHandler(lambda)));
+            Optional.of(new StepHandler.NoArgStepHandler(lambda)));
       }
 
       /**
@@ -1555,7 +1555,7 @@ public abstract class Workflow<S> {
       var method = MethodRefResolver.resolveMethodRef(lambda);
       var stepName = WorkflowDescriptor.stepMethodName(method);
       return new RecoverStrategy<>(
-          0, stepName, Optional.empty(), Optional.of(new StepHandler.UnaryStepHandler(lambda)));
+          0, stepName, Optional.empty(), Optional.of(new StepHandler.NoArgStepHandler(lambda)));
     }
 
     /**

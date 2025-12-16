@@ -32,8 +32,8 @@ import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.Workflow.LegacyWorkflowTimeout
-import akka.javasdk.workflow.Workflow.StepHandler.BinaryStepHandler
-import akka.javasdk.workflow.Workflow.StepHandler.UnaryStepHandler
+import akka.javasdk.workflow.Workflow.StepHandler.NoArgStepHandler
+import akka.javasdk.workflow.Workflow.StepHandler.OneArgStepHandler
 import akka.javasdk.workflow.Workflow.WorkflowSettings
 import akka.javasdk.workflow.Workflow.{ RecoverStrategy => SdkRecoverStrategy }
 import akka.javasdk.workflow.WorkflowContext
@@ -100,8 +100,8 @@ class WorkflowImpl[S, W <: Workflow[S]](
     def toRecovery(sdkRecoverStrategy: SdkRecoverStrategy[_]): SpiWorkflow.RecoverStrategy = {
 
       sdkRecoverStrategy.stepHandler().toScala.foreach {
-        case handler: UnaryStepHandler  => validateStep(handler.handler())
-        case handler: BinaryStepHandler => validateStep(handler.handler())
+        case handler: NoArgStepHandler  => validateStep(handler.handler())
+        case handler: OneArgStepHandler => validateStep(handler.handler())
       }
 
       val stepTransition = new SpiWorkflow.StepTransition(
