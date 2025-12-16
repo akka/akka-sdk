@@ -524,6 +524,7 @@ private[impl] final class AgentImpl[A <: Agent](
         new SpiAgent.ModelProvider.GoogleAIGemini(
           p.apiKey(),
           p.modelName(),
+          p.baseUrl(),
           p.temperature(),
           p.topP(),
           p.maxOutputTokens(),
