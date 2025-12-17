@@ -744,8 +744,8 @@ public class WorkflowTest extends TestKitSupport {
 
     assertThat(exc1.getMessage())
         .contains(
-            "Workflow [akkajavasdk.components.workflowentities.WorkflowCallingOtherWorkflow] calls"
-                + " step [counterStep] from another class"
+            "Workflow [akkajavasdk.components.workflowentities.WorkflowCallingOtherWorkflowStep]"
+                + " calls step [counterStep] from another class"
                 + " [akkajavasdk.components.workflowentities.WorkflowWithTimeout], which is not"
                 + " allowed.");
   }

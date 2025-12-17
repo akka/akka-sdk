@@ -10,7 +10,7 @@ import akka.Done;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.workflow.Workflow;
 
-@Component(id = "workflow-calling-other-workflow")
+@Component(id = "workflow-calling-other-workflow-step")
 public class WorkflowCallingOtherWorkflowStep extends Workflow<String> {
 
   @Override
