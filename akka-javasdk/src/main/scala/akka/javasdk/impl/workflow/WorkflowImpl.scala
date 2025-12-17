@@ -24,6 +24,7 @@ import akka.javasdk.impl.ErrorHandling.BadRequestException
 import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.WorkflowExceptions.WorkflowException
+import akka.javasdk.impl.client.MethodRefResolver
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
@@ -31,6 +32,8 @@ import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.Workflow.LegacyWorkflowTimeout
+import akka.javasdk.workflow.Workflow.StepHandler.NoArgStepHandler
+import akka.javasdk.workflow.Workflow.StepHandler.OneArgStepHandler
 import akka.javasdk.workflow.Workflow.WorkflowSettings
 import akka.javasdk.workflow.Workflow.{ RecoverStrategy => SdkRecoverStrategy }
 import akka.javasdk.workflow.WorkflowContext
@@ -84,7 +87,22 @@ class WorkflowImpl[S, W <: Workflow[S]](
     val workflow = instanceFactory(workflowContext)
     val workflowConfig = workflow.settings()
 
+    def validateStep(stepLambda: Any) = {
+      val method = MethodRefResolver.resolveMethodRef(stepLambda)
+      val stepName = WorkflowDescriptor.stepMethodName(method)
+      val classToTest = method.getDeclaringClass
+      if (!classToTest.isAssignableFrom(workflow.getClass)) {
+        throw new IllegalArgumentException(
+          s"Workflow [${workflow.getClass.getName}] settings refers to step [$stepName] from another class [${classToTest.getName}], which is not allowed.")
+      }
+    }
+
     def toRecovery(sdkRecoverStrategy: SdkRecoverStrategy[_]): SpiWorkflow.RecoverStrategy = {
+
+      sdkRecoverStrategy.stepHandler().toScala.foreach {
+        case handler: NoArgStepHandler  => validateStep(handler.handler())
+        case handler: OneArgStepHandler => validateStep(handler.handler())
+      }
 
       val stepTransition = new SpiWorkflow.StepTransition(
         sdkRecoverStrategy.failoverStepName,
@@ -94,6 +112,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
 
     val stepConfigs =
       workflowConfig.stepSettings.asScala.map { stepSettings =>
+        stepSettings.stepLambda().toScala.foreach(validateStep)
         val stepTimeout = stepSettings.timeout.toScala.map(_.toScala)
         val failoverRecoverStrategy = stepSettings.recovery.toScala.map(toRecovery)
         (stepSettings.stepName, new SpiWorkflow.StepConfig(stepSettings.stepName, stepTimeout, failoverRecoverStrategy))

@@ -36,7 +36,7 @@ public class WorkflowWithTimeout extends Workflow<FailingCounterState> {
         .thenReply(new Message("workflow started"));
   }
 
-  private StepEffect counterStep() throws InterruptedException {
+  StepEffect counterStep() throws InterruptedException {
     Thread.sleep(1000); // force a delay to produce a timeout
     return stepEffects().thenEnd();
   }
