@@ -1426,7 +1426,8 @@ public abstract class Workflow<S> {
       Optional<RecoverStrategy<?>> recovery,
       Optional<Object> stepLambda) {
 
-    @Deprecated() // TODO
+    /** Use constructor with stepLamba */
+    @Deprecated(since = "3.5.10", forRemoval = true)
     StepSettings(
         String stepName, Optional<Duration> timeout, Optional<RecoverStrategy<?>> recovery) {
       this(stepName, timeout, recovery, Optional.empty());
