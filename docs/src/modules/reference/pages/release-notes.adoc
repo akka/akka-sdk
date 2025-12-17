@@ -12,7 +12,7 @@ Current versions
 
 == December 2025
 
-* Akka CLI 3.0.43
+* Akka CLI 3.0.44
 - Support for configuring Azure observability
 - Project level descriptors through `akka project export`, `akka project apply`
 - `akka code check`, check if project is ready for local development
