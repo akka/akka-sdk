@@ -87,7 +87,7 @@ The following is a list of all natively supported model configurations. Remember
 |===
 
 
-See link:_attachments/api/akka/javasdk/agent/ModelProvider.Anthropic.html[`ModelProvider.Anthropic`] for programmatic settings.
+See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Anthropic.html[`ModelProvider.Anthropic`] for programmatic settings.
 
 === Bedrock
 
@@ -154,7 +154,7 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.Anthropic.html[`Model
 
 |===
 
-See link:_attachments/api/akka/javasdk/agent/ModelProvider.Bedrock.html[`ModelProvider.Bedrock`] for programmatic settings.
+See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Bedrock.html[`ModelProvider.Bedrock`] for programmatic settings.
 
 === Gemini
 
@@ -204,7 +204,7 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.Bedrock.html[`ModelPr
 
 |===
 
-See link:_attachments/api/akka/javasdk/agent/ModelProvider.GoogleAIGemini.html[`ModelProvider.GoogleAIGemini`] for programmatic settings.
+See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.GoogleAIGemini.html[`ModelProvider.GoogleAIGemini`] for programmatic settings.
 
 === Hugging Face
 
@@ -254,7 +254,7 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.GoogleAIGemini.html[`
 
 |===
 
-See link:_attachments/api/akka/javasdk/agent/ModelProvider.HuggingFace.html[`ModelProvider.HuggingFace`] for programmatic settings.
+See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.HuggingFace.html[`ModelProvider.HuggingFace`] for programmatic settings.
 
 === Local AI
 
@@ -288,7 +288,7 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.HuggingFace.html[`Mod
 
 |===
 
-See link:_attachments/api/akka/javasdk/agent/ModelProvider.LocalAI.html[`ModelProvider.LocalAI`] for programmatic settings.
+See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.LocalAI.html[`ModelProvider.LocalAI`] for programmatic settings.
 
 === Ollama
 
@@ -330,7 +330,7 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.LocalAI.html[`ModelPr
 
 |===
 
-See link:_attachments/api/akka/javasdk/agent/ModelProvider.Ollama.html[`ModelProvider.Ollama`] for programmatic settings.
+See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Ollama.html[`ModelProvider.Ollama`] for programmatic settings.
 
 === OpenAI
 
@@ -384,7 +384,7 @@ See link:_attachments/api/akka/javasdk/agent/ModelProvider.Ollama.html[`ModelPro
 
 |===
 
-See link:_attachments/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`ModelProvider.OpenAi`] for programmatic settings.
+See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`ModelProvider.OpenAi`] for programmatic settings.
 
 == Default model configuration
 
