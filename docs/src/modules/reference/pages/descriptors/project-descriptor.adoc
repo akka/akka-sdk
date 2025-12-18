@@ -1,0 +1,360 @@
+= Project Descriptor reference
+include::ROOT:partial$include.adoc[]
+
+== Akka Project descriptor
+
+Akka's _Project Descriptor_ is a multi-document YAML file that defines the complete configuration for an Akka project, including
+
+. xref:#service[services],
+. xref:#route[routes],
+. xref:#observability[observability settings],
+. xref:#broker[message broker configuration], and
+. xref:#rolebindings[role bindings].
+
+This allows you to manage multiple resources in a single file and apply them at once with the `akka project apply` command.
+
+Each document in the project descriptor represents a single resource and follows a common structure:
+
+[cols="1,1,1"]
+|===
+|Field   |Type                    |Description
+
+|*resource*         |string _required_  |The type of resource: `Service`, `Route`, `Observability`, `Broker`, or `RoleBindings`
+|*resourceVersion*  |string _required_  |The version of the resource schema. Currently only `v1` is supported.
+|*metadata*         |<<Metadata>>       |Optional metadata for the resource. Required for `Service` and `Route` resources.
+|*spec*             |object _required_  |The specification for the resource. Structure depends on the resource type.
+|===
+
+=== Metadata
+
+[cols="1,1,1"]
+|===
+|Field   |Type     |Description
+
+|*name*  |string   |The name of the resource. Required for `Service` and `Route` resources.
+|===
+
+== Resource types
+
+The project descriptor supports the following resource types. A single descriptor can contain multiple `Service` and `Route` documents, each with a unique name. The `Observability`, `Broker`, and `RoleBindings` resources are project-level singletons—only one of each can exist per project.
+
+[#service]
+=== Service
+
+Defines an Akka service with its container image, environment variables, and runtime configuration. A descriptor can include multiple Service documents, each with a unique name. See xref:reference:descriptors/service-descriptor.adoc[] for the complete reference.
+
+[source,yaml]
+----
+resource: Service
+resourceVersion: v1
+metadata:
+  name: my-service
+spec:
+  image: acr.us-east-1.akka.io/my-org/my-project/my-service:1.0.0
+  resources:
+    runtime:
+      mode: embedded
+  env:
+    - name: ENABLE_SOME_FEATURE
+      value: true
+----
+
+[#route]
+=== Route
+
+Defines how ingress traffic is routed to services. A descriptor can include multiple Route documents, each with a unique name. See xref:reference:descriptors/route-descriptor.adoc[] for the complete reference.
+
+[source,yaml]
+----
+resource: Route
+resourceVersion: v1
+metadata:
+  name: api-gateway
+spec:
+  routes:
+    - prefix: /api
+      route:
+        service: my-service
+----
+
+[#observability]
+=== Observability
+
+Configures the project's observability settings for exporting metrics, logs, and traces to third-party services. Only one observability configuration exists per project. See xref:reference:descriptors/observability-descriptor.adoc[] for the complete reference.
+
+[source,yaml]
+----
+resource: Observability
+resourceVersion: v1
+spec:
+  exporter:
+    kalixConsole: {}
+----
+
+[#broker]
+=== Broker
+
+Configures the message broker for the project. Only one broker configuration is supported per project.
+
+[cols="1,1,1"]
+|===
+|Field         |Type                  |Description
+
+|*type*        |string _required_     |The broker type: `google-pubsub`, `kafka`, or `eventhubs`
+|*description* |string                |Optional description of the broker configuration
+|*gcpKey*      |string                |Required for `google-pubsub`. The name of a secret containing the GCP service account key.
+|*kafka*       |<<KafkaSASLSpec>>     |Required for `kafka`. Kafka SASL authentication configuration.
+|*eventhubs*   |<<EventHubsSpec>>     |Required for `eventhubs`. Azure Event Hubs configuration.
+|===
+
+[#KafkaSASLSpec]
+==== KafkaSASLSpec
+
+Configuration for Kafka brokers using SASL authentication.
+
+[cols="1,1,1"]
+|===
+|Field            |Type              |Description
+
+|*authMechanism*  |string _required_ |The SASL authentication mechanism. Supported values: `PLAIN`, `SCRAM-SHA-256`, `SCRAM-SHA-512`.
+|*servers*        |string _required_ |Comma-separated list of Kafka bootstrap servers, e.g. `broker1:9092,broker2:9092`.
+|*username*       |string _required_ |The username for SASL authentication.
+|*passwordSecret* |string _required_ |Reference to the secret containing the password, in the format `secret-name/key`.
+|*caCertSecret*   |string            |Optional reference to a secret containing the CA certificate for TLS, in the format `secret-name/key`.
+|===
+
+Example:
+
+[source,yaml]
+----
+resource: Broker
+resourceVersion: v1
+spec:
+  type: kafka
+  description: Production Kafka cluster
+  kafka:
+    authMechanism: SCRAM-SHA-256
+    servers: kafka-1.example.com:9092,kafka-2.example.com:9092
+    username: akka-service
+
+    passwordSecret: kafka-credentials/password
+    caCertSecret: kafka-credentials/ca-cert
+----
+
+[#EventHubsSpec]
+==== EventHubsSpec
+
+Configuration for Azure Event Hubs.
+
+[cols="1,1,1"]
+|===
+|Field                          |Type              |Description
+
+|*connectionStringSecret*       |string _required_ |Reference to the secret containing the Event Hubs connection string, in the format `secret-name/key`.
+|*checkpointStoreSasTokenSecret*|string _required_ |Reference to the secret containing the SAS token for the checkpoint store, in the format `secret-name/key`.
+|*checkpointStoreEndpoint*      |string _required_ |The Azure Blob Storage endpoint for checkpointing, e.g. `https://mystorageaccount.blob.core.windows.net`.
+|*checkpointStoreContainerName* |string _required_ |The name of the blob container used for checkpointing.
+|===
+
+Example:
+
+[source,yaml]
+----
+resource: Broker
+resourceVersion: v1
+spec:
+  type: eventhubs
+  description: Azure Event Hubs for production
+  eventhubs:
+    connectionStringSecret: eventhubs-credentials/connection-string
+    checkpointStoreSasTokenSecret: eventhubs-credentials/sas-token
+    checkpointStoreEndpoint: https://mystorageaccount.blob.core.windows.net
+    checkpointStoreContainerName: checkpoints
+----
+
+==== Google Pub/Sub
+
+For Google Pub/Sub, provide the name of a secret containing the GCP service account key:
+
+[source,yaml]
+----
+resource: Broker
+resourceVersion: v1
+spec:
+  type: google-pubsub
+  description: Google Pub/Sub for production
+  gcpKey: gcp-service-account
+----
+
+[#rolebindings]
+=== RoleBindings
+
+Configures the project's OpenID Connect (OIDC) group-to-role mappings. Only one role binding configuration exists per project, but it can contain multiple group-to-role mappings. This enables automated role assignment based on group membership when using OIDC authentication at the organization level. The project must be owned by an organization with an OIDC setup.
+
+[cols="1,1,1"]
+|===
+|Field      |Type                      |Description
+
+|*bindings* |[]<<GroupRoleBinding>>    |List of group-to-role mappings.
+|===
+
+[#GroupRoleBinding]
+==== GroupRoleBinding
+
+[cols="1,1,1"]
+|===
+|Field   |Type              |Description
+
+|*group* |string _required_ |The OIDC group name from your identity provider. Must be a simple group name, not a full resource path.
+|*role*  |string _required_ |The Akka project role to assign. Valid values: `admin`, `developer`, `viewer`, `backoffice`.
+|===
+
+Example:
+
+[source,yaml]
+----
+resource: RoleBindings
+resourceVersion: v1
+spec:
+  bindings:
+    - group: platform-admins
+      role: admin
+    - group: developers
+      role: developer
+    - group: support-team
+      role: viewer
+----
+
+== Using the project descriptor
+
+[#exporting]
+=== Exporting the descriptor for an existing project
+
+To export all resources from an existing project as a descriptor:
+
+[source,bash]
+----
+akka project export --project my-project --file my-project.yaml
+----
+
+This exports all services, routes, observability configuration, broker settings, and role bindings to a single file. You can also write to standard output:
+
+[source,bash]
+----
+akka project export > project.yaml
+----
+
+The exported descriptor can be used as a starting point for version-controlled infrastructure, or to replicate a project's configuration.
+
+[#applying]
+=== Applying a project descriptor
+
+To configure the project according to the descriptor, use the `akka project apply` command.
+The `--dry-run` flag allows validating a descriptor and see what would be applied without making any changes:
+
+[source,bash]
+----
+akka project apply --file project.yaml --dry-run
+----
+
+To apply a project descriptor, use the `akka project apply` command:
+
+[source,bash]
+----
+akka project apply --file project.yaml
+----
+
+This command will create or update all resources defined in the descriptor. Resources are processed in order, and the command will report which resources were created, updated, or skipped.
+
+IMPORTANT: The apply operation is additive. It creates or updates resources defined in the descriptor, but does not remove resources that are absent from the file. If you previously applied a descriptor with three services and then apply a new version with only two services, the third service will remain deployed. To remove a resource, use the appropriate `akka` CLI delete command (e.g., `akka service delete`).
+
+NOTE: For multi-region projects, the descriptor is applied to the primary region. Changes will then be synchronized to other regions automatically.
+
+=== Reading from standard input
+
+You can also pipe the descriptor content:
+
+[source,bash]
+----
+cat project.yaml | akka project apply --file -
+----
+
+[#example]
+== Complete descriptor example
+
+Here is a complete project descriptor demonstrating multiple resource types:
+
+[source,yaml]
+----
+resource: Service
+resourceVersion: v1
+metadata:
+  name: cart-service
+spec:
+  image: acr.us-east-1.akka.io/my-org/my-project/cart-service:1.0.0
+  resources:
+    runtime:
+      mode: embedded
+  env:
+    - name: LOG_LEVEL
+      value: INFO
+---
+resource: Service
+resourceVersion: v1
+metadata:
+  name: product-catalog
+spec:
+  image: acr.us-east-1.akka.io/my-org/my-project/product-catalog:2.1.0
+  resources:
+    runtime:
+      mode: embedded
+  labels:
+    team: commerce
+    tier: backend
+---
+resource: Route
+resourceVersion: v1
+metadata:
+  name: api-gateway
+spec:
+  routes:
+    - prefix: /carts
+      route:
+        service: cart-service
+    - prefix: /products
+      route:
+        service: product-catalog
+---
+resource: Observability
+resourceVersion: v1
+spec:
+  exporter:
+    kalixConsole: {}
+---
+resource: Broker
+resourceVersion: v1
+spec:
+  type: kafka
+  description: Production Kafka cluster
+  kafka:
+    authMechanism: SCRAM-SHA-256
+    servers: kafka.example.com:9092
+    username: akka-service
+    passwordSecret: kafka-credentials/password
+---
+resource: RoleBindings
+resourceVersion: v1
+spec:
+  bindings:
+    - group: platform-admins
+      role: admin
+    - group: developers
+      role: developer
+----
+
+== Related documentation
+
+* xref:reference:descriptors/service-descriptor.adoc[Service Descriptor reference]
+* xref:reference:descriptors/route-descriptor.adoc[Route Descriptor reference]
+* xref:reference:descriptors/observability-descriptor.adoc[Observability Descriptor reference]
+* xref:reference:cli/akka-cli/akka_projects.adoc[`akka projects` CLI commands]

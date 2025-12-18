@@ -4,6 +4,8 @@ include::ROOT:partial$include.adoc[]
 
 This guide will walk you through deploying Akka services using the Akka Console and the Akka CLI. By the end, you’ll be able to deploy, check the status, update, and remove services.
 
+NOTE: Akka also supports a descriptor for a full project configuration spanning over multiple services and other project-level settings. Please refer to xref:reference:descriptors/project-descriptor.adoc[] for details.
+
 == Prerequisites
 
 Before deploying a service, ensure you have the following:
@@ -174,6 +176,8 @@ For further details, see xref:operations:projects/external-container-registries.
 == Using service descriptors
 
 Akka services can also be described and managed with *YAML service descriptors*. See xref:reference:descriptors/service-descriptor.adoc[].
+
+NOTE: Akka also supports a descriptor for a full project configuration spanning over multiple services and other project-level settings. Please refer to xref:reference:descriptors/project-descriptor.adoc[] for details.
 
 You can deploy your service using a service descriptor.
 For this you need at least the image, which you can get by <<_build_container_image, building the container image>> and then <<_pushing_to_acr, pushing it to the container registry>>:
