@@ -23,21 +23,21 @@ private[javasdk] object ReplicationFilterImpl {
  * INTERNAL API
  */
 @InternalApi
-private[javasdk] final case class ReplicationFilterImpl(addRegions: Set[String], removeRegions: Set[String])
+private[javasdk] final case class ReplicationFilterImpl(includedRegions: Set[String], excludedRegions: Set[String])
     extends akka.javasdk.eventsourcedentity.ReplicationFilter.Builder {
   override def includeRegion(region: String): ReplicationFilterImpl =
-    copy(addRegions = addRegions + region)
+    copy(includedRegions = includedRegions + region)
 
   override def includeRegions(regions: util.Set[String]): ReplicationFilterImpl =
-    copy(addRegions = addRegions.union(regions.asScala))
+    copy(includedRegions = includedRegions.union(regions.asScala))
 
   override def excludeRegion(region: String): ReplicationFilterImpl =
-    copy(removeRegions = removeRegions + region)
+    copy(excludedRegions = excludedRegions + region)
 
   override def excludeRegions(regions: util.Set[String]): ReplicationFilterImpl =
-    copy(removeRegions = removeRegions.union(regions.asScala))
+    copy(excludedRegions = excludedRegions.union(regions.asScala))
 
   def toSpi: SpiEventSourcedEntity.ChangeReplicationFilter =
-    new SpiEventSourcedEntity.ChangeReplicationFilter(addRegions, removeRegions)
+    new SpiEventSourcedEntity.ChangeReplicationFilter(includedRegions, excludedRegions)
 
 }

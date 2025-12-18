@@ -31,8 +31,7 @@ import java.util.Set;
  *
  * <p>After enabling replication filter with the {@code @EnableReplicationFilter} annotation, the
  * entity will still replicate to all regions until specific regions are defined with the {@code
- * updateReplicationFilter} effect. This effect can be combined with persisting events or used
- * without additional events.
+ * updateReplicationFilter} effect.
  */
 public interface ReplicationFilter {
   /**
