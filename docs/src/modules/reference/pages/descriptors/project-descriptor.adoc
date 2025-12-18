@@ -46,8 +46,8 @@ spec:
     runtime:
       mode: embedded
   env:
-    - name: LOG_LEVEL
-      value: INFO
+    - name: ENABLE_SOME_FEATURE
+      value: true
 ----
 
 === Route
