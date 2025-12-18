@@ -1,4 +1,5 @@
 * xref:index.adoc[Reference]
+** xref:descriptors/project-descriptor.adoc[Project descriptor]
 ** xref:descriptors/service-descriptor.adoc[Service descriptor]
 ** xref:descriptors/route-descriptor.adoc[Route descriptor]
 ** xref:descriptors/observability-descriptor.adoc[Observability descriptor]
