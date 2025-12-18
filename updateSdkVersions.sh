@@ -15,8 +15,19 @@ updateJavaSamples() {
   for i in ${PROJS[@]}
   do
     echo "Updating pom for: $i"
-    # we only want to update the first occurrence of <version>, the one belonging the parent-pom
-    awk '/<version>[^<]*<\/version>/ && !subyet {sub("<version>[^<]*<\/version>", "<version>"ENVIRON["SDK_VERSION"]"</version>"); subyet=1} 1' $i > temp && mv temp $i
+    # only update the <version> inside <parent> block where <artifactId> is akka-javasdk-parent
+    awk '
+      /<parent>/ { in_parent=1 }
+      in_parent && /<artifactId>akka-javasdk-parent<\/artifactId>/ { found_akka_parent=1 }
+      in_parent && found_akka_parent && /<version>[^<]*<\/version>/ && !subyet {
+        sub("<version>[^<]*<\/version>", "<version>"ENVIRON["SDK_VERSION"]"</version>")
+        subyet=1
+        updated=1
+      }
+      /<\/parent>/ { in_parent=0; found_akka_parent=0 }
+      { print }
+      END { exit !updated }
+    ' $i > temp && mv temp $i || rm temp
   done
 }
 
