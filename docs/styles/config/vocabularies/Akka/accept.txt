@@ -16,6 +16,7 @@ async
 [Aa]uditability
 auditable
 [Aa]utoscaling
+authMechanism
 Avro
 [Bb]ackoffice
 Bastian
@@ -27,6 +28,7 @@ CA's
 caSecret
 Cembaluk
 [Cc]hatbots
+checkpointing
 classname
 clientCertificate
 codegen
@@ -58,9 +60,11 @@ facto
 effectful
 enum
 env
+eventhubs
 exfiltration
 failover
 fanout
+gcpKey
 getOptional
 [Gg]itHub
 googleCloud
@@ -132,6 +136,7 @@ parseable
 passivates
 passivation
 passwordHashes
+passwordSecret
 plaintext
 Postgres
 PostgreSQL
@@ -162,6 +167,7 @@ repartitions
 replayability
 replicatedRead
 reshard
+resourceVersion
 [Rr]eusability
 RNGs
 runtimes

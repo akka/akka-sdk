@@ -237,7 +237,7 @@ To export all resources from an existing project as a descriptor:
 akka project export --project my-project --file my-project.yaml
 ----
 
-This exports all services, routes, observability configuration, broker settings, and role bindings to a single file. You can also write to stdout:
+This exports all services, routes, observability configuration, broker settings, and role bindings to a single file. You can also write to standard output:
 
 [source,bash]
 ----
@@ -270,7 +270,7 @@ IMPORTANT: The apply operation is additive. It creates or updates resources defi
 
 NOTE: For multi-region projects, the descriptor is applied to the primary region. Changes will then be synchronized to other regions automatically.
 
-=== Reading from stdin
+=== Reading from standard input
 
 You can also pipe the descriptor content:
 
