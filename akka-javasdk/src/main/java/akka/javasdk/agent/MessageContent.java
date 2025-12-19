@@ -7,6 +7,7 @@ package akka.javasdk.agent;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.util.Optional;
 
 /**
  * Represents a piece of content within a multimodal message to an AI model.
@@ -40,9 +41,22 @@ public sealed interface MessageContent {
    *
    * @param url The URL pointing to the image
    * @param detailLevel The level of detail for image processing
+   * @param mimeType The mimeType of the image, e.g. 'image/jpeg', 'image/png'
    */
-  record ImageUrlMessageContent(URL url, ImageMessageContent.DetailLevel detailLevel)
-      implements MessageContent {}
+  record ImageUrlMessageContent(
+      URL url, ImageMessageContent.DetailLevel detailLevel, Optional<String> mimeType)
+      implements MessageContent {
+
+    /**
+     * Image content within a user message, referenced by URL.
+     *
+     * @param url The URL pointing to the image
+     * @param detailLevel The level of detail for image processing
+     */
+    public ImageUrlMessageContent(URL url, ImageMessageContent.DetailLevel detailLevel) {
+      this(url, detailLevel, Optional.empty());
+    }
+  }
 
   /** Factory methods for creating image message content. */
   record ImageMessageContent() {
@@ -80,6 +94,19 @@ public sealed interface MessageContent {
      */
     public static ImageUrlMessageContent fromUrl(URL url, DetailLevel detailLevel) {
       return new ImageUrlMessageContent(url, detailLevel);
+    }
+
+    /**
+     * Creates image content from a URL with a specific detail level.
+     *
+     * @param url The URL pointing to the image
+     * @param detailLevel The level of detail for image processing
+     * @param mimeType The mimeType of the image, e.g. 'image/jpeg', 'image/png'
+     * @return A new ImageUrlMessageContent instance
+     */
+    public static ImageUrlMessageContent fromUrl(
+        URL url, DetailLevel detailLevel, String mimeType) {
+      return new ImageUrlMessageContent(url, detailLevel, Optional.of(mimeType));
     }
 
     /**
