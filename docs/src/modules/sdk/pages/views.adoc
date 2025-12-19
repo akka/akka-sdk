@@ -100,9 +100,9 @@ NOTE: Some `TableUpdater` implementation might update the view model in a non-id
 [#ve_delete]
 === Handling Key Value Entity deletes
 
-The View state corresponding to an Entity is not automatically deleted when the Entity is deleted.
+When an entity is deleted, its corresponding view row will be deleted automatically.
 
-We can update our table updater with an additional handler marked with `@DeleteHandler`, to handle a Key Value Entity xref:key-value-entities.adoc#deleting-state[delete] operation.
+If you want to customize this behavior, you can add a handler method marked with `@DeleteHandler` to your table updater. For example, instead of deleting the row, you can perform a logical deleted.
 
 [source,java,indent=0]
 .{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomerSummaryByName.java[CustomerSummaryByName.java]
@@ -111,7 +111,8 @@ include::example$key-value-customer-registry/src/main/java/customer/application/
 ----
 <1> Note we are adding a new handler to the existing table updater.
 <2> Marks the method as a delete handler.
-<3> An effect to delete the view row `effects().deleteRow()`. It could also be an update of a special column, to mark the view row as deleted.
+<3> Logical delete: use `effects().updateRow()` to keep the row but mark it as deleted by setting the `deleted` field to `true`.
+<4> Hard delete: use `effects().deleteRow()` to physically remove the row..
 
 [#event-sourced-entity]
 == Creating a View from an Event Sourced Entity
@@ -156,9 +157,9 @@ You can ignore events by returning `Effect.ignore` for those you are not interes
 [#es_delete]
 === Handling Event Sourced Entity deletes
 
-The View row corresponding to an Entity is not automatically deleted when the Entity is deleted.
+When an entity is deleted, its corresponding view row will be deleted automatically.
 
-To delete from the View you can use the `deleteRow()` effect from an event transformation method, similarly to the example shown above for a Key Value Entity.
+If you want to customize this behavior, you can add a handler method marked with `@DeleteHandler` to your table updater. For example, instead of deleting the row, you can perform a logical deleted.
 
 [#workflow]
 == Creating a View from a Workflow
