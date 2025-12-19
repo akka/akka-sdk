@@ -234,9 +234,21 @@ public class HttpEndpointTest extends TestKitSupport {
     var sseRouteTester = testKit.getSelfSseRouteTester();
     componentClient.forEventSourcedEntity("sse-one").method(CounterEntity::increase).invoke(1);
 
-    // another write comes in, we want it to have a different timestamp
-    Thread.sleep(10);
-    componentClient.forEventSourcedEntity("sse-two").method(CounterEntity::increase).invoke(2);
+    new Thread(
+            () -> {
+              // Another write comes in (while the view is streaming), for test coverage, we want it
+              // to have a different timestamp, and be picked up by a later view poll
+              try {
+                Thread.sleep(1000);
+                componentClient
+                    .forEventSourcedEntity("sse-two")
+                    .method(CounterEntity::increase)
+                    .invoke(2);
+              } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+              }
+            })
+        .start();
 
     var firstEvents =
         sseRouteTester.receiveFirstN("/serversentevents/sse-counters", 2, Duration.ofSeconds(5));
