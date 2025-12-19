@@ -122,13 +122,15 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
           "summarize"
         );
 
-        var tools = telemetryReader.getAgents(debugId);
-        assertThat(tools).containsOnly(
+        var agents = telemetryReader.getAgents(debugId);
+        assertThat(agents).containsOnly(
           "selector-agent",
           "planner-agent",
           "weather-agent",
           "activity-agent",
-          "summarizer-agent"
+          "summarizer-agent",
+          "toxicity-evaluator",
+          "summarization-evaluator"
         );
       });
 
@@ -171,7 +173,9 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
           "planner-agent",
           "weather-agent",
           "activity-agent",
-          "summarizer-agent"
+          "summarizer-agent",
+          "toxicity-evaluator",
+          "summarization-evaluator"
         );
       });
   }
