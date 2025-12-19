@@ -33,6 +33,7 @@ import akka.stream.javadsl.Source
 private[impl] object AbstractViewStreamMethodRef {
   val includeMetadataFlag = new SpiMetadataEntry("include-metadata", "true")
   val includeMetadataMetadata = new spi.SpiMetadata(Vector(includeMetadataFlag))
+  val StartingOffsetMetadataKey = "starting-offset"
 }
 
 /**
@@ -60,7 +61,11 @@ private[impl] trait AbstractViewStreamMethodRef {
             case Some(instant) =>
               new SpiMetadata(
                 Vector(
-                  new SpiMetadataEntry("starting-offset", instant.toString), // ISO-8601 instant
+                  new SpiMetadataEntry(
+                    StartingOffsetMetadataKey,
+                    // ISO-8601 instant, backdated one microsecond to not miss events in case there were multiple
+                    // entries with the same last-updated timestamp
+                    instant.minusNanos(1000).toString),
                   includeMetadataFlag))
             case None if includeMetadata => includeMetadataMetadata
             case None                    => SpiMetadata.empty

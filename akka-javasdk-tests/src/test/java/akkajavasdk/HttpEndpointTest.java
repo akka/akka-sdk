@@ -234,48 +234,60 @@ public class HttpEndpointTest extends TestKitSupport {
     var sseRouteTester = testKit.getSelfSseRouteTester();
     componentClient.forEventSourcedEntity("sse-one").method(CounterEntity::increase).invoke(1);
 
+    // another write comes in, we want it to have a different timestamp
+    Thread.sleep(10);
+    componentClient.forEventSourcedEntity("sse-two").method(CounterEntity::increase).invoke(2);
+
     var firstEvents =
-        sseRouteTester.receiveFirstN(
-            "/serversentevents/counterbyid/sse-one", 1, Duration.ofSeconds(5));
-    assertThat(firstEvents).hasSize(1);
-    var firstId = firstEvents.get(0).getId().get();
+        sseRouteTester.receiveFirstN("/serversentevents/sse-counters", 2, Duration.ofSeconds(5));
+    assertThat(firstEvents).hasSize(2);
     assertThat(firstEvents.get(0).getData())
         .isEqualTo(
             """
             {"id":"sse-one","latestEvent":"ValueIncreased[value=1]"}\
             """);
 
+    assertThat(firstEvents.get(1).getData())
+        .isEqualTo(
+            """
+            {"id":"sse-two","latestEvent":"ValueIncreased[value=2]"}\
+            """);
+    var lastIdFirstStream = firstEvents.get(1).getId().get();
+
     // only sees new updates, there are no new updates
     catchException(
         () -> {
           sseRouteTester.receiveNFromOffset(
-              "/serversentevents/counterbyid/sse-one", 1, firstId, Duration.ofMillis(200));
+              "/serversentevents/sse-counters", 1, lastIdFirstStream, Duration.ofMillis(200));
         });
 
-    componentClient.forEventSourcedEntity("sse-one").method(CounterEntity::increase).invoke(2);
+    // and then another update with yet another timestamp
+    Thread.sleep(10);
+    componentClient.forEventSourcedEntity("sse-one").method(CounterEntity::increase).invoke(3);
 
     // only sees new updates, now there is a new update
     var newEvents =
         sseRouteTester.receiveNFromOffset(
-            "/serversentevents/counterbyid/sse-one", 2, firstId, Duration.ofSeconds(5));
+            "/serversentevents/sse-counters", 2, lastIdFirstStream, Duration.ofSeconds(5));
     assertThat(newEvents).hasSize(2);
 
-    // we always get a duplicate, because offset is a timestamp, and there could have been multiple
-    // entries with the same timestamp, but the previous stream failed after seeing the first
+    // Note that we always get a duplicate, because offset is a timestamp, and there could have been
+    // multiple
+    // entries with the same timestamp, while the previous stream failed after seeing the first
     assertThat(newEvents.get(0).getData())
         .isEqualTo(
             """
-            {"id":"sse-one","latestEvent":"ValueIncreased[value=1]"}\
+            {"id":"sse-two","latestEvent":"ValueIncreased[value=2]"}\
             """);
 
     // the updated event
     assertThat(newEvents.get(1).getData())
         .isEqualTo(
             """
-            {"id":"sse-one","latestEvent":"ValueIncreased[value=2]"}\
+            {"id":"sse-one","latestEvent":"ValueIncreased[value=3]"}\
             """);
 
-    var firstInstant = Instant.parse(firstId);
+    var firstInstant = Instant.parse(lastIdFirstStream);
     var secondInstant = Instant.parse(newEvents.get(1).getId().get());
 
     assertThat(firstInstant).isBefore(secondInstant);

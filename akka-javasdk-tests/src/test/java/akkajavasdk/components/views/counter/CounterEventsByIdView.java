@@ -35,8 +35,8 @@ public class CounterEventsByIdView extends View {
     }
   }
 
-  @Query(value = "SELECT * FROM counters WHERE id = :counterId", streamUpdates = true)
-  public QueryStreamEffect<CounterEntry> streamCounterUpdatesFor(String counterId) {
+  @Query(value = "SELECT * FROM counters WHERE id LIKE 'sse-%'", streamUpdates = true)
+  public QueryStreamEffect<CounterEntry> streamSseCounterUpdates() {
     return queryStreamResult();
   }
 }

@@ -91,11 +91,11 @@ public class TestEndpoint extends AbstractHttpEndpoint {
     return HttpResponses.serverSentEvents(source, MyEvent::id, event -> "sometype");
   }
 
-  @Get("/serversentevents/counterbyid/{counterId}")
-  public HttpResponse sseStreamUpdates(String counterId) {
+  @Get("/serversentevents/sse-counters")
+  public HttpResponse sseStreamUpdates() {
     var stream =
-        componentClient.forView().stream(CounterEventsByIdView::streamCounterUpdatesFor)
-            .entriesSource(counterId, requestContext().lastSeenSseEventId().map(Instant::parse));
+        componentClient.forView().stream(CounterEventsByIdView::streamSseCounterUpdates)
+            .entriesSource(requestContext().lastSeenSseEventId().map(Instant::parse));
 
     return HttpResponses.serverSentEventsForView(stream);
   }
