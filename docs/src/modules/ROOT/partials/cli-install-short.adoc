@@ -4,11 +4,15 @@ NOTE: In case there is any trouble with installing the CLI when following these 
 Linux::
 +
 --
-Download and install the latest version of `akka`:
+Install the `akka` CLI using the Debian package repository:
+
 [source,bash]
-....
-curl -sL https://doc.akka.io/install-cli.sh | bash
-....
+----
+curl -1sLf \
+  'https://dl.cloudsmith.io/public/lightbend/public-akka/setup.deb.sh' \
+  | sudo -E bash
+sudo apt install akka
+----
 
 --
 macOS::
@@ -25,10 +29,12 @@ brew install akka/brew/akka
 Windows::
 +
 --
+Install the `akka` CLI using https://learn.microsoft.com/en-us/windows/package-manager/winget/[winget]:
 
-. Download the latest version of `akka` from https://downloads.akka.io/latest/akka_windows_amd64.zip[https://downloads.akka.io/latest/akka_windows_amd64.zip]
-
-. Extract the zip file and move `akka.exe` to a location on your `%PATH%`.
+[source,powershell]
+----
+winget install Akka.AkkaCli
+----
 
 --
 
