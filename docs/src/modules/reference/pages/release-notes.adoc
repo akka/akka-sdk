@@ -19,6 +19,10 @@ Current versions
 - option to wrap log lines in `akka local cluster`
 - fixed issue when shutting down a local cluster
 
+* https://github.com/akka/akka-sdk/releases/tag/v3.5.11[Akka SDK 3.5.11]
+- resumable SSE for streaming updates view queries
+- workflow global timeout and pause timeout configuration
+
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.10[Akka SDK 3.5.10]
 - image input support in Agents
 - Streaming HTTP endpoint improvements
