@@ -107,8 +107,10 @@ jobs:
           BRANCH=update-sdk-$sdk_version-$timestamp
           git checkout -b $BRANCH
           rm -rf ./src/*
+          ## debugging rsync
+          ls -l pom.xml ../docs/build/bundle/${{ matrix.sample }}/pom.xml
           if [ -f "../docs/build/bundle/${{ matrix.sample }}/pom.xml" ]; then cat ../docs/build/bundle/${{ matrix.sample }}/pom.xml; fi
-          rsync -av ../docs/build/bundle/${{ matrix.sample }}/ ./
+          rsync -avc ../docs/build/bundle/${{ matrix.sample }}/ ./
           rm -f .bundleignore
           
           if [ -n "$(git status --porcelain)" ]; then
