@@ -34,10 +34,15 @@ public class ActivityView extends View {
 
     public Effect<ActivityEntry> onStateChange(AgentTeamWorkflow.State state) {
       var sessionId = updateContext().eventSubject().get(); // the workflow id
-      return effects()
-        .updateRow(
-          new ActivityEntry(state.userId(), sessionId, state.userQuery(), state.finalAnswer())
-        );
+      var currentFinal = rowState() == null ? "" : rowState().finalAnswer;
+      if (currentFinal.equals(state.finalAnswer())) { // avoid updating the state if no relevant changes
+        return effects().ignore();
+      } else {
+        return effects()
+            .updateRow(
+                new ActivityEntry(state.userId(), sessionId, state.userQuery(), state.finalAnswer())
+            );
+      }
     }
 
     @DeleteHandler
