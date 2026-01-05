@@ -11,7 +11,12 @@ import customer.domain.Customer;
 @Component(id = "customer-summary-by-name")
 public class CustomerSummaryByName extends View {
 
-  public record CustomerSummary(String id, String name, boolean deleted, boolean hasActiveOrders) {
+  public record CustomerSummary(
+    String id,
+    String name,
+    boolean deleted,
+    boolean hasActiveOrders
+  ) {
     CustomerSummary(String id, String name, boolean hasActiveOrders) {
       this(id, name, false, hasActiveOrders);
     }
