@@ -72,8 +72,6 @@ public sealed interface SessionMessage {
     }
   }
 
-  String componentId();
-
   record UserMessage(Instant timestamp, String text, String componentId) implements SessionMessage {
 
     public UserMessage(Instant now, String text) {
