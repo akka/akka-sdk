@@ -7,7 +7,7 @@ RUN_ID=$1
 # Check if Run ID is provided
 if [ -z "$RUN_ID" ]; then
     echo "Error: Please provide a Run ID."
-    echo "Usage: ./collect_pr_links.sh 13446054522"
+    echo "Usage: ./.github/akka-sample-sdk-bump-prs.sh 13446054522"
     exit 1
 fi
 
