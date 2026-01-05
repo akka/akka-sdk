@@ -553,6 +553,11 @@ public class MyEndpointIntegrationTest extends TestKitSupport {
 - Omit `@Acl` on endpoints
 - Use `definition()` in Workflow → use `settings()` + step methods
 - Use string step names → use method references (`::`)
+- Create a `Main` class for bootstrapping → use a `Bootstrap` class that implements `ServiceSetup`
+- Inject `ComponentClient` into Entities → `ComponentClient` is only allowed in ServiceSetup, Endpoints, Agents, Consumers, TimedActions, and Workflows
+- Create empty command record classes without fields → causes serialization errors; if no fields needed, don't create an empty Command class
+- Return `null` in `emptyState()` or after delete commands → causes NullPointerExceptions; use an empty or deleted state in the state record instead
+- Perform side effects in `.thenReply()` in Entities → use a Consumer to react to events for side effects
 - Use deprecated `@ComponentId`  -> use `@Component(id = ")`
 - Use deprecated `@AgentDescription`  -> use `@Component(id = ")` and `@AgentRole`
 - Add `@Component` or `@ComponentId` to HTTP/gRPC endpoints
