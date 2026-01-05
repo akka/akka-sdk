@@ -29,7 +29,7 @@ You can see the Akka Runtime version on prod [on grafana](https://app.groundcove
 ### Update samples
 - [ ] Run https://github.com/akka/akka-sdk/actions/workflows/pr-akka-samples.yml from the release tag 
 - [ ] Merge auto-PRs in akka-samples https://github.com/orgs/akka-samples/repositories?q=sort%3Aname-asc
-  - Easiest is to use the PR links from "Open PR with changes" in https://github.com/akka/akka-sdk/actions/workflows/pr-akka-samples.yml
+  - Easiest is to use `.github/akka-sample-sdk-bump-prs.sh` script to collect all PR links or do it manually from "Open PR with changes" in https://github.com/akka/akka-sdk/actions/workflows/pr-akka-samples.yml
  
 ### Announcements
 
