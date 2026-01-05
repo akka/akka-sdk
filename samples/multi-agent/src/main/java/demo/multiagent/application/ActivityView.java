@@ -40,9 +40,14 @@ public class ActivityView extends View {
         return effects().ignore();
       } else {
         return effects()
-            .updateRow(
-                new ActivityEntry(state.userId(), sessionId, state.userQuery(), state.finalAnswer())
-            );
+          .updateRow(
+            new ActivityEntry(
+              state.userId(),
+              sessionId,
+              state.userQuery(),
+              state.finalAnswer()
+            )
+          );
       }
     }
 
