@@ -125,8 +125,10 @@ public abstract class TableUpdater<S> {
 
     interface Builder<S> {
 
+      /** Updates the state of view row. */
       Effect<S> updateRow(S newRow);
 
+      /** Deletes the view row. */
       Effect<S> deleteRow();
 
       /** Ignore this event (and continue to process the next). */

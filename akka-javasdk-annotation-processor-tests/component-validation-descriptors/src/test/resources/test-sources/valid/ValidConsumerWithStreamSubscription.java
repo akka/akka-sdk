@@ -11,4 +11,7 @@ public class ValidConsumerWithStreamSubscription extends Consumer {
   public Effect onMessage(String message) {
     return effects().done();
   }
+  public Effect onMessage2(Integer message) {
+    return effects().done();
+  }
 }

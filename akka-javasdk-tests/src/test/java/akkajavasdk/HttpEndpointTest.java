@@ -5,6 +5,7 @@
 package akkajavasdk;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchException;
 
 import akka.http.javadsl.Http;
 import akka.http.javadsl.model.ContentTypes;
@@ -14,10 +15,12 @@ import akka.http.javadsl.model.headers.RawHeader;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.stream.javadsl.Sink;
 import akka.util.ByteString;
+import akkajavasdk.components.eventsourcedentities.counter.CounterEntity;
 import akkajavasdk.components.http.ResourcesEndpoint;
 import akkajavasdk.components.http.TestEndpoint;
 import java.io.InputStream;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.OptionalLong;
@@ -224,5 +227,81 @@ public class HttpEndpointTest extends TestKitSupport {
     assertThat(reconnectEvents).hasSize(1);
     assertThat(reconnectEvents.get(0).getId().get())
         .isEqualTo("3"); // starts from the reported Last-Event-ID
+  }
+
+  @Test
+  public void shouldSupportResumableSseForViewStreamUpdates() throws InterruptedException {
+    var sseRouteTester = testKit.getSelfSseRouteTester();
+    componentClient.forEventSourcedEntity("sse-one").method(CounterEntity::increase).invoke(1);
+
+    new Thread(
+            () -> {
+              // Another write comes in (while the view is streaming), for test coverage, we want it
+              // to have a different timestamp, and be picked up by a later view poll
+              try {
+                Thread.sleep(1000);
+                componentClient
+                    .forEventSourcedEntity("sse-two")
+                    .method(CounterEntity::increase)
+                    .invoke(2);
+              } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+              }
+            })
+        .start();
+
+    var firstEvents =
+        sseRouteTester.receiveFirstN("/serversentevents/sse-counters", 2, Duration.ofSeconds(5));
+    assertThat(firstEvents).hasSize(2);
+    assertThat(firstEvents.get(0).getData())
+        .isEqualTo(
+            """
+            {"id":"sse-one","latestEvent":"ValueIncreased[value=1]"}\
+            """);
+
+    assertThat(firstEvents.get(1).getData())
+        .isEqualTo(
+            """
+            {"id":"sse-two","latestEvent":"ValueIncreased[value=2]"}\
+            """);
+    var lastIdFirstStream = firstEvents.get(1).getId().get();
+
+    // only sees new updates, there are no new updates
+    catchException(
+        () -> {
+          sseRouteTester.receiveNFromOffset(
+              "/serversentevents/sse-counters", 1, lastIdFirstStream, Duration.ofMillis(200));
+        });
+
+    // and then another update with yet another timestamp
+    Thread.sleep(10);
+    componentClient.forEventSourcedEntity("sse-one").method(CounterEntity::increase).invoke(3);
+
+    // only sees new updates, now there is a new update
+    var newEvents =
+        sseRouteTester.receiveNFromOffset(
+            "/serversentevents/sse-counters", 2, lastIdFirstStream, Duration.ofSeconds(5));
+    assertThat(newEvents).hasSize(2);
+
+    // Note that we always get a duplicate, because offset is a timestamp, and there could have been
+    // multiple
+    // entries with the same timestamp, while the previous stream failed after seeing the first
+    assertThat(newEvents.get(0).getData())
+        .isEqualTo(
+            """
+            {"id":"sse-two","latestEvent":"ValueIncreased[value=2]"}\
+            """);
+
+    // the updated event
+    assertThat(newEvents.get(1).getData())
+        .isEqualTo(
+            """
+            {"id":"sse-one","latestEvent":"ValueIncreased[value=3]"}\
+            """);
+
+    var firstInstant = Instant.parse(lastIdFirstStream);
+    var secondInstant = Instant.parse(newEvents.get(1).getId().get());
+
+    assertThat(firstInstant).isBefore(secondInstant);
   }
 }

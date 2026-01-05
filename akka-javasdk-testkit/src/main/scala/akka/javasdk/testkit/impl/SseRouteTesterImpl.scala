@@ -8,6 +8,7 @@ import java.time.Duration
 import java.util
 
 import scala.concurrent.Await
+import scala.concurrent.duration.DurationInt
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import scala.jdk.DurationConverters.JavaDurationOps
 
@@ -24,6 +25,7 @@ import akka.http.scaladsl.model.headers.Accept
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.unmarshalling.sse.EventStreamParser
 import akka.javasdk.testkit.SseRouteTester
+import akka.stream.SystemMaterializer
 import akka.stream.scaladsl.Sink
 
 /**
@@ -46,6 +48,13 @@ private[testkit] final class SseRouteTesterImpl(runtimeHost: String, runtimePort
         .singleRequest(
           HttpRequest(uri = url, method = HttpMethods.GET, headers = Seq(acceptHeader) ++ additionalHeaders)),
       timeout.toScala)
+
+    if (response.status.isFailure()) {
+      val strictBody =
+        Await.result(response.entity.toStrict(3.seconds)(SystemMaterializer(system).materializer), 4.seconds)
+      throw new RuntimeException(
+        s"SSE endpoint returned error ${response.status} for [$path]: ${strictBody.data.utf8String}")
+    }
 
     val futureSeq = response.entity.dataBytes
       .via(EventStreamParser.apply(16384, 16384))

@@ -133,7 +133,7 @@ NOTE: Endpoints are stateless and each request is served by a new Endpoint insta
 ----
 include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tags=endpoint-class;request-context]
 ----
-<1> Let your endpoint extend link:_attachments/api/akka/javasdk/http/AbstractHttpEndpoint.html[AbstractHttpEndpoint] to get access to the request specific `RequestContext` through `requestContext()`.
+<1> Let your endpoint extend link:{attachmentsdir}/api/akka/javasdk/http/AbstractHttpEndpoint.html[AbstractHttpEndpoint] to get access to the request specific `RequestContext` through `requestContext()`.
 
 You can access the current Principals through method `RequestContext.getPrincipals()`
 

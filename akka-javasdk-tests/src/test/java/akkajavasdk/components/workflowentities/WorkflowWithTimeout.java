@@ -4,8 +4,7 @@
 
 package akkajavasdk.components.workflowentities;
 
-import static java.time.Duration.ofMillis;
-
+import akka.Done;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
@@ -24,11 +23,9 @@ public class WorkflowWithTimeout extends Workflow<FailingCounterState> {
   @Override
   public WorkflowSettings settings() {
     return WorkflowSettings.builder()
-        .defaultStepTimeout(ofMillis(999))
+        .defaultStepTimeout(Duration.ofMillis(200))
+        .timeout(Duration.ofMillis(500), WorkflowWithTimeout::counterFailoverStep, 12345)
         .stepTimeout(WorkflowWithTimeout::counterStep, Duration.ofMillis(50))
-        .stepRecovery(
-            WorkflowWithTimeout::counterStep,
-            maxRetries(1).failoverTo(WorkflowWithTimeout::counterFailoverStep).withInput(3))
         .build();
   }
 
@@ -39,7 +36,7 @@ public class WorkflowWithTimeout extends Workflow<FailingCounterState> {
         .thenReply(new Message("workflow started"));
   }
 
-  private StepEffect counterStep() throws InterruptedException {
+  StepEffect counterStep() throws InterruptedException {
     Thread.sleep(1000); // force a delay to produce a timeout
     return stepEffects().thenEnd();
   }
@@ -51,6 +48,10 @@ public class WorkflowWithTimeout extends Workflow<FailingCounterState> {
         .invoke(num);
 
     return stepEffects().updateState(currentState().asFinished()).thenEnd();
+  }
+
+  public Effect<Done> test() {
+    return effects().end().thenReply(Done.done());
   }
 
   public Effect<FailingCounterState> get() {

@@ -1,5 +1,6 @@
 package com.example.transfer.application;
 
+import static akka.Done.done;
 import static com.example.transfer.domain.TransferState.TransferStatus.COMPENSATION_COMPLETED;
 import static com.example.transfer.domain.TransferState.TransferStatus.COMPLETED;
 import static com.example.transfer.domain.TransferState.TransferStatus.DEPOSIT_FAILED;
@@ -11,6 +12,7 @@ import static com.example.transfer.domain.TransferState.TransferStatus.WITHDRAW_
 import static java.time.Duration.ofHours;
 import static java.time.Duration.ofSeconds;
 
+import akka.Done;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
@@ -48,8 +50,9 @@ public class TransferWorkflow extends Workflow<TransferState> {
   public WorkflowSettings settings() {
     return WorkflowSettings.builder()
       // end::recover-strategy[]
-      .defaultStepTimeout(ofSeconds(2)) // <1>
-      .stepTimeout(TransferWorkflow::failoverHandlerStep, ofSeconds(1)) // <2>
+      .timeout(ofSeconds(10)) // <1>
+      .defaultStepTimeout(ofSeconds(2)) // <2>
+      .stepTimeout(TransferWorkflow::failoverHandlerStep, ofSeconds(1)) // <3>
       // end::step-timeout[]
       // tag::recover-strategy[]
       .defaultStepRecovery(maxRetries(1).failoverTo(TransferWorkflow::failoverHandlerStep)) // <1>
@@ -66,9 +69,6 @@ public class TransferWorkflow extends Workflow<TransferState> {
 
   private StepEffect withdrawStep(Withdraw withdraw) {
     logger.info("Running withdraw: {}", withdraw);
-
-    // cancelling the timer in case it was scheduled
-    timers().delete("acceptanceTimeout-" + currentState().transferId());
 
     WalletResult result = componentClient
       .forEventSourcedEntity(currentState().transfer().from())
@@ -147,18 +147,10 @@ public class TransferWorkflow extends Workflow<TransferState> {
 
   // tag::pausing[]
   private StepEffect waitForAcceptanceStep() {
-    String transferId = currentState().transferId();
-    timers()
-      .createSingleTimer(
-        "acceptanceTimeout-" + transferId,
-        ofHours(8),
-        componentClient
-          .forWorkflow(transferId)
-          .method(TransferWorkflow::acceptanceTimeout)
-          .deferred()
-      ); // <1>
-
-    return stepEffects().thenPause(); // <2>
+    return stepEffects()
+      .thenPause( // <1>
+        pauseSetting(ofHours(8)).timeoutHandler(TransferWorkflow::acceptanceTimeout) // <2>
+      );
   }
 
   // end::pausing[]
@@ -241,17 +233,17 @@ public class TransferWorkflow extends Workflow<TransferState> {
     }
   }
 
-  public Effect<String> acceptanceTimeout() {
+  public Effect<Done> acceptanceTimeout() {
     if (currentState() == null) {
       return effects().error("transfer not started");
     } else if (currentState().status() == WAITING_FOR_ACCEPTANCE) {
       return effects()
         .updateState(currentState().withStatus(TRANSFER_ACCEPTANCE_TIMED_OUT))
         .end()
-        .thenReply("timed out");
+        .thenReply(done());
     } else {
       logger.info("Ignoring acceptance timeout for status: " + currentState().status());
-      return effects().reply("Ok");
+      return effects().reply(done());
     }
   }
 

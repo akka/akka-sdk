@@ -105,20 +105,22 @@
                 // Handle incoming messages
                 eventSource.onmessage = function(event) {
                     // Parse the JSON data
-                    const customer = JSON.parse(event.data);
+                    if (event.data) {
+                        const customer = JSON.parse(event.data);
 
-                    // Add customer to the table
-                    addCustomerToTable(customer);
+                        // Add customer to the table
+                        addCustomerToTable(customer);
 
-                    // Update status
-                    statusDiv.textContent = `Connected! Last update: ${new Date().toLocaleTimeString()}`;
+                        // Update status
+                        statusDiv.textContent = `Connected! Last update: ${new Date().toLocaleTimeString()}`;
+                    }
                 };
 
                 // Handle errors
                 eventSource.onerror = function(error) {
-                    statusDiv.textContent = 'Error connecting to the server. Check if the server is running.';
+                    statusDiv.textContent = 'No connection to the server. Check if the server is running. Will reconnect automatically.';
                     statusDiv.className = 'disconnected';
-                    eventSource.close();
+                    // eventSource.close();
                 };
             }
 

@@ -8,6 +8,7 @@ import static akkajavasdk.components.workflowentities.TransferConsumer.TRANSFER_
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import akka.actor.testkit.typed.javadsl.LoggingTestKit;
 import akka.javasdk.CommandException;
 import akka.javasdk.testkit.TestKitSupport;
 import akkajavasdk.components.MyException;
@@ -21,6 +22,10 @@ import akkajavasdk.components.workflowentities.TransferState;
 import akkajavasdk.components.workflowentities.TransferWorkflow;
 import akkajavasdk.components.workflowentities.TransferWorkflowWithFraudDetection;
 import akkajavasdk.components.workflowentities.WalletEntity;
+import akkajavasdk.components.workflowentities.WorkflowCallingOtherWorkflowCommandHandler;
+import akkajavasdk.components.workflowentities.WorkflowCallingOtherWorkflowStep;
+import akkajavasdk.components.workflowentities.WorkflowSettingCallingOtherWorkflowStep;
+import akkajavasdk.components.workflowentities.WorkflowTimeoutSettingCallingOtherWorkflowStep;
 import akkajavasdk.components.workflowentities.WorkflowWithDefaultRecoverStrategy;
 import akkajavasdk.components.workflowentities.WorkflowWithRecoverStrategy;
 import akkajavasdk.components.workflowentities.WorkflowWithStepTimeout;
@@ -34,6 +39,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import kalix.runtime.CorrelatedRuntimeException;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -44,8 +50,8 @@ public class WorkflowTest extends TestKitSupport {
 
   @Test
   public void shouldNotStartTransferForWithNegativeAmount() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     createWallet(walletId1, 100);
     createWallet(walletId2, 100);
     var transferId = randomTransferId();
@@ -62,8 +68,8 @@ public class WorkflowTest extends TestKitSupport {
 
   @Test
   public void shouldTransferMoneyAndDelete() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     createWallet(walletId1, 100);
     createWallet(walletId2, 100);
     var transferId = randomTransferId();
@@ -104,6 +110,16 @@ public class WorkflowTest extends TestKitSupport {
               assertThat(lastStep).isEqualTo("logAndStop");
             });
 
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(5, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              List<String> workflowSteps =
+                  telemetryReader.getWorkflowSteps(TransferWorkflow.class, transferId);
+              assertThat(workflowSteps).containsOnly("withdraw-step", "deposit-step", "logAndStop");
+            });
+
     var isDeleted =
         componentClient.forWorkflow(transferId).method(TransferWorkflow::hasBeenDeleted).invoke();
     assertThat(isDeleted).isFalse();
@@ -117,8 +133,8 @@ public class WorkflowTest extends TestKitSupport {
 
   @Test
   public void shouldUpdateAndDelete() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     var transferId = randomTransferId();
     var transfer = new Transfer(walletId1, walletId2, 10);
 
@@ -134,8 +150,8 @@ public class WorkflowTest extends TestKitSupport {
 
   @Test
   public void shouldVerifyWorkflowSubscriptions() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     createWallet(walletId1, 100);
     createWallet(walletId2, 100);
     var transferId1 = randomTransferId();
@@ -191,8 +207,8 @@ public class WorkflowTest extends TestKitSupport {
 
   @Test
   public void shouldTransferMoneyWithoutStepInputs() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     createWallet(walletId1, 100);
     createWallet(walletId2, 100);
     var transferId = randomTransferId();
@@ -221,8 +237,8 @@ public class WorkflowTest extends TestKitSupport {
 
   @Test
   public void shouldTransferAsyncMoneyWithoutStepInputs() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     createWallet(walletId1, 100);
     createWallet(walletId2, 100);
     var transferId = randomTransferId();
@@ -251,8 +267,8 @@ public class WorkflowTest extends TestKitSupport {
 
   @Test
   public void shouldTransferMoneyWithFraudDetection() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     createWallet(walletId1, 100);
     createWallet(walletId2, 100);
     var transferId = randomTransferId();
@@ -280,9 +296,10 @@ public class WorkflowTest extends TestKitSupport {
   }
 
   @Test
-  public void shouldTransferMoneyWithFraudDetectionAndManualAcceptance() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+  public void shouldTransferMoneyWithFraudDetectionAndManualAcceptance()
+      throws InterruptedException {
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     createWallet(walletId1, 100000);
     createWallet(walletId2, 100000);
     var transferId = randomTransferId();
@@ -312,6 +329,16 @@ public class WorkflowTest extends TestKitSupport {
             });
 
     Awaitility.await()
+        .atMost(10, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              List<String> workflowSteps =
+                  telemetryReader.getWorkflowSteps(
+                      TransferWorkflowWithFraudDetection.class, transferId);
+              assertThat(workflowSteps).containsOnly("detectFraud");
+            });
+
+    Awaitility.await()
         .ignoreExceptions()
         .atMost(20, TimeUnit.of(SECONDS))
         .untilAsserted(
@@ -336,12 +363,24 @@ public class WorkflowTest extends TestKitSupport {
               assertThat(balance1).isEqualTo(99000);
               assertThat(balance2).isEqualTo(101000);
             });
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(20, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              List<String> workflowStepsAfterAcceptation =
+                  telemetryReader.getWorkflowSteps(
+                      TransferWorkflowWithFraudDetection.class, transferId);
+              assertThat(workflowStepsAfterAcceptation)
+                  .containsOnly("detectFraud", "withdraw", "deposit");
+            });
   }
 
   @Test
   public void shouldNotTransferMoneyWhenFraudDetectionRejectTransfer() {
-    var walletId1 = "1";
-    var walletId2 = "2";
+    var walletId1 = randomId();
+    var walletId2 = randomId();
     createWallet(walletId1, 100);
     createWallet(walletId2, 100);
     var transferId = randomTransferId();
@@ -520,7 +559,7 @@ public class WorkflowTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               Integer counterValue = getFailingCounterValue(counterId);
-              assertThat(counterValue).isEqualTo(3);
+              assertThat(counterValue).isEqualTo(12345);
             });
 
     Awaitility.await()
@@ -562,6 +601,38 @@ public class WorkflowTest extends TestKitSupport {
                       .invoke();
 
               assertThat(state.value()).isEqualTo(2);
+              assertThat(state.finished()).isTrue();
+            });
+  }
+
+  @Test
+  public void shouldRecoverWorkflowPauseTimeout() {
+    // given
+    var counterId = randomId();
+    var workflowId = randomId();
+
+    // when
+    Message response =
+        componentClient
+            .forWorkflow(workflowId)
+            .method(WorkflowWithStepTimeout::startPausedCounter)
+            .invoke(counterId);
+
+    assertThat(response.text()).isEqualTo("workflow started");
+
+    // then
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(20, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              var state =
+                  componentClient
+                      .forWorkflow(workflowId)
+                      .method(WorkflowWithStepTimeout::get)
+                      .invoke();
+
+              assertThat(state.value()).isEqualTo(1234);
               assertThat(state.finished()).isTrue();
             });
   }
@@ -693,6 +764,83 @@ public class WorkflowTest extends TestKitSupport {
   }
 
   @Test
+  public void failWhenCallingOtherWorkflowStep() {
+
+    var exc1 =
+        Assertions.assertThrows(
+            CorrelatedRuntimeException.class,
+            () ->
+                componentClient
+                    .forWorkflow(randomId())
+                    .method(WorkflowCallingOtherWorkflowStep::start)
+                    .invoke());
+
+    assertThat(exc1.getMessage())
+        .contains(
+            "Workflow [akkajavasdk.components.workflowentities.WorkflowCallingOtherWorkflowStep]"
+                + " calls step [counterStep] from another class"
+                + " [akkajavasdk.components.workflowentities.WorkflowWithTimeout], which is not"
+                + " allowed.");
+  }
+
+  @Test
+  public void failWhenWorkflowTimeoutSettingCallingOtherWorkflowStep() {
+
+    LoggingTestKit.error(
+            "Workflow"
+                + " [akkajavasdk.components.workflowentities.WorkflowTimeoutSettingCallingOtherWorkflowStep]"
+                + " settings refers to step [counterStep] from another class"
+                + " [akkajavasdk.components.workflowentities.WorkflowWithTimeout], which is not"
+                + " allowed.")
+        .expect(
+            testKit.getActorSystem(),
+            () ->
+                componentClient
+                    .forWorkflow(randomId())
+                    .method(WorkflowTimeoutSettingCallingOtherWorkflowStep::start)
+                    .invokeAsync());
+  }
+
+  @Test
+  public void failWhenWorkflowStepSettingCallingOtherWorkflowStep() {
+
+    LoggingTestKit.error(
+            "Workflow"
+                + " [akkajavasdk.components.workflowentities.WorkflowSettingCallingOtherWorkflowStep]"
+                + " settings refers to step [counterStep] from another class"
+                + " [akkajavasdk.components.workflowentities.WorkflowWithTimeout], which is not"
+                + " allowed.")
+        .expect(
+            testKit.getActorSystem(),
+            () ->
+                componentClient
+                    .forWorkflow(randomId())
+                    .method(WorkflowSettingCallingOtherWorkflowStep::start)
+                    .invokeAsync());
+  }
+
+  @Test
+  public void failWhenCallingOtherWorkflowCommandHandler() {
+
+    var exc1 =
+        Assertions.assertThrows(
+            CorrelatedRuntimeException.class,
+            () ->
+                componentClient
+                    .forWorkflow(randomId())
+                    .method(WorkflowCallingOtherWorkflowCommandHandler::start)
+                    .invoke());
+
+    assertThat(exc1.getMessage())
+        .contains(
+            "Workflow"
+                + " [akkajavasdk.components.workflowentities.WorkflowCallingOtherWorkflowCommandHandler]"
+                + " calls command handler [test] from another class"
+                + " [akkajavasdk.components.workflowentities.WorkflowWithTimeout], which is not"
+                + " allowed.");
+  }
+
+  @Test
   public void shouldTestExceptions() {
     var exc1 =
         Assertions.assertThrows(
@@ -748,7 +896,9 @@ public class WorkflowTest extends TestKitSupport {
                     .invoke("throwRuntimeException"));
 
     assertThat(exc5.getMessage())
-        .contains("Unexpected failure: java.lang.RuntimeException: throwRuntimeException");
+        .contains(
+            "exception while processing [Run]: unexpected failure: java.lang.RuntimeException:"
+                + " throwRuntimeException");
   }
 
   private String randomTransferId() {

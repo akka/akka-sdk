@@ -4,6 +4,9 @@
 
 package akka.javasdk.impl.workflow
 
+import scala.concurrent.duration.FiniteDuration
+import scala.jdk.DurationConverters.JavaDurationOps
+
 import akka.annotation.InternalApi
 import akka.japi.function
 import akka.japi.function.Function
@@ -16,7 +19,10 @@ import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.Persistence
 import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.ReadOnlyEffectImpl
 import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.Reply
 import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowEffectImpl.TransitionalEffectImpl
+import akka.javasdk.impl.workflow.WorkflowEffects.WorkflowStepEffectImpl.toPauseStepEffect
 import akka.javasdk.workflow.Workflow
+import akka.javasdk.workflow.Workflow.CommandHandler.NoArgCommandHandler
+import akka.javasdk.workflow.Workflow.CommandHandler.OneArgCommandHandler
 import akka.javasdk.workflow.Workflow.Effect
 import akka.javasdk.workflow.Workflow.Effect.PersistenceEffectBuilder
 import akka.javasdk.workflow.Workflow.Effect.Transitional
@@ -31,25 +37,57 @@ import akka.javasdk.workflow.Workflow.WithInput
 object WorkflowEffects {
   sealed trait Transition
 
-  case class StepTransition[I](stepName: String, input: Option[I]) extends Transition
+  case class StepTransition[I](stepName: String, input: Option[I], workflowClass: Option[Class[_]]) extends Transition
 
-  object Pause extends Transition
+  sealed trait CommandHandler
+  case class UnaryCommandHandler(handler: akka.japi.function.Function[_, Effect[_]]) extends CommandHandler
+  case class BinaryCommandHandler(handler: akka.japi.function.Function2[_, _, Effect[_]], input: Any)
+      extends CommandHandler
+
+  case class PauseSettings(duration: FiniteDuration, timeoutHandler: CommandHandler)
+
+  case class PauseTransition(reason: Option[String], pauseSettings: Option[PauseSettings] = None) extends Transition
+  object PauseTransition {
+    val noReason: PauseTransition = PauseTransition(None)
+    def withReason(reason: String): PauseTransition = PauseTransition(Some(reason))
+  }
 
   object NoTransition extends Transition
 
-  object End extends Transition
+  case class EndTransition(reason: Option[String]) extends Transition
+  object EndTransition {
+    def noReason: EndTransition = EndTransition(None)
+    def withReason(reason: String): EndTransition = EndTransition(Some(reason))
+  }
 
-  object Delete extends Transition
-
+  case class DeleteTransition(reason: Option[String]) extends Transition
+  object DeleteTransition {
+    def noReason: DeleteTransition = DeleteTransition(None)
+    def withReason(reason: String): DeleteTransition = DeleteTransition(Some(reason))
+  }
   sealed trait Persistence[+S]
 
   final case class UpdateState[S](newState: S) extends Persistence[S]
 
   case object NoPersistence extends Persistence[Nothing]
 
-  def createEffectBuilder[S](): WorkflowEffectImpl[S, S] = WorkflowEffectImpl(NoPersistence, Pause, NoReply)
+  def createEffectBuilder[S](): WorkflowEffectImpl[S, S] =
+    WorkflowEffectImpl(NoPersistence, PauseTransition(None), NoReply)
 
-  def createStepEffectBuilder[S](): WorkflowStepEffectImpl[S] = WorkflowStepEffectImpl(NoPersistence, Pause)
+  def createStepEffectBuilder[S](): WorkflowStepEffectImpl[S] =
+    WorkflowStepEffectImpl(NoPersistence, PauseTransition(None))
+
+  private def validateReason(reason: String): Unit =
+    require(reason != null && reason.nonEmpty, "Given reason must not be null or empty")
+
+  private def toTimeoutHandler(handler: Workflow.CommandHandler) = {
+    handler match {
+      case handler: NoArgCommandHandler =>
+        UnaryCommandHandler(handler.handler())
+      case handler: OneArgCommandHandler =>
+        BinaryCommandHandler(handler.handler(), handler.input())
+    }
+  }
 
   /**
    * INTERNAL API
@@ -66,30 +104,55 @@ object WorkflowEffects {
       override def transitionTo[W](lambda: Function[W, Workflow.StepEffect]): Transitional = {
         val method = MethodRefResolver.resolveMethodRef(lambda)
         val stepName = WorkflowDescriptor.stepMethodName(method)
-        TransitionalEffectImpl(persistence, StepTransition(stepName, None))
+        TransitionalEffectImpl(persistence, StepTransition(stepName, None, Some(method.getDeclaringClass)))
       }
 
       override def transitionTo[W, I](
           lambda: function.Function2[W, I, Workflow.StepEffect]): WithInput[I, Transitional] = {
         val method = MethodRefResolver.resolveMethodRef(lambda)
         val stepName = WorkflowDescriptor.stepMethodName(method)
-        EffectCallWithInputImpl(persistence, stepName)
+        EffectCallWithInputImpl(persistence, stepName, method.getDeclaringClass)
       }
 
       override def pause(): Transitional =
-        TransitionalEffectImpl(persistence, Pause)
+        TransitionalEffectImpl(persistence, PauseTransition.noReason)
+
+      override def pause(reason: String): Transitional = {
+        validateReason(reason)
+        TransitionalEffectImpl(persistence, PauseTransition.withReason(reason))
+      }
+
+      override def pause(pauseSettings: Workflow.PauseSettings): Transitional = {
+        TransitionalEffectImpl(
+          persistence,
+          PauseTransition(
+            None,
+            Some(
+              WorkflowEffects
+                .PauseSettings(pauseSettings.timeout().toScala, toTimeoutHandler(pauseSettings.timeoutHandler())))))
+      }
 
       override def end(): Transitional =
-        TransitionalEffectImpl(persistence, End)
+        TransitionalEffectImpl(persistence, EndTransition.noReason)
+
+      override def end(reason: String): Transitional = {
+        validateReason(reason)
+        TransitionalEffectImpl(persistence, EndTransition.withReason(reason))
+      }
 
       override def delete(): Transitional =
-        TransitionalEffectImpl(persistence, Delete)
+        TransitionalEffectImpl(persistence, DeleteTransition.noReason)
+
+      override def delete(reason: String): Transitional = {
+        validateReason(reason)
+        TransitionalEffectImpl(persistence, DeleteTransition.withReason(reason))
+      }
 
       override def transitionTo[I](stepName: String, input: I): Transitional =
-        TransitionalEffectImpl(persistence, StepTransition(stepName, Some(input)))
+        TransitionalEffectImpl(persistence, StepTransition(stepName, Some(input), None))
 
       override def transitionTo(stepName: String): Transitional =
-        TransitionalEffectImpl(persistence, StepTransition(stepName, None))
+        TransitionalEffectImpl(persistence, StepTransition(stepName, None, None))
 
     }
 
@@ -130,19 +193,44 @@ object WorkflowEffects {
       PersistenceEffectBuilderImpl(UpdateState(newState))
 
     override def pause(): Transitional =
-      TransitionalEffectImpl(NoPersistence, Pause)
+      TransitionalEffectImpl(NoPersistence, PauseTransition.noReason)
+
+    override def pause(reason: String): Transitional = {
+      validateReason(reason)
+      TransitionalEffectImpl(NoPersistence, PauseTransition.withReason(reason))
+    }
+
+    override def pause(pauseSettings: Workflow.PauseSettings): Transitional = {
+      TransitionalEffectImpl(
+        persistence,
+        PauseTransition(
+          None,
+          Some(
+            WorkflowEffects
+              .PauseSettings(pauseSettings.timeout().toScala, toTimeoutHandler(pauseSettings.timeoutHandler())))))
+    }
 
     override def transitionTo[I](stepName: String, input: I): Transitional =
-      TransitionalEffectImpl(NoPersistence, StepTransition(stepName, Some(input)))
+      TransitionalEffectImpl(NoPersistence, StepTransition(stepName, Some(input), None))
 
     override def transitionTo(stepName: String): Transitional =
-      TransitionalEffectImpl(NoPersistence, StepTransition(stepName, None))
+      TransitionalEffectImpl(NoPersistence, StepTransition(stepName, None, None))
 
     override def end(): Transitional =
-      TransitionalEffectImpl(NoPersistence, End)
+      TransitionalEffectImpl(NoPersistence, EndTransition.noReason)
+
+    override def end(reason: String): Transitional = {
+      validateReason(reason)
+      TransitionalEffectImpl(NoPersistence, EndTransition.withReason(reason))
+    }
 
     override def delete(): Transitional =
-      TransitionalEffectImpl(NoPersistence, Delete)
+      TransitionalEffectImpl(NoPersistence, DeleteTransition.noReason)
+
+    override def delete(reason: String): Transitional = {
+      validateReason(reason)
+      TransitionalEffectImpl(NoPersistence, DeleteTransition.withReason(reason))
+    }
 
     override def reply[R](reply: R): ReadOnlyEffect[R] =
       ReadOnlyEffectImpl().reply(reply)
@@ -153,14 +241,14 @@ object WorkflowEffects {
     override def transitionTo[W](lambda: Function[W, Workflow.StepEffect]): Transitional = {
       val method = MethodRefResolver.resolveMethodRef(lambda)
       val stepName = WorkflowDescriptor.stepMethodName(method)
-      TransitionalEffectImpl(persistence, StepTransition(stepName, None))
+      TransitionalEffectImpl(persistence, StepTransition(stepName, None, Some(method.getDeclaringClass)))
     }
 
     override def transitionTo[W, I](
         lambda: function.Function2[W, I, Workflow.StepEffect]): WithInput[I, Transitional] = {
       val method = MethodRefResolver.resolveMethodRef(lambda)
       val stepName = WorkflowDescriptor.stepMethodName(method)
-      EffectCallWithInputImpl(NoPersistence, stepName)
+      EffectCallWithInputImpl(NoPersistence, stepName, method.getDeclaringClass)
     }
 
     override def error[R](description: String): ReadOnlyEffect[R] =
@@ -168,12 +256,16 @@ object WorkflowEffects {
 
     override def error[R](commandException: CommandException): ReadOnlyEffect[R] =
       ErrorEffectImpl(commandException.getMessage, Some(commandException))
+
   }
 
-  private final case class EffectCallWithInputImpl[I, S](persistence: Persistence[S], stepName: String)
+  private final case class EffectCallWithInputImpl[I, S](
+      persistence: Persistence[S],
+      stepName: String,
+      workflowClass: Class[_])
       extends WithInput[I, Transitional] {
     override def withInput(input: I): Transitional =
-      TransitionalEffectImpl(persistence, StepTransition(stepName, Some(input)))
+      TransitionalEffectImpl(persistence, StepTransition(stepName, Some(input), Some(workflowClass)))
   }
 
   /**
@@ -188,23 +280,51 @@ object WorkflowEffects {
       def thenTransitionTo[W](lambda: Function[W, Workflow.StepEffect]): Workflow.StepEffect = {
         val method = MethodRefResolver.resolveMethodRef(lambda)
         val stepName = WorkflowDescriptor.stepMethodName(method)
-        WorkflowStepEffectImpl(persistence, StepTransition(stepName, None))
+        WorkflowStepEffectImpl(persistence, StepTransition(stepName, None, Some(method.getDeclaringClass)))
       }
       override def thenTransitionTo[W, I](lambda: function.Function2[W, I, StepEffect]): WithInput[I, StepEffect] = {
         val method = MethodRefResolver.resolveMethodRef(lambda)
         val stepName = WorkflowDescriptor.stepMethodName(method)
-        StepEffectCallWithInputImpl(persistence, stepName)
+        StepEffectCallWithInputImpl(persistence, stepName, method.getDeclaringClass)
       }
 
       override def thenPause(): StepEffect =
-        WorkflowStepEffectImpl(persistence, Pause)
+        WorkflowStepEffectImpl(persistence, PauseTransition.noReason)
+
+      override def thenPause(reason: String): StepEffect = {
+        validateReason(reason)
+        WorkflowStepEffectImpl(persistence, PauseTransition.withReason(reason))
+      }
+
+      override def thenPause(pauseSettings: Workflow.PauseSettings): StepEffect = {
+        toPauseStepEffect(persistence, pauseSettings)
+      }
 
       override def thenDelete(): StepEffect =
-        WorkflowStepEffectImpl(persistence, Delete)
+        WorkflowStepEffectImpl(persistence, DeleteTransition.noReason)
+
+      override def thenDelete(reason: String): StepEffect = {
+        validateReason(reason)
+        WorkflowStepEffectImpl(persistence, DeleteTransition.withReason(reason))
+      }
 
       override def thenEnd(): StepEffect =
-        WorkflowStepEffectImpl(persistence, End)
+        WorkflowStepEffectImpl(persistence, EndTransition.noReason)
 
+      override def thenEnd(reason: String): StepEffect = {
+        validateReason(reason)
+        WorkflowStepEffectImpl(persistence, EndTransition.withReason(reason))
+      }
+    }
+
+    private def toPauseStepEffect[S](persistence: Persistence[S], pauseSettings: Workflow.PauseSettings) = {
+      WorkflowStepEffectImpl(
+        persistence,
+        PauseTransition(
+          None,
+          Some(
+            WorkflowEffects
+              .PauseSettings(pauseSettings.timeout().toScala, toTimeoutHandler(pauseSettings.timeoutHandler())))))
     }
   }
 
@@ -220,30 +340,53 @@ object WorkflowEffects {
       WorkflowStepEffectImpl.PersistenceEffectBuilderImpl(UpdateState(newState))
 
     override def thenPause(): StepEffect =
-      WorkflowStepEffectImpl(NoPersistence, Pause)
+      WorkflowStepEffectImpl(NoPersistence, PauseTransition.noReason)
+
+    override def thenPause(reason: String): StepEffect = {
+      validateReason(reason)
+      WorkflowStepEffectImpl(NoPersistence, PauseTransition.withReason(reason))
+    }
+
+    override def thenPause(pauseSettings: Workflow.PauseSettings): StepEffect = {
+      toPauseStepEffect(persistence, pauseSettings)
+    }
 
     def thenTransitionTo[W](lambda: Function[W, Workflow.StepEffect]): Workflow.StepEffect = {
       val method = MethodRefResolver.resolveMethodRef(lambda)
       val stepName = WorkflowDescriptor.stepMethodName(method)
-      WorkflowStepEffectImpl(persistence, StepTransition(stepName, None))
+      WorkflowStepEffectImpl(persistence, StepTransition(stepName, None, Some(method.getDeclaringClass)))
     }
 
     override def thenTransitionTo[W, I](lambda: function.Function2[W, I, StepEffect]): WithInput[I, StepEffect] = {
       val method = MethodRefResolver.resolveMethodRef(lambda)
       val stepName = WorkflowDescriptor.stepMethodName(method)
-      StepEffectCallWithInputImpl(persistence, stepName)
+      StepEffectCallWithInputImpl(persistence, stepName, method.getDeclaringClass)
     }
 
     override def thenEnd(): StepEffect =
-      WorkflowStepEffectImpl(NoPersistence, End)
+      WorkflowStepEffectImpl(NoPersistence, EndTransition.noReason)
+
+    override def thenEnd(reason: String): StepEffect = {
+      validateReason(reason)
+      WorkflowStepEffectImpl(NoPersistence, EndTransition.withReason(reason))
+    }
 
     override def thenDelete(): StepEffect =
-      WorkflowStepEffectImpl(NoPersistence, Delete)
+      WorkflowStepEffectImpl(NoPersistence, DeleteTransition.noReason)
+
+    override def thenDelete(reason: String): StepEffect = {
+      validateReason(reason)
+      WorkflowStepEffectImpl(NoPersistence, DeleteTransition.withReason(reason))
+    }
+
   }
 
-  private final case class StepEffectCallWithInputImpl[I, S](persistence: Persistence[S], stepName: String)
+  private final case class StepEffectCallWithInputImpl[I, S](
+      persistence: Persistence[S],
+      stepName: String,
+      workflowClass: Class[_])
       extends WithInput[I, StepEffect] {
     def withInput(input: I): StepEffect =
-      WorkflowStepEffectImpl(persistence, StepTransition(stepName, Some(input)))
+      WorkflowStepEffectImpl(persistence, StepTransition(stepName, Some(input), Some(workflowClass)))
   }
 }

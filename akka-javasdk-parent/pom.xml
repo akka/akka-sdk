@@ -70,8 +70,8 @@
         <akka-runtime.version>REPLACED_BY_BUILD</akka-runtime.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <skip.docker>false</skip.docker>
         <skip.deploy>true</skip.deploy>
+        <non-akka-service>false</non-akka-service>
 
         <!-- plugin versions -->
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
@@ -128,7 +128,7 @@
                     <artifactId>docker-maven-plugin</artifactId>
                     <version>${docker-maven-plugin.version}</version>
                     <configuration>
-                        <skip>${skip.docker}</skip>
+                        <skip>${non-akka-service}</skip>
                         <images>
                             <image>
                                 <name>${docker.image}:%l</name>
@@ -352,6 +352,7 @@
                     <artifactId>exec-maven-plugin</artifactId>
                     <version>3.4.1</version>
                     <configuration>
+                        <skip>${non-akka-service}</skip>
                         <mainClass>kalix.runtime.AkkaRuntimeMain</mainClass>
                         <cleanupDaemonThreads>false</cleanupDaemonThreads>
                         <systemProperties>
@@ -606,7 +607,7 @@
                             <artifactId>docker-maven-plugin</artifactId>
                             <version>${docker-maven-plugin.version}</version>
                             <configuration combine.self="override">
-                                <skip>${skip.docker}</skip>
+                                <skip>${non-akka-service}</skip>
                                 <images>
                                     <image>
                                         <name>${docker.image}:%l</name>
@@ -649,6 +650,21 @@
                     </plugins>
                 </pluginManagement>
             </build>
+        </profile>
+        <profile>
+            <id>pom-packaging</id>
+            <activation>
+                <file>
+                    <!--
+                    POMs without a source directory are typically a pom aggregator
+                     for those projects we can skip docker and run configuration
+                    -->
+                    <missing>src</missing>
+                </file>
+            </activation>
+            <properties>
+                <non-akka-service>true</non-akka-service>
+            </properties>
         </profile>
     </profiles>
 

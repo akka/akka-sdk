@@ -44,7 +44,7 @@ include::example$doc-snippets/src/main/java/com/example/application/MyAgentMore.
 
 == Different memory providers
 
-The link:_attachments/api/akka/javasdk/agent/MemoryProvider.html[`MemoryProvider`] interface allows you to control how session memory behaves:
+The link:{attachmentsdir}/api/akka/javasdk/agent/MemoryProvider.html[`MemoryProvider`] interface allows you to control how session memory behaves:
 
 * `MemoryProvider.none()` - Disables both reading from and writing to session memory
 * `MemoryProvider.limitedWindow()` - Configures memory with options to, e.g.:
@@ -56,7 +56,7 @@ The link:_attachments/api/akka/javasdk/agent/MemoryProvider.html[`MemoryProvider
 
 === Filtering memory
 
-In multi-agent scenarios, you may want to control which messages from the session history are visible to specific agents. The link:_attachments/api/akka/javasdk/agent/MemoryFilter.html[`MemoryFilter`] API allows you to filter messages based on the agent component ID or role that produced them.
+In multi-agent scenarios, you may want to control which messages from the session history are visible to specific agents. The link:{attachmentsdir}/api/akka/javasdk/agent/MemoryFilter.html[`MemoryFilter`] API allows you to filter messages based on the agent component ID or role that produced them.
 
 The `MemoryFilter` API uses a fluent builder pattern that allows you to chain multiple filters together. When multiple filters are chained, filters of the same type are automatically merged together. The merged filters are then applied in the order that each filter type first appears in the chain, with each filter type operating on the result of the previous filter type.
 

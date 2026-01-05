@@ -28,13 +28,13 @@ public interface ViewClient {
       Function2<T, A1, View.QueryEffect<R>> methodRef);
 
   /** Pass in a View query method reference, e.g. {@code UserByCity::findAllInCity} */
-  <T, R> ComponentStreamMethodRef<R> stream(Function<T, View.QueryStreamEffect<R>> methodRef);
+  <T, R> ViewStreamMethodRef<R> stream(Function<T, View.QueryStreamEffect<R>> methodRef);
 
   /**
    * Pass in a View query method reference, e.g. {@code UserByCity::findAllInCity}
    *
    * @param <A1> the type of parameter expected by the call
    */
-  <T, A1, R> ComponentStreamMethodRef1<A1, R> stream(
+  <T, A1, R> ViewStreamMethodRef1<A1, R> stream(
       Function2<T, A1, View.QueryStreamEffect<R>> methodRef);
 }

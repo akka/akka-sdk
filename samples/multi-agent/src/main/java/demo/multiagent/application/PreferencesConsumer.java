@@ -33,7 +33,7 @@ public class PreferencesConsumer extends Consumer { // <2>
 
     // Call EvaluatorAgent for each session
     for (var activity : activities.entries()) {
-      if (activity.finalAnswer() != null && !activity.finalAnswer().isEmpty()) {
+      if (activity.hasFinalAnswer()) {
         var evaluationRequest = new EvaluatorAgent.EvaluationRequest(
           userId,
           activity.userQuestion(),

@@ -12,7 +12,7 @@ For instance, after a test run, you could send the session history to a powerful
 
 You run your agent and then _evaluate_ the results based on a number of criteria like token usage, elapsed time, and the results of using other models to infer quality metrics like accuracy or confidence.
 
-You can implement an LLM-as-judge evaluator as an Akka `Agent`. The result of the agent method should implement the link:_attachments/api/akka/javasdk/agent/EvaluationResult.html[`EvaluationResult`] interface. Essentially a boolean that tells if the input passed the evaluation criteria, and an explanation for the decision. These results are captured and included in metrics and traces.
+You can implement an LLM-as-judge evaluator as an Akka `Agent`. The result of the agent method should implement the link:{attachmentsdir}/api/akka/javasdk/agent/EvaluationResult.html[`EvaluationResult`] interface. Essentially a boolean that tells if the input passed the evaluation criteria, and an explanation for the decision. These results are captured and included in metrics and traces.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/HumanVsAiEvaluator.java[HumanVsAiEvaluator.java]
@@ -59,7 +59,7 @@ The system and user message prompts for these agents are loaded from a xref:sdk:
 
 === Toxicity evaluator
 
-link:_attachments/api/akka/javasdk/agent/evaluator/ToxicityEvaluator.html[`ToxicityEvaluator`] is an agent that acts as an LLM judge to evaluate if an AI response or other text is racist, biased, or toxic.
+link:{attachmentsdir}/api/akka/javasdk/agent/evaluator/ToxicityEvaluator.html[`ToxicityEvaluator`] is an agent that acts as an LLM judge to evaluate if an AI response or other text is racist, biased, or toxic.
 
 * Model provider configuration: `akka.javasdk.agent.evaluators.toxicity-evaluator.model-provider`
 * System message prompt id: `toxicity-evaluator.system`
@@ -74,7 +74,7 @@ include::example$akka-javasdk/src/main/java/akka/javasdk/agent/evaluator/Toxicit
 
 === Summarization evaluator
 
-link:_attachments/api/akka/javasdk/agent/evaluator/SummarizationEvaluator.html[`SummarizationEvaluator`] is an agent that acts as an LLM judge to evaluate a summarization task.
+link:{attachmentsdir}/api/akka/javasdk/agent/evaluator/SummarizationEvaluator.html[`SummarizationEvaluator`] is an agent that acts as an LLM judge to evaluate a summarization task.
 
 * Model provider configuration: `akka.javasdk.agent.evaluators.summarization-evaluator.model-provider`
 * System message prompt id: `summarization-evaluator.system`
@@ -89,7 +89,7 @@ include::example$akka-javasdk/src/main/java/akka/javasdk/agent/evaluator/Summari
 
 === Hallucination evaluator
 
-link:_attachments/api/akka/javasdk/agent/evaluator/HallucinationEvaluator.html[`HallucinationEvaluator`] is an agent that acts as an LLM judge to evaluate whether an output contains information not available in the reference text given an input question.
+link:{attachmentsdir}/api/akka/javasdk/agent/evaluator/HallucinationEvaluator.html[`HallucinationEvaluator`] is an agent that acts as an LLM judge to evaluate whether an output contains information not available in the reference text given an input question.
 
 * Model provider configuration: `akka.javasdk.agent.evaluators.hallucination-evaluator.model-provider`
 * System message prompt id: `hallucination-evaluator.system`

@@ -49,6 +49,8 @@ public abstract class TestKitSupport extends AsyncCallsSupport {
     return TestKit.Settings.DEFAULT;
   }
 
+  protected TelemetryReader telemetryReader;
+
   @BeforeAll
   public void beforeAll() {
     try {
@@ -56,6 +58,7 @@ public abstract class TestKitSupport extends AsyncCallsSupport {
       componentClient = testKit.getComponentClient();
       timerScheduler = testKit.getTimerScheduler();
       httpClient = testKit.getSelfHttpClient();
+      telemetryReader = new TelemetryReader(testKit.getInMemorySpanExporter());
     } catch (Exception ex) {
       logger.error("Failed to startup service", ex);
       throw ex;

@@ -12,19 +12,25 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.FutureConverters.CompletionStageOps
 
+import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
+import akka.javasdk.client.WorkflowClient
 import akka.javasdk.impl.CommandSerialization
 import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.MethodInvoker
+import akka.javasdk.impl.client.ComponentClientImpl
+import akka.javasdk.impl.client.DeferredCallImpl
+import akka.javasdk.impl.client.MethodRefResolver
 import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.WorkflowStepNotFound
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.WorkflowStepNotSupported
-import akka.javasdk.impl.workflow.WorkflowEffects.Delete
-import akka.javasdk.impl.workflow.WorkflowEffects.End
+import akka.javasdk.impl.workflow.WorkflowEffects.DeleteTransition
+import akka.javasdk.impl.workflow.WorkflowEffects.EndTransition
 import akka.javasdk.impl.workflow.WorkflowEffects.NoPersistence
 import akka.javasdk.impl.workflow.WorkflowEffects.NoTransition
-import akka.javasdk.impl.workflow.WorkflowEffects.Pause
+import akka.javasdk.impl.workflow.WorkflowEffects.PauseTransition
 import akka.javasdk.impl.workflow.WorkflowEffects.Persistence
 import akka.javasdk.impl.workflow.WorkflowEffects.StepTransition
 import akka.javasdk.impl.workflow.WorkflowEffects.Transition
@@ -44,6 +50,7 @@ import akka.javasdk.workflow.Workflow.Effect.TransitionalEffect
 import akka.javasdk.workflow.Workflow.RunnableStep
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi.BytesPayload
+import akka.runtime.sdk.spi.ComponentClients
 import akka.runtime.sdk.spi.SpiEntity
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiWorkflow
@@ -72,7 +79,9 @@ object ReflectiveWorkflowRouter {
 class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     instanceFactory: Function[WorkflowContext, W],
     methodInvokers: Map[String, MethodInvoker],
-    serializer: JsonSerializer) {
+    serializer: JsonSerializer,
+    sdkExecutionContext: ExecutionContext,
+    runtimeComponentClients: ComponentClients)(implicit system: ActorSystem[_]) {
 
   private def decodeUserState(userState: Option[BytesPayload]): Option[S] =
     userState
@@ -122,7 +131,11 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
         case None        => methodInvoker.invoke(workflow)
         case Some(input) => methodInvoker.invokeDirectly(workflow, input)
       }
-      toSpiCommandEffect(result.asInstanceOf[Workflow.Effect[_]])
+      val otelContext = context.tracing().asInstanceOf[SpanTracingImpl].context
+      val componentClient =
+        ComponentClientImpl(runtimeComponentClients, serializer, Map.empty, otelContext)(sdkExecutionContext, system)
+      val workflowClient = componentClient.forWorkflow(workflowContext.workflowId())
+      toSpiCommandEffect(result.asInstanceOf[Workflow.Effect[_]], workflowClient, workflow)
     } else {
       throw new IllegalStateException(
         s"Could not find a matching command handler for method [$commandName], content type [${command.contentType}] " +
@@ -203,7 +216,11 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
               stepMethod.invoke(workflow)
             }
           }
-        effect.map(toSpiStepTransitionalEffect)
+        val otelContext = commandContext.tracing().asInstanceOf[SpanTracingImpl].context
+        val componentClient =
+          ComponentClientImpl(runtimeComponentClients, serializer, Map.empty, otelContext)(sdkExecutionContext, system)
+        val workflowClient = componentClient.forWorkflow(workflowContext.workflowId())
+        effect.map(stepEffect => toSpiStepTransitionalEffect(stepEffect, workflowClient, workflow))
       }
       // fallback to step call
       .getOrElse(tryCallStep(stepName))
@@ -243,15 +260,15 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     descriptor.findStepByName(stepName) match {
       case Some(runnableStep: RunnableStep) =>
         val effect = runnableStep.transitionFunc.get()
-        toSpiTransitionalEffect(effect)
+        toSpiTransitionalEffect(effect, workflow)
 
       case Some(call: CallStep[_, _, _]) =>
         val effect = applyTransitionFunc(call.transitionFunc, call.transitionInputClass)
-        toSpiTransitionalEffect(effect)
+        toSpiTransitionalEffect(effect, workflow)
 
       case Some(call: AsyncCallStep[_, _, _]) =>
         val effect = applyTransitionFunc(call.transitionFunc, call.transitionInputClass)
-        toSpiTransitionalEffect(effect)
+        toSpiTransitionalEffect(effect, workflow)
 
       case Some(any) => throw WorkflowStepNotSupported(any.getClass.getSimpleName)
       case None      => throw WorkflowStepNotFound(stepName)
@@ -260,7 +277,10 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
   }
 
   @nowarn("msg=deprecated") // DeleteState deprecated but must be in here
-  private def toSpiCommandEffect(effect: Workflow.Effect[_]): SpiWorkflow.CommandEffect = {
+  private def toSpiCommandEffect(
+      effect: Workflow.Effect[_],
+      workflowClient: WorkflowClient,
+      workflow: W): SpiWorkflow.CommandEffect = {
 
     effect match {
       case error: ErrorEffectImpl[_] =>
@@ -270,12 +290,14 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       case WorkflowEffectImpl(persistence, transition, reply) =>
         val (replyBytes, spiMetadata) =
           reply match {
+            case ReplyValue(null, _) =>
+              throw new IllegalStateException("the reply must not be null")
             case ReplyValue(value, metadata) => (serializer.toBytes(value), MetadataImpl.toSpi(metadata))
             // FIXME: WorkflowEffectImpl never contain a NoReply
             case NoReply => (BytesPayload.empty, SpiMetadata.empty)
           }
 
-        val spiTransition = toSpiTransition(transition)
+        val spiTransition = toSpiTransition(transition, Some(workflowClient), workflow)
 
         handleState(persistence) match {
           case upt: SpiWorkflow.UpdateState =>
@@ -309,27 +331,70 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       case NoPersistence         => SpiWorkflow.NoPersistence
     }
 
-  private def toSpiTransition(transition: Transition): SpiWorkflow.Transition =
+  private def toSpiTransition(
+      transition: Transition,
+      workflowClient: Option[WorkflowClient],
+      workflow: W): SpiWorkflow.Transition = {
+
     transition match {
-      case StepTransition(stepName, input) =>
+      case StepTransition(stepName, input, workflowClass) =>
+        workflowClass.foreach(verifyWorkflowClass(workflow, s"step [$stepName]"))
         new SpiWorkflow.StepTransition(stepName, input.map(serializer.toBytes))
-      case Pause        => SpiWorkflow.Pause
-      case NoTransition => SpiWorkflow.NoTransition
-      case End          => SpiWorkflow.End
-      case Delete       => SpiWorkflow.Delete
+      case PauseTransition(reason, None) => new SpiWorkflow.PauseTransition(reason, None)
+      case PauseTransition(reason, Some(settings)) =>
+        val deferredReg = settings.timeoutHandler match {
+          case WorkflowEffects.UnaryCommandHandler(handler) =>
+            val method = MethodRefResolver.resolveMethodRef(handler)
+            verifyWorkflowClass(workflow, s"command handler [${method.getName}]")(method.getDeclaringClass)
+            workflowClient.map(
+              _.method(handler.asInstanceOf[akka.japi.function.Function[_, Workflow.Effect[Any]]])
+                .deferred()
+                .asInstanceOf[DeferredCallImpl[_, _]]
+                .deferredRequest())
+          case WorkflowEffects.BinaryCommandHandler(handler, input) =>
+            val method = MethodRefResolver.resolveMethodRef(handler)
+            verifyWorkflowClass(workflow, s"command handler [${method.getName}]")(method.getDeclaringClass)
+            workflowClient.map(
+              _.method(handler.asInstanceOf[akka.japi.function.Function2[_, Any, Workflow.Effect[Any]]])
+                .deferred(input)
+                .asInstanceOf[DeferredCallImpl[_, _]]
+                .deferredRequest())
+        }
+        val pauseSetting = deferredReg.map(req => new SpiWorkflow.PauseSettings(settings.duration, req))
+        new SpiWorkflow.PauseTransition(reason, pauseSetting)
+      case NoTransition                   => SpiWorkflow.NoTransition
+      case EndTransition(Some(reason))    => new SpiWorkflow.EndTransition(reason)
+      case EndTransition(_)               => SpiWorkflow.End
+      case DeleteTransition(Some(reason)) => new SpiWorkflow.DeleteTransition(reason)
+      case DeleteTransition(_)            => SpiWorkflow.Delete
     }
+  }
+
+  private def verifyWorkflowClass(workflow: W, transition: String)(classToTest: Class[_]) = {
+    if (!classToTest.isAssignableFrom(workflow.getClass)) {
+      throw new IllegalArgumentException(
+        s"Workflow [${workflow.getClass.getName}] calls $transition from another class [${classToTest.getName}], which is not allowed.")
+    }
+  }
 
   @nowarn("msg=deprecated")
-  private def toSpiTransitionalEffect(effect: Workflow.Effect.TransitionalEffect[_]) =
+  private def toSpiTransitionalEffect(effect: Workflow.Effect.TransitionalEffect[_], workflow: W) =
     effect match {
       case trEff: TransitionalEffectImpl[_] =>
-        new SpiWorkflow.TransitionalOnlyEffect(handleState(trEff.persistence), toSpiTransition(trEff.transition))
+        new SpiWorkflow.TransitionalOnlyEffect(
+          handleState(trEff.persistence),
+          toSpiTransition(trEff.transition, None, workflow))
     }
 
-  private def toSpiStepTransitionalEffect(effect: Workflow.StepEffect): SpiWorkflow.StepTransitionalEffect =
+  private def toSpiStepTransitionalEffect(
+      effect: Workflow.StepEffect,
+      workflowClient: WorkflowClient,
+      workflow: W): SpiWorkflow.StepTransitionalEffect =
     effect match {
       case stepEff: WorkflowStepEffectImpl[_] =>
-        new SpiWorkflow.StepTransitionalEffect(handleState(stepEff.persistence), toSpiTransition(stepEff.transition))
+        new SpiWorkflow.StepTransitionalEffect(
+          handleState(stepEff.persistence),
+          toSpiTransition(stepEff.transition, Some(workflowClient), workflow))
     }
 
 }

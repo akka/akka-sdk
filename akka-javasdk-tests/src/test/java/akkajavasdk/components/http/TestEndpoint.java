@@ -11,10 +11,13 @@ import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
+import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.AbstractHttpEndpoint;
 import akka.javasdk.http.HttpResponses;
 import akka.stream.javadsl.Source;
+import akkajavasdk.components.views.counter.CounterEventsByIdView;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
@@ -23,9 +26,11 @@ import java.util.List;
 public class TestEndpoint extends AbstractHttpEndpoint {
 
   private final Sanitizer sanitizer;
+  private final ComponentClient componentClient;
 
-  public TestEndpoint(Sanitizer sanitizer) {
+  public TestEndpoint(Sanitizer sanitizer, ComponentClient componentClient) {
     this.sanitizer = sanitizer;
+    this.componentClient = componentClient;
   }
 
   private boolean constructedOnVt = Thread.currentThread().isVirtual();
@@ -84,5 +89,14 @@ public class TestEndpoint extends AbstractHttpEndpoint {
     }
 
     return HttpResponses.serverSentEvents(source, MyEvent::id, event -> "sometype");
+  }
+
+  @Get("/serversentevents/sse-counters")
+  public HttpResponse sseStreamUpdates() {
+    var stream =
+        componentClient.forView().stream(CounterEventsByIdView::streamSseCounterUpdates)
+            .entriesSource(requestContext().lastSeenSseEventId().map(Instant::parse));
+
+    return HttpResponses.serverSentEventsForView(stream);
   }
 }

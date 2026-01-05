@@ -69,9 +69,9 @@ Additionally, the request body parameter can be of the following types:
 
 === Request headers ===
 
-Accessing request headers is done through the link:_attachments/api/akka/javasdk/http/RequestContext.html[RequestContext] methods `requestHeader(String headerName)` and `allRequestHeaders()`.
+Accessing request headers is done through the link:{attachmentsdir}/api/akka/javasdk/http/RequestContext.html[RequestContext] methods `requestHeader(String headerName)` and `allRequestHeaders()`.
 
-By letting the endpoint extend link:_attachments/api/akka/javasdk/http/AbstractHttpEndpoint.html[AbstractHttpEndpoint] request context is available through the method `requestContext()`.
+By letting the endpoint extend link:{attachmentsdir}/api/akka/javasdk/http/AbstractHttpEndpoint.html[AbstractHttpEndpoint] request context is available through the method `requestContext()`.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
@@ -83,7 +83,7 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java
 
 === Query parameters ===
 
-Accessing query parameter is done through the `requestContext()`, inherited from link:_attachments/api/akka/javasdk/http/AbstractHttpEndpoint.html[AbstractHttpEndpoint].
+Accessing query parameter is done through the `requestContext()`, inherited from link:{attachmentsdir}/api/akka/javasdk/http/AbstractHttpEndpoint.html[AbstractHttpEndpoint].
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
@@ -285,7 +285,7 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java
 
 Static resources such as HTML, CSS files can be packaged together with the service. This is done
 by placing the resource files in `src/main/resources/static-resources` and returning them from an endpoint
-method using link:_attachments/api/akka/javasdk/http/HttpResponses.html#staticResource[HttpResponses.staticResource].
+method using link:{attachmentsdir}/api/akka/javasdk/http/HttpResponses.html#staticResource[HttpResponses.staticResource].
 
 This can be done for a single filename:
 
@@ -370,9 +370,13 @@ feature].
 include::example$key-value-customer-registry/src/main/java/customer/api/CustomerEndpoint.java[tag=sse-view-updates]
 ----
 <1> The view is annotated with `@Query(value = [a query], streamUpdates = true)` to keep polling the database after the initial result is returned and return updates matching the query filter
-<2> The stream of view entries and then updates are turned into an SSE response.
+<2> SSE last seen event id, if present is parsed and passed to the query, to be able to continue if this is a client reconnect
+<3> The stream of view entries and then updates are turned into an SSE response.
 
-Note that on client reconnects, this example will start the reconnected stream issuing the full query, and then start streaming individual updates.
+If the connection is lost, the client will reconnect and start from the last seen updates.
+
+The offset tracking is timestamp-based, multiple entries can potentially have the exact same last change timestamp.
+Because of this, to make sure no updates are missed, a restarted stream will always include the entries which were seen last by the previous connection. A SSE client will likely have to deduplicate those.
 
 Another realistic example is to periodically poll an entity for its state,
 but only emit an element over SSE when the state changes:
