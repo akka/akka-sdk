@@ -41,7 +41,9 @@ public sealed interface SessionMessage {
     record TextMessageContent(String text) implements MessageContent {}
 
     record ImageUriMessageContent(
-        String uri, akka.javasdk.agent.MessageContent.ImageMessageContent.DetailLevel detailLevel)
+        String uri,
+        akka.javasdk.agent.MessageContent.ImageMessageContent.DetailLevel detailLevel,
+        Optional<String> mimeType)
         implements MessageContent {}
   }
 
@@ -65,7 +67,9 @@ public sealed interface SessionMessage {
                   switch (content) {
                     case MessageContent.TextMessageContent text -> sizeInBytes(text.text());
                     case MessageContent.ImageUriMessageContent image ->
-                        sizeInBytes(image.uri()) + sizeInBytes(image.detailLevel().toString());
+                        sizeInBytes(image.uri())
+                            + sizeInBytes(image.detailLevel().toString())
+                            + image.mimeType.map(SessionMessage::sizeInBytes).orElse(0);
                   })
           .mapToInt(Integer::intValue)
           .sum();

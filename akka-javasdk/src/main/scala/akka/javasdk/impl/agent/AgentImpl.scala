@@ -15,6 +15,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
 import scala.jdk.DurationConverters.JavaDurationOps
+import scala.jdk.OptionConverters.RichOptional
 import scala.util.control.NonFatal
 
 import akka.annotation.InternalApi
@@ -307,7 +308,10 @@ private[impl] final class AgentImpl[A <: Agent](
   private def toSpiMessageContent(messageContent: MessageContent): SpiAgent.MessageContent = {
     messageContent match {
       case content: ImageUrlMessageContent =>
-        new SpiAgent.ImageUriMessageContent(content.url().toURI, toSpiDetailLevel(content.detailLevel()))
+        new SpiAgent.ImageUriMessageContent(
+          content.url().toURI,
+          toSpiDetailLevel(content.detailLevel()),
+          content.mimeType().toScala)
       case content: MessageContent.TextMessageContent =>
         new SpiAgent.TextMessageContent(content.text())
     }
@@ -427,7 +431,10 @@ private[impl] final class AgentImpl[A <: Agent](
       case content: MessageContent.TextMessageContent =>
         new SessionMessage.MessageContent.TextMessageContent(content.text)
       case content: ImageUrlMessageContent =>
-        new SessionMessage.MessageContent.ImageUriMessageContent(content.url().toString, content.detailLevel())
+        new SessionMessage.MessageContent.ImageUriMessageContent(
+          content.url().toString,
+          content.detailLevel(),
+          content.mimeType())
     }
   }
 
@@ -458,7 +465,10 @@ private[impl] final class AgentImpl[A <: Agent](
               case content: SessionMessage.MessageContent.TextMessageContent =>
                 new SpiAgent.TextMessageContent(content.text())
               case content: SessionMessage.MessageContent.ImageUriMessageContent =>
-                new SpiAgent.ImageUriMessageContent(URI.create(content.uri()), toSpiDetailLevel(content.detailLevel()))
+                new SpiAgent.ImageUriMessageContent(
+                  URI.create(content.uri()),
+                  toSpiDetailLevel(content.detailLevel()),
+                  content.mimeType().toScala)
             }
             .toSeq
           new SpiAgent.ContextMessage.UserMessage(contents)
