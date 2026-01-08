@@ -127,7 +127,12 @@ abstract class EventSourcedEntityEffectsRunner<S, E> {
       entity._internalSetEventContext(Optional.of(new TestKitEventSourcedEntityEventContext()));
       for (E event : events) {
         verifySerDer(event, entity);
-        this._state = handleEvent(this._state, event);
+        S state = handleEvent(this._state, event);
+        if (state == null) {
+          throw new IllegalStateException(
+              "Event handler must not return null as the updated state.");
+        }
+        this._state = state;
         verifySerDerWithExpectedType(stateClass, this._state, entity);
         entity._internalSetCurrentState(this._state, this.deleted);
       }

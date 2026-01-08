@@ -12,4 +12,6 @@ public sealed interface CounterEvent {
 
   record Set(String counterId, int value, Multimap<String, String> notSerializableField)
       implements CounterEvent {}
+
+  record SerializableSet(String counterId, int value) implements CounterEvent {}
 }
