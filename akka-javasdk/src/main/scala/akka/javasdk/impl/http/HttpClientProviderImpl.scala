@@ -4,9 +4,9 @@
 
 package akka.javasdk.impl.http
 
+import java.net.InetSocketAddress
 import java.util.concurrent.Executor
 
-import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 import scala.util.control.NonFatal
 
@@ -15,6 +15,9 @@ import akka.annotation.InternalApi
 import akka.discovery.Discovery
 import akka.http.javadsl.model.HttpHeader
 import akka.http.javadsl.model.headers.RawHeader
+import akka.http.scaladsl.ClientTransport
+import akka.http.scaladsl.settings.ClientConnectionSettings
+import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.javasdk.http.HttpClient
 import akka.javasdk.http.HttpClientProvider
 import akka.javasdk.impl.Settings
@@ -31,7 +34,8 @@ private[akka] final class HttpClientProviderImpl(
     telemetryContext: Option[OtelContext],
     remoteIdentificationHeader: Option[RawHeader],
     settings: Settings,
-    sdkExecutor: Executor)
+    sdkExecutor: Executor,
+    connectionPoolSettings: Option[ConnectionPoolSettings] = None)
     extends HttpClientProvider {
 
   private val log = LoggerFactory.getLogger(classOf[HttpClientProvider])
@@ -57,38 +61,47 @@ private[akka] final class HttpClientProviderImpl(
 
   override def httpClientFor(name: String): HttpClient = {
     val nameIsService = isServiceName(name)
-    val baseUrl =
+    val (baseUrl, connectionPoolSettings) =
       if (nameIsService) {
         if (settings.devModeSettings.isDefined) {
-          // dev mode, other service name, use Akka discovery to find it
-          // the runtime has set up a mechanism that finds locally running
-          // services. Since in dev mode blocking is probably fine for now.
-          try {
-            val result = Await.result(Discovery(system).discovery.lookup(name, 5.seconds), 5.seconds)
-            val address = result.addresses.head
-            // port is always set
-            val port = address.port.get
-            log.debug("Local service resolution found service [{}] at [{}:{}]", name, address.host, port)
+          val devModeResolverTransport = ClientTransport.withCustomResolver((name, port) =>
+            // dev mode, other service name, use Akka discovery to find it
+            // the runtime has set up a mechanism that finds locally running
+            // services. Since in dev mode blocking is probably fine for now.
+            Discovery(system.classicSystem).discovery
+              .lookup(name, 5.seconds)
+              .map { resolved =>
+                try {
+                  val resolvedTarget = resolved.addresses.head
+                  log.debug("Local service resolution found service [{}] at [{}:{}]", name, resolvedTarget.host, port)
+                  InetSocketAddress.createUnresolved(resolvedTarget.host, resolvedTarget.port.getOrElse(port))
+                } catch {
+                  case NonFatal(ex) =>
+                    throw new RuntimeException(
+                      s"Failed to look up service [$name] in dev-mode, make sure that it is also running " +
+                      "with a separate port and service name correctly defined in its application.conf under 'akka.javasdk.dev-mode.service-name' " +
+                      "if it differs from the maven project name.",
+                      ex)
+                }
+              }(system.executionContext))
+
+          val connectionSettings = ClientConnectionSettings(system).withTransport(devModeResolverTransport)
+          val poolSettings = ConnectionPoolSettings(system).withConnectionSettings(connectionSettings)
+
+          (
             // always http because local
-            s"http://${address.host}:$port"
-          } catch {
-            case NonFatal(ex) =>
-              throw new RuntimeException(
-                s"Failed to look up service [$name] in dev-mode, make sure that it is also running " +
-                "with a separate port and service name correctly defined in its application.conf under 'akka.javasdk.dev-mode.service-name' " +
-                "if it differs from the maven project name.",
-                ex)
-          }
+            s"http://$name",
+            Some(poolSettings))
         } else {
           // production, request to other service, service mesh manages TLS
-          s"http://$name"
+          (s"http://$name", None)
         }
       } else {
         // if it isn't a service, we expect it is arbitrary http or https server including the protocol part
         if (!name.startsWith("http://") && !name.startsWith("https://"))
           throw new IllegalArgumentException(
             s"httpClientFor accepts an akka service name or an arbitrary http server prefixed by http:// or https://, got [$name]")
-        name
+        (name, None)
       }
 
     // FIXME fail fast on too large request
@@ -101,10 +114,16 @@ private[akka] final class HttpClientProviderImpl(
       else
         // arbitrary http request
         otelTraceHeaders
-    new HttpClientImpl(system, baseUrl, defaultHeaders, sdkExecutor)
+    new HttpClientImpl(system, baseUrl, defaultHeaders, sdkExecutor, connectionPoolSettings)
   }
 
   def withTelemetryContext(telemetryContext: OtelContext): HttpClientProvider =
-    new HttpClientProviderImpl(system, Some(telemetryContext), remoteIdentificationHeader, settings, sdkExecutor)
+    new HttpClientProviderImpl(
+      system,
+      Some(telemetryContext),
+      remoteIdentificationHeader,
+      settings,
+      sdkExecutor,
+      connectionPoolSettings)
 
 }

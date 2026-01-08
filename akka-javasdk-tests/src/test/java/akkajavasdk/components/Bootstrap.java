@@ -8,6 +8,7 @@ import akka.javasdk.DependencyProvider;
 import akka.javasdk.ServiceSetup;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.grpc.GrpcClientProvider;
+import akka.javasdk.http.HttpClientProvider;
 import akkajavasdk.components.keyvalueentities.user.ProdCounterEntity;
 import akkajavasdk.protocol.TestGrpcServiceClient;
 import java.util.Set;
@@ -19,13 +20,16 @@ import org.slf4j.LoggerFactory;
 public class Bootstrap implements ServiceSetup {
 
   private static final Logger logger = LoggerFactory.getLogger(Bootstrap.class);
-  private final TestGrpcServiceClient eagerlyCreatedClient;
+  private final TestGrpcServiceClient eagerlyCreatedGrpcClient;
 
-  public Bootstrap(GrpcClientProvider clientProvider) {
-    // indirect test coverage of lazy resolution of other grpc services in dev mode
+  public Bootstrap(HttpClientProvider httpClientProvider, GrpcClientProvider grpcClientProvider) {
+    // indirect test coverage of lazy resolution of other grpc and HTTP services in dev mode
     // (no concrete test case, but would fail all tests if it did not work)
-    eagerlyCreatedClient =
-        clientProvider.grpcClientFor(TestGrpcServiceClient.class, "some-other-service");
+    eagerlyCreatedGrpcClient =
+        grpcClientProvider.grpcClientFor(TestGrpcServiceClient.class, "some-other-service");
+
+    // this should succeed as long as we don't try to use the client
+    var __ = httpClientProvider.httpClientFor("some-other-service");
   }
 
   @Override
@@ -47,7 +51,7 @@ public class Bootstrap implements ServiceSetup {
       public <T> T getDependency(Class<T> clazz) {
         if (clazz == TestGrpcServiceClient.class) {
           // not normal usage, here for test coverage of lazily resolving grpc clients
-          return (T) eagerlyCreatedClient;
+          return (T) eagerlyCreatedGrpcClient;
         } else {
           throw new IllegalArgumentException("Unknown dependency type " + clazz.getName());
         }
