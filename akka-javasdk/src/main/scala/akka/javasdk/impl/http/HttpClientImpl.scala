@@ -34,6 +34,7 @@ import akka.http.javadsl.model.HttpRequest
 import akka.http.javadsl.model.HttpResponse
 import akka.http.javadsl.model.StatusCodes
 import akka.http.javadsl.model.headers.HttpCredentials
+import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.javasdk.JsonSupport
 import akka.javasdk.http.HttpClient
 import akka.javasdk.http.RequestBuilder
@@ -50,16 +51,22 @@ import com.fasterxml.jackson.core.JsonProcessingException
  * INTERNAL API
  */
 @InternalApi
-private[akka] final class HttpClientImpl(
+private[akka] final class HttpClientImpl private (
     http: Http,
     baseUrl: String,
     materializer: Materializer,
     timeout: FiniteDuration,
     defaultHeaders: Seq[HttpHeader],
-    sdkExecutor: Executor)
+    sdkExecutor: Executor,
+    connectionPoolSettings: Option[ConnectionPoolSettings])
     extends HttpClient {
 
-  def this(system: ActorSystem[_], baseUrl: String, defaultHeaders: Seq[HttpHeader], sdkExecutor: Executor) =
+  def this(
+      system: ActorSystem[_],
+      baseUrl: String,
+      defaultHeaders: Seq[HttpHeader],
+      sdkExecutor: Executor,
+      connectionPoolSettings: Option[ConnectionPoolSettings]) =
     this(
       Http(system),
       baseUrl,
@@ -67,10 +74,11 @@ private[akka] final class HttpClientImpl(
       // 10s higher than configured timeout, so configured timeout always win
       system.settings.config.getDuration("akka.http.server.request-timeout").toScala + 10.seconds,
       defaultHeaders,
-      sdkExecutor)
+      sdkExecutor,
+      connectionPoolSettings)
 
   def this(system: ActorSystem[_], baseUrl: String, sdkExecutor: Executor) =
-    this(system, baseUrl, Seq.empty, sdkExecutor)
+    this(system, baseUrl, Seq.empty, sdkExecutor, None)
 
   override def GET(uri: String): RequestBuilder[ByteString] = forMethod(uri, HttpMethods.GET)
 
@@ -91,7 +99,8 @@ private[akka] final class HttpClientImpl(
       req.withHeaders(defaultHeaders.asJava),
       new StrictResponse[ByteString](_, _),
       None,
-      sdkExecutor)
+      sdkExecutor,
+      connectionPoolSettings)
   }
 }
 
@@ -106,7 +115,8 @@ private[akka] final case class RequestBuilderImpl[R](
     request: HttpRequest,
     bodyParser: (HttpResponse, ByteString) => StrictResponse[R],
     retrySettings: Option[RetrySettings],
-    sdkExecutor: Executor)
+    sdkExecutor: Executor,
+    connectionPoolSettings: Option[ConnectionPoolSettings])
     extends RequestBuilder[R] {
 
   override def withRequest(request: HttpRequest): RequestBuilder[R] = copy(request = request)
@@ -157,14 +167,18 @@ private[akka] final case class RequestBuilderImpl[R](
 
   override def invokeAsync: CompletionStage[StrictResponse[R]] = {
 
-    def callHttp(): CompletionStage[StrictResponse[R]] = http
-      .singleRequest(request)
-      .thenComposeAsync(
+    def callHttp(): CompletionStage[StrictResponse[R]] = {
+      (connectionPoolSettings match {
+        case Some(poolSettings) =>
+          http.singleRequest(request, http.defaultClientHttpsContext, poolSettings, materializer.system.log)
+        case None => http.singleRequest(request)
+      }).thenComposeAsync(
         (response: HttpResponse) =>
           response.entity
             .toStrict(timeout.toMillis, materializer)
             .thenApplyAsync((entity: HttpEntity.Strict) => bodyParser.apply(response, entity.getData), sdkExecutor),
         sdkExecutor)
+    }
 
     retrySettings match {
       case Some(settings) => Patterns.retry(() => callHttp(), settings, materializer.system)
@@ -258,6 +272,14 @@ private[akka] final case class RequestBuilderImpl[R](
     copy(retrySettings = Some(RetrySettings(maxRetries)))
 
   private def withBodyParser[T](parser: (HttpResponse, ByteString) => StrictResponse[T]): RequestBuilderImpl[T] =
-    new RequestBuilderImpl[T](http, materializer, timeout, request, parser, retrySettings, sdkExecutor)
+    new RequestBuilderImpl[T](
+      http,
+      materializer,
+      timeout,
+      request,
+      parser,
+      retrySettings,
+      sdkExecutor,
+      connectionPoolSettings)
 
 }

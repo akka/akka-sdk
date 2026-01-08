@@ -91,7 +91,7 @@ trait HttpClientImplSuite {
   val path = "/test"
   val headers: Seq[HttpHeader] = Seq.empty
 
-  private def client = new HttpClientImpl(system, baseUrl, headers, system.executionContext)
+  private def client = new HttpClientImpl(system, baseUrl, headers, system.executionContext, None)
 
   private def get(url: String)(
       builder: RequestBuilder[ByteString] => RequestBuilder[ByteString]): RequestBuilderImpl[ByteString] = {
