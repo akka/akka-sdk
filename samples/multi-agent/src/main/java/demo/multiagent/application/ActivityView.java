@@ -7,6 +7,7 @@ import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
 import java.util.List;
+import java.util.Optional;
 
 @Component(id = "activity-view")
 public class ActivityView extends View {
@@ -34,10 +35,20 @@ public class ActivityView extends View {
 
     public Effect<ActivityEntry> onStateChange(AgentTeamWorkflow.State state) {
       var sessionId = updateContext().eventSubject().get(); // the workflow id
-      return effects()
-        .updateRow(
-          new ActivityEntry(state.userId(), sessionId, state.userQuery(), state.finalAnswer())
-        );
+      var currentAnswer = rowState() == null ? "" : rowState().finalAnswer;
+      if (currentAnswer.equals(state.finalAnswer())) { // avoid updating the state if no relevant changes
+        return effects().ignore();
+      } else {
+        return effects()
+          .updateRow(
+            new ActivityEntry(
+              state.userId(),
+              sessionId,
+              state.userQuery(),
+              state.finalAnswer()
+            )
+          );
+      }
     }
 
     @DeleteHandler
