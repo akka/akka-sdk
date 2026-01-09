@@ -4,6 +4,8 @@ include::ROOT:partial$include.adoc[]
 
 A single agent performs one well-defined task. Several agents can collaborate to achieve a common goal. The agents should be orchestrated from a predefined workflow or a dynamically created plan.
 
+This orchestration approach is often called the *supervisor pattern*: a central workflow acts as the supervisor, coordinating multiple worker agents. Agents don't communicate directly with each other—instead, the supervisor decides which agents to call, in what order, and how to handle their outputs. This separation keeps agents simple and reusable while centralizing reliability concerns like durable execution steps, retries and failure handling in the workflow.
+
 == Using a predefined workflow
 
 Let's first look at how to define a workflow that orchestrates several agents in a predefined steps. This is similar to the xref:sdk:agents/calling.adoc[`ActivityAgentManager`] that was illustrated above, but it uses both the `WeatherAgent` and the `ActivityAgent`. First it retrieves the weather forecast and then it finds suitable activities.
@@ -28,7 +30,9 @@ To create a more flexible and autonomous agentic system you want to analyze the 
 
 There are several approaches for the planning, such as using deterministic algorithms or using AI also for the planning. We will look at how we can use AI for analyzing a request, selecting agents and in which order to use them.
 
-We split the planning into two steps and use two separate agents for these tasks. It's not always necessary to use several steps for the planning. You have to experiment with what works best for your problem domain.
+In this dynamic variant of the supervisor pattern, an AI model creates the plan, decides the next step, evaluates results, and determines when the goal has been achieved. The workflow still provides durable execution with built-in retry mechanisms—the AI influences *what* happens, but the workflow ensures it happens *reliably*.
+
+In the following example we split the planning into two steps and use two separate agents for these tasks. It's not always necessary to use several steps for the planning. You have to experiment with what works best for your problem domain.
 
 . Select agents that are useful for a certain problem.
 . Decide in which order to use the agents and give each agent precise instructions for its task.
