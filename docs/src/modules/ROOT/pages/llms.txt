@@ -20,7 +20,7 @@
 - [Handling failures](https://doc.akka.io/sdk/agents/failures.html.md): Handling agent failures.
 - [Extending agents with function tools](https://doc.akka.io/sdk/agents/extending.html.md): Extending agents with function (callback) tools.
 - [Streaming agent responses](https://doc.akka.io/sdk/agents/streaming.html.md): Streaming model responses with agents.
-- [Orchestrating multiple agents](https://doc.akka.io/sdk/agents/orchestrating.html.md): Orchestrating multiple agents.
+- [Orchestrating multiple agents](https://doc.akka.io/sdk/agents/orchestrating.html.md): Orchestrating and supervising multiple agents.
 - [Providing guardrails](https://doc.akka.io/sdk/agents/guardrails.html.md): Constraining and controlling agent behavior with guardrails.
 - [Evaluating model responses](https://doc.akka.io/sdk/agents/evaluating.html.md): Evaluating and judging the responses from LLMs via agents.
 - [Testing agents](https://doc.akka.io/sdk/agents/testing.html.md): Testing agents and agentic behavior.
@@ -41,7 +41,7 @@
 - [Retrieval-Augmented Generation (RAG)](https://doc.akka.io/sdk/rag.html.md): Performing semantic search on a vector database to find relevant content and enrich the request to the AI model.
 - [Architecture model](https://doc.akka.io/concepts/architecture-model.html.md): Key architectural patterns and principles used in Akka.
 - [Declarative effects](https://doc.akka.io/concepts/declarative-effects.html.md): Understanding how Akka's effect system enables composable, testable side effects.
-- [AI orchestration patterns](https://doc.akka.io/concepts/ms-agent-patterns.html.md): Patterns for composing agentic applications.
+- [AI orchestration patterns](https://doc.akka.io/concepts/ms-agent-patterns.html.md): Patterns for composing and orchestrating agentic applications.
 - [Inter-agent communications](https://doc.akka.io/concepts/inter-agent-comms.html.md): Patterns for agent collaboration and communication.
 - [Santization](https://doc.akka.io/sdk/sanitization.html.md): Anonymization of personal information in texts.
 
