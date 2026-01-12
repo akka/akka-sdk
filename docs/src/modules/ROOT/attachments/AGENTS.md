@@ -564,6 +564,7 @@ public class MyEndpointIntegrationTest extends TestKitSupport {
 - Use deprecated `testKit.call`  -> use `testKit.method(...).invoke(...)`
 - Create multiple command handlers in Agent
 - Return protobuf types from domain layer
+- Import `WorkflowSettings` -> WorkflowSettings is an inner class of Workflow, so no additional import is needed
 
 ✅ **DO:**
 - Use Java records for immutable data
