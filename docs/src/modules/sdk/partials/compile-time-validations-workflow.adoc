@@ -1,0 +1,55 @@
+== Compile-time validations
+
+The Akka Java SDK validates Workflow components at compile time to catch configuration errors early.
+
+include::compile-time-validations-common.adoc[tag=intro]
+
+=== Workflow-specific validations
+
+In addition to the xref:compile-time-validations-common.adoc[common validations], Workflows have the following specific requirements:
+
+==== Must have Effect or ReadOnlyEffect method
+
+A Workflow must have at least one public method returning either `Workflow.Effect` or `Workflow.ReadOnlyEffect`. Methods that only return `Workflow.StepEffect` are not sufficient.
+
+NOTE: `StepEffect` methods define internal workflow steps, but the workflow needs at least one public command handler (returning `Effect` or `ReadOnlyEffect`) to be invocable from outside.
+
+==== Public command handler arity
+
+Public methods returning `Effect` or `ReadOnlyEffect` (command handlers) must have zero or one parameter.
+
+==== Step method arity
+
+Methods returning `StepEffect` (workflow steps) can be private, but must also have zero or one parameter.
+
+==== @FunctionTool not on StepEffect
+
+The `@FunctionTool` annotation cannot be used on methods returning `StepEffect`. It can only be used on methods returning `Effect` or `ReadOnlyEffect`.
+
+==== No @FunctionTool on private methods
+
+Private methods cannot be annotated with `@FunctionTool`, even if they return `Effect` or `ReadOnlyEffect`.
+
+=== Workflow architecture
+
+Workflows have a unique structure with two types of methods:
+
+* **Command handlers** (public, return `Effect` or `ReadOnlyEffect`): External entry points for invoking the workflow
+* **Step methods** (can be private, return `StepEffect`): Internal workflow steps that define the workflow's business logic
+
+This separation allows:
+
+* **Clear API**: Command handlers define the public interface
+* **Private steps**: Internal workflow logic can be encapsulated
+* **Step orchestration**: Steps can transition to other steps
+* **State management**: Each step can update the workflow state
+
+=== Why these validations matter
+
+These validations ensure:
+
+* **Proper workflow structure**: Clear separation between commands and steps
+* **Invocable workflows**: At least one public entry point exists
+* **Tool exposure correctness**: Only command handlers (not internal steps) can be exposed as tools for AI agents
+* **Simple parameter design**: Limited parameters encourage thoughtful command and step design
+* **Encapsulation**: Internal steps remain private while commands are public

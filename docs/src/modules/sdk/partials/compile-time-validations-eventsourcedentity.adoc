@@ -1,0 +1,45 @@
+== Compile-time validations
+
+The Akka Java SDK validates EventSourcedEntity components at compile time to catch configuration errors early.
+
+include::compile-time-validations-common.adoc[tag=intro]
+
+=== EventSourcedEntity-specific validations
+
+In addition to the xref:compile-time-validations-common.adoc[common validations], EventSourcedEntities have the following specific requirements:
+
+==== Unique command handler names
+
+EventSourcedEntity command handlers must have unique names. Method overloading is not supported for command handlers.
+
+==== Event type must be sealed
+
+The event type parameter of an EventSourcedEntity must be a sealed interface. This ensures that all possible event types are known at compile time and can be properly validated.
+
+NOTE: This validation ensures type safety and completeness when consuming events from the entity, as Consumers need to know all possible event types.
+
+==== @FunctionTool only on Effect methods
+
+The `@FunctionTool` annotation can only be used on methods that return `EventSourcedEntity.Effect` or `EventSourcedEntity.ReadOnlyEffect`. It cannot be used on other methods or private methods.
+
+==== Command handler arity
+
+Command handlers (methods returning `Effect` or `ReadOnlyEffect`) must have zero or one parameter.
+
+=== Event sourcing best practices
+
+These validations support event sourcing best practices:
+
+* **Sealed event types** ensure complete event handling and type safety
+* **Unique command names** prevent ambiguous routing and make the API clear
+* **Limited parameters** encourage thoughtful command design
+* **Effect-based tools** ensure AI agents can only interact through the proper effect system
+
+=== Why these validations matter
+
+These validations ensure:
+
+* **Type safety**: All event types are known and validated at compile time
+* **Clear API**: Unique command names prevent confusion and routing errors
+* **Proper tool exposure**: Only command handlers can be exposed as tools for AI agents
+* **Event sourcing correctness**: Sealed types guarantee complete event handling in consumers
