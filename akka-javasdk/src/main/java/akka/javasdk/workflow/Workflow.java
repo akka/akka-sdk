@@ -1146,7 +1146,6 @@ public abstract class Workflow<S> {
     }
 
     /** Define a default recovery strategy for all steps. Can be overridden per step. */
-    @Deprecated
     public WorkflowSettingsBuilder defaultStepRecovery(RecoverStrategy<?> recoverStrategy) {
       return new WorkflowSettingsBuilder(
           defaultStepTimeout,
