@@ -12,20 +12,25 @@ import customer.domain.Customer;
 import customer.domain.CustomerEntries;
 import customer.domain.CustomerEntry;
 import customer.domain.CustomerEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component(id = "customers-by-name") // <1>
 public class CustomersByNameView extends View {
+  private static final Logger logger = LoggerFactory.getLogger(CustomersByNameView.class);
 
   @Consume.FromEventSourcedEntity(CustomerEntity.class)
   public static class CustomersByNameUpdater extends TableUpdater<CustomerEntry> { // <2>
 
     @FromSnapshotHandler
     public Effect<CustomerEntry> onSnapshot(Customer snapshot) {
-         return effects()
-            .updateRow(new CustomerEntry(snapshot.email(), snapshot.name(), snapshot.address()));
+      logger.info("onSnapshot [{}]", snapshot);
+       return effects()
+          .updateRow(new CustomerEntry(snapshot.email(), snapshot.name(), snapshot.address()));
     }
 
     public Effect<CustomerEntry> onEvent(CustomerEvent event) { // <3>
+      logger.info("onEvent [{}]", event);
       return switch (event) {
         case CustomerEvent.CustomerCreated created -> effects()
           .updateRow(new CustomerEntry(created.email(), created.name(), created.address()));
