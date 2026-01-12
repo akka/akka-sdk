@@ -4,9 +4,11 @@ package customer.application;
 
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
+import akka.javasdk.annotations.FromSnapshotHandler;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
+import customer.domain.Customer;
 import customer.domain.CustomerEntries;
 import customer.domain.CustomerEntry;
 import customer.domain.CustomerEvent;
@@ -16,6 +18,12 @@ public class CustomersByNameView extends View {
 
   @Consume.FromEventSourcedEntity(CustomerEntity.class)
   public static class CustomersByNameUpdater extends TableUpdater<CustomerEntry> { // <2>
+
+    @FromSnapshotHandler
+    public Effect<CustomerEntry> onSnapshot(Customer snapshot) {
+         return effects()
+            .updateRow(new CustomerEntry(snapshot.email(), snapshot.name(), snapshot.address()));
+    }
 
     public Effect<CustomerEntry> onEvent(CustomerEvent event) { // <3>
       return switch (event) {

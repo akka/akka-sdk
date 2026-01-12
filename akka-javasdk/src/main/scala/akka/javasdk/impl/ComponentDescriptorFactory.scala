@@ -21,6 +21,7 @@ import akka.javasdk.annotations.Consume.FromServiceStream
 import akka.javasdk.annotations.Consume.FromTopic
 import akka.javasdk.annotations.Consume.FromWorkflow
 import akka.javasdk.annotations.DeleteHandler
+import akka.javasdk.annotations.FromSnapshotHandler
 import akka.javasdk.annotations.Produce.ServiceStream
 import akka.javasdk.annotations.Produce.ToTopic
 import akka.javasdk.consumer.Consumer
@@ -119,6 +120,11 @@ private[impl] object ComponentDescriptorFactory {
 
   def hasHandleDeletes(javaMethod: Method): Boolean = {
     val ann = javaMethod.getAnnotation(classOf[DeleteHandler])
+    javaMethod.isPublic && ann != null
+  }
+
+  def hasFromSnapshotHandler(javaMethod: Method): Boolean = {
+    val ann = javaMethod.getAnnotation(classOf[FromSnapshotHandler])
     javaMethod.isPublic && ann != null
   }
 
