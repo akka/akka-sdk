@@ -98,7 +98,8 @@ public class SessionMemoryEntityTest {
     String aiMsg = "I'm fine, thanks for asking!";
     SessionMessage.MessageContent text = new TextMessageContent("Hello, how are you?");
     SessionMessage.MessageContent image =
-        new ImageUriMessageContent("uri", MessageContent.ImageMessageContent.DetailLevel.AUTO);
+        new ImageUriMessageContent(
+            "uri", MessageContent.ImageMessageContent.DetailLevel.AUTO, Optional.of("image/jpeg"));
     var contents = List.of(text, image);
     MultimodalUserMessage userMessage =
         new MultimodalUserMessage(timestamp, contents, COMPONENT_ID);
@@ -202,7 +203,8 @@ public class SessionMemoryEntityTest {
 
     SessionMessage.MessageContent text = new TextMessageContent("Hello, how are you?");
     SessionMessage.MessageContent image =
-        new ImageUriMessageContent("uri", MessageContent.ImageMessageContent.DetailLevel.AUTO);
+        new ImageUriMessageContent(
+            "uri", MessageContent.ImageMessageContent.DetailLevel.AUTO, Optional.of("image/jpeg"));
     var contents = List.of(text, image);
     MultimodalUserMessage userMessage =
         new MultimodalUserMessage(timestamp, contents, COMPONENT_ID);
