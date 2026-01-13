@@ -35,6 +35,7 @@ import akka.javasdk.impl.timer.TimerSchedulerImpl;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
 import akka.javasdk.testkit.impl.SseRouteTesterImpl;
+import akka.javasdk.testkit.impl.WebSocketRouteTesterImpl;
 import akka.javasdk.timer.TimerScheduler;
 import akka.javasdk.workflow.Workflow;
 import akka.pattern.Patterns;
@@ -927,6 +928,10 @@ public class TestKit {
 
   public SseRouteTester getSelfSseRouteTester() {
     return new SseRouteTesterImpl(runtimeHost, runtimePort, runtimeActorSystem);
+  }
+
+  public WebSocketRouteTester getSelfWebSocketRouteTester() {
+    return new WebSocketRouteTesterImpl(runtimeHost, runtimePort, runtimeActorSystem);
   }
 
   public AkkaInMemorySpanExporter getInMemorySpanExporter() {

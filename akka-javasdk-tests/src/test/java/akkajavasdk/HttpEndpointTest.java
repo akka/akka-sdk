@@ -12,19 +12,8 @@ import akka.http.javadsl.model.ContentTypes;
 import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.StatusCodes;
 import akka.http.javadsl.model.headers.RawHeader;
-import akka.http.javadsl.model.ws.Message;
-import akka.http.javadsl.model.ws.TextMessage;
-import akka.http.javadsl.model.ws.WebSocketRequest;
-import akka.http.javadsl.model.ws.WebSocketUpgradeResponse;
-import akka.japi.Pair;
 import akka.javasdk.testkit.TestKitSupport;
-import akka.stream.javadsl.Flow;
-import akka.stream.javadsl.Keep;
 import akka.stream.javadsl.Sink;
-import akka.stream.testkit.TestPublisher;
-import akka.stream.testkit.TestSubscriber;
-import akka.stream.testkit.javadsl.TestSink;
-import akka.stream.testkit.javadsl.TestSource;
 import akka.util.ByteString;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEntity;
 import akkajavasdk.components.http.ResourcesEndpoint;
@@ -36,9 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.OptionalLong;
 import java.util.Set;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -321,39 +308,47 @@ public class HttpEndpointTest extends TestKitSupport {
   }
 
   @Test
-  void shouldSupportWebSockets() throws ExecutionException, InterruptedException, TimeoutException {
+  void shouldSupportTextWebSockets()
+      throws ExecutionException, InterruptedException, TimeoutException {
     // FIXME testkit support
-    Flow<Message, Message, CompletionStage<WebSocketUpgradeResponse>> wsFlow =
-        Http.get(testKit.getActorSystem())
-            .webSocketClientFlow(
-                WebSocketRequest.create(
-                    "ws://" + testKit.getHost() + ":" + testKit.getPort() + "/websocket"));
+    var webSocketRouteTester = testKit.getSelfWebSocketRouteTester();
 
-    var sink = TestSink.<Message>create(testKit.getActorSystem());
-    var source = TestSource.<Message>create(testKit.getActorSystem());
+    var probes = webSocketRouteTester.wsTextConnection("/websocket-text");
 
-    Pair<
-            Pair<TestPublisher.Probe<Message>, CompletionStage<WebSocketUpgradeResponse>>,
-            TestSubscriber.Probe<Message>>
-        matVal =
-            source
-                .viaMat(wsFlow, Keep.both())
-                .toMat(sink, Keep.both())
-                .run(testKit.getMaterializer());
-    TestPublisher.Probe<Message> publisher = matVal.first().first();
-    CompletionStage<WebSocketUpgradeResponse> completion = matVal.first().second();
-    TestSubscriber.Probe<Message> subscriber = matVal.second();
-
-    var upgradeResponse = completion.toCompletableFuture().get(3, TimeUnit.SECONDS);
-    assertThat(upgradeResponse.isValid()).isTrue();
+    var publisher = probes.publisher();
+    var subscriber = probes.subscriber();
+    assertThat(probes.chosenProtocol()).isEmpty();
 
     subscriber.request(1);
 
     publisher.expectRequest();
-    publisher.sendNext(TextMessage.create("ping"));
+    publisher.sendNext("ping");
 
-    var messageOut = subscriber.expectNext();
-    assertThat(messageOut.asTextMessage().getStrictText()).isEqualTo("ping");
+    assertThat(subscriber.expectNext()).isEqualTo("ping");
+
+    publisher.sendComplete();
+    subscriber.expectComplete();
+  }
+
+  @Test
+  void shouldSupportBinaryWebSockets()
+      throws ExecutionException, InterruptedException, TimeoutException {
+    // FIXME testkit support
+    var webSocketRouteTester = testKit.getSelfWebSocketRouteTester();
+
+    // Test also covers protocol and parameters
+    var probes = webSocketRouteTester.wsBinaryConnection("/websocket-binary/5", "limiting");
+
+    var publisher = probes.publisher();
+    var subscriber = probes.subscriber();
+    assertThat(probes.chosenProtocol()).contains("limiting");
+
+    subscriber.request(1);
+
+    publisher.expectRequest();
+    publisher.sendNext(ByteString.fromString("123456"));
+
+    assertThat(subscriber.expectNext()).isEqualTo(ByteString.fromString("12345"));
 
     publisher.sendComplete();
     subscriber.expectComplete();

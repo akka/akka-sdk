@@ -5,7 +5,6 @@
 package akka.javasdk.impl.http
 
 import scala.jdk.FutureConverters.CompletionStageOps
-
 import akka.NotUsed
 import akka.annotation.InternalApi
 import akka.http.javadsl.model.HttpRequest
@@ -20,6 +19,10 @@ import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import org.slf4j.LoggerFactory
 
+import java.util.stream.Collectors
+import java.util.stream.StreamSupport
+import java.util.{ List => JList }
+
 /**
  * INTERNAL API
  */
@@ -28,35 +31,54 @@ private[akka] object WebSockets {
 
   private val log = LoggerFactory.getLogger(classOf[WebSockets.type])
 
-  def textWebSocketResponse(
-      request: HttpRequest,
-      protocol: Option[String],
-      stringFlow: JavaDslFlow[String, String, NotUsed])(implicit mat: Materializer): HttpResponse = {
+  def textWebSocketResponse(request: HttpRequest, stringFlow: JavaDslFlow[String, String, NotUsed])(implicit
+      mat: Materializer): HttpResponse = {
     val wsUpgrade = getUpgrade(request)
     val adaptedFlow = adaptStringFlow(stringFlow.asScala)
-    protocol match {
-      case None              => wsUpgrade.handleMessagesWith(adaptedFlow)
-      case Some(subprotocol) => wsUpgrade.handleMessagesWith(adaptedFlow, subprotocol)
-    }
+    wsUpgrade.handleMessagesWith(adaptedFlow)
+  }
+
+  def textWebSocketResponse(
+      request: HttpRequest,
+      protocolSelector: java.util.function.Function[JList[String], SelectedWebSocketProtocol[String]])(implicit
+      mat: Materializer): HttpResponse = {
+    val (wsUpgrade, requestedProtocols) = getUpgradeAndProtocols(request)
+    val selectedProtocol = protocolSelector.apply(requestedProtocols)
+    val adaptedFlow = adaptStringFlow(selectedProtocol.handler().asScala)
+    wsUpgrade.handleMessagesWith(adaptedFlow, selectedProtocol.protocolName())
+  }
+
+  def binaryWebSocketResponse(request: HttpRequest, binaryFlow: JavaDslFlow[ByteString, ByteString, NotUsed])(implicit
+      mat: Materializer): HttpResponse = {
+    val wsUpgrade = getUpgrade(request)
+    val adaptedFlow = adaptBytesFlow(binaryFlow.asScala)
+    wsUpgrade.handleMessagesWith(adaptedFlow)
   }
 
   def binaryWebSocketResponse(
       request: HttpRequest,
-      protocol: Option[String],
-      stringFlow: JavaDslFlow[ByteString, ByteString, NotUsed])(implicit mat: Materializer): HttpResponse = {
-    val wsUpgrade = getUpgrade(request)
-    val adaptedFlow =
-      adaptBytesFlow(stringFlow.asScala)
-    protocol match {
-      case Some(subprotocol) => wsUpgrade.handleMessagesWith(adaptedFlow, subprotocol)
-      case None              => wsUpgrade.handleMessagesWith(adaptedFlow)
-    }
+      protocolSelector: java.util.function.Function[JList[String], SelectedWebSocketProtocol[ByteString]])(implicit
+      mat: Materializer): HttpResponse = {
+    val (wsUpgrade, requestedProtocols) = getUpgradeAndProtocols(request)
+    val selectedProtocol = protocolSelector.apply(requestedProtocols)
+    val adaptedFlow = adaptBytesFlow(selectedProtocol.handler().asScala)
+    wsUpgrade.handleMessagesWith(adaptedFlow, selectedProtocol.protocolName())
   }
 
-  private def getUpgrade(request: HttpRequest): WebSocketUpgrade =
+  private def getUpgrade(request: HttpRequest): WebSocketUpgrade = {
     request
       .getAttribute(akka.http.javadsl.model.AttributeKeys.webSocketUpgrade)
       .orElseThrow(() => new IllegalArgumentException("Request expected to be a websocket upgrade"))
+  }
+
+  private def getUpgradeAndProtocols(request: HttpRequest): (WebSocketUpgrade, JList[String]) = {
+    val upgrade = getUpgrade(request)
+    val requestedProtocols =
+      StreamSupport
+        .stream(upgrade.getRequestedProtocols().spliterator(), false)
+        .collect(Collectors.toList());
+    (upgrade, requestedProtocols)
+  }
 
   private def adaptStringFlow(userFlow: Flow[String, String, NotUsed])(implicit
       mat: Materializer): JavaDslFlow[Message, Message, NotUsed] =
