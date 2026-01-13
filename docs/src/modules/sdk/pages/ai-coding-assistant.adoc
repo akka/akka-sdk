@@ -72,7 +72,7 @@ Make sure that you download the latest documentation regularly to make use of do
 
 [source, command line]
 ----
-akka code ai-assistance-update .
+akka code context-update .
 ----
 
 The `akka-context` documentation bundle is also available as link:../sdk/_attachments/akka-docs-md.zip[akka-docs-md.zip] if you prefer that.
