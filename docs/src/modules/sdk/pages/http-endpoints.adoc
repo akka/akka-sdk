@@ -402,6 +402,67 @@ being present in the request.
 The testkit contains a `akka.javasdk.testkit.SseRouteTester` which can be used for covering
 both initial streams and reconnects with tests. In a test it can be accessed through `TestKit#getSelfSseRouteTester`.
 
+[#websocket]
+=== Streaming with WebSocket ===
+
+link:https://datatracker.ietf.org/doc/html/rfc6455[WebSocket] provides full-duplex communication channels over a single TCP connection. Unlike server-sent events which are unidirectional (server to client), WebSocket allows bidirectional streaming between the client and server.
+
+WebSocket endpoints are useful when you need:
+
+* Two-way communication between a browser client and the server
+* Binary data streaming to a browser
+
+ifdef::todo[TODO: details/link about this not working in a deployed service unless special routes are created]
+
+==== Creating a WebSocket endpoint
+
+A WebSocket endpoint is created by returning an `HttpResponse` from `HttpResponses.textWebsocket` or `HttpResponses.binaryWebsocket`.
+These methods accept a `Flow` that defines how messages flow between the client and server.
+
+The `Flow` can be a request-response type of interaction where each incoming message from a client leads to one or more response message.
+Another alternative is separate, detached, input and output streams using `Flow.fromSinkAndSource`.
+
+Here's an example that streams view updates over WebSocket:
+
+[source,java,indent=0]
+.{sample-base-url}/key-value-customer-registry/src/main/java/customer/api/CustomerEndpoint.java[CustomerEndpoint.java]
+----
+include::example$key-value-customer-registry/src/main/java/customer/api/CustomerEndpoint.java[tag=ws-view-updates]
+----
+<1> Query the view to get a stream of customer updates
+<2> Convert each customer object to a JSON string using `JsonSupport.encodeToString`
+<3> Create a text WebSocket response using `HttpResponses.textWebsocket`
+<4> Pass the `RequestContext` which is needed for WebSocket protocol handling
+<5> Create a `Flow` that ignores incoming client messages and streams view updates to the client
+
+For binary WebSocket support, use `HttpResponses.binaryWebsocket` which accepts a `Flow` with `ByteString` instead of `String`.
+
+==== WebSocket protocol negotiation
+
+WebSocket supports protocols that can be negotiated, the client sends zero to many protocol names that it supports. The server
+endpoint then chooses one of the supported protocols and returns an appropriate `Flow` together with the chosen protocol name
+in a `SelectedWebSocketProtocol`.
+
+There is one `HttpResponses.binaryWebsocket` and one `HttpResponses.textWebsocket` method accepting such a protocol selector.
+
+==== Testing WebSocket endpoints
+
+The testkit provides `akka.javasdk.testkit.WebSocketRouteTester` for testing WebSocket endpoints. Access it through `TestKit#getSelfWebSocketRouteTester`.
+
+Example testing a text WebSocket:
+
+[source,java,indent=0]
+.akka-javasdk-tests/src/test/java/akkajavasdk/HttpEndpointTest.java[HttpEndpointTest.java]
+----
+include::example$doc-snippets/src/test/java/com/example/api/ExampleWebSocketTest.java[tag=ws-testkit]
+----
+<1> Get the WebSocket route tester from the test kit
+<2> Create a text WebSocket connection to the endpoint
+<3> Request one message from the server
+<4> Send a message from the client
+<5> Expect and verify the received message
+<6> Complete the connection
+
 == See also
 
 - xref:sdk:access-control.adoc[]

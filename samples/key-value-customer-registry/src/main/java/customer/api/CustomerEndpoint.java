@@ -147,6 +147,8 @@ public class CustomerEndpoint extends AbstractHttpEndpoint {
 
   // end::sse-view-updates[]
 
+  // tag::ws-view-updates[]
+
   @Get("/by-city-ws/{cityName}")
   public HttpResponse continousByCityNameWebSocket(String cityName) {
     // view will keep stream going, toggled with streamUpdates = true on the query
@@ -166,6 +168,8 @@ public class CustomerEndpoint extends AbstractHttpEndpoint {
       )
     );
   }
+
+  // end::ws-view-updates[]
 
   // tag::sse-customer-changes[]
   private record CustomerStreamState(Optional<Customer> customer, boolean isSame) {}
