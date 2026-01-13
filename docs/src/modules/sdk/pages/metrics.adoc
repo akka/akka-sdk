@@ -5,7 +5,7 @@ The Akka runtime exposes approximately 170 metrics that provide deep insights in
 
 == Custom Metrics
 
-In addition to the built-in runtime metrics, you can define custom application-level metrics to track business-specific operations and behavior. Custom metrics allow you to instrument your code with counters, gauges, timers, and distribution summaries to measure what matters most for your application. These metrics integrate seamlessly with the Akka metrics infrastructure and can be exported to the same monitoring systems as the runtime metrics.
+In addition to the built-in runtime metrics, you can define custom application-level metrics to track business-specific operations and behavior. Custom metrics allow you to instrument your code with counters, gauges, timers, and distribution summaries to measure what matters most for your application. These metrics integrate seamlessly with the Akka metrics infrastructure and can be xref:operations:observability-and-monitoring/observability-exports.adoc[exported] to the same monitoring systems as the runtime metrics.
 
 Define metric using Prometheus library.
 
