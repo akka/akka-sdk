@@ -14,6 +14,7 @@ import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.AbstractHttpEndpoint;
 import akka.javasdk.http.HttpResponses;
+import akka.stream.javadsl.Flow;
 import akka.stream.javadsl.Source;
 import akkajavasdk.components.views.counter.CounterEventsByIdView;
 import java.math.BigDecimal;
@@ -98,5 +99,11 @@ public class TestEndpoint extends AbstractHttpEndpoint {
             .entriesSource(requestContext().lastSeenSseEventId().map(Instant::parse));
 
     return HttpResponses.serverSentEventsForView(stream);
+  }
+
+  @Get("/websocket")
+  public HttpResponse websocket() {
+    // echo messages back
+    return HttpResponses.textWebsocket(requestContext(), Flow.create());
   }
 }
