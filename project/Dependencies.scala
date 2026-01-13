@@ -7,7 +7,7 @@ object Dependencies {
     val ProtocolVersionMajor = 1
     val ProtocolVersionMinor = 1
   }
-  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.5.29")
+  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.5.29-28-19d88d59-SNAPSHOT")
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
   // for prod code, they are marked as Provided, but testkit still requires the alignment
@@ -32,6 +32,7 @@ object Dependencies {
   val JUnitJupiterVersion = "5.10.1"
   val OpenTelemetryVersion = "1.51.0"
   val OpenTelemetrySemConv = "1.34.0"
+  val PrometheusClientVersion = "1.4.3"
 
   val CommonsIoVersion = "2.11.0"
   val MunitVersion = "0.7.29"
@@ -49,6 +50,7 @@ object Dependencies {
 
   val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.16"
 
+  val prometheus = "io.prometheus" % "prometheus-metrics-core" % PrometheusClientVersion
   val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % JacksonVersion
   val jacksonAnnotations = "com.fasterxml.jackson.core" % "jackson-annotations" % JacksonVersion
   val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % JacksonDatabindVersion
@@ -101,7 +103,8 @@ object Dependencies {
     jacksonJsr310,
     jacksonParameterNames,
     jacksonScala,
-    langchain4j)
+    langchain4j,
+    prometheus)
 
   // Important: be careful when adding dependencies here, unless provided, runtime or test they will also be packaged in the user project
   //            binaries/artifacts unless explicitly excluded in the akka-javasdk-parent assembly descriptor

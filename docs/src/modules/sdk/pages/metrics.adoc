@@ -1,0 +1,37 @@
+= Metrics
+include::ROOT:partial$include.adoc[]
+
+The Akka runtime exposes approximately 170 metrics that provide deep insights into the performance and behavior of your application, including entity operations, workflows, and internal runtime statistics. In addition to these Akka-specific metrics, standard JVM metrics are also available, giving you comprehensive visibility into memory usage, garbage collection, thread pools, and other JVM-level operations.
+
+== Custom Metrics
+
+In addition to the built-in runtime metrics, you can define custom application-level metrics to track business-specific operations and behavior. Custom metrics allow you to instrument your code with counters, gauges, timers, and distribution summaries to measure what matters most for your application. These metrics integrate seamlessly with the Akka metrics infrastructure and can be exported to the same monitoring systems as the runtime metrics.
+
+Define metric using Prometheus library.
+
+[source,java,indent=0]
+.{sample-base-url}/src/main/java/com/example/application/ShoppingCartMetrics.java[ShoppingCartMetrics.java]
+----
+include::example$key-value-shopping-cart/src/main/java/com/example/application/ShoppingCartMetrics.java[tag=metrics]
+----
+<1> Counter metric.
+<2> Metric accessor method.
+
+Use it in your implementation.
+
+[source,java,indent=0]
+.{sample-base-url}/key-value-shopping-cart/src/main/java/com/example/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
+----
+include::example$key-value-shopping-cart/src/main/java/com/example/api/ShoppingCartEndpoint.java[tag=metrics]
+----
+<1> Increases cart created counter.
+
+You can validate your metrics locally by running the service with `-Dakka.runtime.telemetry.metrics.disabled=false` parameter. Metrics are exposed under `http://localhost:9090` address.
+
+[source,text,indent=0]
+----
+# HELP shopping_cart_created_counter_total Total shopping cart created
+# TYPE shopping_cart_created_counter_total counter
+shopping_cart_created_counter_total 2.0
+----
+
