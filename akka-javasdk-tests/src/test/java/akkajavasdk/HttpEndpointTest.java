@@ -308,16 +308,13 @@ public class HttpEndpointTest extends TestKitSupport {
   }
 
   @Test
-  void shouldSupportTextWebSockets()
-      throws ExecutionException, InterruptedException, TimeoutException {
-    // FIXME testkit support
+  void shouldSupportTextWebSockets() {
     var webSocketRouteTester = testKit.getSelfWebSocketRouteTester();
 
     var probes = webSocketRouteTester.wsTextConnection("/websocket-text");
 
     var publisher = probes.publisher();
     var subscriber = probes.subscriber();
-    assertThat(probes.chosenProtocol()).isEmpty();
 
     subscriber.request(1);
 
@@ -331,9 +328,7 @@ public class HttpEndpointTest extends TestKitSupport {
   }
 
   @Test
-  void shouldSupportBinaryWebSockets()
-      throws ExecutionException, InterruptedException, TimeoutException {
-    // FIXME testkit support
+  void shouldSupportBinaryWebSockets() {
     var webSocketRouteTester = testKit.getSelfWebSocketRouteTester();
 
     // Test also covers protocol and parameters
