@@ -155,12 +155,12 @@ public class CustomerEndpoint extends AbstractHttpEndpoint {
     Source<String, NotUsed> customerSummarySourceJson = componentClient
       .forView()
       .stream(CustomersByCity::continuousCustomersInCity)
-      .source(cityName)
-      .map(JsonSupport::encodeToString);
+      .source(cityName) // <1>
+      .map(JsonSupport::encodeToString); // <2>
 
-    return HttpResponses.textWebsocket(
-      requestContext(),
-      Flow.fromSinkAndSource(
+    return HttpResponses.textWebsocket( // <3>
+      requestContext(), // <4>
+      Flow.fromSinkAndSource( // <5>
         // ignore messages from client
         Sink.ignore(),
         // stream view updates

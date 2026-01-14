@@ -391,8 +391,7 @@ public class HttpResponses {
    * </ul>
    *
    * <p><b>Important:</b> WebSocket endpoints require additional route configuration to be
-   * accessible in deployed services. Refer to the Akka SDK documentation for configuration
-   * details.
+   * accessible in deployed services. Refer to the Akka SDK documentation for configuration details.
    *
    * @param requestContext The request context from the endpoint (available when the endpoint
    *     extends AbstractHttpEndpoint)
@@ -422,14 +421,13 @@ public class HttpResponses {
    * </ul>
    *
    * <p><b>Important:</b> WebSocket endpoints require additional route configuration to be
-   * accessible in deployed services. Refer to the Akka SDK documentation for configuration
-   * details.
+   * accessible in deployed services. Refer to the Akka SDK documentation for configuration details.
    *
    * @param requestContext The request context from the endpoint (available when the endpoint
    *     extends AbstractHttpEndpoint)
    * @param protocolSelector A function that receives the list of protocols requested by the client
-   *     and returns a {@link SelectedWebSocketProtocol} containing the chosen protocol name and
-   *     the corresponding flow to handle messages
+   *     and returns a {@link SelectedWebSocketProtocol} containing the chosen protocol name and the
+   *     corresponding flow to handle messages
    * @return An HTTP response to return from the HttpEndpoint method
    */
   public static HttpResponse binaryWebsocket(
@@ -454,8 +452,7 @@ public class HttpResponses {
    * </ul>
    *
    * <p><b>Important:</b> WebSocket endpoints require additional route configuration to be
-   * accessible in deployed services. Refer to the Akka SDK documentation for configuration
-   * details.
+   * accessible in deployed services. Refer to the Akka SDK documentation for configuration details.
    *
    * @param requestContext The request context from the endpoint (available when the endpoint
    *     extends AbstractHttpEndpoint)
@@ -485,14 +482,13 @@ public class HttpResponses {
    * </ul>
    *
    * <p><b>Important:</b> WebSocket endpoints require additional route configuration to be
-   * accessible in deployed services. Refer to the Akka SDK documentation for configuration
-   * details.
+   * accessible in deployed services. Refer to the Akka SDK documentation for configuration details.
    *
    * @param requestContext The request context from the endpoint (available when the endpoint
    *     extends AbstractHttpEndpoint)
    * @param protocolSelector A function that receives the list of protocols requested by the client
-   *     and returns a {@link SelectedWebSocketProtocol} containing the chosen protocol name and
-   *     the corresponding flow to handle messages
+   *     and returns a {@link SelectedWebSocketProtocol} containing the chosen protocol name and the
+   *     corresponding flow to handle messages
    * @return An HTTP response to return from the HttpEndpoint method
    */
   public static HttpResponse textWebsocket(
