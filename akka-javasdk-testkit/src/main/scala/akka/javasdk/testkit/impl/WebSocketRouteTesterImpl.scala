@@ -4,6 +4,9 @@
 
 package akka.javasdk.testkit.impl
 
+import java.util.concurrent.CompletionStage
+import java.util.concurrent.TimeUnit
+
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.http.javadsl.Http
@@ -12,8 +15,8 @@ import akka.http.javadsl.model.ws.Message
 import akka.http.javadsl.model.ws.TextMessage
 import akka.http.javadsl.model.ws.WebSocketRequest
 import akka.http.javadsl.model.ws.WebSocketUpgradeResponse
-import akka.http.scaladsl.model.ws.TextMessage.{ Strict => ScalaStrictTextMessage }
 import akka.http.scaladsl.model.ws.BinaryMessage.{ Strict => ScalaStrictBinaryMessage }
+import akka.http.scaladsl.model.ws.TextMessage.{ Strict => ScalaStrictTextMessage }
 import akka.japi.Pair
 import akka.javasdk.testkit.WebSocketRouteTester
 import akka.javasdk.testkit.WebSocketRouteTester.WsConnection
@@ -25,9 +28,6 @@ import akka.stream.testkit.TestSubscriber
 import akka.stream.testkit.javadsl.TestSink
 import akka.stream.testkit.javadsl.TestSource
 import akka.util.ByteString
-
-import java.util.concurrent.CompletionStage
-import java.util.concurrent.TimeUnit
 
 /**
  * INTERNAL API Used by the testkit
