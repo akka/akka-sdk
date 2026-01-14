@@ -45,6 +45,6 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
 
 record ShoppingCart(String id) {}
 
-interface ShoppingCartEvent {}
+sealed interface ShoppingCartEvent {}
 
 record CartCreated(String cartId, String userId) implements ShoppingCartEvent {}
