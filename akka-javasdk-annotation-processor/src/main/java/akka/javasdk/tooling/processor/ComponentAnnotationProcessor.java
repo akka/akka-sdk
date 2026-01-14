@@ -178,6 +178,35 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
 
   private String recurseForComponentType(Element annotatedClass, Element current) {
     var superClassTypeMirror = ((TypeElement) current).getSuperclass();
+
+    if (superClassTypeMirror.getKind() == javax.lang.model.type.TypeKind.NONE) {
+      throw new IllegalArgumentException(
+          "Unknown supertype for class ["
+              + annotatedClass
+              + "] annotated with @Component or @ComponentId. Reached top of hierarchy without"
+              + " finding a known component supertype.");
+    }
+
+    if (superClassTypeMirror.getKind() == javax.lang.model.type.TypeKind.ERROR) {
+      throw new IllegalArgumentException(
+          "Superclass for class ["
+              + current
+              + "] (processing ["
+              + annotatedClass
+              + "]) could not be resolved. Ensure all dependencies and imports are correct.");
+    }
+
+    if (!(superClassTypeMirror instanceof DeclaredType)) {
+      throw new IllegalArgumentException(
+          "Unknown supertype for class ["
+              + annotatedClass
+              + "] annotated with @Component or @ComponentId. Superclass ["
+              + superClassTypeMirror
+              + "] is not a declared type (kind: "
+              + superClassTypeMirror.getKind()
+              + ").");
+    }
+
     var superClassElement = ((DeclaredType) superClassTypeMirror).asElement();
 
     var superClassName = superClassTypeMirror.toString();
