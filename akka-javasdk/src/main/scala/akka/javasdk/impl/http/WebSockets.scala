@@ -4,7 +4,12 @@
 
 package akka.javasdk.impl.http
 
+import java.util.stream.Collectors
+import java.util.stream.StreamSupport
+import java.util.{ List => JList }
+
 import scala.jdk.FutureConverters.CompletionStageOps
+
 import akka.NotUsed
 import akka.annotation.InternalApi
 import akka.http.javadsl.model.HttpRequest
@@ -18,10 +23,6 @@ import akka.stream.javadsl.{ Flow => JavaDslFlow }
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import org.slf4j.LoggerFactory
-
-import java.util.stream.Collectors
-import java.util.stream.StreamSupport
-import java.util.{ List => JList }
 
 /**
  * INTERNAL API
