@@ -6,7 +6,9 @@ package akka.javasdk.agent;
 
 import com.typesafe.config.Config;
 import java.time.Duration;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Configuration interface for AI model providers used by agents.
@@ -295,7 +297,7 @@ public sealed interface ModelProvider {
         Duration.ofMinutes(1),
         2,
         "",
-        0,
+        Optional.empty(),
         "");
   }
 
@@ -310,7 +312,7 @@ public sealed interface ModelProvider {
       Duration responseTimeout,
       int maxRetries,
       String baseUrl,
-      int thinkingBudget,
+      Optional<Integer> thinkingBudget,
       String thinkingLevel)
       implements ModelProvider {
 
@@ -338,11 +340,15 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           "",
-          0,
+          Optional.empty(),
           "");
     }
 
     public static GoogleAIGemini fromConfig(Config config) {
+      final Optional<Integer> thinkingBudget =
+          (config.getString("thinking-budget").toLowerCase(Locale.ROOT).equals("none")
+              ? Optional.empty()
+              : Optional.of(config.getInt("thinking-budget")));
       return new GoogleAIGemini(
           config.getString("api-key"),
           config.getString("model-name"),
@@ -353,7 +359,7 @@ public sealed interface ModelProvider {
           config.getDuration("response-timeout"),
           config.getInt("max-retries"),
           config.getString("base-url"),
-          config.getInt("thinking-budget"),
+          thinkingBudget,
           config.getString("thinking-level"));
     }
 
@@ -492,7 +498,7 @@ public sealed interface ModelProvider {
           thinkingLevel);
     }
 
-    public GoogleAIGemini withThinkingBudget(int thinkingBudget) {
+    public GoogleAIGemini withThinkingBudget(Optional<Integer> thinkingBudget) {
       return new GoogleAIGemini(
           apiKey,
           modelName,
