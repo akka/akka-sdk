@@ -46,12 +46,5 @@ public class HelloWorldWebSocketEndpoint extends AbstractHttpEndpoint {
           .source(requestText))
     );
   }
-
-  // end::class[]
-  @Get("/hello-websocket")
-  public HttpResponse index() {
-    return HttpResponses.staticResource("hello-websocket.html");
-  }
-  // tag::class[]
 }
 // end::class[]

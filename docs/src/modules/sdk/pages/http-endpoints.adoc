@@ -441,9 +441,9 @@ In many cases WebSockets are interesting because of the bidirectional capabiliti
 that accepts incoming agent requests, feeds those into a streaming agent and then streams the agent response back to the client:
 
 [source,java,indent=0]
-.{sample-base-url}/helloworld-agent/src/main/java/com/example/api/HelloWorldWebSocketEndpoint.java[HelloWorldWebSocketEndpoint.java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/HelloWorldWebSocketEndpoint.java[HelloWorldWebSocketEndpoint.java]
 ----
-include::example$helloworld-agent/src/main/java/com/example/api/HelloWorldWebSocketEndpoint.java[tag=class]
+include::example$doc-snippets/src/main/java/com/example/api/HelloWorldWebSocketEndpoint.java[tag=class]
 ----
 <1> Response is created using a WebSocket stream of strings.
 <2> `Flow.flatMapConcat` turns each incoming request into a stream of response strings
