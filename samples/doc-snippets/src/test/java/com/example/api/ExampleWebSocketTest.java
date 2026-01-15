@@ -1,8 +1,8 @@
 package com.example.api;
 
-import akka.javasdk.testkit.TestKitSupport;
-
 import static org.assertj.core.api.Assertions.assertThat;
+
+import akka.javasdk.testkit.TestKitSupport;
 
 public class ExampleWebSocketTest extends TestKitSupport {
 
@@ -28,4 +28,3 @@ public class ExampleWebSocketTest extends TestKitSupport {
     // end::ws-testkit[]
   }
 }
-
