@@ -23,7 +23,7 @@ import com.example.application.StreamingHelloWorldAgent;
 // and often set more limited
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint
-public class HelloWorldWebSocketEndpoint extends AbstractHttpEndpoint  {
+public class HelloWorldWebSocketEndpoint extends AbstractHttpEndpoint {
 
   private final ComponentClient componentClient;
 
@@ -36,16 +36,15 @@ public class HelloWorldWebSocketEndpoint extends AbstractHttpEndpoint  {
   // tag::class[]
   @Get("/hello-websocket/{user}")
   public HttpResponse hello(String user) {
-    return HttpResponses.textWebsocket(requestContext(), // <1>
-        Flow.of(String.class)
-            .flatMapConcat(requestText -> // <2>
-                componentClient
-                    .forAgent()
-                    .inSession(user)
-                    .tokenStream(StreamingHelloWorldAgent::greet)
-                    .source(requestText)
-                )
-        );
+    return HttpResponses.textWebsocket(
+      requestContext(), // <1>
+      Flow.of(String.class).flatMapConcat(requestText -> // <2>
+        componentClient
+          .forAgent()
+          .inSession(user)
+          .tokenStream(StreamingHelloWorldAgent::greet)
+          .source(requestText))
+    );
   }
 
   // end::class[]
