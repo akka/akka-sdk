@@ -530,7 +530,7 @@ private[impl] final class AgentImpl[A <: Agent](
           topK = p.topK,
           maxTokens = p.maxTokens,
           new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
-          thinkingBudgetTokens = 0)
+          thinkingBudgetTokens = p.thinkingBudgetTokens)
       case p: ModelProvider.GoogleAIGemini =>
         new SpiAgent.ModelProvider.GoogleAIGemini(
           p.apiKey(),
@@ -540,8 +540,8 @@ private[impl] final class AgentImpl[A <: Agent](
           p.topP(),
           p.maxOutputTokens(),
           new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
-          thinkingBudget = None,
-          thinkingLevel = "")
+          p.thinkingBudget,
+          p.thinkingLevel)
       case p: ModelProvider.HuggingFace =>
         new SpiAgent.ModelProvider.HuggingFace(
           p.accessToken(),
@@ -551,7 +551,7 @@ private[impl] final class AgentImpl[A <: Agent](
           p.topP(),
           p.maxNewTokens(),
           new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
-          thinking = false)
+          p.thinking())
       case p: ModelProvider.LocalAI =>
         new SpiAgent.ModelProvider.LocalAI(p.baseUrl(), p.modelName(), p.temperature(), p.topP(), p.maxTokens())
       case p: ModelProvider.Ollama =>
@@ -561,7 +561,7 @@ private[impl] final class AgentImpl[A <: Agent](
           p.temperature(),
           p.topP(),
           new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
-          thinking = false)
+          p.think)
       case p: ModelProvider.OpenAi =>
         new SpiAgent.ModelProvider.OpenAi(
           apiKey = p.apiKey,
@@ -572,7 +572,7 @@ private[impl] final class AgentImpl[A <: Agent](
           maxTokens = p.maxTokens,
           maxCompletionTokens = p.maxCompletionTokens,
           new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
-          thinking = false)
+          thinking = p.thinking)
       case p: ModelProvider.Custom =>
         new SpiAgent.ModelProvider.Custom(() => p.createChatModel(), () => p.createStreamingChatModel())
       case p: ModelProvider.Bedrock =>
