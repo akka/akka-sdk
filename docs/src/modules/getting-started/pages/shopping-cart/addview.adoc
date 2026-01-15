@@ -187,6 +187,14 @@ With JWT authentication in place, it's now slightly more difficult to invoke the
 curl http://localhost:9000/carts/my -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJib2IiLCJuYW1lIjoiQm9iIEJvYmJlcnNvbiIsImlzcyI6ImFsaWNlIiwiaWF0IjoxNTE2MjM5MDIyfQ.wIxafOw2k4TgdCm2pH4abupetKRKS4ItOKlsNTY-pzc'
 ----
 
+While `curl` is useful for automation and testing, sometimes it might be easier to use a tool to generate requests for your endpoints. With the Akka local console running, you can navigate to the HTTP endpoint and then build a request, as shown in the following screenshot:
+
+image:shoppingcart_request_builder.png[Shopping cart request builder]
+
+Once executed, you'll be able to see an execution trace that shows every component invoked and all the corresponding details for that request.
+
+image:shoppingcart_request_flow.png[Shopping cart request trace view]
+
 == Next steps
 
 Now that you've added a view _and_ user authentication to the shopping cart sample, take your Akka skills to the next level:
