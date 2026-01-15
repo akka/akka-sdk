@@ -36,5 +36,6 @@
 *** xref:sdk:running-locally.adoc[]
 *** xref:sdk:model-provider-details.adoc[]
 *** xref:sdk:sanitization.adoc[Data sanitization]
+*** xref:sdk:metrics.adoc[]
 ** xref:sdk:dev-best-practices.adoc[]
 ** xref:sdk:ai-coding-assistant.adoc[]

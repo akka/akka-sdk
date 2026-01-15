@@ -230,6 +230,8 @@
                                                         <exclude>io.akka:akka-sdk-spi_2.13</exclude>
                                                         <!-- langchain -->
                                                         <exclude>dev.langchain4j:langchain4j</exclude>
+                                                        <!-- prometheus -->
+                                                        <exclude>io.prometheus:prometheus-metrics-core</exclude>
                                                     </excludes>
                                                 </dependencySet>
                                             </dependencySets>
