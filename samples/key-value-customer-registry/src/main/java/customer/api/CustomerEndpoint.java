@@ -168,6 +168,7 @@ public class CustomerEndpoint extends AbstractHttpEndpoint {
       )
     );
   }
+
   // end::ws-view-updates[]
 
   // tag::sse-customer-changes[]
