@@ -540,7 +540,7 @@ private[impl] final class AgentImpl[A <: Agent](
           p.topP(),
           p.maxOutputTokens(),
           new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
-          p.thinkingBudget,
+          p.thinkingBudget.toScala.map(_.intValue()),
           p.thinkingLevel)
       case p: ModelProvider.HuggingFace =>
         new SpiAgent.ModelProvider.HuggingFace(
