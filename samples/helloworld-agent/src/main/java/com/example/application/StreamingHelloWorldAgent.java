@@ -4,7 +4,7 @@ import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.Component;
 
 // tag::class[]
-@Component(id = "hello-world-agent")
+@Component(id = "hello-world-agent-streaming")
 public class StreamingHelloWorldAgent extends Agent {
 
   private static final String SYSTEM_MESSAGE =

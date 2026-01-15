@@ -1,5 +1,6 @@
 package com.example.api;
 
+import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
@@ -30,12 +31,11 @@ public class HelloWorldWebSocketEndpoint extends AbstractHttpEndpoint  {
     this.componentClient = componentClient;
   }
 
-
   // end::class[]
   // Note: using websocket in a deployed service requires additional steps, see the documentation
   // tag::class[]
   @Get("/hello-websocket/{user}")
-  public String hello(String user) {
+  public HttpResponse hello(String user) {
     return HttpResponses.textWebsocket(requestContext(), // <1>
         Flow.of(String.class)
             .flatMapConcat(requestText -> // <2>
@@ -47,5 +47,12 @@ public class HelloWorldWebSocketEndpoint extends AbstractHttpEndpoint  {
                 )
         );
   }
+
+  // end::class[]
+  @Get("/hello-websocket")
+  public HttpResponse index() {
+    return HttpResponses.staticResource("hello-websocket.html");
+  }
+  // tag::class[]
 }
 // end::class[]
