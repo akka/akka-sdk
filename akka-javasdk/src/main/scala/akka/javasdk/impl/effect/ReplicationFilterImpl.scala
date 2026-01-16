@@ -24,7 +24,8 @@ private[javasdk] object ReplicationFilterImpl {
  */
 @InternalApi
 private[javasdk] final case class ReplicationFilterImpl(includedRegions: Set[String], excludedRegions: Set[String])
-    extends akka.javasdk.eventsourcedentity.ReplicationFilter.Builder {
+    extends akka.javasdk.eventsourcedentity.ReplicationFilter.Builder
+    with akka.javasdk.keyvalueentity.ReplicationFilter.Builder {
   override def includeRegion(region: String): ReplicationFilterImpl =
     copy(includedRegions = includedRegions + region)
 

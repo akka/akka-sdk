@@ -285,6 +285,28 @@ public abstract class KeyValueEntity<S> {
       OnSuccessBuilder<S> updateStateWithMetadata(S newState, Metadata metadata);
 
       /**
+       * Change the replication filter for this entity updating the state.
+       *
+       * <p>State is by default replicated to all regions that have been enabled for the service.
+       * This method allows you to control which regions participate in the replication for this
+       * specific entity instance. This is useful for regulatory reasons or as cost optimization.
+       *
+       * <p>The replication filter can only be updated from the primary region of the entity, or the
+       * entity will become the primary if using the request-region primary selection strategy. The
+       * filter is durable for the specific entity instance and can be changed without deploying a
+       * new version.
+       *
+       * <p>The region where the update is made (the self region) is automatically included in the
+       * replication filter. The changes are additive, meaning that if you first update the filter
+       * to include one region and then later make another update to include a different region from
+       * the same entity, both regions are included.
+       *
+       * @param filter the replication filter defining which regions to include or exclude
+       * @return an effect builder for chaining additional operations
+       */
+      OnSuccessBuilder<S> updateReplicationFilter(ReplicationFilter.Builder filter);
+
+      /**
        * Marks the entity for deletion. After deletion, the entity will still exist with an empty
        * state for some time before being completely removed. No additional state updates are
        * allowed after deletion.
@@ -366,6 +388,31 @@ public abstract class KeyValueEntity<S> {
        * @return an effect that will perform the state operation and then send the reply
        */
       <T> Effect<T> thenReply(T message, Metadata metadata);
+
+      /**
+       * Change the replication filter for this entity, combined with updating state.
+       *
+       * <p>State us by default replicated to all regions that have been enabled for the service.
+       * This method allows you to control which regions participate in the replication for this
+       * specific entity instance. This is useful for regulatory reasons or as cost optimization.
+       *
+       * <p>This effect can be combined with updating the state. For example, you can update the
+       * state and then update the replication filter in the same command handler.
+       *
+       * <p>The replication filter can only be updated from the primary region of the entity, or the
+       * entity will become the primary if using the request-region primary selection strategy. The
+       * filter is durable for the specific entity instance and can be changed without deploying a
+       * new version.
+       *
+       * <p>The region where the update is made (the self region) is automatically included in the
+       * replication filter. The changes are additive, meaning that if you first update the filter
+       * to include one region and then later make another update to include a different region from
+       * the same entity, both regions are included.
+       *
+       * @param filter the replication filter defining which regions to include or exclude
+       * @return an effect builder for chaining additional operations
+       */
+      OnSuccessBuilder<S> updateReplicationFilter(ReplicationFilter.Builder filter);
     }
   }
 
