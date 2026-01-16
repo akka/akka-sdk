@@ -1,0 +1,5 @@
+= Telemetry reference
+
+This section provides reference documentation for the telemetry recorded by Akka.
+
+* xref:telemetry/metrics.adoc[]

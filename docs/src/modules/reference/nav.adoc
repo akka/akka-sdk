@@ -281,3 +281,5 @@
 *** xref:cli/akka-cli/akka_services.adoc[]
 *** xref:cli/akka-cli/akka_version.adoc[]
 *** xref:cli/akka-cli/akka.adoc[]
+** xref:telemetry/index.adoc[]
+*** xref:telemetry/metrics.adoc[]
