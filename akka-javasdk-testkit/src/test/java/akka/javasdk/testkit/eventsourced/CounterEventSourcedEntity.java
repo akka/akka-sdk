@@ -37,6 +37,12 @@ public class CounterEventSourcedEntity extends EventSourcedEntity<Integer, Count
         .thenReply(__ -> "Ok");
   }
 
+  public Effect<String> okSet(Integer value) {
+    return effects()
+        .persist(new CounterEvent.SerializableSet(commandContext().entityId(), value))
+        .thenReply(__ -> "Ok");
+  }
+
   public Effect<String> increaseFromMeta() {
     return effects()
         .persist(
@@ -75,6 +81,13 @@ public class CounterEventSourcedEntity extends EventSourcedEntity<Integer, Count
         else yield currentState() + increased.value();
       }
       case CounterEvent.Set set -> set.value();
+      case CounterEvent.SerializableSet set -> {
+        if (set.value() == 42) {
+          yield null;
+        } else {
+          yield set.value();
+        }
+      }
     };
   }
 

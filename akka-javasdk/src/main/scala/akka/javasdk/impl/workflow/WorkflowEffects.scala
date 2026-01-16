@@ -67,7 +67,9 @@ object WorkflowEffects {
   }
   sealed trait Persistence[+S]
 
-  final case class UpdateState[S](newState: S) extends Persistence[S]
+  final case class UpdateState[S](newState: S) extends Persistence[S] {
+    require(newState != null, "Updated state must not be null")
+  }
 
   case object NoPersistence extends Persistence[Nothing]
 
