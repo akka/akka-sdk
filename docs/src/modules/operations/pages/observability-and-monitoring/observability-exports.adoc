@@ -7,6 +7,10 @@ Observability configuration is configured per Akka project. All services in that
 
 When updating observability configuration, the changes will not take effect until a service is restarted.
 
+== Exported metrics
+
+For a complete list of metrics recorded and exported by Akka, see the xref:reference:telemetry/metrics.adoc[metrics reference].
+
 == Working with observability descriptors
 
 The Akka observability descriptor allows observability export configuration to be specified in a YAML file, for versioning and reuse across projects and environments.
@@ -423,3 +427,4 @@ This will show the observability agent logs for all instances of the service. An
 == See also
 
 - xref:reference:cli/akka-cli/akka_projects_observability.adoc#_see_also[`akka project observability` commands]
+- xref:reference:telemetry/metrics.adoc[Exported metrics reference]
