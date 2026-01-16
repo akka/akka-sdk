@@ -9,7 +9,7 @@ Install the `akka` CLI using the Debian package repository:
 [source,bash]
 ----
 curl -1sLf \
-  'https://dl.cloudsmith.io/public/lightbend/public-akka/setup.deb.sh' \
+  'https://downloads.akka.io/setup.deb.sh' \
   | sudo -E bash
 sudo apt install akka
 ----
