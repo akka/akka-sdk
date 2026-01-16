@@ -61,7 +61,6 @@ import akka.javasdk.grpc.GrpcClientProvider
 import akka.javasdk.grpc.GrpcRequestContext
 import akka.javasdk.http.AbstractHttpEndpoint
 import akka.javasdk.http.HttpClientProvider
-import akka.javasdk.http.QueryParams
 import akka.javasdk.http.RequestContext
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerDestination
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerSource
@@ -79,8 +78,8 @@ import akka.javasdk.impl.consumer.MessageContextImpl
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl
 import akka.javasdk.impl.http.HttpClientProviderImpl
+import akka.javasdk.impl.http.HttpRequestContextImpl
 import akka.javasdk.impl.http.JwtClaimsImpl
-import akka.javasdk.impl.http.QueryParamsImpl
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
@@ -130,6 +129,7 @@ import akka.runtime.sdk.spi.UserFunctionError
 import akka.runtime.sdk.spi.ViewDescriptor
 import akka.runtime.sdk.spi.WorkflowDescriptor
 import akka.stream.Materializer
+import akka.stream.SystemMaterializer
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.opentelemetry.api.trace.Span
@@ -437,7 +437,7 @@ private final class Sdk(
   private val applicationConfig = ApplicationConfig(system).getConfig
   private val sdkSettings = Settings(applicationConfig.getConfig("akka.javasdk"))
 
-  private val sdkTracerFactory = () => tracerFactory(TraceInstrumentation.InstrumentationScopeName)
+  private val sdkTracerFactory: () => Tracer = () => tracerFactory(TraceInstrumentation.InstrumentationScopeName)
 
   private lazy val httpClientProvider = new HttpClientProviderImpl(
     system,
@@ -964,37 +964,8 @@ private final class Sdk(
 
   private def httpEndpointFactory[E](httpEndpointClass: Class[E]): HttpEndpointConstructionContext => E = {
     (context: HttpEndpointConstructionContext) =>
-      lazy val requestContext = new RequestContext {
-        override def getPrincipals: Principals =
-          PrincipalsImpl(context.principal.source, context.principal.service)
-
-        override def getJwtClaims: JwtClaims =
-          context.jwt match {
-            case Some(jwtClaims) => new JwtClaimsImpl(jwtClaims)
-            case None =>
-              throw new RuntimeException(
-                "There are no JWT claims defined but trying accessing the JWT claims. The class or the method needs to be annotated with @JWT.")
-          }
-
-        override def requestHeader(headerName: String): Optional[HttpHeader] =
-          // Note: force cast to Java header model
-          context.requestHeaders.header(headerName).asInstanceOf[Option[HttpHeader]].toJava
-
-        override def allRequestHeaders(): util.List[HttpHeader] =
-          // Note: force cast to Java header model
-          context.requestHeaders.allHeaders.asInstanceOf[Seq[HttpHeader]].asJava
-
-        override def tracing(): Tracing = new SpanTracingImpl(Option(context.telemetryContext), sdkTracerFactory)
-
-        override def queryParams(): QueryParams = {
-          QueryParamsImpl(context.httpRequest.uri.query())
-        }
-
-        override def lastSeenSseEventId(): Optional[String] =
-          context.requestHeaders.header("Last-Event-ID").map(_.value()).toJava
-
-        override def selfRegion(): String = regionInfo.selfRegion
-      }
+      lazy val requestContext = new HttpRequestContextImpl(context, sdkTracerFactory, regionInfo)(
+        SystemMaterializer(system).materializer)
       val instance = wiredInstance(httpEndpointClass) {
         sideEffectingComponentInjects(Option(context.telemetryContext)).orElse {
           case p if p == classOf[RequestContext] => requestContext

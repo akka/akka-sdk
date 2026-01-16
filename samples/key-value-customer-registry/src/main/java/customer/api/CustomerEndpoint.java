@@ -6,6 +6,7 @@ import akka.http.javadsl.model.ContentTypes;
 import akka.http.javadsl.model.HttpEntities;
 import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.model.StatusCodes;
+import akka.javasdk.JsonSupport;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Delete;
 import akka.javasdk.annotations.http.Get;
@@ -17,6 +18,8 @@ import akka.javasdk.http.AbstractHttpEndpoint;
 import akka.javasdk.http.HttpException;
 import akka.javasdk.http.HttpResponses;
 import akka.javasdk.view.EntryWithMetadata;
+import akka.stream.javadsl.Flow;
+import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import customer.application.CustomerEntity;
@@ -143,6 +146,30 @@ public class CustomerEndpoint extends AbstractHttpEndpoint {
   }
 
   // end::sse-view-updates[]
+
+  // Note: using websocket in a deployed service requires additional steps, see the documentation
+  // tag::ws-view-updates[]
+  @Get("/by-city-ws/{cityName}")
+  public HttpResponse continousByCityNameWebSocket(String cityName) {
+    // view will keep stream going, toggled with streamUpdates = true on the query
+    Source<String, NotUsed> customerSummarySourceJson = componentClient
+      .forView()
+      .stream(CustomersByCity::continuousCustomersInCity)
+      .source(cityName) // <1>
+      .map(JsonSupport::encodeToString); // <2>
+
+    return HttpResponses.textWebsocket( // <3>
+      requestContext(), // <4>
+      Flow.fromSinkAndSource( // <5>
+        // ignore messages from client
+        Sink.ignore(),
+        // stream view updates
+        customerSummarySourceJson
+      )
+    );
+  }
+
+  // end::ws-view-updates[]
 
   // tag::sse-customer-changes[]
   private record CustomerStreamState(Optional<Customer> customer, boolean isSame) {}
