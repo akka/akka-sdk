@@ -22,15 +22,16 @@ object Dependencies {
 
   val ScalaTestVersion = "3.2.14"
   // https://github.com/akka/akka/blob/main/project/Dependencies.scala#L31
-  val JacksonVersion = "2.19.0"
+  val JacksonVersion = "2.20.1"
   val JacksonDatabindVersion = JacksonVersion
-  val Langchain4jVersion = "1.5.0"
-  val LogbackVersion = "1.5.18"
+  val JacksonAnnotationsVersion = "2.20"
+  val Langchain4jVersion = "1.10.0"
+  val LogbackVersion = "1.5.23"
   val LogbackContribVersion = "0.1.5"
   val JUnitVersion = "4.13.2"
   val JUnitInterfaceVersion = "0.11"
   val JUnitJupiterVersion = "5.10.1"
-  val OpenTelemetryVersion = "1.51.0"
+  val OpenTelemetryVersion = "1.57.0"
   val OpenTelemetrySemConv = "1.34.0"
 
   val CommonsIoVersion = "2.11.0"
@@ -50,7 +51,7 @@ object Dependencies {
   val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.16"
 
   val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % JacksonVersion
-  val jacksonAnnotations = "com.fasterxml.jackson.core" % "jackson-annotations" % JacksonVersion
+  val jacksonAnnotations = "com.fasterxml.jackson.core" % "jackson-annotations" % JacksonAnnotationsVersion
   val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % JacksonDatabindVersion
   val jacksonJdk8 = "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % JacksonVersion
   val jacksonJsr310 = "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % JacksonVersion
