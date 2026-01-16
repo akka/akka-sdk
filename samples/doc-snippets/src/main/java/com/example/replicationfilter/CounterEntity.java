@@ -18,7 +18,6 @@ public class CounterEntity extends KeyValueEntity<Counter> {
     return new Counter(0);
   }
 
-
   // tag::replication-filter-update-state[]
   public Effect<Counter> increaseBy(int increaseBy) {
     var selfRegion = commandContext().selfRegion();
@@ -34,11 +33,11 @@ public class CounterEntity extends KeyValueEntity<Counter> {
 
   public Effect<Done> replicateTo(String region) {
     return effects()
-        .updateReplicationFilter(ReplicationFilter.includeRegion(region)) // <2>
-        .thenReply(Done.getInstance());
+      .updateReplicationFilter(ReplicationFilter.includeRegion(region)) // <2>
+      .thenReply(Done.getInstance());
   }
-
 }
+
 // end::replication-filter[]
 
 record Counter(int value) {
