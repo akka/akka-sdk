@@ -117,6 +117,8 @@ Make sure that you download the latest documentation regularly to make use of do
 
 === Notes about Gemini CLI
 
+For Gemini CLI you can use `akka code init` and select Claude as coding assistant. Then rename the file `CLAUDE.md` to `GEMINI.md`.
+
 If Gemini CLI doesn't make use of the documentation in `akka-context` directory it can be because it is listed in `.gitignore`. Then you have to remove `akka-context` from `.gitignore`.
 
 === Notes about OpenAI Codex
