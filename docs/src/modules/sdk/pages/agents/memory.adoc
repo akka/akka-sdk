@@ -189,4 +189,6 @@ include::example$doc-snippets/src/main/java/com/example/application/SessionMemor
 <4> Store the summary as the new compacted history in the `SessionMemoryEntity`.
 <5> To support concurrent updates, the `sequenceNumber` of the retrieved history is included in the `CompactionCmd`.
 
+== Multi-region replication
 
+The session memory can be replicated to other regions, but it has the multi-region replication filter enabled to only include the local region when using `request-region` primary selection. When accessed from another region the filter will automatically be expanded to include the other region too, and thereby contain the same information.

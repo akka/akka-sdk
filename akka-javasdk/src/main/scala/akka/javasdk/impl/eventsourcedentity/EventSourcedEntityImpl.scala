@@ -25,9 +25,11 @@ import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
+import akka.javasdk.impl.effect.ReplicationFilterImpl
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.EmitEvents
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.EmitEventsWithMetadata
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.NoPrimaryEffect
+import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
@@ -150,6 +152,11 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
         }
       }
 
+      if ((commandEffect.replFilter ne ReplicationFilterImpl.empty) && !isReplicationFilterEnabled) {
+        throw new IllegalStateException(
+          "To use replication filters the EventSourcedEntity class must be annotated with @EnableReplicationFilter.")
+      }
+
       var currentSequence = command.sequenceNumber
 
       def emitEvents(events: Iterable[Any], eventsMetadata: Iterable[Metadata], deleteEntity: Boolean) = {
@@ -181,8 +188,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
                 metadata,
                 deleteEntity,
                 eventsMetadata.iterator.map(MetadataImpl.toSpi).toVector,
-                SpiEventSourcedEntity.ChangeReplicationFilter.empty // FIXME: add replication filter
-              ))
+                replicationFilter = commandEffect.replFilter.toSpi))
         }
       }
 
@@ -259,4 +265,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
 
   override def stateFromBytes(pb: BytesPayload): SpiEventSourcedEntity.State =
     serializer.fromBytes(entityStateType, pb).asInstanceOf[SpiEventSourcedEntity.State]
+
+  private def isReplicationFilterEnabled: Boolean =
+    Reflect.isReplicationFilterEnabled(entity.getClass)
 }
