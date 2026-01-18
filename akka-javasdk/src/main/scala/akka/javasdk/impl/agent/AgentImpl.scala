@@ -7,7 +7,6 @@ package akka.javasdk.impl.agent
 import java.net.URI
 import java.time.Instant
 import java.util.concurrent.TimeUnit
-
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -17,7 +16,6 @@ import scala.jdk.CollectionConverters._
 import scala.jdk.DurationConverters.JavaDurationOps
 import scala.jdk.OptionConverters.RichOptional
 import scala.util.control.NonFatal
-
 import akka.annotation.InternalApi
 import akka.http.scaladsl.model.HttpHeader
 import akka.javasdk.CommandException
@@ -77,6 +75,8 @@ import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
+
+import scala.jdk.OptionConverters.RichOption
 
 /**
  * INTERNAL API
@@ -402,7 +402,7 @@ private[impl] final class AgentImpl[A <: Agent](
           val requests = res.toolRequests.map { req =>
             new ToolCallRequest(req.id, req.name, req.arguments)
           }.asJava
-          new AiMessage(res.timestamp, res.content, componentId, requests)
+          new AiMessage(res.timestamp, res.content, componentId, requests, res.thinking.toJava)
 
         case res: SpiAgent.ToolCallResponse =>
           new ToolCallResponse(res.timestamp, componentId, res.id, res.name, res.content)
@@ -453,7 +453,7 @@ private[impl] final class AgentImpl[A <: Agent](
               new SpiAgent.ToolCallRequest(req.id(), req.name(), req.arguments())
             }
             .toSeq
-          new SpiAgent.ContextMessage.AiMessage(m.text(), toolRequests, None)
+          new SpiAgent.ContextMessage.AiMessage(m.text(), toolRequests, m.thinking().toScala)
         case m: UserMessage =>
           new SpiAgent.ContextMessage.UserMessage(m.text())
 
