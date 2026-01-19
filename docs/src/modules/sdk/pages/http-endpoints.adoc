@@ -416,8 +416,7 @@ ifdef::todo[TODO: details/link about this not working in a deployed service unle
 
 ==== Creating a WebSocket endpoint
 
-A WebSocket endpoint is created by returning an `HttpResponse` from `HttpResponses.textWebsocket` or `HttpResponses.binaryWebsocket`.
-These methods accept a `Flow` which will be fed incoming messages from the client, and send messages coming out of the flow back to the client.
+A WebSocket endpoint is created by annotating a method with `@WebSocket()` and having it return a `akka.stream.javadsl.Flow`. The returned flow will be fed incoming messages from the client, and messages coming out of the flow will be sent back to the client.
 
 The `Flow` can be a request-response type of interaction where each incoming message from a client leads to one or more response messages.
 Another alternative is separate, detached, input and output streams using `Flow.fromSinkAndSource`.
@@ -429,13 +428,14 @@ Here's an example that streams view updates from the server to the client WebSoc
 ----
 include::example$key-value-customer-registry/src/main/java/customer/api/CustomerEndpoint.java[tag=ws-view-updates]
 ----
-<1> Query the view to get a stream of customer updates
-<2> Convert each customer object to a JSON string using `JsonSupport.encodeToString`
-<3> Create a text WebSocket response using `HttpResponses.textWebsocket`
-<4> Pass the `RequestContext` which is needed for WebSocket protocol handling
+<1> Method annotated wity `WebSocket`
+<2> The method returns a `Flow<String, String, NotUsed>` to handle and emit WebSocket text messages
+<3> Query the view to get a stream of entries and updates
+<4> Convert each customer object to a JSON string using `JsonSupport.encodeToString`
 <5> Create a `Flow` that ignores incoming client messages and streams view updates to the client
 
-For binary WebSocket support, use `HttpResponses.binaryWebsocket` which accepts a `Flow` with `ByteString` instead of `String`.
+For binary WebSocket support, return a `Flow` with `ByteString` instead of `String`. For even greater flexibility
+`akka.http.javadsl.model.ws.Message` is also supported.
 
 In many cases WebSockets are interesting because of the bidirectional capabilities. Here is an example
 that accepts incoming agent requests, feeds those into a streaming agent and then streams the agent response back to the client:
@@ -445,18 +445,11 @@ that accepts incoming agent requests, feeds those into a streaming agent and the
 ----
 include::example$doc-snippets/src/main/java/com/example/api/HelloWorldWebSocketEndpoint.java[tag=class]
 ----
-<1> Response is created using a WebSocket stream of strings.
-<2> `Flow.flatMapConcat` turns each incoming request into a stream of response strings
+<1> Method annotated with `WebSocket`
+<2> Return type `Flow<String, String, NotUsed>` to handle and emit WebSocket text messages
+<3> `Flow.flatMapConcat` turns each incoming request into a stream of response strings
 
 `flatMapConcat` means that each response will be streamed until completion, before the next response starts.
-
-==== WebSocket protocol negotiation
-
-WebSocket supports protocols that can be negotiated, the client sends zero to many protocol names that it supports. The server
-endpoint then chooses one of the supported protocols and returns an appropriate `Flow` together with the chosen protocol name
-in a `SelectedWebSocketProtocol`.
-
-There is one `HttpResponses.binaryWebsocket` and one `HttpResponses.textWebsocket` method accepting such a protocol selector.
 
 ==== Testing WebSocket endpoints
 

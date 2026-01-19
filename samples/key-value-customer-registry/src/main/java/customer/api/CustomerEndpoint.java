@@ -150,16 +150,16 @@ public class CustomerEndpoint extends AbstractHttpEndpoint {
 
   // Note: using websocket in a deployed service requires additional steps, see the documentation
   // tag::ws-view-updates[]
-  @WebSocket("/by-city-ws/{cityName}")
-  public Flow<String, String, NotUsed> continousByCityNameWebSocket(String cityName) {
+  @WebSocket("/by-city-ws/{cityName}") // <1>
+  public Flow<String, String, NotUsed> continousByCityNameWebSocket(String cityName) { // <2>
     // view will keep stream going, toggled with streamUpdates = true on the query
     Source<String, NotUsed> customerSummarySourceJson = componentClient
       .forView()
       .stream(CustomersByCity::continuousCustomersInCity)
-      .source(cityName) // <1>
-      .map(JsonSupport::encodeToString); // <2>
+      .source(cityName) // <3>
+      .map(JsonSupport::encodeToString); // <4>
 
-    return Flow.fromSinkAndSource( // <3>
+    return Flow.fromSinkAndSource( // <5>
       // ignore messages from client
       Sink.ignore(),
       // stream view updates
