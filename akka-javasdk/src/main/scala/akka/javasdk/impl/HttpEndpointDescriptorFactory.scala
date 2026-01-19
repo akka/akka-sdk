@@ -4,13 +4,15 @@
 
 package akka.javasdk.impl
 
-import akka.NotUsed
-
 import java.lang.reflect.Method
+import java.lang.reflect.ParameterizedType
+
 import scala.annotation.tailrec
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
+
+import akka.NotUsed
 import akka.annotation.InternalApi
 import akka.http.javadsl.model.HttpEntity
 import akka.http.javadsl.model.HttpRequest
@@ -40,8 +42,6 @@ import akka.runtime.sdk.spi.MethodOptions
 import akka.runtime.sdk.spi.SpiJsonSchema
 import akka.util.ByteString
 import org.slf4j.LoggerFactory
-
-import java.lang.reflect.ParameterizedType
 
 /**
  * INTERNAL API
@@ -145,55 +145,65 @@ private[javasdk] object HttpEndpointDescriptorFactory {
                 else Validations.Valid -> count
             }
 
-          if (webSocket) {
-            val returnType = method.getReturnType
-            if (returnType != classOf[akka.stream.javadsl.Flow[_, _, _]])
-              invalid(
-                s"Wrong return type for WebSocket method [$methodName], must be [akka.stream.javadsl.Flow] but was [$returnType]")
-            method.getGenericReturnType match {
-              case p: ParameterizedType =>
-                val typeArgs = p.getActualTypeArguments
-                val in = typeArgs(0)
-                val out = typeArgs(1)
-                val mat = typeArgs(2)
-                if (in != out)
-                  invalid(
-                    s"WebSocket method [$methodName] has different types of Flow in and out messages, both must be the same.")
-                if (in != classOf[String] && in != classOf[ByteString] && in != classOf[
-                    akka.http.javadsl.model.ws.Message])
-                  invalid(
-                    s"WebSocket method [$methodName] has unsupported message type [$in], must be String for text messages, " +
-                    "akka.util.ByteString for binary messages or akka.http.javadsl.model.ws.Message for low level protocol handling.")
-                if (mat != classOf[NotUsed])
-                  invalid(
-                    s"WebSocket method [$methodName] has unsupported materialized value type [$mat], must be akka.NotUsed")
+          def validateWebSocket(): Validation =
+            if (webSocket) {
+              val returnType = method.getReturnType
+              if (returnType != classOf[akka.stream.javadsl.Flow[_, _, _]])
+                Validations.Invalid(
+                  s"Wrong return type for WebSocket method [$methodName], must be [akka.stream.javadsl.Flow] but was [$returnType]")
+              else
+                method.getGenericReturnType match {
+                  case p: ParameterizedType =>
+                    val typeArgs = p.getActualTypeArguments
+                    val in = typeArgs(0)
+                    val out = typeArgs(1)
+                    val mat = typeArgs(2)
+                    if (in != out)
+                      Validations.Invalid(
+                        s"WebSocket method [$methodName] has different types of Flow in and out messages, both must be the same.")
+                    else if (in != classOf[String] && in != classOf[ByteString] && in != classOf[
+                        akka.http.javadsl.model.ws.Message])
+                      Validations.Invalid(
+                        s"WebSocket method [$methodName] has unsupported message type [$in], must be String for text messages, " +
+                        "akka.util.ByteString for binary messages or akka.http.javadsl.model.ws.Message for low level protocol handling.")
+                    else if (mat != classOf[NotUsed])
+                      Validations.Invalid(
+                        s"WebSocket method [$methodName] has unsupported materialized value type [$mat], must be akka.NotUsed")
+                    else
+                      Validations.Valid
 
-              case huh =>
-                // won't ever happen because check above
-                throw new IllegalArgumentException(s"Unexpected WebSocket return type for [$methodName]: [$huh]")
-            }
-          }
+                  case huh =>
+                    // won't ever happen because check above
+                    throw new IllegalArgumentException(s"Unexpected WebSocket return type for [$methodName]: [$huh]")
+                }
+            } else Validations.Valid
 
-          validatePath(parsedPath, method.getParameters.toList.map(_.getName)) match {
-            case (Validations.Valid, pathParameterCount) =>
-              val methodSpec = deriveSpec(method, pathParameterCount)
-              if (webSocket && methodSpec.requestBody.isDefined)
-                invalid(s"Request body parameter defined for WebSocket method [$methodName], this is not supported")
-
-              Right(
-                new HttpEndpointMethodDescriptor(
-                  httpMethod = httpMethod,
-                  pathExpression = path,
-                  userMethod = method,
-                  methodOptions = new MethodOptions(
-                    deriveAclOptions(Option(method.getAnnotation(classOf[Acl]))),
-                    deriveJWTOptions(
-                      Option(method.getAnnotation(classOf[JWT])),
-                      endpointClass.getCanonicalName,
-                      Some(method))),
-                  methodSpec = methodSpec,
-                  webSocket = webSocket))
-            case (invalid, _) => Left(invalid)
+          validateWebSocket() match {
+            case wsInvalid: Validations.Invalid => Left(wsInvalid)
+            case Validations.Valid =>
+              validatePath(parsedPath, method.getParameters.toList.map(_.getName)) match {
+                case (Validations.Valid, pathParameterCount) =>
+                  val methodSpec = deriveSpec(method, pathParameterCount)
+                  if (webSocket && methodSpec.requestBody.isDefined)
+                    Left(
+                      Validations.Invalid(
+                        s"Request body parameter defined for WebSocket method [$methodName], this is not supported"))
+                  else
+                    Right(
+                      new HttpEndpointMethodDescriptor(
+                        httpMethod = httpMethod,
+                        pathExpression = path,
+                        userMethod = method,
+                        methodOptions = new MethodOptions(
+                          deriveAclOptions(Option(method.getAnnotation(classOf[Acl]))),
+                          deriveJWTOptions(
+                            Option(method.getAnnotation(classOf[JWT])),
+                            endpointClass.getCanonicalName,
+                            Some(method))),
+                        methodSpec = methodSpec,
+                        webSocket = webSocket))
+                case (invalid, _) => Left(invalid)
+              }
           }
         }
       }
