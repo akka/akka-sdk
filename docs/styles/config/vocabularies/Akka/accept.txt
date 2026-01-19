@@ -24,7 +24,9 @@ Bastian
 brokerless
 Buildah
 burstable
+CA
 CA's
+CAs
 caSecret
 Cembaluk
 [Cc]hatbots
@@ -94,6 +96,7 @@ iss
 Javadoc
 Json
 JUnit
+JVM's
 (?i)JWT
 (?i)JWTs
 [Kk]afka
@@ -220,6 +223,7 @@ tokenization
 tokenSecret
 transcoded
 [Tt]ranscoding
+truststore
 [Tt]ypesafe
 uid
 unary
