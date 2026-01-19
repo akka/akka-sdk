@@ -1,0 +1,62 @@
+= Custom JVM truststore
+include::ROOT:partial$include.adoc[]
+
+Add custom Certificate Authorities (CAs) to your service's JVM truststore for connecting to servers that use certificates signed by a private or internal CA. Your custom CA certificates are merged with the JVM's default trust store, so your service continues to trust standard public CAs alongside your private ones.
+
+NOTE: This feature requires deploying your service using a xref:services/deploy-service.adoc#apply[service descriptor].
+
+== Quick start
+
+Follow these steps to configure a custom truststore for your Akka service.
+
+=== 1. Create a PKCS12 truststore from your CA certificate
+
+[source, command line]
+----
+keytool -import -trustcacerts -alias myca \
+  -file my-ca-cert.pem \
+  -keystore truststore.p12 \
+  -storetype PKCS12 \
+  -storepass changeit \
+  -noprompt
+----
+
+=== 2. Create a secret with the truststore and password
+
+[source, command line]
+----
+akka secret create generic my-truststore \
+  --from-file truststore.p12=truststore.p12 \
+  --literal password=changeit
+----
+
+=== 3. Configure your service descriptor
+
+[source, yaml]
+----
+name: my-service
+service:
+  image: my-image:latest
+  tls:
+    truststore:
+      secret:
+        name: my-truststore
+      key: truststore.p12
+      type: PKCS12
+      passwordKey: password
+----
+
+=== 4. Apply the descriptor
+
+[source, command line]
+----
+akka service apply -f descriptor.yaml
+----
+
+== Supported formats
+
+Akka supports JKS and PKCS12 truststore formats. Use the `type` field in your configuration to specify the format (defaults to `JKS`).
+
+== Configuration reference
+
+For the full configuration reference, see xref:reference:descriptors/service-descriptor.adoc#TLSConfig[TLSConfig] in the service descriptor reference.
