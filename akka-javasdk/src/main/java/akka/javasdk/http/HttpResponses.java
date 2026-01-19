@@ -14,17 +14,12 @@ import akka.japi.pf.Match;
 import akka.javasdk.JsonSupport;
 import akka.javasdk.impl.SdkRunner;
 import akka.javasdk.impl.http.HttpClassPathResource;
-import akka.javasdk.impl.http.HttpRequestContextImpl;
-import akka.javasdk.impl.http.SelectedWebSocketProtocol;
-import akka.javasdk.impl.http.WebSockets;
 import akka.javasdk.view.EntryWithMetadata;
-import akka.stream.javadsl.Flow;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import com.google.common.net.HttpHeaders;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Function;
@@ -375,127 +370,5 @@ public class HttpResponses {
             Arrays.asList(
                 CacheControl.create(CacheDirectives.NO_CACHE), Connection.create("keep-alive")))
         .withEntity(HttpEntities.create(TEXT_EVENT_STREAM, sseSource));
-  }
-
-  /**
-   * Handles a WebSocket upgrade request in an HttpEndpoint {@code GET} method. This method
-   * establishes a binary WebSocket connection where incoming messages are processed through the
-   * provided flow, and the flow's output is sent back to the client.
-   *
-   * <p>The WebSocket connection will fail if:
-   *
-   * <ul>
-   *   <li>The request is not a valid WebSocket upgrade request
-   *   <li>The client sends a text message instead of a binary message
-   *   <li>An individual message payload exceeds the configured streaming timeout
-   * </ul>
-   *
-   * <p><b>Important:</b> WebSocket endpoints require additional route configuration to be
-   * accessible in deployed services. Refer to the Akka SDK documentation for configuration details.
-   *
-   * @param requestContext The request context from the endpoint (available when the endpoint
-   *     extends AbstractHttpEndpoint)
-   * @param handler A flow that processes incoming binary messages and produces outgoing binary
-   *     messages to send back to the client
-   * @return An HTTP response to return from the HttpEndpoint method
-   */
-  public static HttpResponse binaryWebsocket(
-      RequestContext requestContext, Flow<ByteString, ByteString, NotUsed> handler) {
-    var requestContextImpl = ((HttpRequestContextImpl) requestContext);
-    return WebSockets.binaryWebSocketResponse(
-        requestContextImpl.request(), handler, requestContextImpl.materializer());
-  }
-
-  /**
-   * Handles a WebSocket upgrade request with protocol negotiation in an HttpEndpoint {@code GET}
-   * method. This method establishes a binary WebSocket connection where the protocol selector
-   * determines which subprotocol to use based on the client's requested protocols.
-   *
-   * <p>The WebSocket connection will fail if:
-   *
-   * <ul>
-   *   <li>The request is not a valid WebSocket upgrade request
-   *   <li>The protocol selector returns a protocol that was not requested by the client
-   *   <li>The client sends a text message instead of a binary message
-   *   <li>An individual message payload exceeds the configured streaming timeout
-   * </ul>
-   *
-   * <p><b>Important:</b> WebSocket endpoints require additional route configuration to be
-   * accessible in deployed services. Refer to the Akka SDK documentation for configuration details.
-   *
-   * @param requestContext The request context from the endpoint (available when the endpoint
-   *     extends AbstractHttpEndpoint)
-   * @param protocolSelector A function that receives the list of protocols requested by the client
-   *     and returns a {@link SelectedWebSocketProtocol} containing the chosen protocol name and the
-   *     corresponding flow to handle messages
-   * @return An HTTP response to return from the HttpEndpoint method
-   */
-  public static HttpResponse binaryWebsocket(
-      RequestContext requestContext,
-      Function<List<String>, SelectedWebSocketProtocol<ByteString>> protocolSelector) {
-    var requestContextImpl = ((HttpRequestContextImpl) requestContext);
-    return WebSockets.binaryWebSocketResponse(
-        requestContextImpl.request(), protocolSelector, requestContextImpl.materializer());
-  }
-
-  /**
-   * Handles a WebSocket upgrade request in an HttpEndpoint {@code GET} method. This method
-   * establishes a text WebSocket connection where incoming messages are processed through the
-   * provided flow, and the flow's output is sent back to the client.
-   *
-   * <p>The WebSocket connection will fail if:
-   *
-   * <ul>
-   *   <li>The request is not a valid WebSocket upgrade request
-   *   <li>The client sends a binary message instead of a text message
-   *   <li>An individual message payload exceeds the configured streaming timeout
-   * </ul>
-   *
-   * <p><b>Important:</b> WebSocket endpoints require additional route configuration to be
-   * accessible in deployed services. Refer to the Akka SDK documentation for configuration details.
-   *
-   * @param requestContext The request context from the endpoint (available when the endpoint
-   *     extends AbstractHttpEndpoint)
-   * @param handler A flow that processes incoming text messages and produces outgoing text messages
-   *     to send back to the client
-   * @return An HTTP response to return from the HttpEndpoint method
-   */
-  public static HttpResponse textWebsocket(
-      RequestContext requestContext, Flow<String, String, NotUsed> handler) {
-    var requestContextImpl = ((HttpRequestContextImpl) requestContext);
-    return WebSockets.textWebSocketResponse(
-        requestContextImpl.request(), handler, requestContextImpl.materializer());
-  }
-
-  /**
-   * Handles a WebSocket upgrade request with protocol negotiation in an HttpEndpoint {@code GET}
-   * method. This method establishes a text WebSocket connection where the protocol selector
-   * determines which subprotocol to use based on the client's requested protocols.
-   *
-   * <p>The WebSocket connection will fail if:
-   *
-   * <ul>
-   *   <li>The request is not a valid WebSocket upgrade request
-   *   <li>The protocol selector returns a protocol that was not requested by the client
-   *   <li>The client sends a binary message instead of a text message
-   *   <li>An individual message payload exceeds the configured streaming timeout
-   * </ul>
-   *
-   * <p><b>Important:</b> WebSocket endpoints require additional route configuration to be
-   * accessible in deployed services. Refer to the Akka SDK documentation for configuration details.
-   *
-   * @param requestContext The request context from the endpoint (available when the endpoint
-   *     extends AbstractHttpEndpoint)
-   * @param protocolSelector A function that receives the list of protocols requested by the client
-   *     and returns a {@link SelectedWebSocketProtocol} containing the chosen protocol name and the
-   *     corresponding flow to handle messages
-   * @return An HTTP response to return from the HttpEndpoint method
-   */
-  public static HttpResponse textWebsocket(
-      RequestContext requestContext,
-      Function<List<String>, SelectedWebSocketProtocol<String>> protocolSelector) {
-    var requestContextImpl = ((HttpRequestContextImpl) requestContext);
-    return WebSockets.textWebSocketResponse(
-        requestContextImpl.request(), protocolSelector, requestContextImpl.materializer());
   }
 }

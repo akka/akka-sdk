@@ -13,6 +13,7 @@ import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Patch;
 import akka.javasdk.annotations.http.Post;
+import akka.javasdk.annotations.http.WebSocket;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.AbstractHttpEndpoint;
 import akka.javasdk.http.HttpException;
@@ -149,8 +150,8 @@ public class CustomerEndpoint extends AbstractHttpEndpoint {
 
   // Note: using websocket in a deployed service requires additional steps, see the documentation
   // tag::ws-view-updates[]
-  @Get("/by-city-ws/{cityName}")
-  public HttpResponse continousByCityNameWebSocket(String cityName) {
+  @WebSocket("/by-city-ws/{cityName}")
+  public Flow<String, String, NotUsed> continousByCityNameWebSocket(String cityName) {
     // view will keep stream going, toggled with streamUpdates = true on the query
     Source<String, NotUsed> customerSummarySourceJson = componentClient
       .forView()
@@ -158,14 +159,11 @@ public class CustomerEndpoint extends AbstractHttpEndpoint {
       .source(cityName) // <1>
       .map(JsonSupport::encodeToString); // <2>
 
-    return HttpResponses.textWebsocket( // <3>
-      requestContext(), // <4>
-      Flow.fromSinkAndSource( // <5>
-        // ignore messages from client
-        Sink.ignore(),
-        // stream view updates
-        customerSummarySourceJson
-      )
+    return Flow.fromSinkAndSource( // <3>
+      // ignore messages from client
+      Sink.ignore(),
+      // stream view updates
+      customerSummarySourceJson
     );
   }
 

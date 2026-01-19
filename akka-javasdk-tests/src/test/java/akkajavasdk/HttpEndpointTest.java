@@ -330,11 +330,10 @@ public class HttpEndpointTest extends TestKitSupport {
     var webSocketRouteTester = testKit.getSelfWebSocketRouteTester();
 
     // Test also covers protocol and parameters
-    var probes = webSocketRouteTester.wsBinaryConnection("/websocket-binary/5", "limiting");
+    var probes = webSocketRouteTester.wsBinaryConnection("/websocket-binary/5");
 
     var publisher = probes.publisher();
     var subscriber = probes.subscriber();
-    assertThat(probes.chosenProtocol()).contains("limiting");
 
     subscriber.request(1);
 

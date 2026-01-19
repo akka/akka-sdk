@@ -11,10 +11,10 @@ import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
+import akka.javasdk.annotations.http.WebSocket;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.AbstractHttpEndpoint;
 import akka.javasdk.http.HttpResponses;
-import akka.javasdk.impl.http.SelectedWebSocketProtocol;
 import akka.stream.javadsl.Flow;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
@@ -23,7 +23,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Function;
 
 @HttpEndpoint()
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
@@ -104,31 +103,21 @@ public class TestEndpoint extends AbstractHttpEndpoint {
     return HttpResponses.serverSentEventsForView(stream);
   }
 
-  @Get("/websocket-text")
-  public HttpResponse websocketText() {
+  @WebSocket("/websocket-text")
+  public Flow<String, String, NotUsed> websocketText() {
     // echo messages back
-    return HttpResponses.textWebsocket(requestContext(), Flow.create());
+    return Flow.of(String.class);
   }
 
-  @Get("/websocket-binary/{limit}")
-  public HttpResponse websocketBinary(int limit) {
-    Function<List<String>, SelectedWebSocketProtocol<ByteString>> protocolSelector =
-        (List<String> requestedProtocols) -> {
-          if (requestedProtocols.contains("limiting")) {
-            // echo messages back
-            var limitedBytes =
-                Flow.of(ByteString.class)
-                    .map(
-                        bytes -> {
-                          if (bytes.length() > limit) {
-                            return bytes.dropRight(bytes.length() - limit);
-                          } else return bytes;
-                        });
-            return new SelectedWebSocketProtocol("limiting", limitedBytes);
-          } else
-            throw new IllegalArgumentException("No supported protocols: " + requestedProtocols);
-        };
-
-    return HttpResponses.binaryWebsocket(requestContext(), protocolSelector);
+  @WebSocket("/websocket-binary/{limit}")
+  public Flow<ByteString, ByteString, NotUsed> websocketBinary(int limit) {
+    // echo messages back
+    return Flow.of(ByteString.class)
+        .map(
+            bytes -> {
+              if (bytes.length() > limit) {
+                return bytes.dropRight(bytes.length() - limit);
+              } else return bytes;
+            });
   }
 }

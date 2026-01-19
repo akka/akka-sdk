@@ -38,21 +38,9 @@ private[testkit] final class WebSocketRouteTesterImpl(runtimeHost: String, runti
     extends WebSocketRouteTester {
   private val materializer = SystemMaterializer(system).materializer
 
-  override def wsTextConnection(path: String): WsConnection[String] =
-    wsTextConnection(path, None)
-
-  override def wsTextConnection(path: String, protocol: String): WsConnection[String] =
-    wsTextConnection(path, Some(protocol))
-
-  override def wsBinaryConnection(path: String): WsConnection[ByteString] =
-    wsBinaryConnection(path, None)
-
-  override def wsBinaryConnection(path: String, protocol: String): WsConnection[ByteString] =
-    wsBinaryConnection(path, Some(protocol))
-
-  private def wsTextConnection(path: String, protocol: Option[String]): WsConnection[String] = {
+  override def wsTextConnection(path: String): WsConnection[String] = {
     val (absolutePath, wsFlow: Flow[Message, Message, CompletionStage[WebSocketUpgradeResponse]]) =
-      clientFlowFor(path, protocol)
+      clientFlowFor(path)
 
     val sink = TestSink.create[String](system)
     val source = TestSource.create[String](system)
@@ -82,14 +70,14 @@ private[testkit] final class WebSocketRouteTesterImpl(runtimeHost: String, runti
     val completion = matVal.first.second
     val subscriber = matVal.second
 
-    val upgrade = waitForSuccessfullUpgrade(completion, absolutePath)
+    waitForSuccessfullUpgrade(completion, absolutePath)
 
-    new WsConnection(publisher, subscriber, upgrade.chosenSubprotocol);
+    new WsConnection(publisher, subscriber);
   }
 
-  private def wsBinaryConnection(path: String, protocol: Option[String]): WsConnection[ByteString] = {
+  override def wsBinaryConnection(path: String): WsConnection[ByteString] = {
     val (absolutePath, wsFlow: Flow[Message, Message, CompletionStage[WebSocketUpgradeResponse]]) =
-      clientFlowFor(path, protocol)
+      clientFlowFor(path)
 
     val sink = TestSink.create[ByteString](system)
     val source = TestSource.create[ByteString](system)
@@ -119,32 +107,25 @@ private[testkit] final class WebSocketRouteTesterImpl(runtimeHost: String, runti
     val completion = matVal.first.second
     val subscriber = matVal.second
 
-    val upgrade = waitForSuccessfullUpgrade(completion, absolutePath)
+    waitForSuccessfullUpgrade(completion, absolutePath)
 
-    new WsConnection(publisher, subscriber, upgrade.chosenSubprotocol);
+    new WsConnection(publisher, subscriber);
   }
 
-  private def waitForSuccessfullUpgrade(
-      cs: CompletionStage[WebSocketUpgradeResponse],
-      absolutePath: String): WebSocketUpgradeResponse = {
+  private def waitForSuccessfullUpgrade(cs: CompletionStage[WebSocketUpgradeResponse], absolutePath: String): Unit = {
     val upgradeResponse = cs.toCompletableFuture.get(3, TimeUnit.SECONDS)
     if (!upgradeResponse.isValid) {
       throw new RuntimeException(
         s"WebSocket connection to ws://$runtimeHost:$runtimePort$absolutePath was not successful: ${upgradeResponse.invalidationReason}")
     }
-    upgradeResponse
   }
 
-  private def clientFlowFor(path: String, protocol: Option[String]) = {
+  private def clientFlowFor(path: String) = {
     val absolutePath = if (path.startsWith("/")) path else "/" + path
     val wsRequest = WebSocketRequest.create("ws://" + runtimeHost + ":" + runtimePort + absolutePath)
-    val requestWithProtocol = protocol match {
-      case Some(p) => wsRequest.requestSubprotocol(p)
-      case None    => wsRequest
-    }
     val wsFlow = Http
       .get(system)
-      .webSocketClientFlow(requestWithProtocol)
+      .webSocketClientFlow(wsRequest)
     (absolutePath, wsFlow)
   }
 
