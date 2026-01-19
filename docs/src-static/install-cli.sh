@@ -151,7 +151,15 @@ detect_arch() {
       error "Detected i386"
       exit 1
     elif [ "${arch}" = "x86_64" ]; then
-      arch=amd64
+      # Get the actual hardware brand string to double-check for Rosetta.
+      # If the terminal is running via Rosetta 2 (Intel emulation), `uname -m`   will return x86_64.
+      # To see the actual physical hardware regardless of the terminal's state use `sysctl`.
+      BRAND=$(sysctl -n machdep.cpu.brand_string)
+      if [[ "$BRAND" == *"Apple"* ]]; then
+        arch=arm64
+      else
+        arch=amd64
+      fi
     elif [ "${arch}" = "aarch64" ]; then
       error "Detected aarch64"
       exit 1
