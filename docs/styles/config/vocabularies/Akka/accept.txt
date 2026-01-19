@@ -58,12 +58,13 @@ downscaling
 DTDs
 [Ee]mptyState
 evolvability
-facto
 effectful
 enum
 env
 eventhubs
 exfiltration
+externalSecret
+facto
 failover
 fanout
 gcpKey
@@ -142,6 +143,7 @@ passivates
 parameterless
 passivation
 passwordHashes
+passwordKey
 passwordSecret
 plaintext
 Podman
