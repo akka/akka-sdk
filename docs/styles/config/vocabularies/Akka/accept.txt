@@ -24,7 +24,9 @@ Bastian
 brokerless
 Buildah
 burstable
+CA
 CA's
+CAs
 caSecret
 Cembaluk
 [Cc]hatbots
@@ -56,12 +58,13 @@ downscaling
 DTDs
 [Ee]mptyState
 evolvability
-facto
 effectful
 enum
 env
 eventhubs
 exfiltration
+externalSecret
+facto
 failover
 fanout
 gcpKey
@@ -94,6 +97,7 @@ iss
 Javadoc
 Json
 JUnit
+JVM's
 (?i)JWT
 (?i)JWTs
 [Kk]afka
@@ -139,6 +143,7 @@ passivates
 parameterless
 passivation
 passwordHashes
+passwordKey
 passwordSecret
 plaintext
 Podman
@@ -220,6 +225,7 @@ tokenization
 tokenSecret
 transcoded
 [Tt]ranscoding
+truststore
 [Tt]ypesafe
 uid
 unary

@@ -26,6 +26,7 @@
 ***** xref:operations:services/invoke-service.adoc[]
 ***** xref:operations:services/view-data.adoc[]
 ***** xref:operations:services/data-management.adoc[]
+***** xref:operations:services/custom-truststore.adoc[]
 
 **** xref:operations:regions/index.adoc[]
 

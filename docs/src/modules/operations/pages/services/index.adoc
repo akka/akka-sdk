@@ -12,3 +12,4 @@ Services can be managed via the Akka CLI or the https://console.akka.io[Akka Con
 * xref:services/invoke-service.adoc[]
 * xref:services/view-data.adoc[]
 * xref:services/data-management.adoc[]
+* xref:services/custom-truststore.adoc[]

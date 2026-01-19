@@ -1,0 +1,66 @@
+= Configuring a custom JVM truststore
+include::ROOT:partial$include.adoc[]
+
+Securing connectivity to other services may use TLS certificates signed by a Certificate Authority (CA) that is not included in the JVM truststore. Akka Services can be configured to extend the JVM truststore with additional CAs. Your truststore with custom CA certificates is merged with the JVM's default trust store, so your service continues to trust standard public CAs alongside your private ones.
+
+NOTE: To configure a custom truststore, the Akka Service must be deployed through a xref:services/deploy-service.adoc#apply[service descriptor].
+
+== Quick start
+
+Follow these steps to configure a custom truststore for your Akka service.
+
+=== Create a PKCS12 truststore from your CA certificate
+
+[source, command line]
+----
+keytool -import -trustcacerts -alias myca \
+  -file my-ca-cert.pem \
+  -keystore my-truststore.p12 \
+  -storetype PKCS12 \
+  -storepass changeit \
+  -noprompt
+----
+
+=== Create a secret with the truststore and password
+
+Import the PKCS12 file into an Akka Service secret.
+
+[source, command line]
+----
+akka secret create generic my-truststore \
+  --from-file truststore.p12=my-truststore.p12 \
+  --literal password=changeit
+----
+
+=== Extend the Akka Service descriptor
+
+Extend the Akka Service descriptor with a `tls` section to reference the service secret created above.
+
+[source, yaml]
+----
+name: my-service
+service:
+  image: my-image:latest
+  tls:
+    truststore:
+      secret:
+        name: my-truststore
+      key: truststore.p12
+      type: PKCS12
+      passwordKey: password
+----
+
+Akka supports the JKS and PKCS12 truststore formats. Use the `type` field in your configuration to specify the format (defaults to `JKS`).
+
+=== Apply the Akka Service descriptor
+
+Apply the updated service configuration to the Akka Service.
+
+[source, command line]
+----
+akka service apply -f descriptor.yaml
+----
+
+== Configuration reference
+
+For the full configuration reference, see xref:reference:descriptors/service-descriptor.adoc#TLSConfig[TLSConfig] in the service descriptor reference.

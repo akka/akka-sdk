@@ -30,6 +30,7 @@ The *ServiceSpec* defines the detailed configuration of an Akka service, includi
 |*volumeMounts* |[]<<VolumeMount>>         |Volume mounts to mount in the service's container
 |*telemetry*    |[]<<ServiceTelemetry>>    |Telemetry configuration for the service
 |*replication*  |<<ServiceReplication>>    |Replication configuration for stateful components in the service
+|*tls*          |<<TLSConfig>>             |TLS configuration for outbound connections from the service
 |===
 
 
@@ -300,3 +301,54 @@ Replicated read means that writes are handled by one primary replica and reads c
 * `none` - read-only mode for all regions, which causes all write requests to be rejected
 
 |===
+
+[#TLSConfig]
+=== TLSConfig
+
+TLS configuration for outbound connections from the service. This configuration affects how the service connects to external systems over TLS.
+
+[cols="1,1,1"]
+|===
+|Field          |Type                      |Description
+
+|*truststore*   |<<TruststoreConfig>>      |Truststore configuration for custom CA certificates. When configured, the truststore is merged with the JVM's default cacerts for outbound TLS connections, ensuring both custom and public CAs are trusted.
+|===
+
+[#TruststoreConfig]
+=== TruststoreConfig
+
+Defines a custom JVM truststore for validating server certificates on outbound TLS connections. This is typically used when connecting to services that use certificates signed by a private/internal Certificate Authority.
+
+Either *secret* or *externalSecret* must be specified, but not both.
+
+[cols="1,1,1"]
+|===
+|Field             |Type              |Description
+
+|*secret*          |<<ObjectRef>>     |A reference to a secret containing the truststore file. The secret must exist in the same project as the service.
+|*externalSecret*  |<<ObjectRef>>     |A reference to an ExternalSecret resource that provides the truststore file from an external secret provider (e.g., Azure Key Vault). The ExternalSecret must exist in the same project as the service.
+|*key*             |string            |The key/filename containing the truststore file. For Secret: the key in the secret's data field. For ExternalSecret: the filename as configured in the ExternalSecret's objects. Defaults to `truststore`.
+|*type*            |string            |The truststore format. Valid values are `JKS` (Java KeyStore) and `PKCS12`. Defaults to `JKS`.
+|*passwordKey*     |string            |The key in the secret containing the truststore password. For ExternalSecret, this refers to the filename containing the password. If not specified, no password will be used when reading the truststore.
+|===
+
+Example of configuring a truststore to trust a private CA for connecting to an internal service:
+
+[source, bash]
+----
+akka secret create generic my-truststore --from-file truststore.jks=/path/to/truststore.jks --from-literal truststore-password=changeit
+----
+
+[source, yaml]
+----
+name: <<service-name>>
+service:
+  image: my-image:latest
+  tls:
+    truststore:
+      secret:
+        name: my-truststore
+      key: truststore.jks
+      type: JKS
+      passwordKey: truststore-password
+----
