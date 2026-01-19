@@ -211,6 +211,48 @@ include::example$transfer-workflow-compensation/src/main/java/com/example/transf
 <1> Accepts the request only when status is `WAITING_FOR_ACCEPTANCE`.
 <2> Otherwise, rejects the requests.
 
+== Notification
+
+When a workflow is running, clients often need to track its progress. Rather than repeatedly polling the workflow state, you can use the `NotificationPublisher` to push updates to subscribers in real-time. This is more efficient and provides a better user experience, especially for long-running workflows.
+
+The notification mechanism works as follows:
+
+1. The workflow injects a `NotificationPublisher<T>` where `T` is the notification message type
+2. During step execution, the workflow calls `publish(message)` to send notifications
+3. The workflow exposes a method returning `NotificationStream<T>` for clients to subscribe
+4. Clients use the `ComponentClient` to subscribe and receive notifications as a stream
+
+=== Publishing notifications
+
+To add notifications to a workflow, inject the `NotificationPublisher` in the constructor and call `publish()` at appropriate points during execution.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/TransferWorkflowWithNotifications.java[TransferWorkflowWithNotifications.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/TransferWorkflowWithNotifications.java[tag=workflow-notification]
+----
+<1> Inject `NotificationPublisher` typed with your notification message type. This can be a simple `String`, a Java Record, or a sealed interface for multiple message types.
+<2> Publish notifications at key points in the workflow to inform subscribers of the progress.
+<3> Expose the notification stream via a public method. Clients will reference this method when subscribing.
+
+TIP: For workflows with different types of updates (status changes, progress percentages, error messages), consider using a sealed interface to define your notification types. This allows subscribers to handle different notification types appropriately.
+
+=== Subscribing to notifications
+
+Clients subscribe to workflow notifications using the `ComponentClient`. The notifications are delivered as a reactive stream, which can be exposed to external clients as Server-Sent Events (SSE).
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/WorkflowEndpoint.java[WorkflowEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/WorkflowEndpoint.java[tag=workflow-notification]
+----
+<1> Use `notificationStream()` with a method reference to the workflow's stream method. The returned source can be consumed directly or wrapped with `HttpResponses.serverSentEvents()` for SSE delivery to HTTP clients.
+
+You can find the full source code of workflow notification sample in the link:https://github.com/akka-samples/multi-agent[akka-samples/multi-agent GitHub Repository].
+
+
+WARNING: Notifications should not be used for building business logic. Akka does not guarantee delivery of every notification. Messages may be lost due to network issues, client disconnections, or other transient failures. If your application requires reliable state synchronization, implement a reconciliation mechanism that fetches the authoritative workflow state when needed.
+
 == Error handling
 
 Design for failure is one of the key attributes of all Akka components. Workflow has the richest set of configurations from all of them. It's essential to build robust and reliable solutions.

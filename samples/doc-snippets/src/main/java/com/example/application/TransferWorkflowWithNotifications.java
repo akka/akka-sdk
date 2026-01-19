@@ -1,10 +1,5 @@
 package com.example.application;
 
-import static akka.Done.done;
-import static com.example.domain.TransferState.TransferStatus.COMPLETED;
-import static com.example.domain.TransferState.TransferStatus.WITHDRAW_SUCCEEDED;
-import static java.time.Duration.ofSeconds;
-
 import akka.Done;
 import akka.javasdk.NotificationPublisher;
 import akka.javasdk.NotificationPublisher.NotificationStream;
@@ -13,63 +8,50 @@ import akka.javasdk.workflow.Workflow;
 import com.example.domain.TransferState;
 import com.example.domain.TransferState.Transfer;
 
-// tag::class[]
-// tag::workflow-notification[]
-@Component(id = "transfer") // <1>
-public class TransferWorkflow extends Workflow<TransferState> { // <2>
+import static akka.Done.done;
+import static com.example.domain.TransferState.TransferStatus.COMPLETED;
+import static com.example.domain.TransferState.TransferStatus.WITHDRAW_SUCCEEDED;
+import static java.time.Duration.ofSeconds;
 
-  // end::class[]
+// tag::workflow-notification[]
+@Component(id = "transfer")
+public class TransferWorkflowWithNotifications extends Workflow<TransferState> {
+
   private final NotificationPublisher<String> notificationPublisher;
 
-  public TransferWorkflow(NotificationPublisher<String> notificationPublisher) { // <1>
+  public TransferWorkflowWithNotifications(NotificationPublisher<String> notificationPublisher) { // <1>
     this.notificationPublisher = notificationPublisher;
   }
 
-  // tag::class[]
-  // end::workflow-notification[]
-  @Override
-  public WorkflowSettings settings() { // <3>
-    // prettier-ignore
-    return WorkflowSettings.builder()
-      .defaultStepTimeout(ofSeconds(2))
-      .build();
-  }
-
-  private StepEffect withdrawStep() { // <4>
+  private StepEffect withdrawStep() {
     // TODO: implement your step logic here
     // prettier-ignore
-    return stepEffects() // <5>
+    notificationPublisher.publish("Withdraw completed"); // <2>
+    return stepEffects()
       .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
-      .thenTransitionTo(TransferWorkflow::depositStep);
+      .thenTransitionTo(TransferWorkflowWithNotifications::depositStep);
   }
 
   private StepEffect depositStep() {
     // TODO: implement your step logic here
     // prettier-ignore
-    // end::class[]
     notificationPublisher.publish("Deposit completed"); // <2>
-    // tag::class[]
     return stepEffects().updateState(currentState().withStatus(COMPLETED)).thenEnd();
   }
 
-  // tag::workflow-notification[]
-  // end::class[]
   public NotificationStream<String> updates() { // <3>
     return notificationPublisher.stream();
   }
-
   // end::workflow-notification[]
-  // tag::class[]
 
-  public Effect<Done> startTransfer(Transfer transfer) { // <6>
+  public Effect<Done> startTransfer(Transfer transfer) {
     TransferState initialState = new TransferState(transfer);
 
     return effects() // <7>
       .updateState(initialState)
-      .transitionTo(TransferWorkflow::withdrawStep)
+      .transitionTo(TransferWorkflowWithNotifications::withdrawStep)
       .thenReply(done());
   }
   // tag::workflow-notification[]
 }
 // end::workflow-notification[]
-// end::class[]
