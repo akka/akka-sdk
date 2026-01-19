@@ -230,6 +230,12 @@
                                                         <exclude>io.akka:akka-sdk-spi_2.13</exclude>
                                                         <!-- langchain -->
                                                         <exclude>dev.langchain4j:langchain4j</exclude>
+                                                        <exclude>dev.langchain4j:langchain4j-open-ai</exclude>
+                                                        <exclude>dev.langchain4j:langchain4j-anthropic</exclude>
+                                                        <exclude>dev.langchain4j:langchain4j-google-ai-gemini</exclude>
+                                                        <exclude>dev.langchain4j:langchain4j-local-ai</exclude>
+                                                        <exclude>dev.langchain4j:langchain4j-ollama</exclude>
+                                                        <exclude>dev.langchain4j:langchain4j-bedrock</exclude>
                                                     </excludes>
                                                 </dependencySet>
                                             </dependencySets>
