@@ -45,7 +45,7 @@ service:
     truststore:
       secret:
         name: my-truststore
-      key: my-truststore.p12
+      key: truststore.p12
       type: PKCS12
       passwordKey: password
 ----
