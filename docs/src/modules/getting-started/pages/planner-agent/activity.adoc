@@ -99,6 +99,11 @@ the Prado and Reina Sofia art museums, savor local cuisine at Mercado de San Mig
 guided walking tour through lively neighborhoods such as Malasaña and Chueca.
 ----
 
+If you decide to use the local console's request builder instead of `curl`, you might see something similar to the 
+following screenshot (if you're following along step-by-step, your output will show fewer steps):
+
+image:multiagent_request_builder.png[Request builder output in the local console]
+
 [NOTE]
 ====
 It may take 10s of seconds for the AI model to respond.

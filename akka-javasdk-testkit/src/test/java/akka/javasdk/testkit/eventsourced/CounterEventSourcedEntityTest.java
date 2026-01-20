@@ -128,6 +128,18 @@ public class CounterEventSourcedEntityTest {
   }
 
   @Test
+  public void failSetStateToNull() {
+    EventSourcedTestKit<Integer, CounterEvent, CounterEventSourcedEntity> testKit =
+        EventSourcedTestKit.ofEntityWithState(ctx -> new CounterEventSourcedEntity(), 0);
+
+    var ex =
+        assertThrows(
+            Exception.class, () -> testKit.method(CounterEventSourcedEntity::okSet).invoke(42));
+    assertThat(ex.getMessage())
+        .isEqualTo("Event handler must not return null as the updated state.");
+  }
+
+  @Test
   public void failEventSerDes() {
     EventSourcedTestKit<Integer, CounterEvent, CounterEventSourcedEntity> testKit =
         EventSourcedTestKit.ofEntityWithState(ctx -> new CounterEventSourcedEntity(), 0);

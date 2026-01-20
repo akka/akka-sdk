@@ -45,6 +45,7 @@ The metrics exporter configuration. At most one metrics exporter may be configur
 |*googleCloud*     |<<ObservabilityGoogleCloud>>     |If defined, will export metrics to Google Cloud.
 |===
 
+See the xref:reference:telemetry/metrics.adoc[metrics reference] for a list of the available metrics that will be exported.
 
 === ObservabilityTraces
 

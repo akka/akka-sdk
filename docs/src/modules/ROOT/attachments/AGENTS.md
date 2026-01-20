@@ -36,7 +36,7 @@ Access these documentation files for detailed patterns:
 - `akka-context/sdk/http-endpoints.html.md` - RESTful APIs
 - `akka-context/sdk/grpc-endpoints.html.md` - Protocol buffer APIs
 - `akka-context/sdk/timed-actions.html.md` - Scheduling and timers
-- `akka-context/sdk/setup-and-dependency-injection.html.md` - Service bootstrap and dependency injection 
+- `akka-context/sdk/setup-and-dependency-injection.html.md` - Service bootstrap and dependency injection
 - `ai-coding-assistant-guidelines.html.md` - Best practices
 
 ### When to Read Documentation
@@ -74,22 +74,25 @@ Access these documentation files for detailed patterns:
 
 **Event Sourced Entity**
 - Extends `EventSourcedEntity<State, Event>`, has `@Component(id = "...")`
-- Command handlers return `Effect<T>`
+- Command handlers accept 0 or 1 parameter and return `Effect<T>`
 - Events: sealed interface with `@TypeName` per event
 - State/events in `domain`, entity in `application`
 
 **Key Value Entity**
 - Extends `KeyValueEntity<State>`, has `@Component(id = "...")`
+- Command handlers accept 0 or 1 parameter
 - Simpler than Event Sourced (direct state updates)
 
 **View**
 - Extends `View`, has `@Query` methods returning `QueryEffect<T>`
+- Query methods accept 0 or 1 parameter
 - **CRITICAL**: ESE views use `onEvent(Event)`, KVE views use `onUpdate(State)`
 - TableUpdater uses `effects().updateRow()`, access current with `rowState()`
 
 **Workflow**
 - Extends `Workflow<State>`, has `@Component(id = "...")`
-- Steps return `StepEffect`, commands return `Effect<T>`
+- Command handlers accept 0 or 1 parameter and return `Effect<T>`
+- Step methods accept 0 or 1 parameter and return `StepEffect`
 - Steps use `@StepName`, `stepEffects()` in steps, `effects()` in commands
 - Compensation via `thenTransitionTo(compensationStep)` on failure
 
@@ -542,8 +545,9 @@ public class MyEndpointIntegrationTest extends TestKitSupport {
 - Put Akka dependencies in domain package
 - Use `onUpdate(State)` for ESE views → use `onEvent(Event)`
 - Use `componentClient` in endpoint integration tests → use `httpClient`
-- Return domain objects from endpoints → create API-specific types
+- Return domain objects/records from endpoints → create API-specific types
 - Put business logic in entities → put in domain objects
+- Use try-catch for validation in command handlers → use explicit validation checks returning `effects().error()`
 - Use `commandContext().entityId()` in `emptyState()` → inject context
 - Return `QueryEffect<List<Row>>` → wrap in record with `List<Row> items`
 - Use `SELECT *` for multi-row → use `SELECT * AS items`
@@ -553,12 +557,18 @@ public class MyEndpointIntegrationTest extends TestKitSupport {
 - Omit `@Acl` on endpoints
 - Use `definition()` in Workflow → use `settings()` + step methods
 - Use string step names → use method references (`::`)
+- Create a `Main` class for bootstrapping → use a `Bootstrap` class that implements `ServiceSetup`
+- Inject `ComponentClient` into Entities and Views → `ComponentClient` is only allowed in ServiceSetup, Endpoints, Agents, Consumers, TimedActions, and Workflows
+- Create empty command record classes without fields → causes serialization errors; if no fields needed, make the command handler method parameterless
+- Return `null` in the event handler → Only the `emptyState()` method is allowed to return `null`; Add a method to the State record class to model an empty or deleted state instead
+- Perform side effects in `.thenReply()` in Entities → use a Consumer to react to events for side effects
 - Use deprecated `@ComponentId`  -> use `@Component(id = ")`
 - Use deprecated `@AgentDescription`  -> use `@Component(id = ")` and `@AgentRole`
 - Add `@Component` or `@ComponentId` to HTTP/gRPC endpoints
 - Use deprecated `testKit.call`  -> use `testKit.method(...).invoke(...)`
 - Create multiple command handlers in Agent
 - Return protobuf types from domain layer
+- Import `WorkflowSettings` -> WorkflowSettings is an inner class of Workflow, so no additional import is needed
 
 ✅ **DO:**
 - Use Java records for immutable data
@@ -604,9 +614,9 @@ Before presenting code, verify:
 **Workflow**
 - [ ] **STOP: Did you read `workflows.html.md` BEFORE writing any code?** (Required for first workflow in session)
 - [ ] Uses `settings()` with `WorkflowSettings` (NOT `definition()`)
-- [ ] Step methods return `StepEffect` (NOT `Effect`)
+- [ ] Command handlers accept 0 or 1 parameter and return `Effect<T>`
+- [ ] Step methods accept 0 or 1 parameter and return `StepEffect` (NOT `Effect`)
 - [ ] Uses method references for step names (e.g., `TransferWorkflow::withdrawStep`)
-- [ ] Command handlers return `Effect<T>`
 - [ ] Uses `stepEffects()` in steps, `effects()` in command handlers
 
 **Endpoint**

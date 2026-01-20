@@ -10,11 +10,13 @@ import akka.javasdk.Metadata
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
+import akka.javasdk.impl.effect.ReplicationFilterImpl
 import akka.javasdk.impl.effect.SecondaryEffectImpl
 import akka.javasdk.keyvalueentity.KeyValueEntity.Effect
 import akka.javasdk.keyvalueentity.KeyValueEntity.Effect.Builder
 import akka.javasdk.keyvalueentity.KeyValueEntity.Effect.OnSuccessBuilder
 import akka.javasdk.keyvalueentity.KeyValueEntity.ReadOnlyEffect
+import akka.javasdk.keyvalueentity.ReplicationFilter
 
 /**
  * INTERNAL API
@@ -41,9 +43,17 @@ private[javasdk] final class KeyValueEntityEffectImpl[S]
   private var _primaryEffect: PrimaryEffectImpl[S] = NoPrimaryEffect
   private var _secondaryEffect: SecondaryEffectImpl = NoSecondaryEffectImpl
 
+  private var _replicationFilter: ReplicationFilter.Builder = ReplicationFilterImpl.empty
+
   def primaryEffect: PrimaryEffectImpl[S] = _primaryEffect
 
   def secondaryEffect: SecondaryEffectImpl = _secondaryEffect
+
+  def replFilter: ReplicationFilterImpl =
+    _replicationFilter match {
+      case impl: ReplicationFilterImpl => impl
+      case _                           => throw new IllegalStateException("Unexpected ReplicationFilter implementation")
+    }
 
   override def updateState(newState: S): KeyValueEntityEffectImpl[S] = {
     if (newState == null)
@@ -91,6 +101,11 @@ private[javasdk] final class KeyValueEntityEffectImpl[S]
   override def thenReply[T](message: T, metadata: Metadata): KeyValueEntityEffectImpl[T] = {
     _secondaryEffect = MessageReplyImpl(message, metadata)
     this.asInstanceOf[KeyValueEntityEffectImpl[T]]
+  }
+
+  override def updateReplicationFilter(filter: ReplicationFilter.Builder): OnSuccessBuilder[S] = {
+    _replicationFilter = filter
+    this
   }
 
 }

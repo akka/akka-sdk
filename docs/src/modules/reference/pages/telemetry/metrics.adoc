@@ -1,0 +1,2460 @@
+= Metrics reference
+
+Akka collects metrics for monitoring the runtime behavior of your services.
+
+These metrics are available for xref:operations:observability-and-monitoring/observability-exports.adoc[export] to external monitoring systems.
+
+== HTTP Endpoints
+
+=== `kalix_proxy_http_request_duration_seconds`
+
+Total duration of HTTP requests to a service endpoint, in seconds.
+
+Metric:: `kalix_proxy_http_request_duration_seconds`
+Type:: histogram
+Labels::
++
+--
+* `endpoint_class`
+* `endpoint_method`
+* `http_method`
+* `http_target`
+* `http_status_code`
+* `grpc_service`
+* `grpc_method`
+* `grpc_streaming`
+--
+Exported metrics::
++
+--
+* `kalix_proxy_http_request_duration_seconds_bucket` (with `le` label)
+* `kalix_proxy_http_request_duration_seconds_count`
+* `kalix_proxy_http_request_duration_seconds_sum`
+--
+Buckets:: `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
+
+=== `kalix_proxy_http_requests_total`
+
+Total HTTP requests to a service endpoint.
+
+Metric:: `kalix_proxy_http_requests_total`
+Type:: counter
+Labels::
++
+--
+* `endpoint_class`
+* `endpoint_method`
+* `http_method`
+* `http_target`
+* `http_status_code`
+* `grpc_service`
+* `grpc_method`
+* `grpc_streaming`
+--
+
+== gRPC Endpoints
+
+=== `kalix_proxy_grpc_request_duration_seconds`
+
+Total duration of gRPC requests to a service endpoint, in seconds.
+
+Metric:: `kalix_proxy_grpc_request_duration_seconds`
+Type:: histogram
+Labels::
++
+--
+* `endpoint_class`
+* `grpc_service`
+* `grpc_method`
+* `grpc_streaming`
+* `grpc_status_code`
+--
+Exported metrics::
++
+--
+* `kalix_proxy_grpc_request_duration_seconds_bucket` (with `le` label)
+* `kalix_proxy_grpc_request_duration_seconds_count`
+* `kalix_proxy_grpc_request_duration_seconds_sum`
+--
+Buckets:: `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
+
+=== `kalix_proxy_grpc_requests_total`
+
+Total gRPC requests to a service endpoint.
+
+Metric:: `kalix_proxy_grpc_requests_total`
+Type:: counter
+Labels::
++
+--
+* `endpoint_class`
+* `grpc_service`
+* `grpc_method`
+* `grpc_streaming`
+* `grpc_status_code`
+--
+
+== MCP Endpoints
+
+=== `kalix_proxy_mcp_request_duration_seconds`
+
+Request duration to an MCP endpoint, in seconds.
+
+Metric:: `kalix_proxy_mcp_request_duration_seconds`
+Type:: histogram
+Labels::
++
+--
+* `endpoint_path`
+* `rpc_method`
+* `rpc_error_code`
+--
+Exported metrics::
++
+--
+* `kalix_proxy_mcp_request_duration_seconds_bucket` (with `le` label)
+* `kalix_proxy_mcp_request_duration_seconds_count`
+* `kalix_proxy_mcp_request_duration_seconds_sum`
+--
+Buckets:: `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
+
+=== `kalix_proxy_mcp_requests_total`
+
+Total requests to an MCP endpoint.
+
+Metric:: `kalix_proxy_mcp_requests_total`
+Type:: counter
+Labels::
++
+--
+* `endpoint_path`
+* `rpc_method`
+* `rpc_error_code`
+--
+
+== Agents
+
+=== `kalix_agent_command_processing_time_seconds`
+
+Total duration of a completed command to the Akka Agent, in seconds
+
+Metric:: `kalix_agent_command_processing_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `agent_id`
+--
+Exported metrics::
++
+--
+* `kalix_agent_command_processing_time_seconds_bucket` (with `le` label)
+* `kalix_agent_command_processing_time_seconds_count`
+* `kalix_agent_command_processing_time_seconds_sum`
+--
+Buckets:: `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `15.0`, `Infinity`
+
+=== `kalix_agent_completed_commands_total`
+
+Total completed commands by the Akka Agent.
+
+Metric:: `kalix_agent_completed_commands_total`
+Type:: counter
+Labels::
++
+--
+* `agent_id`
+--
+
+=== `kalix_agent_evaluations_completed_total`
+
+Total completed agent evaluations.
+
+Metric:: `kalix_agent_evaluations_completed_total`
+Type:: counter
+Labels::
++
+--
+* `agent_id`
+--
+
+=== `kalix_agent_evaluations_failed_total`
+
+Total failed agent evaluations.
+
+Metric:: `kalix_agent_evaluations_failed_total`
+Type:: counter
+Labels::
++
+--
+* `agent_id`
+--
+
+=== `kalix_agent_failed_commands_total`
+
+Total failed commands by the Akka Agent.
+
+Metric:: `kalix_agent_failed_commands_total`
+Type:: counter
+Labels::
++
+--
+* `agent_id`
+--
+
+=== `kalix_agent_guardrail_completed_evaluations_total`
+
+Total completed guardrail evaluations for an agent.
+
+Metric:: `kalix_agent_guardrail_completed_evaluations_total`
+Type:: counter
+Labels::
++
+--
+* `agent_id`
+* `guardrail_category`
+* `guardrail_name`
+--
+
+=== `kalix_agent_guardrail_evaluation_processing_time_seconds`
+
+Total duration of a completed and failed guardrail evaluation, in seconds
+
+Metric:: `kalix_agent_guardrail_evaluation_processing_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `agent_id`
+* `guardrail_category`
+* `guardrail_name`
+--
+Exported metrics::
++
+--
+* `kalix_agent_guardrail_evaluation_processing_time_seconds_bucket` (with `le` label)
+* `kalix_agent_guardrail_evaluation_processing_time_seconds_count`
+* `kalix_agent_guardrail_evaluation_processing_time_seconds_sum`
+--
+Buckets:: `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `15.0`, `Infinity`
+
+=== `kalix_agent_guardrail_evaluations_total`
+
+Total guardrail evaluations for an agent.
+
+Metric:: `kalix_agent_guardrail_evaluations_total`
+Type:: counter
+Labels::
++
+--
+* `agent_id`
+* `guardrail_category`
+* `guardrail_name`
+--
+
+=== `kalix_agent_guardrail_failed_evaluations_total`
+
+Total failed guardrail evaluations for an agent.
+
+Metric:: `kalix_agent_guardrail_failed_evaluations_total`
+Type:: counter
+Labels::
++
+--
+* `agent_id`
+* `guardrail_category`
+* `guardrail_name`
+--
+
+=== `kalix_agent_model_completed_requests_total`
+
+Total completed requests by the Model.
+
+Metric:: `kalix_agent_model_completed_requests_total`
+Type:: counter
+Labels::
++
+--
+* `agent_id`
+* `model_name`
+--
+
+=== `kalix_agent_model_failed_requests_total`
+
+Total failed requests by the Model.
+
+Metric:: `kalix_agent_model_failed_requests_total`
+Type:: counter
+Labels::
++
+--
+* `agent_id`
+* `model_name`
+--
+
+=== `kalix_agent_model_received_requests_total`
+
+Total received requests by the Model.
+
+Metric:: `kalix_agent_model_received_requests_total`
+Type:: counter
+Labels::
++
+--
+* `agent_id`
+* `model_name`
+--
+
+=== `kalix_agent_model_request_processing_time_seconds`
+
+Total duration of a completed command to the Model, in seconds
+
+Metric:: `kalix_agent_model_request_processing_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `agent_id`
+* `model_name`
+--
+Exported metrics::
++
+--
+* `kalix_agent_model_request_processing_time_seconds_bucket` (with `le` label)
+* `kalix_agent_model_request_processing_time_seconds_count`
+* `kalix_agent_model_request_processing_time_seconds_sum`
+--
+Buckets:: `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `15.0`, `Infinity`
+
+=== `kalix_agent_model_token_input_total`
+
+Tokens used in the input by the model in the response.
+
+Metric:: `kalix_agent_model_token_input_total`
+Type:: counter
+Labels::
++
+--
+* `agent_id`
+* `model_name`
+--
+
+=== `kalix_agent_model_token_output_total`
+
+Tokens used in the output by the model in the response.
+
+Metric:: `kalix_agent_model_token_output_total`
+Type:: counter
+Labels::
++
+--
+* `agent_id`
+* `model_name`
+--
+
+=== `kalix_agent_received_commands_total`
+
+Total received commands by the Akka Agent.
+
+Metric:: `kalix_agent_received_commands_total`
+Type:: counter
+Labels::
++
+--
+* `agent_id`
+--
+
+=== `kalix_agent_tool_completed_requests_total`
+
+Total completed requests by a Tool.
+
+Metric:: `kalix_agent_tool_completed_requests_total`
+Type:: counter
+Labels::
++
+--
+* `agent_id`
+* `model_name`
+* `tool_name`
+--
+
+=== `kalix_agent_tool_failed_requests_total`
+
+Total failed requests by a Tool.
+
+Metric:: `kalix_agent_tool_failed_requests_total`
+Type:: counter
+Labels::
++
+--
+* `agent_id`
+* `model_name`
+* `tool_name`
+--
+
+=== `kalix_agent_tool_received_requests_total`
+
+Total received commands by a Tool.
+
+Metric:: `kalix_agent_tool_received_requests_total`
+Type:: counter
+Labels::
++
+--
+* `agent_id`
+* `model_name`
+* `tool_name`
+--
+
+=== `kalix_agent_tool_request_processing_time_seconds`
+
+Total duration of a completed command to a Tool, in seconds
+
+Metric:: `kalix_agent_tool_request_processing_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `agent_id`
+* `model_name`
+* `tool_name`
+--
+Exported metrics::
++
+--
+* `kalix_agent_tool_request_processing_time_seconds_bucket` (with `le` label)
+* `kalix_agent_tool_request_processing_time_seconds_count`
+* `kalix_agent_tool_request_processing_time_seconds_sum`
+--
+Buckets:: `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
+
+== Event Sourced Entities
+
+=== `kalix_eventsourced_activated_entities_total`
+
+Total entity instances that have activated.
+
+Metric:: `kalix_eventsourced_activated_entities_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_command_processing_time_seconds`
+
+Duration for command processing (until user service reply), in seconds.
+
+Metric:: `kalix_eventsourced_command_processing_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `entity_name`
+--
+Exported metrics::
++
+--
+* `kalix_eventsourced_command_processing_time_seconds_bucket` (with `le` label)
+* `kalix_eventsourced_command_processing_time_seconds_count`
+* `kalix_eventsourced_command_processing_time_seconds_sum`
+--
+Buckets:: `0.001`, `0.002`, `0.003`, `0.005`, `0.01`, `0.025`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
+
+=== `kalix_eventsourced_command_total_time_seconds`
+
+Total duration for command handling (including stash and persist), in seconds.
+
+Metric:: `kalix_eventsourced_command_total_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `entity_name`
+--
+Exported metrics::
++
+--
+* `kalix_eventsourced_command_total_time_seconds_bucket` (with `le` label)
+* `kalix_eventsourced_command_total_time_seconds_count`
+* `kalix_eventsourced_command_total_time_seconds_sum`
+--
+Buckets:: `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
+
+=== `kalix_eventsourced_completed_commands_total`
+
+Total commands completed for an entity.
+
+Metric:: `kalix_eventsourced_completed_commands_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_conflicts_detected_total`
+
+Total conflicts detected for an entity.
+
+Metric:: `kalix_eventsourced_conflicts_detected_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_conflicts_resolved_total`
+
+Total conflicts resolved for an entity.
+
+Metric:: `kalix_eventsourced_conflicts_resolved_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_deleted_entities_total`
+
+Total entity instances that have been deleted.
+
+Metric:: `kalix_eventsourced_deleted_entities_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_deleted_events_failed_total`
+
+Total deleted events operations that have failed.
+
+Metric:: `kalix_eventsourced_deleted_events_failed_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_deleted_events_time_seconds`
+
+Duration for deleting events, in seconds.
+
+Metric:: `kalix_eventsourced_deleted_events_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `entity_name`
+--
+Exported metrics::
++
+--
+* `kalix_eventsourced_deleted_events_time_seconds_bucket` (with `le` label)
+* `kalix_eventsourced_deleted_events_time_seconds_count`
+* `kalix_eventsourced_deleted_events_time_seconds_sum`
+--
+Buckets:: `0.01`, `0.05`, `0.1`, `0.25`, `0.5`, `1.0`, `2.0`, `3.0`, `4.0`, `5.0`, `10.0`, `20.0`, `30.0`, `Infinity`
+
+=== `kalix_eventsourced_deleted_events_total`
+
+Total deleted events
+
+Metric:: `kalix_eventsourced_deleted_events_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_entity_active_time_seconds`
+
+Duration that entities are active, in seconds.
+
+Metric:: `kalix_eventsourced_entity_active_time_seconds`
+Type:: summary
+Labels::
++
+--
+* `entity_name`
+--
+Exported metrics::
++
+--
+* `kalix_eventsourced_entity_active_time_seconds` (with `quantile` label)
+* `kalix_eventsourced_entity_active_time_seconds_count`
+* `kalix_eventsourced_entity_active_time_seconds_sum`
+--
+Quantiles:: `0.5`, `0.95`, `0.99`, `1.0`
+
+=== `kalix_eventsourced_failed_commands_total`
+
+Total commands that have failed.
+
+Metric:: `kalix_eventsourced_failed_commands_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_failed_deleted_entities_total`
+
+Total failures when attempting to delete entities.
+
+Metric:: `kalix_eventsourced_failed_deleted_entities_total`
+Type:: counter
+
+=== `kalix_eventsourced_failed_entities_total`
+
+Total entity instances that have failed.
+
+Metric:: `kalix_eventsourced_failed_entities_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_loaded_event_bytes_total`
+
+Total event sizes loaded for an entity.
+
+Metric:: `kalix_eventsourced_loaded_event_bytes_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_loaded_events_total`
+
+Total events loaded for an entity.
+
+Metric:: `kalix_eventsourced_loaded_events_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_loaded_snapshot_bytes_total`
+
+Total snapshot sizes loaded for an entity.
+
+Metric:: `kalix_eventsourced_loaded_snapshot_bytes_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_loaded_snapshots_total`
+
+Total snapshots loaded for an entity.
+
+Metric:: `kalix_eventsourced_loaded_snapshots_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_passivated_entities_total`
+
+Total entity instances that have passivated.
+
+Metric:: `kalix_eventsourced_passivated_entities_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_persist_failed_total`
+
+Total persist operations that have failed.
+
+Metric:: `kalix_eventsourced_persist_failed_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_persist_time_seconds`
+
+Duration for persisting events from a command, in seconds.
+
+Metric:: `kalix_eventsourced_persist_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `entity_name`
+--
+Exported metrics::
++
+--
+* `kalix_eventsourced_persist_time_seconds_bucket` (with `le` label)
+* `kalix_eventsourced_persist_time_seconds_count`
+* `kalix_eventsourced_persist_time_seconds_sum`
+--
+Buckets:: `0.001`, `0.002`, `0.003`, `0.005`, `0.01`, `0.025`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `10.0`, `Infinity`
+
+=== `kalix_eventsourced_persisted_event_bytes_total`
+
+Total event sizes persisted for an entity.
+
+Metric:: `kalix_eventsourced_persisted_event_bytes_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_persisted_events_total`
+
+Total events persisted for an entity.
+
+Metric:: `kalix_eventsourced_persisted_events_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_persisted_replicated_event_bytes_total`
+
+Total replicated event sizes persisted for an entity.
+
+Metric:: `kalix_eventsourced_persisted_replicated_event_bytes_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_persisted_replicated_events_total`
+
+Total replicated events persisted for an entity.
+
+Metric:: `kalix_eventsourced_persisted_replicated_events_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_persisted_snapshot_bytes_total`
+
+Total snapshot sizes persisted for an entity.
+
+Metric:: `kalix_eventsourced_persisted_snapshot_bytes_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_persisted_snapshots_total`
+
+Total snapshots persisted for an entity.
+
+Metric:: `kalix_eventsourced_persisted_snapshots_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_received_commands_total`
+
+Total commands received for an entity.
+
+Metric:: `kalix_eventsourced_received_commands_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_recovery_failed_total`
+
+Total entity recoveries that have failed.
+
+Metric:: `kalix_eventsourced_recovery_failed_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_recovery_from_events_total`
+
+If events were loaded to recover an entity.
+
+Metric:: `kalix_eventsourced_recovery_from_events_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_recovery_time_seconds`
+
+Duration for entity recovery, in seconds.
+
+Metric:: `kalix_eventsourced_recovery_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `entity_name`
+--
+Exported metrics::
++
+--
+* `kalix_eventsourced_recovery_time_seconds_bucket` (with `le` label)
+* `kalix_eventsourced_recovery_time_seconds_count`
+* `kalix_eventsourced_recovery_time_seconds_sum`
+--
+Buckets:: `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `10.0`, `Infinity`
+
+=== `kalix_eventsourced_registered_for_deletion_total`
+
+Total entity instances registered to be deleted
+
+Metric:: `kalix_eventsourced_registered_for_deletion_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_switch_primary_failed_total`
+
+Total primary switches that have failed.
+
+Metric:: `kalix_eventsourced_switch_primary_failed_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_eventsourced_switch_primary_time_seconds`
+
+Duration for switching primary, in seconds.
+
+Metric:: `kalix_eventsourced_switch_primary_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `entity_name`
+--
+Exported metrics::
++
+--
+* `kalix_eventsourced_switch_primary_time_seconds_bucket` (with `le` label)
+* `kalix_eventsourced_switch_primary_time_seconds_count`
+* `kalix_eventsourced_switch_primary_time_seconds_sum`
+--
+Buckets:: `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.05`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `5.0`, `10.0`, `20.0`, `Infinity`
+
+=== `kalix_eventsourced_switch_primary_total`
+
+Total primary switches completed for an entity.
+
+Metric:: `kalix_eventsourced_switch_primary_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+== Key Value Entities
+
+=== `kalix_valueentity_activated_entities_total`
+
+Total entity instances that have activated.
+
+Metric:: `kalix_valueentity_activated_entities_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_valueentity_command_processing_time_seconds`
+
+Duration for command processing (until user service reply), in seconds.
+
+Metric:: `kalix_valueentity_command_processing_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `entity_name`
+--
+Exported metrics::
++
+--
+* `kalix_valueentity_command_processing_time_seconds_bucket` (with `le` label)
+* `kalix_valueentity_command_processing_time_seconds_count`
+* `kalix_valueentity_command_processing_time_seconds_sum`
+--
+Buckets:: `0.001`, `0.002`, `0.003`, `0.005`, `0.01`, `0.025`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
+
+=== `kalix_valueentity_command_stash_time_seconds`
+
+Duration that commands are stashed, in seconds.
+
+Metric:: `kalix_valueentity_command_stash_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `entity_name`
+--
+Exported metrics::
++
+--
+* `kalix_valueentity_command_stash_time_seconds_bucket` (with `le` label)
+* `kalix_valueentity_command_stash_time_seconds_count`
+* `kalix_valueentity_command_stash_time_seconds_sum`
+--
+Buckets:: `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
+
+=== `kalix_valueentity_command_total_time_seconds`
+
+Total duration for command handling (including stash and persist), in seconds.
+
+Metric:: `kalix_valueentity_command_total_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `entity_name`
+--
+Exported metrics::
++
+--
+* `kalix_valueentity_command_total_time_seconds_bucket` (with `le` label)
+* `kalix_valueentity_command_total_time_seconds_count`
+* `kalix_valueentity_command_total_time_seconds_sum`
+--
+Buckets:: `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
+
+=== `kalix_valueentity_completed_commands_total`
+
+Total commands completed for an entity.
+
+Metric:: `kalix_valueentity_completed_commands_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_valueentity_conflicts_detected_total`
+
+Total conflicts detected for an entity.
+
+Metric:: `kalix_valueentity_conflicts_detected_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_valueentity_conflicts_resolved_total`
+
+Total conflicts resolved for an entity.
+
+Metric:: `kalix_valueentity_conflicts_resolved_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_valueentity_deleted_events_failed_total`
+
+Total deleted events operations that have failed.
+
+Metric:: `kalix_valueentity_deleted_events_failed_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_valueentity_deleted_events_time_seconds`
+
+Duration for deleting events, in seconds.
+
+Metric:: `kalix_valueentity_deleted_events_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `entity_name`
+--
+Exported metrics::
++
+--
+* `kalix_valueentity_deleted_events_time_seconds_bucket` (with `le` label)
+* `kalix_valueentity_deleted_events_time_seconds_count`
+* `kalix_valueentity_deleted_events_time_seconds_sum`
+--
+Buckets:: `0.01`, `0.05`, `0.1`, `0.25`, `0.5`, `1.0`, `2.0`, `3.0`, `4.0`, `5.0`, `10.0`, `20.0`, `30.0`, `Infinity`
+
+=== `kalix_valueentity_deleted_events_total`
+
+Total deleted events
+
+Metric:: `kalix_valueentity_deleted_events_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_valueentity_entity_active_time_seconds`
+
+Duration that entities are active, in seconds.
+
+Metric:: `kalix_valueentity_entity_active_time_seconds`
+Type:: summary
+Labels::
++
+--
+* `entity_name`
+--
+Exported metrics::
++
+--
+* `kalix_valueentity_entity_active_time_seconds` (with `quantile` label)
+* `kalix_valueentity_entity_active_time_seconds_count`
+* `kalix_valueentity_entity_active_time_seconds_sum`
+--
+Quantiles:: `0.5`, `0.95`, `0.99`, `1.0`
+
+=== `kalix_valueentity_failed_commands_total`
+
+Total commands that have failed.
+
+Metric:: `kalix_valueentity_failed_commands_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_valueentity_failed_entities_total`
+
+Total entity instances that have failed.
+
+Metric:: `kalix_valueentity_failed_entities_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_valueentity_loaded_state_bytes_total`
+
+Total state sizes loaded for an entity.
+
+Metric:: `kalix_valueentity_loaded_state_bytes_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_valueentity_loaded_state_total`
+
+Total states loaded for an entity.
+
+Metric:: `kalix_valueentity_loaded_state_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_valueentity_passivated_entities_total`
+
+Total entity instances that have passivated.
+
+Metric:: `kalix_valueentity_passivated_entities_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_valueentity_persist_failed_total`
+
+Total persist operations that have failed.
+
+Metric:: `kalix_valueentity_persist_failed_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_valueentity_persist_time_seconds`
+
+Duration for persisting events from a command, in seconds.
+
+Metric:: `kalix_valueentity_persist_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `entity_name`
+--
+Exported metrics::
++
+--
+* `kalix_valueentity_persist_time_seconds_bucket` (with `le` label)
+* `kalix_valueentity_persist_time_seconds_count`
+* `kalix_valueentity_persist_time_seconds_sum`
+--
+Buckets:: `0.001`, `0.002`, `0.003`, `0.005`, `0.01`, `0.025`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `10.0`, `Infinity`
+
+=== `kalix_valueentity_persisted_replicated_state_bytes_total`
+
+Total replicated state sizes persisted for an entity.
+
+Metric:: `kalix_valueentity_persisted_replicated_state_bytes_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_valueentity_persisted_replicated_states_total`
+
+Total replicated states persisted for an entity.
+
+Metric:: `kalix_valueentity_persisted_replicated_states_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_valueentity_persisted_state_bytes_total`
+
+Total state sizes persisted for an entity.
+
+Metric:: `kalix_valueentity_persisted_state_bytes_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_valueentity_persisted_states_total`
+
+Total states persisted for an entity.
+
+Metric:: `kalix_valueentity_persisted_states_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_valueentity_received_commands_total`
+
+Total commands received for an entity.
+
+Metric:: `kalix_valueentity_received_commands_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_valueentity_recovery_failed_total`
+
+Total entity recoveries that have failed.
+
+Metric:: `kalix_valueentity_recovery_failed_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_valueentity_recovery_time_seconds`
+
+Duration for entity recovery, in seconds.
+
+Metric:: `kalix_valueentity_recovery_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `entity_name`
+--
+Exported metrics::
++
+--
+* `kalix_valueentity_recovery_time_seconds_bucket` (with `le` label)
+* `kalix_valueentity_recovery_time_seconds_count`
+* `kalix_valueentity_recovery_time_seconds_sum`
+--
+Buckets:: `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `10.0`, `Infinity`
+
+=== `kalix_valueentity_registered_for_deletion_total`
+
+Total entity instances registered to be deleted
+
+Metric:: `kalix_valueentity_registered_for_deletion_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_valueentity_stashed_commands_total`
+
+Total commands stashed for an entity.
+
+Metric:: `kalix_valueentity_stashed_commands_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_valueentity_switch_primary_failed_total`
+
+Total primary switches that have failed.
+
+Metric:: `kalix_valueentity_switch_primary_failed_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_valueentity_switch_primary_time_seconds`
+
+Duration for switching primary, in seconds.
+
+Metric:: `kalix_valueentity_switch_primary_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `entity_name`
+--
+Exported metrics::
++
+--
+* `kalix_valueentity_switch_primary_time_seconds_bucket` (with `le` label)
+* `kalix_valueentity_switch_primary_time_seconds_count`
+* `kalix_valueentity_switch_primary_time_seconds_sum`
+--
+Buckets:: `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.05`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `5.0`, `10.0`, `20.0`, `Infinity`
+
+=== `kalix_valueentity_switch_primary_total`
+
+Total primary switches completed for an entity.
+
+Metric:: `kalix_valueentity_switch_primary_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_valueentity_unstashed_commands_total`
+
+Total commands unstashed for an entity.
+
+Metric:: `kalix_valueentity_unstashed_commands_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+== Workflows
+
+=== `kalix_workflowentity_activated_entities_total`
+
+Total workflow instances that have been activated.
+
+Metric:: `kalix_workflowentity_activated_entities_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_workflowentity_command_processing_time_seconds`
+
+Duration for command processing (until user service reply), in seconds.
+
+Metric:: `kalix_workflowentity_command_processing_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `entity_name`
+--
+Exported metrics::
++
+--
+* `kalix_workflowentity_command_processing_time_seconds_bucket` (with `le` label)
+* `kalix_workflowentity_command_processing_time_seconds_count`
+* `kalix_workflowentity_command_processing_time_seconds_sum`
+--
+Buckets:: `0.001`, `0.002`, `0.003`, `0.005`, `0.01`, `0.025`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
+
+=== `kalix_workflowentity_command_total_time_seconds`
+
+Total duration for command handling (including stash and persist), in seconds.
+
+Metric:: `kalix_workflowentity_command_total_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `entity_name`
+--
+Exported metrics::
++
+--
+* `kalix_workflowentity_command_total_time_seconds_bucket` (with `le` label)
+* `kalix_workflowentity_command_total_time_seconds_count`
+* `kalix_workflowentity_command_total_time_seconds_sum`
+--
+Buckets:: `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
+
+=== `kalix_workflowentity_completed_commands_total`
+
+Total commands completed for an entity.
+
+Metric:: `kalix_workflowentity_completed_commands_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_workflowentity_completed_steps_total`
+
+Total steps completed.
+
+Metric:: `kalix_workflowentity_completed_steps_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_workflowentity_conflicts_detected_total`
+
+Total conflicts detected for an entity.
+
+Metric:: `kalix_workflowentity_conflicts_detected_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_workflowentity_conflicts_resolved_total`
+
+Total conflicts resolved for an entity.
+
+Metric:: `kalix_workflowentity_conflicts_resolved_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_workflowentity_entity_active_time_seconds`
+
+Duration that entities are active, in seconds.
+
+Metric:: `kalix_workflowentity_entity_active_time_seconds`
+Type:: summary
+Labels::
++
+--
+* `entity_name`
+--
+Exported metrics::
++
+--
+* `kalix_workflowentity_entity_active_time_seconds` (with `quantile` label)
+* `kalix_workflowentity_entity_active_time_seconds_count`
+* `kalix_workflowentity_entity_active_time_seconds_sum`
+--
+Quantiles:: `0.5`, `0.95`, `0.99`, `1.0`
+
+=== `kalix_workflowentity_failed_commands_total`
+
+Total commands that have failed.
+
+Metric:: `kalix_workflowentity_failed_commands_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_workflowentity_failed_entities_total`
+
+Total workflow instances that have failed.
+
+Metric:: `kalix_workflowentity_failed_entities_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_workflowentity_failed_steps_total`
+
+Total steps that have failed.
+
+Metric:: `kalix_workflowentity_failed_steps_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_workflowentity_loaded_event_bytes_total`
+
+Total event sizes loaded for an entity.
+
+Metric:: `kalix_workflowentity_loaded_event_bytes_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_workflowentity_loaded_events_total`
+
+Total events loaded for an entity.
+
+Metric:: `kalix_workflowentity_loaded_events_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_workflowentity_loaded_snapshot_bytes_total`
+
+Total snapshot sizes loaded for an entity.
+
+Metric:: `kalix_workflowentity_loaded_snapshot_bytes_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_workflowentity_loaded_snapshots_total`
+
+Total snapshots loaded for an entity.
+
+Metric:: `kalix_workflowentity_loaded_snapshots_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_workflowentity_passivated_entities_total`
+
+Total workflow instances that have been passivated.
+
+Metric:: `kalix_workflowentity_passivated_entities_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_workflowentity_persist_time_seconds`
+
+Duration for persisting events, in seconds.
+
+Metric:: `kalix_workflowentity_persist_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `entity_name`
+--
+Exported metrics::
++
+--
+* `kalix_workflowentity_persist_time_seconds_bucket` (with `le` label)
+* `kalix_workflowentity_persist_time_seconds_count`
+* `kalix_workflowentity_persist_time_seconds_sum`
+--
+Buckets:: `0.001`, `0.002`, `0.003`, `0.005`, `0.01`, `0.025`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `10.0`, `Infinity`
+
+=== `kalix_workflowentity_persisted_event_bytes_total`
+
+Total event sizes persisted for an entity.
+
+Metric:: `kalix_workflowentity_persisted_event_bytes_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_workflowentity_persisted_events_total`
+
+Total events persisted for an entity.
+
+Metric:: `kalix_workflowentity_persisted_events_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_workflowentity_persisted_replicated_event_bytes_total`
+
+Total replicated event sizes persisted for an entity.
+
+Metric:: `kalix_workflowentity_persisted_replicated_event_bytes_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_workflowentity_persisted_replicated_events_total`
+
+Total replicated events persisted for an entity.
+
+Metric:: `kalix_workflowentity_persisted_replicated_events_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_workflowentity_persisted_snapshot_bytes_total`
+
+Total snapshot sizes persisted for an entity.
+
+Metric:: `kalix_workflowentity_persisted_snapshot_bytes_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_workflowentity_persisted_snapshots_total`
+
+Total snapshots persisted for an entity.
+
+Metric:: `kalix_workflowentity_persisted_snapshots_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_workflowentity_received_commands_total`
+
+Total commands received for an entity.
+
+Metric:: `kalix_workflowentity_received_commands_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_workflowentity_recovery_failed_total`
+
+Total recovery process that have failed.
+
+Metric:: `kalix_workflowentity_recovery_failed_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_workflowentity_recovery_from_events_total`
+
+If events were loaded to recover an entity.
+
+Metric:: `kalix_workflowentity_recovery_from_events_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_workflowentity_recovery_time_seconds`
+
+Duration for workflow recovery, in seconds.
+
+Metric:: `kalix_workflowentity_recovery_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `entity_name`
+--
+Exported metrics::
++
+--
+* `kalix_workflowentity_recovery_time_seconds_bucket` (with `le` label)
+* `kalix_workflowentity_recovery_time_seconds_count`
+* `kalix_workflowentity_recovery_time_seconds_sum`
+--
+Buckets:: `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `10.0`, `Infinity`
+
+=== `kalix_workflowentity_registered_for_deletion_total`
+
+Total workflow instances registered to be deleted
+
+Metric:: `kalix_workflowentity_registered_for_deletion_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_workflowentity_started_commands_total`
+
+Commands sent from workflow to other components or user service.
+
+Metric:: `kalix_workflowentity_started_commands_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_workflowentity_started_steps_total`
+
+Total steps started.
+
+Metric:: `kalix_workflowentity_started_steps_total`
+Type:: counter
+Labels::
++
+--
+* `entity_name`
+--
+
+=== `kalix_workflowentity_step_processing_time_seconds`
+
+Duration for step processing (until user service reply), in seconds.
+
+Metric:: `kalix_workflowentity_step_processing_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `entity_name`
+--
+Exported metrics::
++
+--
+* `kalix_workflowentity_step_processing_time_seconds_bucket` (with `le` label)
+* `kalix_workflowentity_step_processing_time_seconds_count`
+* `kalix_workflowentity_step_processing_time_seconds_sum`
+--
+Buckets:: `0.001`, `0.002`, `0.003`, `0.005`, `0.01`, `0.025`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
+
+=== `kalix_workflowentity_step_total_time_seconds`
+
+Total duration for step handling (including persist), in seconds.
+
+Metric:: `kalix_workflowentity_step_total_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `entity_name`
+--
+Exported metrics::
++
+--
+* `kalix_workflowentity_step_total_time_seconds_bucket` (with `le` label)
+* `kalix_workflowentity_step_total_time_seconds_count`
+* `kalix_workflowentity_step_total_time_seconds_sum`
+--
+Buckets:: `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
+
+== Views
+
+=== `kalix_view_conflict_resolution_total_time_seconds`
+
+Total duration for conflict resolution, in seconds.
+
+Metric:: `kalix_view_conflict_resolution_total_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `view_name`
+* `command_name`
+--
+Exported metrics::
++
+--
+* `kalix_view_conflict_resolution_total_time_seconds_bucket` (with `le` label)
+* `kalix_view_conflict_resolution_total_time_seconds_count`
+* `kalix_view_conflict_resolution_total_time_seconds_sum`
+--
+Buckets:: `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
+
+=== `kalix_view_conflict_resolutions_total`
+
+Total conflict resolutions started for an update method.
+
+Metric:: `kalix_view_conflict_resolutions_total`
+Type:: counter
+Labels::
++
+--
+* `view_name`
+* `command_name`
+--
+
+=== `kalix_view_delete_rows_total`
+
+Total deleted rows.
+
+Metric:: `kalix_view_delete_rows_total`
+Type:: counter
+Labels::
++
+--
+* `view_name`
+--
+
+=== `kalix_view_load_bytes_total`
+
+Total bytes loaded from store.
+
+Metric:: `kalix_view_load_bytes_total`
+Type:: counter
+Labels::
++
+--
+* `view_name`
+--
+
+=== `kalix_view_load_failed_total`
+
+Total failures loading from store.
+
+Metric:: `kalix_view_load_failed_total`
+Type:: counter
+Labels::
++
+--
+* `view_name`
+--
+
+=== `kalix_view_load_rows_total`
+
+Total rows loaded from store.
+
+Metric:: `kalix_view_load_rows_total`
+Type:: counter
+Labels::
++
+--
+* `view_name`
+--
+
+=== `kalix_view_query_process_failed_total`
+
+Total failures processing a query.
+
+Metric:: `kalix_view_query_process_failed_total`
+Type:: counter
+Labels::
++
+--
+* `view_name`
+--
+
+=== `kalix_view_query_received_requests_total`
+
+Total query requests received for a view.
+
+Metric:: `kalix_view_query_received_requests_total`
+Type:: counter
+Labels::
++
+--
+* `view_name`
+--
+
+=== `kalix_view_query_result_bytes_total`
+
+Total query result bytes.
+
+Metric:: `kalix_view_query_result_bytes_total`
+Type:: counter
+Labels::
++
+--
+* `view_name`
+--
+
+=== `kalix_view_query_result_rows_total`
+
+Total query result rows.
+
+Metric:: `kalix_view_query_result_rows_total`
+Type:: counter
+Labels::
++
+--
+* `view_name`
+--
+
+=== `kalix_view_query_total_time_seconds`
+
+Total duration for queries, in seconds.
+
+Metric:: `kalix_view_query_total_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `view_name`
+--
+Exported metrics::
++
+--
+* `kalix_view_query_total_time_seconds_bucket` (with `le` label)
+* `kalix_view_query_total_time_seconds_count`
+* `kalix_view_query_total_time_seconds_sum`
+--
+Buckets:: `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
+
+=== `kalix_view_query_view_store_limit_load_bytes_exceeded_total`
+
+Total failures from exceeding limit bytes loaded from view store.
+
+Metric:: `kalix_view_query_view_store_limit_load_bytes_exceeded_total`
+Type:: counter
+Labels::
++
+--
+* `view_name`
+--
+
+=== `kalix_view_query_view_store_limit_load_rows_exceeded_total`
+
+Total failures from exceeding limit for rows loaded from view store.
+
+Metric:: `kalix_view_query_view_store_limit_load_rows_exceeded_total`
+Type:: counter
+Labels::
++
+--
+* `view_name`
+--
+
+=== `kalix_view_update_load_time_seconds`
+
+Duration for loading existing entries (if transforming updates), in seconds.
+
+Metric:: `kalix_view_update_load_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `view_name`
+* `command_name`
+--
+Exported metrics::
++
+--
+* `kalix_view_update_load_time_seconds_bucket` (with `le` label)
+* `kalix_view_update_load_time_seconds_count`
+* `kalix_view_update_load_time_seconds_sum`
+--
+Buckets:: `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
+
+=== `kalix_view_update_store_time_seconds`
+
+Duration for storing updates, in seconds.
+
+Metric:: `kalix_view_update_store_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `view_name`
+* `command_name`
+--
+Exported metrics::
++
+--
+* `kalix_view_update_store_time_seconds_bucket` (with `le` label)
+* `kalix_view_update_store_time_seconds_count`
+* `kalix_view_update_store_time_seconds_sum`
+--
+Buckets:: `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
+
+=== `kalix_view_update_total_time_seconds`
+
+Total duration for updates, in seconds.
+
+Metric:: `kalix_view_update_total_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `view_name`
+* `command_name`
+--
+Exported metrics::
++
+--
+* `kalix_view_update_total_time_seconds_bucket` (with `le` label)
+* `kalix_view_update_total_time_seconds_count`
+* `kalix_view_update_total_time_seconds_sum`
+--
+Buckets:: `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
+
+=== `kalix_view_update_transform_time_seconds`
+
+Duration for transforming updates in the user service, in seconds.
+
+Metric:: `kalix_view_update_transform_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `view_name`
+* `command_name`
+--
+Exported metrics::
++
+--
+* `kalix_view_update_transform_time_seconds_bucket` (with `le` label)
+* `kalix_view_update_transform_time_seconds_count`
+* `kalix_view_update_transform_time_seconds_sum`
+--
+Buckets:: `0.002`, `0.005`, `0.01`, `0.015`, `0.02`, `0.03`, `0.04`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
+
+=== `kalix_view_updates_deduplicated_total`
+
+Total updates that have been automatically deduplicated.
+
+Metric:: `kalix_view_updates_deduplicated_total`
+Type:: counter
+Labels::
++
+--
+* `view_name`
+* `table_name`
+--
+
+=== `kalix_view_updates_filtered_total`
+
+Total updates that have been automatically filtered (for internal messages).
+
+Metric:: `kalix_view_updates_filtered_total`
+Type:: counter
+Labels::
++
+--
+* `view_name`
+* `table_name`
+--
+
+=== `kalix_view_updates_ignored_total`
+
+Total updates that have been ignored.
+
+Metric:: `kalix_view_updates_ignored_total`
+Type:: counter
+Labels::
++
+--
+* `view_name`
+* `table_name`
+--
+
+=== `kalix_view_updates_processed_total`
+
+Total updates that have been actually processed.
+
+Metric:: `kalix_view_updates_processed_total`
+Type:: counter
+Labels::
++
+--
+* `view_name`
+* `table_name`
+--
+
+=== `kalix_view_updates_skipped_total`
+
+Total updates that have been skipped (based on sequence gap detection).
+
+Metric:: `kalix_view_updates_skipped_total`
+Type:: counter
+Labels::
++
+--
+* `view_name`
+* `table_name`
+--
+
+=== `kalix_view_updates_total`
+
+Total updates received for an update method.
+
+Metric:: `kalix_view_updates_total`
+Type:: counter
+Labels::
++
+--
+* `view_name`
+* `command_name`
+--
+
+=== `kalix_view_upsert_byte_limit_exceeded_total`
+
+Total failures from exceeding byte size limit for single view store upsert.
+
+Metric:: `kalix_view_upsert_byte_limit_exceeded_total`
+Type:: counter
+Labels::
++
+--
+* `view_name`
+--
+
+=== `kalix_view_upsert_bytes_total`
+
+Total upsert bytes.
+
+Metric:: `kalix_view_upsert_bytes_total`
+Type:: counter
+Labels::
++
+--
+* `view_name`
+--
+
+=== `kalix_view_upsert_failed_total`
+
+Total failed upserts.
+
+Metric:: `kalix_view_upsert_failed_total`
+Type:: counter
+Labels::
++
+--
+* `view_name`
+--
+
+=== `kalix_view_upsert_rows_total`
+
+Total upsert rows.
+
+Metric:: `kalix_view_upsert_rows_total`
+Type:: counter
+Labels::
++
+--
+* `view_name`
+--
+
+== Eventing
+
+=== `kalix_eventing_broker_used_total`
+
+Kalix eventing message broker type
+
+Metric:: `kalix_eventing_broker_used_total`
+Type:: counter
+Labels::
++
+--
+* `broker_type`
+--
+
+=== `kalix_eventing_event_failed_total`
+
+Total events leading to event stream failure
+
+Metric:: `kalix_eventing_event_failed_total`
+Type:: counter
+Labels::
++
+--
+* `consumer_service`
+* `event_source_type`
+* `event_source`
+--
+
+=== `kalix_eventing_event_handled_total`
+
+Total events processed by a consumer
+
+Metric:: `kalix_eventing_event_handled_total`
+Type:: counter
+Labels::
++
+--
+* `consumer_service`
+* `event_source_type`
+* `event_source`
+--
+
+=== `kalix_eventing_service_to_service_consumer_total`
+
+Service to Service stream consumers, each stream_id counted
+
+Metric:: `kalix_eventing_service_to_service_consumer_total`
+Type:: counter
+
+=== `kalix_eventing_service_to_service_producer_total`
+
+Service to Service stream producer, each stream_id counted
+
+Metric:: `kalix_eventing_service_to_service_producer_total`
+Type:: counter
+
+=== `kalix_eventing_source_stream_started_total`
+
+Total event source streams that have started
+
+Metric:: `kalix_eventing_source_stream_started_total`
+Type:: counter
+Labels::
++
+--
+* `consumer_service`
+* `event_source_type`
+* `event_source`
+--
+
+== Projections
+
+=== `kalix_projection_backlog_lag_seconds`
+
+Time in seconds the projection is lagging behind the latest event
+
+Metric:: `kalix_projection_backlog_lag_seconds`
+Type:: gauge
+Labels::
++
+--
+* `projection_name`
+* `projection_key`
+* `projection_type`
+--
+
+=== `kalix_projection_completed_total`
+
+Total envelopes completed for a projection.
+
+Metric:: `kalix_projection_completed_total`
+Type:: counter
+Labels::
++
+--
+* `projection_name`
+* `projection_key`
+* `projection_type`
+* `envelope_source`
+--
+
+=== `kalix_projection_consumer_lag_seconds`
+
+Consumer lag, duration for envelope processing from when the envelope was created, in seconds.
+
+Metric:: `kalix_projection_consumer_lag_seconds`
+Type:: histogram
+Labels::
++
+--
+* `projection_name`
+* `projection_key`
+* `projection_type`
+* `envelope_source`
+--
+Exported metrics::
++
+--
+* `kalix_projection_consumer_lag_seconds_bucket` (with `le` label)
+* `kalix_projection_consumer_lag_seconds_count`
+* `kalix_projection_consumer_lag_seconds_sum`
+--
+Buckets:: `0.01`, `0.05`, `0.1`, `0.25`, `0.5`, `1.0`, `2.0`, `3.0`, `4.0`, `5.0`, `10.0`, `20.0`, `30.0`, `Infinity`
+
+=== `kalix_projection_failed_total`
+
+Total projection instances that have failed.
+
+Metric:: `kalix_projection_failed_total`
+Type:: counter
+Labels::
++
+--
+* `projection_name`
+* `projection_key`
+* `projection_type`
+--
+
+=== `kalix_projection_processing_time_seconds`
+
+Duration for envelope processing (including user service and persist), in seconds.
+
+Metric:: `kalix_projection_processing_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `projection_name`
+* `projection_key`
+* `projection_type`
+* `envelope_source`
+--
+Exported metrics::
++
+--
+* `kalix_projection_processing_time_seconds_bucket` (with `le` label)
+* `kalix_projection_processing_time_seconds_count`
+* `kalix_projection_processing_time_seconds_sum`
+--
+Buckets:: `0.001`, `0.002`, `0.003`, `0.005`, `0.01`, `0.025`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `10.0`, `Infinity`
+
+=== `kalix_projection_received_total`
+
+Total envelopes received for a projection (before de-duplication).
+
+Metric:: `kalix_projection_received_total`
+Type:: counter
+Labels::
++
+--
+* `projection_name`
+* `projection_key`
+* `projection_type`
+* `envelope_source`
+--
+
+=== `kalix_projection_started_total`
+
+Total projection instances that have started.
+
+Metric:: `kalix_projection_started_total`
+Type:: counter
+Labels::
++
+--
+* `projection_name`
+* `projection_key`
+* `projection_type`
+--
+
+=== `kalix_projection_stopped_total`
+
+Total projection instances that have stopped.
+
+Metric:: `kalix_projection_stopped_total`
+Type:: counter
+Labels::
++
+--
+* `projection_name`
+* `projection_key`
+* `projection_type`
+--
+
+== Actions
+
+=== `kalix_action_completed_messages_total`
+
+Total messages completed for an action.
+
+Metric:: `kalix_action_completed_messages_total`
+Type:: counter
+Labels::
++
+--
+* `action_name`
+--
+
+=== `kalix_action_message_processing_time_seconds`
+
+Duration for message processing (until first user service reply), in seconds.
+
+Metric:: `kalix_action_message_processing_time_seconds`
+Type:: histogram
+Labels::
++
+--
+* `action_name`
+--
+Exported metrics::
++
+--
+* `kalix_action_message_processing_time_seconds_bucket` (with `le` label)
+* `kalix_action_message_processing_time_seconds_count`
+* `kalix_action_message_processing_time_seconds_sum`
+--
+Buckets:: `0.001`, `0.002`, `0.003`, `0.005`, `0.01`, `0.025`, `0.05`, `0.075`, `0.1`, `0.2`, `0.5`, `1.0`, `2.0`, `3.0`, `5.0`, `7.5`, `10.0`, `Infinity`
+
+=== `kalix_action_received_messages_total`
+
+Total messages received for an action.
+
+Metric:: `kalix_action_received_messages_total`
+Type:: counter
+Labels::
++
+--
+* `action_name`
+--
+
+== Runtime
+
+=== `kalix_component_types_total`
+
+Kalix component type counts
+
+Metric:: `kalix_component_types_total`
+Type:: counter
+Labels::
++
+--
+* `component_type`
+--
+
+=== `kalix_instance_size`
+
+Kalix instance size.
+
+Metric:: `kalix_instance_size`
+Type:: gauge
+
+=== `kalix_proxy_info`
+
+Kalix proxy and SDK details
+
+Metric:: `kalix_proxy_info`
+Type:: info
+Labels::
++
+--
+* `proxy_version`
+* `sdk_name`
+* `sdk_version`
+--
+
+=== `kalix_service_revision`
+
+Kalix user service version. I.e. Kubernetes/revision
+
+Metric:: `kalix_service_revision`
+Type:: gauge

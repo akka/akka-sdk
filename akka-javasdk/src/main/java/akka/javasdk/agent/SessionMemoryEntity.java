@@ -14,10 +14,12 @@ import akka.javasdk.agent.SessionMessage.MultimodalUserMessage;
 import akka.javasdk.agent.SessionMessage.ToolCallResponse;
 import akka.javasdk.agent.SessionMessage.UserMessage;
 import akka.javasdk.annotations.Component;
+import akka.javasdk.annotations.EnableReplicationFilter;
 import akka.javasdk.annotations.TypeName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
+import akka.javasdk.eventsourcedentity.ReplicationFilter;
 import com.typesafe.config.Config;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -57,6 +59,10 @@ import org.slf4j.LoggerFactory;
  * <p><strong>Event Subscription:</strong> You can subscribe to session memory events using a {@link
  * akka.javasdk.consumer.Consumer} to monitor session activity, implement custom analytics, or
  * trigger compaction when memory usage exceeds thresholds.
+ *
+ * <p>The session memory has the multi-region replication filter enabled to only include the local
+ * region when using `request-region` primary selection. When accessed from another region the
+ * filter will be expanded to include the other region too.
  */
 @Component(
     id = "akka-session-memory",
@@ -66,6 +72,7 @@ import org.slf4j.LoggerFactory;
 Stores the recent conversation history for each agent session, including user, AI, and tool messages.
 Use this component to view or inspect the memory that the agents uses for context during interactions.
 """)
+@EnableReplicationFilter
 public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> {
 
   private static final Logger log = LoggerFactory.getLogger(SessionMemoryEntity.class);
@@ -73,12 +80,14 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
   private final Config config;
   private final String sessionId;
   public final AgentRegistry agentRegistry;
+  private final ReplicationFilter.Builder selfRegionFilter;
 
   public SessionMemoryEntity(
       Config config, EventSourcedEntityContext context, AgentRegistry agentRegistry) {
     this.config = config;
     this.sessionId = context.entityId();
     this.agentRegistry = agentRegistry;
+    this.selfRegionFilter = ReplicationFilter.includeRegion(context.selfRegion());
   }
 
   public record State(
@@ -213,6 +222,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     } else {
       return effects()
           .persist(new Event.LimitedWindowSet(Instant.now(), limitedWindow.maxSizeInBytes))
+          .updateReplicationFilter(selfRegionFilter)
           .thenReply(__ -> done());
     }
   }
@@ -292,7 +302,10 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
 
     var allEventsWithSize = updateHistorySize(allEvents);
 
-    return effects().persistAll(allEventsWithSize).thenReply(__ -> done());
+    return effects()
+        .persistAll(allEventsWithSize)
+        .updateReplicationFilter(selfRegionFilter)
+        .thenReply(__ -> done());
   }
 
   public record GetHistoryCmd(Optional<Integer> lastNMessages, List<MemoryFilter> memoryFilters) {
@@ -345,7 +358,12 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     return memoryFilters.stream().reduce(messages, this::applyFilter, (acc, filter) -> acc);
   }
 
-  public ReadOnlyEffect<SessionHistory> getHistory(GetHistoryCmd cmd) {
+  /**
+   * Consistent read (not ReadOnlyEffect). Replication filter for the local region is enabled by
+   * default and when accessing from another region it's important to trigger a region event sync
+   * also for reads.
+   */
+  public Effect<SessionHistory> getHistory(GetHistoryCmd cmd) {
     List<SessionMessage> messages = filteredMessages(cmd.memoryFilters);
 
     if (cmd.lastNMessages != null
@@ -441,7 +459,10 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
 
     var eventsWithSize = updateHistorySize(events);
 
-    return effects().persistAll(eventsWithSize).thenReply(__ -> done());
+    return effects()
+        .persistAll(eventsWithSize)
+        .updateReplicationFilter(selfRegionFilter)
+        .thenReply(__ -> done());
   }
 
   private List<Event> updateHistorySize(List<Event> events) {
@@ -483,6 +504,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     } else {
       return effects()
           .persist(new Event.Deleted(Instant.now()))
+          .updateReplicationFilter(selfRegionFilter)
           .deleteEntity()
           .thenReply(__ -> done());
     }

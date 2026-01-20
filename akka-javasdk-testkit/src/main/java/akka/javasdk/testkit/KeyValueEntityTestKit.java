@@ -173,8 +173,12 @@ public class KeyValueEntityTestKit<S, E extends KeyValueEntity<S>> {
       Supplier<KeyValueEntity.Effect<Reply>> effect, Optional<Type> returnType) {
     KeyValueEntityResultImpl<Reply> result = new KeyValueEntityResultImpl<>(effect.get());
     if (result.stateWasUpdated()) {
-      this.state = (S) result.getUpdatedState();
-      verifySerDerWithExpectedType(stateClass, state, entity);
+      S state = (S) result.getUpdatedState();
+      if (state == null) {
+        throw new IllegalStateException("Updated state must not be null.");
+      }
+      this.state = state;
+      verifySerDerWithExpectedType(stateClass, this.state, entity);
     } else if (result.stateWasDeleted()) {
       this.state = emptyState;
       this.deleted = true;

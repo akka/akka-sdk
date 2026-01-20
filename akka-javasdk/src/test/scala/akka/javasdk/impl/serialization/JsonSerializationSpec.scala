@@ -496,7 +496,7 @@ class JsonSerializationSpec extends AnyWordSpec with Matchers {
 
     "use the provided object mapper" in {
       val customMapper = JsonSerializer.newObjectMapperWithDefaults()
-      customMapper.setSerializationInclusion(JsonInclude.Include.NON_ABSENT)
+      customMapper.setDefaultPropertyInclusion(JsonInclude.Include.NON_ABSENT)
       val customSerializer = new JsonSerializer(customMapper)
       val bytesPayload = customSerializer.toBytes(JsonSerializationSpec.SomeTypeWithOptional(Optional.empty()))
       bytesPayload.bytes.utf8String shouldBe "{}"
