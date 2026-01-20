@@ -1,28 +1,32 @@
-= akka local cluster
+= akka service-configs create
 
-Start and manage a local Akka cluster
+Create or update a service config in the current project.
 
 == Synopsis
 
-Start and manage a local Akka cluster for development and testing.
-
-This command must be run from an Akka SDK project directory (a directory containing a pom.xml file).
-
-Prerequisites:
-
-* Maven installed on your system, or the Maven wrapper (mvnw) present in your project
-* Docker installed and running (used to launch Akka Persistence backed by PostgreSQL)
+The `akka service-configs create` command creates or updates a service config for the currently configured project.
+The config contains HOCON configuration that will override the service's application.conf.
 
 ----
-akka local cluster [flags]
+akka service-configs create CONFIG_NAME [flags]
+----
+
+== Examples
+
+----
+akka service-configs create my-config --from-file /path/to/config.conf
 ----
 
 == Options
 
 ----
-  -D, --define stringArray   Pass -D properties to Maven (e.g., -Dfoo=bar)
-  -h, --help                 help for cluster
-  -n, --num-nodes int        Number of nodes to start (1-3)
+      --force-global       force an existing regional resource to be configured as a global resource
+      --force-regional     force an existing global resource to be configured as a regional resource
+      --from-file string   A path to a file containing the HOCON configuration. Use '-' to read from stdin.
+  -h, --help               help for create
+      --owner string       the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string     project to use if not using the default configured project
+      --region string      region to use if project has more than one region
 ----
 
 == Options inherited from parent commands
@@ -43,7 +47,7 @@ akka local cluster [flags]
 
 == SEE ALSO
 
-* link:akka_local.html[akka local]	 - Interact with and manage Akka services running locally.
+* link:akka_service-configs.html[akka service-configs]	 - Manage service configs for a Akka project.
 
 [discrete]
 
