@@ -65,6 +65,8 @@ jobs:
       - name: llm-ctx.txt
         run: |
           sudo chmod a+w target/site
+          # https://github.com/AnswerDotAI/llms-txt/issues/103
+          pip install fastcore==1.12.1
           pip install llms-txt
           sudo cp docs/src/modules/ROOT/pages/llms.txt target/site/
           llms_txt2ctx target/site/llms.txt > target/site/llms-ctx.txt
