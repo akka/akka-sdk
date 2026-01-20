@@ -161,8 +161,7 @@ detect_arch() {
         arch=amd64
       fi
     elif [ "${arch}" = "aarch64" ]; then
-      error "Detected aarch64"
-      exit 1
+      arch=arm64
     fi
 
     # `uname -m` in some cases mis-reports 32-bit OS as 64-bit, so double check
