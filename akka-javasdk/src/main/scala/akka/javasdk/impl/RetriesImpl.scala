@@ -7,11 +7,11 @@ package akka.javasdk.impl
 import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
-import java.util.concurrent.ExecutionException
 
 import akka.actor.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.Retries
+import akka.javasdk.impl.ErrorHandling.unwrapExecutionExceptionCatcher
 import akka.pattern.Patterns
 import akka.pattern.RetrySettings
 
@@ -40,8 +40,6 @@ private[akka] class RetriesImpl(actorSystem: ActorSystem) extends Retries {
         },
         retrySettings).toCompletableFuture
         .get()
-    } catch {
-      case e: ExecutionException => throw ErrorHandling.unwrapExecutionException(e)
-    }
+    } catch unwrapExecutionExceptionCatcher
   }
 }
