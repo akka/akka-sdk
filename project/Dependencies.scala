@@ -17,7 +17,7 @@ object Dependencies {
   val GoogleProtobufVersion = akka.grpc.gen.BuildInfo.googleProtobufVersion
 
   // Note: the Scala version must be aligned with the runtime
-  val ScalaVersion = "2.13.17"
+  val ScalaVersion = "2.13.18"
   val CrossScalaVersions = Seq(ScalaVersion)
 
   val ScalaTestVersion = "3.2.14"
