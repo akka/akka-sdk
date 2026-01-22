@@ -260,8 +260,8 @@ private[impl] object ComponentDescriptorFactory {
       new ConsumerSource.WorkflowSource(workflowComponentId)
     } else if (hasEventSourcedEntitySubscription(clazz)) {
       val esComponentId = findSubscriptionEventSourcedComponentId(clazz)
-      // FIXME handle startFromSnapshots
-      new ConsumerSource.EventSourcedEntitySource(esComponentId, startFromSnapshots = false)
+      val startFromSnapshots = clazz.getMethods.exists(hasFromSnapshotHandler)
+      new ConsumerSource.EventSourcedEntitySource(esComponentId, startFromSnapshots)
     } else if (hasTopicSubscription(clazz)) {
       val topicName = findSubscriptionTopicName(clazz)
       val consumerGroup = findSubscriptionConsumerGroup(clazz)
