@@ -8,6 +8,8 @@ import java.lang.reflect.InvocationTargetException
 import java.util.UUID
 import java.util.concurrent.ExecutionException
 
+import scala.util.control.Exception.Catcher
+
 import akka.annotation.InternalApi
 import org.slf4j.MDC
 
@@ -31,6 +33,9 @@ private[javasdk] object ErrorHandling {
     }
   }
 
+  /**
+   * For Java
+   */
   def unwrapExecutionException(exc: ExecutionException): RuntimeException = {
     exc.getCause match {
       case null                => new RuntimeException(exc.getMessage)
@@ -39,12 +44,31 @@ private[javasdk] object ErrorHandling {
     }
   }
 
+  /**
+   * For Java
+   */
   def unwrapInvocationTargetException(exc: InvocationTargetException): RuntimeException = {
     exc.getCause match {
       case null                => new RuntimeException(exc.getMessage)
       case e: RuntimeException => e
       case other               => new RuntimeException(other)
     }
+  }
+
+  /**
+   * For Scala
+   */
+  def unwrapExecutionExceptionCatcher[A]: Catcher[A] = {
+    case exc: ExecutionException if exc.getCause != null =>
+      throw exc.getCause
+  }
+
+  /**
+   * For Scala
+   */
+  def unwrapInvocationTargetExceptionCatcher[A]: Catcher[A] = {
+    case exc: InvocationTargetException if exc.getCause != null =>
+      throw exc.getCause
   }
 
 }

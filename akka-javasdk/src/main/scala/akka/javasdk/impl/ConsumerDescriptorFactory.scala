@@ -7,6 +7,7 @@ package akka.javasdk.impl
 import akka.annotation.InternalApi
 import akka.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
 import akka.javasdk.impl.ComponentDescriptorFactory._
+import akka.javasdk.impl.ErrorHandling.unwrapInvocationTargetExceptionCatcher
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.JsonSerializer
 import com.google.protobuf.GeneratedMessageV3
@@ -44,10 +45,13 @@ private[impl] object ConsumerDescriptorFactory extends ComponentDescriptorFactor
                 })
             } else if (classOf[GeneratedMessageV3].isAssignableFrom(inputType)) {
               // special handling of protobuf message types
-              val descriptor = inputType
-                .getMethod("getDescriptor")
-                .invoke(null)
-                .asInstanceOf[com.google.protobuf.Descriptors.Descriptor]
+              val descriptor =
+                try {
+                  inputType
+                    .getMethod("getDescriptor")
+                    .invoke(null)
+                    .asInstanceOf[com.google.protobuf.Descriptors.Descriptor]
+                } catch unwrapInvocationTargetExceptionCatcher
 
               Seq(AnySupport.DefaultTypeUrlPrefix + "/" + descriptor.getFullName -> invoker)
             } else {
