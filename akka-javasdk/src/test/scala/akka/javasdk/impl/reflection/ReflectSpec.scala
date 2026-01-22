@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext
 import akka.Done
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.client.ComponentClientImpl
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowAnnotatedAbstractClass
 import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowAnnotatedAbstractClassLegacy
 import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowAnnotatedInterface
@@ -35,7 +35,7 @@ class SomeClass {
 }
 
 class ReflectSpec extends AnyWordSpec with Matchers {
-  private val serializer = new JsonSerializer
+  private val serializer = new Serializer
 
   "The reflection utils" must {
     "deterministically sort methods of the same class" in {

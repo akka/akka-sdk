@@ -15,7 +15,7 @@ import akka.javasdk.consumer.MessageEnvelope
 import akka.javasdk.impl.AnySupport.BytesPrimitive
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.MethodInvoker
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.BytesPayload
 import akka.util.ByteString
 import com.google.protobuf.GeneratedMessageV3
@@ -45,7 +45,7 @@ class ReflectiveConsumerRouterSpec
   private def bytesOnlyRouter(ignoreUnknown: Boolean = false) = new ReflectiveConsumerRouter[BytesOnlyConsumer](
     new BytesOnlyConsumer,
     BytesOnlyConsumer.methodInvokers,
-    new JsonSerializer,
+    new Serializer,
     ignoreUnknown = ignoreUnknown,
     consumesFromTopic = false)
 
@@ -74,7 +74,7 @@ class ReflectiveConsumerRouterSpec
   private def protoBufRouter() = new ReflectiveConsumerRouter[ProtoConsumer](
     new ProtoConsumer,
     ProtoConsumer.methodInvokers,
-    new JsonSerializer,
+    new Serializer,
     ignoreUnknown = false,
     consumesFromTopic = false)
 

@@ -25,7 +25,7 @@ import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.WorkflowExceptions.WorkflowException
 import akka.javasdk.impl.client.MethodRefResolver
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.timer.TimerSchedulerImpl
@@ -62,7 +62,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
     componentId: String,
     workflowId: String,
     workflowClass: Class[W],
-    serializer: JsonSerializer,
+    serializer: Serializer,
     componentDescriptor: ComponentDescriptor,
     timerClient: TimerClient,
     sdkExecutionContext: ExecutionContext,

@@ -9,7 +9,7 @@ import akka.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
 import akka.javasdk.impl.ComponentDescriptorFactory._
 import akka.javasdk.impl.ErrorHandling.unwrapInvocationTargetExceptionCatcher
 import akka.javasdk.impl.reflection.Reflect
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import com.google.protobuf.GeneratedMessageV3
 
 /**
@@ -18,7 +18,7 @@ import com.google.protobuf.GeneratedMessageV3
 @InternalApi
 private[impl] object ConsumerDescriptorFactory extends ComponentDescriptorFactory {
 
-  override def buildDescriptorFor(component: Class[_], serializer: JsonSerializer): ComponentDescriptor = {
+  override def buildDescriptorFor(component: Class[_], serializer: Serializer): ComponentDescriptor = {
 
     import Reflect.methodOrdering
 
