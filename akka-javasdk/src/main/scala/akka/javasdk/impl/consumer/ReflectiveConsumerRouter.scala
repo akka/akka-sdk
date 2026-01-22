@@ -15,7 +15,7 @@ import akka.javasdk.impl.AnySupport.BytesPrimitive
 import akka.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
 import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.impl.reflection.ParameterExtractors
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.BytesPayload
 
 /**
@@ -25,13 +25,13 @@ import akka.runtime.sdk.spi.BytesPayload
 private[impl] class ReflectiveConsumerRouter[A <: Consumer](
     consumer: A,
     methodInvokers: Map[String, MethodInvoker],
-    internalSerializer: JsonSerializer,
+    internalSerializer: Serializer,
     ignoreUnknown: Boolean,
     consumesFromTopic: Boolean) {
 
   private val serializer =
     // consuming from topic, external json format, so mapper configurable by user
-    if (consumesFromTopic) new JsonSerializer(JsonSupport.getObjectMapper)
+    if (consumesFromTopic) new Serializer(JsonSupport.getObjectMapper)
     //  non-topic is internal, so non-configurable
     else internalSerializer
 

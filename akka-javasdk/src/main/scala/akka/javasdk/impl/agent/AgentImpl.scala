@@ -51,7 +51,7 @@ import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
 import akka.javasdk.impl.reflection.Reflect
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.runtime.sdk.spi.BytesPayload
@@ -150,7 +150,7 @@ private[impl] final class AgentImpl[A <: Agent](
     val factory: AgentContext => A,
     sdkExecutionContext: ExecutionContext,
     tracerFactory: () => Tracer,
-    serializer: JsonSerializer,
+    serializer: Serializer,
     componentDescriptor: ComponentDescriptor,
     regionInfo: RegionInfo,
     promptTemplateClient: Option[OtelContext] => PromptTemplateClient,
@@ -641,7 +641,7 @@ private[impl] final class AgentImpl[A <: Agent](
 
         serializer.fromBytes(
           responseType,
-          new BytesPayload(ByteString.fromString(modelResponse), JsonSerializer.JsonContentTypePrefix + "object"))
+          new BytesPayload(ByteString.fromString(modelResponse), Serializer.JsonContentTypePrefix + "object"))
       }
     } catch {
       case e: IllegalArgumentException => throw new JsonParsingException(e.getMessage, e, modelResponse)

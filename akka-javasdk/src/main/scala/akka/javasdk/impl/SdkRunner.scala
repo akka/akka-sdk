@@ -79,7 +79,7 @@ import akka.javasdk.impl.http.JwtClaimsImpl
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.javasdk.impl.timedaction.TimedActionImpl
@@ -304,7 +304,7 @@ private[javasdk] object Sdk {
       grpcClientProvider: GrpcClientProviderImpl,
       agentRegistry: AgentRegistryImpl,
       overrideModelProvider: OverrideModelProvider,
-      serializer: JsonSerializer,
+      serializer: Serializer,
       sanitizer: Sanitizer)
 
   private val platformManagedDependency = Set[Class[_]](
@@ -345,7 +345,7 @@ private final class Sdk(
   import Sdk._
 
   private val logger = LoggerFactory.getLogger(getClass)
-  private val serializer = new JsonSerializer
+  private val serializer = new Serializer
   private lazy val retries = new RetriesImpl(system.classicSystem)
   private val ComponentLocator.LocatedClasses(componentClasses, maybeServiceClass) =
     ComponentLocator.locateUserComponents(system)

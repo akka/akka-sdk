@@ -22,7 +22,7 @@ import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.impl.client.ComponentClientImpl
 import akka.javasdk.impl.client.DeferredCallImpl
 import akka.javasdk.impl.client.MethodRefResolver
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.WorkflowStepNotFound
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.WorkflowStepNotSupported
@@ -79,7 +79,7 @@ object ReflectiveWorkflowRouter {
 class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     instanceFactory: Function[WorkflowContext, W],
     methodInvokers: Map[String, MethodInvoker],
-    serializer: JsonSerializer,
+    serializer: Serializer,
     sdkExecutionContext: ExecutionContext,
     runtimeComponentClients: ComponentClients)(implicit system: ActorSystem[_]) {
 

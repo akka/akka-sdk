@@ -27,7 +27,7 @@ import akka.javasdk.client.ViewStreamMethodRef
 import akka.javasdk.client.ViewStreamMethodRef1
 import akka.javasdk.impl.ComponentDescriptorFactory
 import akka.javasdk.impl.MetadataImpl
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.view.ViewStreamMethodRefImpl
 import akka.javasdk.impl.view.ViewStreamMethodRefImpl1
 import akka.javasdk.view.View
@@ -94,18 +94,18 @@ private[javasdk] object ViewClientImpl {
     }
   }
 
-  private[impl] def encodeArgument(serializer: JsonSerializer, method: Method, arg: Option[Any]): BytesPayload =
+  private[impl] def encodeArgument(serializer: Serializer, method: Method, arg: Option[Any]): BytesPayload =
     arg match {
       case Some(arg) =>
         // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
         if (arg.getClass.isPrimitive || primitiveObjects.contains(arg.getClass)) {
           val bytes = serializer.encodeDynamicToAkkaByteString(method.getParameters.head.getName, arg)
-          new BytesPayload(bytes, JsonSerializer.JsonContentTypePrefix + "object")
+          new BytesPayload(bytes, Serializer.JsonContentTypePrefix + "object")
         } else if (classOf[java.util.Collection[_]].isAssignableFrom(arg.getClass)) {
           val bytes = serializer.encodeDynamicCollectionToAkkaByteString(
             method.getParameters.head.getName,
             arg.asInstanceOf[java.util.Collection[_]])
-          new BytesPayload(bytes, JsonSerializer.JsonContentTypePrefix + "object")
+          new BytesPayload(bytes, Serializer.JsonContentTypePrefix + "object")
         } else {
           serializer.toBytes(arg)
         }
@@ -121,7 +121,7 @@ private[javasdk] object ViewClientImpl {
 @InternalApi
 private[javasdk] final case class ViewClientImpl(
     viewClient: RuntimeViewClient,
-    serializer: JsonSerializer,
+    serializer: Serializer,
     // Note: not actually passed through to query
     callMetadata: Option[Metadata])(implicit val executionContext: ExecutionContext, system: ActorSystem[_])
     extends ViewClient {
