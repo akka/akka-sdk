@@ -8,7 +8,7 @@ import scala.collection.mutable
 
 import akka.actor.ActorSystem
 import akka.actor.Props
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.testkit.impl.EventingTestKitImpl.RunningSourceProbe
 import akka.stream.BoundedSourceQueue
 import akka.stream.QueueOfferResult
@@ -31,7 +31,7 @@ class IncomingMessagesImplSpec
     with BeforeAndAfterEach
     with BeforeAndAfterAll {
 
-  private val serializer = new JsonSerializer
+  private val serializer = new Serializer
   private val subscription =
     new IncomingMessagesImpl(system.actorOf(Props[SourcesHolder](), "holder"), serializer)
   val queue = new DummyQueue(mutable.Queue.empty)

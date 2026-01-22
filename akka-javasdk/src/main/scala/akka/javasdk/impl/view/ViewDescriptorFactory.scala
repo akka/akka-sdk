@@ -26,7 +26,7 @@ import akka.javasdk.impl.ComponentDescriptorFactory.readComponentName
 import akka.javasdk.impl.ErrorHandling.unwrapInvocationTargetExceptionCatcher
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.reflection.Reflect
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.UpdateContext
@@ -60,7 +60,7 @@ private[impl] object ViewDescriptorFactory {
 
   def apply(
       viewClass: Class[_],
-      serializer: JsonSerializer,
+      serializer: Serializer,
       regionInfo: RegionInfo,
       userEc: ExecutionContext): ViewDescriptor = {
     val componentId = ComponentDescriptorFactory.readComponentIdValue(viewClass)
@@ -221,7 +221,7 @@ private[impl] object ViewDescriptorFactory {
       tableUpdater: Class[_],
       tableType: SpiClass,
       tableName: String,
-      serializer: JsonSerializer,
+      serializer: Serializer,
       regionInfo: RegionInfo,
       userEc: ExecutionContext): TableDescriptor = {
     val annotation = tableUpdater.getAnnotation(classOf[Consume.FromServiceStream])
@@ -262,7 +262,7 @@ private[impl] object ViewDescriptorFactory {
       tableUpdater: Class[_],
       tableType: SpiClass,
       tableName: String,
-      serializer: JsonSerializer,
+      serializer: Serializer,
       regionInfo: RegionInfo,
       userEc: ExecutionContext): TableDescriptor = {
 
@@ -307,7 +307,7 @@ private[impl] object ViewDescriptorFactory {
       tableUpdater: Class[_],
       tableType: SpiClass,
       tableName: String,
-      serializer: JsonSerializer,
+      serializer: Serializer,
       regionInfo: RegionInfo,
       userEc: ExecutionContext): TableDescriptor = {
 
@@ -343,7 +343,7 @@ private[impl] object ViewDescriptorFactory {
       tableUpdater: Class[_],
       tableType: SpiClass,
       tableName: String,
-      serializer: JsonSerializer,
+      serializer: Serializer,
       regionInfo: RegionInfo,
       userEc: ExecutionContext): TableDescriptor = {
 
@@ -379,7 +379,7 @@ private[impl] object ViewDescriptorFactory {
       tableUpdater: Class[_],
       tableType: SpiClass,
       tableName: String,
-      serializer: JsonSerializer,
+      serializer: Serializer,
       regionInfo: RegionInfo,
       userEc: ExecutionContext): TableDescriptor = {
     val annotation = tableUpdater.getAnnotation(classOf[Consume.FromTopic])
@@ -413,7 +413,7 @@ private[impl] object ViewDescriptorFactory {
       componentId: String,
       tableUpdaterClass: Class[_],
       methods: Seq[Method],
-      serializer: JsonSerializer,
+      serializer: Serializer,
       regionInfo: RegionInfo,
       ignoreUnknown: Boolean = false,
       deleteHandler: Boolean = false)(implicit userEc: ExecutionContext)
@@ -515,7 +515,7 @@ private[impl] object ViewDescriptorFactory {
                 s"View updater tried to set row state to null, not allowed [$componentId] threw an exception")
               throw ViewException(componentId, "updateState with null state is not allowed.", None)
             }
-            val bytesPayload = serializer.toBytes(newState)
+            val bytesPayload = serializer.toBytesAsJson(newState)
             new spi.SpiTableUpdateHandler.UpdateRow(bytesPayload)
           case ViewEffectImpl.Delete => SpiTableUpdateHandler.DeleteRow
           case ViewEffectImpl.Ignore => SpiTableUpdateHandler.IgnoreUpdate

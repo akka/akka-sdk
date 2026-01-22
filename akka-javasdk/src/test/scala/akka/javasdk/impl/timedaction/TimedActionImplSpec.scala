@@ -15,7 +15,7 @@ import akka.actor.typed.scaladsl.adapter._
 import akka.javasdk.annotations.Component
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.TimedActionDescriptorFactory
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.timedaction.TimedAction
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.DeferredRequest
@@ -42,7 +42,7 @@ class TimedActionImplSpec
 
   private val classicSystem = system.toClassic
 
-  private val serializer = new JsonSerializer
+  private val serializer = new Serializer
   private val timerClient = new TimerClient {
     // Not exercised here
     override def startSingleTimer(

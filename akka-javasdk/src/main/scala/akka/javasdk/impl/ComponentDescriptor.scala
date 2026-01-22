@@ -5,7 +5,7 @@
 package akka.javasdk.impl
 
 import akka.annotation.InternalApi
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 
 /**
  * The component descriptor is used the reflective routers routing incoming calls to the right method of the user
@@ -16,7 +16,7 @@ import akka.javasdk.impl.serialization.JsonSerializer
 @InternalApi
 private[impl] object ComponentDescriptor {
 
-  def descriptorFor(component: Class[_], serializer: JsonSerializer): ComponentDescriptor =
+  def descriptorFor(component: Class[_], serializer: Serializer): ComponentDescriptor =
     ComponentDescriptorFactory.getFactoryFor(component).buildDescriptorFor(component, serializer)
 
   def apply(methods: Map[String, MethodInvoker]): ComponentDescriptor = {

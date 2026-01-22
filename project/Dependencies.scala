@@ -74,6 +74,7 @@ object Dependencies {
   val opentelemetrySemConv = "io.opentelemetry.semconv" % "opentelemetry-semconv" % OpenTelemetrySemConv
 
   val typesafeConfig = "com.typesafe" % "config" % "1.4.2"
+  val protobufJavaUtil = "com.google.protobuf" % "protobuf-java-util" % GoogleProtobufVersion
 
   private val deps = libraryDependencies
 
@@ -102,7 +103,8 @@ object Dependencies {
     jacksonJsr310,
     jacksonParameterNames,
     jacksonScala,
-    langchain4j)
+    langchain4j,
+    protobufJavaUtil)
 
   // Important: be careful when adding dependencies here, unless provided, runtime or test they will also be packaged in the user project
   //            binaries/artifacts unless explicitly excluded in the akka-javasdk-parent assembly descriptor

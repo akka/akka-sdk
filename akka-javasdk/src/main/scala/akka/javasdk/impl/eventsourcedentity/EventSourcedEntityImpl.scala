@@ -30,7 +30,7 @@ import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.EmitEve
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.EmitEventsWithMetadata
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.NoPrimaryEffect
 import akka.javasdk.impl.reflection.Reflect
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.runtime.sdk.spi.BytesPayload
@@ -87,7 +87,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
     tracerFactory: () => Tracer,
     componentId: String,
     entityId: String,
-    serializer: JsonSerializer,
+    serializer: Serializer,
     componentDescriptor: ComponentDescriptor,
     entityStateType: Class[S],
     regionInfo: RegionInfo,

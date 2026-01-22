@@ -12,7 +12,7 @@ import akka.javasdk.Metadata;
 import akka.javasdk.impl.*;
 import akka.javasdk.impl.client.ComponentClientImpl;
 import akka.javasdk.impl.client.DeferredCallImpl;
-import akka.javasdk.impl.serialization.JsonSerializer;
+import akka.javasdk.impl.serialization.Serializer;
 import akka.javasdk.testmodels.Number;
 import akka.javasdk.testmodels.action.ActionsTestModels.ActionWithOneParam;
 import akka.javasdk.testmodels.action.ActionsTestModels.ActionWithoutParam;
@@ -32,7 +32,7 @@ import scala.concurrent.ExecutionContext;
 
 class ComponentClientTest {
 
-  private final JsonSerializer serializer = new JsonSerializer();
+  private final Serializer serializer = new Serializer();
   private ComponentClientImpl componentClient;
 
   @BeforeEach

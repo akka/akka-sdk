@@ -27,7 +27,7 @@ import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.AsyncEffect
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.ConsumedEffect
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.ProduceEffect
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.timer.TimerSchedulerImpl
@@ -60,7 +60,7 @@ private[impl] final class ConsumerImpl[C <: Consumer](
     timerClient: TimerClient,
     sdkExecutionContext: ExecutionContext,
     tracerFactory: () => Tracer,
-    internalSerializer: JsonSerializer,
+    internalSerializer: Serializer,
     ignoreUnknown: Boolean,
     componentDescriptor: ComponentDescriptor,
     regionInfo: RegionInfo)
@@ -73,7 +73,7 @@ private[impl] final class ConsumerImpl[C <: Consumer](
 
   private val resultSerializer =
     // producing to topic, external json format, so mapper configurable by user
-    if (consumerDestination.exists(_.isInstanceOf[TopicDestination])) new JsonSerializer(JsonSupport.getObjectMapper)
+    if (consumerDestination.exists(_.isInstanceOf[TopicDestination])) new Serializer(JsonSupport.getObjectMapper)
     // non-topic is internal, so non-configurable (also means no output json is ever passed anywhere though)
     else internalSerializer
 
