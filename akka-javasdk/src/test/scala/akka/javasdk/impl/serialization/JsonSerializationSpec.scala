@@ -351,7 +351,7 @@ class JsonSerializationSpec extends AnyWordSpec with Matchers {
       val decoded = serializer.fromBytes(value.getClass, encoded)
       decoded shouldBe value
       // without known type name
-      val decoded2 = new serialization.JsonSerializer().fromBytes(value.getClass, encoded)
+      val decoded2 = new serialization.Serializer().fromBytes(value.getClass, encoded)
       decoded2 shouldBe value
     }
 
@@ -366,7 +366,7 @@ class JsonSerializationSpec extends AnyWordSpec with Matchers {
       val value = SimpleClass("abc", 10)
       val encoded = serializer.toBytes(value)
       val exception = intercept[IllegalStateException] {
-        new serialization.JsonSerializer().fromBytes(encoded)
+        new serialization.Serializer().fromBytes(encoded)
       }
       exception.getMessage should include("Class mapping not found")
     }

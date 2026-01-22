@@ -16,7 +16,7 @@ import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.MetadataImpl
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.timedaction.TimedActionEffectImpl.AsyncEffect
@@ -76,7 +76,7 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
     timerClient: TimerClient,
     sdkExecutionContext: ExecutionContext,
     tracerFactory: () => Tracer,
-    jsonSerializer: JsonSerializer,
+    jsonSerializer: Serializer,
     regionInfo: RegionInfo,
     componentDescriptor: ComponentDescriptor)
     extends SpiTimedAction {

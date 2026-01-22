@@ -7,7 +7,7 @@ package akka.javasdk.impl.view
 import scala.reflect.ClassTag
 
 import akka.dispatch.ExecutionContexts
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.testmodels.view.ViewTestModels
 import akka.runtime.sdk.spi.ConsumerSource
 import akka.runtime.sdk.spi.Principal

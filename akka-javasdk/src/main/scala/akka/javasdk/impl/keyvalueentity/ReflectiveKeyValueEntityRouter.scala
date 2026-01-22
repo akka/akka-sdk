@@ -8,7 +8,7 @@ import akka.annotation.InternalApi
 import akka.javasdk.impl.CommandSerialization
 import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.MethodInvoker
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.runtime.sdk.spi.BytesPayload
 
@@ -19,7 +19,7 @@ import akka.runtime.sdk.spi.BytesPayload
 private[impl] class ReflectiveKeyValueEntityRouter[S, KV <: KeyValueEntity[S]](
     val entity: KV,
     methodInvokers: Map[String, MethodInvoker],
-    serializer: JsonSerializer) {
+    serializer: Serializer) {
 
   private def methodInvokerLookup(commandName: String): MethodInvoker =
     methodInvokers.get(commandName) match {

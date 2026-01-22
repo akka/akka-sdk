@@ -7,7 +7,7 @@ package akka.javasdk.testkit;
 import akka.actor.typed.ActorSystem;
 import akka.annotation.InternalApi;
 import akka.javasdk.Metadata;
-import akka.javasdk.impl.serialization.JsonSerializer;
+import akka.javasdk.impl.serialization.Serializer;
 import akka.javasdk.testkit.impl.EventingTestKitImpl;
 import akka.javasdk.testkit.impl.OutgoingMessagesImpl;
 import akka.javasdk.testkit.impl.TestKitMessageImpl;
@@ -20,7 +20,7 @@ public interface EventingTestKit {
   /** INTERNAL API */
   @InternalApi
   static EventingTestKit start(
-      ActorSystem<?> system, String host, int port, JsonSerializer serializer) {
+      ActorSystem<?> system, String host, int port, Serializer serializer) {
     return EventingTestKitImpl.start(system, host, port, serializer);
   }
 
@@ -213,9 +213,9 @@ public interface EventingTestKit {
   }
 
   class MessageBuilder {
-    private final JsonSerializer serializer;
+    private final Serializer serializer;
 
-    public MessageBuilder(JsonSerializer serializer) {
+    public MessageBuilder(Serializer serializer) {
       this.serializer = serializer;
     }
 

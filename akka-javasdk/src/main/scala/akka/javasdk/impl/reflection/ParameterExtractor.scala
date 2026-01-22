@@ -5,10 +5,8 @@
 package akka.javasdk.impl.reflection
 
 import akka.annotation.InternalApi
-import akka.javasdk.impl.AnySupport
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.BytesPayload
-import com.google.protobuf.GeneratedMessageV3
 
 /**
  * INTERNAL API
@@ -16,17 +14,16 @@ import com.google.protobuf.GeneratedMessageV3
 @InternalApi
 private[impl] object ParameterExtractors {
 
-  private def decodeParam[T](payload: BytesPayload, cls: Class[T], serializer: JsonSerializer): T = {
+  private def decodeParam[T](payload: BytesPayload, cls: Class[T], serializer: Serializer): T = {
     if (cls == classOf[Array[Byte]]) {
       payload.bytes.toArrayUnsafe().asInstanceOf[T]
-    } else if (classOf[GeneratedMessageV3].isAssignableFrom(cls)) {
-      AnySupport.decodeJavaProtobuf(payload, cls)
     } else {
+      // Serializer now handles both JSON and protobuf detection internally
       serializer.fromBytes(cls, payload)
     }
   }
 
-  def decodeParamPossiblySealed[T](payload: BytesPayload, cls: Class[T], serializer: JsonSerializer): T = {
+  def decodeParamPossiblySealed[T](payload: BytesPayload, cls: Class[T], serializer: Serializer): T = {
     if (cls.isSealed) {
       serializer.fromBytes(payload).asInstanceOf[T]
     } else {

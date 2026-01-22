@@ -14,7 +14,7 @@ import akka.javasdk.impl.agent.FunctionTools.FunctionToolInvoker
 import akka.javasdk.impl.agent.ToolExecutorSpec.Bar
 import akka.javasdk.impl.agent.ToolExecutorSpec.Foo
 import akka.javasdk.impl.agent.ToolExecutorSpec.Foobar
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiMetadata
 import io.opentelemetry.context.{ Context => TelemetryContext }
@@ -31,7 +31,7 @@ object ToolExecutorSpec {
 
 class ToolExecutorSpec extends AnyWordSpecLike with TestSuite with Matchers {
 
-  private val serializer = new JsonSerializer(JsonSupport.getObjectMapper)
+  private val serializer = new Serializer(JsonSupport.getObjectMapper)
 
   private def functionToolFor(any: Any): FunctionToolInvoker = {
     val method = any.getClass.getMethods.collectFirst {

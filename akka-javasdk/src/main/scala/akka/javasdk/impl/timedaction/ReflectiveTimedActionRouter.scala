@@ -10,7 +10,7 @@ import akka.annotation.InternalApi
 import akka.javasdk.impl.CommandSerialization
 import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.MethodInvoker
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.timedaction.CommandContext
 import akka.javasdk.timedaction.CommandEnvelope
 import akka.javasdk.timedaction.TimedAction
@@ -23,7 +23,7 @@ import akka.runtime.sdk.spi.BytesPayload
 private[impl] final class ReflectiveTimedActionRouter[A <: TimedAction](
     action: A,
     methodInvokers: Map[String, MethodInvoker],
-    serializer: JsonSerializer) {
+    serializer: Serializer) {
 
   private def methodInvokerLookup(commandName: String): MethodInvoker =
     methodInvokers.get(commandName) match {

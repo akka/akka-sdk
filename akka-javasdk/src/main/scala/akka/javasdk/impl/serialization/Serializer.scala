@@ -1,0 +1,170 @@
+/*
+ * Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
+ */
+
+package akka.javasdk.impl.serialization
+
+import java.lang.reflect.Type
+import java.util
+
+import akka.annotation.InternalApi
+import akka.javasdk.CommandException
+import akka.javasdk.impl.AnySupport.BytesPrimitive
+import akka.runtime.sdk.spi.BytesPayload
+import akka.util.ByteString
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.protobuf.GeneratedMessageV3
+
+/**
+ * INTERNAL API
+ *
+ * Composite serializer that automatically detects and delegates to either JsonSerializer or ProtobufSerializer based on
+ * the type being serialized/deserialized.
+ */
+@InternalApi
+object Serializer {
+  val JsonContentTypePrefix: String = JsonSerializer.JsonContentTypePrefix
+  val ProtobufContentTypePrefix: String = ProtobufSerializer.ProtobufContentTypePrefix
+
+  def newObjectMapperWithDefaults(): ObjectMapper = JsonSerializer.newObjectMapperWithDefaults()
+}
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+final class Serializer(val objectMapper: ObjectMapper) {
+
+  def this() = this(JsonSerializer.internalObjectMapper)
+
+  private val jsonSerializer = new JsonSerializer(objectMapper)
+
+  override def toString: String = s"Serializer(json: $jsonSerializer)"
+
+  // Expose the underlying serializers for cases where specific behavior is needed
+  def json: JsonSerializer = jsonSerializer
+
+  /**
+   * Serialize a value to bytes. Automatically detects protobuf messages and serializes them to binary protobuf format,
+   * otherwise uses JSON.
+   */
+  def toBytes(value: Any): BytesPayload = {
+    value match {
+      case null                      => throw new NullPointerException("Null value handed to serialization")
+      case proto: GeneratedMessageV3 => ProtobufSerializer.toBytes(proto)
+      case _                         => jsonSerializer.toBytes(value)
+    }
+  }
+
+  /**
+   * Serialize a value to JSON bytes, even if it's a protobuf message. This is useful for Views which store data as
+   * JSONB.
+   */
+  def toBytesAsJson(value: Any): BytesPayload = {
+    value match {
+      case null                  => throw new NullPointerException("Null value handed to serialization")
+      case _: GeneratedMessageV3 => ProtobufSerializer.toBytesAsJson(value)
+      case _                     => jsonSerializer.toBytes(value) // Already JSON
+    }
+  }
+
+  /**
+   * Deserialize bytes to the expected type. Automatically detects the content type and uses the appropriate
+   * deserializer.
+   */
+  def fromBytes[T](expectedType: Class[T], bytesPayload: BytesPayload): T = {
+    if (expectedType.isAssignableFrom(classOf[GeneratedMessageV3])) {
+      if (isProtobuf(bytesPayload))
+        ProtobufSerializer.fromBytes(expectedType.asSubclass(expectedType), bytesPayload)
+      else
+        throw new IllegalArgumentException(
+          s"Expected protobuf message matching generated class [${expectedType}] but paylod has type [${bytesPayload.contentType}]")
+    } else if (isJson(bytesPayload)) {
+      jsonSerializer.fromBytes(expectedType, bytesPayload)
+    } else {
+      throw new IllegalArgumentException(s"Unknown content type [${bytesPayload.contentType}]")
+    }
+  }
+
+  /**
+   * Deserialize bytes to the expected type using Type parameter (for generic types).
+   */
+  def fromBytes[T](expectedType: Type, bytesPayload: BytesPayload): T = {
+    jsonSerializer.fromBytes(expectedType, bytesPayload)
+  }
+
+  /**
+   * Deserialize bytes to an object based on the content type. Requires that types are registered via registerTypeHints.
+   */
+  def fromBytes(bytesPayload: BytesPayload): AnyRef = {
+    jsonSerializer.fromBytes(bytesPayload)
+  }
+
+  /**
+   * Deserialize bytes to a collection of the expected type.
+   */
+  def fromBytes[T, C <: util.Collection[T]](
+      valueClass: Class[T],
+      collectionType: Class[C],
+      bytesPayload: BytesPayload): C = {
+    jsonSerializer.fromBytes(valueClass, collectionType, bytesPayload)
+  }
+
+  /**
+   * Deserialize an exception from bytes.
+   */
+  def exceptionFromBytes(exceptionPayload: BytesPayload): CommandException = {
+    jsonSerializer.exceptionFromBytes(exceptionPayload)
+  }
+
+  def toJsonString(value: Any): String = jsonSerializer.toJsonString(value)
+
+  def isJson(bytesPayload: BytesPayload): Boolean =
+    jsonSerializer.isJson(bytesPayload)
+
+  def isJsonContentType(contentType: String): Boolean =
+    jsonSerializer.isJsonContentType(contentType)
+
+  def isProtobuf(bytesPayload: BytesPayload): Boolean =
+    ProtobufSerializer.isProtobuf(bytesPayload)
+
+  /**
+   * Get the content type for a class. Returns protobuf content type for protobuf classes, JSON content type otherwise.
+   */
+  def contentTypeFor(clz: Class[_]): String = {
+    if (ProtobufSerializer.isProtobufClass(clz)) {
+      ProtobufSerializer.contentTypeFor(clz)
+    } else {
+      jsonSerializer.contentTypeFor(clz)
+    }
+  }
+
+  /**
+   * Get all content types for a class.
+   */
+  def contentTypesFor(clz: Class[_]): List[String] = {
+    if (clz == classOf[Array[Byte]]) {
+      List(BytesPrimitive.fullName)
+    } else if (ProtobufSerializer.isProtobufClass(clz)) {
+      ProtobufSerializer.contentTypesFor(clz)
+    } else {
+      jsonSerializer.contentTypesFor(clz)
+    }
+  }
+
+  def stripJsonContentTypePrefix(contentType: String): String =
+    jsonSerializer.stripJsonContentTypePrefix(contentType)
+
+  def registerTypeHints(clz: Class[_]): Unit =
+    jsonSerializer.registerTypeHints(clz)
+
+  def reversedTypeHints = jsonSerializer.reversedTypeHints
+
+  def lookupTypeHint(clz: Class[_]) = jsonSerializer.lookupTypeHint(clz)
+  def removeVersion(typeName: String) = jsonSerializer.removeVersion(typeName)
+  def replaceLegacyJsonPrefix(typeUrl: String) = jsonSerializer.replaceLegacyJsonPrefix(typeUrl)
+  def encodeDynamicToAkkaByteString(key: String, value: Any): ByteString =
+    jsonSerializer.encodeDynamicToAkkaByteString(key, value)
+  def encodeDynamicCollectionToAkkaByteString(key: String, values: java.util.Collection[_]): ByteString =
+    jsonSerializer.encodeDynamicCollectionToAkkaByteString(key, values)
+}

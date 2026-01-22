@@ -25,7 +25,7 @@ import akka.javasdk.impl.ComponentDescriptorFactory
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.isCommandHandlerCandidate
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.AgentRequest
 import akka.runtime.sdk.spi.AgentType
 import akka.runtime.sdk.spi.BytesPayload
@@ -63,7 +63,7 @@ private[javasdk] object AgentClientImpl {
 @InternalApi
 private[javasdk] final case class AgentClientImpl(
     agentClient: RuntimeAgentClient,
-    serializer: JsonSerializer,
+    serializer: Serializer,
     callMetadata: Option[Metadata],
     agentClassById: Map[String, Class[Agent]],
     sessionId: String)(implicit val executionContext: ExecutionContext, system: ActorSystem[_])
