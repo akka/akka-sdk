@@ -453,7 +453,7 @@ private[impl] final class AgentImpl[A <: Agent](
               new SpiAgent.ToolCallRequest(req.id(), req.name(), req.arguments())
             }
             .toSeq
-          new SpiAgent.ContextMessage.AiMessage(m.text(), toolRequests)
+          new SpiAgent.ContextMessage.AiMessage(m.text(), toolRequests, None)
         case m: UserMessage =>
           new SpiAgent.ContextMessage.UserMessage(m.text())
 
@@ -529,7 +529,8 @@ private[impl] final class AgentImpl[A <: Agent](
           topP = p.topP,
           topK = p.topK,
           maxTokens = p.maxTokens,
-          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()))
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
+          thinkingBudgetTokens = 0)
       case p: ModelProvider.GoogleAIGemini =>
         new SpiAgent.ModelProvider.GoogleAIGemini(
           p.apiKey(),
@@ -538,7 +539,9 @@ private[impl] final class AgentImpl[A <: Agent](
           p.temperature(),
           p.topP(),
           p.maxOutputTokens(),
-          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()))
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
+          thinkingBudget = None,
+          thinkingLevel = "")
       case p: ModelProvider.HuggingFace =>
         new SpiAgent.ModelProvider.HuggingFace(
           p.accessToken(),
@@ -547,7 +550,8 @@ private[impl] final class AgentImpl[A <: Agent](
           p.temperature(),
           p.topP(),
           p.maxNewTokens(),
-          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()))
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
+          thinking = false)
       case p: ModelProvider.LocalAI =>
         new SpiAgent.ModelProvider.LocalAI(p.baseUrl(), p.modelName(), p.temperature(), p.topP(), p.maxTokens())
       case p: ModelProvider.Ollama =>
@@ -556,7 +560,8 @@ private[impl] final class AgentImpl[A <: Agent](
           p.modelName(),
           p.temperature(),
           p.topP(),
-          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()))
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
+          thinking = false)
       case p: ModelProvider.OpenAi =>
         new SpiAgent.ModelProvider.OpenAi(
           apiKey = p.apiKey,
@@ -566,15 +571,14 @@ private[impl] final class AgentImpl[A <: Agent](
           topP = p.topP,
           maxTokens = p.maxTokens,
           maxCompletionTokens = p.maxCompletionTokens,
-          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()))
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
+          thinking = false)
       case p: ModelProvider.Custom =>
         new SpiAgent.ModelProvider.Custom(() => p.createChatModel(), () => p.createStreamingChatModel())
       case p: ModelProvider.Bedrock =>
         new SpiAgent.ModelProvider.Bedrock(
           region = p.region,
           modelId = p.modelId,
-          returnThinking = p.returnThinking,
-          sendThinking = p.sendThinking,
           maxOutputTokens = p.maxOutputTokens,
           reasoningTokenBudget = p.reasoningTokenBudget,
           additionalModelRequestFields = p.additionalModelRequestFields.asScala.toMap,

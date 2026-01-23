@@ -7,7 +7,7 @@ object Dependencies {
     val ProtocolVersionMajor = 1
     val ProtocolVersionMinor = 1
   }
-  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.5.30")
+  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.5.33")
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
   // for prod code, they are marked as Provided, but testkit still requires the alignment
@@ -17,7 +17,7 @@ object Dependencies {
   val GoogleProtobufVersion = akka.grpc.gen.BuildInfo.googleProtobufVersion
 
   // Note: the Scala version must be aligned with the runtime
-  val ScalaVersion = "2.13.17"
+  val ScalaVersion = "2.13.18"
   val CrossScalaVersions = Seq(ScalaVersion)
 
   val ScalaTestVersion = "3.2.14"
