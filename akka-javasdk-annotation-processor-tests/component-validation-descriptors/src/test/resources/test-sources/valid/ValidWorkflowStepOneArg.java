@@ -10,11 +10,13 @@ import akka.javasdk.workflow.Workflow;
 @Component(id = "valid-workflow-step-one-arg")
 public class ValidWorkflowStepOneArg extends Workflow<String> {
 
-  public Effect execute() {
+  public Effect<String> execute() {
     return effects().reply("ok");
   }
 
   public StepEffect processStep(String input) {
-    return effects().pause();
+
+    return stepEffects().thenPause();
+
   }
 }

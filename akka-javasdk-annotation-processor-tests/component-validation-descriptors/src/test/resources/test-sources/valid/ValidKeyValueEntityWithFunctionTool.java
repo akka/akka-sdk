@@ -12,12 +12,14 @@ import akka.javasdk.keyvalueentity.KeyValueEntity;
 public class ValidKeyValueEntityWithFunctionTool extends KeyValueEntity<String> {
 
   @FunctionTool(description = "This is allowed on Effect")
-  public Effect update(String value) {
-    return effects().updateState(value).reply("updated");
+  public Effect<String> update(String value) {
+    return
+      effects().updateState(value).thenReply("updated");
+
   }
 
   @FunctionTool(description = "This is allowed on ReadOnlyEffect")
-  public ReadOnlyEffect query() {
+  public ReadOnlyEffect<String> query() {
     return effects().reply("query result");
   }
 }

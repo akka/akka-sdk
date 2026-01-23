@@ -7,6 +7,7 @@ import akka.javasdk.annotations.Component;
 public class ValidAgentWithStreamEffect extends Agent {
 
   public StreamEffect stream(String request) {
-    return effects().reply("response");
+
+    return streamEffects().reply("response");
   }
 }

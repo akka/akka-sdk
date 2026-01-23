@@ -11,8 +11,8 @@ import akka.javasdk.keyvalueentity.KeyValueEntity;
 @Component(id = "kv-entity-with-function-tool-on-invalid-method")
 public class KeyValueEntityWithFunctionToolOnInvalidMethod extends KeyValueEntity<String> {
 
-  public Effect update(String value) {
-    return effects().updateState(value).reply("updated");
+  public Effect<String> update(String value) {
+    return effects().updateState(value).thenReply(__ -> "updated");
   }
 
   // @FunctionTool is not allowed on methods that don't return Effect or ReadOnlyEffect

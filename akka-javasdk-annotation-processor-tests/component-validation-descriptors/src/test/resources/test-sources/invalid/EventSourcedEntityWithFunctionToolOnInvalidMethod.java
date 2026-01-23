@@ -15,8 +15,8 @@ public class EventSourcedEntityWithFunctionToolOnInvalidMethod extends EventSour
     record Created(String name) implements Event {}
   }
 
-  public Effect create(String name) {
-    return effects().persist(new Event.Created(name));
+  public Effect<String> create(String name) {
+    return effects().persist(new Event.Created(name)).thenReply(__ -> "created");
   }
 
   // @FunctionTool is not allowed on methods that don't return Effect or ReadOnlyEffect

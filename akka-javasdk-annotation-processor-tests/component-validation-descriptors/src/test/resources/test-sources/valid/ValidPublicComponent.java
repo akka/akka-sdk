@@ -6,7 +6,7 @@ import akka.javasdk.keyvalueentity.KeyValueEntity;
 @Component(id = "valid-public-component")
 public class ValidPublicComponent extends KeyValueEntity<String> {
   // This component is public and should pass validation
-  public Effect execute(String command) {
+  public Effect<String> execute(String command) {
     return effects().reply(command);
   }
 }

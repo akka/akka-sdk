@@ -10,7 +10,7 @@ import akka.javasdk.workflow.Workflow;
 @Component(id = "not-public-workflow")
 class NotPublicWorkflow extends Workflow<String> {
 
-  public Effect execute() {
+  public Effect<String> execute() {
     return effects().reply("ok");
   }
 }

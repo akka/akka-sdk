@@ -11,11 +11,11 @@ import akka.javasdk.keyvalueentity.KeyValueEntity;
 public class KeyValueEntityDuplicateHandlers extends KeyValueEntity<String> {
 
   // Duplicate command handler names (overloaded) - not allowed
-  public Effect execute(String cmd) {
+  public Effect<String> execute(String cmd) {
     return effects().reply(cmd);
   }
 
-  public Effect execute(Integer cmd) {
+  public Effect<String> execute(Integer cmd) {
     return effects().reply(cmd.toString());
   }
 }
