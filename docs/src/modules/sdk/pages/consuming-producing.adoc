@@ -50,6 +50,20 @@ If an exception is raised during the event processing. Akka runtime will redeliv
 When deleting Event Sourced Entities, and want to act on it in a consumer, make sure to persist a final event representing
 the deletion before triggering delete.
 
+=== Starting from Snapshot
+
+A Consumer that processes events from an Event Sourced Entity can optionally define a `@SnapshotHandler` method to receive entity snapshots. This can provide significant performance improvements when a new consumer needs to catch up on a long event history.
+
+When a `@SnapshotHandler` is defined, the consumer will start processing from the most recent snapshot instead of replaying historical events. After processing the snapshot, subsequent events are processed normally.
+
+[source,java,indent=0]
+.{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/application/CounterEventsConsumer.java[CounterEventsConsumer.java]
+----
+include::example$event-sourced-counter-brokers/src/main/java/counter/application/CounterEventsConsumer.java[tag=ese-consumer-from-snapshot]
+----
+
+The `@SnapshotHandler` annotation marks the method that will receive entity snapshots. The parameter type must match the state type of the Event Sourced Entity.
+
 == Consume from Key Value Entity
 
 You can consume state changes from a Key Value Entity. To receive messages with the entity state changes, annotate the Consumer with `@Consume.FromKeyValueEntity` and specify the class of the entity. Although it looks similar to an Event Sourced Entity Consumer, the semantics are slightly different. The Key Value Entity Consumer is guaranteed to receive the most recent state change, but not necessarily all changes. Normally it will receive all changes, but changes may be omitted in case of a very high update pace, and a new consumer will not see all historical changes.
@@ -106,6 +120,8 @@ include::example$event-sourced-customer-registry/src/main/java/customer/api/Cust
 <3> Allow access from other Akka services (in the same project), but not from the public internet.
 <4> Event handler transforms service internal event model into public API types.
 <5> Filter event types that should not be available to consuming services using `ignore()`.
+
+xref:consuming-producing.adoc#_starting_from_snapshot[] can be used for service-to-service eventing. The snapshot handling is defined on the producer side using `@Produce.ServiceStream`, where the snapshot is transformed to an event that consumers receive like any other event.
 
 [#_event_consumer]
 === Event Consumer
