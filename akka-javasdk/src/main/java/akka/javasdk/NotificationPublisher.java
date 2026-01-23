@@ -4,6 +4,7 @@
 
 package akka.javasdk;
 
+import akka.Done;
 import akka.NotUsed;
 import akka.annotation.ApiMayChange;
 import akka.japi.Pair;
@@ -12,6 +13,7 @@ import akka.stream.Materializer;
 import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
 import java.time.Duration;
+import java.util.concurrent.CompletionStage;
 
 /**
  * A publisher for sending notifications to external subscribers. Notifications can be used to
@@ -59,7 +61,7 @@ public interface NotificationPublisher<T> {
    *
    * @return a sink that publishes notifications
    */
-  default Sink<T, ?> publishSink() {
+  default Sink<T, CompletionStage<Done>> publishSink() {
     return Sink.foreach(this::publish);
   }
 

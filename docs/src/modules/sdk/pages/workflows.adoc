@@ -217,10 +217,10 @@ When a workflow is running, clients often need to track its progress. Rather tha
 
 The notification mechanism works as follows:
 
-1. The workflow injects a `NotificationPublisher<T>` where `T` is the notification message type
-2. During step execution, the workflow calls `publish(message)` to send notifications
-3. The workflow exposes a method returning `NotificationStream<T>` for clients to subscribe
-4. Clients use the `ComponentClient` to subscribe and receive notifications as a stream
+. The workflow injects a `NotificationPublisher<T>` where `T` is the notification message type
+. During step execution, the workflow calls `publish(message)` to send notifications
+. The workflow exposes a method returning `NotificationStream<T>` for clients to subscribe
+. Clients use the `ComponentClient` to subscribe and receive notifications as a stream
 
 === Publishing notifications
 
@@ -248,8 +248,10 @@ include::example$doc-snippets/src/main/java/com/example/api/WorkflowEndpoint.jav
 ----
 <1> Use `notificationStream()` with a method reference to the workflow's stream method. The returned source can be consumed directly or wrapped with `HttpResponses.serverSentEvents()` for SSE delivery to HTTP clients.
 
-You can find the full source code of workflow notification sample in the link:https://github.com/akka-samples/multi-agent[akka-samples/multi-agent GitHub Repository].
+You can find the full source code of workflow notification sample in the link:https://github.com/akka-samples/multi-agent[akka-samples/multi-agent GitHub Repository, window="new"].
 
+
+IMPORTANT: The notification stream is a live stream that emits messages only after the client creates the stream—it does not replay historical messages. While the stream is running, it delivers all messages in order without message loss. If the stream detects missing messages, it will fail, allowing clients to reconnect and recover.
 
 WARNING: Notifications should not be used for building business logic. Akka does not guarantee delivery of every notification. Messages may be lost due to network issues, client disconnections, or other transient failures. If your application requires reliable state synchronization, implement a reconciliation mechanism that fetches the authoritative workflow state when needed.
 

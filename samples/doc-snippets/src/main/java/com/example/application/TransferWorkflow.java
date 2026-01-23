@@ -6,27 +6,17 @@ import static com.example.domain.TransferState.TransferStatus.WITHDRAW_SUCCEEDED
 import static java.time.Duration.ofSeconds;
 
 import akka.Done;
-import akka.javasdk.NotificationPublisher;
-import akka.javasdk.NotificationPublisher.NotificationStream;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.workflow.Workflow;
 import com.example.domain.TransferState;
 import com.example.domain.TransferState.Transfer;
 
 // tag::class[]
-// tag::workflow-notification[]
 @Component(id = "transfer") // <1>
 public class TransferWorkflow extends Workflow<TransferState> { // <2>
 
-  // end::class[]
-  private final NotificationPublisher<String> notificationPublisher;
+  public record Withdraw(String from, int amount) {}
 
-  public TransferWorkflow(NotificationPublisher<String> notificationPublisher) { // <1>
-    this.notificationPublisher = notificationPublisher;
-  }
-
-  // tag::class[]
-  // end::workflow-notification[]
   @Override
   public WorkflowSettings settings() { // <3>
     // prettier-ignore
@@ -46,20 +36,10 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
   private StepEffect depositStep() {
     // TODO: implement your step logic here
     // prettier-ignore
-    // end::class[]
-    notificationPublisher.publish("Deposit completed"); // <2>
-    // tag::class[]
-    return stepEffects().updateState(currentState().withStatus(COMPLETED)).thenEnd();
+    return stepEffects()
+      .updateState(currentState().withStatus(COMPLETED))
+      .thenEnd();
   }
-
-  // tag::workflow-notification[]
-  // end::class[]
-  public NotificationStream<String> updates() { // <3>
-    return notificationPublisher.stream();
-  }
-
-  // end::workflow-notification[]
-  // tag::class[]
 
   public Effect<Done> startTransfer(Transfer transfer) { // <6>
     TransferState initialState = new TransferState(transfer);
@@ -69,7 +49,5 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
       .transitionTo(TransferWorkflow::withdrawStep)
       .thenReply(done());
   }
-  // tag::workflow-notification[]
 }
-// end::workflow-notification[]
 // end::class[]

@@ -110,6 +110,6 @@ When executing the plan and calling the agents we know the id of the agent to ca
 include::example$multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[tag=dynamicCall]
 ----
 
-You find the full source code for this multi-agent sample in the link:https://github.com/akka-samples/multi-agent[akka-samples/multi-agent GitHub Repository].
+You find the full source code for this multi-agent sample in the link:https://github.com/akka-samples/multi-agent[akka-samples/multi-agent GitHub Repository, window="new"].
 
 A more advanced sample illustrates link:https://github.com/akka-samples/adaptive-multi-agent[adaptive multi-agent orchestration, window="new"]. It re-evaluates progress after each agent response and dynamically adjusts its strategy.
