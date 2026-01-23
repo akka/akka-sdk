@@ -48,8 +48,7 @@ public class ActivityEndpoint {
   }
 
   @Post("/activities/{userId}/{sessionId}")
-  public HttpResponse suggestActivities(String userId,String sessionId, Request request) {
-
+  public HttpResponse suggestActivities(String userId, String sessionId, Request request) {
     var res = componentClient
       .forWorkflow(sessionId)
       .method(AgentTeamWorkflow::start)
@@ -102,27 +101,32 @@ public class ActivityEndpoint {
   )
   public sealed interface UpdateEvent {
     record StatusUpdate(String msg) implements UpdateEvent {}
+
     record LlmResponseStart() implements UpdateEvent {}
+
     record LlmResponseDelta(String response) implements UpdateEvent {}
+
     record LlmResponseEnd() implements UpdateEvent {}
   }
 
   @Get("/updates/{sessionId}")
   public HttpResponse updates(String sessionId) {
     return HttpResponses.serverSentEvents(
-      componentClient.forWorkflow(sessionId)
+      componentClient
+        .forWorkflow(sessionId)
         .notificationStream(AgentTeamWorkflow::updates)
         .source()
-        .map(notification -> switch (notification){
-          case AgentTeamNotification.LlmResponseDelta llmResponseDelta ->
-            new UpdateEvent.LlmResponseDelta(llmResponseDelta.response());
-          case AgentTeamNotification.LlmResponseEnd __ ->
-            new UpdateEvent.LlmResponseEnd();
-          case AgentTeamNotification.LlmResponseStart __ ->
-            new UpdateEvent.LlmResponseStart();
-          case AgentTeamNotification.StatusUpdate statusUpdate ->
-            new UpdateEvent.StatusUpdate(statusUpdate.msg());
-        })
+        .map(notification ->
+          switch (notification) {
+            case AgentTeamNotification.LlmResponseDelta llmResponseDelta -> new UpdateEvent.LlmResponseDelta(
+              llmResponseDelta.response()
+            );
+            case AgentTeamNotification.LlmResponseEnd __ -> new UpdateEvent.LlmResponseEnd();
+            case AgentTeamNotification.LlmResponseStart __ -> new UpdateEvent.LlmResponseStart();
+            case AgentTeamNotification.StatusUpdate statusUpdate -> new UpdateEvent.StatusUpdate(
+              statusUpdate.msg()
+            );
+          })
     );
   }
 }

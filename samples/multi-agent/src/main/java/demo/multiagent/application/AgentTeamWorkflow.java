@@ -20,7 +20,6 @@ import demo.multiagent.domain.AgentRequest;
 import demo.multiagent.domain.AgentSelection;
 import demo.multiagent.domain.Plan;
 import demo.multiagent.domain.PlanStep;
-
 import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -91,7 +90,11 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
   private final NotificationPublisher<AgentTeamNotification> notificationPublisher;
   private final Materializer materializer;
 
-  public AgentTeamWorkflow(ComponentClient componentClient, NotificationPublisher<AgentTeamNotification> notificationPublisher, Materializer materializer) {
+  public AgentTeamWorkflow(
+    ComponentClient componentClient,
+    NotificationPublisher<AgentTeamNotification> notificationPublisher,
+    Materializer materializer
+  ) {
     this.componentClient = componentClient;
     this.notificationPublisher = notificationPublisher;
     this.materializer = materializer;
@@ -105,15 +108,18 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
       @JsonSubTypes.Type(value = AgentTeamNotification.StatusUpdate.class, name = "S"),
       @JsonSubTypes.Type(value = AgentTeamNotification.LlmResponseStart.class, name = "LS"),
       @JsonSubTypes.Type(value = AgentTeamNotification.LlmResponseDelta.class, name = "LD"),
-      @JsonSubTypes.Type(value = AgentTeamNotification.LlmResponseEnd.class, name = "LE")
+      @JsonSubTypes.Type(value = AgentTeamNotification.LlmResponseEnd.class, name = "LE"),
     }
   )
   // tag::all[]
   // tag::plan[]
   public sealed interface AgentTeamNotification {
     record StatusUpdate(String msg) implements AgentTeamNotification {}
+
     record LlmResponseStart() implements AgentTeamNotification {}
+
     record LlmResponseDelta(String response) implements AgentTeamNotification {}
+
     record LlmResponseEnd() implements AgentTeamNotification {}
   }
 
@@ -176,7 +182,9 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
       .invoke(currentState().userQuery); // <4>
 
     logger.info("Selected agents: {}", selection.agents());
-    notificationPublisher.publish(new AgentTeamNotification.StatusUpdate("Agents selected: " + selection.agents()));
+    notificationPublisher.publish(
+      new AgentTeamNotification.StatusUpdate("Agents selected: " + selection.agents())
+    );
     if (selection.agents().isEmpty()) {
       var newState = currentState()
         .withFinalAnswer("Couldn't find any agent(s) able to respond to the original query.")
@@ -204,7 +212,11 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
       .invoke(new PlannerAgent.Request(currentState().userQuery, agentSelection)); // <6>
 
     logger.info("Execution plan: {}", plan);
-    notificationPublisher.publish(new AgentTeamNotification.StatusUpdate("Execution plan formed. Number of steps: " + plan.steps().size()));
+    notificationPublisher.publish(
+      new AgentTeamNotification.StatusUpdate(
+        "Execution plan formed. Number of steps: " + plan.steps().size()
+      )
+    );
     return stepEffects()
       .updateState(currentState().withPlan(plan))
       .thenTransitionTo(AgentTeamWorkflow::executePlanStep); // <7>
@@ -218,7 +230,9 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
       stepPlan.agentId(),
       stepPlan.query()
     );
-    notificationPublisher.publish(new AgentTeamNotification.StatusUpdate("Calling: " + stepPlan.agentId()));
+    notificationPublisher.publish(
+      new AgentTeamNotification.StatusUpdate("Calling: " + stepPlan.agentId())
+    );
     var agentResponse = callAgent(stepPlan.agentId(), stepPlan.query()); // <9>
     if (agentResponse.startsWith("ERROR")) {
       throw new RuntimeException(
@@ -269,14 +283,18 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
       .source(new SummarizerAgent.Request(currentState().userQuery, agentsAnswers));
 
     notificationPublisher.publish(new AgentTeamNotification.LlmResponseStart());
-    var finalAnswer = notificationPublisher.publishTokenStream(tokenSource,
+    var finalAnswer = notificationPublisher.publishTokenStream(
+      tokenSource,
       10,
       ofMillis(200),
       AgentTeamNotification.LlmResponseDelta::new,
-      materializer);
+      materializer
+    );
 
     notificationPublisher.publish(new AgentTeamNotification.LlmResponseEnd());
-    notificationPublisher.publish(new AgentTeamNotification.StatusUpdate("All steps completed!"));
+    notificationPublisher.publish(
+      new AgentTeamNotification.StatusUpdate("All steps completed!")
+    );
 
     return stepEffects()
       .updateState(currentState().withFinalAnswer(finalAnswer).complete())
@@ -292,7 +310,7 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
     return stepEffects().updateState(currentState().failed()).thenEnd();
   }
 
-  public NotificationPublisher.NotificationStream<AgentTeamNotification> updates(){
+  public NotificationPublisher.NotificationStream<AgentTeamNotification> updates() {
     return notificationPublisher.stream();
   }
 
