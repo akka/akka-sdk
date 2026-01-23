@@ -21,9 +21,9 @@ import akka.javasdk.annotations.Consume.FromServiceStream
 import akka.javasdk.annotations.Consume.FromTopic
 import akka.javasdk.annotations.Consume.FromWorkflow
 import akka.javasdk.annotations.DeleteHandler
-import akka.javasdk.annotations.FromSnapshotHandler
 import akka.javasdk.annotations.Produce.ServiceStream
 import akka.javasdk.annotations.Produce.ToTopic
+import akka.javasdk.annotations.SnapshotHandler
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.agent.AgentDescriptorFactory
@@ -124,7 +124,7 @@ private[impl] object ComponentDescriptorFactory {
   }
 
   def hasFromSnapshotHandler(javaMethod: Method): Boolean = {
-    val ann = javaMethod.getAnnotation(classOf[FromSnapshotHandler])
+    val ann = javaMethod.getAnnotation(classOf[SnapshotHandler])
     javaMethod.isPublic && ann != null
   }
 
