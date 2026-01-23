@@ -1,15 +1,23 @@
-= akka projects settings
+= akka local services components list-interactions
 
-Configures the settings on a project.
+List interactions from the Agent for the given service and Agent id.
 
 == Synopsis
 
-The `akka project settings` commands provides a way to configure the settings of a project
+The `akka local service components list-interactions` command lists interactions from the Agent for the given service and Agent id
+
+----
+akka local services components list-interactions SERVICE_NAME AGENT_ID [flags]
+----
 
 == Options
 
 ----
-  -h, --help   help for settings
+  -h, --help             help for list-interactions
+      --last duration    Fetch interactions from the last N duration (e.g., 1h for last hour, 168h for last week) (default 1h0m0s)
+      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string   project to use if not using the default configured project
+      --region string    region to use if project has more than one region
 ----
 
 == Options inherited from parent commands
@@ -30,10 +38,7 @@ The `akka project settings` commands provides a way to configure the settings of
 
 == SEE ALSO
 
-* link:akka_projects.html[akka projects]	 - Manage your Akka projects.
-* link:akka_projects_settings_bring-up-region.html[akka projects settings bring-up-region]	 - Brings up a region that was previously downed without need for redeployment.
-* link:akka_projects_settings_down-region.html[akka projects settings down-region]	 - Downs a region without need for redeployment.
-Optionally select a new region as a primary.
+* link:akka_local_services_components.html[akka local services components]	 - Inspect components of a service.
 
 [discrete]
 

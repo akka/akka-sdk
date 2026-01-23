@@ -1,15 +1,29 @@
-= akka projects settings
+= akka service-configs get
 
-Configures the settings on a project.
+Get a service config in the current project.
 
 == Synopsis
 
-The `akka project settings` commands provides a way to configure the settings of a project
+The `akka service-configs get _config_` command will get a service config in the currently configured project.
+
+----
+akka service-configs get CONFIG_NAME [flags]
+----
+
+== Examples
+
+----
+akka service-configs get my-config
+----
 
 == Options
 
 ----
-  -h, --help   help for settings
+      --all-regions      run the command on all regions
+  -h, --help             help for get
+      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string   project to use if not using the default configured project
+      --region string    region to use if project has more than one region
 ----
 
 == Options inherited from parent commands
@@ -30,10 +44,7 @@ The `akka project settings` commands provides a way to configure the settings of
 
 == SEE ALSO
 
-* link:akka_projects.html[akka projects]	 - Manage your Akka projects.
-* link:akka_projects_settings_bring-up-region.html[akka projects settings bring-up-region]	 - Brings up a region that was previously downed without need for redeployment.
-* link:akka_projects_settings_down-region.html[akka projects settings down-region]	 - Downs a region without need for redeployment.
-Optionally select a new region as a primary.
+* link:akka_service-configs.html[akka service-configs]	 - Manage service configs for a Akka project.
 
 [discrete]
 

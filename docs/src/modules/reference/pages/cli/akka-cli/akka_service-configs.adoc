@@ -1,15 +1,16 @@
-= akka projects settings
+= akka service-configs
 
-Configures the settings on a project.
+Manage service configs for a Akka project.
 
 == Synopsis
 
-The `akka project settings` commands provides a way to configure the settings of a project
+The `akka service-configs` command manages service configs for the currently configured project.
+Service configs contain HOCON configuration that overrides a service's application.conf.
 
 == Options
 
 ----
-  -h, --help   help for settings
+  -h, --help   help for service-configs
 ----
 
 == Options inherited from parent commands
@@ -30,10 +31,11 @@ The `akka project settings` commands provides a way to configure the settings of
 
 == SEE ALSO
 
-* link:akka_projects.html[akka projects]	 - Manage your Akka projects.
-* link:akka_projects_settings_bring-up-region.html[akka projects settings bring-up-region]	 - Brings up a region that was previously downed without need for redeployment.
-* link:akka_projects_settings_down-region.html[akka projects settings down-region]	 - Downs a region without need for redeployment.
-Optionally select a new region as a primary.
+* link:akka.html[akka]	 - Akka control
+* link:akka_service-configs_create.html[akka service-configs create]	 - Create or update a service config in the current project.
+* link:akka_service-configs_delete.html[akka service-configs delete]	 - Delete a service config from the current project.
+* link:akka_service-configs_get.html[akka service-configs get]	 - Get a service config in the current project.
+* link:akka_service-configs_list.html[akka service-configs list]	 - List the service configs in the current project.
 
 [discrete]
 
