@@ -123,6 +123,7 @@ multimodal
 Multimodal
 mutator
 mutators
+mvnw
 namespace
 newname
 npx

@@ -428,7 +428,7 @@ Here's an example that streams view updates from the server to the client WebSoc
 ----
 include::example$key-value-customer-registry/src/main/java/customer/api/CustomerEndpoint.java[tag=ws-view-updates]
 ----
-<1> Method annotated wity `WebSocket`
+<1> Method annotated with `WebSocket`
 <2> The method returns a `Flow<String, String, NotUsed>` to handle and emit WebSocket text messages
 <3> Query the view to get a stream of entries and updates
 <4> Convert each customer object to a JSON string using `JsonSupport.encodeToString`
