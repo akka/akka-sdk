@@ -7,6 +7,7 @@ package akka.javasdk.tooling.validation;
 import static akka.javasdk.tooling.validation.Validations.ambiguousHandlerValidations;
 import static akka.javasdk.tooling.validation.Validations.functionToolMustNotBeOnNonPublicMethods;
 import static akka.javasdk.tooling.validation.Validations.noSubscriptionMethodWithAcl;
+import static akka.javasdk.tooling.validation.Validations.snapshotHandlerValidation;
 import static akka.javasdk.tooling.validation.Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne;
 import static akka.javasdk.tooling.validation.Validations.subscriptionMethodMustHaveOneParameter;
 
@@ -290,7 +291,8 @@ public class ViewValidations {
         .combine(strictlyPublicCommandHandlerArityShouldBeZeroOrOne(tableUpdater, effectType))
         .combine(viewMissingHandlerValidations(tableUpdater, effectType))
         .combine(noSubscriptionMethodWithAcl(tableUpdater, effectType))
-        .combine(subscriptionMethodMustHaveOneParameter(tableUpdater, effectType));
+        .combine(subscriptionMethodMustHaveOneParameter(tableUpdater, effectType))
+        .combine(snapshotHandlerValidation(tableUpdater, effectType));
   }
 
   /**

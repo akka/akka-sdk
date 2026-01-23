@@ -211,5 +211,31 @@ class ViewValidationSpec extends AnyWordSpec with Matchers with CompilationTestS
         result,
         "Methods annotated with @FunctionTool must be public. Method [privateMethod] cannot be annotated with @FunctionTool")
     }
+
+    // SnapshotHandler validations
+    "accept valid View TableUpdater with @SnapshotHandler for EventSourcedEntity subscription" in {
+      val result = compileTestSource("valid/ValidViewWithSnapshotHandler.java")
+      assertCompilationSuccess(result)
+    }
+
+    "reject View TableUpdater with @SnapshotHandler on KeyValueEntity subscription" in {
+      val result = compileTestSource("invalid/ViewSnapshotHandlerWithKVE.java")
+      assertCompilationFailure(
+        result,
+        "@SnapshotHandler can only be used in classes annotated with @Consume.FromEventSourcedEntity")
+    }
+
+    "reject View TableUpdater with @SnapshotHandler on ServiceStream subscription with helpful message" in {
+      val result = compileTestSource("invalid/ViewSnapshotHandlerWithServiceStream.java")
+      assertCompilationFailure(
+        result,
+        "@SnapshotHandler cannot be used with @Consume.FromServiceStream",
+        "define the @SnapshotHandler on the producer side")
+    }
+
+    "reject View TableUpdater with multiple @SnapshotHandler methods" in {
+      val result = compileTestSource("invalid/ViewWithMultipleSnapshotHandlers.java")
+      assertCompilationFailure(result, "Only one method can be annotated with @SnapshotHandler")
+    }
   }
 }

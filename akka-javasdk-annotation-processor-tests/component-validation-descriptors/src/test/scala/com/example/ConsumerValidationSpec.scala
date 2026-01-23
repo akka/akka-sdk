@@ -227,5 +227,48 @@ class ConsumerValidationSpec extends AnyWordSpec with CompilationTestSupport {
       val result = compileTestSource("invalid/ConsumerWithFunctionTool.java")
       assertCompilationFailure(result, "Consumer methods cannot be annotated with @FunctionTool.")
     }
+
+    // SnapshotHandler validations
+    "accept valid Consumer with @SnapshotHandler for EventSourcedEntity subscription" in {
+      val result = compileTestSource("valid/ValidConsumerWithSnapshotHandler.java")
+      assertCompilationSuccess(result)
+    }
+
+    "reject Consumer with @SnapshotHandler on KeyValueEntity subscription" in {
+      val result = compileTestSource("invalid/ConsumerSnapshotHandlerWithKVE.java")
+      assertCompilationFailure(
+        result,
+        "@SnapshotHandler can only be used in classes annotated with @Consume.FromEventSourcedEntity")
+    }
+
+    "reject Consumer with @SnapshotHandler on Topic subscription" in {
+      val result = compileTestSource("invalid/ConsumerSnapshotHandlerWithTopic.java")
+      assertCompilationFailure(
+        result,
+        "@SnapshotHandler can only be used in classes annotated with @Consume.FromEventSourcedEntity")
+    }
+
+    "reject Consumer with @SnapshotHandler on ServiceStream subscription with helpful message" in {
+      val result = compileTestSource("invalid/ConsumerSnapshotHandlerWithServiceStream.java")
+      assertCompilationFailure(
+        result,
+        "@SnapshotHandler cannot be used with @Consume.FromServiceStream",
+        "define the @SnapshotHandler on the producer side")
+    }
+
+    "reject Consumer with multiple @SnapshotHandler methods" in {
+      val result = compileTestSource("invalid/ConsumerWithMultipleSnapshotHandlers.java")
+      assertCompilationFailure(result, "Only one method can be annotated with @SnapshotHandler")
+    }
+
+    "reject Consumer with @SnapshotHandler method with no parameters" in {
+      val result = compileTestSource("invalid/ConsumerSnapshotHandlerNoParams.java")
+      assertCompilationFailure(result, "@SnapshotHandler method must have exactly one parameter")
+    }
+
+    "reject Consumer with @SnapshotHandler method with too many parameters" in {
+      val result = compileTestSource("invalid/ConsumerSnapshotHandlerTooManyParams.java")
+      assertCompilationFailure(result, "@SnapshotHandler method must have exactly one parameter")
+    }
   }
 }
