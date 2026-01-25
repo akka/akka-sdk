@@ -19,3 +19,8 @@ This page provides an overview of common commands: xref:operations:cli/using-cli
 
 Completion allows you to hit [TAB] on a partially entered `akka` command and have the shell complete the command, subcommand or flag for you.
 To enable it, follow these steps: xref:operations:cli/command-completion.adoc[]
+
+== System Configuration
+
+For enterprise deployments, the CLI supports system-level configuration to customize default behavior, specify internal mirrors, or disable features.
+See xref:operations:cli/system-config.adoc[] for details.
