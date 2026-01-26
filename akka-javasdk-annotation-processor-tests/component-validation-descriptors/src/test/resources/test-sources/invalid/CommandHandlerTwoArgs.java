@@ -15,8 +15,8 @@ public class CommandHandlerTwoArgs extends EventSourcedEntity<String, CommandHan
   }
 
   // Command handler with more than one parameter - not allowed
-  public Effect create(String name, int age) {
-    return effects().persist(new Event.Created(name, age));
+  public Effect<String> create(String name, int age) {
+    return effects().persist(new Event.Created(name, age)).thenReply(__ -> "created");
   }
 
   public Event.Created onEvent(Event.Created event) {

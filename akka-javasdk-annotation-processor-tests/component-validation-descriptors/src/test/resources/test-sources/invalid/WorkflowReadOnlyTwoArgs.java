@@ -11,12 +11,12 @@ import akka.javasdk.workflow.Workflow;
 public class WorkflowReadOnlyTwoArgs extends Workflow<String> {
 
   // Regular command handler  - required
-  public Effect execute(String cmd) {
+  public Effect<String> execute(String cmd) {
     return effects().reply(cmd);
   }
 
   // ReadOnlyEffect handler with 2 arguments - not allowed
-  public ReadOnlyEffect query(String cmd, int i) {
+  public ReadOnlyEffect<String> query(String cmd, int i) {
     return effects().reply(cmd);
   }
 }

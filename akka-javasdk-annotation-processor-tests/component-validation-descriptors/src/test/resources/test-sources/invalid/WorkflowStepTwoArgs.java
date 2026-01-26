@@ -10,7 +10,7 @@ import akka.javasdk.workflow.Workflow;
 @Component(id = "workflow-step-two-args")
 public class WorkflowStepTwoArgs extends Workflow<String> {
 
-  public Effect execute() {
+  public Effect<String> execute() {
     return effects().reply("ok");
   }
 

@@ -10,7 +10,7 @@ import akka.javasdk.keyvalueentity.KeyValueEntity;
 @Component(id = "not-public-kv-entity")
 class NotPublicKeyValueEntity extends KeyValueEntity<String> {
 
-  public Effect execute() {
+  public Effect<String> execute() {
     return effects().reply("ok");
   }
 }

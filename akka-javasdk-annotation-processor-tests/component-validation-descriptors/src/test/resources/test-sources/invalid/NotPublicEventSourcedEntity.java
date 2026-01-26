@@ -14,8 +14,8 @@ class NotPublicEventSourcedEntity extends EventSourcedEntity<String, NotPublicEv
     record Created(String name) implements Event {}
   }
 
-  public Effect create(String name) {
-    return effects().persist(new Event.Created(name));
+  public Effect<String> create(String name) {
+    return effects().persist(new Event.Created(name)).thenReply(__ -> "created");
   }
 
   public Event.Created onEvent(Event.Created event) {
