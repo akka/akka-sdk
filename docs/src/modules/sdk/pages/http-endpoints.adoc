@@ -412,7 +412,7 @@ WebSocket endpoints are useful when you need:
 * Two-way communication between a browser client and the server
 * Binary data streaming to a browser
 
-IMPORTANT: While WebSocket endpoint methods work out of the box in local development and tests it requires additional setup to work in a deployed service, see xref:operations:services/invoke-service.adoc#websockets[Invoking Akka Services / Websockets]. If this is not setup WebSocket connections to the deployed service will fail with an HTTP 403 Forbidden response.
+IMPORTANT: While WebSocket endpoint methods work out of the box in local development and tests it requires additional setup to work in a deployed service, see xref:operations:services/invoke-service.adoc#websockets[Invoking Akka Services / WebSocket Support]. If this is not setup WebSocket connections to the deployed service will fail with an HTTP 403 Forbidden response.
 
 ==== WebSockets requires extra thought
 
