@@ -19,15 +19,14 @@ import java.util.Optional;
  * <pre>{@code
  * public class MyImageLoader implements ImageLoader {
  *   @Override
- *   public CompletionStage<LoadedImage> load(
+ *   public LoadedImage load(
  *       URI uri,
  *       MessageContent.ImageMessageContent.DetailLevel detailLevel,
  *       Optional<String> mimeType) {
  *     // Load image bytes from your custom source
  *     byte[] imageData = fetchFromStorage(uri);
  *     String actualMimeType = mimeType.orElse("image/jpeg");
- *     return CompletableFuture.completedFuture(
- *         new LoadedImage(imageData, actualMimeType));
+ *     return new LoadedImage(imageData, actualMimeType);
  *   }
  * }
  * }</pre>
@@ -70,12 +69,14 @@ public interface ImageLoader {
    * references. The implementation should fetch the image data and return it along with the
    * appropriate MIME type.
    *
+   * <p>If the method throws, the entire agent request is failed.
+   *
    * @param uri The URI of the image to load
    * @param detailLevel The requested detail level for image processing (LOW, HIGH, or AUTO)
    * @param mimeType Optional MIME type hint provided by the user. Note that the returned mime type
    *     *must* match the actual MIME type of the returned bytes if the input MIME type is not
    *     correct.
-   * @return A CompletionStage that completes with the loaded image data and MIME type
+   * @return The loaded image data and MIME type
    */
   LoadedImage load(
       URI uri,

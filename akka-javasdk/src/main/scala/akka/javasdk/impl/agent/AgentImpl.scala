@@ -336,14 +336,18 @@ private[impl] final class AgentImpl[A <: Agent](
     }
 
   private def toSpiImageLoader(javaImageLoader: ImageLoader): SpiAgent.SpiImageLoader =
-    (messageContent: SpiAgent.ImageUriMessageContent) =>
-      Future {
-        val detailLevel = fromSpiDetailLevel(messageContent.detailLevel)
-        val mimeType =
-          messageContent.mimeType.map(java.util.Optional.of[String]).getOrElse(java.util.Optional.empty[String]())
-        val loaded = javaImageLoader.load(messageContent.uri, detailLevel, mimeType)
-        new SpiAgent.SpiLoadedImage(loaded.data(), loaded.mimeType())
-      }(sdkExecutionContext)
+    new SpiAgent.SpiImageLoader {
+      override def implementationClassName: String = javaImageLoader.getClass.getName
+
+      override def load(messageContent: SpiAgent.ImageUriMessageContent): Future[SpiAgent.SpiLoadedImage] =
+        Future {
+          val detailLevel = fromSpiDetailLevel(messageContent.detailLevel)
+          val mimeType =
+            messageContent.mimeType.map(java.util.Optional.of[String]).getOrElse(java.util.Optional.empty[String]())
+          val loaded = javaImageLoader.load(messageContent.uri, detailLevel, mimeType)
+          new SpiAgent.SpiLoadedImage(loaded.data(), loaded.mimeType())
+        }(sdkExecutionContext)
+    }
 
   private def toSpiMcpEndpoints(remoteMcpTools: Seq[RemoteMcpTools]): Seq[SpiAgent.McpToolEndpointDescriptor] =
     remoteMcpTools.map {

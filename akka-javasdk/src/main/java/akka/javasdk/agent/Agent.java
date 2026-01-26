@@ -226,9 +226,9 @@ public abstract class Agent {
        * Sets a custom image loader for loading images from URIs.
        *
        * <p>When multimodal messages contain image references, they are normally automatically
-       * fetched, this however requires that they are publicly and can be fetched by any HTTP
-       * client. Defining a custom loader makes it possible to load images from custom sources such
-       * as cloud storage, databases, or authenticated endpoints.
+       * fetched, this however requires that they are public and can be fetched by any HTTP client.
+       * Defining a custom loader makes it possible to load images from custom sources such as cloud
+       * storage, databases, or authenticated endpoints.
        *
        * <p>Example:
        *
@@ -570,9 +570,9 @@ public abstract class Agent {
        * Sets a custom image loader for loading images from URIs.
        *
        * <p>When multimodal messages contain image references, they are normally automatically
-       * fetched, this however requires that they are publicly and can be fetched by any HTTP
-       * client. Defining a custom loader makes it possible to load images from custom sources such
-       * as cloud storage, databases, or authenticated endpoints.
+       * fetched, this however requires that they are public and can be fetched by any HTTP client.
+       * Defining a custom loader makes it possible to load images from custom sources such as cloud
+       * storage, databases, or authenticated endpoints.
        *
        * <p>Example:
        *
