@@ -27,16 +27,25 @@ import java.lang.annotation.Target;
  * <p><strong>Path Parameters:</strong> Use {@code {paramName}} in the path to identify the specific
  * resource to create or update. These can be combined with request body parameters.
  *
- * <p><strong>Return value:</strong> WebSocket annotated types must return {{@link
- * akka.stream.javadsl.Flow}} handling the stream of incoming messages, messages coming out of hte
+ * <p><strong>Return value:</strong> WebSocket annotated types must return {@link
+ * akka.stream.javadsl.Flow} handling the stream of incoming messages, messages coming out of hte
  * flow are emitted to the client. The incoming and outgoing message type must both be the same
- * type. Supported types are {{@code String}} for text, {{@link akka.util.ByteString}} for binary
- * messages, or {{@link akka.http.javadsl.model.ws.Message}} for a lower level handling of the
+ * type. Supported types are {@code String} for text, {@link akka.util.ByteString} for binary
+ * messages, or {@link akka.http.javadsl.model.ws.Message} for a lower level handling of the
  * protocol.
+ *
+ * <p>Example:
+ *
+ * <pre>{@code
+ * @WebSocket("/ping-pong-websocket")
+ * public Flow<String, String, NotUsed> pingPong() {
+ *     return Flow.of(String.class).map(incoming -> "pong: " + incoming)
+ * }
+ * }</pre>
  *
  * <p><strong>IMPORTANT</strong> WebSocket endpoints always work locally, but in a deployed service,
  * require additional setup. See the <a
- * href="https://doc.akka.io/operations/services/invoke-service.html#_FIXME">Akka SDK
+ * href="https://doc.akka.io/operations/services/invoke-service.html#websockets">Akka SDK
  * documentation</a> for more details about setup.
  */
 @Target(ElementType.METHOD)
