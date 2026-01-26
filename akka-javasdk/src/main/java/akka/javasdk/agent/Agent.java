@@ -223,6 +223,31 @@ public abstract class Agent {
       Builder mcpTools(List<RemoteMcpTools> tools);
 
       /**
+       * Sets a custom image loader for loading images from URIs.
+       *
+       * <p>When multimodal messages contain image references, they are normally automatically
+       * fetched, this however requires that they are publicly and can be fetched by any HTTP
+       * client. Defining a custom loader makes it possible to load images from custom sources such
+       * as cloud storage, databases, or authenticated endpoints.
+       *
+       * <p>Example:
+       *
+       * <pre>{@code
+       * return effects()
+       *     .imageLoader(new MyImageLoader())
+       *     .userMessage(UserMessage.from(
+       *         MessageContent.TextMessageContent.from("Describe this image"),
+       *         MessageContent.ImageMessageContent.fromUrl(imageUrl)))
+       *     .thenReply();
+       * }</pre>
+       *
+       * @param imageLoader The image loader implementation
+       * @return this builder for method chaining
+       * @see ImageLoader
+       */
+      Builder imageLoader(ImageLoader imageLoader);
+
+      /**
        * The user message to the AI model. This message represents the specific query, instruction,
        * or input that will be processed by the model to generate a response.
        */
@@ -540,6 +565,31 @@ public abstract class Agent {
        * <p>Construct instances using {@link RemoteMcpTools#fromServer(String)}
        */
       Builder mcpTools(List<RemoteMcpTools> tools);
+
+      /**
+       * Sets a custom image loader for loading images from URIs.
+       *
+       * <p>When multimodal messages contain image references, they are normally automatically
+       * fetched, this however requires that they are publicly and can be fetched by any HTTP
+       * client. Defining a custom loader makes it possible to load images from custom sources such
+       * as cloud storage, databases, or authenticated endpoints.
+       *
+       * <p>Example:
+       *
+       * <pre>{@code
+       * return streamEffects()
+       *     .imageLoader(new MyImageLoader())
+       *     .userMessage(UserMessage.from(
+       *         MessageContent.TextMessageContent.from("Describe this image"),
+       *         MessageContent.ImageMessageContent.fromUrl(imageUrl)))
+       *     .thenReply();
+       * }</pre>
+       *
+       * @param imageLoader The image loader implementation
+       * @return this builder for method chaining
+       * @see ImageLoader
+       */
+      Builder imageLoader(ImageLoader imageLoader);
 
       /**
        * Create a message reply without calling the model.

@@ -258,6 +258,7 @@ private[impl] final class AgentImpl[A <: Agent](
             val userMessageAt = Instant.now()
 
             val agentRole = Reflect.readAgentRole(agent.getClass)
+            val spiImageLoader = req.imageLoader.map(toSpiImageLoader)
             new SpiAgent.RequestModelEffect(
               modelProvider = spiModelProvider,
               systemMessage = systemMessage,
@@ -274,7 +275,7 @@ private[impl] final class AgentImpl[A <: Agent](
               onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, userMessageAt, agentRole, results),
               requestGuardrails = guardrails.modelRequestGuardrails,
               responseGuardrails = guardrails.modelResponseGuardrails,
-              imageLoader = None)
+              imageLoader = spiImageLoader)
 
           case NoPrimaryEffect =>
             errorOrReply match {
@@ -326,6 +327,23 @@ private[impl] final class AgentImpl[A <: Agent](
       case ImageMessageContent.DetailLevel.AUTO => SpiAgent.ImageMessageContent.Auto
     }
   }
+
+  private def fromSpiDetailLevel(level: SpiAgent.ImageMessageContent.DetailLevel): ImageMessageContent.DetailLevel =
+    level match {
+      case SpiAgent.ImageMessageContent.Low  => ImageMessageContent.DetailLevel.LOW
+      case SpiAgent.ImageMessageContent.High => ImageMessageContent.DetailLevel.HIGH
+      case SpiAgent.ImageMessageContent.Auto => ImageMessageContent.DetailLevel.AUTO
+    }
+
+  private def toSpiImageLoader(javaImageLoader: ImageLoader): SpiAgent.SpiImageLoader =
+    (messageContent: SpiAgent.ImageUriMessageContent) =>
+      Future {
+        val detailLevel = fromSpiDetailLevel(messageContent.detailLevel)
+        val mimeType =
+          messageContent.mimeType.map(java.util.Optional.of[String]).getOrElse(java.util.Optional.empty[String]())
+        val loaded = javaImageLoader.load(messageContent.uri, detailLevel, mimeType)
+        new SpiAgent.SpiLoadedImage(loaded.data(), loaded.mimeType())
+      }(sdkExecutionContext)
 
   private def toSpiMcpEndpoints(remoteMcpTools: Seq[RemoteMcpTools]): Seq[SpiAgent.McpToolEndpointDescriptor] =
     remoteMcpTools.map {
@@ -502,6 +520,9 @@ private[impl] final class AgentImpl[A <: Agent](
 
             case reason: GuardrailFailure =>
               new Guardrail.GuardrailException(reason.explanation)
+
+            case reason: ImageLoadingFailure =>
+              new RuntimeException(exc.getMessage, exc.cause)
 
             // this is expected to be a JsonParsingException, we give it as is to users
             case OutputParsingFailure => exc.cause
