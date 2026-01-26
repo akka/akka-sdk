@@ -28,10 +28,6 @@ public class CustomerEntity extends EventSourcedEntity<Customer, CustomerEvent> 
     }
   }
 
-  public Effect untyped(Customer customer) {
-    return effects().persist(new CustomerCreated(customer.email(), customer.name(), customer.address()));
-  }
-
   public Effect<Done> create(Customer customer) {
     logger.info("Creating {}", customer);
     return effects()
