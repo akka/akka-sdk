@@ -37,6 +37,36 @@ include::example$doc-snippets/src/main/java/com/example/application/ImageProcess
 
 NOTE: Not all AI models support vision capabilities. Ensure your configured model provider supports image inputs before using multimodal messages.
 
+=== Custom image loading
+
+By default, the Akka runtime fetches images from publicly accessible URLs. When you need to load images from authenticated endpoints, private storage systems, or custom sources, you can implement a custom `ImageLoader`.
+
+The `ImageLoader` interface provides a single method that receives the image URI, detail level, and an optional MIME type hint. Your implementation fetches the image data and returns it along with the actual MIME type:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/CustomImageLoadingAgent.java[MyImageLoader.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/CustomImageLoadingAgent.java[tag=custom-image-loader]
+----
+<1> Implement the `ImageLoader` interface
+<2> Custom logic to fetch image data with authentication
+<3> Extract the actual MIME type of the image from the response
+<4> Wrap bytes and type in a `LoadedImage` and return
+
+To use your custom image loader, pass it to the agent effect builder:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/CustomImageLoadingAgent.java[CustomImageLoadingAgent.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/CustomImageLoadingAgent.java[tag=using-custom-loader]
+----
+<1> Register the custom image loader with the effect
+<2> The image URL is passed to your loader when processing the message
+
+The image loader instance can be created per-request like in this example (to support per-request credentials) or shared globally via dependency injection. If shared, ensure the implementation is thread-safe as it may be used by multiple concurrent agent interactions.
+
+NOTE: If the `load` method throws an exception, the entire agent request fails.
+
 == Using dynamic prompts with templates
 
 As an alternative to hard-coded prompts, there is a built-in prompt template entity. The advantage of using the prompt template entity is that you can change the prompts at runtime without restarting or redeploying the service. Because the prompt template is managed as an entity, you retain full change history.
