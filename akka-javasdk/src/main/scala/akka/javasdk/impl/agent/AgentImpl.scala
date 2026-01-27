@@ -58,6 +58,7 @@ import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAgent.ContextMessage
 import akka.runtime.sdk.spi.SpiAgent.GuardrailFailure
+import akka.runtime.sdk.spi.SpiAgent.ImageLoadingFailure
 import akka.runtime.sdk.spi.SpiAgent.InternalFailure
 import akka.runtime.sdk.spi.SpiAgent.McpToolCallExecutionFailure
 import akka.runtime.sdk.spi.SpiAgent.ModelFailure
@@ -272,7 +273,8 @@ private[impl] final class AgentImpl[A <: Agent](
               replyMetadata = metadata,
               onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, userMessageAt, agentRole, results),
               requestGuardrails = guardrails.modelRequestGuardrails,
-              responseGuardrails = guardrails.modelResponseGuardrails)
+              responseGuardrails = guardrails.modelResponseGuardrails,
+              imageLoader = None)
 
           case NoPrimaryEffect =>
             errorOrReply match {
@@ -503,6 +505,9 @@ private[impl] final class AgentImpl[A <: Agent](
 
             // this is expected to be a JsonParsingException, we give it as is to users
             case OutputParsingFailure => exc.cause
+
+            case _: ImageLoadingFailure =>
+              throw new RuntimeException(exc.getMessage)
           }
         } catch {
           case _: MatchError =>
