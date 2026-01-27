@@ -91,14 +91,20 @@ final class Serializer(val objectMapper: ObjectMapper) {
   /**
    * Deserialize bytes to the expected type using Type parameter (for generic types).
    */
-  def fromBytes[T](expectedType: Type, bytesPayload: BytesPayload): T = {
-    jsonSerializer.fromBytes(expectedType, bytesPayload)
-  }
+  def fromBytes[T](expectedType: Type, bytesPayload: BytesPayload): T =
+    expectedType match {
+      case cls: Class[_] if classOf[GeneratedMessageV3].isAssignableFrom(cls) =>
+        ProtobufSerializer
+          .fromBytes(expectedType.asInstanceOf[Class[_ <: GeneratedMessageV3]], bytesPayload)
+          .asInstanceOf[T]
+      case _ => jsonSerializer.fromBytes(expectedType, bytesPayload)
+    }
 
   /**
    * Deserialize bytes to an object based on the content type. Requires that types are registered via registerTypeHints.
    */
   def fromBytes(bytesPayload: BytesPayload): AnyRef = {
+    // FIXME we need to make proto serializer stateful and register proto message types in it for this to work
     jsonSerializer.fromBytes(bytesPayload)
   }
 
