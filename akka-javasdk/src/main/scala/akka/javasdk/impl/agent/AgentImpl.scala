@@ -7,6 +7,7 @@ package akka.javasdk.impl.agent
 import java.net.URI
 import java.time.Instant
 import java.util.concurrent.TimeUnit
+
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -16,6 +17,7 @@ import scala.jdk.CollectionConverters._
 import scala.jdk.DurationConverters.JavaDurationOps
 import scala.jdk.OptionConverters.RichOptional
 import scala.util.control.NonFatal
+
 import akka.annotation.InternalApi
 import akka.http.scaladsl.model.HttpHeader
 import akka.javasdk.CommandException
