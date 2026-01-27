@@ -73,12 +73,14 @@ final class Serializer(val objectMapper: ObjectMapper) {
    * deserializer.
    */
   def fromBytes[T](expectedType: Class[T], bytesPayload: BytesPayload): T = {
-    if (expectedType.isAssignableFrom(classOf[GeneratedMessageV3])) {
+    if (classOf[GeneratedMessageV3].isAssignableFrom(expectedType)) {
       if (isProtobuf(bytesPayload))
-        ProtobufSerializer.fromBytes(expectedType.asSubclass(expectedType), bytesPayload)
+        ProtobufSerializer
+          .fromBytes(expectedType.asInstanceOf[Class[GeneratedMessageV3]], bytesPayload)
+          .asInstanceOf[T]
       else
         throw new IllegalArgumentException(
-          s"Expected protobuf message matching generated class [${expectedType}] but paylod has type [${bytesPayload.contentType}]")
+          s"Expected protobuf message matching generated class [${expectedType}] but payload has type [${bytesPayload.contentType}]")
     } else if (isJson(bytesPayload)) {
       jsonSerializer.fromBytes(expectedType, bytesPayload)
     } else {
@@ -133,7 +135,7 @@ final class Serializer(val objectMapper: ObjectMapper) {
    */
   def contentTypeFor(clz: Class[_]): String = {
     if (ProtobufSerializer.isProtobufClass(clz)) {
-      ProtobufSerializer.contentTypeFor(clz)
+      ProtobufSerializer.contentTypeFor(clz.asInstanceOf[Class[_ <: GeneratedMessageV3]])
     } else {
       jsonSerializer.contentTypeFor(clz)
     }
@@ -146,7 +148,7 @@ final class Serializer(val objectMapper: ObjectMapper) {
     if (clz == classOf[Array[Byte]]) {
       List(BytesPrimitive.fullName)
     } else if (ProtobufSerializer.isProtobufClass(clz)) {
-      ProtobufSerializer.contentTypesFor(clz)
+      ProtobufSerializer.contentTypesFor(clz.asInstanceOf[Class[_ <: GeneratedMessageV3]])
     } else {
       jsonSerializer.contentTypesFor(clz)
     }

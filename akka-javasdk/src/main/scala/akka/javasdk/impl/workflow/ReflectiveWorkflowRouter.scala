@@ -80,13 +80,14 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     instanceFactory: Function[WorkflowContext, W],
     methodInvokers: Map[String, MethodInvoker],
     serializer: Serializer,
+    stateClass: Class[S],
     sdkExecutionContext: ExecutionContext,
     runtimeComponentClients: ComponentClients)(implicit system: ActorSystem[_]) {
 
   private def decodeUserState(userState: Option[BytesPayload]): Option[S] =
     userState
       .collect {
-        case payload if payload.nonEmpty => serializer.fromBytes(payload).asInstanceOf[S]
+        case payload if payload.nonEmpty => serializer.fromBytes(stateClass, payload)
       }
 
   private def decodeInput(input: BytesPayload, expectedInputClass: Class[_]) = {

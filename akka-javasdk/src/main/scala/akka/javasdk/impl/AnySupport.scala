@@ -537,6 +537,7 @@ class AnySupport(
 }
 
 final case class SerializationException(msg: String, cause: Throwable = null) extends RuntimeException(msg, cause)
+object NullSerializationException extends RuntimeException("Don't know how to serialize object of type null.")
 
 /**
  * INTERNAL API

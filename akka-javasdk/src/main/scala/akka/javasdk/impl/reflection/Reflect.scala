@@ -317,7 +317,9 @@ private[impl] object Reflect {
 
   def allKnownEventSourcedEntityEventType(component: Class[_]): Seq[Class[_]] = {
     val eventType = eventSourcedEntityEventType(component)
-    eventType.getPermittedSubclasses.toSeq
+    val permitted = eventType.getPermittedSubclasses
+    // getPermittedSubclasses returns null for non-sealed classes (e.g., GeneratedMessageV3 for protobuf)
+    if (permitted == null) Seq.empty else permitted.toSeq
   }
 
   def eventSourcedEntityEventType(component: Class[_]): Class[_] =
