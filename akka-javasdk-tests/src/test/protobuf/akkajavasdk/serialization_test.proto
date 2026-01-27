@@ -1,0 +1,187 @@
+// Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
+
+// Protobuf messages for testing serialization support
+
+syntax = "proto3";
+
+package akkajavasdk.serialization;
+
+option java_package = "akkajavasdk.protocol";
+option java_outer_classname = "SerializationTestProtos";
+
+// Simple message with basic scalar types
+message SimpleMessage {
+  string text = 1;
+  int32 number = 2;
+  bool flag = 3;
+}
+
+// Message with all scalar types for comprehensive testing
+message ScalarTypesMessage {
+  double double_value = 1;
+  float float_value = 2;
+  int32 int32_value = 3;
+  int64 int64_value = 4;
+  uint32 uint32_value = 5;
+  uint64 uint64_value = 6;
+  sint32 sint32_value = 7;
+  sint64 sint64_value = 8;
+  fixed32 fixed32_value = 9;
+  fixed64 fixed64_value = 10;
+  sfixed32 sfixed32_value = 11;
+  sfixed64 sfixed64_value = 12;
+  bool bool_value = 13;
+  string string_value = 14;
+  bytes bytes_value = 15;
+}
+
+// Message with nested types
+message NestedMessage {
+  string id = 1;
+  Address address = 2;
+  repeated PhoneNumber phones = 3;
+
+  message Address {
+    string street = 1;
+    string city = 2;
+    string country = 3;
+    int32 zip_code = 4;
+  }
+
+  message PhoneNumber {
+    string number = 1;
+    PhoneType type = 2;
+  }
+
+  enum PhoneType {
+    MOBILE = 0;
+    HOME = 1;
+    WORK = 2;
+  }
+}
+
+// Message with repeated fields
+message RepeatedFieldsMessage {
+  repeated string strings = 1;
+  repeated int32 numbers = 2;
+  repeated SimpleMessage messages = 3;
+}
+
+// Message with map fields
+message MapFieldsMessage {
+  map<string, string> string_map = 1;
+  map<string, int32> int_map = 2;
+  map<int32, SimpleMessage> message_map = 3;
+}
+
+// Message with oneof field
+message OneofMessage {
+  string id = 1;
+  oneof payload {
+    string text_payload = 2;
+    int32 number_payload = 3;
+    SimpleMessage message_payload = 4;
+  }
+}
+
+// Message with optional fields (proto3 optional)
+message OptionalFieldsMessage {
+  optional string optional_string = 1;
+  optional int32 optional_int = 2;
+  optional SimpleMessage optional_message = 3;
+}
+
+// Enum for standalone enum testing
+enum Status {
+  UNKNOWN = 0;
+  ACTIVE = 1;
+  INACTIVE = 2;
+  PENDING = 3;
+}
+
+// Message with enum field
+message StatusMessage {
+  string id = 1;
+  Status status = 2;
+}
+
+// Event types for event sourced entity testing
+message CustomerCreated {
+  string customer_id = 1;
+  string name = 2;
+  string email = 3;
+}
+
+message CustomerNameChanged {
+  string customer_id = 1;
+  string new_name = 2;
+}
+
+message CustomerEmailChanged {
+  string customer_id = 1;
+  string new_email = 2;
+}
+
+// State type for key-value entity testing
+message CustomerState {
+  string customer_id = 1;
+  string name = 2;
+  string email = 3;
+  Status status = 4;
+  repeated string tags = 5;
+}
+
+// ======================================
+// Workflow state and step input messages
+// ======================================
+
+// Enum for order status
+enum OrderStatus {
+  ORDER_STATUS_UNKNOWN = 0;
+  ORDER_STATUS_PENDING = 1;
+  ORDER_STATUS_VALIDATED = 2;
+  ORDER_STATUS_PROCESSING = 3;
+  ORDER_STATUS_SHIPPED = 4;
+  ORDER_STATUS_COMPLETED = 5;
+  ORDER_STATUS_CANCELLED = 6;
+}
+
+// Order item
+message OrderItem {
+  string product_id = 1;
+  string product_name = 2;
+  int32 quantity = 3;
+  double price = 4;
+}
+
+// Workflow state for order processing
+message OrderWorkflowState {
+  string order_id = 1;
+  string customer_id = 2;
+  repeated OrderItem items = 3;
+  double total_amount = 4;
+  OrderStatus status = 5;
+  string last_step = 6;
+  string error_message = 7;
+}
+
+// Step input for validation
+message ValidateOrderInput {
+  string order_id = 1;
+  string customer_id = 2;
+  repeated OrderItem items = 3;
+}
+
+// Step input for processing payment
+message ProcessPaymentInput {
+  string order_id = 1;
+  string customer_id = 2;
+  double amount = 3;
+}
+
+// Step input for shipping
+message ShipOrderInput {
+  string order_id = 1;
+  string customer_id = 2;
+  string shipping_address = 3;
+}
