@@ -12,7 +12,6 @@ import scala.jdk.OptionConverters.RichOptional
 import scala.util.Failure
 import scala.util.Success
 import scala.util.control.NonFatal
-
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.CommandException
@@ -25,6 +24,7 @@ import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.WorkflowExceptions.WorkflowException
 import akka.javasdk.impl.client.MethodRefResolver
+import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
@@ -79,6 +79,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
       instanceFactory,
       componentDescriptor.methodInvokers,
       serializer,
+      Reflect.workflowStateType(workflowClass).asInstanceOf[Class[S]],
       sdkExecutionContext,
       runtimeComponentClients)
 
