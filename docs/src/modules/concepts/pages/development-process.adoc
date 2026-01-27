@@ -117,14 +117,13 @@ Not all components are equally suited for sharing. Consider the following guidel
 **Good candidates for sharing:**
 
 * **Agents** - Agents are stateless and perform tasks based on inputs, making them safe to share across services.
-* **Consumers and Views subscribing to external data** - When a Consumer or View subscribes to data from outside the service—either from a broker (e.g., Kafka) or via xref:sdk:service-to-service.adoc#_streaming_use_case[service-to-service streaming]—sharing allows multiple services to process the same external data stream or maintain the same projection.
+* **Consumers and Views subscribing to external data** - When a Consumer or View subscribes to data from outside the service—either from a broker (e.g., Kafka) or via xref:sdk:consuming-producing.adoc#s2s-eventing[service-to-service streaming]—sharing allows multiple services to process the same external data stream or maintain the same projection.
 
 **Use with caution:**
 
 * **Entities and Workflows** - Sharing entity or workflow classes can be misleading. The same class in different services creates separate, isolated data stores. Akka treats them as completely distinct components with separate persistence. If you share an entity class, each service will have its own independent set of entity instances with no shared state.
 * **Consumers and Views subscribing to local components** - Sharing these only makes sense if the source components are also shared. Otherwise, the shared Consumer or View would reference components that don't exist in the consuming service.
-* **Endpoints** - Sharing an endpoint means sharing all the components it depends on. If any dependency is a stateful component (Entity, Workflow), each service creates its own isolated data store—giving a misleading sense of shared data. Consider whether services truly need identical routes, or if one service should own the endpoint and others call it via xref:sdk:service-to-service.adoc[service-to-service calls].
-
+* **Endpoints** - Sharing an endpoint means sharing all the components it depends on. If any dependency is a stateful component (Entity, Workflow), each service creates its own isolated data store—giving a misleading sense of shared data. Consider whether services truly need identical routes, or if one service should own the endpoint and others call it via xref:sdk:consuming-producing.adoc#s2s-eventing[service-to-service calls].
 TIP: Start with a "share nothing" approach. Only share Akka components when there is a clear benefit and you understand the implications for stateful dependencies.
 
 [#_endpoints]
