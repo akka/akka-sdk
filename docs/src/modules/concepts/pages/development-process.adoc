@@ -26,6 +26,7 @@ The main components of an Akka service are:
 
 * Stateful xref:reference:glossary.adoc#entity[Entities]
 * Stateful xref:reference:glossary.adoc#workflow[Workflows]
+* xref:reference:glossary.adoc#agent[Agents]
 * xref:reference:glossary.adoc#view[Views]
 * xref:reference:glossary.adoc#timed_action[Timed Actions]
 * xref:reference:glossary.adoc#consumer[Consumers]
@@ -39,7 +40,7 @@ TIP: Kickstart a project using the xref:getting-started:author-your-first-servic
 
 In Akka, services can be stateful or stateless, and the components you implement depend on the service type.
 
-Stateful services utilize components like xref:sdk:event-sourced-entities.adoc[Event Sourced Entities], xref:sdk:key-value-entities.adoc[Key Value Entities], xref:sdk:workflows.adoc[Workflows], and xref:sdk:views.adoc[Views], while stateless services focus on exposing functionality via xref:sdk:http-endpoints.adoc[HTTP Endpoints]. Typically, a stateful service is centered around one Entity type but may also include Endpoints and Views to expose or retrieve data.
+Stateful services utilize components like xref:sdk:event-sourced-entities.adoc[Event Sourced Entities], xref:sdk:key-value-entities.adoc[Key Value Entities], xref:sdk:workflows.adoc[Workflows], xref:sdk:agents.adoc[Agents], and xref:sdk:views.adoc[Views], while stateless services focus on exposing functionality via xref:sdk:http-endpoints.adoc[HTTP Endpoints]. Typically, a stateful service is centered around one Entity type but may also include Endpoints and Views to expose or retrieve data.
 
 === Entities
 
@@ -55,6 +56,10 @@ Services can interact asynchronously with other services and with external syste
 
 Akka Workflows are high-level descriptions to easily align business requirements with their implementation in code. Orchestration across multiple services including failure scenarios and compensating actions is simple with xref:sdk:workflows.adoc[Workflows].
 
+=== Agents
+
+Akka Agents interact with AI models to perform specific tasks. An agent is typically backed by a large language model (LLM), maintains contextual history in a session memory, and can invoke tools as directed by the model. Multiple agents can share the same session to collaborate on a common goal. For more information see xref:sdk:agents.adoc[].
+
 === Views
 
 A View provides a way to retrieve state from multiple Entities based on a query. You can create views from Key Value Entity state, Event Sourced Entity events, and by subscribing to topics. For more information about writing views see xref:sdk:views.adoc[].
@@ -68,6 +73,7 @@ For more details and examples take a look at the following topics:
 * xref:sdk:event-sourced-entities.adoc[Event Sourced Entities]
 * xref:sdk:key-value-entities.adoc[Key Value Entities]
 * xref:sdk:workflows.adoc[Workflows]
+* xref:sdk:agents.adoc[Agents]
 * xref:sdk:views.adoc[Views]
 * xref:sdk:timed-actions.adoc[Timed Actions]
 
