@@ -525,14 +525,12 @@ private[impl] final class AgentImpl[A <: Agent](
             case reason: GuardrailFailure =>
               new Guardrail.GuardrailException(reason.explanation)
 
-            case reason: ImageLoadingFailure =>
+            case _: ImageLoadingFailure =>
               new RuntimeException(exc.getMessage, exc.cause)
 
             // this is expected to be a JsonParsingException, we give it as is to users
             case OutputParsingFailure => exc.cause
 
-            case _: ImageLoadingFailure =>
-              throw new RuntimeException(exc.getMessage)
           }
         } catch {
           case _: MatchError =>
