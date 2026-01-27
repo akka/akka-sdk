@@ -38,3 +38,4 @@
 *** xref:sdk:sanitization.adoc[Data sanitization]
 ** xref:sdk:dev-best-practices.adoc[]
 ** xref:sdk:ai-coding-assistant.adoc[]
+** xref:sdk:local-cluster.adoc[]
