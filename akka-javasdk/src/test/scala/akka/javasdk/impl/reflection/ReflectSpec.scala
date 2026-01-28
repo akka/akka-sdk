@@ -10,6 +10,8 @@ import akka.Done
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.client.ComponentClientImpl
 import akka.javasdk.impl.serialization.Serializer
+import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.InvalidProtoEventSourcedEntityWrongEventType
+import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.ValidProtoEventSourcedEntity
 import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowAnnotatedAbstractClass
 import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowAnnotatedAbstractClassLegacy
 import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowAnnotatedInterface
@@ -21,8 +23,11 @@ import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowUnann
 import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowUnannotatedInterface
 import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowUnannotatedInterfaceLegacy
 import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowWithPrimitives
+import com.google.protobuf.GeneratedMessageV3
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import protoconsumer.EventsForConsumer.EventForConsumer1
+import protoconsumer.EventsForConsumer.EventForConsumer2
 
 class SomeClass {
   def a(): Unit = {}
@@ -162,6 +167,29 @@ class ReflectSpec extends AnyWordSpec with Matchers {
       intercept[IllegalArgumentException] {
         Reflect.workflowKnownInputTypes(new TransferWorkflowUnannotatedAbstractClassLegacy)
       }.getMessage should startWith("Can't determine all existing subtypes")
+    }
+
+    "detect @ProtoEventTypes annotation on event sourced entity" in {
+      Reflect.hasProtoEventTypes(classOf[ValidProtoEventSourcedEntity]) shouldBe true
+    }
+
+    "return proto event types from @ProtoEventTypes annotation" in {
+      val types = Reflect.protoEventTypes(classOf[ValidProtoEventSourcedEntity])
+      types should have size 2
+      types should contain(classOf[EventForConsumer1])
+      types should contain(classOf[EventForConsumer2])
+    }
+
+    "validate applyEvent signature for valid @ProtoEventTypes entity" in {
+      val result = Reflect.validateProtoEventTypesApplyEvent(classOf[ValidProtoEventSourcedEntity])
+      result shouldBe None
+    }
+
+    "fail validation when @ProtoEventTypes entity has wrong applyEvent signature" in {
+      val result = Reflect.validateProtoEventTypesApplyEvent(classOf[InvalidProtoEventSourcedEntityWrongEventType])
+      result shouldBe defined
+      result.get should include("@ProtoEventTypes")
+      result.get should include(classOf[GeneratedMessageV3].getName)
     }
   }
 }

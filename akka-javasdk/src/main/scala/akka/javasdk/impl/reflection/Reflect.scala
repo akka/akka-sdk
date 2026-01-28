@@ -28,6 +28,7 @@ import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.EnableReplicationFilter
 import akka.javasdk.annotations.GrpcEndpoint
+import akka.javasdk.annotations.ProtoEventTypes
 import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.client.ComponentClient
@@ -42,6 +43,7 @@ import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.Workflow.RunnableStep
 import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.google.protobuf.GeneratedMessageV3
 
 /**
  * Class extension to facilitate some reflection common usages.
@@ -320,6 +322,42 @@ private[impl] object Reflect {
     val permitted = eventType.getPermittedSubclasses
     // getPermittedSubclasses returns null for non-sealed classes (e.g., GeneratedMessageV3 for protobuf)
     if (permitted == null) Seq.empty else permitted.toSeq
+  }
+
+  /**
+   * Get protobuf event types declared via @ProtoEventTypes annotation on an Event Sourced Entity.
+   */
+  def protoEventTypes(component: Class[_]): Seq[Class[_ <: GeneratedMessageV3]] = {
+    Option(component.getAnnotation(classOf[ProtoEventTypes]))
+      .map(_.value().toSeq)
+      .getOrElse(Seq.empty)
+  }
+
+  /**
+   * Check if an Event Sourced Entity has the @ProtoEventTypes annotation.
+   */
+  def hasProtoEventTypes(component: Class[_]): Boolean = {
+    component.getAnnotation(classOf[ProtoEventTypes]) != null
+  }
+
+  /**
+   * Validate that an Event Sourced Entity with @ProtoEventTypes has applyEvent accepting GeneratedMessageV3. Returns an
+   * error message if validation fails, None otherwise.
+   */
+  def validateProtoEventTypesApplyEvent(component: Class[_]): Option[String] = {
+    if (hasProtoEventTypes(component)) {
+      val eventType = eventSourcedEntityEventType(component)
+      if (!classOf[GeneratedMessageV3].isAssignableFrom(eventType)) {
+        Some(
+          s"Event Sourced Entity [${component.getName}] is annotated with @ProtoEventTypes but its applyEvent method " +
+          s"accepts [${eventType.getName}] instead of [${classOf[GeneratedMessageV3].getName}]. " +
+          "When using @ProtoEventTypes, the applyEvent method must accept GeneratedMessageV3.")
+      } else {
+        None
+      }
+    } else {
+      None
+    }
   }
 
   def eventSourcedEntityEventType(component: Class[_]): Class[_] =
