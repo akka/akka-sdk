@@ -67,6 +67,10 @@
               <goal>kapt</goal>
             </goals>
             <configuration>
+              <annotationProcessorArgs>
+                <arg>akka.javasdk.groupId=${groupId.dashed}</arg>
+                <arg>akka.javasdk.artifactId=${project.artifactId}</arg>
+              </annotationProcessorArgs>
               <annotationProcessors>
                 <annotationProcessor>
                   akka.javasdk.tooling.processor.ComponentValidationProcessor
@@ -93,6 +97,10 @@
                   akka.javasdk.tooling.processor.ComponentAnnotationProcessor
                 </annotationProcessor>
               </annotationProcessors>
+              <annotationProcessorArgs>
+                <arg>akka.javasdk.groupId=${groupId.dashed}</arg>
+                <arg>akka.javasdk.artifactId=${project.artifactId}</arg>
+              </annotationProcessorArgs>
               <annotationProcessorPaths>
                 <annotationProcessorPath>
                   <groupId>io.akka</groupId>

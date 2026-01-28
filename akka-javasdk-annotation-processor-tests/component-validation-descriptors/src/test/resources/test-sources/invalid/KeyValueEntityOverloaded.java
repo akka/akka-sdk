@@ -11,11 +11,11 @@ import akka.javasdk.keyvalueentity.KeyValueEntity;
 public class KeyValueEntityOverloaded extends KeyValueEntity<String> {
 
   // Overloaded command handlers - not allowed
-  public Effect createEntity(String name) {
+  public Effect<String> createEntity(String name) {
     return effects().reply(name);
   }
 
-  public Effect createEntity(String name, String email) {
+  public Effect<String> createEntity(String name, String email) {
     return effects().reply(name + ":" + email);
   }
 }

@@ -26,6 +26,7 @@ The main components of an Akka service are:
 
 * Stateful xref:reference:glossary.adoc#entity[Entities]
 * Stateful xref:reference:glossary.adoc#workflow[Workflows]
+* xref:reference:glossary.adoc#agent[Agents]
 * xref:reference:glossary.adoc#view[Views]
 * xref:reference:glossary.adoc#timed_action[Timed Actions]
 * xref:reference:glossary.adoc#consumer[Consumers]
@@ -39,7 +40,7 @@ TIP: Kickstart a project using the xref:getting-started:author-your-first-servic
 
 In Akka, services can be stateful or stateless, and the components you implement depend on the service type.
 
-Stateful services utilize components like xref:sdk:event-sourced-entities.adoc[Event Sourced Entities], xref:sdk:key-value-entities.adoc[Key Value Entities], xref:sdk:workflows.adoc[Workflows], and xref:sdk:views.adoc[Views], while stateless services focus on exposing functionality via xref:sdk:http-endpoints.adoc[HTTP Endpoints]. Typically, a stateful service is centered around one Entity type but may also include Endpoints and Views to expose or retrieve data.
+Stateful services utilize components like xref:sdk:event-sourced-entities.adoc[Event Sourced Entities], xref:sdk:key-value-entities.adoc[Key Value Entities], xref:sdk:workflows.adoc[Workflows], xref:sdk:agents.adoc[Agents], and xref:sdk:views.adoc[Views], while stateless services focus on exposing functionality via xref:sdk:http-endpoints.adoc[HTTP Endpoints]. Typically, a stateful service is centered around one Entity type but may also include Endpoints and Views to expose or retrieve data.
 
 === Entities
 
@@ -55,6 +56,10 @@ Services can interact asynchronously with other services and with external syste
 
 Akka Workflows are high-level descriptions to easily align business requirements with their implementation in code. Orchestration across multiple services including failure scenarios and compensating actions is simple with xref:sdk:workflows.adoc[Workflows].
 
+=== Agents
+
+Akka Agents interact with AI models to perform specific tasks. An agent is typically backed by a large language model (LLM), maintains contextual history in a session memory, and can invoke tools as directed by the model. Multiple agents can share the same session to collaborate on a common goal. For more information see xref:sdk:agents.adoc[].
+
 === Views
 
 A View provides a way to retrieve state from multiple Entities based on a query. You can create views from Key Value Entity state, Event Sourced Entity events, and by subscribing to topics. For more information about writing views see xref:sdk:views.adoc[].
@@ -68,8 +73,64 @@ For more details and examples take a look at the following topics:
 * xref:sdk:event-sourced-entities.adoc[Event Sourced Entities]
 * xref:sdk:key-value-entities.adoc[Key Value Entities]
 * xref:sdk:workflows.adoc[Workflows]
+* xref:sdk:agents.adoc[Agents]
 * xref:sdk:views.adoc[Views]
 * xref:sdk:timed-actions.adoc[Timed Actions]
+
+[#_components_in_shared_libraries]
+== Components in shared libraries
+
+Akka components can be defined in shared library JARs and automatically discovered when those libraries are included as dependencies. This enables code reuse across multiple services.
+
+=== Creating a component library
+
+To create a library containing Akka components, use the Akka parent pom as you would for any Akka service. The parent pom configures everything needed for component discovery automatically.
+
+Since a shared library is not a deployable service, set `non-akka-service` to `true` in the properties section. This prevents building a Docker image for the library.
+
+[source,xml]
+----
+<parent>
+  <groupId>io.akka</groupId>
+  <artifactId>akka-javasdk-parent</artifactId>
+  <version>${akka-sdk.version}</version>
+</parent>
+
+<properties>
+  <non-akka-service>true</non-akka-service>
+</properties>
+----
+
+When you compile the library, Akka generates a descriptor file that lists all components. At runtime, Akka scans the classpath for these descriptors and automatically registers all discovered components.
+
+=== Using a component library
+
+To use components from a library, add it as a dependency in your project. No additional configuration is required—components are discovered automatically at startup.
+
+[source,xml]
+----
+<dependency>
+  <groupId>com.example</groupId>
+  <artifactId>my-component-library</artifactId>
+  <version>1.0.0</version>
+</dependency>
+----
+
+=== What to share
+
+Not all components are equally suited for sharing. Consider the following guidelines:
+
+**Good candidates for sharing:**
+
+* **Agents** - Agents are stateless and perform tasks based on inputs, making them safe to share across services.
+* **Consumers and Views subscribing to external data** - When a Consumer or View subscribes to data from outside the service—either from a broker (e.g., Kafka) or via xref:sdk:consuming-producing.adoc#s2s-eventing[service-to-service streaming]—sharing allows multiple services to process the same external data stream or maintain the same projection.
+
+**Use with caution:**
+
+* **Entities and Workflows** - Sharing entity or workflow classes can be misleading. The same class in different services creates separate, isolated data stores. Akka treats them as completely distinct components with separate persistence. If you share an entity class, each service will have its own independent set of entity instances with no shared state.
+* **Consumers and Views subscribing to local components** - Sharing these only makes sense if the source components are also shared. Otherwise, the shared Consumer or View would reference components that don't exist in the consuming service.
+* **Endpoints** - Sharing an endpoint means sharing all the components it depends on. If any dependency is a stateful component (Entity, Workflow), each service creates its own isolated data store—giving a misleading sense of shared data. Consider whether services truly need identical routes, or if one service should own the endpoint and others call it via xref:sdk:consuming-producing.adoc#s2s-eventing[service-to-service calls].
+TIP: Start with a "share nothing" approach. Only share Akka components when there is a clear benefit and you understand the implications for stateful dependencies.
 
 [#_endpoints]
 == Exposing components through Endpoints and Consumers

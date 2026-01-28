@@ -40,6 +40,7 @@ Welcome to the Akka CLI, for more information on its usage please visit the docu
 * link:akka_roles.html[akka roles]	 - Manage the user roles for an Akka project.
 * link:akka_routes.html[akka routes]	 - Manage routes for your Akka project.
 * link:akka_secrets.html[akka secrets]	 - Manage secrets for an Akka project.
+* link:akka_service-configs.html[akka service-configs]	 - Manage service configs for a Akka project.
 * link:akka_services.html[akka services]	 - Manage and deploy services on Akka.
 * link:akka_version.html[akka version]	 - Print the akka CLI version
 

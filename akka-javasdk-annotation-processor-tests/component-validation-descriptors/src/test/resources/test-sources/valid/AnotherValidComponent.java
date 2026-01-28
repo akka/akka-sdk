@@ -11,8 +11,8 @@ public class AnotherValidComponent extends EventSourcedEntity<String, AnotherVal
     record SampleEvent(String data) implements Event {}
   }
 
-  public Effect sampleCommand(String data) {
-    return effects().persist(new Event.SampleEvent(data));
+  public Effect<String> sampleCommand(String data) {
+    return effects().persist(new Event.SampleEvent(data)).thenReply(__ -> "Ok");
   }
 
   @Override

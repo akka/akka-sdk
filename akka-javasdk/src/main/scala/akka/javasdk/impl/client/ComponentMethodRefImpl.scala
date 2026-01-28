@@ -6,8 +6,6 @@ package akka.javasdk.impl.client
 
 import java.util.concurrent.CompletionStage
 
-import scala.concurrent.ExecutionException
-
 import akka.NotUsed
 import akka.annotation.InternalApi
 import akka.javasdk.DeferredCall
@@ -17,7 +15,7 @@ import akka.javasdk.client.ComponentInvokeOnlyMethodRef1
 import akka.javasdk.client.ComponentMethodRef
 import akka.javasdk.client.ComponentMethodRef1
 import akka.javasdk.client.DynamicMethodRef
-import akka.javasdk.impl.ErrorHandling
+import akka.javasdk.impl.ErrorHandling.unwrapExecutionExceptionCatcher
 import akka.pattern.RetrySettings
 
 /**
@@ -79,15 +77,11 @@ private[impl] final case class ComponentMethodRefImpl[A1, R](
   override def invoke(): R =
     try {
       invokeAsync().toCompletableFuture.get()
-    } catch {
-      case ex: ExecutionException => throw ErrorHandling.unwrapExecutionException(ex)
-    }
+    } catch unwrapExecutionExceptionCatcher
 
   override def invoke(arg: A1): R = {
     try {
       invokeAsync(arg).toCompletableFuture.get()
-    } catch {
-      case ex: ExecutionException => throw ErrorHandling.unwrapExecutionException(ex)
-    }
+    } catch unwrapExecutionExceptionCatcher
   }
 }

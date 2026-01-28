@@ -20,6 +20,7 @@ import akka.javasdk.agent.Agent.Effect.FailureBuilder
 import akka.javasdk.agent.Agent.Effect.MappingFailureBuilder
 import akka.javasdk.agent.Agent.Effect.MappingResponseBuilder
 import akka.javasdk.agent.Agent.Effect.OnSuccessBuilder
+import akka.javasdk.agent.ImageLoader
 import akka.javasdk.agent.MemoryProvider
 import akka.javasdk.agent.ModelProvider
 import akka.javasdk.agent.RemoteMcpTools
@@ -51,7 +52,8 @@ private[javasdk] object BaseAgentEffectBuilder {
         replyMetadata = Metadata.EMPTY,
         memoryProvider = MemoryProvider.fromConfig(),
         toolInstancesOrClasses = Seq.empty,
-        mcpTools = Seq.empty)
+        mcpTools = Seq.empty,
+        imageLoader = None)
   }
 
   sealed trait SystemMessage
@@ -69,7 +71,8 @@ private[javasdk] object BaseAgentEffectBuilder {
       replyMetadata: Metadata,
       memoryProvider: MemoryProvider,
       toolInstancesOrClasses: Seq[AnyRef],
-      mcpTools: Seq[RemoteMcpTools])
+      mcpTools: Seq[RemoteMcpTools],
+      imageLoader: Option[ImageLoader])
       extends PrimaryEffectImpl {
 
     def withProvider(provider: ModelProvider): RequestModel =
@@ -77,6 +80,9 @@ private[javasdk] object BaseAgentEffectBuilder {
 
     def withMemory(provider: MemoryProvider): RequestModel =
       copy(memoryProvider = provider)
+
+    def withImageLoader(loader: ImageLoader): RequestModel =
+      copy(imageLoader = Some(loader))
 
     def addTool(tool: AnyRef): RequestModel = {
       copy(toolInstancesOrClasses = this.toolInstancesOrClasses :+ tool)
@@ -193,6 +199,11 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
 
   override def mcpTools(tools: util.List[RemoteMcpTools]): Builder = {
     updateRequestModel(_.addMcpTools(tools.asScala.toSeq))
+    this
+  }
+
+  override def imageLoader(loader: ImageLoader): Builder = {
+    updateRequestModel(_.withImageLoader(loader))
     this
   }
 
