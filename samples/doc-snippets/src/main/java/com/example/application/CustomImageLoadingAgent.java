@@ -57,14 +57,16 @@ public class CustomImageLoadingAgent extends Agent {
   // end::custom-image-loader[]
 
   // tag::using-custom-loader[]
-  public Effect<String> analyzeImage(String imageUri, String userToken) {
+  public record AnalyzeRequest(String imageUri, String userToken) {}
+
+  public Effect<String> analyzeImage(AnalyzeRequest request) {
     return effects()
       .systemMessage("You are an image analysis assistant.")
-      .imageLoader(new MyImageLoader(userToken)) // <1>
+      .imageLoader(new MyImageLoader(request.userToken())) // <1>
       .userMessage(
         UserMessage.from(
           TextMessageContent.from("Describe this image in detail"),
-          ImageMessageContent.fromUrl(imageUri)
+          ImageMessageContent.fromUrl(request.imageUri)
         )
       ) // <2>
       .thenReply();
