@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Recommendation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.21.2/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.2/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/3.0.1/js.cookie.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #000000;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            color: #F1F1F1;
+        }
+        .typing-animation::after {
+            content: '|';
+            animation: blink 1s step-start infinite;
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+        .chat-message {
+            max-width: 80%;
+            border-radius: 1rem;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .user-message {
+            margin-left: auto;
+            border-bottom-right-radius: 0.25rem;
+            background-color: #1F1F1F;
+            border: 1px solid #FFFFFF;
+            color: #FFFFFF;
+        }
+
+        .ai-message {
+            background-color: #1A1A1A;
+            margin-right: auto;
+            border-bottom-left-radius: 0.25rem;
+            border: 1px dashed #FFCE4A;
+            font-style: italic;
+            color: #FFFFFF;
+        }
+
+        .status-message {
+            background-color: #1A1A1A;
+            margin-right: auto;
+            border-bottom-left-radius: 0.25rem;
+            border: 1px solid #00DBDD;
+            color: #00DBDD;
+            font-size: 0.875rem;
+        }
+
+        .ai-message h1, .ai-message h2, .ai-message h3,
+        .ai-message h4, .ai-message h5, .ai-message h6 {
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #FFCE4A;
+        }
+        .ai-message h1 { font-size: 1.5rem; }
+        .ai-message h2 { font-size: 1.4rem; }
+        .ai-message h3 { font-size: 1.3rem; }
+        .ai-message h4 { font-size: 1.2rem; }
+        .ai-message h5 { font-size: 1.1rem; }
+        .ai-message h6 { font-size: 1rem; }
+
+        .ai-message ul, .ai-message ol {
+            margin-left: 1.5rem;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .ai-message ul { list-style-type: disc; }
+        .ai-message ol { list-style-type: decimal; }
+
+        .ai-message code {
+            background-color: #333333;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: monospace;
+            color: #F1F1F1;
+        }
+
+        .ai-message pre {
+            background-color: #333333;
+            padding: 1rem;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 0.5rem 0;
+        }
+
+        .ai-message pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+
+        .ai-message p {
+            margin-bottom: 0.75rem;
+        }
+
+        .ai-message a {
+            color: #00DBDD;
+            text-decoration: underline;
+        }
+
+        .truncate-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            max-height: 100%;
+            overflow: hidden;
+        }
+
+        .message-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            padding-top: 1.5rem;
+            background-color: #1A1A1A !important;
+        }
+
+        .header-area {
+            flex-shrink: 0;
+            background-color: #000000;
+            border-color: #333333;
+        }
+
+        .input-area {
+            flex-shrink: 0;
+            position: sticky;
+            bottom: 0;
+            background-color: #1A1A1A !important;
+            border-color: #333333;
+            z-index: 10;
+        }
+
+        .chat-message-wrapper {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            padding-bottom: 1rem;
+        }
+
+        .h-screen, .h-full {
+            background-color: #000000;
+        }
+
+        .justify-between {
+            background-color: #1A1A1A;
+            color: #F1F1F1;
+            border-bottom: 1px solid #333333;
+        }
+
+        .justify-between h1 {
+            color: #00DBDD;
+        }
+
+        .text-gray-500, .text-gray-400, .text-gray-700 {
+            color: #F1F1F1 !important;
+        }
+
+        button {
+            background-color: #00DBDD !important;
+            color: #1A1A1A !important;
+            border: none;
+        }
+
+        button:hover {
+            background-color: #00c5c7 !important;
+        }
+
+        .send-button {
+            background-color: transparent !important;
+        }
+
+        .send-button svg {
+            stroke: #00DBDD;
+        }
+
+        .send-button:hover svg {
+            stroke: #00c5c7;
+        }
+
+        .send-button[disabled] svg {
+            stroke: #666666;
+        }
+
+        .bg-gray-50 {
+            background-color: #1A1A1A !important;
+            color: #F1F1F1 !important;
+        }
+
+        .border, .border-r, .border-b, .border-t {
+            border-color: #333333 !important;
+        }
+
+        .divide-y > li {
+            border-color: #333333 !important;
+        }
+
+        .hover\:bg-gray-50:hover {
+            background-color: #2a2a2a !important;
+        }
+
+        .bg-blue-50 {
+            background-color: #002e2e !important;
+        }
+
+        .border-blue-500 {
+            border-color: #00DBDD !important;
+        }
+
+        textarea, input[type="text"] {
+            background-color: #2a2a2a;
+            color: #F1F1F1;
+            border-color: #333333;
+        }
+
+        textarea:focus, input[type="text"]:focus {
+            border-color: #00DBDD;
+            box-shadow: 0 0 0 2px rgba(0, 219, 221, 0.2);
+        }
+
+        .text-blue-600 {
+            color: #00DBDD !important;
+        }
+
+        .text-red-500 {
+            color: #ff6b6b !important;
+        }
+
+        .text-blue-600 svg {
+            color: #00DBDD !important;
+        }
+
+        .preference-tag {
+            display: inline-block;
+            background-color: #002e2e;
+            border: 1px solid #00DBDD;
+            color: #00DBDD;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            margin: 0.25rem;
+            font-size: 0.875rem;
+        }
+
+        .preference-tag button {
+            background-color: transparent !important;
+            color: #ff6b6b !important;
+            margin-left: 0.5rem;
+            padding: 0;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+    const { marked } = window;
+    const { Cookies } = window;
+    const { v4: uuidv4 } = window.uuid;
+
+    const USER_COOKIE = "activity_user_id";
+
+    function App() {
+        const [userId, setUserId] = useState("");
+        const [isLoggedIn, setIsLoggedIn] = useState(false);
+        const [error, setError] = useState("");
+
+        useEffect(() => {
+            const savedUserId = Cookies.get(USER_COOKIE);
+            if (savedUserId) {
+                setUserId(savedUserId);
+                setIsLoggedIn(true);
+            }
+        }, []);
+
+        const handleLogin = () => {
+            if (userId.trim().length < 3) {
+                setError("User ID must be at least 3 characters");
+                return;
+            }
+            Cookies.set(USER_COOKIE, userId, { expires: 7 });
+            setError("");
+            setIsLoggedIn(true);
+        };
+
+        const handleLogout = () => {
+            Cookies.remove(USER_COOKIE);
+            setUserId("");
+            setIsLoggedIn(false);
+        };
+
+        return (
+            <div className="h-screen">
+                <div className="h-full flex flex-col">
+                    <div className="flex justify-between items-center py-4 px-4 flex-shrink-0 shadow-sm">
+                        <div className="flex items-center">
+                            <h1 className="text-3xl font-bold text-blue-600">Activity Recommendation</h1>
+                            {isLoggedIn && <span className="text-sm text-gray-500 ml-4">User: {userId}</span>}
+                        </div>
+                        {isLoggedIn && (
+                            <button
+                                onClick={handleLogout}
+                                className="py-2 px-4 rounded-md focus:outline-none"
+                            >
+                                Logout
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="flex-grow overflow-hidden">
+                        {!isLoggedIn ? (
+                            <LoginScreen
+                                userId={userId}
+                                setUserId={setUserId}
+                                handleLogin={handleLogin}
+                                error={error}
+                            />
+                        ) : (
+                            <MainInterface userId={userId} />
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    function LoginScreen({ userId, setUserId, handleLogin, error }) {
+        return (
+            <div className="max-w-md mx-auto mt-16 p-8 rounded-lg shadow-md bg-gray-50">
+                <h2 className="text-xl font-semibold mb-4">Welcome to Activity Recommendation</h2>
+                <p className="text-gray-600 mb-6">Please enter your user ID to continue</p>
+
+                <div className="mb-4">
+                    <label htmlFor="userId" className="block text-sm font-medium text-gray-700 mb-1">
+                        User ID
+                    </label>
+                    <input
+                        type="text"
+                        id="userId"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none"
+                        value={userId}
+                        onChange={(e) => setUserId(e.target.value)}
+                        placeholder="Enter your user ID"
+                        onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+                    />
+                </div>
+
+                {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+
+                <button
+                    onClick={handleLogin}
+                    className="w-full py-2 px-4 rounded-md focus:outline-none"
+                >
+                    Continue
+                </button>
+            </div>
+        );
+    }
+
+    function MainInterface({ userId }) {
+        const [activities, setActivities] = useState([]);
+        const [currentSession, setCurrentSession] = useState(null);
+        const [selectedActivity, setSelectedActivity] = useState(null);
+        const [loading, setLoading] = useState(true);
+
+        const fetchActivities = useCallback(async (showLoading = true) => {
+            try {
+                if (showLoading) setLoading(true);
+                const response = await fetch(`/activities/${userId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setActivities(data.suggestions || []);
+                }
+            } catch (err) {
+                console.error("Error fetching activities:", err);
+            } finally {
+                if (showLoading) setLoading(false);
+            }
+        }, [userId]);
+
+        const refreshActivities = useCallback(() => {
+            fetchActivities(false);
+        }, [fetchActivities]);
+
+        useEffect(() => {
+            fetchActivities();
+        }, [fetchActivities]);
+
+        const startNewSession = () => {
+            setSelectedActivity(null);
+            setCurrentSession({
+                id: uuidv4(),
+                messages: [],
+                isStreaming: false
+            });
+        };
+
+        const closeSession = () => {
+            setCurrentSession(null);
+            fetchActivities();
+        };
+
+        const viewActivity = (activity) => {
+            setCurrentSession(null);
+            setSelectedActivity(activity);
+        };
+
+        return (
+            <div className="h-full flex">
+                <div className="relative border-r overflow-y-auto w-80">
+                    <div className="p-4 border-b">
+                        <button
+                            onClick={startNewSession}
+                            className="w-full py-2 px-4 rounded-md focus:outline-none"
+                        >
+                            New Recommendation
+                        </button>
+                    </div>
+
+                    <div className="p-4 border-b">
+                        <h3 className="text-sm font-semibold mb-2" style={{color: '#00DBDD'}}>Previous Recommendations</h3>
+                    </div>
+
+                    <div className="overflow-y-auto">
+                        {loading ? (
+                            <div className="text-center p-8 text-gray-500">
+                                <svg className="animate-spin h-8 w-8 mx-auto mb-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Loading...
+                            </div>
+                        ) : activities.length === 0 ? (
+                            <div className="text-center p-8 text-gray-500">
+                                No recommendations yet. Start a new one!
+                            </div>
+                        ) : (
+                            <ul className="divide-y divide-gray-200">
+                                {activities.map((activity, index) => (
+                                    <li
+                                        key={index}
+                                        className="p-4 hover:bg-gray-50 cursor-pointer"
+                                        onClick={() => viewActivity(activity)}
+                                    >
+                                        <h4 className="font-medium truncate">{activity.userQuestion}</h4>
+                                        <p className="text-sm text-gray-500 truncate-2 mt-1">
+                                            {activity.answer?.substring(0, 100)}...
+                                        </p>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                </div>
+
+                <div className="flex-1">
+                    {currentSession ? (
+                        <ChatScreen
+                            session={currentSession}
+                            setSession={setCurrentSession}
+                            userId={userId}
+                            onClose={closeSession}
+                            onComplete={refreshActivities}
+                        />
+                    ) : selectedActivity ? (
+                        <ActivityView
+                            activity={selectedActivity}
+                            onNewRecommendation={startNewSession}
+                        />
+                    ) : (
+                        <div className="h-full flex items-center justify-center bg-gray-50">
+                            <div className="text-center p-8">
+                                <h3 className="text-xl font-medium text-gray-700 mb-2">Activity Recommendation Engine</h3>
+                                <p className="text-gray-500 mb-4">Get personalized activity suggestions from our AI agents</p>
+                                <button
+                                    onClick={startNewSession}
+                                    className="py-2 px-6 rounded-md focus:outline-none"
+                                >
+                                    Get Recommendations
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    function ActivityView({ activity, onNewRecommendation }) {
+        return (
+            <div className="chat-container">
+                <div className="header-area p-4 border-b">
+                    <h2 className="text-xl font-semibold" style={{color: '#00DBDD'}}>
+                        Previous Recommendation
+                    </h2>
+                </div>
+
+                <div className="message-area bg-gray-50">
+                    <div className="chat-message-wrapper">
+                        <div className="chat-message user-message">
+                            <div>{activity.userQuestion}</div>
+                        </div>
+                        <div className="chat-message ai-message">
+                            <div dangerouslySetInnerHTML={{ __html: marked.parse(activity.answer || '') }}></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="input-area p-4 border-t">
+                    <button
+                        onClick={onNewRecommendation}
+                        className="w-full py-3 px-4 rounded-md focus:outline-none"
+                    >
+                        Start New Recommendation
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    function ChatScreen({ session, setSession, userId, onClose, onComplete }) {
+        const [messageInput, setMessageInput] = useState("");
+        const [messages, setMessages] = useState([]);
+        const [isStreaming, setIsStreaming] = useState(false);
+        const [currentResponse, setCurrentResponse] = useState("");
+        const [statusMessages, setStatusMessages] = useState([]);
+        const [error, setError] = useState(null);
+
+        const messagesEndRef = useRef(null);
+        const eventSourceRef = useRef(null);
+        const responseRef = useRef("");
+        const statusMessagesRef = useRef([]);
+        const onCompleteRef = useRef(onComplete);
+
+        // Keep the ref updated with the latest callback
+        useEffect(() => {
+            onCompleteRef.current = onComplete;
+        }, [onComplete]);
+
+        const startNewRecommendation = () => {
+            setMessages([]);
+            setMessageInput("");
+            setCurrentResponse("");
+            setStatusMessages([]);
+            setError(null);
+            responseRef.current = "";
+            statusMessagesRef.current = [];
+            // Update session with new ID
+            setSession({
+                id: uuidv4(),
+                messages: [],
+                isStreaming: false
+            });
+        };
+
+        useEffect(() => {
+            return () => {
+                if (eventSourceRef.current) {
+                    eventSourceRef.current.close();
+                }
+            };
+        }, []);
+
+        useEffect(() => {
+            if (messagesEndRef.current) {
+                messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+            }
+        }, [messages, currentResponse, statusMessages]);
+
+        const sendMessage = async (content) => {
+            if (!content.trim() || isStreaming) return;
+
+            const userMessage = { type: "user", message: content };
+            setMessages(prev => [...prev, userMessage]);
+            setMessageInput("");
+            setIsStreaming(true);
+            setCurrentResponse("");
+            responseRef.current = "";
+            setStatusMessages([]);
+            statusMessagesRef.current = [];
+            setError(null);
+
+            try {
+                const response = await fetch(`/activities/${userId}/${session.id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: content })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
+
+                // Connect to SSE updates stream
+                eventSourceRef.current = new EventSource(`/updates/${session.id}`);
+
+                eventSourceRef.current.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+
+                        switch (data["@type"]) {
+                            case "S": // StatusUpdate
+                                statusMessagesRef.current = [...statusMessagesRef.current, data.msg];
+                                setStatusMessages(prev => [...prev, data.msg]);
+                                break;
+                            case "LS": // LlmResponseStart
+                                responseRef.current = "";
+                                setCurrentResponse("");
+                                break;
+                            case "LD": // LlmResponseDelta
+                                responseRef.current += data.response;
+                                setCurrentResponse(responseRef.current);
+                                break;
+                            case "LE": // LlmResponseEnd
+                                const finalResponse = responseRef.current;
+                                setMessages(prev => {
+                                    // Get current status messages and convert to permanent messages
+                                    const statusMsgs = statusMessagesRef.current.map(s => ({ type: "status", message: s }));
+                                    return [...prev, ...statusMsgs, { type: "ai", message: finalResponse }];
+                                });
+                                setCurrentResponse("");
+                                setStatusMessages([]);
+                                statusMessagesRef.current = [];
+                                responseRef.current = "";
+                                setIsStreaming(false);
+                                eventSourceRef.current.close();
+                                // Refresh the activities list using ref to avoid stale closure
+                                // Small delay to allow the view to be updated after workflow state is persisted
+                                setTimeout(() => {
+                                    if (onCompleteRef.current) onCompleteRef.current();
+                                }, 500);
+                                break;
+                        }
+                    } catch (e) {
+                        console.error("Error parsing SSE data:", e);
+                    }
+                };
+
+                eventSourceRef.current.onerror = (err) => {
+                    console.error("SSE error:", err);
+                    if (responseRef.current) {
+                        setMessages(prev => [...prev, { type: "ai", message: responseRef.current }]);
+                    }
+                    setIsStreaming(false);
+                    eventSourceRef.current.close();
+                };
+
+            } catch (err) {
+                console.error("Error sending message:", err);
+                setError("Failed to get a response. Please try again.");
+                setIsStreaming(false);
+            }
+        };
+
+        return (
+            <div className="chat-container">
+                <div className="header-area p-4 border-b flex items-center justify-between">
+                    <h2 className="text-xl font-semibold" style={{color: '#00DBDD'}}>
+                        Activity Recommendation Session
+                    </h2>
+                    <button
+                        onClick={onClose}
+                        className="py-1 px-3 rounded-md text-sm"
+                    >
+                        Close
+                    </button>
+                </div>
+
+                <div className="message-area bg-gray-50">
+                    {messages.length === 0 && !isStreaming ? (
+                        <div className="text-center p-8 text-gray-500">
+                            Ask for an activity recommendation!
+                        </div>
+                    ) : (
+                        <div className="chat-message-wrapper">
+                            {messages.map((msg, index) => (
+                                <div
+                                    key={index}
+                                    className={`chat-message ${msg.type === 'user' ? 'user-message' : msg.type === 'status' ? 'status-message' : 'ai-message'}`}
+                                >
+                                    {msg.type === 'ai' ? (
+                                        <div dangerouslySetInnerHTML={{ __html: marked.parse(msg.message) }}></div>
+                                    ) : (
+                                        <div>{msg.message}</div>
+                                    )}
+                                </div>
+                            ))}
+
+                            {statusMessages.map((status, index) => (
+                                <div key={`status-${index}`} className="chat-message status-message">
+                                    {status}
+                                </div>
+                            ))}
+
+                            {currentResponse && (
+                                <div className="chat-message ai-message">
+                                    <div dangerouslySetInnerHTML={{ __html: marked.parse(currentResponse) }}></div>
+                                    <span className="typing-animation"></span>
+                                </div>
+                            )}
+
+                            {isStreaming && !currentResponse && statusMessages.length === 0 && (
+                                <div className="chat-message status-message typing-animation">
+                                    Connecting to recommendation engine...
+                                </div>
+                            )}
+
+                            {error && (
+                                <div className="text-center p-2 text-red-500 text-sm">
+                                    {error}
+                                </div>
+                            )}
+                            <div ref={messagesEndRef} />
+                        </div>
+                    )}
+                </div>
+
+                <div className="input-area p-4 border-t">
+                    {messages.some(m => m.type === 'ai') && !isStreaming ? (
+                        <button
+                            onClick={startNewRecommendation}
+                            className="w-full py-3 px-4 rounded-md focus:outline-none"
+                        >
+                            Start New Recommendation
+                        </button>
+                    ) : (
+                        <div className="relative">
+                            <textarea
+                                className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-md focus:outline-none resize-none"
+                                placeholder="What kind of activity are you looking for?"
+                                rows="2"
+                                value={messageInput}
+                                onChange={(e) => setMessageInput(e.target.value)}
+                                onKeyPress={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        sendMessage(messageInput);
+                                    }
+                                }}
+                                disabled={isStreaming}
+                            ></textarea>
+                            <button
+                                className={`absolute right-3 bottom-3 send-button focus:outline-none`}
+                                onClick={() => sendMessage(messageInput)}
+                                disabled={isStreaming}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                </svg>
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+</script>
+</body>
+</html>

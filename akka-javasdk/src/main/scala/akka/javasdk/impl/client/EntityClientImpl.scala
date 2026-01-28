@@ -16,10 +16,12 @@ import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.japi.function
 import akka.javasdk.Metadata
+import akka.javasdk.NotificationPublisher.NotificationStream
 import akka.javasdk.client.ComponentDeferredMethodRef
 import akka.javasdk.client.ComponentDeferredMethodRef1
 import akka.javasdk.client.ComponentMethodRef
 import akka.javasdk.client.ComponentMethodRef1
+import akka.javasdk.client.ComponentStreamMethodRef
 import akka.javasdk.client.EventSourcedEntityClient
 import akka.javasdk.client.KeyValueEntityClient
 import akka.javasdk.client.TimedActionClient
@@ -37,6 +39,7 @@ import akka.runtime.sdk.spi.ComponentType
 import akka.runtime.sdk.spi.EntityRequest
 import akka.runtime.sdk.spi.EventSourcedEntityType
 import akka.runtime.sdk.spi.KeyValueEntityType
+import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.TimedActionRequest
 import akka.runtime.sdk.spi.TimedActionType
 import akka.runtime.sdk.spi.WorkflowType
@@ -200,6 +203,24 @@ private[javasdk] final case class WorkflowClientImpl(
 
   override def method[T, A1, R](methodRef: function.Function2[T, A1, Workflow.Effect[R]]): ComponentMethodRef1[A1, R] =
     createMethodRef2(methodRef)
+
+  override def notificationStream[T, R](
+      methodRef: function.Function[T, NotificationStream[R]]): ComponentStreamMethodRef[R] = {
+    val method = MethodRefResolver.resolveMethodRef(methodRef)
+    val expectedComponentSuperclass = classOf[Workflow[_]]
+    val declaringClass = method.getDeclaringClass
+    if (!expectedComponentSuperclass.isAssignableFrom(declaringClass)) {
+      throw new IllegalArgumentException(s"$declaringClass is not a subclass of $expectedComponentSuperclass")
+    }
+    val componentId = ComponentDescriptorFactory.readComponentIdValue(declaringClass)
+    val returnType = Reflect.getReturnType(declaringClass, method)
+    val req = new EntityRequest(componentId, entityId, "", BytesPayload.empty, SpiMetadata.empty)
+    () =>
+      entityClient
+        .notificationStream(req)
+        .map(reply => serializer.fromBytes[R](returnType, reply.payload))
+        .asJava
+  }
 }
 
 /**

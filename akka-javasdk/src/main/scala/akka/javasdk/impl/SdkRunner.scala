@@ -34,6 +34,7 @@ import akka.http.scaladsl.model.headers.RawHeader
 import akka.javasdk.BuildInfo
 import akka.javasdk.DependencyProvider
 import akka.javasdk.JwtClaims
+import akka.javasdk.NotificationPublisher
 import akka.javasdk.Principals
 import akka.javasdk.Retries
 import akka.javasdk.Sanitizer
@@ -433,6 +434,12 @@ private final class Sdk(
           sideEffectingComponentInjects(context.asInstanceOf[WorkflowContextImpl].telemetryContext).orElse {
             // remember to update component type API doc and docs if changing the set of injectables
             case p if p == classOf[WorkflowContext] => context
+            case p if p == classOf[NotificationPublisher[_]] =>
+              new NotificationPublisher[Any] {
+                override def publish(msg: Any): Unit = {
+                  factoryContext.publishToTopic.apply(serializer.toBytes(msg))
+                }
+              }
           }
         }
 

@@ -7,8 +7,11 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpResponses;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import demo.multiagent.application.ActivityView;
 import demo.multiagent.application.AgentTeamWorkflow;
+import demo.multiagent.application.AgentTeamWorkflow.AgentTeamNotification;
 import demo.multiagent.application.PreferencesEntity;
 import java.util.List;
 import java.util.UUID;
@@ -44,10 +47,8 @@ public class ActivityEndpoint {
     this.componentClient = componentClient;
   }
 
-  @Post("/activities/{userId}")
-  public HttpResponse suggestActivities(String userId, Request request) {
-    var sessionId = UUID.randomUUID().toString();
-
+  @Post("/activities/{userId}/{sessionId}")
+  public HttpResponse suggestActivities(String userId, String sessionId, Request request) {
     var res = componentClient
       .forWorkflow(sessionId)
       .method(AgentTeamWorkflow::start)
@@ -87,5 +88,45 @@ public class ActivityEndpoint {
       .invoke(new PreferencesEntity.AddPreference(request.preference()));
 
     return HttpResponses.created();
+  }
+
+  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
+  @JsonSubTypes(
+    {
+      @JsonSubTypes.Type(value = UpdateEvent.StatusUpdate.class, name = "S"),
+      @JsonSubTypes.Type(value = UpdateEvent.LlmResponseStart.class, name = "LS"),
+      @JsonSubTypes.Type(value = UpdateEvent.LlmResponseDelta.class, name = "LD"),
+      @JsonSubTypes.Type(value = UpdateEvent.LlmResponseEnd.class, name = "LE"),
+    }
+  )
+  public sealed interface UpdateEvent {
+    record StatusUpdate(String msg) implements UpdateEvent {}
+
+    record LlmResponseStart() implements UpdateEvent {}
+
+    record LlmResponseDelta(String response) implements UpdateEvent {}
+
+    record LlmResponseEnd() implements UpdateEvent {}
+  }
+
+  @Get("/updates/{sessionId}")
+  public HttpResponse updates(String sessionId) {
+    return HttpResponses.serverSentEvents(
+      componentClient
+        .forWorkflow(sessionId)
+        .notificationStream(AgentTeamWorkflow::updates)
+        .source()
+        .map(notification ->
+          switch (notification) {
+            case AgentTeamNotification.LlmResponseDelta llmResponseDelta -> new UpdateEvent.LlmResponseDelta(
+              llmResponseDelta.response()
+            );
+            case AgentTeamNotification.LlmResponseEnd __ -> new UpdateEvent.LlmResponseEnd();
+            case AgentTeamNotification.LlmResponseStart __ -> new UpdateEvent.LlmResponseStart();
+            case AgentTeamNotification.StatusUpdate statusUpdate -> new UpdateEvent.StatusUpdate(
+              statusUpdate.msg()
+            );
+          })
+    );
   }
 }

@@ -30,13 +30,13 @@ public class SummarizerAgent extends Agent {
     """.formatted(userQuery);
   }
 
-  public Effect<String> summarize(Request request) {
+  public StreamEffect summarize(Request request) {
     var allResponses = request.agentsResponses
       .stream()
       .filter(response -> !response.startsWith("ERROR"))
       .collect(Collectors.joining("\n\n"));
 
-    return effects()
+    return streamEffects()
       .systemMessage(buildSystemMessage(request.originalQuery))
       .userMessage("Summarize the following: \n" + allResponses)
       .thenReply();

@@ -20,6 +20,8 @@ import akkajavasdk.components.workflowentities.FailingCounterEntity;
 import akkajavasdk.components.workflowentities.Transfer;
 import akkajavasdk.components.workflowentities.TransferState;
 import akkajavasdk.components.workflowentities.TransferWorkflow;
+import akkajavasdk.components.workflowentities.TransferWorkflow.TransferNotification.DepositCompleted;
+import akkajavasdk.components.workflowentities.TransferWorkflow.TransferNotification.WithdrawCompleted;
 import akkajavasdk.components.workflowentities.TransferWorkflowWithFraudDetection;
 import akkajavasdk.components.workflowentities.WalletEntity;
 import akkajavasdk.components.workflowentities.WorkflowCallingOtherWorkflowCommandHandler;
@@ -35,6 +37,7 @@ import akkajavasdk.components.workflowentities.WorkflowWithoutInitialState;
 import akkajavasdk.components.workflowentities.hierarchy.TextWorkflow;
 import akkajavasdk.components.workflowentities.legacy.TransferWorkflowWithoutInputs;
 import akkajavasdk.components.workflowentities.legacy.WorkflowWithRecoverStrategyAndAsyncCall;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -129,6 +132,43 @@ public class WorkflowTest extends TestKitSupport {
     var isDeletedAfterDeletion =
         componentClient.forWorkflow(transferId).method(TransferWorkflow::hasBeenDeleted).invoke();
     assertThat(isDeletedAfterDeletion).isTrue();
+  }
+
+  @Test
+  public void shouldNotifyAboutTheProgress() {
+    var walletId1 = randomId();
+    var walletId2 = randomId();
+    createWallet(walletId1, 100);
+    createWallet(walletId2, 100);
+    var transferId = randomTransferId();
+    var transfer = new Transfer(walletId1, walletId2, 10);
+
+    var notifications = new ArrayList<TransferWorkflow.TransferNotification>();
+
+    componentClient
+        .forWorkflow(transferId)
+        .notificationStream(TransferWorkflow::updates)
+        .source()
+        .runForeach(notifications::add, testKit.getMaterializer());
+
+    Message response =
+        componentClient
+            .forWorkflow(transferId)
+            .method(TransferWorkflow::startTransfer)
+            .invoke(transfer);
+
+    assertThat(response.text()).contains("transfer started");
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(20, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              assertThat(notifications)
+                  .containsOnly(
+                      new WithdrawCompleted(transfer.from(), transfer.amount()),
+                      new DepositCompleted(transfer.to(), transfer.amount()));
+            });
   }
 
   @Test

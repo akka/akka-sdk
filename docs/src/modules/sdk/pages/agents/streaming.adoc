@@ -35,5 +35,21 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 <2> Concatenate the list of string into a single string.
 <3> Return the stream of grouped tokens as a streaming HTTP response.
 
-NOTE: Token streams are designed for direct agent calls from an endpoint. You can't use a token stream when you have an intermediate workflow between the endpoint and the agent.
+== Streaming from the Workflow
+
+When a workflow orchestrates agent calls, you can bridge the agent's token stream to the workflow's notification system. This allows clients to receive real-time LLM responses while still benefiting from workflow orchestration.
+
+[source,java,indent=0]
+----
+include::example$doc-snippets/src/main/java/com/example/application/ActivityWorkflow.java[tag=workflow-agent-stream-notification]
+----
+<1> Define notification types using a sealed interface. `LlmResponseStart` and `LlmResponseEnd` signal the streaming lifecycle, `LlmResponseDelta` carries token chunks, and `StatusUpdate` is for workflow progress updates.
+<2> Inject `NotificationPublisher` typed with the notification interface.
+<3> Get the token source from the agent.
+<4> Publish lifecycle notifications to signal when streaming starts and ends.
+<5> Use `publishTokenStream` to bridge the token source to notifications. Define parameters to reduce the overhead of sending each token as a separate notification.
+<6> Persist the final answer from the agent in the workflow state.
+
+Clients subscribe to these notifications as described in xref:workflows.adoc#_subscribing_to_notifications[Subscribing to notifications]. The client can handle each notification type appropriately—initializing the UI on `LlmResponseStart`, appending text on `LlmResponseDelta`, and finalizing on `LlmResponseEnd`.
+
 

@@ -8,12 +8,16 @@ import static akka.Done.done;
 
 import akka.Done;
 import akka.javasdk.CommandException;
+import akka.javasdk.NotificationPublisher;
+import akka.javasdk.NotificationPublisher.NotificationStream;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.StepName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import akkajavasdk.components.MyException;
 import akkajavasdk.components.actions.echo.Message;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,16 +25,29 @@ import org.slf4j.LoggerFactory;
 @Component(id = "transfer-workflow")
 public class TransferWorkflow extends Workflow<TransferState> {
 
-  private final String withdrawStepName = "withdraw";
-
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
   private final ComponentClient componentClient;
+  private final NotificationPublisher<TransferNotification> notificationPublisher;
 
   private final boolean constructedOnVt = Thread.currentThread().isVirtual();
 
-  public TransferWorkflow(ComponentClient componentClient) {
+  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
+  @JsonSubTypes({
+    @JsonSubTypes.Type(value = TransferNotification.WithdrawCompleted.class, name = "W"),
+    @JsonSubTypes.Type(value = TransferNotification.DepositCompleted.class, name = "D"),
+  })
+  public sealed interface TransferNotification {
+    record WithdrawCompleted(String from, int amount) implements TransferNotification {}
+
+    record DepositCompleted(String to, int amount) implements TransferNotification {}
+  }
+
+  public TransferWorkflow(
+      ComponentClient componentClient,
+      NotificationPublisher<TransferNotification> notificationPublisher) {
     this.componentClient = componentClient;
+    this.notificationPublisher = notificationPublisher;
   }
 
   public Effect<Message> startTransfer(Transfer transfer) {
@@ -57,6 +74,9 @@ public class TransferWorkflow extends Workflow<TransferState> {
         .method(WalletEntity::withdraw)
         .invoke(withdraw.amount);
 
+    notificationPublisher.publish(
+        new TransferNotification.WithdrawCompleted(withdraw.from, withdraw.amount));
+
     var state = currentState().withLastStep("withdrawn").asAccepted();
     return stepEffects()
         .updateState(state)
@@ -71,6 +91,9 @@ public class TransferWorkflow extends Workflow<TransferState> {
         .forKeyValueEntity(deposit.to)
         .method(WalletEntity::deposit)
         .invoke(deposit.amount);
+
+    notificationPublisher.publish(
+        new TransferNotification.DepositCompleted(deposit.to, deposit.amount));
 
     var state = currentState().withLastStep("deposited").asFinished();
     return stepEffects().updateState(state).thenTransitionTo(TransferWorkflow::logAndStop);
@@ -106,6 +129,10 @@ public class TransferWorkflow extends Workflow<TransferState> {
       return effects().reply(TransferState.EMPTY);
     }
     return effects().reply(currentState());
+  }
+
+  public NotificationStream<TransferNotification> updates() {
+    return notificationPublisher.stream();
   }
 
   public Effect<Done> delete() {
