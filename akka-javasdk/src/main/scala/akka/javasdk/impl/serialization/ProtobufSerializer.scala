@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.serialization
 
+import java.util.concurrent.ConcurrentHashMap
+
 import akka.annotation.InternalApi
 import akka.javasdk.impl.AnySupport
 import akka.runtime.sdk.spi.BytesPayload
@@ -13,6 +15,59 @@ import com.google.protobuf.util.JsonFormat
 
 /**
  * INTERNAL API
+ *
+ * Stateful protobuf serializer that maintains a registry of protobuf message types for deserialization without knowing
+ * the expected type upfront. Used for event replay in Event Sourced Entities with protobuf events.
+ */
+@InternalApi
+final class ProtobufSerializer {
+  import ProtobufSerializer._
+
+  // Maps protobuf full name (e.g., "akkajavasdk.serialization.CustomerCreated") to the Java class
+  val reversedTypeHints: ConcurrentHashMap[String, Class[_ <: GeneratedMessageV3]] =
+    new ConcurrentHashMap[String, Class[_ <: GeneratedMessageV3]]()
+
+  /**
+   * Register a protobuf message type for later deserialization without knowing the expected type. The type is extracted
+   * from the protobuf descriptor.
+   */
+  def registerProtoType(clz: Class[_ <: GeneratedMessageV3]): Unit = {
+    val descriptor = clz
+      .getMethod("getDescriptor")
+      .invoke(null)
+      .asInstanceOf[com.google.protobuf.Descriptors.Descriptor]
+    val fullName = descriptor.getFullName
+    reversedTypeHints.put(fullName, clz)
+  }
+
+  /**
+   * Deserialize bytes to a protobuf message based on the content type. Requires that the type was previously registered
+   * via [[registerProtoType]].
+   */
+  def fromBytes(bytesPayload: BytesPayload): GeneratedMessageV3 = {
+    if (!isProtobuf(bytesPayload))
+      throw new IllegalArgumentException(
+        s"BytesPayload with contentType [${bytesPayload.contentType}] " +
+        s"cannot be decoded as protobuf, must start with [$ProtobufContentTypePrefix]")
+
+    val fullName = stripProtobufContentTypePrefix(bytesPayload.contentType)
+    val typeClass = reversedTypeHints.get(fullName)
+    if (typeClass eq null)
+      throw new IllegalStateException(
+        s"Cannot decode [${bytesPayload.contentType}] protobuf message type. " +
+        s"Class mapping not found. Make sure the protobuf event type is declared in @ProtoEventType annotation.")
+    else
+      AnySupport.decodeJavaProtobuf(bytesPayload, typeClass)
+  }
+
+  private def stripProtobufContentTypePrefix(contentType: String): String =
+    contentType.stripPrefix(ProtobufContentTypePrefix)
+}
+
+/**
+ * INTERNAL API
+ *
+ * Static utility methods for protobuf serialization.
  */
 @InternalApi
 object ProtobufSerializer {

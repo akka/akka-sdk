@@ -91,6 +91,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
     componentDescriptor: ComponentDescriptor,
     entityStateType: Class[S],
     regionInfo: RegionInfo,
+    allowedProtoEventTypes: Seq[Class[_]],
     factory: EventSourcedEntityContext => ES)
     extends SpiEventSourcedEntity {
   import EventSourcedEntityImpl._
@@ -103,6 +104,23 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
 
   private def entity: EventSourcedEntity[AnyRef, AnyRef] =
     router.entity
+
+  /**
+   * Validate that events are of allowed types when @ProtoEventTypes is used. Throws IllegalArgumentException if an
+   * event is not one of the declared types.
+   */
+  private def validateProtoEventTypes(events: Iterable[Any]): Unit = {
+    if (allowedProtoEventTypes.nonEmpty) {
+      events.foreach { event =>
+        val eventClass = event.getClass
+        if (!allowedProtoEventTypes.exists(_.isAssignableFrom(eventClass))) {
+          throw new IllegalArgumentException(
+            s"Event Sourced Entity [$componentId] tried to persist event of type [${eventClass.getName}] " +
+            s"which is not declared in @ProtoEventTypes. Allowed types are: [${allowedProtoEventTypes.map(_.getName).mkString(", ")}]")
+        }
+      }
+    }
+  }
 
   override def emptyState: SpiEventSourcedEntity.State =
     entity.emptyState()
@@ -160,6 +178,9 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
       var currentSequence = command.sequenceNumber
 
       def emitEvents(events: Iterable[Any], eventsMetadata: Iterable[Metadata], deleteEntity: Boolean) = {
+        // Validate proto event types if @ProtoEventTypes is used
+        validateProtoEventTypes(events)
+
         var updatedState = state
         val eventsAndMetadata =
           if (eventsMetadata.isEmpty)

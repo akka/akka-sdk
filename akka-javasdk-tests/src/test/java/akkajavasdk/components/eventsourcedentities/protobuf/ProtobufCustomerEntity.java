@@ -5,6 +5,7 @@
 package akkajavasdk.components.eventsourcedentities.protobuf;
 
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.ProtoEventTypes;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akkajavasdk.protocol.SerializationTestProtos.CustomerCreated;
 import akkajavasdk.protocol.SerializationTestProtos.CustomerEmailChanged;
@@ -19,6 +20,7 @@ import com.google.protobuf.GeneratedMessageV3;
  * that protobuf serialization works correctly with event sourcing.
  */
 @ComponentId("protobuf-customer")
+@ProtoEventTypes({CustomerCreated.class, CustomerNameChanged.class, CustomerEmailChanged.class})
 public class ProtobufCustomerEntity extends EventSourcedEntity<CustomerState, GeneratedMessageV3> {
 
   @Override
@@ -95,6 +97,11 @@ public class ProtobufCustomerEntity extends EventSourcedEntity<CustomerState, Ge
     return effects().reply(currentState());
   }
 
+  /** Force entity restart - useful for testing event replay. */
+  public Effect<String> restart() {
+    throw new RuntimeException("Forceful restart for testing!");
+  }
+
   /**
    * Command handler that accepts a protobuf message directly as a parameter. This tests that
    * protobuf messages can be passed through the component client as command parameters.
@@ -123,10 +130,22 @@ public class ProtobufCustomerEntity extends EventSourcedEntity<CustomerState, Ge
         .thenReply(__ -> "Customer created from protobuf with number: " + command.getNumber());
   }
 
+  /**
+   * Command handler that tries to persist an event type NOT listed in @ProtoEventTypes annotation.
+   * This should fail at runtime with a validation error.
+   */
+  public Effect<String> persistInvalidEventType(PersistInvalidEventCommand command) {
+    // SimpleMessage is NOT in the @ProtoEventTypes annotation, so this should fail
+    var invalidEvent = SimpleMessage.newBuilder().setText(command.text()).setNumber(42).build();
+    return effects().persist(invalidEvent).thenReply(__ -> "This should not be reached");
+  }
+
   // Command records (using Java records as input)
   public record CreateCustomerCommand(String name, String email) {}
 
   public record ChangeNameCommand(String newName) {}
 
   public record ChangeEmailCommand(String newEmail) {}
+
+  public record PersistInvalidEventCommand(String text) {}
 }
