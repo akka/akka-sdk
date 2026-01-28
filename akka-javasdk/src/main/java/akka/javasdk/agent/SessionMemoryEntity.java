@@ -187,12 +187,13 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
         String message,
         int sizeInBytes,
         long historySizeInBytes,
-        List<SessionMessage.ToolCallRequest> toolCallRequests)
+        List<SessionMessage.ToolCallRequest> toolCallRequests,
+        Optional<String> thinking)
         implements Event {
 
       AiMessageAdded withHistorySizeInBytes(long newSize) {
         return new AiMessageAdded(
-            timestamp, componentId, message, sizeInBytes, newSize, toolCallRequests);
+            timestamp, componentId, message, sizeInBytes, newSize, toolCallRequests, thinking);
       }
     }
 
@@ -279,7 +280,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                                 aiMessage.text(),
                                 aiMessage.size(),
                                 0L, // filled in later
-                                aiMessage.toolCallRequests());
+                                aiMessage.toolCallRequests(),
+                                aiMessage.thinking());
 
                         case ToolCallResponse toolCallResponse ->
                             new Event.ToolResponseMessageAdded(
@@ -404,7 +406,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
             cmd.aiMessage.text(),
             cmd.aiMessage.size(),
             0L, // filled in later
-            Collections.emptyList()));
+            Collections.emptyList(),
+            cmd.aiMessage.thinking()));
 
     if (commandContext().sequenceNumber() > cmd.sequenceNumber
         && !currentState().messages.isEmpty()) {
@@ -443,7 +446,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                             aiMessage.text(),
                             aiMessage.size(),
                             0L, // filled in later
-                            aiMessage.toolCallRequests()));
+                            aiMessage.toolCallRequests(),
+                            aiMessage.thinking()));
                   }
                   case MultimodalUserMessage multimodalUserMessage -> {
                     events.add(
@@ -532,7 +536,11 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
           currentState()
               .addMessage(
                   new AiMessage(
-                      aiMsg.timestamp, aiMsg.message, aiMsg.componentId, aiMsg.toolCallRequests));
+                      aiMsg.timestamp,
+                      aiMsg.message,
+                      aiMsg.componentId,
+                      aiMsg.toolCallRequests,
+                      aiMsg.thinking));
 
       case Event.ToolResponseMessageAdded toolMsg ->
           currentState()
