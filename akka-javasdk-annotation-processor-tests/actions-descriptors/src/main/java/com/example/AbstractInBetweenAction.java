@@ -6,4 +6,4 @@ package com.example;
 
 import akka.javasdk.timedaction.TimedAction;
 
-public abstract class AbstracInbetweenAction extends TimedAction {}
+public abstract class AbstractInBetweenAction extends TimedAction {}
