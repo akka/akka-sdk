@@ -52,7 +52,7 @@ jobs:
 
       - name: Make docs and validate links
         # validate-links not enabled yet, waiting for fixing broken links
-        run: make clean managed local
+        run: make managed local
 
   vale:
     name: "Vale style checking"
