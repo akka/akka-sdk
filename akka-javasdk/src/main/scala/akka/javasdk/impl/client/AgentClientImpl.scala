@@ -104,10 +104,10 @@ private[javasdk] final case class AgentClientImpl(
       callMetadata,
       { (maybeMetadata, maybeRetrySetting, maybeArg) =>
         // Note: same path for 0 and 1 arg calls
+        // Agents use JSON for all data including protobuf messages (using built-in protobuf JSON rendering)
         val serializedPayload = maybeArg match {
           case Some(arg) =>
-            // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-            serializer.toBytes(arg)
+            serializer.toBytesAsJson(arg)
           case None =>
             BytesPayload.empty
         }
@@ -128,7 +128,6 @@ private[javasdk] final case class AgentClientImpl(
                       //rethrowing to catch it on the component client invocation level
                       throw serializer.exceptionFromBytes(value)
                     case None =>
-                      // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
                       serializer.fromBytes[R](returnType, reply.payload)
                   }
                 }
@@ -172,13 +171,12 @@ private[javasdk] final case class AgentClientImpl(
     import agentMethodProperties._
 
     (arg: A1) =>
-      // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-      val serializedPayload = serializer.toBytes(arg)
+      // Agents use JSON for all data including protobuf messages (using built-in protobuf JSON rendering)
+      val serializedPayload = serializer.toBytesAsJson(arg)
       agentClient
         .sendStream(
           new AgentRequest(componentId, sessionId, methodName, serializedPayload, MetadataImpl.toSpi(callMetadata)))
         .map { agentResult =>
-          // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
           serializer.fromBytes(classOf[String], agentResult.payload)
         }
         .asJava
@@ -212,10 +210,10 @@ private[javasdk] final case class AgentClientImpl(
       callMetadata,
       { (maybeMetadata, maybeRetrySetting, maybeArg) =>
         // Note: same path for 0 and 1 arg calls
+        // Agents use JSON for all data including protobuf messages (using built-in protobuf JSON rendering)
         val serializedPayload = maybeArg match {
           case Some(arg) =>
-            // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-            serializer.toBytes(arg)
+            serializer.toBytesAsJson(arg)
           case None =>
             BytesPayload.empty
         }
@@ -231,7 +229,6 @@ private[javasdk] final case class AgentClientImpl(
               agentClient
                 .send(new AgentRequest(agentId, sessionId, methodName, serializedPayload, toSpi(metadata)))
                 .map { reply =>
-                  // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
                   serializer.fromBytes[R](returnType, reply.payload)
                 }
             }
