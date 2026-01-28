@@ -23,6 +23,7 @@ import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptorFactory
 import akka.javasdk.impl.ComponentDescriptorFactory.readComponentDescription
 import akka.javasdk.impl.ComponentDescriptorFactory.readComponentName
+import akka.javasdk.impl.ErrorHandling.unwrapInvocationTargetExceptionCatcher
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.JsonSerializer
@@ -476,8 +477,10 @@ private[impl] object ViewDescriptorFactory {
                 tableUpdaterInstance._internalSetViewState(existingState.getOrElse(tableUpdaterInstance.emptyRow()))
 
                 val result =
-                  if (deleteHandler) method.invoke(tableUpdaterInstance)
-                  else method.invoke(tableUpdaterInstance, event)
+                  try {
+                    if (deleteHandler) method.invoke(tableUpdaterInstance)
+                    else method.invoke(tableUpdaterInstance, event)
+                  } catch unwrapInvocationTargetExceptionCatcher
 
                 result match {
                   case effect: ViewEffectImpl.PrimaryEffect[Any @unchecked] => effect

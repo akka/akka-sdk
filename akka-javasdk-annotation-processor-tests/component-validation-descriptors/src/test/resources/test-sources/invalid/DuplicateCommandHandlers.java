@@ -15,12 +15,12 @@ public class DuplicateCommandHandlers extends EventSourcedEntity<String, Duplica
   }
 
   // Duplicate command handler names (overloaded) - not allowed
-  public Effect create(String name) {
-    return effects().persist(new Event.Created(name));
+  public Effect<String> create(String name) {
+    return effects().persist(new Event.Created(name)).thenReply(__ -> "created");
   }
 
-  public Effect create() {
-    return effects().persist(new Event.Created("default"));
+  public Effect<String> create() {
+    return effects().persist(new Event.Created("default")).thenReply(__ -> "created");
   }
 
   public Event.Created onEvent(Event.Created event) {

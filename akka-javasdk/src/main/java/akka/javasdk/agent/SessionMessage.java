@@ -91,16 +91,29 @@ public sealed interface SessionMessage {
   record ToolCallRequest(String id, String name, String arguments) {}
 
   record AiMessage(
-      Instant timestamp, String text, String componentId, List<ToolCallRequest> toolCallRequests)
+      Instant timestamp,
+      String text,
+      String componentId,
+      List<ToolCallRequest> toolCallRequests,
+      Optional<String> thinking)
       implements SessionMessage {
 
+    public AiMessage(
+        Instant timestamp,
+        String text,
+        String componentId,
+        List<ToolCallRequest> toolCallRequests) {
+      this(timestamp, text, componentId, toolCallRequests, Optional.empty());
+    }
+
     public AiMessage(Instant timestamp, String text, String componentId) {
-      this(timestamp, text, componentId, List.of());
+      this(timestamp, text, componentId, List.of(), Optional.empty());
     }
 
     @Override
     public int size() {
-      var textLength = text == null ? 0 : SessionMessage.sizeInBytes(text);
+      int textLength = text == null ? 0 : SessionMessage.sizeInBytes(text);
+      int thinkingLength = thinking.map(SessionMessage::sizeInBytes).orElse(0);
       // calculating the length of tool call requests arguments
       // NOTE: not accounting for the real payload, only the arguments
       int argsLength =
@@ -112,10 +125,11 @@ public sealed interface SessionMessage {
                           req.arguments() == null ? 0 : SessionMessage.sizeInBytes(req.arguments()))
                   .sum();
 
-      return textLength + argsLength;
+      return textLength + thinkingLength + argsLength;
     }
   }
 
+  // FIXME do we need attributes here as well, for thinking signatures, when thinking is enabled?
   record ToolCallResponse(
       Instant timestamp, String componentId, String id, String name, String text)
       implements SessionMessage {

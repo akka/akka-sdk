@@ -42,11 +42,6 @@ import akka.javasdk.Tracing
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
 import akka.javasdk.agent.AgentRegistry
-import akka.javasdk.agent.PromptTemplate
-import akka.javasdk.agent.SessionMemoryEntity
-import akka.javasdk.agent.evaluator.HallucinationEvaluator
-import akka.javasdk.agent.evaluator.SummarizationEvaluator
-import akka.javasdk.agent.evaluator.ToxicityEvaluator
 import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.GrpcEndpoint
@@ -287,93 +282,6 @@ private object ComponentType {
   val TimedAction = "timed-action"
   val View = "view"
   val Agent = "agent"
-}
-
-/**
- * INTERNAL API
- */
-@InternalApi
-private object ComponentLocator {
-
-  // populated by annotation processor
-  private val ComponentDescriptorResourcePath = "META-INF/akka-javasdk-components.conf"
-  private val DescriptorComponentBasePath = "akka.javasdk.components"
-  private val DescriptorServiceSetupEntryPath = "akka.javasdk.service-setup"
-
-  private val logger = LoggerFactory.getLogger(getClass)
-
-  val providedComponents: Seq[Class[_]] = Seq(
-    classOf[SessionMemoryEntity],
-    classOf[PromptTemplate],
-    classOf[ToxicityEvaluator],
-    classOf[SummarizationEvaluator],
-    classOf[HallucinationEvaluator])
-
-  case class LocatedClasses(components: Seq[Class[_]], service: Option[Class[_]])
-
-  def locateUserComponents(system: ActorSystem[_]): LocatedClasses = {
-    val akkaComponentTypeAndBaseClasses: Map[String, Class[_]] =
-      Map(
-        ComponentType.HttpEndpoint -> classOf[AnyRef],
-        ComponentType.GrpcEndpoint -> classOf[AnyRef],
-        ComponentType.McpEndpoint -> classOf[AnyRef],
-        ComponentType.TimedAction -> classOf[TimedAction],
-        ComponentType.Consumer -> classOf[Consumer],
-        ComponentType.EventSourcedEntity -> classOf[EventSourcedEntity[_, _]],
-        ComponentType.Workflow -> classOf[Workflow[_]],
-        ComponentType.KeyValueEntity -> classOf[KeyValueEntity[_]],
-        ComponentType.View -> classOf[AnyRef],
-        ComponentType.Agent -> classOf[Agent])
-
-    // Alternative to but inspired by the stdlib SPI style of registering in META-INF/services
-    // since we don't always have top supertypes and want to inject things into component constructors
-    logger.info("Looking for component descriptors in [{}]", ComponentDescriptorResourcePath)
-
-    // Descriptor hocon has one entry per component type with a list of strings containing
-    // the concrete component classes for the given project
-    val descriptorConfig = ConfigFactory.load(ComponentDescriptorResourcePath)
-    if (!descriptorConfig.hasPath(DescriptorComponentBasePath))
-      throw new IllegalStateException(
-        "No components found. If you have any, it looks like your project needs to be recompiled. Run `mvn clean compile` and try again.")
-    val componentConfig = descriptorConfig.getConfig(DescriptorComponentBasePath)
-
-    val components: Seq[Class[_]] = akkaComponentTypeAndBaseClasses.flatMap {
-      case (componentTypeKey, componentTypeClass) =>
-        if (componentConfig.hasPath(componentTypeKey)) {
-          componentConfig.getStringList(componentTypeKey).asScala.map { className =>
-            try {
-              val componentClass = system.dynamicAccess.getClassFor(className)(ClassTag(componentTypeClass)).get
-              logger.debug("Found and loaded component class: [{}]", componentClass)
-              componentClass
-            } catch {
-              case ex: ClassNotFoundException =>
-                throw new IllegalStateException(
-                  s"Could not load component class [$className]. The exception might appear after rename or repackaging operation. " +
-                  "It looks like your project needs to be recompiled. Run `mvn clean compile` and try again.",
-                  ex)
-            }
-          }
-        } else
-          Seq.empty
-    }.toSeq
-
-    val withBuildInComponents = if (components.exists(classOf[Agent].isAssignableFrom)) {
-      logger.debug("Agent component detected, adding provided components")
-      providedComponents ++ components
-    } else {
-      components
-    }
-
-    if (descriptorConfig.hasPath(DescriptorServiceSetupEntryPath)) {
-      // central config/lifecycle class
-      val serviceSetupClassName = descriptorConfig.getString(DescriptorServiceSetupEntryPath)
-      val serviceSetup = system.dynamicAccess.getClassFor[AnyRef](serviceSetupClassName).get
-      logger.debug("Found and loaded service class setup: [{}]", serviceSetup)
-      LocatedClasses(withBuildInComponents, Some(serviceSetup))
-    } else {
-      LocatedClasses(withBuildInComponents, None)
-    }
-  }
 }
 
 /**

@@ -12,6 +12,10 @@ Current versions
 
 == January 2026
 
+* Akka CLI 3.0.45
+- Support for configuring custom JVM Truststore
+- Command for bringing up region
+
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.12[Akka SDK 3.5.12]
 - agent image input mime type support
 - replication filters for Event Sourced Entity and Key Value Entity

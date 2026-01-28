@@ -111,7 +111,7 @@ public class KeyValueEntityValidations {
 
   private static boolean isEffectMethod(MethodDef method) {
     String returnTypeName = method.getReturnType().getQualifiedName();
-    return returnTypeName.equals("akka.javasdk.keyvalueentity.KeyValueEntity.Effect")
-        || returnTypeName.equals("akka.javasdk.keyvalueentity.KeyValueEntity.ReadOnlyEffect");
+    return returnTypeName.startsWith("akka.javasdk.keyvalueentity.KeyValueEntity.Effect")
+        || returnTypeName.startsWith("akka.javasdk.keyvalueentity.KeyValueEntity.ReadOnlyEffect");
   }
 }

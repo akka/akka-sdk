@@ -15,6 +15,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
 import scala.jdk.DurationConverters.JavaDurationOps
+import scala.jdk.OptionConverters.RichOption
 import scala.jdk.OptionConverters.RichOptional
 import scala.util.control.NonFatal
 
@@ -58,6 +59,7 @@ import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAgent.ContextMessage
 import akka.runtime.sdk.spi.SpiAgent.GuardrailFailure
+import akka.runtime.sdk.spi.SpiAgent.ImageLoadingFailure
 import akka.runtime.sdk.spi.SpiAgent.InternalFailure
 import akka.runtime.sdk.spi.SpiAgent.McpToolCallExecutionFailure
 import akka.runtime.sdk.spi.SpiAgent.ModelFailure
@@ -257,6 +259,7 @@ private[impl] final class AgentImpl[A <: Agent](
             val userMessageAt = Instant.now()
 
             val agentRole = Reflect.readAgentRole(agent.getClass)
+            val spiImageLoader = req.imageLoader.map(toSpiImageLoader)
             new SpiAgent.RequestModelEffect(
               modelProvider = spiModelProvider,
               systemMessage = systemMessage,
@@ -272,7 +275,8 @@ private[impl] final class AgentImpl[A <: Agent](
               replyMetadata = metadata,
               onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, userMessageAt, agentRole, results),
               requestGuardrails = guardrails.modelRequestGuardrails,
-              responseGuardrails = guardrails.modelResponseGuardrails)
+              responseGuardrails = guardrails.modelResponseGuardrails,
+              imageLoader = spiImageLoader)
 
           case NoPrimaryEffect =>
             errorOrReply match {
@@ -324,6 +328,27 @@ private[impl] final class AgentImpl[A <: Agent](
       case ImageMessageContent.DetailLevel.AUTO => SpiAgent.ImageMessageContent.Auto
     }
   }
+
+  private def fromSpiDetailLevel(level: SpiAgent.ImageMessageContent.DetailLevel): ImageMessageContent.DetailLevel =
+    level match {
+      case SpiAgent.ImageMessageContent.Low  => ImageMessageContent.DetailLevel.LOW
+      case SpiAgent.ImageMessageContent.High => ImageMessageContent.DetailLevel.HIGH
+      case SpiAgent.ImageMessageContent.Auto => ImageMessageContent.DetailLevel.AUTO
+    }
+
+  private def toSpiImageLoader(javaImageLoader: ImageLoader): SpiAgent.SpiImageLoader =
+    new SpiAgent.SpiImageLoader {
+      override def implementationClassName: String = javaImageLoader.getClass.getName
+
+      override def load(messageContent: SpiAgent.ImageUriMessageContent): Future[SpiAgent.SpiLoadedImage] =
+        Future {
+          val detailLevel = fromSpiDetailLevel(messageContent.detailLevel)
+          val mimeType =
+            messageContent.mimeType.map(java.util.Optional.of[String]).getOrElse(java.util.Optional.empty[String]())
+          val loaded = javaImageLoader.load(messageContent.uri, detailLevel, mimeType)
+          new SpiAgent.SpiLoadedImage(loaded.data(), loaded.mimeType())
+        }(sdkExecutionContext)
+    }
 
   private def toSpiMcpEndpoints(remoteMcpTools: Seq[RemoteMcpTools]): Seq[SpiAgent.McpToolEndpointDescriptor] =
     remoteMcpTools.map {
@@ -402,7 +427,7 @@ private[impl] final class AgentImpl[A <: Agent](
           val requests = res.toolRequests.map { req =>
             new ToolCallRequest(req.id, req.name, req.arguments)
           }.asJava
-          new AiMessage(res.timestamp, res.content, componentId, requests)
+          new AiMessage(res.timestamp, res.content, componentId, requests, res.thinking.toJava)
 
         case res: SpiAgent.ToolCallResponse =>
           new ToolCallResponse(res.timestamp, componentId, res.id, res.name, res.content)
@@ -453,7 +478,7 @@ private[impl] final class AgentImpl[A <: Agent](
               new SpiAgent.ToolCallRequest(req.id(), req.name(), req.arguments())
             }
             .toSeq
-          new SpiAgent.ContextMessage.AiMessage(m.text(), toolRequests)
+          new SpiAgent.ContextMessage.AiMessage(m.text(), toolRequests, m.thinking().toScala)
         case m: UserMessage =>
           new SpiAgent.ContextMessage.UserMessage(m.text())
 
@@ -501,8 +526,12 @@ private[impl] final class AgentImpl[A <: Agent](
             case reason: GuardrailFailure =>
               new Guardrail.GuardrailException(reason.explanation)
 
+            case _: ImageLoadingFailure =>
+              new RuntimeException(exc.getMessage, exc.cause)
+
             // this is expected to be a JsonParsingException, we give it as is to users
             case OutputParsingFailure => exc.cause
+
           }
         } catch {
           case _: MatchError =>
@@ -529,7 +558,8 @@ private[impl] final class AgentImpl[A <: Agent](
           topP = p.topP,
           topK = p.topK,
           maxTokens = p.maxTokens,
-          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()))
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
+          thinkingBudgetTokens = p.thinkingBudgetTokens)
       case p: ModelProvider.GoogleAIGemini =>
         new SpiAgent.ModelProvider.GoogleAIGemini(
           p.apiKey(),
@@ -538,7 +568,9 @@ private[impl] final class AgentImpl[A <: Agent](
           p.temperature(),
           p.topP(),
           p.maxOutputTokens(),
-          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()))
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
+          p.thinkingBudget.toScala.map(_.intValue()),
+          p.thinkingLevel)
       case p: ModelProvider.HuggingFace =>
         new SpiAgent.ModelProvider.HuggingFace(
           p.accessToken(),
@@ -547,7 +579,8 @@ private[impl] final class AgentImpl[A <: Agent](
           p.temperature(),
           p.topP(),
           p.maxNewTokens(),
-          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()))
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
+          p.thinking())
       case p: ModelProvider.LocalAI =>
         new SpiAgent.ModelProvider.LocalAI(p.baseUrl(), p.modelName(), p.temperature(), p.topP(), p.maxTokens())
       case p: ModelProvider.Ollama =>
@@ -556,7 +589,8 @@ private[impl] final class AgentImpl[A <: Agent](
           p.modelName(),
           p.temperature(),
           p.topP(),
-          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()))
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
+          p.think)
       case p: ModelProvider.OpenAi =>
         new SpiAgent.ModelProvider.OpenAi(
           apiKey = p.apiKey,
@@ -566,15 +600,14 @@ private[impl] final class AgentImpl[A <: Agent](
           topP = p.topP,
           maxTokens = p.maxTokens,
           maxCompletionTokens = p.maxCompletionTokens,
-          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()))
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
+          thinking = p.thinking)
       case p: ModelProvider.Custom =>
         new SpiAgent.ModelProvider.Custom(() => p.createChatModel(), () => p.createStreamingChatModel())
       case p: ModelProvider.Bedrock =>
         new SpiAgent.ModelProvider.Bedrock(
           region = p.region,
           modelId = p.modelId,
-          returnThinking = p.returnThinking,
-          sendThinking = p.sendThinking,
           maxOutputTokens = p.maxOutputTokens,
           reasoningTokenBudget = p.reasoningTokenBudget,
           additionalModelRequestFields = p.additionalModelRequestFields.asScala.toMap,

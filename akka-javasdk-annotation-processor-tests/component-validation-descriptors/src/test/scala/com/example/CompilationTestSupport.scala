@@ -65,7 +65,8 @@ trait CompilationTestSupport extends Matchers {
     val options = List(
       "-d",
       outputDir.toString,
-      "-proc:only", // Only run annotation processing, don't generate class files
+      "-Werror", // Treat warnings as errors to catch raw types
+      "-Xlint:rawtypes", // Warn about raw type usage
       "-processor",
       "akka.javasdk.tooling.processor.ComponentValidationProcessor",
       "-classpath",

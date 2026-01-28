@@ -10,7 +10,7 @@ import akka.javasdk.keyvalueentity.KeyValueEntity;
 @Component(id = "valid-kv-entity-no-arg")
 public class ValidKeyValueEntityNoArg extends KeyValueEntity<String> {
 
-  public Effect execute() {
+  public Effect<String> execute() {
     return effects().reply("ok");
   }
 }

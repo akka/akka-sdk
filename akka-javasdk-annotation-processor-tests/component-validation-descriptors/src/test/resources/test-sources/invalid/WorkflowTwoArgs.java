@@ -11,7 +11,7 @@ import akka.javasdk.workflow.Workflow;
 public class WorkflowTwoArgs extends Workflow<String> {
 
   // Command handler with 2 arguments - not allowed
-  public Effect execute(String cmd, int i) {
+  public Effect<String> execute(String cmd, int i) {
     return effects().reply(cmd);
   }
 }

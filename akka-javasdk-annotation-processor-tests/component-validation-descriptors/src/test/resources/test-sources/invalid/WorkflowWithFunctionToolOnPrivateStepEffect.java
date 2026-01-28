@@ -16,7 +16,7 @@ public class WorkflowWithFunctionToolOnPrivateStepEffect extends Workflow<String
     return effects().done();
   }
 
-  public Effect execute() {
+  public Effect<String> execute() {
     return effects().reply("ok");
   }
 }

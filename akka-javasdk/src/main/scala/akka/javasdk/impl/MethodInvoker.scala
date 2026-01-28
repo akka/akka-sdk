@@ -4,12 +4,10 @@
 
 package akka.javasdk.impl
 
-import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 
-import scala.util.control.Exception.Catcher
-
 import akka.annotation.InternalApi
+import akka.javasdk.impl.ErrorHandling.unwrapInvocationTargetExceptionCatcher
 
 /**
  * INTERNAL API
@@ -22,7 +20,7 @@ private[impl] final case class MethodInvoker(method: Method) {
    */
   def invoke(componentInstance: AnyRef): AnyRef = {
     try method.invoke(componentInstance)
-    catch unwrapInvocationTargetException()
+    catch unwrapInvocationTargetExceptionCatcher
   }
 
   /**
@@ -30,11 +28,7 @@ private[impl] final case class MethodInvoker(method: Method) {
    */
   def invokeDirectly(componentInstance: AnyRef, payload: AnyRef): AnyRef = {
     try method.invoke(componentInstance, payload)
-    catch unwrapInvocationTargetException()
+    catch unwrapInvocationTargetExceptionCatcher
   }
 
-  private def unwrapInvocationTargetException(): Catcher[AnyRef] = {
-    case exc: InvocationTargetException if exc.getCause != null =>
-      throw exc.getCause
-  }
 }

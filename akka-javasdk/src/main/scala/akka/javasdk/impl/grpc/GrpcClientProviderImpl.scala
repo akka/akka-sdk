@@ -21,6 +21,7 @@ import akka.annotation.InternalApi
 import akka.grpc.GrpcClientSettings
 import akka.grpc.javadsl.AkkaGrpcClient
 import akka.javasdk.grpc.GrpcClientProvider
+import akka.javasdk.impl.ErrorHandling.unwrapInvocationTargetExceptionCatcher
 import akka.javasdk.impl.Settings
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl.AuthHeaders
 import com.typesafe.config.Config
@@ -184,10 +185,12 @@ private[akka] final class GrpcClientProviderImpl(
     }
 
     // Java API - static create
-    val create =
-      clientClass.getMethod("create", classOf[GrpcClientSettings], classOf[ClassicActorSystemProvider])
-    val client = create.invoke(null, clientSettings, system).asInstanceOf[AkkaGrpcClient]
-    client.asInstanceOf[T]
+    try {
+      val create =
+        clientClass.getMethod("create", classOf[GrpcClientSettings], classOf[ClassicActorSystemProvider])
+      val client = create.invoke(null, clientSettings, system).asInstanceOf[AkkaGrpcClient]
+      client.asInstanceOf[T]
+    } catch unwrapInvocationTargetExceptionCatcher
   }
 
   private def clientSettingsFromConfig(serviceName: String): GrpcClientSettings = {

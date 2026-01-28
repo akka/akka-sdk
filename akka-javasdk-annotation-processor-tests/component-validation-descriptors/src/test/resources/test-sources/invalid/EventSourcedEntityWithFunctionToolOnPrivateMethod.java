@@ -15,13 +15,13 @@ public class EventSourcedEntityWithFunctionToolOnPrivateMethod extends EventSour
     record Created(String name) implements Event {}
   }
 
-  public Effect create(String name) {
-    return effects().persist(new Event.Created(name));
+  public Effect<String> create(String name) {
+    return effects().persist(new Event.Created(name)).thenReply(__ -> "created");
   }
 
   // @FunctionTool is not allowed on private methods
   @FunctionTool(description = "This should not be allowed on private methods")
-  private Effect privateMethod() {
+  private Effect<String> privateMethod() {
     return effects().reply("private");
   }
 

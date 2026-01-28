@@ -4,6 +4,7 @@
 
 package com.example;
 
+import akka.Done;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 
@@ -16,8 +17,8 @@ public class ValidEventSourcedEntity extends EventSourcedEntity<String, ValidEve
     record Updated(String name) implements Event {}
   }
 
-  public Effect create(String name) {
-    return effects().persist(new Event.Created(name));
+  public Effect<Done> create(String name) {
+    return effects().persist(new Event.Created(name)).thenReply(__ -> Done.getInstance());
   }
 
   public Event.Created onEvent(Event.Created event) {
@@ -26,5 +27,10 @@ public class ValidEventSourcedEntity extends EventSourcedEntity<String, ValidEve
 
   public Event.Updated onEvent(Event.Updated event) {
     return event;
+  }
+
+  @Override
+  public String applyEvent(com.example.ValidEventSourcedEntity.Event event) {
+    return "";
   }
 }

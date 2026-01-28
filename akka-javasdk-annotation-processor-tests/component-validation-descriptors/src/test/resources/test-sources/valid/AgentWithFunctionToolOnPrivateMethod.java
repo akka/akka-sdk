@@ -11,7 +11,7 @@ import akka.javasdk.annotations.FunctionTool;
 @Component(id = "agent-with-function-tool-on-private-method")
 public class AgentWithFunctionToolOnPrivateMethod extends Agent {
 
-  public Effect handle(String input) {
+  public Effect<String> handle(String input) {
     // Use the private method annotated with @FunctionTool
     privateHelperMethod();
     return effects().reply("handled");

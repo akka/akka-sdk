@@ -11,13 +11,13 @@ import akka.javasdk.keyvalueentity.KeyValueEntity;
 @Component(id = "kv-entity-with-function-tool-on-private-method")
 public class KeyValueEntityWithFunctionToolOnPrivateMethod extends KeyValueEntity<String> {
 
-  public Effect update(String value) {
-    return effects().updateState(value).reply("updated");
+  public Effect<String> update(String value) {
+    return effects().updateState(value).thenReply(__ -> "updated");
   }
 
   // @FunctionTool is not allowed on private methods
   @FunctionTool(description = "This should not be allowed on private methods")
-  private Effect privateMethod() {
+  private Effect<String> privateMethod() {
     return effects().reply("private");
   }
 }

@@ -16,16 +16,21 @@ public class ValidEventSourcedEntityWithFunctionTool extends EventSourcedEntity<
   }
 
   @FunctionTool(description = "This is allowed on Effect")
-  public Effect create(String name) {
-    return effects().persist(new Event.Created(name));
+  public Effect<String> create(String name) {
+    return effects().persist(new Event.Created(name)).thenReply(__ -> "created");
   }
 
   @FunctionTool(description = "This is allowed on ReadOnlyEffect")
-  public ReadOnlyEffect query() {
+  public ReadOnlyEffect<String> query() {
     return effects().reply("query result");
   }
 
   public Event.Created onEvent(Event.Created event) {
     return event;
+  }
+
+  @Override
+  public String applyEvent(com.example.ValidEventSourcedEntityWithFunctionTool.Event event) {
+    return "";
   }
 }
