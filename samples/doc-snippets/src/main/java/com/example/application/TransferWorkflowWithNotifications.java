@@ -1,5 +1,10 @@
 package com.example.application;
 
+import static akka.Done.done;
+import static com.example.domain.TransferState.TransferStatus.COMPLETED;
+import static com.example.domain.TransferState.TransferStatus.WITHDRAW_SUCCEEDED;
+import static java.time.Duration.ofSeconds;
+
 import akka.Done;
 import akka.javasdk.NotificationPublisher;
 import akka.javasdk.NotificationPublisher.NotificationStream;
@@ -8,18 +13,15 @@ import akka.javasdk.workflow.Workflow;
 import com.example.domain.TransferState;
 import com.example.domain.TransferState.Transfer;
 
-import static akka.Done.done;
-import static com.example.domain.TransferState.TransferStatus.COMPLETED;
-import static com.example.domain.TransferState.TransferStatus.WITHDRAW_SUCCEEDED;
-import static java.time.Duration.ofSeconds;
-
 // tag::workflow-notification[]
 @Component(id = "transfer")
 public class TransferWorkflowWithNotifications extends Workflow<TransferState> {
 
   private final NotificationPublisher<String> notificationPublisher;
 
-  public TransferWorkflowWithNotifications(NotificationPublisher<String> notificationPublisher) { // <1>
+  public TransferWorkflowWithNotifications(
+    NotificationPublisher<String> notificationPublisher
+  ) { // <1>
     this.notificationPublisher = notificationPublisher;
   }
 
@@ -42,6 +44,7 @@ public class TransferWorkflowWithNotifications extends Workflow<TransferState> {
   public NotificationStream<String> updates() { // <3>
     return notificationPublisher.stream();
   }
+
   // end::workflow-notification[]
 
   public Effect<Done> startTransfer(Transfer transfer) {

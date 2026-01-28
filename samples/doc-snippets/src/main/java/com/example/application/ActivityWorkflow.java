@@ -1,5 +1,7 @@
 package com.example.application;
 
+import static java.time.Duration.ofMillis;
+
 import akka.javasdk.NotificationPublisher;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.StepName;
@@ -8,8 +10,6 @@ import akka.javasdk.workflow.Workflow;
 import akka.stream.Materializer;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-
-import static java.time.Duration.ofMillis;
 
 // tag::workflow-agent-stream-notification[]
 @Component(id = "activity")
@@ -31,15 +31,27 @@ public class ActivityWorkflow extends Workflow<ActivityWorkflow.State> {
   @JsonSubTypes(
     {
       @JsonSubTypes.Type(value = ActivityWorkflowNotification.StatusUpdate.class, name = "S"),
-      @JsonSubTypes.Type(value = ActivityWorkflowNotification.LlmResponseStart.class, name = "LS"),
-      @JsonSubTypes.Type(value = ActivityWorkflowNotification.LlmResponseDelta.class, name = "LD"),
-      @JsonSubTypes.Type(value = ActivityWorkflowNotification.LlmResponseEnd.class, name = "LE")
+      @JsonSubTypes.Type(
+        value = ActivityWorkflowNotification.LlmResponseStart.class,
+        name = "LS"
+      ),
+      @JsonSubTypes.Type(
+        value = ActivityWorkflowNotification.LlmResponseDelta.class,
+        name = "LD"
+      ),
+      @JsonSubTypes.Type(
+        value = ActivityWorkflowNotification.LlmResponseEnd.class,
+        name = "LE"
+      ),
     }
   )
   public sealed interface ActivityWorkflowNotification { // <1>
     record StatusUpdate(String msg) implements ActivityWorkflowNotification {}
+
     record LlmResponseStart() implements ActivityWorkflowNotification {}
+
     record LlmResponseDelta(String response) implements ActivityWorkflowNotification {}
+
     record LlmResponseEnd() implements ActivityWorkflowNotification {}
   }
 
@@ -47,9 +59,11 @@ public class ActivityWorkflow extends Workflow<ActivityWorkflow.State> {
   private final NotificationPublisher<ActivityWorkflowNotification> notificationPublisher;
   private final Materializer materializer;
 
-  public ActivityWorkflow(ComponentClient componentClient,
-                          NotificationPublisher<ActivityWorkflowNotification> notificationPublisher, // <2>
-                          Materializer materializer) {
+  public ActivityWorkflow(
+    ComponentClient componentClient,
+    NotificationPublisher<ActivityWorkflowNotification> notificationPublisher, // <2>
+    Materializer materializer
+  ) {
     this.componentClient = componentClient;
     this.notificationPublisher = notificationPublisher;
     this.materializer = materializer;
@@ -57,7 +71,6 @@ public class ActivityWorkflow extends Workflow<ActivityWorkflow.State> {
 
   @StepName("summarize")
   private StepEffect summarizeStep(String request) {
-
     var tokenSource = componentClient // <3>
       .forAgent()
       .inSession(sessionId())
@@ -66,19 +79,24 @@ public class ActivityWorkflow extends Workflow<ActivityWorkflow.State> {
 
     notificationPublisher.publish(new ActivityWorkflowNotification.LlmResponseStart()); // <4>
 
-    var finalAnswer = notificationPublisher.publishTokenStream(tokenSource, // <5>
+    var finalAnswer = notificationPublisher.publishTokenStream(
+      tokenSource, // <5>
       10,
       ofMillis(200),
       ActivityWorkflowNotification.LlmResponseDelta::new,
-      materializer);
+      materializer
+    );
 
     notificationPublisher.publish(new ActivityWorkflowNotification.LlmResponseEnd()); // <4>
-    notificationPublisher.publish(new ActivityWorkflowNotification.StatusUpdate("All steps completed!")); // <4>
+    notificationPublisher.publish(
+      new ActivityWorkflowNotification.StatusUpdate("All steps completed!")
+    ); // <4>
 
     return stepEffects()
       .updateState(currentState().withAnswer(finalAnswer)) // <6>
       .thenPause();
   }
+
   // end::workflow-agent-stream-notification[]
 
   private String sessionId() {

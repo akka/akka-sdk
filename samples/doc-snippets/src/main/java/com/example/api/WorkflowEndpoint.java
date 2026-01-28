@@ -6,7 +6,7 @@ import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpResponses;
-import com.example.application.TransferWorkflow;
+import com.example.application.TransferWorkflowWithNotifications;
 
 // tag::workflow-notification[]
 @HttpEndpoint("/transfer")
@@ -26,7 +26,7 @@ public class WorkflowEndpoint {
     return HttpResponses.serverSentEvents(
       componentClient
         .forWorkflow(transferId)
-        .notificationStream(TransferWorkflow::updates) // <1>
+        .notificationStream(TransferWorkflowWithNotifications::updates) // <1>
         .source()
     );
   }
