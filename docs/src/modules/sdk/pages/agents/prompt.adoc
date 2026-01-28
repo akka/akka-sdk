@@ -44,7 +44,7 @@ By default, the Akka runtime fetches images from publicly accessible URLs. When 
 The `ImageLoader` interface provides a single method that receives the image URI, detail level, and an optional MIME type hint. Your implementation fetches the image data and returns it along with the actual MIME type:
 
 [source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/application/CustomImageLoadingAgent.java[MyImageLoader.java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/CustomImageLoadingAgent.java[CustomImageLoadingAgent.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/application/CustomImageLoadingAgent.java[tag=custom-image-loader]
 ----
