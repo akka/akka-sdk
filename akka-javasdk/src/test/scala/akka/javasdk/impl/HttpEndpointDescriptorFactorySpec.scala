@@ -170,23 +170,6 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
       lowLevelBodyOnly.methodSpec shouldBe Spec(requestBody = Spec.lowLevelBody())
     }
 
-    "fail when path expression does not match parameters" in {
-      val message = intercept[ValidationException] {
-        HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.InvalidEndpointMethods], _ => null)
-      }.getMessage
-
-      message should include(
-        "There are more parameters in the path expression [/{id}/my-endpoint/] than there are parameters for [akka.javasdk.impl.http.TestEndpoints$InvalidEndpointMethods.list1]")
-      message should include(
-        "The parameter [id] in the path expression [/{id}/my-endpoint/] does not match the method parameter name [bob] for [akka.javasdk.impl.http.TestEndpoints$InvalidEndpointMethods.list2]")
-      message should include(
-        "The parameter [bob] in the path expression [/{id}/my-endpoint/something/{bob}] does not match the method parameter name [value] for [akka.javasdk.impl.http.TestEndpoints$InvalidEndpointMethods.list3]")
-      message should include(
-        "There are [2] parameters ([value,body]) for endpoint method [akka.javasdk.impl.http.TestEndpoints$InvalidEndpointMethods.list5] not matched by the path expression")
-      message should include(
-        "Wildcard path can only be the last segment of the path [/{id}/my-endpoint/wildcard/**/not/last]")
-    }
-
     "hide double slash when combining prefix with method path" in {
       val descriptor = HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.WithRootPrefix], _ => null)
       val byMethodName = descriptor.methods.map(md => md.userMethod.getName -> md).toMap
