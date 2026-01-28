@@ -29,6 +29,20 @@ trait CompilationTestSupport extends Matchers {
    *   CompilationResult containing success status and diagnostics
    */
   protected def compileTestSource(relativePath: String): CompilationResult = {
+    compileWithProcessor(relativePath, "akka.javasdk.tooling.processor.ComponentValidationProcessor")
+  }
+
+  /**
+   * Compiles a test source file using the specified annotation processor.
+   *
+   * @param relativePath
+   *   path to the test source file relative to src/test/resources/test-sources
+   * @param processorClass
+   *   fully qualified class name of the annotation processor to use
+   * @return
+   *   CompilationResult containing success status and diagnostics
+   */
+  private def compileWithProcessor(relativePath: String, processorClass: String): CompilationResult = {
     val compiler = ToolProvider.getSystemJavaCompiler
     require(compiler != null, "Java compiler not available. Make sure you're running on a JDK, not a JRE.")
 
@@ -65,10 +79,11 @@ trait CompilationTestSupport extends Matchers {
     val options = List(
       "-d",
       outputDir.toString,
+      "-parameters", // Preserve parameter names (needed for HTTP endpoint validation)
       "-Werror", // Treat warnings as errors to catch raw types
       "-Xlint:rawtypes", // Warn about raw type usage
       "-processor",
-      "akka.javasdk.tooling.processor.ComponentValidationProcessor",
+      processorClass,
       "-classpath",
       System.getProperty("java.class.path")).asJava
 

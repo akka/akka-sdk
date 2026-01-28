@@ -26,15 +26,15 @@ public class Validations {
    * @return a Validation result indicating success or failure with error messages
    */
   public static Validation validateComponent(TypeDef typeDef) {
-    return componentMustBePublic(typeDef)
-        .combine(mustHaveValidComponentId(typeDef))
+    return mustHaveValidComponentId(typeDef)
         .combine(TimedActionValidations.validate(typeDef))
         .combine(ConsumerValidations.validate(typeDef))
         .combine(WorkflowValidations.validate(typeDef))
         .combine(KeyValueEntityValidations.validate(typeDef))
         .combine(EventSourcedEntityValidations.validate(typeDef))
         .combine(AgentValidations.validate(typeDef))
-        .combine(ViewValidations.validate(typeDef));
+        .combine(ViewValidations.validate(typeDef))
+        .combine(HttpEndpointValidations.validate(typeDef));
   }
 
   // ==================== Subscription Helper Methods ====================
