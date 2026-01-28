@@ -10,6 +10,7 @@ import akkajavasdk.protocol.SerializationTestProtos.CustomerCreated;
 import akkajavasdk.protocol.SerializationTestProtos.CustomerEmailChanged;
 import akkajavasdk.protocol.SerializationTestProtos.CustomerNameChanged;
 import akkajavasdk.protocol.SerializationTestProtos.CustomerState;
+import akkajavasdk.protocol.SerializationTestProtos.SimpleMessage;
 import akkajavasdk.protocol.SerializationTestProtos.Status;
 import com.google.protobuf.GeneratedMessageV3;
 
@@ -92,6 +93,34 @@ public class ProtobufCustomerEntity extends EventSourcedEntity<CustomerState, Ge
       return effects().error("Customer does not exist");
     }
     return effects().reply(currentState());
+  }
+
+  /**
+   * Command handler that accepts a protobuf message directly as a parameter. This tests that
+   * protobuf messages can be passed through the component client as command parameters.
+   */
+  public Effect<SimpleMessage> echoProtobuf(SimpleMessage message) {
+    // Simply echo back the protobuf message to verify serialization round-trip
+    return effects().reply(message);
+  }
+
+  /**
+   * Command handler that accepts a protobuf message and uses it to create the entity. This tests
+   * that protobuf command parameters work correctly with event persistence.
+   */
+  public Effect<String> createFromProtobuf(SimpleMessage command) {
+    if (!currentState().getCustomerId().isEmpty()) {
+      return effects().error("Customer already exists");
+    }
+    var event =
+        CustomerCreated.newBuilder()
+            .setCustomerId(commandContext().entityId())
+            .setName(command.getText())
+            .setEmail("from-protobuf@test.com")
+            .build();
+    return effects()
+        .persist(event)
+        .thenReply(__ -> "Customer created from protobuf with number: " + command.getNumber());
   }
 
   // Command records (using Java records as input)

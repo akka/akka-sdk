@@ -44,9 +44,10 @@ private[impl] final class ReflectiveTimedActionRouter[A <: TimedAction](
 
     val payload = message.payload()
 
-    if (serializer.isJson(payload) || payload.isEmpty) {
+    if (serializer.isJson(payload) || serializer.isProtobuf(payload) || payload.isEmpty) {
       // - BytesPayload.empty - there is no real command, and we are calling a method with arity 0
       // - BytesPayload with json - we deserialize it and call the method
+      // - BytesPayload with protobuf - we deserialize it and call the method
       val deserializedCommand =
         CommandSerialization.deserializeComponentClientCommand(methodInvoker.method, payload, serializer)
       val result = deserializedCommand match {
