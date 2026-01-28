@@ -510,8 +510,16 @@ private final class Sdk(
 
         // we preemptively register the events type to the serializer
         Reflect.allKnownEventSourcedEntityEventType(clz).foreach(serializer.registerTypeHints)
+        // Register protobuf event types from @ProtoEventTypes annotation
+        Reflect.protoEventTypes(clz).foreach(serializer.registerTypeHints)
+
+        // Validate that @ProtoEventTypes entities have applyEvent accepting GeneratedMessageV3
+        Reflect.validateProtoEventTypesApplyEvent(clz).foreach { errorMessage =>
+          throw ValidationException(errorMessage)
+        }
 
         val entityStateType: Class[AnyRef] = Reflect.eventSourcedEntityStateType(clz).asInstanceOf[Class[AnyRef]]
+        val allowedProtoEventTypes: Seq[Class[_]] = Reflect.protoEventTypes(clz)
 
         val instanceFactory: SpiEventSourcedEntity.FactoryContext => SpiEventSourcedEntity = { factoryContext =>
           new EventSourcedEntityImpl[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]](
@@ -522,6 +530,7 @@ private final class Sdk(
             ComponentDescriptor.descriptorFor(clz, serializer),
             entityStateType,
             regionInfo,
+            allowedProtoEventTypes,
             context =>
               wiredInstance(clz.asInstanceOf[Class[EventSourcedEntity[AnyRef, AnyRef]]]) {
                 // remember to update component type API doc and docs if changing the set of injectables
