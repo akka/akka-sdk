@@ -38,11 +38,13 @@ final class Serializer(val objectMapper: ObjectMapper) {
   def this() = this(JsonSerializer.internalObjectMapper)
 
   private val jsonSerializer = new JsonSerializer(objectMapper)
+  private val protobufSerializer = new ProtobufSerializer()
 
-  override def toString: String = s"Serializer(json: $jsonSerializer)"
+  override def toString: String = s"Serializer(json: $jsonSerializer, proto: $protobufSerializer)"
 
   // Expose the underlying serializers for cases where specific behavior is needed
   def json: JsonSerializer = jsonSerializer
+  def proto: ProtobufSerializer = protobufSerializer
 
   /**
    * Serialize a value to bytes. Automatically detects protobuf messages and serializes them to binary protobuf format,
@@ -104,8 +106,11 @@ final class Serializer(val objectMapper: ObjectMapper) {
    * Deserialize bytes to an object based on the content type. Requires that types are registered via registerTypeHints.
    */
   def fromBytes(bytesPayload: BytesPayload): AnyRef = {
-    // FIXME we need to make proto serializer stateful and register proto message types in it for this to work
-    jsonSerializer.fromBytes(bytesPayload)
+    if (isProtobuf(bytesPayload)) {
+      protobufSerializer.fromBytes(bytesPayload)
+    } else {
+      jsonSerializer.fromBytes(bytesPayload)
+    }
   }
 
   /**
@@ -163,8 +168,13 @@ final class Serializer(val objectMapper: ObjectMapper) {
   def stripJsonContentTypePrefix(contentType: String): String =
     jsonSerializer.stripJsonContentTypePrefix(contentType)
 
-  def registerTypeHints(clz: Class[_]): Unit =
-    jsonSerializer.registerTypeHints(clz)
+  def registerTypeHints(clz: Class[_]): Unit = {
+    if (ProtobufSerializer.isProtobufClass(clz)) {
+      protobufSerializer.registerProtoType(clz.asInstanceOf[Class[_ <: GeneratedMessageV3]])
+    } else {
+      jsonSerializer.registerTypeHints(clz)
+    }
+  }
 
   def reversedTypeHints = jsonSerializer.reversedTypeHints
 

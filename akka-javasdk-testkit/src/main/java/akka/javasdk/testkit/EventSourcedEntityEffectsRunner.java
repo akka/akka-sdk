@@ -13,30 +13,44 @@ import akka.javasdk.impl.reflection.Reflect;
 import akka.javasdk.testkit.impl.EventSourcedResultImpl;
 import akka.javasdk.testkit.impl.TestKitEventSourcedEntityCommandContext;
 import akka.javasdk.testkit.impl.TestKitEventSourcedEntityEventContext;
+import com.google.protobuf.GeneratedMessageV3;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import scala.jdk.javaapi.CollectionConverters;
 
 /** Extended by generated code, not meant for user extension */
 abstract class EventSourcedEntityEffectsRunner<S, E> {
 
   private final Class<?> stateClass;
+  private final List<Class<? extends GeneratedMessageV3>> allowedProtoEventTypes;
   protected EventSourcedEntity<S, E> entity;
   private S _state;
   private boolean deleted = false;
   private List<E> events = new ArrayList<>();
 
+  @SuppressWarnings("unchecked")
+  private static List<Class<? extends GeneratedMessageV3>> getProtoEventTypes(
+      Class<?> entityClass) {
+    return new ArrayList<>(
+        (List<Class<? extends GeneratedMessageV3>>)
+            (List<?>) CollectionConverters.asJava(Reflect.protoEventTypes(entityClass)));
+  }
+
   public EventSourcedEntityEffectsRunner(EventSourcedEntity<S, E> entity) {
     this.entity = entity;
     this.stateClass = Reflect.eventSourcedEntityStateType(entity.getClass());
+    this.allowedProtoEventTypes = getProtoEventTypes(entity.getClass());
     this._state = entity.emptyState();
   }
 
   public EventSourcedEntityEffectsRunner(EventSourcedEntity<S, E> entity, S initialState) {
     this.entity = entity;
     this.stateClass = Reflect.eventSourcedEntityStateType(entity.getClass());
+    this.allowedProtoEventTypes = getProtoEventTypes(entity.getClass());
     verifySerDerWithExpectedType(stateClass, initialState, entity);
     this._state = initialState;
   }
@@ -45,6 +59,7 @@ abstract class EventSourcedEntityEffectsRunner<S, E> {
     this.entity = entity;
     this._state = entity.emptyState();
     this.stateClass = Reflect.eventSourcedEntityStateType(entity.getClass());
+    this.allowedProtoEventTypes = getProtoEventTypes(entity.getClass());
     entity._internalSetCurrentState(this._state, false);
     // NB: updates _state
     playEventsForEntity(initialEvents);
@@ -81,6 +96,30 @@ abstract class EventSourcedEntityEffectsRunner<S, E> {
   }
 
   /**
+   * Validates that events are of allowed types when @ProtoEventTypes is used. Throws
+   * IllegalArgumentException if an event is not one of the declared types.
+   */
+  private void validateProtoEventTypes(List<E> events) {
+    if (!allowedProtoEventTypes.isEmpty()) {
+      for (E event : events) {
+        Class<?> eventClass = event.getClass();
+        boolean isAllowed =
+            allowedProtoEventTypes.stream()
+                .anyMatch(allowed -> allowed.isAssignableFrom(eventClass));
+        if (!isAllowed) {
+          String allowedTypesStr =
+              allowedProtoEventTypes.stream().map(Class::getName).collect(Collectors.joining(", "));
+          throw new IllegalArgumentException(
+              String.format(
+                  "Event Sourced Entity [%s] tried to persist event of type [%s] "
+                      + "which is not declared in @ProtoEventTypes. Allowed types are: [%s]",
+                  entity.getClass().getName(), eventClass.getName(), allowedTypesStr));
+        }
+      }
+    }
+  }
+
+  /**
    * creates a command context to run the commands, then creates an event context to run the events,
    * and finally, creates a command context to run the side effects. It cleans each context after
    * each run.
@@ -100,7 +139,10 @@ abstract class EventSourcedEntityEffectsRunner<S, E> {
       entity._internalSetCommandContext(Optional.of(commandContext));
       entity._internalSetCurrentState(this._state, this.deleted);
       effectExecuted = effect.get();
-      this.events.addAll(EventSourcedResultImpl.eventsOf(effectExecuted));
+      // Validate proto event types before adding events
+      List<E> newEvents = EventSourcedResultImpl.eventsOf(effectExecuted);
+      validateProtoEventTypes(newEvents);
+      this.events.addAll(newEvents);
     } finally {
       entity._internalSetCommandContext(Optional.empty());
     }
