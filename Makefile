@@ -51,6 +51,9 @@ attributes: prepare
 	# see https://docs.docker.com/engine/release-notes/27/
 	echo ":minimum_docker_version: 27" \
 		>> "${managed_partials}/attributes.adoc"
+	# generate version.txt for Antora build (promoted to site root via ui.yml)
+	docs/bin/version.sh | xargs -0 printf "sdk.version=%s" \
+		> "docs/supplemental_ui/version.txt"
 
 apidocs: prepare
 	mkdir -p "${java_managed_attachments}"
