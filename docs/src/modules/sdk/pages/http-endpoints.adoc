@@ -414,16 +414,6 @@ WebSocket endpoints are useful when you need:
 
 IMPORTANT: While WebSocket endpoint methods work out of the box in local development and tests it requires additional setup to work in a deployed service, see xref:operations:services/invoke-service.adoc#websockets[Invoking Akka Services / WebSocket Support]. If this is not setup WebSocket connections to the deployed service will fail with an HTTP 403 Forbidden response.
 
-==== WebSockets requires extra thought
-
-WebSocket connections to an HTTP endpoint is tied to the specific instance they were connected to when the request was first made.
-
-Akka is a distributed system, which means that services instances can start and stop based on decisions the infrastructure makes, because the service upgrading, or  other unanticipated issues. Connections are also
-forcibly disconnected at an interval to make sure connected clients are alive and that the connections
-are rebalanced over the instances of the service.
-
-It is important that WebSocket endpoint methods are designed with connection loss in mind and do not rely on the stream itself to keep a local JVM object alive. A reconnect may not end up in the same service instance as the original connection.
-
 ==== Creating a WebSocket endpoint
 
 A WebSocket endpoint is created by annotating a method with `@WebSocket()` and having it return a `akka.stream.javadsl.Flow`. The returned flow will be fed incoming messages from the client, and messages coming out of the flow will be sent back to the client.
@@ -445,7 +435,7 @@ include::example$key-value-customer-registry/src/main/java/customer/api/Customer
 <5> Create a `Flow` that ignores incoming client messages and streams view updates to the client
 
 For binary WebSocket support, return a `Flow` with `ByteString` instead of `String`. For even greater flexibility
-`akka.http.javadsl.model.ws.Message` is also supported.
+`akka.http.javadsl.model.ws.Message` is also supported. The input and output of the flow must have the same type.
 
 In many cases WebSockets are interesting because of the bidirectional capabilities. Here is an example
 that accepts incoming agent requests, feeds those into a streaming agent and then streams the agent response back to the client:
@@ -460,6 +450,16 @@ include::example$doc-snippets/src/main/java/com/example/api/HelloWorldWebSocketE
 <3> `Flow.flatMapConcat` turns each incoming request into a stream of response strings
 
 `flatMapConcat` means that each response will be streamed until completion, before the next response starts.
+
+==== WebSockets requires extra thought
+
+WebSocket connections to an HTTP endpoint is tied to the specific instance they were connected to when the request was first made.
+
+Akka is a distributed system, which means that services instances can start and stop based on decisions the infrastructure makes, because the service upgrading, or  other unanticipated issues. Connections are also
+forcibly disconnected at an interval to make sure connected clients are alive and that the connections
+are rebalanced over the instances of the service.
+
+It is important that WebSocket endpoint methods are designed with connection loss in mind and do not rely on the stream itself to keep a local JVM object alive. A reconnect may not end up in the same service instance as the original connection.
 
 ==== Testing WebSocket endpoints
 

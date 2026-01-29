@@ -192,25 +192,7 @@ akka route update acme-ecommerce --cors-origin https://www.acme.org --cors-metho
 WebSockets in endpoints require additional config. Connecting to a WebSocket route without configuring the route will lead
 to an HTTP 403 Forbidden response.
 
-Enabling support is done with the descriptor flag `enableWebsockets` for a specific route in the descriptor.
-
-Using either the `akka route edit` command or updating the route descriptor, for all traffic to a service:
-[source,yaml]
-----
-host: ecommerce.acme.org
-routes:
-- prefix: /
-  enableWebsockets: true
-  route:
-    service: shopping-cart
-----
-
-IMPORTANT: WebSocket connections require downgrades the internal communication to HTTP/1.1 which breaks gRPC support and
-is more costly for regular HTTP traffic than HTTP/2 which is normally used.
-For production loads, WebSocket routes should be defined separately from the routes handling
-regular HTTP and gRPC traffic to a service.
-
-Isolating WebSocket traffic to a separate route, while allowing regular traffic with a separate route:
+Enabling support is done with the descriptor flag `enableWebsockets` for a specific route in the descriptor:
 [source,yaml]
 ----
 host: ecommerce.acme.org
@@ -224,6 +206,10 @@ routes:
     service: shopping-cart
 ----
 
+IMPORTANT: WebSocket connections require downgrades the internal communication to HTTP/1.1 which breaks gRPC support and
+is more costly for regular HTTP traffic than HTTP/2 which is normally used.
+For production loads, WebSocket routes should be defined separately from the routes handling
+regular HTTP and gRPC traffic to a service.
 
 ==== Securing routes
 
