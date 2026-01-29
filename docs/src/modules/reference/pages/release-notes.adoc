@@ -40,8 +40,6 @@ The Akka console now provides detailed insights into your service structure and 
 - External secrets
 - Support for controlling CLI configuration with MDM solutions
 
-* Akka Runtime 1.5.34
-
 * Akka CLI 3.0.45
 - Support for configuring custom JVM Truststore
 - Command for bringing up region
