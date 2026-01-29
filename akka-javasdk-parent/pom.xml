@@ -104,8 +104,6 @@
                         <compilerArgs>
                             <arg>-Xlint:deprecation</arg>
                             <arg>-parameters</arg>
-                            <arg>-Aakka.javasdk.groupId=${groupId.dashed}</arg>
-                            <arg>-Aakka.javasdk.artifactId=${project.artifactId}</arg>
                         </compilerArgs>
                         <annotationProcessors>
                             <annotationProcessor>
@@ -260,21 +258,6 @@
                     <artifactId>build-helper-maven-plugin</artifactId>
                     <version>${build-helper-maven-plugin.version}</version>
                     <executions>
-                        <!-- create groupId.dashed property (dots replaced by dashes) for use in file names -->
-                        <execution>
-                            <id>regex-groupId-property</id>
-                            <phase>validate</phase>
-                            <goals>
-                                <goal>regex-property</goal>
-                            </goals>
-                            <configuration>
-                                <name>groupId.dashed</name>
-                                <value>${project.groupId}</value>
-                                <regex>\.</regex>
-                                <replacement>-</replacement>
-                                <failIfNoMatch>false</failIfNoMatch>
-                            </configuration>
-                        </execution>
                         <!-- configure src/it/java and src/it/resources legacy paths for integration tests -->
                         <execution>
                             <id>add-integration-test-source</id>
@@ -495,8 +478,7 @@
             <id>clean-on-missing-descriptor</id>
             <activation>
                 <file>
-                    <!-- Check for artifact-specific descriptor file -->
-                    <missing>target/classes/META-INF/akka-javasdk-components_${groupId.dashed}_${project.artifactId}.conf</missing>
+                    <missing>target/classes/META-INF/akka-javasdk-components.conf</missing>
                 </file>
             </activation>
             <build>
