@@ -304,4 +304,45 @@ public class HttpEndpointTest extends TestKitSupport {
 
     assertThat(firstInstant).isBefore(secondInstant);
   }
+
+  @Test
+  void shouldSupportTextWebSockets() {
+    var webSocketRouteTester = testKit.getSelfWebSocketRouteTester();
+
+    var probes = webSocketRouteTester.wsTextConnection("/websocket-text");
+
+    var publisher = probes.publisher();
+    var subscriber = probes.subscriber();
+
+    subscriber.request(1);
+
+    publisher.expectRequest();
+    publisher.sendNext("ping");
+
+    assertThat(subscriber.expectNext()).isEqualTo("ping");
+
+    publisher.sendComplete();
+    subscriber.expectComplete();
+  }
+
+  @Test
+  void shouldSupportBinaryWebSockets() {
+    var webSocketRouteTester = testKit.getSelfWebSocketRouteTester();
+
+    // Test also covers protocol and parameters
+    var probes = webSocketRouteTester.wsBinaryConnection("/websocket-binary/5");
+
+    var publisher = probes.publisher();
+    var subscriber = probes.subscriber();
+
+    subscriber.request(1);
+
+    publisher.expectRequest();
+    publisher.sendNext(ByteString.fromString("123456"));
+
+    assertThat(subscriber.expectNext()).isEqualTo(ByteString.fromString("12345"));
+
+    publisher.sendComplete();
+    subscriber.expectComplete();
+  }
 }

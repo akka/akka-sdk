@@ -11,10 +11,13 @@ import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
+import akka.javasdk.annotations.http.WebSocket;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.AbstractHttpEndpoint;
 import akka.javasdk.http.HttpResponses;
+import akka.stream.javadsl.Flow;
 import akka.stream.javadsl.Source;
+import akka.util.ByteString;
 import akkajavasdk.components.views.counter.CounterEventsByIdView;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -98,5 +101,23 @@ public class TestEndpoint extends AbstractHttpEndpoint {
             .entriesSource(requestContext().lastSeenSseEventId().map(Instant::parse));
 
     return HttpResponses.serverSentEventsForView(stream);
+  }
+
+  @WebSocket("/websocket-text")
+  public Flow<String, String, NotUsed> websocketText() {
+    // echo messages back
+    return Flow.of(String.class);
+  }
+
+  @WebSocket("/websocket-binary/{limit}")
+  public Flow<ByteString, ByteString, NotUsed> websocketBinary(int limit) {
+    // echo messages back
+    return Flow.of(ByteString.class)
+        .map(
+            bytes -> {
+              if (bytes.length() > limit) {
+                return bytes.dropRight(bytes.length() - limit);
+              } else return bytes;
+            });
   }
 }

@@ -4,6 +4,7 @@
 
 package akka.javasdk.tooling.processor;
 
+import akka.javasdk.tooling.validation.HttpEndpointValidations;
 import akka.javasdk.tooling.validation.Validation;
 import akka.javasdk.tooling.validation.Validations;
 import akka.javasdk.validation.ast.compiletime.CompileTimeTypeDef;
@@ -17,15 +18,19 @@ import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic;
 
 /**
- * Annotation processor that performs compile-time validation on classes annotated with @Component,
- * or deprecated @ComponentId.
+ * Annotation processor that performs compile-time validation on classes annotated
+ * with @Component, @ComponentId, or @HttpEndpoint.
  */
 @SupportedAnnotationTypes({
   "akka.javasdk.annotations.Component",
-  "akka.javasdk.annotations.ComponentId"
+  "akka.javasdk.annotations.ComponentId",
+  "akka.javasdk.annotations.http.HttpEndpoint"
 })
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 public class ComponentValidationProcessor extends BaseAkkaProcessor {
+
+  private static final String HTTP_ENDPOINT_ANNOTATION =
+      "akka.javasdk.annotations.http.HttpEndpoint";
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -36,13 +41,20 @@ public class ComponentValidationProcessor extends BaseAkkaProcessor {
     info("Validating Akka components...");
     for (TypeElement annotation : annotations) {
       var annotatedElements = roundEnv.getElementsAnnotatedWith(annotation);
+      boolean isHttpEndpoint =
+          annotation.getQualifiedName().toString().equals(HTTP_ENDPOINT_ANNOTATION);
 
       for (TypeElement element : ElementFilter.typesIn(annotatedElements)) {
         debug("Validating " + element.getSimpleName());
 
         // Wrap TypeElement in CompileTimeTypeDef
         CompileTimeTypeDef typeDef = new CompileTimeTypeDef(element);
-        Validation validation = Validations.validateComponent(typeDef);
+
+        // Use appropriate validation based on annotation type
+        Validation validation =
+            isHttpEndpoint
+                ? HttpEndpointValidations.validate(typeDef)
+                : Validations.validateComponent(typeDef);
 
         if (validation instanceof Validation.Invalid(java.util.List<String> errorMessages)) {
           debug("Component " + element.getSimpleName() + " is invalid");
