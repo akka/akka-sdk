@@ -339,12 +339,12 @@ include::example$doc-snippets/pom.xml[tag=openapi-maven-plugin-static-resource]
 And then creating an endpoint serving it:
 
 [source,java,indent=0]
-.{sample-base-url}/doc-snippets/pom.xml[pom.xml]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/OpenApiSpecificationEndpoint.java[OpenApiSpecificationEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/api/OpenApiSpecificationEndpoint.java[tag=serve-openapi]
 ----
 
-For additional metadata options and configuration, see the link:https://github.com/osodevops/akka-openapi-maven-plugin[Akka OpenAPI Maven plugin documentation].
+For more details around additional specification metadata options and configuration, see the link:https://github.com/osodevops/akka-openapi-maven-plugin[Akka OpenAPI Maven plugin documentation].
 
 [#sse]
 === Streaming responses with server-sent events ===

@@ -5,7 +5,7 @@ import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.http.HttpResponses;
 
-@HttpEndpoint()
+@HttpEndpoint
 public class OpenApiSpecificationEndpoint {
 
   // tag::serve-openapi[]
