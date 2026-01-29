@@ -127,11 +127,7 @@ lazy val annotationProcessorTestProject: CompositeProject =
       .settings(libraryDependencies += Dependencies.scalaTest % Test)
       .settings(
         libraryDependencies += Dependencies.scalaTest % Test,
-        Compile / javacOptions ++= Seq(
-          "-processor",
-          "akka.javasdk.tooling.processor.ComponentAnnotationProcessor",
-          "-Aakka.javasdk.groupId=com-example",
-          "-Aakka.javasdk.artifactId=test"))
+        Compile / javacOptions ++= Seq("-processor", "akka.javasdk.tooling.processor.ComponentAnnotationProcessor"))
   }
 
 lazy val akkaJavaSdkParent =

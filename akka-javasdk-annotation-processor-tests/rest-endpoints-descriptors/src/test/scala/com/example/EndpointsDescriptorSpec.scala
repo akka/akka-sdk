@@ -11,7 +11,7 @@ import org.scalatest.wordspec.AnyWordSpec
 class EndpointsDescriptorSpec extends AnyWordSpec with Matchers {
 
   "akka-javasdk-components.conf" should {
-    val config = ConfigFactory.load("META-INF/akka-javasdk-components_com-example_test.conf")
+    val config = ConfigFactory.load("META-INF/akka-javasdk-components.conf")
 
     "contain http endpoint components" in {
       val endpointComponents = config.getStringList("akka.javasdk.components.http-endpoint")

@@ -12,7 +12,7 @@ class TimedActionDescriptorSpec extends AnyWordSpec with Matchers {
 
   "akka-javasdk-components.conf" should {
     "have correct configuration" in {
-      val config = ConfigFactory.load("META-INF/akka-javasdk-components_com-example_test.conf")
+      val config = ConfigFactory.load("META-INF/akka-javasdk-components.conf")
 
       val actionComponents = config.getStringList("akka.javasdk.components.timed-action")
       actionComponents.size() shouldBe 3
