@@ -314,6 +314,38 @@ include::example$doc-snippets/src/main/java/com/example/api/StaticResourcesEndpo
 NOTE: This is convenient for service documentation or small self-contained services with web user interface but is not intended
  for production, where coupling of the service lifecycle with the user interface would mean that a new service version would need to be deployed for any changes in the user interface.
 
+=== OpenAPI endpoint schema
+
+The third party https://github.com/osodevops/akka-openapi-maven-plugin[Akka OpenAPI Maven plugin, window="new"] makes it possible to automatically generate OpenAPI specification for all the endpoints of a service.
+
+Add it to the plugins section of `pom.xml`
+
+[source,xml,indent=0]
+.{sample-base-url}/doc-snippets/pom.xml[pom.xml]
+----
+include::example$doc-snippets/pom.xml[tag=openapi-maven-plugin]
+----
+
+This will generate an up-to-date schema in `target/openapi.yaml` which can be manually distributed.
+
+It is also possible to serve the generated schema from the deployed service by changing where the file is generated:
+
+[source,xml,indent=0]
+.{sample-base-url}/doc-snippets/pom.xml[pom.xml]
+----
+include::example$doc-snippets/pom.xml[tag=openapi-maven-plugin-static-resource]
+----
+
+And then creating an endpoint serving it:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/OpenApiSpecificationEndpoint.java[OpenApiSpecificationEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/OpenApiSpecificationEndpoint.java[tag=serve-openapi]
+----
+
+For more details around additional specification metadata options and configuration, see the https://github.com/osodevops/akka-openapi-maven-plugin[Akka OpenAPI Maven plugin documentation, window="new"].
+
 [#sse]
 === Streaming responses with server-sent events ===
 
