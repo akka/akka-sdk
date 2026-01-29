@@ -424,9 +424,9 @@ Another alternative is separate, detached, input and output streams using `Flow.
 Here's an example that streams view updates from the server to the client WebSocket:
 
 [source,java,indent=0]
-.{sample-base-url}/key-value-customer-registry/src/main/java/customer/api/CustomerEndpoint.java[CustomerEndpoint.java]
+.{sample-base-url}/key-value-customer-registry/src/main/java/customer/api/WebSocketsEndpoint.java[WebSocketsEndpoint.java]
 ----
-include::example$key-value-customer-registry/src/main/java/customer/api/CustomerEndpoint.java[tag=ws-view-updates]
+include::example$key-value-customer-registry/src/main/java/customer/api/WebSocketsEndpoint.java[tag=ws-view-updates]
 ----
 <1> Method annotated with `WebSocket`
 <2> The method returns a `Flow<String, String, NotUsed>` to handle and emit WebSocket text messages

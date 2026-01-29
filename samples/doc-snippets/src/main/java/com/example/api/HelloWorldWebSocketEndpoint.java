@@ -33,7 +33,7 @@ public class HelloWorldWebSocketEndpoint extends AbstractHttpEndpoint {
   // end::class[]
   // Note: using websocket in a deployed service requires additional steps, see the documentation
   // tag::class[]
-  @WebSocket("/hello-websocket/{user}") // <1>
+  @WebSocket("/websockets/hello/{user}") // <1>
   public Flow<String, String, NotUsed> hello(String user) { // <2>
     return Flow.of(String.class).flatMapConcat(requestText -> // <3>
       componentClient
