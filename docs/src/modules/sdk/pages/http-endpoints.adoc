@@ -316,7 +316,7 @@ NOTE: This is convenient for service documentation or small self-contained servi
 
 === OpenAPI endpoint schema
 
-The third party link:https://github.com/osodevops/akka-openapi-maven-plugin[Akka OpenAPI Maven plugin] makes it possible to automatically generate OpenAPI specification for all the endpoints of a service.
+The third party https://github.com/osodevops/akka-openapi-maven-plugin[Akka OpenAPI Maven plugin, window="new"] makes it possible to automatically generate OpenAPI specification for all the endpoints of a service.
 
 Add it to the plugins section of `pom.xml`
 
@@ -344,7 +344,7 @@ And then creating an endpoint serving it:
 include::example$doc-snippets/src/main/java/com/example/api/OpenApiSpecificationEndpoint.java[tag=serve-openapi]
 ----
 
-For more details around additional specification metadata options and configuration, see the link:https://github.com/osodevops/akka-openapi-maven-plugin[Akka OpenAPI Maven plugin documentation].
+For more details around additional specification metadata options and configuration, see the https://github.com/osodevops/akka-openapi-maven-plugin[Akka OpenAPI Maven plugin documentation, window="new"].
 
 [#sse]
 === Streaming responses with server-sent events ===
