@@ -147,6 +147,7 @@ passwordHashes
 passwordKey
 passwordSecret
 plaintext
+plist
 Podman
 Postgres
 PostgreSQL
