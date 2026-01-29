@@ -15,8 +15,9 @@ import customer.application.CustomersByCity;
 // For actual services meant for production this must be carefully considered, and often set more limited
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 // tag::ws-view-updates[]
-@HttpEndpoint()
+@HttpEndpoint
 public class WebSocketsEndpoint {
+
   // end::ws-view-updates[]
 
   private final ComponentClient componentClient;
@@ -32,18 +33,17 @@ public class WebSocketsEndpoint {
   public Flow<String, String, NotUsed> continousByCityNameWebSocket(String cityName) { // <2>
     // view will keep stream going, toggled with streamUpdates = true on the query
     Source<String, NotUsed> customerSummarySourceJson = componentClient
-        .forView()
-        .stream(CustomersByCity::continuousCustomersInCity)
-        .source(cityName) // <3>
-        .map(JsonSupport::encodeToString); // <4>
+      .forView()
+      .stream(CustomersByCity::continuousCustomersInCity)
+      .source(cityName) // <3>
+      .map(JsonSupport::encodeToString); // <4>
 
     return Flow.fromSinkAndSource( // <5>
-        // ignore messages from client
-        Sink.ignore(),
-        // stream view updates
-        customerSummarySourceJson
+      // ignore messages from client
+      Sink.ignore(),
+      // stream view updates
+      customerSummarySourceJson
     );
   }
-
   // end::ws-view-updates[]
 }
