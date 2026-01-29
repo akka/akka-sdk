@@ -12,8 +12,14 @@ Current versions
 
 == January 2026
 
+* https://github.com/akka/akka-sdk/releases/tag/v3.5.13[Akka SDK 3.5.13]
+- Workflow notifications
+- WebSocket support
+- Pluggable agent image loading
+- Agent thinking
+
 * Akka CLI 3.0.46
-- Observability support improved 
+- Observability support improved
 - External secrets
 - Support for controlling CLI configuration with MDM solutions
 
