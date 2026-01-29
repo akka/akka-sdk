@@ -128,8 +128,8 @@ public class EventSourcedEntityValidations {
       if (method.hasAnnotation("akka.javasdk.annotations.FunctionTool")) {
         String returnTypeName = method.getReturnType().getQualifiedName();
         boolean isEffectMethod =
-            returnTypeName.equals("akka.javasdk.eventsourcedentity.EventSourcedEntity.Effect")
-                || returnTypeName.equals(
+            returnTypeName.startsWith("akka.javasdk.eventsourcedentity.EventSourcedEntity.Effect")
+                || returnTypeName.startsWith(
                     "akka.javasdk.eventsourcedentity.EventSourcedEntity.ReadOnlyEffect");
 
         if (!isEffectMethod) {

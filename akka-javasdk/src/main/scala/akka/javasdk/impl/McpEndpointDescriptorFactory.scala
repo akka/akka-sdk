@@ -27,6 +27,7 @@ import akka.javasdk.annotations.mcp.McpResource
 import akka.javasdk.annotations.mcp.McpTool
 import akka.javasdk.annotations.mcp.ToolAnnotation
 import akka.javasdk.impl.AclDescriptorFactory.deriveAclOptions
+import akka.javasdk.impl.ErrorHandling.unwrapInvocationTargetExceptionCatcher
 import akka.javasdk.impl.JwtDescriptorFactory.deriveJWTOptions
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.parboiled2.util.Base64
@@ -130,25 +131,29 @@ object McpEndpointDescriptorFactory {
         val callback = (context: McpEndpointConstructionContext, params: Map[String, Any]) =>
           Future[ResponseContent] {
             val endpointInstance = instanceFactory.apply(context)
-            val returnValue = if (method.getParameterCount == 0) {
-              method.invoke(endpointInstance)
-            } else {
-              val parsedParams = method.getParameters.map { param =>
-                val required = requiredParameterNames(param.getName)
-                params.get(param.getName) match {
-                  case Some(unparsedValue) =>
-                    val paramValue = objectMapper.convertValue(unparsedValue, param.getType)
-                    if (required) paramValue
-                    else Optional.ofNullable(paramValue)
-                  case None =>
-                    if (required)
-                      throw new IllegalArgumentException(
-                        s"Missing required tool parameter [${param.getName}] for tool [$toolName]")
-                    else Optional.empty()
+            val returnValue =
+              try {
+                if (method.getParameterCount == 0) {
+                  method.invoke(endpointInstance)
+                } else {
+                  val parsedParams = method.getParameters.map { param =>
+                    val required = requiredParameterNames(param.getName)
+                    params.get(param.getName) match {
+                      case Some(unparsedValue) =>
+                        val paramValue = objectMapper.convertValue(unparsedValue, param.getType)
+                        if (required) paramValue
+                        else Optional.ofNullable(paramValue)
+                      case None =>
+                        if (required)
+                          throw new IllegalArgumentException(
+                            s"Missing required tool parameter [${param.getName}] for tool [$toolName]")
+                        else Optional.empty()
+                    }
+                  }
+                  method.invoke(endpointInstance, parsedParams: _*)
                 }
-              }
-              method.invoke(endpointInstance, parsedParams: _*)
-            }
+              } catch unwrapInvocationTargetExceptionCatcher
+
             returnValue match {
               case text: String => new TextContent(text)
               case unknown      =>
@@ -218,7 +223,10 @@ object McpEndpointDescriptorFactory {
                 s"Resource template request was missing parameter [${parameter.getName}]")))
 
           val instance = instanceFactory(context)
-          val result = method.invoke(instance, params: _*)
+          val result =
+            try {
+              method.invoke(instance, params: _*)
+            } catch unwrapInvocationTargetExceptionCatcher
           resourceResultToMcp(result, uri.toString(), resourceTemplate.mimeType)
         }
 
@@ -249,7 +257,10 @@ object McpEndpointDescriptorFactory {
         val callback = { (context: McpEndpointConstructionContext) =>
           try {
             val endpointInstance = instanceFactory(context)
-            val result = method.invoke(endpointInstance)
+            val result =
+              try {
+                method.invoke(endpointInstance)
+              } catch unwrapInvocationTargetExceptionCatcher
             resourceResultToMcp(result, resourceDescription.uri, resourceDescription.mimeType)
           } catch {
             case NonFatal(ex) =>
@@ -299,7 +310,10 @@ object McpEndpointDescriptorFactory {
             if (parameter.getType != classOf[Optional[_]]) arguments(parameter.getName)
             else arguments.get(parameter.getName).toJava
           }
-          val result = method.invoke(endpointInstance, paramsInOrder: _*).asInstanceOf[String]
+          val result =
+            try {
+              method.invoke(endpointInstance, paramsInOrder: _*).asInstanceOf[String]
+            } catch unwrapInvocationTargetExceptionCatcher
           Future.successful(
             new PromptResult(
               description = None,

@@ -4,17 +4,16 @@
 
 package akka.javasdk.impl.agent
 
-import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.lang.reflect.Type
-
-import scala.util.control.Exception.Catcher
 
 import akka.annotation.InternalApi
 import akka.javasdk.DependencyProvider
 import akka.javasdk.agent.Agent
 import akka.javasdk.annotations.FunctionTool
 import akka.javasdk.client.ComponentClient
+import akka.javasdk.impl.ErrorHandling.unwrapExecutionExceptionCatcher
+import akka.javasdk.impl.ErrorHandling.unwrapInvocationTargetExceptionCatcher
 import akka.javasdk.impl.JsonSchema
 import akka.javasdk.impl.JsonSchema.jsonSchemaFor
 import akka.javasdk.impl.client.EntityClientImpl
@@ -66,7 +65,7 @@ object FunctionTools {
         if (isAgent(cls)) method.setAccessible(true)
         val instance = instanceFactory()
         method.invoke(instance, args: _*)
-      } catch unwrapInvocationTargetException()
+      } catch unwrapInvocationTargetExceptionCatcher
     }
 
     override def returnType: Class[_] =
@@ -109,7 +108,7 @@ object FunctionTools {
         if (hasParams) client.methodRefOneArg(method).invoke(args(1))
         else client.methodRefNoArg(method).invoke()
 
-      } catch unwrapInvocationTargetException()
+      } catch unwrapExecutionExceptionCatcher
     }
 
     override def returnType: Class[_] =
@@ -135,7 +134,7 @@ object FunctionTools {
         val client = componentClient.forView().asInstanceOf[ViewClientImpl]
         if (hasParams) client.methodRefOneArg(method).invoke(args(0))
         else client.methodRefNoArg(method).invoke()
-      } catch unwrapInvocationTargetException()
+      } catch unwrapExecutionExceptionCatcher
     }
 
     override def returnType: Class[_] =
@@ -293,8 +292,4 @@ object FunctionTools {
     }
   }
 
-  private def unwrapInvocationTargetException(): Catcher[AnyRef] = {
-    case exc: InvocationTargetException if exc.getCause != null =>
-      throw exc.getCause
-  }
 }

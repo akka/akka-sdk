@@ -10,7 +10,7 @@ import akka.javasdk.workflow.Workflow;
 @Component(id = "valid-workflow-one-arg")
 public class ValidWorkflowOneArg extends Workflow<String> {
 
-  public Effect execute(String command) {
+  public Effect<String> execute(String command) {
     return effects().reply(command);
   }
 }

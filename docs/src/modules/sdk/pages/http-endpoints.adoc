@@ -314,6 +314,38 @@ include::example$doc-snippets/src/main/java/com/example/api/StaticResourcesEndpo
 NOTE: This is convenient for service documentation or small self-contained services with web user interface but is not intended
  for production, where coupling of the service lifecycle with the user interface would mean that a new service version would need to be deployed for any changes in the user interface.
 
+=== OpenAPI endpoint schema
+
+The third party https://github.com/osodevops/akka-openapi-maven-plugin[Akka OpenAPI Maven plugin, window="new"] makes it possible to automatically generate OpenAPI specification for all the endpoints of a service.
+
+Add it to the plugins section of `pom.xml`
+
+[source,xml,indent=0]
+.{sample-base-url}/doc-snippets/pom.xml[pom.xml]
+----
+include::example$doc-snippets/pom.xml[tag=openapi-maven-plugin]
+----
+
+This will generate an up-to-date schema in `target/openapi.yaml` which can be manually distributed.
+
+It is also possible to serve the generated schema from the deployed service by changing where the file is generated:
+
+[source,xml,indent=0]
+.{sample-base-url}/doc-snippets/pom.xml[pom.xml]
+----
+include::example$doc-snippets/pom.xml[tag=openapi-maven-plugin-static-resource]
+----
+
+And then creating an endpoint serving it:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/OpenApiSpecificationEndpoint.java[OpenApiSpecificationEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/OpenApiSpecificationEndpoint.java[tag=serve-openapi]
+----
+
+For more details around additional specification metadata options and configuration, see the https://github.com/osodevops/akka-openapi-maven-plugin[Akka OpenAPI Maven plugin documentation, window="new"].
+
 [#sse]
 === Streaming responses with server-sent events ===
 
@@ -329,7 +361,7 @@ to make sure the response stream is kept alive through proxies and firewalls.
 
 ==== Streaming responses requires extra thought
 
-Streaming responses from an HTTP endpoint is tied to the specific instance they where connected to when the request was first made.
+Streaming responses from an HTTP endpoint is tied to the specific instance they were connected to when the request was first made.
 
 Akka is a distributed system, which means that services instances can start and stop based on decisions the infrastructure makes, because the service upgrading, or  other unanticipated issues. Connections are also
 forcibly disconnected at an interval to make sure connected clients are alive and that the connections
@@ -401,6 +433,83 @@ being present in the request.
 
 The testkit contains a `akka.javasdk.testkit.SseRouteTester` which can be used for covering
 both initial streams and reconnects with tests. In a test it can be accessed through `TestKit#getSelfSseRouteTester`.
+
+[#websocket]
+=== Streaming with WebSockets ===
+
+link:https://datatracker.ietf.org/doc/html/rfc6455[WebSockets] provides full-duplex communication channels over a single TCP connection. Unlike server-sent events which are unidirectional (server to client), WebSocket allows bidirectional streaming between the client and server.
+
+WebSocket endpoints are useful when you need:
+
+* Two-way communication between a browser client and the server
+* Binary data streaming to a browser
+
+IMPORTANT: While WebSocket endpoint methods work out of the box in local development and tests it requires additional setup to work in a deployed service, see xref:operations:services/invoke-service.adoc#websockets[Invoking Akka Services / WebSocket Support]. If this is not setup WebSocket connections to the deployed service will fail with an HTTP 403 Forbidden response.
+
+==== Creating a WebSocket endpoint
+
+A WebSocket endpoint is created by annotating a method with `@WebSocket()` and having it return a `akka.stream.javadsl.Flow`. The returned flow will be fed incoming messages from the client, and messages coming out of the flow will be sent back to the client.
+
+The `Flow` can be a request-response type of interaction where each incoming message from a client leads to one or more response messages.
+Another alternative is separate, detached, input and output streams using `Flow.fromSinkAndSource`.
+
+Here's an example that streams view updates from the server to the client WebSocket:
+
+[source,java,indent=0]
+.{sample-base-url}/key-value-customer-registry/src/main/java/customer/api/WebSocketsEndpoint.java[WebSocketsEndpoint.java]
+----
+include::example$key-value-customer-registry/src/main/java/customer/api/WebSocketsEndpoint.java[tag=ws-view-updates]
+----
+<1> Method annotated with `WebSocket`
+<2> The method returns a `Flow<String, String, NotUsed>` to handle and emit WebSocket text messages
+<3> Query the view to get a stream of entries and updates
+<4> Convert each customer object to a JSON string using `JsonSupport.encodeToString`
+<5> Create a `Flow` that ignores incoming client messages and streams view updates to the client
+
+For binary WebSocket support, return a `Flow` with `ByteString` instead of `String`. For even greater flexibility
+`akka.http.javadsl.model.ws.Message` is also supported. The input and output of the flow must have the same type.
+
+In many cases WebSockets are interesting because of the bidirectional capabilities. Here is an example
+that accepts incoming agent requests, feeds those into a streaming agent and then streams the agent response back to the client:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/HelloWorldWebSocketEndpoint.java[HelloWorldWebSocketEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/HelloWorldWebSocketEndpoint.java[tag=class]
+----
+<1> Method annotated with `WebSocket`
+<2> Return type `Flow<String, String, NotUsed>` to handle and emit WebSocket text messages
+<3> `Flow.flatMapConcat` turns each incoming request into a stream of response strings
+
+`flatMapConcat` means that each response will be streamed until completion, before the next response starts.
+
+==== WebSockets requires extra thought
+
+WebSocket connections to an HTTP endpoint is tied to the specific instance they were connected to when the request was first made.
+
+Akka is a distributed system, which means that services instances can start and stop based on decisions the infrastructure makes, because the service upgrading, or  other unanticipated issues. Connections are also
+forcibly disconnected at an interval to make sure connected clients are alive and that the connections
+are rebalanced over the instances of the service.
+
+It is important that WebSocket endpoint methods are designed with connection loss in mind and do not rely on the stream itself to keep a local JVM object alive. A reconnect may not end up in the same service instance as the original connection.
+
+==== Testing WebSocket endpoints
+
+The testkit provides `akka.javasdk.testkit.WebSocketRouteTester` for testing WebSocket endpoints. Access it through `TestKit#getSelfWebSocketRouteTester`.
+
+Example testing a text WebSocket:
+
+[source,java,indent=0]
+.akka-javasdk-tests/src/test/java/akkajavasdk/HttpEndpointTest.java[HttpEndpointTest.java]
+----
+include::example$doc-snippets/src/test/java/com/example/api/ExampleWebSocketTest.java[tag=ws-testkit]
+----
+<1> Get the WebSocket route tester from the test kit
+<2> Create a text WebSocket connection to the endpoint
+<3> Request one message from the server
+<4> Send a message from the client
+<5> Expect and verify the received message
+<6> Complete the connection
 
 == See also
 

@@ -12,6 +12,38 @@ Current versions
 
 == January 2026
 
+[sidebar]
+****
+
+**Smarter agents with vision and reasoning**
+
+Agents gain multimodal capabilities with image input support, enabling models to perceive and reason about visual content. Supported models can now be configured to enable thinking, letting agents reason through complex problems step by step. Other Akka components can be wired directly as agent tools, making it easy to give agents access to your existing business logic without writing glue code.
+
+**Workflow notifications and a new fluent API**
+
+Workflows get a redesigned, more type-safe and fluent API that makes defining multi-step processes more intuitive. Workflows can now publish real-time notifications to subscribers, keeping downstream systems informed as individual workflows progress through their steps.
+
+**Console with deep observability**
+
+The Akka console now provides detailed insights into your service structure and component interactions. Run it in local mode to get full request traces showing exactly which components handle each request, along with a detailed view of how agents interact with AI models — invaluable for debugging and understanding agent behavior during development.
+
+****
+
+* https://github.com/akka/akka-sdk/releases/tag/v3.5.13[Akka SDK 3.5.13]
+- Workflow notifications
+- WebSocket support
+- Pluggable agent image loading
+- Agent thinking
+
+* Akka CLI 3.0.46
+- Observability support improved
+- External secrets
+- Support for controlling CLI configuration with MDM solutions
+
+* Akka CLI 3.0.45
+- Support for configuring custom JVM Truststore
+- Command for bringing up region
+
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.12[Akka SDK 3.5.12]
 - agent image input mime type support
 - replication filters for Event Sourced Entity and Key Value Entity

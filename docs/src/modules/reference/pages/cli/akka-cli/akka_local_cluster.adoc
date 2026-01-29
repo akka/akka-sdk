@@ -5,7 +5,13 @@ Start and manage a local Akka cluster
 == Synopsis
 
 Start and manage a local Akka cluster for development and testing.
-This command requires that docker is installed and started, docker is used to launch the Akka Persistence layer before starting the Akka cluster.
+
+This command must be run from an Akka SDK project directory (a directory containing a pom.xml file).
+
+Prerequisites:
+
+* Maven installed on your system, or the Maven wrapper (mvnw) present in your project
+* Docker installed and running (used to launch Akka Persistence backed by PostgreSQL)
 
 ----
 akka local cluster [flags]

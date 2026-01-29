@@ -31,6 +31,7 @@ The `akka project settings` commands provides a way to configure the settings of
 == SEE ALSO
 
 * link:akka_projects.html[akka projects]	 - Manage your Akka projects.
+* link:akka_projects_settings_bring-up-region.html[akka projects settings bring-up-region]	 - Brings up a region that was previously downed without need for redeployment.
 * link:akka_projects_settings_down-region.html[akka projects settings down-region]	 - Downs a region without need for redeployment.
 Optionally select a new region as a primary.
 

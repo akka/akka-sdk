@@ -46,9 +46,11 @@ The `akka services` commands are used to manage and modify the services in your 
 * link:akka_services_logging.html[akka services logging]	 - Change the log level configuration of a service.
 * link:akka_services_pause.html[akka services pause]	 - Pause a service, scaling it to zero instances.
 * link:akka_services_proxy.html[akka services proxy]	 - Create an HTTP proxy to a service.
+* link:akka_services_remove-config.html[akka services remove-config]	 - Remove the service config from a service.
 * link:akka_services_restart.html[akka services restart]	 - Restart all service instances using the newest image.
 * link:akka_services_restore.html[akka services restore]	 - Restore a service that was deleted in the past two weeks.
 * link:akka_services_resume.html[akka services resume]	 - Resume a service, scaling it back up.
+* link:akka_services_set-config.html[akka services set-config]	 - Set the service config for a service.
 * link:akka_services_unexpose.html[akka services unexpose]	 - Unexpose a service.
 * link:akka_services_views.html[akka services views]	 - Manage views.
 

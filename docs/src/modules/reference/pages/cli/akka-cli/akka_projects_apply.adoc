@@ -19,7 +19,6 @@ akka project apply -f project.yaml
 == Options
 
 ----
-      --all-regions      run the command on all regions
       --dry-run          Validate and show what would be applied without making changes
   -f, --file string      The YAML file to apply. If not supplied, will read from stdin.
   -h, --help             help for apply

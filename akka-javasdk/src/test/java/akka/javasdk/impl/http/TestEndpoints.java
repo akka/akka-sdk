@@ -4,9 +4,11 @@
 
 package akka.javasdk.impl.http;
 
+import akka.NotUsed;
 import akka.http.javadsl.model.HttpEntity;
 import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
+import akka.http.javadsl.model.ws.Message;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.Description;
 import akka.javasdk.annotations.JWT;
@@ -16,7 +18,10 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Patch;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.annotations.http.Put;
+import akka.javasdk.annotations.http.WebSocket;
 import akka.javasdk.http.HttpResponses;
+import akka.stream.javadsl.Flow;
+import akka.util.ByteString;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -266,5 +271,80 @@ public class TestEndpoints {
 
     @Get("/b")
     public void b() {}
+  }
+
+  // Valid WebSocket endpoints for positive testing
+  @HttpEndpoint("websocket")
+  public static class ValidWebSocketEndpoints {
+
+    @WebSocket("/text")
+    public Flow<String, String, NotUsed> textWebSocket() {
+      return Flow.create();
+    }
+
+    @WebSocket("/binary")
+    public Flow<ByteString, ByteString, NotUsed> binaryWebSocket() {
+      return Flow.create();
+    }
+
+    @WebSocket("/message")
+    public Flow<Message, Message, NotUsed> messageWebSocket() {
+      return Flow.create();
+    }
+
+    @WebSocket("/with-path-param/{id}")
+    public Flow<String, String, NotUsed> withPathParam(String id) {
+      return Flow.create();
+    }
+  }
+
+  // WebSocket with wrong return type (not Flow)
+  @HttpEndpoint("invalid-websocket-return-type")
+  public static class InvalidWebSocketReturnType {
+
+    @WebSocket("/echo")
+    public String wrongReturnType() {
+      return "wrong";
+    }
+  }
+
+  // WebSocket with different in/out message types
+  @HttpEndpoint("invalid-websocket-different-types")
+  public static class InvalidWebSocketDifferentTypes {
+
+    @WebSocket("/echo")
+    public Flow<String, ByteString, NotUsed> differentInOut() {
+      return null;
+    }
+  }
+
+  // WebSocket with unsupported message type
+  @HttpEndpoint("invalid-websocket-message-type")
+  public static class InvalidWebSocketMessageType {
+
+    @WebSocket("/echo")
+    public Flow<Integer, Integer, NotUsed> unsupportedType() {
+      return null;
+    }
+  }
+
+  // WebSocket with unsupported materialized value type
+  @HttpEndpoint("invalid-websocket-mat-type")
+  public static class InvalidWebSocketMatType {
+
+    @WebSocket("/echo")
+    public Flow<String, String, String> wrongMatType() {
+      return null;
+    }
+  }
+
+  // WebSocket with request body parameter
+  @HttpEndpoint("invalid-websocket-body-param")
+  public static class InvalidWebSocketBodyParam {
+
+    @WebSocket("/echo")
+    public Flow<String, String, NotUsed> withBodyParam(AThing body) {
+      return null;
+    }
   }
 }

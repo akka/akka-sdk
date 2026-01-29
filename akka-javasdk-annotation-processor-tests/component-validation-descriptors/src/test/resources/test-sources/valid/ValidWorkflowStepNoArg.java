@@ -10,11 +10,11 @@ import akka.javasdk.workflow.Workflow;
 @Component(id = "valid-workflow-step-no-arg")
 public class ValidWorkflowStepNoArg extends Workflow<String> {
 
-  public Effect execute() {
+  public Effect<String> execute() {
     return effects().reply("ok");
   }
 
   public StepEffect processStep() {
-    return effects().pause();
+    return stepEffects().thenPause();
   }
 }

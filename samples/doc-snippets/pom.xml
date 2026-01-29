@@ -5,7 +5,7 @@
   <parent>
     <groupId>io.akka</groupId>
     <artifactId>akka-javasdk-parent</artifactId>
-    <version>3.5.12</version>
+    <version>3.5.13</version>
   </parent>
 
   <groupId>com.example</groupId>
@@ -17,8 +17,10 @@
 
   <!-- example of including third party protobuf messages available in a jar -->
   <!-- tag::third-party-proto-jar[] -->
+  <!-- tag::openapi-maven-plugin[] -->
   <build>
     <plugins>
+      <!-- end::openapi-maven-plugin[] -->
       <plugin>
         <artifactId>maven-dependency-plugin</artifactId>
         <executions>
@@ -48,7 +50,30 @@
           </execution>
         </executions>
       </plugin>
+    <!-- end::third-party-proto-jar[] -->
+    <!-- tag::openapi-maven-plugin[] -->
+      <plugin>
+        <groupId>sh.oso</groupId>
+        <artifactId>akka-openapi-maven-plugin</artifactId>
+        <version>1.0.0</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+          </execution>
+        </executions>
+        <!-- end::openapi-maven-plugin[] -->
+        <!-- tag::openapi-maven-plugin-static-resource[] -->
+        <configuration>
+          <outputFile>target/classes/static-resources/openapi.yaml</outputFile>
+        </configuration>
+        <!-- end::openapi-maven-plugin-static-resource[] -->
+        <!-- tag::openapi-maven-plugin[] -->
+      </plugin>
+    <!-- tag::third-party-proto-jar[] -->
     </plugins>
   </build>
   <!-- end::third-party-proto-jar[] -->
+  <!-- end::openapi-maven-plugin[] -->
 </project>

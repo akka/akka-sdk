@@ -20,7 +20,6 @@ akka project export > project.yaml
 == Options
 
 ----
-      --all-regions      run the command on all regions
   -f, --file string      The YAML file to export to. If not supplied, will write to stdout.
   -h, --help             help for export
       --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
