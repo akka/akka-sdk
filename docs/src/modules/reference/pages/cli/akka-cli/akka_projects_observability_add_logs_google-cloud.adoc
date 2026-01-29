@@ -1,30 +1,21 @@
-= akka projects apply
+= akka projects observability add logs google-cloud
 
-Apply a project descriptor.
-
-== Synopsis
-
-The `akka project apply` command applies a project descriptor containing multiple services, creating or updating them as appropriate.
+Add a Google Cloud exporter for logs.
 
 ----
-akka projects apply [flags]
-----
-
-== Examples
-
-----
-akka project apply -f project.yaml
+akka projects observability add logs google-cloud [flags]
 ----
 
 == Options
 
 ----
-      --dry-run          Validate and show what would be applied without making changes
-  -f, --file string      The YAML file to apply. If not supplied, will read from stdin.
-  -h, --help             help for apply
-      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
-      --project string   project to use if not using the default configured project
-      --region string    region to use if project has more than one region
+      --force-global                        force an existing regional resource to be configured as a global resource
+      --force-regional                      force an existing global resource to be configured as a regional resource
+  -h, --help                                help for google-cloud
+      --owner string                        the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string                      project to use if not using the default configured project
+      --region string                       region to use if project has more than one region
+      --service-account-key-secret string   The name of an Akka Secret to read the service account secret key from. The key should be in a property called 'key.json'.
 ----
 
 == Options inherited from parent commands
@@ -45,7 +36,7 @@ akka project apply -f project.yaml
 
 == SEE ALSO
 
-* link:akka_projects.html[akka projects]	 - Manage your Akka projects.
+* link:akka_projects_observability_add_logs.html[akka projects observability add logs]	 - Add a logs exporter for your Akka project.
 
 [discrete]
 
