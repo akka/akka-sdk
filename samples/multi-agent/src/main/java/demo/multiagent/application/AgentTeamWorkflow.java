@@ -3,14 +3,19 @@ package demo.multiagent.application;
 import static demo.multiagent.application.AgentTeamWorkflow.Status.COMPLETED;
 import static demo.multiagent.application.AgentTeamWorkflow.Status.FAILED;
 import static demo.multiagent.application.AgentTeamWorkflow.Status.STARTED;
+import static java.time.Duration.ofMillis;
 import static java.time.Duration.ofSeconds;
 
 import akka.Done;
+import akka.javasdk.NotificationPublisher;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.StepName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.client.DynamicMethodRef;
 import akka.javasdk.workflow.Workflow;
+import akka.stream.Materializer;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import demo.multiagent.domain.AgentRequest;
 import demo.multiagent.domain.AgentSelection;
 import demo.multiagent.domain.Plan;
@@ -82,12 +87,40 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
   private static final Logger logger = LoggerFactory.getLogger(AgentTeamWorkflow.class);
 
   private final ComponentClient componentClient;
+  private final NotificationPublisher<AgentTeamNotification> notificationPublisher;
+  private final Materializer materializer;
 
-  public AgentTeamWorkflow(ComponentClient componentClient) {
+  public AgentTeamWorkflow(
+    ComponentClient componentClient,
+    NotificationPublisher<AgentTeamNotification> notificationPublisher,
+    Materializer materializer
+  ) {
     this.componentClient = componentClient;
+    this.notificationPublisher = notificationPublisher;
+    this.materializer = materializer;
   }
 
+  // end::all[]
+  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
+  @JsonSubTypes(
+    {
+      @JsonSubTypes.Type(value = AgentTeamNotification.StatusUpdate.class, name = "S"),
+      @JsonSubTypes.Type(value = AgentTeamNotification.LlmResponseStart.class, name = "LS"),
+      @JsonSubTypes.Type(value = AgentTeamNotification.LlmResponseDelta.class, name = "LD"),
+      @JsonSubTypes.Type(value = AgentTeamNotification.LlmResponseEnd.class, name = "LE"),
+    }
+  )
+  // tag::all[]
   // tag::plan[]
+  public sealed interface AgentTeamNotification {
+    record StatusUpdate(String msg) implements AgentTeamNotification {}
+
+    record LlmResponseStart() implements AgentTeamNotification {}
+
+    record LlmResponseDelta(String response) implements AgentTeamNotification {}
+
+    record LlmResponseEnd() implements AgentTeamNotification {}
+  }
 
   @Override
   public WorkflowSettings settings() {
@@ -148,6 +181,9 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
       .invoke(currentState().userQuery); // <4>
 
     logger.info("Selected agents: {}", selection.agents());
+    notificationPublisher.publish(
+      new AgentTeamNotification.StatusUpdate("Agents selected: " + selection.agents())
+    );
     if (selection.agents().isEmpty()) {
       var newState = currentState()
         .withFinalAnswer("Couldn't find any agent(s) able to respond to the original query.")
@@ -175,6 +211,11 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
       .invoke(new PlannerAgent.Request(currentState().userQuery, agentSelection)); // <6>
 
     logger.info("Execution plan: {}", plan);
+    notificationPublisher.publish(
+      new AgentTeamNotification.StatusUpdate(
+        "Execution plan formed. Number of steps: " + plan.steps().size()
+      )
+    );
     return stepEffects()
       .updateState(currentState().withPlan(plan))
       .thenTransitionTo(AgentTeamWorkflow::executePlanStep); // <7>
@@ -187,6 +228,9 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
       "Executing plan step (agent:{}), asking {}",
       stepPlan.agentId(),
       stepPlan.query()
+    );
+    notificationPublisher.publish(
+      new AgentTeamNotification.StatusUpdate("Calling: " + stepPlan.agentId())
     );
     var agentResponse = callAgent(stepPlan.agentId(), stepPlan.query()); // <9>
     if (agentResponse.startsWith("ERROR")) {
@@ -230,11 +274,26 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
   @StepName("summarize")
   private StepEffect summarizeStep() { // <2>
     var agentsAnswers = currentState().agentResponses.values();
-    var finalAnswer = componentClient
+
+    var tokenSource = componentClient
       .forAgent()
       .inSession(sessionId())
-      .method(SummarizerAgent::summarize)
-      .invoke(new SummarizerAgent.Request(currentState().userQuery, agentsAnswers));
+      .tokenStream(SummarizerAgent::summarize)
+      .source(new SummarizerAgent.Request(currentState().userQuery, agentsAnswers));
+
+    notificationPublisher.publish(new AgentTeamNotification.LlmResponseStart());
+    var finalAnswer = notificationPublisher.publishTokenStream(
+      tokenSource,
+      10,
+      ofMillis(200),
+      AgentTeamNotification.LlmResponseDelta::new,
+      materializer
+    );
+
+    notificationPublisher.publish(new AgentTeamNotification.LlmResponseEnd());
+    notificationPublisher.publish(
+      new AgentTeamNotification.StatusUpdate("All steps completed!")
+    );
 
     return stepEffects()
       .updateState(currentState().withFinalAnswer(finalAnswer).complete())
@@ -248,6 +307,10 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
     logger.info("Interrupting workflow");
 
     return stepEffects().updateState(currentState().failed()).thenEnd();
+  }
+
+  public NotificationPublisher.NotificationStream<AgentTeamNotification> updates() {
+    return notificationPublisher.stream();
   }
 
   private String sessionId() {

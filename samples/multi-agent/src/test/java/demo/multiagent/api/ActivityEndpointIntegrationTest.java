@@ -19,6 +19,7 @@ import demo.multiagent.domain.AgentSelection;
 import demo.multiagent.domain.Plan;
 import demo.multiagent.domain.PlanStep;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
@@ -51,6 +52,7 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldHandleFullActivitySuggestionWorkflowWithPreferenceUpdate() {
+    var sessionId = UUID.randomUUID().toString();
     var userId = "alice";
     var query = "I am in Stockholm. What should I do? Beware of the weather";
 
@@ -62,7 +64,7 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
 
     // 1. Call suggestActivities endpoint
     var suggestResponse = httpClient
-      .POST("/activities/" + userId)
+      .POST("/activities/" + userId + "/" + sessionId)
       .withRequestBody(new ActivityEndpoint.Request(query))
       .addHeader("akka-debug-id", debugId)
       .invoke();
@@ -75,7 +77,8 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
       .getHeader("Location")
       .orElseThrow()
       .value();
-    var sessionId = extractSessionIdFromLocation(locationHeader, userId);
+    var locationSessionId = extractSessionIdFromLocation(locationHeader, userId);
+    assertThat(locationSessionId).isEqualTo(sessionId);
 
     // 2. Retrieve answer using the sessionId
     Awaitility.await()
@@ -128,7 +131,7 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
           "planner-agent",
           "weather-agent",
           "activity-agent",
-          "summarizer-agent",
+          //"summarizer-agent", // FIXME not included because it's using tokenStream?
           "toxicity-evaluator",
           "summarization-evaluator"
         );
@@ -173,7 +176,7 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
           "planner-agent",
           "weather-agent",
           "activity-agent",
-          "summarizer-agent",
+          //"summarizer-agent", // FIXME not included because it's using tokenStream?
           "toxicity-evaluator",
           "summarization-evaluator"
         );

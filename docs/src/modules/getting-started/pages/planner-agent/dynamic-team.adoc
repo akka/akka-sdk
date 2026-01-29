@@ -121,7 +121,7 @@ Update the `AgentTeamWorkflow` to this:
 ----
 include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[tag=all]
 ----
-<1> It's a workflow, with reliable and durable execution.
+<1> It's a workflow, with reliable and durable execution and the xref:sdk:agents/streaming.adoc#_streaming_from_the_workflow[notification system].
 <2> The steps are select - plan - execute - summarize.
 <3> The workflow starts by selecting agents
 <4> which is performed by the `SelectorAgent`.
