@@ -148,6 +148,7 @@ passwordKey
 passwordSecret
 plaintext
 plist
+[pP]luggable
 Podman
 Postgres
 PostgreSQL
