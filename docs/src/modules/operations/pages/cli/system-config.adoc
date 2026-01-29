@@ -14,11 +14,11 @@ The following settings can be configured at the system level:
 | Setting | Description | Default
 
 | `code-templates-url`
-| URL for project templates used by `akka code init`
+| URL of project templates used by `akka code init`
 | `\https://doc.akka.io/_attachments/akka-code-init.json`
 
 | `context-url`
-| URL for documentation context used by AI coding assistants
+| URL of documentation context used by AI coding assistants
 | `\https://doc.akka.io/java/_attachments/akka-docs-md.zip`
 
 | `context-subdir`
@@ -115,7 +115,7 @@ Create a configuration profile with the bundle identifier `io.akka.cli` containi
 </plist>
 ----
 
-Deploy this as a managed preference using your MDM solution (Jamf, Kandji, Mosyle, etc.).
+Deploy this as a managed preference using your MDM solution.
 
 == Precedence
 
