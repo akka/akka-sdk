@@ -99,6 +99,13 @@ public class ActivityWorkflow extends Workflow<ActivityWorkflow.State> {
 
   // end::workflow-agent-stream-notification[]
 
+  public Effect<String> start(String request) {
+    return effects()
+        .transitionTo(ActivityWorkflow::summarizeStep)
+        .withInput(request)
+        .thenReply("Started");
+  }
+
   private String sessionId() {
     // the workflow corresponds to the session
     return commandContext().workflowId();

@@ -101,7 +101,6 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
   }
 
   // end::all[]
-  // end::plan[]
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
   @JsonSubTypes(
     {
