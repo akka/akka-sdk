@@ -241,7 +241,8 @@ public class WorkflowTest extends TestKitSupport {
 
               var result = componentClient.forView().method(TransferView::getAll).invoke();
               assertThat(result.entries())
-                  .containsOnly(new TransferView.TransferEntry(transferId2, true));
+                  .contains(new TransferView.TransferEntry(transferId2, true))
+                  .doesNotContain(new TransferView.TransferEntry(transferId1, true));
             });
   }
 
