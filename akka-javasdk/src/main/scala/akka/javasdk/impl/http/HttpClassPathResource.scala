@@ -20,17 +20,28 @@ object HttpClassPathResource {
 
   private val PredefinedStaticResourcesPath = "/static-resources/"
 
-  private val suffixToMimeType = Map(
-    "html" -> ContentTypes.TEXT_HTML_UTF8,
-    "txt" -> ContentTypes.TEXT_PLAIN_UTF8,
-    "css" -> ContentTypes.create(MediaTypes.TEXT_CSS, HttpCharsets.`UTF-8`),
-    "js" -> ContentTypes.create(MediaTypes.APPLICATION_JAVASCRIPT, HttpCharsets.`UTF-8`),
-    "png" -> ContentTypes.create(MediaTypes.IMAGE_PNG),
-    "svg" -> ContentTypes.create(MediaTypes.IMAGE_SVG_XML),
-    "jpg" -> ContentTypes.create(MediaTypes.IMAGE_JPEG),
-    "gif" -> ContentTypes.create(MediaTypes.IMAGE_GIF),
-    "ico" -> ContentTypes.create(MediaTypes.IMAGE_X_ICON),
-    "pdf" -> ContentTypes.create(MediaTypes.APPLICATION_PDF))
+  // FIXME replace this with the existing MediaTypes registry in Akka HTTP?
+  private val suffixToMimeType = {
+    val yaml = ContentTypes.create(
+      MediaTypes.applicationWithOpenCharset("yaml", "yaml", "yml"),
+      HttpCharsets.`UTF-8`
+    ) // RFC 9512
+    Map(
+      "html" -> ContentTypes.TEXT_HTML_UTF8,
+      "txt" -> ContentTypes.TEXT_PLAIN_UTF8,
+      "css" -> ContentTypes.create(MediaTypes.TEXT_CSS, HttpCharsets.`UTF-8`),
+      "js" -> ContentTypes.create(MediaTypes.APPLICATION_JAVASCRIPT, HttpCharsets.`UTF-8`),
+      "json" -> ContentTypes.APPLICATION_JSON,
+      "png" -> ContentTypes.create(MediaTypes.IMAGE_PNG),
+      "svg" -> ContentTypes.create(MediaTypes.IMAGE_SVG_XML),
+      "jpg" -> ContentTypes.create(MediaTypes.IMAGE_JPEG),
+      "gif" -> ContentTypes.create(MediaTypes.IMAGE_GIF),
+      "ico" -> ContentTypes.create(MediaTypes.IMAGE_X_ICON),
+      "pdf" -> ContentTypes.create(MediaTypes.APPLICATION_PDF),
+      "xml" -> ContentTypes.TEXT_XML_UTF8,
+      "yaml" -> yaml,
+      "yml" -> yaml)
+  }
 
   def fromStaticPath(relativePath: String): HttpResponse = {
     // not http response since it would be a programmer error
