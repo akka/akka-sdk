@@ -34,7 +34,8 @@ public class Validations {
         .combine(KeyValueEntityValidations.validate(typeDef))
         .combine(EventSourcedEntityValidations.validate(typeDef))
         .combine(AgentValidations.validate(typeDef))
-        .combine(ViewValidations.validate(typeDef));
+        .combine(ViewValidations.validate(typeDef))
+        .combine(HttpEndpointValidations.validate(typeDef));
   }
 
   // ==================== Subscription Helper Methods ====================

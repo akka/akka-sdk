@@ -18,11 +18,12 @@ import javax.tools.Diagnostic;
 
 /**
  * Annotation processor that performs compile-time validation on classes annotated with @Component,
- * or deprecated @ComponentId.
+ * deprecated @ComponentId, or @HttpEndpoint.
  */
 @SupportedAnnotationTypes({
   "akka.javasdk.annotations.Component",
-  "akka.javasdk.annotations.ComponentId"
+  "akka.javasdk.annotations.ComponentId",
+  "akka.javasdk.annotations.http.HttpEndpoint"
 })
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 public class ComponentValidationProcessor extends BaseAkkaProcessor {
