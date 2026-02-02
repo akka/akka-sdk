@@ -158,7 +158,8 @@ private[javasdk] final case class AgentClientImpl(
 
     () =>
       agentClient
-        .sendStream(new AgentRequest(componentId, sessionId, methodName, BytesPayload.empty, SpiMetadata.empty))
+        .sendStream(
+          new AgentRequest(componentId, sessionId, methodName, BytesPayload.empty, MetadataImpl.toSpi(callMetadata)))
         .map { agentResult =>
           // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
           serializer.fromBytes(classOf[String], agentResult.payload)
@@ -175,7 +176,8 @@ private[javasdk] final case class AgentClientImpl(
       // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
       val serializedPayload = serializer.toBytes(arg)
       agentClient
-        .sendStream(new AgentRequest(componentId, sessionId, methodName, serializedPayload, SpiMetadata.empty))
+        .sendStream(
+          new AgentRequest(componentId, sessionId, methodName, serializedPayload, MetadataImpl.toSpi(callMetadata)))
         .map { agentResult =>
           // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
           serializer.fromBytes(classOf[String], agentResult.payload)

@@ -131,7 +131,7 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
           "planner-agent",
           "weather-agent",
           "activity-agent",
-          //"summarizer-agent", // FIXME not included because it's using tokenStream?
+          "summarizer-agent",
           "toxicity-evaluator",
           "summarization-evaluator"
         );
@@ -176,7 +176,7 @@ public class ActivityEndpointIntegrationTest extends TestKitSupport {
           "planner-agent",
           "weather-agent",
           "activity-agent",
-          //"summarizer-agent", // FIXME not included because it's using tokenStream?
+          "summarizer-agent",
           "toxicity-evaluator",
           "summarization-evaluator"
         );
