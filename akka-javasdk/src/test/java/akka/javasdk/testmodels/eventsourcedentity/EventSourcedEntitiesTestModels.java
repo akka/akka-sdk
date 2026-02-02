@@ -5,7 +5,9 @@
 package akka.javasdk.testmodels.eventsourcedentity;
 
 import akka.javasdk.annotations.Component;
+import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.ProtoEventTypes;
+import akka.javasdk.consumer.Consumer;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import com.google.protobuf.GeneratedMessageV3;
 import protoconsumer.EventsForConsumer.EventForConsumer1;
@@ -82,6 +84,46 @@ public class EventSourcedEntitiesTestModels {
     @Override
     public String applyEvent(EmployeeEvent event) {
       return "test";
+    }
+  }
+
+  /** Consumer with @ProtoEventTypes on the consumer class itself. */
+  @Component(id = "proto-consumer-with-annotation")
+  @Consume.FromEventSourcedEntity(value = ValidProtoEventSourcedEntity.class)
+  @ProtoEventTypes({EventForConsumer1.class})
+  public static class ProtoConsumerWithAnnotation extends Consumer {
+    public Effect onEvent(GeneratedMessageV3 event) {
+      return effects().done();
+    }
+  }
+
+  /** Consumer that auto-resolves proto types from the source entity. */
+  @Component(id = "proto-consumer-auto-resolve")
+  @Consume.FromEventSourcedEntity(value = ValidProtoEventSourcedEntity.class)
+  public static class ProtoConsumerAutoResolve extends Consumer {
+    public Effect onEvent(GeneratedMessageV3 event) {
+      return effects().done();
+    }
+  }
+
+  /** Consumer with no @ProtoEventTypes and no ES entity source — should fail resolution. */
+  @Component(id = "proto-consumer-no-types")
+  @Consume.FromTopic("some-topic")
+  public static class ProtoConsumerNoTypes extends Consumer {
+    public Effect onEvent(GeneratedMessageV3 event) {
+      return effects().done();
+    }
+  }
+
+  /**
+   * Consumer subscribing to an ES entity that does NOT have @ProtoEventTypes — should fail
+   * resolution.
+   */
+  @Component(id = "proto-consumer-entity-without-annotation")
+  @Consume.FromEventSourcedEntity(value = EmployeeEntity.class)
+  public static class ProtoConsumerEntityWithoutAnnotation extends Consumer {
+    public Effect onEvent(GeneratedMessageV3 event) {
+      return effects().done();
     }
   }
 }

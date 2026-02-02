@@ -11,6 +11,10 @@ import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.client.ComponentClientImpl
 import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.InvalidProtoEventSourcedEntityWrongEventType
+import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.ProtoConsumerAutoResolve
+import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.ProtoConsumerEntityWithoutAnnotation
+import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.ProtoConsumerNoTypes
+import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.ProtoConsumerWithAnnotation
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.ValidProtoEventSourcedEntity
 import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowAnnotatedAbstractClass
 import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowAnnotatedAbstractClassLegacy
@@ -190,6 +194,36 @@ class ReflectSpec extends AnyWordSpec with Matchers {
       result shouldBe defined
       result.get should include("@ProtoEventTypes")
       result.get should include(classOf[GeneratedMessageV3].getName)
+    }
+
+    "resolve proto event types from @ProtoEventTypes on the component itself" in {
+      val types = Reflect.resolveProtoEventTypes(classOf[ProtoConsumerWithAnnotation])
+      types should have size 1
+      types should contain(classOf[EventForConsumer1])
+    }
+
+    "resolve proto event types from source ES entity when not on component" in {
+      val types = Reflect.resolveProtoEventTypes(classOf[ProtoConsumerAutoResolve])
+      types should have size 2
+      types should contain(classOf[EventForConsumer1])
+      types should contain(classOf[EventForConsumer2])
+    }
+
+    "prefer @ProtoEventTypes on component over source entity" in {
+      // ProtoConsumerWithAnnotation has only EventForConsumer1, but the source entity has both
+      val types = Reflect.resolveProtoEventTypes(classOf[ProtoConsumerWithAnnotation])
+      types should have size 1
+      types should contain only classOf[EventForConsumer1]
+    }
+
+    "return empty when no @ProtoEventTypes and no ES entity source" in {
+      val types = Reflect.resolveProtoEventTypes(classOf[ProtoConsumerNoTypes])
+      types shouldBe empty
+    }
+
+    "return empty when source ES entity has no @ProtoEventTypes" in {
+      val types = Reflect.resolveProtoEventTypes(classOf[ProtoConsumerEntityWithoutAnnotation])
+      types shouldBe empty
     }
   }
 }
