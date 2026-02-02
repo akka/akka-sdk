@@ -17,15 +17,15 @@ Current versions
 
 **Smarter agents with vision and reasoning**
 
-Agents gain multimodal capabilities with image input support, enabling models to perceive and reason about visual content. Supported models can now be configured to enable thinking, letting agents reason through complex problems step by step. Other Akka components can be wired directly as agent tools, making it easy to give agents access to your existing business logic without writing glue code.
+Agents gain xref:sdk:agents/prompt.adoc#_multimodal_user_message[multimodal capabilities with image input support], enabling models to perceive and reason about visual content. Supported models can now be configured to enable thinking, letting agents reason through complex problems step by step. Other Akka components can be wired directly as agent tools, making it easy to give agents access to your existing business logic without writing glue code.
 
 **Workflow notifications and a new fluent API**
 
-Workflows get a redesigned, more type-safe and fluent API that makes defining multi-step processes more intuitive. Workflows can now publish real-time notifications to subscribers, keeping downstream systems informed as individual workflows progress through their steps.
+Workflows get xref:sdk:workflows.adoc[a redesigned, more type-safe and fluent API] that makes defining multi-step processes more intuitive. Workflows can now emit streams of real-time notifications to subscribers, keeping clients and downstream systems informed as individual workflows progress through their steps.
 
 **Console with deep observability**
 
-The Akka console now provides detailed insights into your service structure and component interactions. Run it in local mode to get full request traces showing exactly which components handle each request, along with a detailed view of how agents interact with AI models — invaluable for debugging and understanding agent behavior during development.
+The Akka console now provides detailed insights into your service structure and component interactions. xref:sdk:running-locally.adoc#_local_console[Run it in local mode] to get full request traces showing exactly which components handle each request, along with a detailed view of how agents interact with AI models — invaluable for debugging and understanding agent behavior during development.
 
 ****
 
