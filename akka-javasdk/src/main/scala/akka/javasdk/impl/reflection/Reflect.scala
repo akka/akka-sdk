@@ -26,6 +26,7 @@ import akka.javasdk.annotations.AgentDescription
 import akka.javasdk.annotations.AgentRole
 import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.ComponentId
+import akka.javasdk.annotations.Consume
 import akka.javasdk.annotations.EnableReplicationFilter
 import akka.javasdk.annotations.GrpcEndpoint
 import akka.javasdk.annotations.ProtoEventTypes
@@ -331,6 +332,21 @@ private[impl] object Reflect {
     Option(component.getAnnotation(classOf[ProtoEventTypes]))
       .map(_.value().toSeq)
       .getOrElse(Seq.empty)
+  }
+
+  /**
+   * Resolve proto event types for a component. First checks for @ProtoEventTypes on the class itself, then falls back
+   * to the source ES entity referenced by @Consume.FromEventSourcedEntity.
+   */
+  def resolveProtoEventTypes(component: Class[_]): Seq[Class[_ <: GeneratedMessageV3]] = {
+    val fromComponent = protoEventTypes(component)
+    if (fromComponent.nonEmpty) {
+      fromComponent
+    } else {
+      Option(component.getAnnotation(classOf[Consume.FromEventSourcedEntity]))
+        .map(ann => protoEventTypes(ann.value()))
+        .getOrElse(Seq.empty)
+    }
   }
 
   /**

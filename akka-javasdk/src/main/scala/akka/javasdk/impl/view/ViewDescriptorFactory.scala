@@ -7,13 +7,11 @@ package akka.javasdk.impl.view
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
 import java.util.Optional
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.OptionConverters.RichOption
 import scala.util.control.NonFatal
 import scala.util.matching.Regex
-
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.annotations.Consume
@@ -47,6 +45,7 @@ import akka.runtime.sdk.spi.SpiTableUpdateHandler.SpiTableUpdateEffect
 import akka.runtime.sdk.spi.SpiTableUpdateHandler.SpiTableUpdateEnvelope
 import akka.runtime.sdk.spi.TableDescriptor
 import akka.runtime.sdk.spi.ViewDescriptor
+import com.google.protobuf.GeneratedMessageV3
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
@@ -431,16 +430,30 @@ private[impl] object ViewDescriptorFactory {
     private val methodsByInput: Map[Class[_], Method] =
       if (deleteHandler) Map.empty
       else
-        methods.map { m =>
+        methods.flatMap { m =>
           // register each possible input to deserialize correctly an input
           val inputType = m.getParameterTypes.head
-          if (inputType.isSealed) {
+
+          if (inputType == classOf[GeneratedMessageV3]) {
+            // Base GeneratedMessageV3 handler - resolve and register concrete proto types
+            val protoTypes = Reflect.resolveProtoEventTypes(tableUpdaterClass)
+            if (protoTypes.isEmpty) {
+              throw new IllegalStateException(
+                s"View table updater [${tableUpdaterClass.getName}] handler method [${m.getName}] accepts GeneratedMessageV3 " +
+                  "but no concrete proto event types could be resolved. Add @ProtoEventTypes to the table updater class " +
+                  "or to the source event sourced entity.")
+            }
+            protoTypes.map { protoClass =>
+              serializer.registerTypeHints(protoClass)
+              protoClass -> m
+            }
+          } else if (inputType.isSealed) {
             inputType.getPermittedSubclasses.foreach(serializer.registerTypeHints)
+            Seq(inputType -> m)
           } else {
             serializer.registerTypeHints(m.getParameterTypes.head)
+            Seq(inputType -> m)
           }
-
-          inputType -> m
         }.toMap
 
     // Note: New instance for each update to avoid users storing/leaking state
