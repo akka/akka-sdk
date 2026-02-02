@@ -63,14 +63,6 @@ In Akka terminology, the event hub name is the topic name. A component subscribi
 === Retention
 Events always have retention, if they for some reason are not consumed within the retention time they are lost. This could be for example if pausing a consuming service.
 
-=== Ordering
-
-The ordering guarantee, that consumers see events in the order they were produced is per partition.
-
-Cloud event subject metadata entry, if present, is used as partition key for events produced by an Akka service.
-
-If no subject metadata is available the events are spread over the partitions in a round-robin fashion.
-
 === Consumer groups
 
 Consumer groups in Azure Event Hubs must be created up front before Akka can use them except for the default consumer group (`$Default` which is automatically created when an event hub has is created)
@@ -80,3 +72,14 @@ For actions consuming an event hub the default consumer group is used.
 This means that if more than one action in the same Akka service are consuming events from the same event hub, different consumer groups must be specified on each of the actions, or each will only see a subset of the events.
 
 For views, the component name of the view is used as consumer group, and must be created up front in Azure.
+
+== Delivery characteristics
+
+When your application consumes messages from Azure Event Hubs, it will try to deliver messages to your service in 'at-least-once' fashion while preserving order.
+
+The ordering guarantee, that consumers see events in the order they were produced is per partition.
+
+Cloud event subject metadata entry, if present, is used as partition key for events produced by an Akka service.
+If no subject metadata is available the events are spread over the partitions in a round-robin fashion.
+
+WARNING: Correct ordering is especially important for topics that stream directly into views using the `transform_update` option: when messages for the same subject id are spread over different partitions (or do not have partition keys), they may read stale data and lose updates.
