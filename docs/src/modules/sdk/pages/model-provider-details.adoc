@@ -36,8 +36,8 @@ Some models support thinking, also sometimes referred to as "thought process" or
 thought process, breaking down bigger problems into smaller more manageable tasks. This can be good for more complex problems but comes
 at the price of tokens used for the thought process. 
 
-For models that support thinking, enabling it is done in a model specific way, for some models a thinking token budget is assigned, for
-some it is a on/off toggle. All models supporting thinking has it disabled by default.
+For models that support thinking, it is enabled through model-specific configuration, either by setting a thinking token budget, or
+by a toggle. Thinking is disabled for all models by default.
 
 == Model configuration
 The following is a list of all natively supported model configurations. Remember that if you don't see your model or model format here, you can always create your own custom configuration and still use all of the Agent-related components.
