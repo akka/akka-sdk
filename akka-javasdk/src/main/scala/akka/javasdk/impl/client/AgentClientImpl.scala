@@ -29,7 +29,6 @@ import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.AgentRequest
 import akka.runtime.sdk.spi.AgentType
 import akka.runtime.sdk.spi.BytesPayload
-import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.{ AgentClient => RuntimeAgentClient }
 
 /**
