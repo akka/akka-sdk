@@ -11,7 +11,7 @@ import org.scalatest.wordspec.AnyWordSpec
 class McpEndpointsDescriptorSpec extends AnyWordSpec with Matchers {
   "akka-javasdk-components.conf" should {
     "have correct configuration" in {
-      val config = ConfigFactory.load("META-INF/akka-javasdk-components.conf")
+      val config = ConfigFactory.load("META-INF/akka-javasdk-components_com-example_test.conf")
 
       val keyValueComponents = config.getStringList("akka.javasdk.components.mcp-endpoint")
       keyValueComponents.size() shouldBe 1

@@ -43,16 +43,23 @@ import javax.tools.StandardLocation;
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
 
-  private static final String COMPONENT_DESCRIPTOR_FILE_PATH =
-      "META-INF/akka-javasdk-components.conf";
+  // Compiler options for artifact coordinates (passed via -A options)
+  private static final String OPTION_GROUP_ID = "akka.javasdk.groupId";
+  private static final String OPTION_ARTIFACT_ID = "akka.javasdk.artifactId";
+
+  // Base path for descriptor files - artifact coordinates are appended
+  private static final String COMPONENT_DESCRIPTOR_FILE_PREFIX =
+      "META-INF/akka-javasdk-components_";
+  private static final String COMPONENT_DESCRIPTOR_FILE_SUFFIX = ".conf";
 
   // parent path in hoconf
   private static final String DESCRIPTOR_ENTRY_BASE_PATH = "akka.javasdk.";
   private static final String DESCRIPTOR_COMPONENT_ENTRY_BASE_PATH =
       DESCRIPTOR_ENTRY_BASE_PATH + "components.";
 
-  // key of each component type under that parent path, containing a string list of concrete
-  // component classes
+  // Key of each component type under that parent path, containing a string list of concrete
+  // component classes.
+  // These must be kept in sync with ComponentLocator.scala in the akka-javasdk module.
   private static final String HTTP_ENDPOINT_KEY = "http-endpoint";
   private static final String GRPC_ENDPOINT_KEY = "grpc-endpoint";
   private static final String MCP_ENDPOINT_KEY = "mcp-endpoint";
@@ -80,6 +87,44 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
           SERVICE_SETUP_KEY);
 
   private boolean alreadyRan = false;
+
+  @Override
+  public Set<String> getSupportedOptions() {
+    return Set.of(OPTION_GROUP_ID, OPTION_ARTIFACT_ID);
+  }
+
+  private String getDescriptorFilePath() {
+    var options = processingEnv.getOptions();
+    var groupId = options.get(OPTION_GROUP_ID);
+    var artifactId = options.get(OPTION_ARTIFACT_ID);
+
+    if (groupId == null || groupId.isEmpty()) {
+      throw new IllegalStateException(
+          "Compiler option '"
+              + OPTION_GROUP_ID
+              + "' is required but was not provided. "
+              + "Ensure your pom.xml configures the maven-compiler-plugin with "
+              + "-A"
+              + OPTION_GROUP_ID
+              + "=<groupId>");
+    }
+    if (artifactId == null || artifactId.isEmpty()) {
+      throw new IllegalStateException(
+          "Compiler option '"
+              + OPTION_ARTIFACT_ID
+              + "' is required but was not provided. "
+              + "Ensure your pom.xml configures the maven-compiler-plugin with "
+              + "-A"
+              + OPTION_ARTIFACT_ID
+              + "=<artifactId>");
+    }
+
+    return COMPONENT_DESCRIPTOR_FILE_PREFIX
+        + groupId
+        + "_"
+        + artifactId
+        + COMPONENT_DESCRIPTOR_FILE_SUFFIX;
+  }
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -241,16 +286,17 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
   private void createComponentServiceDescriptor(
       Map<String, List<String>> componentTypeToConcreteComponents) throws IOException {
     var filer = processingEnv.getFiler();
+    var descriptorFilePath = getDescriptorFilePath();
 
     Config existingConfig;
     try {
       var existingDescriptorResource =
-          filer.getResource(StandardLocation.CLASS_OUTPUT, "", COMPONENT_DESCRIPTOR_FILE_PATH);
+          filer.getResource(StandardLocation.CLASS_OUTPUT, "", descriptorFilePath);
 
       try (var in = existingDescriptorResource.openReader(true)) {
         // this could be both user defined existing config, and a previous compile without clean
         // inbetween
-        debug("Existing kalix component descriptor found, will merge with discovered components");
+        debug("Existing Akka component descriptor found, will merge with discovered components");
         try (in) {
           existingConfig = ConfigFactory.parseReader(in);
         }
@@ -258,7 +304,7 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
       existingDescriptorResource.delete();
     } catch (NoSuchFileException ex) {
       // no existing file
-      debug("No existing kalix component descriptor found");
+      debug("No existing Akka component descriptor found");
       existingConfig = ConfigFactory.empty();
     }
 
@@ -269,7 +315,7 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
           var foundComponentClasses =
               componentTypeToConcreteComponents.getOrDefault(componentType, List.of());
           if (componentType.equals(SERVICE_SETUP_KEY)) {
-            // only one kalix service annotated class
+            // only one Akka service annotated class
             String serviceSetupPath = DESCRIPTOR_ENTRY_BASE_PATH + SERVICE_SETUP_KEY;
             if (foundComponentClasses.isEmpty()) {
               if (foundExistingConfig.hasPath(serviceSetupPath)) {
@@ -302,7 +348,7 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
         });
 
     var newDescriptorResource =
-        filer.createResource(StandardLocation.CLASS_OUTPUT, "", COMPONENT_DESCRIPTOR_FILE_PATH);
+        filer.createResource(StandardLocation.CLASS_OUTPUT, "", descriptorFilePath);
     debug(
         "Akka SDK annotation processor writing component descriptor "
             + new File(newDescriptorResource.toUri()));
