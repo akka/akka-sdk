@@ -194,6 +194,15 @@ include::example$event-sourced-counter-brokers/src/main/java/counter/application
 
 include::partial$topic-note.adoc[]
 
+[#at-least-once-delivery]
+== At-least-once delivery and deduplication
+
+All consumers in Akka use at-least-once delivery semantics. It means that messages may be delivered more than once in cases of network failures, process restarts, or other transient issues. To maintain data integrity, your consumer implementations must handle duplicate messages gracefully.
+
+IMPORTANT: Deduplication is not handled automatically by Akka. You must implement deduplication logic explicitly in your consumer code.
+
+For detailed guidance on implementing deduplication strategies, including idempotent updates and sequence number tracking, see xref:dev-best-practices.adoc#message-deduplication[Message deduplication].
+
 == Handling Serialization
 
 Check xref:serialization.adoc[serialization] documentation for more details.

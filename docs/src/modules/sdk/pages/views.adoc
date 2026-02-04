@@ -276,6 +276,13 @@ The View definitions are stored and validated when a new version is deployed. Th
 
 WARNING: Views from topics cannot be rebuilt from the source messages, because it might not be possible to consume all events from the topic again. The new View is built from new messages published to the topic.
 
+[#at-least-once-delivery]
+== Delivery semantics and deduplication
+
+All Views based on Event Sourced Entities, Key Value Entities and Workflows use exactly-once delivery semantics. It means that there is a build in deduplication mechanism based on xref:dev-best-practices.adoc#_sequence_number_tracking[sequence number] tracking.
+
+NOTE: For Views based on Key Value Entities, while the deduplication mechanism ensures exactly-once processing, it does not guarantee that all intermediate state changes will be delivered to the View. Due to the nature of Key Value Entities, only the latest state is guaranteed to be reflected in the View. If a Key Value Entity is updated multiple times in quick succession, some intermediate states may be skipped during restarts or rebalances.
+
 == Testing the View
 
 Testing Views is very similar to testing other xref:consuming-producing.adoc#_testkit_mocked_incoming_messages[subscription integrations].
