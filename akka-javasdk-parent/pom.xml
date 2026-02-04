@@ -491,27 +491,42 @@
                 </plugins>
             </build>
         </profile>
+        <!-- Clean build when no descriptor file is found.
+             Maven profile file-based activation does not support wildcards or ${project.*}
+             properties, so we use antrun with a fileset glob instead. The profile only
+             activates when target/classes already exists (previous build output present). -->
         <profile>
             <id>clean-on-missing-descriptor</id>
             <activation>
                 <file>
-                    <!-- Check for artifact-specific descriptor file -->
-                    <missing>target/classes/META-INF/akka-javasdk-components_${groupId.dashed}_${project.artifactId}.conf</missing>
+                    <exists>target/classes</exists>
                 </file>
             </activation>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-clean-plugin</artifactId>
-                        <version>3.4.0</version>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.1.0</version>
                         <executions>
                             <execution>
                                 <id>clean-on-missing-descriptor</id>
                                 <phase>initialize</phase>
                                 <goals>
-                                    <goal>clean</goal>
+                                    <goal>run</goal>
                                 </goals>
+                                <configuration>
+                                    <target xmlns:if="ant:if">
+                                        <condition property="descriptor.missing">
+                                            <resourcecount count="0">
+                                                <fileset dir="target/classes/META-INF"
+                                                         includes="akka-javasdk-components_${groupId.dashed}_${project.artifactId}.conf"
+                                                         erroronmissingdir="false"/>
+                                            </resourcecount>
+                                        </condition>
+                                        <delete dir="target" if:set="descriptor.missing"/>
+                                    </target>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
