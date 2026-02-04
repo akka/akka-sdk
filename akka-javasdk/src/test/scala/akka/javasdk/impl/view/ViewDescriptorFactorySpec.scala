@@ -26,9 +26,10 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
   import ViewTestModels._
   import akka.javasdk.testmodels.subscriptions.PubSubTestModels._
+  val serializer = new JsonSerializer
 
   def assertDescriptor[T](test: ViewDescriptor => Any)(implicit tag: ClassTag[T]): Unit = {
-    test(ViewDescriptorFactory(tag.runtimeClass, new JsonSerializer, new RegionInfo(""), ExecutionContexts.global()))
+    test(ViewDescriptorFactory(tag.runtimeClass, serializer, new RegionInfo(""), ExecutionContexts.global()))
   }
 
   "View descriptor factory" should {
@@ -75,6 +76,13 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
         query.query shouldBe "SELECT * AS users FROM users WHERE name = :name"
         query.streamUpdates shouldBe false
+      }
+    }
+
+    "register all updater handler subtypes" in {
+      assertDescriptor[UserByEmailWithSealedInput] { _ =>
+        serializer.reversedTypeHints.get("a") shouldBe classOf[UserByEmailWithSealedInput.Message.A]
+        serializer.reversedTypeHints.get("b") shouldBe classOf[UserByEmailWithSealedInput.Message.B]
       }
     }
 

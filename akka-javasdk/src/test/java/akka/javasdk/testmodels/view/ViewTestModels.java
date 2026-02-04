@@ -11,6 +11,7 @@ import akka.javasdk.annotations.DeleteHandler;
 import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.annotations.Table;
+import akka.javasdk.annotations.TypeName;
 import akka.javasdk.testmodels.eventsourcedentity.Employee;
 import akka.javasdk.testmodels.eventsourcedentity.EmployeeEvent;
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EmployeeEntity;
@@ -228,6 +229,30 @@ public class ViewTestModels {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
     public static class UsersTable extends TableUpdater<User> {}
+
+    @Query(value = "SELECT * AS users FROM users WHERE name = :name")
+    public QueryEffect<UserCollection> getUser(ByEmail name) {
+      return queryResult();
+    }
+  }
+
+  @Component(id = "users_view")
+  public static class UserByEmailWithSealedInput extends View {
+
+    public sealed interface Message {
+      @TypeName("a")
+      record A() implements Message {}
+
+      @TypeName("b")
+      record B() implements Message {}
+    }
+
+    @Consume.FromEventSourcedEntity(EmployeeEntity.class)
+    public static class Employees extends TableUpdater<Employee> {
+      public Effect<Employee> onEvent(Message message) {
+        return effects().ignore();
+      }
+    }
 
     @Query(value = "SELECT * AS users FROM users WHERE name = :name")
     public QueryEffect<UserCollection> getUser(ByEmail name) {
