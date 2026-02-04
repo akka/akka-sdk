@@ -20,6 +20,7 @@
 ****** xref:operations:projects/broker-aws-msk.adoc[AWS MSK Kafka]
 ****** xref:operations:projects/broker-aiven.adoc[Aiven for Kafka]
 ***** xref:operations:projects/secrets.adoc[]
+***** xref:operations:projects/external-secrets.adoc[]
 
 **** xref:operations:services/index.adoc[]
 ***** xref:operations:services/deploy-service.adoc[]

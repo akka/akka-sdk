@@ -33,6 +33,7 @@ Cembaluk
 checkpointing
 classname
 clientCertificate
+cloudName
 codegen
 [Cc]omposable
 [Cc]omposability
@@ -244,6 +245,7 @@ upserting
 url
 userid
 valueFrom
+versionHistory
 VMs
 volumeMounts
 [Ww]alkthrough

@@ -2,6 +2,7 @@
 ** xref:descriptors/project-descriptor.adoc[Project descriptor]
 ** xref:descriptors/service-descriptor.adoc[Service descriptor]
 ** xref:descriptors/route-descriptor.adoc[Route descriptor]
+** xref:descriptors/external-secret-descriptor.adoc[External secret descriptor]
 ** xref:descriptors/observability-descriptor.adoc[Observability descriptor]
 ** xref:glossary.adoc[Glossary of terms]
 ** xref:security-announcements/index.adoc[Security announcements]
