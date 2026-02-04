@@ -429,7 +429,11 @@ private[impl] object ViewDescriptorFactory {
         methods.map { m =>
           // register each possible input to deserialize correctly an input
           val inputType = m.getParameterTypes.head
-          serializer.registerTypeHints(m.getParameterTypes.head)
+          if (inputType.isSealed) {
+            inputType.getPermittedSubclasses.foreach(serializer.registerTypeHints)
+          } else {
+            serializer.registerTypeHints(m.getParameterTypes.head)
+          }
 
           inputType -> m
         }.toMap
