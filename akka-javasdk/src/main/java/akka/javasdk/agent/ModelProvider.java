@@ -1135,6 +1135,10 @@ public sealed interface ModelProvider {
      * @return an instance of {@code dev.langchain4j.model.chat.StreamingChatModel}
      */
     Object createStreamingChatModel();
+
+    default String modelName() {
+      return "";
+    }
   }
 
   /** Settings for the Bedrock Large Language Model provider. */

@@ -128,6 +128,8 @@ private[impl] object AgentImpl {
         case "openai"          => ModelProvider.OpenAi.fromConfig(providerConfig)
         case "local-ai"        => ModelProvider.LocalAI.fromConfig(providerConfig)
         case "bedrock"         => ModelProvider.Bedrock.fromConfig(providerConfig)
+        case fqcn if isFqcn(fqcn) =>
+          instantiateCustomProvider(fqcn, providerConfig, resolvedConfigPath)
         case other =>
           throw new IllegalArgumentException(s"Unknown model provider [$other] in config [$resolvedConfigPath]")
       }
@@ -135,6 +137,44 @@ private[impl] object AgentImpl {
       case exc: ConfigException =>
         log.error("Invalid model provider configuration at [{}] for agent [{}].", resolvedConfigPath, componentId, exc)
         throw exc
+    }
+  }
+
+  private def isFqcn(fqcn: String): Boolean = {
+    val lastDot = fqcn.lastIndexOf('.')
+    // Must have at least one dot and the class name should start with uppercase
+    lastDot > 0 && lastDot < fqcn.length - 1 && fqcn.charAt(lastDot + 1).isUpper
+  }
+
+  private def instantiateCustomProvider(
+      fqcn: String,
+      providerConfig: Config,
+      resolvedConfigPath: String): ModelProvider.Custom = {
+    try {
+      val clazz = Class.forName(fqcn)
+      if (!classOf[ModelProvider.Custom].isAssignableFrom(clazz)) {
+        throw new IllegalArgumentException(
+          s"Custom model provider class [$fqcn] in config [$resolvedConfigPath] must implement ModelProvider.Custom")
+      }
+
+      // Try constructor with Config parameter first, then fall back to no-arg constructor
+      val instance =
+        try {
+          val configConstructor = clazz.getDeclaredConstructor(classOf[Config])
+          configConstructor.newInstance(providerConfig)
+        } catch {
+          case _: NoSuchMethodException =>
+            clazz.getDeclaredConstructor().newInstance()
+        }
+
+      instance.asInstanceOf[ModelProvider.Custom]
+    } catch {
+      case e: ClassNotFoundException =>
+        throw new IllegalArgumentException(s"Custom model provider class [$fqcn] not found", e)
+      case e: IllegalArgumentException =>
+        throw e
+      case e: Exception =>
+        throw new IllegalArgumentException(s"Failed to instantiate custom model provider [$fqcn]: ${e.getMessage}", e)
     }
   }
 
@@ -607,7 +647,11 @@ private[impl] final class AgentImpl[A <: Agent](
           new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
           thinking = p.thinking)
       case p: ModelProvider.Custom =>
-        new SpiAgent.ModelProvider.Custom(() => p.createChatModel(), () => p.createStreamingChatModel())
+        new SpiAgent.ModelProvider.Custom(
+          providerName = p.getClass.getName,
+          modelName = p.modelName(),
+          createChatModel = () => p.createChatModel(),
+          createStreamingChatModel = () => p.createStreamingChatModel())
       case p: ModelProvider.Bedrock =>
         new SpiAgent.ModelProvider.Bedrock(
           region = p.region,

@@ -500,3 +500,26 @@ include::example$akka-javasdk/src/main/resources/reference.conf[tag=ollama]
 include::example$akka-javasdk/src/main/resources/reference.conf[tag=openai]
 ----
 
+=== Custom
+
+If none of the built-in providers fit your needs, you can implement a custom model provider. Set the `provider` property to the fully qualified class name (FQCN) of your implementation.
+
+The custom class must implement the `ModelProvider.Custom` interface, which requires two methods: `createChatModel()` and `createStreamingChatModel()`. These should return instances of Langchain4j's `ChatModel` and `StreamingChatModel` respectively. If streaming is not needed, `createStreamingChatModel()` can throw an exception. Overriding the `modelName()` method allows to pass this information to observability attributes.
+
+[source,hocon,indent=0]
+----
+include::example$akka-javasdk/src/main/resources/reference.conf[tag=agent-custom-model-config]
+----
+
+The `provider` value must be a fully qualified class name (e.g. `com.example.application.MyModelProvider`). Any additional properties in the configuration section (such as `model-name` or `api-key`) are available to the provider implementation through an injected `Config` parameter.
+
+[source,java,indent=0]
+.com/example/application/MyModelProvider.java
+----
+include::sdk:example$doc-snippets/src/main/java/com/example/application/MyModelProvider.java[tags=custom]
+----
+<1> If the constructor accepts a `com.typesafe.config.Config` parameter, the full provider configuration section is injected automatically. A no-arg constructor is also supported.
+<2> Return an instance of `dev.langchain4j.model.chat.ChatModel`.
+<3> Return an instance of `dev.langchain4j.model.chat.StreamingChatModel`, or throw an exception if streaming is not needed.
+
+
