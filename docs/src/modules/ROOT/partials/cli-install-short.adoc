@@ -33,7 +33,7 @@ Install the `akka` CLI using https://learn.microsoft.com/en-us/windows/package-m
 
 [source,powershell]
 ----
-winget install Akka.AkkaCli
+winget install Akka.Cli
 ----
 
 --

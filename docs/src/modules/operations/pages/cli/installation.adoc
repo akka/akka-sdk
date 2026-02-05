@@ -96,14 +96,14 @@ The recommended approach to install the `akka` CLI on Windows is using https://l
 
 [source,powershell]
 ----
-winget install Akka.AkkaCli
+winget install Akka.Cli
 ----
 
 If the `akka` CLI is already installed, and you want to upgrade to the latest version, you can run:
 
 [source,powershell]
 ----
-winget upgrade Akka.AkkaCli
+winget upgrade Akka.Cli
 ----
 
 **Alternative approach**
