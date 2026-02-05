@@ -511,7 +511,7 @@ The custom class must implement the `ModelProvider.Custom` interface, which requ
 include::example$akka-javasdk/src/main/resources/reference.conf[tag=agent-custom-model-config]
 ----
 
-The `provider` value must be a fully qualified class name (e.g. `com.example.application.MyModelProvider`). Any additional properties in the configuration section (such as `model-name` or `api-key`) are available to the provider implementation through an injected `Config` parameter.
+Any additional properties in the configuration section (such as `model-name` or `api-key`) are available to the provider implementation through an injected `Config` parameter.
 
 [source,java,indent=0]
 .com/example/application/MyModelProvider.java

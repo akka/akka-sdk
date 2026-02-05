@@ -1136,6 +1136,11 @@ public sealed interface ModelProvider {
      */
     Object createStreamingChatModel();
 
+    /**
+     * Override this method to provide a meaningful model name for your custom provider.
+     *
+     * @return the model name, defaults to an empty string
+     */
     default String modelName() {
       return "";
     }
