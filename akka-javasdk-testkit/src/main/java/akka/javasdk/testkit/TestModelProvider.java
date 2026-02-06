@@ -273,7 +273,9 @@ public final class TestModelProvider implements ModelProvider.Custom {
       ImageContent.DetailLevel detailLevel) {
     return switch (detailLevel) {
       case LOW -> MessageContent.ImageMessageContent.DetailLevel.LOW;
+      case MEDIUM -> MessageContent.ImageMessageContent.DetailLevel.MEDIUM;
       case HIGH -> MessageContent.ImageMessageContent.DetailLevel.HIGH;
+      case ULTRA_HIGH -> MessageContent.ImageMessageContent.DetailLevel.ULTRA_HIGH;
       case AUTO -> MessageContent.ImageMessageContent.DetailLevel.AUTO;
     };
   }
