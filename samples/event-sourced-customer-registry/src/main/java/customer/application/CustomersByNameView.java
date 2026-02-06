@@ -22,12 +22,16 @@ public class CustomersByNameView extends View {
   @Consume.FromEventSourcedEntity(CustomerEntity.class)
   public static class CustomersByNameUpdater extends TableUpdater<CustomerEntry> { // <2>
 
+    // end::class[]
+    // tag::snapshot[]
     @SnapshotHandler
     public Effect<CustomerEntry> onSnapshot(Customer snapshot) {
       logger.info("onSnapshot [{}]", snapshot);
        return effects()
           .updateRow(new CustomerEntry(snapshot.email(), snapshot.name(), snapshot.address()));
     }
+    // end::snapshot[]
+    // tag::class[]
 
     public Effect<CustomerEntry> onEvent(CustomerEvent event) { // <3>
       logger.info("onEvent [{}]", event);
