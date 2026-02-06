@@ -159,7 +159,7 @@ private[impl] object AgentImpl {
       .recoverWith { case _: ClassNotFoundException | _: NoSuchMethodException =>
         Failure(new IllegalArgumentException(
           s"Custom model provider class [$fqcn] in config [$resolvedConfigPath] must implement ModelProvider.Custom " +
-          s"and optionally have a constructor with GuardrailContext parameter"))
+          s"and optionally have a constructor with com.typesafe.config.Config parameter"))
       }
       .get
   }
