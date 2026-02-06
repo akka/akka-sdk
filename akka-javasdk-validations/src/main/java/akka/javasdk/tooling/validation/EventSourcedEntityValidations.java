@@ -92,6 +92,11 @@ public class EventSourcedEntityValidations {
    * @return a Validation result indicating success or failure
    */
   private static Validation eventTypeMustBeSealed(TypeDef typeDef) {
+    // Skip sealed check for protobuf-based entities using @ProtoEventTypes
+    if (typeDef.hasAnnotation("akka.javasdk.annotations.ProtoEventTypes")) {
+      return Validation.Valid.instance();
+    }
+
     // Extract the event type from EventSourcedEntity<State, Event> (second type argument)
     List<TypeRefDef> typeArgs = typeDef.getSuperclassTypeArguments();
     if (typeArgs.size() < 2) {
