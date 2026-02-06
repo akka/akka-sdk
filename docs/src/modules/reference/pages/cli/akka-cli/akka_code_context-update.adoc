@@ -1,10 +1,14 @@
 = akka code context-update
 
-Updates the Akka SDK context directory in the given project directory.
+Updates the Akka SDK context directory and optionally AI assistant files.
 
 == Synopsis
 
-The `akka code context-update <directory>` command creates or updates the Akka SDK context in the specified project directory by downloading the latest version from the official Akka source, and creates or updates the 'akka-context' subdirectory within the provided project location.
+The 'akka code context-update +++<directory>+++' command updates the Akka SDK context in the specified project directory by downloading the latest version from the official Akka source.+++</directory>+++
+
+It updates the 'akka-context' subdirectory and can optionally update AI assistant files (CLAUDE.md, AGENTS.md) when the --assistant flag is specified.
+
+The existing context directory is backed up before being replaced.
 
 ----
 akka code context-update [flags]
@@ -13,7 +17,11 @@ akka code context-update [flags]
 == Options
 
 ----
-  -h, --help   help for context-update
+      --agents-md-name string   Custom filename for AGENTS.md (default "AGENTS.md")
+      --assistant string        AI assistant tool to update files for (claude-code, generic)
+      --claude-md-name string   Custom filename for CLAUDE.md (e.g., CLAUDE-AKKA.md) (default "CLAUDE.md")
+      --force                   Overwrite existing files without prompting
+  -h, --help                    help for context-update
 ----
 
 == Options inherited from parent commands
