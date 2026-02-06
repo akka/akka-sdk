@@ -204,14 +204,15 @@ The configuration for how the Akka service is scaled in response to load.
 
 === VolumeMount
 
-A volume that should be mounted into the service container.
+A volume that should be mounted into the service container. Only one source may be specified.
 
 [cols="1,1,1"]
 |===
-|Field                  |Type                        |Description
+|Field                  |Type                           |Description
 
-|*mountPath* _required_ |string                      |Path within the container at which the volume should be mounted. Must not contain ':'.
-|*secret*               |<<SecretVolumeSource>> |A secret that should be used to populate this volume.
+|*mountPath* _required_ |string                         |Path within the container at which the volume should be mounted. Must not contain ':'.
+|*secret*               |<<SecretVolumeSource>>         |A secret that should be used to populate this volume.
+|*externalSecret*       |<<ExternalSecretVolumeSource>> | An external secret that should be used to populate this volume.
 |===
 
 === SecretVolumeSource
@@ -247,6 +248,17 @@ service:
   - name: GOOGLE_APPLICATION_CREDENTIALS
     value: /google-application-credentials-path/credentials.json
 ----
+
+=== ExternalSecretVolumeSource
+
+Adapts an external secret into a volume that can be mounted into the service's container.
+
+[cols="1,1,1"]
+|===
+|Field                 |Type    |Description
+
+|*provider* _required_ |string  |The name of the external secret to mount.
+|===
 
 === ServiceTelemetry
 

@@ -8,6 +8,7 @@ Akka's _Project Descriptor_ is a multi-document YAML file that defines the compl
 . xref:#service[services],
 . xref:#route[routes],
 . xref:#observability[observability settings],
+. xref:#external-secret[external secrets],
 . xref:#broker[message broker configuration], and
 . xref:#rolebindings[role bindings].
 
@@ -19,9 +20,9 @@ Each document in the project descriptor represents a single resource and follows
 |===
 |Field   |Type                    |Description
 
-|*resource*         |string _required_  |The type of resource: `Service`, `Route`, `Observability`, `Broker`, or `RoleBindings`
+|*resource*         |string _required_  |The type of resource: `Service`, `Route`, `Observability`, `ExternalSecret`, `Broker`, or `RoleBindings`
 |*resourceVersion*  |string _required_  |The version of the resource schema. Currently only `v1` is supported.
-|*metadata*         |<<Metadata>>       |Optional metadata for the resource. Required for `Service` and `Route` resources.
+|*metadata*         |<<Metadata>>       |Optional metadata for the resource. Required for `Service`, `Route` and `ExternalSecret` resources.
 |*spec*             |object _required_  |The specification for the resource. Structure depends on the resource type.
 |===
 
@@ -31,12 +32,12 @@ Each document in the project descriptor represents a single resource and follows
 |===
 |Field   |Type     |Description
 
-|*name*  |string   |The name of the resource. Required for `Service` and `Route` resources.
+|*name*  |string   |The name of the resource. Required for `Service`, `Route` and `ExternalSecret` resources.
 |===
 
 == Resource types
 
-The project descriptor supports the following resource types. A single descriptor can contain multiple `Service` and `Route` documents, each with a unique name. The `Observability`, `Broker`, and `RoleBindings` resources are project-level singletons—only one of each can exist per project.
+The project descriptor supports the following resource types. A single descriptor can contain multiple `Service`, `Route` and `ExternalSecret` documents, each with a unique name. The `Observability`, `Broker`, and `RoleBindings` resources are project-level singletons—only one of each can exist per project.
 
 [#service]
 === Service
@@ -89,6 +90,27 @@ resourceVersion: v1
 spec:
   exporter:
     kalixConsole: {}
+----
+
+[#external-secret]
+=== ExternalSecret
+
+Defines external secrets. A descriptor can define multiple ExternalSecret documents, each with a unique name. See xref:reference:descriptors/external-secret-descriptor.adoc[] for the complete reference.
+
+[source,yaml]
+----
+resource: ExternalSecret
+resourceVersion: v1
+metadata:
+  name: my-secret
+spec:
+  azure:
+    keyVaultName: my-vault
+    tenantId: 09d34770-a00f-4aa1-901c-ecd362555564
+    clientId: 10819e36-4be2-4b47-a7d0-8c78c94c14b6
+    objects:
+    - name: my-secret
+      type: secret
 ----
 
 [#broker]
