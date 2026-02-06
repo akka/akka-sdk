@@ -13,7 +13,7 @@ Current versions
 == February 2026
 
 * Akka CLI 3.0.47
-- Improvments to the 'akka code update-context' command
+- Improvements to the 'akka code update-context' command
 
 == January 2026
 
