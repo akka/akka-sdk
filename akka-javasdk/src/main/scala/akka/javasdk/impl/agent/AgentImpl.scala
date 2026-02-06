@@ -17,8 +17,10 @@ import scala.jdk.CollectionConverters._
 import scala.jdk.DurationConverters.JavaDurationOps
 import scala.jdk.OptionConverters.RichOption
 import scala.jdk.OptionConverters.RichOptional
+import scala.util.Failure
 import scala.util.control.NonFatal
 
+import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.http.scaladsl.model.HttpHeader
 import akka.javasdk.CommandException
@@ -98,7 +100,8 @@ private[impl] object AgentImpl {
     override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
   }
 
-  def modelProviderFromConfig(config: Config, configPath: String, componentId: String): ModelProvider = {
+  def modelProviderFromConfig(config: Config, configPath: String, componentId: String)(implicit
+      system: ActorSystem[_]): ModelProvider = {
     val actualPath =
       if (configPath == "")
         config.getString("akka.javasdk.agent.model-provider")
@@ -146,36 +149,19 @@ private[impl] object AgentImpl {
     lastDot > 0 && lastDot < fqcn.length - 1 && fqcn.charAt(lastDot + 1).isUpper
   }
 
-  private def instantiateCustomProvider(
-      fqcn: String,
-      providerConfig: Config,
-      resolvedConfigPath: String): ModelProvider.Custom = {
-    try {
-      val clazz = Class.forName(fqcn)
-      if (!classOf[ModelProvider.Custom].isAssignableFrom(clazz)) {
-        throw new IllegalArgumentException(
-          s"Custom model provider class [$fqcn] in config [$resolvedConfigPath] must implement ModelProvider.Custom")
+  private def instantiateCustomProvider(fqcn: String, providerConfig: Config, resolvedConfigPath: String)(implicit
+      system: ActorSystem[_]): ModelProvider.Custom = {
+    system.dynamicAccess
+      .createInstanceFor[ModelProvider.Custom](fqcn, (classOf[Config] -> providerConfig) :: Nil)
+      .recoverWith { case _: ClassNotFoundException | _: NoSuchMethodException =>
+        system.dynamicAccess.createInstanceFor[ModelProvider.Custom](fqcn, Nil)
       }
-
-      // Try constructor with Config parameter first, then fall back to no-arg constructor
-      val instance =
-        try {
-          val configConstructor = clazz.getDeclaredConstructor(classOf[Config])
-          configConstructor.newInstance(providerConfig)
-        } catch {
-          case _: NoSuchMethodException =>
-            clazz.getDeclaredConstructor().newInstance()
-        }
-
-      instance.asInstanceOf[ModelProvider.Custom]
-    } catch {
-      case e: ClassNotFoundException =>
-        throw new IllegalArgumentException(s"Custom model provider class [$fqcn] not found", e)
-      case e: IllegalArgumentException =>
-        throw e
-      case e: Exception =>
-        throw new IllegalArgumentException(s"Failed to instantiate custom model provider [$fqcn]: ${e.getMessage}", e)
-    }
+      .recoverWith { case _: ClassNotFoundException | _: NoSuchMethodException =>
+        Failure(new IllegalArgumentException(
+          s"Custom model provider class [$fqcn] in config [$resolvedConfigPath] must implement ModelProvider.Custom " +
+          s"and optionally have a constructor with GuardrailContext parameter"))
+      }
+      .get
   }
 
 }
@@ -198,9 +184,12 @@ private[impl] final class AgentImpl[A <: Agent](
     overrideModelProvider: OverrideModelProvider,
     dependencyProvider: Option[DependencyProvider],
     guardrails: AgentGuardrails,
-    config: Config)
+    config: Config,
+    _system: ActorSystem[_])
     extends SpiAgent {
   import AgentImpl._
+
+  implicit val system: ActorSystem[_] = _system
 
   private val router: ReflectiveAgentRouter[A] = {
     new ReflectiveAgentRouter[A](factory, componentDescriptor.methodInvokers, serializer)

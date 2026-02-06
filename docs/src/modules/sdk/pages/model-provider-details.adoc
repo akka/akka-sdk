@@ -508,7 +508,7 @@ The custom class must implement the `ModelProvider.Custom` interface, which requ
 
 [source,hocon,indent=0]
 ----
-include::example$akka-javasdk/src/main/resources/reference.conf[tag=agent-custom-model-config]
+include::example$doc-snippets/src/main/resources/application.conf[tag=agent-custom-model-config]
 ----
 
 Any additional properties in the configuration section (such as `model-name` or `api-key`) are available to the provider implementation through an injected `Config` parameter.
