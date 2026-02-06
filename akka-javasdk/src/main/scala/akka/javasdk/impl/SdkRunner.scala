@@ -520,6 +520,8 @@ private final class Sdk(
 
         val entityStateType: Class[AnyRef] = Reflect.eventSourcedEntityStateType(clz).asInstanceOf[Class[AnyRef]]
         val allowedProtoEventTypes: Seq[Class[_]] = Reflect.protoEventTypes(clz)
+        val protobufDescriptors =
+          Reflect.protoDescriptorsFor(entityStateType) ++ allowedProtoEventTypes.flatMap(Reflect.protoDescriptorsFor)
 
         val instanceFactory: SpiEventSourcedEntity.FactoryContext => SpiEventSourcedEntity = { factoryContext =>
           new EventSourcedEntityImpl[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]](
@@ -550,7 +552,7 @@ private final class Sdk(
             description = Reflect.readComponentDescription(clz),
             provided = isProvided(clz),
             replicationFilterEnabled = Reflect.isReplicationFilterEnabled(clz),
-            protobufDescriptors = Nil)
+            protobufDescriptors = protobufDescriptors.toVector)
 
       case clz if Reflect.isKeyValueEntity(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -564,6 +566,7 @@ private final class Sdk(
           }.toSet
 
         val entityStateType: Class[AnyRef] = Reflect.keyValueEntityStateType(clz).asInstanceOf[Class[AnyRef]]
+        val protobufDescriptors = Reflect.protoDescriptorsFor(entityStateType)
 
         val instanceFactory: SpiEventSourcedEntity.FactoryContext => SpiEventSourcedEntity = { factoryContext =>
           new KeyValueEntityImpl[AnyRef, KeyValueEntity[AnyRef]](
@@ -593,15 +596,17 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            replicationFilterEnabled = Reflect.isReplicationFilterEnabled(clz),
-            protobufDescriptors = Nil)
+            replicationFilterEnabled = Reflect.isReplicationFilterEnabled(clz))
 
       case clz if Reflect.isWorkflow(clz) =>
         val componentId = Reflect.readComponentId(clz)
 
         // register known types
-        serializer.registerTypeHints(Reflect.workflowStateType(clz))
-        Reflect.workflowKnownInputTypes(clz)
+        val stateType = Reflect.workflowStateType(clz)
+        serializer.registerTypeHints(stateType)
+        val inputTypes = Reflect.workflowKnownInputTypes(clz)
+        val protobufDescriptors = Reflect.protoDescriptorsFor(stateType) ++ inputTypes.flatMap(inputType =>
+          Reflect.protoDescriptorsFor(inputType))
 
         val readOnlyCommandNames =
           clz.getDeclaredMethods.collect {
@@ -619,8 +624,7 @@ private final class Sdk(
             ctx => workflowInstanceFactory(componentId, ctx, clz.asInstanceOf[Class[Workflow[Nothing]]]),
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            provided = false,
-            protobufDescriptors = Nil)
+            provided = false)
 
       case clz if Reflect.isTimedAction(clz) =>
         val componentId = Reflect.readComponentId(clz)

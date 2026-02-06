@@ -12,12 +12,10 @@ import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.util
 import java.util.Optional
-
 import scala.annotation.nowarn
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.reflect.ClassTag
-
 import akka.Done
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
@@ -44,6 +42,8 @@ import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.Workflow.RunnableStep
 import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.google.protobuf.Descriptors
+import com.google.protobuf.Descriptors.FieldDescriptor.JavaType
 import com.google.protobuf.GeneratedMessageV3
 
 /**
@@ -95,6 +95,22 @@ private[impl] object Reflect {
     }
 
   }
+
+  def protoDescriptorsFor(messageClass: Class[_]): Set[Descriptors.Descriptor] =
+    if (classOf[GeneratedMessageV3].isAssignableFrom(messageClass)) {
+      // FIXME actorsystem dynamic access?
+      val mainDescriptor =
+        messageClass.getDeclaredMethod("getDescriptor").invoke(null).asInstanceOf[Descriptors.Descriptor]
+      // we need all nested field types as well
+      flattenDependencies(mainDescriptor)
+    } else Set.empty
+
+  private def flattenDependencies(descriptor: Descriptors.Descriptor): Set[Descriptors.Descriptor] =
+    Set(descriptor) ++ descriptor.getFields.asScala.toSet.flatMap((field: Descriptors.FieldDescriptor) =>
+      if (field.getJavaType == JavaType.MESSAGE) {
+        val fieldDescriptor = field.getMessageType
+        Set(fieldDescriptor) ++ flattenDependencies(fieldDescriptor)
+      } else Set.empty)
 
   def isRestEndpoint(cls: Class[_]): Boolean =
     cls.getAnnotation(classOf[HttpEndpoint]) != null
