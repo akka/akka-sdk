@@ -1139,10 +1139,10 @@ public sealed interface ModelProvider {
     /**
      * Override this method to provide a meaningful model name for your custom provider.
      *
-     * @return the model name, defaults to an empty string
+     * @return the model name, defaults to 'custom'.
      */
     default String modelName() {
-      return "";
+      return "custom";
     }
   }
 
