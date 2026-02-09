@@ -7,13 +7,13 @@ package akkajavasdk.components.workflowentities.protobuf;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.StepName;
 import akka.javasdk.workflow.Workflow;
-import akkajavasdk.protocol.SerializationTestProtos.OrderItem;
+import akkajavasdk.protocol.SerializationTestProtos.CancelOrderCommand;
+import akkajavasdk.protocol.SerializationTestProtos.CreateOrderCommand;
 import akkajavasdk.protocol.SerializationTestProtos.OrderStatus;
 import akkajavasdk.protocol.SerializationTestProtos.OrderWorkflowState;
 import akkajavasdk.protocol.SerializationTestProtos.ProcessPaymentInput;
 import akkajavasdk.protocol.SerializationTestProtos.ShipOrderInput;
 import akkajavasdk.protocol.SerializationTestProtos.ValidateOrderInput;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,13 +26,6 @@ public class ProtobufOrderWorkflow extends Workflow<OrderWorkflowState> {
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
-  // Command records (using Java records as commands)
-  public record CreateOrderCommand(String customerId, List<OrderItemDto> items) {}
-
-  public record OrderItemDto(String productId, String productName, int quantity, double price) {}
-
-  public record CancelOrderCommand() {}
-
   // Command handlers
 
   public Effect<String> createOrder(CreateOrderCommand command) {
@@ -40,26 +33,18 @@ public class ProtobufOrderWorkflow extends Workflow<OrderWorkflowState> {
       return effects().error("Order already exists");
     }
 
-    // Convert DTOs to protobuf OrderItems
-    var itemsBuilder = OrderWorkflowState.newBuilder();
+    // Calculate total from protobuf OrderItems
     double total = 0;
-    for (var dto : command.items()) {
-      var item =
-          OrderItem.newBuilder()
-              .setProductId(dto.productId())
-              .setProductName(dto.productName())
-              .setQuantity(dto.quantity())
-              .setPrice(dto.price())
-              .build();
-      itemsBuilder.addItems(item);
-      total += dto.quantity() * dto.price();
+    for (var item : command.getItemsList()) {
+      total += item.getQuantity() * item.getPrice();
     }
 
     var orderId = commandContext().workflowId();
     var newState =
-        itemsBuilder
+        OrderWorkflowState.newBuilder()
             .setOrderId(orderId)
-            .setCustomerId(command.customerId())
+            .setCustomerId(command.getCustomerId())
+            .addAllItems(command.getItemsList())
             .setTotalAmount(total)
             .setStatus(OrderStatus.ORDER_STATUS_PENDING)
             .setLastStep("created")
@@ -69,7 +54,7 @@ public class ProtobufOrderWorkflow extends Workflow<OrderWorkflowState> {
     var validateInput =
         ValidateOrderInput.newBuilder()
             .setOrderId(orderId)
-            .setCustomerId(command.customerId())
+            .setCustomerId(command.getCustomerId())
             .addAllItems(newState.getItemsList())
             .build();
 
