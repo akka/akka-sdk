@@ -9,9 +9,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.javasdk.testkit.TestKitSupport;
 import akkajavasdk.components.workflowentities.protobuf.ProtobufOrderWorkflow;
-import akkajavasdk.components.workflowentities.protobuf.ProtobufOrderWorkflow.*;
+import akkajavasdk.protocol.SerializationTestProtos.CreateOrderCommand;
+import akkajavasdk.protocol.SerializationTestProtos.OrderItem;
 import akkajavasdk.protocol.SerializationTestProtos.OrderStatus;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
@@ -25,16 +25,28 @@ public class ProtobufWorkflowTest extends TestKitSupport {
   @Test
   public void shouldCreateAndProcessOrderWithProtobufState() {
     var orderId = randomId();
-    var items =
-        List.of(
-            new OrderItemDto("prod-1", "Widget", 2, 10.99),
-            new OrderItemDto("prod-2", "Gadget", 1, 25.50));
+    var command =
+        CreateOrderCommand.newBuilder()
+            .setCustomerId("customer-123")
+            .addItems(
+                OrderItem.newBuilder()
+                    .setProductId("prod-1")
+                    .setProductName("Widget")
+                    .setQuantity(2)
+                    .setPrice(10.99))
+            .addItems(
+                OrderItem.newBuilder()
+                    .setProductId("prod-2")
+                    .setProductName("Gadget")
+                    .setQuantity(1)
+                    .setPrice(25.50))
+            .build();
 
     var response =
         componentClient
             .forWorkflow(orderId)
             .method(ProtobufOrderWorkflow::createOrder)
-            .invoke(new CreateOrderCommand("customer-123", items));
+            .invoke(command);
 
     assertThat(response).isEqualTo("Order created");
 
@@ -71,12 +83,18 @@ public class ProtobufWorkflowTest extends TestKitSupport {
   @Test
   public void shouldTrackWorkflowStepsWithProtobufInputs() {
     var orderId = randomId();
-    var items = List.of(new OrderItemDto("prod-1", "Widget", 1, 10.00));
+    var command =
+        CreateOrderCommand.newBuilder()
+            .setCustomerId("customer-456")
+            .addItems(
+                OrderItem.newBuilder()
+                    .setProductId("prod-1")
+                    .setProductName("Widget")
+                    .setQuantity(1)
+                    .setPrice(10.00))
+            .build();
 
-    componentClient
-        .forWorkflow(orderId)
-        .method(ProtobufOrderWorkflow::createOrder)
-        .invoke(new CreateOrderCommand("customer-456", items));
+    componentClient.forWorkflow(orderId).method(ProtobufOrderWorkflow::createOrder).invoke(command);
 
     // Wait for validate-order step
     Awaitility.await()
@@ -116,13 +134,19 @@ public class ProtobufWorkflowTest extends TestKitSupport {
   @Test
   public void shouldRejectDuplicateOrderCreation() {
     var orderId = randomId();
-    var items = List.of(new OrderItemDto("prod-1", "Widget", 1, 10.00));
+    var command =
+        CreateOrderCommand.newBuilder()
+            .setCustomerId("customer-789")
+            .addItems(
+                OrderItem.newBuilder()
+                    .setProductId("prod-1")
+                    .setProductName("Widget")
+                    .setQuantity(1)
+                    .setPrice(10.00))
+            .build();
 
     // Create first order
-    componentClient
-        .forWorkflow(orderId)
-        .method(ProtobufOrderWorkflow::createOrder)
-        .invoke(new CreateOrderCommand("customer-789", items));
+    componentClient.forWorkflow(orderId).method(ProtobufOrderWorkflow::createOrder).invoke(command);
 
     // Wait for order to be in progress
     Awaitility.await()
@@ -143,7 +167,16 @@ public class ProtobufWorkflowTest extends TestKitSupport {
       componentClient
           .forWorkflow(orderId)
           .method(ProtobufOrderWorkflow::createOrder)
-          .invoke(new CreateOrderCommand("different-customer", items));
+          .invoke(
+              CreateOrderCommand.newBuilder()
+                  .setCustomerId("different-customer")
+                  .addItems(
+                      OrderItem.newBuilder()
+                          .setProductId("prod-1")
+                          .setProductName("Widget")
+                          .setQuantity(1)
+                          .setPrice(10.00))
+                  .build());
       // If we get here, the call didn't fail as expected
       // (might succeed if workflow already completed, which is fine)
     } catch (Exception e) {
@@ -154,12 +187,18 @@ public class ProtobufWorkflowTest extends TestKitSupport {
   @Test
   public void shouldCancelPendingOrder() {
     var orderId = randomId();
-    var items = List.of(new OrderItemDto("prod-1", "Widget", 1, 10.00));
+    var command =
+        CreateOrderCommand.newBuilder()
+            .setCustomerId("customer-cancel")
+            .addItems(
+                OrderItem.newBuilder()
+                    .setProductId("prod-1")
+                    .setProductName("Widget")
+                    .setQuantity(1)
+                    .setPrice(10.00))
+            .build();
 
-    componentClient
-        .forWorkflow(orderId)
-        .method(ProtobufOrderWorkflow::createOrder)
-        .invoke(new CreateOrderCommand("customer-cancel", items));
+    componentClient.forWorkflow(orderId).method(ProtobufOrderWorkflow::createOrder).invoke(command);
 
     // Cancel the order quickly (before it completes)
     // Note: This might fail if the workflow completes too fast
@@ -185,17 +224,30 @@ public class ProtobufWorkflowTest extends TestKitSupport {
   @Test
   public void shouldCalculateTotalAmountCorrectly() {
     var orderId = randomId();
-    var items =
-        List.of(
-            new OrderItemDto("prod-1", "Item A", 3, 15.00), // 45.00
-            new OrderItemDto("prod-2", "Item B", 2, 7.50), // 15.00
-            new OrderItemDto("prod-3", "Item C", 1, 100.00) // 100.00
-            );
+    var command =
+        CreateOrderCommand.newBuilder()
+            .setCustomerId("customer-total")
+            .addItems(
+                OrderItem.newBuilder()
+                    .setProductId("prod-1")
+                    .setProductName("Item A")
+                    .setQuantity(3)
+                    .setPrice(15.00)) // 45.00
+            .addItems(
+                OrderItem.newBuilder()
+                    .setProductId("prod-2")
+                    .setProductName("Item B")
+                    .setQuantity(2)
+                    .setPrice(7.50)) // 15.00
+            .addItems(
+                OrderItem.newBuilder()
+                    .setProductId("prod-3")
+                    .setProductName("Item C")
+                    .setQuantity(1)
+                    .setPrice(100.00)) // 100.00
+            .build();
 
-    componentClient
-        .forWorkflow(orderId)
-        .method(ProtobufOrderWorkflow::createOrder)
-        .invoke(new CreateOrderCommand("customer-total", items));
+    componentClient.forWorkflow(orderId).method(ProtobufOrderWorkflow::createOrder).invoke(command);
 
     // Wait for workflow to start
     Awaitility.await()
@@ -215,15 +267,24 @@ public class ProtobufWorkflowTest extends TestKitSupport {
   @Test
   public void shouldPreserveItemDetailsInProtobufState() {
     var orderId = randomId();
-    var items =
-        List.of(
-            new OrderItemDto("SKU-001", "Premium Widget Pro", 5, 299.99),
-            new OrderItemDto("SKU-002", "Basic Gadget", 10, 49.99));
+    var command =
+        CreateOrderCommand.newBuilder()
+            .setCustomerId("customer-items")
+            .addItems(
+                OrderItem.newBuilder()
+                    .setProductId("SKU-001")
+                    .setProductName("Premium Widget Pro")
+                    .setQuantity(5)
+                    .setPrice(299.99))
+            .addItems(
+                OrderItem.newBuilder()
+                    .setProductId("SKU-002")
+                    .setProductName("Basic Gadget")
+                    .setQuantity(10)
+                    .setPrice(49.99))
+            .build();
 
-    componentClient
-        .forWorkflow(orderId)
-        .method(ProtobufOrderWorkflow::createOrder)
-        .invoke(new CreateOrderCommand("customer-items", items));
+    componentClient.forWorkflow(orderId).method(ProtobufOrderWorkflow::createOrder).invoke(command);
 
     // Wait for workflow to complete
     Awaitility.await()
@@ -272,12 +333,18 @@ public class ProtobufWorkflowTest extends TestKitSupport {
   @Test
   public void shouldReturnCorrectStatusThroughWorkflowLifecycle() {
     var orderId = randomId();
-    var items = List.of(new OrderItemDto("prod-1", "Widget", 1, 10.00));
+    var command =
+        CreateOrderCommand.newBuilder()
+            .setCustomerId("customer-status")
+            .addItems(
+                OrderItem.newBuilder()
+                    .setProductId("prod-1")
+                    .setProductName("Widget")
+                    .setQuantity(1)
+                    .setPrice(10.00))
+            .build();
 
-    componentClient
-        .forWorkflow(orderId)
-        .method(ProtobufOrderWorkflow::createOrder)
-        .invoke(new CreateOrderCommand("customer-status", items));
+    componentClient.forWorkflow(orderId).method(ProtobufOrderWorkflow::createOrder).invoke(command);
 
     // Wait for completion and verify final status
     Awaitility.await()
