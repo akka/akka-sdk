@@ -70,7 +70,7 @@ private[testkit] final class WebSocketRouteTesterImpl(runtimeHost: String, runti
     val completion = matVal.first.second
     val subscriber = matVal.second
 
-    waitForSuccessfullUpgrade(completion, absolutePath)
+    waitForSuccessfulUpgrade(completion, absolutePath)
 
     new WsConnection(publisher, subscriber);
   }
@@ -107,12 +107,12 @@ private[testkit] final class WebSocketRouteTesterImpl(runtimeHost: String, runti
     val completion = matVal.first.second
     val subscriber = matVal.second
 
-    waitForSuccessfullUpgrade(completion, absolutePath)
+    waitForSuccessfulUpgrade(completion, absolutePath)
 
     new WsConnection(publisher, subscriber);
   }
 
-  private def waitForSuccessfullUpgrade(cs: CompletionStage[WebSocketUpgradeResponse], absolutePath: String): Unit = {
+  private def waitForSuccessfulUpgrade(cs: CompletionStage[WebSocketUpgradeResponse], absolutePath: String): Unit = {
     val upgradeResponse = cs.toCompletableFuture.get(3, TimeUnit.SECONDS)
     if (!upgradeResponse.isValid) {
       throw new RuntimeException(
