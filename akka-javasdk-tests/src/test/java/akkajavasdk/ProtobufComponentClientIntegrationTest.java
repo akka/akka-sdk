@@ -4,10 +4,12 @@
 
 package akkajavasdk;
 
+import static java.time.Duration.ofMillis;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.javasdk.testkit.TestKitSupport;
+import akkajavasdk.components.actions.ProtoInputTimedAction;
 import akkajavasdk.components.eventsourcedentities.protobuf.ProtobufCustomerEntity;
 import akkajavasdk.components.keyvalueentities.protobuf.ProtobufCustomerKvEntity;
 import akkajavasdk.protocol.SerializationTestProtos.SimpleMessage;
@@ -270,5 +272,31 @@ public class ProtobufComponentClientIntegrationTest extends TestKitSupport {
     assertThat(result.getText()).isEqualTo("Async ES");
     assertThat(result.getNumber()).isEqualTo(7777);
     assertThat(result.getFlag()).isFalse();
+  }
+
+  // ============================================================
+  // Timed action with protobuf parameters
+  // ============================================================
+
+  @Test
+  public void shouldPassProtobufMessageToTimedAction() {
+    var message =
+        SimpleMessage.newBuilder().setText("hello from proto").setNumber(42).setFlag(true).build();
+
+    timerScheduler.createSingleTimer(
+        "proto-timed-action",
+        ofMillis(0),
+        componentClient
+            .forTimedAction()
+            .method(ProtoInputTimedAction::someMessage)
+            .deferred(message));
+
+    Awaitility.await()
+        .atMost(20, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var value = StaticTestBuffer.getValue("proto-timed-action");
+              assertThat(value).isEqualTo("hello from proto:42:true");
+            });
   }
 }
