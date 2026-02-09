@@ -33,6 +33,7 @@ import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
+import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.client.ComponentClientImpl
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
 import akka.javasdk.keyvalueentity.KeyValueEntity
@@ -363,6 +364,43 @@ private[impl] object Reflect {
         .map(ann => protoEventTypes(ann.value()))
         .getOrElse(Seq.empty)
     }
+  }
+
+  /**
+   * Find all protobuf message types accepted as commands and returned as responses from command handlers
+   */
+  def protoCommandHandlerInputOutput(descriptor: ComponentDescriptor): Seq[Descriptors.Descriptor] = {
+    val methods = descriptor.methodInvokers.values.map(_.method)
+    descriptorsForCommandHandlerInputOutput(methods)
+  }
+
+  def protoCommandHandlerInputOutputForWorkflow(workflowClass: Class[_ <: Workflow[_]]): Seq[Descriptors.Descriptor] = {
+    val methods = workflowClass.getMethods.filter(isCommandHandlerCandidate[Workflow.Effect[_]])
+    descriptorsForCommandHandlerInputOutput(methods)
+  }
+
+  def protoCommandHandlerInputTimedAction(clazz: Class[TimedAction]): Seq[Descriptors.Descriptor] = {
+    val methods = clazz.getMethods.filter(isCommandHandlerCandidate[TimedAction.Effect])
+    descriptorsForCommandHandlerInputOutput(methods)
+  }
+
+  private def descriptorsForCommandHandlerInputOutput(methods: Iterable[Method]): Seq[Descriptors.Descriptor] = {
+    methods
+      .flatMap { method =>
+        val inputs = method.getParameterTypes.toVector
+        val outputs =
+          method.getGenericReturnType match {
+            case p: ParameterizedType => p.getActualTypeArguments.toVector.collect { case c: Class[_] => c }
+            case _                    => Vector.empty[Class[_]]
+          }
+
+        inputs ++ outputs
+      }
+      .collect {
+        case c if c != classOf[GeneratedMessageV3] && classOf[GeneratedMessageV3].isAssignableFrom(c) => c
+      }
+      .flatMap(protoDescriptorsFor)
+      .toVector
   }
 
   /**

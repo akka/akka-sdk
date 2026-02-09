@@ -1,0 +1,17 @@
+/*
+ * Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
+ */
+
+package akkajavasdk.components.actions;
+
+import akka.javasdk.annotations.Component;
+import akka.javasdk.timedaction.TimedAction;
+import akkajavasdk.protocol.SerializationTestProtos;
+
+@Component(id = "proto-timed-action")
+public class ProtoInputTimedAction extends TimedAction {
+
+  public TimedAction.Effect someMessage(SerializationTestProtos.SimpleMessage dummy) {
+    return effects().done();
+  }
+}
