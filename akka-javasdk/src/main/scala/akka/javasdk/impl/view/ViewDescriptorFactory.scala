@@ -450,8 +450,8 @@ private[impl] object ViewDescriptorFactory {
             if (protoTypes.isEmpty) {
               throw new IllegalStateException(
                 s"View table updater [${tableUpdaterClass.getName}] handler method [${m.getName}] accepts GeneratedMessageV3 " +
-                  "but no concrete proto event types could be resolved. Add @ProtoEventTypes to the table updater class " +
-                  "or to the source event sourced entity.")
+                "but no concrete proto event types could be resolved. Add @ProtoEventTypes to the table updater class " +
+                "or to the source event sourced entity.")
             }
             protoTypes.map { protoClass =>
               serializer.registerTypeHints(protoClass)
