@@ -323,17 +323,21 @@ private[impl] final class AgentImpl[A <: Agent](
 
   private def toSpiDetailLevel(level: ImageMessageContent.DetailLevel): SpiAgent.ImageMessageContent.DetailLevel = {
     level match {
-      case ImageMessageContent.DetailLevel.LOW  => SpiAgent.ImageMessageContent.Low
-      case ImageMessageContent.DetailLevel.HIGH => SpiAgent.ImageMessageContent.High
-      case ImageMessageContent.DetailLevel.AUTO => SpiAgent.ImageMessageContent.Auto
+      case ImageMessageContent.DetailLevel.LOW        => SpiAgent.ImageMessageContent.Low
+      case ImageMessageContent.DetailLevel.MEDIUM     => SpiAgent.ImageMessageContent.Medium
+      case ImageMessageContent.DetailLevel.HIGH       => SpiAgent.ImageMessageContent.High
+      case ImageMessageContent.DetailLevel.ULTRA_HIGH => SpiAgent.ImageMessageContent.UltraHigh
+      case ImageMessageContent.DetailLevel.AUTO       => SpiAgent.ImageMessageContent.Auto
     }
   }
 
   private def fromSpiDetailLevel(level: SpiAgent.ImageMessageContent.DetailLevel): ImageMessageContent.DetailLevel =
     level match {
-      case SpiAgent.ImageMessageContent.Low  => ImageMessageContent.DetailLevel.LOW
-      case SpiAgent.ImageMessageContent.High => ImageMessageContent.DetailLevel.HIGH
-      case SpiAgent.ImageMessageContent.Auto => ImageMessageContent.DetailLevel.AUTO
+      case SpiAgent.ImageMessageContent.Low       => ImageMessageContent.DetailLevel.LOW
+      case SpiAgent.ImageMessageContent.Medium    => ImageMessageContent.DetailLevel.MEDIUM
+      case SpiAgent.ImageMessageContent.High      => ImageMessageContent.DetailLevel.HIGH
+      case SpiAgent.ImageMessageContent.UltraHigh => ImageMessageContent.DetailLevel.ULTRA_HIGH
+      case SpiAgent.ImageMessageContent.Auto      => ImageMessageContent.DetailLevel.AUTO
     }
 
   private def toSpiImageLoader(javaImageLoader: ImageLoader): SpiAgent.SpiImageLoader =

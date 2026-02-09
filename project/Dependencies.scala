@@ -7,7 +7,7 @@ object Dependencies {
     val ProtocolVersionMajor = 1
     val ProtocolVersionMinor = 1
   }
-  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.5.35")
+  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.5.36")
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
   // for prod code, they are marked as Provided, but testkit still requires the alignment
@@ -25,7 +25,7 @@ object Dependencies {
   val JacksonVersion = "2.20.1"
   val JacksonDatabindVersion = JacksonVersion
   val JacksonAnnotationsVersion = "2.20"
-  val Langchain4jVersion = "1.10.0"
+  val Langchain4jVersion = "1.11.0"
   val LogbackVersion = "1.5.23"
   val LogbackContribVersion = "0.1.5"
   val JUnitVersion = "4.13.2"

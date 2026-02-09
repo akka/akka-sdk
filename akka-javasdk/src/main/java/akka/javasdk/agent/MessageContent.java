@@ -116,11 +116,15 @@ public sealed interface MessageContent {
      * consumed by the AI model.
      */
     public enum DetailLevel {
-      /** Lower resolution processing, faster and uses fewer tokens */
+      /** Lower resolution processing, faster and uses fewer tokens. */
       LOW,
-      /** Higher resolution processing, more detailed analysis but uses more tokens */
+      /** Medium resolution processing, balance between detail, cost, and latency. */
+      MEDIUM,
+      /** Higher resolution processing, more detailed analysis but uses more tokens. */
       HIGH,
-      /** Let the model automatically choose the appropriate detail level */
+      /** Ultra-high resolution processing, highest token count. */
+      ULTRA_HIGH,
+      /** Let the model automatically choose the appropriate detail level. */
       AUTO;
     }
   }
