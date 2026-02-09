@@ -266,7 +266,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.GoogleAIGemini.ht
 
 | thinking
 | Boolean
-| Enable thinking, only supported for some models. Make sure the chosne model supports thinking before enabling.
+| Enable thinking, only supported for some models. Make sure the choosen model supports thinking before enabling.
 
 |===
 
@@ -404,7 +404,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Ollama.html[`Mode
 
 | thinking
 | Boolean
-| Enable thinking, only supported for deepseek. Make sure the chosen model supports thinking before enabling.
+| Enable thinking, only supported for DeepSeek. Make sure the chosen model supports thinking before enabling.
 
 |===
 
