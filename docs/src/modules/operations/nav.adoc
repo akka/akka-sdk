@@ -19,6 +19,7 @@
 ****** xref:operations:projects/broker-confluent.adoc[Confluent Cloud]
 ****** xref:operations:projects/broker-aws-msk.adoc[AWS MSK Kafka]
 ****** xref:operations:projects/broker-aiven.adoc[Aiven for Kafka]
+****** xref:operations:projects/broker-azure-eventhubs.adoc[Azure Event Hubs]
 ***** xref:operations:projects/secrets.adoc[]
 
 **** xref:operations:services/index.adoc[]
