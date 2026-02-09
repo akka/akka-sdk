@@ -249,6 +249,7 @@ versionHistory
 VMs
 volumeMounts
 [Ww]alkthrough
+winget
 Yugabyte
 Zolotko
 [Zz]sh
