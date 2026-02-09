@@ -31,6 +31,14 @@ values (like 50) allow for more diversity.
 === max-tokens or max-completion-tokens
 If this value is supplied and the model supports this property, then it will stop operations in mid flight if the token quota runs out. It's important to check _how_ the model counts tokens, as some may count differently. Be aware of the fact that this parameter name frequently varies from one provider to the next. Make sure you're using the right property name.
 
+=== Thinking
+Some models support thinking, also sometimes referred to as "thought process" or reasoning, where the model generates an intermediate 
+thought process, breaking down bigger problems into smaller more manageable tasks. This can be good for more complex problems but comes
+at the price of tokens used for the thought process. 
+
+For models that support thinking, it is enabled through model-specific configuration, either by setting a thinking token budget, or
+by a toggle. Thinking is disabled for all models by default.
+
 == Model configuration
 The following is a list of all natively supported model configurations. Remember that if you don't see your model or model format here, you can always create your own custom configuration and still use all of the Agent-related components.
 
@@ -84,6 +92,10 @@ The following is a list of all natively supported model configurations. Remember
 | Integer
 | Retry this many times if the request to the model fails
 
+| thinking-budget-tokens
+| Integer
+| A maximum number of tokens to spend on thinking, use 0 to disable thinking
+
 |===
 
 
@@ -107,14 +119,6 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Anthropic.html[`M
 | model-id
 | String
 | The Bedrock model id, e.g. "ai21.jamba-1-5-large-v1:0"
-
-| send-thinking
-| boolean
-| Send thinking can be enabled
-
-| return-thinking
-| boolean
-| Return thinking can be enabled
 
 | max-output-tokens
 | Integer
@@ -202,6 +206,14 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Bedrock.html[`Mod
 | Integer
 | Retry this many times if the request to the model fails
 
+| thinking-budget
+| Integer
+| A budget of tokens to spend on thinking for Gemini 2.5 models, set to "none" for other models. Can be –1 for dynamic budget, 0 for disabled, a positive value to define an upper limit for tokens spent on thinking. See https://ai.google.dev/gemini-api/docs/thinking#set-budget for details
+
+| thinking-level
+| String
+| Control thinking for Gemini 3 models, exact values depend on the specific model chosen, must be empty for 2.5 models. See Google Gemini docs for more details: https://ai.google.dev/gemini-api/docs/thinking#thinking-levels
+
 |===
 
 See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.GoogleAIGemini.html[`ModelProvider.GoogleAIGemini`] for programmatic settings.
@@ -251,6 +263,10 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.GoogleAIGemini.ht
 | max-retries
 | Integer
 | Retry this many times if the request to the model fails
+
+| thinking
+| Boolean
+| Enable thinking, only supported for some models. Make sure the chosen model supports thinking before enabling.
 
 |===
 
@@ -328,6 +344,10 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.LocalAI.html[`Mod
 | Integer
 | Retry this many times if the request to the model fails
 
+| think
+| Boolean
+| Enable thinking, only supported for some models. Make sure the chosen model supports thinking before enabling.
+
 |===
 
 See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Ollama.html[`ModelProvider.Ollama`] for programmatic settings.
@@ -381,6 +401,10 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Ollama.html[`Mode
 | max-retries
 | Integer
 | Retry this many times if the request to the model fails
+
+| thinking
+| Boolean
+| Enable thinking, only supported for DeepSeek. Make sure the chosen model supports thinking before enabling.
 
 |===
 
