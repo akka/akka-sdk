@@ -125,12 +125,12 @@ private[impl] object ViewDescriptorFactory {
       viewClass.getName,
       tables,
       queries = allQueryMethods.map(_.descriptor),
-      // FIXME reintroduce ACLs (does JWT make any sense here? I don't think so)
       componentOptions = new ComponentOptions(None, None),
       name = readComponentName(viewClass),
       description = readComponentDescription(viewClass),
       provided = false,
-      protobufDescriptors = Nil)
+      protobufDescriptors = Vector.empty // FIXME view updater input protobuf types
+    )
   }
 
   private case class QueryMethod(descriptor: QueryDescriptor, queryString: String)
