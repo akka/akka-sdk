@@ -26,7 +26,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
   import ViewTestModels._
   import akka.javasdk.testmodels.subscriptions.PubSubTestModels._
-  val serializer = new JsonSerializer
+  val serializer = new Serializer()
 
   def assertDescriptor[T](test: ViewDescriptor => Any)(implicit tag: ClassTag[T]): Unit = {
     test(ViewDescriptorFactory(tag.runtimeClass, serializer, new RegionInfo(""), ExecutionContexts.global()))
