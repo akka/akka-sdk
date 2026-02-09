@@ -80,6 +80,11 @@ final class Serializer(val objectMapper: ObjectMapper) {
         ProtobufSerializer
           .fromBytes(expectedType.asInstanceOf[Class[GeneratedMessageV3]], bytesPayload)
           .asInstanceOf[T]
+      else if (isJson(bytesPayload))
+        // View results come back as JSON even for protobuf types (views store data as JSONB)
+        ProtobufSerializer
+          .fromBytesAsJson(expectedType.asInstanceOf[Class[GeneratedMessageV3]], bytesPayload)
+          .asInstanceOf[T]
       else
         throw new IllegalArgumentException(
           s"Expected protobuf message matching generated class [${expectedType}] but payload has type [${bytesPayload.contentType}]")
@@ -96,9 +101,17 @@ final class Serializer(val objectMapper: ObjectMapper) {
   def fromBytes[T](expectedType: Type, bytesPayload: BytesPayload): T =
     expectedType match {
       case cls: Class[_] if classOf[GeneratedMessageV3].isAssignableFrom(cls) =>
-        ProtobufSerializer
-          .fromBytes(expectedType.asInstanceOf[Class[_ <: GeneratedMessageV3]], bytesPayload)
-          .asInstanceOf[T]
+        if (isProtobuf(bytesPayload))
+          ProtobufSerializer
+            .fromBytes(cls.asInstanceOf[Class[_ <: GeneratedMessageV3]], bytesPayload)
+            .asInstanceOf[T]
+        else if (isJson(bytesPayload))
+          ProtobufSerializer
+            .fromBytesAsJson(cls.asInstanceOf[Class[_ <: GeneratedMessageV3]], bytesPayload)
+            .asInstanceOf[T]
+        else
+          throw new IllegalArgumentException(
+            s"Expected protobuf message matching generated class [${cls}] but payload has type [${bytesPayload.contentType}]")
       case _ => jsonSerializer.fromBytes(expectedType, bytesPayload)
     }
 
