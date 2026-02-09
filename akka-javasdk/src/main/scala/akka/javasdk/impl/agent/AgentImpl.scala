@@ -204,7 +204,7 @@ private[impl] final class AgentImpl[A <: Agent](
             case ErrorReplyImpl(commandException) =>
               Left(new SpiAgent.Error(commandException.getMessage, Some(serializer.toBytes(commandException))))
             case MessageReplyImpl(message, m) =>
-              val replyPayload = serializer.toBytes(message)
+              val replyPayload = serializer.toBytesAsJson(message)
               val metadata = MetadataImpl.toSpi(m)
               Right(replyPayload -> metadata)
             case NoSecondaryEffectImpl =>
@@ -627,7 +627,7 @@ private[impl] final class AgentImpl[A <: Agent](
   }
 
   override def serialize(message: Any): BytesPayload = {
-    serializer.toBytes(message)
+    serializer.toBytesAsJson(message)
   }
 
   override def deserialize(modelResponse: String, responseType: Class[_]): Any = {
