@@ -9,6 +9,8 @@ import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.util.Optional
 
+import scala.jdk.CollectionConverters._
+
 import akka.annotation.InternalApi
 import akka.runtime.sdk.spi.SpiSchema.SpiBoolean
 import akka.runtime.sdk.spi.SpiSchema.SpiByteString
@@ -27,6 +29,8 @@ import akka.runtime.sdk.spi.SpiSchema.SpiOptional
 import akka.runtime.sdk.spi.SpiSchema.SpiString
 import akka.runtime.sdk.spi.SpiSchema.SpiTimestamp
 import akka.runtime.sdk.spi.SpiSchema.SpiType
+import com.google.protobuf.Descriptors
+import com.google.protobuf.GeneratedMessageV3
 
 @InternalApi
 private[view] object ViewSchema {
@@ -86,6 +90,8 @@ private[view] object ViewSchema {
                       new SpiOptional(loop(p.getActualTypeArguments.head, seenClasses).asInstanceOf[SpiNestableType])
                     case p: ParameterizedType if classOf[java.util.Collection[_]].isAssignableFrom(clazz) =>
                       new SpiList(loop(p.getActualTypeArguments.head, seenClasses).asInstanceOf[SpiNestableType])
+                    case _: Class[_] if classOf[GeneratedMessageV3].isAssignableFrom(clazz) =>
+                      protobufSchema(clazz.asInstanceOf[Class[_ <: GeneratedMessageV3]])
                     case _: Class[_] =>
                       val seenIncludingThis = seenClasses + clazz
                       new SpiClass(
@@ -100,6 +106,38 @@ private[view] object ViewSchema {
       }
 
     loop(rootType, Set.empty)
+  }
+
+  private def protobufSchema(clazz: Class[_ <: GeneratedMessageV3]): SpiClass = {
+    val descriptor = clazz
+      .getMethod("getDescriptor")
+      .invoke(null)
+      .asInstanceOf[Descriptors.Descriptor]
+    protobufSchemaFromDescriptor(descriptor)
+  }
+
+  private def protobufFieldToSpiType(field: Descriptors.FieldDescriptor): SpiType = {
+    import Descriptors.FieldDescriptor.JavaType
+    field.getJavaType match {
+      case JavaType.STRING      => SpiString
+      case JavaType.INT         => SpiInteger
+      case JavaType.LONG        => SpiLong
+      case JavaType.DOUBLE      => SpiDouble
+      case JavaType.FLOAT       => SpiFloat
+      case JavaType.BOOLEAN     => SpiBoolean
+      case JavaType.BYTE_STRING => SpiByteString
+      case JavaType.ENUM        => new SpiEnum(field.getEnumType.getFullName)
+      case JavaType.MESSAGE     => protobufSchemaFromDescriptor(field.getMessageType)
+    }
+  }
+
+  private def protobufSchemaFromDescriptor(descriptor: Descriptors.Descriptor): SpiClass = {
+    val fields = descriptor.getFields.asScala.map { field =>
+      val baseType = protobufFieldToSpiType(field)
+      val spiType = if (field.isRepeated) new SpiList(baseType.asInstanceOf[SpiNestableType]) else baseType
+      new SpiField(field.getName, spiType)
+    }.toSeq
+    new SpiClass(descriptor.getFullName, fields)
   }
 
 }

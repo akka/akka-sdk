@@ -326,12 +326,22 @@ private[impl] object ViewDescriptorFactory {
       .filterNot(ComponentDescriptorFactory.hasHandleDeletes)
       .filter(ComponentDescriptorFactory.hasUpdateEffectOutput)
 
+    val tableRowClass: Class[_] = Reflect.tableUpdaterRowType(tableUpdater)
+
+    val updateHandler: Option[SpiTableUpdateHandler] =
+      if (updateHandlerMethods.nonEmpty)
+        Some(UpdateHandlerImpl(componentId, tableUpdater, updateHandlerMethods, serializer, regionInfo)(userEc))
+      else if (classOf[GeneratedMessageV3].isAssignableFrom(tableRowClass))
+        // Protobuf passthrough: entity state arrives as binary protobuf but views require JSON
+        Some(ProtobufPassthroughHandler(tableRowClass, serializer)(userEc))
+      else
+        None
+
     new TableDescriptor(
       tableName,
       tableType,
       new ConsumerSource.KeyValueEntitySource(ComponentDescriptorFactory.readComponentIdValue(annotation.value())),
-      Option.when(updateHandlerMethods.nonEmpty)(
-        UpdateHandlerImpl(componentId, tableUpdater, updateHandlerMethods, serializer, regionInfo)(userEc)),
+      updateHandler,
       deleteHandlerMethod.map(deleteMethod =>
         UpdateHandlerImpl(
           componentId,
@@ -547,6 +557,21 @@ private[impl] object ViewDescriptorFactory {
       }
 
     }(userEc)
+  }
+
+  /**
+   * Passthrough handler for views consuming protobuf state from KV entities. Converts binary protobuf to JSON since
+   * views store data as JSONB.
+   */
+  private final case class ProtobufPassthroughHandler(tableRowClass: Class[_], serializer: Serializer)(implicit
+      ec: ExecutionContext)
+      extends SpiTableUpdateHandler {
+
+    override def handle(input: SpiTableUpdateEnvelope): Future[SpiTableUpdateEffect] = Future {
+      val protoMessage = serializer.fromBytes(tableRowClass, input.eventPayload)
+      val bytesPayload = serializer.toBytesAsJson(protoMessage)
+      new spi.SpiTableUpdateHandler.UpdateRow(bytesPayload)
+    }(ec)
   }
 
   private final case class UpdateContextImpl(

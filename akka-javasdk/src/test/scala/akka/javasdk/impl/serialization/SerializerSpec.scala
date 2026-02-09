@@ -93,11 +93,18 @@ class SerializerSpec extends AnyWordSpec with Matchers {
       an[NullPointerException] should be thrownBy serializer.toBytes(null)
     }
 
-    "throw exception when deserializing protobuf from wrong content type" in {
+    "deserialize protobuf from JSON content type (view results)" in {
       val jsonPayload = new BytesPayload(ByteString("{}"), "json.akka.io/some.Type")
 
+      val result = serializer.fromBytes(classOf[EventsForConsumer.EventForConsumer1], jsonPayload)
+      result.getText shouldBe ""
+    }
+
+    "throw exception when deserializing protobuf from unknown content type" in {
+      val unknownPayload = new BytesPayload(ByteString("{}"), "unknown/some.Type")
+
       an[IllegalArgumentException] should be thrownBy {
-        serializer.fromBytes(classOf[EventsForConsumer.EventForConsumer1], jsonPayload)
+        serializer.fromBytes(classOf[EventsForConsumer.EventForConsumer1], unknownPayload)
       }
     }
 
