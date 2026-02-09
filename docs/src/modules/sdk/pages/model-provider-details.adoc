@@ -208,7 +208,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Bedrock.html[`Mod
 
 | thinking-budget
 | Integer
-| A budget of tokens to spend on thinking for Gemini 2.5 models, set to "none" for other models. Can be -1 for dynamic budget, 0 for disabled, a positive value to define an upper limit for tokens spent on thinking. See https://ai.google.dev/gemini-api/docs/thinking#set-budget for details
+| A budget of tokens to spend on thinking for Gemini 2.5 models, set to "none" for other models. Can be –1 for dynamic budget, 0 for disabled, a positive value to define an upper limit for tokens spent on thinking. See https://ai.google.dev/gemini-api/docs/thinking#set-budget for details
 
 | thinking-level
 | String
@@ -266,7 +266,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.GoogleAIGemini.ht
 
 | thinking
 | Boolean
-| Enable thinking, only supported for some models. Make sure the choosen model supports thinking before enabling.
+| Enable thinking, only supported for some models. Make sure the chosen model supports thinking before enabling.
 
 |===
 
