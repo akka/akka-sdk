@@ -185,3 +185,13 @@ message ShipOrderInput {
   string customer_id = 2;
   string shipping_address = 3;
 }
+
+// Command input for creating an order
+message CreateOrderCommand {
+  string customer_id = 1;
+  repeated OrderItem items = 2;
+}
+
+// Command input for cancelling an order
+message CancelOrderCommand {
+}
