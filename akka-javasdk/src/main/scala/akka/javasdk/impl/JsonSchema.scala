@@ -13,6 +13,7 @@ import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.util.Optional
 
+import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
 
 import akka.annotation.InternalApi
@@ -26,6 +27,8 @@ import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaInteger
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaNumber
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaString
+import com.google.protobuf.Descriptors
+import com.google.protobuf.GeneratedMessageV3
 import org.slf4j.LoggerFactory
 
 /**
@@ -156,6 +159,13 @@ private[impl] object JsonSchema {
                   items = jsonSchemaTypeFor(p.getActualTypeArguments.head, None, seenTypes)._1,
                   description),
                 true)
+            case _ if classOf[GeneratedMessageV3].isAssignableFrom(clazz) =>
+              val descriptor = clazz
+                .getMethod("getDescriptor")
+                .invoke(null)
+                .asInstanceOf[Descriptors.Descriptor]
+              (protobufJsonSchemaFromDescriptor(descriptor, description), true)
+
             case _ =>
               // Note: for now the top level can only be a class
               val properties = clazz.getDeclaredFields.toVector.map { field: Field =>
@@ -181,6 +191,34 @@ private[impl] object JsonSchema {
             (emptyObject(description), true)
         }
     }
+  }
+
+  private def protobufFieldToJsonSchema(field: Descriptors.FieldDescriptor): JsonSchemaDataType = {
+    import Descriptors.FieldDescriptor.JavaType
+    val baseType = field.getJavaType match {
+      case JavaType.STRING      => new JsonSchemaString(None)
+      case JavaType.INT         => new JsonSchemaInteger(None)
+      case JavaType.LONG        => new JsonSchemaInteger(None)
+      case JavaType.DOUBLE      => new JsonSchemaNumber(None)
+      case JavaType.FLOAT       => new JsonSchemaNumber(None)
+      case JavaType.BOOLEAN     => new JsonSchemaBoolean(None)
+      case JavaType.BYTE_STRING => new JsonSchemaString(None) // base64-encoded in JSON
+      case JavaType.ENUM        => new JsonSchemaString(None) // protobuf JSON uses string enum names
+      case JavaType.MESSAGE     => protobufJsonSchemaFromDescriptor(field.getMessageType, None)
+    }
+    if (field.isRepeated) new JsonSchemaArray(baseType, None)
+    else baseType
+  }
+
+  private def protobufJsonSchemaFromDescriptor(
+      descriptor: Descriptors.Descriptor,
+      description: Option[String]): JsonSchemaObject = {
+    val fields = descriptor.getFields.asScala.toVector
+    val properties = fields.map { field =>
+      field.getName -> protobufFieldToJsonSchema(field)
+    }.toMap
+    // All proto3 fields are always present (they have defaults)
+    new JsonSchemaObject(description = description, properties = properties, required = fields.map(_.getName).sorted)
   }
 
 }
