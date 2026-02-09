@@ -78,6 +78,12 @@ object ProtobufSerializer {
     .printer()
     .preservingProtoFieldNames()
     .omittingInsignificantWhitespace()
+    .includingDefaultValueFields()
+
+  // Protobuf JSON parser for converting JSON back to protobuf (used by Views)
+  private lazy val protobufJsonParser: JsonFormat.Parser = JsonFormat
+    .parser()
+    .ignoringUnknownFields()
 
   def isProtobufClass(clz: Class[_]): Boolean =
     classOf[GeneratedMessageV3].isAssignableFrom(clz)
@@ -128,6 +134,19 @@ object ProtobufSerializer {
     } else {
       throw new IllegalArgumentException(s"Not a protobuf class: ${expectedType.getName}")
     }
+  }
+
+  /**
+   * Deserialize a protobuf message from JSON format. Used for Views which store and return data as JSONB.
+   */
+  def fromBytesAsJson[T <: GeneratedMessageV3](expectedType: Class[T], bytesPayload: BytesPayload): T = {
+    val builder = expectedType
+      .getMethod("newBuilder")
+      .invoke(null)
+      .asInstanceOf[com.google.protobuf.Message.Builder]
+    val jsonString = bytesPayload.bytes.utf8String
+    protobufJsonParser.merge(jsonString, builder)
+    builder.build().asInstanceOf[T]
   }
 
   def isProtobuf(bytesPayload: BytesPayload): Boolean =
