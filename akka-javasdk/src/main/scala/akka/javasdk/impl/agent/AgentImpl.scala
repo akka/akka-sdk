@@ -17,8 +17,10 @@ import scala.jdk.CollectionConverters._
 import scala.jdk.DurationConverters.JavaDurationOps
 import scala.jdk.OptionConverters.RichOption
 import scala.jdk.OptionConverters.RichOptional
+import scala.util.Failure
 import scala.util.control.NonFatal
 
+import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.http.scaladsl.model.HttpHeader
 import akka.javasdk.CommandException
@@ -98,7 +100,8 @@ private[impl] object AgentImpl {
     override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
   }
 
-  def modelProviderFromConfig(config: Config, configPath: String, componentId: String): ModelProvider = {
+  def modelProviderFromConfig(config: Config, configPath: String, componentId: String)(implicit
+      system: ActorSystem[_]): ModelProvider = {
     val actualPath =
       if (configPath == "")
         config.getString("akka.javasdk.agent.model-provider")
@@ -128,6 +131,8 @@ private[impl] object AgentImpl {
         case "openai"          => ModelProvider.OpenAi.fromConfig(providerConfig)
         case "local-ai"        => ModelProvider.LocalAI.fromConfig(providerConfig)
         case "bedrock"         => ModelProvider.Bedrock.fromConfig(providerConfig)
+        case fqcn if isFqcn(fqcn) =>
+          instantiateCustomProvider(fqcn, providerConfig, resolvedConfigPath)
         case other =>
           throw new IllegalArgumentException(s"Unknown model provider [$other] in config [$resolvedConfigPath]")
       }
@@ -136,6 +141,27 @@ private[impl] object AgentImpl {
         log.error("Invalid model provider configuration at [{}] for agent [{}].", resolvedConfigPath, componentId, exc)
         throw exc
     }
+  }
+
+  private def isFqcn(fqcn: String): Boolean = {
+    val lastDot = fqcn.lastIndexOf('.')
+    // Must have at least one dot and the class name should start with uppercase
+    lastDot > 0 && lastDot < fqcn.length - 1 && fqcn.charAt(lastDot + 1).isUpper
+  }
+
+  private def instantiateCustomProvider(fqcn: String, providerConfig: Config, resolvedConfigPath: String)(implicit
+      system: ActorSystem[_]): ModelProvider.Custom = {
+    system.dynamicAccess
+      .createInstanceFor[ModelProvider.Custom](fqcn, (classOf[Config] -> providerConfig) :: Nil)
+      .recoverWith { case _: ClassNotFoundException | _: NoSuchMethodException =>
+        system.dynamicAccess.createInstanceFor[ModelProvider.Custom](fqcn, Nil)
+      }
+      .recoverWith { case _: ClassNotFoundException | _: NoSuchMethodException =>
+        Failure(new IllegalArgumentException(
+          s"Custom model provider class [$fqcn] in config [$resolvedConfigPath] must implement ModelProvider.Custom " +
+          s"and optionally have a constructor with com.typesafe.config.Config parameter"))
+      }
+      .get
   }
 
 }
@@ -158,9 +184,12 @@ private[impl] final class AgentImpl[A <: Agent](
     overrideModelProvider: OverrideModelProvider,
     dependencyProvider: Option[DependencyProvider],
     guardrails: AgentGuardrails,
-    config: Config)
+    config: Config,
+    _system: ActorSystem[_])
     extends SpiAgent {
   import AgentImpl._
+
+  implicit val system: ActorSystem[_] = _system
 
   private val router: ReflectiveAgentRouter[A] = {
     new ReflectiveAgentRouter[A](factory, componentDescriptor.methodInvokers, serializer)
@@ -603,7 +632,11 @@ private[impl] final class AgentImpl[A <: Agent](
           new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
           thinking = p.thinking)
       case p: ModelProvider.Custom =>
-        new SpiAgent.ModelProvider.Custom(() => p.createChatModel(), () => p.createStreamingChatModel())
+        new SpiAgent.ModelProvider.Custom(
+          providerName = p.getClass.getName,
+          modelName = p.modelName(),
+          createChatModel = () => p.createChatModel(),
+          createStreamingChatModel = () => p.createStreamingChatModel())
       case p: ModelProvider.Bedrock =>
         new SpiAgent.ModelProvider.Bedrock(
           region = p.region,

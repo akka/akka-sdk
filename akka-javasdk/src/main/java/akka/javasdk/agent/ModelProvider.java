@@ -1135,6 +1135,15 @@ public sealed interface ModelProvider {
      * @return an instance of {@code dev.langchain4j.model.chat.StreamingChatModel}
      */
     Object createStreamingChatModel();
+
+    /**
+     * Override this method to provide a meaningful model name for your custom provider.
+     *
+     * @return the model name, defaults to 'custom'.
+     */
+    default String modelName() {
+      return "custom";
+    }
   }
 
   /** Settings for the Bedrock Large Language Model provider. */
