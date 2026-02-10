@@ -74,12 +74,12 @@ private[impl] trait AbstractViewStreamMethodRef {
 
   protected def parse[R](viewResult: ViewResult): R =
     // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-    serializer.fromBytes(viewMethodProperties.queryReturnType.asInstanceOf[Class[R]], viewResult.payload)
+    serializer.fromBytes[R](viewMethodProperties.queryReturnType, viewResult.payload)
 
   protected def parseWithMetadata[R](viewResult: ViewResult): EntryWithMetadata[R] =
     // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
     new EntryWithMetadata(
-      serializer.fromBytes(viewMethodProperties.queryReturnType.asInstanceOf[Class[R]], viewResult.payload),
+      serializer.fromBytes[R](viewMethodProperties.queryReturnType, viewResult.payload),
       MetadataImpl.of(viewResult.metadata))
 
 }
