@@ -5,9 +5,16 @@
 package akka.javasdk.tooling.processor;
 
 import javax.annotation.processing.AbstractProcessor;
+import javax.lang.model.SourceVersion;
 import javax.tools.Diagnostic;
 
 public abstract class BaseAkkaProcessor extends AbstractProcessor {
+
+  @Override
+  public SourceVersion getSupportedSourceVersion() {
+    return SourceVersion.latestSupported();
+  }
+
   private final boolean debugEnabled;
 
   protected BaseAkkaProcessor() {
