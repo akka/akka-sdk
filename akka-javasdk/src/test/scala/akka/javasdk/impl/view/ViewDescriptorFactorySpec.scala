@@ -81,8 +81,8 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
     "register all updater handler subtypes" in {
       assertDescriptor[UserByEmailWithSealedInput] { _ =>
-        serializer.reversedTypeHints.get("a") shouldBe classOf[UserByEmailWithSealedInput.Message.A]
-        serializer.reversedTypeHints.get("b") shouldBe classOf[UserByEmailWithSealedInput.Message.B]
+        serializer.json.reversedTypeHints.get("a") shouldBe classOf[UserByEmailWithSealedInput.Message.A]
+        serializer.json.reversedTypeHints.get("b") shouldBe classOf[UserByEmailWithSealedInput.Message.B]
       }
     }
 
