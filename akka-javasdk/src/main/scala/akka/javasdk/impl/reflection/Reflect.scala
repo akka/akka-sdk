@@ -12,6 +12,7 @@ import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.util
 import java.util.Optional
+import java.util.concurrent.ConcurrentHashMap
 
 import scala.annotation.nowarn
 import scala.annotation.tailrec
@@ -99,14 +100,22 @@ private[impl] object Reflect {
 
   }
 
-  def protoDescriptorsFor(messageClass: Class[_]): Set[Descriptors.Descriptor] =
+  private val protoDescriptorCache = new ConcurrentHashMap[Class[_], Descriptors.Descriptor]()
+  def protoDescriptorFor(messageClass: Class[_ <: GeneratedMessageV3]): Descriptors.Descriptor =
+    protoDescriptorCache.computeIfAbsent(
+      messageClass,
+      { clazz =>
+        clazz.getDeclaredMethod("getDescriptor").invoke(null).asInstanceOf[Descriptors.Descriptor]
+      })
+
+  def protoDescriptorsFor(messageClass: Class[_]): Set[Descriptors.Descriptor] = {
     if (classOf[GeneratedMessageV3].isAssignableFrom(messageClass)) {
-      // FIXME actorsystem dynamic access?
-      val mainDescriptor =
-        messageClass.getDeclaredMethod("getDescriptor").invoke(null).asInstanceOf[Descriptors.Descriptor]
+      val mainDescriptor = protoDescriptorFor(messageClass.asSubclass(classOf[GeneratedMessageV3]))
+      // FIXME verify that we actually do need those
       // we need all nested field types as well
       flattenDependencies(mainDescriptor)
     } else Set.empty
+  }
 
   private def flattenDependencies(descriptor: Descriptors.Descriptor): Set[Descriptors.Descriptor] =
     Set(descriptor) ++ descriptor.getFields.asScala.toSet.flatMap((field: Descriptors.FieldDescriptor) =>
