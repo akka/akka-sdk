@@ -44,7 +44,8 @@ private[impl] class ReflectiveConsumerRouter[A <: Consumer](
 
     val payload = message.payload()
     // make sure we route based on the new type url if we get an old json type url message
-    val inputTypeUrl = internalSerializer.removeVersion(internalSerializer.replaceLegacyJsonPrefix(payload.contentType))
+    val inputTypeUrl =
+      internalSerializer.json.removeVersion(internalSerializer.json.replaceLegacyJsonPrefix(payload.contentType))
 
     val methodInvoker = methodInvokers.get(inputTypeUrl)
     methodInvoker match {

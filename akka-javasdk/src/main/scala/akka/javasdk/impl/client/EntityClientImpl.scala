@@ -110,7 +110,7 @@ private[impl] sealed abstract class EntityClientImpl(
                   reply.exceptionPayload match {
                     case Some(value) =>
                       //rethrowing to catch it on the component client invocation level
-                      throw serializer.exceptionFromBytes(value)
+                      throw serializer.json.exceptionFromBytes(value)
                     case None => // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
                       serializer.fromBytes[R](returnType, reply.payload)
                   }

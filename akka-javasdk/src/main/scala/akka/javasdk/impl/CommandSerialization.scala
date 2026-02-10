@@ -48,7 +48,7 @@ object CommandSerialization {
                     s"Command handler [${method.getDeclaringClass.getName}.${method.getName}] accepts a parameter that is a collection with a generic type inside, this is not supported.")
               }
               Some(
-                serializer.fromBytes(
+                serializer.json.fromBytes(
                   elementType.asInstanceOf[Class[AnyRef]],
                   parameterizedType.getRawType.asInstanceOf[Class[util.Collection[AnyRef]]],
                   command))

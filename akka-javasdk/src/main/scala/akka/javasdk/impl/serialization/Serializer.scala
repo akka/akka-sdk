@@ -5,13 +5,10 @@
 package akka.javasdk.impl.serialization
 
 import java.lang.reflect.Type
-import java.util
 
 import akka.annotation.InternalApi
-import akka.javasdk.CommandException
 import akka.javasdk.impl.AnySupport.BytesPrimitive
 import akka.runtime.sdk.spi.BytesPayload
-import akka.util.ByteString
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.protobuf.GeneratedMessageV3
 
@@ -38,9 +35,7 @@ final class Serializer(val objectMapper: ObjectMapper) {
   def this() = this(JsonSerializer.internalObjectMapper)
 
   private val jsonSerializer = new JsonSerializer(objectMapper)
-  private val protobufSerializer = new ProtobufSerializer()
-
-  override def toString: String = s"Serializer(json: $jsonSerializer, proto: $protobufSerializer)"
+  private lazy val protobufSerializer = new ProtobufSerializer()
 
   // Expose the underlying serializers for cases where specific behavior is needed
   def json: JsonSerializer = jsonSerializer
@@ -59,8 +54,7 @@ final class Serializer(val objectMapper: ObjectMapper) {
   }
 
   /**
-   * Serialize a value to JSON bytes, even if it's a protobuf message. This is useful for Views which store data as
-   * JSONB.
+   * Serialize a value to JSON bytes, even if it's a protobuf message.
    */
   def toBytesAsJson(value: Any): BytesPayload = {
     value match {
@@ -126,25 +120,6 @@ final class Serializer(val objectMapper: ObjectMapper) {
     }
   }
 
-  /**
-   * Deserialize bytes to a collection of the expected type.
-   */
-  def fromBytes[T, C <: util.Collection[T]](
-      valueClass: Class[T],
-      collectionType: Class[C],
-      bytesPayload: BytesPayload): C = {
-    jsonSerializer.fromBytes(valueClass, collectionType, bytesPayload)
-  }
-
-  /**
-   * Deserialize an exception from bytes.
-   */
-  def exceptionFromBytes(exceptionPayload: BytesPayload): CommandException = {
-    jsonSerializer.exceptionFromBytes(exceptionPayload)
-  }
-
-  def toJsonString(value: Any): String = jsonSerializer.toJsonString(value)
-
   def isJson(bytesPayload: BytesPayload): Boolean =
     jsonSerializer.isJson(bytesPayload)
 
@@ -188,14 +163,4 @@ final class Serializer(val objectMapper: ObjectMapper) {
       jsonSerializer.registerTypeHints(clz)
     }
   }
-
-  def reversedTypeHints = jsonSerializer.reversedTypeHints
-
-  def lookupTypeHint(clz: Class[_]) = jsonSerializer.lookupTypeHint(clz)
-  def removeVersion(typeName: String) = jsonSerializer.removeVersion(typeName)
-  def replaceLegacyJsonPrefix(typeUrl: String) = jsonSerializer.replaceLegacyJsonPrefix(typeUrl)
-  def encodeDynamicToAkkaByteString(key: String, value: Any): ByteString =
-    jsonSerializer.encodeDynamicToAkkaByteString(key, value)
-  def encodeDynamicCollectionToAkkaByteString(key: String, values: java.util.Collection[_]): ByteString =
-    jsonSerializer.encodeDynamicCollectionToAkkaByteString(key, values)
 }
