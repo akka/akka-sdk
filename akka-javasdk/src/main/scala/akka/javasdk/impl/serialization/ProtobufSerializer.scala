@@ -126,14 +126,25 @@ object ProtobufSerializer {
     }
   }
 
+  private val builderMethodCache = new ConcurrentHashMap[Class[_], () => com.google.protobuf.Message.Builder]()
+  private def newBuilderFor(messageClass: Class[_ <: GeneratedMessageV3]): com.google.protobuf.Message.Builder = {
+    val newBuilder = builderMethodCache.computeIfAbsent(
+      messageClass,
+      { clazz =>
+        // reflective method lookup once
+        val newBuilderMethod = clazz.getMethod("newBuilder")
+
+        // reuse to construct
+        () => newBuilderMethod.invoke(null).asInstanceOf[com.google.protobuf.Message.Builder]
+      })
+    newBuilder()
+  }
+
   /**
    * Deserialize a protobuf message from JSON format. Used for Views which store and return data as JSONB.
    */
   def fromBytesAsJson[T <: GeneratedMessageV3](expectedType: Class[T], bytesPayload: BytesPayload): T = {
-    val builder = expectedType
-      .getMethod("newBuilder")
-      .invoke(null)
-      .asInstanceOf[com.google.protobuf.Message.Builder]
+    val builder = newBuilderFor(expectedType)
     val jsonString = bytesPayload.bytes.utf8String
     protobufJsonParser.merge(jsonString, builder)
     builder.build().asInstanceOf[T]
