@@ -63,6 +63,10 @@ import java.util.function.Function;
  */
 public abstract class Agent {
 
+  public record TokenUsage(int inputTokens, int outputTokens) {}
+
+  public record AgentReply<T>(T value, TokenUsage tokenUsage) {}
+
   private volatile Optional<AgentContext> context = Optional.empty();
 
   /**
@@ -323,12 +327,16 @@ public abstract class Agent {
        */
       Agent.Effect<String> thenReply();
 
+      Agent.Effect<AgentReply<String>> thenAgentReply();
+
       /**
        * Reply with the response from the model.
        *
        * @param metadata The metadata for the message.
        * @return A message reply.
+       * @deprecated not supported anymore
        */
+      @Deprecated(forRemoval = true)
       Agent.Effect<String> thenReply(Metadata metadata);
 
       /**
@@ -391,7 +399,9 @@ public abstract class Agent {
        *
        * @param metadata The metadata for the message.
        * @return A message reply.
+       * @deprecated not supported anymore
        */
+      @Deprecated(forRemoval = true)
       Agent.Effect<Result> thenReply(Metadata metadata);
 
       /** Map the response from the model into a different response type. */
@@ -431,7 +441,9 @@ public abstract class Agent {
        *
        * @param metadata The metadata for the message.
        * @return A message reply.
+       * @deprecated not supported anymore
        */
+      @Deprecated(forRemoval = true)
       Agent.Effect<Result> thenReply(Metadata metadata);
 
       /**
@@ -462,12 +474,16 @@ public abstract class Agent {
        */
       Agent.Effect<Result> thenReply();
 
+      Agent.Effect<AgentReply<Result>> thenAgentReply();
+
       /**
        * Reply with the response from the model.
        *
        * @param metadata The metadata for the message.
        * @return A message reply.
+       * @deprecated not supported anymore
        */
+      @Deprecated(forRemoval = true)
       Agent.Effect<Result> thenReply(Metadata metadata);
     }
   }
@@ -643,7 +659,9 @@ public abstract class Agent {
        *
        * @param metadata The metadata for the message.
        * @return A message reply.
+       * @deprecated not supported anymore
        */
+      @Deprecated(forRemoval = true)
       Agent.StreamEffect thenReply(Metadata metadata);
     }
   }

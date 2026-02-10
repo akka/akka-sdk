@@ -13,7 +13,7 @@ import akka.javasdk.annotations.Component;
 public class SomeAgent extends Agent {
   public record SomeResponse(String response) {}
 
-  public Effect<SomeResponse> mapLlmResponse(String question) {
+  public Effect<AgentReply<SomeResponse>> mapLlmResponse(String question) {
     return effects()
         .systemMessage("You are a helpful...")
         .userMessage(question)
@@ -26,6 +26,6 @@ public class SomeAgent extends Agent {
                 default -> throw new RuntimeException(cause);
               };
             })
-        .thenReply();
+        .thenAgentReply();
   }
 }

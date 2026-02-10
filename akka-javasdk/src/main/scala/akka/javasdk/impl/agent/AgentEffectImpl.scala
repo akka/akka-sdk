@@ -14,6 +14,7 @@ import akka.annotation.InternalApi
 import akka.javasdk.CommandException
 import akka.javasdk.Metadata
 import akka.javasdk.agent
+import akka.javasdk.agent.Agent
 import akka.javasdk.agent.Agent.Effect
 import akka.javasdk.agent.Agent.Effect.Builder
 import akka.javasdk.agent.Agent.Effect.FailureBuilder
@@ -210,6 +211,10 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
   override def thenReply(): BaseAgentEffectBuilder[String] =
     this.asInstanceOf[BaseAgentEffectBuilder[String]]
 
+  override def thenAgentReply(): Effect[Agent.AgentReply[String]] = {
+    this.asInstanceOf[BaseAgentEffectBuilder[Agent.AgentReply[String]]]
+  }
+
   override def thenReply(metadata: Metadata): BaseAgentEffectBuilder[String] = {
     updateRequestModel(_.copy(replyMetadata = metadata))
     this.asInstanceOf[BaseAgentEffectBuilder[String]]
@@ -274,6 +279,9 @@ private[javasdk] final class MappingResponseEffectBuilder[Reply](private var _pr
 
   override def thenReply(): MappingResponseEffectBuilder[Reply] =
     this.asInstanceOf[MappingResponseEffectBuilder[Reply]]
+
+  override def thenAgentReply(): Effect[Agent.AgentReply[Reply]] =
+    this.asInstanceOf[MappingResponseEffectBuilder[Agent.AgentReply[Reply]]]
 
   override def thenReply(metadata: Metadata): MappingResponseEffectBuilder[Reply] = {
     updateRequestModel(_.copy(replyMetadata = metadata))

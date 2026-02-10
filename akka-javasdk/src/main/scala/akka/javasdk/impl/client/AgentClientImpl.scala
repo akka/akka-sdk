@@ -5,6 +5,7 @@
 package akka.javasdk.impl.client
 
 import java.lang.reflect.Method
+import java.lang.reflect.ParameterizedType
 
 import scala.concurrent.ExecutionContext
 import scala.jdk.FutureConverters.FutureOps
@@ -29,6 +30,7 @@ import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.AgentRequest
 import akka.runtime.sdk.spi.AgentType
 import akka.runtime.sdk.spi.BytesPayload
+import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.{ AgentClient => RuntimeAgentClient }
 
 /**
@@ -129,7 +131,18 @@ private[javasdk] final case class AgentClientImpl(
                       throw serializer.exceptionFromBytes(value)
                     case None =>
                       // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-                      serializer.fromBytes[R](returnType, reply.payload)
+                      returnType match {
+                        case parameterizedType: ParameterizedType
+                            if parameterizedType.getRawType
+                              .asInstanceOf[Class[_]]
+                              .isAssignableFrom(classOf[Agent.AgentReply[_]]) =>
+                          val actualReturnType = parameterizedType.getActualTypeArguments.head
+                          val value = serializer.fromBytes(actualReturnType.asInstanceOf[Class[_]], reply.payload)
+                          val tokenUsage = toTokenUsage(reply.metadata)
+                          new Agent.AgentReply[Any](value, tokenUsage).asInstanceOf[R]
+
+                        case _ => serializer.fromBytes[R](returnType, reply.payload)
+                      }
                   }
                 }
             }
@@ -149,6 +162,12 @@ private[javasdk] final case class AgentClientImpl(
       canBeDeferred = false)
       .asInstanceOf[ComponentMethodRefImpl[A1, R]]
 
+  }
+
+  private def toTokenUsage(metadata: SpiMetadata): Agent.TokenUsage = {
+    val input = metadata.entries.find(_.key == "input_tokens").map(_.value.toInt).getOrElse(0)
+    val output = metadata.entries.find(_.key == "output_tokens").map(_.value.toInt).getOrElse(0)
+    new Agent.TokenUsage(input, output)
   }
 
   override def tokenStream[T](methodRef: function.Function[T, Agent.StreamEffect]): ComponentStreamMethodRef[String] = {
