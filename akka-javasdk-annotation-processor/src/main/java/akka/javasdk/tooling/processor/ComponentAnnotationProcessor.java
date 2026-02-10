@@ -21,8 +21,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
-import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
@@ -40,7 +38,6 @@ import javax.tools.StandardLocation;
   // central config/lifecycle class
   "akka.javasdk.annotations.Setup"
 })
-@SupportedSourceVersion(SourceVersion.RELEASE_21)
 public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
 
   // Compiler options for artifact coordinates (passed via -A options)
