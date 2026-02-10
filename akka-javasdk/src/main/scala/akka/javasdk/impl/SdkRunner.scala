@@ -219,16 +219,22 @@ object SdkRunner {
  * INTERNAL API
  */
 @InternalApi
-class SdkRunner private (dependencyProvider: Option[DependencyProvider], disabledComponents: Set[Class[_]])
+class SdkRunner private (
+    dependencyProvider: Option[DependencyProvider],
+    disabledComponents: Set[Class[_]],
+    overrideDisabledComponents: Boolean)
     extends akka.runtime.sdk.spi.Runner {
   private val startedPromise = Promise[StartupContext]()
 
   // default constructor for runtime creation
-  def this() = this(None, Set.empty[Class[_]])
+  def this() = this(None, Set.empty[Class[_]], false)
 
   // constructor for testkit
-  def this(dependencyProvider: java.util.Optional[DependencyProvider], disabledComponents: java.util.Set[Class[_]]) =
-    this(dependencyProvider.toScala, disabledComponents.asScala.toSet)
+  def this(
+      dependencyProvider: java.util.Optional[DependencyProvider],
+      disabledComponents: java.util.Set[Class[_]],
+      overrideDisabledComponents: Boolean) =
+    this(dependencyProvider.toScala, disabledComponents.asScala.toSet, overrideDisabledComponents)
 
   def applicationConfig: Config =
     ApplicationConfig.loadApplicationConf
@@ -249,6 +255,7 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
         startContext.regionInfo,
         dependencyProvider,
         disabledComponents,
+        overrideDisabledComponents,
         startedPromise,
         getSettings.devMode.map(_.serviceName),
         startContext.sanitizer)
@@ -330,6 +337,7 @@ private final class Sdk(
     regionInfo: RegionInfo,
     dependencyProviderOverride: Option[DependencyProvider],
     disabledComponents: Set[Class[_]],
+    overrideDisabledComponents: Boolean,
     startedPromise: Promise[StartupContext],
     serviceNameOverride: Option[String],
     runtimeSanitizer: SpiSanitizerEngine) {
@@ -759,8 +767,14 @@ private final class Sdk(
     }
 
     // service setup + integration test config
+    // When overrideDisabledComponents is true, use only the testkit's disabled components (which may be empty)
+    // Otherwise, combine with ServiceSetup's disabled components
     val combinedDisabledComponents =
-      (serviceSetup.map(_.disabledComponents().asScala.toSet).getOrElse(Set.empty) ++ disabledComponents).map(_.getName)
+      if (overrideDisabledComponents)
+        disabledComponents.map(_.getName)
+      else
+        (serviceSetup.map(_.disabledComponents().asScala.toSet).getOrElse(Set.empty) ++ disabledComponents)
+          .map(_.getName)
 
     val descriptors =
       (eventSourcedEntityDescriptors ++
