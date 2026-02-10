@@ -100,10 +100,10 @@ private[javasdk] object ViewClientImpl {
         // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
         // Views use JSON for all data including protobuf messages (stored as JSONB in the database)
         if (arg.getClass.isPrimitive || primitiveObjects.contains(arg.getClass)) {
-          val bytes = serializer.encodeDynamicToAkkaByteString(method.getParameters.head.getName, arg)
+          val bytes = serializer.json.encodeDynamicToAkkaByteString(method.getParameters.head.getName, arg)
           new BytesPayload(bytes, Serializer.JsonContentTypePrefix + "object")
         } else if (classOf[java.util.Collection[_]].isAssignableFrom(arg.getClass)) {
-          val bytes = serializer.encodeDynamicCollectionToAkkaByteString(
+          val bytes = serializer.json.encodeDynamicCollectionToAkkaByteString(
             method.getParameters.head.getName,
             arg.asInstanceOf[java.util.Collection[_]])
           new BytesPayload(bytes, Serializer.JsonContentTypePrefix + "object")
