@@ -7,11 +7,13 @@ package akka.javasdk.impl.view
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
 import java.util.Optional
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.OptionConverters.RichOption
 import scala.util.control.NonFatal
 import scala.util.matching.Regex
+
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.annotations.Consume
@@ -70,7 +72,7 @@ private[impl] object ViewDescriptorFactory {
     val allQueryMethods = extractQueryMethods(viewClass)
     val allQueryStrings = allQueryMethods.map(_.queryString)
 
-    val tables: Seq[TableDescriptor] =
+    val tables: Seq[(TableDescriptor, Class[_])] =
       tableUpdaters
         .map { tableUpdaterClass =>
           // View class type parameter declares table type
@@ -99,7 +101,7 @@ private[impl] object ViewDescriptorFactory {
                 s"Table type must be a class but was [$tableRowClass] for table updater [$tableUpdaterClass]")
           }
 
-          if (ComponentDescriptorFactory.hasKeyValueEntitySubscription(tableUpdaterClass)) {
+          val tableDescriptor = if (ComponentDescriptorFactory.hasKeyValueEntitySubscription(tableUpdaterClass)) {
             consumeFromKvEntity(componentId, tableUpdaterClass, tableType, tableName, serializer, regionInfo, userEc)
           } else if (ComponentDescriptorFactory.hasWorkflowSubscription(tableUpdaterClass)) {
             consumeFromWorkflow(componentId, tableUpdaterClass, tableType, tableName, serializer, regionInfo, userEc)
@@ -118,22 +120,32 @@ private[impl] object ViewDescriptorFactory {
               userEc)
           } else
             throw new IllegalStateException(s"Table updater [$tableUpdaterClass] is missing a @Consume annotation")
+
+          (tableDescriptor, tableRowClass)
         }
+
+    val protobufDescriptors =
+      (allQueryMethods
+        .flatMap(qm => Seq(qm.output) ++ qm.input) ++ tables.collect { case (_, rowClass) => rowClass })
+        .flatMap(Reflect.protoDescriptorsFor)
 
     new ViewDescriptor(
       componentId,
       viewClass.getName,
-      tables,
+      tables.collect { case (tableDescriptor, _) => tableDescriptor },
       queries = allQueryMethods.map(_.descriptor),
       componentOptions = new ComponentOptions(None, None),
       name = readComponentName(viewClass),
       description = readComponentDescription(viewClass),
       provided = false,
-      protobufDescriptors = Vector.empty // FIXME view updater input protobuf types
-    )
+      protobufDescriptors = protobufDescriptors)
   }
 
-  private case class QueryMethod(descriptor: QueryDescriptor, queryString: String)
+  private case class QueryMethod(
+      descriptor: QueryDescriptor,
+      queryString: String,
+      input: Option[Class[_]],
+      output: Class[_])
 
   private def validQueryMethod(method: Method): Boolean =
     method.getAnnotation(classOf[Query]) != null && (method.getReturnType == classOf[
@@ -213,7 +225,9 @@ private[impl] object ViewDescriptorFactory {
         streamUpdates,
         // FIXME reintroduce ACLs (does JWT make any sense here? I don't think so)
         new MethodOptions(None, None)),
-      queryStr)
+      queryStr,
+      input = method.getGenericParameterTypes.headOption.collect { case c: Class[_] => c },
+      output = actualQueryOutputClass)
   }
 
   private def consumeFromServiceToService(

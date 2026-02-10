@@ -20,6 +20,7 @@ import akka.annotation.InternalApi
 import akka.http.javadsl.model.HttpEntity
 import akka.http.javadsl.model.HttpRequest
 import akka.javasdk.annotations.Description
+import akka.javasdk.impl.reflection.Reflect
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaArray
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaBoolean
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaDataType
@@ -160,10 +161,7 @@ private[impl] object JsonSchema {
                   description),
                 true)
             case _ if classOf[GeneratedMessageV3].isAssignableFrom(clazz) =>
-              val descriptor = clazz
-                .getMethod("getDescriptor")
-                .invoke(null)
-                .asInstanceOf[Descriptors.Descriptor]
+              val descriptor = Reflect.protoDescriptorFor(clazz.asSubclass(classOf[GeneratedMessageV3]))
               (protobufJsonSchemaFromDescriptor(descriptor, description), true)
 
             case _ =>

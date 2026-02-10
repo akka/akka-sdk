@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import akka.annotation.InternalApi
 import akka.javasdk.impl.AnySupport
+import akka.javasdk.impl.reflection.Reflect
 import akka.runtime.sdk.spi.BytesPayload
 import akka.util.ByteString
 import com.google.protobuf.GeneratedMessageV3
@@ -32,10 +33,7 @@ final class ProtobufSerializer {
    * from the protobuf descriptor.
    */
   def registerProtoType(clz: Class[_ <: GeneratedMessageV3]): Unit = {
-    val descriptor = clz
-      .getMethod("getDescriptor")
-      .invoke(null)
-      .asInstanceOf[com.google.protobuf.Descriptors.Descriptor]
+    val descriptor = Reflect.protoDescriptorFor(clz)
     val fullName = descriptor.getFullName
     reversedTypeHints.put(fullName, clz)
   }
@@ -55,7 +53,7 @@ final class ProtobufSerializer {
     if (typeClass eq null)
       throw new IllegalStateException(
         s"Cannot decode [${bytesPayload.contentType}] protobuf message type. " +
-        s"Class mapping not found. Make sure the protobuf event type is declared in @ProtoEventType annotation.")
+        s"Class mapping not found. Make sure the protobuf event type is declared in @ProtoEventTypes annotation.")
     else
       AnySupport.decodeJavaProtobuf(bytesPayload, typeClass)
   }
@@ -90,18 +88,10 @@ object ProtobufSerializer {
 
   def toBytes(value: GeneratedMessageV3): BytesPayload = {
     if (value == null) throw new NullPointerException("Serialized value is null")
-
-    value match {
-      case msg: GeneratedMessageV3 =>
-        val fullName = msg.getDescriptorForType.getFullName
-        new BytesPayload(
-          bytes = ByteString.fromArrayUnsafe(msg.toByteArray),
-          contentType = ProtobufContentTypePrefix + fullName)
-
-      case _ =>
-        throw new IllegalArgumentException(
-          s"ProtobufSerializer can only serialize protobuf messages, got: ${value.getClass.getName}")
-    }
+    val fullName = value.getDescriptorForType.getFullName
+    new BytesPayload(
+      bytes = ByteString.fromArrayUnsafe(value.toByteArray),
+      contentType = ProtobufContentTypePrefix + fullName)
   }
 
   /**
@@ -156,10 +146,7 @@ object ProtobufSerializer {
     contentType.startsWith(ProtobufContentTypePrefix)
 
   def contentTypeFor(clz: Class[_ <: GeneratedMessageV3]): String = {
-    val descriptor = clz
-      .getMethod("getDescriptor")
-      .invoke(null)
-      .asInstanceOf[com.google.protobuf.Descriptors.Descriptor]
+    val descriptor = Reflect.protoDescriptorFor(clz)
     ProtobufContentTypePrefix + descriptor.getFullName
   }
 

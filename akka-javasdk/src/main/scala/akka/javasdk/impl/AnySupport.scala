@@ -229,36 +229,6 @@ private[akka] object AnySupport {
         s"Protobuf message parsing from type url [${payload.contentType}] not supported")
     }
   }
-
-  // Cache for ScalaPB companions to avoid repeated reflection
-  private val scalaParserCache = new ConcurrentHashMap[Class[_], GeneratedMessageCompanion[_]]()
-
-  /**
-   * Unified protobuf decoding that handles both Java and ScalaPB protobuf messages.
-   */
-  def decodeProtobuf[T](payload: BytesPayload, cls: Class[T]): T = {
-    if (classOf[com.google.protobuf.GeneratedMessageV3].isAssignableFrom(cls)) {
-      decodeJavaProtobuf(payload, cls)
-    } else if (classOf[GeneratedMessage].isAssignableFrom(cls)) {
-      decodeScalaProtobuf(payload, cls)
-    } else {
-      throw new IllegalArgumentException(s"Not a protobuf class: ${cls.getName}")
-    }
-  }
-
-  /**
-   * Decode a ScalaPB protobuf message from a BytesPayload.
-   */
-  def decodeScalaProtobuf[T](payload: BytesPayload, cls: Class[T]): T = {
-    val companion = scalaParserCache.computeIfAbsent(
-      cls,
-      { c =>
-        val companionClass = Class.forName(c.getName + "$")
-        companionClass.getField("MODULE$").get(null).asInstanceOf[GeneratedMessageCompanion[_]]
-      })
-    companion.parseFrom(payload.bytes.toArrayUnsafe()).asInstanceOf[T]
-  }
-
 }
 
 class AnySupport(

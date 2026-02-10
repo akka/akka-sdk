@@ -12,6 +12,7 @@ import java.util.Optional
 import scala.jdk.CollectionConverters._
 
 import akka.annotation.InternalApi
+import akka.javasdk.impl.reflection.Reflect
 import akka.runtime.sdk.spi.SpiSchema.SpiBoolean
 import akka.runtime.sdk.spi.SpiSchema.SpiByteString
 import akka.runtime.sdk.spi.SpiSchema.SpiClass
@@ -109,10 +110,7 @@ private[view] object ViewSchema {
   }
 
   private def protobufSchema(clazz: Class[_ <: GeneratedMessageV3]): SpiClass = {
-    val descriptor = clazz
-      .getMethod("getDescriptor")
-      .invoke(null)
-      .asInstanceOf[Descriptors.Descriptor]
+    val descriptor = Reflect.protoDescriptorFor(clazz)
     protobufSchemaFromDescriptor(descriptor)
   }
 
