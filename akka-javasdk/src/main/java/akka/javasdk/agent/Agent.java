@@ -63,6 +63,10 @@ import java.util.function.Function;
  */
 public abstract class Agent {
 
+  public record TokenUsage(int inputTokens, int outputTokens) {}
+
+  public record AgentReply<T>(T value, TokenUsage tokenUsage) {}
+
   private volatile Optional<AgentContext> context = Optional.empty();
 
   /**

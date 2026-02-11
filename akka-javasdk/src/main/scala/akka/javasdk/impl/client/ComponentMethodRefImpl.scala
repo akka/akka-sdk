@@ -54,7 +54,16 @@ private[impl] final case class ComponentMethodRefImpl[A1, R](
   }
 
   def invokeAsync(): CompletionStage[R] = {
-    createDeferred(metadataOpt, retrySettings, None).asInstanceOf[DeferredCallImpl[NotUsed, R]].invokeAsync()
+    createDeferred(metadataOpt, retrySettings, None)
+      .asInstanceOf[DeferredCallImpl[NotUsed, R]]
+      .invokeAsync()
+      .thenApply(_.value)
+  }
+
+  def invokeAsyncWithMetadata(): CompletionStage[CallResult[R]] = {
+    createDeferred(metadataOpt, retrySettings, None)
+      .asInstanceOf[DeferredCallImpl[NotUsed, R]]
+      .invokeAsync()
   }
 
   def deferred(arg: A1): DeferredCall[A1, R] = {
@@ -70,7 +79,18 @@ private[impl] final case class ComponentMethodRefImpl[A1, R](
   def invokeAsync(arg: A1): CompletionStage[R] = {
     if (arg == null)
       throw new IllegalStateException("Argument to invokeAsync must not be null")
-    createDeferred(metadataOpt, retrySettings, Some(arg)).asInstanceOf[DeferredCallImpl[NotUsed, R]].invokeAsync()
+    createDeferred(metadataOpt, retrySettings, Some(arg))
+      .asInstanceOf[DeferredCallImpl[NotUsed, R]]
+      .invokeAsync()
+      .thenApply(_.value)
+  }
+
+  def invokeAsyncWithMetadata(arg: A1): CompletionStage[CallResult[R]] = {
+    if (arg == null)
+      throw new IllegalStateException("Argument to invokeAsync must not be null")
+    createDeferred(metadataOpt, retrySettings, Some(arg))
+      .asInstanceOf[DeferredCallImpl[NotUsed, R]]
+      .invokeAsync()
   }
 
   // Note: invoke/ask timeout handled by runtime so no timeout needed here
@@ -79,9 +99,20 @@ private[impl] final case class ComponentMethodRefImpl[A1, R](
       invokeAsync().toCompletableFuture.get()
     } catch unwrapExecutionExceptionCatcher
 
+  def invokeWithMetadata(): CallResult[R] =
+    try {
+      invokeAsyncWithMetadata().toCompletableFuture.get()
+    } catch unwrapExecutionExceptionCatcher
+
   override def invoke(arg: A1): R = {
     try {
       invokeAsync(arg).toCompletableFuture.get()
+    } catch unwrapExecutionExceptionCatcher
+  }
+
+  def invokeWithMetadata(arg: A1): CallResult[R] = {
+    try {
+      invokeAsyncWithMetadata(arg).toCompletableFuture.get()
     } catch unwrapExecutionExceptionCatcher
   }
 }

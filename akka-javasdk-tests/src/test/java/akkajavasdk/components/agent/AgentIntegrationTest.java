@@ -10,6 +10,7 @@ import static org.assertj.core.api.Assertions.fail;
 import akka.actor.testkit.typed.javadsl.LoggingTestKit;
 import akka.javasdk.CommandException;
 import akka.javasdk.DependencyProvider;
+import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.agent.MessageContent;
 import akka.javasdk.testkit.TestKit;
@@ -79,15 +80,16 @@ public class AgentIntegrationTest extends TestKitSupport {
     testModelProvider.whenMessage(s -> s.equals("hello")).reply("123456");
 
     // when
-    SomeAgent.SomeResponse result =
+    Agent.AgentReply<SomeAgent.SomeResponse> result =
         componentClient
             .forAgent()
             .inSession(newSessionId())
             .method(SomeAgent::mapLlmResponse)
-            .invoke("hello");
+            .invokeReply("hello");
 
     // then
-    assertThat(result.response()).isEqualTo("123456");
+    assertThat(result.value().response()).isEqualTo("123456");
+    //assertThat(result.tokenUsage().inputTokens()).isEqualTo(123);
   }
 
   @Test

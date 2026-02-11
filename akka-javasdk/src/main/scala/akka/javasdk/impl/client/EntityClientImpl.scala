@@ -7,6 +7,7 @@ package akka.javasdk.impl.client
 import java.lang.reflect.Method
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.jdk.FutureConverters.FutureOps
 import scala.util.Failure
 import scala.util.Success
@@ -103,7 +104,7 @@ private[impl] sealed abstract class EntityClientImpl(
           componentId,
           methodName,
           Some(entityId), {
-            def callEntity(metadata: Metadata) = {
+            def callEntity(metadata: Metadata): Future[CallResult[R]] = {
               entityClient
                 .send(new EntityRequest(componentId, entityId, methodName, serializedPayload, toSpi(metadata)))
                 .map { reply =>
@@ -112,7 +113,7 @@ private[impl] sealed abstract class EntityClientImpl(
                       //rethrowing to catch it on the component client invocation level
                       throw serializer.exceptionFromBytes(value)
                     case None => // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-                      serializer.fromBytes[R](returnType, reply.payload)
+                      CallResult(serializer.fromBytes[R](returnType, reply.payload), MetadataImpl.of(reply.metadata))
                   }
                 }
             }
@@ -277,8 +278,9 @@ private[javasdk] final case class TimedActionClientImpl(
                 case Success(reply) =>
                   // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
                   val returnType = Reflect.getReturnType(declaringClass, method)
-                  if (reply.payload.isEmpty) Success(null.asInstanceOf[R])
-                  else Try(serializer.fromBytes[R](returnType, reply.payload))
+                  if (reply.payload.isEmpty) Success(null.asInstanceOf[CallResult[R]])
+                  else
+                    Try(CallResult(serializer.fromBytes[R](returnType, reply.payload), MetadataImpl.of(reply.metadata)))
                 case Failure(ex) => Failure(ex)
               }
               .asJava
