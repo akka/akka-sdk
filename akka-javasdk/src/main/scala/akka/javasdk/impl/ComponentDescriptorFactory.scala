@@ -254,7 +254,7 @@ private[impl] object ComponentDescriptorFactory {
       new ConsumerSource.WorkflowSource(workflowComponentId)
     } else if (hasEventSourcedEntitySubscription(clazz)) {
       val esComponentId = findSubscriptionEventSourcedComponentId(clazz)
-      new ConsumerSource.EventSourcedEntitySource(esComponentId)
+      new ConsumerSource.EventSourcedEntitySource(esComponentId, startFromSnapshots = false)
     } else if (hasTopicSubscription(clazz)) {
       val topicName = findSubscriptionTopicName(clazz)
       val consumerGroup = findSubscriptionConsumerGroup(clazz)
