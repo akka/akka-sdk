@@ -130,7 +130,8 @@ private[impl] object ViewDescriptorFactory {
       componentOptions = new ComponentOptions(None, None),
       name = readComponentName(viewClass),
       description = readComponentDescription(viewClass),
-      provided = false)
+      provided = false,
+      protobufDescriptors = Nil)
   }
 
   private case class QueryMethod(descriptor: QueryDescriptor, queryString: String)
@@ -283,7 +284,9 @@ private[impl] object ViewDescriptorFactory {
     new TableDescriptor(
       tableName,
       tableType,
-      new ConsumerSource.EventSourcedEntitySource(ComponentDescriptorFactory.readComponentIdValue(annotation.value())),
+      new ConsumerSource.EventSourcedEntitySource(
+        ComponentDescriptorFactory.readComponentIdValue(annotation.value()),
+        startFromSnapshots = false),
       Option.when(updateHandlerMethods.nonEmpty)(
         UpdateHandlerImpl(
           componentId,
