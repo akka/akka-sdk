@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package akka.javasdk.impl
@@ -254,7 +254,7 @@ private[impl] object ComponentDescriptorFactory {
       new ConsumerSource.WorkflowSource(workflowComponentId)
     } else if (hasEventSourcedEntitySubscription(clazz)) {
       val esComponentId = findSubscriptionEventSourcedComponentId(clazz)
-      new ConsumerSource.EventSourcedEntitySource(esComponentId)
+      new ConsumerSource.EventSourcedEntitySource(esComponentId, startFromSnapshots = false)
     } else if (hasTopicSubscription(clazz)) {
       val topicName = findSubscriptionTopicName(clazz)
       val consumerGroup = findSubscriptionConsumerGroup(clazz)

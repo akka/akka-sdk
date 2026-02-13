@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package akka.javasdk.impl
@@ -540,7 +540,8 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = isProvided(clz),
-            replicationFilterEnabled = Reflect.isReplicationFilterEnabled(clz))
+            replicationFilterEnabled = Reflect.isReplicationFilterEnabled(clz),
+            protobufDescriptors = Nil)
 
       case clz if Reflect.isKeyValueEntity(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -583,7 +584,8 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            replicationFilterEnabled = Reflect.isReplicationFilterEnabled(clz))
+            replicationFilterEnabled = Reflect.isReplicationFilterEnabled(clz),
+            protobufDescriptors = Nil)
 
       case clz if Reflect.isWorkflow(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -608,7 +610,8 @@ private final class Sdk(
             ctx => workflowInstanceFactory(componentId, ctx, clz.asInstanceOf[Class[Workflow[Nothing]]]),
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            provided = false)
+            provided = false,
+            protobufDescriptors = Nil)
 
       case clz if Reflect.isTimedAction(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -635,7 +638,8 @@ private final class Sdk(
             timedActionSpi,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            provided = false)
+            provided = false,
+            protobufDescriptors = Nil)
 
       case clz if Reflect.isConsumer(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -668,7 +672,8 @@ private final class Sdk(
             consumerSpi,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            provided = false)
+            provided = false,
+            protobufDescriptors = Nil)
 
       case clz if Reflect.isAgent(clz) =>
         val componentId = Reflect.readComponentId(clz)
