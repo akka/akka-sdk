@@ -77,7 +77,9 @@ public class AgentIntegrationTest extends TestKitSupport {
   @Test
   public void shouldMapStringResponse() {
     // given
-    testModelProvider.whenMessage(s -> s.equals("hello")).reply("123456");
+    testModelProvider
+        .whenMessage(s -> s.equals("hello"))
+        .reply("123456", new Agent.TokenUsage(123, 321));
 
     // when
     Agent.AgentReply<SomeAgent.SomeResponse> result =
@@ -90,7 +92,8 @@ public class AgentIntegrationTest extends TestKitSupport {
 
     // then
     assertThat(result.value().response()).isEqualTo("123456");
-    // assertThat(result.tokenUsage().inputTokens()).isEqualTo(123);
+    assertThat(result.tokenUsage().inputTokens()).isEqualTo(123);
+    assertThat(result.tokenUsage().outputTokens()).isEqualTo(321);
   }
 
   @Test
