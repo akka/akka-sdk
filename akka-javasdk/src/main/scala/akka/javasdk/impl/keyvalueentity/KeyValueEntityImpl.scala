@@ -24,7 +24,7 @@ import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
 import akka.javasdk.impl.effect.ReplicationFilterImpl
 import akka.javasdk.impl.reflection.Reflect
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.keyvalueentity.CommandContext
@@ -75,7 +75,7 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
     tracerFactory: () => Tracer,
     componentId: String,
     entityId: String,
-    serializer: JsonSerializer,
+    serializer: Serializer,
     componentDescriptor: ComponentDescriptor,
     entityStateType: Class[S],
     regionInfo: RegionInfo,

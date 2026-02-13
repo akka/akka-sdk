@@ -30,7 +30,7 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.ComponentDescriptorFactory
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.reflection.Reflect
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.workflow.Workflow
@@ -54,7 +54,7 @@ private[impl] sealed abstract class EntityClientImpl(
     expectedComponentSuperclass: Class[_],
     componentType: ComponentType,
     entityClient: RuntimeEntityClient,
-    serializer: JsonSerializer,
+    serializer: Serializer,
     callMetadata: Option[Metadata],
     entityId: String)(implicit executionContext: ExecutionContext, system: ActorSystem[_]) {
 
@@ -110,7 +110,7 @@ private[impl] sealed abstract class EntityClientImpl(
                   reply.exceptionPayload match {
                     case Some(value) =>
                       //rethrowing to catch it on the component client invocation level
-                      throw serializer.exceptionFromBytes(value)
+                      throw serializer.json.exceptionFromBytes(value)
                     case None => // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
                       serializer.fromBytes[R](returnType, reply.payload)
                   }
@@ -140,7 +140,7 @@ private[impl] sealed abstract class EntityClientImpl(
 @InternalApi
 private[javasdk] final class KeyValueEntityClientImpl(
     entityClient: RuntimeEntityClient,
-    serializer: JsonSerializer,
+    serializer: Serializer,
     callMetadata: Option[Metadata],
     entityId: String)(implicit val executionContext: ExecutionContext, system: ActorSystem[_])
     extends EntityClientImpl(
@@ -166,7 +166,7 @@ private[javasdk] final class KeyValueEntityClientImpl(
 @InternalApi
 private[javasdk] final case class EventSourcedEntityClientImpl(
     entityClient: RuntimeEntityClient,
-    serializer: JsonSerializer,
+    serializer: Serializer,
     callMetadata: Option[Metadata],
     entityId: String)(implicit val executionContext: ExecutionContext, system: ActorSystem[_])
     extends EntityClientImpl(
@@ -192,7 +192,7 @@ private[javasdk] final case class EventSourcedEntityClientImpl(
 @InternalApi
 private[javasdk] final case class WorkflowClientImpl(
     entityClient: RuntimeEntityClient,
-    serializer: JsonSerializer,
+    serializer: Serializer,
     callMetadata: Option[Metadata],
     entityId: String)(implicit val executionContext: ExecutionContext, system: ActorSystem[_])
     extends EntityClientImpl(classOf[Workflow[_]], WorkflowType, entityClient, serializer, callMetadata, entityId)
@@ -229,7 +229,7 @@ private[javasdk] final case class WorkflowClientImpl(
 @InternalApi
 private[javasdk] final case class TimedActionClientImpl(
     timedActionClient: RuntimeTimedActionClient,
-    serializer: JsonSerializer,
+    serializer: Serializer,
     callMetadata: Option[Metadata])(implicit val executionContext: ExecutionContext)
     extends TimedActionClient {
   override def method[T, R](methodRef: function.Function[T, TimedAction.Effect]): ComponentDeferredMethodRef[R] =

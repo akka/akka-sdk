@@ -128,6 +128,8 @@ object JsonSerializer {
 
 /**
  * INTERNAL API
+ *
+ * JSON-only serializer for POJO/case class serialization using Jackson.
  */
 @InternalApi
 final class JsonSerializer(val objectMapper: ObjectMapper) {
@@ -316,7 +318,7 @@ final class JsonSerializer(val objectMapper: ObjectMapper) {
   private def validateIsJson(bytesPayload: BytesPayload): Unit = {
     if (!isJson(bytesPayload))
       throw new IllegalArgumentException(
-        s"BytesPayload with contentTYpe [${bytesPayload.contentType}] " +
+        s"BytesPayload with contentType [${bytesPayload.contentType}] " +
         s"cannot be decoded as JSON, must start with [$JsonContentTypePrefix]")
   }
 

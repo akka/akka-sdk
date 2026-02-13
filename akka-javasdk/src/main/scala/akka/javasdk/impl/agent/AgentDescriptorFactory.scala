@@ -10,7 +10,7 @@ import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ComponentDescriptorFactory
 import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.impl.reflection.Reflect.isCommandHandlerCandidate
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 
 /**
  * INTERNAL API
@@ -18,7 +18,7 @@ import akka.javasdk.impl.serialization.JsonSerializer
 @InternalApi
 private[impl] object AgentDescriptorFactory extends ComponentDescriptorFactory {
 
-  override def buildDescriptorFor(component: Class[_], serializer: JsonSerializer): ComponentDescriptor = {
+  override def buildDescriptorFor(component: Class[_], serializer: Serializer): ComponentDescriptor = {
     //TODO remove capitalization of method name, can't be done per component, because component client reuse the same logic for all
     val commandHandlerMethods = if (classOf[Agent].isAssignableFrom(component)) {
       component.getDeclaredMethods.collect {
