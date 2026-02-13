@@ -12,6 +12,7 @@ import akka.javasdk.agent.Agent
 import akka.javasdk.client.AgentComponentInvokeOnlyMethodRef
 import akka.javasdk.client.AgentComponentInvokeOnlyMethodRef1
 import akka.javasdk.impl.ErrorHandling.unwrapExecutionExceptionCatcher
+import akka.runtime.sdk.spi.SpiAgent
 
 /**
  * INTERNAL API
@@ -47,8 +48,8 @@ private[impl] case class AgentComponentInvokeOnlyMethodRefImpl[A1, R](
   }
 
   private def toTokenUsage(metadata: Metadata): Agent.TokenUsage = {
-    val input = metadata.get("input_tokens").map[Integer](_.toInt).orElse(0)
-    val output = metadata.get("output_tokens").map[Integer](_.toInt).orElse(0)
+    val input = metadata.get(SpiAgent.AgentInputTokensKey).map[Integer](_.toInt).orElse(0)
+    val output = metadata.get(SpiAgent.AgentOutputTokensKey).map[Integer](_.toInt).orElse(0)
     new Agent.TokenUsage(input, output)
   }
 }
