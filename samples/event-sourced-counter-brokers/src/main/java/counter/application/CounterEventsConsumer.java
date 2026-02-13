@@ -22,12 +22,15 @@ public class CounterEventsConsumer extends Consumer { // <3>
   @SnapshotHandler
   public Effect onSnapshot(Integer value) {
     // end::ese-consumer-from-snapshot[]
-    logger.info("Received snapshot: {} (entity id {})",
-        value,
-        messageContext().eventSubject().orElse(""));
+    logger.info(
+      "Received snapshot: {} (entity id {})",
+      value,
+      messageContext().eventSubject().orElse("")
+    );
     // tag::ese-consumer-from-snapshot[]
     return effects().done();
   }
+
   // end::ese-consumer-from-snapshot[]
 
   // tag::ese-consumer[]

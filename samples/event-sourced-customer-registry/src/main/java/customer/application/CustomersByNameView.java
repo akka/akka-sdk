@@ -4,8 +4,8 @@ package customer.application;
 
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
-import akka.javasdk.annotations.SnapshotHandler;
 import akka.javasdk.annotations.Query;
+import akka.javasdk.annotations.SnapshotHandler;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
 import customer.domain.Customer;
@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 @Component(id = "customers-by-name") // <1>
 public class CustomersByNameView extends View {
+
   private static final Logger logger = LoggerFactory.getLogger(CustomersByNameView.class);
 
   @Consume.FromEventSourcedEntity(CustomerEntity.class)
@@ -27,9 +28,10 @@ public class CustomersByNameView extends View {
     @SnapshotHandler
     public Effect<CustomerEntry> onSnapshot(Customer snapshot) {
       logger.info("onSnapshot [{}]", snapshot);
-       return effects()
-          .updateRow(new CustomerEntry(snapshot.email(), snapshot.name(), snapshot.address()));
+      return effects()
+        .updateRow(new CustomerEntry(snapshot.email(), snapshot.name(), snapshot.address()));
     }
+
     // end::snapshot[]
     // tag::class[]
 
