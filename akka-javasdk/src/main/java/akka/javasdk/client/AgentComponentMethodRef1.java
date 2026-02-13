@@ -20,5 +20,10 @@ import akka.annotation.DoNotInherit;
 @DoNotInherit
 public interface AgentComponentMethodRef1<A1, R> extends ComponentMethodRef1<A1, R> {
 
+  /**
+   * Switch to a detailed reply mode that includes e.g. token usage information.
+   *
+   * @return A call representation that returns {@link akka.javasdk.agent.Agent.AgentReply}
+   */
   AgentComponentInvokeOnlyMethodRef1<A1, R> withDetailedReply();
 }

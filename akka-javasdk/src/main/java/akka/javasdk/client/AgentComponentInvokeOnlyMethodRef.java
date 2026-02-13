@@ -19,7 +19,17 @@ import java.util.concurrent.CompletionStage;
 @DoNotInherit
 public interface AgentComponentInvokeOnlyMethodRef<R> {
 
+  /**
+   * Execute the call and block until the response is available.
+   *
+   * @return The agent reply including the result value
+   */
   Agent.AgentReply<R> invoke();
 
+  /**
+   * Execute the call asynchronously.
+   *
+   * @return A CompletionStage that completes with the agent reply including the result value
+   */
   CompletionStage<Agent.AgentReply<R>> invokeAsync();
 }
