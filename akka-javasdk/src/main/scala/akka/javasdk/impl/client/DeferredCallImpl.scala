@@ -15,6 +15,9 @@ import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.ComponentType
 import akka.runtime.sdk.spi.DeferredRequest
 
+/**
+ * INTERNAL API
+ */
 private[impl] final case class CallResult[O](value: O, metadata: Metadata)
 
 /**
