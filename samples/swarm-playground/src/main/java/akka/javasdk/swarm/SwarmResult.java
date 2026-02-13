@@ -4,6 +4,9 @@
 
 package akka.javasdk.swarm;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 import java.util.Optional;
 
 /**
@@ -11,6 +14,14 @@ import java.util.Optional;
  *
  * @param <R> the result type, matching the swarm's {@code resultType()}
  */
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
+@JsonSubTypes({
+    @JsonSubTypes.Type(value = SwarmResult.Running.class, name = "Running"),
+    @JsonSubTypes.Type(value = SwarmResult.Paused.class, name = "Paused"),
+    @JsonSubTypes.Type(value = SwarmResult.Completed.class, name = "Completed"),
+    @JsonSubTypes.Type(value = SwarmResult.Failed.class, name = "Failed"),
+    @JsonSubTypes.Type(value = SwarmResult.Stopped.class, name = "Stopped")
+})
 public sealed interface SwarmResult<R> {
 
   record Running<R>(int currentTurn, int maxTurns,

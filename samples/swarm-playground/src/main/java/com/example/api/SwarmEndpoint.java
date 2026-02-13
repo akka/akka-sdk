@@ -11,6 +11,7 @@ import akka.javasdk.swarm.SwarmResult;
 import com.example.application.ActivityPlannerSwarm;
 import com.example.application.ContentCreationSwarm;
 import com.example.application.ContentRefinementSwarm;
+import com.example.application.TriageSwarm;
 
 import java.util.Optional;
 
@@ -69,6 +70,21 @@ public class SwarmEndpoint {
   public StatusResponse getContentCreationResult(String swarmId) {
     return toStatusResponse(componentClient.forWorkflow(swarmId)
         .method(ContentCreationSwarm::getResult)
+        .invoke());
+  }
+
+  @Post("/triage/{swarmId}")
+  public HttpResponse startTriage(String swarmId, StartRequest request) {
+    componentClient.forWorkflow(swarmId)
+        .method(TriageSwarm::run)
+        .invoke(request.message());
+    return HttpResponses.created(swarmId, "/swarm/triage/" + swarmId);
+  }
+
+  @Get("/triage/{swarmId}")
+  public StatusResponse getTriageResult(String swarmId) {
+    return toStatusResponse(componentClient.forWorkflow(swarmId)
+        .method(TriageSwarm::getResult)
         .invoke());
   }
 
