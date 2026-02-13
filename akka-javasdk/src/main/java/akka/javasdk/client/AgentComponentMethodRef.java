@@ -7,18 +7,17 @@ package akka.javasdk.client;
 import akka.annotation.DoNotInherit;
 
 /**
- * One argument agent component call representation.
+ * Zero argument agent component call representation.
  *
- * <p>Extends {@link ComponentMethodRef1} with the ability to get a detailed reply including token
+ * <p>Extends {@link ComponentMethodRef} with the ability to get a detailed reply including token
  * usage through {@link #withDetailedReply()}.
  *
  * <p>Not for user extension or instantiation, returned by the SDK component client
  *
- * @param <A1> The argument type of the call
  * @param <R> The type of value returned by executing the call
  */
 @DoNotInherit
-public interface AgentComponentMethodRef1<A1, R> extends ComponentMethodRef1<A1, R> {
+public interface AgentComponentMethodRef<R> extends ComponentMethodRef<R> {
 
-  AgentComponentInvokeOnlyMethodRef1<A1, R> withDetailedReply();
+  AgentComponentInvokeOnlyMethodRef<R> withDetailedReply();
 }

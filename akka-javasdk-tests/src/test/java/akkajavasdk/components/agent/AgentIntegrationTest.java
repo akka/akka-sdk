@@ -85,11 +85,12 @@ public class AgentIntegrationTest extends TestKitSupport {
             .forAgent()
             .inSession(newSessionId())
             .method(SomeAgent::mapLlmResponse)
-            .invokeReply("hello");
+            .withDetailedReply()
+            .invoke("hello");
 
     // then
     assertThat(result.value().response()).isEqualTo("123456");
-    //assertThat(result.tokenUsage().inputTokens()).isEqualTo(123);
+    // assertThat(result.tokenUsage().inputTokens()).isEqualTo(123);
   }
 
   @Test
