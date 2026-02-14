@@ -161,6 +161,20 @@ When an entity is deleted, its corresponding view row will be deleted automatica
 
 If you want to customize this behavior, you can add a handler method marked with `@DeleteHandler` to your table updater. For example, instead of deleting the row, you can perform a logical deleted.
 
+=== Starting from Snapshot
+
+A View that processes events from an Event Sourced Entity can optionally define a `@SnapshotHandler` method to receive entity snapshots. This can provide significant performance improvements when a new view needs to catch up on a long event history.
+
+When a `@SnapshotHandler` is defined in the `TableUpdater`, the view will start processing from the most recent snapshot instead of replaying historical events. After processing the snapshot, subsequent events are processed normally.
+
+[source,java,indent=0]
+.{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/application/CustomersByNameView.java[CustomersByNameView.java]
+----
+include::example$event-sourced-customer-registry/src/main/java/customer/application/CustomersByNameView.java[tags=snapshot]
+----
+
+The `@SnapshotHandler` annotation marks the method that will receive entity snapshots. The parameter type must match the state type of the Event Sourced Entity.
+
 [#workflow]
 == Creating a View from a Workflow
 
