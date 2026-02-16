@@ -278,7 +278,7 @@ private[impl] object ViewDescriptorFactory {
       .filterNot(ComponentDescriptorFactory.hasHandleDeletes)
       .filter(ComponentDescriptorFactory.hasUpdateEffectOutput)
 
-    val startFromSnapshots = updaterMethods.exists(ComponentDescriptorFactory.hasFromSnapshotHandler)
+    val startFromSnapshots = updaterMethods.exists(ComponentDescriptorFactory.hasSnapshotHandler)
 
     // FIXME input type validation? (does that happen elsewhere?)
     // FIXME method output vs table type validation? (does that happen elsewhere?)

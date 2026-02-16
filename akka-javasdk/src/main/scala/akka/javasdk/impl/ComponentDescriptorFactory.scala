@@ -123,7 +123,7 @@ private[impl] object ComponentDescriptorFactory {
     javaMethod.isPublic && ann != null
   }
 
-  def hasFromSnapshotHandler(javaMethod: Method): Boolean = {
+  def hasSnapshotHandler(javaMethod: Method): Boolean = {
     val ann = javaMethod.getAnnotation(classOf[SnapshotHandler])
     javaMethod.isPublic && ann != null
   }
@@ -260,7 +260,7 @@ private[impl] object ComponentDescriptorFactory {
       new ConsumerSource.WorkflowSource(workflowComponentId)
     } else if (hasEventSourcedEntitySubscription(clazz)) {
       val esComponentId = findSubscriptionEventSourcedComponentId(clazz)
-      val startFromSnapshots = clazz.getMethods.exists(hasFromSnapshotHandler)
+      val startFromSnapshots = clazz.getMethods.exists(hasSnapshotHandler)
       new ConsumerSource.EventSourcedEntitySource(esComponentId, startFromSnapshots)
     } else if (hasTopicSubscription(clazz)) {
       val topicName = findSubscriptionTopicName(clazz)
