@@ -66,7 +66,8 @@ public abstract class Agent {
   public record TokenUsage(int inputTokens, int outputTokens) {}
 
   /**
-   * A detailed reply from an agent component call, containing both the result and additional information, like token usage.
+   * A detailed reply from an agent component call, containing both the result and additional
+   * information, like token usage.
    *
    * @param value The result of the agent call
    * @param tokenUsage The token usage from the AI model interaction

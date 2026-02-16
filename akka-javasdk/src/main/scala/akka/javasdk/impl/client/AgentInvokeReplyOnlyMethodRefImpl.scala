@@ -9,8 +9,8 @@ import java.util.concurrent.CompletionStage
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.agent.Agent
-import akka.javasdk.client.AgentComponentInvokeOnlyMethodRef
-import akka.javasdk.client.AgentComponentInvokeOnlyMethodRef1
+import akka.javasdk.client.AgentReplyInvokeOnlyMethodRef
+import akka.javasdk.client.AgentReplyInvokeOnlyMethodRef1
 import akka.javasdk.impl.ErrorHandling.unwrapExecutionExceptionCatcher
 import akka.runtime.sdk.spi.SpiAgent
 
@@ -18,10 +18,9 @@ import akka.runtime.sdk.spi.SpiAgent
  * INTERNAL API
  */
 @InternalApi
-private[impl] case class AgentComponentInvokeOnlyMethodRefImpl[A1, R](
-    componentMethodRefImpl: ComponentMethodRefImpl[A1, R])
-    extends AgentComponentInvokeOnlyMethodRef[R]
-    with AgentComponentInvokeOnlyMethodRef1[A1, R] {
+private[impl] case class AgentInvokeReplyOnlyMethodRefImpl[A1, R](componentMethodRefImpl: ComponentMethodRefImpl[A1, R])
+    extends AgentReplyInvokeOnlyMethodRef[R]
+    with AgentReplyInvokeOnlyMethodRef1[A1, R] {
 
   override def invoke(): Agent.AgentReply[R] = {
     try {

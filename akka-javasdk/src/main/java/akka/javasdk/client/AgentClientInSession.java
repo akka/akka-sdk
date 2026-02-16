@@ -17,10 +17,10 @@ public interface AgentClientInSession {
    * Pass in an Agent command handler method reference, e.g. {@code
    * SummarizerAgent::summarizeSession}
    */
-  <T, R> AgentComponentMethodRef<R> method(Function<T, Agent.Effect<R>> methodRef);
+  <T, R> AgentMethodRef<R> method(Function<T, Agent.Effect<R>> methodRef);
 
   /** Pass in an Agent command handler method reference, e.g. {@code PlannerAgent::plan} */
-  <T, A1, R> AgentComponentMethodRef1<A1, R> method(Function2<T, A1, Agent.Effect<R>> methodRef);
+  <T, A1, R> AgentMethodRef1<A1, R> method(Function2<T, A1, Agent.Effect<R>> methodRef);
 
   /** Pass in an Agent command handler method reference, e.g. {@code ExpertAgent::ask} */
   <T> ComponentStreamMethodRef<String> tokenStream(Function<T, Agent.StreamEffect> methodRef);

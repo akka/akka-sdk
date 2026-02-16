@@ -17,8 +17,8 @@ import akka.javasdk.Metadata
 import akka.javasdk.agent.Agent
 import akka.javasdk.client.AgentClient
 import akka.javasdk.client.AgentClientInSession
-import akka.javasdk.client.AgentComponentMethodRef
-import akka.javasdk.client.AgentComponentMethodRef1
+import akka.javasdk.client.AgentMethodRef
+import akka.javasdk.client.AgentMethodRef1
 import akka.javasdk.client.ComponentStreamMethodRef
 import akka.javasdk.client.ComponentStreamMethodRef1
 import akka.javasdk.client.DynamicMethodRef
@@ -78,22 +78,20 @@ private[javasdk] final case class AgentClientImpl(
     AgentClientImpl(agentClient, serializer, callMetadata, agentClassById, sessionId)
   }
 
-  override def method[T, R](methodRef: function.Function[T, Agent.Effect[R]]): AgentComponentMethodRef[R] =
+  override def method[T, R](methodRef: function.Function[T, Agent.Effect[R]]): AgentMethodRef[R] =
     createMethodRef[R](methodRef)
 
-  override def method[T, A1, R](
-      methodRef: function.Function2[T, A1, Agent.Effect[R]]): AgentComponentMethodRef1[A1, R] =
+  override def method[T, A1, R](methodRef: function.Function2[T, A1, Agent.Effect[R]]): AgentMethodRef1[A1, R] =
     createMethodRef2(methodRef)
 
   // commands for methods that take a state as a first parameter and then the command
-  protected def createMethodRef2[A1, R](
-      lambda: akka.japi.function.Function2[_, _, _]): AgentComponentMethodRef1[A1, R] =
+  protected def createMethodRef2[A1, R](lambda: akka.japi.function.Function2[_, _, _]): AgentMethodRef1[A1, R] =
     createMethodRefForEitherArity(lambda)
 
-  protected def createMethodRef[R](lambda: akka.japi.function.Function[_, _]): AgentComponentMethodRef[R] =
+  protected def createMethodRef[R](lambda: akka.japi.function.Function[_, _]): AgentMethodRef[R] =
     createMethodRefForEitherArity[Nothing, R](lambda)
 
-  private def createMethodRefForEitherArity[A1, R](lambda: AnyRef): AgentComponentMethodRefImpl[A1, R] = {
+  private def createMethodRefForEitherArity[A1, R](lambda: AnyRef): AgentMethodRefImpl[A1, R] = {
     import MetadataImpl.toSpi
 
     val agentMethodProperties = validateAndExtractAgentMethodProperties(lambda)
@@ -102,7 +100,7 @@ private[javasdk] final case class AgentClientImpl(
 
     // FIXME push some of this logic into the NativeomponentMethodRef
     //       will be easier to follow to do that instead of creating a lambda here and injecting into that
-    new AgentComponentMethodRefImpl[AnyRef, R](
+    new AgentMethodRefImpl[AnyRef, R](
       new ComponentMethodRefImpl[AnyRef, R](
         optionalId = None,
         callMetadata,
@@ -151,7 +149,7 @@ private[javasdk] final case class AgentClientImpl(
             serializer)
         },
         canBeDeferred = false))
-      .asInstanceOf[AgentComponentMethodRefImpl[A1, R]]
+      .asInstanceOf[AgentMethodRefImpl[A1, R]]
 
   }
 

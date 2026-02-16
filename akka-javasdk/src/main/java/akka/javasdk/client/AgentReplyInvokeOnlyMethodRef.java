@@ -17,7 +17,7 @@ import java.util.concurrent.CompletionStage;
  * @param <R> The type of value returned by executing the call
  */
 @DoNotInherit
-public interface AgentComponentInvokeOnlyMethodRef<R> {
+public interface AgentReplyInvokeOnlyMethodRef<R> {
 
   /**
    * Execute the call and block until the response is available.

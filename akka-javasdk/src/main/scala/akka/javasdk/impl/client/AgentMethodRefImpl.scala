@@ -10,8 +10,8 @@ import akka.NotUsed
 import akka.annotation.InternalApi
 import akka.javasdk.DeferredCall
 import akka.javasdk.Metadata
-import akka.javasdk.client.AgentComponentMethodRef
-import akka.javasdk.client.AgentComponentMethodRef1
+import akka.javasdk.client.AgentMethodRef
+import akka.javasdk.client.AgentMethodRef1
 import akka.javasdk.client.DynamicMethodRef
 import akka.pattern.RetrySettings
 
@@ -19,18 +19,19 @@ import akka.pattern.RetrySettings
  * INTERNAL API
  */
 @InternalApi
-private[impl] final case class AgentComponentMethodRefImpl[A1, R](componentMethodRefImpl: ComponentMethodRefImpl[A1, R])
-    extends AgentComponentMethodRef[R]
-    with AgentComponentMethodRef1[A1, R]
+private[impl] final case class AgentMethodRefImpl[A1, R](componentMethodRefImpl: ComponentMethodRefImpl[A1, R])
+    extends AgentMethodRef[R]
+    with AgentMethodRef1[A1, R]
     with DynamicMethodRef[A1, R] {
 
-  override def withMetadata(metadata: Metadata): ComponentMethodRefImpl[A1, R] =
-    componentMethodRefImpl.withMetadata(metadata)
+  override def withMetadata(metadata: Metadata): AgentMethodRefImpl[A1, R] =
+    AgentMethodRefImpl(componentMethodRefImpl.withMetadata(metadata))
 
-  override def withRetry(retrySettings: RetrySettings): ComponentMethodRefImpl[A1, R] =
-    componentMethodRefImpl.withRetry(retrySettings)
+  override def withRetry(retrySettings: RetrySettings): AgentInvokeOnlyMethodRefImpl[A1, R] =
+    AgentInvokeOnlyMethodRefImpl(componentMethodRefImpl.withRetry(retrySettings))
 
-  override def withRetry(maxRetries: Int): ComponentMethodRefImpl[A1, R] = componentMethodRefImpl.withRetry(maxRetries)
+  override def withRetry(maxRetries: Int): AgentInvokeOnlyMethodRefImpl[A1, R] =
+    AgentInvokeOnlyMethodRefImpl(componentMethodRefImpl.withRetry(maxRetries))
 
   override def invokeAsync(arg: A1): CompletionStage[R] = componentMethodRefImpl.invokeAsync(arg)
 
@@ -44,6 +45,6 @@ private[impl] final case class AgentComponentMethodRefImpl[A1, R](componentMetho
 
   override def deferred(arg: A1): DeferredCall[A1, R] = componentMethodRefImpl.deferred(arg)
 
-  override def withDetailedReply(): AgentComponentInvokeOnlyMethodRefImpl[A1, R] =
-    AgentComponentInvokeOnlyMethodRefImpl[A1, R](componentMethodRefImpl)
+  override def withDetailedReply(): AgentInvokeReplyOnlyMethodRefImpl[A1, R] =
+    AgentInvokeReplyOnlyMethodRefImpl[A1, R](componentMethodRefImpl)
 }
