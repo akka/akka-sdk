@@ -6,7 +6,6 @@ package akka.javasdk.testkit;
 
 import akka.javasdk.impl.serialization.Serializer;
 import akka.runtime.sdk.spi.BytesPayload;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
 /**
@@ -46,25 +45,9 @@ final class EntitySerializationChecker {
   static void verifySerDerWithExpectedType(Type expectedType, Object object, Object entity) {
     try {
       BytesPayload bytesPayload = serializer.toBytes(object);
-      // For protobuf messages, use the Class-based deserialization
-      if (serializer.isProtobuf(bytesPayload)) {
-        Class<?> rawClass = getRawClass(expectedType);
-        serializer.fromBytes(rawClass, bytesPayload);
-      } else {
-        serializer.fromBytes(expectedType, bytesPayload);
-      }
+      serializer.fromBytes(expectedType, bytesPayload);
     } catch (Exception e) {
       fail(object, entity, e);
-    }
-  }
-
-  private static Class<?> getRawClass(Type type) {
-    if (type instanceof Class<?>) {
-      return (Class<?>) type;
-    } else if (type instanceof ParameterizedType) {
-      return (Class<?>) ((ParameterizedType) type).getRawType();
-    } else {
-      throw new IllegalArgumentException("Cannot extract raw class from type: " + type);
     }
   }
 
