@@ -278,6 +278,8 @@ private[impl] object ViewDescriptorFactory {
       .filterNot(ComponentDescriptorFactory.hasHandleDeletes)
       .filter(ComponentDescriptorFactory.hasUpdateEffectOutput)
 
+    val startFromSnapshots = updaterMethods.exists(ComponentDescriptorFactory.hasSnapshotHandler)
+
     // FIXME input type validation? (does that happen elsewhere?)
     // FIXME method output vs table type validation? (does that happen elsewhere?)
 
@@ -286,7 +288,7 @@ private[impl] object ViewDescriptorFactory {
       tableType,
       new ConsumerSource.EventSourcedEntitySource(
         ComponentDescriptorFactory.readComponentIdValue(annotation.value()),
-        startFromSnapshots = false),
+        startFromSnapshots),
       Option.when(updateHandlerMethods.nonEmpty)(
         UpdateHandlerImpl(
           componentId,

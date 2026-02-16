@@ -8,6 +8,7 @@ import static akka.javasdk.tooling.validation.Validations.ambiguousHandlerValida
 import static akka.javasdk.tooling.validation.Validations.hasEffectMethod;
 import static akka.javasdk.tooling.validation.Validations.missingHandlerValidations;
 import static akka.javasdk.tooling.validation.Validations.noSubscriptionMethodWithAcl;
+import static akka.javasdk.tooling.validation.Validations.snapshotHandlerValidation;
 import static akka.javasdk.tooling.validation.Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne;
 import static akka.javasdk.tooling.validation.Validations.subscriptionMethodMustHaveOneParameter;
 
@@ -45,6 +46,7 @@ public class ConsumerValidations {
         .combine(missingHandlerValidations(typeDef, effectType))
         .combine(noSubscriptionMethodWithAcl(typeDef, effectType))
         .combine(subscriptionMethodMustHaveOneParameter(typeDef, effectType))
+        .combine(snapshotHandlerValidation(typeDef, effectType))
         .combine(consumerCannotHaveFunctionTools(typeDef));
   }
 

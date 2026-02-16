@@ -23,6 +23,7 @@ import akka.javasdk.annotations.Consume.FromWorkflow
 import akka.javasdk.annotations.DeleteHandler
 import akka.javasdk.annotations.Produce.ServiceStream
 import akka.javasdk.annotations.Produce.ToTopic
+import akka.javasdk.annotations.SnapshotHandler
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.agent.AgentDescriptorFactory
@@ -119,6 +120,11 @@ private[impl] object ComponentDescriptorFactory {
 
   def hasHandleDeletes(javaMethod: Method): Boolean = {
     val ann = javaMethod.getAnnotation(classOf[DeleteHandler])
+    javaMethod.isPublic && ann != null
+  }
+
+  def hasSnapshotHandler(javaMethod: Method): Boolean = {
+    val ann = javaMethod.getAnnotation(classOf[SnapshotHandler])
     javaMethod.isPublic && ann != null
   }
 
@@ -254,7 +260,8 @@ private[impl] object ComponentDescriptorFactory {
       new ConsumerSource.WorkflowSource(workflowComponentId)
     } else if (hasEventSourcedEntitySubscription(clazz)) {
       val esComponentId = findSubscriptionEventSourcedComponentId(clazz)
-      new ConsumerSource.EventSourcedEntitySource(esComponentId, startFromSnapshots = false)
+      val startFromSnapshots = clazz.getMethods.exists(hasSnapshotHandler)
+      new ConsumerSource.EventSourcedEntitySource(esComponentId, startFromSnapshots)
     } else if (hasTopicSubscription(clazz)) {
       val topicName = findSubscriptionTopicName(clazz)
       val consumerGroup = findSubscriptionConsumerGroup(clazz)

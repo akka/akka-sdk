@@ -5,19 +5,38 @@ package customer.application;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
+import akka.javasdk.annotations.SnapshotHandler;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
+import customer.domain.Customer;
 import customer.domain.CustomerEntries;
 import customer.domain.CustomerEntry;
 import customer.domain.CustomerEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component(id = "customers-by-name") // <1>
 public class CustomersByNameView extends View {
 
+  private static final Logger logger = LoggerFactory.getLogger(CustomersByNameView.class);
+
   @Consume.FromEventSourcedEntity(CustomerEntity.class)
   public static class CustomersByNameUpdater extends TableUpdater<CustomerEntry> { // <2>
 
+    // end::class[]
+    // tag::snapshot[]
+    @SnapshotHandler
+    public Effect<CustomerEntry> onSnapshot(Customer snapshot) {
+      logger.info("onSnapshot [{}]", snapshot);
+      return effects()
+        .updateRow(new CustomerEntry(snapshot.email(), snapshot.name(), snapshot.address()));
+    }
+
+    // end::snapshot[]
+    // tag::class[]
+
     public Effect<CustomerEntry> onEvent(CustomerEvent event) { // <3>
+      logger.info("onEvent [{}]", event);
       return switch (event) {
         case CustomerEvent.CustomerCreated created -> effects()
           .updateRow(new CustomerEntry(created.email(), created.name(), created.address()));
