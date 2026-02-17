@@ -10,7 +10,7 @@ import scala.language.existentials
 
 import akka.actor.ActorSystem
 import akka.javasdk.impl.AnySupport
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.testkit.TestKit
 import akka.testkit.TestProbe
 import com.google.protobuf.ByteString
@@ -34,7 +34,7 @@ class OutgoingMessagesImplSpec
     with BeforeAndAfterAll {
 
   private val anySupport = new AnySupport(Array(), getClass.getClassLoader)
-  private val serializer = new JsonSerializer
+  private val serializer = new Serializer
   private val outProbe = TestProbe()(system)
   private val destination = new OutgoingMessagesImpl(outProbe, serializer)
   val queue = new DummyQueue(mutable.Queue.empty)

@@ -30,7 +30,7 @@ import akka.javasdk.impl.SdkRunner;
 import akka.javasdk.impl.client.ComponentClientImpl;
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl;
 import akka.javasdk.impl.http.HttpClientImpl;
-import akka.javasdk.impl.serialization.JsonSerializer;
+import akka.javasdk.impl.serialization.Serializer;
 import akka.javasdk.impl.timer.TimerSchedulerImpl;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
@@ -689,7 +689,7 @@ public class TestKit {
       // after discovery happens
       eventingTestKit =
           EventingTestKit.start(
-              runtimeActorSystem, "0.0.0.0", eventingTestKitPort, new JsonSerializer());
+              runtimeActorSystem, "0.0.0.0", eventingTestKitPort, new Serializer());
     }
   }
 
@@ -774,7 +774,7 @@ public class TestKit {
       final Sdk.StartupContext startupContext =
           runner.started().toCompletableFuture().get(20, TimeUnit.SECONDS);
       final ComponentClients componentClients = startupContext.componentClients();
-      final JsonSerializer serializer = startupContext.serializer();
+      final Serializer serializer = startupContext.serializer();
       dependencyProvider =
           Optional.ofNullable(startupContext.dependencyProvider().getOrElse(() -> null));
       sanitizer = startupContext.sanitizer();

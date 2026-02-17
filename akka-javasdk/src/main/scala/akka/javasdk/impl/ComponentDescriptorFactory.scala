@@ -29,7 +29,7 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.agent.AgentDescriptorFactory
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax._
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.view.TableUpdater
@@ -306,7 +306,7 @@ private[impl] trait ComponentDescriptorFactory {
   /**
    * Inspect the component class (type), validate the annotations/methods and build a component descriptor for it.
    */
-  def buildDescriptorFor(componentClass: Class[_], serializer: JsonSerializer): ComponentDescriptor
+  def buildDescriptorFor(componentClass: Class[_], serializer: Serializer): ComponentDescriptor
 
 }
 
