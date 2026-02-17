@@ -134,7 +134,8 @@ private[impl] object AgentImpl {
         case fqcn if isFqcn(fqcn) =>
           instantiateCustomProvider(fqcn, providerConfig, resolvedConfigPath)
         case other =>
-          throw new IllegalArgumentException(s"Unknown model provider [$other] in config [$resolvedConfigPath]")
+          throw new IllegalArgumentException(
+            s"Unknown model provider [$other] in config [$resolvedConfigPath]. If you are trying to load a custom class implementation, make sure you are using the right full-qualified class name.")
       }
     } catch {
       case exc: ConfigException =>
@@ -144,9 +145,12 @@ private[impl] object AgentImpl {
   }
 
   private def isFqcn(fqcn: String): Boolean = {
-    val lastDot = fqcn.lastIndexOf('.')
-    // Must have at least one dot and the class name should start with uppercase
-    lastDot > 0 && lastDot < fqcn.length - 1 && fqcn.charAt(lastDot + 1).isUpper
+    try {
+      Class.forName(fqcn)
+      true
+    } catch {
+      case _: ClassNotFoundException => false
+    }
   }
 
   private def instantiateCustomProvider(fqcn: String, providerConfig: Config, resolvedConfigPath: String)(implicit
