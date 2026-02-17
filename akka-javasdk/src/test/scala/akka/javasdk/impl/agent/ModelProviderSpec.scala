@@ -8,7 +8,6 @@ import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.javasdk.agent.ModelProvider
 import com.typesafe.config.ConfigFactory
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.wordspec.AnyWordSpecLike
 
 object ModelProviderSpec {

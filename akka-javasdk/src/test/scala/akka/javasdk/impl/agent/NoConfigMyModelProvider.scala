@@ -5,7 +5,6 @@
 package akka.javasdk.impl.agent
 
 import akka.javasdk.agent.ModelProvider
-import com.typesafe.config.Config
 
 class NoConfigMyModelProvider extends ModelProvider.Custom {
 
