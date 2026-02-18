@@ -473,8 +473,8 @@ Set a global default in `application.conf` as a HOCON list of `name:value` strin
 [source,hocon,indent=0]
 ----
 akka.javasdk.agent.additional-model-request-headers = [
-  "Authorization:Bearer mytoken",
-  "X-Custom-Header:value"
+  "X-Custom-Header:value",
+  "X-Custom-Header-2:value-2",
 ]
 ----
 
@@ -482,16 +482,19 @@ All providers inherit this value automatically. You can override it for a specif
 
 [source,hocon,indent=0]
 ----
-akka.javasdk.agent.openai.additional-model-request-headers = ["Authorization:Bearer openai-token"]
+akka.javasdk.agent.openai.additional-model-request-headers = ["X-Custom-Header:value"]
 ----
 
 === Environment variable
 
-The global setting can also be supplied via the `AKKA_AGENT_ADDITIONAL_MODEL_REQUEST_HEADERS` environment variable as a comma-separated string, which is the recommended approach for secrets such as gateway tokens:
+The global setting can also be supplied via environment variables, this is the recommended approach for secrets such as gateway tokens.
+
+The environment variables use a special naming where each entry is specified with a list index:
 
 [source,bash,indent=0]
 ----
-AKKA_AGENT_ADDITIONAL_MODEL_REQUEST_HEADERS="Authorization:Bearer mytoken,X-Custom-Header:value"
+AKKA_AGENT_ADDITIONAL_MODEL_REQUEST_HEADERS_items_0="Authorization:Bearer mytoken"
+AKKA_AGENT_ADDITIONAL_MODEL_REQUEST_HEADERS_items_1="X-Custom-Header:value"
 ----
 
 === Programmatic override
