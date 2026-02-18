@@ -68,7 +68,7 @@
             </goals>
             <configuration>
               <annotationProcessorArgs>
-                <arg>akka.javasdk.groupId=${groupId.dashed}</arg>
+                <arg>akka.javasdk.groupId=${project.groupId}</arg>
                 <arg>akka.javasdk.artifactId=${project.artifactId}</arg>
               </annotationProcessorArgs>
               <annotationProcessors>
@@ -98,7 +98,7 @@
                 </annotationProcessor>
               </annotationProcessors>
               <annotationProcessorArgs>
-                <arg>akka.javasdk.groupId=${groupId.dashed}</arg>
+                <arg>akka.javasdk.groupId=${project.groupId}</arg>
                 <arg>akka.javasdk.artifactId=${project.artifactId}</arg>
               </annotationProcessorArgs>
               <annotationProcessorPaths>

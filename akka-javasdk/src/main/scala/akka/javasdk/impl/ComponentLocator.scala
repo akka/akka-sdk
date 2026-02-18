@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory
 private[javasdk] object ComponentLocator {
 
   // populated by annotation processor - pattern for artifact-specific descriptors
-  private val ComponentDescriptorPrefix = "akka-javasdk-components_"
+  private val ComponentDescriptorPrefix = "akka-javasdk-components-"
   private val ComponentDescriptorSuffix = ".conf"
   private val MetaInfPath = "META-INF/"
   val DescriptorComponentBasePath = "akka.javasdk.components"
@@ -78,7 +78,7 @@ private[javasdk] object ComponentLocator {
   }
 
   /**
-   * Finds all META-INF/akka-javasdk-components_*.conf files on the classpath. This allows components to be defined in
+   * Finds all META-INF/akka-javasdk-components-*.conf files on the classpath. This allows components to be defined in
    * library JARs with unique filenames per artifact, avoiding shadowing when multiple JARs are on the classpath.
    *
    * Also supports the legacy single-file format (akka-javasdk-components.conf) for backwards compatibility.

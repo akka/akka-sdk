@@ -104,7 +104,7 @@
                         <compilerArgs>
                             <arg>-Xlint:deprecation</arg>
                             <arg>-parameters</arg>
-                            <arg>-Aakka.javasdk.groupId=${groupId.dashed}</arg>
+                            <arg>-Aakka.javasdk.groupId=${project.groupId}</arg>
                             <arg>-Aakka.javasdk.artifactId=${project.artifactId}</arg>
                         </compilerArgs>
                         <annotationProcessors>
@@ -260,21 +260,6 @@
                     <artifactId>build-helper-maven-plugin</artifactId>
                     <version>${build-helper-maven-plugin.version}</version>
                     <executions>
-                        <!-- create groupId.dashed property (dots replaced by dashes) for use in file names -->
-                        <execution>
-                            <id>regex-groupId-property</id>
-                            <phase>validate</phase>
-                            <goals>
-                                <goal>regex-property</goal>
-                            </goals>
-                            <configuration>
-                                <name>groupId.dashed</name>
-                                <value>${project.groupId}</value>
-                                <regex>\.</regex>
-                                <replacement>-</replacement>
-                                <failIfNoMatch>false</failIfNoMatch>
-                            </configuration>
-                        </execution>
                         <!-- configure src/it/java and src/it/resources legacy paths for integration tests -->
                         <execution>
                             <id>add-integration-test-source</id>
@@ -520,7 +505,7 @@
                                         <condition property="descriptor.missing">
                                             <resourcecount count="0">
                                                 <fileset dir="target/classes/META-INF"
-                                                         includes="akka-javasdk-components_${groupId.dashed}_${project.artifactId}.conf"
+                                                         includes="akka-javasdk-components-${project.groupId}-${project.artifactId}.conf"
                                                          erroronmissingdir="false"/>
                                             </resourcecount>
                                         </condition>
