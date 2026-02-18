@@ -96,6 +96,10 @@ The following is a list of all natively supported model configurations. Remember
 | Integer
 | A maximum number of tokens to spend on thinking, use 0 to disable thinking
 
+| additional-model-request-headers
+| List<String>
+| List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. A single comma-separated string is also accepted (e.g. when set via environment variable).
+
 |===
 
 
@@ -156,6 +160,10 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Anthropic.html[`M
 | Integer
 | Retry this many times if the request to the model fails
 
+| additional-model-request-headers
+| List<String>
+| List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. A single comma-separated string is also accepted (e.g. when set via environment variable).
+
 |===
 
 See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Bedrock.html[`ModelProvider.Bedrock`] for programmatic settings.
@@ -214,6 +222,10 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Bedrock.html[`Mod
 | String
 | Control thinking for Gemini 3 models, exact values depend on the specific model chosen, must be empty for 2.5 models. See Google Gemini docs for more details: https://ai.google.dev/gemini-api/docs/thinking#thinking-levels
 
+| additional-model-request-headers
+| List of String
+| List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. A single comma-separated string is also accepted (e.g. when set via environment variable).
+
 |===
 
 See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.GoogleAIGemini.html[`ModelProvider.GoogleAIGemini`] for programmatic settings.
@@ -268,6 +280,10 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.GoogleAIGemini.ht
 | Boolean
 | Enable thinking, only supported for some models. Make sure the chosen model supports thinking before enabling.
 
+| additional-model-request-headers
+| List of String
+| List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. A single comma-separated string is also accepted (e.g. when set via environment variable).
+
 |===
 
 See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.HuggingFace.html[`ModelProvider.HuggingFace`] for programmatic settings.
@@ -301,6 +317,10 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.HuggingFace.html[
 | max-tokens
 | Integer
 | Max number of tokens to generate (–1 for model default)
+
+| additional-model-request-headers
+| List of String
+| List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. A single comma-separated string is also accepted (e.g. when set via environment variable).
 
 |===
 
@@ -347,6 +367,10 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.LocalAI.html[`Mod
 | think
 | Boolean
 | Enable thinking, only supported for some models. Make sure the chosen model supports thinking before enabling.
+
+| additional-model-request-headers
+| List of String
+| List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. A single comma-separated string is also accepted (e.g. when set via environment variable).
 
 |===
 
@@ -406,6 +430,10 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Ollama.html[`Mode
 | Boolean
 | Enable thinking, only supported for DeepSeek. Make sure the chosen model supports thinking before enabling.
 
+| additional-model-request-headers
+| List of String
+| List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. A single comma-separated string is also accepted (e.g. when set via environment variable).
+
 |===
 
 See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`ModelProvider.OpenAi`] for programmatic settings.
@@ -433,6 +461,50 @@ include::sdk:example$doc-snippets/src/main/resources/application.conf[tags=agent
 ----
 
 The API key can be defined with an environment variable, `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` in the above examples.
+
+== Additional model request headers
+
+All built in model providers support attaching extra HTTP headers to every request sent to the model API. This is useful for passing authentication tokens to an AI gateway or proxy, adding routing or tracing headers, or meeting any other header requirements imposed by the endpoint.
+
+=== Configuration
+
+Set a global default in `application.conf` as a HOCON list of `name:value` strings:
+
+[source,hocon,indent=0]
+----
+akka.javasdk.agent.additional-model-request-headers = [
+  "Authorization:Bearer mytoken",
+  "X-Custom-Header:value"
+]
+----
+
+All providers inherit this value automatically. You can override it for a specific provider:
+
+[source,hocon,indent=0]
+----
+akka.javasdk.agent.openai.additional-model-request-headers = ["Authorization:Bearer openai-token"]
+----
+
+=== Environment variable
+
+The global setting can also be supplied via the `AKKA_AGENT_ADDITIONAL_MODEL_REQUEST_HEADERS` environment variable as a comma-separated string, which is the recommended approach for secrets such as gateway tokens:
+
+[source,bash,indent=0]
+----
+AKKA_AGENT_ADDITIONAL_MODEL_REQUEST_HEADERS="Authorization:Bearer mytoken,X-Custom-Header:value"
+----
+
+=== Programmatic override
+
+Headers can also be set directly in code, which overrides any configuration value for that model:
+
+[source,java,indent=0]
+----
+ModelProvider.openAi()
+    .withApiKey(System.getenv("OPENAI_API_KEY"))
+    .withAdditionalModelRequestHeaders(
+        List.of(RawHeader.create("Authorization", "Bearer mygatewaytoken")));
+----
 
 == Reference configurations
 The following is a list of the various reference configurations for each of the AI models
