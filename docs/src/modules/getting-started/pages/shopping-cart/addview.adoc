@@ -1,5 +1,5 @@
 = Authenticated user-specific lookup
-:page-aliases: java:shopping-cart/addview.adoc
+:page-aliases: java:shopping-cart/addview.adoc, sdk:shopping-cart/addview.adoc
 
 include::ROOT:partial$include.adoc[]
 
