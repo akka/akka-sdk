@@ -7,6 +7,7 @@ package akka.javasdk.impl.agent
 import java.util
 import java.util.function
 
+import scala.annotation.nowarn
 import scala.jdk.CollectionConverters.ListHasAsScala
 import scala.jdk.FunctionConverters.enrichAsScalaFromFunction
 
@@ -81,9 +82,6 @@ private[javasdk] object BaseAgentEffectBuilder {
 
     def withMemory(provider: MemoryProvider): RequestModel =
       copy(memoryProvider = provider)
-
-    def withImageLoader(loader: ImageLoader): RequestModel =
-      copy(contentLoader = Some(loader))
 
     def withContentLoader(loader: ContentLoader): RequestModel =
       copy(contentLoader = Some(loader))
@@ -206,8 +204,9 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
     this
   }
 
+  @nowarn("msg=deprecated")
   override def imageLoader(loader: ImageLoader): Builder = {
-    updateRequestModel(_.withImageLoader(loader))
+    updateRequestModel(_.withContentLoader(loader))
     this
   }
 

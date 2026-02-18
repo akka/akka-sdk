@@ -8,6 +8,7 @@ import java.net.URI
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 
+import scala.annotation.nowarn
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -528,6 +529,7 @@ private[impl] final class AgentImpl[A <: Agent](
 
   private def mapSpiAgentException(func: Throwable => Any): Throwable => Any = {
 
+    @nowarn("msg=deprecated")
     def convert(thw: Throwable): Throwable = thw match {
       case exc: SpiAgentException =>
         try {
@@ -546,6 +548,9 @@ private[impl] final class AgentImpl[A <: Agent](
 
             case reason: GuardrailFailure =>
               new Guardrail.GuardrailException(reason.explanation)
+
+            case _: ImageLoadingFailure =>
+              new RuntimeException(exc.getMessage, exc.cause)
 
             case _: ContentLoadingFailure =>
               new RuntimeException(exc.getMessage, exc.cause)

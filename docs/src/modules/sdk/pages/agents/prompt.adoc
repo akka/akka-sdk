@@ -22,9 +22,9 @@ Keep in mind that some models have preferences in how you wrap or label user inp
 
 == Multimodal user message
 
-Multimodal AI models can process not only text but also images, enabling agents to analyze visual content, extract information from diagrams, or answer questions about images.
+Multimodal AI models can process not only text but also images or PDFs, enabling agents to analyze visual content, extract information from documents, or answer questions about images.
 
-To send images along with text to an AI model, use the `UserMessage` class which supports multimodal content:
+To send images or PDFs along with text to an AI model, use the `UserMessage` class which supports multimodal content:
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/application/ImageProcessingAgent.java[ImageProcessingAgent.java]
@@ -33,37 +33,38 @@ include::example$doc-snippets/src/main/java/com/example/application/ImageProcess
 ----
 <1> Create a `UserMessage` with multiple content elements
 <2> Add text content using `TextMessageContent.from()`
-<3> Add image content using `ImageMessageContent.from()`
+<3> Add image content using `ImageMessageContent.fromUrl()`
 
-NOTE: Not all AI models support vision capabilities. Ensure your configured model provider supports image inputs before using multimodal messages.
+NOTE: Not all AI models support vision or PDF capabilities. Ensure your configured model provider supports the input types before using multimodal messages.
 
-=== Custom image loading
+=== Custom content loading
 
-By default, the Akka runtime fetches images from publicly accessible URLs. When you need to load images from authenticated endpoints, private storage systems, or custom sources, you can implement a custom `ImageLoader`.
+Some AI models are able to fetch images or PDFs from publicly accessible URLs. When you need to load content from authenticated endpoints, private storage systems, or custom sources, you can implement a custom `ContentLoader`.
 
-The `ImageLoader` interface provides a single method that receives the image URI, detail level, and an optional MIME type hint. Your implementation fetches the image data and returns it along with the actual MIME type:
+The `ContentLoader` interface provides a single `load` method that receives a `LoadableMessageContent`. Use pattern matching to handle each content type, fetch the data, and return it along with the appropriate MIME type:
 
 [source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/application/CustomImageLoadingAgent.java[CustomImageLoadingAgent.java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/CustomContentLoadingAgent.java[CustomContentLoadingAgent.java]
 ----
-include::example$doc-snippets/src/main/java/com/example/application/CustomImageLoadingAgent.java[tag=custom-image-loader]
+include::example$doc-snippets/src/main/java/com/example/application/CustomContentLoadingAgent.java[tag=custom-content-loader]
 ----
-<1> Implement the `ImageLoader` interface
-<2> Custom logic to fetch image data with authentication
+<1> Implement the `ContentLoader` interface
+<2> Fetch image data with authentication using the URL from `ImageUrlMessageContent`
 <3> Extract the actual MIME type of the image from the response
-<4> Wrap bytes and type in a `LoadedImage` and return
+<4> Return `LoadedContent` with the data and MIME type
 
-To use your custom image loader, pass it to the agent effect builder:
+To use your custom content loader, pass it to the agent effect builder:
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/application/CustomImageLoadingAgent.java[CustomImageLoadingAgent.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/application/CustomImageLoadingAgent.java[tag=using-custom-loader]
 ----
-<1> Register the custom image loader with the effect
-<2> The image URL is passed to your loader when processing the message
+<1> Register the custom content loader with the effect
+<2> `ImageUrlMessageContent` is passed to your loader when processing the user message
 
-The image loader instance can be created per-request like in this example (to support per-request credentials) or shared globally via dependency injection. If shared, ensure the implementation is thread-safe as it may be used by multiple concurrent agent interactions.
+
+The content loader instance can be created per-request like in this example (to support per-request credentials) or shared globally via dependency injection. If shared, ensure the implementation is thread-safe as it may be used by multiple concurrent agent interactions.
 
 NOTE: If the `load` method throws an exception, the entire agent request fails.
 

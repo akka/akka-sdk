@@ -619,6 +619,31 @@ public abstract class Agent {
       Builder imageLoader(ImageLoader imageLoader);
 
       /**
+       * Sets a custom content loader.
+       *
+       * <p>When multimodal messages contain image, PDFs references, they are normally automatically
+       * fetched, this however requires that they are public and can be fetched by any HTTP client.
+       * Defining a custom loader makes it possible to load content from custom sources such as
+       * cloud storage, databases, or authenticated endpoints.
+       *
+       * <p>Example:
+       *
+       * <pre>{@code
+       * return streamEffects()
+       *     .contentLoader(new MyContentLoader())
+       *     .userMessage(UserMessage.from(
+       *         MessageContent.TextMessageContent.from("Describe this image"),
+       *         MessageContent.ImageMessageContent.fromUrl(imageUrl)))
+       *     .thenReply();
+       * }</pre>
+       *
+       * @param contentLoader The content loader implementation
+       * @return this builder for method chaining
+       * @see ContentLoader
+       */
+      Builder contentLoader(ContentLoader contentLoader);
+
+      /**
        * Create a message reply without calling the model.
        *
        * @param message The payload of the reply.
