@@ -493,8 +493,8 @@ The environment variables use a special naming where each entry is specified wit
 
 [source,bash,indent=0]
 ----
-AKKA_AGENT_ADDITIONAL_MODEL_REQUEST_HEADERS_items_0="Authorization:Bearer mytoken"
-AKKA_AGENT_ADDITIONAL_MODEL_REQUEST_HEADERS_items_1="X-Custom-Header:value"
+AKKA_AGENT_ADDITIONAL_MODEL_REQUEST_HEADERS_0="Authorization:Bearer mytoken"
+AKKA_AGENT_ADDITIONAL_MODEL_REQUEST_HEADERS_1="X-Custom-Header:value"
 ----
 
 === Programmatic override
