@@ -29,47 +29,21 @@ import java.util.stream.Collectors;
 public sealed interface ModelProvider {
 
   /**
-   * Parses a single {@code "name:value"} header entry, trimming whitespace from both sides of the
-   * colon.
+   * Parses a single {@code "name:value"} header entry
    */
   private static HttpHeader parseHeaderEntry(String entry) {
     int colonIdx = entry.indexOf(':');
     if (colonIdx < 0)
       throw new IllegalArgumentException(
           "Invalid header format [" + entry + "], expected 'name:value'");
-    return RawHeader.create(
-        entry.substring(0, colonIdx).trim(), entry.substring(colonIdx + 1).trim());
+    return RawHeader.create(entry.substring(0, colonIdx), entry.substring(colonIdx + 1));
   }
 
-  /**
-   * Parses additional model request headers from config.
-   *
-   * <p>The preferred config format is a HOCON list of {@code "name:value"} strings:
-   *
-   * <pre>{@code
-   * additional-model-request-headers = ["Authorization:Bearer token", "X-Custom:value"]
-   * }</pre>
-   *
-   * <p>A single comma-separated string is also accepted, which is convenient when supplying the
-   * value via the {@code AKKA_AGENT_ADDITIONAL_MODEL_REQUEST_HEADERS} environment variable:
-   *
-   * <pre>{@code
-   * AKKA_AGENT_ADDITIONAL_MODEL_REQUEST_HEADERS="Authorization:Bearer token,X-Custom:value"
-   * }</pre>
-   */
   private static List<HttpHeader> headersFromConfig(Config config) {
-    if (config.getValue("additional-model-request-headers").valueType() == ConfigValueType.LIST) {
-      return config.getStringList("additional-model-request-headers").stream()
-          .map(ModelProvider::parseHeaderEntry)
-          .collect(Collectors.toList());
-    } else {
-      // String value — split on commas (e.g. when set via environment variable)
-      return Arrays.stream(config.getString("additional-model-request-headers").split(","))
-          .map(String::trim)
-          .filter(entry -> !entry.isEmpty())
-          .map(ModelProvider::parseHeaderEntry)
-          .collect(Collectors.toList());
-    }
+    return config.getStringList("additional-model-request-headers").stream()
+        .map(ModelProvider::parseHeaderEntry)
+        .collect(Collectors.toList());
+
   }
 
   /**
