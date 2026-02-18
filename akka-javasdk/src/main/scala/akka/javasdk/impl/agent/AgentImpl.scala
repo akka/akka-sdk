@@ -104,6 +104,89 @@ private[impl] object AgentImpl {
     override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
   }
 
+  @tailrec
+  def toSpiModelProvider(modelProvider: ModelProvider, config: Config, componentId: String)(implicit
+      system: ActorSystem[_]): SpiAgent.ModelProvider = {
+    modelProvider match {
+      case p: ModelProvider.FromConfig =>
+        toSpiModelProvider(modelProviderFromConfig(config, p.configPath(), componentId), config, componentId)
+      case p: ModelProvider.Anthropic =>
+        new SpiAgent.ModelProvider.Anthropic(
+          apiKey = p.apiKey,
+          modelName = p.modelName,
+          baseUrl = p.baseUrl,
+          temperature = p.temperature,
+          topP = p.topP,
+          topK = p.topK,
+          maxTokens = p.maxTokens,
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
+          thinkingBudgetTokens = p.thinkingBudgetTokens)
+      case p: ModelProvider.GoogleAIGemini =>
+        new SpiAgent.ModelProvider.GoogleAIGemini(
+          p.apiKey(),
+          p.modelName(),
+          p.baseUrl(),
+          p.temperature(),
+          p.topP(),
+          p.maxOutputTokens(),
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
+          p.thinkingBudget.toScala.map(_.intValue()),
+          p.thinkingLevel)
+      case p: ModelProvider.HuggingFace =>
+        new SpiAgent.ModelProvider.HuggingFace(
+          p.accessToken(),
+          p.modelId(),
+          p.baseUrl(),
+          p.temperature(),
+          p.topP(),
+          p.maxNewTokens(),
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
+          p.thinking())
+      case p: ModelProvider.LocalAI =>
+        new SpiAgent.ModelProvider.LocalAI(p.baseUrl(), p.modelName(), p.temperature(), p.topP(), p.maxTokens())
+      case p: ModelProvider.Ollama =>
+        new SpiAgent.ModelProvider.Ollama(
+          p.baseUrl(),
+          p.modelName(),
+          p.temperature(),
+          p.topP(),
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
+          p.think)
+      case p: ModelProvider.OpenAi =>
+        new SpiAgent.ModelProvider.OpenAi(
+          apiKey = p.apiKey,
+          modelName = p.modelName,
+          baseUrl = p.baseUrl,
+          temperature = p.temperature,
+          topP = p.topP,
+          maxTokens = p.maxTokens,
+          maxCompletionTokens = p.maxCompletionTokens,
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
+          thinking = p.thinking)
+      case p: ModelProvider.Custom =>
+        new SpiAgent.ModelProvider.Custom(
+          providerName = p.getClass.getName,
+          modelName = p.modelName(),
+          createChatModel = () => p.createChatModel(),
+          createStreamingChatModel = () => p.createStreamingChatModel())
+      case p: ModelProvider.Bedrock =>
+        new SpiAgent.ModelProvider.Bedrock(
+          region = p.region,
+          modelId = p.modelId,
+          maxOutputTokens = p.maxOutputTokens,
+          reasoningTokenBudget = p.reasoningTokenBudget,
+          additionalModelRequestFields = p.additionalModelRequestFields.asScala.toMap,
+          accessToken = p.accessToken,
+          temperature = p.temperature,
+          topP = p.topP,
+          maxTokens = p.maxTokens,
+          modelSettings = new SpiAgent.ModelSettings(
+            FiniteDuration.apply(30, TimeUnit.SECONDS),
+            p.responseTimeout().toScala,
+            p.maxRetries()))
+    }
+  }
+
   def modelProviderFromConfig(config: Config, configPath: String, componentId: String)(implicit
       system: ActorSystem[_]): ModelProvider = {
     val actualPath =
@@ -171,6 +254,87 @@ private[impl] object AgentImpl {
       }
       .get
   }
+
+  def toSpiContextMessages(sessionHistory: SessionHistory): Vector[SpiAgent.ContextMessage] = {
+    import scala.jdk.CollectionConverters._
+
+    sessionHistory
+      .messages()
+      .asScala
+      .map {
+        case m: AiMessage =>
+          val toolRequests = m
+            .toolCallRequests()
+            .asScala
+            .map { req =>
+              new SpiAgent.ToolCallRequest(req.id(), req.name(), req.arguments())
+            }
+            .toSeq
+          new SpiAgent.ContextMessage.AiMessage(
+            m.text(),
+            toolRequests,
+            m.thinking().toScala,
+            m.attributes().asScala.toMap)
+        case m: UserMessage =>
+          new SpiAgent.ContextMessage.UserMessage(m.text())
+
+        case m: MultimodalUserMessage =>
+          val contents = m
+            .contents()
+            .asScala
+            .map {
+              case content: SessionMessage.MessageContent.TextMessageContent =>
+                new SpiAgent.TextMessageContent(content.text())
+              case content: SessionMessage.MessageContent.ImageUriMessageContent =>
+                new SpiAgent.ImageUriMessageContent(
+                  URI.create(content.uri()),
+                  toSpiDetailLevel(content.detailLevel()),
+                  content.mimeType().toScala)
+              case content: SessionMessage.MessageContent.PdfUriMessageContent =>
+                new SpiAgent.PdfUriMessageContent(URI.create(content.uri()))
+            }
+            .toSeq
+          new SpiAgent.ContextMessage.UserMessage(contents)
+        case m: ToolCallResponse =>
+          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), m.text())
+        case m =>
+          throw new IllegalStateException("Unsupported message type " + m.getClass.getName)
+      }
+      .toVector
+  }
+
+  private def toSpiMessageContent(messageContent: MessageContent): SpiAgent.MessageContent = {
+    messageContent match {
+      case content: MessageContent.TextMessageContent =>
+        new SpiAgent.TextMessageContent(content.text())
+      case content: MessageContent.ImageUrlMessageContent =>
+        new SpiAgent.ImageUriMessageContent(
+          content.url().toURI,
+          toSpiDetailLevel(content.detailLevel()),
+          content.mimeType().toScala)
+      case content: MessageContent.PdfUrlMessageContent =>
+        new SpiAgent.PdfUriMessageContent(content.url().toURI)
+    }
+  }
+
+  private def toSpiDetailLevel(level: ImageMessageContent.DetailLevel): SpiAgent.ImageMessageContent.DetailLevel = {
+    level match {
+      case ImageMessageContent.DetailLevel.LOW        => SpiAgent.ImageMessageContent.Low
+      case ImageMessageContent.DetailLevel.MEDIUM     => SpiAgent.ImageMessageContent.Medium
+      case ImageMessageContent.DetailLevel.HIGH       => SpiAgent.ImageMessageContent.High
+      case ImageMessageContent.DetailLevel.ULTRA_HIGH => SpiAgent.ImageMessageContent.UltraHigh
+      case ImageMessageContent.DetailLevel.AUTO       => SpiAgent.ImageMessageContent.Auto
+    }
+  }
+
+  def fromSpiDetailLevel(level: SpiAgent.ImageMessageContent.DetailLevel): ImageMessageContent.DetailLevel =
+    level match {
+      case SpiAgent.ImageMessageContent.Low       => ImageMessageContent.DetailLevel.LOW
+      case SpiAgent.ImageMessageContent.Medium    => ImageMessageContent.DetailLevel.MEDIUM
+      case SpiAgent.ImageMessageContent.High      => ImageMessageContent.DetailLevel.HIGH
+      case SpiAgent.ImageMessageContent.UltraHigh => ImageMessageContent.DetailLevel.ULTRA_HIGH
+      case SpiAgent.ImageMessageContent.Auto      => ImageMessageContent.DetailLevel.AUTO
+    }
 
 }
 
@@ -346,39 +510,6 @@ private[impl] final class AgentImpl[A <: Agent](
     new SpiAgent.UserMessage(contents.toSeq)
   }
 
-  private def toSpiMessageContent(messageContent: MessageContent): SpiAgent.MessageContent = {
-    messageContent match {
-      case content: MessageContent.TextMessageContent =>
-        new SpiAgent.TextMessageContent(content.text())
-      case content: MessageContent.ImageUrlMessageContent =>
-        new SpiAgent.ImageUriMessageContent(
-          content.url().toURI,
-          toSpiDetailLevel(content.detailLevel()),
-          content.mimeType().toScala)
-      case content: MessageContent.PdfUrlMessageContent =>
-        new SpiAgent.PdfUriMessageContent(content.url().toURI)
-    }
-  }
-
-  private def toSpiDetailLevel(level: ImageMessageContent.DetailLevel): SpiAgent.ImageMessageContent.DetailLevel = {
-    level match {
-      case ImageMessageContent.DetailLevel.LOW        => SpiAgent.ImageMessageContent.Low
-      case ImageMessageContent.DetailLevel.MEDIUM     => SpiAgent.ImageMessageContent.Medium
-      case ImageMessageContent.DetailLevel.HIGH       => SpiAgent.ImageMessageContent.High
-      case ImageMessageContent.DetailLevel.ULTRA_HIGH => SpiAgent.ImageMessageContent.UltraHigh
-      case ImageMessageContent.DetailLevel.AUTO       => SpiAgent.ImageMessageContent.Auto
-    }
-  }
-
-  private def fromSpiDetailLevel(level: SpiAgent.ImageMessageContent.DetailLevel): ImageMessageContent.DetailLevel =
-    level match {
-      case SpiAgent.ImageMessageContent.Low       => ImageMessageContent.DetailLevel.LOW
-      case SpiAgent.ImageMessageContent.Medium    => ImageMessageContent.DetailLevel.MEDIUM
-      case SpiAgent.ImageMessageContent.High      => ImageMessageContent.DetailLevel.HIGH
-      case SpiAgent.ImageMessageContent.UltraHigh => ImageMessageContent.DetailLevel.ULTRA_HIGH
-      case SpiAgent.ImageMessageContent.Auto      => ImageMessageContent.DetailLevel.AUTO
-    }
-
   private def toSpiContentLoader(javaImageLoader: ContentLoader): SpiAgent.SpiContentLoader =
     new SpiAgent.SpiContentLoader {
       override def implementationClassName: String = javaImageLoader.getClass.getName
@@ -516,54 +647,6 @@ private[impl] final class AgentImpl[A <: Agent](
     }
   }
 
-  private def toSpiContextMessages(sessionHistory: SessionHistory): Vector[SpiAgent.ContextMessage] = {
-    import scala.jdk.CollectionConverters._
-
-    sessionHistory
-      .messages()
-      .asScala
-      .map {
-        case m: AiMessage =>
-          val toolRequests = m
-            .toolCallRequests()
-            .asScala
-            .map { req =>
-              new SpiAgent.ToolCallRequest(req.id(), req.name(), req.arguments())
-            }
-            .toSeq
-          new SpiAgent.ContextMessage.AiMessage(
-            m.text(),
-            toolRequests,
-            m.thinking().toScala,
-            m.attributes().asScala.toMap)
-        case m: UserMessage =>
-          new SpiAgent.ContextMessage.UserMessage(m.text())
-
-        case m: MultimodalUserMessage =>
-          val contents = m
-            .contents()
-            .asScala
-            .map {
-              case content: SessionMessage.MessageContent.TextMessageContent =>
-                new SpiAgent.TextMessageContent(content.text())
-              case content: SessionMessage.MessageContent.ImageUriMessageContent =>
-                new SpiAgent.ImageUriMessageContent(
-                  URI.create(content.uri()),
-                  toSpiDetailLevel(content.detailLevel()),
-                  content.mimeType().toScala)
-              case content: SessionMessage.MessageContent.PdfUriMessageContent =>
-                new SpiAgent.PdfUriMessageContent(URI.create(content.uri()))
-            }
-            .toSeq
-          new SpiAgent.ContextMessage.UserMessage(contents)
-        case m: ToolCallResponse =>
-          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), m.text())
-        case m =>
-          throw new IllegalStateException("Unsupported message type " + m.getClass.getName)
-      }
-      .toVector
-  }
-
   private def mapSpiAgentException(func: Throwable => Any): Throwable => Any = {
 
     @nowarn("msg=deprecated")
@@ -607,88 +690,9 @@ private[impl] final class AgentImpl[A <: Agent](
     (throwable: Throwable) => func(convert(throwable))
   }
 
-  @tailrec
   @nowarn("msg=deprecated") //TODO remove me after merging https://github.com/akka/akka-sdk/pull/1326
-  private def toSpiModelProvider(modelProvider: ModelProvider): SpiAgent.ModelProvider = {
-    modelProvider match {
-      case p: ModelProvider.FromConfig =>
-        toSpiModelProvider(modelProviderFromConfig(config, p.configPath(), componentId))
-      case p: ModelProvider.Anthropic =>
-        new SpiAgent.ModelProvider.Anthropic(
-          apiKey = p.apiKey,
-          modelName = p.modelName,
-          baseUrl = p.baseUrl,
-          temperature = p.temperature,
-          topP = p.topP,
-          topK = p.topK,
-          maxTokens = p.maxTokens,
-          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
-          thinkingBudgetTokens = p.thinkingBudgetTokens)
-      case p: ModelProvider.GoogleAIGemini =>
-        new SpiAgent.ModelProvider.GoogleAIGemini(
-          p.apiKey(),
-          p.modelName(),
-          p.baseUrl(),
-          p.temperature(),
-          p.topP(),
-          p.maxOutputTokens(),
-          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
-          p.thinkingBudget.toScala.map(_.intValue()),
-          p.thinkingLevel)
-      case p: ModelProvider.HuggingFace =>
-        new SpiAgent.ModelProvider.HuggingFace(
-          p.accessToken(),
-          p.modelId(),
-          p.baseUrl(),
-          p.temperature(),
-          p.topP(),
-          p.maxNewTokens(),
-          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
-          p.thinking())
-      case p: ModelProvider.LocalAI =>
-        new SpiAgent.ModelProvider.LocalAI(p.baseUrl(), p.modelName(), p.temperature(), p.topP(), p.maxTokens())
-      case p: ModelProvider.Ollama =>
-        new SpiAgent.ModelProvider.Ollama(
-          p.baseUrl(),
-          p.modelName(),
-          p.temperature(),
-          p.topP(),
-          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
-          p.think)
-      case p: ModelProvider.OpenAi =>
-        new SpiAgent.ModelProvider.OpenAi(
-          apiKey = p.apiKey,
-          modelName = p.modelName,
-          baseUrl = p.baseUrl,
-          temperature = p.temperature,
-          topP = p.topP,
-          maxTokens = p.maxTokens,
-          maxCompletionTokens = p.maxCompletionTokens,
-          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
-          thinking = p.thinking)
-      case p: ModelProvider.Custom =>
-        new SpiAgent.ModelProvider.Custom(
-          providerName = p.getClass.getName,
-          modelName = p.modelName(),
-          createChatModel = () => p.createChatModel(),
-          createStreamingChatModel = () => p.createStreamingChatModel())
-      case p: ModelProvider.Bedrock =>
-        new SpiAgent.ModelProvider.Bedrock(
-          region = p.region,
-          modelId = p.modelId,
-          maxOutputTokens = p.maxOutputTokens,
-          reasoningTokenBudget = p.reasoningTokenBudget,
-          additionalModelRequestFields = p.additionalModelRequestFields.asScala.toMap,
-          accessToken = p.accessToken,
-          temperature = p.temperature,
-          topP = p.topP,
-          maxTokens = p.maxTokens,
-          modelSettings = new SpiAgent.ModelSettings(
-            FiniteDuration.apply(30, TimeUnit.SECONDS),
-            p.responseTimeout().toScala,
-            p.maxRetries()))
-    }
-  }
+  private def toSpiModelProvider(modelProvider: ModelProvider): SpiAgent.ModelProvider =
+    AgentImpl.toSpiModelProvider(modelProvider, config, componentId)
 
   override def serialize(message: Any): BytesPayload = {
     serializer.toBytesAsJson(message)

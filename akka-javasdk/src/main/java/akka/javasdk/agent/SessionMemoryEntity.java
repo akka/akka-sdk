@@ -251,14 +251,19 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
   }
 
   public Effect<Done> addInteraction(AddInteractionCmd cmd) {
-
-    var userMessageEvent =
-        new Event.UserMessageAdded(
-            cmd.userMessage.timestamp(),
-            cmd.userMessage.componentId(),
-            cmd.userMessage.text(),
-            cmd.userMessage.size());
-    return addInteraction(cmd.messages, cmd.userMessage.componentId(), userMessageEvent);
+    // userMessage may be null for partial interactions (e.g. a save point between a tool
+    // call request and the tool response, where there is no triggering user message)
+    if (cmd.userMessage == null) {
+      return addPartialInteraction(cmd.messages);
+    } else {
+      var userMessageEvent =
+          new Event.UserMessageAdded(
+              cmd.userMessage.timestamp(),
+              cmd.userMessage.componentId(),
+              cmd.userMessage.text(),
+              cmd.userMessage.size());
+      return addInteraction(cmd.messages, cmd.userMessage.componentId(), userMessageEvent);
+    }
   }
 
   private Effect<Done> addInteraction(
@@ -312,6 +317,49 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
         .persistAll(allEventsWithSize)
         .updateReplicationFilter(selfRegionFilter)
         .thenReply(__ -> done());
+  }
+
+  // partial interaction without userMessage (e.g. a save point between a tool
+  // call request and the tool response, where there is no triggering user message
+  private Effect<Done> addPartialInteraction(List<SessionMessage> messages) {
+    var allEvents = createEvents(messages);
+    var allEventsWithSize = updateHistorySize(allEvents);
+
+    return effects()
+        .persistAll(allEventsWithSize)
+        .updateReplicationFilter(selfRegionFilter)
+        .thenReply(__ -> done());
+  }
+
+  private List<Event> createEvents(List<SessionMessage> messages) {
+    return messages.stream()
+        .map(
+            msg ->
+                (Event)
+                    switch (msg) {
+                      case AiMessage aiMessage ->
+                          new Event.AiMessageAdded(
+                              aiMessage.timestamp(),
+                              aiMessage.componentId(),
+                              aiMessage.text(),
+                              aiMessage.size(),
+                              0L, // filled in later
+                              aiMessage.toolCallRequests(),
+                              aiMessage.thinking(),
+                              aiMessage.attributes());
+
+                      case ToolCallResponse toolCallResponse ->
+                          new Event.ToolResponseMessageAdded(
+                              toolCallResponse.timestamp(),
+                              toolCallResponse.componentId(),
+                              toolCallResponse.id(),
+                              toolCallResponse.name(),
+                              toolCallResponse.text(),
+                              toolCallResponse.size());
+
+                      default -> throw new IllegalArgumentException("Unsupported message: " + msg);
+                    })
+        .toList();
   }
 
   public record GetHistoryCmd(Optional<Integer> lastNMessages, List<MemoryFilter> memoryFilters) {

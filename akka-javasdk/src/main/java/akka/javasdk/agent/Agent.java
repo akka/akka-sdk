@@ -100,6 +100,28 @@ public abstract class Agent {
     this.context = context;
   }
 
+  private volatile Object _agentTeamInput;
+
+  /**
+   * INTERNAL API
+   *
+   * @hidden
+   */
+  @InternalApi
+  public void _internalSetInput(Object input) {
+    this._agentTeamInput = input;
+  }
+
+  /**
+   * INTERNAL API
+   *
+   * @hidden
+   */
+  @InternalApi
+  public Object _getAgentTeamInput() {
+    return this._agentTeamInput;
+  }
+
   public final Effect.Builder effects() {
     return new BaseAgentEffectBuilder<>();
   }

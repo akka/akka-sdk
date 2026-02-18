@@ -65,6 +65,7 @@ import akka.javasdk.impl.SdkRunner.extractSpiSettings
 import akka.javasdk.impl.agent.AgentImpl
 import akka.javasdk.impl.agent.AgentImpl.AgentContextImpl
 import akka.javasdk.impl.agent.AgentRegistryImpl
+import akka.javasdk.impl.agent.AgentTeamImpl
 import akka.javasdk.impl.agent.GuardrailProvider
 import akka.javasdk.impl.agent.OverrideModelProvider
 import akka.javasdk.impl.agent.PromptTemplateClient
@@ -710,31 +711,58 @@ private final class Sdk(
             guardrailEnabledForComponent.getOrElse(guardrailName, Set.empty) + componentId)
         }
 
-        val instanceFactory: SpiAgent.FactoryContext => SpiAgent = { factoryContext =>
-          new AgentImpl(
-            componentId,
-            factoryContext.sessionId,
-            context =>
-              wiredInstance(agentClass) {
-                (sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext)).orElse {
-                  // remember to update component type API doc and docs if changing the set of injectables
-                  case p if p == classOf[AgentContext] => context
-                }
-              },
-            sdkExecutionContext,
-            sdkTracerFactory,
-            serializer,
-            ComponentDescriptor.descriptorFor(agentClass, serializer),
-            regionInfo,
-            telemetryContext => new PromptTemplateClient(componentClient(telemetryContext)),
-            telemetryContext => componentClient(telemetryContext),
-            overrideModelProvider,
-            dependencyProviderOpt,
-            agentGuardrails,
-            applicationConfig,
-            system)
+        val agentCapabilities: Set[SpiAgent.AgentCapability] =
+          if (Reflect.isAgentTeam(clz)) {
+            Set(SpiAgent.AgentCapability.Team)
+          } else
+            Set.empty
 
-        }
+        val instanceFactory: SpiAgent.FactoryContext => SpiAgent =
+          if (agentCapabilities.contains(SpiAgent.AgentCapability.Team)) { factoryContext =>
+            new AgentTeamImpl(
+              componentId,
+              factoryContext.sessionId,
+              context =>
+                wiredInstance(agentClass) {
+                  (sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext)).orElse {
+                    // remember to update component type API doc and docs if changing the set of injectables
+                    case p if p == classOf[AgentContext] => context
+                  }
+                },
+              sdkExecutionContext,
+              sdkTracerFactory,
+              serializer,
+              regionInfo,
+              overrideModelProvider,
+              dependencyProviderOpt,
+              componentClient(None),
+              () => agentRegistry,
+              applicationConfig,
+              system)
+          } else { factoryContext =>
+            new AgentImpl(
+              componentId,
+              factoryContext.sessionId,
+              context =>
+                wiredInstance(agentClass) {
+                  (sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext)).orElse {
+                    // remember to update component type API doc and docs if changing the set of injectables
+                    case p if p == classOf[AgentContext] => context
+                  }
+                },
+              sdkExecutionContext,
+              sdkTracerFactory,
+              serializer,
+              ComponentDescriptor.descriptorFor(agentClass, serializer),
+              regionInfo,
+              telemetryContext => new PromptTemplateClient(componentClient(telemetryContext)),
+              telemetryContext => componentClient(telemetryContext),
+              overrideModelProvider,
+              dependencyProviderOpt,
+              agentGuardrails,
+              applicationConfig,
+              system)
+          }
 
         agentDescriptors :+=
           new AgentDescriptor(
@@ -744,7 +772,8 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             evaluator = Reflect.isEvaluatorAgent(clz),
-            provided = isProvided(clz))
+            provided = isProvided(clz),
+            agentCapabilities = agentCapabilities)
 
         agentRegistryInfo :+= AgentRegistryImpl.agentDetailsFor(agentClass)
 
