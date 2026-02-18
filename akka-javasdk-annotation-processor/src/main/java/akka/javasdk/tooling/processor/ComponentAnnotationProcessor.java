@@ -118,7 +118,7 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
 
     return COMPONENT_DESCRIPTOR_FILE_PREFIX
         + groupId
-        + "-"
+        + "_"
         + artifactId
         + COMPONENT_DESCRIPTOR_FILE_SUFFIX;
   }
