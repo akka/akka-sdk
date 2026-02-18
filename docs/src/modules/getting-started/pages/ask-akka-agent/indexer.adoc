@@ -1,5 +1,5 @@
 = Knowledge indexing with a workflow
-:page-aliases: java:ask-akka/indexer.adoc
+:page-aliases: java:ask-akka/indexer.adoc, sdk:ask-akka/indexer.adoc
 
 include::ROOT:partial$include.adoc[]
 

@@ -1,5 +1,5 @@
 = Build your first agent
-:page-aliases: java:build-your-first-application.adoc, java:author-your-first-service.adoc
+:page-aliases: java:build-your-first-application.adoc, java:author-your-first-service.adoc, sdk:author-your-first-service.adoc
 
 include::ROOT:partial$include.adoc[]
 

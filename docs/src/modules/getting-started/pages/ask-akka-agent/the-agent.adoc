@@ -1,5 +1,5 @@
 = Creating the agent
-:page-aliases: java:ask-akka/session.adoc
+:page-aliases: java:ask-akka/session.adoc, sdk:ask-akka/session.adoc
 
 include::ROOT:partial$include.adoc[]
 
