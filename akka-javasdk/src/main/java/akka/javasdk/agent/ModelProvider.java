@@ -7,13 +7,8 @@ package akka.javasdk.agent;
 import akka.http.javadsl.model.HttpHeader;
 import akka.http.javadsl.model.headers.RawHeader;
 import com.typesafe.config.Config;
-import com.typesafe.config.ConfigValueType;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -28,9 +23,7 @@ import java.util.stream.Collectors;
  */
 public sealed interface ModelProvider {
 
-  /**
-   * Parses a single {@code "name:value"} header entry
-   */
+  /** Parses a single {@code "name:value"} header entry */
   private static HttpHeader parseHeaderEntry(String entry) {
     int colonIdx = entry.indexOf(':');
     if (colonIdx < 0)
@@ -39,11 +32,26 @@ public sealed interface ModelProvider {
     return RawHeader.create(entry.substring(0, colonIdx), entry.substring(colonIdx + 1));
   }
 
-  private static List<HttpHeader> headersFromConfig(Config config) {
-    return config.getStringList("additional-model-request-headers").stream()
-        .map(ModelProvider::parseHeaderEntry)
-        .collect(Collectors.toList());
+  private static List<HttpHeader> additionalModelRequestHeadersFromEnv() {
+    List<HttpHeader> headers = new ArrayList<>();
+    while (true) {
+      var envValue = System.getenv("AKKA_AGENT_ADDITIONAL_MODEL_REQUEST_HEADERS_" + headers.size());
+      if (envValue != null) {
+        headers.add(parseHeaderEntry(envValue));
+      } else {
+        return headers;
+      }
+    }
+  }
 
+  private static List<HttpHeader> headersFromConfig(Config config) {
+    if (System.getenv().containsKey("AKKA_AGENT_ADDITIONAL_MODEL_REQUEST_HEADERS_0")) {
+      return additionalModelRequestHeadersFromEnv();
+    } else {
+      return config.getStringList("additional-model-request-headers").stream()
+          .map(ModelProvider::parseHeaderEntry)
+          .collect(Collectors.toList());
+    }
   }
 
   /**
