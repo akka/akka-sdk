@@ -505,7 +505,7 @@
                                         <condition property="descriptor.missing">
                                             <resourcecount count="0">
                                                 <fileset dir="target/classes/META-INF"
-                                                         includes="akka-javasdk-components-${project.groupId}-${project.artifactId}.conf"
+                                                         includes="akka-javasdk-components_${project.groupId}_${project.artifactId}.conf"
                                                          erroronmissingdir="false"/>
                                             </resourcecount>
                                         </condition>

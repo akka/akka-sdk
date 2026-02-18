@@ -46,7 +46,7 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
 
   // Base path for descriptor files - artifact coordinates are appended
   private static final String COMPONENT_DESCRIPTOR_FILE_PREFIX =
-      "META-INF/akka-javasdk-components-";
+      "META-INF/akka-javasdk-components_";
   private static final String COMPONENT_DESCRIPTOR_FILE_SUFFIX = ".conf";
 
   // parent path in hoconf
