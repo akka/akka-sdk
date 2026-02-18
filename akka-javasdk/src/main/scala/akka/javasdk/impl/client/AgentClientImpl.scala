@@ -29,7 +29,10 @@ import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.AgentRequest
 import akka.runtime.sdk.spi.AgentType
 import akka.runtime.sdk.spi.BytesPayload
+import akka.runtime.sdk.spi.EntityRequest
+import akka.runtime.sdk.spi.WorkflowType
 import akka.runtime.sdk.spi.{ AgentClient => RuntimeAgentClient }
+import akka.runtime.sdk.spi.{ EntityClient => RuntimeEntityClient }
 
 /**
  * INTERNAL API
@@ -44,15 +47,15 @@ private[javasdk] object AgentClientImpl {
       declaringClass: Class[_])
 
   private def validateAndExtractAgentMethodProperties(lambda: AnyRef): AgentMethodProperties = {
-    val method = MethodRefResolver.resolveMethodRef(lambda)
-    val declaringClass = method.getDeclaringClass
+    val methodRefInfo = MethodRefResolver.resolveMethodRefInfo(lambda)
+    import methodRefInfo._
     val expectedComponentSuperclass: Class[_] = classOf[Agent]
-    if (!expectedComponentSuperclass.isAssignableFrom(declaringClass)) {
-      throw new IllegalArgumentException(s"$declaringClass is not a subclass of $expectedComponentSuperclass")
+    if (!expectedComponentSuperclass.isAssignableFrom(componentClass)) {
+      throw new IllegalArgumentException(s"$componentClass is not a subclass of $expectedComponentSuperclass")
     }
-    val componentId = ComponentDescriptorFactory.readComponentIdValue(declaringClass)
+    val componentId = ComponentDescriptorFactory.readComponentIdValue(componentClass)
     val methodName = method.getName.capitalize
-    AgentMethodProperties(componentId, method, methodName, declaringClass)
+    AgentMethodProperties(componentId, method, methodName, componentClass)
   }
 
 }
@@ -63,6 +66,7 @@ private[javasdk] object AgentClientImpl {
 @InternalApi
 private[javasdk] final case class AgentClientImpl(
     agentClient: RuntimeAgentClient,
+    workflowClient: RuntimeEntityClient,
     serializer: JsonSerializer,
     callMetadata: Option[Metadata],
     agentClassById: Map[String, Class[Agent]],
@@ -74,7 +78,7 @@ private[javasdk] final case class AgentClientImpl(
   override def inSession(sessionId: String): AgentClientInSession = {
     if ((sessionId eq null) || sessionId.trim.isBlank)
       throw new IllegalArgumentException("sessionId must be defined")
-    AgentClientImpl(agentClient, serializer, callMetadata, agentClassById, sessionId)
+    AgentClientImpl(agentClient, workflowClient, serializer, callMetadata, agentClassById, sessionId)
   }
 
   override def method[T, R](methodRef: function.Function[T, Agent.Effect[R]]): ComponentMethodRef[R] =
@@ -97,58 +101,101 @@ private[javasdk] final case class AgentClientImpl(
     import agentMethodProperties._
     val returnType = Reflect.getReturnType(declaringClass, agentMethodProperties.method)
 
-    // FIXME push some of this logic into the NativeomponentMethodRef
-    //       will be easier to follow to do that instead of creating a lambda here and injecting into that
-    new ComponentMethodRefImpl[AnyRef, R](
-      optionalId = None,
-      callMetadata,
-      { (maybeMetadata, maybeRetrySetting, maybeArg) =>
-        // Note: same path for 0 and 1 arg calls
-        val serializedPayload = maybeArg match {
-          case Some(arg) =>
-            // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-            serializer.toBytes(arg)
-          case None =>
-            BytesPayload.empty
-        }
+    if (Reflect.isDelegativeAgent(declaringClass)) {
+      // Delegative agents are backed by a Workflow. The sessionId is the workflow entity ID.
+      new ComponentMethodRefImpl[AnyRef, R](
+        optionalId = None,
+        callMetadata,
+        { (maybeMetadata, maybeRetrySetting, maybeArg) =>
+          val serializedPayload = maybeArg match {
+            case Some(arg) => serializer.toBytes(arg)
+            case None      => BytesPayload.empty
+          }
 
-        DeferredCallImpl(
-          maybeArg.orNull,
-          maybeMetadata.getOrElse(Metadata.EMPTY).asInstanceOf[MetadataImpl],
-          AgentType,
-          componentId,
-          methodName,
-          entityId = None, {
-            def callAgent(metadata: Metadata) = {
-              agentClient
-                .send(new AgentRequest(componentId, sessionId, methodName, serializedPayload, toSpi(metadata)))
-                .map { reply =>
-                  reply.exceptionPayload match {
-                    case Some(value) =>
-                      //rethrowing to catch it on the component client invocation level
-                      throw serializer.exceptionFromBytes(value)
-                    case None =>
-                      // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-                      serializer.fromBytes[R](returnType, reply.payload)
-                  }
-                }
-            }
-            metadata =>
-              maybeRetrySetting match {
-                case Some(retrySetting) =>
-                  akka.pattern
-                    .retry(retrySetting) { () =>
-                      callAgent(metadata)
+          DeferredCallImpl(
+            maybeArg.orNull,
+            maybeMetadata.getOrElse(Metadata.EMPTY).asInstanceOf[MetadataImpl],
+            WorkflowType,
+            componentId,
+            methodName,
+            entityId = Some(sessionId), {
+              def callWorkflow(metadata: Metadata) = {
+                workflowClient
+                  .send(new EntityRequest(componentId, sessionId, methodName, serializedPayload, toSpi(metadata)))
+                  .map { reply =>
+                    reply.exceptionPayload match {
+                      case Some(value) => throw serializer.exceptionFromBytes(value)
+                      case None =>
+                        if (reply.payload.isEmpty) null.asInstanceOf[R]
+                        else serializer.fromBytes[R](returnType, reply.payload)
                     }
-                    .asJava
-                case None => callAgent(metadata).asJava
+                  }
               }
-          },
-          serializer)
-      },
-      canBeDeferred = false)
-      .asInstanceOf[ComponentMethodRefImpl[A1, R]]
+              metadata =>
+                maybeRetrySetting match {
+                  case Some(retrySetting) =>
+                    akka.pattern.retry(retrySetting) { () => callWorkflow(metadata) }.asJava
+                  case None => callWorkflow(metadata).asJava
+                }
+            },
+            serializer)
+        },
+        canBeDeferred = false)
+        .asInstanceOf[ComponentMethodRefImpl[A1, R]]
 
+    } else {
+      // FIXME push some of this logic into the NativeComponentMethodRef
+      //       will be easier to follow to do that instead of creating a lambda here and injecting into that
+      new ComponentMethodRefImpl[AnyRef, R](
+        optionalId = None,
+        callMetadata,
+        { (maybeMetadata, maybeRetrySetting, maybeArg) =>
+          // Note: same path for 0 and 1 arg calls
+          val serializedPayload = maybeArg match {
+            case Some(arg) =>
+              // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
+              serializer.toBytes(arg)
+            case None =>
+              BytesPayload.empty
+          }
+
+          DeferredCallImpl(
+            maybeArg.orNull,
+            maybeMetadata.getOrElse(Metadata.EMPTY).asInstanceOf[MetadataImpl],
+            AgentType,
+            componentId,
+            methodName,
+            entityId = None, {
+              def callAgent(metadata: Metadata) = {
+                agentClient
+                  .send(new AgentRequest(componentId, sessionId, methodName, serializedPayload, toSpi(metadata)))
+                  .map { reply =>
+                    reply.exceptionPayload match {
+                      case Some(value) =>
+                        //rethrowing to catch it on the component client invocation level
+                        throw serializer.exceptionFromBytes(value)
+                      case None =>
+                        // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
+                        serializer.fromBytes[R](returnType, reply.payload)
+                    }
+                  }
+              }
+              metadata =>
+                maybeRetrySetting match {
+                  case Some(retrySetting) =>
+                    akka.pattern
+                      .retry(retrySetting) { () =>
+                        callAgent(metadata)
+                      }
+                      .asJava
+                  case None => callAgent(metadata).asJava
+                }
+            },
+            serializer)
+        },
+        canBeDeferred = false)
+        .asInstanceOf[ComponentMethodRefImpl[A1, R]]
+    }
   }
 
   override def tokenStream[T](methodRef: function.Function[T, Agent.StreamEffect]): ComponentStreamMethodRef[String] = {
