@@ -32,6 +32,10 @@ public class AgentValidations {
       return Validation.Valid.instance();
     }
 
+    if (typeDef.implementsInterface("akka.javasdk.agent.Delegative")) {
+      return mustHaveValidAgentDescription(typeDef).combine(mustHaveNoCommandHandlers(typeDef));
+    }
+
     return mustHaveValidAgentDescription(typeDef)
         .combine(hasEffectMethod(typeDef, effectTypes))
         .combine(mustHaveSinglePublicCommandHandler(typeDef))
@@ -114,6 +118,36 @@ public class AgentValidations {
     }
 
     return Validation.of(errors);
+  }
+
+  /**
+   * Validates that a Delegative Agent has no command handlers.
+   *
+   * @param typeDef the Delegative Agent class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation mustHaveNoCommandHandlers(TypeDef typeDef) {
+    int count = 0;
+
+    for (MethodDef method : typeDef.getPublicMethods()) {
+      String returnTypeName = method.getReturnType().getQualifiedName();
+      if (Arrays.stream(effectTypes).anyMatch(returnTypeName::startsWith)) {
+        count++;
+      }
+    }
+
+    if (count == 0) {
+      return Validation.Valid.instance();
+    } else {
+      return Validation.of(
+          Validations.errorMessage(
+              typeDef,
+              typeDef.getSimpleName()
+                  + " implements Delegative and has "
+                  + count
+                  + " command handler(s). Delegative agents must not have public methods returning"
+                  + " Agent.Effect or Agent.StreamEffect."));
+    }
   }
 
   /**

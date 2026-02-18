@@ -115,6 +115,25 @@ public record CompileTimeTypeDef(TypeElement typeElement) implements TypeDef {
   }
 
   @Override
+  public boolean implementsInterface(String interfaceName) {
+    for (TypeMirror iface : typeElement.getInterfaces()) {
+      String ifaceName = iface.toString();
+      if (ifaceName.equals(interfaceName) || ifaceName.startsWith(interfaceName + "<")) {
+        return true;
+      }
+    }
+    // Check recursively up the class hierarchy
+    TypeMirror superclass = typeElement.getSuperclass();
+    if (superclass instanceof DeclaredType declaredType) {
+      Element superElement = declaredType.asElement();
+      if (superElement instanceof TypeElement superType) {
+        return new CompileTimeTypeDef(superType).implementsInterface(interfaceName);
+      }
+    }
+    return false;
+  }
+
+  @Override
   public List<TypeRefDef> getPermittedSubclasses() {
     if (!isSealed()) {
       return Collections.emptyList();
