@@ -21,6 +21,7 @@ import scala.reflect.ClassTag
 import akka.Done
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
+import akka.javasdk.agent.Delegative
 import akka.javasdk.agent.EvaluationResult
 import akka.javasdk.annotations.AgentDescription
 import akka.javasdk.annotations.AgentRole
@@ -434,6 +435,10 @@ private[impl] object Reflect {
     agentRoleAnn
       .map(_.value())
       .orElse(agentDescAnno.map(_.role()))
+  }
+
+  def isDelegativeAgent(agentClass: Class[_]): Boolean = {
+    isAgent(agentClass) && classOf[Delegative[_, _]].isAssignableFrom(agentClass)
   }
 
 }

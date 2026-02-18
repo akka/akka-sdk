@@ -108,6 +108,7 @@ import akka.runtime.sdk.spi.RemoteIdentification
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiComponents
 import akka.runtime.sdk.spi.SpiConfiguredGuardrail
+import akka.runtime.sdk.spi.SpiDelegativeAgent
 import akka.runtime.sdk.spi.SpiDeployedEventingSettings
 import akka.runtime.sdk.spi.SpiDevModeSettings
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
@@ -713,6 +714,15 @@ private final class Sdk(
 
         }
 
+        val multiAgentCapability: Option[SpiAgent.MultiAgentCapability] =
+          if (Reflect.isDelegativeAgent(clz)) {
+            val delegativeAgentFactory: SpiDelegativeAgent.FactoryContext => SpiDelegativeAgent = { factoryContext =>
+              instanceFactory(new SpiAgent.FactoryContext(factoryContext.sessionId)).asInstanceOf[SpiDelegativeAgent]
+            }
+            Some(new SpiAgent.DelegativeCapability(delegativeAgentFactory))
+          } else
+            None
+
         agentDescriptors :+=
           new AgentDescriptor(
             componentId,
@@ -721,7 +731,8 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             evaluator = Reflect.isEvaluatorAgent(clz),
-            provided = isProvided(clz))
+            provided = isProvided(clz),
+            multiAgentCapability = multiAgentCapability)
 
         agentRegistryInfo :+= AgentRegistryImpl.agentDetailsFor(agentClass)
 
