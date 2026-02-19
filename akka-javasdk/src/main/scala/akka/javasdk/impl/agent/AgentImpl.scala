@@ -263,7 +263,7 @@ private[impl] final class AgentImpl[A <: Agent](
             val userMessageAt = Instant.now()
 
             val agentRole = Reflect.readAgentRole(agent.getClass)
-            val spiImageLoader = req.contentLoader.map(toSpiImageLoader)
+            val spiContentLoader = req.contentLoader.map(toSpiContentLoader)
             new SpiAgent.RequestModelEffect(
               modelProvider = spiModelProvider,
               systemMessage = systemMessage,
@@ -280,7 +280,7 @@ private[impl] final class AgentImpl[A <: Agent](
               onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, userMessageAt, agentRole, results),
               requestGuardrails = guardrails.modelRequestGuardrails,
               responseGuardrails = guardrails.modelResponseGuardrails,
-              contentLoader = spiImageLoader)
+              contentLoader = spiContentLoader)
 
           case NoPrimaryEffect =>
             errorOrReply match {
@@ -346,7 +346,7 @@ private[impl] final class AgentImpl[A <: Agent](
       case SpiAgent.ImageMessageContent.Auto      => ImageMessageContent.DetailLevel.AUTO
     }
 
-  private def toSpiImageLoader(javaImageLoader: ContentLoader): SpiAgent.SpiContentLoader =
+  private def toSpiContentLoader(javaImageLoader: ContentLoader): SpiAgent.SpiContentLoader =
     new SpiAgent.SpiContentLoader {
       override def implementationClassName: String = javaImageLoader.getClass.getName
 
