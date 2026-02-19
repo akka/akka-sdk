@@ -4,11 +4,12 @@
 
 package akka.javasdk.agent;
 
+import akka.http.javadsl.model.HttpHeader;
+import akka.http.javadsl.model.headers.RawHeader;
 import com.typesafe.config.Config;
 import java.time.Duration;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Configuration interface for AI model providers used by agents.
@@ -21,6 +22,37 @@ import java.util.Optional;
  * If no model is specified, the default model from configuration is used.
  */
 public sealed interface ModelProvider {
+
+  /** Parses a single {@code "name:value"} header entry */
+  private static HttpHeader parseHeaderEntry(String entry) {
+    int colonIdx = entry.indexOf(':');
+    if (colonIdx < 0)
+      throw new IllegalArgumentException(
+          "Invalid header format [" + entry + "], expected 'name:value'");
+    return RawHeader.create(entry.substring(0, colonIdx), entry.substring(colonIdx + 1));
+  }
+
+  private static List<HttpHeader> additionalModelRequestHeadersFromEnv() {
+    List<HttpHeader> headers = new ArrayList<>();
+    while (true) {
+      var envValue = System.getenv("AKKA_AGENT_ADDITIONAL_MODEL_REQUEST_HEADERS_" + headers.size());
+      if (envValue != null) {
+        headers.add(parseHeaderEntry(envValue));
+      } else {
+        return headers;
+      }
+    }
+  }
+
+  private static List<HttpHeader> headersFromConfig(Config config) {
+    if (System.getenv().containsKey("AKKA_AGENT_ADDITIONAL_MODEL_REQUEST_HEADERS_0")) {
+      return additionalModelRequestHeadersFromEnv();
+    } else {
+      return config.getStringList("additional-model-request-headers").stream()
+          .map(ModelProvider::parseHeaderEntry)
+          .collect(Collectors.toList());
+    }
+  }
 
   /**
    * Creates a model provider from the default configuration path.
@@ -61,7 +93,8 @@ public sealed interface ModelProvider {
         Duration.ofSeconds(15),
         Duration.ofMinutes(1),
         2,
-        0);
+        0,
+        List.of());
   }
 
   /** Settings for the Anthropic Large Language Model provider. */
@@ -101,7 +134,9 @@ public sealed interface ModelProvider {
       /** If the request fails, retry this many times. */
       int maxRetries,
       /** A maximum number of tokens to spend on thinking, use 0 to disable thinking */
-      int thinkingBudgetTokens)
+      int thinkingBudgetTokens,
+      /** Additional HTTP headers to include in each request to the model API */
+      List<HttpHeader> additionalModelRequestHeaders)
       implements ModelProvider {
 
     public static Anthropic fromConfig(Config config) {
@@ -116,7 +151,8 @@ public sealed interface ModelProvider {
           config.getDuration("connection-timeout"),
           config.getDuration("response-timeout"),
           config.getInt("max-retries"),
-          config.getInt("thinking-budget-tokens"));
+          config.getInt("thinking-budget-tokens"),
+          headersFromConfig(config));
     }
 
     public Anthropic withApiKey(String apiKey) {
@@ -131,7 +167,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          thinkingBudgetTokens);
+          thinkingBudgetTokens,
+          additionalModelRequestHeaders);
     }
 
     public Anthropic withModelName(String modelName) {
@@ -146,7 +183,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          thinkingBudgetTokens);
+          thinkingBudgetTokens,
+          additionalModelRequestHeaders);
     }
 
     public Anthropic withBaseUrl(String baseUrl) {
@@ -161,7 +199,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          thinkingBudgetTokens);
+          thinkingBudgetTokens,
+          additionalModelRequestHeaders);
     }
 
     public Anthropic withTemperature(double temperature) {
@@ -176,7 +215,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          thinkingBudgetTokens);
+          thinkingBudgetTokens,
+          additionalModelRequestHeaders);
     }
 
     public Anthropic withTopP(double topP) {
@@ -191,7 +231,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          thinkingBudgetTokens);
+          thinkingBudgetTokens,
+          additionalModelRequestHeaders);
     }
 
     public Anthropic withTopK(int topK) {
@@ -206,7 +247,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          thinkingBudgetTokens);
+          thinkingBudgetTokens,
+          additionalModelRequestHeaders);
     }
 
     public Anthropic withMaxTokens(int maxTokens) {
@@ -221,7 +263,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          thinkingBudgetTokens);
+          thinkingBudgetTokens,
+          additionalModelRequestHeaders);
     }
 
     public Anthropic withConnectionTimeout(Duration connectionTimeout) {
@@ -236,7 +279,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          thinkingBudgetTokens);
+          thinkingBudgetTokens,
+          additionalModelRequestHeaders);
     }
 
     public Anthropic withResponseTimeout(Duration responseTimeout) {
@@ -251,7 +295,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          thinkingBudgetTokens);
+          thinkingBudgetTokens,
+          additionalModelRequestHeaders);
     }
 
     public Anthropic withMaxRetries(int maxRetries) {
@@ -266,7 +311,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          thinkingBudgetTokens);
+          thinkingBudgetTokens,
+          additionalModelRequestHeaders);
     }
 
     public Anthropic withThinkingBudgetTokens(int thinkingBudgetTokens) {
@@ -281,7 +327,25 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          thinkingBudgetTokens);
+          thinkingBudgetTokens,
+          additionalModelRequestHeaders);
+    }
+
+    public Anthropic withAdditionalModelRequestHeaders(
+        List<HttpHeader> additionalModelRequestHeaders) {
+      return new Anthropic(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          topK,
+          maxTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          thinkingBudgetTokens,
+          additionalModelRequestHeaders);
     }
   }
 
@@ -298,7 +362,8 @@ public sealed interface ModelProvider {
         2,
         "",
         Optional.empty(),
-        "");
+        "",
+        List.of());
   }
 
   /** Settings for the Google AI Gemini Large Language Model provider. */
@@ -313,7 +378,9 @@ public sealed interface ModelProvider {
       int maxRetries,
       String baseUrl,
       Optional<Integer> thinkingBudget,
-      String thinkingLevel)
+      String thinkingLevel,
+      /** Additional HTTP headers to include in each request to the model API */
+      List<HttpHeader> additionalModelRequestHeaders)
       implements ModelProvider {
 
     /**
@@ -341,7 +408,8 @@ public sealed interface ModelProvider {
           maxRetries,
           "",
           Optional.empty(),
-          "");
+          "",
+          List.of());
     }
 
     public static GoogleAIGemini fromConfig(Config config) {
@@ -360,7 +428,8 @@ public sealed interface ModelProvider {
           config.getInt("max-retries"),
           config.getString("base-url"),
           thinkingBudget,
-          config.getString("thinking-level"));
+          config.getString("thinking-level"),
+          headersFromConfig(config));
     }
 
     public GoogleAIGemini withApiKey(String apiKey) {
@@ -375,7 +444,8 @@ public sealed interface ModelProvider {
           maxRetries,
           baseUrl,
           thinkingBudget,
-          thinkingLevel);
+          thinkingLevel,
+          additionalModelRequestHeaders);
     }
 
     public GoogleAIGemini withModelName(String modelName) {
@@ -390,7 +460,8 @@ public sealed interface ModelProvider {
           maxRetries,
           baseUrl,
           thinkingBudget,
-          thinkingLevel);
+          thinkingLevel,
+          additionalModelRequestHeaders);
     }
 
     public GoogleAIGemini withBaseUrl(String baseUrl) {
@@ -405,7 +476,8 @@ public sealed interface ModelProvider {
           maxRetries,
           baseUrl,
           thinkingBudget,
-          thinkingLevel);
+          thinkingLevel,
+          additionalModelRequestHeaders);
     }
 
     public GoogleAIGemini withTemperature(double temperature) {
@@ -420,7 +492,8 @@ public sealed interface ModelProvider {
           maxRetries,
           baseUrl,
           thinkingBudget,
-          thinkingLevel);
+          thinkingLevel,
+          additionalModelRequestHeaders);
     }
 
     public GoogleAIGemini withTopP(double topP) {
@@ -435,7 +508,8 @@ public sealed interface ModelProvider {
           maxRetries,
           baseUrl,
           thinkingBudget,
-          thinkingLevel);
+          thinkingLevel,
+          additionalModelRequestHeaders);
     }
 
     public GoogleAIGemini withMaxOutputTokens(int maxOutputTokens) {
@@ -450,7 +524,8 @@ public sealed interface ModelProvider {
           maxRetries,
           baseUrl,
           thinkingBudget,
-          thinkingLevel);
+          thinkingLevel,
+          additionalModelRequestHeaders);
     }
 
     public GoogleAIGemini withConnectionTimeout(Duration connectionTimeout) {
@@ -465,7 +540,8 @@ public sealed interface ModelProvider {
           maxRetries,
           baseUrl,
           thinkingBudget,
-          thinkingLevel);
+          thinkingLevel,
+          additionalModelRequestHeaders);
     }
 
     public GoogleAIGemini withResponseTimeout(Duration responseTimeout) {
@@ -480,7 +556,8 @@ public sealed interface ModelProvider {
           maxRetries,
           baseUrl,
           thinkingBudget,
-          thinkingLevel);
+          thinkingLevel,
+          additionalModelRequestHeaders);
     }
 
     public GoogleAIGemini withMaxRetries(int maxRetries) {
@@ -495,7 +572,8 @@ public sealed interface ModelProvider {
           maxRetries,
           baseUrl,
           thinkingBudget,
-          thinkingLevel);
+          thinkingLevel,
+          additionalModelRequestHeaders);
     }
 
     public GoogleAIGemini withThinkingBudget(Optional<Integer> thinkingBudget) {
@@ -510,7 +588,8 @@ public sealed interface ModelProvider {
           maxRetries,
           baseUrl,
           thinkingBudget,
-          thinkingLevel);
+          thinkingLevel,
+          additionalModelRequestHeaders);
     }
 
     public GoogleAIGemini withThinkingLevel(String thinkingLevel) {
@@ -525,17 +604,42 @@ public sealed interface ModelProvider {
           maxRetries,
           baseUrl,
           thinkingBudget,
-          thinkingLevel);
+          thinkingLevel,
+          additionalModelRequestHeaders);
+    }
+
+    public GoogleAIGemini withAdditionalModelRequestHeaders(
+        List<HttpHeader> additionalModelRequestHeaders) {
+      return new GoogleAIGemini(
+          apiKey,
+          modelName,
+          temperature,
+          topP,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          baseUrl,
+          thinkingBudget,
+          thinkingLevel,
+          additionalModelRequestHeaders);
     }
   }
 
   /** Settings for the Local AI Large Language Model provider. */
   static LocalAI localAI() {
-    return new LocalAI("http://localhost:8080/v1", "", Double.NaN, Double.NaN, -1);
+    return new LocalAI("http://localhost:8080/v1", "", Double.NaN, Double.NaN, -1, List.of());
   }
 
   /** Settings for the Local AI Large Language Model provider. */
-  record LocalAI(String baseUrl, String modelName, Double temperature, Double topP, int maxTokens)
+  record LocalAI(
+      String baseUrl,
+      String modelName,
+      Double temperature,
+      Double topP,
+      int maxTokens,
+      /** Additional HTTP headers to include in each request to the model API */
+      List<HttpHeader> additionalModelRequestHeaders)
       implements ModelProvider {
     public static LocalAI fromConfig(Config config) {
       return new LocalAI(
@@ -543,23 +647,34 @@ public sealed interface ModelProvider {
           config.getString("model-name"),
           config.getDouble("temperature"),
           config.getDouble("top-p"),
-          config.getInt("max-tokens"));
+          config.getInt("max-tokens"),
+          headersFromConfig(config));
     }
 
     public LocalAI withModelName(String modelName) {
-      return new LocalAI(baseUrl, modelName, temperature, topP, maxTokens);
+      return new LocalAI(
+          baseUrl, modelName, temperature, topP, maxTokens, additionalModelRequestHeaders);
     }
 
     public LocalAI withTemperature(double temperature) {
-      return new LocalAI(baseUrl, modelName, temperature, topP, maxTokens);
+      return new LocalAI(
+          baseUrl, modelName, temperature, topP, maxTokens, additionalModelRequestHeaders);
     }
 
     public LocalAI withTopP(double topP) {
-      return new LocalAI(baseUrl, modelName, temperature, topP, maxTokens);
+      return new LocalAI(
+          baseUrl, modelName, temperature, topP, maxTokens, additionalModelRequestHeaders);
     }
 
     public LocalAI withMaxTokens(int maxTokens) {
-      return new LocalAI(baseUrl, modelName, temperature, topP, maxTokens);
+      return new LocalAI(
+          baseUrl, modelName, temperature, topP, maxTokens, additionalModelRequestHeaders);
+    }
+
+    public LocalAI withAdditionalModelRequestHeaders(
+        List<HttpHeader> additionalModelRequestHeaders) {
+      return new LocalAI(
+          baseUrl, modelName, temperature, topP, maxTokens, additionalModelRequestHeaders);
     }
   }
 
@@ -573,7 +688,8 @@ public sealed interface ModelProvider {
         Duration.ofSeconds(15),
         Duration.ofMinutes(1),
         2,
-        false);
+        false,
+        List.of());
   }
 
   /** Settings for the Ollama Large Language Model provider. */
@@ -585,7 +701,9 @@ public sealed interface ModelProvider {
       Duration connectionTimeout,
       Duration responseTimeout,
       int maxRetries,
-      boolean think)
+      boolean think,
+      /** Additional HTTP headers to include in each request to the model API */
+      List<HttpHeader> additionalModelRequestHeaders)
       implements ModelProvider {
 
     public static Ollama fromConfig(Config config) {
@@ -597,7 +715,8 @@ public sealed interface ModelProvider {
           config.getDuration("connection-timeout"),
           config.getDuration("response-timeout"),
           config.getInt("max-retries"),
-          config.getBoolean("think"));
+          config.getBoolean("think"),
+          headersFromConfig(config));
     }
 
     public Ollama withBaseUrl(String baseUrl) {
@@ -609,7 +728,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          think);
+          think,
+          additionalModelRequestHeaders);
     }
 
     public Ollama withModelName(String modelName) {
@@ -621,7 +741,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          think);
+          think,
+          additionalModelRequestHeaders);
     }
 
     public Ollama withTemperature(double temperature) {
@@ -633,7 +754,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          think);
+          think,
+          additionalModelRequestHeaders);
     }
 
     public Ollama withTopP(double topP) {
@@ -645,7 +767,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          think);
+          think,
+          additionalModelRequestHeaders);
     }
 
     public Ollama withConnectionTimeout(Duration connectionTimeout) {
@@ -657,7 +780,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          think);
+          think,
+          additionalModelRequestHeaders);
     }
 
     public Ollama withResponseTimeout(Duration responseTimeout) {
@@ -669,7 +793,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          think);
+          think,
+          additionalModelRequestHeaders);
     }
 
     public Ollama withMaxRetries(int maxRetries) {
@@ -681,7 +806,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          think);
+          think,
+          additionalModelRequestHeaders);
     }
 
     public Ollama withThink(boolean think) {
@@ -693,7 +819,22 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          think);
+          think,
+          additionalModelRequestHeaders);
+    }
+
+    public Ollama withAdditionalModelRequestHeaders(
+        List<HttpHeader> additionalModelRequestHeaders) {
+      return new Ollama(
+          baseUrl,
+          modelName,
+          temperature,
+          topP,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          think,
+          additionalModelRequestHeaders);
     }
   }
 
@@ -710,7 +851,8 @@ public sealed interface ModelProvider {
         Duration.ofSeconds(15),
         Duration.ofMinutes(1),
         2,
-        false);
+        false,
+        List.of());
   }
 
   /** Settings for the OpenAI Large Language Model provider. */
@@ -743,7 +885,9 @@ public sealed interface ModelProvider {
       Duration connectionTimeout,
       Duration responseTimeout,
       int maxRetries,
-      boolean thinking)
+      boolean thinking,
+      /** Additional HTTP headers to include in each request to the model API */
+      List<HttpHeader> additionalModelRequestHeaders)
       implements ModelProvider {
 
     public static OpenAi fromConfig(Config config) {
@@ -758,7 +902,8 @@ public sealed interface ModelProvider {
           config.getDuration("connection-timeout"),
           config.getDuration("response-timeout"),
           config.getInt("max-retries"),
-          config.getBoolean("thinking"));
+          config.getBoolean("thinking"),
+          headersFromConfig(config));
     }
 
     public OpenAi withApiKey(String apiKey) {
@@ -773,7 +918,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          thinking);
+          thinking,
+          additionalModelRequestHeaders);
     }
 
     public OpenAi withModelName(String modelName) {
@@ -788,7 +934,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          thinking);
+          thinking,
+          additionalModelRequestHeaders);
     }
 
     public OpenAi withBaseUrl(String baseUrl) {
@@ -803,7 +950,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          thinking);
+          thinking,
+          additionalModelRequestHeaders);
     }
 
     public OpenAi withTemperature(double temperature) {
@@ -818,7 +966,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          thinking);
+          thinking,
+          additionalModelRequestHeaders);
     }
 
     public OpenAi withTopP(double topP) {
@@ -833,7 +982,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          thinking);
+          thinking,
+          additionalModelRequestHeaders);
     }
 
     public OpenAi withMaxTokens(int maxTokens) {
@@ -848,7 +998,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          thinking);
+          thinking,
+          additionalModelRequestHeaders);
     }
 
     public OpenAi withMaxCompletionTokens(int maxCompletionTokens) {
@@ -863,7 +1014,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          thinking);
+          thinking,
+          additionalModelRequestHeaders);
     }
 
     public OpenAi withConnectionTimeout(Duration connectionTimeout) {
@@ -878,7 +1030,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          thinking);
+          thinking,
+          additionalModelRequestHeaders);
     }
 
     public OpenAi withResponseTimeout(Duration responseTimeout) {
@@ -893,7 +1046,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          thinking);
+          thinking,
+          additionalModelRequestHeaders);
     }
 
     public OpenAi withMaxRetries(int maxRetries) {
@@ -908,7 +1062,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          thinking);
+          thinking,
+          additionalModelRequestHeaders);
     }
 
     public OpenAi withThinking(boolean thinking) {
@@ -923,13 +1078,30 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          thinking);
+          thinking,
+          additionalModelRequestHeaders);
+    }
+
+    public OpenAi withAdditionalModelRequestHeaders(
+        List<HttpHeader> additionalModelRequestHeaders) {
+      return new OpenAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          thinking,
+          additionalModelRequestHeaders);
     }
   }
 
   /** Settings for the HuggingFace Large Language Model provider. */
   static HuggingFace huggingFace() {
-    // Implementation omitted for shortness
     return new HuggingFace(
         "",
         "",
@@ -940,7 +1112,8 @@ public sealed interface ModelProvider {
         Duration.ofSeconds(15),
         Duration.ofMinutes(1),
         2,
-        false);
+        false,
+        List.of());
   }
 
   record HuggingFace(
@@ -953,7 +1126,9 @@ public sealed interface ModelProvider {
       Duration connectionTimeout,
       Duration responseTimeout,
       int maxRetries,
-      boolean thinking)
+      boolean thinking,
+      /** Additional HTTP headers to include in each request to the model API */
+      List<HttpHeader> additionalModelRequestHeaders)
       implements ModelProvider {
 
     public static HuggingFace fromConfig(Config config) {
@@ -967,7 +1142,8 @@ public sealed interface ModelProvider {
           config.getDuration("connection-timeout"),
           config.getDuration("response-timeout"),
           config.getInt("max-retries"),
-          config.getBoolean("thinking"));
+          config.getBoolean("thinking"),
+          headersFromConfig(config));
     }
 
     public HuggingFace withAccessToken(String accessToken) {
@@ -981,7 +1157,8 @@ public sealed interface ModelProvider {
           this.connectionTimeout,
           this.responseTimeout,
           this.maxRetries,
-          this.thinking);
+          this.thinking,
+          this.additionalModelRequestHeaders);
     }
 
     public HuggingFace withModelId(String modelId) {
@@ -995,7 +1172,8 @@ public sealed interface ModelProvider {
           this.connectionTimeout,
           this.responseTimeout,
           this.maxRetries,
-          this.thinking);
+          this.thinking,
+          this.additionalModelRequestHeaders);
     }
 
     public HuggingFace withBaseUrl(String baseUrl) {
@@ -1009,7 +1187,8 @@ public sealed interface ModelProvider {
           this.connectionTimeout,
           this.responseTimeout,
           this.maxRetries,
-          this.thinking);
+          this.thinking,
+          this.additionalModelRequestHeaders);
     }
 
     public HuggingFace withTemperature(Double temperature) {
@@ -1023,7 +1202,8 @@ public sealed interface ModelProvider {
           this.connectionTimeout,
           this.responseTimeout,
           this.maxRetries,
-          this.thinking);
+          this.thinking,
+          this.additionalModelRequestHeaders);
     }
 
     public HuggingFace withTopP(Double topP) {
@@ -1037,7 +1217,8 @@ public sealed interface ModelProvider {
           this.connectionTimeout,
           this.responseTimeout,
           this.maxRetries,
-          this.thinking);
+          this.thinking,
+          this.additionalModelRequestHeaders);
     }
 
     public HuggingFace withMaxNewTokens(Integer maxNewTokens) {
@@ -1051,7 +1232,8 @@ public sealed interface ModelProvider {
           this.connectionTimeout,
           this.responseTimeout,
           this.maxRetries,
-          this.thinking);
+          this.thinking,
+          this.additionalModelRequestHeaders);
     }
 
     public HuggingFace withConnectionTimeout(Duration connectionTimeout) {
@@ -1065,7 +1247,8 @@ public sealed interface ModelProvider {
           connectionTimeout,
           this.responseTimeout,
           this.maxRetries,
-          this.thinking);
+          this.thinking,
+          this.additionalModelRequestHeaders);
     }
 
     public HuggingFace withResponseTimeout(Duration responseTimeout) {
@@ -1079,7 +1262,8 @@ public sealed interface ModelProvider {
           this.connectionTimeout,
           responseTimeout,
           this.maxRetries,
-          this.thinking);
+          this.thinking,
+          this.additionalModelRequestHeaders);
     }
 
     public HuggingFace withMaxRetries(int maxRetries) {
@@ -1093,7 +1277,8 @@ public sealed interface ModelProvider {
           this.connectionTimeout,
           this.responseTimeout,
           maxRetries,
-          this.thinking);
+          this.thinking,
+          this.additionalModelRequestHeaders);
     }
 
     public HuggingFace withThinking(boolean thinking) {
@@ -1107,7 +1292,24 @@ public sealed interface ModelProvider {
           connectionTimeout,
           responseTimeout,
           maxRetries,
-          thinking);
+          thinking,
+          additionalModelRequestHeaders);
+    }
+
+    public HuggingFace withAdditionalModelRequestHeaders(
+        List<HttpHeader> additionalModelRequestHeaders) {
+      return new HuggingFace(
+          accessToken,
+          modelId,
+          baseUrl,
+          temperature,
+          topP,
+          maxNewTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          thinking,
+          additionalModelRequestHeaders);
     }
   }
 
@@ -1161,7 +1363,8 @@ public sealed interface ModelProvider {
         Double.NaN,
         -1,
         Duration.ofMinutes(1),
-        2);
+        2,
+        List.of());
   }
 
   record Bedrock(
@@ -1177,7 +1380,9 @@ public sealed interface ModelProvider {
       double topP,
       int maxTokens,
       Duration responseTimeout,
-      int maxRetries)
+      int maxRetries,
+      /** Additional HTTP headers to include in each request to the model API */
+      List<HttpHeader> additionalModelRequestHeaders)
       implements ModelProvider {
 
     public static Bedrock fromConfig(Config config) {
@@ -1194,7 +1399,8 @@ public sealed interface ModelProvider {
           config.getDouble("top-p"),
           config.getInt("max-tokens"),
           config.getDuration("response-timeout"),
-          config.getInt("max-retries"));
+          config.getInt("max-retries"),
+          headersFromConfig(config));
     }
 
     public Bedrock withRegion(String region) {
@@ -1211,7 +1417,8 @@ public sealed interface ModelProvider {
           this.topP,
           this.maxTokens,
           this.responseTimeout,
-          this.maxRetries);
+          this.maxRetries,
+          this.additionalModelRequestHeaders);
     }
 
     public Bedrock withModelId(String modelId) {
@@ -1228,7 +1435,8 @@ public sealed interface ModelProvider {
           this.topP,
           this.maxTokens,
           this.responseTimeout,
-          this.maxRetries);
+          this.maxRetries,
+          this.additionalModelRequestHeaders);
     }
 
     public Bedrock withReturnThinking(Boolean returnThinking) {
@@ -1245,7 +1453,8 @@ public sealed interface ModelProvider {
           this.topP,
           this.maxTokens,
           this.responseTimeout,
-          this.maxRetries);
+          this.maxRetries,
+          this.additionalModelRequestHeaders);
     }
 
     public Bedrock withSendThinking(Boolean sendThinking) {
@@ -1262,7 +1471,8 @@ public sealed interface ModelProvider {
           this.topP,
           this.maxTokens,
           this.responseTimeout,
-          this.maxRetries);
+          this.maxRetries,
+          this.additionalModelRequestHeaders);
     }
 
     public Bedrock withMaxOutputTokens(int maxOutputTokens) {
@@ -1279,7 +1489,8 @@ public sealed interface ModelProvider {
           this.topP,
           this.maxTokens,
           this.responseTimeout,
-          this.maxRetries);
+          this.maxRetries,
+          this.additionalModelRequestHeaders);
     }
 
     public Bedrock withReasoningTokenBudget(int reasoningTokenBudget) {
@@ -1296,7 +1507,8 @@ public sealed interface ModelProvider {
           this.topP,
           this.maxTokens,
           this.responseTimeout,
-          this.maxRetries);
+          this.maxRetries,
+          this.additionalModelRequestHeaders);
     }
 
     public Bedrock withAdditionalModelRequestFields(
@@ -1314,7 +1526,8 @@ public sealed interface ModelProvider {
           this.topP,
           this.maxTokens,
           this.responseTimeout,
-          this.maxRetries);
+          this.maxRetries,
+          this.additionalModelRequestHeaders);
     }
 
     public Bedrock withAccessToken(String accessToken) {
@@ -1331,7 +1544,8 @@ public sealed interface ModelProvider {
           this.topP,
           this.maxTokens,
           this.responseTimeout,
-          this.maxRetries);
+          this.maxRetries,
+          this.additionalModelRequestHeaders);
     }
 
     public Bedrock withTemperature(double temperature) {
@@ -1348,7 +1562,8 @@ public sealed interface ModelProvider {
           this.topP,
           this.maxTokens,
           this.responseTimeout,
-          this.maxRetries);
+          this.maxRetries,
+          this.additionalModelRequestHeaders);
     }
 
     public Bedrock withTopP(double topP) {
@@ -1365,7 +1580,8 @@ public sealed interface ModelProvider {
           topP,
           this.maxTokens,
           this.responseTimeout,
-          this.maxRetries);
+          this.maxRetries,
+          this.additionalModelRequestHeaders);
     }
 
     public Bedrock withMaxTokens(int maxTokens) {
@@ -1382,7 +1598,8 @@ public sealed interface ModelProvider {
           this.topP,
           maxTokens,
           this.responseTimeout,
-          this.maxRetries);
+          this.maxRetries,
+          this.additionalModelRequestHeaders);
     }
 
     public Bedrock withResponseTimeout(Duration responseTimeout) {
@@ -1399,7 +1616,8 @@ public sealed interface ModelProvider {
           this.topP,
           this.maxTokens,
           responseTimeout,
-          this.maxRetries);
+          this.maxRetries,
+          this.additionalModelRequestHeaders);
     }
 
     public Bedrock withMaxRetries(int maxRetries) {
@@ -1416,7 +1634,27 @@ public sealed interface ModelProvider {
           this.topP,
           this.maxTokens,
           this.responseTimeout,
-          maxRetries);
+          maxRetries,
+          this.additionalModelRequestHeaders);
+    }
+
+    public Bedrock withAdditionalModelRequestHeaders(
+        List<HttpHeader> additionalModelRequestHeaders) {
+      return new Bedrock(
+          this.region,
+          this.modelId,
+          this.returnThinking,
+          this.sendThinking,
+          this.maxOutputTokens,
+          this.reasoningTokenBudget,
+          this.additionalModelRequestFields,
+          this.accessToken,
+          this.temperature,
+          this.topP,
+          this.maxTokens,
+          this.responseTimeout,
+          this.maxRetries,
+          additionalModelRequestHeaders);
     }
   }
 }
