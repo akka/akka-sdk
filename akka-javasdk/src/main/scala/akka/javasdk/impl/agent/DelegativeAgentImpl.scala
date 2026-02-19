@@ -82,8 +82,12 @@ private[impl] class DelegativeAgentImpl[A <: Agent](
           throw new IllegalArgumentException(s"Unknown agent [$agentId] for delegation"))
         delegation match {
           case _: DelegativeAgentDelegation =>
+            // Always wrap as {"input": type} so the schema structure is consistent with AgentDelegation
             val inputType = Reflect.getDelegativeInputType(delegateeClass)
-            val inputSchema = wrapAsSchemaObject(JsonSchema.jsonSchemaFor(inputType))
+            val inputSchema = new SpiJsonSchema.JsonSchemaObject(
+              None,
+              Map("input" -> JsonSchema.jsonSchemaFor(inputType)),
+              Seq("input"))
             new SpiDelegativeAgent.DelegativeAgentDelegation(agentId, description, inputSchema)
 
           case _: AgentDelegation =>
@@ -91,19 +95,12 @@ private[impl] class DelegativeAgentImpl[A <: Agent](
               .getCommandHandlerMethod(delegateeClass)
               .getOrElse(throw new IllegalStateException(s"Agent [$agentId] should have one command handler"))
             val commandName = handler.getName.capitalize
-            // FIXME is this the right schema? handler method vs inputType?
             val inputSchema = JsonSchema.jsonSchemaFor(handler)
             new SpiDelegativeAgent.AgentDelegation(agentId, description, commandName, inputSchema)
         }
       }
       .toSeq
   }
-
-  private def wrapAsSchemaObject(dt: SpiJsonSchema.JsonSchemaDataType): SpiJsonSchema.JsonSchemaObject =
-    dt match {
-      case obj: SpiJsonSchema.JsonSchemaObject => obj
-      case other => new SpiJsonSchema.JsonSchemaObject(None, Map("input" -> other), Seq("input"))
-    }
 
   override def toolDescriptors(): Seq[SpiAgent.ToolDescriptor] = {
     val toolClasses = delegative
@@ -175,5 +172,18 @@ private[impl] class DelegativeAgentImpl[A <: Agent](
         new Delegative.Result.Running(currentTurn)
     }
     serializer.toBytes(resultValue)
+  }
+
+  override def serializeDelegationInput(agentComponentId: String, toolCallArguments: String): BytesPayload = {
+    // toolCallArguments is always {"paramName": value} — either {"paramName": value} for AgentDelegation
+    // or {"input": value} for DelegativeAgentDelegation. Extract the single property value.
+    val valueJson = extractSinglePropertyValue(toolCallArguments)
+    new BytesPayload(ByteString.fromString(valueJson), JsonSerializer.JsonContentTypePrefix + "object")
+  }
+
+  private def extractSinglePropertyValue(jsonArgs: String): String = {
+    val argsNode = serializer.objectMapper.readTree(jsonArgs)
+    val fieldName = argsNode.fieldNames().next()
+    serializer.objectMapper.writeValueAsString(argsNode.get(fieldName))
   }
 }

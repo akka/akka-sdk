@@ -47,7 +47,7 @@ public interface Delegative<A, B> {
   List<Delegation> delegations();
 
   /** Expected result type; conforming LLM output terminates the agent. */
-  Class<B> resultType();
+  Class<B> resultType(); // FIXME is this needed, or can we get it from the type parameter?
 
   /** Max LLM round-trips (default: 10). */
   default int maxTurns() {
