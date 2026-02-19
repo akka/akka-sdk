@@ -26,7 +26,7 @@ import akka.javasdk.impl.ComponentDescriptorFactory.readComponentName
 import akka.javasdk.impl.ErrorHandling.unwrapInvocationTargetExceptionCatcher
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.reflection.Reflect
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.UpdateContext
@@ -47,6 +47,7 @@ import akka.runtime.sdk.spi.SpiTableUpdateHandler.SpiTableUpdateEffect
 import akka.runtime.sdk.spi.SpiTableUpdateHandler.SpiTableUpdateEnvelope
 import akka.runtime.sdk.spi.TableDescriptor
 import akka.runtime.sdk.spi.ViewDescriptor
+import com.google.protobuf.GeneratedMessageV3
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
@@ -60,7 +61,7 @@ private[impl] object ViewDescriptorFactory {
 
   def apply(
       viewClass: Class[_],
-      serializer: JsonSerializer,
+      serializer: Serializer,
       regionInfo: RegionInfo,
       userEc: ExecutionContext): ViewDescriptor = {
     val componentId = ComponentDescriptorFactory.readComponentIdValue(viewClass)
@@ -71,7 +72,7 @@ private[impl] object ViewDescriptorFactory {
     val allQueryMethods = extractQueryMethods(viewClass)
     val allQueryStrings = allQueryMethods.map(_.queryString)
 
-    val tables: Seq[TableDescriptor] =
+    val tables: Seq[(TableDescriptor, Class[_])] =
       tableUpdaters
         .map { tableUpdaterClass =>
           // View class type parameter declares table type
@@ -100,7 +101,7 @@ private[impl] object ViewDescriptorFactory {
                 s"Table type must be a class but was [$tableRowClass] for table updater [$tableUpdaterClass]")
           }
 
-          if (ComponentDescriptorFactory.hasKeyValueEntitySubscription(tableUpdaterClass)) {
+          val tableDescriptor = if (ComponentDescriptorFactory.hasKeyValueEntitySubscription(tableUpdaterClass)) {
             consumeFromKvEntity(componentId, tableUpdaterClass, tableType, tableName, serializer, regionInfo, userEc)
           } else if (ComponentDescriptorFactory.hasWorkflowSubscription(tableUpdaterClass)) {
             consumeFromWorkflow(componentId, tableUpdaterClass, tableType, tableName, serializer, regionInfo, userEc)
@@ -119,22 +120,32 @@ private[impl] object ViewDescriptorFactory {
               userEc)
           } else
             throw new IllegalStateException(s"Table updater [$tableUpdaterClass] is missing a @Consume annotation")
+
+          (tableDescriptor, tableRowClass)
         }
+
+    val protobufDescriptors =
+      (allQueryMethods
+        .flatMap(qm => Seq(qm.output) ++ qm.input) ++ tables.collect { case (_, rowClass) => rowClass })
+        .flatMap(Reflect.protoDescriptorsFor)
 
     new ViewDescriptor(
       componentId,
       viewClass.getName,
-      tables,
+      tables.collect { case (tableDescriptor, _) => tableDescriptor },
       queries = allQueryMethods.map(_.descriptor),
-      // FIXME reintroduce ACLs (does JWT make any sense here? I don't think so)
       componentOptions = new ComponentOptions(None, None),
       name = readComponentName(viewClass),
       description = readComponentDescription(viewClass),
       provided = false,
-      protobufDescriptors = Nil)
+      protobufDescriptors = protobufDescriptors)
   }
 
-  private case class QueryMethod(descriptor: QueryDescriptor, queryString: String)
+  private case class QueryMethod(
+      descriptor: QueryDescriptor,
+      queryString: String,
+      input: Option[Class[_]],
+      output: Class[_])
 
   private def validQueryMethod(method: Method): Boolean =
     method.getAnnotation(classOf[Query]) != null && (method.getReturnType == classOf[
@@ -214,7 +225,9 @@ private[impl] object ViewDescriptorFactory {
         streamUpdates,
         // FIXME reintroduce ACLs (does JWT make any sense here? I don't think so)
         new MethodOptions(None, None)),
-      queryStr)
+      queryStr,
+      input = method.getGenericParameterTypes.headOption.collect { case c: Class[_] => c },
+      output = actualQueryOutputClass)
   }
 
   private def consumeFromServiceToService(
@@ -222,7 +235,7 @@ private[impl] object ViewDescriptorFactory {
       tableUpdater: Class[_],
       tableType: SpiClass,
       tableName: String,
-      serializer: JsonSerializer,
+      serializer: Serializer,
       regionInfo: RegionInfo,
       userEc: ExecutionContext): TableDescriptor = {
     val annotation = tableUpdater.getAnnotation(classOf[Consume.FromServiceStream])
@@ -263,7 +276,7 @@ private[impl] object ViewDescriptorFactory {
       tableUpdater: Class[_],
       tableType: SpiClass,
       tableName: String,
-      serializer: JsonSerializer,
+      serializer: Serializer,
       regionInfo: RegionInfo,
       userEc: ExecutionContext): TableDescriptor = {
 
@@ -312,7 +325,7 @@ private[impl] object ViewDescriptorFactory {
       tableUpdater: Class[_],
       tableType: SpiClass,
       tableName: String,
-      serializer: JsonSerializer,
+      serializer: Serializer,
       regionInfo: RegionInfo,
       userEc: ExecutionContext): TableDescriptor = {
 
@@ -327,12 +340,22 @@ private[impl] object ViewDescriptorFactory {
       .filterNot(ComponentDescriptorFactory.hasHandleDeletes)
       .filter(ComponentDescriptorFactory.hasUpdateEffectOutput)
 
+    val tableRowClass: Class[_] = Reflect.tableUpdaterRowType(tableUpdater)
+
+    val updateHandler: Option[SpiTableUpdateHandler] =
+      if (updateHandlerMethods.nonEmpty)
+        Some(UpdateHandlerImpl(componentId, tableUpdater, updateHandlerMethods, serializer, regionInfo)(userEc))
+      else if (classOf[GeneratedMessageV3].isAssignableFrom(tableRowClass))
+        // Protobuf passthrough: entity state arrives as binary protobuf but views require JSON
+        Some(ProtobufPassthroughHandler(tableRowClass, serializer)(userEc))
+      else
+        None
+
     new TableDescriptor(
       tableName,
       tableType,
       new ConsumerSource.KeyValueEntitySource(ComponentDescriptorFactory.readComponentIdValue(annotation.value())),
-      Option.when(updateHandlerMethods.nonEmpty)(
-        UpdateHandlerImpl(componentId, tableUpdater, updateHandlerMethods, serializer, regionInfo)(userEc)),
+      updateHandler,
       deleteHandlerMethod.map(deleteMethod =>
         UpdateHandlerImpl(
           componentId,
@@ -348,7 +371,7 @@ private[impl] object ViewDescriptorFactory {
       tableUpdater: Class[_],
       tableType: SpiClass,
       tableName: String,
-      serializer: JsonSerializer,
+      serializer: Serializer,
       regionInfo: RegionInfo,
       userEc: ExecutionContext): TableDescriptor = {
 
@@ -384,7 +407,7 @@ private[impl] object ViewDescriptorFactory {
       tableUpdater: Class[_],
       tableType: SpiClass,
       tableName: String,
-      serializer: JsonSerializer,
+      serializer: Serializer,
       regionInfo: RegionInfo,
       userEc: ExecutionContext): TableDescriptor = {
     val annotation = tableUpdater.getAnnotation(classOf[Consume.FromTopic])
@@ -418,7 +441,7 @@ private[impl] object ViewDescriptorFactory {
       componentId: String,
       tableUpdaterClass: Class[_],
       methods: Seq[Method],
-      serializer: JsonSerializer,
+      serializer: Serializer,
       regionInfo: RegionInfo,
       ignoreUnknown: Boolean = false,
       deleteHandler: Boolean = false)(implicit userEc: ExecutionContext)
@@ -431,16 +454,30 @@ private[impl] object ViewDescriptorFactory {
     private val methodsByInput: Map[Class[_], Method] =
       if (deleteHandler) Map.empty
       else
-        methods.map { m =>
+        methods.flatMap { m =>
           // register each possible input to deserialize correctly an input
           val inputType = m.getParameterTypes.head
-          if (inputType.isSealed) {
+
+          if (inputType == classOf[GeneratedMessageV3]) {
+            // Base GeneratedMessageV3 handler - resolve and register concrete proto types
+            val protoTypes = Reflect.resolveProtoEventTypes(tableUpdaterClass)
+            if (protoTypes.isEmpty) {
+              throw new IllegalStateException(
+                s"View table updater [${tableUpdaterClass.getName}] handler method [${m.getName}] accepts GeneratedMessageV3 " +
+                "but no concrete proto event types could be resolved. Add @ProtoEventTypes to the table updater class " +
+                "or to the source event sourced entity.")
+            }
+            protoTypes.map { protoClass =>
+              serializer.registerTypeHints(protoClass)
+              protoClass -> m
+            }
+          } else if (inputType.isSealed) {
             inputType.getPermittedSubclasses.foreach(serializer.registerTypeHints)
+            Seq(inputType -> m)
           } else {
             serializer.registerTypeHints(m.getParameterTypes.head)
+            Seq(inputType -> m)
           }
-
-          inputType -> m
         }.toMap
 
     // Note: New instance for each update to avoid users storing/leaking state
@@ -524,7 +561,7 @@ private[impl] object ViewDescriptorFactory {
                 s"View updater tried to set row state to null, not allowed [$componentId] threw an exception")
               throw ViewException(componentId, "updateState with null state is not allowed.", None)
             }
-            val bytesPayload = serializer.toBytes(newState)
+            val bytesPayload = serializer.toBytesAsJson(newState)
             new spi.SpiTableUpdateHandler.UpdateRow(bytesPayload)
           case ViewEffectImpl.Delete => SpiTableUpdateHandler.DeleteRow
           case ViewEffectImpl.Ignore => SpiTableUpdateHandler.IgnoreUpdate
@@ -534,6 +571,21 @@ private[impl] object ViewDescriptorFactory {
       }
 
     }(userEc)
+  }
+
+  /**
+   * Passthrough handler for views consuming protobuf state from KV entities. Converts binary protobuf to JSON since
+   * views store data as JSONB.
+   */
+  private final case class ProtobufPassthroughHandler(tableRowClass: Class[_], serializer: Serializer)(implicit
+      ec: ExecutionContext)
+      extends SpiTableUpdateHandler {
+
+    override def handle(input: SpiTableUpdateEnvelope): Future[SpiTableUpdateEffect] = Future {
+      val protoMessage = serializer.fromBytes(tableRowClass, input.eventPayload)
+      val bytesPayload = serializer.toBytesAsJson(protoMessage)
+      new spi.SpiTableUpdateHandler.UpdateRow(bytesPayload)
+    }(ec)
   }
 
   private final case class UpdateContextImpl(

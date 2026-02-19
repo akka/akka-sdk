@@ -8,14 +8,14 @@ import java.util.Optional
 
 import akka.annotation.InternalApi
 import akka.javasdk.impl.agent.FunctionTools.FunctionToolInvoker
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.SpiAgent
 
 /**
  * INTERNAL API
  */
 @InternalApi
-class ToolExecutor(functionTools: Map[String, FunctionToolInvoker], serializer: JsonSerializer) {
+class ToolExecutor(functionTools: Map[String, FunctionToolInvoker], serializer: Serializer) {
 
   /**
    * Executes a tool call command synchronously.

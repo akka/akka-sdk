@@ -32,7 +32,7 @@ import akka.javasdk.JsonSupport
 import akka.javasdk.Metadata.{ MetadataEntry => SdkMetadataEntry }
 import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.MetadataImpl
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.testkit.EventingTestKit
 import akka.javasdk.testkit.EventingTestKit.IncomingMessages
 import akka.javasdk.testkit.EventingTestKit.OutgoingMessages
@@ -79,7 +79,7 @@ object EventingTestKitImpl {
    * The returned testkit can be used to expect and emit events to the proxy as if they came from an actual pub/sub
    * event backend.
    */
-  def start(system: ActorSystem[_], host: String, port: Int, serializer: JsonSerializer): EventingTestKit = {
+  def start(system: ActorSystem[_], host: String, port: Int, serializer: Serializer): EventingTestKit = {
 
     // Create service handlers
     val service = new EventingTestServiceImpl(system, host, port, serializer)
@@ -161,7 +161,7 @@ object EventingTestKitImpl {
  * Implements the EventingTestKit protocol originally defined in proxy
  * protocols/testkit/src/main/protobuf/eventing_test_backend.proto
  */
-final class EventingTestServiceImpl(system: ActorSystem[_], val host: String, var port: Int, serializer: JsonSerializer)
+final class EventingTestServiceImpl(system: ActorSystem[_], val host: String, var port: Int, serializer: Serializer)
     extends EventingTestKit {
 
   private val log = LoggerFactory.getLogger(classOf[EventingTestServiceImpl])
@@ -297,7 +297,7 @@ final class EventingTestServiceImpl(system: ActorSystem[_], val host: String, va
   }
 }
 
-private[testkit] class IncomingMessagesImpl(val sourcesHolder: ActorRef, val serializer: JsonSerializer)
+private[testkit] class IncomingMessagesImpl(val sourcesHolder: ActorRef, val serializer: Serializer)
     extends IncomingMessages {
 
   def addSourceProbe(runningSourceProbe: RunningSourceProbe): Unit = {
@@ -344,9 +344,7 @@ private[testkit] class IncomingMessagesImpl(val sourcesHolder: ActorRef, val ser
     "Publishing a delete message is supported only for ValueEntity messages.")
 }
 
-private[testkit] class VeIncomingMessagesImpl(
-    override val sourcesHolder: ActorRef,
-    override val serializer: JsonSerializer)
+private[testkit] class VeIncomingMessagesImpl(override val sourcesHolder: ActorRef, override val serializer: Serializer)
     extends IncomingMessagesImpl(sourcesHolder, serializer) {
 
   override def publishDelete(subject: String): Unit = {
@@ -362,7 +360,7 @@ private[testkit] class VeIncomingMessagesImpl(
 
 private[testkit] class OutgoingMessagesImpl(
     private[testkit] val destinationProbe: TestProbe,
-    protected val serializer: JsonSerializer)
+    protected val serializer: Serializer)
     extends OutgoingMessages {
   import EventingTestKitImpl.metadataToSpi
 
@@ -474,7 +472,7 @@ private[testkit] object TestKitMessageImpl {
     TestKitMessageImpl[ByteString](m.payload, metadata).asInstanceOf[TestKitMessage[ByteString]]
   }
 
-  def defaultMetadata(message: Any, subject: String, serializer: JsonSerializer): SdkMetadata = {
+  def defaultMetadata(message: Any, subject: String, serializer: Serializer): SdkMetadata = {
     val (contentType, ceType) = message match {
       case pbMsg: GeneratedMessageV3 =>
         val desc = pbMsg.getDescriptorForType

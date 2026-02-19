@@ -4,7 +4,7 @@
 
 package akka.javasdk.impl
 
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.testmodels.action.ActionsTestModels.ActionWithOneParam
 import akka.javasdk.testmodels.action.ActionsTestModels.ActionWithoutParam
 import org.scalatest.matchers.should.Matchers
@@ -15,12 +15,12 @@ class TimedActionDescriptorFactorySpec extends AnyWordSpec with Matchers {
   "Action descriptor factory" should {
 
     "generate mappings for an Action with method without path param" in {
-      val desc = ComponentDescriptor.descriptorFor(classOf[ActionWithoutParam], new JsonSerializer)
+      val desc = ComponentDescriptor.descriptorFor(classOf[ActionWithoutParam], new Serializer)
       desc.methodInvokers should have size 1
     }
 
     "generate mappings for an Action with method with one param" in {
-      val desc = ComponentDescriptor.descriptorFor(classOf[ActionWithOneParam], new JsonSerializer)
+      val desc = ComponentDescriptor.descriptorFor(classOf[ActionWithOneParam], new Serializer)
       desc.methodInvokers.get("Message") should not be empty
     }
   }

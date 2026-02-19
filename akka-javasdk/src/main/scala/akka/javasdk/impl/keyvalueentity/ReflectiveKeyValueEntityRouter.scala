@@ -8,7 +8,7 @@ import akka.annotation.InternalApi
 import akka.javasdk.impl.CommandSerialization
 import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.MethodInvoker
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.runtime.sdk.spi.BytesPayload
 
@@ -19,7 +19,7 @@ import akka.runtime.sdk.spi.BytesPayload
 private[impl] class ReflectiveKeyValueEntityRouter[S, KV <: KeyValueEntity[S]](
     val entity: KV,
     methodInvokers: Map[String, MethodInvoker],
-    serializer: JsonSerializer) {
+    serializer: Serializer) {
 
   private def methodInvokerLookup(commandName: String): MethodInvoker =
     methodInvokers.get(commandName) match {
@@ -32,9 +32,10 @@ private[impl] class ReflectiveKeyValueEntityRouter[S, KV <: KeyValueEntity[S]](
 
     val methodInvoker = methodInvokerLookup(commandName)
 
-    if (serializer.isJson(command) || command.isEmpty) {
+    if (serializer.isJson(command) || serializer.isProtobuf(command) || command.isEmpty) {
       // - BytesPayload.empty - there is no real command, and we are calling a method with arity 0
       // - BytesPayload with json - we deserialize it and call the method
+      // - BytesPayload with protobuf - we deserialize it and call the method
       val deserializedCommand =
         CommandSerialization.deserializeComponentClientCommand(methodInvoker.method, command, serializer)
       val result = deserializedCommand match {
