@@ -21,6 +21,7 @@ import scala.reflect.ClassTag
 import akka.Done
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
+import akka.javasdk.agent.Delegative
 import akka.javasdk.agent.EvaluationResult
 import akka.javasdk.annotations.AgentDescription
 import akka.javasdk.annotations.AgentRole
@@ -435,5 +436,29 @@ private[impl] object Reflect {
       .map(_.value())
       .orElse(agentDescAnno.map(_.role()))
   }
+
+  def isDelegativeAgent(agentClass: Class[_]): Boolean = {
+    isAgent(agentClass) && classOf[Delegative[_, _]].isAssignableFrom(agentClass)
+  }
+
+  /** Extracts the input type parameter A from {@code Delegative<A, B>}. */
+  def getDelegativeInputType(agentClass: Class[_]): Class[_] = {
+    def fromInterfaces(cls: Class[_]): Option[Class[_]] =
+      cls.getGenericInterfaces.collectFirst {
+        case pt: ParameterizedType if pt.getRawType == classOf[Delegative[_, _]] =>
+          pt.getActualTypeArguments.head match {
+            case c: Class[_] => c
+            case _           => classOf[AnyRef]
+          }
+      }
+    fromInterfaces(agentClass)
+      .orElse(Option(agentClass.getSuperclass).flatMap(fromInterfaces))
+      .getOrElse(classOf[AnyRef])
+  }
+
+  /** Returns the first single-parameter command handler method declared on the agent class. */
+  def getCommandHandlerMethod(agentClass: Class[_]): Option[Method] =
+    agentClass.getDeclaredMethods
+      .find(m => isCommandHandlerCandidate[Agent.Effect[_]](m) && m.getParameterTypes.length == 1)
 
 }

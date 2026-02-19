@@ -8,7 +8,6 @@ import java.net.URI
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 
-import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
@@ -96,6 +95,84 @@ private[impl] object AgentImpl {
       extends AbstractContext
       with AgentContext {
     override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
+  }
+
+  @scala.annotation.tailrec
+  def toSpiModelProvider(modelProvider: ModelProvider, config: Config, componentId: String): SpiAgent.ModelProvider = {
+    modelProvider match {
+      case p: ModelProvider.FromConfig =>
+        toSpiModelProvider(modelProviderFromConfig(config, p.configPath(), componentId), config, componentId)
+      case p: ModelProvider.Anthropic =>
+        new SpiAgent.ModelProvider.Anthropic(
+          apiKey = p.apiKey,
+          modelName = p.modelName,
+          baseUrl = p.baseUrl,
+          temperature = p.temperature,
+          topP = p.topP,
+          topK = p.topK,
+          maxTokens = p.maxTokens,
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
+          thinkingBudgetTokens = p.thinkingBudgetTokens)
+      case p: ModelProvider.GoogleAIGemini =>
+        new SpiAgent.ModelProvider.GoogleAIGemini(
+          p.apiKey(),
+          p.modelName(),
+          p.baseUrl(),
+          p.temperature(),
+          p.topP(),
+          p.maxOutputTokens(),
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
+          p.thinkingBudget.toScala.map(_.intValue()),
+          p.thinkingLevel)
+      case p: ModelProvider.HuggingFace =>
+        new SpiAgent.ModelProvider.HuggingFace(
+          p.accessToken(),
+          p.modelId(),
+          p.baseUrl(),
+          p.temperature(),
+          p.topP(),
+          p.maxNewTokens(),
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
+          p.thinking())
+      case p: ModelProvider.LocalAI =>
+        new SpiAgent.ModelProvider.LocalAI(p.baseUrl(), p.modelName(), p.temperature(), p.topP(), p.maxTokens())
+      case p: ModelProvider.Ollama =>
+        new SpiAgent.ModelProvider.Ollama(
+          p.baseUrl(),
+          p.modelName(),
+          p.temperature(),
+          p.topP(),
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
+          p.think)
+      case p: ModelProvider.OpenAi =>
+        new SpiAgent.ModelProvider.OpenAi(
+          apiKey = p.apiKey,
+          modelName = p.modelName,
+          baseUrl = p.baseUrl,
+          temperature = p.temperature,
+          topP = p.topP,
+          maxTokens = p.maxTokens,
+          maxCompletionTokens = p.maxCompletionTokens,
+          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
+          thinking = p.thinking)
+      case p: ModelProvider.Custom =>
+        new SpiAgent.ModelProvider.Custom(() => p.createChatModel(), () => p.createStreamingChatModel())
+      case p: ModelProvider.Bedrock =>
+        new SpiAgent.ModelProvider.Bedrock(
+          region = p.region,
+          modelId = p.modelId,
+          maxOutputTokens = p.maxOutputTokens,
+          reasoningTokenBudget = p.reasoningTokenBudget,
+          additionalModelRequestFields = p.additionalModelRequestFields.asScala.toMap,
+          accessToken = p.accessToken,
+          temperature = p.temperature,
+          topP = p.topP,
+          maxTokens = p.maxTokens,
+          modelSettings = new SpiAgent.ModelSettings(
+            FiniteDuration.apply(30, TimeUnit.SECONDS),
+            p.responseTimeout().toScala,
+            p.maxRetries()))
+    }
   }
 
   def modelProviderFromConfig(config: Config, configPath: String, componentId: String): ModelProvider = {
@@ -548,83 +625,8 @@ private[impl] final class AgentImpl[A <: Agent](
     (throwable: Throwable) => func(convert(throwable))
   }
 
-  @tailrec
-  private def toSpiModelProvider(modelProvider: ModelProvider): SpiAgent.ModelProvider = {
-    modelProvider match {
-      case p: ModelProvider.FromConfig =>
-        toSpiModelProvider(modelProviderFromConfig(config, p.configPath(), componentId))
-      case p: ModelProvider.Anthropic =>
-        new SpiAgent.ModelProvider.Anthropic(
-          apiKey = p.apiKey,
-          modelName = p.modelName,
-          baseUrl = p.baseUrl,
-          temperature = p.temperature,
-          topP = p.topP,
-          topK = p.topK,
-          maxTokens = p.maxTokens,
-          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
-          thinkingBudgetTokens = p.thinkingBudgetTokens)
-      case p: ModelProvider.GoogleAIGemini =>
-        new SpiAgent.ModelProvider.GoogleAIGemini(
-          p.apiKey(),
-          p.modelName(),
-          p.baseUrl(),
-          p.temperature(),
-          p.topP(),
-          p.maxOutputTokens(),
-          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
-          p.thinkingBudget.toScala.map(_.intValue()),
-          p.thinkingLevel)
-      case p: ModelProvider.HuggingFace =>
-        new SpiAgent.ModelProvider.HuggingFace(
-          p.accessToken(),
-          p.modelId(),
-          p.baseUrl(),
-          p.temperature(),
-          p.topP(),
-          p.maxNewTokens(),
-          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
-          p.thinking())
-      case p: ModelProvider.LocalAI =>
-        new SpiAgent.ModelProvider.LocalAI(p.baseUrl(), p.modelName(), p.temperature(), p.topP(), p.maxTokens())
-      case p: ModelProvider.Ollama =>
-        new SpiAgent.ModelProvider.Ollama(
-          p.baseUrl(),
-          p.modelName(),
-          p.temperature(),
-          p.topP(),
-          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
-          p.think)
-      case p: ModelProvider.OpenAi =>
-        new SpiAgent.ModelProvider.OpenAi(
-          apiKey = p.apiKey,
-          modelName = p.modelName,
-          baseUrl = p.baseUrl,
-          temperature = p.temperature,
-          topP = p.topP,
-          maxTokens = p.maxTokens,
-          maxCompletionTokens = p.maxCompletionTokens,
-          new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
-          thinking = p.thinking)
-      case p: ModelProvider.Custom =>
-        new SpiAgent.ModelProvider.Custom(() => p.createChatModel(), () => p.createStreamingChatModel())
-      case p: ModelProvider.Bedrock =>
-        new SpiAgent.ModelProvider.Bedrock(
-          region = p.region,
-          modelId = p.modelId,
-          maxOutputTokens = p.maxOutputTokens,
-          reasoningTokenBudget = p.reasoningTokenBudget,
-          additionalModelRequestFields = p.additionalModelRequestFields.asScala.toMap,
-          accessToken = p.accessToken,
-          temperature = p.temperature,
-          topP = p.topP,
-          maxTokens = p.maxTokens,
-          modelSettings = new SpiAgent.ModelSettings(
-            FiniteDuration.apply(30, TimeUnit.SECONDS),
-            p.responseTimeout().toScala,
-            p.maxRetries()))
-    }
-  }
+  private def toSpiModelProvider(modelProvider: ModelProvider): SpiAgent.ModelProvider =
+    AgentImpl.toSpiModelProvider(modelProvider, config, componentId)
 
   override def serialize(message: Any): BytesPayload = {
     serializer.toBytes(message)

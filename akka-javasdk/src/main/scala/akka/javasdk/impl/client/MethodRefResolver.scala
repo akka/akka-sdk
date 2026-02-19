@@ -10,9 +10,23 @@ import java.lang.reflect.Method
 private[impl] object MethodRefResolver {
 
   /**
+   * Holds both the resolved method and the component class extracted from the instantiated method type (first parameter
+   * of the functional interface, which is the unbound receiver for `ComponentClass::method` style references).
+   */
+  case class MethodRefInfo(method: Method, componentClass: Class[_])
+
+  /**
    * Resolve the method ref for a lambda.
    */
-  def resolveMethodRef(lambda: Any): Method = {
+  def resolveMethodRef(lambda: Any): Method =
+    resolveMethodRefInfo(lambda).method
+
+  /**
+   * Resolve the method ref for a lambda, also returning the component class (the receiver type extracted from the
+   * instantiated method type of the functional interface). This correctly identifies the concrete agent class even when
+   * the method is inherited from a superclass or declared as a default interface method.
+   */
+  def resolveMethodRefInfo(lambda: Any): MethodRefInfo = {
     val lambdaType = lambda.getClass
 
     if (!classOf[java.io.Serializable].isInstance(lambda)) {
@@ -39,15 +53,31 @@ private[impl] object MethodRefResolver {
           "Passed in object does not writeReplace itself with SerializedLambda, hence it can't be a Java 8 method reference.")
     }
 
-    // Try to load the class that the method ref is defined on
-    val ownerClass = loadClass(lambdaType.getClassLoader, serializedLambda.getImplClass)
-
-    val argumentClasses = getArgumentClasses(lambdaType.getClassLoader, serializedLambda.getImplMethodSignature)
     if (serializedLambda.getImplClass.equals("<init>")) {
       throw new IllegalArgumentException("Passed in method ref is a constructor.")
-    } else {
-      ownerClass.getDeclaredMethod(serializedLambda.getImplMethodName, argumentClasses: _*)
     }
+
+    // Load the class the method is implemented on (may be a superclass or interface)
+    val implClass = loadClass(lambdaType.getClassLoader, serializedLambda.getImplClass)
+    val argumentClasses = getArgumentClasses(lambdaType.getClassLoader, serializedLambda.getImplMethodSignature)
+
+    // Try getDeclaredMethod first; fall back to getMethod for inherited / default interface methods
+    val method =
+      try {
+        implClass.getDeclaredMethod(serializedLambda.getImplMethodName, argumentClasses: _*)
+      } catch {
+        case _: NoSuchMethodException =>
+          implClass.getMethod(serializedLambda.getImplMethodName, argumentClasses: _*)
+      }
+
+    // For unbound instance method references `ComponentClass::method`, the instantiated method
+    // type's first parameter is the receiver type (i.e. the concrete component class), even when
+    // the method itself is inherited from a superclass or default interface method.
+    val instantiatedArgs =
+      getArgumentClasses(lambdaType.getClassLoader, serializedLambda.getInstantiatedMethodType)
+    val componentClass = if (instantiatedArgs.nonEmpty) instantiatedArgs.head else implClass
+
+    MethodRefInfo(method, componentClass)
   }
 
   private def loadClass(classLoader: ClassLoader, internalName: String) = {

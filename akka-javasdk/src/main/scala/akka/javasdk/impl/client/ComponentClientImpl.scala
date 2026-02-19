@@ -71,6 +71,12 @@ private[javasdk] final case class ComponentClientImpl(
   override def forView(): ViewClient = ViewClientImpl(runtimeComponentClients.viewClient, serializer, callMetadata)
 
   override def forAgent(): AgentClient =
-    AgentClientImpl(runtimeComponentClients.agentClient, serializer, callMetadata, agentClassById, sessionId = "")
+    AgentClientImpl(
+      runtimeComponentClients.agentClient,
+      runtimeComponentClients.workFlowClient,
+      serializer,
+      callMetadata,
+      agentClassById,
+      sessionId = "")
 
 }

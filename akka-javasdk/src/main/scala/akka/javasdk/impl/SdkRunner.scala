@@ -65,6 +65,7 @@ import akka.javasdk.impl.SdkRunner.extractSpiSettings
 import akka.javasdk.impl.agent.AgentImpl
 import akka.javasdk.impl.agent.AgentImpl.AgentContextImpl
 import akka.javasdk.impl.agent.AgentRegistryImpl
+import akka.javasdk.impl.agent.DelegativeAgentImpl
 import akka.javasdk.impl.agent.GuardrailProvider
 import akka.javasdk.impl.agent.OverrideModelProvider
 import akka.javasdk.impl.agent.PromptTemplateClient
@@ -688,30 +689,56 @@ private final class Sdk(
             guardrailEnabledForComponent.getOrElse(guardrailName, Set.empty) + componentId)
         }
 
-        val instanceFactory: SpiAgent.FactoryContext => SpiAgent = { factoryContext =>
-          new AgentImpl(
-            componentId,
-            factoryContext.sessionId,
-            context =>
-              wiredInstance(agentClass) {
-                (sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext)).orElse {
-                  // remember to update component type API doc and docs if changing the set of injectables
-                  case p if p == classOf[AgentContext] => context
-                }
-              },
-            sdkExecutionContext,
-            sdkTracerFactory,
-            serializer,
-            ComponentDescriptor.descriptorFor(agentClass, serializer),
-            regionInfo,
-            telemetryContext => new PromptTemplateClient(componentClient(telemetryContext)),
-            telemetryContext => componentClient(telemetryContext),
-            overrideModelProvider,
-            dependencyProviderOpt,
-            agentGuardrails,
-            applicationConfig)
+        val agentCapabilities: Set[SpiAgent.AgentCapability] =
+          if (Reflect.isDelegativeAgent(clz)) {
+            Set(SpiAgent.AgentCapability.DelegativeCapability)
+          } else
+            Set.empty
 
-        }
+        val instanceFactory: SpiAgent.FactoryContext => SpiAgent =
+          if (agentCapabilities.contains(SpiAgent.AgentCapability.DelegativeCapability)) { factoryContext =>
+            new DelegativeAgentImpl(
+              componentId,
+              factoryContext.sessionId,
+              context =>
+                wiredInstance(agentClass) {
+                  (sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext)).orElse {
+                    // remember to update component type API doc and docs if changing the set of injectables
+                    case p if p == classOf[AgentContext] => context
+                  }
+                },
+              sdkExecutionContext,
+              sdkTracerFactory,
+              serializer,
+              regionInfo,
+              overrideModelProvider,
+              dependencyProviderOpt,
+              componentClient(None),
+              () => agentRegistry,
+              applicationConfig)
+          } else { factoryContext =>
+            new AgentImpl(
+              componentId,
+              factoryContext.sessionId,
+              context =>
+                wiredInstance(agentClass) {
+                  (sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext)).orElse {
+                    // remember to update component type API doc and docs if changing the set of injectables
+                    case p if p == classOf[AgentContext] => context
+                  }
+                },
+              sdkExecutionContext,
+              sdkTracerFactory,
+              serializer,
+              ComponentDescriptor.descriptorFor(agentClass, serializer),
+              regionInfo,
+              telemetryContext => new PromptTemplateClient(componentClient(telemetryContext)),
+              telemetryContext => componentClient(telemetryContext),
+              overrideModelProvider,
+              dependencyProviderOpt,
+              agentGuardrails,
+              applicationConfig)
+          }
 
         agentDescriptors :+=
           new AgentDescriptor(
@@ -721,7 +748,8 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             evaluator = Reflect.isEvaluatorAgent(clz),
-            provided = isProvided(clz))
+            provided = isProvided(clz),
+            agentCapabilities = agentCapabilities)
 
         agentRegistryInfo :+= AgentRegistryImpl.agentDetailsFor(agentClass)
 
