@@ -9,5 +9,10 @@
      when the application runs. 
  -->
 <included>
-    <logger name="com.example" level="INFO"/>
+    <logger name="akka.runtime" level="DEBUG"/>
+    <logger name="kalix.runtime" level="DEBUG"/>
+
+    <logger name="kalix.runtime.agent.AkkaLangChain4jHttpClient" level="TRACE"/>
+
+    <logger name="com.example" level="DEBUG"/>
 </included>

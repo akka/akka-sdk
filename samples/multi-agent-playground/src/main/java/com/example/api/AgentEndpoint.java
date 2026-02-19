@@ -10,6 +10,8 @@ import akka.javasdk.http.HttpResponses;
 import com.example.application.ActivityPlannerAgent;
 import com.example.application.ContentCreationAgent;
 import com.example.application.ContentRefinementAgent;
+import akka.javasdk.agent.Delegative;
+import com.example.application.LanguageTriageAgent;
 import com.example.application.TriageAgent;
 import java.util.Optional;
 
@@ -107,8 +109,28 @@ public class AgentEndpoint {
     );
   }
 
-  private StatusResponse toStatusResponse(Object result) {
-    // TODO: switch to DelegativeResult<String> once the runtime type is available
-    return new StatusResponse("UNKNOWN", Optional.empty());
+  @Post("/language-triage/{sessionId}")
+  public HttpResponse startLanguageTriage(String sessionId, StartRequest request) {
+    componentClient
+      .forAgent()
+      .inSession(sessionId)
+      .method(LanguageTriageAgent::run)
+      .invoke(request.message());
+    return HttpResponses.created(sessionId, "/agent/language-triage/" + sessionId);
+  }
+
+  @Get("/language-triage/{sessionId}")
+  public StatusResponse getLanguageTriageResult(String sessionId) {
+    return toStatusResponse(
+      componentClient.forAgent().inSession(sessionId).method(LanguageTriageAgent::getResult).invoke()
+    );
+  }
+
+  private StatusResponse toStatusResponse(Delegative.Result<String> result) {
+    return switch (result) {
+      case Delegative.Result.Running<String> r -> new StatusResponse("RUNNING", Optional.empty());
+      case Delegative.Result.Completed<String> c -> new StatusResponse("COMPLETED", Optional.of(c.result()));
+      case Delegative.Result.Failed<String> f -> new StatusResponse("FAILED", Optional.of(f.reason()));
+    };
   }
 }
