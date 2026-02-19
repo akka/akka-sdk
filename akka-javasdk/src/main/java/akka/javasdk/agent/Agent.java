@@ -88,6 +88,28 @@ public abstract class Agent {
     this.context = context;
   }
 
+  private volatile Object _delegativeInput;
+
+  /**
+   * INTERNAL API
+   *
+   * @hidden
+   */
+  @InternalApi
+  public void _internalSetInput(Object input) {
+    this._delegativeInput = input;
+  }
+
+  /**
+   * INTERNAL API
+   *
+   * @hidden
+   */
+  @InternalApi
+  public Object _getDelegativeInput() {
+    return this._delegativeInput;
+  }
+
   public final Effect.Builder effects() {
     return new BaseAgentEffectBuilder<>();
   }

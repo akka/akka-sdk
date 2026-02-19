@@ -65,6 +65,7 @@ import akka.javasdk.impl.SdkRunner.extractSpiSettings
 import akka.javasdk.impl.agent.AgentImpl
 import akka.javasdk.impl.agent.AgentImpl.AgentContextImpl
 import akka.javasdk.impl.agent.AgentRegistryImpl
+import akka.javasdk.impl.agent.DelegativeAgentImpl
 import akka.javasdk.impl.agent.GuardrailProvider
 import akka.javasdk.impl.agent.OverrideModelProvider
 import akka.javasdk.impl.agent.PromptTemplateClient
@@ -108,7 +109,6 @@ import akka.runtime.sdk.spi.RemoteIdentification
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiComponents
 import akka.runtime.sdk.spi.SpiConfiguredGuardrail
-import akka.runtime.sdk.spi.SpiDelegativeAgent
 import akka.runtime.sdk.spi.SpiDeployedEventingSettings
 import akka.runtime.sdk.spi.SpiDevModeSettings
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
@@ -689,37 +689,54 @@ private final class Sdk(
             guardrailEnabledForComponent.getOrElse(guardrailName, Set.empty) + componentId)
         }
 
-        val instanceFactory: SpiAgent.FactoryContext => SpiAgent = { factoryContext =>
-          new AgentImpl(
-            componentId,
-            factoryContext.sessionId,
-            context =>
-              wiredInstance(agentClass) {
-                (sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext)).orElse {
-                  // remember to update component type API doc and docs if changing the set of injectables
-                  case p if p == classOf[AgentContext] => context
-                }
-              },
-            sdkExecutionContext,
-            sdkTracerFactory,
-            serializer,
-            ComponentDescriptor.descriptorFor(agentClass, serializer),
-            regionInfo,
-            telemetryContext => new PromptTemplateClient(componentClient(telemetryContext)),
-            telemetryContext => componentClient(telemetryContext),
-            overrideModelProvider,
-            dependencyProviderOpt,
-            agentGuardrails,
-            applicationConfig)
-
-        }
+        val instanceFactory: SpiAgent.FactoryContext => SpiAgent =
+          if (Reflect.isDelegativeAgent(clz)) { factoryContext =>
+            new DelegativeAgentImpl(
+              componentId,
+              factoryContext.sessionId,
+              context =>
+                wiredInstance(agentClass) {
+                  (sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext)).orElse {
+                    // remember to update component type API doc and docs if changing the set of injectables
+                    case p if p == classOf[AgentContext] => context
+                  }
+                },
+              sdkExecutionContext,
+              sdkTracerFactory,
+              serializer,
+              regionInfo,
+              overrideModelProvider,
+              dependencyProviderOpt,
+              componentClient(None),
+              () => agentRegistry,
+              applicationConfig)
+          } else { factoryContext =>
+            new AgentImpl(
+              componentId,
+              factoryContext.sessionId,
+              context =>
+                wiredInstance(agentClass) {
+                  (sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext)).orElse {
+                    // remember to update component type API doc and docs if changing the set of injectables
+                    case p if p == classOf[AgentContext] => context
+                  }
+                },
+              sdkExecutionContext,
+              sdkTracerFactory,
+              serializer,
+              ComponentDescriptor.descriptorFor(agentClass, serializer),
+              regionInfo,
+              telemetryContext => new PromptTemplateClient(componentClient(telemetryContext)),
+              telemetryContext => componentClient(telemetryContext),
+              overrideModelProvider,
+              dependencyProviderOpt,
+              agentGuardrails,
+              applicationConfig)
+          }
 
         val multiAgentCapability: Option[SpiAgent.MultiAgentCapability] =
           if (Reflect.isDelegativeAgent(clz)) {
-            val delegativeAgentFactory: SpiDelegativeAgent.FactoryContext => SpiDelegativeAgent = { factoryContext =>
-              instanceFactory(new SpiAgent.FactoryContext(factoryContext.sessionId)).asInstanceOf[SpiDelegativeAgent]
-            }
-            Some(new SpiAgent.DelegativeCapability(delegativeAgentFactory))
+            Some(SpiAgent.MultiAgentCapability.DelegativeCapability)
           } else
             None
 

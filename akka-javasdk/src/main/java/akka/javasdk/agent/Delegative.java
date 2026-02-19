@@ -6,6 +6,8 @@ package akka.javasdk.agent;
 
 import akka.Done;
 import akka.javasdk.impl.agent.DelegationImpl;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,6 +26,12 @@ public interface Delegative<A, B> {
   }
 
   // FIXME we will have more types, like Paused, Stopped, and probably more information
+  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "@type")
+  @JsonSubTypes({
+    @JsonSubTypes.Type(value = Result.Running.class, name = "Running"),
+    @JsonSubTypes.Type(value = Result.Completed.class, name = "Completed"),
+    @JsonSubTypes.Type(value = Result.Failed.class, name = "Failed")
+  })
   sealed interface Result<R> {
     record Running<R>(int currentTurn) implements Result<R> {}
 
@@ -52,8 +60,9 @@ public interface Delegative<A, B> {
   }
 
   /** Accessor for the input to the {@code run} method, available in all methods. */
+  @SuppressWarnings("unchecked")
   default A getInput() {
-    return null; // FIXME override implementation of this in Agent?
+    return (A) ((Agent) this)._getDelegativeInput();
   }
 
   default Agent.Effect<Done> run(A input) {
