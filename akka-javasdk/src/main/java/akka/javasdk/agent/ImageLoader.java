@@ -5,6 +5,7 @@
 package akka.javasdk.agent;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Optional;
 
 /**
@@ -51,8 +52,10 @@ import java.util.Optional;
  *
  * @see MessageContent.ImageMessageContent
  * @see Agent.Effect.Builder#imageLoader(ImageLoader)
+ * @deprecated use {@link ContentLoader}
  */
-public interface ImageLoader {
+@Deprecated(forRemoval = true)
+public interface ImageLoader extends ContentLoader {
 
   /**
    * Represents a loaded image with its binary data and MIME type.
@@ -60,7 +63,7 @@ public interface ImageLoader {
    * @param data The raw image bytes
    * @param mimeType The MIME type of the image (e.g., "image/jpeg", "image/png")
    */
-  record LoadedImage(byte[] data, String mimeType) {}
+  record LoadedImage(byte[] data, Optional<String> mimeType) {}
 
   /**
    * Loads an image from the given URI.
@@ -82,4 +85,18 @@ public interface ImageLoader {
       URI uri,
       MessageContent.ImageMessageContent.DetailLevel detailLevel,
       Optional<String> mimeType);
+
+  default LoadedContent load(MessageContent.LoadableMessageContent content) {
+    switch (content) {
+      case MessageContent.ImageUrlMessageContent image -> {
+        try {
+          var loadedImage = load(image.url().toURI(), image.detailLevel(), image.mimeType());
+          return new LoadedContent(loadedImage.data, loadedImage.mimeType);
+        } catch (URISyntaxException e) {
+          throw new RuntimeException(e);
+        }
+      }
+      default -> throw new IllegalStateException("Loading unsupported content " + content);
+    }
+  }
 }

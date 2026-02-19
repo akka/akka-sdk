@@ -34,7 +34,8 @@ public sealed interface SessionMessage {
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
   @JsonSubTypes({
     @JsonSubTypes.Type(value = MessageContent.TextMessageContent.class, name = "T"),
-    @JsonSubTypes.Type(value = MessageContent.ImageUriMessageContent.class, name = "IU")
+    @JsonSubTypes.Type(value = MessageContent.ImageUriMessageContent.class, name = "IU"),
+    @JsonSubTypes.Type(value = MessageContent.PdfUriMessageContent.class, name = "PU")
   })
   sealed interface MessageContent {
 
@@ -45,6 +46,8 @@ public sealed interface SessionMessage {
         akka.javasdk.agent.MessageContent.ImageMessageContent.DetailLevel detailLevel,
         Optional<String> mimeType)
         implements MessageContent {}
+
+    record PdfUriMessageContent(String uri) implements MessageContent {}
   }
 
   // need to introduce new message to keep backward compatibility
@@ -70,6 +73,7 @@ public sealed interface SessionMessage {
                         sizeInBytes(image.uri())
                             + sizeInBytes(image.detailLevel().toString())
                             + image.mimeType.map(SessionMessage::sizeInBytes).orElse(0);
+                    case MessageContent.PdfUriMessageContent pdf -> sizeInBytes(pdf.uri());
                   })
           .mapToInt(Integer::intValue)
           .sum();
