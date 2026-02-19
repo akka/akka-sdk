@@ -18,6 +18,11 @@ import akka.runtime.sdk.spi.DeferredRequest
 /**
  * INTERNAL API
  */
+private[impl] final case class CallResult[O](value: O, metadata: Metadata)
+
+/**
+ * INTERNAL API
+ */
 @InternalApi
 private[impl] final case class DeferredCallImpl[I, O](
     message: I,
@@ -26,12 +31,12 @@ private[impl] final case class DeferredCallImpl[I, O](
     componentId: String,
     methodName: String,
     entityId: Option[String],
-    asyncCall: Metadata => CompletionStage[O],
+    asyncCall: Metadata => CompletionStage[CallResult[O]],
     serializer: JsonSerializer)
     extends DeferredCall[I, O] {
   import MetadataImpl.toSpi
 
-  def invokeAsync(): CompletionStage[O] = asyncCall(metadata)
+  def invokeAsync(): CompletionStage[CallResult[O]] = asyncCall(metadata)
 
   override def withMetadata(metadata: Metadata): DeferredCallImpl[I, O] = {
     this.copy(metadata = metadata.asInstanceOf[MetadataImpl])

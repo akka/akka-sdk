@@ -54,7 +54,8 @@ private[impl] final case class ComponentMethodRefImpl[A1, R](
   }
 
   def invokeAsync(): CompletionStage[R] = {
-    createDeferred(metadataOpt, retrySettings, None).asInstanceOf[DeferredCallImpl[NotUsed, R]].invokeAsync()
+    callComponent()
+      .thenApply(_.value)
   }
 
   def deferred(arg: A1): DeferredCall[A1, R] = {
@@ -70,7 +71,8 @@ private[impl] final case class ComponentMethodRefImpl[A1, R](
   def invokeAsync(arg: A1): CompletionStage[R] = {
     if (arg == null)
       throw new IllegalStateException("Argument to invokeAsync must not be null")
-    createDeferred(metadataOpt, retrySettings, Some(arg)).asInstanceOf[DeferredCallImpl[NotUsed, R]].invokeAsync()
+    callComponent(arg)
+      .thenApply(_.value)
   }
 
   // Note: invoke/ask timeout handled by runtime so no timeout needed here
@@ -83,5 +85,19 @@ private[impl] final case class ComponentMethodRefImpl[A1, R](
     try {
       invokeAsync(arg).toCompletableFuture.get()
     } catch unwrapExecutionExceptionCatcher
+  }
+
+  def callComponent(): CompletionStage[CallResult[R]] = {
+    createDeferred(metadataOpt, retrySettings, None)
+      .asInstanceOf[DeferredCallImpl[NotUsed, R]]
+      .invokeAsync()
+  }
+
+  def callComponent(arg: A1): CompletionStage[CallResult[R]] = {
+    if (arg == null)
+      throw new IllegalStateException("Argument to invokeAsync must not be null")
+    createDeferred(metadataOpt, retrySettings, Some(arg))
+      .asInstanceOf[DeferredCallImpl[NotUsed, R]]
+      .invokeAsync()
   }
 }
