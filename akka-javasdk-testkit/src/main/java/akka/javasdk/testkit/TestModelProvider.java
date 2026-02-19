@@ -336,7 +336,7 @@ public final class TestModelProvider implements ModelProvider.Custom {
 
   /** Configures a fixed response for all input messages. */
   public void fixedResponse(String response) {
-    whenMessage(msg -> true).reply(response);
+    whenUserMessage(__ -> true).reply(response);
   }
 
   /**
