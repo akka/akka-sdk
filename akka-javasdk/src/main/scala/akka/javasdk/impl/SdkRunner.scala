@@ -689,8 +689,14 @@ private final class Sdk(
             guardrailEnabledForComponent.getOrElse(guardrailName, Set.empty) + componentId)
         }
 
+        val agentCapabilities: Set[SpiAgent.AgentCapability] =
+          if (Reflect.isDelegativeAgent(clz)) {
+            Set(SpiAgent.AgentCapability.DelegativeCapability)
+          } else
+            Set.empty
+
         val instanceFactory: SpiAgent.FactoryContext => SpiAgent =
-          if (Reflect.isDelegativeAgent(clz)) { factoryContext =>
+          if (agentCapabilities.contains(SpiAgent.AgentCapability.DelegativeCapability)) { factoryContext =>
             new DelegativeAgentImpl(
               componentId,
               factoryContext.sessionId,
@@ -734,12 +740,6 @@ private final class Sdk(
               applicationConfig)
           }
 
-        val multiAgentCapability: Option[SpiAgent.MultiAgentCapability] =
-          if (Reflect.isDelegativeAgent(clz)) {
-            Some(SpiAgent.MultiAgentCapability.DelegativeCapability)
-          } else
-            None
-
         agentDescriptors :+=
           new AgentDescriptor(
             componentId,
@@ -749,7 +749,7 @@ private final class Sdk(
             description = Reflect.readComponentDescription(clz),
             evaluator = Reflect.isEvaluatorAgent(clz),
             provided = isProvided(clz),
-            multiAgentCapability = multiAgentCapability)
+            agentCapabilities = agentCapabilities)
 
         agentRegistryInfo :+= AgentRegistryImpl.agentDetailsFor(agentClass)
 
