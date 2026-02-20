@@ -27,7 +27,7 @@ Akka supports three deployment models. Behaviour remains consistent across them,
 |Akka clusters xref:concepts:concepts.adoc#_service_packaging[can be run on your infrastructure]: virtual machines, containers, Platform as a Service (PaaS), edge, unikernels, or Kubernetes. You will need to configure routing, certificates, networking, and persistence yourself. Some PaaS systems may block network access, affecting clustering. In those cases, single-node operation is possible.
 
 |xref:operations:akka-platform.adoc[*Akka Automated Operations (AAO)*]
-(in your VPC or serveress)
+(in your VPC or serverless)
 
 |This optional product helps automate day 2 operations. It provides a global federation plane for managing federated regions, along with an application plane for running services in a secure way. Services can be deployed from the Akka CLI to either xref:operations:index.adoc[Akka’s serverless cloud] or a xref:operations:index.adoc[privately managed VPC region].
 
