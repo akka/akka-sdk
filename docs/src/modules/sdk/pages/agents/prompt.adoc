@@ -22,9 +22,9 @@ Keep in mind that some models have preferences in how you wrap or label user inp
 
 == Multimodal user message
 
-Multimodal AI models can process not only text but also images or PDFs, enabling agents to analyze visual content, extract information from documents, or answer questions about images.
+Multimodal AI models can process not only text but also images or PDF, enabling agents to analyze visual content, extract information from documents, or answer questions about images.
 
-To send images or PDFs along with text to an AI model, use the `UserMessage` class which supports multimodal content:
+To send images or PDF along with text to an AI model, use the `UserMessage` class which supports multimodal content:
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/application/ImageProcessingAgent.java[ImageProcessingAgent.java]
@@ -39,7 +39,7 @@ NOTE: Not all AI models support vision or PDF capabilities. Ensure your configur
 
 === Custom content loading
 
-Some AI models are able to fetch images or PDFs from publicly accessible URLs. When you need to load content from authenticated endpoints, private storage systems, or custom sources, you can implement a custom `ContentLoader`.
+Some AI models are able to fetch images or PDF from publicly accessible URLs. When you need to load content from authenticated endpoints, private storage systems, or custom sources, you can implement a custom `ContentLoader`.
 
 The `ContentLoader` interface provides a single `load` method that receives a `LoadableMessageContent`. Use pattern matching to handle each content type, fetch the data, and return it along with the appropriate MIME type:
 

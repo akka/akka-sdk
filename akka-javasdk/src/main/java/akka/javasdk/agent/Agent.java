@@ -252,7 +252,7 @@ public abstract class Agent {
       /**
        * Sets a custom content loader.
        *
-       * <p>When multimodal messages contain image, PDFs references, they are normally automatically
+       * <p>When multimodal messages contain image, PDF references, they are normally automatically
        * fetched, this however requires that they are public and can be fetched by any HTTP client.
        * Defining a custom loader makes it possible to load content from custom sources such as
        * cloud storage, databases, or authenticated endpoints.
@@ -621,7 +621,7 @@ public abstract class Agent {
       /**
        * Sets a custom content loader.
        *
-       * <p>When multimodal messages contain image, PDFs references, they are normally automatically
+       * <p>When multimodal messages contain image, PDF references, they are normally automatically
        * fetched, this however requires that they are public and can be fetched by any HTTP client.
        * Defining a custom loader makes it possible to load content from custom sources such as
        * cloud storage, databases, or authenticated endpoints.
