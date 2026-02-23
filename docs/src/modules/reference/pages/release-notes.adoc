@@ -12,6 +12,20 @@ Current versions
 
 == February 2026
 
+[sidebar]
+****
+
+**Views and consumers can start from snapshots**
+
+Views and consumers can now be configured to xref:sdk:consuming-producing.adoc#_starting_from_snapshot[start from a snapshot] instead of replaying the full event history. This significantly reduces startup time and resource usage for components that subscribe to high-volume event streams.
+
+****
+
+* https://github.com/akka/akka-sdk/releases/tag/v3.5.14[Akka SDK 3.5.14]
+- maven multi-module support improvements
+- start views and consumers from snapshot
+- Testkit improvements
+
 * Akka CLI 3.0.47
 - Improvements to the 'akka code update-context' command
 
