@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package akka.javasdk.testkit;
@@ -32,6 +32,11 @@ import java.util.stream.Stream;
  * allows defining mock responses based on input predicates.
  */
 public final class TestModelProvider implements ModelProvider.Custom {
+
+  @Override
+  public String modelName() {
+    return "test-model";
+  }
 
   /**
    * Represents an AI response, which can include a message and/or list of tool invocation requests.
@@ -273,7 +278,9 @@ public final class TestModelProvider implements ModelProvider.Custom {
       ImageContent.DetailLevel detailLevel) {
     return switch (detailLevel) {
       case LOW -> MessageContent.ImageMessageContent.DetailLevel.LOW;
+      case MEDIUM -> MessageContent.ImageMessageContent.DetailLevel.MEDIUM;
       case HIGH -> MessageContent.ImageMessageContent.DetailLevel.HIGH;
+      case ULTRA_HIGH -> MessageContent.ImageMessageContent.DetailLevel.ULTRA_HIGH;
       case AUTO -> MessageContent.ImageMessageContent.DetailLevel.AUTO;
     };
   }
@@ -334,7 +341,7 @@ public final class TestModelProvider implements ModelProvider.Custom {
 
   /** Configures a fixed response for all input messages. */
   public void fixedResponse(String response) {
-    whenMessage(msg -> true).reply(response);
+    new WhenClause(this, inputMessage -> true).reply(response);
   }
 
   /**

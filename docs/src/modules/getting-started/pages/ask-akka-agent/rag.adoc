@@ -1,5 +1,5 @@
 = Executing RAG queries
-:page-aliases: java:ask-akka/rag.adoc
+:page-aliases: java:ask-akka/rag.adoc, sdk:ask-akka/rag.adoc
 
 include::ROOT:partial$include.adoc[]
 

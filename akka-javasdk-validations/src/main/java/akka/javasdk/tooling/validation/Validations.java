@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package akka.javasdk.tooling.validation;
@@ -26,15 +26,15 @@ public class Validations {
    * @return a Validation result indicating success or failure with error messages
    */
   public static Validation validateComponent(TypeDef typeDef) {
-    return componentMustBePublic(typeDef)
-        .combine(mustHaveValidComponentId(typeDef))
+    return mustHaveValidComponentId(typeDef)
         .combine(TimedActionValidations.validate(typeDef))
         .combine(ConsumerValidations.validate(typeDef))
         .combine(WorkflowValidations.validate(typeDef))
         .combine(KeyValueEntityValidations.validate(typeDef))
         .combine(EventSourcedEntityValidations.validate(typeDef))
         .combine(AgentValidations.validate(typeDef))
-        .combine(ViewValidations.validate(typeDef));
+        .combine(ViewValidations.validate(typeDef))
+        .combine(HttpEndpointValidations.validate(typeDef));
   }
 
   // ==================== Subscription Helper Methods ====================
@@ -70,6 +70,16 @@ public class Validations {
   }
 
   /**
+   * Checks if a component has a ServiceStream subscription.
+   *
+   * @param typeDef the component class to check
+   * @return true if the component has @Consume.FromServiceStream
+   */
+  public static boolean hasServiceStreamSubscription(TypeDef typeDef) {
+    return typeDef.hasAnnotation("akka.javasdk.annotations.Consume.FromServiceStream");
+  }
+
+  /**
    * Checks if a component does not have any subscription annotation.
    *
    * @param typeDef the component class to check
@@ -87,6 +97,92 @@ public class Validations {
    */
   public static boolean hasHandleDeletes(MethodDef method) {
     return method.hasAnnotation("akka.javasdk.annotations.DeleteHandler");
+  }
+
+  /**
+   * Checks if a method has @SnapshotHandler annotation.
+   *
+   * @param method the method to check
+   * @return true if the method has @SnapshotHandler
+   */
+  public static boolean hasSnapshotHandler(MethodDef method) {
+    return method.hasAnnotation("akka.javasdk.annotations.SnapshotHandler");
+  }
+
+  /**
+   * Validates @SnapshotHandler usage. The annotation is only valid on methods in classes
+   * with @Consume.FromEventSourcedEntity annotation.
+   *
+   * @param typeDef the component class to validate
+   * @param effectTypeName the effect type name to identify handler methods
+   * @return a Validation result indicating success or failure
+   */
+  public static Validation snapshotHandlerValidation(TypeDef typeDef, String effectTypeName) {
+    List<MethodDef> snapshotHandlers =
+        typeDef.getPublicMethods().stream().filter(Validations::hasSnapshotHandler).toList();
+
+    if (snapshotHandlers.isEmpty()) {
+      return Validation.Valid.instance();
+    }
+
+    List<String> errors = new ArrayList<>();
+
+    // @SnapshotHandler is only allowed with @Consume.FromEventSourcedEntity
+    if (!hasEventSourcedEntitySubscription(typeDef)) {
+      for (MethodDef method : snapshotHandlers) {
+        // Provide a more specific error message for service-to-service consumers
+        if (hasServiceStreamSubscription(typeDef)) {
+          errors.add(
+              errorMessage(
+                  method,
+                  "@SnapshotHandler cannot be used with @Consume.FromServiceStream. For"
+                      + " service-to-service communication, define the @SnapshotHandler on the"
+                      + " producer side (with @Produce.ServiceStream), which will transform the"
+                      + " snapshot to an event that the consumer receives like any other event."));
+        } else {
+          errors.add(
+              errorMessage(
+                  method,
+                  "@SnapshotHandler can only be used in classes annotated with"
+                      + " @Consume.FromEventSourcedEntity."));
+        }
+      }
+      return Validation.of(errors);
+    }
+
+    // Only one @SnapshotHandler method is allowed
+    if (snapshotHandlers.size() > 1) {
+      List<String> methodNames = snapshotHandlers.stream().map(MethodDef::getName).toList();
+      errors.add(
+          errorMessage(
+              typeDef,
+              "Only one method can be annotated with @SnapshotHandler. Found: ["
+                  + String.join(", ", methodNames)
+                  + "]."));
+    }
+
+    // Each @SnapshotHandler method must have exactly one parameter
+    for (MethodDef method : snapshotHandlers) {
+      int paramCount = method.getParameters().size();
+      if (paramCount != 1) {
+        errors.add(
+            errorMessage(
+                method,
+                "@SnapshotHandler method must have exactly one parameter (the snapshot type)."
+                    + " Found "
+                    + paramCount
+                    + " parameters."));
+      }
+
+      // Must return the correct Effect type
+      String returnTypeName = method.getReturnType().getQualifiedName();
+      if (!returnTypeName.startsWith(effectTypeName)) {
+        errors.add(
+            errorMessage(method, "@SnapshotHandler method must return " + effectTypeName + "."));
+      }
+    }
+
+    return Validation.of(errors);
   }
 
   // ==================== Subscription Validation Methods ====================

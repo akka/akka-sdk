@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package akka.javasdk.impl
@@ -43,11 +43,6 @@ import akka.javasdk.Tracing
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
 import akka.javasdk.agent.AgentRegistry
-import akka.javasdk.agent.PromptTemplate
-import akka.javasdk.agent.SessionMemoryEntity
-import akka.javasdk.agent.evaluator.HallucinationEvaluator
-import akka.javasdk.agent.evaluator.SummarizationEvaluator
-import akka.javasdk.agent.evaluator.ToxicityEvaluator
 import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.GrpcEndpoint
@@ -224,16 +219,22 @@ object SdkRunner {
  * INTERNAL API
  */
 @InternalApi
-class SdkRunner private (dependencyProvider: Option[DependencyProvider], disabledComponents: Set[Class[_]])
+class SdkRunner private (
+    dependencyProvider: Option[DependencyProvider],
+    disabledComponents: Set[Class[_]],
+    overrideDisabledComponents: Boolean)
     extends akka.runtime.sdk.spi.Runner {
   private val startedPromise = Promise[StartupContext]()
 
   // default constructor for runtime creation
-  def this() = this(None, Set.empty[Class[_]])
+  def this() = this(None, Set.empty[Class[_]], false)
 
   // constructor for testkit
-  def this(dependencyProvider: java.util.Optional[DependencyProvider], disabledComponents: java.util.Set[Class[_]]) =
-    this(dependencyProvider.toScala, disabledComponents.asScala.toSet)
+  def this(
+      dependencyProvider: java.util.Optional[DependencyProvider],
+      disabledComponents: java.util.Set[Class[_]],
+      overrideDisabledComponents: Boolean) =
+    this(dependencyProvider.toScala, disabledComponents.asScala.toSet, overrideDisabledComponents)
 
   def applicationConfig: Config =
     ApplicationConfig.loadApplicationConf
@@ -254,6 +255,7 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
         startContext.regionInfo,
         dependencyProvider,
         disabledComponents,
+        overrideDisabledComponents,
         startedPromise,
         getSettings.devMode.map(_.serviceName),
         startContext.sanitizer)
@@ -288,93 +290,6 @@ private object ComponentType {
   val TimedAction = "timed-action"
   val View = "view"
   val Agent = "agent"
-}
-
-/**
- * INTERNAL API
- */
-@InternalApi
-private object ComponentLocator {
-
-  // populated by annotation processor
-  private val ComponentDescriptorResourcePath = "META-INF/akka-javasdk-components.conf"
-  private val DescriptorComponentBasePath = "akka.javasdk.components"
-  private val DescriptorServiceSetupEntryPath = "akka.javasdk.service-setup"
-
-  private val logger = LoggerFactory.getLogger(getClass)
-
-  val providedComponents: Seq[Class[_]] = Seq(
-    classOf[SessionMemoryEntity],
-    classOf[PromptTemplate],
-    classOf[ToxicityEvaluator],
-    classOf[SummarizationEvaluator],
-    classOf[HallucinationEvaluator])
-
-  case class LocatedClasses(components: Seq[Class[_]], service: Option[Class[_]])
-
-  def locateUserComponents(system: ActorSystem[_]): LocatedClasses = {
-    val akkaComponentTypeAndBaseClasses: Map[String, Class[_]] =
-      Map(
-        ComponentType.HttpEndpoint -> classOf[AnyRef],
-        ComponentType.GrpcEndpoint -> classOf[AnyRef],
-        ComponentType.McpEndpoint -> classOf[AnyRef],
-        ComponentType.TimedAction -> classOf[TimedAction],
-        ComponentType.Consumer -> classOf[Consumer],
-        ComponentType.EventSourcedEntity -> classOf[EventSourcedEntity[_, _]],
-        ComponentType.Workflow -> classOf[Workflow[_]],
-        ComponentType.KeyValueEntity -> classOf[KeyValueEntity[_]],
-        ComponentType.View -> classOf[AnyRef],
-        ComponentType.Agent -> classOf[Agent])
-
-    // Alternative to but inspired by the stdlib SPI style of registering in META-INF/services
-    // since we don't always have top supertypes and want to inject things into component constructors
-    logger.info("Looking for component descriptors in [{}]", ComponentDescriptorResourcePath)
-
-    // Descriptor hocon has one entry per component type with a list of strings containing
-    // the concrete component classes for the given project
-    val descriptorConfig = ConfigFactory.load(ComponentDescriptorResourcePath)
-    if (!descriptorConfig.hasPath(DescriptorComponentBasePath))
-      throw new IllegalStateException(
-        "No components found. If you have any, it looks like your project needs to be recompiled. Run `mvn clean compile` and try again.")
-    val componentConfig = descriptorConfig.getConfig(DescriptorComponentBasePath)
-
-    val components: Seq[Class[_]] = akkaComponentTypeAndBaseClasses.flatMap {
-      case (componentTypeKey, componentTypeClass) =>
-        if (componentConfig.hasPath(componentTypeKey)) {
-          componentConfig.getStringList(componentTypeKey).asScala.map { className =>
-            try {
-              val componentClass = system.dynamicAccess.getClassFor(className)(ClassTag(componentTypeClass)).get
-              logger.debug("Found and loaded component class: [{}]", componentClass)
-              componentClass
-            } catch {
-              case ex: ClassNotFoundException =>
-                throw new IllegalStateException(
-                  s"Could not load component class [$className]. The exception might appear after rename or repackaging operation. " +
-                  "It looks like your project needs to be recompiled. Run `mvn clean compile` and try again.",
-                  ex)
-            }
-          }
-        } else
-          Seq.empty
-    }.toSeq
-
-    val withBuildInComponents = if (components.exists(classOf[Agent].isAssignableFrom)) {
-      logger.debug("Agent component detected, adding provided components")
-      providedComponents ++ components
-    } else {
-      components
-    }
-
-    if (descriptorConfig.hasPath(DescriptorServiceSetupEntryPath)) {
-      // central config/lifecycle class
-      val serviceSetupClassName = descriptorConfig.getString(DescriptorServiceSetupEntryPath)
-      val serviceSetup = system.dynamicAccess.getClassFor[AnyRef](serviceSetupClassName).get
-      logger.debug("Found and loaded service class setup: [{}]", serviceSetup)
-      LocatedClasses(withBuildInComponents, Some(serviceSetup))
-    } else {
-      LocatedClasses(withBuildInComponents, None)
-    }
-  }
 }
 
 /**
@@ -422,6 +337,7 @@ private final class Sdk(
     regionInfo: RegionInfo,
     dependencyProviderOverride: Option[DependencyProvider],
     disabledComponents: Set[Class[_]],
+    overrideDisabledComponents: Boolean,
     startedPromise: Promise[StartupContext],
     serviceNameOverride: Option[String],
     runtimeSanitizer: SpiSanitizerEngine) {
@@ -624,7 +540,8 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = isProvided(clz),
-            replicationFilterEnabled = Reflect.isReplicationFilterEnabled(clz))
+            replicationFilterEnabled = Reflect.isReplicationFilterEnabled(clz),
+            protobufDescriptors = Nil)
 
       case clz if Reflect.isKeyValueEntity(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -667,7 +584,8 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            replicationFilterEnabled = Reflect.isReplicationFilterEnabled(clz))
+            replicationFilterEnabled = Reflect.isReplicationFilterEnabled(clz),
+            protobufDescriptors = Nil)
 
       case clz if Reflect.isWorkflow(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -692,7 +610,8 @@ private final class Sdk(
             ctx => workflowInstanceFactory(componentId, ctx, clz.asInstanceOf[Class[Workflow[Nothing]]]),
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            provided = false)
+            provided = false,
+            protobufDescriptors = Nil)
 
       case clz if Reflect.isTimedAction(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -719,7 +638,8 @@ private final class Sdk(
             timedActionSpi,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            provided = false)
+            provided = false,
+            protobufDescriptors = Nil)
 
       case clz if Reflect.isConsumer(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -752,7 +672,8 @@ private final class Sdk(
             consumerSpi,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            provided = false)
+            provided = false,
+            protobufDescriptors = Nil)
 
       case clz if Reflect.isAgent(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -788,7 +709,8 @@ private final class Sdk(
             overrideModelProvider,
             dependencyProviderOpt,
             agentGuardrails,
-            applicationConfig)
+            applicationConfig,
+            system)
 
         }
 
@@ -851,8 +773,14 @@ private final class Sdk(
     }
 
     // service setup + integration test config
+    // When overrideDisabledComponents is true, use only the testkit's disabled components (which may be empty)
+    // Otherwise, combine with ServiceSetup's disabled components
     val combinedDisabledComponents =
-      (serviceSetup.map(_.disabledComponents().asScala.toSet).getOrElse(Set.empty) ++ disabledComponents).map(_.getName)
+      if (overrideDisabledComponents)
+        disabledComponents.map(_.getName)
+      else
+        (serviceSetup.map(_.disabledComponents().asScala.toSet).getOrElse(Set.empty) ++ disabledComponents)
+          .map(_.getName)
 
     val descriptors =
       (eventSourcedEntityDescriptors ++

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package akka.javasdk.agent;
@@ -1135,6 +1135,15 @@ public sealed interface ModelProvider {
      * @return an instance of {@code dev.langchain4j.model.chat.StreamingChatModel}
      */
     Object createStreamingChatModel();
+
+    /**
+     * Override this method to provide a meaningful model name for your custom provider.
+     *
+     * @return the model name, defaults to 'custom'.
+     */
+    default String modelName() {
+      return "custom";
+    }
   }
 
   /** Settings for the Bedrock Large Language Model provider. */

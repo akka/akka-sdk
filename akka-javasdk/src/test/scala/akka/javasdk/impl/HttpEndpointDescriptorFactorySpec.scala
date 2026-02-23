@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package akka.javasdk.impl
@@ -170,23 +170,6 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
       lowLevelBodyOnly.methodSpec shouldBe Spec(requestBody = Spec.lowLevelBody())
     }
 
-    "fail when path expression does not match parameters" in {
-      val message = intercept[ValidationException] {
-        HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.InvalidEndpointMethods], _ => null)
-      }.getMessage
-
-      message should include(
-        "There are more parameters in the path expression [/{id}/my-endpoint/] than there are parameters for [akka.javasdk.impl.http.TestEndpoints$InvalidEndpointMethods.list1]")
-      message should include(
-        "The parameter [id] in the path expression [/{id}/my-endpoint/] does not match the method parameter name [bob] for [akka.javasdk.impl.http.TestEndpoints$InvalidEndpointMethods.list2]")
-      message should include(
-        "The parameter [bob] in the path expression [/{id}/my-endpoint/something/{bob}] does not match the method parameter name [value] for [akka.javasdk.impl.http.TestEndpoints$InvalidEndpointMethods.list3]")
-      message should include(
-        "There are [2] parameters ([value,body]) for endpoint method [akka.javasdk.impl.http.TestEndpoints$InvalidEndpointMethods.list5] not matched by the path expression")
-      message should include(
-        "Wildcard path can only be the last segment of the path [/{id}/my-endpoint/wildcard/**/not/last]")
-    }
-
     "hide double slash when combining prefix with method path" in {
       val descriptor = HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.WithRootPrefix], _ => null)
       val byMethodName = descriptor.methods.map(md => md.userMethod.getName -> md).toMap
@@ -309,80 +292,6 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
           "origin-ref") shouldBe "one-value1-two-value1-three"
       }
       exception.getMessage shouldBe "[ENV3] env var is missing but it is used in claim [one-${ENV}-two-${ENV3}-three] in [origin-ref]."
-    }
-
-    "parse valid WebSocket endpoints" in {
-      val descriptor = HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.ValidWebSocketEndpoints], _ => null)
-      val byMethodName = descriptor.methods.map(md => md.userMethod.getName -> md).toMap
-
-      descriptor.mainPath should ===(Some("/websocket/"))
-      descriptor.methods should have size 4
-
-      val textWs = byMethodName("textWebSocket")
-      textWs.pathExpression should ===("text")
-      textWs.httpMethod should ===(HttpMethods.GET)
-      textWs.webSocket shouldBe true
-
-      val binaryWs = byMethodName("binaryWebSocket")
-      binaryWs.pathExpression should ===("binary")
-      binaryWs.webSocket shouldBe true
-
-      val messageWs = byMethodName("messageWebSocket")
-      messageWs.pathExpression should ===("message")
-      messageWs.webSocket shouldBe true
-
-      val withPathParam = byMethodName("withPathParam")
-      withPathParam.pathExpression should ===("with-path-param/{id}")
-      withPathParam.webSocket shouldBe true
-    }
-
-    "fail when WebSocket method has wrong return type" in {
-      val message = intercept[ValidationException] {
-        HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.InvalidWebSocketReturnType], _ => null)
-      }.getMessage
-
-      message should include("Wrong return type for WebSocket method")
-      message should include("wrongReturnType")
-      message should include("must be [akka.stream.javadsl.Flow]")
-    }
-
-    "fail when WebSocket method has different in/out message types" in {
-      val message = intercept[ValidationException] {
-        HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.InvalidWebSocketDifferentTypes], _ => null)
-      }.getMessage
-
-      message should include("differentInOut")
-      message should include("has different types of Flow in and out messages")
-    }
-
-    "fail when WebSocket method has unsupported message type" in {
-      val message = intercept[ValidationException] {
-        HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.InvalidWebSocketMessageType], _ => null)
-      }.getMessage
-
-      message should include("unsupportedType")
-      message should include("has unsupported message type")
-      message should include("must be String for text messages")
-    }
-
-    "fail when WebSocket method has unsupported materialized value type" in {
-      val message = intercept[ValidationException] {
-        HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.InvalidWebSocketMatType], _ => null)
-      }.getMessage
-
-      message should include("wrongMatType")
-      message should include("has unsupported materialized value type")
-      message should include("must be akka.NotUsed")
-    }
-
-    "fail when WebSocket method has request body parameter" in {
-      val message = intercept[ValidationException] {
-        HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.InvalidWebSocketBodyParam], _ => null)
-      }.getMessage
-
-      message should include("Request body parameter defined for WebSocket method")
-      message should include("withBodyParam")
-      message should include("this is not supported")
     }
   }
 }

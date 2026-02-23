@@ -161,6 +161,20 @@ When an entity is deleted, its corresponding view row will be deleted automatica
 
 If you want to customize this behavior, you can add a handler method marked with `@DeleteHandler` to your table updater. For example, instead of deleting the row, you can perform a logical deleted.
 
+=== Starting from Snapshot
+
+A View that processes events from an Event Sourced Entity can optionally define a `@SnapshotHandler` method to receive entity snapshots. This can provide significant performance improvements when a new view needs to catch up on a long event history.
+
+When a `@SnapshotHandler` is defined in the `TableUpdater`, the view will start processing from the most recent snapshot instead of replaying historical events. After processing the snapshot, subsequent events are processed normally.
+
+[source,java,indent=0]
+.{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/application/CustomersByNameView.java[CustomersByNameView.java]
+----
+include::example$event-sourced-customer-registry/src/main/java/customer/application/CustomersByNameView.java[tags=snapshot]
+----
+
+The `@SnapshotHandler` annotation marks the method that will receive entity snapshots. The parameter type must match the state type of the Event Sourced Entity.
+
 [#workflow]
 == Creating a View from a Workflow
 
@@ -275,6 +289,13 @@ Rebuilding a new View may take some time if there are many events that have to b
 The View definitions are stored and validated when a new version is deployed. There will be an error message if the changes are not compatible.
 
 WARNING: Views from topics cannot be rebuilt from the source messages, because it might not be possible to consume all events from the topic again. The new View is built from new messages published to the topic.
+
+[#at-least-once-delivery]
+== Delivery semantics and deduplication
+
+All Views based on Event Sourced Entities, Key Value Entities and Workflows use exactly-once delivery semantics. It means that there is a build in deduplication mechanism based on xref:dev-best-practices.adoc#_sequence_number_tracking[sequence number] tracking.
+
+NOTE: For Views based on Key Value Entities, while the deduplication mechanism ensures exactly-once processing, it does not guarantee that all intermediate state changes will be delivered to the View. Due to the nature of Key Value Entities, only the latest state is guaranteed to be reflected in the View. If a Key Value Entity is updated multiple times in quick succession, some intermediate states may be skipped during restarts or rebalances.
 
 == Testing the View
 

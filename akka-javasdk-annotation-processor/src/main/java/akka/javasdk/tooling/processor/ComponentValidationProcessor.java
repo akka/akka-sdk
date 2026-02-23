@@ -1,8 +1,10 @@
 /*
- * Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package akka.javasdk.tooling.processor;
+
+import static akka.javasdk.tooling.validation.Validations.componentMustBePublic;
 
 import akka.javasdk.tooling.validation.HttpEndpointValidations;
 import akka.javasdk.tooling.validation.Validation;
@@ -11,8 +13,6 @@ import akka.javasdk.validation.ast.compiletime.CompileTimeTypeDef;
 import java.util.Set;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
-import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic;
@@ -26,7 +26,6 @@ import javax.tools.Diagnostic;
   "akka.javasdk.annotations.ComponentId",
   "akka.javasdk.annotations.http.HttpEndpoint"
 })
-@SupportedSourceVersion(SourceVersion.RELEASE_21)
 public class ComponentValidationProcessor extends BaseAkkaProcessor {
 
   private static final String HTTP_ENDPOINT_ANNOTATION =
@@ -50,11 +49,14 @@ public class ComponentValidationProcessor extends BaseAkkaProcessor {
         // Wrap TypeElement in CompileTimeTypeDef
         CompileTimeTypeDef typeDef = new CompileTimeTypeDef(element);
 
+        // all components must be public, to start with...
+        Validation publicValidation = componentMustBePublic(typeDef);
+
         // Use appropriate validation based on annotation type
         Validation validation =
             isHttpEndpoint
-                ? HttpEndpointValidations.validate(typeDef)
-                : Validations.validateComponent(typeDef);
+                ? publicValidation.combine(HttpEndpointValidations.validate(typeDef))
+                : publicValidation.combine(Validations.validateComponent(typeDef));
 
         if (validation instanceof Validation.Invalid(java.util.List<String> errorMessages)) {
           debug("Component " + element.getSimpleName() + " is invalid");

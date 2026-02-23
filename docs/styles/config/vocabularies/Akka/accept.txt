@@ -18,6 +18,7 @@ auditable
 [Aa]utoscaling
 authMechanism
 Avro
+azureMonitor
 [Bb]ackoffice
 Bastian
 [Bb]oolean
@@ -33,11 +34,13 @@ Cembaluk
 checkpointing
 classname
 clientCertificate
+cloudName
 codegen
 [Cc]omposable
 [Cc]omposability
 config
 configs
+connectionString
 corsPolicy
 Couchbase
 CRDTs
@@ -244,9 +247,11 @@ upserting
 url
 userid
 valueFrom
+versionHistory
 VMs
 volumeMounts
 [Ww]alkthrough
+winget
 Yugabyte
 Zolotko
 [Zz]sh

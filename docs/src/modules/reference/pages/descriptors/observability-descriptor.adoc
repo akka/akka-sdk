@@ -26,8 +26,10 @@ The default exporter configuration for metrics, logs, and traces. At most one de
 
 |*kalixConsole* |object                            |If defined, metrics will be exported to the Akka Console. There are no configuration parameters for the console exporter, it should be declared as an empty object.
 |*otlp*         |<<ObservabilityOtlp>>        |If defined, will export metrics, logs, and traces to an OpenTelemetry collector using the OTLP gRPC protocol.
+|*otlpHttp*     |<<ObservabilityOtlpHttp>>    |If defined, will export metrics, logs, and traces to an OpenTelemetry collector using the OTLP HTTP protocol.
 |*splunkHec*    |<<ObservabilitySplunkHec>>   |If defined, will export metrics and logs to a Splunk platform instance, using the Splunk HTTP Event Collector.
 |*googleCloud*  |<<ObservabilityGoogleCloud>> |If defined, will export metrics, logs, and traces to Google Cloud.
+|*azureMonitor* |<<ObservabilityAzureMonitor>> |If defined, will export metrics, logs, and traces to Azure Monitor.
 |===
 
 === ObservabilityMetrics
@@ -40,9 +42,11 @@ The metrics exporter configuration. At most one metrics exporter may be configur
 
 |*kalixConsole*    |object                                |If defined, metrics will be exported to the Akka Console. There are no configuration parameters for the console exporter, it should be declared as an empty object.
 |*otlp*            |<<ObservabilityOtlp>>            |If defined, will export metrics to an OpenTelemetry collector using the OTLP gRPC protocol.
+|*otlpHttp*        |<<ObservabilityOtlpHttp>>        |If defined, will export metrics to an OpenTelemetry collector using the OTLP HTTP protocol.
 |*prometheuswrite* |<<ObservabilityPrometheusWrite>> |If defined, will export metrics using the Prometheus remote write protocol.
 |*splunkHec*       |<<ObservabilitySplunkHec>>       |If defined, will export metrics to a Splunk platform instance, using the Splunk HTTP Event Collector.
 |*googleCloud*     |<<ObservabilityGoogleCloud>>     |If defined, will export metrics to Google Cloud.
+|*azureMonitor*    |<<ObservabilityAzureMonitor>>    |If defined, will export metrics to Azure Monitor.
 |===
 
 See the xref:reference:telemetry/metrics.adoc[metrics reference] for a list of the available metrics that will be exported.
@@ -55,9 +59,11 @@ The traces exporter configuration. At most one traces exporter may be configured
 |===
 |Field             |Type                                  |Description
 
-|*kalixConsole*    |object                                |If defined, metrics will be exported to the Akka Console. There are no configuration parameters for the console exporter, it should be declared as an empty object.
+|*kalixConsole*    |object                                |If defined, traces will be exported to the Akka Console. There are no configuration parameters for the console exporter, it should be declared as an empty object.
 |*otlp*            |<<ObservabilityOtlp>>            |If defined, will export traces to an OpenTelemetry collector using the OTLP gRPC protocol.
+|*otlpHttp*        |<<ObservabilityOtlpHttp>>        |If defined, will export traces to an OpenTelemetry collector using the OTLP HTTP protocol.
 |*googleCloud*     |<<ObservabilityGoogleCloud>>     |If defined, will export traces to Google Cloud.
+|*azureMonitor*    |<<ObservabilityAzureMonitor>>    |If defined, will export traces to Azure Monitor.
 |===
 
 
@@ -71,8 +77,10 @@ The logs exporter configuration. At most one logs exporter may be configured. If
 |Field         |Type                              |Description
 
 |*otlp*        |<<ObservabilityOtlp>>        |If defined, will export logs to an OpenTelemetry collector using the OTLP gRPC protocol.
+|*otlpHttp*    |<<ObservabilityOtlpHttp>>    |If defined, will export logs to an OpenTelemetry collector using the OTLP HTTP protocol.
 |*splunkHec*   |<<ObservabilitySplunkHec>>   |If defined, will export logs to a Splunk platform instance, using the Splunk HTTP Event Collector.
 |*googleCloud* |<<ObservabilityGoogleCloud>> |If defined, will export logs to Google Cloud.
+|*azureMonitor* |<<ObservabilityAzureMonitor>> |If defined, will export logs to Azure Monitor.
 |===
 
 === ObservabilityOtlp
@@ -128,6 +136,32 @@ Configuration for a Google Cloud exporter.
 |*serviceAccountKeySecret* |<<ObjectRef>> _required_ |A secret containing a Google service account JSON key, in a property called `key.json`.
 
 The service account used must have the `roles/logging.logWriter` role if exporting logs. The `roles/monitoring.metricWriter` role if exporting metrics. The `roles/cloudtrace.agent` role if exporting traces.
+|===
+
+[#_observabilityazuremonitor]
+=== ObservabilityAzureMonitor
+
+Configuration for an Azure Monitor exporter.
+
+[cols="1,1,1"]
+|===
+|Field              |Type              |Description
+
+|*connectionString* |string _required_ |The Azure Monitor connection string, obtained from your Application Insights resource in the Azure portal.
+|===
+
+=== ObservabilityOtlpHttp
+
+Configuration for an OpenTelemetry exporter using the OTLP HTTP protocol.
+
+[cols="1,1,1"]
+|===
+|Field              |Type                           |Description
+
+|*endpointBaseUrl*  |string _required_              |The base URL to export OTLP metrics, logs, or traces to, for example, `https://my.otlp.host:4318`. The appropriate path (`/v1/logs`, `/v1/metrics`, `/v1/traces`) will be appended automatically.
+|*encoding*         |string                         |The encoding to use, either `proto` or `json`. Defaults to `proto`.
+|*tls*              |<<ObservabilityTls>>      |TLS configuration for connections to the OpenTelemetry collector.
+|*headers*          |[]<<ObservabilityHeader>> |A list of headers to add to outgoing requests.
 |===
 
 === ObservabilityTls

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package com.example
@@ -12,7 +12,7 @@ class EntitiesAndViewsDescriptorSpec extends AnyWordSpec with Matchers {
 
   "akka-javasdk-components.conf" should {
     "have correct configuration" in {
-      val config = ConfigFactory.load("META-INF/akka-javasdk-components.conf")
+      val config = ConfigFactory.load("META-INF/akka-javasdk-components_com.example_test.conf")
 
       val keyValueComponents = config.getStringList("akka.javasdk.components.key-value-entity")
       keyValueComponents.size() shouldBe 2

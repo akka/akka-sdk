@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package com.example
@@ -11,7 +11,7 @@ import org.scalatest.wordspec.AnyWordSpec
 class EndpointsDescriptorSpec extends AnyWordSpec with Matchers {
 
   "akka-javasdk-components.conf" should {
-    val config = ConfigFactory.load("META-INF/akka-javasdk-components.conf")
+    val config = ConfigFactory.load("META-INF/akka-javasdk-components_com.example_test.conf")
 
     "contain http endpoint components" in {
       val endpointComponents = config.getStringList("akka.javasdk.components.http-endpoint")

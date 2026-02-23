@@ -6,7 +6,7 @@
   <parent>
     <groupId>io.akka</groupId>
     <artifactId>akka-javasdk-parent</artifactId>
-      <version>3.5.13</version>
+      <version>3.5.14</version>
   </parent>
 
   <groupId>com.example</groupId>
@@ -67,6 +67,10 @@
               <goal>kapt</goal>
             </goals>
             <configuration>
+              <annotationProcessorArgs>
+                <arg>akka.javasdk.groupId=${project.groupId}</arg>
+                <arg>akka.javasdk.artifactId=${project.artifactId}</arg>
+              </annotationProcessorArgs>
               <annotationProcessors>
                 <annotationProcessor>
                   akka.javasdk.tooling.processor.ComponentValidationProcessor
@@ -93,6 +97,10 @@
                   akka.javasdk.tooling.processor.ComponentAnnotationProcessor
                 </annotationProcessor>
               </annotationProcessors>
+              <annotationProcessorArgs>
+                <arg>akka.javasdk.groupId=${project.groupId}</arg>
+                <arg>akka.javasdk.artifactId=${project.artifactId}</arg>
+              </annotationProcessorArgs>
               <annotationProcessorPaths>
                 <annotationProcessorPath>
                   <groupId>io.akka</groupId>

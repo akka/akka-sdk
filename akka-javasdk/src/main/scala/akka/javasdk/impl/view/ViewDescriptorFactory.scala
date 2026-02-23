@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package akka.javasdk.impl.view
@@ -130,7 +130,8 @@ private[impl] object ViewDescriptorFactory {
       componentOptions = new ComponentOptions(None, None),
       name = readComponentName(viewClass),
       description = readComponentDescription(viewClass),
-      provided = false)
+      provided = false,
+      protobufDescriptors = Nil)
   }
 
   private case class QueryMethod(descriptor: QueryDescriptor, queryString: String)
@@ -277,13 +278,17 @@ private[impl] object ViewDescriptorFactory {
       .filterNot(ComponentDescriptorFactory.hasHandleDeletes)
       .filter(ComponentDescriptorFactory.hasUpdateEffectOutput)
 
+    val startFromSnapshots = updaterMethods.exists(ComponentDescriptorFactory.hasSnapshotHandler)
+
     // FIXME input type validation? (does that happen elsewhere?)
     // FIXME method output vs table type validation? (does that happen elsewhere?)
 
     new TableDescriptor(
       tableName,
       tableType,
-      new ConsumerSource.EventSourcedEntitySource(ComponentDescriptorFactory.readComponentIdValue(annotation.value())),
+      new ConsumerSource.EventSourcedEntitySource(
+        ComponentDescriptorFactory.readComponentIdValue(annotation.value()),
+        startFromSnapshots),
       Option.when(updateHandlerMethods.nonEmpty)(
         UpdateHandlerImpl(
           componentId,
@@ -429,7 +434,11 @@ private[impl] object ViewDescriptorFactory {
         methods.map { m =>
           // register each possible input to deserialize correctly an input
           val inputType = m.getParameterTypes.head
-          serializer.registerTypeHints(m.getParameterTypes.head)
+          if (inputType.isSealed) {
+            inputType.getPermittedSubclasses.foreach(serializer.registerTypeHints)
+          } else {
+            serializer.registerTypeHints(m.getParameterTypes.head)
+          }
 
           inputType -> m
         }.toMap

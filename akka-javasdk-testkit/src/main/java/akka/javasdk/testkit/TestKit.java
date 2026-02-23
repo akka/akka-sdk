@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package akka.javasdk.testkit;
@@ -235,6 +235,7 @@ public class TestKit {
             Optional.empty(),
             ConfigFactory.empty(),
             Set.of(),
+            false,
             new HashMap<>());
 
     /** The name of this service when deployed. */
@@ -252,6 +253,12 @@ public class TestKit {
     public final Optional<DependencyProvider> dependencyProvider;
 
     public final Set<Class<?>> disabledComponents;
+
+    /**
+     * When true, the testkit disabled components override any disabled components from
+     * ServiceSetup, rather than being combined with them.
+     */
+    public final boolean overrideDisabledComponents;
 
     public final Map<String, ModelProvider> modelProvidersByAgentId;
 
@@ -285,6 +292,7 @@ public class TestKit {
         Optional<DependencyProvider> dependencyProvider,
         Config additionalConfig,
         Set<Class<?>> disabledComponents,
+        boolean overrideDisabledComponents,
         Map<String, ModelProvider> modelProvidersByAgentId) {
       this.serviceName = serviceName;
       this.aclEnabled = aclEnabled;
@@ -293,6 +301,7 @@ public class TestKit {
       this.dependencyProvider = dependencyProvider;
       this.additionalConfig = additionalConfig;
       this.disabledComponents = disabledComponents;
+      this.overrideDisabledComponents = overrideDisabledComponents;
       this.modelProvidersByAgentId = modelProvidersByAgentId;
     }
 
@@ -314,6 +323,7 @@ public class TestKit {
           dependencyProvider,
           additionalConfig,
           disabledComponents,
+          overrideDisabledComponents,
           modelProvidersByAgentId);
     }
 
@@ -331,6 +341,7 @@ public class TestKit {
           dependencyProvider,
           additionalConfig,
           disabledComponents,
+          overrideDisabledComponents,
           modelProvidersByAgentId);
     }
 
@@ -348,6 +359,7 @@ public class TestKit {
           dependencyProvider,
           additionalConfig,
           disabledComponents,
+          overrideDisabledComponents,
           modelProvidersByAgentId);
     }
 
@@ -366,6 +378,7 @@ public class TestKit {
           dependencyProvider,
           additionalConfig,
           disabledComponents,
+          overrideDisabledComponents,
           modelProvidersByAgentId);
     }
 
@@ -390,6 +403,7 @@ public class TestKit {
           dependencyProvider,
           additionalConfig,
           disabledComponents,
+          overrideDisabledComponents,
           modelProvidersByAgentId);
     }
 
@@ -414,6 +428,7 @@ public class TestKit {
           dependencyProvider,
           additionalConfig,
           disabledComponents,
+          overrideDisabledComponents,
           modelProvidersByAgentId);
     }
 
@@ -434,6 +449,7 @@ public class TestKit {
           dependencyProvider,
           additionalConfig,
           disabledComponents,
+          overrideDisabledComponents,
           modelProvidersByAgentId);
     }
 
@@ -447,6 +463,7 @@ public class TestKit {
           dependencyProvider,
           additionalConfig,
           disabledComponents,
+          overrideDisabledComponents,
           modelProvidersByAgentId);
     }
 
@@ -460,6 +477,7 @@ public class TestKit {
           dependencyProvider,
           additionalConfig,
           disabledComponents,
+          overrideDisabledComponents,
           modelProvidersByAgentId);
     }
 
@@ -472,6 +490,7 @@ public class TestKit {
           dependencyProvider,
           additionalConfig,
           disabledComponents,
+          overrideDisabledComponents,
           modelProvidersByAgentId);
     }
 
@@ -488,6 +507,7 @@ public class TestKit {
           dependencyProvider,
           additionalConfig,
           disabledComponents,
+          overrideDisabledComponents,
           modelProvidersByAgentId);
     }
 
@@ -512,6 +532,7 @@ public class TestKit {
           Optional.of(dependencyProvider),
           additionalConfig,
           disabledComponents,
+          overrideDisabledComponents,
           modelProvidersByAgentId);
     }
 
@@ -528,6 +549,45 @@ public class TestKit {
           dependencyProvider,
           additionalConfig,
           disabledComponents,
+          overrideDisabledComponents,
+          modelProvidersByAgentId);
+    }
+
+    /**
+     * Disable components from running, useful for testing components in isolation. This set of
+     * disabled components will override the {@link ServiceSetup#disabledComponents()} if
+     * configured.
+     */
+    public Settings withOverriddenDisabledComponents(Set<Class<?>> disabledComponents) {
+      return new Settings(
+          serviceName,
+          aclEnabled,
+          eventingSupport,
+          mockedEventing,
+          dependencyProvider,
+          additionalConfig,
+          disabledComponents,
+          true,
+          modelProvidersByAgentId);
+    }
+
+    /**
+     * Enable all components to run, overriding any disabled components from {@link
+     * ServiceSetup#disabledComponents()}. This is useful for integration tests that need to test
+     * all components even if some are disabled in the Bootstrap configuration.
+     *
+     * @return The updated settings with all components enabled.
+     */
+    public Settings withAllComponentsEnabled() {
+      return new Settings(
+          serviceName,
+          aclEnabled,
+          eventingSupport,
+          mockedEventing,
+          dependencyProvider,
+          additionalConfig,
+          Set.of(),
+          true,
           modelProvidersByAgentId);
     }
 
@@ -544,6 +604,7 @@ public class TestKit {
           dependencyProvider,
           additionalConfig,
           disabledComponents,
+          overrideDisabledComponents,
           newModelProvidersByAgentId);
     }
 
@@ -638,7 +699,10 @@ public class TestKit {
       runtimeHost = "localhost";
 
       SdkRunner runner =
-          new SdkRunner(settings.dependencyProvider, settings.disabledComponents) {
+          new SdkRunner(
+              settings.dependencyProvider,
+              settings.disabledComponents,
+              settings.overrideDisabledComponents) {
             @Override
             public Config applicationConfig() {
               var userConfig = config.withFallback(super.applicationConfig());

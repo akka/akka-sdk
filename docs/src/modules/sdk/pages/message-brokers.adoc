@@ -1,7 +1,7 @@
 = Message broker integrations
 include::ROOT:partial$include.adoc[]
 
-Akka offers built-in message broker integrations for use with the Akka Consumer and Producer component. These built-in integrations are available for Google Cloud Pub/Sub and hosted Kafka services. For other broker technologies, Java client libraries can be used directly to implement publishing of messages.
+Akka offers built-in message broker integrations for use with the Akka Consumer and Producer component. These built-in integrations are available for Google Cloud Pub/Sub, Azure Event Hubs and hosted Kafka services. For other broker technologies, Java client libraries can be used directly to implement publishing of messages.
 
 == Using built-in integrations
 

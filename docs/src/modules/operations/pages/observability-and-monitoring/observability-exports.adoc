@@ -159,6 +159,51 @@ akka project observability set default otlp --endpoint otlp.example.com:4317
 
 In addition, the OTLP exporter supports <<TLS configuration>> and <<Custom headers,custom headers>>. A full reference of configuration options is available in xref:reference:descriptors/observability-descriptor.adoc#_observabilityotlp[the reference documentation].
 
+=== OTLP HTTP
+
+OTLP HTTP is the HTTP-based protocol used by OpenTelemetry, as an alternative to the gRPC-based OTLP exporter. It is supported for logs, metrics, and traces. This exporter is useful in environments where HTTP is preferred over gRPC, such as when behind proxies or firewalls that don't support HTTP/2.
+
+The primary piece of configuration it needs is a base URL endpoint. The exporter will automatically append the appropriate path for logs, metrics, or traces (e.g., `/v1/logs`, `/v1/metrics`, `/v1/traces`).
+
+[.tabset]
+Descriptor::
++
+[source,yaml]
+----
+default:
+  otlpHttp:
+    endpointBaseUrl: https://otlp.example.com:4318
+----
+CLI::
++
+[source,command line]
+----
+akka project observability set default otlp-http --endpoint-base-url https://otlp.example.com:4318
+----
+
+By default, the exporter uses Protobuf encoding. To use JSON encoding instead:
+
+[.tabset]
+Descriptor::
++
+[source,yaml]
+----
+default:
+  otlpHttp:
+    endpointBaseUrl: https://otlp.example.com:4318
+    encoding: json
+----
+CLI::
++
+[source,command line]
+----
+akka project observability set default otlp-http \
+  --endpoint-base-url https://otlp.example.com:4318 \
+  --encoding json
+----
+
+In addition, the OTLP HTTP exporter supports <<TLS configuration>> and <<Custom headers,custom headers>>. A full reference of configuration options is available in xref:reference:descriptors/observability-descriptor.adoc#_observabilityotlphttp[the reference documentation].
+
 === Prometheus Remote Write
 
 The Prometheus remote write protocol is supported for exporting metrics. It is generally used to write metrics into Cortex and similar long term metrics databases for Prometheus. The primary piece of configuration it needs is an endpoint. For example:
@@ -207,6 +252,32 @@ akka project observability set default splunk-hec \
 ----
 
 In addition, the Splunk HEC exporter supports <<TLS configuration>>. A full reference of configuration options is available in xref:reference:descriptors/observability-descriptor.adoc#_observabilitysplunkhec[the reference documentation].
+
+[#_azure_monitor]
+=== Azure Monitor
+
+Azure Monitor is supported for exporting logs, metrics, and traces. The primary piece of configuration it needs is an Azure Monitor connection string, which can be obtained from your Application Insights resource in the Azure portal.
+
+NOTE: Replace the `XXXXXXXX` placeholder values with the actual values from your Azure Application Insights connection string.
+
+[.tabset]
+Descriptor::
++
+[source,yaml]
+----
+default:
+  azureMonitor:
+    connectionString: InstrumentationKey=XXXXXXXX;IngestionEndpoint=https://centralus-2.in.applicationinsights.azure.com/;LiveEndpoint=https://centralus.livediagnostics.monitor.azure.com/;ApplicationId=XXXXXXXX
+----
+CLI::
++
+[source,command line]
+----
+akka project observability set default azure-monitor \
+  --connection-string "InstrumentationKey=XXXXXXXX;IngestionEndpoint=https://centralus-2.in.applicationinsights.azure.com/;LiveEndpoint=https://centralus.livediagnostics.monitor.azure.com/;ApplicationId=XXXXXXXX"
+----
+
+A full reference of configuration options is available in xref:reference:descriptors/observability-descriptor.adoc#_observabilityazuremonitor[the reference documentation].
 
 [#_google_cloud]
 === Google Cloud

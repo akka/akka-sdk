@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package akka.javasdk.impl.http;
@@ -305,46 +305,6 @@ public class TestEndpoints {
     @WebSocket("/echo")
     public String wrongReturnType() {
       return "wrong";
-    }
-  }
-
-  // WebSocket with different in/out message types
-  @HttpEndpoint("invalid-websocket-different-types")
-  public static class InvalidWebSocketDifferentTypes {
-
-    @WebSocket("/echo")
-    public Flow<String, ByteString, NotUsed> differentInOut() {
-      return null;
-    }
-  }
-
-  // WebSocket with unsupported message type
-  @HttpEndpoint("invalid-websocket-message-type")
-  public static class InvalidWebSocketMessageType {
-
-    @WebSocket("/echo")
-    public Flow<Integer, Integer, NotUsed> unsupportedType() {
-      return null;
-    }
-  }
-
-  // WebSocket with unsupported materialized value type
-  @HttpEndpoint("invalid-websocket-mat-type")
-  public static class InvalidWebSocketMatType {
-
-    @WebSocket("/echo")
-    public Flow<String, String, String> wrongMatType() {
-      return null;
-    }
-  }
-
-  // WebSocket with request body parameter
-  @HttpEndpoint("invalid-websocket-body-param")
-  public static class InvalidWebSocketBodyParam {
-
-    @WebSocket("/echo")
-    public Flow<String, String, NotUsed> withBodyParam(AThing body) {
-      return null;
     }
   }
 }

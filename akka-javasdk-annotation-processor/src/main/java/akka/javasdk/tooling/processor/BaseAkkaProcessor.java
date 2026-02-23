@@ -1,13 +1,20 @@
 /*
- * Copyright (C) 2021-2025 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
 package akka.javasdk.tooling.processor;
 
 import javax.annotation.processing.AbstractProcessor;
+import javax.lang.model.SourceVersion;
 import javax.tools.Diagnostic;
 
 public abstract class BaseAkkaProcessor extends AbstractProcessor {
+
+  @Override
+  public SourceVersion getSupportedSourceVersion() {
+    return SourceVersion.latestSupported();
+  }
+
   private final boolean debugEnabled;
 
   protected BaseAkkaProcessor() {
