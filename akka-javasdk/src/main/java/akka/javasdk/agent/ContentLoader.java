@@ -74,8 +74,8 @@ public interface ContentLoader {
    * Loads content from the given loadable message content.
    *
    * <p>This method is called by the runtime when processing multimodal messages that contain
-   * URL-referenced content. The implementation should fetch the content data and
-   * return it along with the appropriate MIME type.
+   * URL-referenced content. The implementation should fetch the content data and return it along
+   * with the appropriate MIME type.
    *
    * <p>Use pattern matching on the content parameter to handle different content types:
    *
