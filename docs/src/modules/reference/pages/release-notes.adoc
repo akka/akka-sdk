@@ -21,6 +21,11 @@ Views and consumers can now be configured to xref:sdk:consuming-producing.adoc#_
 
 ****
 
+* Akka CLI 3.0.48
+- Improvements to `akka project apply` command
+- Updated data management commands
+- Allow `akka project get` without project name to retrieve the current configured project
+
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.14[Akka SDK 3.5.14]
 - maven multi-module support improvements
 - start views and consumers from snapshot
