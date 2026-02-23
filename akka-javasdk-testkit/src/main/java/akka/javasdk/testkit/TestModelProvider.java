@@ -5,6 +5,7 @@
 package akka.javasdk.testkit;
 
 import akka.japi.Pair;
+import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.MessageContent;
 import akka.javasdk.agent.ModelProvider;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
@@ -41,26 +42,29 @@ public final class TestModelProvider implements ModelProvider.Custom {
   /**
    * Represents an AI response, which can include a message and/or list of tool invocation requests.
    */
-  public record AiResponse(String message, List<ToolInvocationRequest> toolRequests) {
+  public record AiResponse(
+      String message,
+      List<ToolInvocationRequest> toolRequests,
+      Optional<Agent.TokenUsage> tokenUsage) {
 
     /** Constructs an AI response with only a message. */
     public AiResponse(String message) {
-      this(message, List.of());
+      this(message, List.of(), Optional.empty());
     }
 
     /** Constructs an AI response with a message and a single tool request. */
     public AiResponse(String message, ToolInvocationRequest toolRequest) {
-      this(message, List.of(toolRequest));
+      this(message, List.of(toolRequest), Optional.empty());
     }
 
     /** Constructs an AI response with only a tool request. */
     public AiResponse(ToolInvocationRequest toolRequest) {
-      this("", List.of(toolRequest));
+      this("", List.of(toolRequest), Optional.empty());
     }
 
     /** Constructs an AI response with a list of tool invocation requests. */
     public AiResponse(List<ToolInvocationRequest> toolRequests) {
-      this("", toolRequests);
+      this("", toolRequests, Optional.empty());
     }
   }
 
@@ -145,6 +149,11 @@ public final class TestModelProvider implements ModelProvider.Custom {
     /** Reply with a simple message for matching requests. */
     public void reply(String message) {
       reply(new AiResponse(message));
+    }
+
+    /** Reply with a simple message for matching requests with defined token usage. */
+    public void reply(String message, Agent.TokenUsage tokenUsage) {
+      reply(new AiResponse(message, List.of(), Optional.of(tokenUsage)));
     }
 
     /** Reply with a tool invocation request for matching requests. */
@@ -314,6 +323,13 @@ public final class TestModelProvider implements ModelProvider.Custom {
   private ChatResponse chatResponse(AiResponse response) {
 
     var builder = new ChatResponse.Builder().modelName("test-model");
+
+    response.tokenUsage.ifPresent(
+        tokenUsage -> {
+          builder.tokenUsage(
+              new dev.langchain4j.model.output.TokenUsage(
+                  tokenUsage.inputTokens(), tokenUsage.outputTokens()));
+        });
 
     if (!response.toolRequests.isEmpty()) {
       var requests =

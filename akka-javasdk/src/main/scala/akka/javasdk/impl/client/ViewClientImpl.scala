@@ -155,7 +155,7 @@ private[javasdk] final case class ViewClientImpl(
         // Note: same path for 0 and 1 arg calls
         val serializedPayload = encodeArgument(serializer, viewMethodProperties.method, maybeArg)
 
-        def callView(metadata: Metadata): Future[R] = {
+        def callView(metadata: Metadata): Future[CallResult[R]] = {
           viewClient
             .query(
               new ViewRequest(
@@ -165,12 +165,15 @@ private[javasdk] final case class ViewClientImpl(
                 toSpi(metadata)))
             .map { result =>
               if (result.payload.isEmpty) {
-                if (viewMethodProperties.returnTypeOptional) Optional.empty().asInstanceOf[R]
+                if (viewMethodProperties.returnTypeOptional)
+                  CallResult(Optional.empty(), MetadataImpl.Empty).asInstanceOf[CallResult[R]]
                 else
                   throw new NoEntryFoundException(
                     s"No matching entry found when calling ${viewMethodProperties.declaringClass}.${viewMethodProperties.methodName}")
               } else {
-                serializer.fromBytes(viewMethodProperties.queryReturnType, result.payload)
+                CallResult(
+                  serializer.fromBytes(viewMethodProperties.queryReturnType, result.payload),
+                  MetadataImpl.Empty)
               }
             }
         }
