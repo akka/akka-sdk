@@ -173,7 +173,7 @@ spec:
     password: my-password
 ----
 
-Values are strings, so structured data such as JSON can be embedded using YAML's block scalar syntax:
+Values are strings, so structured data such as JSON can be embedded using the YAML block scalar syntax:
 
 [source,yaml]
 ----
