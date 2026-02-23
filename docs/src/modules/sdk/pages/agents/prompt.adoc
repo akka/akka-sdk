@@ -56,9 +56,9 @@ include::example$doc-snippets/src/main/java/com/example/application/CustomConten
 To use your custom content loader, pass it to the agent effect builder:
 
 [source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/application/CustomImageLoadingAgent.java[CustomImageLoadingAgent.java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/CustomContentLoadingAgent.java[CustomContentLoadingAgent.java]
 ----
-include::example$doc-snippets/src/main/java/com/example/application/CustomImageLoadingAgent.java[tag=using-custom-loader]
+include::example$doc-snippets/src/main/java/com/example/application/CustomContentLoadingAgent.java[tag=using-custom-loader]
 ----
 <1> Register the custom content loader with the effect
 <2> `ImageUrlMessageContent` is passed to your loader when processing the user message
