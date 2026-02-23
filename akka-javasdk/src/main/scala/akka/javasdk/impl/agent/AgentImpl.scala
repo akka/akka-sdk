@@ -604,6 +604,7 @@ private[impl] final class AgentImpl[A <: Agent](
   }
 
   @tailrec
+  @nowarn("msg=deprecated") //TODO remove me after merging https://github.com/akka/akka-sdk/pull/1326
   private def toSpiModelProvider(modelProvider: ModelProvider): SpiAgent.ModelProvider = {
     modelProvider match {
       case p: ModelProvider.FromConfig =>
