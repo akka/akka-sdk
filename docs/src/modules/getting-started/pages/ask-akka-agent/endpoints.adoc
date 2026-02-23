@@ -1,5 +1,5 @@
 = Adding UI endpoints
-:page-aliases: java:ask-akka/endpoints.adoc
+:page-aliases: java:ask-akka/endpoints.adoc, sdk:ask-akka/endpoints.adoc
 
 include::ROOT:partial$include.adoc[]
 

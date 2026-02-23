@@ -130,7 +130,7 @@ lazy val annotationProcessorTestProject: CompositeProject =
         Compile / javacOptions ++= Seq(
           "-processor",
           "akka.javasdk.tooling.processor.ComponentAnnotationProcessor",
-          "-Aakka.javasdk.groupId=com-example",
+          "-Aakka.javasdk.groupId=com.example",
           "-Aakka.javasdk.artifactId=test"))
   }
 

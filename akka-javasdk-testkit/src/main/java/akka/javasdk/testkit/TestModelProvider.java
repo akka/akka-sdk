@@ -34,6 +34,11 @@ import java.util.stream.Stream;
  */
 public final class TestModelProvider implements ModelProvider.Custom {
 
+  @Override
+  public String modelName() {
+    return "test-model";
+  }
+
   /**
    * Represents an AI response, which can include a message and/or list of tool invocation requests.
    */
@@ -352,7 +357,7 @@ public final class TestModelProvider implements ModelProvider.Custom {
 
   /** Configures a fixed response for all input messages. */
   public void fixedResponse(String response) {
-    whenMessage(msg -> true).reply(response);
+    new WhenClause(this, inputMessage -> true).reply(response);
   }
 
   /**

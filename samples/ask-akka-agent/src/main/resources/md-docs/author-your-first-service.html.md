@@ -77,7 +77,7 @@ Alternatively, you can clone the [GitHub Repository](https://github.com/akka-sam
 ```command
 git clone https://github.com/akka-samples/helloworld-agent.git --depth 1
 ```
-Then navigate to the new project directory and open it in your preferred IDE / Editor.
+Then navigate to the new project directory and open it in your preferred IDE / Editor, making sure to add [your Akka token](https://account.akka.io/token) to the pom.xml.
 
 ## <a href="about:blank#_explore_the_agent"></a> Explore the Agent
 

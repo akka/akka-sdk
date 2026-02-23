@@ -4,10 +4,11 @@
 
 package akka.javasdk.impl.agent
 
+import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.javasdk.agent.ModelProvider
 import com.typesafe.config.ConfigFactory
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.wordspec.AnyWordSpecLike
 
 object ModelProviderSpec {
   private val config = ConfigFactory.load(ConfigFactory.parseString(s"""
@@ -40,7 +41,7 @@ object ModelProviderSpec {
     """))
 }
 
-class ModelProviderSpec extends AnyWordSpec with Matchers {
+class ModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matchers {
   import ModelProviderSpec.config
 
   private val defaultConfig = ConfigFactory.load()
@@ -111,6 +112,73 @@ class ModelProviderSpec extends AnyWordSpec with Matchers {
     "load defaults from config for bedrock" in {
       val m = ModelProvider.Bedrock.fromConfig(defaultConfig.getConfig("akka.javasdk.agent.bedrock"))
       m shouldBe ModelProvider.bedrock()
+    }
+
+    "fail when custom model provider class not found" in {
+      assertThrows[IllegalArgumentException] {
+        AgentImpl.modelProviderFromConfig(
+          ConfigFactory.parseString(s"""
+          akka.javasdk {
+            agent {
+              model-provider = my-provider
+
+              my-provider {
+                # fully qualified class name of the provider implementation
+                provider = "wrong.package.MyModelProvider"
+              }
+            }
+          }
+          """),
+          "akka.javasdk.agent.my-provider",
+          "myagent")
+      }
+    }
+
+    "load custom model provider class with config" in {
+      val provider =
+        AgentImpl
+          .modelProviderFromConfig(
+            ConfigFactory.parseString(s"""
+          akka.javasdk {
+            agent {
+              model-provider = my-provider
+
+              my-provider {
+                # fully qualified class name of the provider implementation
+                provider = "akka.javasdk.impl.agent.MyModelProvider"
+                model-name = "my-model"
+              }
+            }
+          }
+          """),
+            "akka.javasdk.agent.my-provider",
+            "myagent")
+          .asInstanceOf[MyModelProvider]
+
+      provider.modelName() shouldBe "my-model"
+    }
+
+    "load custom model provider class without config" in {
+      val provider =
+        AgentImpl
+          .modelProviderFromConfig(
+            ConfigFactory.parseString(s"""
+          akka.javasdk {
+            agent {
+              model-provider = my-provider
+
+              my-provider {
+                # fully qualified class name of the provider implementation
+                provider = "akka.javasdk.impl.agent.NoConfigMyModelProvider"
+              }
+            }
+          }
+          """),
+            "akka.javasdk.agent.my-provider",
+            "myagent")
+          .asInstanceOf[NoConfigMyModelProvider]
+
+      provider.modelName() shouldBe "no-config-model-name"
     }
 
   }

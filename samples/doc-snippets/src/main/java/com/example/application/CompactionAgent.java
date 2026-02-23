@@ -62,6 +62,7 @@ public class CompactionAgent extends Agent {
               switch (content) {
                 case MessageContent.ImageUriMessageContent image -> "image from " +
                 image.uri();
+                case MessageContent.PdfUriMessageContent pdf -> "pdf from " + pdf.uri();
                 case MessageContent.TextMessageContent text -> text.text();
               })
             .reduce("", (acc, text) -> "\n\nUSER:\n" + text, String::concat);

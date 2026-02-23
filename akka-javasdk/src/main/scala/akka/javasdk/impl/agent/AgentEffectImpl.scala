@@ -7,6 +7,7 @@ package akka.javasdk.impl.agent
 import java.util
 import java.util.function
 
+import scala.annotation.nowarn
 import scala.jdk.CollectionConverters.ListHasAsScala
 import scala.jdk.FunctionConverters.enrichAsScalaFromFunction
 
@@ -20,6 +21,7 @@ import akka.javasdk.agent.Agent.Effect.FailureBuilder
 import akka.javasdk.agent.Agent.Effect.MappingFailureBuilder
 import akka.javasdk.agent.Agent.Effect.MappingResponseBuilder
 import akka.javasdk.agent.Agent.Effect.OnSuccessBuilder
+import akka.javasdk.agent.ContentLoader
 import akka.javasdk.agent.ImageLoader
 import akka.javasdk.agent.MemoryProvider
 import akka.javasdk.agent.ModelProvider
@@ -53,7 +55,7 @@ private[javasdk] object BaseAgentEffectBuilder {
         memoryProvider = MemoryProvider.fromConfig(),
         toolInstancesOrClasses = Seq.empty,
         mcpTools = Seq.empty,
-        imageLoader = None)
+        contentLoader = None)
   }
 
   sealed trait SystemMessage
@@ -72,7 +74,7 @@ private[javasdk] object BaseAgentEffectBuilder {
       memoryProvider: MemoryProvider,
       toolInstancesOrClasses: Seq[AnyRef],
       mcpTools: Seq[RemoteMcpTools],
-      imageLoader: Option[ImageLoader])
+      contentLoader: Option[ContentLoader])
       extends PrimaryEffectImpl {
 
     def withProvider(provider: ModelProvider): RequestModel =
@@ -81,8 +83,8 @@ private[javasdk] object BaseAgentEffectBuilder {
     def withMemory(provider: MemoryProvider): RequestModel =
       copy(memoryProvider = provider)
 
-    def withImageLoader(loader: ImageLoader): RequestModel =
-      copy(imageLoader = Some(loader))
+    def withContentLoader(loader: ContentLoader): RequestModel =
+      copy(contentLoader = Some(loader))
 
     def addTool(tool: AnyRef): RequestModel = {
       copy(toolInstancesOrClasses = this.toolInstancesOrClasses :+ tool)
@@ -202,8 +204,14 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
     this
   }
 
+  @nowarn("msg=deprecated")
   override def imageLoader(loader: ImageLoader): Builder = {
-    updateRequestModel(_.withImageLoader(loader))
+    updateRequestModel(_.withContentLoader(loader))
+    this
+  }
+
+  override def contentLoader(loader: ContentLoader): Builder = {
+    updateRequestModel(_.withContentLoader(loader))
     this
   }
 
