@@ -9,6 +9,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 
 import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.ImageContent;
+import dev.langchain4j.data.message.TextContent;
+import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
@@ -111,9 +114,27 @@ class TestModelProviderTest {
     testModelProvider.fixedResponse("New response");
     ChatRequest request2 =
         ChatRequest.builder().messages(List.of(new UserMessage("Another question"))).build();
-    ChatResponse response2 = chatModel.doChat(request);
+    ChatResponse response2 = chatModel.doChat(request2);
 
     assertThat(response2.aiMessage().text()).isEqualTo("New response");
+
+    // should accept multi-modal messages
+    testModelProvider.fixedResponse("Another response");
+    UserMessage userMessage =
+        new UserMessage(List.of(TextContent.from("text"), ImageContent.from("http://example.com")));
+    ChatRequest request3 = ChatRequest.builder().messages(List.of(userMessage)).build();
+    ChatResponse response3 = chatModel.doChat(request3);
+
+    assertThat(response3.aiMessage().text()).isEqualTo("Another response");
+
+    // should accept tool result
+    testModelProvider.fixedResponse("Tool response");
+    ToolExecutionResultMessage toolResult =
+        ToolExecutionResultMessage.from("id", "toolName", "executionResult");
+    ChatRequest request4 = ChatRequest.builder().messages(toolResult).build();
+    ChatResponse response4 = chatModel.doChat(request4);
+
+    assertThat(response4.aiMessage().text()).isEqualTo("Tool response");
   }
 
   @Test

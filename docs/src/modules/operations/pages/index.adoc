@@ -2,117 +2,153 @@
 
 Akka offers two distinct operational approaches:
 
-* *Self-managed operations*: For teams that prefer to operate Akka on their own infrastructure. This provides full control over runtime and operational details.
+* xref:operations:configuring.adoc[*Self-managed operations*]: For teams that prefer to operate Akka on their own infrastructure. This provides full control over runtime and operational details.
 
-* *Akka Automated Operations*: For teams seeking a managed experience with built-in automation, observability, and scalability. Services are deployed either in our https://console.akka.io[serverless cloud] or your VPC.
+* xref:operations:akka-platform.adoc[*Akka Automated Operations*]: For teams seeking a managed experience with built-in automation, observability, and scalability. Services are deployed either in our serverless cloud or your VPC. AAO gives you a single entry point to all of your Akka regions.
 
 [discrete]
 == Feature comparison
 
-[cols="1,1,1", options="header"]
+[cols="2,1,1,1", options="header"]
 |===
 | Feature
 | Self-managed Operations
-| Akka Automated Operations
+| Akka Automated Operations (in your VPC)
+| Akka Automated Operations (serverless)
 
 | Akka runtime
+| pass:[✅]
 | pass:[✅]
 | pass:[✅]
 
 | Akka clustering
 | pass:[✅]
 | pass:[✅]
+| pass:[✅]
 
 | Elasticity
+| pass:[✅]
 | pass:[✅]
 | pass:[✅]
 
 | Resilience
 | pass:[✅]
 | pass:[✅]
+| pass:[✅]
 
 | Durable memory
+| pass:[✅]
 | pass:[✅]
 | pass:[✅]
 
 | Akka Orchestration
 | pass:[✅]
 | pass:[✅]
+| pass:[✅]
 
 | Akka Agents
+| pass:[✅]
 | pass:[✅]
 | pass:[✅]
 
 | Akka Memory
 | pass:[✅]
 | pass:[✅]
+| pass:[✅]
 
 | Akka Streaming
+| pass:[✅]
 | pass:[✅]
 | pass:[✅]
 
 | Metrics, logs, and traces
 | pass:[✅]
 | pass:[✅]
+| pass:[✅]
+
+| User management: OpenID Connect (OIDC)
+| pass:[❌]
+| pass:[✅]
+| pass:[✅]
 
 | Deploy: Bare metal
 | pass:[✅]
+| pass:[❌]
 | pass:[❌]
 
 | Deploy: VMs
 | pass:[✅]
 | pass:[❌]
+| pass:[❌]
 
 | Deploy: Edge
 | pass:[✅]
+| pass:[❌]
 | pass:[❌]
 
 | Deploy: Containers
 | pass:[✅]
 | pass:[❌]
+| pass:[❌]
 
 | Deploy: PaaS
 | pass:[✅]
 | pass:[❌]
+| pass:[❌]
 
 | Deploy: Serverless
+| pass:[❌]
 | pass:[❌]
 | pass:[✅]
 
 | Deploy: Your VPC
 | pass:[❌]
 | pass:[✅]
+| pass:[❌]
 
 | Deploy: Your Edge VPC
 | pass:[❌]
 | pass:[✅]
+| pass:[❌]
+
+| Custom network setup
+| pass:[✅]
+| pass:[✅]
+| pass:[❌]
 
 | Auto-elasticity
 | pass:[❌]
+| pass:[✅]
 | pass:[✅]
 
 | Multi-tenant services
 | pass:[❌]
 | pass:[✅]
+| pass:[❌]
 
 | Multi-region operations
 | pass:[❌]
+| pass:[✅]
 | pass:[✅]
 
 | Persistence oversight
 | pass:[❌]
 | pass:[✅]
+| pass:[✅]
 
 | Certificate and key rotation
 | pass:[❌]
+| pass:[✅]
 | pass:[✅]
 
 | Multi-org access controls
 | pass:[❌]
 | pass:[✅]
+| pass:[❌]
 
 | No downtime updates
 | pass:[❌]
+| pass:[✅]
 | pass:[✅]
 |===
 

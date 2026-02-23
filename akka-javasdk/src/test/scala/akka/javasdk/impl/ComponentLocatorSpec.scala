@@ -239,9 +239,9 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
   "ComponentLocator.isComponentDescriptor" should {
 
     "match artifact-specific descriptor filenames" in {
-      ComponentLocator.isComponentDescriptor("akka-javasdk-components_com-example_my-service.conf") shouldBe true
-      ComponentLocator.isComponentDescriptor("akka-javasdk-components_io-akka_api.conf") shouldBe true
-      ComponentLocator.isComponentDescriptor("akka-javasdk-components_org-company_lib.conf") shouldBe true
+      ComponentLocator.isComponentDescriptor("akka-javasdk-components_com.example_my-service.conf") shouldBe true
+      ComponentLocator.isComponentDescriptor("akka-javasdk-components_io.akka_api.conf") shouldBe true
+      ComponentLocator.isComponentDescriptor("akka-javasdk-components_org.company_lib.conf") shouldBe true
     }
 
     "not match legacy descriptor filename" in {

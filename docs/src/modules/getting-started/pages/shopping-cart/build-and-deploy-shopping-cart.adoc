@@ -1,5 +1,5 @@
 = A simple shopping cart service
-:page-aliases: java:shopping-cart-quickstart.adoc
+:page-aliases: java:shopping-cart-quickstart.adoc, sdk:shopping-cart-quickstart.adoc
 
 include::ROOT:partial$include.adoc[]
 

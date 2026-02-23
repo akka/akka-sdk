@@ -1,5 +1,5 @@
 = Additional samples
-:page-aliases: java:samples.adoc
+:page-aliases: java:samples.adoc, sdk:samples.adoc
 include::ROOT:partial$include.adoc[]
 
 include::ROOT:partial$new-to-akka-start-here.adoc[]

@@ -709,7 +709,8 @@ private final class Sdk(
             overrideModelProvider,
             dependencyProviderOpt,
             agentGuardrails,
-            applicationConfig)
+            applicationConfig,
+            system)
 
         }
 
