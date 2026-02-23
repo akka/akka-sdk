@@ -34,6 +34,7 @@ import akka.javasdk.agent.MessageContent.ImageUrlMessageContent
 import akka.javasdk.agent.MessageContent.PdfUrlMessageContent
 import akka.javasdk.agent.SessionMessage.AiMessage
 import akka.javasdk.agent.SessionMessage.MultimodalUserMessage
+import akka.javasdk.agent.SessionMessage.TokenUsage
 import akka.javasdk.agent.SessionMessage.ToolCallRequest
 import akka.javasdk.agent.SessionMessage.ToolCallResponse
 import akka.javasdk.agent.SessionMessage.UserMessage
@@ -478,7 +479,13 @@ private[impl] final class AgentImpl[A <: Agent](
           val requests = res.toolRequests.map { req =>
             new ToolCallRequest(req.id, req.name, req.arguments)
           }.asJava
-          new AiMessage(res.timestamp, res.content, componentId, requests, res.thinking.toJava)
+          new AiMessage(
+            res.timestamp,
+            res.content,
+            componentId,
+            requests,
+            res.thinking.toJava,
+            new TokenUsage(res.inputTokenCount, res.outputTokenCount))
 
         case res: SpiAgent.ToolCallResponse =>
           new ToolCallResponse(res.timestamp, componentId, res.id, res.name, res.content)

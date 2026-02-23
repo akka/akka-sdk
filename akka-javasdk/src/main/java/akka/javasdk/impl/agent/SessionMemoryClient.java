@@ -10,6 +10,7 @@ import akka.javasdk.agent.SessionHistory;
 import akka.javasdk.agent.SessionMemory;
 import akka.javasdk.agent.SessionMemoryEntity;
 import akka.javasdk.agent.SessionMessage;
+import akka.javasdk.agent.SessionMessage.TokenUsage;
 import akka.javasdk.client.ComponentClient;
 import com.typesafe.config.Config;
 import java.util.List;
@@ -101,5 +102,13 @@ public final class SessionMemoryClient implements SessionMemory {
           "Memory reading is disabled, history not retrieved for sessionId [{}]", sessionId);
       return SessionHistory.EMPTY;
     }
+  }
+
+  @Override
+  public TokenUsage getTokenUsage(String sessionId) {
+    return componentClient
+        .forEventSourcedEntity(sessionId)
+        .method(SessionMemoryEntity::getTokenUsage)
+        .invoke();
   }
 }
