@@ -53,7 +53,7 @@ import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
 import akka.javasdk.impl.reflection.Reflect
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.runtime.sdk.spi.BytesPayload
@@ -180,7 +180,7 @@ private[impl] final class AgentImpl[A <: Agent](
     val factory: AgentContext => A,
     sdkExecutionContext: ExecutionContext,
     tracerFactory: () => Tracer,
-    serializer: JsonSerializer,
+    serializer: Serializer,
     componentDescriptor: ComponentDescriptor,
     regionInfo: RegionInfo,
     promptTemplateClient: Option[OtelContext] => PromptTemplateClient,
@@ -237,7 +237,7 @@ private[impl] final class AgentImpl[A <: Agent](
             case ErrorReplyImpl(commandException) =>
               Left(new SpiAgent.Error(commandException.getMessage, Some(serializer.toBytes(commandException))))
             case MessageReplyImpl(message, m) =>
-              val replyPayload = serializer.toBytes(message)
+              val replyPayload = serializer.toBytesAsJson(message)
               val metadata = MetadataImpl.toSpi(m)
               Right(replyPayload -> metadata)
             case NoSecondaryEffectImpl =>
@@ -664,7 +664,7 @@ private[impl] final class AgentImpl[A <: Agent](
   }
 
   override def serialize(message: Any): BytesPayload = {
-    serializer.toBytes(message)
+    serializer.toBytesAsJson(message)
   }
 
   override def deserialize(modelResponse: String, responseType: Class[_]): Any = {
@@ -678,7 +678,7 @@ private[impl] final class AgentImpl[A <: Agent](
 
         serializer.fromBytes(
           responseType,
-          new BytesPayload(ByteString.fromString(modelResponse), JsonSerializer.JsonContentTypePrefix + "object"))
+          new BytesPayload(ByteString.fromString(modelResponse), Serializer.JsonContentTypePrefix + "object"))
       }
     } catch {
       case e: IllegalArgumentException => throw new JsonParsingException(e.getMessage, e, modelResponse)

@@ -4,7 +4,7 @@
 
 package akka.javasdk.impl
 
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.testmodels.keyvalueentity.CounterState
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.EventStreamPublishingConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.EventStreamSubscriptionConsumer
@@ -24,7 +24,7 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
   "Consumer descriptor factory" should {
 
     "generate mapping with Event Sourced Subscription annotations" in {
-      val desc = ComponentDescriptor.descriptorFor(classOf[SubscribeToEventSourcedEmployee], new JsonSerializer)
+      val desc = ComponentDescriptor.descriptorFor(classOf[SubscribeToEventSourcedEmployee], new Serializer)
 
       // in case of @Migration, it should map 2 type urls to the same method
       desc.methodInvokers.view.mapValues(_.method.getName).toMap should
@@ -32,7 +32,7 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
     }
 
     "generate mapping with Key Value Entity Subscription annotations (type level)" in {
-      val desc = ComponentDescriptor.descriptorFor(classOf[SubscribeToValueEntityTypeLevel], new JsonSerializer)
+      val desc = ComponentDescriptor.descriptorFor(classOf[SubscribeToValueEntityTypeLevel], new Serializer)
 
       // in case of @Migration, it should map 2 type urls to the same method
       desc.methodInvokers should have size 2
@@ -42,7 +42,7 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
     }
 
     "generate mapping with Key Value Entity and delete handler" in {
-      val desc = ComponentDescriptor.descriptorFor(classOf[SubscribeToValueEntityWithDeletes], new JsonSerializer)
+      val desc = ComponentDescriptor.descriptorFor(classOf[SubscribeToValueEntityWithDeletes], new Serializer)
 
       desc.methodInvokers should have size 3
       desc.methodInvokers.view.mapValues(_.method.getName).toMap should
@@ -50,12 +50,12 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
     }
 
     "generate mapping for a Consumer with a subscription to a topic (type level)" in {
-      val desc = ComponentDescriptor.descriptorFor(classOf[SubscribeToTopicTypeLevel], new JsonSerializer)
+      val desc = ComponentDescriptor.descriptorFor(classOf[SubscribeToTopicTypeLevel], new Serializer)
       desc.methodInvokers should have size 1
     }
 
     "generate mapping for a Consumer with a subscription to a topic (type level) combined" in {
-      val desc = ComponentDescriptor.descriptorFor(classOf[SubscribeToTopicTypeLevelCombined], new JsonSerializer)
+      val desc = ComponentDescriptor.descriptorFor(classOf[SubscribeToTopicTypeLevelCombined], new Serializer)
       desc.methodInvokers should have size 3
       //TODO not sure why we need to support `json.akka.io/string` and `json.akka.io/java.lang.String`
       desc.methodInvokers.view.mapValues(_.method.getName).toMap should
@@ -67,7 +67,7 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
     }
 
     "generate mapping for a Consumer subscribing to raw bytes from a topic" in {
-      val desc = ComponentDescriptor.descriptorFor(classOf[SubscribeToBytesFromTopic], new JsonSerializer)
+      val desc = ComponentDescriptor.descriptorFor(classOf[SubscribeToBytesFromTopic], new Serializer)
       desc.methodInvokers.contains("type.kalix.io/bytes") shouldBe true
     }
 
@@ -84,18 +84,18 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
     }
 
     "generate mappings for service to service publishing " in {
-      val desc = ComponentDescriptor.descriptorFor(classOf[EventStreamPublishingConsumer], new JsonSerializer)
+      val desc = ComponentDescriptor.descriptorFor(classOf[EventStreamPublishingConsumer], new Serializer)
       desc.methodInvokers.view.mapValues(_.method.getName).toMap should
       contain only ("json.akka.io/created" -> "transform", "json.akka.io/old-created" -> "transform", "json.akka.io/emailUpdated" -> "transform")
     }
 
     "generate mappings for service to service subscription " in {
-      val desc = ComponentDescriptor.descriptorFor(classOf[EventStreamSubscriptionConsumer], new JsonSerializer)
+      val desc = ComponentDescriptor.descriptorFor(classOf[EventStreamSubscriptionConsumer], new Serializer)
       desc.methodInvokers should have size 3
     }
 
     "generate mappings for service to service subscription with protobuf events, for Kalix interop" in {
-      val desc = ComponentDescriptor.descriptorFor(classOf[ProtobufEventStreamConsumer], new JsonSerializer)
+      val desc = ComponentDescriptor.descriptorFor(classOf[ProtobufEventStreamConsumer], new Serializer)
       desc.methodInvokers should have size 2
       desc.methodInvokers.keySet shouldEqual Set(
         AnySupport.DefaultTypeUrlPrefix + "/" + EventsForConsumer.EventForConsumer1.getDescriptor.getFullName,

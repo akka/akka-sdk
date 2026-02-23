@@ -18,7 +18,7 @@ import akka.javasdk.client.TimedActionClient
 import akka.javasdk.client.ViewClient
 import akka.javasdk.client.WorkflowClient
 import akka.javasdk.impl.MetadataImpl
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
 import io.opentelemetry.context.{ Context => OtelContext }
 
@@ -30,7 +30,7 @@ import io.opentelemetry.context.{ Context => OtelContext }
 @InternalApi
 private[javasdk] final case class ComponentClientImpl(
     runtimeComponentClients: RuntimeComponentClients,
-    serializer: JsonSerializer,
+    serializer: Serializer,
     agentClassById: Map[String, Class[Agent]],
     telemetryContext: Option[OtelContext])(implicit ec: ExecutionContext, system: ActorSystem[_])
     extends ComponentClient {

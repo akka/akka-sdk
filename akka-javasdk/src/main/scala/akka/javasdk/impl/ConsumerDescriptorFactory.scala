@@ -9,7 +9,7 @@ import akka.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
 import akka.javasdk.impl.ComponentDescriptorFactory._
 import akka.javasdk.impl.ErrorHandling.unwrapInvocationTargetExceptionCatcher
 import akka.javasdk.impl.reflection.Reflect
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import com.google.protobuf.GeneratedMessageV3
 
 /**
@@ -18,7 +18,7 @@ import com.google.protobuf.GeneratedMessageV3
 @InternalApi
 private[impl] object ConsumerDescriptorFactory extends ComponentDescriptorFactory {
 
-  override def buildDescriptorFor(component: Class[_], serializer: JsonSerializer): ComponentDescriptor = {
+  override def buildDescriptorFor(component: Class[_], serializer: Serializer): ComponentDescriptor = {
 
     import Reflect.methodOrdering
 
@@ -37,27 +37,38 @@ private[impl] object ConsumerDescriptorFactory extends ComponentDescriptorFactor
       .flatMap { method =>
         method.getParameterTypes.headOption match {
           case Some(inputType) =>
-            val invoker = MethodInvoker(method)
-            if (inputType.isSealed) {
-              inputType.getPermittedSubclasses.toList
-                .flatMap(subClass => {
-                  serializer.contentTypesFor(subClass).map(typeUrl => typeUrl -> invoker)
-                })
-            } else if (classOf[GeneratedMessageV3].isAssignableFrom(inputType)) {
-              // special handling of protobuf message types
-              val descriptor =
-                try {
-                  inputType
-                    .getMethod("getDescriptor")
-                    .invoke(null)
-                    .asInstanceOf[com.google.protobuf.Descriptors.Descriptor]
-                } catch unwrapInvocationTargetExceptionCatcher
-
-              Seq(AnySupport.DefaultTypeUrlPrefix + "/" + descriptor.getFullName -> invoker)
-            } else {
-              val typeUrls = serializer.contentTypesFor(inputType)
-              typeUrls.map(_ -> invoker)
-            }
+            try {
+              val invoker = MethodInvoker(method)
+              if (inputType.isSealed) {
+                inputType.getPermittedSubclasses.toList
+                  .flatMap(subClass => {
+                    serializer.contentTypesFor(subClass).map(typeUrl => typeUrl -> invoker)
+                  })
+              } else if (classOf[GeneratedMessageV3].isAssignableFrom(inputType)) {
+                // special handling of protobuf message types, catch all
+                if (inputType == classOf[GeneratedMessageV3]) {
+                  // Base GeneratedMessageV3 handler - resolve concrete proto types
+                  val protoTypes = Reflect.resolveProtoEventTypes(component)
+                  if (protoTypes.isEmpty) {
+                    throw new IllegalStateException(
+                      s"Consumer [${component.getName}] handler method [${method.getName}] accepts GeneratedMessageV3 " +
+                      "but no concrete proto event types could be resolved. Add @ProtoEventTypes to the consumer class " +
+                      "or to the source event sourced entity.")
+                  }
+                  protoTypes.flatMap { protoClass =>
+                    serializer.registerTypeHints(protoClass)
+                    serializer.contentTypesFor(protoClass).map(_ -> invoker)
+                  }
+                } else {
+                  // specific concrete proto message input types
+                  val descriptor = Reflect.protoDescriptorFor(inputType.asSubclass(classOf[GeneratedMessageV3]))
+                  Seq(AnySupport.DefaultTypeUrlPrefix + "/" + descriptor.getFullName -> invoker)
+                }
+              } else {
+                val typeUrls = serializer.contentTypesFor(inputType)
+                typeUrls.map(_ -> invoker)
+              }
+            } catch unwrapInvocationTargetExceptionCatcher
           case None =>
             // FIXME check if there is a validation for that already
             throw new IllegalStateException(

@@ -16,7 +16,7 @@ import akka.javasdk.client.ViewStreamMethodRef1
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.client.ViewClientImpl.ViewMethodProperties
 import akka.javasdk.impl.client.ViewClientImpl.encodeArgument
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.view.EntryWithMetadata
 import akka.runtime.sdk.spi
 import akka.runtime.sdk.spi.SpiMetadata
@@ -44,7 +44,7 @@ private[impl] trait AbstractViewStreamMethodRef {
   import AbstractViewStreamMethodRef._
 
   protected def viewClient: RuntimeViewClient
-  protected def serializer: JsonSerializer
+  protected def serializer: Serializer
   protected def viewMethodProperties: ViewMethodProperties
 
   protected def invoke(
@@ -74,12 +74,12 @@ private[impl] trait AbstractViewStreamMethodRef {
 
   protected def parse[R](viewResult: ViewResult): R =
     // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-    serializer.fromBytes(viewMethodProperties.queryReturnType.asInstanceOf[Class[R]], viewResult.payload)
+    serializer.fromBytes[R](viewMethodProperties.queryReturnType, viewResult.payload)
 
   protected def parseWithMetadata[R](viewResult: ViewResult): EntryWithMetadata[R] =
     // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
     new EntryWithMetadata(
-      serializer.fromBytes(viewMethodProperties.queryReturnType.asInstanceOf[Class[R]], viewResult.payload),
+      serializer.fromBytes[R](viewMethodProperties.queryReturnType, viewResult.payload),
       MetadataImpl.of(viewResult.metadata))
 
 }
@@ -90,7 +90,7 @@ private[impl] trait AbstractViewStreamMethodRef {
 @InternalApi
 private[impl] final class ViewStreamMethodRefImpl[R](
     override val viewClient: RuntimeViewClient,
-    override val serializer: JsonSerializer,
+    override val serializer: Serializer,
     override val viewMethodProperties: ViewMethodProperties)
     extends AbstractViewStreamMethodRef
     with ViewStreamMethodRef[R] {
@@ -108,7 +108,7 @@ private[impl] final class ViewStreamMethodRefImpl[R](
 @InternalApi
 private[impl] final class ViewStreamMethodRefImpl1[A1, R](
     override val viewClient: RuntimeViewClient,
-    override val serializer: JsonSerializer,
+    override val serializer: Serializer,
     override val viewMethodProperties: ViewMethodProperties)
     extends AbstractViewStreamMethodRef
     with ViewStreamMethodRef1[A1, R] {

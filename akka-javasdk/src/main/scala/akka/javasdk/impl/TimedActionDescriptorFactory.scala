@@ -6,7 +6,7 @@ package akka.javasdk.impl
 
 import akka.annotation.InternalApi
 import akka.javasdk.impl.reflection.Reflect.isCommandHandlerCandidate
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.timedaction.TimedAction
 
 /**
@@ -15,7 +15,7 @@ import akka.javasdk.timedaction.TimedAction
 @InternalApi
 private[impl] object TimedActionDescriptorFactory extends ComponentDescriptorFactory {
 
-  override def buildDescriptorFor(component: Class[_], serializer: JsonSerializer): ComponentDescriptor = {
+  override def buildDescriptorFor(component: Class[_], serializer: Serializer): ComponentDescriptor = {
     //TODO remove capitalization of method name, can't be done per component, because component client reuse the same logic for all
     val invokers = component.getDeclaredMethods.collect {
       case method if isCommandHandlerCandidate[TimedAction.Effect](method) =>
