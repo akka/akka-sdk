@@ -8,6 +8,7 @@ import java.net.URI
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 
+import scala.annotation.nowarn
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -30,6 +31,7 @@ import akka.javasdk.Tracing
 import akka.javasdk.agent
 import akka.javasdk.agent.MessageContent.ImageMessageContent
 import akka.javasdk.agent.MessageContent.ImageUrlMessageContent
+import akka.javasdk.agent.MessageContent.PdfUrlMessageContent
 import akka.javasdk.agent.SessionMessage.AiMessage
 import akka.javasdk.agent.SessionMessage.MultimodalUserMessage
 import akka.javasdk.agent.SessionMessage.ToolCallRequest
@@ -59,10 +61,12 @@ import akka.javasdk.impl.telemetry.Telemetry
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiAgent
+import akka.runtime.sdk.spi.SpiAgent.ContentLoadingFailure
 import akka.runtime.sdk.spi.SpiAgent.ContextMessage
 import akka.runtime.sdk.spi.SpiAgent.GuardrailFailure
 import akka.runtime.sdk.spi.SpiAgent.ImageLoadingFailure
 import akka.runtime.sdk.spi.SpiAgent.InternalFailure
+import akka.runtime.sdk.spi.SpiAgent.LoadableMessageContent
 import akka.runtime.sdk.spi.SpiAgent.McpToolCallExecutionFailure
 import akka.runtime.sdk.spi.SpiAgent.ModelFailure
 import akka.runtime.sdk.spi.SpiAgent.OutputParsingFailure
@@ -292,7 +296,7 @@ private[impl] final class AgentImpl[A <: Agent](
             val userMessageAt = Instant.now()
 
             val agentRole = Reflect.readAgentRole(agent.getClass)
-            val spiImageLoader = req.imageLoader.map(toSpiImageLoader)
+            val spiContentLoader = req.contentLoader.map(toSpiContentLoader)
             new SpiAgent.RequestModelEffect(
               modelProvider = spiModelProvider,
               systemMessage = systemMessage,
@@ -309,7 +313,7 @@ private[impl] final class AgentImpl[A <: Agent](
               onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, userMessageAt, agentRole, results),
               requestGuardrails = guardrails.modelRequestGuardrails,
               responseGuardrails = guardrails.modelResponseGuardrails,
-              imageLoader = spiImageLoader)
+              contentLoader = spiContentLoader)
 
           case NoPrimaryEffect =>
             errorOrReply match {
@@ -344,13 +348,15 @@ private[impl] final class AgentImpl[A <: Agent](
 
   private def toSpiMessageContent(messageContent: MessageContent): SpiAgent.MessageContent = {
     messageContent match {
-      case content: ImageUrlMessageContent =>
+      case content: MessageContent.TextMessageContent =>
+        new SpiAgent.TextMessageContent(content.text())
+      case content: MessageContent.ImageUrlMessageContent =>
         new SpiAgent.ImageUriMessageContent(
           content.url().toURI,
           toSpiDetailLevel(content.detailLevel()),
           content.mimeType().toScala)
-      case content: MessageContent.TextMessageContent =>
-        new SpiAgent.TextMessageContent(content.text())
+      case content: MessageContent.PdfUrlMessageContent =>
+        new SpiAgent.PdfUriMessageContent(content.url().toURI)
     }
   }
 
@@ -373,18 +379,26 @@ private[impl] final class AgentImpl[A <: Agent](
       case SpiAgent.ImageMessageContent.Auto      => ImageMessageContent.DetailLevel.AUTO
     }
 
-  private def toSpiImageLoader(javaImageLoader: ImageLoader): SpiAgent.SpiImageLoader =
-    new SpiAgent.SpiImageLoader {
+  private def toSpiContentLoader(javaImageLoader: ContentLoader): SpiAgent.SpiContentLoader =
+    new SpiAgent.SpiContentLoader {
       override def implementationClassName: String = javaImageLoader.getClass.getName
 
-      override def load(messageContent: SpiAgent.ImageUriMessageContent): Future[SpiAgent.SpiLoadedImage] =
+      override def load(messageContent: LoadableMessageContent): Future[SpiAgent.SpiLoadedContent] =
         Future {
-          val detailLevel = fromSpiDetailLevel(messageContent.detailLevel)
-          val mimeType =
-            messageContent.mimeType.map(java.util.Optional.of[String]).getOrElse(java.util.Optional.empty[String]())
-          val loaded = javaImageLoader.load(messageContent.uri, detailLevel, mimeType)
-          new SpiAgent.SpiLoadedImage(loaded.data(), loaded.mimeType())
+          val loaded = javaImageLoader.load(fromSpiLoadable(messageContent))
+          new SpiAgent.SpiLoadedContent(loaded.data(), loaded.mimeType().toScala)
         }(sdkExecutionContext)
+
+      private def fromSpiLoadable(messageContent: LoadableMessageContent): MessageContent.LoadableMessageContent =
+        messageContent match {
+          case content: SpiAgent.ImageUriMessageContent =>
+            val detailLevel = fromSpiDetailLevel(content.detailLevel)
+            val mimeType =
+              content.mimeType.map(java.util.Optional.of[String]).getOrElse(java.util.Optional.empty[String]())
+            new MessageContent.ImageUrlMessageContent(content.uri.toURL, detailLevel, mimeType)
+          case content: SpiAgent.PdfUriMessageContent =>
+            new PdfUrlMessageContent(content.uri.toURL)
+        }
     }
 
   private def toSpiMcpEndpoints(remoteMcpTools: Seq[RemoteMcpTools]): Seq[SpiAgent.McpToolEndpointDescriptor] =
@@ -497,6 +511,8 @@ private[impl] final class AgentImpl[A <: Agent](
           content.url().toString,
           content.detailLevel(),
           content.mimeType())
+      case content: PdfUrlMessageContent =>
+        new SessionMessage.MessageContent.PdfUriMessageContent(content.url().toString)
     }
   }
 
@@ -531,6 +547,8 @@ private[impl] final class AgentImpl[A <: Agent](
                   URI.create(content.uri()),
                   toSpiDetailLevel(content.detailLevel()),
                   content.mimeType().toScala)
+              case content: SessionMessage.MessageContent.PdfUriMessageContent =>
+                new SpiAgent.PdfUriMessageContent(URI.create(content.uri()))
             }
             .toSeq
           new SpiAgent.ContextMessage.UserMessage(contents)
@@ -544,6 +562,7 @@ private[impl] final class AgentImpl[A <: Agent](
 
   private def mapSpiAgentException(func: Throwable => Any): Throwable => Any = {
 
+    @nowarn("msg=deprecated")
     def convert(thw: Throwable): Throwable = thw match {
       case exc: SpiAgentException =>
         try {
@@ -566,6 +585,9 @@ private[impl] final class AgentImpl[A <: Agent](
             case _: ImageLoadingFailure =>
               new RuntimeException(exc.getMessage, exc.cause)
 
+            case _: ContentLoadingFailure =>
+              new RuntimeException(exc.getMessage, exc.cause)
+
             // this is expected to be a JsonParsingException, we give it as is to users
             case OutputParsingFailure => exc.cause
 
@@ -582,6 +604,7 @@ private[impl] final class AgentImpl[A <: Agent](
   }
 
   @tailrec
+  @nowarn("msg=deprecated") //TODO remove me after merging https://github.com/akka/akka-sdk/pull/1326
   private def toSpiModelProvider(modelProvider: ModelProvider): SpiAgent.ModelProvider = {
     modelProvider match {
       case p: ModelProvider.FromConfig =>
