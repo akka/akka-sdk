@@ -1,13 +1,8 @@
 package counter.application;
 
-import static akka.Done.done;
-import static java.util.concurrent.CompletableFuture.completedFuture;
-
-import akka.Done;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 
 // tag::seq-tracking[]
@@ -17,18 +12,16 @@ public class CounterStore {
 
   private Map<String, CounterEntry> store = new ConcurrentHashMap<>();
 
-  public CompletionStage<Optional<CounterEntry>> getById(String counterId) {
-    return completedFuture(Optional.ofNullable(store.get(counterId)));
+  public Optional<CounterEntry> getById(String counterId) {
+    return Optional.ofNullable(store.get(counterId));
   }
 
-  public CompletionStage<Done> save(CounterEntry counterEntry) {
-    return completedFuture(store.put(counterEntry.counterId(), counterEntry)).thenApply(
-      __ -> done()
-    );
+  public void save(CounterEntry counterEntry) {
+    store.put(counterEntry.counterId(), counterEntry);
   }
 
-  public CompletionStage<Collection<CounterEntry>> getAll() {
-    return completedFuture(store.values());
+  public Collection<CounterEntry> getAll() {
+    return store.values();
   }
 }
 // end::seq-tracking[]
