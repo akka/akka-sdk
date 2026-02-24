@@ -22,4 +22,9 @@ public class CommandHandlerTwoArgs extends EventSourcedEntity<String, CommandHan
   public Event.Created onEvent(Event.Created event) {
     return event;
   }
+
+  @Override
+  public String applyEvent(Event event) {
+    return "";
+  }
 }

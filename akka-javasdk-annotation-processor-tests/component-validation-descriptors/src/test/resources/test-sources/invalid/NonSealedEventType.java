@@ -22,4 +22,9 @@ public class NonSealedEventType extends EventSourcedEntity<String, NonSealedEven
   public Event.Created onEvent(Event.Created event) {
     return event;
   }
+
+  @Override
+  public String applyEvent(Event event) {
+    return "";
+  }
 }

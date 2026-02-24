@@ -396,25 +396,19 @@ trait CompilationTestSupport extends Matchers {
         assertCompilationFailure(compileResult, expectedMessages: _*)
       case RuntimeValidation =>
         // Runtime validation
-        tryCompileTestSourceForRuntime(relativePath) match {
-          case Some(runtimeResult) =>
-            val clazz = loadCompiledClass(runtimeResult, className)
-            val typeDef = new RuntimeTypeDef(clazz)
-            val validation = akka.javasdk.tooling.validation.Validations.validateComponent(typeDef)
-            validation match {
-              case _: Validation.Valid =>
-                throw new RuntimeException(s"Expecting errors: [${expectedMessages.mkString}]")
-              case invalid: Validation.Invalid =>
-                // Runtime caught some error - verify it contains expected messages
-                val allMessages = invalid.messages().asScala.mkString(" ")
-                val missingMessages = expectedMessages.filterNot(allMessages.contains)
-                if (missingMessages.nonEmpty) {
-                  throw new RuntimeException(s"Not all expected errors were found: [${missingMessages.mkString}]")
-                }
+        val runtimeResult = compileTestSourceForRuntime(relativePath)
+        val clazz = loadCompiledClass(runtimeResult, className)
+        val typeDef = new RuntimeTypeDef(clazz)
+        val validation = akka.javasdk.tooling.validation.Validations.validateComponent(typeDef)
+        validation match {
+          case _: Validation.Valid =>
+            fail(s"Expected validation errors but got Valid. Expected: ${expectedMessages.mkString(", ")}")
+          case invalid: Validation.Invalid =>
+            val allMessages = invalid.messages().asScala.mkString(" ")
+            val missingMessages = expectedMessages.filterNot(allMessages.contains)
+            if (missingMessages.nonEmpty) {
+              fail(s"Not all expected errors were found. Missing: ${missingMessages.mkString(", ")}. Got: $allMessages")
             }
-          case None =>
-            // Code doesn't compile without annotation processor - this is expected for some invalid test cases
-            ()
         }
     }
   }
@@ -441,69 +435,4 @@ trait CompilationTestSupport extends Matchers {
     assertRuntimeValidationFailure(clazz, expectedMessages: _*)
   }
 
-  /**
-   * Attempts to compile a test source file for runtime validation. Returns None if compilation fails (which is expected
-   * for some invalid test cases).
-   *
-   * @param relativePath
-   *   path to the test source file relative to src/test/resources/test-sources
-   * @return
-   *   Some(RuntimeCompilationResult) if compilation succeeded, None if it failed
-   */
-  protected def tryCompileTestSourceForRuntime(relativePath: String): Option[RuntimeCompilationResult] = {
-    val compiler = ToolProvider.getSystemJavaCompiler
-    require(compiler != null, "Java compiler not available. Make sure you're running on a JDK, not a JRE.")
-
-    val diagnosticCollector = new DiagnosticCollector[JavaFileObject]()
-    val fileManager = compiler.getStandardFileManager(diagnosticCollector, null, null)
-
-    // Get the test source file
-    val testSourcesDir = Paths.get("src/test/resources/test-sources")
-    val sourceFile = testSourcesDir.resolve(relativePath).toFile
-    require(sourceFile.exists(), s"Test source file not found: ${sourceFile.getAbsolutePath}")
-
-    // Collect all files to compile (include dependency entity files)
-    val filesToCompile = collection.mutable.ListBuffer(sourceFile)
-
-    // Add entity/workflow files that are commonly referenced
-    val supportFiles =
-      List("valid/SimpleKeyValueEntity.java", "valid/SimpleWorkflow.java", "valid/SimpleEventSourcedEntity.java")
-
-    supportFiles.foreach { supportFile =>
-      val file = testSourcesDir.resolve(supportFile).toFile
-      if (file.exists()) {
-        filesToCompile += file
-      }
-    }
-
-    // Get compilation units
-    val compilationUnits = fileManager.getJavaFileObjectsFromFiles(filesToCompile.asJava)
-
-    // Create output directory for compiled classes
-    val outputDir = Files.createTempDirectory("runtime-validation-test")
-    outputDir.toFile.deleteOnExit()
-
-    // Set up compiler options - NO annotation processor, just compile
-    val options = List(
-      "-d",
-      outputDir.toString,
-      "-parameters",
-      "-proc:none",
-      "-classpath",
-      System.getProperty("java.class.path")).asJava
-
-    // Compile
-    val task = compiler.getTask(null, fileManager, diagnosticCollector, options, null, compilationUnits)
-
-    val success = task.call()
-
-    Using.resource(fileManager) { _ =>
-      if (success) {
-        val classLoader = new URLClassLoader(Array(outputDir.toUri.toURL), Thread.currentThread().getContextClassLoader)
-        Some(RuntimeCompilationResult(outputDir, classLoader, diagnosticCollector.getDiagnostics.asScala.toList))
-      } else {
-        None
-      }
-    }
-  }
 }

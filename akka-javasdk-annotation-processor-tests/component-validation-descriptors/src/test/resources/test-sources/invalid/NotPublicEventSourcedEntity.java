@@ -21,4 +21,9 @@ class NotPublicEventSourcedEntity extends EventSourcedEntity<String, NotPublicEv
   public Event.Created onEvent(Event.Created event) {
     return event;
   }
+
+  @Override
+  public String applyEvent(Event event) {
+    return "";
+  }
 }

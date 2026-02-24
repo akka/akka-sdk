@@ -19,4 +19,9 @@ public class NoEffectMethod extends EventSourcedEntity<String, NoEffectMethod.Ev
   public Event.Created onEvent(Event.Created event) {
     return event;
   }
+
+  @Override
+  public String applyEvent(Event event) {
+    return "";
+  }
 }

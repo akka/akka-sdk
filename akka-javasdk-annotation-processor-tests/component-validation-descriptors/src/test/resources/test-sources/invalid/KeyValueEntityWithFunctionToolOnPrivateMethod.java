@@ -12,7 +12,7 @@ import akka.javasdk.keyvalueentity.KeyValueEntity;
 public class KeyValueEntityWithFunctionToolOnPrivateMethod extends KeyValueEntity<String> {
 
   public Effect<String> update(String value) {
-    return effects().updateState(value).thenReply(__ -> "updated");
+    return effects().updateState(value).thenReply("updated");
   }
 
   // @FunctionTool is not allowed on private methods

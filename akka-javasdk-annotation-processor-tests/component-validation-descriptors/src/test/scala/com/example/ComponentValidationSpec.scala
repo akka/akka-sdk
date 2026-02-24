@@ -96,12 +96,9 @@ abstract class AbstractComponentValidationSpec(val validationMode: ValidationMod
       val errors = result.diagnostics.filter(_.getKind == javax.tools.Diagnostic.Kind.ERROR)
       errors.length should be >= 2
 
-      // Note: Runtime validation does not currently include componentMustBePublic check,
-      // so we only verify that it catches the @Component id error (which is validated)
-      tryCompileTestSourceForRuntime("invalid/MultipleErrorsComponent.java").foreach { runtimeResult =>
-        val clazz = loadCompiledClass(runtimeResult, "com.example.MultipleErrorsComponent")
-        assertRuntimeValidationFailure(clazz, "MultipleErrorsComponent", "@Component id is empty")
-      }
+      val runtimeResult = compileTestSourceForRuntime("invalid/MultipleErrorsComponent.java")
+      val clazz = loadCompiledClass(runtimeResult, "com.example.MultipleErrorsComponent")
+      assertRuntimeValidationFailure(clazz, "MultipleErrorsComponent", "@Component id is empty")
     }
   }
 }

@@ -79,14 +79,13 @@ abstract class AbstractWorkflowValidationSpec(val validationMode: ValidationMode
       assertCompilationFailureNotContain(result, "Methods annotated with @FunctionTool must be public.")
 
       // Runtime validation
-      tryCompileTestSourceForRuntime("invalid/WorkflowWithFunctionToolOnPrivateStepEffect.java").foreach {
-        runtimeResult =>
-          val clazz = loadCompiledClass(runtimeResult, "com.example.WorkflowWithFunctionToolOnPrivateStepEffect")
-          assertRuntimeValidationFailure(
-            clazz,
-            "Workflow methods annotated with @FunctionTool cannot return StepEffect.",
-            "Only methods returning Effect or ReadOnlyEffect can be annotated with @FunctionTool.")
-      }
+      val runtimeResult =
+        compileTestSourceForRuntime("invalid/WorkflowWithFunctionToolOnPrivateStepEffect.java")
+      val clazz = loadCompiledClass(runtimeResult, "com.example.WorkflowWithFunctionToolOnPrivateStepEffect")
+      assertRuntimeValidationFailure(
+        clazz,
+        "Workflow methods annotated with @FunctionTool cannot return StepEffect.",
+        "Only methods returning Effect or ReadOnlyEffect can be annotated with @FunctionTool.")
     }
 
     "reject Workflow with @FunctionTool on private methods" in {

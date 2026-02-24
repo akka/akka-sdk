@@ -26,4 +26,9 @@ public class DuplicateCommandHandlers extends EventSourcedEntity<String, Duplica
   public Event.Created onEvent(Event.Created event) {
     return event;
   }
+
+  @Override
+  public String applyEvent(Event event) {
+    return "";
+  }
 }
