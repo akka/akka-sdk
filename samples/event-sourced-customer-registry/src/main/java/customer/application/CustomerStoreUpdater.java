@@ -33,10 +33,7 @@ public class CustomerStoreUpdater extends Consumer {
       case NameChanged nameChanged -> {
         var customer = customerStore.getById(customerId);
         if (customer.isPresent()) {
-          customerStore.save(
-            customerId,
-            customer.get().withName(nameChanged.newName())
-          );
+          customerStore.save(customerId, customer.get().withName(nameChanged.newName()));
           yield effects().done();
         } else {
           throw new IllegalStateException("Customer not found: " + customerId);
