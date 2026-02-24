@@ -8,6 +8,7 @@ import java.net.URLClassLoader
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import javax.tools._
 
 import scala.jdk.CollectionConverters._
 import scala.util.Using
@@ -17,7 +18,6 @@ import akka.javasdk.validation.ast.runtime.RuntimeTypeDef
 import com.example.CompilationTestSupport.CompileTimeValidation
 import com.example.CompilationTestSupport.RuntimeValidation
 import com.example.CompilationTestSupport.ValidationMode
-import javax.tools._
 import org.scalatest.matchers.should.Matchers
 
 object CompilationTestSupport {

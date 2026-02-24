@@ -93,10 +93,10 @@ import akka.javasdk.mcp.AbstractMcpEndpoint
 import akka.javasdk.mcp.McpRequestContext
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.timer.TimerScheduler
-import akka.javasdk.tooling.validation.{ Validation => AkkaValidation }
-import akka.javasdk.tooling.validation.{ Validations => AkkaValidations }
+import akka.javasdk.tooling.validation.Validation
 import akka.javasdk.tooling.validation.Validation.Invalid
 import akka.javasdk.tooling.validation.Validation.Valid
+import akka.javasdk.tooling.validation.Validations
 import akka.javasdk.validation.ast.runtime.RuntimeTypeDef
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.WorkflowContext
@@ -387,10 +387,10 @@ private final class Sdk(
   private lazy val overrideModelProvider = new OverrideModelProvider
 
   // validate service classes before instantiating
-  private val validation = componentClasses.foldLeft(Valid.instance().asInstanceOf[AkkaValidation]) {
+  private val validation = componentClasses.foldLeft(Valid.instance().asInstanceOf[Validation]) {
     case (validations, cls) =>
       val typeDef = new RuntimeTypeDef(cls)
-      val componentValidation = AkkaValidations.validate(typeDef)
+      val componentValidation = Validations.validate(typeDef)
       validations.combine(componentValidation)
   }
 

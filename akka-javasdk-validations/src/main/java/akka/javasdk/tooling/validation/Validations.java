@@ -301,8 +301,7 @@ public class Validations {
     for (java.util.Map.Entry<String, List<MethodDef>> entry : handlersByType.entrySet()) {
       if (entry.getValue().size() > 1) {
         String paramType = entry.getKey();
-        List<String> methodNames =
-            entry.getValue().stream().map(MethodDef::getName).toList();
+        List<String> methodNames = entry.getValue().stream().map(MethodDef::getName).toList();
 
         if (paramType.isEmpty()) {
           // Multiple delete handlers
