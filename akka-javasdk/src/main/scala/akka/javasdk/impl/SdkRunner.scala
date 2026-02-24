@@ -390,7 +390,7 @@ private final class Sdk(
   private val validation = componentClasses.foldLeft(Valid.instance().asInstanceOf[AkkaValidation]) {
     case (validations, cls) =>
       val typeDef = new RuntimeTypeDef(cls)
-      val componentValidation = AkkaValidations.validateComponent(typeDef)
+      val componentValidation = AkkaValidations.validate(typeDef)
       validations.combine(componentValidation)
   }
 

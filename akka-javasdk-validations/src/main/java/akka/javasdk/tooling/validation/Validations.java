@@ -19,13 +19,23 @@ import java.util.Optional;
  */
 public class Validations {
 
+  private static final String HTTP_ENDPOINT_ANNOTATION =
+      "akka.javasdk.annotations.http.HttpEndpoint";
+
   /**
-   * Validates a component class.
+   * Validates a component class or an http endpoint
    *
    * @param typeDef the component class to validate
    * @return a Validation result indicating success or failure with error messages
    */
-  public static Validation validateComponent(TypeDef typeDef) {
+  public static Validation validate(TypeDef typeDef) {
+    var anno = typeDef.findAnnotation(HTTP_ENDPOINT_ANNOTATION);
+
+    if (anno.isEmpty()) return validateComponent(typeDef);
+    else return HttpEndpointValidations.validate(typeDef);
+  }
+
+  private static Validation validateComponent(TypeDef typeDef) {
     return componentMustBePublic(typeDef)
         .combine(mustHaveValidComponentId(typeDef))
         .combine(TimedActionValidations.validate(typeDef))
@@ -34,8 +44,7 @@ public class Validations {
         .combine(KeyValueEntityValidations.validate(typeDef))
         .combine(EventSourcedEntityValidations.validate(typeDef))
         .combine(AgentValidations.validate(typeDef))
-        .combine(ViewValidations.validate(typeDef))
-        .combine(HttpEndpointValidations.validate(typeDef));
+        .combine(ViewValidations.validate(typeDef));
   }
 
   // ==================== Subscription Helper Methods ====================

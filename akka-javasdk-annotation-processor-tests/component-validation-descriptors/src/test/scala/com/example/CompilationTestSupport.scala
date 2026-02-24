@@ -291,7 +291,7 @@ trait CompilationTestSupport extends Matchers {
    */
   protected def assertRuntimeValidationSuccess(clazz: Class[_]): Unit = {
     val typeDef = new RuntimeTypeDef(clazz)
-    val validation = akka.javasdk.tooling.validation.Validations.validateComponent(typeDef)
+    val validation = akka.javasdk.tooling.validation.Validations.validate(typeDef)
     validation match {
       case _: Validation.Valid =>
         () // success
@@ -310,7 +310,7 @@ trait CompilationTestSupport extends Matchers {
    */
   protected def assertRuntimeValidationFailure(clazz: Class[_], expectedMessages: String*): Unit = {
     val typeDef = new RuntimeTypeDef(clazz)
-    val validation = akka.javasdk.tooling.validation.Validations.validateComponent(typeDef)
+    val validation = akka.javasdk.tooling.validation.Validations.validate(typeDef)
     validation match {
       case _: Validation.Valid =>
         fail("Expected runtime validation to fail but it succeeded")
@@ -399,7 +399,7 @@ trait CompilationTestSupport extends Matchers {
         val runtimeResult = compileTestSourceForRuntime(relativePath)
         val clazz = loadCompiledClass(runtimeResult, className)
         val typeDef = new RuntimeTypeDef(clazz)
-        val validation = akka.javasdk.tooling.validation.Validations.validateComponent(typeDef)
+        val validation = akka.javasdk.tooling.validation.Validations.validate(typeDef)
         validation match {
           case _: Validation.Valid =>
             fail(s"Expected validation errors but got Valid. Expected: ${expectedMessages.mkString(", ")}")
