@@ -29,7 +29,7 @@ import akka.javasdk.annotations.mcp.ToolAnnotation
 import akka.javasdk.impl.AclDescriptorFactory.deriveAclOptions
 import akka.javasdk.impl.ErrorHandling.unwrapInvocationTargetExceptionCatcher
 import akka.javasdk.impl.JwtDescriptorFactory.deriveJWTOptions
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.parboiled2.util.Base64
 import akka.runtime.sdk.spi.ComponentOptions
 import akka.runtime.sdk.spi.McpEndpointConstructionContext
@@ -71,7 +71,7 @@ object McpEndpointDescriptorFactory {
   private val logger = LoggerFactory.getLogger("akka.javasdk.mcp")
 
   private lazy val objectMapper = {
-    val m = JsonSerializer.newObjectMapperWithDefaults()
+    val m = Serializer.newObjectMapperWithDefaults()
     m.registerModule(new DefaultScalaModule())
 
     val module = new SimpleModule()

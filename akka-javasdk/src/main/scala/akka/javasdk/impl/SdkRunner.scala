@@ -79,7 +79,7 @@ import akka.javasdk.impl.http.JwtClaimsImpl
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.javasdk.impl.timedaction.TimedActionImpl
@@ -304,7 +304,7 @@ private[javasdk] object Sdk {
       grpcClientProvider: GrpcClientProviderImpl,
       agentRegistry: AgentRegistryImpl,
       overrideModelProvider: OverrideModelProvider,
-      serializer: JsonSerializer,
+      serializer: Serializer,
       sanitizer: Sanitizer)
 
   private val platformManagedDependency = Set[Class[_]](
@@ -345,7 +345,7 @@ private final class Sdk(
   import Sdk._
 
   private val logger = LoggerFactory.getLogger(getClass)
-  private val serializer = new JsonSerializer
+  private val serializer = new Serializer
   private lazy val retries = new RetriesImpl(system.classicSystem)
   private val ComponentLocator.LocatedClasses(componentClasses, maybeServiceClass) =
     ComponentLocator.locateUserComponents(system)
@@ -510,8 +510,21 @@ private final class Sdk(
 
         // we preemptively register the events type to the serializer
         Reflect.allKnownEventSourcedEntityEventType(clz).foreach(serializer.registerTypeHints)
+        // Register protobuf event types from @ProtoEventTypes annotation
+        Reflect.protoEventTypes(clz).foreach(serializer.registerTypeHints)
+
+        // Validate that @ProtoEventTypes entities have applyEvent accepting GeneratedMessageV3
+        Reflect.validateProtoEventTypesApplyEvent(clz).foreach { errorMessage =>
+          throw ValidationException(errorMessage)
+        }
+
+        val componentDescriptor = ComponentDescriptor.descriptorFor(clz, serializer)
 
         val entityStateType: Class[AnyRef] = Reflect.eventSourcedEntityStateType(clz).asInstanceOf[Class[AnyRef]]
+        val allowedProtoEventTypes: Seq[Class[_]] = Reflect.protoEventTypes(clz)
+        val protobufDescriptors =
+          Reflect.protoDescriptorsFor(entityStateType) ++ allowedProtoEventTypes.flatMap(Reflect.protoDescriptorsFor) ++
+          Reflect.protoCommandHandlerInputOutput(componentDescriptor)
 
         val instanceFactory: SpiEventSourcedEntity.FactoryContext => SpiEventSourcedEntity = { factoryContext =>
           new EventSourcedEntityImpl[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]](
@@ -519,9 +532,10 @@ private final class Sdk(
             componentId,
             factoryContext.entityId,
             serializer,
-            ComponentDescriptor.descriptorFor(clz, serializer),
+            componentDescriptor,
             entityStateType,
             regionInfo,
+            allowedProtoEventTypes,
             context =>
               wiredInstance(clz.asInstanceOf[Class[EventSourcedEntity[AnyRef, AnyRef]]]) {
                 // remember to update component type API doc and docs if changing the set of injectables
@@ -541,7 +555,7 @@ private final class Sdk(
             description = Reflect.readComponentDescription(clz),
             provided = isProvided(clz),
             replicationFilterEnabled = Reflect.isReplicationFilterEnabled(clz),
-            protobufDescriptors = Nil)
+            protobufDescriptors = protobufDescriptors.toVector)
 
       case clz if Reflect.isKeyValueEntity(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -554,7 +568,10 @@ private final class Sdk(
               method.getName
           }.toSet
 
+        val componentDescriptor = ComponentDescriptor.descriptorFor(clz, serializer)
         val entityStateType: Class[AnyRef] = Reflect.keyValueEntityStateType(clz).asInstanceOf[Class[AnyRef]]
+        val protobufDescriptors =
+          Reflect.protoDescriptorsFor(entityStateType) ++ Reflect.protoCommandHandlerInputOutput(componentDescriptor)
 
         val instanceFactory: SpiEventSourcedEntity.FactoryContext => SpiEventSourcedEntity = { factoryContext =>
           new KeyValueEntityImpl[AnyRef, KeyValueEntity[AnyRef]](
@@ -563,7 +580,7 @@ private final class Sdk(
             componentId,
             factoryContext.entityId,
             serializer,
-            ComponentDescriptor.descriptorFor(clz, serializer),
+            componentDescriptor,
             entityStateType,
             regionInfo,
             context =>
@@ -585,14 +602,18 @@ private final class Sdk(
             description = Reflect.readComponentDescription(clz),
             provided = false,
             replicationFilterEnabled = Reflect.isReplicationFilterEnabled(clz),
-            protobufDescriptors = Nil)
+            protobufDescriptors = protobufDescriptors.toVector)
 
       case clz if Reflect.isWorkflow(clz) =>
         val componentId = Reflect.readComponentId(clz)
 
         // register known types
-        serializer.registerTypeHints(Reflect.workflowStateType(clz))
-        Reflect.workflowKnownInputTypes(clz)
+        val stateType = Reflect.workflowStateType(clz)
+        serializer.registerTypeHints(stateType)
+        val inputTypes = Reflect.workflowKnownInputTypes(clz)
+        val protobufDescriptors = Reflect.protoDescriptorsFor(stateType) ++ inputTypes.flatMap(inputType =>
+          Reflect.protoDescriptorsFor(inputType)) ++ Reflect.protoCommandHandlerInputOutputForWorkflow(
+          clz.asInstanceOf[Class[Workflow[_]]])
 
         val readOnlyCommandNames =
           clz.getDeclaredMethods.collect {
@@ -611,7 +632,7 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            protobufDescriptors = Nil)
+            protobufDescriptors = protobufDescriptors.toVector)
 
       case clz if Reflect.isTimedAction(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -639,13 +660,14 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            protobufDescriptors = Nil)
+            protobufDescriptors = Reflect.protoCommandHandlerInputTimedAction(clz.asInstanceOf[Class[TimedAction]]))
 
       case clz if Reflect.isConsumer(clz) =>
         val componentId = Reflect.readComponentId(clz)
         val consumerClass = clz.asInstanceOf[Class[Consumer]]
         val consumerDest = consumerDestination(consumerClass)
         val consumerSrc = consumerSource(consumerClass)
+        val componentDescriptor = ComponentDescriptor.descriptorFor(consumerClass, serializer)
         val consumerSpi =
           new ConsumerImpl[Consumer](
             componentId,
@@ -661,7 +683,7 @@ private final class Sdk(
             sdkTracerFactory,
             serializer,
             ComponentDescriptorFactory.findIgnore(consumerClass),
-            ComponentDescriptor.descriptorFor(consumerClass, serializer),
+            componentDescriptor,
             regionInfo)
         consumerDescriptors :+=
           new ConsumerDescriptor(
@@ -673,7 +695,7 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            protobufDescriptors = Nil)
+            protobufDescriptors = Reflect.protoCommandHandlerInputOutput(componentDescriptor))
 
       case clz if Reflect.isAgent(clz) =>
         val componentId = Reflect.readComponentId(clz)

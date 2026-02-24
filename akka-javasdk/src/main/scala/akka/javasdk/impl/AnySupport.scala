@@ -229,7 +229,6 @@ private[akka] object AnySupport {
         s"Protobuf message parsing from type url [${payload.contentType}] not supported")
     }
   }
-
 }
 
 class AnySupport(

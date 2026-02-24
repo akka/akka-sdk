@@ -12,6 +12,7 @@ import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.util
 import java.util.Optional
+import java.util.concurrent.ConcurrentHashMap
 
 import scala.annotation.nowarn
 import scala.annotation.tailrec
@@ -26,13 +27,16 @@ import akka.javasdk.annotations.AgentDescription
 import akka.javasdk.annotations.AgentRole
 import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.ComponentId
+import akka.javasdk.annotations.Consume
 import akka.javasdk.annotations.EnableReplicationFilter
 import akka.javasdk.annotations.GrpcEndpoint
+import akka.javasdk.annotations.ProtoEventTypes
 import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
+import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.client.ComponentClientImpl
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
 import akka.javasdk.keyvalueentity.KeyValueEntity
@@ -42,6 +46,9 @@ import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.Workflow.RunnableStep
 import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.google.protobuf.Descriptors
+import com.google.protobuf.Descriptors.FieldDescriptor.JavaType
+import com.google.protobuf.GeneratedMessageV3
 
 /**
  * Class extension to facilitate some reflection common usages.
@@ -92,6 +99,30 @@ private[impl] object Reflect {
     }
 
   }
+
+  private val protoDescriptorCache = new ConcurrentHashMap[Class[_], Descriptors.Descriptor]()
+  def protoDescriptorFor(messageClass: Class[_ <: GeneratedMessageV3]): Descriptors.Descriptor =
+    protoDescriptorCache.computeIfAbsent(
+      messageClass,
+      { clazz =>
+        clazz.getDeclaredMethod("getDescriptor").invoke(null).asInstanceOf[Descriptors.Descriptor]
+      })
+
+  def protoDescriptorsFor(messageClass: Class[_]): Set[Descriptors.Descriptor] = {
+    if (classOf[GeneratedMessageV3].isAssignableFrom(messageClass)) {
+      val mainDescriptor = protoDescriptorFor(messageClass.asSubclass(classOf[GeneratedMessageV3]))
+      // FIXME verify that we actually do need those
+      // we need all nested field types as well
+      flattenDependencies(mainDescriptor)
+    } else Set.empty
+  }
+
+  private def flattenDependencies(descriptor: Descriptors.Descriptor): Set[Descriptors.Descriptor] =
+    Set(descriptor) ++ descriptor.getFields.asScala.toSet.flatMap((field: Descriptors.FieldDescriptor) =>
+      if (field.getJavaType == JavaType.MESSAGE) {
+        val fieldDescriptor = field.getMessageType
+        Set(fieldDescriptor) ++ flattenDependencies(fieldDescriptor)
+      } else Set.empty)
 
   def isRestEndpoint(cls: Class[_]): Boolean =
     cls.getAnnotation(classOf[HttpEndpoint]) != null
@@ -317,7 +348,97 @@ private[impl] object Reflect {
 
   def allKnownEventSourcedEntityEventType(component: Class[_]): Seq[Class[_]] = {
     val eventType = eventSourcedEntityEventType(component)
-    eventType.getPermittedSubclasses.toSeq
+    val permitted = eventType.getPermittedSubclasses
+    // getPermittedSubclasses returns null for non-sealed classes (e.g., GeneratedMessageV3 for protobuf)
+    if (permitted == null) Seq.empty else permitted.toSeq
+  }
+
+  /**
+   * Get protobuf event types declared via @ProtoEventTypes annotation on an Event Sourced Entity.
+   */
+  def protoEventTypes(component: Class[_]): Seq[Class[_ <: GeneratedMessageV3]] = {
+    Option(component.getAnnotation(classOf[ProtoEventTypes]))
+      .map(_.value().toSeq)
+      .getOrElse(Seq.empty)
+  }
+
+  /**
+   * Resolve proto event types for a component. First checks for @ProtoEventTypes on the class itself, then falls back
+   * to the source ES entity referenced by @Consume.FromEventSourcedEntity.
+   */
+  def resolveProtoEventTypes(component: Class[_]): Seq[Class[_ <: GeneratedMessageV3]] = {
+    val fromComponent = protoEventTypes(component)
+    if (fromComponent.nonEmpty) {
+      fromComponent
+    } else {
+      Option(component.getAnnotation(classOf[Consume.FromEventSourcedEntity]))
+        .map(ann => protoEventTypes(ann.value()))
+        .getOrElse(Seq.empty)
+    }
+  }
+
+  /**
+   * Find all protobuf message types accepted as commands and returned as responses from command handlers
+   */
+  def protoCommandHandlerInputOutput(descriptor: ComponentDescriptor): Seq[Descriptors.Descriptor] = {
+    val methods = descriptor.methodInvokers.values.map(_.method)
+    descriptorsForCommandHandlerInputOutput(methods)
+  }
+
+  def protoCommandHandlerInputOutputForWorkflow(workflowClass: Class[_ <: Workflow[_]]): Seq[Descriptors.Descriptor] = {
+    val methods = workflowClass.getMethods.filter(isCommandHandlerCandidate[Workflow.Effect[_]])
+    descriptorsForCommandHandlerInputOutput(methods)
+  }
+
+  def protoCommandHandlerInputTimedAction(clazz: Class[TimedAction]): Seq[Descriptors.Descriptor] = {
+    val methods = clazz.getMethods.filter(isCommandHandlerCandidate[TimedAction.Effect])
+    descriptorsForCommandHandlerInputOutput(methods)
+  }
+
+  private def descriptorsForCommandHandlerInputOutput(methods: Iterable[Method]): Seq[Descriptors.Descriptor] = {
+    methods
+      .flatMap { method =>
+        val inputs = method.getParameterTypes.toVector
+        val outputs =
+          method.getGenericReturnType match {
+            case p: ParameterizedType => p.getActualTypeArguments.toVector.collect { case c: Class[_] => c }
+            case _                    => Vector.empty[Class[_]]
+          }
+
+        inputs ++ outputs
+      }
+      .collect {
+        case c if c != classOf[GeneratedMessageV3] && classOf[GeneratedMessageV3].isAssignableFrom(c) => c
+      }
+      .flatMap(protoDescriptorsFor)
+      .toVector
+  }
+
+  /**
+   * Check if an Event Sourced Entity has the @ProtoEventTypes annotation.
+   */
+  def hasProtoEventTypes(component: Class[_]): Boolean = {
+    component.getAnnotation(classOf[ProtoEventTypes]) != null
+  }
+
+  /**
+   * Validate that an Event Sourced Entity with @ProtoEventTypes has applyEvent accepting GeneratedMessageV3. Returns an
+   * error message if validation fails, None otherwise.
+   */
+  def validateProtoEventTypesApplyEvent(component: Class[_]): Option[String] = {
+    if (hasProtoEventTypes(component)) {
+      val eventType = eventSourcedEntityEventType(component)
+      if (!classOf[GeneratedMessageV3].isAssignableFrom(eventType)) {
+        Some(
+          s"Event Sourced Entity [${component.getName}] is annotated with @ProtoEventTypes but its applyEvent method " +
+          s"accepts [${eventType.getName}] instead of [${classOf[GeneratedMessageV3].getName}]. " +
+          "When using @ProtoEventTypes, the applyEvent method must accept GeneratedMessageV3.")
+      } else {
+        None
+      }
+    } else {
+      None
+    }
   }
 
   def eventSourcedEntityEventType(component: Class[_]): Class[_] =

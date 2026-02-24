@@ -7,7 +7,7 @@ package akka.javasdk.impl.view
 import scala.reflect.ClassTag
 
 import akka.dispatch.ExecutionContexts
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.testmodels.view.ViewTestModels
 import akka.runtime.sdk.spi.ConsumerSource
 import akka.runtime.sdk.spi.Principal
@@ -26,7 +26,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
   import ViewTestModels._
   import akka.javasdk.testmodels.subscriptions.PubSubTestModels._
-  val serializer = new JsonSerializer
+  val serializer = new Serializer()
 
   def assertDescriptor[T](test: ViewDescriptor => Any)(implicit tag: ClassTag[T]): Unit = {
     test(ViewDescriptorFactory(tag.runtimeClass, serializer, new RegionInfo(""), ExecutionContexts.global()))
@@ -81,8 +81,8 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
     "register all updater handler subtypes" in {
       assertDescriptor[UserByEmailWithSealedInput] { _ =>
-        serializer.reversedTypeHints.get("a") shouldBe classOf[UserByEmailWithSealedInput.Message.A]
-        serializer.reversedTypeHints.get("b") shouldBe classOf[UserByEmailWithSealedInput.Message.B]
+        serializer.json.reversedTypeHints.get("a") shouldBe classOf[UserByEmailWithSealedInput.Message.A]
+        serializer.json.reversedTypeHints.get("b") shouldBe classOf[UserByEmailWithSealedInput.Message.B]
       }
     }
 
