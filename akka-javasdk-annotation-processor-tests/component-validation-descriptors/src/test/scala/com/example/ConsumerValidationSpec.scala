@@ -4,271 +4,257 @@
 
 package com.example
 
+import com.example.CompilationTestSupport.CompileTimeValidation
+import com.example.CompilationTestSupport.RuntimeValidation
+import com.example.CompilationTestSupport.ValidationMode
 import org.scalatest.wordspec.AnyWordSpec
 
-class ConsumerValidationSpec extends AnyWordSpec with CompilationTestSupport {
+class CompileTimeConsumerValidationSpec extends AbstractConsumerValidationSpec(CompileTimeValidation)
+class RuntimeConsumerValidationSpec extends AbstractConsumerValidationSpec(RuntimeValidation)
 
-  "Consumer validation" should {
+abstract class AbstractConsumerValidationSpec(val validationMode: ValidationMode)
+    extends AnyWordSpec
+    with CompilationTestSupport {
+
+  s"Consumer validation ($validationMode)" should {
 
     // Valid consumers
     "accept valid Consumer with topic subscription" in {
-      val result = compileTestSource("valid/ValidConsumer.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidConsumer.java")
     }
 
     "accept valid Consumer with KeyValueEntity subscription" in {
-      val result = compileTestSource("valid/ValidConsumerWithKeyValueEntitySubscription.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidConsumerWithKeyValueEntitySubscription.java")
     }
 
     "accept valid Consumer with EventSourcedEntity subscription" in {
-      val result = compileTestSource("valid/ValidConsumerWithESSubscription.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidConsumerWithESSubscription.java")
     }
 
     "accept valid Consumer with Workflow subscription" in {
-      val result = compileTestSource("valid/ValidConsumerWithWorkflowSubscription.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidConsumerWithWorkflowSubscription.java")
     }
 
     "accept valid Consumer with delete handler" in {
-      val result = compileTestSource("valid/ValidConsumerWithDeleteHandler.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidConsumerWithDeleteHandler.java")
     }
 
     "accept valid Consumer with topic publishing and valid source" in {
-      val result = compileTestSource("valid/ValidConsumerWithTopicPublishing.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidConsumerWithTopicPublishing.java")
     }
 
     "accept valid Consumer with stream subscription" in {
-      val result = compileTestSource("valid/ValidConsumerWithStreamSubscription.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidConsumerWithStreamSubscription.java")
     }
 
     "accept valid Consumer with stream publishing" in {
-      val result = compileTestSource("valid/ValidConsumerWithStreamPublishing.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidConsumerWithStreamPublishing.java")
     }
 
     "accept valid Consumer with raw event handler for EventSourcedEntity" in {
-      val result = compileTestSource("valid/ValidConsumerWithRawEventHandlerES.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidConsumerWithRawEventHandlerES.java")
     }
 
     "accept valid Consumer with raw event handler for KeyValueEntity" in {
-      val result = compileTestSource("valid/ValidConsumerWithRawEventHandlerKVE.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidConsumerWithRawEventHandlerKVE.java")
     }
 
     "accept valid Consumer with raw event handler for Workflow" in {
-      val result = compileTestSource("valid/ValidConsumerWithRawEventHandlerWorkflow.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidConsumerWithRawEventHandlerWorkflow.java")
     }
 
     // Invalid consumers - basic validations
     "reject Consumer without @Consume annotation" in {
-      val result = compileTestSource("invalid/ConsumerWithoutConsumeAnnotation.java")
-      assertCompilationFailure(result, "A Consumer must be annotated with `@Consume` annotation")
+      assertInvalid(
+        "invalid/ConsumerWithoutConsumeAnnotation.java",
+        "A Consumer must be annotated with `@Consume` annotation")
     }
 
     "reject Consumer without Effect methods" in {
-      val result = compileTestSource("invalid/ConsumerWithoutEffectMethod.java")
-      assertCompilationFailure(result, "No public method returning akka.javasdk.consumer.Consumer.Effect found")
+      assertInvalid(
+        "invalid/ConsumerWithoutEffectMethod.java",
+        "No public method returning akka.javasdk.consumer.Consumer.Effect found")
     }
 
     "reject Consumer with command handler having too many parameters" in {
-      val result = compileTestSource("invalid/ConsumerWithTooManyParams.java")
-      assertCompilationFailure(result, "must have zero or one argument")
+      assertInvalid("invalid/ConsumerWithTooManyParams.java", "must have zero or one argument")
     }
 
     "reject Consumer not declared as public" in {
-      val result = compileTestSource("invalid/NotPublicConsumer.java")
-      assertCompilationFailure(result, "NotPublicConsumer is not marked with `public` modifier")
+      assertInvalid("invalid/NotPublicConsumer.java", "NotPublicConsumer is not marked with `public` modifier")
     }
 
     // Subscription validations
     "reject Consumer with multiple type-level subscriptions" in {
-      val result = compileTestSource("invalid/ConsumerWithMultipleSubscriptions.java")
-      assertCompilationFailure(result, "Only one subscription type is allowed on a type level")
+      assertInvalid(
+        "invalid/ConsumerWithMultipleSubscriptions.java",
+        "Only one subscription type is allowed on a type level")
     }
 
     "reject Consumer with subscription method with no parameters (not delete handler)" in {
-      val result = compileTestSource("invalid/ConsumerWithNoParamSubscriptionMethod.java")
-      assertCompilationFailure(
-        result,
+      assertInvalid(
+        "invalid/ConsumerWithNoParamSubscriptionMethod.java",
         "Subscription method must have exactly one parameter",
         "unless it's marked with @DeleteHandler")
     }
 
     "reject Consumer with method level ACL on subscription method" in {
-      val result = compileTestSource("invalid/ConsumerWithAclOnSubscriptionMethod.java")
-      assertCompilationFailure(
-        result,
+      assertInvalid(
+        "invalid/ConsumerWithAclOnSubscriptionMethod.java",
         "Methods from classes annotated with Akka @Consume annotations are for internal use only")
     }
 
     // State subscription validations (KeyValueEntity and Workflow)
     "reject Consumer with multiple update methods for KeyValueEntity subscription" in {
-      val result = compileTestSource("invalid/ConsumerWithMultipleUpdateMethods.java")
-      assertCompilationFailure(
-        result,
+      assertInvalid(
+        "invalid/ConsumerWithMultipleUpdateMethods.java",
         "Duplicated update methods [onUpdate1, onUpdate2]",
         "for state subscription are not allowed.")
     }
 
     "reject Consumer with multiple delete handlers" in {
-      val result = compileTestSource("invalid/ConsumerWithMultipleDeleteHandlers.java")
-      assertCompilationFailure(result, "Multiple methods annotated with @DeleteHandler are not allowed")
+      assertInvalid(
+        "invalid/ConsumerWithMultipleDeleteHandlers.java",
+        "Multiple methods annotated with @DeleteHandler are not allowed")
     }
 
     "reject Consumer with delete handler with parameters" in {
-      val result = compileTestSource("invalid/ConsumerWithDeleteHandlerWithParams.java")
-      assertCompilationFailure(result, "Method annotated with '@DeleteHandler' must not have parameters")
+      assertInvalid(
+        "invalid/ConsumerWithDeleteHandlerWithParams.java",
+        "Method annotated with '@DeleteHandler' must not have parameters")
     }
 
     "reject Consumer with multiple update methods for Workflow subscription" in {
-      val result = compileTestSource("invalid/ConsumerWithMultipleUpdateMethodsWorkflow.java")
-      assertCompilationFailure(
-        result,
+      assertInvalid(
+        "invalid/ConsumerWithMultipleUpdateMethodsWorkflow.java",
         "Duplicated update methods [onUpdate1, onUpdate2]",
         "for state subscription are not allowed.")
     }
 
     "reject Consumer with multiple delete handlers for Workflow subscription" in {
-      val result = compileTestSource("invalid/ConsumerWithMultipleDeleteHandlersWorkflow.java")
-      assertCompilationFailure(result, "Multiple methods annotated with @DeleteHandler are not allowed")
+      assertInvalid(
+        "invalid/ConsumerWithMultipleDeleteHandlersWorkflow.java",
+        "Multiple methods annotated with @DeleteHandler are not allowed")
     }
 
     "reject Consumer with delete handler with parameters for Workflow subscription" in {
-      val result = compileTestSource("invalid/ConsumerWithDeleteHandlerWithParamsWorkflow.java")
-      assertCompilationFailure(result, "Method annotated with '@DeleteHandler' must not have parameters")
+      assertInvalid(
+        "invalid/ConsumerWithDeleteHandlerWithParamsWorkflow.java",
+        "Method annotated with '@DeleteHandler' must not have parameters")
     }
 
     // Ambiguous handler validations
     "reject Consumer with ambiguous handlers for topic" in {
-      val result = compileTestSource("invalid/ConsumerWithAmbiguousHandlers.java")
-      assertCompilationFailure(
-        result,
+      assertInvalid(
+        "invalid/ConsumerWithAmbiguousHandlers.java",
         "Ambiguous handlers for java.lang.String",
         "methods: [onMessage1, onMessage2] consume the same type")
     }
 
     "reject Consumer with ambiguous delete handlers" in {
-      val result = compileTestSource("invalid/ConsumerWithAmbiguousDeleteHandlers.java")
-      assertCompilationFailure(result, "Ambiguous delete handlers")
+      assertInvalid("invalid/ConsumerWithAmbiguousDeleteHandlers.java", "Ambiguous delete handlers")
     }
 
     "reject Consumer with ambiguous handlers for ValueEntity" in {
-      val result = compileTestSource("invalid/AmbiguousHandlersVESubscriptionInConsumer.java")
-      assertCompilationFailure(
-        result,
+      assertInvalid(
+        "invalid/AmbiguousHandlersVESubscriptionInConsumer.java",
         "Ambiguous handlers for java.lang.Integer",
         "methods: [methodOne, methodTwo] consume the same type")
     }
 
     "reject Consumer with ambiguous delete handlers for ValueEntity" in {
-      val result = compileTestSource("invalid/AmbiguousDeleteHandlersVESubscriptionInConsumer.java")
-      assertCompilationFailure(result, "Ambiguous delete handlers: [methodOne, methodTwo].")
+      assertInvalid(
+        "invalid/AmbiguousDeleteHandlersVESubscriptionInConsumer.java",
+        "Ambiguous delete handlers: [methodOne, methodTwo].")
     }
 
     "accept Consumer with with multiple private command handlers for EventSourcedEntity" in {
-      val result = compileTestSource("valid/PrivateHandlersESSubscriptionInConsumer.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/PrivateHandlersESSubscriptionInConsumer.java")
     }
 
     "reject Consumer with ambiguous handlers for EventSourcedEntity" in {
-      val result = compileTestSource("invalid/AmbiguousHandlersESSubscriptionInConsumer.java")
-      assertCompilationFailure(
-        result,
+      assertInvalid(
+        "invalid/AmbiguousHandlersESSubscriptionInConsumer.java",
         "Ambiguous handlers for java.lang.Integer",
         "methods: [methodOne, methodTwo] consume the same type")
     }
 
     "reject Consumer with ambiguous handlers for ServiceStream (type level)" in {
-      val result = compileTestSource("invalid/AmbiguousHandlersStreamTypeLevelSubscriptionInConsumer.java")
-      assertCompilationFailure(
-        result,
+      assertInvalid(
+        "invalid/AmbiguousHandlersStreamTypeLevelSubscriptionInConsumer.java",
         "Ambiguous handlers for java.lang.Integer",
         "methods: [methodOne, methodTwo] consume the same type")
     }
 
     // Publication validations
     "reject Consumer with topic publishing but no source" in {
-      val result = compileTestSource("invalid/ConsumerWithTopicPublishingButNoSource.java")
-      assertCompilationFailure(
-        result,
+      assertInvalid(
+        "invalid/ConsumerWithTopicPublishingButNoSource.java",
         "You must select a source for @Produce.ToTopic",
         "Annotate this class with one a @Consume annotation")
     }
 
     "reject Consumer with empty stream ID in ServiceStream publishing" in {
-      val result = compileTestSource("invalid/ConsumerWithEmptyStreamId.java")
-      assertCompilationFailure(result, "@Produce.ServiceStream id can not be an empty string")
+      assertInvalid("invalid/ConsumerWithEmptyStreamId.java", "@Produce.ServiceStream id can not be an empty string")
     }
 
     // Missing handler validations
     "reject Consumer missing handler for KeyValueEntity subscription" in {
-      val result = compileTestSource("invalid/ConsumerMissingHandlerForKVE.java")
-      assertCompilationFailure(result, "missing handlers")
+      assertInvalid("invalid/ConsumerMissingHandlerForKVE.java", "missing handlers")
     }
 
     "reject Consumer missing handler for Workflow subscription" in {
-      val result = compileTestSource("invalid/ConsumerMissingHandlerForWorkflow.java")
-      assertCompilationFailure(result, "missing handlers")
+      assertInvalid("invalid/ConsumerMissingHandlerForWorkflow.java", "missing handlers")
     }
 
     "reject Consumer missing handler for EventSourcedEntity subscription" in {
-      val result = compileTestSource("invalid/ConsumerMissingHandlerForES.java")
-      assertCompilationFailure(result, "missing an event handler")
+      assertInvalid("invalid/ConsumerMissingHandlerForES.java", "missing an event handler")
     }
 
     "reject Consumer with @FunctionTool annotation" in {
-      val result = compileTestSource("invalid/ConsumerWithFunctionTool.java")
-      assertCompilationFailure(result, "Consumer methods cannot be annotated with @FunctionTool.")
+      assertInvalid("invalid/ConsumerWithFunctionTool.java", "Consumer methods cannot be annotated with @FunctionTool.")
     }
 
     // SnapshotHandler validations
     "accept valid Consumer with @SnapshotHandler for EventSourcedEntity subscription" in {
-      val result = compileTestSource("valid/ValidConsumerWithSnapshotHandler.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidConsumerWithSnapshotHandler.java")
     }
 
     "reject Consumer with @SnapshotHandler on KeyValueEntity subscription" in {
-      val result = compileTestSource("invalid/ConsumerSnapshotHandlerWithKVE.java")
-      assertCompilationFailure(
-        result,
+      assertInvalid(
+        "invalid/ConsumerSnapshotHandlerWithKVE.java",
         "@SnapshotHandler can only be used in classes annotated with @Consume.FromEventSourcedEntity")
     }
 
     "reject Consumer with @SnapshotHandler on Topic subscription" in {
-      val result = compileTestSource("invalid/ConsumerSnapshotHandlerWithTopic.java")
-      assertCompilationFailure(
-        result,
+      assertInvalid(
+        "invalid/ConsumerSnapshotHandlerWithTopic.java",
         "@SnapshotHandler can only be used in classes annotated with @Consume.FromEventSourcedEntity")
     }
 
     "reject Consumer with @SnapshotHandler on ServiceStream subscription with helpful message" in {
-      val result = compileTestSource("invalid/ConsumerSnapshotHandlerWithServiceStream.java")
-      assertCompilationFailure(
-        result,
+      assertInvalid(
+        "invalid/ConsumerSnapshotHandlerWithServiceStream.java",
         "@SnapshotHandler cannot be used with @Consume.FromServiceStream",
         "define the @SnapshotHandler on the producer side")
     }
 
     "reject Consumer with multiple @SnapshotHandler methods" in {
-      val result = compileTestSource("invalid/ConsumerWithMultipleSnapshotHandlers.java")
-      assertCompilationFailure(result, "Only one method can be annotated with @SnapshotHandler")
+      assertInvalid(
+        "invalid/ConsumerWithMultipleSnapshotHandlers.java",
+        "Only one method can be annotated with @SnapshotHandler")
     }
 
     "reject Consumer with @SnapshotHandler method with no parameters" in {
-      val result = compileTestSource("invalid/ConsumerSnapshotHandlerNoParams.java")
-      assertCompilationFailure(result, "@SnapshotHandler method must have exactly one parameter")
+      assertInvalid(
+        "invalid/ConsumerSnapshotHandlerNoParams.java",
+        "@SnapshotHandler method must have exactly one parameter")
     }
 
     "reject Consumer with @SnapshotHandler method with too many parameters" in {
-      val result = compileTestSource("invalid/ConsumerSnapshotHandlerTooManyParams.java")
-      assertCompilationFailure(result, "@SnapshotHandler method must have exactly one parameter")
+      assertInvalid(
+        "invalid/ConsumerSnapshotHandlerTooManyParams.java",
+        "@SnapshotHandler method must have exactly one parameter")
     }
   }
 }

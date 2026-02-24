@@ -26,7 +26,8 @@ public class Validations {
    * @return a Validation result indicating success or failure with error messages
    */
   public static Validation validateComponent(TypeDef typeDef) {
-    return mustHaveValidComponentId(typeDef)
+    return componentMustBePublic(typeDef)
+        .combine(mustHaveValidComponentId(typeDef))
         .combine(TimedActionValidations.validate(typeDef))
         .combine(ConsumerValidations.validate(typeDef))
         .combine(WorkflowValidations.validate(typeDef))

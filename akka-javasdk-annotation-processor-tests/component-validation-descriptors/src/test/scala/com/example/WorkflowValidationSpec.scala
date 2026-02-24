@@ -4,87 +4,94 @@
 
 package com.example
 
+import com.example.CompilationTestSupport.CompileTimeValidation
+import com.example.CompilationTestSupport.RuntimeValidation
+import com.example.CompilationTestSupport.ValidationMode
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class WorkflowValidationSpec extends AnyWordSpec with Matchers with CompilationTestSupport {
+class CompileTimeWorkflowValidationSpec extends AbstractWorkflowValidationSpec(CompileTimeValidation)
+class RuntimeWorkflowValidationSpec extends AbstractWorkflowValidationSpec(RuntimeValidation)
 
-  "Workflow validation" should {
+abstract class AbstractWorkflowValidationSpec(val validationMode: ValidationMode)
+    extends AnyWordSpec
+    with Matchers
+    with CompilationTestSupport {
+
+  s"Workflow validation ($validationMode)" should {
 
     "accept valid Workflow with 0-arg command handler" in {
-      val result = compileTestSource("valid/ValidWorkflowNoArg.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidWorkflowNoArg.java")
     }
 
     "accept valid Workflow with 1-arg command handler" in {
-      val result = compileTestSource("valid/ValidWorkflowOneArg.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidWorkflowOneArg.java")
     }
 
     "reject Workflow with command handler with 2 arguments" in {
-      val result = compileTestSource("invalid/WorkflowTwoArgs.java")
-      assertCompilationFailure(result, "Method [execute] must have zero or one argument")
+      assertInvalid("invalid/WorkflowTwoArgs.java", "Method [execute] must have zero or one argument")
     }
 
     "accept valid Workflow with 0-arg StepMethod" in {
-      val result = compileTestSource("valid/ValidWorkflowStepNoArg.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidWorkflowStepNoArg.java")
     }
 
     "accept valid Workflow with 1-arg StepMethod" in {
-      val result = compileTestSource("valid/ValidWorkflowStepOneArg.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidWorkflowStepOneArg.java")
     }
 
     "reject Workflow with StepEffect method with 2 arguments" in {
-      val result = compileTestSource("invalid/WorkflowStepTwoArgs.java")
-      assertCompilationFailure(result, "WorkflowStepTwoArgs", "zero or one argument")
+      assertInvalid("invalid/WorkflowStepTwoArgs.java", "WorkflowStepTwoArgs", "zero or one argument")
     }
 
     "reject Workflow with ReadOnlyEffect method with 2 arguments" in {
-      val result = compileTestSource("invalid/WorkflowReadOnlyTwoArgs.java")
-      assertCompilationFailure(result, "WorkflowReadOnlyTwoArgs", "zero or one argument")
+      assertInvalid("invalid/WorkflowReadOnlyTwoArgs.java", "WorkflowReadOnlyTwoArgs", "zero or one argument")
     }
 
     "reject Workflow with no Effect method" in {
-      val result = compileTestSource("invalid/WorkflowNoEffect.java")
-      assertCompilationFailure(result, "No public method returning akka.javasdk.workflow.Workflow.Effect")
+      assertInvalid("invalid/WorkflowNoEffect.java", "No public method returning akka.javasdk.workflow.Workflow.Effect")
     }
 
     "reject Workflow that is not public" in {
-      val result = compileTestSource("invalid/NotPublicWorkflow.java")
-      assertCompilationFailure(
-        result,
+      assertInvalid(
+        "invalid/NotPublicWorkflow.java",
         "NotPublicWorkflow is not marked with `public` modifier. Components must be public.")
     }
 
     "accept Workflow with @FunctionTool on Effect and ReadOnlyEffect" in {
-      val result = compileTestSource("valid/ValidWorkflowWithFunctionTool.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidWorkflowWithFunctionTool.java")
     }
 
     "reject Workflow with @FunctionTool on StepEffect" in {
-      val result = compileTestSource("invalid/WorkflowWithFunctionToolOnStepEffect.java")
-      assertCompilationFailure(
-        result,
+      assertInvalid(
+        "invalid/WorkflowWithFunctionToolOnStepEffect.java",
         "Workflow methods annotated with @FunctionTool cannot return StepEffect.",
         "Only methods returning Effect or ReadOnlyEffect can be annotated with @FunctionTool.")
     }
 
     "reject Workflow with @FunctionTool on private StepEffect" in {
+      // This test needs special handling for the "not contain" assertion
       val result = compileTestSource("invalid/WorkflowWithFunctionToolOnPrivateStepEffect.java")
       assertCompilationFailure(
         result,
         "Workflow methods annotated with @FunctionTool cannot return StepEffect.",
         "Only methods returning Effect or ReadOnlyEffect can be annotated with @FunctionTool.")
-
       assertCompilationFailureNotContain(result, "Methods annotated with @FunctionTool must be public.")
+
+      // Runtime validation
+      tryCompileTestSourceForRuntime("invalid/WorkflowWithFunctionToolOnPrivateStepEffect.java").foreach {
+        runtimeResult =>
+          val clazz = loadCompiledClass(runtimeResult, "com.example.WorkflowWithFunctionToolOnPrivateStepEffect")
+          assertRuntimeValidationFailure(
+            clazz,
+            "Workflow methods annotated with @FunctionTool cannot return StepEffect.",
+            "Only methods returning Effect or ReadOnlyEffect can be annotated with @FunctionTool.")
+      }
     }
 
     "reject Workflow with @FunctionTool on private methods" in {
-      val result = compileTestSource("invalid/WorkflowWithFunctionToolOnPrivateMethod.java")
-      assertCompilationFailure(
-        result,
+      assertInvalid(
+        "invalid/WorkflowWithFunctionToolOnPrivateMethod.java",
         "Methods annotated with @FunctionTool must be public. Method [privateMethod] cannot be annotated with @FunctionTool")
     }
   }
