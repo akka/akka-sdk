@@ -51,11 +51,6 @@ class DummyAgent3 extends Agent {
           public SessionHistory getHistory(String sessionId) {
             return null;
           }
-
-          @Override
-          public SessionMessage.TokenUsage getTokenUsage(String sessionId) {
-            return null;
-          }
         };
 
     return effects()

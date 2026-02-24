@@ -8,7 +8,6 @@
 
 package akka.javasdk.agent;
 
-import akka.javasdk.agent.SessionMessage.TokenUsage;
 import java.util.List;
 
 /**
@@ -68,12 +67,4 @@ public interface SessionMemory {
    * @return The complete session history containing all messages
    */
   SessionHistory getHistory(String sessionId);
-
-  /**
-   * Retrieves the accumulated token usage for the specified session.
-   *
-   * @param sessionId The unique identifier for the contextual session
-   * @return The accumulated token usage containing input and output token counts
-   */
-  TokenUsage getTokenUsage(String sessionId);
 }
