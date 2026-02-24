@@ -26,7 +26,7 @@ public class CounterStoreUpdater extends Consumer {
     var counterId = messageContext().eventSubject().get();
     var newSeqNum = messageContext().metadata().asCloudEvent().sequence();
 
-    var counterEntry = counterStore.getById(counterId);
+    var counterEntry = counterStore.getById(counterId); // <1>
     var currentSeqNum = counterEntry.map(CounterEntry::seqNum).orElse(0L);
     if (!newSeqNum.isPresent()) { // <2>
       // missing sequence number, can't deduplicate
