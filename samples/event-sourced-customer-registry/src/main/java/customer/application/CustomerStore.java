@@ -1,14 +1,10 @@
 package customer.application;
 
-import static akka.Done.done;
-import static java.util.concurrent.CompletableFuture.completedFuture;
-
-import akka.Done;
 import customer.domain.Customer;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -21,22 +17,22 @@ public class CustomerStore {
   private Map<String, Customer> store = new ConcurrentHashMap<>();
 
   // tag::idempotent-update[]
-  public CompletionStage<Optional<Customer>> getById(String customerId) {
+  public Optional<Customer> getById(String customerId) {
     // end::idempotent-update[]
-    return completedFuture(Optional.ofNullable(store.get(customerId)));
+    return Optional.ofNullable(store.get(customerId));
     // tag::idempotent-update[]
   }
 
-  public CompletionStage<Done> save(String customerId, Customer customer) {
+  public void save(String customerId, Customer customer) {
     // end::idempotent-update[]
-    return completedFuture(store.put(customerId, customer)).thenApply(__ -> done());
+    store.put(customerId, customer);
     // tag::idempotent-update[]
   }
 
   // end::idempotent-update[]
 
-  public CompletionStage<Collection<Customer>> getAll() {
-    return completedFuture(store.values());
+  public Collection<Customer> getAll() {
+    return store.values();
   }
   // tag::idempotent-update[]
 }

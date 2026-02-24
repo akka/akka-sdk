@@ -26,26 +26,20 @@ public class CounterStoreUpdater extends Consumer {
     var counterId = messageContext().eventSubject().get();
     var newSeqNum = messageContext().metadata().asCloudEvent().sequence();
 
-    return effects()
-      .asyncEffect(
-        counterStore
-          .getById(counterId) // <1>
-          .thenApply(counterEntry -> {
-            var currentSeqNum = counterEntry.map(CounterEntry::seqNum).orElse(0L);
-            if (!newSeqNum.isPresent()) { // <2>
-              // missing sequence number, can't deduplicate
-              return processEvent(counterEvent, counterEntry, 0L);
-            } else {
-              if (newSeqNum.get() <= currentSeqNum) {
-                //duplicate, can be ignored
-                return effects().ignore(); // <3>
-              } else {
-                // not a duplicate
-                return processEvent(counterEvent, counterEntry, newSeqNum.get()); // <4>
-              }
-            }
-          })
-      );
+    var counterEntry = counterStore.getById(counterId);
+    var currentSeqNum = counterEntry.map(CounterEntry::seqNum).orElse(0L);
+    if (!newSeqNum.isPresent()) { // <2>
+      // missing sequence number, can't deduplicate
+      return processEvent(counterEvent, counterEntry, 0L);
+    } else {
+      if (newSeqNum.get() <= currentSeqNum) {
+        //duplicate, can be ignored
+        return effects().ignore(); // <3>
+      } else {
+        // not a duplicate
+        return processEvent(counterEvent, counterEntry, newSeqNum.get()); // <4>
+      }
+    }
   }
 
   private Effect processEvent(
@@ -62,7 +56,8 @@ public class CounterStoreUpdater extends Consumer {
           currentValue + increased.value(),
           seqNum
         );
-        yield effects().asyncDone(counterStore.save(updatedEntry)); // <5>
+        counterStore.save(updatedEntry); // <5>
+        yield effects().done();
       }
       case ValueMultiplied multiplied -> {
         var updatedEntry = new CounterEntry(
@@ -70,7 +65,8 @@ public class CounterStoreUpdater extends Consumer {
           currentValue * multiplied.multiplier(),
           seqNum
         );
-        yield effects().asyncDone(counterStore.save(updatedEntry)); // <5>
+        counterStore.save(updatedEntry); // <5>
+        yield effects().done();
       }
     };
   }
