@@ -293,7 +293,7 @@ public class Validations {
       if (entry.getValue().size() > 1) {
         String paramType = entry.getKey();
         List<String> methodNames =
-            entry.getValue().stream().map(MethodDef::getName).sorted().toList();
+            entry.getValue().stream().map(MethodDef::getName).toList();
 
         if (paramType.isEmpty()) {
           // Multiple delete handlers

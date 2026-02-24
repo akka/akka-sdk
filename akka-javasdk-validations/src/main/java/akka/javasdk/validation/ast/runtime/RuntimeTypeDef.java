@@ -74,6 +74,7 @@ public record RuntimeTypeDef(Class<?> clazz) implements TypeDef {
     return Arrays.stream(clazz.getDeclaredMethods())
         .map(RuntimeMethodDef::new)
         .map(m -> (MethodDef) m)
+        .sorted() // sorted to ensure predictable output in tests
         .toList();
   }
 

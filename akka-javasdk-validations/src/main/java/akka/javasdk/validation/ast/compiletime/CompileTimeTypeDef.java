@@ -58,6 +58,7 @@ public record CompileTimeTypeDef(TypeElement typeElement) implements TypeDef {
         .map(e -> (ExecutableElement) e)
         .map(CompileTimeMethodDef::new)
         .map(m -> (MethodDef) m)
+        .sorted() // sorted to ensure predictable output in tests
         .toList();
   }
 
