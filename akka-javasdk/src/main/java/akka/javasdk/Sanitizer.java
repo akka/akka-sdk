@@ -9,8 +9,8 @@ import akka.annotation.DoNotInherit;
 /**
  * Sanitizer that applies all configured sanitization rules for the service.
  *
- * <p>Can be injected in all components, allows for applying manual sanitization according to service
- * configuration in arbitrary logic.
+ * <p>Can be injected in all components, allows for applying manual sanitization according to
+ * service configuration in arbitrary logic.
  *
  * <p>Not for user extension, implementation provided by the runtime.
  */
