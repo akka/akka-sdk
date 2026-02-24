@@ -113,41 +113,41 @@ private[javasdk] final case class AgentClientImpl(
             BytesPayload.empty
         }
 
-          DeferredCallImpl(
-            maybeArg.orNull,
-            maybeMetadata.getOrElse(Metadata.EMPTY).asInstanceOf[MetadataImpl],
-            AgentType,
-            componentId,
-            methodName,
-            entityId = None, {
-              def callAgent(metadata: Metadata): Future[CallResult[R]] = {
-                agentClient
-                  .send(new AgentRequest(componentId, sessionId, methodName, serializedPayload, toSpi(metadata)))
-                  .map { reply =>
-                    reply.exceptionPayload match {
-                      case Some(value) =>
-                        //rethrowing to catch it on the component client invocation level
-                        throw serializer.json.exceptionFromBytes(value)
-                      case None =>
-                        // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-                        CallResult(serializer.fromBytes[R](returnType, reply.payload), MetadataImpl.of(reply.metadata))
-                    }
+        DeferredCallImpl(
+          maybeArg.orNull,
+          maybeMetadata.getOrElse(Metadata.EMPTY).asInstanceOf[MetadataImpl],
+          AgentType,
+          componentId,
+          methodName,
+          entityId = None, {
+            def callAgent(metadata: Metadata): Future[CallResult[R]] = {
+              agentClient
+                .send(new AgentRequest(componentId, sessionId, methodName, serializedPayload, toSpi(metadata)))
+                .map { reply =>
+                  reply.exceptionPayload match {
+                    case Some(value) =>
+                      //rethrowing to catch it on the component client invocation level
+                      throw serializer.json.exceptionFromBytes(value)
+                    case None =>
+                      // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
+                      CallResult(serializer.fromBytes[R](returnType, reply.payload), MetadataImpl.of(reply.metadata))
                   }
-              }
-              metadata =>
-                maybeRetrySetting match {
-                  case Some(retrySetting) =>
-                    akka.pattern
-                      .retry(retrySetting) { () =>
-                        callAgent(metadata)
-                      }
-                      .asJava
-                  case None => callAgent(metadata).asJava
                 }
-            },
-            serializer)
-        },
-        canBeDeferred = false))
+            }
+            metadata =>
+              maybeRetrySetting match {
+                case Some(retrySetting) =>
+                  akka.pattern
+                    .retry(retrySetting) { () =>
+                      callAgent(metadata)
+                    }
+                    .asJava
+                case None => callAgent(metadata).asJava
+              }
+          },
+          serializer)
+      },
+      canBeDeferred = false)
       .asInstanceOf[AgentMethodRefImpl[A1, R]]
 
   }
