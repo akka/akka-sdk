@@ -84,21 +84,12 @@ abstract class AbstractComponentValidationSpec(val validationMode: ValidationMod
 
     // Multiple errors - verify all errors are reported together
     "report all validation errors for a component with multiple issues" in {
-      // This test needs special handling to check the error count
-      val result = compileTestSource("invalid/MultipleErrorsComponent.java")
-      assertCompilationFailure(
-        result,
+      assertInvalid(
+        "invalid/MultipleErrorsComponent.java",
         "MultipleErrorsComponent",
         "not marked with `public` modifier",
         "@Component id is empty")
 
-      // Verify that multiple errors are in the diagnostic list
-      val errors = result.diagnostics.filter(_.getKind == javax.tools.Diagnostic.Kind.ERROR)
-      errors.length should be >= 2
-
-      val runtimeResult = compileTestSourceForRuntime("invalid/MultipleErrorsComponent.java")
-      val clazz = loadCompiledClass(runtimeResult, "com.example.MultipleErrorsComponent")
-      assertRuntimeValidationFailure(clazz, "MultipleErrorsComponent", "@Component id is empty")
     }
   }
 }

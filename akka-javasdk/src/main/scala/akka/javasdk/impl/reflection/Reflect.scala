@@ -10,6 +10,7 @@ import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
+import java.lang.reflect.TypeVariable
 import java.util
 import java.util.Optional
 import java.util.concurrent.ConcurrentHashMap
@@ -216,31 +217,52 @@ private[impl] object Reflect {
   }
 
   def keyValueEntityStateType(component: Class[_]): Class[_] = {
-    findSingleTypeParam(component, s"Cannot find key value state class for $component")
+    findSingleTypeParam(component, classOf[KeyValueEntity[_]], s"Cannot find key value state class for $component")
   }
 
   /**
-   * Find the type parameter class.
+   * Find the type parameter of a specific base class in the hierarchy.
    *
-   * This method should only be called on a class receiving a single type parameter. For example, given a type defined
-   * as F[G], it will return Class[G].
+   * Walks up the superclass chain looking for the given base class, then returns its first type argument. This avoids
+   * accidentally picking up a type parameter from an intermediate generic superclass. Type variables are resolved using
+   * substitutions collected while walking up, so intermediate abstract classes that pass through the type parameter are
+   * handled correctly.
    */
-  @tailrec
-  private def findSingleTypeParam(current: Class[_], errorMsg: String): Class[_] =
-    if (current == classOf[AnyRef])
-      // recursed to root without finding type param
-      throw new IllegalArgumentException(errorMsg)
-    else {
-      current.getGenericSuperclass match {
-        case parameterizedType: ParameterizedType =>
-          if (parameterizedType.getActualTypeArguments.length == 1)
-            parameterizedType.getActualTypeArguments.head.asInstanceOf[Class[_]]
-          else throw new IllegalArgumentException(errorMsg)
-        case noTypeParamsParent: Class[_] =>
-          // recurse and look at parent
-          findSingleTypeParam(noTypeParamsParent, errorMsg)
+  private def findSingleTypeParam(current: Class[_], baseClass: Class[_], errorMsg: String): Class[_] = {
+    def resolveTypeArg(typeArg: Type, substitutions: Map[String, Class[_]]): Class[_] =
+      typeArg match {
+        case cls: Class[_]       => cls
+        case tv: TypeVariable[_] => substitutions.getOrElse(tv.getName, throw new IllegalArgumentException(errorMsg))
+        case _                   => throw new IllegalArgumentException(errorMsg)
       }
-    }
+
+    @tailrec
+    def loop(current: Class[_], substitutions: Map[String, Class[_]]): Class[_] =
+      if (current == classOf[AnyRef])
+        throw new IllegalArgumentException(errorMsg)
+      else {
+        current.getGenericSuperclass match {
+          case parameterizedType: ParameterizedType if parameterizedType.getRawType == baseClass =>
+            resolveTypeArg(parameterizedType.getActualTypeArguments.head, substitutions)
+          case parameterizedType: ParameterizedType =>
+            val rawType = parameterizedType.getRawType.asInstanceOf[Class[_]]
+            val newSubstitutions = rawType.getTypeParameters
+              .zip(parameterizedType.getActualTypeArguments)
+              .foldLeft(substitutions) { case (acc, (param, arg)) =>
+                arg match {
+                  case cls: Class[_]       => acc + (param.getName -> cls)
+                  case tv: TypeVariable[_] => substitutions.get(tv.getName).fold(acc)(c => acc + (param.getName -> c))
+                  case _                   => acc
+                }
+              }
+            loop(rawType, newSubstitutions)
+          case noTypeParamsParent: Class[_] =>
+            loop(noTypeParamsParent, substitutions)
+        }
+      }
+
+    loop(current, Map.empty)
+  }
 
   private def extendsView(component: Class[_]): Boolean =
     classOf[View].isAssignableFrom(component)
@@ -254,7 +276,7 @@ private[impl] object Reflect {
     Modifier.isPublic(component.getModifiers)
 
   def workflowStateType(component: Class[_]): Class[_] = {
-    findSingleTypeParam(component, s"Cannot find workflow state class for $component")
+    findSingleTypeParam(component, classOf[Workflow[_]], s"Cannot find workflow state class for $component")
   }
 
   def workflowKnownInputTypes(clz: Class[_]): List[Class[_]] = {
@@ -344,7 +366,10 @@ private[impl] object Reflect {
   }
 
   def tableUpdaterRowType(tableUpdater: Class[_]): Class[_] =
-    findSingleTypeParam(tableUpdater, s"Cannot find table updater class for ${tableUpdater.getClass}")
+    findSingleTypeParam(
+      tableUpdater,
+      classOf[TableUpdater[_]],
+      s"Cannot find table updater class for ${tableUpdater.getClass}")
 
   def allKnownEventSourcedEntityEventType(component: Class[_]): Seq[Class[_]] = {
     val eventType = eventSourcedEntityEventType(component)

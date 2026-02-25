@@ -61,6 +61,10 @@ abstract class AbstractAgentValidationSpec(val validationMode: ValidationMode)
         "No public method returning akka.javasdk.agent.Agent.Effect, akka.javasdk.agent.Agent.StreamEffect found")
     }
 
+    "accept Agent with inherited Effect method" in {
+      assertValid("valid/AgentWithEffectMethodInherited.java")
+    }
+
     "reject Agent with command handler having too many parameters" in {
       assertInvalid(
         "invalid/AgentWithTooManyParams.java",

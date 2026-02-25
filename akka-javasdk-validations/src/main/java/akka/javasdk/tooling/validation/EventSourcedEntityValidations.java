@@ -35,7 +35,8 @@ public class EventSourcedEntityValidations {
     String readOnlyEffectType = "akka.javasdk.eventsourcedentity.EventSourcedEntity.ReadOnlyEffect";
     String[] effectTypes = {effectType, readOnlyEffectType};
 
-    return hasEffectMethod(typeDef, effectType)
+    return hasEffectMethod(
+            typeDef, "akka.javasdk.eventsourcedentity.EventSourcedEntity", effectType)
         .combine(strictlyPublicCommandHandlerArityShouldBeZeroOrOne(typeDef, effectTypes))
         .combine(commandHandlersMustHaveUniqueNames(typeDef, effectTypes))
         .combine(eventTypeMustBeSealed(typeDef))

@@ -745,23 +745,39 @@ public class Validations {
 
   /**
    * Validates that a component has at least one public method returning one of the specified effect
-   * types.
+   * types. Only methods declared up to (but not including) the component base class are considered.
    *
    * @param typeDef the component class to validate
+   * @param componentBaseClass the fully qualified name of the component base class to stop at
    * @param effectTypeNames the fully qualified effect type names
    * @return a Validation result indicating success or failure
    */
-  public static Validation hasEffectMethod(TypeDef typeDef, String... effectTypeNames) {
-    for (MethodDef method : typeDef.getPublicMethods()) {
-      String returnTypeName = method.getReturnType().getQualifiedName();
-      if (Arrays.stream(effectTypeNames).anyMatch(returnTypeName::startsWith)) {
-        return Validation.Valid.instance();
-      }
-    }
+  public static Validation hasEffectMethod(
+      TypeDef typeDef, String componentBaseClass, String... effectTypeNames) {
 
-    var names = String.join(", ", effectTypeNames);
-    return Validation.of(
-        "No public method returning " + names + " found in " + typeDef.getQualifiedName());
+    if (effectMethods(typeDef, componentBaseClass, effectTypeNames).isEmpty()) {
+      var names = String.join(", ", effectTypeNames);
+      return Validation.of(
+          "No public method returning " + names + " found in " + typeDef.getQualifiedName());
+    } else {
+      return Validation.Valid.instance();
+    }
+  }
+
+  public static List<MethodDef> effectMethods(
+      TypeDef typeDef, String componentBaseClass, String[] effectTypeNames) {
+    List<MethodDef> methodDefs = new ArrayList<>();
+    TypeDef current = typeDef;
+    while (current != null && !current.getQualifiedName().equals(componentBaseClass)) {
+      for (MethodDef method : current.getPublicMethods()) {
+        String returnTypeName = method.getReturnType().getQualifiedName();
+        if (Arrays.stream(effectTypeNames).anyMatch(returnTypeName::startsWith)) {
+          methodDefs.add(method);
+        }
+      }
+      current = current.getSuperclass().flatMap(TypeRefDef::resolveTypeDef).orElse(null);
+    }
+    return methodDefs;
   }
 
   /**

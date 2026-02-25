@@ -34,7 +34,7 @@ public class ConsumerValidations {
     }
 
     String effectType = "akka.javasdk.consumer.Consumer.Effect";
-    return hasEffectMethod(typeDef, effectType)
+    return hasEffectMethod(typeDef, "akka.javasdk.consumer.Consumer", effectType)
         .combine(hasConsumeAnnotation(typeDef))
         .combine(typeLevelSubscriptionValidation(typeDef))
         .combine(valueEntitySubscriptionValidations(typeDef, effectType))

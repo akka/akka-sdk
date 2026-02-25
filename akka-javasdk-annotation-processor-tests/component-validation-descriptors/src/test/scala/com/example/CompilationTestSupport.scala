@@ -64,7 +64,7 @@ trait CompilationTestSupport extends Matchers {
    * @return
    *   CompilationResult containing success status and diagnostics
    */
-  protected def compileTestSource(relativePath: String): CompilationResult = {
+  private def compileTestSource(relativePath: String): CompilationResult = {
     compileWithProcessor(relativePath, "akka.javasdk.tooling.processor.ComponentValidationProcessor")
   }
 
@@ -142,7 +142,7 @@ trait CompilationTestSupport extends Matchers {
   /**
    * Asserts that compilation succeeded with no errors.
    */
-  protected def assertCompilationSuccess(result: CompilationResult): Unit = {
+  private def assertCompilationSuccess(result: CompilationResult): Unit = {
     withClue(result.diagnostics) {
       result.success shouldBe true
       result.diagnostics.filter(_.getKind == Diagnostic.Kind.ERROR) shouldBe empty
@@ -157,7 +157,7 @@ trait CompilationTestSupport extends Matchers {
    * @param expectedMessages
    *   expected substrings in error messages
    */
-  protected def assertCompilationFailure(result: CompilationResult, expectedMessages: String*): Unit = {
+  private def assertCompilationFailure(result: CompilationResult, expectedMessages: String*): Unit = {
     withClue(result.diagnostics) {
       result.success shouldBe false
 
@@ -167,28 +167,6 @@ trait CompilationTestSupport extends Matchers {
       val errorMessages = errors.map(_.getMessage(null)).mkString(" ")
       expectedMessages.foreach { expected =>
         errorMessages should include(expected)
-      }
-    }
-  }
-
-  /**
-   * Asserts that compilation failed and does not contain unexpected error messages.
-   *
-   * @param result
-   *   compilation result
-   * @param notExpectedMessages
-   *   unexpected substrings in error messages
-   */
-  protected def assertCompilationFailureNotContain(result: CompilationResult, notExpectedMessages: String*): Unit = {
-    withClue(result.diagnostics) {
-      result.success shouldBe false
-
-      val errors = result.diagnostics.filter(_.getKind == Diagnostic.Kind.ERROR)
-      errors should not be empty
-
-      val errorMessages = errors.map(_.getMessage(null)).mkString(" ")
-      notExpectedMessages.foreach { expected =>
-        errorMessages shouldNot include(expected)
       }
     }
   }
@@ -206,7 +184,7 @@ trait CompilationTestSupport extends Matchers {
    * @return
    *   RuntimeCompilationResult with outputDir, classLoader, and diagnostics
    */
-  protected def compileTestSourceForRuntime(relativePath: String): RuntimeCompilationResult = {
+  private def compileTestSourceForRuntime(relativePath: String): RuntimeCompilationResult = {
     val compiler = ToolProvider.getSystemJavaCompiler
     require(compiler != null, "Java compiler not available. Make sure you're running on a JDK, not a JRE.")
 
@@ -279,7 +257,7 @@ trait CompilationTestSupport extends Matchers {
    * @return
    *   the loaded Class object
    */
-  protected def loadCompiledClass(result: RuntimeCompilationResult, className: String): Class[_] = {
+  private def loadCompiledClass(result: RuntimeCompilationResult, className: String): Class[_] = {
     result.classLoader.loadClass(className)
   }
 
@@ -289,7 +267,7 @@ trait CompilationTestSupport extends Matchers {
    * @param clazz
    *   the class to validate
    */
-  protected def assertRuntimeValidationSuccess(clazz: Class[_]): Unit = {
+  private def assertRuntimeValidationSuccess(clazz: Class[_]): Unit = {
     val typeDef = new RuntimeTypeDef(clazz)
     val validation = akka.javasdk.tooling.validation.Validations.validate(typeDef)
     validation match {
@@ -300,29 +278,6 @@ trait CompilationTestSupport extends Matchers {
     }
   }
 
-  /**
-   * Runs runtime validation on a class and asserts it fails with expected messages.
-   *
-   * @param clazz
-   *   the class to validate
-   * @param expectedMessages
-   *   expected substrings in error messages
-   */
-  protected def assertRuntimeValidationFailure(clazz: Class[_], expectedMessages: String*): Unit = {
-    val typeDef = new RuntimeTypeDef(clazz)
-    val validation = akka.javasdk.tooling.validation.Validations.validate(typeDef)
-    validation match {
-      case _: Validation.Valid =>
-        fail("Expected runtime validation to fail but it succeeded")
-      case invalid: Validation.Invalid =>
-        val allMessages = invalid.messages().asScala.mkString(" ")
-        expectedMessages.foreach { expected =>
-          withClue(s"Expected message '$expected' in: $allMessages") {
-            allMessages should include(expected)
-          }
-        }
-    }
-  }
 
   /**
    * Helper to derive the expected class name from a file path. Reads the actual package declaration from the source
@@ -333,7 +288,7 @@ trait CompilationTestSupport extends Matchers {
    * @return
    *   fully qualified class name like "com.example.ValidEventSourcedEntity"
    */
-  protected def classNameFromPath(relativePath: String): String = {
+  private def classNameFromPath(relativePath: String): String = {
     val testSourcesDir = Paths.get("src/test/resources/test-sources")
     val sourceFile = testSourcesDir.resolve(relativePath)
     val fileName = Paths.get(relativePath).getFileName.toString
@@ -413,26 +368,6 @@ trait CompilationTestSupport extends Matchers {
     }
   }
 
-  /**
-   * Strict version of assertInvalidInBothModes that requires the code to compile without annotation processor. Use this
-   * for invalid test cases where the Java code is syntactically correct but fails validation.
-   *
-   * @param relativePath
-   *   path to the test source file relative to src/test/resources/test-sources
-   * @param expectedMessages
-   *   expected substrings in error messages
-   */
-  protected def assertInvalidInBothModesStrict(relativePath: String, expectedMessages: String*): Unit = {
-    val className = classNameFromPath(relativePath)
 
-    // Compile-time validation
-    val compileResult = compileTestSource(relativePath)
-    assertCompilationFailure(compileResult, expectedMessages: _*)
-
-    // Runtime validation (must succeed in compiling)
-    val runtimeResult = compileTestSourceForRuntime(relativePath)
-    val clazz = loadCompiledClass(runtimeResult, className)
-    assertRuntimeValidationFailure(clazz, expectedMessages: _*)
-  }
 
 }

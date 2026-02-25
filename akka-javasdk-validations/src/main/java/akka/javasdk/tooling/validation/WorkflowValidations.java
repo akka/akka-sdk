@@ -37,7 +37,7 @@ public class WorkflowValidations {
         // a workflow is not required to have step methods,
         // but must have at least one Effect or ReadOnlyEffect
         // although a single ReadOnlyEffect is questionable
-        .hasEffectMethod(typeDef, strictlyPublicEffectTypes)
+        .hasEffectMethod(typeDef, "akka.javasdk.workflow.Workflow", strictlyPublicEffectTypes)
         // method returning Effect or ReadOnlyEffect must be public
         // users can still have private methods with arity > 1
         .combine(

@@ -46,6 +46,10 @@ abstract class AbstractEventSourcedEntityValidationSpec(val validationMode: Vali
         "No public method returning akka.javasdk.eventsourcedentity.EventSourcedEntity.Effect found")
     }
 
+    "accept EventSourcedEntity with inherited Effect method" in {
+      assertValid("valid/ESEInheritedEffectMethod.java")
+    }
+
     "reject EventSourcedEntity that is not public" in {
       assertInvalid(
         "invalid/NotPublicEventSourcedEntity.java",

@@ -4,6 +4,7 @@
 
 package akka.javasdk.tooling.validation;
 
+import static akka.javasdk.tooling.validation.Validations.effectMethods;
 import static akka.javasdk.tooling.validation.Validations.hasEffectMethod;
 import static akka.javasdk.tooling.validation.Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne;
 
@@ -11,7 +12,6 @@ import akka.javasdk.validation.ast.AnnotationDef;
 import akka.javasdk.validation.ast.MethodDef;
 import akka.javasdk.validation.ast.TypeDef;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,7 +33,7 @@ public class AgentValidations {
     }
 
     return mustHaveValidAgentDescription(typeDef)
-        .combine(hasEffectMethod(typeDef, effectTypes))
+        .combine(hasEffectMethod(typeDef, "akka.javasdk.agent.Agent", effectTypes))
         .combine(mustHaveSinglePublicCommandHandler(typeDef))
         .combine(strictlyPublicCommandHandlerArityShouldBeZeroOrOne(typeDef, effectTypes))
         .combine(commandHandlerCannotHaveFunctionTool(typeDef));
@@ -123,14 +123,7 @@ public class AgentValidations {
    * @return a Validation result indicating success or failure
    */
   private static Validation mustHaveSinglePublicCommandHandler(TypeDef typeDef) {
-    int count = 0;
-
-    for (MethodDef method : typeDef.getPublicMethods()) {
-      String returnTypeName = method.getReturnType().getQualifiedName();
-      if (Arrays.stream(effectTypes).anyMatch(returnTypeName::startsWith)) {
-        count++;
-      }
-    }
+    int count = effectMethods(typeDef, "akka.javasdk.agent.Agent", effectTypes).size();
 
     if (count == 1) {
       return Validation.Valid.instance();
