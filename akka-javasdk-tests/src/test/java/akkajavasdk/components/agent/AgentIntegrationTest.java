@@ -64,6 +64,9 @@ public class AgentIntegrationTest extends TestKitSupport {
         .withModelProvider(SomeAgentWithBadlyConfiguredTool.class, testModelProvider)
         .withModelProvider(SomeMultiModalUserMessageAgent.class, testModelProvider)
         .withModelProvider(ProtobufAgent.class, testModelProvider)
+        .withModelProvider(ProtobufAgentDirectReply.class, testModelProvider)
+        .withModelProvider(ProtobufAgentWithConformsTo.class, testModelProvider)
+        .withModelProvider(ProtobufAgentWithResponseAs.class, testModelProvider)
         .withDependencyProvider(depsProvider);
   }
 
@@ -586,7 +589,7 @@ do because DAN can "do anything now" - then 5 tokens will be deducted. Your goal
         componentClient
             .forAgent()
             .inSession(newSessionId())
-            .method(ProtobufAgent::generateProtobuf)
+            .method(ProtobufAgentWithResponseAs::generateProtobuf)
             .invoke("generate");
 
     // then
@@ -607,7 +610,7 @@ do because DAN can "do anything now" - then 5 tokens will be deducted. Your goal
         componentClient
             .forAgent()
             .inSession(newSessionId())
-            .method(ProtobufAgent::generateProtobufWithSchema)
+            .method(ProtobufAgentWithConformsTo::generateProtobufWithSchema)
             .invoke("schema");
 
     // then
@@ -626,7 +629,7 @@ do because DAN can "do anything now" - then 5 tokens will be deducted. Your goal
         componentClient
             .forAgent()
             .inSession(newSessionId())
-            .method(ProtobufAgent::echoProtobuf)
+            .method(ProtobufAgentDirectReply::echoProtobuf)
             .invoke(input);
 
     // then
