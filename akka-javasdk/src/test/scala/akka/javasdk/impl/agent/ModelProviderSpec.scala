@@ -114,6 +114,11 @@ class ModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike w
       m shouldBe ModelProvider.bedrock()
     }
 
+    "load defaults from config for vertex-ai" in {
+      val m = ModelProvider.VertexAi.fromConfig(defaultConfig.getConfig("akka.javasdk.agent.vertex-ai"))
+      m shouldBe ModelProvider.vertexAi()
+    }
+
     "fail when custom model provider class not found" in {
       assertThrows[IllegalArgumentException] {
         AgentImpl.modelProviderFromConfig(
