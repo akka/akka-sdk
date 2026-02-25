@@ -478,7 +478,7 @@ private[impl] final class AgentImpl[A <: Agent](
           val requests = res.toolRequests.map { req =>
             new ToolCallRequest(req.id, req.name, req.arguments)
           }.asJava
-          new AiMessage(res.timestamp, res.content, componentId, requests, res.thinking.toJava)
+          new AiMessage(res.timestamp, res.content, componentId, requests, res.thinking.toJava, res.attributes.asJava)
 
         case res: SpiAgent.ToolCallResponse =>
           new ToolCallResponse(res.timestamp, componentId, res.id, res.name, res.content)
@@ -531,7 +531,11 @@ private[impl] final class AgentImpl[A <: Agent](
               new SpiAgent.ToolCallRequest(req.id(), req.name(), req.arguments())
             }
             .toSeq
-          new SpiAgent.ContextMessage.AiMessage(m.text(), toolRequests, m.thinking().toScala)
+          new SpiAgent.ContextMessage.AiMessage(
+            m.text(),
+            toolRequests,
+            m.thinking().toScala,
+            m.attributes().asScala.toMap)
         case m: UserMessage =>
           new SpiAgent.ContextMessage.UserMessage(m.text())
 

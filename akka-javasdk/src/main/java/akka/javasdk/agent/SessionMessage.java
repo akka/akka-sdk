@@ -8,10 +8,13 @@ import akka.javasdk.agent.SessionMessage.AiMessage;
 import akka.javasdk.agent.SessionMessage.MultimodalUserMessage;
 import akka.javasdk.agent.SessionMessage.ToolCallResponse;
 import akka.javasdk.agent.SessionMessage.UserMessage;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.Nulls;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /** Interface for message representation used inside the SessionMemoryEntity state. */
@@ -99,7 +102,8 @@ public sealed interface SessionMessage {
       String text,
       String componentId,
       List<ToolCallRequest> toolCallRequests,
-      Optional<String> thinking)
+      @JsonSetter(nulls = Nulls.AS_EMPTY) Optional<String> thinking,
+      @JsonSetter(nulls = Nulls.AS_EMPTY) Map<String, Object> attributes)
       implements SessionMessage {
 
     public AiMessage(
@@ -107,11 +111,11 @@ public sealed interface SessionMessage {
         String text,
         String componentId,
         List<ToolCallRequest> toolCallRequests) {
-      this(timestamp, text, componentId, toolCallRequests, Optional.empty());
+      this(timestamp, text, componentId, toolCallRequests, Optional.empty(), Map.of());
     }
 
     public AiMessage(Instant timestamp, String text, String componentId) {
-      this(timestamp, text, componentId, List.of(), Optional.empty());
+      this(timestamp, text, componentId, List.of(), Optional.empty(), Map.of());
     }
 
     @Override
