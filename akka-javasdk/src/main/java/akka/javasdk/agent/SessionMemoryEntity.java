@@ -22,12 +22,7 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import akka.javasdk.eventsourcedentity.ReplicationFilter;
 import com.typesafe.config.Config;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -188,12 +183,20 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
         int sizeInBytes,
         long historySizeInBytes,
         List<SessionMessage.ToolCallRequest> toolCallRequests,
-        Optional<String> thinking)
+        Optional<String> thinking,
+        Map<String, Object> attributes)
         implements Event {
 
       AiMessageAdded withHistorySizeInBytes(long newSize) {
         return new AiMessageAdded(
-            timestamp, componentId, message, sizeInBytes, newSize, toolCallRequests, thinking);
+            timestamp,
+            componentId,
+            message,
+            sizeInBytes,
+            newSize,
+            toolCallRequests,
+            thinking,
+            attributes);
       }
     }
 
@@ -281,7 +284,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                                 aiMessage.size(),
                                 0L, // filled in later
                                 aiMessage.toolCallRequests(),
-                                aiMessage.thinking());
+                                aiMessage.thinking(),
+                                aiMessage.attributes());
 
                         case ToolCallResponse toolCallResponse ->
                             new Event.ToolResponseMessageAdded(
@@ -407,7 +411,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
             cmd.aiMessage.size(),
             0L, // filled in later
             Collections.emptyList(),
-            cmd.aiMessage.thinking()));
+            cmd.aiMessage.thinking(),
+            cmd.aiMessage.attributes()));
 
     if (commandContext().sequenceNumber() > cmd.sequenceNumber
         && !currentState().messages.isEmpty()) {
@@ -447,7 +452,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                             aiMessage.size(),
                             0L, // filled in later
                             aiMessage.toolCallRequests(),
-                            aiMessage.thinking()));
+                            aiMessage.thinking(),
+                            aiMessage.attributes()));
                   }
                   case MultimodalUserMessage multimodalUserMessage -> {
                     events.add(
@@ -540,7 +546,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                       aiMsg.message,
                       aiMsg.componentId,
                       aiMsg.toolCallRequests,
-                      aiMsg.thinking));
+                      aiMsg.thinking,
+                      aiMsg.attributes));
 
       case Event.ToolResponseMessageAdded toolMsg ->
           currentState()
