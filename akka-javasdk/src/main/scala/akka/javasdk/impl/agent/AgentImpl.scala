@@ -669,6 +669,8 @@ private[impl] final class AgentImpl[A <: Agent](
           projectId = p.projectId,
           location = p.location,
           apiKey = p.apiKey,
+          baseUrl = p.baseUrl,
+          apiVersion = p.apiVersion,
           modelSettings =
             new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
           temperature = p.temperature,

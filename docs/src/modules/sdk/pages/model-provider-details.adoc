@@ -410,6 +410,72 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Ollama.html[`Mode
 
 See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`ModelProvider.OpenAi`] for programmatic settings.
 
+=== Vertex AI
+
+[cols="1m,1,4"]
+|===
+| Property | Type | Description
+
+| provider
+| "vertex-ai"
+| Name of the provider. Must always be `vertex-ai`
+
+| model-name
+| String
+| The name of the model to use, e.g. "gemini-2.0-flash-001". See vendor documentation for a list of available models
+
+| api-key
+| String
+| API key for authentication. Defaults to the value of the `VERTEX_AI_API_KEY` environment variable. Use either this or `project-id` + `location`, not both
+
+| project-id
+| String
+| Google Cloud project ID. Used together with `location` for authentication via application default credentials. Use either this or `api-key`, not both
+
+| location
+| String
+| Google Cloud region, e.g. "us-central1". Used together with `project-id`
+
+| base-url
+| Url
+| Optional override to the base URL of the Vertex AI API
+
+| api-version
+| String
+| Optional override for the API version
+
+| temperature
+| Float
+| Model randomness. The default is not supplied so check with the model documentation for default behavior
+
+| top-p
+| Float
+| Nucleus sampling parameter
+
+| thinking-budget
+| Integer
+| Tokens to spend on thinking (0 to disable thinking)
+
+| max-output-tokens
+| Integer
+| Max token _output_ quota. Leave as –1 for model default
+
+| connection-timeout
+| Duration
+| Fail the request if connecting to the model API takes longer than this
+
+| response-timeout
+| Duration
+| Fail the request if getting a response from the model API takes longer than this
+
+| max-retries
+| Integer
+| Retry this many times if the request to the model fails
+
+|===
+
+See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.VertexAi.html[`ModelProvider.VertexAi`] for programmatic settings.
+
 == Default model configuration
 
 The default model will be used if the agent doesn't specify another model.
@@ -498,6 +564,12 @@ include::example$akka-javasdk/src/main/resources/reference.conf[tag=ollama]
 [source,hocon,indent=0]
 ----
 include::example$akka-javasdk/src/main/resources/reference.conf[tag=openai]
+----
+
+=== Vertex AI
+[source,hocon,indent=0]
+----
+include::example$akka-javasdk/src/main/resources/reference.conf[tag=vertex-ai]
 ----
 
 === Custom
