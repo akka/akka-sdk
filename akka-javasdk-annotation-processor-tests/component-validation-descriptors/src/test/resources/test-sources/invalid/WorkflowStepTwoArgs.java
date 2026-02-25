@@ -16,6 +16,6 @@ public class WorkflowStepTwoArgs extends Workflow<String> {
 
   // Step method with 2 arguments - not allowed
   private StepEffect processStep(String input, int count) {
-    return effects().pause();
+    return stepEffects().thenPause();
   }
 }

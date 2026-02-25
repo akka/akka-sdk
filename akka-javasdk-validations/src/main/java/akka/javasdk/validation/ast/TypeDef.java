@@ -68,7 +68,10 @@ public interface TypeDef {
    * @return list of public methods
    */
   default List<MethodDef> getPublicMethods() {
-    return getMethods().stream().filter(MethodDef::isPublic).toList();
+    return getMethods().stream()
+        .filter(MethodDef::isPublic)
+        .sorted() // sorted to ensure predictable output in tests
+        .toList();
   }
 
   /**
@@ -77,7 +80,10 @@ public interface TypeDef {
    * @return list of non-public methods
    */
   default List<MethodDef> getNonPublicMethods() {
-    return getMethods().stream().filter(m -> !m.isPublic()).toList();
+    return getMethods().stream()
+        .filter(m -> !m.isPublic())
+        .sorted() // sorted to ensure predictable output in tests
+        .toList();
   }
 
   /**

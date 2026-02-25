@@ -93,6 +93,11 @@ import akka.javasdk.mcp.AbstractMcpEndpoint
 import akka.javasdk.mcp.McpRequestContext
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.timer.TimerScheduler
+import akka.javasdk.tooling.validation.Validation
+import akka.javasdk.tooling.validation.Validation.Invalid
+import akka.javasdk.tooling.validation.Validation.Valid
+import akka.javasdk.tooling.validation.Validations
+import akka.javasdk.validation.ast.runtime.RuntimeTypeDef
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi
@@ -380,6 +385,21 @@ private final class Sdk(
     remoteIdentification.map(ri => GrpcClientProviderImpl.AuthHeaders(ri.headerName, ri.headerValue)))
 
   private lazy val overrideModelProvider = new OverrideModelProvider
+
+  // validate service classes before instantiating
+  private val validation = componentClasses.foldLeft(Valid.instance().asInstanceOf[Validation]) {
+    case (validations, cls) =>
+      val typeDef = new RuntimeTypeDef(cls)
+      val componentValidation = Validations.validate(typeDef)
+      validations.combine(componentValidation)
+  }
+
+  validation match { // if any invalid component, log and throw
+    case _: Valid => ()
+    case invalid: Invalid =>
+      invalid.messages.asScala.foreach { msg => logger.error(msg) }
+      invalid.throwFailureSummary()
+  }
 
   val guardrailProvider = new GuardrailProvider(system, applicationConfig)
   try {

@@ -13,7 +13,7 @@ public class WorkflowWithFunctionToolOnStepEffect extends Workflow<String> {
 
   @FunctionTool(description = "This should not be allowed on StepEffect")
   public StepEffect invalidStep() {
-    return effects().done();
+    return stepEffects().thenPause();
   }
 
   public Effect<String> execute() {

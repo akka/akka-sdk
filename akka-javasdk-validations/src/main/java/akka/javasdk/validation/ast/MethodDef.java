@@ -12,7 +12,7 @@ import java.util.Optional;
  * (javax.lang.model.element.ExecutableElement) or runtime (java.lang.reflect.Method)
  * representations.
  */
-public interface MethodDef {
+public interface MethodDef extends Comparable<MethodDef> {
 
   /**
    * Returns the name of this method.
@@ -65,5 +65,10 @@ public interface MethodDef {
    */
   default boolean hasAnnotation(String annotationName) {
     return findAnnotation(annotationName).isPresent();
+  }
+
+  @Override
+  default int compareTo(MethodDef o) {
+    return this.getName().compareTo(o.getName());
   }
 }

@@ -21,14 +21,6 @@ public class ValidEventSourcedEntity extends EventSourcedEntity<String, ValidEve
     return effects().persist(new Event.Created(name)).thenReply(__ -> Done.getInstance());
   }
 
-  public Event.Created onEvent(Event.Created event) {
-    return event;
-  }
-
-  public Event.Updated onEvent(Event.Updated event) {
-    return event;
-  }
-
   @Override
   public String applyEvent(com.example.ValidEventSourcedEntity.Event event) {
     return "";
