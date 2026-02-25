@@ -19,10 +19,6 @@ public class CommandHandlerTwoArgs extends EventSourcedEntity<String, CommandHan
     return effects().persist(new Event.Created(name, age)).thenReply(__ -> "created");
   }
 
-  public Event.Created onEvent(Event.Created event) {
-    return event;
-  }
-
   @Override
   public String applyEvent(Event event) {
     return "";

@@ -16,10 +16,6 @@ public class NoEffectMethod extends EventSourcedEntity<String, NoEffectMethod.Ev
 
   // No Effect method - this should cause a validation error
 
-  public Event.Created onEvent(Event.Created event) {
-    return event;
-  }
-
   @Override
   public String applyEvent(Event event) {
     return "";

@@ -25,10 +25,6 @@ public class EventSourcedEntityWithFunctionToolOnPrivateMethod extends EventSour
     return effects().reply("private");
   }
 
-  public Event.Created onEvent(Event.Created event) {
-    return event;
-  }
-
   @Override
   public String applyEvent(Event event) {
     return "";
