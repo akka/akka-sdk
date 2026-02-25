@@ -98,7 +98,7 @@ The following is a list of all natively supported model configurations. Remember
 
 | additional-model-request-headers
 | List<String>
-| List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. A single comma-separated string is also accepted (e.g. when set via environment variable).
+| List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. Can also be set via `ADDITIONAL_ANTHROPIC_REQUEST_HEADERS_N` environment variables.
 
 |===
 
@@ -162,7 +162,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Anthropic.html[`M
 
 | additional-model-request-headers
 | List<String>
-| List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. A single comma-separated string is also accepted (e.g. when set via environment variable).
+| List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. Can also be set via `ADDITIONAL_BEDROCK_REQUEST_HEADERS_N` environment variables.
 
 |===
 
@@ -224,7 +224,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Bedrock.html[`Mod
 
 | additional-model-request-headers
 | List of String
-| List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. A single comma-separated string is also accepted (e.g. when set via environment variable).
+| List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. Can also be set via `ADDITIONAL_GOOGLE_AI_GEMINI_REQUEST_HEADERS_N` environment variables.
 
 |===
 
@@ -282,7 +282,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.GoogleAIGemini.ht
 
 | additional-model-request-headers
 | List of String
-| List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. A single comma-separated string is also accepted (e.g. when set via environment variable).
+| List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. Can also be set via `ADDITIONAL_HUGGING_FACE_REQUEST_HEADERS_N` environment variables.
 
 |===
 
@@ -320,7 +320,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.HuggingFace.html[
 
 | additional-model-request-headers
 | List of String
-| List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. A single comma-separated string is also accepted (e.g. when set via environment variable).
+| List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. Can also be set via `ADDITIONAL_LOCAL_AI_REQUEST_HEADERS_N` environment variables.
 
 |===
 
@@ -370,7 +370,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.LocalAI.html[`Mod
 
 | additional-model-request-headers
 | List of String
-| List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. A single comma-separated string is also accepted (e.g. when set via environment variable).
+| List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. Can also be set via `ADDITIONAL_OLLAMA_REQUEST_HEADERS_N` environment variables.
 
 |===
 
@@ -432,7 +432,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Ollama.html[`Mode
 
 | additional-model-request-headers
 | List of String
-| List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. A single comma-separated string is also accepted (e.g. when set via environment variable).
+| List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. Can also be set via `ADDITIONAL_OPENAI_REQUEST_HEADERS_N` environment variables.
 
 |===
 
@@ -489,12 +489,35 @@ akka.javasdk.agent.openai.additional-model-request-headers = ["X-Custom-Header:v
 
 The global setting can also be supplied via environment variables, this is the recommended approach for secrets such as gateway tokens.
 
-The environment variables use a special naming where each entry is specified with a list index:
+Each header entry is a separate environment variable with an incrementing numeric suffix:
 
 [source,bash,indent=0]
 ----
-AKKA_AGENT_ADDITIONAL_MODEL_REQUEST_HEADERS_0="Authorization:Bearer mytoken"
-AKKA_AGENT_ADDITIONAL_MODEL_REQUEST_HEADERS_1="X-Custom-Header:value"
+ADDITIONAL_MODEL_REQUEST_HEADERS_0="Authorization:Bearer mytoken"
+ADDITIONAL_MODEL_REQUEST_HEADERS_1="X-Custom-Header:value"
+----
+
+You can also set headers for a specific model provider using provider-specific environment variables. These replace the inherited global headers for that provider:
+
+[cols="1m,3"]
+|===
+| Provider | Environment variable prefix
+
+| Anthropic | `ADDITIONAL_ANTHROPIC_REQUEST_HEADERS_N`
+| OpenAI | `ADDITIONAL_OPENAI_REQUEST_HEADERS_N`
+| Google AI Gemini | `ADDITIONAL_GOOGLE_AI_GEMINI_REQUEST_HEADERS_N`
+| Ollama | `ADDITIONAL_OLLAMA_REQUEST_HEADERS_N`
+| Local AI | `ADDITIONAL_LOCAL_AI_REQUEST_HEADERS_N`
+| Hugging Face | `ADDITIONAL_HUGGING_FACE_REQUEST_HEADERS_N`
+| Bedrock | `ADDITIONAL_BEDROCK_REQUEST_HEADERS_N`
+
+|===
+
+For example, to set a header only for Anthropic requests:
+
+[source,bash,indent=0]
+----
+ADDITIONAL_ANTHROPIC_REQUEST_HEADERS_0="Authorization:Bearer mytoken"
 ----
 
 === Programmatic override

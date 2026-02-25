@@ -32,26 +32,10 @@ public sealed interface ModelProvider {
     return RawHeader.create(entry.substring(0, colonIdx), entry.substring(colonIdx + 1));
   }
 
-  private static List<HttpHeader> additionalModelRequestHeadersFromEnv() {
-    List<HttpHeader> headers = new ArrayList<>();
-    while (true) {
-      var envValue = System.getenv("AKKA_AGENT_ADDITIONAL_MODEL_REQUEST_HEADERS_" + headers.size());
-      if (envValue != null) {
-        headers.add(parseHeaderEntry(envValue));
-      } else {
-        return headers;
-      }
-    }
-  }
-
   private static List<HttpHeader> headersFromConfig(Config config) {
-    if (System.getenv().containsKey("AKKA_AGENT_ADDITIONAL_MODEL_REQUEST_HEADERS_0")) {
-      return additionalModelRequestHeadersFromEnv();
-    } else {
-      return config.getStringList("additional-model-request-headers").stream()
-          .map(ModelProvider::parseHeaderEntry)
-          .collect(Collectors.toList());
-    }
+    return config.getStringList("additional-model-request-headers").stream()
+        .map(ModelProvider::parseHeaderEntry)
+        .collect(Collectors.toList());
   }
 
   /**

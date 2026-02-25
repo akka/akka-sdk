@@ -564,6 +564,7 @@ private[impl] final class AgentImpl[A <: Agent](
       .toVector
   }
 
+  @nowarn("msg=deprecated")
   private def mapSpiAgentException(func: Throwable => Any): Throwable => Any = {
 
     @nowarn("msg=deprecated")

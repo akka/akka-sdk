@@ -73,7 +73,7 @@ object Dependencies {
   val opentelemetryContext = "io.opentelemetry" % "opentelemetry-context" % OpenTelemetryVersion
   val opentelemetrySemConv = "io.opentelemetry.semconv" % "opentelemetry-semconv" % OpenTelemetrySemConv
 
-  val typesafeConfig = "com.typesafe" % "config" % "1.4.2"
+  val typesafeConfig = "com.typesafe" % "config" % "1.4.6"
   val protobufJavaUtil = "com.google.protobuf" % "protobuf-java-util" % GoogleProtobufVersion
 
   private val deps = libraryDependencies
@@ -110,6 +110,8 @@ object Dependencies {
   //            binaries/artifacts unless explicitly excluded in the akka-javasdk-parent assembly descriptor
   val javaSdk = deps ++= sdkDeps ++ Seq(
     akkaSdkSpi,
+    // FIXME: Not sure why this is needed, 1.4.5 from akka-core somehow trumps 1.4.6 from spi/runtime without it
+    typesafeConfig,
     // make sure these two are on the classpath for users to consume http request/response APIs and streams
     "com.typesafe.akka" %% "akka-http-core" % AkkaHttpVersion,
     akkaDependency("akka-stream"),
