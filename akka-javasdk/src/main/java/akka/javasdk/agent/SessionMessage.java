@@ -137,7 +137,6 @@ public sealed interface SessionMessage {
     }
   }
 
-  // FIXME do we need attributes here as well, for thinking signatures, when thinking is enabled?
   record ToolCallResponse(
       Instant timestamp, String componentId, String id, String name, String text)
       implements SessionMessage {
