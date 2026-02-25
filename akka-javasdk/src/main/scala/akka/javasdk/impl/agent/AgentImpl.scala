@@ -135,6 +135,7 @@ private[impl] object AgentImpl {
         case "openai"          => ModelProvider.OpenAi.fromConfig(providerConfig)
         case "local-ai"        => ModelProvider.LocalAI.fromConfig(providerConfig)
         case "bedrock"         => ModelProvider.Bedrock.fromConfig(providerConfig)
+        case "vertex-ai"       => ModelProvider.VertexAi.fromConfig(providerConfig)
         case fqcn if isFqcn(fqcn) =>
           instantiateCustomProvider(fqcn, providerConfig, resolvedConfigPath)
         case other =>
@@ -662,6 +663,20 @@ private[impl] final class AgentImpl[A <: Agent](
           maxCompletionTokens = p.maxCompletionTokens,
           new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
           thinking = p.thinking)
+      case p: ModelProvider.VertexAi =>
+        new SpiAgent.ModelProvider.VertexAi(
+          modelName = p.modelName,
+          projectId = p.projectId,
+          location = p.location,
+          apiKey = p.apiKey,
+          baseUrl = p.baseUrl,
+          apiVersion = p.apiVersion,
+          modelSettings =
+            new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
+          temperature = p.temperature,
+          topP = p.topP,
+          thinkingBudget = p.thinkingBudget,
+          maxOutputTokens = p.maxOutputTokens)
       case p: ModelProvider.Custom =>
         new SpiAgent.ModelProvider.Custom(
           providerName = p.getClass.getName,

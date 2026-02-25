@@ -14,8 +14,8 @@ import java.util.Optional;
  * Configuration interface for AI model providers used by agents.
  *
  * <p>ModelProvider defines which AI model and settings to use for agent interactions. Akka supports
- * multiple model providers including hosted services (OpenAI, Anthropic, Google AI Gemini,
- * HuggingFace) and locally running models (Ollama, LocalAI).
+ * multiple model providers including hosted services (OpenAI, Anthropic, Google AI Gemini, Google
+ * Cloud Vertex AI, HuggingFace, Amazon Bedrock) and locally running models (Ollama, LocalAI).
  *
  * <p>Different agents can use different models by specifying the ModelProvider in the agent effect.
  * If no model is specified, the default model from configuration is used.
@@ -1108,6 +1108,299 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinking);
+    }
+  }
+
+  /** Settings for the Google Cloud Vertex AI Large Language Model provider. */
+  static VertexAi vertexAi() {
+    return new VertexAi(
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        Double.NaN,
+        Double.NaN,
+        0,
+        -1,
+        Duration.ofSeconds(15),
+        Duration.ofMinutes(1),
+        2);
+  }
+
+  /** Settings for the Google Cloud Vertex AI Large Language Model provider. */
+  record VertexAi(
+      /** Name of the Vertex AI model to use (e.g. "gemini-2.0-flash-001") */
+      String modelName,
+      /** Google Cloud project ID */
+      String projectId,
+      /** Google Cloud region (e.g. "us-central1") */
+      String location,
+      /** API key for authentication with Vertex AI */
+      String apiKey,
+      /** Optional base URL override for the Vertex AI API */
+      String baseUrl,
+      /** Optional API version override */
+      String apiVersion,
+      /** Controls randomness in the model's output (0.0-2.0, higher = more random) */
+      double temperature,
+      /**
+       * Nucleus sampling parameter (0.0 to 1.0). Controls text generation by only considering the
+       * most likely tokens whose cumulative probability exceeds the threshold value.
+       */
+      double topP,
+      /** A maximum number of tokens to spend on thinking, use 0 to disable thinking */
+      int thinkingBudget,
+      /** Maximum number of tokens to generate in the response */
+      int maxOutputTokens,
+      /** Fail the request if connecting to the model API takes longer than this */
+      Duration connectionTimeout,
+      /**
+       * Fail the request if getting a response from the model API takes longer than this, does not
+       * apply to streaming agents
+       */
+      Duration responseTimeout,
+      /** If the request fails, retry this many times. */
+      int maxRetries)
+      implements ModelProvider {
+
+    public static VertexAi fromConfig(Config config) {
+      return new VertexAi(
+          config.getString("model-name"),
+          config.getString("project-id"),
+          config.getString("location"),
+          config.getString("api-key"),
+          config.getString("base-url"),
+          config.getString("api-version"),
+          config.getDouble("temperature"),
+          config.getDouble("top-p"),
+          config.getInt("thinking-budget"),
+          config.getInt("max-output-tokens"),
+          config.getDuration("connection-timeout"),
+          config.getDuration("response-timeout"),
+          config.getInt("max-retries"));
+    }
+
+    public VertexAi withModelName(String modelName) {
+      return new VertexAi(
+          modelName,
+          projectId,
+          location,
+          apiKey,
+          baseUrl,
+          apiVersion,
+          temperature,
+          topP,
+          thinkingBudget,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
+    }
+
+    public VertexAi withProjectId(String projectId) {
+      return new VertexAi(
+          modelName,
+          projectId,
+          location,
+          apiKey,
+          baseUrl,
+          apiVersion,
+          temperature,
+          topP,
+          thinkingBudget,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
+    }
+
+    public VertexAi withLocation(String location) {
+      return new VertexAi(
+          modelName,
+          projectId,
+          location,
+          apiKey,
+          baseUrl,
+          apiVersion,
+          temperature,
+          topP,
+          thinkingBudget,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
+    }
+
+    public VertexAi withApiKey(String apiKey) {
+      return new VertexAi(
+          modelName,
+          projectId,
+          location,
+          apiKey,
+          baseUrl,
+          apiVersion,
+          temperature,
+          topP,
+          thinkingBudget,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
+    }
+
+    public VertexAi withBaseUrl(String baseUrl) {
+      return new VertexAi(
+          modelName,
+          projectId,
+          location,
+          apiKey,
+          baseUrl,
+          apiVersion,
+          temperature,
+          topP,
+          thinkingBudget,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
+    }
+
+    public VertexAi withApiVersion(String apiVersion) {
+      return new VertexAi(
+          modelName,
+          projectId,
+          location,
+          apiKey,
+          baseUrl,
+          apiVersion,
+          temperature,
+          topP,
+          thinkingBudget,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
+    }
+
+    public VertexAi withTemperature(double temperature) {
+      return new VertexAi(
+          modelName,
+          projectId,
+          location,
+          apiKey,
+          baseUrl,
+          apiVersion,
+          temperature,
+          topP,
+          thinkingBudget,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
+    }
+
+    public VertexAi withTopP(double topP) {
+      return new VertexAi(
+          modelName,
+          projectId,
+          location,
+          apiKey,
+          baseUrl,
+          apiVersion,
+          temperature,
+          topP,
+          thinkingBudget,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
+    }
+
+    public VertexAi withThinkingBudget(int thinkingBudget) {
+      return new VertexAi(
+          modelName,
+          projectId,
+          location,
+          apiKey,
+          baseUrl,
+          apiVersion,
+          temperature,
+          topP,
+          thinkingBudget,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
+    }
+
+    public VertexAi withMaxOutputTokens(int maxOutputTokens) {
+      return new VertexAi(
+          modelName,
+          projectId,
+          location,
+          apiKey,
+          baseUrl,
+          apiVersion,
+          temperature,
+          topP,
+          thinkingBudget,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
+    }
+
+    public VertexAi withConnectionTimeout(Duration connectionTimeout) {
+      return new VertexAi(
+          modelName,
+          projectId,
+          location,
+          apiKey,
+          baseUrl,
+          apiVersion,
+          temperature,
+          topP,
+          thinkingBudget,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
+    }
+
+    public VertexAi withResponseTimeout(Duration responseTimeout) {
+      return new VertexAi(
+          modelName,
+          projectId,
+          location,
+          apiKey,
+          baseUrl,
+          apiVersion,
+          temperature,
+          topP,
+          thinkingBudget,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
+    }
+
+    public VertexAi withMaxRetries(int maxRetries) {
+      return new VertexAi(
+          modelName,
+          projectId,
+          location,
+          apiKey,
+          baseUrl,
+          apiVersion,
+          temperature,
+          topP,
+          thinkingBudget,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries);
     }
   }
 
