@@ -20,6 +20,7 @@ import akka.javasdk.agent.SessionMessage.AiMessage;
 import akka.javasdk.agent.SessionMessage.MessageContent.ImageUriMessageContent;
 import akka.javasdk.agent.SessionMessage.MessageContent.TextMessageContent;
 import akka.javasdk.agent.SessionMessage.MultimodalUserMessage;
+import akka.javasdk.agent.SessionMessage.ToolCallResponse;
 import akka.javasdk.agent.SessionMessage.UserMessage;
 import akka.javasdk.impl.agent.AgentRegistryImpl;
 import akka.javasdk.testkit.EventSourcedResult;
@@ -220,6 +221,51 @@ public class SessionMemoryEntityTest {
     // then
     assertThat(historyResult.getReply().messages())
         .containsExactly(userMessage1, aiMessage1, userMessage2, aiMessage2);
+  }
+
+  @Test
+  public void shouldAddInteractionWithoutUserMessage() {
+    // Simulates a save point between a tool call request and the tool response:
+    // the AI responds with a tool call request, and then the tool response arrives as a
+    // separate partial interaction with no triggering user message.
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
+    var timestamp = Instant.now();
+
+    // First interaction: user sends a task, AI responds with a tool call request
+    var userMessage = new UserMessage(timestamp, "Do some work", COMPONENT_ID);
+    var toolCallRequest =
+        new SessionMessage.ToolCallRequest("call-1", "delegate_to_worker", "{\"task\": \"work\"}");
+    var aiMessageWithToolCall =
+        new AiMessage(timestamp, "", COMPONENT_ID, List.of(toolCallRequest));
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage, aiMessageWithToolCall));
+
+    // Second interaction (save point): no user message, only the tool response
+    var toolResponse =
+        new ToolCallResponse(
+            timestamp.plusMillis(1), COMPONENT_ID, "call-1", "delegate_to_worker", "worker result");
+    var result =
+        testKit
+            .method(SessionMemoryEntity::addInteraction)
+            .invoke(new AddInteractionCmd(null, List.of(toolResponse)));
+
+    // then
+    assertThat(result.getReply()).isEqualTo(done());
+    var events = result.getAllEvents();
+    assertThat(events).hasSize(1);
+    assertThat(events.getFirst())
+        .isInstanceOf(SessionMemoryEntity.Event.ToolResponseMessageAdded.class);
+
+    // when retrieving history
+    EventSourcedResult<SessionHistory> historyResult =
+        testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
+
+    // then - all messages including the tool response without user message should be present
+    assertThat(historyResult.getReply().messages())
+        .containsExactly(userMessage, aiMessageWithToolCall, toolResponse);
   }
 
   @Test

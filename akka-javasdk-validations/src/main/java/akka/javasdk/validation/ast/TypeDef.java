@@ -135,6 +135,16 @@ public interface TypeDef {
   boolean extendsType(String className);
 
   /**
+   * Checks if this type implements (directly or indirectly) the given interface.
+   *
+   * @param interfaceName the fully qualified name of the interface to check
+   * @return true if this type implements the specified interface
+   */
+  default boolean implementsInterface(String interfaceName) {
+    return false;
+  }
+
+  /**
    * Returns the permitted subclasses for a sealed type.
    *
    * @return list of permitted subclass type references, empty if not sealed
