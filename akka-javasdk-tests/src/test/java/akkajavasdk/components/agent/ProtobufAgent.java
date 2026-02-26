@@ -19,33 +19,4 @@ public class ProtobufAgent extends Agent {
         .map(SomeAgent.SomeResponse::new)
         .thenReply();
   }
-
-  // string input → protobuf output (LLM returns JSON, deserialized as protobuf via responseAs)
-  public Effect<SimpleMessage> generateProtobuf(String question) {
-    return effects()
-        .systemMessage("Generate a response")
-        .userMessage(question)
-        .responseAs(SimpleMessage.class)
-        .thenReply();
-  }
-
-  // string input → protobuf output with schema (responseConformsTo)
-  public Effect<SimpleMessage> generateProtobufWithSchema(String question) {
-    return effects()
-        .systemMessage("Generate a response")
-        .userMessage(question)
-        .responseConformsTo(SimpleMessage.class)
-        .thenReply();
-  }
-
-  // protobuf input → protobuf output (direct reply, no LLM)
-  public Effect<SimpleMessage> echoProtobuf(SimpleMessage input) {
-    return effects()
-        .reply(
-            SimpleMessage.newBuilder()
-                .setText("Echo: " + input.getText())
-                .setNumber(input.getNumber())
-                .setFlag(input.getFlag())
-                .build());
-  }
 }

@@ -12,7 +12,7 @@ import akka.javasdk.workflow.Workflow;
 public class WorkflowWithFunctionToolOnPrivateMethod extends Workflow<String> {
 
   public Effect<String> start(String input) {
-    return effects().updateState(input).end();
+    return effects().reply("ok");
   }
 
   // @FunctionTool is not allowed on private methods

@@ -28,9 +28,7 @@ import akka.javasdk.testkit.EventSourcedTestKit;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import org.junit.jupiter.api.Test;
 
 public class SessionMemoryEntityTest {
@@ -52,7 +50,7 @@ public class SessionMemoryEntityTest {
     String userMsg = "Hello, how are you?";
     String aiMsg = "I'm fine, thanks for asking!";
     UserMessage userMessage = new UserMessage(timestamp, userMsg, COMPONENT_ID);
-    var aiMessage = new AiMessage(timestamp, aiMsg, COMPONENT_ID);
+    var aiMessage = new AiMessage(timestamp, aiMsg, COMPONENT_ID, Collections.emptyList());
 
     // when
     EventSourcedResult<Done> result =
@@ -87,6 +85,45 @@ public class SessionMemoryEntityTest {
 
     // then
     assertThat(historyResult.getReply().messages()).containsExactly(userMessage, aiMessage);
+
+    // should not be null
+    var resultAiMessage = ((AiMessage) historyResult.getReply().messages().getLast());
+    assertThat(resultAiMessage.attributes().isEmpty()).isTrue();
+    assertThat(resultAiMessage.thinking().isEmpty()).isTrue();
+  }
+
+  @Test
+  public void shouldAddMessageWithAttributesToHistory() {
+    // given
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
+    var timestamp = Instant.now();
+    String userMsg = "Hello, how are you?";
+    String aiMsg = "I'm fine, thanks for asking!";
+    UserMessage userMessage = new UserMessage(timestamp, userMsg, COMPONENT_ID);
+    var aiMessage =
+        new AiMessage(
+            timestamp,
+            aiMsg,
+            COMPONENT_ID,
+            Collections.emptyList(),
+            Optional.of("Thoughts about how I am"),
+            TokenUsage.EMPTY,
+            Map.of("some-attribute", "some-value"));
+
+    // when
+    EventSourcedResult<Done> result =
+        testKit
+            .method(SessionMemoryEntity::addInteraction)
+            .invoke(new AddInteractionCmd(userMessage, aiMessage));
+    EventSourcedResult<SessionHistory> historyResult =
+        testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
+
+    // then
+    var resultAiMessage = ((AiMessage) historyResult.getReply().messages().getLast());
+    assertThat(resultAiMessage.attributes()).containsEntry("some-attribute", "some-value");
+    assertThat(resultAiMessage.thinking()).contains("Thoughts about how I am");
   }
 
   @Test
