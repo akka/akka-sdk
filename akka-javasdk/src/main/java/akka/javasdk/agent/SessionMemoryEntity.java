@@ -491,10 +491,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                             0L, // filled in later
                             aiMessage.toolCallRequests(),
                             aiMessage.thinking(),
-                            Optional.of(
-                                TokenUsage
-                                    .EMPTY) // already included in the summary we must set it to 0
-                            ));
+                            Optional.empty())); // already included in the summary we must set it to 0
                   }
                   case MultimodalUserMessage multimodalUserMessage -> {
                     events.add(
