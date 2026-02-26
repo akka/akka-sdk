@@ -100,7 +100,7 @@ public record CompileTimeTypeDef(TypeElement typeElement) implements TypeDef {
     // Handle generic types by checking if the superclass name starts with the expected class name
     // e.g., "akka.javasdk.eventsourcedentity.EventSourcedEntity<String, Event>" should match
     // "akka.javasdk.eventsourcedentity.EventSourcedEntity"
-    if (superclassName.equals(className) || superclassName.startsWith(className + "<")) {
+    if (superclassName.startsWith(className)) {
       return true;
     }
 

@@ -149,10 +149,10 @@ public class AgentValidations {
     List<String> errors = new ArrayList<>();
 
     for (MethodDef method : typeDef.getPublicMethods()) {
-      String returnTypeName = method.getReturnType().getQualifiedName();
+      String returnTypeName = method.getReturnType().getRawQualifiedName();
       // Check if this is a command handler (returns Effect or StreamEffect)
-      if (returnTypeName.startsWith("akka.javasdk.agent.Agent.Effect")
-          || returnTypeName.startsWith("akka.javasdk.agent.Agent.StreamEffect")) {
+      if (returnTypeName.equals("akka.javasdk.agent.Agent.Effect")
+          || returnTypeName.equals("akka.javasdk.agent.Agent.StreamEffect")) {
         // Check if it has @FunctionTool annotation
         if (method.hasAnnotation("akka.javasdk.annotations.FunctionTool")) {
           errors.add(

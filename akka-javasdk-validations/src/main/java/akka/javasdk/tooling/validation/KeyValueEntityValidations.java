@@ -54,9 +54,9 @@ public class KeyValueEntityValidations {
 
     // Count occurrences of each method name for Effect-returning methods
     for (MethodDef method : typeDef.getPublicMethods()) {
-      String returnTypeName = method.getReturnType().getQualifiedName();
+      String returnTypeName = method.getReturnType().getRawQualifiedName();
       for (String effectTypeName : effectTypeNames) {
-        if (returnTypeName.startsWith(effectTypeName)) {
+        if (returnTypeName.equals(effectTypeName)) {
           String methodName = method.getName();
           methodNameCounts.merge(methodName, 1, Integer::sum);
           break;
@@ -110,8 +110,8 @@ public class KeyValueEntityValidations {
   }
 
   private static boolean isEffectMethod(MethodDef method) {
-    String returnTypeName = method.getReturnType().getQualifiedName();
-    return returnTypeName.startsWith("akka.javasdk.keyvalueentity.KeyValueEntity.Effect")
-        || returnTypeName.startsWith("akka.javasdk.keyvalueentity.KeyValueEntity.ReadOnlyEffect");
+    String returnTypeName = method.getReturnType().getRawQualifiedName();
+    return returnTypeName.equals("akka.javasdk.keyvalueentity.KeyValueEntity.Effect")
+        || returnTypeName.equals("akka.javasdk.keyvalueentity.KeyValueEntity.ReadOnlyEffect");
   }
 }

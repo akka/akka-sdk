@@ -278,7 +278,6 @@ trait CompilationTestSupport extends Matchers {
     }
   }
 
-
   /**
    * Helper to derive the expected class name from a file path. Reads the actual package declaration from the source
    * file to determine the correct fully qualified class name.
@@ -367,7 +366,5 @@ trait CompilationTestSupport extends Matchers {
         }
     }
   }
-
-
 
 }
