@@ -1,0 +1,51 @@
+== Compile-time validations
+
+The Akka Java SDK uses annotation processors to validate your component configuration at compile time. This catches common errors early in the development cycle, before you even run your application.
+
+=== Common validations
+
+The following validations apply to all component types:
+
+==== Component must be public
+
+Components must be declared with the `public` modifier.
+
+==== Valid component ID
+
+Every component must have a unique identifier specified via the `@Component` annotation's `id` parameter.
+
+The component ID must:
+
+* Not be empty or blank
+* Not contain the pipe character `|`
+
+==== At least one effect method
+
+Each component must have at least one public method returning the appropriate Effect type for that component (e.g., `KeyValueEntity.Effect`, `Workflow.Effect`, etc.).
+
+==== Command handler arity
+
+Command handler methods (public methods returning an Effect type) can only accept zero or one parameter. If you need to pass multiple arguments, wrap them in a class.
+
+==== @FunctionTool restrictions
+
+The `@FunctionTool` annotation is used to expose methods as tools for AI agents. However, it has specific restrictions:
+
+* Cannot be used on private methods (except in Agent components where tools can be private)
+* Can only be used on specific method types depending on the component (see component-specific validations)
+
+=== Validation system architecture
+
+The compile-time validation system consists of:
+
+* **ComponentValidationProcessor**: A Java annotation processor that runs during compilation
+* **Component-specific validation classes**: Each component type has its own validation logic
+
+When you compile your code, the annotation processor:
+
+1. Discovers all classes annotated with `@Component`
+2. Runs component-specific validations
+3. Reports any errors through the Java compiler
+4. Fails the build if validation errors are found
+
+This ensures that configuration errors are caught immediately during development, rather than at runtime or deployment time.

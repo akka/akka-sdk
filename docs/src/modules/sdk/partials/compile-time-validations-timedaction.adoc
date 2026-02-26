@@ -1,0 +1,41 @@
+== Compile-time validations
+
+The Akka Java SDK validates TimedAction components at compile time to catch configuration errors early.
+
+include::compile-time-validations-common.adoc[tag=intro]
+
+=== TimedAction-specific validations
+
+In addition to the xref:compile-time-validations-common.adoc[common validations], TimedActions have the following specific requirements:
+
+==== No @FunctionTool allowed
+
+TimedAction methods cannot be annotated with `@FunctionTool`. TimedActions are designed to be triggered by timers, not called as tools by AI agents. This includes both public and private methods.
+
+==== Command handler arity
+
+Command handler methods (methods returning `TimedAction.Effect`) must have zero or one parameter.
+
+=== TimedAction design patterns
+
+TimedActions are designed for scheduled and delayed operations:
+
+* **Timer-based execution**: Triggered by timers, not direct invocations
+* **No tool exposure**: Cannot be called as tools by AI agents
+* **Async patterns**: Often used for scheduled cleanup, batch processing, or delayed notifications
+
+Common use cases:
+
+* Scheduled cleanup tasks
+* Periodic batch processing
+* Delayed notifications
+* Timeout handlers
+* Recurring maintenance tasks
+
+=== Why these validations matter
+
+These validations ensure:
+
+* **Proper component usage**: TimedActions are for scheduled execution, not interactive tools
+* **Clear separation of concerns**: Prevents confusion between scheduled tasks and callable operations
+* **Simple action design**: Limited parameters encourage focused, single-purpose actions

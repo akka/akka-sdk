@@ -1,0 +1,120 @@
+== Compile-time validations
+
+The Akka Java SDK validates View components at compile time to catch configuration errors early.
+
+include::compile-time-validations-common.adoc[tag=intro]
+
+=== View-specific validations
+
+Views have two levels of validation: View-level validations (for the outer View class) and TableUpdater-level validations (for the inner TableUpdater classes). In addition to the xref:compile-time-validations-common.adoc[common validations], Views have the following specific requirements:
+
+==== View-level validations
+
+===== View must not have @Table
+
+The View class itself should not be annotated with `@Table`. Only the inner TableUpdater classes should have `@Table` annotations.
+
+===== Must have at least one TableUpdater
+
+A View must contain at least one public static class that extends `TableUpdater`.
+
+===== Must have at least one query method
+
+A View must have at least one method annotated with `@Query`.
+
+===== Query method return types
+
+Query methods must return either `View.QueryEffect<RowType>` or `View.QueryStreamEffect<RowType>`.
+
+===== Query result type not primitive wrapper
+
+Query result types cannot be primitive wrapper types like `Integer`, `Long`, `String`, etc. They must be proper data types (records, classes, etc.).
+
+===== Stream updates must return QueryStreamEffect
+
+If a query method is marked with `@Query(streamUpdates=true)`, it must return `QueryStreamEffect`, not `QueryEffect`.
+
+===== Query method arity
+
+Query methods must have zero or one parameter.
+
+===== Multiple TableUpdaters must have @Table
+
+When a View has multiple TableUpdater classes, each must be annotated with `@Table` to specify which table it updates.
+
+===== @FunctionTool only on QueryEffect
+
+The `@FunctionTool` annotation can only be used on methods returning `QueryEffect`, not `QueryStreamEffect`. It cannot be used on private methods.
+
+==== TableUpdater-level validations
+
+===== TableUpdater must have @Consume
+
+Each TableUpdater class must be annotated with one of the `@Consume` annotations to specify its data source.
+
+===== Row type not primitive wrapper
+
+The row type (type parameter of `TableUpdater`) cannot be a primitive wrapper type.
+
+===== @Table name not empty
+
+If using the `@Table` annotation, the table name cannot be empty.
+
+===== Delete handler zero parameters
+
+Methods annotated with `@DeleteHandler` must have no parameters.
+
+===== Single delete handler
+
+Only one method can be annotated with `@DeleteHandler` per TableUpdater.
+
+===== Single update method for state subscriptions
+
+When subscribing to KeyValueEntity or Workflow state changes with type-level annotations, only one update method is allowed.
+
+===== Type transformation handler required
+
+When using type-level annotations (`@Consume.FromKeyValueEntity` or `@Consume.FromWorkflow`) on the TableUpdater, if the entity's state type differs from the table's row type, you must provide a transformation handler.
+
+===== Missing handlers
+
+When subscribing to EventSourcedEntity with sealed event types, you must provide handlers for all event types (similar to Consumer validation).
+
+For KeyValueEntity/Workflow subscriptions, you must have a state handler and/or delete handler.
+
+===== Subscription method parameter count
+
+Update handler methods must have exactly one parameter (unless marked with `@DeleteHandler`).
+
+===== No ACL on subscription methods
+
+TableUpdater subscription methods cannot have ACL annotations.
+
+===== Ambiguous handler validation
+
+Cannot have multiple handlers for the same type within a TableUpdater.
+
+=== View architecture
+
+Views consist of:
+
+* **View class**: Contains query methods and one or more TableUpdater classes
+* **TableUpdater classes**: Subscribe to data sources and maintain queryable tables
+* **Query methods**: Annotated with `@Query`, return `QueryEffect` or `QueryStreamEffect`
+
+This separation allows:
+
+* **Multiple tables**: Each TableUpdater maintains its own table
+* **Different data sources**: Each TableUpdater can subscribe to different entities
+* **Flexible queries**: Query methods can join across tables or query single tables
+
+=== Why these validations matter
+
+These validations ensure:
+
+* **Correct view structure**: Proper separation between View and TableUpdater concerns
+* **Complete data handling**: All event types and state changes are handled
+* **Type safety**: Row types and transformations are validated at compile time
+* **Proper tool exposure**: Only non-streaming queries can be exposed as tools for AI agents
+* **Query correctness**: Query methods have proper signatures and return types
+* **Security**: Internal subscription methods cannot be exposed via ACLs
