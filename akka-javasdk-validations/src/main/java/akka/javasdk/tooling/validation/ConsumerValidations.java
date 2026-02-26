@@ -181,7 +181,7 @@ public class ConsumerValidations {
 
     // Collect subscription methods
     for (MethodDef method : typeDef.getPublicMethods()) {
-      String returnTypeName = method.getReturnType().getQualifiedName();
+      String returnTypeName = method.getReturnType().getRawQualifiedName();
       if (returnTypeName.equals(effectTypeName)) {
 
         if (Validations.hasHandleDeletes(method)) {

@@ -16,6 +16,8 @@ import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.ProtoConsumerNoTypes
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.ProtoConsumerWithAnnotation
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.ValidProtoEventSourcedEntity
+import akka.javasdk.testmodels.workflow.WorkflowState
+import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflow
 import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowAnnotatedAbstractClass
 import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowAnnotatedAbstractClassLegacy
 import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowAnnotatedInterface
@@ -27,6 +29,7 @@ import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowUnann
 import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowUnannotatedInterface
 import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowUnannotatedInterfaceLegacy
 import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowWithPrimitives
+import akka.javasdk.testmodels.workflow.WorkflowTestModels.WorkflowHierarchy
 import com.google.protobuf.GeneratedMessageV3
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -114,7 +117,7 @@ class ReflectSpec extends AnyWordSpec with Matchers {
       }.getMessage should startWith("Can't determine all existing subtypes")
     }
 
-    "return all step input types for a workflow with annotated abstract clas" in {
+    "return all step input types for a workflow with annotated abstract class" in {
       val types =
         Reflect.workflowKnownInputTypes(classOf[TransferWorkflowAnnotatedAbstractClass])
       types should contain theSameElementsAs List(
@@ -149,6 +152,16 @@ class ReflectSpec extends AnyWordSpec with Matchers {
         classOf[TransferWorkflowAnnotatedInterfaceLegacy.Transaction],
         classOf[TransferWorkflowAnnotatedInterfaceLegacy.CreditTransaction],
         classOf[TransferWorkflowAnnotatedInterfaceLegacy.DebitTransaction])
+    }
+
+    "return workflow state" in {
+      val state = Reflect.workflowStateType(classOf[TransferWorkflow])
+      state shouldBe classOf[WorkflowState]
+    }
+
+    "return workflow state for complex class hierarchy" in {
+      val state = Reflect.workflowStateType(classOf[WorkflowHierarchy])
+      state shouldBe classOf[String]
     }
 
     "throw exception if interface subtypes can be found (legacy)" in {

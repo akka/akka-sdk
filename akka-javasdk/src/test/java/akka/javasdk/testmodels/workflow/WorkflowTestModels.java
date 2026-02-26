@@ -281,4 +281,21 @@ public class WorkflowTestModels {
           .andThen(Done.class, __ -> effects().end());
     }
   }
+
+  public static class MyWorkflow extends Swarm<String, Integer> {
+
+    public Effect<String> execute() {
+      return effects().reply("ok");
+    }
+
+    public StepEffect processStep(String input) {
+
+      return stepEffects().thenPause();
+    }
+  }
+
+  public abstract static class Swarm<A, B> extends Workflow<A> {}
+
+  @Component(id = "workflow-inherited")
+  public static class WorkflowHierarchy extends MyWorkflow {}
 }

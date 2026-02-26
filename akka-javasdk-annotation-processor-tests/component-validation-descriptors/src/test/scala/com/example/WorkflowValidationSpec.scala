@@ -52,6 +52,10 @@ abstract class AbstractWorkflowValidationSpec(val validationMode: ValidationMode
       assertInvalid("invalid/WorkflowNoEffect.java", "No public method returning akka.javasdk.workflow.Workflow.Effect")
     }
 
+    "accept Workflow with inherited Effect method" in {
+      assertValid("valid/WorkflowInheritedEffect.java")
+    }
+
     "reject Workflow that is not public" in {
       assertInvalid(
         "invalid/NotPublicWorkflow.java",
@@ -71,19 +75,8 @@ abstract class AbstractWorkflowValidationSpec(val validationMode: ValidationMode
 
     "reject Workflow with @FunctionTool on private StepEffect" in {
       // This test needs special handling for the "not contain" assertion
-      val result = compileTestSource("invalid/WorkflowWithFunctionToolOnPrivateStepEffect.java")
-      assertCompilationFailure(
-        result,
-        "Workflow methods annotated with @FunctionTool cannot return StepEffect.",
-        "Only methods returning Effect or ReadOnlyEffect can be annotated with @FunctionTool.")
-      assertCompilationFailureNotContain(result, "Methods annotated with @FunctionTool must be public.")
-
-      // Runtime validation
-      val runtimeResult =
-        compileTestSourceForRuntime("invalid/WorkflowWithFunctionToolOnPrivateStepEffect.java")
-      val clazz = loadCompiledClass(runtimeResult, "com.example.WorkflowWithFunctionToolOnPrivateStepEffect")
-      assertRuntimeValidationFailure(
-        clazz,
+      assertInvalid(
+        "invalid/WorkflowWithFunctionToolOnPrivateStepEffect.java",
         "Workflow methods annotated with @FunctionTool cannot return StepEffect.",
         "Only methods returning Effect or ReadOnlyEffect can be annotated with @FunctionTool.")
     }

@@ -54,9 +54,9 @@ public interface TypeDef {
   boolean isAbstract();
 
   /**
-   * Returns all methods declared in this type.
+   * Returns all methods declared in this type and in inherited types.
    *
-   * <p>This includes both public and non-public methods, but does not include inherited methods.
+   * <p>This includes both public and non-public methods.
    *
    * @return list of methods
    */
