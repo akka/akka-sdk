@@ -11,6 +11,7 @@ import akka.javasdk.agent.SessionMemoryEntity.Event;
 import akka.javasdk.agent.SessionMemoryEntity.State;
 import akka.javasdk.agent.SessionMessage.AiMessage;
 import akka.javasdk.agent.SessionMessage.MultimodalUserMessage;
+import akka.javasdk.agent.SessionMessage.TokenUsage;
 import akka.javasdk.agent.SessionMessage.ToolCallResponse;
 import akka.javasdk.agent.SessionMessage.UserMessage;
 import akka.javasdk.annotations.Component;
@@ -89,7 +90,16 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
       String sessionId,
       long maxSizeInBytes,
       long currentSizeInBytes,
-      List<SessionMessage> messages) {
+      List<SessionMessage> messages,
+      TokenUsage tokenUsage) {
+
+    public State(
+        String sessionId,
+        long maxSizeInBytes,
+        long currentSizeInBytes,
+        List<SessionMessage> messages) {
+      this(sessionId, maxSizeInBytes, currentSizeInBytes, messages, TokenUsage.EMPTY);
+    }
 
     private static final Logger logger = LoggerFactory.getLogger(State.class);
 
@@ -115,11 +125,17 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
       messages.add(message);
 
       var updatedSize = currentSizeInBytes + message.size();
-      return new State(sessionId, maxSizeInBytes, updatedSize, messages);
+
+      var tokenUsage = this.tokenUsage;
+      if (message instanceof AiMessage aiMessage) {
+        tokenUsage = tokenUsage.add(aiMessage.tokenUsage());
+      }
+
+      return new State(sessionId, maxSizeInBytes, updatedSize, messages, tokenUsage);
     }
 
     public State clear() {
-      return new State(sessionId, maxSizeInBytes, 0, new LinkedList<>());
+      return new State(sessionId, maxSizeInBytes, 0, new LinkedList<>(), tokenUsage);
     }
 
     private static long enforceMaxCapacity(
@@ -184,6 +200,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
         long historySizeInBytes,
         List<SessionMessage.ToolCallRequest> toolCallRequests,
         Optional<String> thinking,
+        Optional<TokenUsage> tokenUsage,
         Map<String, Object> attributes)
         implements Event {
 
@@ -196,6 +213,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
             newSize,
             toolCallRequests,
             thinking,
+            tokenUsage,
             attributes);
       }
     }
@@ -285,6 +303,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                                 0L, // filled in later
                                 aiMessage.toolCallRequests(),
                                 aiMessage.thinking(),
+                                Optional.of(aiMessage.tokenUsage()),
                                 aiMessage.attributes());
 
                         case ToolCallResponse toolCallResponse ->
@@ -369,6 +388,15 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
    * default and when accessing from another region it's important to trigger a region event sync
    * also for reads.
    */
+  public Effect<TokenUsage> getTokenUsage() {
+    return effects().reply(currentState().tokenUsage);
+  }
+
+  /**
+   * Consistent read (not ReadOnlyEffect). Replication filter for the local region is enabled by
+   * default and when accessing from another region it's important to trigger a region event sync
+   * also for reads.
+   */
   public Effect<SessionHistory> getHistory(GetHistoryCmd cmd) {
     List<SessionMessage> messages = filteredMessages(cmd.memoryFilters);
 
@@ -378,11 +406,19 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
       var lastN = messages.subList(messages.size() - cmd.lastNMessages.get(), messages.size());
       // make sure this returns a copy of the list and not the list itself
       return effects()
-          .reply(new SessionHistory(new LinkedList<>(lastN), commandContext().sequenceNumber()));
+          .reply(
+              new SessionHistory(
+                  new LinkedList<>(lastN),
+                  commandContext().sequenceNumber(),
+                  currentState().tokenUsage));
     } else {
       // make sure this returns a copy of the list and not the list itself
       return effects()
-          .reply(new SessionHistory(new LinkedList<>(messages), commandContext().sequenceNumber()));
+          .reply(
+              new SessionHistory(
+                  new LinkedList<>(messages),
+                  commandContext().sequenceNumber(),
+                  currentState().tokenUsage));
     }
   }
 
@@ -412,6 +448,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
             0L, // filled in later
             Collections.emptyList(),
             cmd.aiMessage.thinking(),
+            Optional.of(cmd.aiMessage.tokenUsage()),
             cmd.aiMessage.attributes()));
 
     if (commandContext().sequenceNumber() > cmd.sequenceNumber
@@ -453,6 +490,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                             0L, // filled in later
                             aiMessage.toolCallRequests(),
                             aiMessage.thinking(),
+                            Optional.empty(),
                             aiMessage.attributes()));
                   }
                   case MultimodalUserMessage multimodalUserMessage -> {
@@ -547,6 +585,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                       aiMsg.componentId,
                       aiMsg.toolCallRequests,
                       aiMsg.thinking,
+                      aiMsg.tokenUsage.orElse(TokenUsage.EMPTY),
                       aiMsg.attributes));
 
       case Event.ToolResponseMessageAdded toolMsg ->

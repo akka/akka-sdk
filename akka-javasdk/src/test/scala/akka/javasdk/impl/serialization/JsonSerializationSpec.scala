@@ -19,6 +19,8 @@ import akka.javasdk.JsonMigration
 import akka.javasdk.agent.EvaluationResult
 import akka.javasdk.annotations.Migration
 import akka.javasdk.annotations.TypeName
+import akka.javasdk.eventsourcedentity.OldTestESEvent
+import akka.javasdk.eventsourcedentity.TestESEvent
 import akka.javasdk.impl.serialization
 import akka.runtime.sdk.spi.BytesPayload
 import akka.util.ByteString
@@ -109,6 +111,14 @@ object JsonSerializationSpec {
 
   final class ApplicationEvaluationResult(val explanation: String, val passed: Boolean) extends EvaluationResult
 
+  object OptionalBackwardCompatibility {
+
+    @TypeName("my-event")
+    final case class MyEvent(name: String)
+
+    @TypeName("my-event")
+    final case class MyEvent2(name: String, optionalValue: Optional[String])
+  }
 }
 class JsonSerializationSpec extends AnyWordSpec with Matchers {
   import JsonSerializationSpec._
@@ -328,6 +338,14 @@ class JsonSerializationSpec extends AnyWordSpec with Matchers {
       val decoded =
         serializer.fromBytes(classOf[SimpleClassUpdated], encoded)
       decoded shouldBe SimpleClassUpdated("abc", 10, 1)
+    }
+
+    "deserialize with empty Optional" in {
+      val encoded = serializer.toBytes(new OldTestESEvent.OldEvent5("someValue"))
+      val decoded =
+        serializer.fromBytes(classOf[TestESEvent.Event5], encoded)
+      decoded.value() shouldBe "someValue"
+      decoded.optionalValue().isEmpty shouldBe true
     }
 
     "fail with the same type name" in {

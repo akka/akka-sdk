@@ -1,5 +1,7 @@
 package com.example.application;
 
+import akka.javasdk.agent.Agent;
+import akka.javasdk.agent.Agent.AgentReply;
 import akka.javasdk.agent.SessionMemoryEntity;
 import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.annotations.Component;
@@ -46,21 +48,32 @@ public class SessionMemoryConsumer extends Consumer {
             .method(SessionMemoryEntity::getHistory) // <2>
             .invoke(new SessionMemoryEntity.GetHistoryCmd());
 
-          var summary = componentClient
+          AgentReply<CompactionAgent.Result> summaryReply = componentClient
             .forAgent()
             .inSession(sessionId)
             .method(CompactionAgent::summarizeSessionHistory) // <3>
+            .withDetailedReply()
             .invoke(history);
 
           var now = Instant.now();
+          var tokenUsage = new SessionMessage.TokenUsage(
+            summaryReply.tokenUsage().inputTokens(),
+            summaryReply.tokenUsage().outputTokens()
+          );
+
           componentClient
             .forEventSourcedEntity(sessionId)
             .method(SessionMemoryEntity::compactHistory) // <4>
             .invoke(
               new SessionMemoryEntity.CompactionCmd(
-                new SessionMessage.UserMessage(now, summary.userMessage(), ""),
-                new SessionMessage.AiMessage(now, summary.aiMessage(), ""),
-                history.sequenceNumber() // <5>
+                new SessionMessage.UserMessage(now, summaryReply.value().userMessage(), ""),
+                new SessionMessage.AiMessage(
+                  now,
+                  summaryReply.value().aiMessage(),
+                  "",
+                  tokenUsage
+                ), // <5>
+                history.sequenceNumber() // <6>
               )
             );
         }

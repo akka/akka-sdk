@@ -97,12 +97,22 @@ public sealed interface SessionMessage {
 
   record ToolCallRequest(String id, String name, String arguments) {}
 
+  record TokenUsage(int inputTokens, int outputTokens) {
+    public static final TokenUsage EMPTY = new TokenUsage(0, 0);
+
+    public TokenUsage add(TokenUsage tokenUsage) {
+      return new TokenUsage(
+          inputTokens + tokenUsage.inputTokens, outputTokens + tokenUsage.outputTokens);
+    }
+  }
+
   record AiMessage(
       Instant timestamp,
       String text,
       String componentId,
       List<ToolCallRequest> toolCallRequests,
-      @JsonSetter(nulls = Nulls.AS_EMPTY) Optional<String> thinking,
+      Optional<String> thinking,
+      TokenUsage tokenUsage,
       @JsonSetter(nulls = Nulls.AS_EMPTY) Map<String, Object> attributes)
       implements SessionMessage {
 
@@ -110,12 +120,32 @@ public sealed interface SessionMessage {
         Instant timestamp,
         String text,
         String componentId,
+        List<ToolCallRequest> toolCallRequests,
+        Optional<String> thinking) {
+      this(timestamp, text, componentId, toolCallRequests, thinking, TokenUsage.EMPTY, Map.of());
+    }
+
+    public AiMessage(
+        Instant timestamp,
+        String text,
+        String componentId,
         List<ToolCallRequest> toolCallRequests) {
-      this(timestamp, text, componentId, toolCallRequests, Optional.empty(), Map.of());
+      this(
+          timestamp,
+          text,
+          componentId,
+          toolCallRequests,
+          Optional.empty(),
+          TokenUsage.EMPTY,
+          Map.of());
     }
 
     public AiMessage(Instant timestamp, String text, String componentId) {
-      this(timestamp, text, componentId, List.of(), Optional.empty(), Map.of());
+      this(timestamp, text, componentId, List.of(), Optional.empty(), TokenUsage.EMPTY, Map.of());
+    }
+
+    public AiMessage(Instant timestamp, String text, String componentId, TokenUsage tokenUsage) {
+      this(timestamp, text, componentId, List.of(), Optional.empty(), tokenUsage, Map.of());
     }
 
     @Override
