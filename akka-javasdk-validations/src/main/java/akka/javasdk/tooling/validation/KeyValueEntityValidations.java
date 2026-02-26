@@ -33,7 +33,7 @@ public class KeyValueEntityValidations {
     String readOnlyEffectType = "akka.javasdk.keyvalueentity.KeyValueEntity.ReadOnlyEffect";
     String[] effectTypes = {effectType, readOnlyEffectType};
 
-    return hasEffectMethod(typeDef, "akka.javasdk.keyvalueentity.KeyValueEntity", effectType)
+    return hasEffectMethod(typeDef, effectType)
         .combine(strictlyPublicCommandHandlerArityShouldBeZeroOrOne(typeDef, effectTypes))
         .combine(commandHandlersMustHaveUniqueNames(typeDef, effectTypes))
         .combine(functionToolMustBeOnEffectMethods(typeDef))

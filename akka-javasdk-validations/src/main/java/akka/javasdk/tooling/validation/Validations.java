@@ -745,17 +745,15 @@ public class Validations {
 
   /**
    * Validates that a component has at least one public method returning one of the specified effect
-   * types. Only methods declared up to (but not including) the component base class are considered.
+   * types.
    *
    * @param typeDef the component class to validate
-   * @param componentBaseClass the fully qualified name of the component base class to stop at
    * @param effectTypeNames the fully qualified effect type names
    * @return a Validation result indicating success or failure
    */
-  public static Validation hasEffectMethod(
-      TypeDef typeDef, String componentBaseClass, String... effectTypeNames) {
+  public static Validation hasEffectMethod(TypeDef typeDef, String... effectTypeNames) {
 
-    if (effectMethods(typeDef, componentBaseClass, effectTypeNames).isEmpty()) {
+    if (effectMethods(typeDef, effectTypeNames).isEmpty()) {
       var names = String.join(", ", effectTypeNames);
       return Validation.of(
           "No public method returning " + names + " found in " + typeDef.getQualifiedName());
@@ -764,20 +762,14 @@ public class Validations {
     }
   }
 
-  public static List<MethodDef> effectMethods(
-      TypeDef typeDef, String componentBaseClass, String[] effectTypeNames) {
+  public static List<MethodDef> effectMethods(TypeDef typeDef, String[] effectTypeNames) {
     List<MethodDef> methodDefs = new ArrayList<>();
 
-    TypeDef current = typeDef;
-
-    while (current != null && !current.getQualifiedName().equals(componentBaseClass)) {
-      for (MethodDef method : current.getPublicMethods()) {
-        String returnTypeName = method.getReturnType().getRawQualifiedName();
-        if (Arrays.stream(effectTypeNames).anyMatch(returnTypeName::equals)) {
-          methodDefs.add(method);
-        }
+    for (MethodDef method : typeDef.getPublicMethods()) {
+      String returnTypeName = method.getReturnType().getRawQualifiedName();
+      if (Arrays.asList(effectTypeNames).contains(returnTypeName)) {
+        methodDefs.add(method);
       }
-      current = current.getSuperclass().flatMap(TypeRefDef::resolveTypeDef).orElse(null);
     }
     return methodDefs;
   }
@@ -814,7 +806,7 @@ public class Validations {
 
     for (MethodDef method : methods) {
       String returnTypeName = method.getReturnType().getRawQualifiedName();
-      if (Arrays.stream(effectTypeNames).anyMatch(returnTypeName::equals)) {
+      if (Arrays.asList(effectTypeNames).contains(returnTypeName)) {
         int paramCount = method.getParameters().size();
         if (paramCount > 1) {
           errors.add(

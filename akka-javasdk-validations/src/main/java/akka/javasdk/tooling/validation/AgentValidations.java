@@ -33,7 +33,7 @@ public class AgentValidations {
     }
 
     return mustHaveValidAgentDescription(typeDef)
-        .combine(hasEffectMethod(typeDef, "akka.javasdk.agent.Agent", effectTypes))
+        .combine(hasEffectMethod(typeDef, effectTypes))
         .combine(mustHaveSinglePublicCommandHandler(typeDef))
         .combine(strictlyPublicCommandHandlerArityShouldBeZeroOrOne(typeDef, effectTypes))
         .combine(commandHandlerCannotHaveFunctionTool(typeDef));
@@ -123,7 +123,7 @@ public class AgentValidations {
    * @return a Validation result indicating success or failure
    */
   private static Validation mustHaveSinglePublicCommandHandler(TypeDef typeDef) {
-    int count = effectMethods(typeDef, "akka.javasdk.agent.Agent", effectTypes).size();
+    int count = effectMethods(typeDef, effectTypes).size();
 
     if (count == 1) {
       return Validation.Valid.instance();

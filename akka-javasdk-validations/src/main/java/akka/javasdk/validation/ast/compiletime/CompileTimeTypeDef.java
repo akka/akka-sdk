@@ -53,13 +53,30 @@ public record CompileTimeTypeDef(TypeElement typeElement) implements TypeDef {
 
   @Override
   public List<MethodDef> getMethods() {
-    return typeElement.getEnclosedElements().stream()
+
+    List<MethodDef> methods = new java.util.ArrayList<>();
+    // Add methods from the current type
+    typeElement.getEnclosedElements().stream()
         .filter(e -> e instanceof ExecutableElement)
         .map(e -> (ExecutableElement) e)
         .map(CompileTimeMethodDef::new)
-        .map(m -> (MethodDef) m)
-        .sorted() // sorted to ensure predictable output in tests
-        .toList();
+        .forEach(methods::add);
+
+    // Add methods from the superclass hierarchy.
+    TypeMirror superclass = typeElement.getSuperclass();
+
+    // Note: getSuperclass() returns NoType (not DeclaredType) for java.lang.Object and interfaces,
+    // so the instanceof check naturally terminates the recursion.
+    if (superclass instanceof DeclaredType declaredType) {
+      Element superElement = declaredType.asElement();
+      if (superElement instanceof TypeElement superType) {
+        // Recursively get methods from superclass
+        new CompileTimeTypeDef(superType).getMethods().stream().forEach(methods::add);
+      }
+    }
+
+    // sorted to ensure predictable output in tests
+    return methods.stream().sorted().toList();
   }
 
   @Override
@@ -92,9 +109,6 @@ public record CompileTimeTypeDef(TypeElement typeElement) implements TypeDef {
   @Override
   public boolean extendsType(String className) {
     TypeMirror superclass = typeElement.getSuperclass();
-    if (superclass == null) {
-      return false;
-    }
 
     String superclassName = superclass.toString();
     // Handle generic types by checking if the superclass name starts with the expected class name
