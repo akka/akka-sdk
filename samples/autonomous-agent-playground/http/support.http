@@ -1,0 +1,17 @@
+## Customer Support — sequential handoff between specialists
+## Triage agent classifies the issue and hands off to billing or technical specialist.
+
+### Submit a billing issue
+POST http://localhost:9000/support
+Content-Type: application/json
+
+{"issue": "I was charged twice for my subscription last month"}
+
+### Submit a technical issue
+POST http://localhost:9000/support
+Content-Type: application/json
+
+{"issue": "The application crashes when I try to export a PDF report"}
+
+### Check resolution (replace with id from above)
+GET http://localhost:9000/support/{{id}}

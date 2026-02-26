@@ -1,0 +1,11 @@
+## Research Brief — delegative coordination with parallel subtasks
+## Coordinator delegates research and analysis to specialists, then synthesises.
+
+### Start a research brief
+POST http://localhost:9000/research
+Content-Type: application/json
+
+{"topic": "The impact of quantum computing on modern cryptography"}
+
+### Check research status (replace with id from above)
+GET http://localhost:9000/research/{{id}}

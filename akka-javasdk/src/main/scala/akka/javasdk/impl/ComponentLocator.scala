@@ -55,6 +55,7 @@ private[javasdk] object ComponentLocator {
   val TimedActionKey = "timed-action"
   val ViewKey = "view"
   val WorkflowKey = "workflow"
+  val AutonomousAgentKey = "autonomous-agent"
 
   private val AllComponentTypeKeys = Seq(
     AgentKey,
@@ -66,7 +67,8 @@ private[javasdk] object ComponentLocator {
     McpEndpointKey,
     TimedActionKey,
     ViewKey,
-    WorkflowKey)
+    WorkflowKey,
+    AutonomousAgentKey)
 
   private val logger = LoggerFactory.getLogger(getClass)
 
@@ -204,12 +206,23 @@ private[javasdk] object ComponentLocator {
     }
   }
 
-  val providedComponents: Seq[Class[_]] = Seq(
+  val agentProvidedComponents: Seq[Class[_]] = Seq(
     classOf[SessionMemoryEntity],
     classOf[PromptTemplate],
     classOf[ToxicityEvaluator],
     classOf[SummarizationEvaluator],
     classOf[HallucinationEvaluator])
+
+  val autonomousAgentProvidedComponents: Seq[Class[_]] = Seq(
+    classOf[akka.javasdk.agent.task.TaskEntity],
+    classOf[akka.javasdk.agent.task.TaskNotificationWorkflow],
+    classOf[akka.javasdk.agent.task.TaskEventConsumer],
+    classOf[akka.javasdk.agent.autonomous.AutonomousAgentWorkflow],
+    classOf[akka.javasdk.agent.autonomous.IterationBridgeAction],
+    classOf[akka.javasdk.agent.autonomous.StrategyExecutor],
+    classOf[akka.javasdk.agent.autonomous.TaskListEntity],
+    classOf[akka.javasdk.agent.autonomous.TeamEntity],
+    classOf[akka.javasdk.agent.autonomous.MessageInboxEntity])
 
   case class LocatedClasses(components: Seq[Class[_]], service: Option[Class[_]])
 
@@ -269,21 +282,27 @@ private[javasdk] object ComponentLocator {
           Seq.empty
     }.toSeq
 
-    val withBuildInComponents = if (components.exists(classOf[Agent].isAssignableFrom)) {
-      logger.debug("Agent component detected, adding provided components")
-      providedComponents ++ components
-    } else {
+    val hasAgentComponents = components.exists(classOf[Agent].isAssignableFrom)
+    val hasAutonomousAgentComponents = componentConfig.hasPath(AutonomousAgentKey)
+
+    if (hasAgentComponents)
+      logger.debug("Agent detected, adding agent provided components")
+    if (hasAutonomousAgentComponents)
+      logger.debug("AutonomousAgent detected, adding autonomous agent provided components")
+
+    val withBuiltInComponents =
+      (if (hasAgentComponents || hasAutonomousAgentComponents) agentProvidedComponents else Seq.empty) ++
+      (if (hasAutonomousAgentComponents) autonomousAgentProvidedComponents else Seq.empty) ++
       components
-    }
 
     if (descriptorConfig.hasPath(DescriptorServiceSetupEntryPath)) {
       // central config/lifecycle class
       val serviceSetupClassName = descriptorConfig.getString(DescriptorServiceSetupEntryPath)
       val serviceSetup = system.dynamicAccess.getClassFor[AnyRef](serviceSetupClassName).get
       logger.debug("Found and loaded service class setup: [{}]", serviceSetup)
-      LocatedClasses(withBuildInComponents, Some(serviceSetup))
+      LocatedClasses(withBuiltInComponents, Some(serviceSetup))
     } else {
-      LocatedClasses(withBuildInComponents, None)
+      LocatedClasses(withBuiltInComponents, None)
     }
   }
 }
