@@ -458,7 +458,7 @@ private final class Sdk(
       runtimeComponentClients,
       { context =>
 
-        val workflow = wiredInstance(clz) {
+        val workflow = wiredInstance("Workflow", clz) {
           sideEffectingComponentInjects(context.asInstanceOf[WorkflowContextImpl].telemetryContext).orElse {
             // remember to update component type API doc and docs if changing the set of injectables
             case p if p == classOf[WorkflowContext] => context
@@ -557,7 +557,7 @@ private final class Sdk(
             regionInfo,
             allowedProtoEventTypes,
             context =>
-              wiredInstance(clz.asInstanceOf[Class[EventSourcedEntity[AnyRef, AnyRef]]]) {
+              wiredInstance("Event Sourced Entity", clz.asInstanceOf[Class[EventSourcedEntity[AnyRef, AnyRef]]]) {
                 // remember to update component type API doc and docs if changing the set of injectables
                 case p if p == classOf[EventSourcedEntityContext] => context
                 case s if s == classOf[Sanitizer]                 => sanitizer
@@ -604,7 +604,7 @@ private final class Sdk(
             entityStateType,
             regionInfo,
             context =>
-              wiredInstance(clz.asInstanceOf[Class[KeyValueEntity[AnyRef]]]) {
+              wiredInstance("Key Value Entity", clz.asInstanceOf[Class[KeyValueEntity[AnyRef]]]) {
                 // remember to update component type API doc and docs if changing the set of injectables
                 case p if p == classOf[KeyValueEntityContext] => context
                 case s if s == classOf[Sanitizer]             => sanitizer
@@ -661,7 +661,7 @@ private final class Sdk(
           new TimedActionImpl[TimedAction](
             componentId,
             context =>
-              wiredInstance(timedActionClass)(
+              wiredInstance("Timed Action", timedActionClass)(
                 sideEffectingComponentInjects(
                   context.asInstanceOf[TimedActionImpl.CommandContextImpl].telemetryContext)),
             timedActionClass,
@@ -692,7 +692,7 @@ private final class Sdk(
           new ConsumerImpl[Consumer](
             componentId,
             context =>
-              wiredInstance(consumerClass)(
+              wiredInstance("Consumer", consumerClass)(
                 sideEffectingComponentInjects(context.asInstanceOf[MessageContextImpl].telemetryContext)),
             consumerClass,
             consumerSrc,
@@ -735,7 +735,7 @@ private final class Sdk(
             componentId,
             factoryContext.sessionId,
             context =>
-              wiredInstance(agentClass) {
+              wiredInstance("Agent", agentClass) {
                 (sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext)).orElse {
                   // remember to update component type API doc and docs if changing the set of injectables
                   case p if p == classOf[AgentContext] => context
@@ -804,12 +804,13 @@ private final class Sdk(
         // FIXME: HttpClientProvider will inject but not quite work for cross service calls until we
         //        pass auth headers with the runner startup context from the runtime
         Some(
-          wiredInstance[ServiceSetup](serviceClassClass.asInstanceOf[Class[ServiceSetup]])(
+          wiredInstance[ServiceSetup]("Service Setup", serviceClassClass.asInstanceOf[Class[ServiceSetup]])(
             sideEffectingComponentInjects(None)))
 
       case Some(serviceClassClass) =>
         //just wiring the class
-        wiredInstance[Any](serviceClassClass.asInstanceOf[Class[Any]])(sideEffectingComponentInjects(None))
+        wiredInstance[Any]("Service Setup", serviceClassClass.asInstanceOf[Class[Any]])(
+          sideEffectingComponentInjects(None))
         None
       case _ => None
     }
@@ -877,7 +878,14 @@ private final class Sdk(
         case None => Future.successful(Done)
         case Some(setup) =>
           logger.debug("Running onStart lifecycle hook")
-          setup.onStartup()
+          try {
+            setup.onStartup()
+          } catch {
+            case NonFatal(ex) =>
+              // Make sure it reaches the user
+              SdkRunner.userServiceLog.error(s"${setup.getClass.getName}.onStart() thew an exception", ex)
+              throw ex
+          }
           Future.successful(Done)
       }
     }
@@ -943,7 +951,7 @@ private final class Sdk(
     (context: HttpEndpointConstructionContext) =>
       lazy val requestContext = new HttpRequestContextImpl(context, sdkTracerFactory, regionInfo)(
         SystemMaterializer(system).materializer)
-      val instance = wiredInstance(httpEndpointClass) {
+      val instance = wiredInstance("HTTP Endpoint", httpEndpointClass) {
         sideEffectingComponentInjects(Option(context.telemetryContext)).orElse {
           case p if p == classOf[RequestContext] => requestContext
         }
@@ -977,7 +985,7 @@ private final class Sdk(
         override def selfRegion(): String = regionInfo.selfRegion
       }
 
-      val instance = wiredInstance(grpcEndpointClass) {
+      val instance = wiredInstance("gRPC Endpoint", grpcEndpointClass) {
         sideEffectingComponentInjects(Option(context.telemetryContext)).orElse {
           case p if p == classOf[GrpcRequestContext] => grpcRequestContext
         }
@@ -1018,7 +1026,7 @@ private final class Sdk(
 
       }
 
-      val instance = wiredInstance(mcpEndpointClass) {
+      val instance = wiredInstance("MCP Endpoint", mcpEndpointClass) {
         sideEffectingComponentInjects(telemetryContext).orElse {
           case p if p == classOf[GrpcRequestContext] => mcpRequestContext
         }
@@ -1030,10 +1038,18 @@ private final class Sdk(
       instance
   }
 
-  private def wiredInstance[T](clz: Class[T])(partial: PartialFunction[Class[_], Any]): T = {
-    // only one constructor allowed
-    require(clz.getDeclaredConstructors.length == 1, s"Class [${clz.getSimpleName}] must have only one constructor.")
-    wiredInstance(clz.getDeclaredConstructors.head.asInstanceOf[Constructor[T]])(partial)
+  private def wiredInstance[T](componentType: String, clz: Class[T])(partial: PartialFunction[Class[_], Any]): T = {
+    try {
+      // only one constructor allowed
+      require(clz.getDeclaredConstructors.length == 1, s"Class [${clz.getSimpleName}] must have only one constructor.")
+      wiredInstance(clz.getDeclaredConstructors.head.asInstanceOf[Constructor[T]])(partial)
+    } catch {
+      case NonFatal(ex) =>
+        // Make sure it goes in user logs
+        SdkRunner.userServiceLog.error(s"Failed to create instance of $componentType [${clz.getName}]", ex)
+        throw ex
+    }
+
   }
 
   /**
@@ -1065,7 +1081,7 @@ private final class Sdk(
               dependencyProvider.getDependency(anyOther)
             case None =>
               throw new IllegalStateException(
-                s"Could not inject dependency [${anyOther.getName}] required by [${constructor.getDeclaringClass.getName}] as no DependencyProvider was configured." +
+                s"Could not inject dependency [${anyOther.getName}] required by [${constructor.getDeclaringClass.getName}] as no DependencyProvider was configured. " +
                 "Please provide a DependencyProvider to supply dependencies. " +
                 "See https://doc.akka.io/sdk/setup-and-dependency-injection.html#_custom_dependency_injection");
           }
