@@ -2,6 +2,7 @@ package demo.brainstorm.application;
 
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.annotations.Component;
+import demo.brainstorm.application.BrainstormTasks;
 
 /**
  * Simple agent that contributes ideas to a shared board.
@@ -16,6 +17,7 @@ public class Ideator extends AutonomousAgent {
   @Override
   public Strategy configure() {
     return strategy()
+      .accepts(BrainstormTasks.IDEATE)
       .instructions(
         """
         You are a creative ideator participating in a brainstorm. Your task description \

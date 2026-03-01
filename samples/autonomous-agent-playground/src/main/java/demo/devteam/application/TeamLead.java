@@ -6,6 +6,7 @@ import static akka.javasdk.agent.autonomous.AutonomousAgent.team;
 
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.annotations.Component;
+import demo.devteam.application.ProjectTasks;
 
 @Component(id = "team-lead")
 public class TeamLead extends AutonomousAgent {
@@ -13,6 +14,7 @@ public class TeamLead extends AutonomousAgent {
   @Override
   public Strategy configure() {
     return strategy()
+      .accepts(ProjectTasks.PLAN)
       .instructions(
         """
         You lead a development team. Your workflow spans multiple iterations — \

@@ -6,6 +6,7 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import demo.editorial.application.ChiefEditor;
+import demo.editorial.application.EditorialTasks;
 import demo.editorial.application.Publication;
 
 /**
@@ -40,7 +41,6 @@ public class EditorialEndpoint {
   public record EditorialStatusResponse(
     String status,
     Publication result,
-    String rawResult,
     String pendingQuestion,
     String pendingDecisionId
   ) {}
@@ -55,42 +55,46 @@ public class EditorialEndpoint {
 
   @Post
   public EditorialResponse create(CreateEditorial request) {
-    var taskId = componentClient
+    var ref = componentClient
       .forAutonomousAgent(ChiefEditor.class)
-      .runSingleTask("Produce a publication about: " + request.topic(), Publication.class);
+      .runSingleTask(
+        EditorialTasks.PUBLICATION.instructions(
+          "Produce a publication about: " + request.topic()
+        )
+      );
 
-    return new EditorialResponse(taskId);
+    return new EditorialResponse(ref.taskId());
   }
 
   @Get("/{id}")
   public EditorialStatusResponse get(String id) {
-    var task = componentClient.forTask(id, Publication.class);
-    var state = task.getState();
+    var task = componentClient.forTask(EditorialTasks.PUBLICATION.ref(id)).get();
     return new EditorialStatusResponse(
-      state.status().name(),
-      task.getResult(),
-      state.result(),
-      state.pendingDecisionQuestion(),
-      state.pendingDecisionId()
+      task.status().name(),
+      task.result(),
+      task.pendingDecisionQuestion(),
+      task.pendingDecisionId()
     );
   }
 
   @Post("/{id}/approve")
   public EditorialStatusResponse approve(String id) {
-    var task = componentClient.forTask(id, Publication.class);
-    var state = task.getState();
-    task.provideInput(state.pendingDecisionId(), "Approved. Publish the article.");
-    return new EditorialStatusResponse("APPROVED", null, null, null, null);
+    var task = componentClient.forTask(EditorialTasks.PUBLICATION.ref(id)).get();
+    componentClient
+      .forTask(EditorialTasks.PUBLICATION.ref(id))
+      .provideInput(task.pendingDecisionId(), "Approved. Publish the article.");
+    return new EditorialStatusResponse("APPROVED", null, null, null);
   }
 
   @Post("/{id}/reject")
   public EditorialStatusResponse reject(String id, RejectRequest request) {
-    var task = componentClient.forTask(id, Publication.class);
-    var state = task.getState();
-    task.provideInput(
-      state.pendingDecisionId(),
-      "Rejected. Revise based on this feedback: " + request.reason()
-    );
-    return new EditorialStatusResponse("REJECTED_WITH_FEEDBACK", null, null, null, null);
+    var task = componentClient.forTask(EditorialTasks.PUBLICATION.ref(id)).get();
+    componentClient
+      .forTask(EditorialTasks.PUBLICATION.ref(id))
+      .provideInput(
+        task.pendingDecisionId(),
+        "Rejected. Revise based on this feedback: " + request.reason()
+      );
+    return new EditorialStatusResponse("REJECTED_WITH_FEEDBACK", null, null, null);
   }
 }

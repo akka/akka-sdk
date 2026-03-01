@@ -2,6 +2,7 @@ package demo.debate.application;
 
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.annotations.Component;
+import demo.debate.application.DebateTasks;
 
 /**
  * Team member — a debater who collaborates primarily through messaging.
@@ -15,6 +16,7 @@ public class Debater extends AutonomousAgent {
   @Override
   public Strategy configure() {
     return strategy()
+      .accepts(DebateTasks.DEBATE)
       .instructions(
         """
         You are a debater in a structured debate. Check the shared task list — \

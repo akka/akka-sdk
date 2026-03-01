@@ -11,7 +11,11 @@ public sealed interface TaskEvent {
 
   @TypeName("akka-task-created")
   record TaskCreated(
-      String taskId, String description, String resultTypeName, List<String> dependencyTaskIds)
+      String taskId,
+      String description,
+      String instructions,
+      String resultTypeName,
+      List<String> dependencyTaskIds)
       implements TaskEvent {}
 
   @TypeName("akka-task-assigned")

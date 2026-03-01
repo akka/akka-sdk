@@ -2,6 +2,7 @@ package demo.consulting.application;
 
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.annotations.Component;
+import demo.consulting.application.ConsultingTasks;
 
 /** Handoff target — handles complex problems that exceed standard consulting scope. */
 @Component(id = "senior-consultant")
@@ -10,6 +11,7 @@ public class SeniorConsultant extends AutonomousAgent {
   @Override
   public Strategy configure() {
     return strategy()
+      .accepts(ConsultingTasks.ENGAGEMENT)
       .instructions(
         """
         You are a senior consultant who handles complex, high-stakes problems — \

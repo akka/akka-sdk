@@ -6,6 +6,7 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import demo.support.application.SupportResolution;
+import demo.support.application.SupportTasks;
 import demo.support.application.TriageAgent;
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
@@ -16,11 +17,7 @@ public class SupportEndpoint {
 
   public record TicketResponse(String id) {}
 
-  public record TicketStatusResponse(
-    String status,
-    SupportResolution resolution,
-    String result
-  ) {}
+  public record TicketStatusResponse(String status, SupportResolution resolution) {}
 
   private final ComponentClient componentClient;
 
@@ -30,17 +27,16 @@ public class SupportEndpoint {
 
   @Post
   public TicketResponse create(CreateTicket request) {
-    var taskId = componentClient
+    var ref = componentClient
       .forAutonomousAgent(TriageAgent.class)
-      .runSingleTask(request.issue(), SupportResolution.class);
+      .runSingleTask(SupportTasks.RESOLVE.instructions(request.issue()));
 
-    return new TicketResponse(taskId);
+    return new TicketResponse(ref.taskId());
   }
 
   @Get("/{id}")
   public TicketStatusResponse get(String id) {
-    var task = componentClient.forTask(id, SupportResolution.class);
-    var state = task.getState();
-    return new TicketStatusResponse(state.status().name(), task.getResult(), state.result());
+    var task = componentClient.forTask(SupportTasks.RESOLVE.ref(id)).get();
+    return new TicketStatusResponse(task.status().name(), task.result());
   }
 }

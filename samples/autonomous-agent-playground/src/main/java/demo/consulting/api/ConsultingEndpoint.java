@@ -6,6 +6,7 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import demo.consulting.application.ConsultingCoordinator;
+import demo.consulting.application.ConsultingTasks;
 import demo.consulting.application.ConsultingResult;
 
 /**
@@ -34,11 +35,7 @@ public class ConsultingEndpoint {
 
   public record ConsultingResponse(String id) {}
 
-  public record ConsultingStatusResponse(
-    String status,
-    ConsultingResult result,
-    String rawResult
-  ) {}
+  public record ConsultingStatusResponse(String status, ConsultingResult result) {}
 
   private final ComponentClient componentClient;
 
@@ -48,21 +45,18 @@ public class ConsultingEndpoint {
 
   @Post
   public ConsultingResponse create(CreateConsulting request) {
-    var taskId = componentClient
+    var ref = componentClient
       .forAutonomousAgent(ConsultingCoordinator.class)
-      .runSingleTask("Consulting engagement: " + request.problem(), ConsultingResult.class);
+      .runSingleTask(
+        ConsultingTasks.ENGAGEMENT.instructions("Consulting engagement: " + request.problem())
+      );
 
-    return new ConsultingResponse(taskId);
+    return new ConsultingResponse(ref.taskId());
   }
 
   @Get("/{id}")
   public ConsultingStatusResponse get(String id) {
-    var task = componentClient.forTask(id, ConsultingResult.class);
-    var state = task.getState();
-    return new ConsultingStatusResponse(
-      state.status().name(),
-      task.getResult(),
-      state.result()
-    );
+    var task = componentClient.forTask(ConsultingTasks.ENGAGEMENT.ref(id)).get();
+    return new ConsultingStatusResponse(task.status().name(), task.result());
   }
 }

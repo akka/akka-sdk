@@ -6,6 +6,7 @@ import static akka.javasdk.agent.autonomous.AutonomousAgent.team;
 
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.annotations.Component;
+import demo.debate.application.DebateTasks;
 
 /**
  * Debate moderator — demonstrates team with messaging-driven collaboration.
@@ -20,6 +21,7 @@ public class DebateModerator extends AutonomousAgent {
   @Override
   public Strategy configure() {
     return strategy()
+      .accepts(DebateTasks.DEBATE)
       .instructions(
         """
         You moderate a structured debate. Your workflow spans multiple iterations — \

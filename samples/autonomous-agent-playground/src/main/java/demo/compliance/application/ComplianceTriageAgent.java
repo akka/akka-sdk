@@ -5,6 +5,7 @@ import static akka.javasdk.agent.autonomous.AutonomousAgent.handoff;
 
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.annotations.Component;
+import demo.compliance.application.ComplianceTasks;
 
 /**
  * Compliance triage — demonstrates handoff + decision points composition.
@@ -19,6 +20,7 @@ public class ComplianceTriageAgent extends AutonomousAgent {
   @Override
   public Strategy configure() {
     return strategy()
+      .accepts(ComplianceTasks.REVIEW)
       .instructions(
         """
         You triage compliance review requests. Your workflow:

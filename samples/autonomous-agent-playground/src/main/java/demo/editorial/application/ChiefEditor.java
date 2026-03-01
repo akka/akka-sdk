@@ -7,6 +7,7 @@ import static akka.javasdk.agent.autonomous.AutonomousAgent.team;
 
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.annotations.Component;
+import demo.editorial.application.EditorialTasks;
 
 /**
  * Chief editor — demonstrates team + external input.
@@ -20,6 +21,7 @@ public class ChiefEditor extends AutonomousAgent {
   @Override
   public Strategy configure() {
     return strategy()
+      .accepts(EditorialTasks.PUBLICATION)
       .instructions(
         """
         You are the chief editor of a publication. Your workflow spans multiple \

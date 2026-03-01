@@ -2,6 +2,7 @@ package demo.support.application;
 
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.annotations.Component;
+import demo.support.application.SupportTasks;
 
 @Component(id = "billing-specialist")
 public class BillingSpecialist extends AutonomousAgent {
@@ -9,6 +10,7 @@ public class BillingSpecialist extends AutonomousAgent {
   @Override
   public Strategy configure() {
     return strategy()
+      .accepts(SupportTasks.RESOLVE)
       .instructions(
         """
         You are a billing specialist. Review the customer's billing issue using \

@@ -6,6 +6,7 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import demo.brainstorm.application.BrainstormResult;
+import demo.brainstorm.application.BrainstormTasks;
 import demo.brainstorm.application.Curator;
 import demo.brainstorm.application.IdeaBoardEntity;
 import demo.brainstorm.application.Ideator;
@@ -52,11 +53,7 @@ public class BrainstormEndpoint {
 
   public record CurateResponse(String curatorTaskId) {}
 
-  public record TaskStatusResponse(
-    String status,
-    BrainstormResult result,
-    String rawResult
-  ) {}
+  public record TaskStatusResponse(String status, BrainstormResult result) {}
 
   public record BoardStatusResponse(
     String topic,
@@ -85,17 +82,18 @@ public class BrainstormEndpoint {
     // Spawn N ideator agents — each gets the same simple task
     var taskIds = new ArrayList<String>();
     for (int i = 0; i < numIdeators; i++) {
-      var taskId = componentClient
+      var ref = componentClient
         .forAutonomousAgent(Ideator.class)
         .runSingleTask(
-          "Brainstorm ideas for '" +
-          request.topic() +
-          "'. Board ID: " +
-          boardId +
-          ". Read the board, contribute new ideas, refine and rate existing ones.",
-          BrainstormResult.class
+          BrainstormTasks.IDEATE.instructions(
+            "Brainstorm ideas for '" +
+            request.topic() +
+            "'. Board ID: " +
+            boardId +
+            ". Read the board, contribute new ideas, refine and rate existing ones."
+          )
         );
-      taskIds.add(taskId);
+      taskIds.add(ref.taskId());
     }
 
     return new BrainstormResponse(boardId, taskIds);
@@ -118,22 +116,22 @@ public class BrainstormEndpoint {
 
   @Post("/{boardId}/curate")
   public CurateResponse curate(String boardId) {
-    var taskId = componentClient
+    var ref = componentClient
       .forAutonomousAgent(Curator.class)
       .runSingleTask(
-        "Curate the brainstorm results. Board ID: " +
-        boardId +
-        ". Read all ideas, select the best, and synthesise into a BrainstormResult.",
-        BrainstormResult.class
+        BrainstormTasks.CURATE.instructions(
+          "Curate the brainstorm results. Board ID: " +
+          boardId +
+          ". Read all ideas, select the best, and synthesise into a BrainstormResult."
+        )
       );
 
-    return new CurateResponse(taskId);
+    return new CurateResponse(ref.taskId());
   }
 
   @Get("/task/{taskId}")
   public TaskStatusResponse getTask(String taskId) {
-    var task = componentClient.forTask(taskId, BrainstormResult.class);
-    var state = task.getState();
-    return new TaskStatusResponse(state.status().name(), task.getResult(), state.result());
+    var task = componentClient.forTask(BrainstormTasks.IDEATE.ref(taskId)).get();
+    return new TaskStatusResponse(task.status().name(), task.result());
   }
 }

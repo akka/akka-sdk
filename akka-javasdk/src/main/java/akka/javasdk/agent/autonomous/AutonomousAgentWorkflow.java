@@ -201,6 +201,7 @@ public final class AutonomousAgentWorkflow extends Workflow<AutonomousAgentState
           new StrategyExecutor.ExecuteRequest(
               null,
               null,
+              null,
               state.currentTaskIterationCount(),
               state.maxIterationsPerTask(),
               state.instructions(),
@@ -225,6 +226,7 @@ public final class AutonomousAgentWorkflow extends Workflow<AutonomousAgentState
         new StrategyExecutor.ExecuteRequest(
             taskId,
             taskState.description(),
+            taskState.instructions(),
             state.currentTaskIterationCount(),
             state.maxIterationsPerTask(),
             state.instructions(),

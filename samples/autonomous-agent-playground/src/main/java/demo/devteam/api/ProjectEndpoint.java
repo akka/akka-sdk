@@ -6,6 +6,7 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import demo.devteam.application.ProjectResult;
+import demo.devteam.application.ProjectTasks;
 import demo.devteam.application.TeamLead;
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
@@ -16,11 +17,7 @@ public class ProjectEndpoint {
 
   public record ProjectResponse(String id) {}
 
-  public record ProjectStatusResponse(
-    String status,
-    ProjectResult result,
-    String rawResult
-  ) {}
+  public record ProjectStatusResponse(String status, ProjectResult result) {}
 
   private final ComponentClient componentClient;
 
@@ -30,17 +27,16 @@ public class ProjectEndpoint {
 
   @Post
   public ProjectResponse create(CreateProject request) {
-    var taskId = componentClient
+    var ref = componentClient
       .forAutonomousAgent(TeamLead.class)
-      .runSingleTask(request.description(), ProjectResult.class);
+      .runSingleTask(ProjectTasks.PLAN.instructions(request.description()));
 
-    return new ProjectResponse(taskId);
+    return new ProjectResponse(ref.taskId());
   }
 
   @Get("/{id}")
   public ProjectStatusResponse get(String id) {
-    var task = componentClient.forTask(id, ProjectResult.class);
-    var state = task.getState();
-    return new ProjectStatusResponse(state.status().name(), task.getResult(), state.result());
+    var task = componentClient.forTask(ProjectTasks.PLAN.ref(id)).get();
+    return new ProjectStatusResponse(task.status().name(), task.result());
   }
 }

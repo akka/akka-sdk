@@ -6,6 +6,7 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import demo.compliance.application.ComplianceReport;
+import demo.compliance.application.ComplianceTasks;
 import demo.compliance.application.ComplianceTriageAgent;
 
 /**
@@ -44,7 +45,6 @@ public class ComplianceEndpoint {
   public record ComplianceStatusResponse(
     String status,
     ComplianceReport result,
-    String rawResult,
     String pendingQuestion,
     String pendingDecisionId
   ) {}
@@ -59,42 +59,44 @@ public class ComplianceEndpoint {
 
   @Post
   public ComplianceResponse create(CreateCompliance request) {
-    var taskId = componentClient
+    var ref = componentClient
       .forAutonomousAgent(ComplianceTriageAgent.class)
-      .runSingleTask("Compliance review: " + request.request(), ComplianceReport.class);
+      .runSingleTask(
+        ComplianceTasks.REVIEW.instructions("Compliance review: " + request.request())
+      );
 
-    return new ComplianceResponse(taskId);
+    return new ComplianceResponse(ref.taskId());
   }
 
   @Get("/{id}")
   public ComplianceStatusResponse get(String id) {
-    var task = componentClient.forTask(id, ComplianceReport.class);
-    var state = task.getState();
+    var task = componentClient.forTask(ComplianceTasks.REVIEW.ref(id)).get();
     return new ComplianceStatusResponse(
-      state.status().name(),
-      task.getResult(),
-      state.result(),
-      state.pendingDecisionQuestion(),
-      state.pendingDecisionId()
+      task.status().name(),
+      task.result(),
+      task.pendingDecisionQuestion(),
+      task.pendingDecisionId()
     );
   }
 
   @Post("/{id}/approve")
   public ComplianceStatusResponse approve(String id) {
-    var task = componentClient.forTask(id, ComplianceReport.class);
-    var state = task.getState();
-    task.provideInput(state.pendingDecisionId(), "Approved by compliance officer. Proceed.");
-    return new ComplianceStatusResponse("APPROVED", null, null, null, null);
+    var task = componentClient.forTask(ComplianceTasks.REVIEW.ref(id)).get();
+    componentClient
+      .forTask(ComplianceTasks.REVIEW.ref(id))
+      .provideInput(task.pendingDecisionId(), "Approved by compliance officer. Proceed.");
+    return new ComplianceStatusResponse("APPROVED", null, null, null);
   }
 
   @Post("/{id}/reject")
   public ComplianceStatusResponse reject(String id, RejectRequest request) {
-    var task = componentClient.forTask(id, ComplianceReport.class);
-    var state = task.getState();
-    task.provideInput(
-      state.pendingDecisionId(),
-      "Rejected by compliance officer: " + request.reason()
-    );
-    return new ComplianceStatusResponse("REJECTED_WITH_FEEDBACK", null, null, null, null);
+    var task = componentClient.forTask(ComplianceTasks.REVIEW.ref(id)).get();
+    componentClient
+      .forTask(ComplianceTasks.REVIEW.ref(id))
+      .provideInput(
+        task.pendingDecisionId(),
+        "Rejected by compliance officer: " + request.reason()
+      );
+    return new ComplianceStatusResponse("REJECTED_WITH_FEEDBACK", null, null, null);
   }
 }

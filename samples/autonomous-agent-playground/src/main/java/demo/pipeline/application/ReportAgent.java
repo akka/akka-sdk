@@ -2,6 +2,7 @@ package demo.pipeline.application;
 
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.annotations.Component;
+import demo.pipeline.application.PipelineTasks;
 
 @Component(id = "report-agent")
 public class ReportAgent extends AutonomousAgent {
@@ -9,6 +10,7 @@ public class ReportAgent extends AutonomousAgent {
   @Override
   public Strategy configure() {
     return strategy()
+      .accepts(PipelineTasks.COLLECT, PipelineTasks.ANALYZE, PipelineTasks.REPORT)
       .instructions(
         """
         You process report pipeline tasks. Each task represents one phase of a report. \

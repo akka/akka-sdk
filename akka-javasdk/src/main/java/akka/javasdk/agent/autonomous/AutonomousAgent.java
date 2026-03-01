@@ -5,6 +5,7 @@
 package akka.javasdk.agent.autonomous;
 
 import akka.annotation.InternalApi;
+import akka.javasdk.agent.task.TaskDef;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -218,12 +219,19 @@ public abstract class AutonomousAgent {
    * }</pre>
    */
   public static final class Strategy {
+    private final List<TaskDef<?>> acceptedTasks = new ArrayList<>();
     private String instructions = "";
     private final List<String> toolClassNames = new ArrayList<>();
     private int maxIterations = 20;
     private final List<Capability> capabilities = new ArrayList<>();
 
     Strategy() {}
+
+    /** Declare which task definitions this agent accepts. */
+    public Strategy accepts(TaskDef<?>... tasks) {
+      this.acceptedTasks.addAll(List.of(tasks));
+      return this;
+    }
 
     /** System message defining the agent's role and instructions. */
     public Strategy instructions(String instructions) {
@@ -273,7 +281,11 @@ public abstract class AutonomousAgent {
     @InternalApi
     public StrategyView toView() {
       return new StrategyView(
-          instructions, List.copyOf(toolClassNames), maxIterations, List.copyOf(capabilities));
+          List.copyOf(acceptedTasks),
+          instructions,
+          List.copyOf(toolClassNames),
+          maxIterations,
+          List.copyOf(capabilities));
     }
   }
 
@@ -284,6 +296,7 @@ public abstract class AutonomousAgent {
    */
   @InternalApi
   public record StrategyView(
+      List<TaskDef<?>> acceptedTasks,
       String instructions,
       List<String> toolClassNames,
       int maxIterations,

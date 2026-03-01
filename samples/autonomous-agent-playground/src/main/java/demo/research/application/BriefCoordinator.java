@@ -5,6 +5,7 @@ import static akka.javasdk.agent.autonomous.AutonomousAgent.delegation;
 
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.annotations.Component;
+import demo.research.application.ResearchTasks;
 
 @Component(id = "brief-coordinator")
 public class BriefCoordinator extends AutonomousAgent {
@@ -12,6 +13,7 @@ public class BriefCoordinator extends AutonomousAgent {
   @Override
   public Strategy configure() {
     return strategy()
+      .accepts(ResearchTasks.BRIEF)
       .instructions(
         """
         You coordinate research briefs. When given a topic, delegate research and \

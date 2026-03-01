@@ -5,8 +5,8 @@ import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
-import demo.helloworld.application.Answer;
 import demo.helloworld.application.QuestionAnswerer;
+import demo.helloworld.application.QuestionTasks;
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/questions")
@@ -16,7 +16,7 @@ public class QuestionEndpoint {
 
   public record QuestionResponse(String id) {}
 
-  public record AnswerResponse(String status, Answer answer) {}
+  public record AnswerResponse(String status, Object answer) {}
 
   private final ComponentClient componentClient;
 
@@ -26,17 +26,16 @@ public class QuestionEndpoint {
 
   @Post
   public QuestionResponse ask(AskQuestion request) {
-    var taskId = componentClient
+    var ref = componentClient
       .forAutonomousAgent(QuestionAnswerer.class)
-      .runSingleTask(request.question(), Answer.class);
+      .runSingleTask(QuestionTasks.ANSWER.instructions(request.question()));
 
-    return new QuestionResponse(taskId);
+    return new QuestionResponse(ref.taskId());
   }
 
   @Get("/{id}")
   public AnswerResponse get(String id) {
-    var task = componentClient.forTask(id, Answer.class);
-    var state = task.getState();
-    return new AnswerResponse(state.status().name(), task.getResult());
+    var task = componentClient.forTask(QuestionTasks.ANSWER.ref(id)).get();
+    return new AnswerResponse(task.status().name(), task.result());
   }
 }

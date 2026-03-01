@@ -4,68 +4,79 @@
 
 package akka.javasdk.agent.task;
 
-import akka.Done;
-import akka.javasdk.client.ComponentStreamMethodRef;
-import java.util.List;
-
 /**
- * Interface for interacting with tasks in the autonomous agent system.
+ * A typed task definition — describes a kind of work and the expected result type. Task definitions
+ * are declared as {@code static final} constants and referenced everywhere:
  *
- * <p>Tasks represent units of work that autonomous agents process. Each task has a lifecycle:
- * PENDING -> IN_PROGRESS -> COMPLETED or FAILED.
+ * <pre>{@code
+ * // Define tasks alongside their result types
+ * public class QuestionTasks {
+ *   public static final Task<Answer> ANSWER =
+ *       Task.of("Answer a question", Answer.class);
+ * }
  *
- * <p>The result type {@code R} defines the expected structure of the task's output. When an
- * autonomous agent completes the task, the LLM is guided to produce results conforming to the JSON
- * schema of {@code R}. When reading the result, the stored JSON is deserialized into {@code R}.
+ * // Submit with per-request instructions
+ * var ref = componentClient
+ *     .forAutonomousAgent(QuestionAnswerer.class)
+ *     .runSingleTask(QuestionTasks.ANSWER.instructions("What is quantum computing?"));
  *
- * <p>The default implementation is backed by {@link TaskEntity}, a built-in Event Sourced Entity.
+ * // Retrieve — type comes from the definition, no class token needed
+ * var task = componentClient.forTask(QuestionTasks.ANSWER.ref(id)).get();
+ * Answer answer = task.result();
+ * }</pre>
  *
- * @param <R> The type of the task result.
+ * <p>Immutable. {@link #instructions(String)} returns a new instance with the instructions
+ * attached.
+ *
+ * @param <R> The result type produced when the task completes.
  */
-public interface Task<R> {
+public final class Task<R> implements TaskDef<R> {
 
-  /** Create a new task with the given description. */
-  default Done create(String description) {
-    return create(description, List.of());
+  private final String description;
+  private final Class<R> resultType;
+  private final String instructions;
+
+  private Task(String description, Class<R> resultType, String instructions) {
+    this.description = description;
+    this.resultType = resultType;
+    this.instructions = instructions;
   }
 
   /**
-   * Create a new task with the given description and dependencies. The task will not be worked on
-   * until all dependency tasks have completed.
+   * Create a task definition.
    *
-   * @param description the task description
-   * @param dependencyTaskIds IDs of tasks that must complete before this task can start
+   * @param description what kind of work this task represents
+   * @param resultType the expected result type
    */
-  Done create(String description, List<String> dependencyTaskIds);
+  public static <R> Task<R> of(String description, Class<R> resultType) {
+    return new Task<>(description, resultType, null);
+  }
 
-  /** Get the current state of the task, with a typed result. */
-  TaskState getState();
+  @Override
+  public String description() {
+    return description;
+  }
 
-  /** Get the current state with the result deserialized to type {@code R}. */
-  R getResult();
+  @Override
+  public Class<R> resultType() {
+    return resultType;
+  }
+
+  /** Per-request instructions, or {@code null} if none were provided. */
+  public String instructions() {
+    return instructions;
+  }
 
   /**
-   * Subscribe to real-time notifications for this task's lifecycle events. Notifications follow the
-   * task — they are published regardless of which agent is processing it, surviving handoffs.
-   *
-   * <p>Example usage:
-   *
-   * <pre>{@code
-   * componentClient.forTask(taskId, MyResult.class)
-   *     .notifications()
-   *     .source()
-   *     .runForeach(notification -> System.out.println("Event: " + notification), materializer);
-   * }</pre>
+   * Return a new task with per-request instructions attached. The original task definition is
+   * unchanged.
    */
-  ComponentStreamMethodRef<TaskNotification> notifications();
+  public Task<R> instructions(String instructions) {
+    return new Task<>(this.description, this.resultType, instructions);
+  }
 
-  /**
-   * Provide input for a pending decision point. This resumes the agent's processing after a
-   * decision was requested via the {@code requestDecision} tool.
-   *
-   * @param decisionId the ID of the pending decision (from the {@link
-   *     TaskNotification.DecisionRequested} notification)
-   * @param response the response to provide to the agent
-   */
-  Done provideInput(String decisionId, String response);
+  @Override
+  public TaskRef<R> ref(String taskId) {
+    return new TaskRef<>(taskId, description, resultType);
+  }
 }

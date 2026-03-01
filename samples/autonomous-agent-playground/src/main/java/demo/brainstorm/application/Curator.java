@@ -2,6 +2,7 @@ package demo.brainstorm.application;
 
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.annotations.Component;
+import demo.brainstorm.application.BrainstormTasks;
 
 /**
  * External selection agent — reads the final board state and selects the best ideas.
@@ -15,6 +16,7 @@ public class Curator extends AutonomousAgent {
   @Override
   public Strategy configure() {
     return strategy()
+      .accepts(BrainstormTasks.CURATE)
       .instructions(
         """
         You are a curator reviewing a brainstorm. Your task description includes the \

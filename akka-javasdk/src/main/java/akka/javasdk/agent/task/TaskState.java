@@ -11,6 +11,7 @@ import java.util.List;
 public record TaskState(
     String taskId,
     String description,
+    String instructions,
     TaskStatus status,
     String assignee,
     String resultTypeName,
@@ -24,13 +25,26 @@ public record TaskState(
 
   public static TaskState empty() {
     return new TaskState(
-        "", "", TaskStatus.PENDING, "", null, null, List.of(), null, null, null, null, List.of());
+        "",
+        "",
+        null,
+        TaskStatus.PENDING,
+        "",
+        null,
+        null,
+        List.of(),
+        null,
+        null,
+        null,
+        null,
+        List.of());
   }
 
   public TaskState withStatus(TaskStatus status) {
     return new TaskState(
         taskId,
         description,
+        instructions,
         status,
         assignee,
         resultTypeName,
@@ -47,6 +61,7 @@ public record TaskState(
     return new TaskState(
         taskId,
         description,
+        instructions,
         status,
         assignee,
         resultTypeName,
@@ -63,6 +78,7 @@ public record TaskState(
     return new TaskState(
         taskId,
         description,
+        instructions,
         status,
         assignee,
         resultTypeName,
@@ -81,6 +97,7 @@ public record TaskState(
     return new TaskState(
         taskId,
         description,
+        instructions,
         status,
         newAssignee,
         resultTypeName,
@@ -97,6 +114,7 @@ public record TaskState(
     return new TaskState(
         taskId,
         description,
+        instructions,
         TaskStatus.WAITING_FOR_INPUT,
         assignee,
         resultTypeName,
@@ -113,6 +131,7 @@ public record TaskState(
     return new TaskState(
         taskId,
         description,
+        instructions,
         TaskStatus.IN_PROGRESS,
         assignee,
         resultTypeName,

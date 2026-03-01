@@ -2,6 +2,7 @@ package demo.editorial.application;
 
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.annotations.Component;
+import demo.editorial.application.EditorialTasks;
 
 /** Team member — writes content sections. Claims tasks from the shared task list. */
 @Component(id = "writer")
@@ -10,6 +11,7 @@ public class Writer extends AutonomousAgent {
   @Override
   public Strategy configure() {
     return strategy()
+      .accepts(EditorialTasks.PUBLICATION)
       .instructions(
         """
         You are a writer on an editorial team. Check the task list for writing \

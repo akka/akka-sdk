@@ -6,6 +6,7 @@ import static akka.javasdk.agent.autonomous.AutonomousAgent.handoff;
 
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.annotations.Component;
+import demo.consulting.application.ConsultingTasks;
 
 /**
  * Consulting coordinator — demonstrates delegation + handoff on the same agent.
@@ -19,6 +20,7 @@ public class ConsultingCoordinator extends AutonomousAgent {
   @Override
   public Strategy configure() {
     return strategy()
+      .accepts(ConsultingTasks.ENGAGEMENT)
       .instructions(
         """
         You coordinate consulting engagements. For each client problem:

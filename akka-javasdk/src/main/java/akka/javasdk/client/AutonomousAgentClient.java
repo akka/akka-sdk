@@ -7,6 +7,8 @@ package akka.javasdk.client;
 import akka.Done;
 import akka.annotation.DoNotInherit;
 import akka.javasdk.agent.autonomous.Capability;
+import akka.javasdk.agent.task.Task;
+import akka.javasdk.agent.task.TaskRef;
 import java.util.List;
 
 /** Not for user extension, implementation provided by the SDK. */
@@ -15,13 +17,13 @@ public interface AutonomousAgentClient {
 
   /**
    * Create a task and run it on this agent. The agent auto-starts, processes the task, and stops
-   * when done. Returns the task ID for polling results.
+   * when done. Returns a typed reference for retrieving results.
    *
-   * @param description The task description.
-   * @param resultType The expected result type.
-   * @return The generated task ID.
+   * @param task The task definition, optionally with per-request instructions.
+   * @param <R> The result type.
+   * @return A typed reference to the created task.
    */
-  String runSingleTask(String description, Class<?> resultType);
+  <R> TaskRef<R> runSingleTask(Task<R> task);
 
   /** Start the autonomous agent. It begins idle, waiting for tasks to be assigned. */
   Done start();

@@ -2,6 +2,7 @@ package demo.support.application;
 
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.annotations.Component;
+import demo.support.application.SupportTasks;
 
 @Component(id = "technical-specialist")
 public class TechnicalSpecialist extends AutonomousAgent {
@@ -9,6 +10,7 @@ public class TechnicalSpecialist extends AutonomousAgent {
   @Override
   public Strategy configure() {
     return strategy()
+      .accepts(SupportTasks.RESOLVE)
       .instructions(
         """
         You are a technical support specialist. Diagnose the technical issue using \

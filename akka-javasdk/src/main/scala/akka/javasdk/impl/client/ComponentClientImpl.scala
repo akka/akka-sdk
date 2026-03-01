@@ -11,7 +11,8 @@ import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.autonomous.AutonomousAgent
-import akka.javasdk.agent.task.Task
+import akka.javasdk.agent.task.TaskClient
+import akka.javasdk.agent.task.TaskRef
 import akka.javasdk.client.AgentClient
 import akka.javasdk.client.AutonomousAgentClient
 import akka.javasdk.client.ComponentClient
@@ -22,7 +23,7 @@ import akka.javasdk.client.ViewClient
 import akka.javasdk.client.WorkflowClient
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.agent.AutonomousAgentClientImpl
-import akka.javasdk.impl.agent.TaskClient
+import akka.javasdk.impl.agent.TaskClientImpl
 import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
 import io.opentelemetry.context.{ Context => OtelContext }
@@ -78,11 +79,9 @@ private[javasdk] final case class ComponentClientImpl(
   override def forAgent(): AgentClient =
     AgentClientImpl(runtimeComponentClients.agentClient, serializer, callMetadata, agentClassById, sessionId = "")
 
-  override def forTask[R](taskId: String, resultType: Class[R]): Task[R] =
-    if (taskId eq null) throw new NullPointerException("Task id is null")
-    else if (taskId.isEmpty) throw new IllegalArgumentException("Empty task id not allowed")
-    else if (resultType eq null) throw new NullPointerException("Result type is null")
-    else new TaskClient[R](this, taskId, resultType)
+  override def forTask[R](ref: TaskRef[R]): TaskClient[R] =
+    if (ref eq null) throw new NullPointerException("Task ref is null")
+    else new TaskClientImpl[R](this, ref)
 
   override def forAutonomousAgent[T <: AutonomousAgent](agentId: String, agentClass: Class[T]): AutonomousAgentClient =
     if (agentId eq null) throw new NullPointerException("Autonomous agent id is null")

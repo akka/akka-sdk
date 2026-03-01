@@ -5,8 +5,8 @@ import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
+import demo.pipeline.application.PipelineTasks;
 import demo.pipeline.application.ReportAgent;
-import demo.pipeline.application.ReportResult;
 import java.util.List;
 import java.util.UUID;
 import demo.pipeline.application.ReportResult;
@@ -44,7 +44,7 @@ public class PipelineEndpoint {
     String reportTaskId
   ) {}
 
-  public record TaskStatusResponse(String status, ReportResult result, String rawResult) {}
+  public record TaskStatusResponse(String status, ReportResult result) {}
 
   public record PipelineStatusResponse(
     TaskStatusResponse collect,
@@ -67,18 +67,18 @@ public class PipelineEndpoint {
 
     // Create tasks with dependency chain: collect → analyze → report
     componentClient
-      .forTask(collectId, ReportResult.class)
+      .forTask(PipelineTasks.COLLECT.ref(collectId))
       .create("Collect data on: " + request.topic());
 
     componentClient
-      .forTask(analyzeId, ReportResult.class)
+      .forTask(PipelineTasks.ANALYZE.ref(analyzeId))
       .create(
         "Analyze the collected data for: " + request.topic() + ". Use the analyzeData tool.",
         List.of(collectId)
       );
 
     componentClient
-      .forTask(reportId, ReportResult.class)
+      .forTask(PipelineTasks.REPORT.ref(reportId))
       .create(
         "Write a comprehensive final report for: " +
         request.topic() +
@@ -99,9 +99,8 @@ public class PipelineEndpoint {
 
   @Get("/{id}")
   public TaskStatusResponse get(String id) {
-    var task = componentClient.forTask(id, ReportResult.class);
-    var state = task.getState();
-    return new TaskStatusResponse(state.status().name(), task.getResult(), state.result());
+    var task = componentClient.forTask(PipelineTasks.COLLECT.ref(id)).get();
+    return new TaskStatusResponse(task.status().name(), task.result());
   }
 
   @Get("/all/{pipelineId}")
@@ -114,8 +113,7 @@ public class PipelineEndpoint {
   }
 
   private TaskStatusResponse getTaskStatus(String taskId) {
-    var task = componentClient.forTask(taskId, ReportResult.class);
-    var state = task.getState();
-    return new TaskStatusResponse(state.status().name(), task.getResult(), state.result());
+    var task = componentClient.forTask(PipelineTasks.COLLECT.ref(taskId)).get();
+    return new TaskStatusResponse(task.status().name(), task.result());
   }
 }

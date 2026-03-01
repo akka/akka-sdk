@@ -22,11 +22,20 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
   }
 
   public record CreateRequest(
-      String description, String resultTypeName, List<String> dependencyTaskIds) {
+      String description,
+      String instructions,
+      String resultTypeName,
+      List<String> dependencyTaskIds) {
 
-    /** Convenience constructor without dependencies. */
+    /** Convenience constructor without instructions or dependencies. */
     public CreateRequest(String description, String resultTypeName) {
-      this(description, resultTypeName, List.of());
+      this(description, null, resultTypeName, List.of());
+    }
+
+    /** Convenience constructor without instructions. */
+    public CreateRequest(
+        String description, String resultTypeName, List<String> dependencyTaskIds) {
+      this(description, null, resultTypeName, dependencyTaskIds);
     }
   }
 
@@ -50,7 +59,11 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
     return effects()
         .persist(
             new TaskEvent.TaskCreated(
-                taskId, request.description(), request.resultTypeName(), deps))
+                taskId,
+                request.description(),
+                request.instructions(),
+                request.resultTypeName(),
+                deps))
         .thenReply(__ -> done());
   }
 
@@ -149,6 +162,7 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
           new TaskState(
               e.taskId(),
               e.description(),
+              e.instructions(),
               TaskStatus.PENDING,
               "",
               e.resultTypeName(),

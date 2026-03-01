@@ -4,6 +4,7 @@ import static akka.javasdk.agent.autonomous.AutonomousAgent.externalInput;
 
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.annotations.Component;
+import demo.publishing.application.PublishingTasks;
 
 @Component(id = "content-agent")
 public class ContentAgent extends AutonomousAgent {
@@ -11,6 +12,7 @@ public class ContentAgent extends AutonomousAgent {
   @Override
   public Strategy configure() {
     return strategy()
+      .accepts(PublishingTasks.ARTICLE)
       .capability(externalInput())
       .instructions(
         """

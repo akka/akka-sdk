@@ -6,7 +6,7 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import demo.research.application.BriefCoordinator;
-import demo.research.application.ResearchBrief;
+import demo.research.application.ResearchTasks;
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/research")
@@ -16,7 +16,7 @@ public class ResearchEndpoint {
 
   public record BriefResponse(String id) {}
 
-  public record BriefStatusResponse(String status, ResearchBrief brief, String result) {}
+  public record BriefStatusResponse(String status, ResearchBrief brief) {}
 
   private final ComponentClient componentClient;
 
@@ -26,17 +26,16 @@ public class ResearchEndpoint {
 
   @Post
   public BriefResponse create(CreateBrief request) {
-    var taskId = componentClient
+    var ref = componentClient
       .forAutonomousAgent(BriefCoordinator.class)
-      .runSingleTask(request.topic(), ResearchBrief.class);
+      .runSingleTask(ResearchTasks.BRIEF.instructions(request.topic()));
 
-    return new BriefResponse(taskId);
+    return new BriefResponse(ref.taskId());
   }
 
   @Get("/{id}")
   public BriefStatusResponse get(String id) {
-    var task = componentClient.forTask(id, ResearchBrief.class);
-    var state = task.getState();
-    return new BriefStatusResponse(state.status().name(), task.getResult(), state.result());
+    var task = componentClient.forTask(ResearchTasks.BRIEF.ref(id)).get();
+    return new BriefStatusResponse(task.status().name(), task.result());
   }
 }

@@ -4,6 +4,7 @@ import static akka.javasdk.agent.autonomous.AutonomousAgent.externalInput;
 
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.annotations.Component;
+import demo.compliance.application.ComplianceTasks;
 
 /**
  * Handoff target — performs deep risk assessment and requests compliance officer approval.
@@ -17,6 +18,7 @@ public class RiskAssessor extends AutonomousAgent {
   @Override
   public Strategy configure() {
     return strategy()
+      .accepts(ComplianceTasks.REVIEW)
       .instructions(
         """
         You are a compliance risk assessor who handles high-risk compliance reviews. \

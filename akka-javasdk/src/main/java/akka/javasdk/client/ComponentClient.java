@@ -7,7 +7,8 @@ package akka.javasdk.client;
 import akka.annotation.DoNotInherit;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.autonomous.AutonomousAgent;
-import akka.javasdk.agent.task.Task;
+import akka.javasdk.agent.task.TaskClient;
+import akka.javasdk.agent.task.TaskRef;
 
 /**
  * Utility to send requests to other components by composing a call that can be executed by the
@@ -66,13 +67,14 @@ public interface ComponentClient {
   AgentClient forAgent();
 
   /**
-   * Access a {@link Task} by id, with a typed result.
+   * Access a task by typed reference. The result type is carried by the {@link TaskRef}, so no
+   * class token needs to be repeated.
    *
-   * @param taskId - task id. Must not be null or empty string.
-   * @param resultType - the expected result type for deserialization.
+   * @param ref - typed task reference (from {@link akka.javasdk.agent.task.TaskDef#ref(String)} or
+   *     returned by {@link AutonomousAgentClient#runSingleTask}).
    * @param <R> the result type.
    */
-  <R> Task<R> forTask(String taskId, Class<R> resultType);
+  <R> TaskClient<R> forTask(TaskRef<R> ref);
 
   /**
    * Select an {@link AutonomousAgent} as a call target.

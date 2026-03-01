@@ -9,6 +9,9 @@ import akka.annotation.InternalApi;
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.agent.autonomous.AutonomousAgentWorkflow;
 import akka.javasdk.agent.autonomous.Capability;
+import akka.javasdk.agent.task.Task;
+import akka.javasdk.agent.task.TaskEntity;
+import akka.javasdk.agent.task.TaskRef;
 import akka.javasdk.client.AutonomousAgentClient;
 import akka.javasdk.client.ComponentClient;
 import java.util.ArrayList;
@@ -31,11 +34,16 @@ public final class AutonomousAgentClientImpl implements AutonomousAgentClient {
   }
 
   @Override
-  public String runSingleTask(String description, Class<?> resultType) {
+  public <R> TaskRef<R> runSingleTask(Task<R> task) {
     var taskId = UUID.randomUUID().toString();
-    componentClient.forTask(taskId, resultType).create(description);
+    componentClient
+        .forEventSourcedEntity(taskId)
+        .method(TaskEntity::create)
+        .invoke(
+            new TaskEntity.CreateRequest(
+                task.description(), task.instructions(), task.resultType().getName(), List.of()));
     assignSingleTask(taskId);
-    return taskId;
+    return task.ref(taskId);
   }
 
   @Override

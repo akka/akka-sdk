@@ -5,6 +5,7 @@ import static akka.javasdk.agent.autonomous.AutonomousAgent.handoff;
 
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.annotations.Component;
+import demo.support.application.SupportTasks;
 
 @Component(id = "triage-agent")
 public class TriageAgent extends AutonomousAgent {
@@ -12,6 +13,7 @@ public class TriageAgent extends AutonomousAgent {
   @Override
   public Strategy configure() {
     return strategy()
+      .accepts(SupportTasks.RESOLVE)
       .instructions(
         """
         You are a customer support triage agent. Read the support request, \

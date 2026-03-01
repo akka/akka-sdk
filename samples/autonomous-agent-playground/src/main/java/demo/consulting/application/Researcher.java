@@ -2,6 +2,7 @@ package demo.consulting.application;
 
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.annotations.Component;
+import demo.consulting.application.ConsultingTasks;
 
 /** Delegation target — performs focused research on a specific aspect of the problem. */
 @Component(id = "consulting-researcher")
@@ -10,6 +11,7 @@ public class Researcher extends AutonomousAgent {
   @Override
   public Strategy configure() {
     return strategy()
+      .accepts(ConsultingTasks.ENGAGEMENT)
       .instructions(
         """
         You are a research specialist for a consulting firm. When given a research \

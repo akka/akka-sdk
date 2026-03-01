@@ -46,6 +46,7 @@ public final class StrategyExecutor extends Agent {
   public record ExecuteRequest(
       String taskId,
       String taskDescription,
+      String taskInstructions,
       int iteration,
       int maxIterations,
       String instructions,
@@ -104,7 +105,14 @@ public final class StrategyExecutor extends Agent {
           .append("\nIteration: ")
           .append(request.iteration())
           .append(" of ")
-          .append(request.maxIterations())
+          .append(request.maxIterations());
+
+      var taskInstructions = request.taskInstructions();
+      if (taskInstructions != null && !taskInstructions.isEmpty()) {
+        userMessage.append("\n\nInstructions: ").append(taskInstructions);
+      }
+
+      userMessage
           .append("\n\nAnalyse the task and take action. Use the available tools.")
           .append(" When done, call complete_task with the result.")
           .append(" If you cannot complete the task, call fail_task with a reason.");

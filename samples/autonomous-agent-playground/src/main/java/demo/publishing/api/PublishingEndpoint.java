@@ -7,6 +7,7 @@ import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import demo.publishing.application.Article;
 import demo.publishing.application.ContentAgent;
+import demo.publishing.application.PublishingTasks;
 
 /**
  * Content publishing with human-in-the-loop approval.
@@ -43,7 +44,6 @@ public class PublishingEndpoint {
   public record PublishingStatusResponse(
     String status,
     Article result,
-    String rawResult,
     String pendingQuestion,
     String pendingDecisionId
   ) {}
@@ -58,44 +58,48 @@ public class PublishingEndpoint {
 
   @Post
   public PublishingResponse create(CreatePublishing request) {
-    var taskId = componentClient
+    var ref = componentClient
       .forAutonomousAgent(ContentAgent.class)
-      .runSingleTask("Write and publish an article about: " + request.topic(), Article.class);
+      .runSingleTask(
+        PublishingTasks.ARTICLE.instructions(
+          "Write and publish an article about: " + request.topic()
+        )
+      );
 
-    return new PublishingResponse(taskId);
+    return new PublishingResponse(ref.taskId());
   }
 
   @Get("/{id}")
   public PublishingStatusResponse get(String id) {
-    var task = componentClient.forTask(id, Article.class);
-    var state = task.getState();
+    var task = componentClient.forTask(PublishingTasks.ARTICLE.ref(id)).get();
     return new PublishingStatusResponse(
-      state.status().name(),
-      task.getResult(),
-      state.result(),
-      state.pendingDecisionQuestion(),
-      state.pendingDecisionId()
+      task.status().name(),
+      task.result(),
+      task.pendingDecisionQuestion(),
+      task.pendingDecisionId()
     );
   }
 
   @Post("/{id}/approve")
   public PublishingStatusResponse approve(String id) {
-    var task = componentClient.forTask(id, Article.class);
-    var state = task.getState();
-    task.provideInput(state.pendingDecisionId(), "Approved. Proceed to publish the article.");
+    var task = componentClient.forTask(PublishingTasks.ARTICLE.ref(id)).get();
+    componentClient
+      .forTask(PublishingTasks.ARTICLE.ref(id))
+      .provideInput(task.pendingDecisionId(), "Approved. Proceed to publish the article.");
 
-    return new PublishingStatusResponse("APPROVED", null, null, null, null);
+    return new PublishingStatusResponse("APPROVED", null, null, null);
   }
 
   @Post("/{id}/reject")
   public PublishingStatusResponse reject(String id, RejectRequest request) {
-    var task = componentClient.forTask(id, Article.class);
-    var state = task.getState();
-    task.provideInput(
-      state.pendingDecisionId(),
-      "Rejected. Please revise the article based on this feedback: " + request.reason()
-    );
+    var task = componentClient.forTask(PublishingTasks.ARTICLE.ref(id)).get();
+    componentClient
+      .forTask(PublishingTasks.ARTICLE.ref(id))
+      .provideInput(
+        task.pendingDecisionId(),
+        "Rejected. Please revise the article based on this feedback: " + request.reason()
+      );
 
-    return new PublishingStatusResponse("REJECTED_WITH_FEEDBACK", null, null, null, null);
+    return new PublishingStatusResponse("REJECTED_WITH_FEEDBACK", null, null, null);
   }
 }

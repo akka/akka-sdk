@@ -6,6 +6,7 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import demo.debate.application.DebateModerator;
+import demo.debate.application.DebateTasks;
 import demo.debate.application.DebateResult;
 
 /**
@@ -30,7 +31,7 @@ public class DebateEndpoint {
 
   public record DebateResponse(String id) {}
 
-  public record DebateStatusResponse(String status, DebateResult result, String rawResult) {}
+  public record DebateStatusResponse(String status, DebateResult result) {}
 
   private final ComponentClient componentClient;
 
@@ -40,17 +41,18 @@ public class DebateEndpoint {
 
   @Post
   public DebateResponse create(CreateDebate request) {
-    var taskId = componentClient
+    var ref = componentClient
       .forAutonomousAgent(DebateModerator.class)
-      .runSingleTask("Moderate a debate on: " + request.topic(), DebateResult.class);
+      .runSingleTask(
+        DebateTasks.DEBATE.instructions("Moderate a debate on: " + request.topic())
+      );
 
-    return new DebateResponse(taskId);
+    return new DebateResponse(ref.taskId());
   }
 
   @Get("/{id}")
   public DebateStatusResponse get(String id) {
-    var task = componentClient.forTask(id, DebateResult.class);
-    var state = task.getState();
-    return new DebateStatusResponse(state.status().name(), task.getResult(), state.result());
+    var task = componentClient.forTask(DebateTasks.DEBATE.ref(id)).get();
+    return new DebateStatusResponse(task.status().name(), task.result());
   }
 }
