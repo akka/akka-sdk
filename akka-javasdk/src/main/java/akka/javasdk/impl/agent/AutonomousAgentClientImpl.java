@@ -9,6 +9,7 @@ import akka.annotation.InternalApi;
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.agent.autonomous.AutonomousAgentWorkflow;
 import akka.javasdk.agent.autonomous.Capability;
+import akka.javasdk.agent.task.ContentRef;
 import akka.javasdk.agent.task.Task;
 import akka.javasdk.agent.task.TaskEntity;
 import akka.javasdk.agent.task.TaskRef;
@@ -36,12 +37,17 @@ public final class AutonomousAgentClientImpl implements AutonomousAgentClient {
   @Override
   public <R> TaskRef<R> runSingleTask(Task<R> task) {
     var taskId = UUID.randomUUID().toString();
+    var contentRefs = task.attachments().stream().map(ContentRef::fromMessageContent).toList();
     componentClient
         .forEventSourcedEntity(taskId)
         .method(TaskEntity::create)
         .invoke(
             new TaskEntity.CreateRequest(
-                task.description(), task.instructions(), task.resultType().getName(), List.of()));
+                task.description(),
+                task.instructions(),
+                task.resultType().getName(),
+                List.of(),
+                contentRefs));
     assignSingleTask(taskId);
     return task.ref(taskId);
   }
@@ -53,7 +59,8 @@ public final class AutonomousAgentClientImpl implements AutonomousAgentClient {
             strategy.maxIterations(),
             strategy.instructions(),
             strategy.toolClassNames(),
-            strategy.capabilities());
+            strategy.capabilities(),
+            strategy.contentLoaderClassName());
 
     return componentClient
         .forWorkflow(agentId)
@@ -102,7 +109,8 @@ public final class AutonomousAgentClientImpl implements AutonomousAgentClient {
             strategy.maxIterations(),
             strategy.instructions(),
             strategy.toolClassNames(),
-            allCapabilities);
+            allCapabilities,
+            strategy.contentLoaderClassName());
 
     return componentClient
         .forWorkflow(agentId)

@@ -259,6 +259,7 @@ public abstract class AutonomousAgent {
     private final List<String> toolClassNames = new ArrayList<>();
     private int maxIterations = 20;
     private final List<Capability> capabilities = new ArrayList<>();
+    private String contentLoaderClassName;
 
     Strategy() {}
 
@@ -291,6 +292,15 @@ public abstract class AutonomousAgent {
       return this;
     }
 
+    /**
+     * Set a content loader for resolving authenticated URLs in task attachments. The loader class
+     * must have a no-arg constructor.
+     */
+    public Strategy contentLoader(Class<? extends akka.javasdk.agent.ContentLoader> loaderClass) {
+      this.contentLoaderClassName = loaderClass.getName();
+      return this;
+    }
+
     /** Add a coordination capability to this agent's strategy. */
     public Strategy capability(CapabilityBuilder builder) {
       this.capabilities.addAll(builder.build());
@@ -320,7 +330,8 @@ public abstract class AutonomousAgent {
           instructions,
           List.copyOf(toolClassNames),
           maxIterations,
-          List.copyOf(capabilities));
+          List.copyOf(capabilities),
+          contentLoaderClassName);
     }
   }
 
@@ -335,5 +346,6 @@ public abstract class AutonomousAgent {
       String instructions,
       List<String> toolClassNames,
       int maxIterations,
-      List<Capability> capabilities) {}
+      List<Capability> capabilities,
+      String contentLoaderClassName) {}
 }

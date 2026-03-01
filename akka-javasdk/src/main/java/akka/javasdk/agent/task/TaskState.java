@@ -21,7 +21,8 @@ public record TaskState(
     String pendingDecisionQuestion,
     String pendingDecisionType,
     String lastDecisionResponse,
-    List<String> dependencyTaskIds) {
+    List<String> dependencyTaskIds,
+    List<ContentRef> contentRefs) {
 
   public static TaskState empty() {
     return new TaskState(
@@ -37,6 +38,7 @@ public record TaskState(
         null,
         null,
         null,
+        List.of(),
         List.of());
   }
 
@@ -54,7 +56,8 @@ public record TaskState(
         pendingDecisionQuestion,
         pendingDecisionType,
         lastDecisionResponse,
-        dependencyTaskIds);
+        dependencyTaskIds,
+        contentRefs);
   }
 
   public TaskState withAssignee(String assignee) {
@@ -71,7 +74,8 @@ public record TaskState(
         pendingDecisionQuestion,
         pendingDecisionType,
         lastDecisionResponse,
-        dependencyTaskIds);
+        dependencyTaskIds,
+        contentRefs);
   }
 
   public TaskState withResult(String result) {
@@ -88,7 +92,8 @@ public record TaskState(
         pendingDecisionQuestion,
         pendingDecisionType,
         lastDecisionResponse,
-        dependencyTaskIds);
+        dependencyTaskIds,
+        contentRefs);
   }
 
   public TaskState withHandoff(String newAssignee, String context) {
@@ -107,7 +112,8 @@ public record TaskState(
         pendingDecisionQuestion,
         pendingDecisionType,
         lastDecisionResponse,
-        dependencyTaskIds);
+        dependencyTaskIds,
+        contentRefs);
   }
 
   public TaskState withDecisionRequested(String decisionId, String question, String decisionType) {
@@ -124,7 +130,8 @@ public record TaskState(
         question,
         decisionType,
         lastDecisionResponse,
-        dependencyTaskIds);
+        dependencyTaskIds,
+        contentRefs);
   }
 
   public TaskState withInputProvided(String decisionId, String response) {
@@ -141,6 +148,7 @@ public record TaskState(
         null,
         null,
         response,
-        dependencyTaskIds);
+        dependencyTaskIds,
+        contentRefs);
   }
 }

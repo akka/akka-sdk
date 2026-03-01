@@ -25,17 +25,27 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
       String description,
       String instructions,
       String resultTypeName,
-      List<String> dependencyTaskIds) {
+      List<String> dependencyTaskIds,
+      List<ContentRef> contentRefs) {
 
-    /** Convenience constructor without instructions or dependencies. */
+    /** Convenience constructor without instructions, dependencies, or content. */
     public CreateRequest(String description, String resultTypeName) {
-      this(description, null, resultTypeName, List.of());
+      this(description, null, resultTypeName, List.of(), List.of());
     }
 
-    /** Convenience constructor without instructions. */
+    /** Convenience constructor without instructions or content. */
     public CreateRequest(
         String description, String resultTypeName, List<String> dependencyTaskIds) {
-      this(description, null, resultTypeName, dependencyTaskIds);
+      this(description, null, resultTypeName, dependencyTaskIds, List.of());
+    }
+
+    /** Convenience constructor without content. */
+    public CreateRequest(
+        String description,
+        String instructions,
+        String resultTypeName,
+        List<String> dependencyTaskIds) {
+      this(description, instructions, resultTypeName, dependencyTaskIds, List.of());
     }
   }
 
@@ -56,6 +66,7 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
     }
     var deps =
         request.dependencyTaskIds() != null ? request.dependencyTaskIds() : List.<String>of();
+    var refs = request.contentRefs() != null ? request.contentRefs() : List.<ContentRef>of();
     return effects()
         .persist(
             new TaskEvent.TaskCreated(
@@ -63,7 +74,8 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
                 request.description(),
                 request.instructions(),
                 request.resultTypeName(),
-                deps))
+                deps,
+                refs))
         .thenReply(__ -> done());
   }
 
@@ -172,7 +184,8 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
               null,
               null,
               null,
-              e.dependencyTaskIds() != null ? e.dependencyTaskIds() : List.of());
+              e.dependencyTaskIds() != null ? e.dependencyTaskIds() : List.of(),
+              e.contentRefs() != null ? e.contentRefs() : List.of());
       case TaskEvent.TaskAssigned e -> currentState().withAssignee(e.assignee());
       case TaskEvent.TaskStarted e -> currentState().withStatus(TaskStatus.IN_PROGRESS);
       case TaskEvent.TaskCompleted e ->

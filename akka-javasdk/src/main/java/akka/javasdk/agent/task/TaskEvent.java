@@ -15,7 +15,8 @@ public sealed interface TaskEvent {
       String description,
       String instructions,
       String resultTypeName,
-      List<String> dependencyTaskIds)
+      List<String> dependencyTaskIds,
+      List<ContentRef> contentRefs)
       implements TaskEvent {}
 
   @TypeName("akka-task-assigned")

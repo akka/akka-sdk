@@ -47,7 +47,8 @@ public final class AutonomousAgentWorkflow extends Workflow<AutonomousAgentState
       int maxIterationsPerTask,
       String instructions,
       List<String> toolClassNames,
-      List<Capability> capabilities) {}
+      List<Capability> capabilities,
+      String contentLoaderClassName) {}
 
   /** Delivery payload from the IterationBridgeAction after the LLM completes. */
   public record IterationResult(int iteration, boolean teamMember) {}
@@ -80,7 +81,8 @@ public final class AutonomousAgentWorkflow extends Workflow<AutonomousAgentState
             request.maxIterationsPerTask(),
             request.instructions(),
             request.toolClassNames(),
-            request.capabilities());
+            request.capabilities(),
+            request.contentLoaderClassName());
 
     return effects().updateState(initialState).pause().thenReply(Done.done());
   }
@@ -161,7 +163,8 @@ public final class AutonomousAgentWorkflow extends Workflow<AutonomousAgentState
       int maxIterationsPerTask,
       String instructions,
       List<String> toolClassNames,
-      List<Capability> capabilities) {}
+      List<Capability> capabilities,
+      String contentLoaderClassName) {}
 
   public Effect<Done> startAsTeamMember(TeamMemberStartRequest request) {
     if (currentState() != null) {
@@ -176,7 +179,8 @@ public final class AutonomousAgentWorkflow extends Workflow<AutonomousAgentState
                 request.maxIterationsPerTask(),
                 request.instructions(),
                 request.toolClassNames(),
-                request.capabilities())
+                request.capabilities(),
+                request.contentLoaderClassName())
             .withTeamMember();
 
     return effects()
@@ -210,7 +214,9 @@ public final class AutonomousAgentWorkflow extends Workflow<AutonomousAgentState
               state.capabilities(),
               null,
               null,
-              null);
+              null,
+              null,
+              state.contentLoaderClassName());
       return effects().reply(request);
     }
 
@@ -235,7 +241,9 @@ public final class AutonomousAgentWorkflow extends Workflow<AutonomousAgentState
             state.capabilities(),
             taskState.resultTypeName(),
             taskState.handoffContext(),
-            taskState.lastDecisionResponse());
+            taskState.lastDecisionResponse(),
+            taskState.contentRefs(),
+            state.contentLoaderClassName());
     return effects().reply(request);
   }
 

@@ -4,6 +4,10 @@
 
 package akka.javasdk.agent.task;
 
+import akka.javasdk.agent.MessageContent;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * A typed task definition — describes a kind of work and the expected result type. Task definitions
  * are declared as {@code static final} constants and referenced everywhere:
@@ -35,11 +39,17 @@ public final class Task<R> implements TaskDef<R> {
   private final String description;
   private final Class<R> resultType;
   private final String instructions;
+  private final List<MessageContent> attachments;
 
-  private Task(String description, Class<R> resultType, String instructions) {
+  private Task(
+      String description,
+      Class<R> resultType,
+      String instructions,
+      List<MessageContent> attachments) {
     this.description = description;
     this.resultType = resultType;
     this.instructions = instructions;
+    this.attachments = attachments;
   }
 
   /**
@@ -49,7 +59,7 @@ public final class Task<R> implements TaskDef<R> {
    * @param resultType the expected result type
    */
   public static <R> Task<R> of(String description, Class<R> resultType) {
-    return new Task<>(description, resultType, null);
+    return new Task<>(description, resultType, null, List.of());
   }
 
   @Override
@@ -72,7 +82,26 @@ public final class Task<R> implements TaskDef<R> {
    * unchanged.
    */
   public Task<R> instructions(String instructions) {
-    return new Task<>(this.description, this.resultType, instructions);
+    return new Task<>(this.description, this.resultType, instructions, this.attachments);
+  }
+
+  /** Content attached to this task (images, PDFs), or an empty list. */
+  public List<MessageContent> attachments() {
+    return attachments;
+  }
+
+  /** Return a new task with the given content attached. */
+  public Task<R> attach(MessageContent content) {
+    var updated = new ArrayList<>(this.attachments);
+    updated.add(content);
+    return new Task<>(this.description, this.resultType, this.instructions, List.copyOf(updated));
+  }
+
+  /** Return a new task with the given content items attached. */
+  public Task<R> attach(MessageContent... content) {
+    var updated = new ArrayList<>(this.attachments);
+    updated.addAll(List.of(content));
+    return new Task<>(this.description, this.resultType, this.instructions, List.copyOf(updated));
   }
 
   /**

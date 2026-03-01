@@ -55,7 +55,9 @@ public final class StrategyExecutor extends Agent {
       List<Capability> capabilities,
       String resultTypeName,
       List<String> handoffContext,
-      String lastDecisionResponse) {}
+      String lastDecisionResponse,
+      List<akka.javasdk.agent.task.ContentRef> contentRefs,
+      String contentLoaderClassName) {}
 
   /** Execute one iteration: instantiate tools, build effect from strategy config. */
   public Effect<String> execute(ExecuteRequest request) {
@@ -449,6 +451,39 @@ public final class StrategyExecutor extends Agent {
 
     if (request.instructions() != null && !request.instructions().isEmpty()) {
       builder = builder.systemMessage(request.instructions());
+    }
+
+    // Set content loader if configured
+    if (request.contentLoaderClassName() != null && !request.contentLoaderClassName().isEmpty()) {
+      try {
+        var loaderClass =
+            Class.forName(request.contentLoaderClassName())
+                .asSubclass(akka.javasdk.agent.ContentLoader.class);
+        builder = builder.contentLoader(loaderClass.getDeclaredConstructor().newInstance());
+      } catch (Exception e) {
+        log.warn(
+            "Could not instantiate content loader {}: {}",
+            request.contentLoaderClassName(),
+            e.getMessage());
+      }
+    }
+
+    // Build UserMessage with text + any attached content
+    var hasContent = request.contentRefs() != null && !request.contentRefs().isEmpty();
+
+    if (hasContent) {
+      var messageContents = new ArrayList<akka.javasdk.agent.MessageContent>();
+      messageContents.add(
+          akka.javasdk.agent.MessageContent.TextMessageContent.from(userMessage.toString()));
+      for (var ref : request.contentRefs()) {
+        messageContents.add(ref.toMessageContent());
+      }
+      return builder
+          .tools(allTools)
+          .userMessage(
+              akka.javasdk.agent.UserMessage.from(
+                  messageContents.toArray(new akka.javasdk.agent.MessageContent[0])))
+          .thenReply();
     }
 
     return builder.tools(allTools).userMessage(userMessage.toString()).thenReply();
