@@ -84,6 +84,33 @@ public abstract class AutonomousAgent {
     return new TeamMember(agentRef);
   }
 
+  // --- Shared helpers ---
+
+  private static final Logger log = LoggerFactory.getLogger(AutonomousAgent.class);
+
+  /** Read accepted task metadata from an agent reference by instantiating and configuring it. */
+  private static List<DelegationCapability.AcceptedTaskInfo> readAcceptedTasks(AgentRef agentRef) {
+    try {
+      var agent = agentRef.agentClass().getDeclaredConstructor().newInstance();
+      var strategy = agent.configure().toView();
+      return strategy.acceptedTasks().stream()
+          .map(
+              taskDef -> {
+                var template =
+                    (taskDef instanceof TaskTemplate<?> t) ? t.instructionTemplate() : null;
+                return new DelegationCapability.AcceptedTaskInfo(
+                    taskDef.description(), taskDef.resultType().getName(), template);
+              })
+          .toList();
+    } catch (Exception e) {
+      log.warn(
+          "Could not read accepted tasks from {}: {}",
+          agentRef.agentClass().getSimpleName(),
+          e.getMessage());
+      return List.of();
+    }
+  }
+
   // --- Capability builders ---
 
   /** Interface for capability builders — each coordination pattern implements this. */
@@ -93,9 +120,6 @@ public abstract class AutonomousAgent {
 
   /** Builder for delegation capabilities. */
   public static final class DelegationBuilder implements CapabilityBuilder {
-
-    private static final Logger log = LoggerFactory.getLogger(DelegationBuilder.class);
-
     private final List<AgentRef> agents;
 
     DelegationBuilder(AgentRef... agents) {
@@ -116,28 +140,6 @@ public abstract class AutonomousAgent {
                         acceptedTasks);
               })
           .toList();
-    }
-
-    private List<DelegationCapability.AcceptedTaskInfo> readAcceptedTasks(AgentRef agentRef) {
-      try {
-        var agent = agentRef.agentClass().getDeclaredConstructor().newInstance();
-        var strategy = agent.configure().toView();
-        return strategy.acceptedTasks().stream()
-            .map(
-                taskDef -> {
-                  var template =
-                      (taskDef instanceof TaskTemplate<?> t) ? t.instructionTemplate() : null;
-                  return new DelegationCapability.AcceptedTaskInfo(
-                      taskDef.description(), taskDef.resultType().getName(), template);
-                })
-            .toList();
-      } catch (Exception e) {
-        log.warn(
-            "Could not read accepted tasks from {}: {}",
-            agentRef.agentClass().getSimpleName(),
-            e.getMessage());
-        return List.of();
-      }
     }
   }
 
@@ -177,12 +179,14 @@ public abstract class AutonomousAgent {
           .map(
               m -> {
                 var a = m.agentRef();
+                var acceptedTasks = readAcceptedTasks(a);
                 return (Capability)
                     new TeamCapability(
                         a.agentClass().getName(),
                         a.agentClass().getSimpleName().toLowerCase(),
                         a.description(),
-                        m.maxMembers());
+                        m.maxMembers(),
+                        acceptedTasks);
               })
           .toList();
     }
@@ -300,7 +304,7 @@ public abstract class AutonomousAgent {
      */
     @InternalApi
     public Strategy taskList(String taskListId) {
-      this.capabilities.add(new TaskListCapability(taskListId));
+      this.capabilities.add(new TaskListCapability(taskListId, null));
       return this;
     }
 

@@ -11,7 +11,12 @@ import java.util.List;
 public record TaskListState(String listId, List<TaskListItem> tasks) {
 
   public record TaskListItem(
-      String taskId, String description, String claimedBy, TaskListItemStatus status) {}
+      String taskId,
+      String description,
+      String claimedBy,
+      TaskListItemStatus status,
+      List<String> targetAgentTypes,
+      String resultTypeName) {}
 
   public enum TaskListItemStatus {
     AVAILABLE,
@@ -25,9 +30,17 @@ public record TaskListState(String listId, List<TaskListItem> tasks) {
     return new TaskListState("", List.of());
   }
 
-  public TaskListState withTask(String taskId, String description) {
+  public TaskListState withTask(
+      String taskId, String description, List<String> targetAgentTypes, String resultTypeName) {
     var updated = new ArrayList<>(tasks);
-    updated.add(new TaskListItem(taskId, description, null, TaskListItemStatus.AVAILABLE));
+    updated.add(
+        new TaskListItem(
+            taskId,
+            description,
+            null,
+            TaskListItemStatus.AVAILABLE,
+            targetAgentTypes,
+            resultTypeName));
     return new TaskListState(listId, updated);
   }
 
@@ -38,7 +51,12 @@ public record TaskListState(String listId, List<TaskListItem> tasks) {
                 t ->
                     t.taskId().equals(taskId)
                         ? new TaskListItem(
-                            t.taskId(), t.description(), claimedBy, TaskListItemStatus.CLAIMED)
+                            t.taskId(),
+                            t.description(),
+                            claimedBy,
+                            TaskListItemStatus.CLAIMED,
+                            t.targetAgentTypes(),
+                            t.resultTypeName())
                         : t)
             .toList();
     return new TaskListState(listId, updated);
@@ -51,7 +69,12 @@ public record TaskListState(String listId, List<TaskListItem> tasks) {
                 t ->
                     t.taskId().equals(taskId)
                         ? new TaskListItem(
-                            t.taskId(), t.description(), null, TaskListItemStatus.AVAILABLE)
+                            t.taskId(),
+                            t.description(),
+                            null,
+                            TaskListItemStatus.AVAILABLE,
+                            t.targetAgentTypes(),
+                            t.resultTypeName())
                         : t)
             .toList();
     return new TaskListState(listId, updated);
@@ -67,7 +90,9 @@ public record TaskListState(String listId, List<TaskListItem> tasks) {
                             t.taskId(),
                             t.description(),
                             t.claimedBy(),
-                            TaskListItemStatus.COMPLETED)
+                            TaskListItemStatus.COMPLETED,
+                            t.targetAgentTypes(),
+                            t.resultTypeName())
                         : t)
             .toList();
     return new TaskListState(listId, updated);
@@ -80,7 +105,12 @@ public record TaskListState(String listId, List<TaskListItem> tasks) {
                 t ->
                     t.taskId().equals(taskId)
                         ? new TaskListItem(
-                            t.taskId(), t.description(), t.claimedBy(), TaskListItemStatus.FAILED)
+                            t.taskId(),
+                            t.description(),
+                            t.claimedBy(),
+                            TaskListItemStatus.FAILED,
+                            t.targetAgentTypes(),
+                            t.resultTypeName())
                         : t)
             .toList();
     return new TaskListState(listId, updated);
@@ -96,7 +126,9 @@ public record TaskListState(String listId, List<TaskListItem> tasks) {
                             t.taskId(),
                             t.description(),
                             t.claimedBy(),
-                            TaskListItemStatus.CANCELLED)
+                            TaskListItemStatus.CANCELLED,
+                            t.targetAgentTypes(),
+                            t.resultTypeName())
                         : t)
             .toList();
     return new TaskListState(listId, updated);

@@ -5,6 +5,7 @@
 package akka.javasdk.agent.autonomous;
 
 import akka.javasdk.annotations.TypeName;
+import java.util.List;
 
 public sealed interface TaskListEvent {
 
@@ -12,7 +13,9 @@ public sealed interface TaskListEvent {
   record TaskListCreated(String listId) implements TaskListEvent {}
 
   @TypeName("akka-task-list-task-added")
-  record TaskAdded(String taskId, String description) implements TaskListEvent {}
+  record TaskAdded(
+      String taskId, String description, List<String> targetAgentTypes, String resultTypeName)
+      implements TaskListEvent {}
 
   @TypeName("akka-task-list-task-claimed")
   record TaskClaimed(String taskId, String claimedBy) implements TaskListEvent {}

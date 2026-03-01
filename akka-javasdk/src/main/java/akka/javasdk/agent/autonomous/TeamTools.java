@@ -9,7 +9,9 @@ import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.client.ComponentClient;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,7 +99,7 @@ public class TeamTools {
 
       // Inject team capabilities into the member
       var teamCapabilities = new ArrayList<Capability>();
-      teamCapabilities.add(new TaskListCapability(taskListId));
+      teamCapabilities.add(new TaskListCapability(taskListId, config.agentComponentId()));
       teamCapabilities.add(new MessageCapability(teamId));
 
       agentClient.startAsTeamMember(teamCapabilities);
@@ -125,32 +127,89 @@ public class TeamTools {
     }
   }
 
+  private static final Pattern PARAM_PATTERN = Pattern.compile("\\{(\\w+)}");
+
   @FunctionTool(
       description =
-          "Add a task to the team's shared task list. Team members will be able to see and"
-              + " claim it.")
-  public String addTask(String description) {
+          "Add a task to the team's shared task list. Specify the target agent type for"
+              + " filtering. Provide instructions or template parameters if the agent's task has"
+              + " a template.")
+  public String addTask(String agentType, String instructions, Map<String, String> templateParams) {
+    var config =
+        configs.stream()
+            .filter(c -> c.agentComponentId().equals(agentType))
+            .findFirst()
+            .orElse(null);
+
+    if (config == null) {
+      return "Error: Unknown agent type '"
+          + agentType
+          + "'. Available types: "
+          + configs.stream().map(TeamCapability::agentComponentId).toList();
+    }
+
     var taskId = UUID.randomUUID().toString();
 
+    // Resolve task description, instructions, and result type from accepted tasks
+    var taskDescription = instructions;
+    String taskInstructions = null;
+    String resultTypeName = null;
+
+    var acceptedTasks = config.acceptedTasks();
+    if (acceptedTasks != null && !acceptedTasks.isEmpty()) {
+      var acceptedTask = acceptedTasks.getFirst();
+      taskDescription = acceptedTask.description();
+      resultTypeName = acceptedTask.resultTypeName();
+
+      if (acceptedTask.instructionTemplate() != null
+          && templateParams != null
+          && !templateParams.isEmpty()) {
+        taskInstructions = resolveTemplate(acceptedTask.instructionTemplate(), templateParams);
+      } else {
+        taskInstructions = instructions;
+      }
+    }
+
     try {
-      // Create the underlying task entity
+      // Create the underlying task entity with typed result
       componentClient
           .forEventSourcedEntity(taskId)
           .method(TaskEntity::create)
-          .invoke(new TaskEntity.CreateRequest(description, null));
+          .invoke(
+              new TaskEntity.CreateRequest(
+                  taskDescription,
+                  taskInstructions,
+                  resultTypeName != null ? resultTypeName : "",
+                  List.of()));
 
-      // Add to the shared task list
+      // Add to the shared task list with target agent type for filtering
       componentClient
           .forEventSourcedEntity(taskListId)
           .method(TaskListEntity::addTask)
-          .invoke(new TaskListEntity.AddTaskRequest(taskId, description));
+          .invoke(
+              new TaskListEntity.AddTaskRequest(
+                  taskId,
+                  taskInstructions != null ? taskInstructions : taskDescription,
+                  List.of(agentType),
+                  resultTypeName != null ? resultTypeName : ""));
 
-      log.info("Added task {} to task list {}", taskId, taskListId);
-      return "Task added to the shared list. Task ID: " + taskId;
+      log.info("Added task {} for agent type {} to task list {}", taskId, agentType, taskListId);
+      return "Task added to the shared list for " + agentType + ". Task ID: " + taskId;
     } catch (Exception e) {
       log.error("Failed to add task", e);
       return "Error adding task: " + e.getMessage();
     }
+  }
+
+  private String resolveTemplate(String template, Map<String, String> params) {
+    var resolved = template;
+    var matcher = PARAM_PATTERN.matcher(template);
+    while (matcher.find()) {
+      var paramName = matcher.group(1);
+      var value = params.getOrDefault(paramName, "{" + paramName + "}");
+      resolved = resolved.replace("{" + paramName + "}", value);
+    }
+    return resolved;
   }
 
   @FunctionTool(description = "Get the current status of the team — members and task progress.")

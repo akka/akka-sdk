@@ -4,5 +4,9 @@
 
 package akka.javasdk.agent.autonomous;
 
-/** Capability to interact with a shared task list. */
-public record TaskListCapability(String taskListId) implements Capability {}
+/**
+ * Capability to interact with a shared task list.
+ *
+ * @param agentType the member's agent type for task filtering (nullable for standalone use)
+ */
+public record TaskListCapability(String taskListId, String agentType) implements Capability {}

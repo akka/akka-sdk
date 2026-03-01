@@ -8,6 +8,7 @@ public class BrainstormTasks {
     "Brainstorm ideas",
     BrainstormResult.class
   );
+
   public static final Task<BrainstormResult> CURATE = Task.of(
     "Curate brainstorm results",
     BrainstormResult.class

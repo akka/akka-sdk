@@ -8,10 +8,12 @@ public class PipelineTasks {
     "Collect data",
     ReportResult.class
   );
+
   public static final Task<ReportResult> ANALYZE = Task.of(
     "Analyze collected data",
     ReportResult.class
   );
+
   public static final Task<ReportResult> REPORT = Task.of(
     "Write final report",
     ReportResult.class

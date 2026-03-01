@@ -22,7 +22,8 @@ public class TeamLead extends AutonomousAgent {
 
         ITERATION 1 — Setup:
         1. Create a team and add developers (up to 3).
-        2. Break the project into tasks and add them to the shared task list.
+        2. Break the project into tasks using addTask with agentType="developer" \
+        and templateParams for feature and requirements.
         3. STOP here. The developers need time to work.
 
         ITERATIONS 2+ — Monitor:

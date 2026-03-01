@@ -22,11 +22,14 @@ public class TaskListTools {
 
   private final ComponentClient componentClient;
   private final String taskListId;
+  private final String agentType;
   private final String agentId;
 
-  public TaskListTools(ComponentClient componentClient, String taskListId, String agentId) {
+  public TaskListTools(
+      ComponentClient componentClient, String taskListId, String agentType, String agentId) {
     this.componentClient = componentClient;
     this.taskListId = taskListId;
+    this.agentType = agentType;
     this.agentId = agentId;
   }
 
@@ -45,6 +48,12 @@ public class TaskListTools {
       var available =
           state.tasks().stream()
               .filter(t -> t.status() == TaskListState.TaskListItemStatus.AVAILABLE)
+              .filter(
+                  t ->
+                      agentType == null
+                          || t.targetAgentTypes() == null
+                          || t.targetAgentTypes().isEmpty()
+                          || t.targetAgentTypes().contains(agentType))
               .toList();
 
       if (available.isEmpty()) {

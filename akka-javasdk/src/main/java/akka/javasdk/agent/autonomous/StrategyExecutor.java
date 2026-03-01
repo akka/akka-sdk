@@ -286,7 +286,9 @@ public final class StrategyExecutor extends Agent {
 
       userMessage.append(
           "\n\nYou can form and manage a team. Use createTeam to set up a team and task list,");
-      userMessage.append(" addTeamMember to add members, addTask to add tasks to the shared list,");
+      userMessage.append(
+          " addTeamMember to add members, addTask to add tasks to the shared list"
+              + " (specify agentType, instructions, and optionally templateParams),");
       userMessage.append(" getTeamStatus to monitor progress, and disbandTeam when all work is");
       userMessage.append(" done (disband before completing your own task). Available agent types:");
       for (var config : teamConfigs) {
@@ -297,6 +299,36 @@ public final class StrategyExecutor extends Agent {
             .append(config.description());
         if (config.maxMembers() > 0) {
           userMessage.append(" (max ").append(config.maxMembers()).append(")");
+        }
+
+        var acceptedTasks = config.acceptedTasks();
+        if (acceptedTasks != null && !acceptedTasks.isEmpty()) {
+          for (var task : acceptedTasks) {
+            var shortType =
+                task.resultTypeName().contains(".")
+                    ? task.resultTypeName().substring(task.resultTypeName().lastIndexOf('.') + 1)
+                    : task.resultTypeName();
+            userMessage
+                .append("\n  Accepted task: \"")
+                .append(task.description())
+                .append("\" → ")
+                .append(shortType);
+            if (task.instructionTemplate() != null) {
+              userMessage
+                  .append("\n  Template: \"")
+                  .append(task.instructionTemplate())
+                  .append("\"");
+              var paramNames = new ArrayList<String>();
+              var matcher =
+                  java.util.regex.Pattern.compile("\\{(\\w+)}").matcher(task.instructionTemplate());
+              while (matcher.find()) {
+                paramNames.add(matcher.group(1));
+              }
+              if (!paramNames.isEmpty()) {
+                userMessage.append("\n  Parameters: ").append(String.join(", ", paramNames));
+              }
+            }
+          }
         }
       }
 
@@ -334,7 +366,11 @@ public final class StrategyExecutor extends Agent {
     if (!taskListConfigs.isEmpty()) {
       var taskListConfig = taskListConfigs.getFirst();
       allTools.add(
-          new TaskListTools(componentClient, taskListConfig.taskListId(), request.workflowId()));
+          new TaskListTools(
+              componentClient,
+              taskListConfig.taskListId(),
+              taskListConfig.agentType(),
+              request.workflowId()));
 
       userMessage.append(
           "\n\nYou have access to a shared task list. Use listAvailableTasks to see work,");

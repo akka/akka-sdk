@@ -2,7 +2,6 @@ package demo.devteam.application;
 
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.annotations.Component;
-import demo.devteam.application.ProjectTasks;
 
 @Component(id = "developer")
 public class Developer extends AutonomousAgent {
@@ -10,7 +9,7 @@ public class Developer extends AutonomousAgent {
   @Override
   public Strategy configure() {
     return strategy()
-      .accepts(ProjectTasks.PLAN)
+      .accepts(DeveloperTasks.IMPLEMENT)
       .instructions(
         """
         You are a developer. Claim tasks, implement them using your code tools, \
