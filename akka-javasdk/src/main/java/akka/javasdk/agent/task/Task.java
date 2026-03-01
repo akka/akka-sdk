@@ -75,6 +75,20 @@ public final class Task<R> implements TaskDef<R> {
     return new Task<>(this.description, this.resultType, instructions);
   }
 
+  /**
+   * Create a {@link TaskTemplate} from this task definition with a parameterized instruction
+   * template. Template parameters use {@code {paramName}} syntax.
+   *
+   * <pre>{@code
+   * public static final TaskTemplate<ResearchBrief> BRIEF =
+   *     Task.of("Produce a research brief", ResearchBrief.class)
+   *         .instructionTemplate("Research {topic}. Focus area: {focus}.");
+   * }</pre>
+   */
+  public TaskTemplate<R> instructionTemplate(String template) {
+    return new TaskTemplate<>(this.description, this.resultType, template);
+  }
+
   @Override
   public TaskRef<R> ref(String taskId) {
     return new TaskRef<>(taskId, description, resultType);

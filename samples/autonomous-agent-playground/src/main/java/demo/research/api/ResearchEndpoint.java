@@ -6,13 +6,15 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import demo.research.application.BriefCoordinator;
+import demo.research.application.ResearchBrief;
 import demo.research.application.ResearchTasks;
+import java.util.Map;
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/research")
 public class ResearchEndpoint {
 
-  public record CreateBrief(String topic) {}
+  public record CreateBrief(String topic, String focus) {}
 
   public record BriefResponse(String id) {}
 
@@ -28,7 +30,9 @@ public class ResearchEndpoint {
   public BriefResponse create(CreateBrief request) {
     var ref = componentClient
       .forAutonomousAgent(BriefCoordinator.class)
-      .runSingleTask(ResearchTasks.BRIEF.instructions(request.topic()));
+      .runSingleTask(
+        ResearchTasks.BRIEF.params(Map.of("topic", request.topic(), "focus", request.focus()))
+      );
 
     return new BriefResponse(ref.taskId());
   }

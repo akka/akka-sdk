@@ -6,8 +6,11 @@ package akka.javasdk.agent.autonomous;
 
 import akka.annotation.InternalApi;
 import akka.javasdk.agent.task.TaskDef;
+import akka.javasdk.agent.task.TaskTemplate;
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * An autonomous agent that combines an LLM-based decision loop with durable execution.
@@ -90,6 +93,9 @@ public abstract class AutonomousAgent {
 
   /** Builder for delegation capabilities. */
   public static final class DelegationBuilder implements CapabilityBuilder {
+
+    private static final Logger log = LoggerFactory.getLogger(DelegationBuilder.class);
+
     private final List<AgentRef> agents;
 
     DelegationBuilder(AgentRef... agents) {
@@ -100,13 +106,38 @@ public abstract class AutonomousAgent {
     public List<Capability> build() {
       return agents.stream()
           .map(
-              a ->
-                  (Capability)
-                      new DelegationCapability(
-                          a.agentClass().getName(),
-                          a.agentClass().getSimpleName().toLowerCase(),
-                          a.description()))
+              a -> {
+                var acceptedTasks = readAcceptedTasks(a);
+                return (Capability)
+                    new DelegationCapability(
+                        a.agentClass().getName(),
+                        a.agentClass().getSimpleName().toLowerCase(),
+                        a.description(),
+                        acceptedTasks);
+              })
           .toList();
+    }
+
+    private List<DelegationCapability.AcceptedTaskInfo> readAcceptedTasks(AgentRef agentRef) {
+      try {
+        var agent = agentRef.agentClass().getDeclaredConstructor().newInstance();
+        var strategy = agent.configure().toView();
+        return strategy.acceptedTasks().stream()
+            .map(
+                taskDef -> {
+                  var template =
+                      (taskDef instanceof TaskTemplate<?> t) ? t.instructionTemplate() : null;
+                  return new DelegationCapability.AcceptedTaskInfo(
+                      taskDef.description(), taskDef.resultType().getName(), template);
+                })
+            .toList();
+      } catch (Exception e) {
+        log.warn(
+            "Could not read accepted tasks from {}: {}",
+            agentRef.agentClass().getSimpleName(),
+            e.getMessage());
+        return List.of();
+      }
     }
   }
 

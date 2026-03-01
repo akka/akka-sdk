@@ -208,13 +208,44 @@ public final class StrategyExecutor extends Agent {
 
       userMessage.append(
           "\n\nYou can delegate subtasks to specialist agents using the delegate tool.");
-      userMessage.append(" Available agents:");
+      userMessage.append(" Available agents for delegation:");
       for (var config : delegationConfigs) {
         userMessage
             .append("\n- ")
             .append(config.agentComponentId())
             .append(": ")
             .append(config.description());
+
+        var acceptedTasks = config.acceptedTasks();
+        if (acceptedTasks != null && !acceptedTasks.isEmpty()) {
+          for (var task : acceptedTasks) {
+            var shortType =
+                task.resultTypeName().contains(".")
+                    ? task.resultTypeName().substring(task.resultTypeName().lastIndexOf('.') + 1)
+                    : task.resultTypeName();
+            userMessage
+                .append("\n  Accepted task: \"")
+                .append(task.description())
+                .append("\" → ")
+                .append(shortType);
+            if (task.instructionTemplate() != null) {
+              userMessage
+                  .append("\n  Template: \"")
+                  .append(task.instructionTemplate())
+                  .append("\"");
+              // Extract param names for clarity
+              var paramNames = new ArrayList<String>();
+              var matcher =
+                  java.util.regex.Pattern.compile("\\{(\\w+)}").matcher(task.instructionTemplate());
+              while (matcher.find()) {
+                paramNames.add(matcher.group(1));
+              }
+              if (!paramNames.isEmpty()) {
+                userMessage.append("\n  Parameters: ").append(String.join(", ", paramNames));
+              }
+            }
+          }
+        }
       }
     }
 

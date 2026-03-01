@@ -10,7 +10,9 @@ import akka.javasdk.agent.task.TaskStatus;
 import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.client.ComponentClient;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,10 +21,14 @@ import org.slf4j.LoggerFactory;
  *
  * <p>Delegations run synchronously within the agent's tool call loop. The delegate tool creates a
  * subtask, starts a worker agent, and polls until the worker completes before returning.
+ *
+ * <p>When the target agent has accepted task definitions, the delegation creates properly typed
+ * tasks with the correct result type and resolved instruction templates.
  */
 public class DelegationTools {
 
   private static final Logger log = LoggerFactory.getLogger(DelegationTools.class);
+  private static final Pattern PARAM_PATTERN = Pattern.compile("\\{(\\w+)}");
 
   private static final long POLL_INTERVAL_MS = 1000;
   private static final long POLL_TIMEOUT_MS = 4 * 60 * 1000; // 4 minutes
@@ -37,9 +43,9 @@ public class DelegationTools {
 
   @FunctionTool(
       description =
-          "Delegate a subtask to a specialist agent. Specify the agent ID and a description"
-              + " of the subtask. The agent will work on the subtask and return the result.")
-  public String delegate(String agent, String taskDescription) {
+          "Delegate a subtask to a specialist agent. Provide the agent ID and instructions."
+              + " If the agent's task has a template, provide template parameters as a map.")
+  public String delegate(String agent, String instructions, Map<String, String> templateParams) {
     var config =
         configs.stream().filter(c -> c.agentComponentId().equals(agent)).findFirst().orElse(null);
 
@@ -53,11 +59,38 @@ public class DelegationTools {
     var subtaskId = UUID.randomUUID().toString();
     var workerInstanceId = config.agentComponentId() + "-" + subtaskId;
 
-    // Create subtask
+    // Resolve task description, instructions, and result type from accepted task definitions
+    var taskDescription = instructions;
+    String taskInstructions = null;
+    String resultTypeName = null;
+
+    var acceptedTasks = config.acceptedTasks();
+    if (acceptedTasks != null && !acceptedTasks.isEmpty()) {
+      // Use the first accepted task definition
+      var acceptedTask = acceptedTasks.getFirst();
+      taskDescription = acceptedTask.description();
+      resultTypeName = acceptedTask.resultTypeName();
+
+      // Resolve template if available and params provided
+      if (acceptedTask.instructionTemplate() != null
+          && templateParams != null
+          && !templateParams.isEmpty()) {
+        taskInstructions = resolveTemplate(acceptedTask.instructionTemplate(), templateParams);
+      } else {
+        taskInstructions = instructions;
+      }
+    }
+
+    // Create subtask with typed result
     componentClient
         .forEventSourcedEntity(subtaskId)
         .method(TaskEntity::create)
-        .invoke(new TaskEntity.CreateRequest(taskDescription, null));
+        .invoke(
+            new TaskEntity.CreateRequest(
+                taskDescription,
+                taskInstructions,
+                resultTypeName != null ? resultTypeName : "",
+                List.of()));
 
     // Start worker agent and assign as single task (auto-stops when done)
     try {
@@ -87,6 +120,17 @@ public class DelegationTools {
           + " finished with status: "
           + subtaskState.status();
     }
+  }
+
+  private String resolveTemplate(String template, Map<String, String> params) {
+    var resolved = template;
+    var matcher = PARAM_PATTERN.matcher(template);
+    while (matcher.find()) {
+      var paramName = matcher.group(1);
+      var value = params.getOrDefault(paramName, "{" + paramName + "}");
+      resolved = resolved.replace("{" + paramName + "}", value);
+    }
+    return resolved;
   }
 
   // Prototype only — the runtime will handle delegation completion natively without polling.
