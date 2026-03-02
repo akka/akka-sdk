@@ -500,6 +500,10 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`Mode
 | Integer
 | Retry this many times if the request to the model fails
 
+| additional-model-request-headers
+| List of String
+| Additional HTTP headers to include in each request to the model API, as a list of `"name:value"` strings. Can also be set via `ADDITIONAL_VERTEX_AI_REQUEST_HEADERS_N` environment variables
+
 |===
 
 See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.VertexAi.html[`ModelProvider.VertexAi`] for programmatic settings.
@@ -572,6 +576,7 @@ You can also set headers for a specific model provider using provider-specific e
 | Anthropic | `ADDITIONAL_ANTHROPIC_REQUEST_HEADERS_N`
 | OpenAI | `ADDITIONAL_OPENAI_REQUEST_HEADERS_N`
 | Google AI Gemini | `ADDITIONAL_GOOGLE_AI_GEMINI_REQUEST_HEADERS_N`
+| Google Cloud Vertex AI | `ADDITIONAL_VERTEX_AI_REQUEST_HEADERS_N`
 | Ollama | `ADDITIONAL_OLLAMA_REQUEST_HEADERS_N`
 | Local AI | `ADDITIONAL_LOCAL_AI_REQUEST_HEADERS_N`
 | Hugging Face | `ADDITIONAL_HUGGING_FACE_REQUEST_HEADERS_N`

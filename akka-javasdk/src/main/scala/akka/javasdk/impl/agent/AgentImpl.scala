@@ -706,7 +706,11 @@ private[impl] final class AgentImpl[A <: Agent](
           baseUrl = p.baseUrl,
           apiVersion = p.apiVersion,
           modelSettings =
-            new SpiAgent.ModelSettings(p.connectionTimeout().toScala, p.responseTimeout().toScala, p.maxRetries()),
+            new SpiAgent.ModelSettings(
+              p.connectionTimeout().toScala,
+              p.responseTimeout().toScala,
+              p.maxRetries(),
+              p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq),
           temperature = p.temperature,
           topP = p.topP,
           thinkingBudget = p.thinkingBudget,
