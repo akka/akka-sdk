@@ -17,6 +17,7 @@ Current versions
 - Token usage tracking in session memory
 - Agent reply wrapper in component client
 - Protobuf serialization support
+- Custom model request headers
 
 == February 2026
 
