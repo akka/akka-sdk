@@ -83,3 +83,43 @@ akka service deploy helloworld-agent helloworld-agent:tag-name --push \
 ```
 
 Refer to [Deploy and manage services](https://doc.akka.io/operations/services/deploy-service.html) for more information.
+
+---
+
+## Spec-Driven Development (SDD)
+
+Spec-Driven Development (SDD) is an AI-assisted coding paradigm where structured, natural-language specifications serve as the executable source of truth. Instead of writing code directly, developers use tools like GitHub Spec Kit to define architectural intent and guide AI agents through a strict, multi-phase implementation pipeline. By iterating on these living specifications rather than the raw codebase, this project rapidly generates features while maintaining strict alignment with system constraints.
+
+### Specification artifacts
+
+The `specs/` directory contains the SDD artifacts for this application:
+
+- `specs/001-hello-world-agent/spec.md` — Feature specification (what and why)
+- `specs/001-hello-world-agent/plan.md` — Implementation plan (architecture and components)
+- `specs/001-hello-world-agent/tasks.md` — Implementation tasks (step-by-step checklist)
+- `specs/001-hello-world-agent/research.md` — Research decisions
+- `specs/001-hello-world-agent/contracts/http-api.md` — HTTP API contract
+- `specs/001-hello-world-agent/quickstart.md` — Setup and curl examples
+
+### Speckit commands
+
+The following `/speckit` slash commands are available in Claude Code for iterating on specifications and adding new features:
+
+| Command | Description |
+|---------|-------------|
+| `/speckit.specify <description>` | Create or update a feature specification from a natural language description |
+| `/speckit.clarify` | Identify underspecified areas in the spec and ask targeted clarification questions |
+| `/speckit.plan` | Generate an implementation plan from the specification |
+| `/speckit.tasks` | Generate actionable, dependency-ordered tasks from the plan |
+| `/speckit.analyze` | Cross-artifact consistency and quality analysis across spec, plan, and tasks |
+| `/speckit.implement` | Execute the implementation plan by processing tasks in tasks.md |
+| `/speckit.checklist` | Generate a custom checklist for the current feature |
+| `/speckit.constitution` | Create or update the project constitution |
+
+### Exercise: Re-implement from specs
+
+As an exercise, you can re-implement this application entirely from the specifications:
+
+1. Remove all source files: `rm -rf src/`
+2. Uncheck all tasks in `specs/001-hello-world-agent/tasks.md` (reset checkboxes to `- [ ]`)
+3. Run `/speckit.implement` in Claude Code to generate the implementation from the specs
