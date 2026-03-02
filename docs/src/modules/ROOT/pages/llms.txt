@@ -58,11 +58,10 @@
 
 ## Optional
 
-- [TLS certificates](https://doc.akka.io/security/tls-certificates.html.md): Guide to configuring and managing TLS certificates for secure communications in Akka services.
-- [Access Control List concepts](https://doc.akka.io/security/acls.html.md): Core concepts behind Access Control Lists and how they secure Akka services.
+- [TLS certificates](https://doc.akka.io/operations/tls-certificates.html.md): Guide to configuring and managing TLS certificates for secure communications in Akka services.
+- [Access Control List concepts](https://doc.akka.io/concepts/acls.html.md): Core concepts behind Access Control Lists and how they secure Akka services.
 - [Developing Access Control Lists (ACLs)](https://doc.akka.io/sdk/access-control.html.md): Implementing ACLs to control access to your Akka service endpoints.
-- [Securing](https://doc.akka.io/security/index.html.md): Overview of security features and best practices for Akka services.
-- [JSON Web Tokens (JWTs)](https://doc.akka.io/security/jwts.html.md): Understanding JWT concepts and their role in Akka authentication.
+- [JSON Web Tokens (JWTs)](https://doc.akka.io/reference/jwts.html.md): Understanding JWT concepts and their role in Akka authentication.
 - [Developing JSON Web Tokens (JWT)](https://doc.akka.io/sdk/auth-with-jwts.html.md): Implementing JWT-based authentication in your Akka services.
 - [Message broker integrations](https://doc.akka.io/sdk/message-brokers.html.md): Connecting Akka services with external message brokers for reliable communication.
 - [Streaming](https://doc.akka.io/sdk/streaming.html.md): Working with streaming data in Akka applications.
