@@ -6,8 +6,8 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import demo.debate.application.DebateModerator;
-import demo.debate.application.DebateTasks;
 import demo.debate.application.DebateResult;
+import demo.debate.application.DebateTasks;
 
 /**
  * Structured debate with messaging-driven collaboration.

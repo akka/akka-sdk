@@ -18,7 +18,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
  *   <li>{@link TeamCapability} — form and manage teams of autonomous agents
  *   <li>{@link TaskListCapability} — interact with a shared task list
  *   <li>{@link MessageCapability} — send and receive messages with team members
- *   <li>{@link ExternalInputCapability} — request external input (approval, clarification, etc.)
  * </ul>
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@type")
@@ -27,13 +26,11 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
   @JsonSubTypes.Type(value = HandoffCapability.class, name = "handoff"),
   @JsonSubTypes.Type(value = TeamCapability.class, name = "team"),
   @JsonSubTypes.Type(value = TaskListCapability.class, name = "taskList"),
-  @JsonSubTypes.Type(value = MessageCapability.class, name = "message"),
-  @JsonSubTypes.Type(value = ExternalInputCapability.class, name = "externalInput")
+  @JsonSubTypes.Type(value = MessageCapability.class, name = "message")
 })
 public sealed interface Capability
     permits DelegationCapability,
         HandoffCapability,
         TeamCapability,
         TaskListCapability,
-        MessageCapability,
-        ExternalInputCapability {}
+        MessageCapability {}

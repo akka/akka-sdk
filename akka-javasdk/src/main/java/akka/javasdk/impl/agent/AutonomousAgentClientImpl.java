@@ -47,7 +47,8 @@ public final class AutonomousAgentClientImpl implements AutonomousAgentClient {
                 task.instructions(),
                 task.resultType().getName(),
                 List.of(),
-                contentRefs));
+                contentRefs,
+                task.policyClassNames()));
     assignSingleTask(taskId);
     return task.ref(taskId);
   }

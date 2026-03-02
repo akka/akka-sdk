@@ -10,23 +10,26 @@ import demo.compliance.application.ComplianceTasks;
 import demo.compliance.application.ComplianceTriageAgent;
 
 /**
- * Compliance review pipeline with handoff and human approval.
+ * Compliance review pipeline with handoff and policy-driven approval.
+ *
+ * <p>The {@link demo.compliance.application.ComplianceApprovalPolicy} requires officer sign-off for
+ * high-risk reports. Low-risk reports complete automatically.
  *
  * <p>Usage:
  *
  * <pre>
- * # Submit a low-risk review (handled directly)
+ * # Submit a low-risk review (completes automatically)
  * curl -X POST localhost:9000/compliance -H "Content-Type: application/json" \
  *   -d '{"request": "Annual policy review for office safety procedures"}'
  *
- * # Submit a high-risk review (triggers handoff + approval)
+ * # Submit a high-risk review (triggers handoff + policy approval)
  * curl -X POST localhost:9000/compliance -H "Content-Type: application/json" \
  *   -d '{"request": "Data breach investigation for financial records system"}'
  *
- * # Check status (will show WAITING_FOR_INPUT when officer approval is needed)
+ * # Check status (will show AWAITING_APPROVAL when officer sign-off is needed)
  * curl localhost:9000/compliance/{id}
  *
- * # Approve (when status shows WAITING_FOR_INPUT)
+ * # Approve
  * curl -X POST localhost:9000/compliance/{id}/approve
  *
  * # Or reject
@@ -45,8 +48,7 @@ public class ComplianceEndpoint {
   public record ComplianceStatusResponse(
     String status,
     ComplianceReport result,
-    String pendingQuestion,
-    String pendingDecisionId
+    String approvalReason
   ) {}
 
   public record RejectRequest(String reason) {}
@@ -74,29 +76,19 @@ public class ComplianceEndpoint {
     return new ComplianceStatusResponse(
       task.status().name(),
       task.result(),
-      task.pendingDecisionQuestion(),
-      task.pendingDecisionId()
+      task.approvalReason()
     );
   }
 
   @Post("/{id}/approve")
   public ComplianceStatusResponse approve(String id) {
-    var task = componentClient.forTask(ComplianceTasks.REVIEW.ref(id)).get();
-    componentClient
-      .forTask(ComplianceTasks.REVIEW.ref(id))
-      .provideInput(task.pendingDecisionId(), "Approved by compliance officer. Proceed.");
-    return new ComplianceStatusResponse("APPROVED", null, null, null);
+    componentClient.forTask(ComplianceTasks.REVIEW.ref(id)).approve();
+    return new ComplianceStatusResponse("APPROVED", null, null);
   }
 
   @Post("/{id}/reject")
   public ComplianceStatusResponse reject(String id, RejectRequest request) {
-    var task = componentClient.forTask(ComplianceTasks.REVIEW.ref(id)).get();
-    componentClient
-      .forTask(ComplianceTasks.REVIEW.ref(id))
-      .provideInput(
-        task.pendingDecisionId(),
-        "Rejected by compliance officer: " + request.reason()
-      );
-    return new ComplianceStatusResponse("REJECTED_WITH_FEEDBACK", null, null, null);
+    componentClient.forTask(ComplianceTasks.REVIEW.ref(id)).reject(request.reason());
+    return new ComplianceStatusResponse("REJECTED", null, null);
   }
 }

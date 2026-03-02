@@ -207,24 +207,6 @@ public abstract class AutonomousAgent {
     return new TeamBuilder(members);
   }
 
-  /** Builder for external input capabilities. */
-  public static final class ExternalInputBuilder implements CapabilityBuilder {
-    ExternalInputBuilder() {}
-
-    @Override
-    public List<Capability> build() {
-      return List.of(new ExternalInputCapability());
-    }
-  }
-
-  /**
-   * Create an external input capability — the agent can pause and request input from external
-   * parties (human approval, another agent, or any external system).
-   */
-  public static ExternalInputBuilder externalInput() {
-    return new ExternalInputBuilder();
-  }
-
   /** Entry point for building a strategy. */
   public final Strategy strategy() {
     return new Strategy();

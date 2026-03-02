@@ -1,16 +1,16 @@
 /**
- * Compliance Review — handoff + decision points composition.
+ * Compliance Review — handoff + policy-driven approval.
  *
  * <p>A triage agent classifies incoming compliance requests by risk level. Low-risk items are
- * handled directly; high-risk items are handed off to a specialist risk assessor. The risk assessor
- * performs a detailed assessment and requests human sign-off from a compliance officer before
- * completing. Demonstrates composing sequential handoff with human-in-the-loop decision points.
+ * handled directly; high-risk items are handed off to a specialist risk assessor. The {@link
+ * demo.compliance.application.ComplianceApprovalPolicy} requires officer sign-off for high-risk
+ * reports. Demonstrates composing sequential handoff with deterministic task policies.
  *
- * <p><b>Capabilities demonstrated:</b> Handoff (risk-based routing), decision points
- * (requestDecision for officer approval), handoff + decision point composition.
+ * <p><b>Capabilities demonstrated:</b> Handoff (risk-based routing), task policies (conditional
+ * approval based on risk level), handoff + policy composition.
  *
  * <p><b>Agents:</b> ComplianceTriageAgent (classifies, hands off) → RiskAssessor (deep analysis,
- * requests approval).
+ * policy-gated completion).
  *
  * <p><b>See:</b> {@code http/compliance.http} for example requests.
  */

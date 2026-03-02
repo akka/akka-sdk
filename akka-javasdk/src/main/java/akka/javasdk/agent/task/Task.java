@@ -40,16 +40,19 @@ public final class Task<R> implements TaskDef<R> {
   private final Class<R> resultType;
   private final String instructions;
   private final List<MessageContent> attachments;
+  private final List<String> policyClassNames;
 
   private Task(
       String description,
       Class<R> resultType,
       String instructions,
-      List<MessageContent> attachments) {
+      List<MessageContent> attachments,
+      List<String> policyClassNames) {
     this.description = description;
     this.resultType = resultType;
     this.instructions = instructions;
     this.attachments = attachments;
+    this.policyClassNames = policyClassNames;
   }
 
   /**
@@ -59,7 +62,7 @@ public final class Task<R> implements TaskDef<R> {
    * @param resultType the expected result type
    */
   public static <R> Task<R> of(String description, Class<R> resultType) {
-    return new Task<>(description, resultType, null, List.of());
+    return new Task<>(description, resultType, null, List.of(), List.of());
   }
 
   @Override
@@ -82,7 +85,8 @@ public final class Task<R> implements TaskDef<R> {
    * unchanged.
    */
   public Task<R> instructions(String instructions) {
-    return new Task<>(this.description, this.resultType, instructions, this.attachments);
+    return new Task<>(
+        this.description, this.resultType, instructions, this.attachments, this.policyClassNames);
   }
 
   /** Content attached to this task (images, PDFs), or an empty list. */
@@ -94,14 +98,44 @@ public final class Task<R> implements TaskDef<R> {
   public Task<R> attach(MessageContent content) {
     var updated = new ArrayList<>(this.attachments);
     updated.add(content);
-    return new Task<>(this.description, this.resultType, this.instructions, List.copyOf(updated));
+    return new Task<>(
+        this.description,
+        this.resultType,
+        this.instructions,
+        List.copyOf(updated),
+        this.policyClassNames);
   }
 
   /** Return a new task with the given content items attached. */
   public Task<R> attach(MessageContent... content) {
     var updated = new ArrayList<>(this.attachments);
     updated.addAll(List.of(content));
-    return new Task<>(this.description, this.resultType, this.instructions, List.copyOf(updated));
+    return new Task<>(
+        this.description,
+        this.resultType,
+        this.instructions,
+        List.copyOf(updated),
+        this.policyClassNames);
+  }
+
+  /** Policy class names attached to this task, or an empty list. */
+  public List<String> policyClassNames() {
+    return policyClassNames;
+  }
+
+  /**
+   * Return a new task with the given policy attached. Policies are evaluated by the framework at
+   * task lifecycle boundaries (assignment and completion).
+   */
+  public Task<R> policy(Class<? extends TaskPolicy<R>> policyClass) {
+    var updated = new ArrayList<>(this.policyClassNames);
+    updated.add(policyClass.getName());
+    return new Task<>(
+        this.description,
+        this.resultType,
+        this.instructions,
+        this.attachments,
+        List.copyOf(updated));
   }
 
   /**

@@ -10,7 +10,10 @@ import demo.editorial.application.EditorialTasks;
 import demo.editorial.application.Publication;
 
 /**
- * Editorial workflow with team coordination and human approval.
+ * Editorial workflow with team coordination and policy-driven approval.
+ *
+ * <p>The {@link demo.editorial.application.PublicationApprovalPolicy} requires editorial approval
+ * before any publication can be finalised.
  *
  * <p>Usage:
  *
@@ -19,13 +22,13 @@ import demo.editorial.application.Publication;
  * curl -X POST localhost:9000/editorial -H "Content-Type: application/json" \
  *   -d '{"topic": "The Future of Remote Work"}'
  *
- * # Check status (will show WAITING_FOR_INPUT when approval is needed)
+ * # Check status (will show AWAITING_APPROVAL when ready for review)
  * curl localhost:9000/editorial/{id}
  *
  * # Approve the publication
  * curl -X POST localhost:9000/editorial/{id}/approve
  *
- * # Or reject with feedback
+ * # Or reject (task fails)
  * curl -X POST localhost:9000/editorial/{id}/reject -H "Content-Type: application/json" \
  *   -d '{"reason": "Needs stronger conclusion"}'
  * </pre>
@@ -41,8 +44,7 @@ public class EditorialEndpoint {
   public record EditorialStatusResponse(
     String status,
     Publication result,
-    String pendingQuestion,
-    String pendingDecisionId
+    String approvalReason
   ) {}
 
   public record RejectRequest(String reason) {}
@@ -72,29 +74,19 @@ public class EditorialEndpoint {
     return new EditorialStatusResponse(
       task.status().name(),
       task.result(),
-      task.pendingDecisionQuestion(),
-      task.pendingDecisionId()
+      task.approvalReason()
     );
   }
 
   @Post("/{id}/approve")
   public EditorialStatusResponse approve(String id) {
-    var task = componentClient.forTask(EditorialTasks.PUBLICATION.ref(id)).get();
-    componentClient
-      .forTask(EditorialTasks.PUBLICATION.ref(id))
-      .provideInput(task.pendingDecisionId(), "Approved. Publish the article.");
-    return new EditorialStatusResponse("APPROVED", null, null, null);
+    componentClient.forTask(EditorialTasks.PUBLICATION.ref(id)).approve();
+    return new EditorialStatusResponse("APPROVED", null, null);
   }
 
   @Post("/{id}/reject")
   public EditorialStatusResponse reject(String id, RejectRequest request) {
-    var task = componentClient.forTask(EditorialTasks.PUBLICATION.ref(id)).get();
-    componentClient
-      .forTask(EditorialTasks.PUBLICATION.ref(id))
-      .provideInput(
-        task.pendingDecisionId(),
-        "Rejected. Revise based on this feedback: " + request.reason()
-      );
-    return new EditorialStatusResponse("REJECTED_WITH_FEEDBACK", null, null, null);
+    componentClient.forTask(EditorialTasks.PUBLICATION.ref(id)).reject(request.reason());
+    return new EditorialStatusResponse("REJECTED", null, null);
   }
 }

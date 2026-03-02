@@ -10,7 +10,11 @@ import demo.publishing.application.ContentAgent;
 import demo.publishing.application.PublishingTasks;
 
 /**
- * Content publishing with human-in-the-loop approval.
+ * Content publishing with policy-driven approval.
+ *
+ * <p>The {@link demo.publishing.application.ArticleApprovalPolicy} requires editorial approval
+ * before any article can be published. When the agent completes the task, the policy intercepts
+ * and moves the task to AWAITING_APPROVAL status automatically.
  *
  * <p>Usage:
  *
@@ -19,13 +23,13 @@ import demo.publishing.application.PublishingTasks;
  * curl -X POST localhost:9000/publishing -H "Content-Type: application/json" \
  *   -d '{"topic": "AI in Healthcare"}'
  *
- * # Check status — will show WAITING_FOR_INPUT when approval is needed
+ * # Check status — will show AWAITING_APPROVAL when the article is ready for review
  * curl localhost:9000/publishing/{id}
  *
  * # Approve the article
  * curl -X POST localhost:9000/publishing/{id}/approve
  *
- * # Or reject with feedback
+ * # Or reject (task fails)
  * curl -X POST localhost:9000/publishing/{id}/reject -H "Content-Type: application/json" \
  *   -d '{"reason": "Too short, needs more detail on regulatory aspects"}'
  *
@@ -44,8 +48,7 @@ public class PublishingEndpoint {
   public record PublishingStatusResponse(
     String status,
     Article result,
-    String pendingQuestion,
-    String pendingDecisionId
+    String approvalReason
   ) {}
 
   public record RejectRequest(String reason) {}
@@ -75,31 +78,19 @@ public class PublishingEndpoint {
     return new PublishingStatusResponse(
       task.status().name(),
       task.result(),
-      task.pendingDecisionQuestion(),
-      task.pendingDecisionId()
+      task.approvalReason()
     );
   }
 
   @Post("/{id}/approve")
   public PublishingStatusResponse approve(String id) {
-    var task = componentClient.forTask(PublishingTasks.ARTICLE.ref(id)).get();
-    componentClient
-      .forTask(PublishingTasks.ARTICLE.ref(id))
-      .provideInput(task.pendingDecisionId(), "Approved. Proceed to publish the article.");
-
-    return new PublishingStatusResponse("APPROVED", null, null, null);
+    componentClient.forTask(PublishingTasks.ARTICLE.ref(id)).approve();
+    return new PublishingStatusResponse("APPROVED", null, null);
   }
 
   @Post("/{id}/reject")
   public PublishingStatusResponse reject(String id, RejectRequest request) {
-    var task = componentClient.forTask(PublishingTasks.ARTICLE.ref(id)).get();
-    componentClient
-      .forTask(PublishingTasks.ARTICLE.ref(id))
-      .provideInput(
-        task.pendingDecisionId(),
-        "Rejected. Please revise the article based on this feedback: " + request.reason()
-      );
-
-    return new PublishingStatusResponse("REJECTED_WITH_FEEDBACK", null, null, null);
+    componentClient.forTask(PublishingTasks.ARTICLE.ref(id)).reject(request.reason());
+    return new PublishingStatusResponse("REJECTED", null, null);
   }
 }

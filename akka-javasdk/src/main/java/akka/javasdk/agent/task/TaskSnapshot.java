@@ -11,9 +11,4 @@ package akka.javasdk.agent.task;
  * @param <R> The result type of the task.
  */
 public record TaskSnapshot<R>(
-    TaskStatus status,
-    String description,
-    String instructions,
-    R result,
-    String pendingDecisionId,
-    String pendingDecisionQuestion) {}
+    TaskStatus status, String description, String instructions, R result, String approvalReason) {}

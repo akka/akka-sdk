@@ -6,8 +6,8 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import demo.consulting.application.ConsultingCoordinator;
-import demo.consulting.application.ConsultingTasks;
 import demo.consulting.application.ConsultingResult;
+import demo.consulting.application.ConsultingTasks;
 
 /**
  * Consulting engagement with delegation + handoff.

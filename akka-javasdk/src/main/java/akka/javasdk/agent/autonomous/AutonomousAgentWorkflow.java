@@ -7,7 +7,10 @@ package akka.javasdk.agent.autonomous;
 import static java.time.Duration.ofSeconds;
 
 import akka.Done;
+import akka.javasdk.agent.task.PolicyResult;
+import akka.javasdk.agent.task.TaskAssignmentContext;
 import akka.javasdk.agent.task.TaskEntity;
+import akka.javasdk.agent.task.TaskPolicy;
 import akka.javasdk.agent.task.TaskState;
 import akka.javasdk.agent.task.TaskStatus;
 import akka.javasdk.annotations.Component;
@@ -130,6 +133,36 @@ public final class AutonomousAgentWorkflow extends Workflow<AutonomousAgentState
 
     var agentId = currentState().sessionId();
 
+    // Evaluate assignment policies before assigning
+    TaskState taskState =
+        componentClient.forEventSourcedEntity(taskId).method(TaskEntity::getState).invoke();
+    var policyClassNames = taskState.policyClassNames();
+    if (policyClassNames != null && !policyClassNames.isEmpty()) {
+      var ctx =
+          new TaskAssignmentContext(taskState.description(), taskState.instructions(), agentId);
+      for (String policyClassName : policyClassNames) {
+        try {
+          var policy = instantiatePolicy(policyClassName);
+          var policyResult = policy.onAssignment(ctx);
+          switch (policyResult) {
+            case PolicyResult.Deny deny -> {
+              return effects().error("Assignment denied by policy: " + deny.reason());
+            }
+            case PolicyResult.RequireApproval approval -> {
+              return effects()
+                  .error("Assignment denied (approval not supported): " + approval.reason());
+            }
+            case PolicyResult.Allow allow -> {
+              // continue to next policy
+            }
+          }
+        } catch (Exception e) {
+          log.error("Failed to evaluate assignment policy {}", policyClassName, e);
+          return effects().error("Assignment policy evaluation error: " + e.getMessage());
+        }
+      }
+    }
+
     // Assign and start the task
     componentClient.forEventSourcedEntity(taskId).method(TaskEntity::assign).invoke(agentId);
     componentClient.forEventSourcedEntity(taskId).method(TaskEntity::start).invoke();
@@ -215,8 +248,8 @@ public final class AutonomousAgentWorkflow extends Workflow<AutonomousAgentState
               null,
               null,
               null,
-              null,
-              state.contentLoaderClassName());
+              state.contentLoaderClassName(),
+              List.of());
       return effects().reply(request);
     }
 
@@ -241,17 +274,17 @@ public final class AutonomousAgentWorkflow extends Workflow<AutonomousAgentState
             state.capabilities(),
             taskState.resultTypeName(),
             taskState.handoffContext(),
-            taskState.lastDecisionResponse(),
             taskState.contentRefs(),
-            state.contentLoaderClassName());
+            state.contentLoaderClassName(),
+            taskState.policyClassNames());
     return effects().reply(request);
   }
 
   /**
-   * Resume the agent after external input was provided for a decision point. Called by TaskClient
-   * after writing the input to the TaskEntity.
+   * Resume the agent after a task approval or rejection. Called by TaskClient after calling
+   * approve() or reject() on the TaskEntity.
    */
-  public Effect<Done> resumeAfterInput() {
+  public Effect<Done> resumeAfterApproval() {
     if (currentState() == null) {
       return effects().error("Autonomous agent not started");
     }
@@ -259,9 +292,18 @@ public final class AutonomousAgentWorkflow extends Workflow<AutonomousAgentState
       return effects().error("No current task to resume");
     }
     log.info(
-        "Autonomous agent {} resuming after decision input for task {}",
+        "Autonomous agent {} resuming after approval for task {}",
         currentState().sessionId(),
         currentState().currentTaskId());
+    // Read updated task state to determine next step (approved → completed, rejected → failed)
+    var taskId = currentState().currentTaskId();
+    TaskState taskState =
+        componentClient.forEventSourcedEntity(taskId).method(TaskEntity::getState).invoke();
+
+    if (taskState.status() == TaskStatus.COMPLETED || taskState.status() == TaskStatus.FAILED) {
+      return moveToNextTaskFromCommand(currentState());
+    }
+    // Still in progress — continue iterating
     return effects().transitionTo(AutonomousAgentWorkflow::iterateStep).thenReply(Done.done());
   }
 
@@ -585,13 +627,13 @@ public final class AutonomousAgentWorkflow extends Workflow<AutonomousAgentState
       return moveToNextTaskFromCommand(state);
     }
 
-    // Check if the agent requested a decision (human-in-the-loop)
-    if (updatedTaskState.status() == TaskStatus.WAITING_FOR_INPUT) {
+    // Check if a policy requires external approval
+    if (updatedTaskState.status() == TaskStatus.AWAITING_APPROVAL) {
       log.info(
-          "Autonomous agent {} task {} waiting for decision input (decision: {})",
+          "Autonomous agent {} task {} awaiting approval: {}",
           state.sessionId(),
           taskId,
-          updatedTaskState.pendingDecisionId());
+          updatedTaskState.approvalReason());
       return effects().updateState(state).pause().thenReply(Done.done());
     }
 
@@ -744,6 +786,17 @@ public final class AutonomousAgentWorkflow extends Workflow<AutonomousAgentState
                   .method(AutonomousAgentWorkflow::retryDependencyCheck)
                   .deferred());
       return stepEffects().updateState(requeued).thenPause();
+    }
+  }
+
+  /** Instantiate a policy class using the same pattern as tool classes. */
+  private TaskPolicy<?> instantiatePolicy(String className) throws Exception {
+    var clz = Class.forName(className).asSubclass(TaskPolicy.class);
+    try {
+      var ctor = clz.getDeclaredConstructor(ComponentClient.class);
+      return ctor.newInstance(componentClient);
+    } catch (NoSuchMethodException e) {
+      return clz.getDeclaredConstructor().newInstance();
     }
   }
 

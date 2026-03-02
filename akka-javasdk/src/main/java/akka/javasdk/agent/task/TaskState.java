@@ -17,12 +17,11 @@ public record TaskState(
     String resultTypeName,
     String result,
     List<String> handoffContext,
-    String pendingDecisionId,
-    String pendingDecisionQuestion,
-    String pendingDecisionType,
-    String lastDecisionResponse,
     List<String> dependencyTaskIds,
-    List<ContentRef> contentRefs) {
+    List<ContentRef> contentRefs,
+    List<String> policyClassNames,
+    String pendingApprovalResult,
+    String approvalReason) {
 
   public static TaskState empty() {
     return new TaskState(
@@ -34,12 +33,11 @@ public record TaskState(
         null,
         null,
         List.of(),
-        null,
-        null,
-        null,
-        null,
         List.of(),
-        List.of());
+        List.of(),
+        List.of(),
+        null,
+        null);
   }
 
   public TaskState withStatus(TaskStatus status) {
@@ -52,12 +50,11 @@ public record TaskState(
         resultTypeName,
         result,
         handoffContext,
-        pendingDecisionId,
-        pendingDecisionQuestion,
-        pendingDecisionType,
-        lastDecisionResponse,
         dependencyTaskIds,
-        contentRefs);
+        contentRefs,
+        policyClassNames,
+        pendingApprovalResult,
+        approvalReason);
   }
 
   public TaskState withAssignee(String assignee) {
@@ -70,12 +67,11 @@ public record TaskState(
         resultTypeName,
         result,
         handoffContext,
-        pendingDecisionId,
-        pendingDecisionQuestion,
-        pendingDecisionType,
-        lastDecisionResponse,
         dependencyTaskIds,
-        contentRefs);
+        contentRefs,
+        policyClassNames,
+        pendingApprovalResult,
+        approvalReason);
   }
 
   public TaskState withResult(String result) {
@@ -88,12 +84,11 @@ public record TaskState(
         resultTypeName,
         result,
         handoffContext,
-        pendingDecisionId,
-        pendingDecisionQuestion,
-        pendingDecisionType,
-        lastDecisionResponse,
         dependencyTaskIds,
-        contentRefs);
+        contentRefs,
+        policyClassNames,
+        pendingApprovalResult,
+        approvalReason);
   }
 
   public TaskState withHandoff(String newAssignee, String context) {
@@ -108,47 +103,61 @@ public record TaskState(
         resultTypeName,
         result,
         updated,
-        pendingDecisionId,
-        pendingDecisionQuestion,
-        pendingDecisionType,
-        lastDecisionResponse,
         dependencyTaskIds,
-        contentRefs);
+        contentRefs,
+        policyClassNames,
+        pendingApprovalResult,
+        approvalReason);
   }
 
-  public TaskState withDecisionRequested(String decisionId, String question, String decisionType) {
+  public TaskState withApprovalRequested(String pendingResult, String reason) {
     return new TaskState(
         taskId,
         description,
         instructions,
-        TaskStatus.WAITING_FOR_INPUT,
+        TaskStatus.AWAITING_APPROVAL,
         assignee,
         resultTypeName,
         result,
         handoffContext,
-        decisionId,
-        question,
-        decisionType,
-        lastDecisionResponse,
         dependencyTaskIds,
-        contentRefs);
+        contentRefs,
+        policyClassNames,
+        pendingResult,
+        reason);
   }
 
-  public TaskState withInputProvided(String decisionId, String response) {
+  public TaskState withApproved() {
     return new TaskState(
         taskId,
         description,
         instructions,
-        TaskStatus.IN_PROGRESS,
+        TaskStatus.COMPLETED,
         assignee,
         resultTypeName,
-        result,
+        pendingApprovalResult,
         handoffContext,
-        null,
-        null,
-        null,
-        response,
         dependencyTaskIds,
-        contentRefs);
+        contentRefs,
+        policyClassNames,
+        null,
+        null);
+  }
+
+  public TaskState withRejected(String reason) {
+    return new TaskState(
+        taskId,
+        description,
+        instructions,
+        TaskStatus.FAILED,
+        assignee,
+        resultTypeName,
+        reason,
+        handoffContext,
+        dependencyTaskIds,
+        contentRefs,
+        policyClassNames,
+        null,
+        null);
   }
 }

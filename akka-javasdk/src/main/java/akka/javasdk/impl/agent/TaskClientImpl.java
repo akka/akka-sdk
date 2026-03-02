@@ -94,16 +94,12 @@ public final class TaskClientImpl<R> implements TaskClient<R> {
         state.description(),
         state.instructions(),
         typedResult,
-        state.pendingDecisionId(),
-        state.pendingDecisionQuestion());
+        state.approvalReason());
   }
 
   @Override
-  public Done provideInput(String decisionId, String response) {
-    componentClient
-        .forEventSourcedEntity(taskId)
-        .method(TaskEntity::provideInput)
-        .invoke(new TaskEntity.InputResponse(decisionId, response));
+  public Done approve() {
+    componentClient.forEventSourcedEntity(taskId).method(TaskEntity::approve).invoke();
 
     var taskState =
         componentClient.forEventSourcedEntity(taskId).method(TaskEntity::getState).invoke();
@@ -112,10 +108,30 @@ public final class TaskClientImpl<R> implements TaskClient<R> {
     if (assignee != null && !assignee.isEmpty()) {
       componentClient
           .forWorkflow(assignee)
-          .method(AutonomousAgentWorkflow::resumeAfterInput)
+          .method(AutonomousAgentWorkflow::resumeAfterApproval)
           .invoke();
     } else {
-      log.warn("Task {} has no assignee — cannot resume workflow after input", taskId);
+      log.warn("Task {} has no assignee — cannot resume workflow after approval", taskId);
+    }
+
+    return Done.done();
+  }
+
+  @Override
+  public Done reject(String reason) {
+    componentClient.forEventSourcedEntity(taskId).method(TaskEntity::reject).invoke(reason);
+
+    var taskState =
+        componentClient.forEventSourcedEntity(taskId).method(TaskEntity::getState).invoke();
+
+    var assignee = taskState.assignee();
+    if (assignee != null && !assignee.isEmpty()) {
+      componentClient
+          .forWorkflow(assignee)
+          .method(AutonomousAgentWorkflow::resumeAfterApproval)
+          .invoke();
+    } else {
+      log.warn("Task {} has no assignee — cannot resume workflow after rejection", taskId);
     }
 
     return Done.done();

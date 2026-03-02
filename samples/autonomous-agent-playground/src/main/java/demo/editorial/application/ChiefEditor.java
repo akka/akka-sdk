@@ -1,7 +1,6 @@
 package demo.editorial.application;
 
 import static akka.javasdk.agent.autonomous.AutonomousAgent.agent;
-import static akka.javasdk.agent.autonomous.AutonomousAgent.externalInput;
 import static akka.javasdk.agent.autonomous.AutonomousAgent.member;
 import static akka.javasdk.agent.autonomous.AutonomousAgent.team;
 
@@ -10,10 +9,10 @@ import akka.javasdk.annotations.Component;
 import demo.editorial.application.EditorialTasks;
 
 /**
- * Chief editor — demonstrates team + external input.
+ * Chief editor — demonstrates team coordination with policy-driven approval.
  *
- * <p>Forms a team of writers, assigns sections, compiles the output, then requests editorial
- * approval (via requestDecision) before finalising the publication.
+ * <p>Forms a team of writers, assigns sections, compiles the output. The {@link
+ * PublicationApprovalPolicy} requires editorial approval before the task completes.
  */
 @Component(id = "chief-editor")
 public class ChiefEditor extends AutonomousAgent {
@@ -39,10 +38,9 @@ public class ChiefEditor extends AutonomousAgent {
 
         WHEN ALL TASKS COMPLETE:
         6. Compile the writers' work into a cohesive publication.
-        7. Use requestDecision to ask for editorial approval before publishing. \
-           Include a summary of the compiled content in your request.
-        8. If approved, disband the team, then complete your task with the Publication. \
-           If rejected, revise based on feedback and request approval again.
+        7. Complete the task with a Publication (title, content, status="draft"). \
+           The system will automatically route it for editorial approval.
+        8. Once approved, disband the team.
 
         IMPORTANT: Each iteration is separated by a pause that gives writers \
         time to work. Do not poll status repeatedly in the same iteration.\
@@ -56,7 +54,6 @@ public class ChiefEditor extends AutonomousAgent {
           ).max(2)
         )
       )
-      .capability(externalInput())
       .maxIterations(30);
   }
 }

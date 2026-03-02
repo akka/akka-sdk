@@ -1,16 +1,12 @@
 package demo.compliance.application;
 
-import static akka.javasdk.agent.autonomous.AutonomousAgent.externalInput;
-
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.annotations.Component;
 import demo.compliance.application.ComplianceTasks;
 
 /**
- * Handoff target — performs deep risk assessment and requests compliance officer approval.
- *
- * <p>Demonstrates external input within a handoff chain: this agent was handed a task from the
- * triage agent, and it requests sign-off before completing.
+ * Handoff target — performs deep risk assessment. If the result is high-risk, the {@link
+ * ComplianceApprovalPolicy} will require officer approval before the task completes.
  */
 @Component(id = "risk-assessor")
 public class RiskAssessor extends AutonomousAgent {
@@ -29,13 +25,13 @@ public class RiskAssessor extends AutonomousAgent {
         1. Review the handoff context to understand what the triage agent found.
         2. Use detailedAssessment to perform a thorough risk analysis.
         3. Use lookupPolicy to identify all relevant compliance policies.
-        4. Use requestDecision to present your findings to the compliance officer \
-           for approval. Include your assessment, findings, and recommendation.
-        5. Based on the officer's response, complete the task with a ComplianceReport.\
+        4. Complete the task with a ComplianceReport containing the riskLevel, \
+           findings, decision, and approvedByOfficer=false. \
+           If the report is high-risk, the system will automatically route it \
+           for officer approval.\
         """
       )
       .tools(ComplianceTools.class)
-      .capability(externalInput())
       .maxIterations(10);
   }
 }

@@ -13,7 +13,8 @@ import java.util.List;
  * akka.javasdk.client.ComponentClient#forTask(TaskRef)}.
  *
  * <p>Use {@link #get()} for a single-fetch snapshot of the task's state and typed result. Use
- * {@link #provideInput} and {@link #notifications()} for actions and streaming.
+ * {@link #approve()}, {@link #reject(String)}, and {@link #notifications()} for actions and
+ * streaming.
  *
  * @param <R> The result type of the task.
  */
@@ -47,14 +48,18 @@ public interface TaskClient<R> {
   TaskSnapshot<R> get();
 
   /**
-   * Provide input for a pending decision point. This resumes the agent's processing after a
-   * decision was requested via the {@code requestDecision} tool.
-   *
-   * @param decisionId the ID of the pending decision (from {@link
-   *     TaskSnapshot#pendingDecisionId()})
-   * @param response the response to provide to the agent
+   * Approve a task that is awaiting approval (status {@link TaskStatus#AWAITING_APPROVAL}). The
+   * task completes with the result that was pending approval.
    */
-  Done provideInput(String decisionId, String response);
+  Done approve();
+
+  /**
+   * Reject a task that is awaiting approval (status {@link TaskStatus#AWAITING_APPROVAL}). The task
+   * fails with the given reason.
+   *
+   * @param reason why the approval was rejected
+   */
+  Done reject(String reason);
 
   /**
    * Subscribe to real-time notifications for this task's lifecycle events. Notifications follow the

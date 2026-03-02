@@ -23,8 +23,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
   @JsonSubTypes.Type(value = TaskNotification.TaskCompleted.class, name = "task-completed"),
   @JsonSubTypes.Type(value = TaskNotification.TaskFailed.class, name = "task-failed"),
   @JsonSubTypes.Type(value = TaskNotification.TaskHandedOff.class, name = "task-handed-off"),
-  @JsonSubTypes.Type(value = TaskNotification.DecisionRequested.class, name = "decision-requested"),
-  @JsonSubTypes.Type(value = TaskNotification.InputProvided.class, name = "input-provided")
+  @JsonSubTypes.Type(value = TaskNotification.ApprovalRequired.class, name = "approval-required"),
+  @JsonSubTypes.Type(value = TaskNotification.Approved.class, name = "approved"),
+  @JsonSubTypes.Type(value = TaskNotification.Rejected.class, name = "rejected")
 })
 public sealed interface TaskNotification {
 
@@ -40,11 +41,11 @@ public sealed interface TaskNotification {
 
   record TaskHandedOff(String taskId, String newAssignee) implements TaskNotification {}
 
-  // Decision point notifications (Phase 2) — declared upfront for schema stability.
+  // Policy approval notifications
 
-  record DecisionRequested(String taskId, String decisionId, String question, String decisionType)
-      implements TaskNotification {}
+  record ApprovalRequired(String taskId, String reason) implements TaskNotification {}
 
-  record InputProvided(String taskId, String decisionId, String response)
-      implements TaskNotification {}
+  record Approved(String taskId) implements TaskNotification {}
+
+  record Rejected(String taskId, String reason) implements TaskNotification {}
 }

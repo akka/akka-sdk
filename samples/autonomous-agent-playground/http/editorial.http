@@ -1,5 +1,5 @@
-## Editorial Workflow — team coordination + decision points
-## Chief editor forms writer team, compiles output, requests human approval.
+## Editorial Workflow — team coordination + policy-driven approval
+## Chief editor forms writer team, compiles output. Policy requires editorial approval.
 
 ### Commission an article
 POST http://localhost:9000/editorial
@@ -7,13 +7,13 @@ Content-Type: application/json
 
 {"topic": "How remote work is reshaping city planning and urban design"}
 
-### Check status — look for pendingQuestion when awaiting approval
+### Check status — look for AWAITING_APPROVAL when ready for review
 GET http://localhost:9000/editorial/{{id}}
 
 ### Approve publication
 POST http://localhost:9000/editorial/{{id}}/approve
 
-### Reject with feedback (editor will revise with team)
+### Reject (task fails with the given reason)
 POST http://localhost:9000/editorial/{{id}}/reject
 Content-Type: application/json
 

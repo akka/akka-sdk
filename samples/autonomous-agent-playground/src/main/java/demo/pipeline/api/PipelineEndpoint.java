@@ -7,9 +7,9 @@ import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import demo.pipeline.application.PipelineTasks;
 import demo.pipeline.application.ReportAgent;
+import demo.pipeline.application.ReportResult;
 import java.util.List;
 import java.util.UUID;
-import demo.pipeline.application.ReportResult;
 
 /**
  * Multi-phase report pipeline with task dependencies.

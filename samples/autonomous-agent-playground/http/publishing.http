@@ -1,5 +1,5 @@
-## Content Publishing — human-in-the-loop decision points
-## Agent writes an article, then requests human approval before publishing.
+## Content Publishing — policy-driven editorial approval
+## Agent writes an article, then the ArticleApprovalPolicy requires human approval before publishing.
 
 ### Request an article
 POST http://localhost:9000/publishing
@@ -7,13 +7,13 @@ Content-Type: application/json
 
 {"topic": "The future of renewable energy in urban environments"}
 
-### Check status — look for pendingQuestion when awaiting approval
+### Check status — look for AWAITING_APPROVAL when the article is ready for review
 GET http://localhost:9000/publishing/{{id}}
 
 ### Approve publication
 POST http://localhost:9000/publishing/{{id}}/approve
 
-### Reject with feedback (agent will revise)
+### Reject (task fails with the given reason)
 POST http://localhost:9000/publishing/{{id}}/reject
 Content-Type: application/json
 

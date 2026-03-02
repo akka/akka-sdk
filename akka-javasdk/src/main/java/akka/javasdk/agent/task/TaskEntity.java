@@ -26,34 +26,43 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
       String instructions,
       String resultTypeName,
       List<String> dependencyTaskIds,
-      List<ContentRef> contentRefs) {
+      List<ContentRef> contentRefs,
+      List<String> policyClassNames) {
 
-    /** Convenience constructor without instructions, dependencies, or content. */
+    /** Convenience constructor without instructions, dependencies, content, or policies. */
     public CreateRequest(String description, String resultTypeName) {
-      this(description, null, resultTypeName, List.of(), List.of());
+      this(description, null, resultTypeName, List.of(), List.of(), List.of());
     }
 
-    /** Convenience constructor without instructions or content. */
+    /** Convenience constructor without instructions, content, or policies. */
     public CreateRequest(
         String description, String resultTypeName, List<String> dependencyTaskIds) {
-      this(description, null, resultTypeName, dependencyTaskIds, List.of());
+      this(description, null, resultTypeName, dependencyTaskIds, List.of(), List.of());
     }
 
-    /** Convenience constructor without content. */
+    /** Convenience constructor without content or policies. */
     public CreateRequest(
         String description,
         String instructions,
         String resultTypeName,
         List<String> dependencyTaskIds) {
-      this(description, instructions, resultTypeName, dependencyTaskIds, List.of());
+      this(description, instructions, resultTypeName, dependencyTaskIds, List.of(), List.of());
+    }
+
+    /** Convenience constructor without policies. */
+    public CreateRequest(
+        String description,
+        String instructions,
+        String resultTypeName,
+        List<String> dependencyTaskIds,
+        List<ContentRef> contentRefs) {
+      this(description, instructions, resultTypeName, dependencyTaskIds, contentRefs, List.of());
     }
   }
 
   public record HandoffRequest(String newAssignee, String context) {}
 
-  public record DecisionRequest(String decisionId, String question, String decisionType) {}
-
-  public record InputResponse(String decisionId, String response) {}
+  public record AwaitApprovalRequest(String pendingResult, String reason) {}
 
   @Override
   public TaskState emptyState() {
@@ -67,6 +76,8 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
     var deps =
         request.dependencyTaskIds() != null ? request.dependencyTaskIds() : List.<String>of();
     var refs = request.contentRefs() != null ? request.contentRefs() : List.<ContentRef>of();
+    var policies =
+        request.policyClassNames() != null ? request.policyClassNames() : List.<String>of();
     return effects()
         .persist(
             new TaskEvent.TaskCreated(
@@ -75,7 +86,8 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
                 request.instructions(),
                 request.resultTypeName(),
                 deps,
-                refs))
+                refs,
+                policies))
         .thenReply(__ -> done());
   }
 
@@ -119,8 +131,8 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
       return effects().reply(done()); // idempotent for any terminal state
     }
     if (currentState().status() != TaskStatus.IN_PROGRESS
-        && currentState().status() != TaskStatus.WAITING_FOR_INPUT) {
-      return effects().error("Task can only be failed when IN_PROGRESS or WAITING_FOR_INPUT");
+        && currentState().status() != TaskStatus.AWAITING_APPROVAL) {
+      return effects().error("Task can only be failed when IN_PROGRESS or AWAITING_APPROVAL");
     }
     return effects().persist(new TaskEvent.TaskFailed(taskId, reason)).thenReply(__ -> done());
   }
@@ -137,27 +149,27 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
         .thenReply(__ -> done());
   }
 
-  public Effect<Done> requestDecision(DecisionRequest request) {
+  public Effect<Done> awaitApproval(AwaitApprovalRequest request) {
     if (currentState().status() != TaskStatus.IN_PROGRESS) {
-      return effects().error("Decision can only be requested when IN_PROGRESS");
+      return effects().error("Approval can only be requested when IN_PROGRESS");
     }
     return effects()
-        .persist(
-            new TaskEvent.DecisionRequested(
-                taskId, request.decisionId(), request.question(), request.decisionType()))
+        .persist(new TaskEvent.ApprovalRequested(taskId, request.pendingResult(), request.reason()))
         .thenReply(__ -> done());
   }
 
-  public Effect<Done> provideInput(InputResponse input) {
-    if (currentState().status() != TaskStatus.WAITING_FOR_INPUT) {
-      return effects().error("Input can only be provided when WAITING_FOR_INPUT");
+  public Effect<Done> approve() {
+    if (currentState().status() != TaskStatus.AWAITING_APPROVAL) {
+      return effects().error("Task can only be approved when AWAITING_APPROVAL");
     }
-    if (!currentState().pendingDecisionId().equals(input.decisionId())) {
-      return effects().error("Decision ID mismatch");
+    return effects().persist(new TaskEvent.TaskApproved(taskId)).thenReply(__ -> done());
+  }
+
+  public Effect<Done> reject(String reason) {
+    if (currentState().status() != TaskStatus.AWAITING_APPROVAL) {
+      return effects().error("Task can only be rejected when AWAITING_APPROVAL");
     }
-    return effects()
-        .persist(new TaskEvent.InputProvided(taskId, input.decisionId(), input.response()))
-        .thenReply(__ -> done());
+    return effects().persist(new TaskEvent.TaskRejected(taskId, reason)).thenReply(__ -> done());
   }
 
   public ReadOnlyEffect<TaskState> getState() {
@@ -180,12 +192,11 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
               e.resultTypeName(),
               null,
               List.of(),
-              null,
-              null,
-              null,
-              null,
               e.dependencyTaskIds() != null ? e.dependencyTaskIds() : List.of(),
-              e.contentRefs() != null ? e.contentRefs() : List.of());
+              e.contentRefs() != null ? e.contentRefs() : List.of(),
+              e.policyClassNames() != null ? e.policyClassNames() : List.of(),
+              null,
+              null);
       case TaskEvent.TaskAssigned e -> currentState().withAssignee(e.assignee());
       case TaskEvent.TaskStarted e -> currentState().withStatus(TaskStatus.IN_PROGRESS);
       case TaskEvent.TaskCompleted e ->
@@ -193,10 +204,10 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
       case TaskEvent.TaskFailed e ->
           currentState().withStatus(TaskStatus.FAILED).withResult(e.reason());
       case TaskEvent.TaskHandedOff e -> currentState().withHandoff(e.newAssignee(), e.context());
-      case TaskEvent.DecisionRequested e ->
-          currentState().withDecisionRequested(e.decisionId(), e.question(), e.decisionType());
-      case TaskEvent.InputProvided e ->
-          currentState().withInputProvided(e.decisionId(), e.response());
+      case TaskEvent.ApprovalRequested e ->
+          currentState().withApprovalRequested(e.pendingResult(), e.reason());
+      case TaskEvent.TaskApproved e -> currentState().withApproved();
+      case TaskEvent.TaskRejected e -> currentState().withRejected(e.reason());
     };
   }
 }

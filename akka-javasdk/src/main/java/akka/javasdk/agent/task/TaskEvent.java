@@ -16,7 +16,8 @@ public sealed interface TaskEvent {
       String instructions,
       String resultTypeName,
       List<String> dependencyTaskIds,
-      List<ContentRef> contentRefs)
+      List<ContentRef> contentRefs,
+      List<String> policyClassNames)
       implements TaskEvent {}
 
   @TypeName("akka-task-assigned")
@@ -34,10 +35,13 @@ public sealed interface TaskEvent {
   @TypeName("akka-task-handed-off")
   record TaskHandedOff(String taskId, String newAssignee, String context) implements TaskEvent {}
 
-  @TypeName("akka-task-decision-requested")
-  record DecisionRequested(String taskId, String decisionId, String question, String decisionType)
+  @TypeName("akka-task-approval-requested")
+  record ApprovalRequested(String taskId, String pendingResult, String reason)
       implements TaskEvent {}
 
-  @TypeName("akka-task-input-provided")
-  record InputProvided(String taskId, String decisionId, String response) implements TaskEvent {}
+  @TypeName("akka-task-approved")
+  record TaskApproved(String taskId) implements TaskEvent {}
+
+  @TypeName("akka-task-rejected")
+  record TaskRejected(String taskId, String reason) implements TaskEvent {}
 }

@@ -53,11 +53,10 @@ public class TaskEventConsumer extends Consumer {
       case TaskEvent.TaskFailed e -> new TaskNotification.TaskFailed(e.taskId(), e.reason());
       case TaskEvent.TaskHandedOff e ->
           new TaskNotification.TaskHandedOff(e.taskId(), e.newAssignee());
-      case TaskEvent.DecisionRequested e ->
-          new TaskNotification.DecisionRequested(
-              e.taskId(), e.decisionId(), e.question(), e.decisionType());
-      case TaskEvent.InputProvided e ->
-          new TaskNotification.InputProvided(e.taskId(), e.decisionId(), e.response());
+      case TaskEvent.ApprovalRequested e ->
+          new TaskNotification.ApprovalRequired(e.taskId(), e.reason());
+      case TaskEvent.TaskApproved e -> new TaskNotification.Approved(e.taskId());
+      case TaskEvent.TaskRejected e -> new TaskNotification.Rejected(e.taskId(), e.reason());
     };
   }
 }

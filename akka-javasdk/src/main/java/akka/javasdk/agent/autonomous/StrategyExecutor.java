@@ -5,7 +5,15 @@
 package akka.javasdk.agent.autonomous;
 
 import akka.javasdk.agent.Agent;
+import akka.javasdk.agent.ContentLoader;
+import akka.javasdk.agent.MessageContent;
+import akka.javasdk.agent.MessageContent.TextMessageContent;
+import akka.javasdk.agent.UserMessage;
+import akka.javasdk.agent.task.ContentRef;
+import akka.javasdk.agent.task.PolicyResult;
+import akka.javasdk.agent.task.TaskCompletionContext;
 import akka.javasdk.agent.task.TaskEntity;
+import akka.javasdk.agent.task.TaskPolicy;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.client.ComponentClient;
@@ -55,9 +63,9 @@ public final class StrategyExecutor extends Agent {
       List<Capability> capabilities,
       String resultTypeName,
       List<String> handoffContext,
-      String lastDecisionResponse,
-      List<akka.javasdk.agent.task.ContentRef> contentRefs,
-      String contentLoaderClassName) {}
+      List<ContentRef> contentRefs,
+      String contentLoaderClassName,
+      List<String> policyClassNames) {}
 
   /** Execute one iteration: instantiate tools, build effect from strategy config. */
   public Effect<String> execute(ExecuteRequest request) {
@@ -148,13 +156,6 @@ public final class StrategyExecutor extends Agent {
       }
     }
 
-    // Include decision response if resuming after a decision point (not for team members)
-    var lastDecisionResponse = request.lastDecisionResponse();
-    if (!isTeamMember && lastDecisionResponse != null && !lastDecisionResponse.isEmpty()) {
-      userMessage.append("\n\nDecision response received: ").append(lastDecisionResponse);
-      userMessage.append("\nPlease continue with the task using this input.");
-    }
-
     // On subsequent iterations, nudge the agent to resolve (not for team members — they iterate)
     if (!isTeamMember && request.iteration() > 1) {
       userMessage.append(
@@ -184,18 +185,13 @@ public final class StrategyExecutor extends Agent {
 
     // Add built-in tools (complete/fail task) — not for team members, they use task list tools
     if (!isTeamMember) {
-      allTools.add(new BuiltInTools(componentClient, request.taskId(), request.resultTypeName()));
-    }
-
-    // Add decision tools only if the agent has the external input capability
-    var hasDecisionCapability =
-        request.capabilities().stream().anyMatch(c -> c instanceof ExternalInputCapability);
-
-    if (hasDecisionCapability) {
-      allTools.add(new DecisionTools(componentClient, request.taskId()));
-      userMessage.append(
-          "\n\nYou can request external decisions (approval, confirmation, clarification)"
-              + " using the requestDecision tool. The task will pause until input is provided.");
+      allTools.add(
+          new BuiltInTools(
+              componentClient,
+              request.taskId(),
+              request.taskDescription(),
+              request.resultTypeName(),
+              request.policyClassNames()));
     }
 
     // Add tools for each capability
@@ -457,8 +453,7 @@ public final class StrategyExecutor extends Agent {
     if (request.contentLoaderClassName() != null && !request.contentLoaderClassName().isEmpty()) {
       try {
         var loaderClass =
-            Class.forName(request.contentLoaderClassName())
-                .asSubclass(akka.javasdk.agent.ContentLoader.class);
+            Class.forName(request.contentLoaderClassName()).asSubclass(ContentLoader.class);
         builder = builder.contentLoader(loaderClass.getDeclaredConstructor().newInstance());
       } catch (Exception e) {
         log.warn(
@@ -472,17 +467,14 @@ public final class StrategyExecutor extends Agent {
     var hasContent = request.contentRefs() != null && !request.contentRefs().isEmpty();
 
     if (hasContent) {
-      var messageContents = new ArrayList<akka.javasdk.agent.MessageContent>();
-      messageContents.add(
-          akka.javasdk.agent.MessageContent.TextMessageContent.from(userMessage.toString()));
+      var messageContents = new ArrayList<MessageContent>();
+      messageContents.add(TextMessageContent.from(userMessage.toString()));
       for (var ref : request.contentRefs()) {
         messageContents.add(ref.toMessageContent());
       }
       return builder
           .tools(allTools)
-          .userMessage(
-              akka.javasdk.agent.UserMessage.from(
-                  messageContents.toArray(new akka.javasdk.agent.MessageContent[0])))
+          .userMessage(UserMessage.from(messageContents.toArray(new MessageContent[0])))
           .thenReply();
     }
 
@@ -499,12 +491,21 @@ public final class StrategyExecutor extends Agent {
 
     private final ComponentClient componentClient;
     private final String taskId;
+    private final String taskDescription;
     private final String resultTypeName;
+    private final List<String> policyClassNames;
 
-    public BuiltInTools(ComponentClient componentClient, String taskId, String resultTypeName) {
+    public BuiltInTools(
+        ComponentClient componentClient,
+        String taskId,
+        String taskDescription,
+        String resultTypeName,
+        List<String> policyClassNames) {
       this.componentClient = componentClient;
       this.taskId = taskId;
+      this.taskDescription = taskDescription;
       this.resultTypeName = resultTypeName;
+      this.policyClassNames = policyClassNames != null ? policyClassNames : List.of();
     }
 
     @FunctionTool(
@@ -513,12 +514,13 @@ public final class StrategyExecutor extends Agent {
                 + " specific result type is required, or a plain text description otherwise.")
     public String completeTask(String result) {
       // Runtime type check: if a typed result is expected, validate before completing
+      Object deserializedResult = result; // default: raw string
       if (resultTypeName != null
           && !resultTypeName.isEmpty()
           && !resultTypeName.equals(String.class.getName())) {
         try {
           var resultClass = Class.forName(resultTypeName);
-          OBJECT_MAPPER.readValue(result, resultClass);
+          deserializedResult = OBJECT_MAPPER.readValue(result, resultClass);
         } catch (ClassNotFoundException e) {
           log.warn("Result type class not found: {}", resultTypeName);
           // Allow completion — we can't validate if the class isn't available
@@ -542,6 +544,35 @@ public final class StrategyExecutor extends Agent {
         }
       }
 
+      // Evaluate completion policies before completing the task
+      for (String policyClassName : policyClassNames) {
+        try {
+          @SuppressWarnings("unchecked")
+          var policy = (TaskPolicy<Object>) instantiatePolicy(policyClassName);
+          var ctx =
+              new TaskCompletionContext<>(deserializedResult, result, taskDescription, taskId);
+          var policyResult = policy.onCompletion(ctx);
+          switch (policyResult) {
+            case PolicyResult.Deny deny -> {
+              return "Completion denied by policy: " + deny.reason();
+            }
+            case PolicyResult.RequireApproval approval -> {
+              componentClient
+                  .forEventSourcedEntity(taskId)
+                  .method(TaskEntity::awaitApproval)
+                  .invoke(new TaskEntity.AwaitApprovalRequest(result, approval.reason()));
+              return "Task requires approval: " + approval.reason();
+            }
+            case PolicyResult.Allow allow -> {
+              // continue to next policy
+            }
+          }
+        } catch (Exception e) {
+          log.error("Failed to evaluate policy {}: {}", policyClassName, e.getMessage(), e);
+          return "Policy evaluation error: " + e.getMessage();
+        }
+      }
+
       componentClient.forEventSourcedEntity(taskId).method(TaskEntity::complete).invoke(result);
       return "Task completed successfully";
     }
@@ -550,6 +581,16 @@ public final class StrategyExecutor extends Agent {
     public String failTask(String reason) {
       componentClient.forEventSourcedEntity(taskId).method(TaskEntity::fail).invoke(reason);
       return "Task failed";
+    }
+
+    private TaskPolicy<?> instantiatePolicy(String className) throws Exception {
+      var clz = Class.forName(className).asSubclass(TaskPolicy.class);
+      try {
+        var ctor = clz.getDeclaredConstructor(ComponentClient.class);
+        return ctor.newInstance(componentClient);
+      } catch (NoSuchMethodException e) {
+        return clz.getDeclaredConstructor().newInstance();
+      }
     }
   }
 }

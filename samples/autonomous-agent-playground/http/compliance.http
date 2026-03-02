@@ -1,25 +1,25 @@
-## Compliance Review — handoff + decision points composition
-## Triage classifies risk, hands off high-risk items for review with officer approval.
+## Compliance Review — handoff + policy-driven approval
+## Triage classifies risk, hands off high-risk items. Policy requires officer sign-off for high-risk reports.
 
-### Submit a low-risk compliance request (handled directly)
+### Submit a low-risk compliance request (completes automatically)
 POST http://localhost:9000/compliance
 Content-Type: application/json
 
 {"request": "Annual review of employee handbook updates for office policy changes"}
 
-### Submit a high-risk compliance request (triggers handoff + approval)
+### Submit a high-risk compliance request (triggers handoff + policy approval)
 POST http://localhost:9000/compliance
 Content-Type: application/json
 
 {"request": "Review of new financial trading algorithm for regulatory compliance under MiFID II"}
 
-### Check status — look for pendingQuestion when awaiting officer approval
+### Check status — look for AWAITING_APPROVAL when officer sign-off is needed
 GET http://localhost:9000/compliance/{{id}}
 
 ### Approve compliance finding
 POST http://localhost:9000/compliance/{{id}}/approve
 
-### Reject with feedback (assessor will revise)
+### Reject (task fails with the given reason)
 POST http://localhost:9000/compliance/{{id}}/reject
 Content-Type: application/json
 

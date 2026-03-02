@@ -7,5 +7,5 @@ public class ComplianceTasks {
   public static final Task<ComplianceReport> REVIEW = Task.of(
     "Compliance review",
     ComplianceReport.class
-  );
+  ).policy(ComplianceApprovalPolicy.class);
 }
