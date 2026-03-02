@@ -511,7 +511,8 @@ private final class Sdk(
 
   private def isProvided(clz: Class[_]): Boolean = {
     !sdkSettings.devModeSettings.exists(_.showProvidedComponents) &&
-    ComponentLocator.providedComponents.contains(clz)
+    (ComponentLocator.agentProvidedComponents.contains(clz) ||
+    ComponentLocator.autonomousAgentProvidedComponents.contains(clz))
   }
 
   componentClasses
@@ -651,7 +652,7 @@ private final class Sdk(
             ctx => workflowInstanceFactory(componentId, ctx, clz.asInstanceOf[Class[Workflow[Nothing]]]),
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            provided = false,
+            provided = isProvided(clz),
             protobufDescriptors = protobufDescriptors.toVector)
 
       case clz if Reflect.isTimedAction(clz) =>

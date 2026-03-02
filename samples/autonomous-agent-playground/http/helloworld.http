@@ -1,0 +1,11 @@
+## Hello World — single agent, no tools
+## The simplest autonomous agent: answers a question directly.
+
+### Ask a question
+POST http://localhost:9000/questions
+Content-Type: application/json
+
+{"question": "What are the three laws of thermodynamics?"}
+
+### Check answer (replace with id from above)
+GET http://localhost:9000/questions/{{id}}

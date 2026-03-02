@@ -10,7 +10,11 @@ import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.agent.Agent
+import akka.javasdk.agent.autonomous.AutonomousAgent
+import akka.javasdk.agent.task.TaskClient
+import akka.javasdk.agent.task.TaskRef
 import akka.javasdk.client.AgentClient
+import akka.javasdk.client.AutonomousAgentClient
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.client.EventSourcedEntityClient
 import akka.javasdk.client.KeyValueEntityClient
@@ -18,6 +22,8 @@ import akka.javasdk.client.TimedActionClient
 import akka.javasdk.client.ViewClient
 import akka.javasdk.client.WorkflowClient
 import akka.javasdk.impl.MetadataImpl
+import akka.javasdk.impl.agent.AutonomousAgentClientImpl
+import akka.javasdk.impl.agent.TaskClientImpl
 import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
 import io.opentelemetry.context.{ Context => OtelContext }
@@ -72,5 +78,22 @@ private[javasdk] final case class ComponentClientImpl(
 
   override def forAgent(): AgentClient =
     AgentClientImpl(runtimeComponentClients.agentClient, serializer, callMetadata, agentClassById, sessionId = "")
+
+  override def forTask[R](ref: TaskRef[R]): TaskClient[R] =
+    if (ref eq null) throw new NullPointerException("Task ref is null")
+    else new TaskClientImpl[R](this, ref)
+
+  override def forAutonomousAgent[T <: AutonomousAgent](agentId: String, agentClass: Class[T]): AutonomousAgentClient =
+    if (agentId eq null) throw new NullPointerException("Autonomous agent id is null")
+    else if (agentId.isEmpty) throw new IllegalArgumentException("Empty autonomous agent id not allowed")
+    else {
+      val agent = agentClass.getDeclaredConstructor().newInstance()
+      new AutonomousAgentClientImpl(this, agentId, agent)
+    }
+
+  override def forAutonomousAgent[T <: AutonomousAgent](agentClass: Class[T]): AutonomousAgentClient = {
+    val agentId = agentClass.getSimpleName.toLowerCase + "-" + java.util.UUID.randomUUID()
+    forAutonomousAgent(agentId, agentClass)
+  }
 
 }

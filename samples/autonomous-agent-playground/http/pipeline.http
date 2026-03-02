@@ -1,0 +1,14 @@
+## Report Pipeline — task dependencies with explicit ordering
+## Three tasks (collect → analyse → report) with dependency chains.
+
+### Start a pipeline
+POST http://localhost:9000/pipeline
+Content-Type: application/json
+
+{"topic": "Global trends in artificial intelligence adoption"}
+
+### Check individual task status (replace with id)
+GET http://localhost:9000/pipeline/{{id}}
+
+### Check all pipeline stages (replace with pipelineId)
+GET http://localhost:9000/pipeline/all/{{pipelineId}}

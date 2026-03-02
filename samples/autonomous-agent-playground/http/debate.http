@@ -1,0 +1,11 @@
+## Structured Debate — team with messaging-driven collaboration
+## Moderator forms debaters who argue positions via peer-to-peer messaging.
+
+### Start a debate
+POST http://localhost:9000/debate
+Content-Type: application/json
+
+{"topic": "Should artificial intelligence be regulated by governments?"}
+
+### Check debate status (replace with id from above)
+GET http://localhost:9000/debate/{{id}}
