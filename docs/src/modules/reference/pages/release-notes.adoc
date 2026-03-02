@@ -10,6 +10,14 @@ Current versions
 * Akka CLI {akka-cli-version}
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
 
+== March 2026
+
+* https://github.com/akka/akka-sdk/releases/tag/v3.5.15[Akka SDK 3.5.15]
+- PDF documents support in Agent user message
+- Token usage tracking in session memory
+- Agent reply wrapper in component client
+- Protobuf serialization support
+
 == February 2026
 
 [sidebar]
