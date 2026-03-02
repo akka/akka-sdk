@@ -4,6 +4,8 @@
 
 package akka.javasdk.tooling.validation;
 
+import static akka.javasdk.tooling.validation.Validations.componentMustBePublic;
+
 import akka.javasdk.validation.ast.AnnotationDef;
 import akka.javasdk.validation.ast.MethodDef;
 import akka.javasdk.validation.ast.ParameterDef;
@@ -48,7 +50,9 @@ public class HttpEndpointValidations {
     if (!typeDef.hasAnnotation(HTTP_ENDPOINT_ANNOTATION)) {
       return Validation.Valid.instance();
     }
-    return validateWebSocketMethods(typeDef).combine(validateHttpMethods(typeDef));
+    return componentMustBePublic(typeDef)
+        .combine(validateWebSocketMethods(typeDef))
+        .combine(validateHttpMethods(typeDef));
   }
 
   private static Validation validateWebSocketMethods(TypeDef typeDef) {

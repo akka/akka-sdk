@@ -57,9 +57,9 @@ public class EventSourcedEntityValidations {
 
     // Count occurrences of each method name for Effect-returning methods
     for (MethodDef method : typeDef.getPublicMethods()) {
-      String returnTypeName = method.getReturnType().getQualifiedName();
+      String returnTypeName = method.getReturnType().getRawQualifiedName();
       for (String effectTypeName : effectTypeNames) {
-        if (returnTypeName.startsWith(effectTypeName)) {
+        if (returnTypeName.equals(effectTypeName)) {
           String methodName = method.getName();
           methodNameCounts.merge(methodName, 1, Integer::sum);
           break;
@@ -92,6 +92,11 @@ public class EventSourcedEntityValidations {
    * @return a Validation result indicating success or failure
    */
   private static Validation eventTypeMustBeSealed(TypeDef typeDef) {
+    // Skip sealed check for protobuf-based entities using @ProtoEventTypes
+    if (typeDef.hasAnnotation("akka.javasdk.annotations.ProtoEventTypes")) {
+      return Validation.Valid.instance();
+    }
+
     // Extract the event type from EventSourcedEntity<State, Event> (second type argument)
     List<TypeRefDef> typeArgs = typeDef.getSuperclassTypeArguments();
     if (typeArgs.size() < 2) {
@@ -126,10 +131,10 @@ public class EventSourcedEntityValidations {
 
     for (MethodDef method : typeDef.getPublicMethods()) {
       if (method.hasAnnotation("akka.javasdk.annotations.FunctionTool")) {
-        String returnTypeName = method.getReturnType().getQualifiedName();
+        String returnTypeName = method.getReturnType().getRawQualifiedName();
         boolean isEffectMethod =
-            returnTypeName.startsWith("akka.javasdk.eventsourcedentity.EventSourcedEntity.Effect")
-                || returnTypeName.startsWith(
+            returnTypeName.equals("akka.javasdk.eventsourcedentity.EventSourcedEntity.Effect")
+                || returnTypeName.equals(
                     "akka.javasdk.eventsourcedentity.EventSourcedEntity.ReadOnlyEffect");
 
         if (!isEffectMethod) {

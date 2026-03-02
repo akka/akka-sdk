@@ -54,9 +54,9 @@ public interface TypeDef {
   boolean isAbstract();
 
   /**
-   * Returns all methods declared in this type.
+   * Returns all methods declared in this type and in inherited types.
    *
-   * <p>This includes both public and non-public methods, but does not include inherited methods.
+   * <p>This includes both public and non-public methods.
    *
    * @return list of methods
    */
@@ -68,7 +68,10 @@ public interface TypeDef {
    * @return list of public methods
    */
   default List<MethodDef> getPublicMethods() {
-    return getMethods().stream().filter(MethodDef::isPublic).toList();
+    return getMethods().stream()
+        .filter(MethodDef::isPublic)
+        .sorted() // sorted to ensure predictable output in tests
+        .toList();
   }
 
   /**
@@ -77,7 +80,10 @@ public interface TypeDef {
    * @return list of non-public methods
    */
   default List<MethodDef> getNonPublicMethods() {
-    return getMethods().stream().filter(m -> !m.isPublic()).toList();
+    return getMethods().stream()
+        .filter(m -> !m.isPublic())
+        .sorted() // sorted to ensure predictable output in tests
+        .toList();
   }
 
   /**

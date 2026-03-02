@@ -23,7 +23,8 @@ public class DuplicateCommandHandlers extends EventSourcedEntity<String, Duplica
     return effects().persist(new Event.Created("default")).thenReply(__ -> "created");
   }
 
-  public Event.Created onEvent(Event.Created event) {
-    return event;
+  @Override
+  public String applyEvent(Event event) {
+    return "";
   }
 }

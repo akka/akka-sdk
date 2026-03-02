@@ -4,38 +4,49 @@
 
 package com.example
 
+import com.example.CompilationTestSupport.CompileTimeValidation
+import com.example.CompilationTestSupport.RuntimeValidation
+import com.example.CompilationTestSupport.ValidationMode
 import org.scalatest.wordspec.AnyWordSpec
 
-class TimedActionValidationSpec extends AnyWordSpec with CompilationTestSupport {
+class CompileTimeTimedActionValidationSpec extends AbstractTimedActionValidationSpec(CompileTimeValidation)
+class RuntimeTimedActionValidationSpec extends AbstractTimedActionValidationSpec(RuntimeValidation)
 
-  "TimedAction validation" should {
+abstract class AbstractTimedActionValidationSpec(val validationMode: ValidationMode)
+    extends AnyWordSpec
+    with CompilationTestSupport {
+
+  s"TimedAction validation ($validationMode)" should {
+
     "accept valid TimedAction with Effect methods" in {
-      val result = compileTestSource("valid/ValidTimedAction.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidTimedAction.java")
     }
 
     "reject TimedAction without Effect methods" in {
-      val result = compileTestSource("invalid/TimedActionWithoutEffect.java")
-      assertCompilationFailure(result, "No public method returning akka.javasdk.timedaction.TimedAction.Effect found")
+      assertInvalid(
+        "invalid/TimedActionWithoutEffect.java",
+        "No public method returning akka.javasdk.timedaction.TimedAction.Effect found")
     }
 
     "reject TimedAction with command handler having too many parameters" in {
-      val result = compileTestSource("invalid/TimedActionWithTooManyParams.java")
-      assertCompilationFailure(result, "Method [invalidMethod] must have zero or one argument", "wrap them in a class")
+      assertInvalid(
+        "invalid/TimedActionWithTooManyParams.java",
+        "Method [invalidMethod] must have zero or one argument",
+        "wrap them in a class")
     }
 
     "reject TimedAction with @FunctionTool annotation" in {
-      val result = compileTestSource("invalid/TimedActionWithFunctionTool.java")
-      assertCompilationFailure(result, "TimedAction methods cannot be annotated with @FunctionTool")
+      assertInvalid(
+        "invalid/TimedActionWithFunctionTool.java",
+        "TimedAction methods cannot be annotated with @FunctionTool")
     }
 
     "return Valid for TimedAction with 0-arity method returning TimedAction.Effect" in {
-      val result = compileTestSource("valid/ValidTimedActionNoArg.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidTimedActionNoArg.java")
     }
+
     "return Valid for TimedAction with 1-arity method returning TimedAction.Effect" in {
-      val result = compileTestSource("valid/ValidTimedActionOneArg.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidTimedActionOneArg.java")
     }
   }
 }

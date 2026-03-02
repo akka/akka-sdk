@@ -25,10 +25,6 @@ public class ValidEventSourcedEntityWithFunctionTool extends EventSourcedEntity<
     return effects().reply("query result");
   }
 
-  public Event.Created onEvent(Event.Created event) {
-    return event;
-  }
-
   @Override
   public String applyEvent(com.example.ValidEventSourcedEntityWithFunctionTool.Event event) {
     return "";

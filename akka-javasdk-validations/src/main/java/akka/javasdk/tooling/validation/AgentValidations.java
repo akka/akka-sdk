@@ -4,6 +4,7 @@
 
 package akka.javasdk.tooling.validation;
 
+import static akka.javasdk.tooling.validation.Validations.effectMethods;
 import static akka.javasdk.tooling.validation.Validations.hasEffectMethod;
 import static akka.javasdk.tooling.validation.Validations.strictlyPublicCommandHandlerArityShouldBeZeroOrOne;
 
@@ -11,7 +12,6 @@ import akka.javasdk.validation.ast.AnnotationDef;
 import akka.javasdk.validation.ast.MethodDef;
 import akka.javasdk.validation.ast.TypeDef;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -123,14 +123,7 @@ public class AgentValidations {
    * @return a Validation result indicating success or failure
    */
   private static Validation mustHaveSinglePublicCommandHandler(TypeDef typeDef) {
-    int count = 0;
-
-    for (MethodDef method : typeDef.getPublicMethods()) {
-      String returnTypeName = method.getReturnType().getQualifiedName();
-      if (Arrays.stream(effectTypes).anyMatch(returnTypeName::startsWith)) {
-        count++;
-      }
-    }
+    int count = effectMethods(typeDef, effectTypes).size();
 
     if (count == 1) {
       return Validation.Valid.instance();
@@ -156,10 +149,10 @@ public class AgentValidations {
     List<String> errors = new ArrayList<>();
 
     for (MethodDef method : typeDef.getPublicMethods()) {
-      String returnTypeName = method.getReturnType().getQualifiedName();
+      String returnTypeName = method.getReturnType().getRawQualifiedName();
       // Check if this is a command handler (returns Effect or StreamEffect)
-      if (returnTypeName.startsWith("akka.javasdk.agent.Agent.Effect")
-          || returnTypeName.startsWith("akka.javasdk.agent.Agent.StreamEffect")) {
+      if (returnTypeName.equals("akka.javasdk.agent.Agent.Effect")
+          || returnTypeName.equals("akka.javasdk.agent.Agent.StreamEffect")) {
         // Check if it has @FunctionTool annotation
         if (method.hasAnnotation("akka.javasdk.annotations.FunctionTool")) {
           errors.add(

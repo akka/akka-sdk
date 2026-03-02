@@ -79,7 +79,7 @@ import akka.javasdk.impl.http.JwtClaimsImpl
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.javasdk.impl.timedaction.TimedActionImpl
@@ -93,6 +93,11 @@ import akka.javasdk.mcp.AbstractMcpEndpoint
 import akka.javasdk.mcp.McpRequestContext
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.timer.TimerScheduler
+import akka.javasdk.tooling.validation.Validation
+import akka.javasdk.tooling.validation.Validation.Invalid
+import akka.javasdk.tooling.validation.Validation.Valid
+import akka.javasdk.tooling.validation.Validations
+import akka.javasdk.validation.ast.runtime.RuntimeTypeDef
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi
@@ -304,7 +309,7 @@ private[javasdk] object Sdk {
       grpcClientProvider: GrpcClientProviderImpl,
       agentRegistry: AgentRegistryImpl,
       overrideModelProvider: OverrideModelProvider,
-      serializer: JsonSerializer,
+      serializer: Serializer,
       sanitizer: Sanitizer)
 
   private val platformManagedDependency = Set[Class[_]](
@@ -345,7 +350,7 @@ private final class Sdk(
   import Sdk._
 
   private val logger = LoggerFactory.getLogger(getClass)
-  private val serializer = new JsonSerializer
+  private val serializer = new Serializer
   private lazy val retries = new RetriesImpl(system.classicSystem)
   private val ComponentLocator.LocatedClasses(componentClasses, maybeServiceClass) =
     ComponentLocator.locateUserComponents(system)
@@ -380,6 +385,21 @@ private final class Sdk(
     remoteIdentification.map(ri => GrpcClientProviderImpl.AuthHeaders(ri.headerName, ri.headerValue)))
 
   private lazy val overrideModelProvider = new OverrideModelProvider
+
+  // validate service classes before instantiating
+  private val validation = componentClasses.foldLeft(Valid.instance().asInstanceOf[Validation]) {
+    case (validations, cls) =>
+      val typeDef = new RuntimeTypeDef(cls)
+      val componentValidation = Validations.validate(typeDef)
+      validations.combine(componentValidation)
+  }
+
+  validation match { // if any invalid component, log and throw
+    case _: Valid => ()
+    case invalid: Invalid =>
+      invalid.messages.asScala.foreach { msg => logger.error(msg) }
+      invalid.throwFailureSummary()
+  }
 
   val guardrailProvider = new GuardrailProvider(system, applicationConfig)
   try {
@@ -438,7 +458,7 @@ private final class Sdk(
       runtimeComponentClients,
       { context =>
 
-        val workflow = wiredInstance(clz) {
+        val workflow = wiredInstance("Workflow", clz) {
           sideEffectingComponentInjects(context.asInstanceOf[WorkflowContextImpl].telemetryContext).orElse {
             // remember to update component type API doc and docs if changing the set of injectables
             case p if p == classOf[WorkflowContext] => context
@@ -510,8 +530,21 @@ private final class Sdk(
 
         // we preemptively register the events type to the serializer
         Reflect.allKnownEventSourcedEntityEventType(clz).foreach(serializer.registerTypeHints)
+        // Register protobuf event types from @ProtoEventTypes annotation
+        Reflect.protoEventTypes(clz).foreach(serializer.registerTypeHints)
+
+        // Validate that @ProtoEventTypes entities have applyEvent accepting GeneratedMessageV3
+        Reflect.validateProtoEventTypesApplyEvent(clz).foreach { errorMessage =>
+          throw ValidationException(errorMessage)
+        }
+
+        val componentDescriptor = ComponentDescriptor.descriptorFor(clz, serializer)
 
         val entityStateType: Class[AnyRef] = Reflect.eventSourcedEntityStateType(clz).asInstanceOf[Class[AnyRef]]
+        val allowedProtoEventTypes: Seq[Class[_]] = Reflect.protoEventTypes(clz)
+        val protobufDescriptors =
+          Reflect.protoDescriptorsFor(entityStateType) ++ allowedProtoEventTypes.flatMap(Reflect.protoDescriptorsFor) ++
+          Reflect.protoCommandHandlerInputOutput(componentDescriptor)
 
         val instanceFactory: SpiEventSourcedEntity.FactoryContext => SpiEventSourcedEntity = { factoryContext =>
           new EventSourcedEntityImpl[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]](
@@ -519,11 +552,12 @@ private final class Sdk(
             componentId,
             factoryContext.entityId,
             serializer,
-            ComponentDescriptor.descriptorFor(clz, serializer),
+            componentDescriptor,
             entityStateType,
             regionInfo,
+            allowedProtoEventTypes,
             context =>
-              wiredInstance(clz.asInstanceOf[Class[EventSourcedEntity[AnyRef, AnyRef]]]) {
+              wiredInstance("Event Sourced Entity", clz.asInstanceOf[Class[EventSourcedEntity[AnyRef, AnyRef]]]) {
                 // remember to update component type API doc and docs if changing the set of injectables
                 case p if p == classOf[EventSourcedEntityContext] => context
                 case s if s == classOf[Sanitizer]                 => sanitizer
@@ -541,7 +575,7 @@ private final class Sdk(
             description = Reflect.readComponentDescription(clz),
             provided = isProvided(clz),
             replicationFilterEnabled = Reflect.isReplicationFilterEnabled(clz),
-            protobufDescriptors = Nil)
+            protobufDescriptors = protobufDescriptors.toVector)
 
       case clz if Reflect.isKeyValueEntity(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -554,7 +588,10 @@ private final class Sdk(
               method.getName
           }.toSet
 
+        val componentDescriptor = ComponentDescriptor.descriptorFor(clz, serializer)
         val entityStateType: Class[AnyRef] = Reflect.keyValueEntityStateType(clz).asInstanceOf[Class[AnyRef]]
+        val protobufDescriptors =
+          Reflect.protoDescriptorsFor(entityStateType) ++ Reflect.protoCommandHandlerInputOutput(componentDescriptor)
 
         val instanceFactory: SpiEventSourcedEntity.FactoryContext => SpiEventSourcedEntity = { factoryContext =>
           new KeyValueEntityImpl[AnyRef, KeyValueEntity[AnyRef]](
@@ -563,11 +600,11 @@ private final class Sdk(
             componentId,
             factoryContext.entityId,
             serializer,
-            ComponentDescriptor.descriptorFor(clz, serializer),
+            componentDescriptor,
             entityStateType,
             regionInfo,
             context =>
-              wiredInstance(clz.asInstanceOf[Class[KeyValueEntity[AnyRef]]]) {
+              wiredInstance("Key Value Entity", clz.asInstanceOf[Class[KeyValueEntity[AnyRef]]]) {
                 // remember to update component type API doc and docs if changing the set of injectables
                 case p if p == classOf[KeyValueEntityContext] => context
                 case s if s == classOf[Sanitizer]             => sanitizer
@@ -585,14 +622,18 @@ private final class Sdk(
             description = Reflect.readComponentDescription(clz),
             provided = false,
             replicationFilterEnabled = Reflect.isReplicationFilterEnabled(clz),
-            protobufDescriptors = Nil)
+            protobufDescriptors = protobufDescriptors.toVector)
 
       case clz if Reflect.isWorkflow(clz) =>
         val componentId = Reflect.readComponentId(clz)
 
         // register known types
-        serializer.registerTypeHints(Reflect.workflowStateType(clz))
-        Reflect.workflowKnownInputTypes(clz)
+        val stateType = Reflect.workflowStateType(clz)
+        serializer.registerTypeHints(stateType)
+        val inputTypes = Reflect.workflowKnownInputTypes(clz)
+        val protobufDescriptors = Reflect.protoDescriptorsFor(stateType) ++ inputTypes.flatMap(inputType =>
+          Reflect.protoDescriptorsFor(inputType)) ++ Reflect.protoCommandHandlerInputOutputForWorkflow(
+          clz.asInstanceOf[Class[Workflow[_]]])
 
         val readOnlyCommandNames =
           clz.getDeclaredMethods.collect {
@@ -611,7 +652,7 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            protobufDescriptors = Nil)
+            protobufDescriptors = protobufDescriptors.toVector)
 
       case clz if Reflect.isTimedAction(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -620,7 +661,7 @@ private final class Sdk(
           new TimedActionImpl[TimedAction](
             componentId,
             context =>
-              wiredInstance(timedActionClass)(
+              wiredInstance("Timed Action", timedActionClass)(
                 sideEffectingComponentInjects(
                   context.asInstanceOf[TimedActionImpl.CommandContextImpl].telemetryContext)),
             timedActionClass,
@@ -639,18 +680,19 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            protobufDescriptors = Nil)
+            protobufDescriptors = Reflect.protoCommandHandlerInputTimedAction(clz.asInstanceOf[Class[TimedAction]]))
 
       case clz if Reflect.isConsumer(clz) =>
         val componentId = Reflect.readComponentId(clz)
         val consumerClass = clz.asInstanceOf[Class[Consumer]]
         val consumerDest = consumerDestination(consumerClass)
         val consumerSrc = consumerSource(consumerClass)
+        val componentDescriptor = ComponentDescriptor.descriptorFor(consumerClass, serializer)
         val consumerSpi =
           new ConsumerImpl[Consumer](
             componentId,
             context =>
-              wiredInstance(consumerClass)(
+              wiredInstance("Consumer", consumerClass)(
                 sideEffectingComponentInjects(context.asInstanceOf[MessageContextImpl].telemetryContext)),
             consumerClass,
             consumerSrc,
@@ -661,7 +703,7 @@ private final class Sdk(
             sdkTracerFactory,
             serializer,
             ComponentDescriptorFactory.findIgnore(consumerClass),
-            ComponentDescriptor.descriptorFor(consumerClass, serializer),
+            componentDescriptor,
             regionInfo)
         consumerDescriptors :+=
           new ConsumerDescriptor(
@@ -673,7 +715,7 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            protobufDescriptors = Nil)
+            protobufDescriptors = Reflect.protoCommandHandlerInputOutput(componentDescriptor))
 
       case clz if Reflect.isAgent(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -693,7 +735,7 @@ private final class Sdk(
             componentId,
             factoryContext.sessionId,
             context =>
-              wiredInstance(agentClass) {
+              wiredInstance("Agent", agentClass) {
                 (sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext)).orElse {
                   // remember to update component type API doc and docs if changing the set of injectables
                   case p if p == classOf[AgentContext] => context
@@ -762,12 +804,13 @@ private final class Sdk(
         // FIXME: HttpClientProvider will inject but not quite work for cross service calls until we
         //        pass auth headers with the runner startup context from the runtime
         Some(
-          wiredInstance[ServiceSetup](serviceClassClass.asInstanceOf[Class[ServiceSetup]])(
+          wiredInstance[ServiceSetup]("Service Setup", serviceClassClass.asInstanceOf[Class[ServiceSetup]])(
             sideEffectingComponentInjects(None)))
 
       case Some(serviceClassClass) =>
         //just wiring the class
-        wiredInstance[Any](serviceClassClass.asInstanceOf[Class[Any]])(sideEffectingComponentInjects(None))
+        wiredInstance[Any]("Service Setup", serviceClassClass.asInstanceOf[Class[Any]])(
+          sideEffectingComponentInjects(None))
         None
       case _ => None
     }
@@ -835,7 +878,14 @@ private final class Sdk(
         case None => Future.successful(Done)
         case Some(setup) =>
           logger.debug("Running onStart lifecycle hook")
-          setup.onStartup()
+          try {
+            setup.onStartup()
+          } catch {
+            case NonFatal(ex) =>
+              // Make sure it reaches the user
+              SdkRunner.userServiceLog.error(s"${setup.getClass.getName}.onStart() thew an exception", ex)
+              throw ex
+          }
           Future.successful(Done)
       }
     }
@@ -901,7 +951,7 @@ private final class Sdk(
     (context: HttpEndpointConstructionContext) =>
       lazy val requestContext = new HttpRequestContextImpl(context, sdkTracerFactory, regionInfo)(
         SystemMaterializer(system).materializer)
-      val instance = wiredInstance(httpEndpointClass) {
+      val instance = wiredInstance("HTTP Endpoint", httpEndpointClass) {
         sideEffectingComponentInjects(Option(context.telemetryContext)).orElse {
           case p if p == classOf[RequestContext] => requestContext
         }
@@ -935,7 +985,7 @@ private final class Sdk(
         override def selfRegion(): String = regionInfo.selfRegion
       }
 
-      val instance = wiredInstance(grpcEndpointClass) {
+      val instance = wiredInstance("gRPC Endpoint", grpcEndpointClass) {
         sideEffectingComponentInjects(Option(context.telemetryContext)).orElse {
           case p if p == classOf[GrpcRequestContext] => grpcRequestContext
         }
@@ -976,7 +1026,7 @@ private final class Sdk(
 
       }
 
-      val instance = wiredInstance(mcpEndpointClass) {
+      val instance = wiredInstance("MCP Endpoint", mcpEndpointClass) {
         sideEffectingComponentInjects(telemetryContext).orElse {
           case p if p == classOf[GrpcRequestContext] => mcpRequestContext
         }
@@ -988,10 +1038,18 @@ private final class Sdk(
       instance
   }
 
-  private def wiredInstance[T](clz: Class[T])(partial: PartialFunction[Class[_], Any]): T = {
-    // only one constructor allowed
-    require(clz.getDeclaredConstructors.length == 1, s"Class [${clz.getSimpleName}] must have only one constructor.")
-    wiredInstance(clz.getDeclaredConstructors.head.asInstanceOf[Constructor[T]])(partial)
+  private def wiredInstance[T](componentType: String, clz: Class[T])(partial: PartialFunction[Class[_], Any]): T = {
+    try {
+      // only one constructor allowed
+      require(clz.getDeclaredConstructors.length == 1, s"Class [${clz.getSimpleName}] must have only one constructor.")
+      wiredInstance(clz.getDeclaredConstructors.head.asInstanceOf[Constructor[T]])(partial)
+    } catch {
+      case NonFatal(ex) =>
+        // Make sure it goes in user logs
+        SdkRunner.userServiceLog.error(s"Failed to create instance of $componentType [${clz.getName}]", ex)
+        throw ex
+    }
+
   }
 
   /**
@@ -1023,7 +1081,7 @@ private final class Sdk(
               dependencyProvider.getDependency(anyOther)
             case None =>
               throw new IllegalStateException(
-                s"Could not inject dependency [${anyOther.getName}] required by [${constructor.getDeclaringClass.getName}] as no DependencyProvider was configured." +
+                s"Could not inject dependency [${anyOther.getName}] required by [${constructor.getDeclaringClass.getName}] as no DependencyProvider was configured. " +
                 "Please provide a DependencyProvider to supply dependencies. " +
                 "See https://doc.akka.io/sdk/setup-and-dependency-injection.html#_custom_dependency_injection");
           }

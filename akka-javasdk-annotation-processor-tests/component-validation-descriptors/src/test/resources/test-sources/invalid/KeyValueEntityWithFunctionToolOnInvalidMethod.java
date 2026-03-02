@@ -12,7 +12,7 @@ import akka.javasdk.keyvalueentity.KeyValueEntity;
 public class KeyValueEntityWithFunctionToolOnInvalidMethod extends KeyValueEntity<String> {
 
   public Effect<String> update(String value) {
-    return effects().updateState(value).thenReply(__ -> "updated");
+    return effects().updateState(value).thenReply("updated");
   }
 
   // @FunctionTool is not allowed on methods that don't return Effect or ReadOnlyEffect

@@ -6,6 +6,7 @@ package akka.javasdk.eventsourcedentity;
 
 import akka.javasdk.annotations.Migration;
 import akka.javasdk.annotations.TypeName;
+import java.util.Optional;
 
 public sealed interface TestESEvent {
 
@@ -20,4 +21,7 @@ public sealed interface TestESEvent {
 
   @Migration(Event4Migration.class)
   record Event4(String anotherString) implements OldTestESEvent, TestESEvent {}
+
+  @TypeName("old-event-3")
+  record Event5(String value, Optional<String> optionalValue) implements TestESEvent {}
 }

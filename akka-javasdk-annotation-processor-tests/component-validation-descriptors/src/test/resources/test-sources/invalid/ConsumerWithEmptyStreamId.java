@@ -7,7 +7,7 @@ import akka.javasdk.consumer.Consumer;
 
 @Component(id = "consumer-empty-stream")
 @Consume.FromTopic("my-topic")
-@Produce.ServiceStream(id = "", service = "my-service")
+@Produce.ServiceStream(id = "")
 public class ConsumerWithEmptyStreamId extends Consumer {
   // Stream ID is empty - should fail
 

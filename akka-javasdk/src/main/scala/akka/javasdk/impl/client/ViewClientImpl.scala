@@ -27,7 +27,7 @@ import akka.javasdk.client.ViewStreamMethodRef
 import akka.javasdk.client.ViewStreamMethodRef1
 import akka.javasdk.impl.ComponentDescriptorFactory
 import akka.javasdk.impl.MetadataImpl
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.view.ViewStreamMethodRefImpl
 import akka.javasdk.impl.view.ViewStreamMethodRefImpl1
 import akka.javasdk.view.View
@@ -94,20 +94,21 @@ private[javasdk] object ViewClientImpl {
     }
   }
 
-  private[impl] def encodeArgument(serializer: JsonSerializer, method: Method, arg: Option[Any]): BytesPayload =
+  private[impl] def encodeArgument(serializer: Serializer, method: Method, arg: Option[Any]): BytesPayload =
     arg match {
       case Some(arg) =>
         // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
+        // Views use JSON for all data including protobuf messages (stored as JSONB in the database)
         if (arg.getClass.isPrimitive || primitiveObjects.contains(arg.getClass)) {
-          val bytes = serializer.encodeDynamicToAkkaByteString(method.getParameters.head.getName, arg)
-          new BytesPayload(bytes, JsonSerializer.JsonContentTypePrefix + "object")
+          val bytes = serializer.json.encodeDynamicToAkkaByteString(method.getParameters.head.getName, arg)
+          new BytesPayload(bytes, Serializer.JsonContentTypePrefix + "object")
         } else if (classOf[java.util.Collection[_]].isAssignableFrom(arg.getClass)) {
-          val bytes = serializer.encodeDynamicCollectionToAkkaByteString(
+          val bytes = serializer.json.encodeDynamicCollectionToAkkaByteString(
             method.getParameters.head.getName,
             arg.asInstanceOf[java.util.Collection[_]])
-          new BytesPayload(bytes, JsonSerializer.JsonContentTypePrefix + "object")
+          new BytesPayload(bytes, Serializer.JsonContentTypePrefix + "object")
         } else {
-          serializer.toBytes(arg)
+          serializer.toBytesAsJson(arg)
         }
       case None =>
         BytesPayload.empty
@@ -121,7 +122,7 @@ private[javasdk] object ViewClientImpl {
 @InternalApi
 private[javasdk] final case class ViewClientImpl(
     viewClient: RuntimeViewClient,
-    serializer: JsonSerializer,
+    serializer: Serializer,
     // Note: not actually passed through to query
     callMetadata: Option[Metadata])(implicit val executionContext: ExecutionContext, system: ActorSystem[_])
     extends ViewClient {
@@ -155,7 +156,7 @@ private[javasdk] final case class ViewClientImpl(
         // Note: same path for 0 and 1 arg calls
         val serializedPayload = encodeArgument(serializer, viewMethodProperties.method, maybeArg)
 
-        def callView(metadata: Metadata): Future[R] = {
+        def callView(metadata: Metadata): Future[CallResult[R]] = {
           viewClient
             .query(
               new ViewRequest(
@@ -165,12 +166,15 @@ private[javasdk] final case class ViewClientImpl(
                 toSpi(metadata)))
             .map { result =>
               if (result.payload.isEmpty) {
-                if (viewMethodProperties.returnTypeOptional) Optional.empty().asInstanceOf[R]
+                if (viewMethodProperties.returnTypeOptional)
+                  CallResult(Optional.empty(), MetadataImpl.Empty).asInstanceOf[CallResult[R]]
                 else
                   throw new NoEntryFoundException(
                     s"No matching entry found when calling ${viewMethodProperties.declaringClass}.${viewMethodProperties.methodName}")
               } else {
-                serializer.fromBytes(viewMethodProperties.queryReturnType, result.payload)
+                CallResult(
+                  serializer.fromBytes(viewMethodProperties.queryReturnType, result.payload),
+                  MetadataImpl.Empty)
               }
             }
         }

@@ -67,7 +67,7 @@ class CustomerStoreUpdaterTest extends TestKitSupport {
       .ignoreExceptions()
       .atMost(20, SECONDS)
       .untilAsserted(() -> {
-        var result = await(customerStore.getAll());
+        var result = customerStore.getAll();
         assertThat(result).containsOnly(expectedCustomer);
       });
 
@@ -79,7 +79,7 @@ class CustomerStoreUpdaterTest extends TestKitSupport {
       .ignoreExceptions()
       .during(3, SECONDS)
       .untilAsserted(() -> {
-        var result = await(customerStore.getAll());
+        var result = customerStore.getAll();
         assertThat(result).containsOnly(expectedCustomer);
       });
   }

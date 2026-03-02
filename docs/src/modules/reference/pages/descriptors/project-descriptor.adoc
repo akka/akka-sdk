@@ -5,10 +5,13 @@ include::ROOT:partial$include.adoc[]
 
 Akka's _Project Descriptor_ is a multi-document YAML file that defines the complete configuration for an Akka project, including
 
+. xref:#project[the project itself],
 . xref:#service[services],
 . xref:#route[routes],
 . xref:#observability[observability settings],
 . xref:#external-secret[external secrets],
+. xref:#secret[secrets],
+. xref:#service-config[service configs],
 . xref:#broker[message broker configuration], and
 . xref:#rolebindings[role bindings].
 
@@ -20,9 +23,9 @@ Each document in the project descriptor represents a single resource and follows
 |===
 |Field   |Type                    |Description
 
-|*resource*         |string _required_  |The type of resource: `Service`, `Route`, `Observability`, `ExternalSecret`, `Broker`, or `RoleBindings`
+|*resource*         |string _required_  |The type of resource: `Project`, `Service`, `Route`, `Observability`, `ExternalSecret`, `Secret`, `ServiceConfig`, `Broker`, or `RoleBindings`
 |*resourceVersion*  |string _required_  |The version of the resource schema. Currently only `v1` is supported.
-|*metadata*         |<<Metadata>>       |Optional metadata for the resource. Required for `Service`, `Route` and `ExternalSecret` resources.
+|*metadata*         |<<Metadata>>       |Optional metadata for the resource. Required for `Project`, `Service`, `Route`, `ExternalSecret`, `Secret`, and `ServiceConfig` resources.
 |*spec*             |object _required_  |The specification for the resource. Structure depends on the resource type.
 |===
 
@@ -30,14 +33,45 @@ Each document in the project descriptor represents a single resource and follows
 
 [cols="1,1,1"]
 |===
-|Field   |Type     |Description
+|Field    |Type     |Description
 
-|*name*  |string   |The name of the resource. Required for `Service`, `Route` and `ExternalSecret` resources.
+|*name*   |string   |The name of the resource. Required for `Project`, `Service`, `Route`, `ExternalSecret`, `Secret`, and `ServiceConfig` resources.
+|*region* |string   |The target region for region-specific resources. Supported for `ExternalSecret`, `Secret`, and `ServiceConfig`. When set, the resource is applied only to the specified region with regional sync mode.
 |===
 
 == Resource types
 
-The project descriptor supports the following resource types. A single descriptor can contain multiple `Service`, `Route` and `ExternalSecret` documents, each with a unique name. The `Observability`, `Broker`, and `RoleBindings` resources are project-level singletons—only one of each can exist per project.
+The project descriptor supports the following resource types. A single descriptor can contain multiple `Service`, `Route`, `ExternalSecret`, `Secret`, and `ServiceConfig` documents, each with a unique name. The `Project`, `Observability`, `Broker`, and `RoleBindings` resources are project-level singletons—only one of each can exist per project.
+
+[#project]
+=== Project
+
+Defines the project itself, including its name, description, regions, and organization. If present, it must be the first document in the descriptor. When applied, the project is created if it does not exist, or updated if it does (description changes, regions added or removed).
+
+[cols="1,1,1"]
+|===
+|Field           |Type              |Description
+
+|*description*   |string            |A description for the project.
+|*organization*  |string            |The organization that owns the project. Can also be specified via `--organization` flag or `akka config set organization`.
+|*regions*       |[]string          |List of regions for the project. The first region is the primary region. Can also be specified via `--project-regions` flag.
+|===
+
+NOTE: You cannot specify both a `Project` resource in the descriptor and the `--project` flag. Use one or the other to identify the project.
+
+[source,yaml]
+----
+resource: Project
+resourceVersion: v1
+metadata:
+  name: my-project
+spec:
+  description: My production project
+  organization: my-org
+  regions:
+    - us-east-1
+    - eu-west-1
+----
 
 [#service]
 === Service
@@ -111,6 +145,92 @@ spec:
     objects:
     - name: my-secret
       type: secret
+----
+
+[#secret]
+=== Secret
+
+Defines a secret for storing sensitive data such as credentials, certificates, or keys. A descriptor can include multiple Secret documents, each with a unique name. Secrets can be targeted to a specific region using `metadata.region`.
+
+[cols="1,1,1"]
+|===
+|Field   |Type                |Description
+
+|*type*  |string _required_   |The secret type. Valid values: `generic`, `tls`, `tls-ca`, `symmetric`, `asymmetric`.
+|*data*  |map[string]string   |Key-value pairs of secret data.
+|===
+
+[source,yaml]
+----
+resource: Secret
+resourceVersion: v1
+metadata:
+  name: my-credentials
+spec:
+  type: generic
+  data:
+    username: my-user
+    password: my-password
+----
+
+Values are strings, so structured data such as JSON can be embedded using the YAML block scalar syntax:
+
+[source,yaml]
+----
+resource: Secret
+resourceVersion: v1
+metadata:
+  name: gcp-service-account
+spec:
+  type: generic
+  data:
+    credentials.json: |
+      {
+        "type": "service_account",
+        "project_id": "my-gcp-project",
+        "private_key_id": "key-id",
+        "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
+        "client_email": "sa@my-gcp-project.iam.gserviceaccount.com"
+      }
+----
+
+To target a specific region:
+
+[source,yaml]
+----
+resource: Secret
+resourceVersion: v1
+metadata:
+  name: my-regional-secret
+  region: us-east-1
+spec:
+  type: generic
+  data:
+    api-key: region-specific-key
+----
+
+[#service-config]
+=== ServiceConfig
+
+Defines a service configuration containing HOCON configuration text that can be referenced by services. A descriptor can include multiple ServiceConfig documents, each with a unique name. Service configs can be targeted to a specific region using `metadata.region`.
+
+[cols="1,1,1"]
+|===
+|Field    |Type              |Description
+
+|*config* |string _required_ |The HOCON configuration text.
+|===
+
+[source,yaml]
+----
+resource: ServiceConfig
+resourceVersion: v1
+metadata:
+  name: my-config
+spec:
+  config: |
+    some.setting = "value"
+    another.setting = 42
 ----
 
 [#broker]
@@ -259,7 +379,7 @@ To export all resources from an existing project as a descriptor:
 akka project export --project my-project --file my-project.yaml
 ----
 
-This exports all services, routes, observability configuration, broker settings, and role bindings to a single file. You can also write to standard output:
+This exports the project configuration, services, routes, secrets, service configs, observability configuration, broker settings, and role bindings to a single file. You can also write to standard output:
 
 [source,bash]
 ----
@@ -268,18 +388,32 @@ akka project export > project.yaml
 
 The exported descriptor can be used as a starting point for version-controlled infrastructure, or to replicate a project's configuration.
 
+IMPORTANT: Secret values are redacted in the exported descriptor. Secret data is replaced with `NOT EXPORTED` placeholders to prevent accidental exposure. You must replace these placeholders with actual values before re-applying the descriptor.
+
 [#applying]
 === Applying a project descriptor
 
 To configure the project according to the descriptor, use the `akka project apply` command.
-The `--dry-run` flag allows validating a descriptor and see what would be applied without making any changes:
+
+==== Dry-run validation
+
+The `--dry-run` flag validates a descriptor and shows what would be applied without making any changes:
 
 [source,bash]
 ----
 akka project apply --file project.yaml --dry-run
 ----
 
-To apply a project descriptor, use the `akka project apply` command:
+Dry-run performs the following validations:
+
+- Schema validation for all resource types
+- Cross-resource reference checking — for example, if a Service references `serviceConfig: my-config`, dry-run verifies that `my-config` exists either as a `ServiceConfig` document in the same descriptor or as an existing resource in the project
+- Secret references are validated the same way
+- Region names are validated against the project's available regions
+
+==== Applying
+
+To apply a project descriptor:
 
 [source,bash]
 ----
@@ -292,7 +426,7 @@ IMPORTANT: The apply operation is additive. It creates or updates resources defi
 
 NOTE: For multi-region projects, the descriptor is applied to the primary region. Changes will then be synchronized to other regions automatically.
 
-=== Reading from standard input
+==== Reading from standard input
 
 You can also pipe the descriptor content:
 
@@ -301,6 +435,27 @@ You can also pipe the descriptor content:
 cat project.yaml | akka project apply --file -
 ----
 
+This is particularly useful in CI/CD pipelines where secret values are injected from environment variables. Keep the descriptor in source control as a template with placeholders, and substitute values at apply time:
+
+[source,yaml]
+----
+resource: Secret
+resourceVersion: v1
+metadata:
+  name: my-credentials
+spec:
+  type: generic
+  data:
+    password: ${DB_PASSWORD}
+----
+
+[source,bash]
+----
+envsubst < project.yaml | akka project apply --file -
+----
+
+This way the descriptor never contains actual secret values — they are resolved from the CI environment at apply time.
+
 [#example]
 == Complete descriptor example
 
@@ -308,12 +463,23 @@ Here is a complete project descriptor demonstrating multiple resource types:
 
 [source,yaml]
 ----
+resource: Project
+resourceVersion: v1
+metadata:
+  name: my-project
+spec:
+  description: E-commerce application
+  organization: my-org
+  regions:
+    - us-east-1
+---
 resource: Service
 resourceVersion: v1
 metadata:
   name: cart-service
 spec:
   image: acr.us-east-1.akka.io/my-org/my-project/cart-service:1.0.0
+  serviceConfig: cart-config
   resources:
     runtime:
       mode: embedded
@@ -346,6 +512,24 @@ spec:
     - prefix: /products
       route:
         service: product-catalog
+---
+resource: ServiceConfig
+resourceVersion: v1
+metadata:
+  name: cart-config
+spec:
+  config: |
+    cart.max-items = 100
+    cart.expiry = 24h
+---
+resource: Secret
+resourceVersion: v1
+metadata:
+  name: kafka-credentials
+spec:
+  type: generic
+  data:
+    password: my-kafka-password
 ---
 resource: Observability
 resourceVersion: v1

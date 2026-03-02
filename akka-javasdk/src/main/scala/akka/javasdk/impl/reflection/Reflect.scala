@@ -10,8 +10,10 @@ import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
+import java.lang.reflect.TypeVariable
 import java.util
 import java.util.Optional
+import java.util.concurrent.ConcurrentHashMap
 
 import scala.annotation.nowarn
 import scala.annotation.tailrec
@@ -26,13 +28,16 @@ import akka.javasdk.annotations.AgentDescription
 import akka.javasdk.annotations.AgentRole
 import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.ComponentId
+import akka.javasdk.annotations.Consume
 import akka.javasdk.annotations.EnableReplicationFilter
 import akka.javasdk.annotations.GrpcEndpoint
+import akka.javasdk.annotations.ProtoEventTypes
 import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
+import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.client.ComponentClientImpl
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
 import akka.javasdk.keyvalueentity.KeyValueEntity
@@ -42,6 +47,9 @@ import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.Workflow.RunnableStep
 import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.google.protobuf.Descriptors
+import com.google.protobuf.Descriptors.FieldDescriptor.JavaType
+import com.google.protobuf.GeneratedMessageV3
 
 /**
  * Class extension to facilitate some reflection common usages.
@@ -92,6 +100,30 @@ private[impl] object Reflect {
     }
 
   }
+
+  private val protoDescriptorCache = new ConcurrentHashMap[Class[_], Descriptors.Descriptor]()
+  def protoDescriptorFor(messageClass: Class[_ <: GeneratedMessageV3]): Descriptors.Descriptor =
+    protoDescriptorCache.computeIfAbsent(
+      messageClass,
+      { clazz =>
+        clazz.getDeclaredMethod("getDescriptor").invoke(null).asInstanceOf[Descriptors.Descriptor]
+      })
+
+  def protoDescriptorsFor(messageClass: Class[_]): Set[Descriptors.Descriptor] = {
+    if (classOf[GeneratedMessageV3].isAssignableFrom(messageClass)) {
+      val mainDescriptor = protoDescriptorFor(messageClass.asSubclass(classOf[GeneratedMessageV3]))
+      // FIXME verify that we actually do need those
+      // we need all nested field types as well
+      flattenDependencies(mainDescriptor)
+    } else Set.empty
+  }
+
+  private def flattenDependencies(descriptor: Descriptors.Descriptor): Set[Descriptors.Descriptor] =
+    Set(descriptor) ++ descriptor.getFields.asScala.toSet.flatMap((field: Descriptors.FieldDescriptor) =>
+      if (field.getJavaType == JavaType.MESSAGE) {
+        val fieldDescriptor = field.getMessageType
+        Set(fieldDescriptor) ++ flattenDependencies(fieldDescriptor)
+      } else Set.empty)
 
   def isRestEndpoint(cls: Class[_]): Boolean =
     cls.getAnnotation(classOf[HttpEndpoint]) != null
@@ -185,31 +217,52 @@ private[impl] object Reflect {
   }
 
   def keyValueEntityStateType(component: Class[_]): Class[_] = {
-    findSingleTypeParam(component, s"Cannot find key value state class for $component")
+    findSingleTypeParam(component, classOf[KeyValueEntity[_]], s"Cannot find key value state class for $component")
   }
 
   /**
-   * Find the type parameter class.
+   * Find the type parameter of a specific base class in the hierarchy.
    *
-   * This method should only be called on a class receiving a single type parameter. For example, given a type defined
-   * as F[G], it will return Class[G].
+   * Walks up the superclass chain looking for the given base class, then returns its first type argument. This avoids
+   * accidentally picking up a type parameter from an intermediate generic superclass. Type variables are resolved using
+   * substitutions collected while walking up, so intermediate abstract classes that pass through the type parameter are
+   * handled correctly.
    */
-  @tailrec
-  private def findSingleTypeParam(current: Class[_], errorMsg: String): Class[_] =
-    if (current == classOf[AnyRef])
-      // recursed to root without finding type param
-      throw new IllegalArgumentException(errorMsg)
-    else {
-      current.getGenericSuperclass match {
-        case parameterizedType: ParameterizedType =>
-          if (parameterizedType.getActualTypeArguments.length == 1)
-            parameterizedType.getActualTypeArguments.head.asInstanceOf[Class[_]]
-          else throw new IllegalArgumentException(errorMsg)
-        case noTypeParamsParent: Class[_] =>
-          // recurse and look at parent
-          findSingleTypeParam(noTypeParamsParent, errorMsg)
+  private def findSingleTypeParam(current: Class[_], baseClass: Class[_], errorMsg: String): Class[_] = {
+    def resolveTypeArg(typeArg: Type, substitutions: Map[String, Class[_]]): Class[_] =
+      typeArg match {
+        case cls: Class[_]       => cls
+        case tv: TypeVariable[_] => substitutions.getOrElse(tv.getName, throw new IllegalArgumentException(errorMsg))
+        case _                   => throw new IllegalArgumentException(errorMsg)
       }
-    }
+
+    @tailrec
+    def loop(current: Class[_], substitutions: Map[String, Class[_]]): Class[_] =
+      if (current == classOf[AnyRef])
+        throw new IllegalArgumentException(errorMsg)
+      else {
+        current.getGenericSuperclass match {
+          case parameterizedType: ParameterizedType if parameterizedType.getRawType == baseClass =>
+            resolveTypeArg(parameterizedType.getActualTypeArguments.head, substitutions)
+          case parameterizedType: ParameterizedType =>
+            val rawType = parameterizedType.getRawType.asInstanceOf[Class[_]]
+            val newSubstitutions = rawType.getTypeParameters
+              .zip(parameterizedType.getActualTypeArguments)
+              .foldLeft(substitutions) { case (acc, (param, arg)) =>
+                arg match {
+                  case cls: Class[_]       => acc + (param.getName -> cls)
+                  case tv: TypeVariable[_] => substitutions.get(tv.getName).fold(acc)(c => acc + (param.getName -> c))
+                  case _                   => acc
+                }
+              }
+            loop(rawType, newSubstitutions)
+          case noTypeParamsParent: Class[_] =>
+            loop(noTypeParamsParent, substitutions)
+        }
+      }
+
+    loop(current, Map.empty)
+  }
 
   private def extendsView(component: Class[_]): Boolean =
     classOf[View].isAssignableFrom(component)
@@ -223,7 +276,7 @@ private[impl] object Reflect {
     Modifier.isPublic(component.getModifiers)
 
   def workflowStateType(component: Class[_]): Class[_] = {
-    findSingleTypeParam(component, s"Cannot find workflow state class for $component")
+    findSingleTypeParam(component, classOf[Workflow[_]], s"Cannot find workflow state class for $component")
   }
 
   def workflowKnownInputTypes(clz: Class[_]): List[Class[_]] = {
@@ -313,11 +366,104 @@ private[impl] object Reflect {
   }
 
   def tableUpdaterRowType(tableUpdater: Class[_]): Class[_] =
-    findSingleTypeParam(tableUpdater, s"Cannot find table updater class for ${tableUpdater.getClass}")
+    findSingleTypeParam(
+      tableUpdater,
+      classOf[TableUpdater[_]],
+      s"Cannot find table updater class for ${tableUpdater.getClass}")
 
   def allKnownEventSourcedEntityEventType(component: Class[_]): Seq[Class[_]] = {
     val eventType = eventSourcedEntityEventType(component)
-    eventType.getPermittedSubclasses.toSeq
+    val permitted = eventType.getPermittedSubclasses
+    // getPermittedSubclasses returns null for non-sealed classes (e.g., GeneratedMessageV3 for protobuf)
+    if (permitted == null) Seq.empty else permitted.toSeq
+  }
+
+  /**
+   * Get protobuf event types declared via @ProtoEventTypes annotation on an Event Sourced Entity.
+   */
+  def protoEventTypes(component: Class[_]): Seq[Class[_ <: GeneratedMessageV3]] = {
+    Option(component.getAnnotation(classOf[ProtoEventTypes]))
+      .map(_.value().toSeq)
+      .getOrElse(Seq.empty)
+  }
+
+  /**
+   * Resolve proto event types for a component. First checks for @ProtoEventTypes on the class itself, then falls back
+   * to the source ES entity referenced by @Consume.FromEventSourcedEntity.
+   */
+  def resolveProtoEventTypes(component: Class[_]): Seq[Class[_ <: GeneratedMessageV3]] = {
+    val fromComponent = protoEventTypes(component)
+    if (fromComponent.nonEmpty) {
+      fromComponent
+    } else {
+      Option(component.getAnnotation(classOf[Consume.FromEventSourcedEntity]))
+        .map(ann => protoEventTypes(ann.value()))
+        .getOrElse(Seq.empty)
+    }
+  }
+
+  /**
+   * Find all protobuf message types accepted as commands and returned as responses from command handlers
+   */
+  def protoCommandHandlerInputOutput(descriptor: ComponentDescriptor): Seq[Descriptors.Descriptor] = {
+    val methods = descriptor.methodInvokers.values.map(_.method)
+    descriptorsForCommandHandlerInputOutput(methods)
+  }
+
+  def protoCommandHandlerInputOutputForWorkflow(workflowClass: Class[_ <: Workflow[_]]): Seq[Descriptors.Descriptor] = {
+    val methods = workflowClass.getMethods.filter(isCommandHandlerCandidate[Workflow.Effect[_]])
+    descriptorsForCommandHandlerInputOutput(methods)
+  }
+
+  def protoCommandHandlerInputTimedAction(clazz: Class[TimedAction]): Seq[Descriptors.Descriptor] = {
+    val methods = clazz.getMethods.filter(isCommandHandlerCandidate[TimedAction.Effect])
+    descriptorsForCommandHandlerInputOutput(methods)
+  }
+
+  private def descriptorsForCommandHandlerInputOutput(methods: Iterable[Method]): Seq[Descriptors.Descriptor] = {
+    methods
+      .flatMap { method =>
+        val inputs = method.getParameterTypes.toVector
+        val outputs =
+          method.getGenericReturnType match {
+            case p: ParameterizedType => p.getActualTypeArguments.toVector.collect { case c: Class[_] => c }
+            case _                    => Vector.empty[Class[_]]
+          }
+
+        inputs ++ outputs
+      }
+      .collect {
+        case c if c != classOf[GeneratedMessageV3] && classOf[GeneratedMessageV3].isAssignableFrom(c) => c
+      }
+      .flatMap(protoDescriptorsFor)
+      .toVector
+  }
+
+  /**
+   * Check if an Event Sourced Entity has the @ProtoEventTypes annotation.
+   */
+  def hasProtoEventTypes(component: Class[_]): Boolean = {
+    component.getAnnotation(classOf[ProtoEventTypes]) != null
+  }
+
+  /**
+   * Validate that an Event Sourced Entity with @ProtoEventTypes has applyEvent accepting GeneratedMessageV3. Returns an
+   * error message if validation fails, None otherwise.
+   */
+  def validateProtoEventTypesApplyEvent(component: Class[_]): Option[String] = {
+    if (hasProtoEventTypes(component)) {
+      val eventType = eventSourcedEntityEventType(component)
+      if (!classOf[GeneratedMessageV3].isAssignableFrom(eventType)) {
+        Some(
+          s"Event Sourced Entity [${component.getName}] is annotated with @ProtoEventTypes but its applyEvent method " +
+          s"accepts [${eventType.getName}] instead of [${classOf[GeneratedMessageV3].getName}]. " +
+          "When using @ProtoEventTypes, the applyEvent method must accept GeneratedMessageV3.")
+      } else {
+        None
+      }
+    } else {
+      None
+    }
   }
 
   def eventSourcedEntityEventType(component: Class[_]): Class[_] =

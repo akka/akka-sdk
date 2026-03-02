@@ -12,11 +12,13 @@ import java.util.Optional;
 /**
  * Represents a piece of content within a multimodal message to an AI model.
  *
- * <p>Message content can be text or images, allowing agents to send multimodal inputs.
+ * <p>Message content can be text, images, or PDFs, allowing agents to send multimodal inputs.
  *
  * @see UserMessage
  */
 public sealed interface MessageContent {
+
+  sealed interface LoadableMessageContent extends MessageContent {}
 
   /**
    * Text content within a user message.
@@ -45,7 +47,7 @@ public sealed interface MessageContent {
    */
   record ImageUrlMessageContent(
       URL url, ImageMessageContent.DetailLevel detailLevel, Optional<String> mimeType)
-      implements MessageContent {
+      implements LoadableMessageContent {
 
     /**
      * Image content within a user message, referenced by URL.
@@ -126,6 +128,41 @@ public sealed interface MessageContent {
       ULTRA_HIGH,
       /** Let the model automatically choose the appropriate detail level. */
       AUTO;
+    }
+  }
+
+  /**
+   * PDF content within a user message, referenced by URL.
+   *
+   * @param url The URL pointing to the PDF
+   */
+  record PdfUrlMessageContent(URL url) implements LoadableMessageContent {}
+
+  /** Factory methods for creating PDF message content. */
+  record PdfMessageContent() {
+
+    /**
+     * Creates PDF content from a URL string.
+     *
+     * @param url The URL string pointing to the PDF
+     * @return A new PdfUrlMessageContent instance
+     */
+    public static PdfUrlMessageContent fromUrl(String url) {
+      try {
+        return PdfMessageContent.fromUrl(URI.create(url).toURL());
+      } catch (MalformedURLException e) {
+        throw new RuntimeException("Can't transform " + url + " to URL", e);
+      }
+    }
+
+    /**
+     * Creates PDF content from a URL.
+     *
+     * @param url The URL pointing to the PDF
+     * @return A new PdfUrlMessageContent instance
+     */
+    public static PdfUrlMessageContent fromUrl(URL url) {
+      return new PdfUrlMessageContent(url);
     }
   }
 }

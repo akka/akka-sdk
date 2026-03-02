@@ -7,7 +7,7 @@ object Dependencies {
     val ProtocolVersionMajor = 1
     val ProtocolVersionMinor = 1
   }
-  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.5.37")
+  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.5.39")
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
   // for prod code, they are marked as Provided, but testkit still requires the alignment
@@ -73,7 +73,8 @@ object Dependencies {
   val opentelemetryContext = "io.opentelemetry" % "opentelemetry-context" % OpenTelemetryVersion
   val opentelemetrySemConv = "io.opentelemetry.semconv" % "opentelemetry-semconv" % OpenTelemetrySemConv
 
-  val typesafeConfig = "com.typesafe" % "config" % "1.4.2"
+  val typesafeConfig = "com.typesafe" % "config" % "1.4.6"
+  val protobufJavaUtil = "com.google.protobuf" % "protobuf-java-util" % GoogleProtobufVersion
 
   private val deps = libraryDependencies
 
@@ -102,12 +103,15 @@ object Dependencies {
     jacksonJsr310,
     jacksonParameterNames,
     jacksonScala,
-    langchain4j)
+    langchain4j,
+    protobufJavaUtil)
 
   // Important: be careful when adding dependencies here, unless provided, runtime or test they will also be packaged in the user project
   //            binaries/artifacts unless explicitly excluded in the akka-javasdk-parent assembly descriptor
   val javaSdk = deps ++= sdkDeps ++ Seq(
     akkaSdkSpi,
+    // FIXME: Not sure why this is needed, 1.4.5 from akka-core somehow trumps 1.4.6 from spi/runtime without it
+    typesafeConfig,
     // make sure these two are on the classpath for users to consume http request/response APIs and streams
     "com.typesafe.akka" %% "akka-http-core" % AkkaHttpVersion,
     akkaDependency("akka-stream"),

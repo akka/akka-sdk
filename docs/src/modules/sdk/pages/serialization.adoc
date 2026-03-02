@@ -164,3 +164,64 @@ include::example$event-sourced-customer-registry/src/test/java/customer/domain/C
 ----
 <1> Loading old payload from a file.
 <2> Deserializing with the latest schema.
+
+== Protobuf Serialization
+
+As an alternative to JSON with Jackson, it is possible to use Protobuf messages.
+In most cases the messages are serialized to binary form for storage.
+
+Protobuf serialization is an advanced feature and not recommended as the default choice.
+
+It is possible to use Protobuf messages for:
+
+=== Event Sourced Entity
+
+Entity state and events, commands and their replies.
+
+Since there is no way to mark a sealed interface for the distinct event types
+`applyEvent` must accept `com.google.protobuf.GeneratedMessageV3` and do its own type
+matching for the expected message types.
+
+The concrete Event Sourced Entity class must also have the annotation
+`akka.javasdk.annotations.ProtoEventTypes` listing all event types that the entity will use.
+
+=== Key Value Entity
+
+Entity state, commands and their replies.
+
+=== Workflow
+
+Workflow state and step input, commands and their replies.
+
+=== Consumer
+
+Consumer input and output.
+
+The consumer handler method must accept `com.google.protobuf.GeneratedMessageV3` and do its own type
+matching for the expected message types.
+
+If it is consuming events from an Event Sourced Entity or a Key Value entity in the same service,
+the concrete message types are inferred. For all other cases the consumer class must be annotated with
+`akka.javasdk.annotations.ProtoEventTypes` listing all event types that the consumer will accept.
+
+Unlisted message types arriving will fail the stream and stall the consumer until a service version
+supporting the event type is deployed.
+
+=== View
+
+View updater input, view state, query input and result type.
+
+For views the state, input and output are serialized to JSON and not a binary representation.
+
+If the updater is consuming events from an Event Sourced Entity or a Key Value entity in the same service,
+the concrete message types are inferred. For all other cases the updater class must be annotated with
+`akka.javasdk.annotations.ProtoEventTypes` listing all event types that the updater will accept.
+
+Unlisted message types arriving will fail the stream and stall view updates until a service version
+supporting the event type is deployed.
+
+=== Agent
+
+Commands and their replies.
+
+For agents the messages are serialized to JSON and not a binary representation.

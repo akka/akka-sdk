@@ -60,7 +60,7 @@ class CounterStoreUpdaterTest extends TestKitSupport {
       .ignoreExceptions()
       .atMost(20, SECONDS)
       .untilAsserted(() -> {
-        Collection<CounterEntry> result = await(counterStore.getAll());
+        Collection<CounterEntry> result = counterStore.getAll();
         assertThat(result).containsOnly(new CounterEntry("c123", 6, 2));
       });
 
@@ -72,7 +72,7 @@ class CounterStoreUpdaterTest extends TestKitSupport {
       .ignoreExceptions()
       .during(3, SECONDS)
       .untilAsserted(() -> {
-        Collection<CounterEntry> result = await(counterStore.getAll());
+        Collection<CounterEntry> result = counterStore.getAll();
         assertThat(result).containsOnly(new CounterEntry("c123", 6, 2));
       });
   }

@@ -7,6 +7,7 @@ package akka.javasdk.impl.client
 import java.lang.reflect.Method
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.jdk.FutureConverters.FutureOps
 import scala.util.Failure
 import scala.util.Success
@@ -30,7 +31,7 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.ComponentDescriptorFactory
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.reflection.Reflect
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.workflow.Workflow
@@ -54,7 +55,7 @@ private[impl] sealed abstract class EntityClientImpl(
     expectedComponentSuperclass: Class[_],
     componentType: ComponentType,
     entityClient: RuntimeEntityClient,
-    serializer: JsonSerializer,
+    serializer: Serializer,
     callMetadata: Option[Metadata],
     entityId: String)(implicit executionContext: ExecutionContext, system: ActorSystem[_]) {
 
@@ -103,16 +104,16 @@ private[impl] sealed abstract class EntityClientImpl(
           componentId,
           methodName,
           Some(entityId), {
-            def callEntity(metadata: Metadata) = {
+            def callEntity(metadata: Metadata): Future[CallResult[R]] = {
               entityClient
                 .send(new EntityRequest(componentId, entityId, methodName, serializedPayload, toSpi(metadata)))
                 .map { reply =>
                   reply.exceptionPayload match {
                     case Some(value) =>
                       //rethrowing to catch it on the component client invocation level
-                      throw serializer.exceptionFromBytes(value)
+                      throw serializer.json.exceptionFromBytes(value)
                     case None => // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-                      serializer.fromBytes[R](returnType, reply.payload)
+                      CallResult(serializer.fromBytes[R](returnType, reply.payload), MetadataImpl.of(reply.metadata))
                   }
                 }
             }
@@ -140,7 +141,7 @@ private[impl] sealed abstract class EntityClientImpl(
 @InternalApi
 private[javasdk] final class KeyValueEntityClientImpl(
     entityClient: RuntimeEntityClient,
-    serializer: JsonSerializer,
+    serializer: Serializer,
     callMetadata: Option[Metadata],
     entityId: String)(implicit val executionContext: ExecutionContext, system: ActorSystem[_])
     extends EntityClientImpl(
@@ -166,7 +167,7 @@ private[javasdk] final class KeyValueEntityClientImpl(
 @InternalApi
 private[javasdk] final case class EventSourcedEntityClientImpl(
     entityClient: RuntimeEntityClient,
-    serializer: JsonSerializer,
+    serializer: Serializer,
     callMetadata: Option[Metadata],
     entityId: String)(implicit val executionContext: ExecutionContext, system: ActorSystem[_])
     extends EntityClientImpl(
@@ -192,7 +193,7 @@ private[javasdk] final case class EventSourcedEntityClientImpl(
 @InternalApi
 private[javasdk] final case class WorkflowClientImpl(
     entityClient: RuntimeEntityClient,
-    serializer: JsonSerializer,
+    serializer: Serializer,
     callMetadata: Option[Metadata],
     entityId: String)(implicit val executionContext: ExecutionContext, system: ActorSystem[_])
     extends EntityClientImpl(classOf[Workflow[_]], WorkflowType, entityClient, serializer, callMetadata, entityId)
@@ -229,7 +230,7 @@ private[javasdk] final case class WorkflowClientImpl(
 @InternalApi
 private[javasdk] final case class TimedActionClientImpl(
     timedActionClient: RuntimeTimedActionClient,
-    serializer: JsonSerializer,
+    serializer: Serializer,
     callMetadata: Option[Metadata])(implicit val executionContext: ExecutionContext)
     extends TimedActionClient {
   override def method[T, R](methodRef: function.Function[T, TimedAction.Effect]): ComponentDeferredMethodRef[R] =
@@ -277,8 +278,9 @@ private[javasdk] final case class TimedActionClientImpl(
                 case Success(reply) =>
                   // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
                   val returnType = Reflect.getReturnType(declaringClass, method)
-                  if (reply.payload.isEmpty) Success(null.asInstanceOf[R])
-                  else Try(serializer.fromBytes[R](returnType, reply.payload))
+                  if (reply.payload.isEmpty) Success(null.asInstanceOf[CallResult[R]])
+                  else
+                    Try(CallResult(serializer.fromBytes[R](returnType, reply.payload), MetadataImpl.of(reply.metadata)))
                 case Failure(ex) => Failure(ex)
               }
               .asJava

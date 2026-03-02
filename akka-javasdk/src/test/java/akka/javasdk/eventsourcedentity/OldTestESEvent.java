@@ -14,4 +14,7 @@ public interface OldTestESEvent {
 
   @TypeName("old-event-3")
   record OldEvent3(boolean b) implements OldTestESEvent {}
+
+  @TypeName("old-event-5")
+  record OldEvent5(String value) implements OldTestESEvent {}
 }

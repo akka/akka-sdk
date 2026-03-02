@@ -11,7 +11,7 @@ import java.util
 import scala.util.control.NonFatal
 
 import akka.annotation.InternalApi
-import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.BytesPayload
 
 /**
@@ -23,7 +23,7 @@ object CommandSerialization {
   def deserializeComponentClientCommand(
       method: Method,
       command: BytesPayload,
-      serializer: JsonSerializer): Option[AnyRef] = {
+      serializer: Serializer): Option[AnyRef] = {
     // special cased component client calls, lets json commands through all the way
     val parameterTypes = method.getGenericParameterTypes
     if (parameterTypes.isEmpty) None
@@ -48,7 +48,7 @@ object CommandSerialization {
                     s"Command handler [${method.getDeclaringClass.getName}.${method.getName}] accepts a parameter that is a collection with a generic type inside, this is not supported.")
               }
               Some(
-                serializer.fromBytes(
+                serializer.json.fromBytes(
                   elementType.asInstanceOf[Class[AnyRef]],
                   parameterizedType.getRawType.asInstanceOf[Class[util.Collection[AnyRef]]],
                   command))

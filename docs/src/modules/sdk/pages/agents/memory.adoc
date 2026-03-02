@@ -187,7 +187,8 @@ include::example$doc-snippets/src/main/java/com/example/application/SessionMemor
 <2> Retrieve the full history from the `SessionMemoryEntity`.
 <3> Call the agent to make the summary.
 <4> Store the summary as the new compacted history in the `SessionMemoryEntity`.
-<5> To support concurrent updates, the `sequenceNumber` of the retrieved history is included in the `CompactionCmd`.
+<5> Set token usage for the AiMessage based on compaction summary reply.
+<6> To support concurrent updates, the `sequenceNumber` of the retrieved history is included in the `CompactionCmd`.
 
 == Multi-region replication
 

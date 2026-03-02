@@ -10,6 +10,15 @@ Current versions
 * Akka CLI {akka-cli-version}
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
 
+== March 2026
+
+* https://github.com/akka/akka-sdk/releases/tag/v3.5.15[Akka SDK 3.5.15]
+- PDF documents support in Agent user message
+- Token usage tracking in session memory
+- Agent reply wrapper in component client
+- Protobuf serialization support
+- Custom model request headers
+
 == February 2026
 
 [sidebar]
@@ -20,6 +29,11 @@ Current versions
 Views and consumers can now be configured to xref:sdk:consuming-producing.adoc#_starting_from_snapshot[start from a snapshot] instead of replaying the full event history. This significantly reduces startup time and resource usage for components that subscribe to high-volume event streams.
 
 ****
+
+* Akka CLI 3.0.48
+- Improvements to `akka project apply` command
+- Updated data management commands
+- Allow `akka project get` without project name to retrieve the current configured project
 
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.14[Akka SDK 3.5.14]
 - maven multi-module support improvements

@@ -8,10 +8,13 @@ import akka.javasdk.agent.SessionMessage.AiMessage;
 import akka.javasdk.agent.SessionMessage.MultimodalUserMessage;
 import akka.javasdk.agent.SessionMessage.ToolCallResponse;
 import akka.javasdk.agent.SessionMessage.UserMessage;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.Nulls;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /** Interface for message representation used inside the SessionMemoryEntity state. */
@@ -34,7 +37,8 @@ public sealed interface SessionMessage {
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
   @JsonSubTypes({
     @JsonSubTypes.Type(value = MessageContent.TextMessageContent.class, name = "T"),
-    @JsonSubTypes.Type(value = MessageContent.ImageUriMessageContent.class, name = "IU")
+    @JsonSubTypes.Type(value = MessageContent.ImageUriMessageContent.class, name = "IU"),
+    @JsonSubTypes.Type(value = MessageContent.PdfUriMessageContent.class, name = "PU")
   })
   sealed interface MessageContent {
 
@@ -45,6 +49,8 @@ public sealed interface SessionMessage {
         akka.javasdk.agent.MessageContent.ImageMessageContent.DetailLevel detailLevel,
         Optional<String> mimeType)
         implements MessageContent {}
+
+    record PdfUriMessageContent(String uri) implements MessageContent {}
   }
 
   // need to introduce new message to keep backward compatibility
@@ -70,6 +76,7 @@ public sealed interface SessionMessage {
                         sizeInBytes(image.uri())
                             + sizeInBytes(image.detailLevel().toString())
                             + image.mimeType.map(SessionMessage::sizeInBytes).orElse(0);
+                    case MessageContent.PdfUriMessageContent pdf -> sizeInBytes(pdf.uri());
                   })
           .mapToInt(Integer::intValue)
           .sum();
@@ -90,24 +97,55 @@ public sealed interface SessionMessage {
 
   record ToolCallRequest(String id, String name, String arguments) {}
 
+  record TokenUsage(int inputTokens, int outputTokens) {
+    public static final TokenUsage EMPTY = new TokenUsage(0, 0);
+
+    public TokenUsage add(TokenUsage tokenUsage) {
+      return new TokenUsage(
+          inputTokens + tokenUsage.inputTokens, outputTokens + tokenUsage.outputTokens);
+    }
+  }
+
   record AiMessage(
       Instant timestamp,
       String text,
       String componentId,
       List<ToolCallRequest> toolCallRequests,
-      Optional<String> thinking)
+      Optional<String> thinking,
+      TokenUsage tokenUsage,
+      @JsonSetter(nulls = Nulls.AS_EMPTY) Map<String, Object> attributes)
       implements SessionMessage {
 
     public AiMessage(
         Instant timestamp,
         String text,
         String componentId,
+        List<ToolCallRequest> toolCallRequests,
+        Optional<String> thinking) {
+      this(timestamp, text, componentId, toolCallRequests, thinking, TokenUsage.EMPTY, Map.of());
+    }
+
+    public AiMessage(
+        Instant timestamp,
+        String text,
+        String componentId,
         List<ToolCallRequest> toolCallRequests) {
-      this(timestamp, text, componentId, toolCallRequests, Optional.empty());
+      this(
+          timestamp,
+          text,
+          componentId,
+          toolCallRequests,
+          Optional.empty(),
+          TokenUsage.EMPTY,
+          Map.of());
     }
 
     public AiMessage(Instant timestamp, String text, String componentId) {
-      this(timestamp, text, componentId, List.of(), Optional.empty());
+      this(timestamp, text, componentId, List.of(), Optional.empty(), TokenUsage.EMPTY, Map.of());
+    }
+
+    public AiMessage(Instant timestamp, String text, String componentId, TokenUsage tokenUsage) {
+      this(timestamp, text, componentId, List.of(), Optional.empty(), tokenUsage, Map.of());
     }
 
     @Override
@@ -129,7 +167,6 @@ public sealed interface SessionMessage {
     }
   }
 
-  // FIXME do we need attributes here as well, for thinking signatures, when thinking is enabled?
   record ToolCallResponse(
       Instant timestamp, String componentId, String id, String name, String text)
       implements SessionMessage {

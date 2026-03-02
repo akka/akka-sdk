@@ -4,9 +4,6 @@
 
 package akka.javasdk.tooling.processor;
 
-import static akka.javasdk.tooling.validation.Validations.componentMustBePublic;
-
-import akka.javasdk.tooling.validation.HttpEndpointValidations;
 import akka.javasdk.tooling.validation.Validation;
 import akka.javasdk.tooling.validation.Validations;
 import akka.javasdk.validation.ast.compiletime.CompileTimeTypeDef;
@@ -40,8 +37,6 @@ public class ComponentValidationProcessor extends BaseAkkaProcessor {
     info("Validating Akka components...");
     for (TypeElement annotation : annotations) {
       var annotatedElements = roundEnv.getElementsAnnotatedWith(annotation);
-      boolean isHttpEndpoint =
-          annotation.getQualifiedName().toString().equals(HTTP_ENDPOINT_ANNOTATION);
 
       for (TypeElement element : ElementFilter.typesIn(annotatedElements)) {
         debug("Validating " + element.getSimpleName());
@@ -49,14 +44,7 @@ public class ComponentValidationProcessor extends BaseAkkaProcessor {
         // Wrap TypeElement in CompileTimeTypeDef
         CompileTimeTypeDef typeDef = new CompileTimeTypeDef(element);
 
-        // all components must be public, to start with...
-        Validation publicValidation = componentMustBePublic(typeDef);
-
-        // Use appropriate validation based on annotation type
-        Validation validation =
-            isHttpEndpoint
-                ? publicValidation.combine(HttpEndpointValidations.validate(typeDef))
-                : publicValidation.combine(Validations.validateComponent(typeDef));
+        Validation validation = Validations.validate(typeDef);
 
         if (validation instanceof Validation.Invalid(java.util.List<String> errorMessages)) {
           debug("Component " + element.getSimpleName() + " is invalid");

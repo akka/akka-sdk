@@ -4,83 +4,78 @@
 
 package com.example
 
+import com.example.CompilationTestSupport.CompileTimeValidation
+import com.example.CompilationTestSupport.RuntimeValidation
+import com.example.CompilationTestSupport.ValidationMode
 import org.scalatest.wordspec.AnyWordSpec
 
-class HttpEndpointValidationSpec extends AnyWordSpec with CompilationTestSupport {
+class CompileTimeHttpEndpointValidationSpec extends AbstractHttpEndpointValidationSpec(CompileTimeValidation)
+class RuntimeHttpEndpointValidationSpec extends AbstractHttpEndpointValidationSpec(RuntimeValidation)
 
-  "HttpEndpointValidationProcessor" should {
+abstract class AbstractHttpEndpointValidationSpec(val validationMode: ValidationMode)
+    extends AnyWordSpec
+    with CompilationTestSupport {
+
+  s"HttpEndpointValidationProcessor ($validationMode)" should {
 
     // ==================== Valid HTTP Endpoints ====================
 
     "accept valid public HTTP endpoint with basic CRUD operations" in {
-      val result = compileTestSource("valid/ValidHttpEndpoint.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidHttpEndpoint.java")
     }
 
     "accept valid HTTP endpoint with multiple path parameters" in {
-      val result = compileTestSource("valid/ValidHttpEndpointWithMultiplePathParams.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidHttpEndpointWithMultiplePathParams.java")
     }
 
     "accept valid HTTP endpoint with wildcard at the end" in {
-      val result = compileTestSource("valid/ValidHttpEndpointWithWildcard.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidHttpEndpointWithWildcard.java")
     }
 
     "accept valid HTTP endpoint with root path" in {
-      val result = compileTestSource("valid/ValidHttpEndpointWithRootPath.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidHttpEndpointWithRootPath.java")
     }
 
     "accept valid HTTP endpoint with no body parameters" in {
-      val result = compileTestSource("valid/ValidHttpEndpointNoBody.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidHttpEndpointNoBody.java")
     }
 
     "accept valid HTTP endpoint with body parameter" in {
-      val result = compileTestSource("valid/ValidHttpEndpointWithBodyParam.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidHttpEndpointWithBodyParam.java")
     }
 
     "accept valid HTTP endpoint with empty path annotation" in {
-      val result = compileTestSource("valid/ValidHttpEndpointEmptyPath.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidHttpEndpointEmptyPath.java")
     }
 
     "accept valid HTTP endpoint with leading slash in method path" in {
-      val result = compileTestSource("valid/ValidHttpEndpointWithLeadingSlashInMethod.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidHttpEndpointWithLeadingSlashInMethod.java")
     }
 
     "accept valid HTTP endpoint with no leading slash in class path" in {
-      val result = compileTestSource("valid/ValidHttpEndpointWithNoLeadingSlash.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidHttpEndpointWithNoLeadingSlash.java")
     }
 
     "accept valid HTTP endpoint with non-HTTP methods (ignored)" in {
-      val result = compileTestSource("valid/ValidHttpEndpointWithNonHttpMethods.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidHttpEndpointWithNonHttpMethods.java")
     }
 
     "accept valid HTTP endpoint with all HTTP method types" in {
-      val result = compileTestSource("valid/ValidHttpEndpointAllMethods.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidHttpEndpointAllMethods.java")
     }
 
     // ==================== Public Modifier Validation ====================
 
     "reject non-public HTTP endpoint" in {
-      val result = compileTestSource("invalid/HttpEndpointNotPublic.java")
-      assertCompilationFailure(
-        result,
+      assertInvalid(
+        "invalid/HttpEndpointNotPublic.java",
         "HttpEndpointNotPublic is not marked with `public` modifier",
         "Components must be public")
     }
 
     "reject package-private HTTP endpoint" in {
-      val result = compileTestSource("invalid/HttpEndpointPackagePrivate.java")
-      assertCompilationFailure(
-        result,
+      assertInvalid(
+        "invalid/HttpEndpointPackagePrivate.java",
         "HttpEndpointPackagePrivate is not marked with `public` modifier",
         "Components must be public")
     }
@@ -88,35 +83,31 @@ class HttpEndpointValidationSpec extends AnyWordSpec with CompilationTestSupport
     // ==================== Path Parameter Validation ====================
 
     "reject HTTP endpoint with missing path parameter" in {
-      val result = compileTestSource("invalid/HttpEndpointMissingPathParam.java")
-      assertCompilationFailure(
-        result,
+      assertInvalid(
+        "invalid/HttpEndpointMissingPathParam.java",
         "There are more parameters in the path expression",
         "HttpEndpointMissingPathParam.list1")
     }
 
     "reject HTTP endpoint with wrong parameter name" in {
-      val result = compileTestSource("invalid/HttpEndpointWrongParamName.java")
-      assertCompilationFailure(
-        result,
+      assertInvalid(
+        "invalid/HttpEndpointWrongParamName.java",
         "The parameter [id]",
         "does not match the method parameter name [bob]",
         "HttpEndpointWrongParamName.list2")
     }
 
     "reject HTTP endpoint with wrong second parameter name" in {
-      val result = compileTestSource("invalid/HttpEndpointWrongSecondParamName.java")
-      assertCompilationFailure(
-        result,
+      assertInvalid(
+        "invalid/HttpEndpointWrongSecondParamName.java",
         "The parameter [bob]",
         "does not match the method parameter name [value]",
         "HttpEndpointWrongSecondParamName.list3")
     }
 
     "reject HTTP endpoint with too many parameters" in {
-      val result = compileTestSource("invalid/HttpEndpointTooManyParams.java")
-      assertCompilationFailure(
-        result,
+      assertInvalid(
+        "invalid/HttpEndpointTooManyParams.java",
         "There are [2] parameters",
         "[value,body]",
         "not matched by the path expression",
@@ -126,39 +117,46 @@ class HttpEndpointValidationSpec extends AnyWordSpec with CompilationTestSupport
     // ==================== Wildcard Validation ====================
 
     "reject HTTP endpoint with wildcard not at the last segment" in {
-      val result = compileTestSource("invalid/HttpEndpointWildcardNotLast.java")
-      assertCompilationFailure(result, "Wildcard path can only be the last segment of the path")
+      assertInvalid(
+        "invalid/HttpEndpointWildcardNotLast.java",
+        "Wildcard path can only be the last segment of the path")
     }
 
     "accept valid WebSocket endpoints with String, ByteString, and Message types" in {
-      val result = compileTestSource("valid/ValidWebSocketEndpoint.java")
-      assertCompilationSuccess(result)
+      assertValid("valid/ValidWebSocketEndpoint.java")
     }
 
     "reject WebSocket method with wrong return type" in {
-      val result = compileTestSource("invalid/InvalidWebSocketWrongReturnType.java")
-      assertCompilationFailure(result, "WebSocket method must return akka.stream.javadsl.Flow", "wrongReturnType")
+      assertInvalid(
+        "invalid/InvalidWebSocketWrongReturnType.java",
+        "WebSocket method must return akka.stream.javadsl.Flow",
+        "wrongReturnType")
     }
 
     "reject WebSocket method with different input and output types" in {
-      val result = compileTestSource("invalid/InvalidWebSocketDifferentTypes.java")
-      assertCompilationFailure(result, "must have the same input and output message types", "differentInOut")
+      assertInvalid(
+        "invalid/InvalidWebSocketDifferentTypes.java",
+        "must have the same input and output message types",
+        "differentInOut")
     }
 
     "reject WebSocket method with unsupported message type" in {
-      val result = compileTestSource("invalid/InvalidWebSocketUnsupportedMessageType.java")
-      assertCompilationFailure(result, "unsupported message type", "unsupportedType")
+      assertInvalid(
+        "invalid/InvalidWebSocketUnsupportedMessageType.java",
+        "unsupported message type",
+        "unsupportedType")
     }
 
     "reject WebSocket method with wrong materialized value type" in {
-      val result = compileTestSource("invalid/InvalidWebSocketWrongMatType.java")
-      assertCompilationFailure(result, "must have akka.NotUsed as materialized value type", "wrongMatType")
+      assertInvalid(
+        "invalid/InvalidWebSocketWrongMatType.java",
+        "must have akka.NotUsed as materialized value type",
+        "wrongMatType")
     }
 
     "reject WebSocket method with a body parameter" in {
-      val result = compileTestSource("invalid/InvalidWebSocketBodyParam.java")
-      assertCompilationFailure(
-        result,
+      assertInvalid(
+        "invalid/InvalidWebSocketBodyParam.java",
         "Request body parameter defined for WebSocket method",
         "withBodyParam",
         "this is not supported")
