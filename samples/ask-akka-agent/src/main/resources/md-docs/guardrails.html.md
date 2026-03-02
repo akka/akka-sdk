@@ -11,7 +11,8 @@
 
 Guardrails can protect against harmful inputs, such as jailbreak attempts, and damaging output, such as mentions of a competitor’s product.
 
-A specific guardrail implements the <a href="_attachments/api/akka/javasdk/agent/TextGuardrail.html">`TextGuardrail` interface</a>. It takes the input or output text as a parameter and a result if it passed the validation or not, including an explanation of why the decision was made. These results are included in metrics and traces. A guardrail can abort the interaction with the model, or only report the problem and continue anyway.
+|  | For protecting sensitive information like PII, see [Sanitization](../sanitization.html). |
+A specific guardrail implements the <a href="../_attachments/api/akka/javasdk/agent/TextGuardrail.html">`TextGuardrail` interface</a>. It takes the input or output text as a parameter and a result if it passed the validation or not, including an explanation of why the decision was made. These results are included in metrics and traces. A guardrail can abort the interaction with the model, or only report the problem and continue anyway.
 
 An example of a `Guardrail` implementation:
 
@@ -71,7 +72,7 @@ akka.javasdk.agent.guardrails {
 | **5** | The type of validation, such as PII and TOXIC. |
 | **6** | Where to use the guardrail, such as for the model request or model response. |
 | **7** | If it didn’t pass the evaluation criteria, the execution can either be aborted or continue anyway. In both cases, the result is tracked in logs, metrics and traces. |
-The implementation class of the guardrail is configured with the `class` property. The class must implement the <a href="_attachments/api/akka/javasdk/agent/TextGuardrail.html">`TextGuardrail` interface</a>. The class may optionally have a constructor with a <a href="_attachments/api/akka/javasdk/agent/GuardrailContext.html">`GuardrailContext`</a> parameter, which includes the name and the config section for the specific guardrail. In above code example of the `ToxicGuard` you can see how the configuration property `search-for` is read from the configuration of the `GuardrailContext` parameter.
+The implementation class of the guardrail is configured with the `class` property. The class must implement the <a href="../_attachments/api/akka/javasdk/agent/TextGuardrail.html">`TextGuardrail` interface</a>. The class may optionally have a constructor with a <a href="../_attachments/api/akka/javasdk/agent/GuardrailContext.html">`GuardrailContext`</a> parameter, which includes the name and the config section for the specific guardrail. In above code example of the `ToxicGuard` you can see how the configuration property `search-for` is read from the configuration of the `GuardrailContext` parameter.
 
 Agents are selected by matching `agent` or `agent-role` configuration.
 
@@ -87,7 +88,7 @@ The guardrail can be enabled for certain inputs or outputs with the `use-for` pr
 
 ## <a href="about:blank#_guardrail_of_similar_text"></a> Guardrail of similar text
 
-The built-in <a href="_attachments/api/akka/javasdk/agent/SimilarityGuard.html">`SimilarityGuard`</a> evaluates the text by making a similarity search in a dataset of "bad examples". If the similarity exceeds a threshold, the result is flagged as blocked.
+The built-in <a href="../_attachments/api/akka/javasdk/agent/SimilarityGuard.html">`SimilarityGuard`</a> evaluates the text by making a similarity search in a dataset of "bad examples". If the similarity exceeds a threshold, the result is flagged as blocked.
 
 This is how to configure the `SimilarityGuard`:
 

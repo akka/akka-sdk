@@ -63,7 +63,8 @@ import akka.javasdk.annotations.Component;
 @Component(
   id = "ask-akka-agent", // (2)
   name = "Ask Akka",
-  description = "Expert in Akka")
+  description = "Expert in Akka"
+)
 public class AskAkkaAgent extends Agent { // (1)
 
   private static final String SYSTEM_MESSAGE =
@@ -125,7 +126,7 @@ public class AskHttpEndpoint {
       .tokenStream(AskAkkaAgent::ask)
       .source(request.question); // (2)
 
-    return HttpResponses.serverSentEvents(responseStream); // (3)
+    return HttpResponses.streamText(responseStream); // (3)
   }
 }
 ```
@@ -146,11 +147,24 @@ akka.javasdk {
     # Other AI models can be configured, see https://doc.akka.io/sdk/agents.html#model
     # and https://doc.akka.io/sdk/model-provider-details.html for the reference configurations.
     model-provider = openai
+    # model-provider = googleai-gemini
+    # model-provider = anthropic
 
     openai {
       model-name = "gpt-4o-mini"
       # Environment variable override for the API key
       api-key = ${?OPENAI_API_KEY}
+    }
+
+    googleai-gemini {
+      model-name = "gemini-2.5-flash"
+      api-key = ${?GOOGLE_AI_GEMINI_API_KEY}
+    }
+
+    anthropic {
+      model-name = "claude-opus-4-6"
+      api-key = ${?ANTHROPIC_API_KEY}
+      max-tokens = 5000
     }
   }
 }

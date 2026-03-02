@@ -20,7 +20,7 @@ This quickstart implements an HTTP endpoint and a shopping cart that supports ad
 In this guide you will:
 
 - Clone a completed shopping cart service repository to examine and run it locally.
-- Be introduced to key Akka concepts including [Event Sourced Entities](../../java/event-sourced-entities.html).
+- Be introduced to key Akka concepts including [Event Sourced Entities](../../sdk/event-sourced-entities.html).
 - See how the [project structure](../../concepts/architecture-model.html) provides a clear separation of concerns in your microservices.
 - Run the service locally and explore it with the local Akka console.
 - Deploy the service to [akka.io](https://console.akka.io/).
@@ -446,7 +446,7 @@ curl https://spring-tooth-3406.gcp-us-east1.akka.services/carts/123
 Now that you’ve built and deployed a shopping cart service, take your Akka skills to the next level:
 
 1. **Add a view**: Continue to the [next step](addview.html) in the tour.
-2. **Expand on your own**: Explore [other Akka components](../../java/components/index.html) to enhance your application with additional features.
+2. **Expand on your own**: Explore [other Akka components](../../sdk/components/index.html) to enhance your application with additional features.
 3. **Explore other Akka samples**: Discover more about Akka by exploring [different use cases](../samples.html) for inspiration.
 [1](about:blank#_footnoteref_1). Defined as a stateful behavior capable of acting on its own.
 <!-- <footer> -->

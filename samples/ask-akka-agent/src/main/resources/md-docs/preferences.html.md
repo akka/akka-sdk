@@ -251,7 +251,7 @@ Does it take your preferences into account for the suggestions?
 ## <a href="about:blank#_next_steps"></a> Next steps
 
 - Activities may depend on the weather forecast. Continue with [Weather agent](weather.html) that will make use of agent function tools.
-- Learn more about the <a href="../../java/event-sourced-entities.html">`EventSourceEntity` component</a>.
+- Learn more about the <a href="../../sdk/event-sourced-entities.html">`EventSourceEntity` component</a>.
 
 <!-- <footer> -->
 <!-- <nav> -->

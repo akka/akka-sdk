@@ -38,7 +38,7 @@ To configure ACLs and secure your Akka services effectively, follow these steps:
 1. **Identify the Service or Method**: Determine which services or methods require access restrictions. For example, a payment service might only need to accept requests from an authorized shopping cart service.
 2. **Define Principals and Permissions**: Specify which principals (services or internet) are permitted to access the identified service or method.
 3. **Apply ACL Policies**: Use Akka’s ACL configurations to enforce these permissions. You can configure ACLs via the Akka Console or CLI, where you can define which services can interact with others or be accessed from the internet.
-For detailed configuration steps and examples, see the <a href="../java/access-control.html">Access Control Lists in the **Developing** section</a>.
+For detailed configuration steps and examples, see the <a href="../sdk/access-control.html">Access Control Lists in the **Developing** section</a>.
 
 ## <a href="about:blank#_practical_example"></a> Practical example
 
@@ -59,11 +59,11 @@ With ACLs, you can secure your Akka environment and ensure only authorized entit
 ## <a href="about:blank#_see_also"></a> See also
 
 - [TLS certificates](../operations/tls-certificates.html)
-- [Access Control Lists (ACLs)](../java/access-control.html) in the **Developing** section
+- [Access Control Lists (ACLs)](../sdk/access-control.html) in the **Developing** section
 
 <!-- <footer> -->
 <!-- <nav> -->
-[AI orchestration patterns](ms-agent-patterns.html) [Developing](../java/index.html)
+[AI orchestration patterns](ms-agent-patterns.html) [Developing](../sdk/index.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

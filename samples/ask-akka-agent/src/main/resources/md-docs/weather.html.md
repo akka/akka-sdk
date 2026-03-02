@@ -164,7 +164,7 @@ mvn verify
 ## <a href="about:blank#_next_steps"></a> Next steps
 
 - Introduce a workflow that orchestrates the calls between the agents. Continue with [Orchestrate the agents](team.html)
-- Learn more about more possibilities of [extending agents with function tools](../../java/agents.html#tools).
+- Learn more about more possibilities of [extending agents with function tools](../../sdk/agents.html#tools).
 
 <!-- <footer> -->
 <!-- <nav> -->

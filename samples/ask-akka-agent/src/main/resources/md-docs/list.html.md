@@ -152,7 +152,7 @@ curl http://localhost:9000/activities/alice | jq
 ## <a href="about:blank#_next_steps"></a> Next steps
 
 - In a larger system with more agents, we could benefit from letting the AI model come up with a plan of which agents to use and in which order to execute. Continue with [Dynamic orchestration](dynamic-team.html)
-- Learn more about the <a href="../../java/views.html">`View` component</a>.
+- Learn more about the <a href="../../sdk/views.html">`View` component</a>.
 
 <!-- <footer> -->
 <!-- <nav> -->

@@ -9,7 +9,7 @@
 
 Endpoints components are how you expose your services to the outside world, be it another Akka service, external dependencies or client-facing applications. Three different types of endpoints are available: HTTP, gRPC and MCP Endpoints.
 
-MCP (Model Context Protocol) endpoints are only for providing functionality to a remote agent and not for defining regular APIs, for more details see [Designing MCP Endpoints](../java/mcp-endpoints.html)
+MCP (Model Context Protocol) endpoints are only for providing functionality to a remote agent and not for defining regular APIs, for more details see [Designing MCP Endpoints](../sdk/mcp-endpoints.html)
 
 When designing APIs, choosing between HTTP and gRPC endpoints depends on the use case. This document outlines the key differences, strengths, and recommended usage for each approach.
 
@@ -55,12 +55,12 @@ Use gRPC endpoints when:
 
 For more information on designing and implementing HTTP and gRPC Endpoints in Akka, refer to the following guides:
 
-- [Designing HTTP endpoints](../java/http-endpoints.html)
-- [Designing gRPC Endpoints](../java/grpc-endpoints.html)
+- [Designing HTTP endpoints](../sdk/http-endpoints.html)
+- [Designing gRPC Endpoints](../sdk/grpc-endpoints.html)
 Additionally, note that both endpoint types can be secured using ACLs and JWTs, see:
 
-- [Access Control Lists (ACLs)](../java/access-control.html)
-- [JSON Web Tokens (JWT)](../java/auth-with-jwts.html)
+- [Access Control Lists (ACLs)](../sdk/access-control.html)
+- [JSON Web Tokens (JWT)](../sdk/auth-with-jwts.html)
 
 <!-- <footer> -->
 <!-- <nav> -->

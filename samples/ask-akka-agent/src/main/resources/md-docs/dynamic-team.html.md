@@ -354,11 +354,28 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // (1
   private static final Logger logger = LoggerFactory.getLogger(AgentTeamWorkflow.class);
 
   private final ComponentClient componentClient;
+  private final NotificationPublisher<AgentTeamNotification> notificationPublisher;
+  private final Materializer materializer;
 
-  public AgentTeamWorkflow(ComponentClient componentClient) {
+  public AgentTeamWorkflow(
+    ComponentClient componentClient,
+    NotificationPublisher<AgentTeamNotification> notificationPublisher,
+    Materializer materializer
+  ) {
     this.componentClient = componentClient;
+    this.notificationPublisher = notificationPublisher;
+    this.materializer = materializer;
   }
 
+  public sealed interface AgentTeamNotification {
+    record StatusUpdate(String msg) implements AgentTeamNotification {}
+
+    record LlmResponseStart() implements AgentTeamNotification {}
+
+    record LlmResponseDelta(String response) implements AgentTeamNotification {}
+
+    record LlmResponseEnd() implements AgentTeamNotification {}
+  }
 
   @Override
   public WorkflowSettings settings() {
@@ -415,6 +432,9 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // (1
       .invoke(currentState().userQuery); // (4)
 
     logger.info("Selected agents: {}", selection.agents());
+    notificationPublisher.publish(
+      new AgentTeamNotification.StatusUpdate("Agents selected: " + selection.agents())
+    );
     if (selection.agents().isEmpty()) {
       var newState = currentState()
         .withFinalAnswer("Couldn't find any agent(s) able to respond to the original query.")
@@ -442,6 +462,11 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // (1
       .invoke(new PlannerAgent.Request(currentState().userQuery, agentSelection)); // (6)
 
     logger.info("Execution plan: {}", plan);
+    notificationPublisher.publish(
+      new AgentTeamNotification.StatusUpdate(
+        "Execution plan formed. Number of steps: " + plan.steps().size()
+      )
+    );
     return stepEffects()
       .updateState(currentState().withPlan(plan))
       .thenTransitionTo(AgentTeamWorkflow::executePlanStep); // (7)
@@ -454,6 +479,9 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // (1
       "Executing plan step (agent:{}), asking {}",
       stepPlan.agentId(),
       stepPlan.query()
+    );
+    notificationPublisher.publish(
+      new AgentTeamNotification.StatusUpdate("Calling: " + stepPlan.agentId())
     );
     var agentResponse = callAgent(stepPlan.agentId(), stepPlan.query()); // (9)
     if (agentResponse.startsWith("ERROR")) {
@@ -495,11 +523,26 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // (1
   @StepName("summarize")
   private StepEffect summarizeStep() { // (2)
     var agentsAnswers = currentState().agentResponses.values();
-    var finalAnswer = componentClient
+
+    var tokenSource = componentClient
       .forAgent()
       .inSession(sessionId())
-      .method(SummarizerAgent::summarize)
-      .invoke(new SummarizerAgent.Request(currentState().userQuery, agentsAnswers));
+      .tokenStream(SummarizerAgent::summarize)
+      .source(new SummarizerAgent.Request(currentState().userQuery, agentsAnswers));
+
+    notificationPublisher.publish(new AgentTeamNotification.LlmResponseStart());
+    var finalAnswer = notificationPublisher.publishTokenStream(
+      tokenSource,
+      10,
+      ofMillis// (200),
+      AgentTeamNotification.LlmResponseDelta::new,
+      materializer
+    );
+
+    notificationPublisher.publish(new AgentTeamNotification.LlmResponseEnd());
+    notificationPublisher.publish(
+      new AgentTeamNotification.StatusUpdate("All steps completed!")
+    );
 
     return stepEffects()
       .updateState(currentState().withFinalAnswer(finalAnswer).complete())
@@ -514,13 +557,17 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // (1
     return stepEffects().updateState(currentState().failed()).thenEnd();
   }
 
+  public NotificationPublisher.NotificationStream<AgentTeamNotification> updates() {
+    return notificationPublisher.stream();
+  }
+
   private String sessionId() {
     return commandContext().workflowId();
   }
 }
 ```
 
-| **1** | It’s a workflow, with reliable and durable execution. |
+| **1** | It’s a workflow, with reliable and durable execution and the [notification system](../../sdk/agents/streaming.html#_streaming_from_the_workflow). |
 | **2** | The steps are select - plan - execute - summarize. |
 | **3** | The workflow starts by selecting agents |
 | **4** | which is performed by the `SelectorAgent`. |
@@ -571,13 +618,13 @@ public class SummarizerAgent extends Agent {
     """.formatted(userQuery);
   }
 
-  public Effect<String> summarize(Request request) {
+  public StreamEffect summarize(Request request) {
     var allResponses = request.agentsResponses
       .stream()
       .filter(response -> !response.startsWith("ERROR"))
       .collect(Collectors.joining("\n\n"));
 
-    return effects()
+    return streamEffects()
       .systemMessage(buildSystemMessage(request.originalQuery))
       .userMessage("Summarize the following: \n" + allResponses)
       .thenReply();
@@ -612,9 +659,15 @@ curl -i -XGET --location "http://localhost:9000/activities/alice/{sessionId}"
 ```
 Inspect the logs and notice the difference if you include "Beware of the weather" in the request or not.
 
+If you’d rather use the visual request builder in the console, you can create this request and see all of the components involved in handling the request:
+
+![Flow view for the Multi agent](../_images/multi-agent-flowview.png)
+
+
 ## <a href="about:blank#_next_steps"></a> Next steps
 
 - Finally, let’s use another agent to evaluate the previous suggestions when the user preferences are changed or if new suggestions should be created. Continue with [Evaluation on changes](eval.html) that will illustrate the Consumer component and "LLM as judge" pattern.
+- A more advanced sample illustrates [adaptive multi-agent orchestration](https://github.com/akka-samples/adaptive-multi-agent). It re-evaluates progress after each agent response and dynamically adjusts its strategy.
 
 <!-- <footer> -->
 <!-- <nav> -->

@@ -11,7 +11,23 @@
 
 The Akka CLI, `akka` enables you to interact with Akka projects. To install it, follow these steps:
 
-Linux Download and install the latest version of `akka`:
+Linux **Recommended approach**
+
+The recommended approach to install the `akka` CLI on Linux is using the Debian package repository:
+
+```bash
+curl -1sLf \
+  'https://downloads.akka.io/setup.deb.sh' \
+  | sudo -E bash
+sudo apt install akka
+```
+If the `akka` CLI is already installed, and you want to upgrade to the latest version, you can run:
+
+```bash
+sudo apt update
+sudo apt install --only-upgrade akka
+```
+**Alternative approach**
 
 ```bash
 curl -sL https://doc.akka.io/install-cli.sh | bash
@@ -25,11 +41,9 @@ curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix /tmp && \
 You can pass options to the installer script with `-s --` e.g.:
 
 ```bash
-curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix=$HOME --version=3.0.30 --verbose
-curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v 3.0.30 -V
+curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix=$HOME --version=3.0.47 --verbose
+curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v 3.0.47 -V
 ```
-For manual installation, download [akka_linux_amd64_3.0.30.tar.gz](https://downloads.akka.io/3.0.30/akka_linux_amd64_3.0.30.tar.gz), extract the `akka` executable and make it available on your PATH.
-
 macOS **Recommended approach**
 
 The recommended approach to install `akka` on macOS, is using [brew](https://brew.sh/)
@@ -48,13 +62,28 @@ brew upgrade akka
 curl -sL https://doc.akka.io/install-cli.sh | bash You can pass options to the installer script with `-s --` e.g.:
 
 ```bash
-curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix=$HOME --version=3.0.30 --verbose
-curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v 3.0.30 -V
+curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix=$HOME --version=3.0.47 --verbose
+curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v 3.0.47 -V
 ```
-Windows
+Windows **Recommended approach**
+
+The recommended approach to install the `akka` CLI on Windows is using [winget](https://learn.microsoft.com/en-us/windows/package-manager/winget/):
+
+```powershell
+winget install Akka.Cli
+```
+If the `akka` CLI is already installed, and you want to upgrade to the latest version, you can run:
+
+```powershell
+winget upgrade Akka.Cli
+```
+**Alternative approach**
+
 1. Download the latest version of `akka` from [https://downloads.akka.io/latest/akka_windows_amd64.zip](https://downloads.akka.io/latest/akka_windows_amd64.zip)
 2. Optionally, you can verify the integrity of the downloaded files using the [SHA256 checksums](https://downloads.akka.io/latest/checksums.txt).
 3. Extract the zip file and move `akka.exe` to a location on your `%PATH%`.
+
+|  | By downloading and using this software you agree to Akka’s [Privacy Policy](https://akka.io/legal/privacy) and [Software Terms of Use](https://trust.akka.io/cloud-terms-of-service). |
 Verify that the Akka CLI has been installed successfully by running the following to list all available commands:
 
 ```command

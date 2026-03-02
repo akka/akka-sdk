@@ -110,7 +110,7 @@ See [Testing Akka eventing](message-brokers.html#_testing)
 
 <!-- <footer> -->
 <!-- <nav> -->
-[AWS MSK Kafka](broker-aws-msk.html) [Manage secrets](secrets.html)
+[AWS MSK Kafka](broker-aws-msk.html) [Azure Event Hubs](broker-azure-eventhubs.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

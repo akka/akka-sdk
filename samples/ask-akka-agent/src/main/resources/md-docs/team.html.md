@@ -202,7 +202,7 @@ Does it take the current weather forecast into account? You should see the `Weat
 ## <a href="about:blank#_next_steps"></a> Next steps
 
 - It would be nice to see all previous suggestions for a user. Continue with [List by user](list.html)
-- Learn more about the <a href="../../java/workflows.html">`Workflow` component</a>.
+- Learn more about the <a href="../../sdk/workflows.html">`Workflow` component</a>.
 
 <!-- <footer> -->
 <!-- <nav> -->

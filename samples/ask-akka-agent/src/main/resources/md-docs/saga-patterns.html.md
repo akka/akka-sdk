@@ -25,7 +25,7 @@ There are two common approaches to implementing Saga patterns: **choreography-ba
   - Services are only coupled to events
   - Increased complexity in ensuring proper failure handling
   - Harder to debug and monitor long-running flows |
-| In Akka, you can implement this pattern using the [Workflow](../java/workflows.html) component. The Workflow defines each step and manages retries, timeouts, and compensating actions. | In Akka, you can implement this pattern by combining components such as [Entities](../java/event-sourced-entities.html) and [Consumers](../java/consuming-producing.html), each producing and reacting to events. |
+| In Akka, you can implement this pattern using the [Workflow](../sdk/workflows.html) component. The Workflow defines each step and manages retries, timeouts, and compensating actions. | In Akka, you can implement this pattern by combining components such as [Entities](../sdk/event-sourced-entities.html) and [Consumers](../sdk/consuming-producing.html), each producing and reacting to events. |
 | Example: [Funds Transfer Workflow Between Two Wallets](https://github.com/akka-samples/transfer-workflow-orchestration) | Example: [User Registration Service](https://github.com/akka-samples/choreography-saga-quickstart) |
 
 ## <a href="about:blank#_choosing_the_right_pattern"></a> Choosing the right pattern

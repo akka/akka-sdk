@@ -145,7 +145,7 @@ Store: 		<store-name> Console
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Aiven for Kafka](broker-aiven.html) [Services](../services/index.html)
+[Azure Event Hubs](broker-azure-eventhubs.html) [Manage external secrets](external-secrets.html)
 <!-- </nav> -->
 
 <!-- </footer> -->
