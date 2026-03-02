@@ -211,6 +211,7 @@ include::example$transfer-workflow-compensation/src/main/java/com/example/transf
 <1> Accepts the request only when status is `WAITING_FOR_ACCEPTANCE`.
 <2> Otherwise, rejects the requests.
 
+[#_notification]
 == Notification
 
 When a workflow is running, clients often need to track its progress. Rather than repeatedly polling the workflow state, you can use the `NotificationPublisher` to push updates to subscribers in real-time. This is more efficient and provides a better user experience, especially for long-running workflows.
