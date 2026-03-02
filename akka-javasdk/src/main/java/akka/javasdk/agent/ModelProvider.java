@@ -1344,7 +1344,8 @@ public sealed interface ModelProvider {
         -1,
         Duration.ofSeconds(15),
         Duration.ofMinutes(1),
-        2);
+        2,
+        Collections.emptyList());
   }
 
   /** Settings for the Google Cloud Vertex AI Large Language Model provider. */
@@ -1380,7 +1381,9 @@ public sealed interface ModelProvider {
        */
       Duration responseTimeout,
       /** If the request fails, retry this many times. */
-      int maxRetries)
+      int maxRetries,
+      /** Additional HTTP headers to include in each request to the model API */
+      List<HttpHeader> additionalModelRequestHeaders)
       implements ModelProvider {
 
     public static VertexAi fromConfig(Config config) {
@@ -1397,7 +1400,8 @@ public sealed interface ModelProvider {
           config.getInt("max-output-tokens"),
           config.getDuration("connection-timeout"),
           config.getDuration("response-timeout"),
-          config.getInt("max-retries"));
+          config.getInt("max-retries"),
+          headersFromConfig(config));
     }
 
     public VertexAi withModelName(String modelName) {
@@ -1414,7 +1418,8 @@ public sealed interface ModelProvider {
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
-          maxRetries);
+          maxRetries,
+          additionalModelRequestHeaders);
     }
 
     public VertexAi withProjectId(String projectId) {
@@ -1431,7 +1436,8 @@ public sealed interface ModelProvider {
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
-          maxRetries);
+          maxRetries,
+          additionalModelRequestHeaders);
     }
 
     public VertexAi withLocation(String location) {
@@ -1448,7 +1454,8 @@ public sealed interface ModelProvider {
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
-          maxRetries);
+          maxRetries,
+          additionalModelRequestHeaders);
     }
 
     public VertexAi withApiKey(String apiKey) {
@@ -1465,7 +1472,8 @@ public sealed interface ModelProvider {
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
-          maxRetries);
+          maxRetries,
+          additionalModelRequestHeaders);
     }
 
     public VertexAi withBaseUrl(String baseUrl) {
@@ -1482,7 +1490,8 @@ public sealed interface ModelProvider {
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
-          maxRetries);
+          maxRetries,
+          additionalModelRequestHeaders);
     }
 
     public VertexAi withApiVersion(String apiVersion) {
@@ -1499,7 +1508,8 @@ public sealed interface ModelProvider {
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
-          maxRetries);
+          maxRetries,
+          additionalModelRequestHeaders);
     }
 
     public VertexAi withTemperature(double temperature) {
@@ -1516,7 +1526,8 @@ public sealed interface ModelProvider {
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
-          maxRetries);
+          maxRetries,
+          additionalModelRequestHeaders);
     }
 
     public VertexAi withTopP(double topP) {
@@ -1533,7 +1544,8 @@ public sealed interface ModelProvider {
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
-          maxRetries);
+          maxRetries,
+          additionalModelRequestHeaders);
     }
 
     public VertexAi withThinkingBudget(int thinkingBudget) {
@@ -1550,7 +1562,8 @@ public sealed interface ModelProvider {
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
-          maxRetries);
+          maxRetries,
+          additionalModelRequestHeaders);
     }
 
     public VertexAi withMaxOutputTokens(int maxOutputTokens) {
@@ -1567,7 +1580,8 @@ public sealed interface ModelProvider {
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
-          maxRetries);
+          maxRetries,
+          additionalModelRequestHeaders);
     }
 
     public VertexAi withConnectionTimeout(Duration connectionTimeout) {
@@ -1584,7 +1598,8 @@ public sealed interface ModelProvider {
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
-          maxRetries);
+          maxRetries,
+          additionalModelRequestHeaders);
     }
 
     public VertexAi withResponseTimeout(Duration responseTimeout) {
@@ -1601,7 +1616,8 @@ public sealed interface ModelProvider {
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
-          maxRetries);
+          maxRetries,
+          additionalModelRequestHeaders);
     }
 
     public VertexAi withMaxRetries(int maxRetries) {
@@ -1618,7 +1634,27 @@ public sealed interface ModelProvider {
           maxOutputTokens,
           connectionTimeout,
           responseTimeout,
-          maxRetries);
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public VertexAi withAdditionalModelRequestHeaders(
+        List<HttpHeader> additionalModelRequestHeaders) {
+      return new VertexAi(
+          modelName,
+          projectId,
+          location,
+          apiKey,
+          baseUrl,
+          apiVersion,
+          temperature,
+          topP,
+          thinkingBudget,
+          maxOutputTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
     }
   }
 
