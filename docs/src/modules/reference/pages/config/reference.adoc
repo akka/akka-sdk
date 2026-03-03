@@ -17,4 +17,4 @@ include::sdk:example$akka-javasdk/src/main/resources/reference.conf[tag=referenc
 == References
 - xref:sdk:setup-and-dependency-injection.adoc[]
 - xref:sdk:model-provider-details.adoc[]
-- https://github.com/lightbend/config[Typsafe Config / HOCON]
+- https://github.com/lightbend/config[Typesafe Config / HOCON]
