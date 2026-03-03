@@ -15,14 +15,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/** Contains validation logic specific to Agent components. */
+/** Contains validation logic specific to request-based Agent components. */
 public class AgentValidations {
   private static final String[] effectTypes = {
     "akka.javasdk.agent.Agent.Effect", "akka.javasdk.agent.Agent.StreamEffect"
   };
 
   /**
-   * Validates an Agent component.
+   * Validates a request-based Agent component. Must have exactly one command handler.
    *
    * @param typeDef the Agent class to validate
    * @return a Validation result indicating success or failure with error messages
@@ -45,7 +45,7 @@ public class AgentValidations {
    * @param typeDef the Agent class to validate
    * @return a Validation result indicating success or failure
    */
-  private static Validation mustHaveValidAgentDescription(TypeDef typeDef) {
+  static Validation mustHaveValidAgentDescription(TypeDef typeDef) {
     Optional<AnnotationDef> agentDescAnn =
         typeDef.findAnnotation("akka.javasdk.annotations.AgentDescription");
 

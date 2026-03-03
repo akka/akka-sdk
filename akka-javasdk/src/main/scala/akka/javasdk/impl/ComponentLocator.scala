@@ -17,9 +17,11 @@ import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.PromptTemplate
 import akka.javasdk.agent.SessionMemoryEntity
+import akka.javasdk.agent.autonomous.AutonomousAgent
 import akka.javasdk.agent.evaluator.HallucinationEvaluator
 import akka.javasdk.agent.evaluator.SummarizationEvaluator
 import akka.javasdk.agent.evaluator.ToxicityEvaluator
+import akka.javasdk.agent.task.TaskEntity
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.keyvalueentity.KeyValueEntity
@@ -46,6 +48,7 @@ private[javasdk] object ComponentLocator {
   // Component type keys - these must be kept in sync with ComponentAnnotationProcessor.java
   // in the akka-javasdk-annotation-processor module
   val AgentKey = "agent"
+  val AutonomousAgentKey = "autonomous-agent"
   val ConsumerKey = "consumer"
   val EventSourcedEntityKey = "event-sourced-entity"
   val GrpcEndpointKey = "grpc-endpoint"
@@ -58,6 +61,7 @@ private[javasdk] object ComponentLocator {
 
   private val AllComponentTypeKeys = Seq(
     AgentKey,
+    AutonomousAgentKey,
     ConsumerKey,
     EventSourcedEntityKey,
     GrpcEndpointKey,
@@ -204,12 +208,17 @@ private[javasdk] object ComponentLocator {
     }
   }
 
-  val providedComponents: Seq[Class[_]] = Seq(
+  val agentProvidedComponents: Seq[Class[_]] = Seq(
     classOf[SessionMemoryEntity],
     classOf[PromptTemplate],
     classOf[ToxicityEvaluator],
     classOf[SummarizationEvaluator],
     classOf[HallucinationEvaluator])
+
+  val autonomousAgentProvidedComponents: Seq[Class[_]] = Seq(classOf[TaskEntity])
+
+  // Keep for backwards compat with anything referencing the old name
+  val providedComponents: Seq[Class[_]] = agentProvidedComponents ++ autonomousAgentProvidedComponents
 
   case class LocatedClasses(components: Seq[Class[_]], service: Option[Class[_]])
 
@@ -225,7 +234,8 @@ private[javasdk] object ComponentLocator {
         ComponentType.Workflow -> classOf[Workflow[_]],
         ComponentType.KeyValueEntity -> classOf[KeyValueEntity[_]],
         ComponentType.View -> classOf[AnyRef],
-        ComponentType.Agent -> classOf[Agent])
+        ComponentType.Agent -> classOf[Agent],
+        ComponentType.AutonomousAgent -> classOf[AutonomousAgent])
 
     // Alternative to but inspired by the stdlib SPI style of registering in META-INF/services
     // since we don't always have top supertypes and want to inject things into component constructors
@@ -269,12 +279,17 @@ private[javasdk] object ComponentLocator {
           Seq.empty
     }.toSeq
 
-    val withBuildInComponents = if (components.exists(classOf[Agent].isAssignableFrom)) {
-      logger.debug("Agent component detected, adding provided components")
-      providedComponents ++ components
-    } else {
+    val hasAgentComponents = components.exists(c => classOf[Agent].isAssignableFrom(c))
+    val hasAutonomousAgentComponents = components.exists(c => classOf[AutonomousAgent].isAssignableFrom(c))
+
+    if (hasAgentComponents) logger.debug("Agent component detected, adding agent provided components")
+    if (hasAutonomousAgentComponents)
+      logger.debug("AutonomousAgent component detected, adding autonomous agent provided components")
+
+    val withBuildInComponents =
+      (if (hasAgentComponents || hasAutonomousAgentComponents) agentProvidedComponents else Seq.empty) ++
+      (if (hasAutonomousAgentComponents) autonomousAgentProvidedComponents else Seq.empty) ++
       components
-    }
 
     if (descriptorConfig.hasPath(DescriptorServiceSetupEntryPath)) {
       // central config/lifecycle class
