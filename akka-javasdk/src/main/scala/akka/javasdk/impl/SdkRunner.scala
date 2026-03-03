@@ -43,6 +43,10 @@ import akka.javasdk.Tracing
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
 import akka.javasdk.agent.AgentRegistry
+import akka.javasdk.agent.ModelProvider
+import akka.javasdk.agent.autonomous.AutonomousAgent
+import akka.javasdk.agent.autonomous.DefaultAutonomousStrategy
+import akka.javasdk.agent.task.TaskTemplate
 import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.GrpcEndpoint
@@ -60,11 +64,14 @@ import akka.javasdk.http.HttpClientProvider
 import akka.javasdk.http.RequestContext
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerDestination
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerSource
+import akka.javasdk.impl.JsonSchema
 import akka.javasdk.impl.Sdk.StartupContext
 import akka.javasdk.impl.SdkRunner.extractSpiSettings
 import akka.javasdk.impl.agent.AgentImpl
 import akka.javasdk.impl.agent.AgentImpl.AgentContextImpl
 import akka.javasdk.impl.agent.AgentRegistryImpl
+import akka.javasdk.impl.agent.AutonomousAgentImpl
+import akka.javasdk.impl.agent.FunctionTools
 import akka.javasdk.impl.agent.GuardrailProvider
 import akka.javasdk.impl.agent.OverrideModelProvider
 import akka.javasdk.impl.agent.PromptTemplateClient
@@ -102,6 +109,7 @@ import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi
 import akka.runtime.sdk.spi.AgentDescriptor
+import akka.runtime.sdk.spi.AutonomousAgentDescriptor
 import akka.runtime.sdk.spi.ComponentClients
 import akka.runtime.sdk.spi.ConsumerDescriptor
 import akka.runtime.sdk.spi.EventSourcedEntityDescriptor
@@ -111,6 +119,8 @@ import akka.runtime.sdk.spi.McpEndpointConstructionContext
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.RemoteIdentification
 import akka.runtime.sdk.spi.SpiAgent
+import akka.runtime.sdk.spi.SpiAutonomousAgent
+import akka.runtime.sdk.spi.SpiAutonomousAgentStrategy
 import akka.runtime.sdk.spi.SpiComponents
 import akka.runtime.sdk.spi.SpiConfiguredGuardrail
 import akka.runtime.sdk.spi.SpiDeployedEventingSettings
@@ -122,6 +132,7 @@ import akka.runtime.sdk.spi.SpiMockedEventingSettings
 import akka.runtime.sdk.spi.SpiSanitizerEngine
 import akka.runtime.sdk.spi.SpiServiceInfo
 import akka.runtime.sdk.spi.SpiSettings
+import akka.runtime.sdk.spi.SpiTask
 import akka.runtime.sdk.spi.SpiTestSettings
 import akka.runtime.sdk.spi.SpiWorkflow
 import akka.runtime.sdk.spi.StartContext
@@ -295,6 +306,7 @@ private object ComponentType {
   val TimedAction = "timed-action"
   val View = "view"
   val Agent = "agent"
+  val AutonomousAgent = "autonomous-agent"
 }
 
 /**
@@ -505,6 +517,7 @@ private final class Sdk(
   private var consumerDescriptors = Vector.empty[ConsumerDescriptor]
   private var viewDescriptors = Vector.empty[ViewDescriptor]
   private var agentDescriptors = Vector.empty[AgentDescriptor]
+  private var autonomousAgentDescriptors = Vector.empty[AutonomousAgentDescriptor]
   private var agentRegistryInfo = Vector.empty[AgentRegistryImpl.AgentDetails]
   // guardrail name => component ids
   private var guardrailEnabledForComponent = Map.empty[String, Set[String]]
@@ -717,6 +730,123 @@ private final class Sdk(
             provided = false,
             protobufDescriptors = Reflect.protoCommandHandlerInputOutput(componentDescriptor))
 
+      case clz if Reflect.isAutonomousAgent(clz) =>
+        val componentId = Reflect.readComponentId(clz)
+        val autonomousAgentClass = clz.asInstanceOf[Class[AutonomousAgent]]
+
+        val agentGuardrails = guardrailProvider.agentGuardrails(componentId, None)
+        agentGuardrails.entries.foreach { entry =>
+          val guardrailName = entry.configuredGuardrail.name
+          guardrailEnabledForComponent = guardrailEnabledForComponent.updated(
+            guardrailName,
+            guardrailEnabledForComponent.getOrElse(guardrailName, Set.empty) + componentId)
+        }
+
+        // Strategy is required for AutonomousAgent — instantiate to read it
+        val sdkStrategy: DefaultAutonomousStrategy = {
+          val tempAgent = wiredInstance("AutonomousAgent", autonomousAgentClass) {
+            sideEffectingComponentInjects(None)
+          }
+          tempAgent.strategy() match {
+            case autonomousStrategy: DefaultAutonomousStrategy =>
+              if (autonomousStrategy.goal().isEmpty)
+                logger.warn(
+                  "AutonomousAgent [{}] has no goal configured. Set a goal via Strategy.autonomous().goal(...)",
+                  clz.getName)
+              autonomousStrategy
+            case other =>
+              throw new IllegalStateException(
+                s"AutonomousAgent ${clz.getName} strategy() must return an AutonomousStrategy, got: $other")
+          }
+        }
+
+        val instanceFactory: SpiAutonomousAgent.FactoryContext => SpiAutonomousAgent = { factoryContext =>
+          // Strategy is resolved per-instance so that test model provider overrides,
+          // which are applied after startup, are visible at entity creation time.
+          val spiStrategy: SpiAutonomousAgentStrategy = {
+            val spiModelProvider = {
+              val sdkProvider =
+                overrideModelProvider
+                  .getModelProviderForAgent(componentId)
+                  .getOrElse(if (sdkStrategy.modelProvider() != null) sdkStrategy.modelProvider()
+                  else ModelProvider.fromConfig())
+              AgentImpl.toSpiModelProvider(sdkProvider, applicationConfig, componentId)(system)
+            }
+            val toolClasses: Seq[Class[_]] = sdkStrategy
+              .toolInstancesOrClasses()
+              .asScala
+              .map {
+                case cls: Class[_] => cls
+                case any           => any.getClass
+              }
+              .toSeq
+            val spiToolDescriptors =
+              FunctionTools.descriptorsFor(autonomousAgentClass) ++ toolClasses.flatMap(FunctionTools.descriptorsFor)
+            val spiMcpDescriptors =
+              AgentImpl.toSpiMcpEndpoints(sdkStrategy.mcpTools().asScala.toSeq, agentGuardrails, sdkExecutionContext)
+            val spiTaskDefinitions: Seq[SpiTask.SpiTaskDefinition] =
+              sdkStrategy.acceptedTasks().asScala.toSeq.map { taskDef =>
+                val resultType = taskDef.resultType()
+                val resultSchema =
+                  if (resultType == classOf[String]) None
+                  else {
+                    try Some(JsonSchema.jsonSchemaFor(resultType))
+                    catch { case scala.util.control.NonFatal(_) => None }
+                  }
+                val (instructionTemplate, templateParams) = taskDef match {
+                  case t: TaskTemplate[_] =>
+                    val params = t.templateParameterNames().asScala.toSeq.map { name =>
+                      new SpiTask.SpiTemplateParameter(name, name)
+                    }
+                    (Option(t.instructionTemplate()).filter(_.nonEmpty), params)
+                  case _ => (None, Seq.empty)
+                }
+                new SpiTask.SpiTaskDefinition(
+                  name = taskDef.name(),
+                  description = taskDef.description(),
+                  resultTypeName = resultType.getName,
+                  resultSchema = resultSchema,
+                  instructionTemplate = instructionTemplate,
+                  templateParameters = templateParams)
+              }
+            new SpiAutonomousAgentStrategy(
+              goal = sdkStrategy.goal(),
+              maxIterations = sdkStrategy.maxIterations(),
+              taskDefinitions = spiTaskDefinitions,
+              modelProvider = spiModelProvider,
+              toolDescriptors = spiToolDescriptors,
+              mcpClientDescriptors = spiMcpDescriptors,
+              requestGuardrails = agentGuardrails.modelRequestGuardrails,
+              responseGuardrails = agentGuardrails.modelResponseGuardrails)
+          }
+          new AutonomousAgentImpl(
+            componentId,
+            factoryContext.instanceId,
+            context =>
+              wiredInstance("AutonomousAgent", autonomousAgentClass) {
+                sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext)
+              },
+            sdkExecutionContext,
+            sdkTracerFactory,
+            serializer,
+            regionInfo,
+            telemetryContext => componentClient(telemetryContext),
+            dependencyProviderOpt,
+            applicationConfig,
+            system,
+            sdkStrategy,
+            spiStrategy)
+        }
+
+        autonomousAgentDescriptors :+=
+          new AutonomousAgentDescriptor(
+            componentId,
+            clz.getName,
+            name = Reflect.readComponentName(clz),
+            description = Reflect.readComponentDescription(clz),
+            instanceFactory = instanceFactory,
+            provided = isProvided(clz))
+
       case clz if Reflect.isAgent(clz) =>
         val componentId = Reflect.readComponentId(clz)
         val agentClass = clz.asInstanceOf[Class[Agent]]
@@ -753,7 +883,6 @@ private final class Sdk(
             agentGuardrails,
             applicationConfig,
             system)
-
         }
 
         agentDescriptors :+=
@@ -835,6 +964,7 @@ private final class Sdk(
         viewDescriptors ++
         workflowDescriptors ++
         agentDescriptors ++
+        autonomousAgentDescriptors ++
         mcpEndpoints)
         .filterNot(isDisabled(combinedDisabledComponents))
 

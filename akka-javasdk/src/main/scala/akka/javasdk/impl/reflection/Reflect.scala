@@ -24,6 +24,7 @@ import akka.Done
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.EvaluationResult
+import akka.javasdk.agent.autonomous.AutonomousAgent
 import akka.javasdk.annotations.AgentDescription
 import akka.javasdk.annotations.AgentRole
 import akka.javasdk.annotations.Component
@@ -157,6 +158,9 @@ private[impl] object Reflect {
 
   def isAgent(cls: Class[_]): Boolean =
     classOf[Agent].isAssignableFrom(cls)
+
+  def isAutonomousAgent(cls: Class[_]): Boolean =
+    classOf[AutonomousAgent].isAssignableFrom(cls)
 
   def isToolCandidate(cls: Class[_]): Boolean =
     isEventSourcedEntity(cls) ||
