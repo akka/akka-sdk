@@ -360,6 +360,16 @@ public final class TestModelProvider implements ModelProvider.Custom {
     new WhenClause(this, inputMessage -> true).reply(response);
   }
 
+  /** Configures a fixed {@link AiResponse} for all input messages. */
+  public void fixedResponse(AiResponse response) {
+    new WhenClause(this, inputMessage -> true).reply(response);
+  }
+
+  /** Configures a fixed tool invocation response for all input messages. */
+  public void fixedResponse(ToolInvocationRequest request) {
+    new WhenClause(this, inputMessage -> true).reply(new AiResponse(request));
+  }
+
   /**
    * Configures to respond when the passed string predicate matches the content of an {@link
    * InputMessage}. The predicate is applied to content of {@link UserMessage} or {@link

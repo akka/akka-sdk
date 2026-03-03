@@ -1,0 +1,5 @@
+### Ask a question
+POST http://localhost:9000/questions
+Content-Type: application/json
+
+{"question": "What is the capital of France?"}
