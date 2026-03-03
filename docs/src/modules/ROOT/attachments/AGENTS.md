@@ -231,6 +231,8 @@ private StepEffect compensateWithdrawStep() {
 }
 ```
 
+Note: `maxRetries()` for the WorkflowSettings is inherited from Workflow — NO static import needed
+
 ### Agent with Tools
 
 ```java
@@ -569,6 +571,7 @@ public class MyEndpointIntegrationTest extends TestKitSupport {
 - Create multiple command handlers in Agent
 - Return protobuf types from domain layer
 - Import `WorkflowSettings` -> WorkflowSettings is an inner class of Workflow, so no additional import is needed
+- Static import `maxRetries` -> `maxRetries()` is inherited from `Workflow`, just call it directly without any import
 
 ✅ **DO:**
 - Use Java records for immutable data
