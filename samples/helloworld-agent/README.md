@@ -88,33 +88,26 @@ Refer to [Deploy and manage services](https://doc.akka.io/operations/services/de
 
 ## Spec-Driven Development (SDD)
 
-Spec-Driven Development (SDD) is an AI-assisted coding paradigm where structured, natural-language specifications serve as the executable source of truth. Instead of writing code directly, developers use tools like GitHub Spec Kit to define architectural intent and guide AI agents through a strict, multi-phase implementation pipeline. By iterating on these living specifications rather than the raw codebase, this project rapidly generates features while maintaining strict alignment with system constraints.
+Spec-Driven Development (SDD) is an AI-assisted coding paradigm where structured, natural-language specifications serve as the executable source of truth. Instead of writing code directly, developers use tools like [GitHub Spec Kit](https://github.com/github/spec-kit) to define architectural intent and guide AI agents through a strict, multi-phase implementation pipeline. By iterating on these living specifications rather than the raw codebase, this project rapidly generates features while maintaining strict alignment with system constraints.
 
-### Specification artifacts
+### Setup
 
-The `specs/` directory contains the SDD artifacts for this application:
+Initialize Spec Kit commands in your project (requires Claude Code):
 
-- `specs/001-hello-world-agent/spec.md` — Feature specification (what and why)
-- `specs/001-hello-world-agent/plan.md` — Implementation plan (architecture and components)
-- `specs/001-hello-world-agent/tasks.md` — Implementation tasks (step-by-step checklist)
-- `specs/001-hello-world-agent/research.md` — Research decisions
-- `specs/001-hello-world-agent/contracts/http-api.md` — HTTP API contract
-- `specs/001-hello-world-agent/quickstart.md` — Setup and curl examples
+```shell
+uvx --from git+https://github.com/github/spec-kit.git specify init . --ai claude
+```
 
-### Speckit commands
+### Workflow Commands
 
-The following `/speckit` slash commands are available in Claude Code for iterating on specifications and adding new features:
+Use these `/speckit` commands in Claude Code to add new features to the application:
 
-| Command | Description |
-|---------|-------------|
-| `/speckit.specify <description>` | Create or update a feature specification from a natural language description |
-| `/speckit.clarify` | Identify underspecified areas in the spec and ask targeted clarification questions |
-| `/speckit.plan` | Generate an implementation plan from the specification |
-| `/speckit.tasks` | Generate actionable, dependency-ordered tasks from the plan |
-| `/speckit.analyze` | Cross-artifact consistency and quality analysis across spec, plan, and tasks |
-| `/speckit.implement` | Execute the implementation plan by processing tasks in tasks.md |
-| `/speckit.checklist` | Generate a custom checklist for the current feature |
-| `/speckit.constitution` | Create or update the project constitution |
+* `/speckit.constitution` - Establish project principles
+* `/speckit.specify` - Create baseline specification
+* `/speckit.clarify` (optional) - Ask structured questions to de-risk ambiguous areas before planning (run before `/speckit.plan` if used)
+* `/speckit.plan` - Create implementation plan
+* `/speckit.tasks` - Generate actionable tasks
+* `/speckit.implement` - Execute implementation
 
 ### Exercise: Re-implement from specs
 
