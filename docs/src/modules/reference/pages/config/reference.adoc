@@ -1,9 +1,9 @@
 = Service reference configuration (HOCON)
 include::ROOT:partial$include.adoc[]
 
-== Reference configuration
+== Akka SDK reference configuration
 
-Akka SDK Services are configured through configuration files in the https://github.com/lightbend/config?tab=readme-ov-file#using-hocon-the-json-superset[HOCON format]. When deployed through xref:operations:akka-platform.adoc[] these settings are fully managed. For local and self-hosted setups, these settings provide access to the Akka SDK configuration.
+Akka SDK Services are configured through configuration files in the https://github.com/lightbend/config?tab=readme-ov-file#using-hocon-the-json-superset[HOCON format].
 
 Below shows the complete default configuration for Akka Services.
 
