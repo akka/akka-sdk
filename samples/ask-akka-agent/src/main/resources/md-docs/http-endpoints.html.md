@@ -513,14 +513,73 @@ public HttpResponse webPageResources(HttpRequest request) { // (2)
 |  | This is convenient for service documentation or small self-contained services with web user interface but is not intended
  for production, where coupling of the service lifecycle with the user interface would mean that a new service version would need to be deployed for any changes in the user interface. |
 
+### <a href="about:blank#_openapi_endpoint_schema"></a> OpenAPI endpoint schema
+
+The third party [Akka OpenAPI Maven plugin](https://github.com/osodevops/akka-openapi-maven-plugin) makes it possible to automatically generate OpenAPI specification for all the endpoints of a service.
+
+Add it to the plugins section of `pom.xml`
+
+[pom.xml](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/pom.xml)
+```xml
+<build>
+  <plugins>
+    <plugin>
+      <groupId>sh.oso</groupId>
+      <artifactId>akka-openapi-maven-plugin</artifactId>
+      <version>1.0.0</version>
+      <executions>
+        <execution>
+          <goals>
+            <goal>generate</goal>
+          </goals>
+        </execution>
+      </executions>
+    </plugin>
+  </plugins>
+</build>
+```
+This will generate an up-to-date schema in `target/openapi.yaml` which can be manually distributed.
+
+It is also possible to serve the generated schema from the deployed service by changing where the file is generated:
+
+[pom.xml](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/pom.xml)
+```xml
+<configuration>
+  <outputFile>target/classes/static-resources/openapi.yaml</outputFile>
+</configuration>
+```
+And then creating an endpoint serving it:
+
+[OpenApiSpecificationEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/OpenApiSpecificationEndpoint.java)
+```java
+@Get("/openapi.yaml")
+public HttpResponse openApiV1Yaml() {
+  return HttpResponses.staticResource("openapi.yaml");
+}
+```
+For more details around additional specification metadata options and configuration, see the [Akka OpenAPI Maven plugin documentation](https://github.com/osodevops/akka-openapi-maven-plugin).
+
 ### <a href="about:blank#sse"></a> Streaming responses with server-sent events
 
 [Server-sent events (SSE)](https://html.spec.whatwg.org/multipage/server-sent-events.html#server-sent-events) is a way to push a stream of elements through a single HTTP response
 that the client can see one by one rather than have to wait for the entire response to complete.
 
+NOTE Browsers only use HTTP GET requests for SSE. Other HTTP methods will not be possible to consume through
+the `ServerSentEvent` JavaScript API in browsers, even though they can be accessed with command line tools like `curl`.
+
 Any Akka stream `Source` of elements where the elements can be serialized to JSON using Jackson can
 be turned into an SSE endpoint method. If the stream is idle, a heartbeat is emitted every 5 seconds
 to make sure the response stream is kept alive through proxies and firewalls.
+
+#### <a href="about:blank#_streaming_responses_requires_extra_thought"></a> Streaming responses requires extra thought
+
+Streaming responses from an HTTP endpoint is tied to the specific instance they were connected to when the request was first made.
+
+Akka is a distributed system, which means that services instances can start and stop based on decisions the infrastructure makes, because the service upgrading, or  other unanticipated issues. Connections are also
+forcibly disconnected at an interval to make sure connected clients are alive and that the connections
+are rebalanced over the instances of the service.
+
+Browsers implementing SSE have reconnecting built in, but it is important that SSE endpoint methods are designed with restarts in mind and do not rely on the stream itself to keep a local JVM object alive. A reconnect may not end up in the same service instance as the original connection.
 
 [ExampleEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java)
 ```java
@@ -539,7 +598,42 @@ public HttpResponse streamCurrentTime() {
 | **1** | `Source.tick` emits the element `"tick"` immediately (after `Duration.ZERO`) and then every 5 seconds |
 | **2** | Every time a tick is seen, we turn it into a system clock timestamp |
 | **3** | Passing the `Source` to `serverSentEvents` returns a `HttpResponse` for the endpoint method. |
-A more realistic use case would be to stream the changes from a view, using the [stream view updates view
+For this example, reconnects are fine, since they will just continue from the point in time they reconnected. The endpoint
+does not need any additional logic for this.
+
+In many cases, you will want to continue the stream from the event the client saw last. This is built into the SSE support
+in browsers but requires some extra care in HTTP endpoints:
+
+[ExampleEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java)
+```java
+record ChatMessage(
+  Instant timestamp, // (1)
+  String message
+) {}
+
+public interface ChatRoom {
+  Source<ChatMessage, NotUsed> streamChat(Optional<Instant> startFrom); // (1)
+}
+
+
+@Get("/chatroom")
+public HttpResponse resumableStream() {
+  Optional<Instant> startFrom = requestContext()
+    .lastSeenSseEventId() // (3)
+    .map(Instant::parse);
+  Source<ChatMessage, NotUsed> chatMessageStream = chatRoom.streamChat(startFrom);
+
+  return HttpResponses.serverSentEvents(
+    chatMessageStream,
+    chatMessage -> chatMessage.timestamp().toString()
+  ); // (2)
+}
+```
+
+| **1** | An imagined chat room service returning a stream of chat messages, potentially starting from a given timestamp. |
+| **2** | `HttpResponses.serverSentEvent` overload accepting a function that extracts a value to use as id for the SSE event |
+| **3** | On incoming requests, if the request is a client reconnecting, the last seen id is available through `RequestContext.lastSeenSseEventId` |
+It is possible to stream a query result and then additional updates whenever the view progresses, using the [stream view updates view
 feature](views.html#_streaming_view_updates).
 
 [CustomerEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/key-value-customer-registry/src/main/java/customer/api/CustomerEndpoint.java)
@@ -547,17 +641,23 @@ feature](views.html#_streaming_view_updates).
 @Get("/by-city-sse/{cityName}")
 public HttpResponse continousByCityNameServerSentEvents(String cityName) {
   // view will keep stream going, toggled with streamUpdates = true on the query
-  Source<Customer, NotUsed> customerSummarySource = componentClient
+  Source<EntryWithMetadata<Customer>, NotUsed> customerSummarySource = componentClient
     .forView() // (1)
     .stream(CustomersByCity::continuousCustomersInCity)
-    .source(cityName);
+    .entriesSource(cityName, requestContext().lastSeenSseEventId().map(Instant::parse)); // (2)
 
-  return HttpResponses.serverSentEvents(customerSummarySource); // (2)
+  return HttpResponses.serverSentEventsForView(customerSummarySource); // (3)
 }
 ```
 
 | **1** | The view is annotated with `@Query(value = [a query], streamUpdates = true)` to keep polling the database after the initial result is returned and return updates matching the query filter |
-| **2** | The stream of view entries and then updates are turned into an SSE response. |
+| **2** | SSE last seen event id, if present is parsed and passed to the query, to be able to continue if this is a client reconnect |
+| **3** | The stream of view entries and then updates are turned into an SSE response. |
+If the connection is lost, the client will reconnect and start from the last seen updates.
+
+The offset tracking is timestamp-based, multiple entries can potentially have the exact same last change timestamp.
+Because of this, to make sure no updates are missed, a restarted stream will always include the entries which were seen last by the previous connection. A SSE client will likely have to deduplicate those.
+
 Another realistic example is to periodically poll an entity for its state,
 but only emit an element over SSE when the state changes:
 
@@ -628,6 +728,149 @@ public HttpResponse streamCustomerChanges(String customerId) {
 | **3** | Transform the internal customer domain type to a public API representation |
 | **4** | Turn the stream to a SSE response |
 This uses more advanced Akka stream operators, you can find more details of those in the [Akka libraries documentation](https://doc.akka.io/libraries/akka-core/current/stream/operators/index.html).
+
+Note that on client reconnects, this example will start the reconnected stream with the full state, and then stream partial changes. Depending
+on the use case it might be possible to continue just emitting changes by extracting event ids and handle a `RequestContext.lastSeenSseEventId` being present in the request.
+
+#### <a href="about:blank#_testing_streaming_responses"></a> Testing streaming responses
+
+The testkit contains a `akka.javasdk.testkit.SseRouteTester` which can be used for covering
+both initial streams and reconnects with tests. In a test it can be accessed through `TestKit#getSelfSseRouteTester`.
+
+### <a href="about:blank#websocket"></a> Streaming with WebSockets
+
+[WebSockets](https://datatracker.ietf.org/doc/html/rfc6455) provides full-duplex communication channels over a single TCP connection. Unlike server-sent events which are unidirectional (server to client), WebSocket allows bidirectional streaming between the client and server.
+
+WebSocket endpoints are useful when you need:
+
+- Two-way communication between a browser client and the server
+- Binary data streaming to a browser
+
+|  | While WebSocket endpoint methods work out of the box in local development and tests it requires additional setup to work in a deployed service, see [Invoking Akka Services / WebSocket Support](../operations/services/invoke-service.html#websockets). If this is not setup WebSocket connections to the deployed service will fail with an HTTP 403 Forbidden response. |
+
+#### <a href="about:blank#_creating_a_websocket_endpoint"></a> Creating a WebSocket endpoint
+
+A WebSocket endpoint is created by annotating a method with `@WebSocket()` and having it return a `akka.stream.javadsl.Flow`. The returned flow will be fed incoming messages from the client, and messages coming out of the flow will be sent back to the client.
+
+The `Flow` can be a request-response type of interaction where each incoming message from a client leads to one or more response messages.
+Another alternative is separate, detached, input and output streams using `Flow.fromSinkAndSource`.
+
+Here’s an example that streams view updates from the server to the client WebSocket:
+
+[WebSocketsEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/key-value-customer-registry/src/main/java/customer/api/WebSocketsEndpoint.java)
+```java
+@HttpEndpoint
+public class WebSocketsEndpoint {
+
+
+  @WebSocket("/websockets/customer-by-city/{cityName}") // (1)
+  public Flow<String, String, NotUsed> continousByCityNameWebSocket(String cityName) { // (2)
+    // view will keep stream going, toggled with streamUpdates = true on the query
+    Source<String, NotUsed> customerSummarySourceJson = componentClient
+      .forView()
+      .stream(CustomersByCity::continuousCustomersInCity)
+      .source(cityName) // (3)
+      .map(JsonSupport::encodeToString); // (4)
+
+    return Flow.fromSinkAndSource( // (5)
+      // ignore messages from client
+      Sink.ignore(),
+      // stream view updates
+      customerSummarySourceJson
+    );
+  }
+```
+
+| **1** | Method annotated with `WebSocket` |
+| **2** | The method returns a `Flow<String, String, NotUsed>` to handle and emit WebSocket text messages |
+| **3** | Query the view to get a stream of entries and updates |
+| **4** | Convert each customer object to a JSON string using `JsonSupport.encodeToString` |
+| **5** | Create a `Flow` that ignores incoming client messages and streams view updates to the client |
+For binary WebSocket support, return a `Flow` with `ByteString` instead of `String`. For even greater flexibility `akka.http.javadsl.model.ws.Message` is also supported. The input and output of the flow must have the same type.
+
+In many cases WebSockets are interesting because of the bidirectional capabilities. Here is an example
+that accepts incoming agent requests, feeds those into a streaming agent and then streams the agent response back to the client:
+
+[HelloWorldWebSocketEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/HelloWorldWebSocketEndpoint.java)
+```java
+/**
+ * This is a simple Akka Endpoint that uses an agent and LLM to generate
+ * greetings in different languages. An HTTP client connects a websocket with a username
+ * in the path and then sends individual requests over the socket to get the response
+ * streamed from the agent.
+ */
+// Opened up for access from the public internet to make the service easy to try out.
+// For actual services meant for production this must be carefully considered,
+// and often set more limited
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
+@HttpEndpoint
+public class HelloWorldWebSocketEndpoint extends AbstractHttpEndpoint {
+
+  private final ComponentClient componentClient;
+
+  public HelloWorldWebSocketEndpoint(ComponentClient componentClient) {
+    this.componentClient = componentClient;
+  }
+
+  @WebSocket("/websockets/hello/{user}") // (1)
+  public Flow<String, String, NotUsed> hello(String user) { // (2)
+    return Flow.of(String.class).flatMapConcat(requestText -> // (3)
+      componentClient
+        .forAgent()
+        .inSession(user)
+        .tokenStream(StreamingHelloWorldAgent::greet)
+        .source(requestText));
+  }
+}
+```
+
+| **1** | Method annotated with `WebSocket` |
+| **2** | Return type `Flow<String, String, NotUsed>` to handle and emit WebSocket text messages |
+| **3** | `Flow.flatMapConcat` turns each incoming request into a stream of response strings |
+`flatMapConcat` means that each response will be streamed until completion, before the next response starts.
+
+#### <a href="about:blank#_websockets_requires_extra_thought"></a> WebSockets requires extra thought
+
+WebSocket connections to an HTTP endpoint is tied to the specific instance they were connected to when the request was first made.
+
+Akka is a distributed system, which means that services instances can start and stop based on decisions the infrastructure makes, because the service upgrading, or  other unanticipated issues. Connections are also
+forcibly disconnected at an interval to make sure connected clients are alive and that the connections
+are rebalanced over the instances of the service.
+
+It is important that WebSocket endpoint methods are designed with connection loss in mind and do not rely on the stream itself to keep a local JVM object alive. A reconnect may not end up in the same service instance as the original connection.
+
+#### <a href="about:blank#_testing_websocket_endpoints"></a> Testing WebSocket endpoints
+
+The testkit provides `akka.javasdk.testkit.WebSocketRouteTester` for testing WebSocket endpoints. Access it through `TestKit#getSelfWebSocketRouteTester`.
+
+Example testing a text WebSocket:
+
+akka-javasdk-tests/src/test/java/akkajavasdk/HttpEndpointTest.java[HttpEndpointTest.java]
+```java
+var webSocketRouteTester = testKit.getSelfWebSocketRouteTester(); // (1)
+
+var probes = webSocketRouteTester.wsTextConnection("/ping-pong-websocket"); // (2)
+
+var publisher = probes.publisher();
+var subscriber = probes.subscriber();
+
+subscriber.request// (1); // (3)
+
+publisher.sendNext("ping"); // (4)
+
+var messageBack = subscriber.expectNext(); // (5)
+assertThat(messageBack).isEqualTo("pong");
+
+publisher.sendComplete(); // (6)
+subscriber.expectComplete();
+```
+
+| **1** | Get the WebSocket route tester from the test kit |
+| **2** | Create a text WebSocket connection to the endpoint |
+| **3** | Request one message from the server |
+| **4** | Send a message from the client |
+| **5** | Expect and verify the received message |
+| **6** | Complete the connection |
 
 ## <a href="about:blank#_see_also"></a> See also
 

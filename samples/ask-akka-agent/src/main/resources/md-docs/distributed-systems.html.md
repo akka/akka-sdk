@@ -48,7 +48,7 @@ The foundation of Akka is detailed in the [O’Reilly Technical Guide: Principle
 - Backpressure and flow control, ensuring that communication channels between services or agents never become bottlenecks or cause failure due to data overload.
 - Failure signaling and supervision, allowing systems to self-heal and degrade gracefully.
 - Automatic and transparent self-replication of agents and services for failover, redundancy, and scale.
-These constructs are operationalized in Akka’s runtime through [Agents](../java/agents.html), [Entities](../java/event-sourced-entities.html), [Views](../java/views.html), [Endpoints](../java/http-endpoints.html), [Workflows](../java/workflows.html), and [Consumers](../java/consuming-producing.html) backed by actors, event-sourced persistence, multi-region replication, durable streaming real-time projections, and sharded clusters—all battle-tested in production systems across industries for over a decade, providing a tuned and proven runtime for enterprise-grade services.
+These constructs are operationalized in Akka’s runtime through [Agents](../sdk/agents.html), [Entities](../sdk/event-sourced-entities.html), [Views](../sdk/views.html), [Endpoints](../sdk/http-endpoints.html), [Workflows](../sdk/workflows.html), and [Consumers](../sdk/consuming-producing.html) backed by actors, event-sourced persistence, multi-region replication, durable streaming real-time projections, and sharded clusters—all battle-tested in production systems across industries for over a decade, providing a tuned and proven runtime for enterprise-grade services.
 
 ## <a href="about:blank#_designed_for_multi_agent_ai"></a> Designed for multi-agent AI
 
@@ -56,10 +56,10 @@ Multi-agent AI systems combine the inherent *nondeterminism* of distributed syst
 
 The demands of multi-agent AI systems—which involve large numbers of autonomous, stateful, and often long-lived agents—require managing complexity around orchestration, streaming, memory, and temporal behaviors while being able to reason about the system as a whole and embrace its stochastic and non-deterministic nature. Akka’s approach to multi-agent architectures includes:
 
-- Actor-based isolation and concurrency control for stateful [Agents](../java/agents.html) that must reason and act independently while coordinating with others.
-- Asynchronous messaging and streaming decouple computation from communication, allowing for flow control and resilient communication between [Agents](../java/agents.html), critical for latency-sensitive inference or decision-making.
-- Operational resilience, with fully replicated stateful [Agents](../java/agents.html) that restart and recover in place.
-- Automatic short-term (session) and long-term memory through the [Agent’s](../java/agents.html) built-in durable in-memory storage, allowing replayability through event logs, ensuring agents can recover, reflect, reason, and explain past behavior.
+- Actor-based isolation and concurrency control for stateful [Agents](../sdk/agents.html) that must reason and act independently while coordinating with others.
+- Asynchronous messaging and streaming decouple computation from communication, allowing for flow control and resilient communication between [Agents](../sdk/agents.html), critical for latency-sensitive inference or decision-making.
+- Operational resilience, with fully replicated stateful [Agents](../sdk/agents.html) that restart and recover in place.
+- Automatic short-term (session) and long-term memory through the [Agent’s](../sdk/agents.html) built-in durable in-memory storage, allowing replayability through event logs, ensuring agents can recover, reflect, reason, and explain past behavior.
 - Dynamic scaling and routing are done through automatic and transparent sharding and cluster management.
 - Loose coupling and evolvability, aided by schema-versioned messages and contract-first APIs.
 - Multi-region replication based on CRDTs for collaborative knowledge sharing and eventual consistency without global locking.

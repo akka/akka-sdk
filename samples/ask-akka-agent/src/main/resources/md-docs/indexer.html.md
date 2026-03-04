@@ -48,7 +48,7 @@ We’re going to use `langchain4j` for this sample, so add those dependencies to
     <parent>
         <groupId>io.akka</groupId>
         <artifactId>akka-javasdk-parent</artifactId>
-        <version>3.5.4</version>
+        <version>3.5.15</version>
     </parent>
 
     <groupId>akka.ask</groupId>
@@ -58,7 +58,7 @@ We’re going to use `langchain4j` for this sample, so add those dependencies to
 
     <name>ask-akka</name>
     <properties>
-        <langchain4j.version>1.5.0</langchain4j.version>
+        <langchain4j.version>1.11.0</langchain4j.version>
     </properties>
     <dependencies>
         <dependency>
@@ -69,7 +69,7 @@ We’re going to use `langchain4j` for this sample, so add those dependencies to
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-mongodb-atlas</artifactId>
-            <version>1.1.0-beta7</version>
+            <version>1.11.0-beta19</version>
         </dependency>
     </dependencies>
 </project>

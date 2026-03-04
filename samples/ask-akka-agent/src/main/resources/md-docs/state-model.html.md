@@ -9,7 +9,7 @@
 
 Akka provides an in-memory, durable store for stateful data. Stateful data can be scoped to a single agent, or made available system-wide. Stateful data is persisted in an embedded event store that tracks incremental state changes, which enables recovery of system state (resilience) to its last known modification. State is automatically sharded and rebalanced across Akka nodes running in a cluster to support elastic scaling to terabytes of memory. State can also be replicated across regions for failover and disaster recovery.
 
-Memory in Akka is structured around [entities](../reference/glossary.html#entity). An entity holds a particular slice of application state and evolves it over time according to a defined [state model](../reference/glossary.html#state_model). These state models determine how state is stored, updated, and replicated. This approach provides consistency and durability across the system, even in the face of failure. [Agents](../java/agents.html), for example, manage their memory through entities, whether for short-lived context or persistent behavior.
+Memory in Akka is structured around [entities](../reference/glossary.html#entity). An entity holds a particular slice of application state and evolves it over time according to a defined [state model](../reference/glossary.html#state_model). These state models determine how state is stored, updated, and replicated. This approach provides consistency and durability across the system, even in the face of failure. [Agents](../sdk/agents.html), for example, manage their memory through entities, whether for short-lived context or persistent behavior.
 
 Akka uses an architectural pattern called *Event Sourcing*. Following this pattern, all changes to an application’s state are stored as a sequence of immutable events. Instead of saving the current state directly, Akka stores the history of what happened to it. The current state is derived by replaying those events. Memory is saved in an event journal managed by Akka, with events recorded both sequentially and via periodic snapshots for faster recovery.
 
@@ -21,7 +21,7 @@ Akka uses an architectural pattern called *Event Sourcing*. Following this patte
 | FundsWithdrawn | -$200 | $1,300 |
 | FundsDeposited | +$300 | $1,600 |
 | FundsWithdrawn | -$400 | $1,200 |
-Akka uses the Event Sourcing pattern for many internal stateful operations. For example, [Workflows](../java/workflows.html) rely on Event Sourcing to record each step as it progresses. This provides a complete history of execution, which can be useful for auditing, debugging, or recovery.
+Akka uses the Event Sourcing pattern for many internal stateful operations. For example, [Workflows](../sdk/workflows.html) rely on Event Sourcing to record each step as it progresses. This provides a complete history of execution, which can be useful for auditing, debugging, or recovery.
 
 | Step | Action | Workflow State |
 | --- | --- | --- |
@@ -36,7 +36,7 @@ Tracking all state changes as a sequence of events allows you to create agentic 
 ![Event Actions](_images/event-actions.png)
 
 
-Memory is managed automatically by the [Agent](../java/agents.html) component. By default, each agent has session memory that stores interaction history and context using an [Event Sourced Entity](../java/event-sourced-entities.html). This memory is durable and retained across invocations. If needed, memory behavior can be customized or disabled [through configuration](../java/agents.html#_session_memory_configuration).
+Memory is managed automatically by the [Agent](../sdk/agents.html) component. By default, each agent has session memory that stores interaction history and context using an [Event Sourced Entity](../sdk/event-sourced-entities.html). This memory is durable and retained across invocations. If needed, memory behavior can be customized or disabled [through configuration](../sdk/agents.html#_session_memory_configuration).
 
 ## <a href="about:blank#_entity_state_models"></a> Entity state models
 
@@ -130,8 +130,8 @@ In order to have multi-writer (or write anywhere) capabilities you must implemen
 
 ## <a href="about:blank#_related_documentation"></a> Related documentation
 
-- [Event Sourced Entities](../java/event-sourced-entities.html)
-- [Key Value Entities](../java/key-value-entities.html)
+- [Event Sourced Entities](../sdk/event-sourced-entities.html)
+- [Key Value Entities](../sdk/key-value-entities.html)
 
 <!-- <footer> -->
 <!-- <nav> -->

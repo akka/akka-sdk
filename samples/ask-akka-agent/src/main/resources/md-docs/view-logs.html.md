@@ -31,19 +31,8 @@ Logs can be exported for searching, reporting, alerting and long term storage by
 
 ## <a href="about:blank#_correlating_logs"></a> Correlating logs
 
-You can correlate your log statements, those that you write in your application, by adding the MDC pattern `%mdc{trace_id}` to your log file when tracing is [enabled](observability-exports.html#activating_tracing). Like the following:
+The JSON log messages include a `trace_id` field when tracing is [enabled](observability-exports.html#activating_tracing).
 
-logback.xml
-```xml
-<configuration>
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{36} trace_id: %mdc{trace_id} - %msg%n</pattern>
-        </encoder>
-    </appender>
-...
-</configuration>
-```
 This way, the trace ID that’s passed through your components will be added to your logs. For more information on tracing, click [here](traces.html).
 
 ## <a href="about:blank#_see_also"></a> See also

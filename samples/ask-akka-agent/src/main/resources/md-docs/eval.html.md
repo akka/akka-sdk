@@ -40,7 +40,6 @@ import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.EvaluationResult;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
-
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -202,7 +201,7 @@ public class PreferencesConsumer extends Consumer { // (2)
 
     // Call EvaluatorAgent for each session
     for (var activity : activities.entries()) {
-      if (activity.finalAnswer() != null && !activity.finalAnswer().isEmpty()) {
+      if (activity.hasFinalAnswer()) {
         var evaluationRequest = new EvaluatorAgent.EvaluationRequest(
           userId,
           activity.userQuestion(),
@@ -321,9 +320,9 @@ curl http://localhost:9000/activities/alice | jq
 
 Congratulations, you have completed the tour of building a multi-agent system. Now you can take your Akka skills to the next level:
 
-- Learn more about the <a href="../../java/consuming-producing.html">`Consumer` component</a>.
+- Learn more about the <a href="../../sdk/consuming-producing.html">`Consumer` component</a>.
 - [Deploy to akka.io](../quick-deploy.html)
-- **Expand on your own**: Learn more details of the [Akka components](../../java/components/index.html) to enhance your application with additional features.
+- **Expand on your own**: Learn more details of the [Akka components](../../sdk/components/index.html) to enhance your application with additional features.
 - **Explore other Akka samples**: Discover more about Akka by exploring [different use cases](../samples.html) for inspiration.
 
 <!-- <footer> -->

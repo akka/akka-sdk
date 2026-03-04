@@ -187,7 +187,16 @@ For more details see [Component and service calls](component-and-service-calls.h
 
 ## <a href="about:blank#_streaming"></a> Streaming
 
-gRPC supports streaming requests and responses, with which either the client or the server (or both) can send multiple messages. In this section, we will show how to stream the results of a request but the remaining combinations are similar.
+gRPC supports streaming requests and responses, with which either the client or the server (or both) can send multiple messages. In this section, we will show how to stream the results of a request, but the remaining combinations are similar.
+
+Akka is a distributed system, which means that services instances can start and stop based on decisions the infrastructure makes, because the service upgrading, or  other unanticipated issues. Connections are also
+forcibly disconnected at an interval to make sure connected clients are alive and that the connections
+are rebalanced over the instances of the service.
+
+Streaming gRPC calls do not have resuming of a stream built in, so it is important that streaming gRPC services are designed
+with this in mind. For example, accepting an offset of some sort to let a client resume from the last event it saw emitted
+in the stream. Streaming gRPC endpoint methods cannot rely on a stream itself to keep a local JVM object alive.
+A reconnected client may not end up in the same service instance as the original connection.
 
 To stream the results of a request, mark the return type of the method as `stream` in the `.proto` file:
 
@@ -322,6 +331,61 @@ message Example {
 Dropping fields will not be *source compatible*, since the generated Java class and set of fields will change
 along with the protobuf message change, once a protocol file with name changes is introduced in a service it will need
 updates to the code wherever it is accessing the old field.
+
+## <a href="about:blank#_external_protobuf_message_types"></a> External protobuf message types
+
+The set of common message types defined in the protobuf package `google.protobuf`, for example `google.protobuf.Timestamp` and `google.protobuf.StringValue`, are always available for use in projects with gRPC endpoints.
+
+Sometimes a service needs to use other protobuf message definitions, that do not specifically belong to the service itself,
+for example when an Akka service calls a gRPC endpoint in another Akka service in the same Akka project, or a third party
+gRPC service across the public internet.
+
+**Handling such protobuf files can be done in different ways:**
+
+Copy the needed messages and service descriptors into the project and keep them in version control. gRPC and proto messages
+should let the upstream service evolve without breaking the protocol. The consuming service updates its set of protobuf
+files once it needs to use new features in the upstream service.
+
+If the upstream service uses Java, packages and provides a published Java package, it is possible to let maven download the jar
+and unpack the protobuf files from that to make the message types and gRPC service definitions available. This requires a bit of extra configuration
+in the maven project `pom.xml`:
+
+[pom.xml](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/pom.xml)
+```xml
+<build>
+  <plugins>
+    <plugin>
+      <artifactId>maven-dependency-plugin</artifactId>
+      <executions>
+        <execution>
+          <id>unpack-additional-proto-dependencies</id>
+          <!-- Note: bound to unorthodox phase needed to make sure it happens
+                     before the grpc code generation -->
+          <phase>initialize</phase>
+          <goals>
+            <goal>unpack</goal>
+          </goals>
+          <configuration>
+            <artifactItems>
+              <artifactItem>
+                <groupId>com.google.api.grpc</groupId>
+                <artifactId>proto-google-common-protos</artifactId>
+                <version>2.61.3</version>
+                <type>jar</type>
+                <overWrite>true</overWrite>
+                <outputDirectory>${project.build.directory}/proto</outputDirectory>
+                <includes>**/*.proto</includes>
+              </artifactItem>
+            </artifactItems>
+            <overWriteReleases>false</overWriteReleases>
+            <overWriteSnapshots>true</overWriteSnapshots>
+          </configuration>
+        </execution>
+      </executions>
+    </plugin>
+  </plugins>
+</build>
+```
 
 ## <a href="about:blank#_see_also"></a> See also
 

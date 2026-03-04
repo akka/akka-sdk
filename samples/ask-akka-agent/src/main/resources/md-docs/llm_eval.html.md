@@ -19,7 +19,7 @@ For instance, after a test run, you could send the session history to a powerful
 
 You run your agent and then *evaluate* the results based on a number of criteria like token usage, elapsed time, and the results of using other models to infer quality metrics like accuracy or confidence.
 
-You can implement an LLM-as-judge evaluator as an Akka `Agent`. The result of the agent method should implement the <a href="_attachments/api/akka/javasdk/agent/EvaluationResult.html">`EvaluationResult`</a> interface. Essentially a boolean that tells if the input passed the evaluation criteria, and an explanation for the decision. These results are captured and included in metrics and traces.
+You can implement an LLM-as-judge evaluator as an Akka `Agent`. The result of the agent method should implement the <a href="../_attachments/api/akka/javasdk/agent/EvaluationResult.html">`EvaluationResult`</a> interface. Essentially a boolean that tells if the input passed the evaluation criteria, and an explanation for the decision. These results are captured and included in metrics and traces.
 
 [HumanVsAiEvaluator.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/evaluator/HumanVsAiEvaluator.java)
 ```java
@@ -43,23 +43,28 @@ public class HumanVsAiEvaluator extends Agent { // (1)
 
   public record EvaluationRequest(String question, String humanAnswer, String aiAnswer) {} // (2)
 
-  public record Result(String explanation, String label) implements EvaluationResult { // (3)
-    public boolean passed() {
+  record ModelResult(String explanation, String label) { // (3)
+    Result toEvaluationResult() {
       if (label == null) throw new IllegalArgumentException(
         "Model response must include label field"
       );
 
-      return switch (label.toLowerCase(Locale.ROOT)) {
-        case "correct" -> true;
-        case "incorrect" -> false;
-        default -> throw new IllegalArgumentException(
-          "Unknown evaluation label [" + label + "]"
-        );
-      };
+      var passed =
+        switch (label.toLowerCase(Locale.ROOT)) {
+          case "correct" -> true;
+          case "incorrect" -> false;
+          default -> throw new IllegalArgumentException(
+            "Unknown evaluation label [" + label + "]"
+          );
+        };
+
+      return new Result(explanation, passed);
     }
   }
 
-  private static final String SYSTEM_MESSAGE = // (4)
+  public record Result(String explanation, boolean passed) implements EvaluationResult {} // (4)
+
+  private static final String SYSTEM_MESSAGE = // (5)
     """
     You are comparing a human ground truth answer from an expert to an answer from
     an AI model. Your goal is to determine if the AI answer correctly matches, in
@@ -96,7 +101,7 @@ public class HumanVsAiEvaluator extends Agent { // (1)
     ************
     """.stripIndent();
 
-  public Effect<Result> evaluate(EvaluationRequest req) { // (5)
+  public Effect<Result> evaluate(EvaluationRequest req) { // (6)
     String evaluationPrompt = USER_MESSAGE_TEMPLATE.formatted(
       req.question,
       req.humanAnswer,
@@ -107,12 +112,8 @@ public class HumanVsAiEvaluator extends Agent { // (1)
       .systemMessage(SYSTEM_MESSAGE)
       .memory(MemoryProvider.none())
       .userMessage(evaluationPrompt)
-      .responseConformsTo(Result.class)
-      .map(result -> {
-        // make sure it's a valid label in the result, otherwise it will throw an exception
-        result.passed(); // (6)
-        return result;
-      })
+      .responseConformsTo(ModelResult.class)
+      .map(ModelResult::toEvaluationResult) // (7)
       .thenReply();
   }
 }
@@ -120,10 +121,13 @@ public class HumanVsAiEvaluator extends Agent { // (1)
 
 | **1** | It’s an ordinary `Agent` |
 | **2** | It can have any type of request parameter |
-| **3** | The return type must implement `EvaluationResult`, but may also include more information |
-| **4** | Instructions of how to evaluate |
-| **5** | The method with return type implementing `EvaluationResult` |
-| **6** | The instructions are to use "correct" or "incorrect" in the label, and fail fast if that isn’t followed by the model |
+| **3** | The result from the model |
+| **4** | The return type must implement `EvaluationResult`, but may also include more information |
+| **5** | Instructions of how to evaluate |
+| **6** | The method with return type implementing `EvaluationResult` |
+| **7** | Transform the model result |
+In this example, we use one result representation from the model, and a slightly different as the response type. These could be the same, but the model might be more accurate when using text labels instead of boolean values. It’s also good to include validation in that transformation.
+
 Since the evaluator is an ordinary `Agent` you can call it with the component client in the same way as any other agent. For example, from a consumer of workflow state changes:
 
 [AgentTeamEvaluatorConsumer.java](https://github.com/akka/akka-sdk/blob/main/samples/multi-agent/src/main/java/demo/multiagent/application/AgentTeamEvaluatorConsumer.java)
@@ -215,7 +219,7 @@ The system and user message prompts for these agents are loaded from a <a href="
 
 ### <a href="about:blank#_toxicity_evaluator"></a> Toxicity evaluator
 
-<a href="_attachments/api/akka/javasdk/agent/evaluator/ToxicityEvaluator.html">`ToxicityEvaluator`</a> is an agent that acts as an LLM judge to evaluate if an AI response or other text is racist, biased, or toxic.
+<a href="../_attachments/api/akka/javasdk/agent/evaluator/ToxicityEvaluator.html">`ToxicityEvaluator`</a> is an agent that acts as an LLM judge to evaluate if an AI response or other text is racist, biased, or toxic.
 
 - Model provider configuration: `akka.javasdk.agent.evaluators.toxicity-evaluator.model-provider`
 - System message prompt id: `toxicity-evaluator.system`
@@ -247,7 +251,7 @@ Your response must be a single JSON object with the following fields:
 
 ### <a href="about:blank#_summarization_evaluator"></a> Summarization evaluator
 
-<a href="_attachments/api/akka/javasdk/agent/evaluator/SummarizationEvaluator.html">`SummarizationEvaluator`</a> is an agent that acts as an LLM judge to evaluate a summarization task.
+<a href="../_attachments/api/akka/javasdk/agent/evaluator/SummarizationEvaluator.html">`SummarizationEvaluator`</a> is an agent that acts as an LLM judge to evaluate a summarization task.
 
 - Model provider configuration: `akka.javasdk.agent.evaluators.summarization-evaluator.model-provider`
 - System message prompt id: `summarization-evaluator.system`
@@ -275,7 +279,7 @@ Your response must be a single JSON object with the following fields:
 
 ### <a href="about:blank#_hallucination_evaluator"></a> Hallucination evaluator
 
-<a href="_attachments/api/akka/javasdk/agent/evaluator/HallucinationEvaluator.html">`HallucinationEvaluator`</a> is an agent that acts as an LLM judge to evaluate whether an output contains information not available in the reference text given an input question.
+<a href="../_attachments/api/akka/javasdk/agent/evaluator/HallucinationEvaluator.html">`HallucinationEvaluator`</a> is an agent that acts as an LLM judge to evaluate whether an output contains information not available in the reference text given an input question.
 
 - Model provider configuration: `akka.javasdk.agent.evaluators.hallucination-evaluator.model-provider`
 - System message prompt id: `hallucination-evaluator.system`

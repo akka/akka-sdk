@@ -18,30 +18,30 @@ Developers create services built with *Akka components* that - when deployed - b
 | --- | --- |
 | Akka Orchestration | Akka provides a durable execution engine which automatically captures state at every step, and in the event of failure, can pick up exactly where they left off. No lost progress, no orphaned processes, and no manual recovery required.
 
-You implement orchestration by creating an Akka service with the [Workflow](../java/workflows.html) component. |
+You implement orchestration by creating an Akka service with the [Workflow](../sdk/workflows.html) component. |
 | Akka Agents | Akka provides a development framework and runtime for agents. Agents can be stateful (durable memory included) or stateless. Agents can be invoked by other Akka components or run autonomously. Agents can transact with embedded tools, MCP servers, or any 3rd party data source with 100s of Akka connectors.
 
-You implement an agent by creating an Akka service with the [Agent](../java/agents.html) component.
+You implement an agent by creating an Akka service with the [Agent](../sdk/agents.html) component.
 
-You implement a tool in a regular Java class or embedded within the [Agent](../java/agents.html) component.
+You implement a tool in a regular Java class or embedded within the [Agent](../sdk/agents.html) component.
 
-You implement an MCP server with the [MCP Endpoint](../java/mcp-endpoints.html) component.
+You implement an MCP server with the [MCP Endpoint](../sdk/mcp-endpoints.html) component.
 
-You implement APIs that can front an agent with the [HTTP Endpoint](../java/http-endpoints.html) and [gRPC Endpoint](../java/grpc-endpoints.html) components. |
+You implement APIs that can front an agent with the [HTTP Endpoint](../sdk/http-endpoints.html) and [gRPC Endpoint](../sdk/grpc-endpoints.html) components. |
 | Akka Memory | Akka provides an in-memory, durable store for stateful data. Stateful data can be scoped to a single agent, or made available system-wide. Stateful data is persisted in an embedded event store that tracks incremental state changes, which enables recovery of system state (resilience) to its last known modification. State is automatically sharded and rebalanced across Akka nodes running in a cluster to support elastic scaling to terabytes of memory. State can also be replicated across regions for failover and disaster recovery.
 
-Short-term (traced and episodic) memory is included transparently within the [Agent](../java/agents.html) component.
+Short-term (traced and episodic) memory is included transparently within the [Agent](../sdk/agents.html) component.
 
-You implement long-term memory with the [Event Sourced Entity](../java/event-sourced-entities.html) and [Key Value Entity](../java/key-value-entities.html) components.
+You implement long-term memory with the [Event Sourced Entity](../sdk/event-sourced-entities.html) and [Key Value Entity](../sdk/key-value-entities.html) components.
 
-You implement propagations of cross-system state with the [View](../java/views.html) component. Views implement the Command Query Responsibility Segregation (CQRS) pattern. |
+You implement propagations of cross-system state with the [View](../sdk/views.html) component. Views implement the Command Query Responsibility Segregation (CQRS) pattern. |
 | Akka Streaming | Akka provides a continuous stream processing engine which can synthesize, aggregate, and analyze windows of data without receiving a terminating event. Data streams can be sourced from other Akka services or a 3rd party messaging broker or coming in through an Akka Endpoint. Your services can either store intermediate processing results into *Akka Memory* or trigger commands to other Akka components that take action on the data.
 
-You produce events to a message broker with the [Producer](../java/consuming-producing.html#_event_producer) annotation.
+You produce events to a message broker with the [Producer](../sdk/consuming-producing.html#_event_producer) annotation.
 
-You create a continuous incoming stream of events with the [HTTP Endpoint](../java/http-endpoints.html) or the [gRPC Endpoint](../java/grpc-endpoints.html) components.
+You create a continuous incoming stream of events with the [HTTP Endpoint](../sdk/http-endpoints.html) or the [gRPC Endpoint](../sdk/grpc-endpoints.html) components.
 
-You create a stream processor to analyze and act against a stream of data with the [Consumer](../java/consuming-producing.html) component. |
+You create a stream processor to analyze and act against a stream of data with the [Consumer](../sdk/consuming-producing.html) component. |
 
 ## <a href="about:blank#_components"></a> Components
 
@@ -52,39 +52,39 @@ You build your application using <a href="../reference/glossary.html#component">
 | Agents | - Performs one focused AI task using a selected model and prompt.
   - Maintains session memory for context.
   - Stateless agents also possible.
-  - See [Agents](../java/agents.html). |
+  - See [Agents](../sdk/agents.html). |
 | Workflows | - Durable execution with support for sequential, parallel, retry, and failure logic.
   - Akka manages delivery, scaling, and recovery.
-  - See [Workflows](../java/workflows.html). |
+  - See [Workflows](../sdk/workflows.html). |
 | HTTP Endpoints | - Exposes APIs over HTTP.
   - Accepts input, triggers logic, and returns output.
-  - See [HTTP Endpoints](../java/http-endpoints.html). |
+  - See [HTTP Endpoints](../sdk/http-endpoints.html). |
 | gRPC Endpoints | - Exposes APIs over gRPC using Protobuf contracts.
   - Facilitates compatibility and structured communication.
-  - See [gRPC Endpoints](../java/grpc-endpoints.html). |
+  - See [gRPC Endpoints](../sdk/grpc-endpoints.html). |
 | MCP Endpoints | - Exposes tools, resources and prompts over the MCP protocol.
   - Used by agents to invoke logic and establish context.
-  - See [MCP Endpoints](../java/mcp-endpoints.html). |
+  - See [MCP Endpoints](../sdk/mcp-endpoints.html). |
 | Event Sourced Entities | - Durable memory component.
   - Stores a sequence of events that represent state changes.
   - The current state is reconstructed by replaying these events.
   - Suitable for audit trails and event-driven logic.
-  - See [Event Sourced Entities](../java/event-sourced-entities.html). |
+  - See [Event Sourced Entities](../sdk/event-sourced-entities.html). |
 | Key Value Entities | - Durable memory component.
   - Stores full state snapshots indexed by a key.
   - Each write replaces the entire object.
   - Simpler to reason about and similar to row-based records.
-  - See [Key Value Entities](../java/key-value-entities.html). |
+  - See [Key Value Entities](../sdk/key-value-entities.html). |
 | Views | - Indexes and queries entity data across IDs or attributes.
   - Built from entity state, workflow state, or events.
   - Enables efficient lookups, filtering, and real-time updates.
-  - See [Views](../java/views.html). |
+  - See [Views](../sdk/views.html). |
 | Consumers (streaming) | - Listens for and processes events or messages from entities, workflows, or external systems.
   - May emit output messages.
-  - See [Consuming and producing](../java/consuming-producing.html). |
+  - See [Consuming and producing](../sdk/consuming-producing.html). |
 | Timers | - Schedules future actions with delivery guarantees.
   - Used for reminders, retries, or timeout logic.
-  - See [Timed actions](../java/timed-actions.html). |
+  - See [Timed actions](../sdk/timed-actions.html). |
 
 ## <a href="about:blank#_composability"></a> Composability
 
@@ -101,7 +101,7 @@ In Akka, you specify *what* the system should do, while the Akka runtime decides
 
 Your services define the *what* using `Effects`, which are Application Programming Interfaces (APIs) provided by each Akka component. When you write a component method, you return an `Effect<…​>` object that describes, in a declarative way, what you want Akka to do.
 
-For example, when using Akka’s [Agent](../java/agents.html) component, you might return an `Effect` that tells the runtime to execute the agent with a system message, a user message, and then send the AI model’s response back to the requester:
+For example, when using Akka’s [Agent](../sdk/agents.html) component, you might return an `Effect` that tells the runtime to execute the agent with a system message, a user message, and then send the AI model’s response back to the requester:
 
 ```java
 public Effect<String> query(String question) {
@@ -144,31 +144,31 @@ An agentic system is a distributed system that requires a variety of behaviors a
 | --- | --- |
 | Agents | Components that integrate with AI to perceive their environment, make decisions and take actions toward a specific goal
 
-You implement agents in Akka with the [Agent](../java/agents.html) component. |
+You implement agents in Akka with the [Agent](../sdk/agents.html) component. |
 | Tools | Functionality, local or remote, that agents may call upon to perform tasks beyond their core logic.
 
-You invoke tools in Akka through *embedded agent function calls* or by *invoking a remote MCP tool*. You can implement MCP servers with the [MCP Endpoints](../java/mcp-endpoints.html) component. |
+You invoke tools in Akka through *embedded agent function calls* or by *invoking a remote MCP tool*. You can implement MCP servers with the [MCP Endpoints](../sdk/mcp-endpoints.html) component. |
 | Endpoints | Externally accessible entry points through which agents are launched and controlled.
 
-You implement Endpoints in Akka using either [HTTP](../java/http-endpoints.html), [gRPC](../java/grpc-endpoints.html) or [MCP](../java/mcp-endpoints.html) Endpoint components. |
+You implement Endpoints in Akka using either [HTTP](../sdk/http-endpoints.html), [gRPC](../sdk/grpc-endpoints.html) or [MCP](../sdk/mcp-endpoints.html) Endpoint components. |
 | Goals | Clear objectives or outcomes that agents continuously work toward by making decisions and taking actions on their own.
 
-You implement goals in Akka by implementing a multi-agent system *with a planner agent* using a [Workflow](../java/workflows.html) component to orchestrate the cross-agent interactions. |
+You implement goals in Akka by implementing a multi-agent system *with a planner agent* using a [Workflow](../sdk/workflows.html) component to orchestrate the cross-agent interactions. |
 | Guardians | Components that monitor, protect and evaluate the system against its goals and constraints.
 
-You will soon be able to implements guardians in Akka with an [Agent evaluation workbench](../java/agents.html#_evaluating_ai_model_quality). |
+You will soon be able to implements guardians in Akka with an [Agent evaluation workbench](../sdk/agents.html#_evaluating_ai_model_quality). |
 | Adaptation | Continuous, real-time streams from users or the environment which can alter the context, memory or semantic knowledge used by an agentic system.
 
-You implement adaptation in Akka by processing a stream of data from external sensors, either with the [Consumer](../java/consuming-producing.html) component or through streaming HTTP or gRPC interfaces. [Consumers](../java/consuming-producing.html) can modify an agent’s goals, memory, or guardians to affect the behavior of the system. |
+You implement adaptation in Akka by processing a stream of data from external sensors, either with the [Consumer](../sdk/consuming-producing.html) component or through streaming HTTP or gRPC interfaces. [Consumers](../sdk/consuming-producing.html) can modify an agent’s goals, memory, or guardians to affect the behavior of the system. |
 | Orchestration | The ability to execute, persist and recover long-running tasks made possible through *durable execution*.
 
-You implement orchestration in Akka with the [Workflow](../java/workflows.html) component. |
+You implement orchestration in Akka with the [Workflow](../sdk/workflows.html) component. |
 | Memory | Data that enables agents to reason over time, track context, make correct decisions and learn from experience.
 
-You inherit agentic and episodic (short-term) durable memory automatically when you implement a stateful [Agent](../java/agents.html) component. You can get long-term, multi-agent memory by implementing [Event Sourced Entity](../java/event-sourced-entities.html) or [Key Value Entity](../java/key-value-entities.html) components. |
+You inherit agentic and episodic (short-term) durable memory automatically when you implement a stateful [Agent](../sdk/agents.html) component. You can get long-term, multi-agent memory by implementing [Event Sourced Entity](../sdk/event-sourced-entities.html) or [Key Value Entity](../sdk/key-value-entities.html) components. |
 | Registry | A built-in directory that stores information about all agents so they can be discovered and called upon in multi-agent systems.
 
-You use the registry provided by Akka by [annotating each agent](../java/agents.html#_creating_dynamic_plans), which allows Akka to automatically register and use them as needed. |
+You use the registry provided by Akka by [annotating each agent](../sdk/agents.html#_creating_dynamic_plans), which allows Akka to automatically register and use them as needed. |
 
 ## <a href="about:blank#_properties_of_a_distributed_system"></a> Properties of a distributed system
 
@@ -189,13 +189,13 @@ Autonomous AI systems require three types of runtimes:
 | --- | --- |
 | Durable Execution | Long-lived, where the call-stack is persisted after every invocation to enable recovery and retries.
 
-This is utilized when you implement the [Workflow](../java/workflows.html) component. |
+This is utilized when you implement the [Workflow](../sdk/workflows.html) component. |
 | Transactional | Short-lived, high volume, concurrent execution.
 
-This is utilized when you implement [Endpoint](grpc-vs-http-endpoints.html), [View](../java/views.html), [Entity](state-model.html#_entity_state_models) and [Timer](../java/timed-actions.html) components. |
+This is utilized when you implement [Endpoint](grpc-vs-http-endpoints.html), [View](../sdk/views.html), [Entity](state-model.html#_entity_state_models) and [Timer](../sdk/timed-actions.html) components. |
 | Streaming | Continuous, never-ending processes that handle streams of data.
 
-This is utilized when you implement the [Consumer](../java/consuming-producing.html) component or [SSE / gRPC streaming extension of an endpoint](grpc-vs-http-endpoints.html). |
+This is utilized when you implement the [Consumer](../sdk/consuming-producing.html) component or [SSE / gRPC streaming extension of an endpoint](grpc-vs-http-endpoints.html). |
 Akka provides support for all three runtimes within the same SDK. The runtime behavior is automatic within your service based upon the components that you use during development. All of these runtimes leverage an actor-based core, which is a concurrency model with strong isolation and asynchronous message passing between actors. When running a service that executes multiple runtimes, Akka maximizes efficiency of the underlying compute by executing actors for different runtimes concurrently, enabling node resource utilization up to 95%.
 
 ## <a href="about:blank#_shared_distributed_state_memory"></a> Shared, distributed state (memory)
@@ -204,16 +204,16 @@ There are a variety of shared data (memory) use cases within an agentic system.
 
 | Use Case | Provided by | Description |
 | --- | --- | --- |
-| Short-term | [Agent](../java/agents.html) component | Also called “episodic” and “traced” memory, this memory is an auditable record of each input and output that occurs between an agent and its client throughout a single “user” session. Agent clients may or may not be human.
+| Short-term | [Agent](../sdk/agents.html) component | Also called “episodic” and “traced” memory, this memory is an auditable record of each input and output that occurs between an agent and its client throughout a single “user” session. Agent clients may or may not be human.
 
 Akka also captures the input and output of every interaction between an agent and an LLM in a single enrichment loop, sometimes called “traced” memory. A single invocation of an agent from a client may cause that agent to invoke an LLM, function tools, or MCP tools many times. Akka’s short-term memory captures all of these interactions in an event log.
 
-Short-term memory is also automatically included when you create [an agent](../java/agents.html). Short-term memory can be compressed, optimized, replicated, and audited. |
-| Long-term | [Entity](../java/event-sourced-entities.html) component | Also called “shared” and “external” memory, this memory is an auditable record of state that is available to multiple agents, sessions, users, or Akka components.
+Short-term memory is also automatically included when you create [an agent](../sdk/agents.html). Short-term memory can be compressed, optimized, replicated, and audited. |
+| Long-term | [Entity](../sdk/event-sourced-entities.html) component | Also called “shared” and “external” memory, this memory is an auditable record of state that is available to multiple agents, sessions, users, or Akka components.
 
 Use long-term memory to capture the history (often summarized or aggregated) of interactions for a single user across many sessions.
 
-Shared state is represented through an [Entity](../java/event-sourced-entities.html) component. Entities are event-sourced, making all of their changes published through an event stream and accessible by [Agents](../java/agents.html), [Endpoints](grpc-vs-http-endpoints.html), [Workflows](../java/workflows.html) or [Views](../java/views.html). |
+Shared state is represented through an [Entity](../sdk/event-sourced-entities.html) component. Entities are event-sourced, making all of their changes published through an event stream and accessible by [Agents](../sdk/agents.html), [Endpoints](grpc-vs-http-endpoints.html), [Workflows](../sdk/workflows.html) or [Views](../sdk/views.html). |
 Akka treats all stateful memory as event-sourced objects. Event sourcing is a technique to capture sequential state changes. Akka’s persistence engine transparently persists each event into a durable store. Since all state is represented as an event, Akka’s event engine enables transparent import, export, broadcast, subscription, replication, and replay of events. These behaviors enable Akka to offer a resilience guarantee and multi-region replication, which enables real-time failover with a Recovery Time Objective (RTO) of <200ms.
 
 All events are stored in an event journal which can be inspected, analyzed, and replayed where appropriate.
@@ -235,7 +235,7 @@ Akka supports two primary ways for components to interact, either with each othe
 
 | Client Type | Description |
 | --- | --- |
-| [ComponentClient](../java/component-and-service-calls.html) | One component can invoke another using a direct call. The Akka runtime handles this communication in a non-blocking way using lightweight virtual threads. Although a call may wait for a reply before continuing, the code remains simple and synchronous. There is no need to use futures, callbacks or other asynchronous programming techniques.
+| [ComponentClient](../sdk/component-and-service-calls.html) | One component can invoke another using a direct call. The Akka runtime handles this communication in a non-blocking way using lightweight virtual threads. Although a call may wait for a reply before continuing, the code remains simple and synchronous. There is no need to use futures, callbacks or other asynchronous programming techniques.
 
 A common example is a Workflow that invokes an Agent to perform a specific task, then waits for the Agent to finish. The syntax is simple and resembles a regular method call. |
 | Events | Components can emit events to signal that something has occurred. Other components may subscribe to these events. This model resembles traditional publish-subscribe systems but does not require external brokers.
@@ -281,7 +281,7 @@ You decide how the [component client](../reference/glossary.html#component_clien
 | Component execution | Always runs in the background | Always runs in the background |
 | Common use case | Calling a method and using the result in the next line of code | Starting multiple async tasks or implementing background, always-on processes (Ambient AI) |
 | Ideal for | Simple flows where the result is needed immediately | Parallel task execution, deferred response handling, or long-running background logic |
-For implementation guidance on invoking components, see [Component and service calls](../java/component-and-service-calls.html).
+For implementation guidance on invoking components, see [Component and service calls](../sdk/component-and-service-calls.html).
 
 ## <a href="about:blank#_service_packaging"></a> Service packaging
 
