@@ -195,12 +195,7 @@ include::example$doc-snippets/src/test/java/com/example/ConfigIntegrationTest.ja
 
 === Reference configuration
 
-The default configuration of the Akka SDK:
-
-[source,hocon,indent=0]
-----
-include::example$akka-javasdk/src/main/resources/reference.conf[tag=reference]
-----
+The complete default configuration for the Akka SDK is presented on xref:reference:config/reference.adoc[].
 
 In addition, there is also xref:sdk:model-provider-details.adoc[AI model provider configuration].
 
