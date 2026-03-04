@@ -1,115 +1,103 @@
 <!--
 Sync Impact Report
-- Version change: 0.0.0 (template) → 1.0.0
-- Added principles:
-  - I. Domain Design
-  - II. Incremental Generation Workflow
-  - III. Test Coverage
-  - IV. Akka SDK Conventions
-  - V. Simplicity & Minimalism
-- Added sections:
-  - Technology Constraints
-  - Development Workflow
-- Removed sections: none (initial creation)
+- Version change: 1.0.0 → 2.0.0
+- Redefined principles:
+  - I. Akka SDK First (broadened from Domain Design)
+  - II. Design Principles (merged Domain Purity + API Isolation + new items)
+  - III. Test Coverage (high-level quality gate, no implementation details)
+  - IV. Simplicity (streamlined)
+- Removed from v1:
+  - Incremental Generation Workflow (conflicts with speckit.implement)
+  - Akka SDK Conventions (coding rules, belongs in AGENTS.md)
+  - Technology Constraints / Development Workflow (folded or moved to AGENTS.md)
+- Removed sections:
+  - Technology Constraints (brief version folded into Akka SDK First)
+  - Development Workflow (replaced with reference to AGENTS.md/CLAUDE.md)
 - Templates requiring updates:
-  - .specify/templates/plan-template.md — ✅ compatible (Constitution Check section aligns)
-  - .specify/templates/spec-template.md — ✅ compatible (user stories + requirements align)
-  - .specify/templates/tasks-template.md — ✅ compatible (phase structure aligns)
+  - .specify/templates/plan-template.md — ✅ compatible (Constitution Check section is generic)
+  - .specify/templates/spec-template.md — ✅ compatible (requirements section is generic)
+  - .specify/templates/tasks-template.md — ✅ compatible (testing phases compatible)
 - Follow-up TODOs: none
 -->
 
-# Akka Service Constitution
+# Akka Constitution
 
 ## Core Principles
 
-### I. Domain Design
+### I. Akka SDK First (NON-NEGOTIABLE)
 
-- Domain records MUST reside in the `domain` package with zero Akka SDK dependencies.
-- Domain records MUST be immutable Java records containing their own business logic
-  (validation, mutation via `with*` methods).
-- Domain records MUST NOT emit effects or return event lists; effects belong
-  exclusively to the `application` package.
-- Package structure MUST follow `[org].[app-name].[module].{domain|application|api}`.
-  No dependency from `domain` to `application`, or from `application` to `api`.
-- Events MUST be defined as records implementing a sealed interface with `@TypeName`
-  annotations (e.g., `CreditCardEvent` with `CardCharged`, `PaymentMade`).
-- State records MUST use `with*` builder-style methods for immutable field updates.
+Every feature MUST be built on the Akka SDK. All service components,
+state management, event handling, and inter-service communication MUST
+use Akka SDK primitives (Entities, Views, Workflows, Agents, Consumers,
+Endpoints) rather than custom or third-party alternatives.
 
-### II. Incremental Generation Workflow
+- Deviating from Akka SDK patterns requires explicit justification
+  documented in the implementation plan.
+- External dependencies beyond the Akka SDK dependency tree MUST be
+  justified in the implementation plan before being added.
+- Before adding a dependency, evaluate whether the functionality
+  can be achieved with the Akka SDK, the standard library, or
+  a small amount of application code.
 
-- Every feature MUST follow the step-by-step workflow defined in CLAUDE.md:
-  Design, Domain, Application (one component at a time), Tests, API, Integration Tests, Docs.
-- The AI assistant MUST stop and wait for explicit user approval between each major step.
-- Each component and its corresponding test MUST be created and validated before
-  proceeding to the next component.
-- All code MUST compile (`mvn compile`) before presenting it for review.
-- Tests MUST pass (`mvn test` or `mvn verify`) before proceeding to the next step.
+### II. Design Principles
+
+These principles shape how specifications decompose features into
+components and guide architectural decisions.
+
+- **Domain independence**: Domain logic MUST be independent of framework
+  concerns, enabling isolated testing and reuse.
+- **API isolation**: Endpoints MUST define their own request/response
+  types rather than exposing domain internals.
+- **Single responsibility**: Each component MUST have a clear, focused
+  purpose. Prefer multiple small components over monolithic ones.
+- **Descriptive naming**: Names MUST be domain-aligned and descriptive.
+  Avoid generic names like `Event`, `Service`, or `Manager`.
 
 ### III. Test Coverage
 
-- Entity unit tests MUST use `EventSourcedTestKit` or `KeyValueEntityTestKit`.
-- View integration tests MUST use `TestKitSupport` with event publishing
-  and `Awaitility.await()` for eventual consistency assertions.
-- Endpoint integration tests MUST use `httpClient` (never `componentClient`).
-- Agent tests MUST use `TestModelProvider` with `.fixedResponse()` or `.whenMessage()`.
-- Integration test classes MUST have the `IntegrationTest` suffix.
-- Tests MUST use JUnit 5+ annotations and AssertJ `assertThat`.
+Every behavioral change MUST be accompanied by tests. Specifications
+and task plans MUST include explicit testing phases.
 
-### IV. Akka SDK Conventions
+- Unit tests MUST cover all business logic and domain rules.
+- Each component MUST have corresponding unit or integration tests.
+- Test names MUST describe the behavior under test, not the
+  implementation.
+- Test coverage MUST NOT decrease with any change; new code MUST
+  include corresponding tests before merge.
 
-- Imports MUST use `akka.*` (never `io.akka.*`).
-- Components MUST use `@Component(id = "...")` (not deprecated `@ComponentId`).
-- HTTP/gRPC endpoints MUST NOT have `@Component` annotations.
-- HTTP endpoints MUST have `@Acl` annotations.
-- Endpoints MUST return API-specific types (never domain records directly).
-- Endpoints MUST use synchronous style with `.invoke()` (not `.invokeAsync()`).
-- `ComponentClient` MUST only be injected into Endpoints, Agents, Consumers,
-  TimedActions, Workflows, and ServiceSetup (never into Entities or Views).
-- Event Sourced Entity views MUST use `onEvent()` (never `onUpdate()`).
-- Workflows MUST use `settings()` with method references for steps
-  (never deprecated `definition()`).
-- Agents MUST have exactly one command handler method.
+### IV. Simplicity
 
-### V. Simplicity & Minimalism
+Build only what is needed now. Complexity compounds over time.
 
-- Code MUST favor functional and fluent styles over imperative loops.
-- Only changes directly requested or clearly necessary MUST be made;
-  no speculative features, extra configurability, or premature abstractions.
-- Business logic MUST reside in domain objects; entities MUST only orchestrate
-  effects based on domain validation results.
-- Command handlers MUST accept 0 or 1 parameter. Multiple parameters
-  MUST be wrapped in a single command record.
-- Empty command records without fields MUST NOT be created; use parameterless
-  handler methods instead.
+- YAGNI: Do not build features, abstractions, or extension points for
+  hypothetical future requirements.
+- Prefer flat, direct code over deeply nested abstractions.
+- If a simpler solution meets the requirement, it MUST be chosen over
+  a more sophisticated one.
 
-## Technology Constraints
+## Coding Conventions
 
-- **Language**: Java (records for data, sealed interfaces for events)
-- **Framework**: Akka SDK 3.5+ (parent POM `akka-javasdk-parent`)
-- **Build**: Maven (`mvn compile`, `mvn test`, `mvn verify`)
-- **Testing**: JUnit 5, AssertJ, Awaitility, Akka TestKit
-- **Package convention**: `com.[org].[app-name].{domain|application|api}`
-- **Deployment**: Akka Console / `akka` CLI
+Detailed coding rules, component patterns, naming conventions, and
+testing patterns are maintained in AGENTS.md. This file is the
+authoritative source for implementation-level guidance and MUST be
+consulted when writing code.
 
-## Development Workflow
-
-- Follow the Incremental Generation Workflow (Principle II) for all features.
-- Read relevant `akka-context/sdk/*.html.md` documentation before coding
-  first-time or complex components (especially Workflows and Agents).
-- Run the self-review checklist from AGENTS.md before presenting any code.
-- Commit after each logical step or task group.
-- Update README.md with curl examples after endpoint creation.
+Akka reference documentation in the `akka-context/` directory MUST
+be consulted when planning and implementing components, especially
+for first-time or complex component types.
 
 ## Governance
 
-- This constitution supersedes conflicting practices found elsewhere in the project.
-- Amendments MUST be documented with version bump, rationale, and migration plan.
-- Versioning follows semantic versioning:
-  MAJOR for principle removals/redefinitions, MINOR for new principles/sections,
-  PATCH for clarifications and wording fixes.
-- All code reviews and AI-generated code MUST verify compliance with these principles.
-- Complexity beyond these principles MUST be justified in a Complexity Tracking table
-  (see plan template).
-- Runtime development guidance is maintained in CLAUDE.md and AGENTS.md.
+This constitution is the authoritative source for architectural
+principles. It governs how specifications and plans are structured.
 
-**Version**: 1.0.0 | **Ratified**: 2026-03-01 | **Last Amended**: 2026-03-01
+- **Supremacy**: When a conflict arises between this constitution and
+  other project documents, the constitution prevails for architectural
+  decisions.
+- **Compliance**: Specifications and implementation plans MUST verify
+  alignment with these principles.
+- **Amendment Process**: Changes MUST be documented with a version
+  increment (MAJOR for principle removal/redefinition, MINOR for new
+  principles, PATCH for clarifications) and rationale.
+
+**Version**: 2.0.0 | **Ratified**: 2026-03-01 | **Last Amended**: 2026-03-04
