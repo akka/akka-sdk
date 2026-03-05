@@ -28,6 +28,7 @@ public final class DefaultAutonomousStrategy implements AutonomousStrategy {
   private final List<String> requestGuardrailClassNames;
   private final List<String> responseGuardrailClassNames;
   private final MemoryProvider memoryProvider;
+  private final List<AgentCapability> capabilities;
   private final int maxIterations;
 
   DefaultAutonomousStrategy() {
@@ -40,6 +41,7 @@ public final class DefaultAutonomousStrategy implements AutonomousStrategy {
         List.of(),
         List.of(),
         MemoryProvider.fromConfig(),
+        List.of(),
         DEFAULT_MAX_ITERATIONS);
   }
 
@@ -52,6 +54,7 @@ public final class DefaultAutonomousStrategy implements AutonomousStrategy {
       List<String> requestGuardrailClassNames,
       List<String> responseGuardrailClassNames,
       MemoryProvider memoryProvider,
+      List<AgentCapability> capabilities,
       int maxIterations) {
     this.goal = goal;
     this.acceptedTasks = acceptedTasks;
@@ -61,6 +64,7 @@ public final class DefaultAutonomousStrategy implements AutonomousStrategy {
     this.requestGuardrailClassNames = requestGuardrailClassNames;
     this.responseGuardrailClassNames = responseGuardrailClassNames;
     this.memoryProvider = memoryProvider;
+    this.capabilities = capabilities;
     this.maxIterations = maxIterations;
   }
 
@@ -75,6 +79,7 @@ public final class DefaultAutonomousStrategy implements AutonomousStrategy {
         requestGuardrailClassNames,
         responseGuardrailClassNames,
         memoryProvider,
+        capabilities,
         maxIterations);
   }
 
@@ -91,6 +96,7 @@ public final class DefaultAutonomousStrategy implements AutonomousStrategy {
         requestGuardrailClassNames,
         responseGuardrailClassNames,
         memoryProvider,
+        capabilities,
         maxIterations);
   }
 
@@ -105,6 +111,7 @@ public final class DefaultAutonomousStrategy implements AutonomousStrategy {
         requestGuardrailClassNames,
         responseGuardrailClassNames,
         memoryProvider,
+        capabilities,
         maxIterations);
   }
 
@@ -121,6 +128,7 @@ public final class DefaultAutonomousStrategy implements AutonomousStrategy {
         requestGuardrailClassNames,
         responseGuardrailClassNames,
         memoryProvider,
+        capabilities,
         maxIterations);
   }
 
@@ -137,6 +145,7 @@ public final class DefaultAutonomousStrategy implements AutonomousStrategy {
         requestGuardrailClassNames,
         responseGuardrailClassNames,
         memoryProvider,
+        capabilities,
         maxIterations);
   }
 
@@ -156,6 +165,7 @@ public final class DefaultAutonomousStrategy implements AutonomousStrategy {
         List.copyOf(updated),
         responseGuardrailClassNames,
         memoryProvider,
+        capabilities,
         maxIterations);
   }
 
@@ -175,6 +185,7 @@ public final class DefaultAutonomousStrategy implements AutonomousStrategy {
         requestGuardrailClassNames,
         List.copyOf(updated),
         memoryProvider,
+        capabilities,
         maxIterations);
   }
 
@@ -189,6 +200,25 @@ public final class DefaultAutonomousStrategy implements AutonomousStrategy {
         requestGuardrailClassNames,
         responseGuardrailClassNames,
         memory,
+        capabilities,
+        maxIterations);
+  }
+
+  @Override
+  @SafeVarargs
+  public final AutonomousStrategy canDelegateTo(Class<? extends AutonomousAgent>... agents) {
+    var updated = new ArrayList<>(this.capabilities);
+    updated.add(new AgentCapability.Delegation(List.of(agents)));
+    return new DefaultAutonomousStrategy(
+        goal,
+        acceptedTasks,
+        modelProvider,
+        toolInstancesOrClasses,
+        mcpTools,
+        requestGuardrailClassNames,
+        responseGuardrailClassNames,
+        memoryProvider,
+        List.copyOf(updated),
         maxIterations);
   }
 
@@ -203,6 +233,7 @@ public final class DefaultAutonomousStrategy implements AutonomousStrategy {
         requestGuardrailClassNames,
         responseGuardrailClassNames,
         memoryProvider,
+        capabilities,
         max);
   }
 
@@ -238,6 +269,14 @@ public final class DefaultAutonomousStrategy implements AutonomousStrategy {
 
   public MemoryProvider memoryProvider() {
     return memoryProvider;
+  }
+
+  public List<Class<? extends AutonomousAgent>> delegationTargets() {
+    return capabilities.stream()
+        .filter(AgentCapability.Delegation.class::isInstance)
+        .map(AgentCapability.Delegation.class::cast)
+        .flatMap(d -> d.agents().stream())
+        .toList();
   }
 
   public int maxIterations() {
