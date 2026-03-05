@@ -16,12 +16,13 @@ import javax.tools.Diagnostic;
 
 /**
  * Annotation processor that performs compile-time validation on classes annotated
- * with @Component, @ComponentId, or @HttpEndpoint.
+ * with @Component, @ComponentId, @HttpEndpoint, or @GrpcEndpoint.
  */
 @SupportedAnnotationTypes({
   "akka.javasdk.annotations.Component",
   "akka.javasdk.annotations.ComponentId",
-  "akka.javasdk.annotations.http.HttpEndpoint"
+  "akka.javasdk.annotations.http.HttpEndpoint",
+  "akka.javasdk.annotations.GrpcEndpoint"
 })
 public class ComponentValidationProcessor extends BaseAkkaProcessor {
 

@@ -6,7 +6,7 @@ package akka.javasdk.annotations;
 
 import java.lang.annotation.*;
 
-/** Defines ACL configuration for a resource. */
+/** Defines ACL configuration for a resource. Can be defined on endpoint class and methods. */
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented

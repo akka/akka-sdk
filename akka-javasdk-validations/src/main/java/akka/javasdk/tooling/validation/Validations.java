@@ -22,22 +22,34 @@ public class Validations {
   private static final String HTTP_ENDPOINT_ANNOTATION =
       "akka.javasdk.annotations.http.HttpEndpoint";
 
+  private static final String GRPC_ENDPOINT_ANNOTATION = "akka.javasdk.annotations.GrpcEndpoint";
+
+  private static final String ACL_ANNOTATION = "akka.javasdk.annotations.Acl";
+
+  private static final String JWT_ANNOTATION = "akka.javasdk.annotations.JWT";
+
   /**
-   * Validates a component class or an http endpoint
+   * Validates a component class or an http/grpc endpoint
    *
    * @param typeDef the component class to validate
    * @return a Validation result indicating success or failure with error messages
    */
   public static Validation validate(TypeDef typeDef) {
-    var anno = typeDef.findAnnotation(HTTP_ENDPOINT_ANNOTATION);
-
-    if (anno.isEmpty()) return validateComponent(typeDef);
-    else return HttpEndpointValidations.validate(typeDef);
+    if (typeDef.hasAnnotation(HTTP_ENDPOINT_ANNOTATION)) {
+      return HttpEndpointValidations.validate(typeDef);
+    } else if (typeDef.hasAnnotation(GRPC_ENDPOINT_ANNOTATION)) {
+      // no specific validations for grpc endpoint
+      return Validation.Valid.instance();
+    }else {
+      return validateComponent(typeDef);
+    }
   }
 
   private static Validation validateComponent(TypeDef typeDef) {
     return componentMustBePublic(typeDef)
         .combine(mustHaveValidComponentId(typeDef))
+        .combine(aclMustOnlyBeOnEndpoints(typeDef))
+        .combine(jwtMustOnlyBeOnEndpoints(typeDef))
         .combine(TimedActionValidations.validate(typeDef))
         .combine(ConsumerValidations.validate(typeDef))
         .combine(WorkflowValidations.validate(typeDef))
@@ -45,6 +57,72 @@ public class Validations {
         .combine(EventSourcedEntityValidations.validate(typeDef))
         .combine(AgentValidations.validate(typeDef))
         .combine(ViewValidations.validate(typeDef));
+  }
+
+  /**
+   * Validates that @Acl annotation is not used on non-endpoint components.
+   *
+   * <p>@Acl is only allowed on classes annotated with @HttpEndpoint or @GrpcEndpoint, and on
+   * methods within such classes.
+   *
+   * @param typeDef the component class to validate
+   * @return a Validation result indicating success or failure
+   */
+  public static Validation aclMustOnlyBeOnEndpoints(TypeDef typeDef) {
+    List<String> errors = new ArrayList<>();
+
+    if (typeDef.hasAnnotation(ACL_ANNOTATION)) {
+      errors.add(
+          errorMessage(
+              typeDef,
+              "@Acl annotation is only allowed on classes annotated with @HttpEndpoint or"
+                  + " @GrpcEndpoint."));
+    }
+
+    for (MethodDef method : typeDef.getMethods()) {
+      if (method.hasAnnotation(ACL_ANNOTATION)) {
+        errors.add(
+            errorMessage(
+                method,
+                "@Acl annotation is only allowed on methods of classes annotated with"
+                    + " @HttpEndpoint or @GrpcEndpoint."));
+      }
+    }
+
+    return Validation.of(errors);
+  }
+
+  /**
+   * Validates that @JWT annotation is not used on non-endpoint components.
+   *
+   * <p>@JWT is only allowed on classes annotated with @HttpEndpoint or @GrpcEndpoint, and on
+   * methods within such classes.
+   *
+   * @param typeDef the component class to validate
+   * @return a Validation result indicating success or failure
+   */
+  public static Validation jwtMustOnlyBeOnEndpoints(TypeDef typeDef) {
+    List<String> errors = new ArrayList<>();
+
+    if (typeDef.hasAnnotation(JWT_ANNOTATION)) {
+      errors.add(
+          errorMessage(
+              typeDef,
+              "@JWT annotation is only allowed on classes annotated with @HttpEndpoint or"
+                  + " @GrpcEndpoint."));
+    }
+
+    for (MethodDef method : typeDef.getMethods()) {
+      if (method.hasAnnotation(JWT_ANNOTATION)) {
+        errors.add(
+            errorMessage(
+                method,
+                "@JWT annotation is only allowed on methods of classes annotated with"
+                    + " @HttpEndpoint or @GrpcEndpoint."));
+      }
+    }
+
+    return Validation.of(errors);
   }
 
   // ==================== Subscription Helper Methods ====================
