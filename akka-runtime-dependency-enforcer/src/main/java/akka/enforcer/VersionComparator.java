@@ -18,7 +18,9 @@ import org.apache.maven.artifact.versioning.ComparableVersion;
  *       newer version is backward compatible.
  *   <li><b>MAJOR</b>: flag when major versions differ, regardless of direction.
  *   <li><b>MINOR</b>: flag when major or minor versions differ.
- *   <li><b>PATCH</b>: flag any version difference (exact match required).
+ *   <li><b>PATCH</b>: flag when major, minor, or patch versions differ. Qualifier-only differences
+ *       (e.g., {@code 2.18.3-jre} vs {@code 2.18.3-android}) are allowed.
+ *   <li><b>EXACT</b>: flag any version difference whatsoever.
  * </ul>
  */
 class VersionComparator {
@@ -30,8 +32,10 @@ class VersionComparator {
     MAJOR,
     /** Flag when major or minor versions differ. */
     MINOR,
-    /** Flag any version difference. */
-    PATCH
+    /** Flag when major, minor, or patch versions differ. Qualifier-only differences are allowed. */
+    PATCH,
+    /** Flag any version difference whatsoever. */
+    EXACT
   }
 
   enum Direction {
@@ -107,6 +111,15 @@ class VersionComparator {
         return ConflictResult.none();
 
       case PATCH:
+        if (majorVersion(appVersion) != majorVersion(runtimeVersion)
+            || minorVersion(appVersion) != minorVersion(runtimeVersion)
+            || patchVersion(appVersion) != patchVersion(runtimeVersion)) {
+          return ConflictResult.conflict(direction);
+        }
+        // Numeric major.minor.patch matches — qualifier-only difference is allowed
+        return ConflictResult.none();
+
+      case EXACT:
         return ConflictResult.conflict(direction);
 
       default:
@@ -122,6 +135,11 @@ class VersionComparator {
   /** Extract minor version number, returns 0 if not present, -1 if unparseable. */
   private static int minorVersion(String version) {
     return nthVersionComponent(version, 1);
+  }
+
+  /** Extract patch version number, returns 0 if not present, -1 if unparseable. */
+  private static int patchVersion(String version) {
+    return nthVersionComponent(version, 2);
   }
 
   /**

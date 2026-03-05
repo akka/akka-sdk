@@ -134,6 +134,47 @@ class VersionComparatorTest {
     void differentPatch_conflict() {
       assertTrue(check("2.18.1", "2.18.3", PATCH).isConflict);
     }
+
+    @Test
+    void samePatchDifferentQualifier_noConflict() {
+      // Same numeric base, only qualifier differs — allowed in patch mode
+      assertFalse(check("2.18.3-jre", "2.18.3-android", PATCH).isConflict);
+    }
+
+    @Test
+    void samePatchSnapshotVsRelease_noConflict() {
+      // Same numeric base, SNAPSHOT vs release — allowed in patch mode
+      assertFalse(check("2.18.3-SNAPSHOT", "2.18.3", PATCH).isConflict);
+    }
+
+    @Test
+    void differentMinor_conflict() {
+      assertTrue(check("2.19.0", "2.18.3", PATCH).isConflict);
+    }
+  }
+
+  @Nested
+  class ExactStrictness {
+    @Test
+    void sameVersion_noConflict() {
+      assertFalse(check("2.18.3", "2.18.3", EXACT).isConflict);
+    }
+
+    @Test
+    void differentPatch_conflict() {
+      assertTrue(check("2.18.1", "2.18.3", EXACT).isConflict);
+    }
+
+    @Test
+    void sameBaseDifferentQualifier_conflict() {
+      // Exact mode flags qualifier differences too
+      assertTrue(check("2.18.3-jre", "2.18.3-android", EXACT).isConflict);
+    }
+
+    @Test
+    void snapshotVsRelease_conflict() {
+      assertTrue(check("2.18.3-SNAPSHOT", "2.18.3", EXACT).isConflict);
+    }
   }
 
   @Nested
@@ -141,7 +182,7 @@ class VersionComparatorTest {
     @Test
     void normalizedEquality() {
       // Maven considers "1.0" and "1.0.0" equal
-      assertFalse(check("1.0", "1.0.0", PATCH).isConflict);
+      assertFalse(check("1.0", "1.0.0", EXACT).isConflict);
     }
 
     @Test
