@@ -40,7 +40,7 @@ public class Validations {
     } else if (typeDef.hasAnnotation(GRPC_ENDPOINT_ANNOTATION)) {
       // no specific validations for grpc endpoint
       return Validation.Valid.instance();
-    }else {
+    } else {
       return validateComponent(typeDef);
     }
   }
