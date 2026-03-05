@@ -64,6 +64,12 @@ public sealed interface AutonomousStrategy extends Strategy permits DefaultAuton
   AutonomousStrategy memory(MemoryProvider memory);
 
   /**
+   * Allow this agent to delegate subtasks to the specified worker agents. The coordinator pauses
+   * while workers execute, then resumes with their results. Multiple calls accumulate targets.
+   */
+  AutonomousStrategy canDelegateTo(Class<? extends AutonomousAgent>... agents);
+
+  /**
    * Maximum iterations before the agent fails the current task. Default {@link
    * #DEFAULT_MAX_ITERATIONS}.
    */
