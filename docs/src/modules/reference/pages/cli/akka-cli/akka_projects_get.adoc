@@ -6,6 +6,7 @@ Get project information.
 
 The `akka projects get _name_` command will display information about the project with name _name_, if it exists.
 Using the _id_ of the project is also supported.
+If no project name or id is supplied, the current project is displayed.
 
 TIP: Use `akka projects list` to confirm the project's _name_ or _id_.
 

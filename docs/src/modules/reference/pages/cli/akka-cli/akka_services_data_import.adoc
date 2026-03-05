@@ -19,7 +19,7 @@ akka services data import SERVICE [flags]
       --event-sourced-entity-snapshot-object stringArray   A storage object name (relative to the bucket and object prefix) to import from. Multiple may be specified. If not specified, the default object names used by the export process are used.
       --format string                                      The format of the export. Either protobuf or json. Defaults to protobuf. (default "protobuf")
       --gcs-bucket string                                  If exporting to GCS, the name of the bucket to export to.
-      --gcs-object-prefix string                           If exporting to GCS, a prefix to append to the GCS object name, for example, 'my-export/'
+      --gcs-object-prefix string                           If exporting to GCS, a prefix to prepend to the GCS object name, for example, 'my-export/'
       --gcs-secret string                                  If exporting to GCS, the name of an Akka secret to read the service account key to access GCS from.
       --gcs-secret-key string                              If exporting to GCS, the name of the key inside the Akka secret that contains the service account key. Defaults to key.json. (default "key.json")
   -h, --help                                               help for import
@@ -27,11 +27,13 @@ akka services data import SERVICE [flags]
       --include-event-sourced-entity-snapshots             Whether event sourced entity snapshots should be imported. Defaults to true. (default true)
       --include-value-entities                             Whether value entities should be imported. Defaults to false.
       --owner string                                       the owner of the project to use, needed if you have two projects with the same name from different owners
+      --platform-managed                                   Use the platform managed store. Not available in every region.
+      --platform-managed-object-prefix string              If using the platform managed store, a prefix to prepend to the object name, for example, 'my-export/'
       --project string                                     project to use if not using the default configured project
       --region string                                      region to use if project has more than one region
       --s3-access-key string                               If exporting to S3, the name of the key inside the Akka secret that contains the access key id to authenticate with. Defaults to access-key-id. (default "access-key-id")
       --s3-bucket string                                   If exporting to S3, the name of the bucket to export to.
-      --s3-object-prefix string                            If exporting to S3, a prefix to append to the S3 object name, for example, 'my-export/'
+      --s3-object-prefix string                            If exporting to S3, a prefix to prepend to the S3 object name, for example, 'my-export/'
       --s3-region string                                   If exporting to S3, the region that the bucket lives in. Only necessary if this is a different region from the Akka execution cluster.
       --s3-secret string                                   If exporting to S3, the name of an Akka secret to read the access key and secret to access S3 with.
       --s3-secret-key string                               If exporting to S3, the name of the key inside the Akka secret that contains the secret access key to authenticate with. Defaults to secret-access-key. (default "secret-access-key")
