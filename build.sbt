@@ -6,10 +6,14 @@ import scala.xml.Node
 import Dependencies.AkkaGrpcVersion
 import Dependencies.GoogleProtobufVersion
 
+import sbt.librarymanagement.{ SemanticSelector, VersionNumber }
+
 Global / initialize := {
   val _ = (Global / initialize).value
-  val javaVersion = sys.props("java.specification.version").toInt
-  assert(javaVersion >= 21, s"Java 21+ required, found: $javaVersion")
+  val specificationVersion = sys.props("java.specification.version")
+  val isJdk21orHigher = VersionNumber(specificationVersion).matchesSemVer(SemanticSelector(">=21"))
+  if (!isJdk21orHigher)
+    throw new MessageOnlyException(s"JDK 21 or higher is required, found: $specificationVersion")
 }
 
 lazy val `akka-javasdk-root` = project
