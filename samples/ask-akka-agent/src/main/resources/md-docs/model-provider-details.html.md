@@ -403,7 +403,8 @@ akka.javasdk.agent.googleai-gemini {
   base-url = ""
   # Environment variable override for the API key
   api-key = ${?GOOGLE_AI_GEMINI_API_KEY}
-  # The name of the model to use, e.g. "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro" or "gemini-1.0-pro"
+  # The name of the model to use, e.g. "gemini-2.5-flash", "gemini-2.5-pro", etc
+  # The full list is at https://ai.google.dev/gemini-api/docs/models - select a model to find its "Model code"
   model-name = ""
   # Controls randomness in the model's output (0.0 to 1.0)
   temperature = NaN
