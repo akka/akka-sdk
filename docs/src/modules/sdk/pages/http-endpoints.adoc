@@ -171,6 +171,7 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/api/Shoppin
 
 For more details see xref:component-and-service-calls.adoc[]
 
+[#http_client_provider]
 == Interacting with other HTTP services
 
 It is also possible to interact with other services over HTTP. This is done through the `akka.javasdk.http.HttpClientProvider`.

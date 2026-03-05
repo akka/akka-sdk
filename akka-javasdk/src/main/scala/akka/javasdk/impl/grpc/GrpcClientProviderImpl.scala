@@ -7,10 +7,11 @@ package akka.javasdk.impl.grpc
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executor
 
-import scala.annotation.nowarn
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 import scala.jdk.FutureConverters._
+import scala.util.Failure
+import scala.util.Success
 import scala.util.control.NonFatal
 
 import akka.Done
@@ -23,9 +24,14 @@ import akka.grpc.javadsl.AkkaGrpcClient
 import akka.javasdk.grpc.GrpcClientProvider
 import akka.javasdk.impl.ErrorHandling.unwrapInvocationTargetExceptionCatcher
 import akka.javasdk.impl.Settings
+import akka.javasdk.impl.backoffice.BackofficeAccessTokenCache
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl.AuthHeaders
+import akka.runtime.sdk.spi.SpiBackofficeServiceSettings
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import io.grpc.CallCredentials
+import io.grpc.Metadata
+import io.grpc.Status
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.LoggerFactory
@@ -39,25 +45,6 @@ private[akka] object GrpcClientProviderImpl {
   private final case class ClientKey(clientClass: Class[_], serviceName: String)
 
   private def isAkkaService(serviceName: String): Boolean = !(serviceName.contains('.') || serviceName.contains(':'))
-
-  @nowarn("msg=deprecated")
-  private def settingsWithCallCredentials(key: String, value: String)(
-      settings: GrpcClientSettings): GrpcClientSettings = {
-
-    import io.grpc.{ CallCredentials, Metadata }
-    val headers = new Metadata()
-    headers.put(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER), value)
-    settings.withCallCredentials(new CallCredentials {
-      override def applyRequestMetadata(
-          requestInfo: CallCredentials.RequestInfo,
-          appExecutor: Executor,
-          applier: CallCredentials.MetadataApplier): Unit = {
-        applier.apply(headers)
-      }
-      override def thisUsesUnstableApi(): Unit = ()
-    })
-
-  }
 
   /**
    * Picks up the service specific config from the client config block, sanitizes to allowed config and makes sure the
@@ -92,6 +79,8 @@ private[akka] object GrpcClientProviderImpl {
     safeConfig
   }
 
+  private val KalixProxyHost = Metadata.Key.of("kalix-proxy-host", Metadata.ASCII_STRING_MARSHALLER)
+  private val KalixProxyAuthorization = Metadata.Key.of("kalix-proxy-authorization", Metadata.ASCII_STRING_MARSHALLER)
 }
 
 /**
@@ -134,41 +123,38 @@ private[akka] final class GrpcClientProviderImpl(
       .asInstanceOf[T]
   }
 
-  private[akka] def createNewClientFor[T <: AkkaGrpcClient](
-      clientClass: Class[T],
-      serviceName: String,
-      addAuthHeaders: Boolean = true): T = {
+  private[akka] def createNewClientFor[T <: AkkaGrpcClient](clientClass: Class[T], serviceName: String): T = {
     val clientSettings = {
       if (isAkkaService(serviceName)) {
-        val akkaServiceClientSettings = if (settings.devModeSettings.isDefined) {
-          // special cases in dev mode:
-          // Allow config to override services to talk to services running wherever (auth headers won't work though)
-          if (clientConfig.hasPath(serviceName)) {
-            log.info("Using explicit dev mode config gRPC client override for service [{}]", serviceName)
-            clientSettingsFromConfig(serviceName)
-          } else {
-            // Normally: local service discovery when running locally and trying to use gRPC
-            localDevModeDiscovery(serviceName)
-          }
-        } else {
-          // in production, we rely on DNS and service mesh transports, no overrides allowed
-          if (clientConfig.hasPath(serviceName)) {
-            log.warn(
-              s"Configuration override for [${serviceName}] found in 'application.conf'. This is not supported and is ignored.")
-          }
+        // special cases in dev mode:
+        settings.devModeSettings match {
+          case Some(devModeSettings) =>
+            // First check for dev backoffice config
+            devModeSettings.backoffice.services.get(serviceName) match {
+              case Some(backofficeServiceSettings) =>
+                clientSettingsFromBackofficeSettings(backofficeServiceSettings)
 
-          log.debug("Creating gRPC client for Akka service [{}]", serviceName)
-          GrpcClientSettings
-            .connectToServiceAt(serviceName, 80)(system)
-            // (TLS is handled for us by Kalix infra)
-            .withTls(false)
-        }
+              // Allow config to override services to talk to services running wherever (auth headers won't work though)
+              case None if clientConfig.hasPath(serviceName) =>
+                log.info("Using explicit dev mode config gRPC client override for service [{}]", serviceName)
+                clientSettingsFromConfig(serviceName)
+              case _ =>
+                // Normally: local service discovery when running locally and trying to use gRPC
+                localDevModeDiscovery(serviceName)
+            }
 
-        // auth headers for Akka ACLs
-        remoteIdentificationHeader match {
-          case _ if !addAuthHeaders => akkaServiceClientSettings // used by testkit to specify its own calling principal
-          case Some(auth) => settingsWithCallCredentials(auth.headerName, auth.headerValue)(akkaServiceClientSettings)
-          case None       => akkaServiceClientSettings
+          case None =>
+            // in production, we rely on DNS and service mesh transports, no overrides allowed
+            if (clientConfig.hasPath(serviceName)) {
+              log.warn(
+                s"Configuration override for [${serviceName}] found in 'application.conf'. This is not supported and is ignored.")
+            }
+
+            log.debug("Creating gRPC client for Akka service [{}]", serviceName)
+            GrpcClientSettings
+              .connectToServiceAt(serviceName, 80)(system)
+              // (TLS is handled for us by Kalix infra)
+              .withTls(false)
         }
       } else {
         // external/public gRPC service
@@ -198,16 +184,53 @@ private[akka] final class GrpcClientProviderImpl(
     GrpcClientSettings.fromConfig(serviceName, serviceConfig)(system)
   }
 
+  private def clientSettingsFromBackofficeSettings(settings: SpiBackofficeServiceSettings): GrpcClientSettings = {
+    val accessTokenCache = BackofficeAccessTokenCache(system)
+    GrpcClientSettings
+      .connectToServiceAt(settings.backofficeProxyHost, 443)(system)
+      .withCallCredentials(new CallCredentials {
+        override def applyRequestMetadata(
+            requestInfo: CallCredentials.RequestInfo,
+            appExecutor: Executor,
+            applier: CallCredentials.MetadataApplier): Unit = {
+          accessTokenCache.accessToken().onComplete {
+            case Success(accessToken) =>
+              val headers = new Metadata()
+              val host = s"${settings.serviceName}.${settings.projectId}.svc.kalix.local"
+              headers.put(KalixProxyHost, host)
+              headers.put(KalixProxyAuthorization, accessToken)
+              applier(headers)
+            case Failure(exception) =>
+              applier.fail(Status.INTERNAL.withCause(exception))
+          }
+        }
+      })
+  }
+
   private def localDevModeDiscovery(serviceName: String): GrpcClientSettings = {
     try {
       // The runtime has set up an Akka discovery mechanism that finds locally running
       // services. Since in dev mode only blocking is fine for now.
       log.debug("Creating dev mode gRPC client for Akka service [{}] using local discovery", serviceName)
-      GrpcClientSettings
+      val settings = GrpcClientSettings
         .usingServiceDiscovery(serviceName)(system)
         // (No TLS locally)
         .withTls(false)
 
+      remoteIdentificationHeader match {
+        case Some(auth) =>
+          val headers = new Metadata()
+          headers.put(Metadata.Key.of(auth.headerName, Metadata.ASCII_STRING_MARSHALLER), auth.headerValue)
+          settings.withCallCredentials(new CallCredentials {
+            override def applyRequestMetadata(
+                requestInfo: CallCredentials.RequestInfo,
+                appExecutor: Executor,
+                applier: CallCredentials.MetadataApplier): Unit = {
+              applier.apply(headers)
+            }
+          })
+        case None => settings
+      }
     } catch {
       case NonFatal(ex) =>
         throw new RuntimeException(
