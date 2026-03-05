@@ -3,9 +3,14 @@ import Dependencies.AkkaRuntimeVersion
 
 import scala.xml.Elem
 import scala.xml.Node
-import scala.xml.TopScope
 import Dependencies.AkkaGrpcVersion
 import Dependencies.GoogleProtobufVersion
+
+Global / initialize := {
+  val _ = (Global / initialize).value
+  val javaVersion = sys.props("java.specification.version").toInt
+  assert(javaVersion >= 21, s"Java 21+ required, found: $javaVersion")
+}
 
 lazy val `akka-javasdk-root` = project
   .in(file("."))
