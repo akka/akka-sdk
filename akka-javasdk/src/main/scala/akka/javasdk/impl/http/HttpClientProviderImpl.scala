@@ -21,6 +21,7 @@ import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.javasdk.http.HttpClient
 import akka.javasdk.http.HttpClientProvider
 import akka.javasdk.impl.Settings
+import akka.javasdk.impl.backoffice.BackofficeAccessTokenCache
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.LoggerFactory
@@ -63,38 +64,48 @@ private[akka] final class HttpClientProviderImpl(
     val nameIsService = isServiceName(name)
     val (baseUrl, connectionPoolSettings) =
       if (nameIsService) {
-        if (settings.devModeSettings.isDefined) {
-          val devModeResolverTransport = ClientTransport.withCustomResolver((name, port) =>
-            // dev mode, other service name, use Akka discovery to find it
-            // the runtime has set up a mechanism that finds locally running
-            // services. Since in dev mode blocking is probably fine for now.
-            Discovery(system.classicSystem).discovery
-              .lookup(name, 5.seconds)
-              .map { resolved =>
-                try {
-                  val resolvedTarget = resolved.addresses.head
-                  log.debug("Local service resolution found service [{}] at [{}:{}]", name, resolvedTarget.host, port)
-                  InetSocketAddress.createUnresolved(resolvedTarget.host, resolvedTarget.port.getOrElse(port))
-                } catch {
-                  case NonFatal(ex) =>
-                    throw new RuntimeException(
-                      s"Failed to look up service [$name] in dev-mode, make sure that it is also running " +
-                      "with a separate port and service name correctly defined in its application.conf under 'akka.javasdk.dev-mode.service-name' " +
-                      "if it differs from the maven project name.",
-                      ex)
-                }
-              }(system.executionContext))
+        settings.devModeSettings match {
+          case Some(devModeSettings) =>
+            devModeSettings.backoffice.services.get(name) match {
+              case Some(backofficeSettings) =>
+                (s"https://${backofficeSettings.backofficeProxyHost}", None)
+              case None =>
+                val devModeResolverTransport = ClientTransport.withCustomResolver((name, port) =>
+                  // dev mode, other service name, use Akka discovery to find it
+                  // the runtime has set up a mechanism that finds locally running
+                  // services. Since in dev mode blocking is probably fine for now.
+                  Discovery(system.classicSystem).discovery
+                    .lookup(name, 5.seconds)
+                    .map { resolved =>
+                      try {
+                        val resolvedTarget = resolved.addresses.head
+                        log.debug(
+                          "Local service resolution found service [{}] at [{}:{}]",
+                          name,
+                          resolvedTarget.host,
+                          port)
+                        InetSocketAddress.createUnresolved(resolvedTarget.host, resolvedTarget.port.getOrElse(port))
+                      } catch {
+                        case NonFatal(ex) =>
+                          throw new RuntimeException(
+                            s"Failed to look up service [$name] in dev-mode, make sure that it is also running " +
+                            "with a separate port and service name correctly defined in its application.conf under 'akka.javasdk.dev-mode.service-name' " +
+                            "if it differs from the maven project name.",
+                            ex)
+                      }
+                    }(system.executionContext))
 
-          val connectionSettings = ClientConnectionSettings(system).withTransport(devModeResolverTransport)
-          val poolSettings = ConnectionPoolSettings(system).withConnectionSettings(connectionSettings)
+                val connectionSettings = ClientConnectionSettings(system).withTransport(devModeResolverTransport)
+                val poolSettings = ConnectionPoolSettings(system).withConnectionSettings(connectionSettings)
 
-          (
-            // always http because local
-            s"http://$name",
-            Some(poolSettings))
-        } else {
-          // production, request to other service, service mesh manages TLS
-          (s"http://$name", None)
+                (
+                  // always http because local
+                  s"http://$name",
+                  Some(poolSettings))
+            }
+          case None =>
+            // production, request to other service, service mesh manages TLS
+            (s"http://$name", None)
         }
       } else {
         // if it isn't a service, we expect it is arbitrary http or https server including the protocol part
@@ -114,7 +125,20 @@ private[akka] final class HttpClientProviderImpl(
       else
         // arbitrary http request
         otelTraceHeaders
-    new HttpClientImpl(system, baseUrl, defaultHeaders, sdkExecutor, connectionPoolSettings)
+
+    val headerProvider = for {
+      devModeSettings <- settings.devModeSettings if nameIsService
+      settings <- devModeSettings.backoffice.services.get(name)
+    } yield () => {
+      BackofficeAccessTokenCache(system)
+        .accessToken()
+        .map { token =>
+          val host = s"${settings.serviceName}.${settings.projectId}.svc.kalix.local"
+          Seq(RawHeader.create("kalix-proxy-host", host), RawHeader.create("kalix-proxy-authorization", token))
+        }(system.executionContext)
+    }
+
+    new HttpClientImpl(system, baseUrl, defaultHeaders, headerProvider, sdkExecutor, connectionPoolSettings)
   }
 
   def withTelemetryContext(telemetryContext: OtelContext): HttpClientProvider =
