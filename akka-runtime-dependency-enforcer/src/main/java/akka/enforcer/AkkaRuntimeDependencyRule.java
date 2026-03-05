@@ -140,11 +140,13 @@ public class AkkaRuntimeDependencyRule extends AbstractEnforcerRule {
         return VersionComparator.Strictness.MINOR;
       case "patch":
         return VersionComparator.Strictness.PATCH;
+      case "exact":
+        return VersionComparator.Strictness.EXACT;
       default:
         throw new EnforcerRuleException(
             "Invalid versionStrictness: '"
                 + versionStrictness
-                + "'. Valid values: newer-only, major, minor, patch");
+                + "'. Valid values: newer-only, major, minor, patch, exact");
     }
   }
 

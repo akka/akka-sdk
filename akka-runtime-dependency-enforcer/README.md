@@ -80,19 +80,20 @@ The rule is configured in the `maven-enforcer-plugin` section of the POM. The `a
 |---|---|---|
 | `skip` | `false` | Completely disable the check. Also supports `-Dakka.dependency-check.skip=true` on the command line or as a POM property. Useful for projects that deploy in standalone mode (self-managed). |
 | `failOnConflict` | `true` | `true` to fail the build on conflicts, `false` for warnings only |
-| `versionStrictness` | `newer-only` | How strictly to compare versions (see below) |
+| `versionStrictness` | `newer-only` | How strictly to compare versions (see below): `newer-only`, `major`, `minor`, `patch`, `exact` |
 | `excludes` | (empty) | List of `groupId%artifactId` keys to skip |
 
 ### Version strictness
 
-| Value | Behavior |
-|---|---|
-| `newer-only` | Only flag when the app resolves a **newer** version than the runtime provides. If the app has an older version, the runtime's newer version is backward compatible — no conflict. This is the recommended default. |
-| `major` | Flag when major versions differ, regardless of direction. |
-| `minor` | Flag when major or minor versions differ. |
-| `patch` | Flag any version difference (exact match required). |
+| Value | Behavior | Example: allowed | Example: conflict |
+|---|---|---|---|
+| `newer-only` | Only flag when the app resolves a **newer** version than the runtime provides. If the app has an older version, the runtime's newer version is backward compatible — no conflict. This is the recommended default. | `2.18.1` vs runtime `2.18.3` (app older) | `2.19.0` vs runtime `2.18.3` (app newer) |
+| `major` | Flag when major versions differ, regardless of direction. Also flags qualifier differences when the major version matches. | `2.19.0` vs runtime `2.18.3` (same major) | `3.0.0` vs runtime `2.18.3` (different major) |
+| `minor` | Flag when major or minor versions differ. Also flags qualifier differences when major.minor matches. | `2.18.1` vs runtime `2.18.3` (same minor) | `2.19.0` vs runtime `2.18.3` (different minor) |
+| `patch` | Flag when major, minor, or patch versions differ. Qualifier-only differences are allowed (e.g., `-jre` vs `-android`). | `2.18.3-jre` vs runtime `2.18.3-android` (same base) | `2.18.4` vs runtime `2.18.3` (different patch) |
+| `exact` | Flag **any** version difference whatsoever. | `2.18.3` vs runtime `2.18.3` (identical) | `2.18.3-jre` vs runtime `2.18.3-android` (qualifier differs) |
 
-Version comparison uses Maven's built-in `ComparableVersion`, which correctly handles qualifiers (`-jre`, `-SNAPSHOT`, `-beta1`), milestone ordering, and all standard Maven version semantics.
+Version comparison uses Maven's built-in `ComparableVersion`, which correctly handles qualifiers (`-jre`, `-SNAPSHOT`, `-beta1`), milestone ordering, and all standard Maven version semantics. The `major`, `minor`, and `patch` modes also detect qualifier differences (e.g., `-SNAPSHOT` vs release, `-M1` vs `-M10`) when the relevant numeric components match.
 
 ### Example: user overrides in their own POM
 
