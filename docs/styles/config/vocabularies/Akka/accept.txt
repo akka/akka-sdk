@@ -18,6 +18,7 @@ auditable
 [Aa]utoscaling
 authMechanism
 Avro
+aws
 azureMonitor
 [Bb]ackoffice
 Bastian
