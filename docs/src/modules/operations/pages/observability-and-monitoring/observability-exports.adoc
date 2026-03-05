@@ -1,7 +1,7 @@
 = Exporting metrics, logs, and traces
 include::ROOT:partial$include.adoc[]
 
-Akka supports exporting metrics, logs, and traces to a variety of different destinations for reporting, long term storage and alerting. Metrics, logs, and traces can either be exported to the same location, by configuring a default exporter, or to different locations by configuring separate logging, metrics, and tracing exporters. Only one exporter for each may be configured.
+Akka supports exporting metrics, logs, and traces to a variety of different destinations for reporting, long term storage and alerting. Metrics, logs, and traces can either be exported to the same location, by configuring default exporters, or to different locations by configuring separate logging, metrics, and tracing exporters. Multiple exporters can be configured for each category, allowing you to send the same data to multiple destinations simultaneously.
 
 Observability configuration is configured per Akka project. All services in that project will use the same observability config. Configuration can either be done by specifying an observability descriptor, or by running CLI commands.
 
@@ -28,12 +28,26 @@ This will write the observability YAML descriptor out to standard out. If prefer
 
 [source,yaml]
 ----
-exporter:
-  kalixConsole: {}
-logs: {}
-metrics: {}
-traces: {}
+resource: Observability
+resourceVersion: v2
+spec:
+  exporters:
+    - kalixConsole: {}
+  logs:
+    - googleCloud:
+        serviceAccountKeySecret:
+          name: gcp-credentials
+  metrics: []
+  traces: []
 ----
+
+In this example:
+
+* The `exporters` section defines default exporters applied to logs, metrics, and traces.
+* The `logs` section adds an additional Google Cloud exporter specifically for logs (in addition to the default exporters).
+* The `metrics` and `traces` sections are empty arrays, meaning they only use the default exporters.
+
+Each section (`exporters`, `logs`, `metrics`, `traces`) accepts an array of exporter configurations, allowing multiple destinations. The specific `logs`, `metrics`, and `traces` sections add to the default exporters rather than replacing them.
 
 
 === Updating the observability configuration
@@ -109,9 +123,38 @@ The Akka observability configuration can also be updated using commands. To view
 akka project observability get
 ----
 
-To change configuration, the `set` command can be used. To change the default exporter for both logs and metrics, use `set default`, to change the exporter just for metrics, use `set metrics`, and to change the exporter just for logs, use `set logs`.
+=== Adding exporters
 
-When using the `set` command, the default, logs or metrics exporter configuration will be completely replaced. It's important to include the full configuration for that exporter when you run the command. For example, if you run `akka project observability set default otlp --endpoint otlp.example.com:4317`, and then you want to add a header, you must include the `--endpoint` flag when setting the header.
+To add an exporter to the configuration, use the `add` command. This appends the exporter to the existing configuration without removing any previously configured exporters.
+
+[source,command line]
+----
+akka project observability add default otlp --endpoint otlp.example.com:4317
+akka project observability add logs google-cloud --service-account-key-secret gcp-credentials
+akka project observability add metrics prometheus --endpoint https://prometheus.example.com/api/v1/push
+akka project observability add traces otlp --endpoint traces.example.com:4317
+----
+
+=== Removing exporters
+
+To remove an exporter from the configuration, use the `remove` command.
+
+[source,command line]
+----
+akka project observability remove default otlp --endpoint otlp.example.com:4317
+akka project observability remove logs google-cloud --service-account-key-secret gcp-credentials
+----
+
+=== Replacing all exporters
+
+To completely replace all exporters for a category, use the `set` command. This removes all existing exporters in the specified category and replaces them with the new configuration.
+
+[source,command line]
+----
+akka project observability set default otlp --endpoint otlp.example.com:4317
+----
+
+WARNING: When using the `set` command, all existing exporters in that category (default, logs, metrics, or traces) will be removed and replaced with the new exporter. Use `add` if you want to keep existing exporters.
 
 == Supported exporters
 
@@ -126,14 +169,14 @@ Descriptor::
 +
 [source,yaml]
 ----
-default:
-  kalixConsole: {}
+exporters:
+  - kalixConsole: {}
 ----
 CLI::
 +
 [source,command line]
 ----
-akka project observability set default akka-console
+akka project observability add default akka-console
 ----
 
 
@@ -146,15 +189,15 @@ Descriptor::
 +
 [source,yaml]
 ----
-default:
-  otlp:
-    endpoint: otlp.example.com:4317
+exporters:
+  - otlp:
+      endpoint: otlp.example.com:4317
 ----
 CLI::
 +
 [source,command line]
 ----
-akka project observability set default otlp --endpoint otlp.example.com:4317
+akka project observability add default otlp --endpoint otlp.example.com:4317
 ----
 
 In addition, the OTLP exporter supports <<TLS configuration>> and <<Custom headers,custom headers>>. A full reference of configuration options is available in xref:reference:descriptors/observability-descriptor.adoc#_observabilityotlp[the reference documentation].
@@ -170,15 +213,15 @@ Descriptor::
 +
 [source,yaml]
 ----
-default:
-  otlpHttp:
-    endpointBaseUrl: https://otlp.example.com:4318
+exporters:
+  - otlpHttp:
+      endpointBaseUrl: https://otlp.example.com:4318
 ----
 CLI::
 +
 [source,command line]
 ----
-akka project observability set default otlp-http --endpoint-base-url https://otlp.example.com:4318
+akka project observability add default otlp-http --endpoint-base-url https://otlp.example.com:4318
 ----
 
 By default, the exporter uses Protobuf encoding. To use JSON encoding instead:
@@ -188,16 +231,16 @@ Descriptor::
 +
 [source,yaml]
 ----
-default:
-  otlpHttp:
-    endpointBaseUrl: https://otlp.example.com:4318
-    encoding: json
+exporters:
+  - otlpHttp:
+      endpointBaseUrl: https://otlp.example.com:4318
+      encoding: json
 ----
 CLI::
 +
 [source,command line]
 ----
-akka project observability set default otlp-http \
+akka project observability add default otlp-http \
   --endpoint-base-url https://otlp.example.com:4318 \
   --encoding json
 ----
@@ -214,14 +257,14 @@ Descriptor::
 [source,yaml]
 ----
 metrics:
-  prometheuswrite:
-    endpoint: https://prometheus.example.com/api/v1/push
+  - prometheuswrite:
+      endpoint: https://prometheus.example.com/api/v1/push
 ----
 CLI::
 +
 [source,command line]
 ----
-akka project observability set metrics prometheus --endpoint https://prometheus.example.com/api/v1/push
+akka project observability add metrics prometheus --endpoint https://prometheus.example.com/api/v1/push
 ----
 
 In addition, the Prometheus exporter supports <<TLS configuration>> and <<Custom headers,custom headers>>. A full reference of configuration options is available in xref:reference:descriptors/observability-descriptor.adoc#_observabilityprometheuswrite[the reference documentation].
@@ -235,18 +278,18 @@ Descriptor::
 +
 [source,yaml]
 ----
-default:
-  splunkHec:
-    endpoint: https://<my-trial-instance>.splunkcloud.com:8088/services/collector
-    tokenSecret:
-      name: my-splunk-token
-      key: token
+exporters:
+  - splunkHec:
+      endpoint: https://<my-trial-instance>.splunkcloud.com:8088/services/collector
+      tokenSecret:
+        name: my-splunk-token
+        key: token
 ----
 CLI::
 +
 [source,command line]
 ----
-akka project observability set default splunk-hec \
+akka project observability add default splunk-hec \
   --endpoint https://<my-trial-instance>.splunkcloud.com:8088/services/collector \
   --token-secret-name my-splunk-token --token-secret-key token
 ----
@@ -265,15 +308,15 @@ Descriptor::
 +
 [source,yaml]
 ----
-default:
-  azureMonitor:
-    connectionString: InstrumentationKey=XXXXXXXX;IngestionEndpoint=https://centralus-2.in.applicationinsights.azure.com/;LiveEndpoint=https://centralus.livediagnostics.monitor.azure.com/;ApplicationId=XXXXXXXX
+exporters:
+  - azureMonitor:
+      connectionString: InstrumentationKey=XXXXXXXX;IngestionEndpoint=https://centralus-2.in.applicationinsights.azure.com/;LiveEndpoint=https://centralus.livediagnostics.monitor.azure.com/;ApplicationId=XXXXXXXX
 ----
 CLI::
 +
 [source,command line]
 ----
-akka project observability set default azure-monitor \
+akka project observability add default azure-monitor \
   --connection-string "InstrumentationKey=XXXXXXXX;IngestionEndpoint=https://centralus-2.in.applicationinsights.azure.com/;LiveEndpoint=https://centralus.livediagnostics.monitor.azure.com/;ApplicationId=XXXXXXXX"
 ----
 
@@ -328,16 +371,16 @@ Descriptor::
 +
 [source,yaml]
 ----
-default:
-  googleCloud:
-    serviceAccountKeySecret:
-      name: gcp-credentials
+exporters:
+  - googleCloud:
+      serviceAccountKeySecret:
+        name: gcp-credentials
 ----
 CLI::
 +
 [source,command line]
 ----
-akka project observability set default google-cloud --service-account-key-secret gcp-credentials
+akka project observability add default google-cloud --service-account-key-secret gcp-credentials
 ----
 
 == Common exporter configuration
@@ -351,17 +394,17 @@ Descriptor::
 +
 [source,yaml]
 ----
-default:
-  otlp:
-    endpoint: otlp.example.com:4137
-    tls:
-      insecure: true
+exporters:
+  - otlp:
+      endpoint: otlp.example.com:4137
+      tls:
+        insecure: true
 ----
 CLI::
 +
 [source,command line]
 ----
-akka project observability set default otlp \
+akka project observability add default otlp \
   --endpoint otlp.example.com:4137 --insecure
 ----
 
@@ -372,17 +415,17 @@ Descriptor::
 +
 [source,yaml]
 ----
-default:
-  otlp:
-    endpoint: otlp.example.com:4137
-    tls:
-      insecureSkipVerify: true
+exporters:
+  - otlp:
+      endpoint: otlp.example.com:4137
+      tls:
+        insecureSkipVerify: true
 ----
 CLI::
 +
 [source,command line]
 ----
-akka project observability set default otlp \
+akka project observability add default otlp \
   --endpoint otlp.example.com:4137 --insecure-skip-verify
 ----
 
@@ -393,18 +436,18 @@ Descriptor::
 +
 [source,yaml]
 ----
-default:
-  otlp:
-    endpoint: otlp.example.com:4137
-    tls:
-      caSecret:
-        name: my-ca
+exporters:
+  - otlp:
+      endpoint: otlp.example.com:4137
+      tls:
+        caSecret:
+          name: my-ca
 ----
 CLI::
 +
 [source,command line]
 ----
-akka project observability set default otlp \
+akka project observability add default otlp \
   --endpoint otlp.example.com:4137 --server-ca-secret my-ca
 ----
 
@@ -415,18 +458,18 @@ Descriptor::
 +
 [source,yaml]
 ----
-default:
-  otlp:
-    endpoint: otlp.example.com:4137
-    tls:
-      clientCertSecret:
-        name: my-client-certificate
+exporters:
+  - otlp:
+      endpoint: otlp.example.com:4137
+      tls:
+        clientCertSecret:
+          name: my-client-certificate
 ----
 CLI::
 +
 [source,command line]
 ----
-akka project observability set default otlp \
+akka project observability add default otlp \
   --endpoint otlp.example.com:4137 \
   --client-cert-secret my-client-certificate
 ----
@@ -442,18 +485,18 @@ Descriptor::
 +
 [source,yaml]
 ----
-default:
-  otlp:
-    endpoint: otlp.example.com:4137
-    headers:
-    - name: X-My-Header
-      value: some-value
+exporters:
+  - otlp:
+      endpoint: otlp.example.com:4137
+      headers:
+        - name: X-My-Header
+          value: some-value
 ----
 CLI::
 +
 [source,command line]
 ----
-akka project observability set default otlp \
+akka project observability add default otlp \
   --endpoint otlp.example.com:4137 \
   --header X-My-Header=some-value
 ----
@@ -465,21 +508,21 @@ Descriptor::
 +
 [source,yaml]
 ----
-default:
-  otlp:
-    endpoint: otlp.example.com:4137
-    headers:
-    - name: X-Token
-      valueFrom:
-        secretKeyRef:
-          name: my-token
-          key: token
+exporters:
+  - otlp:
+      endpoint: otlp.example.com:4137
+      headers:
+        - name: X-Token
+          valueFrom:
+            secretKeyRef:
+              name: my-token
+              key: token
 ----
 CLI::
 +
 [source,command line]
 ----
-akka project observability set default otlp \
+akka project observability add default otlp \
   --endpoint otlp.example.com:4137 \
   --header-secret X-Token=my-token/token
 ----
