@@ -299,6 +299,8 @@ include::example$doc-snippets/src/main/java/com/example/api/StaticResourcesEndpo
 <3> Another specific path `/favicon.ico`
 <4> The specific resource to serve
 
+NOTE: File paths passed to `HttpResponses.staticResource` are relative to the `static-resources` directory. For example, `src/main/resources/static-resources/index.html` is referenced as `HttpResponses.staticResource("index.html")`.
+
 [#glob_static_content]
 It is also possible to map an entire path subtree using `**` as a wildcard at the end of the path:
 
@@ -309,7 +311,7 @@ include::example$doc-snippets/src/main/java/com/example/api/StaticResourcesEndpo
 ----
 <1> Endpoint method for any path under `/static/`
 <2> Accept `akka.http.javadsl.model.HttpRequest` for further inspection of the actual path.
-<3> Load any available file under `static-resources` after first removing `/static` from the request path. The request path `/static/images/example.png` is resolved to the file `src/main/resources/static-resources/images/example.png` from the project.
+<3> Strip the `/static` prefix from the request path and serve the matching file from `static-resources`. For example, a request to `/static/images/example.png` serves `src/main/resources/static-resources/images/example.png`.
 
 NOTE: This is convenient for service documentation or small self-contained services with web user interface but is not intended
  for production, where coupling of the service lifecycle with the user interface would mean that a new service version would need to be deployed for any changes in the user interface.
