@@ -70,6 +70,13 @@ public sealed interface AutonomousStrategy extends Strategy permits DefaultAuton
   AutonomousStrategy canDelegateTo(Class<? extends AutonomousAgent>... agents);
 
   /**
+   * Allow this agent to hand off its current task to one of the specified agents. Unlike
+   * delegation, handoff transfers ownership — the current agent is done and the target agent takes
+   * over. Multiple calls accumulate targets.
+   */
+  AutonomousStrategy canHandoffTo(Class<? extends AutonomousAgent>... agents);
+
+  /**
    * Maximum iterations before the agent fails the current task. Default {@link
    * #DEFAULT_MAX_ITERATIONS}.
    */

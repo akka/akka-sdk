@@ -4,6 +4,7 @@
 
 package akka.javasdk.agent.task;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /** State of a task entity. */
@@ -18,11 +19,23 @@ public record TaskState(
     String failureReason,
     List<String> dependencyTaskIds,
     String assignee,
-    List<TaskAttachment> attachments) {
+    List<TaskAttachment> attachments,
+    List<String> reassignmentContext) {
 
   public static TaskState empty() {
     return new TaskState(
-        "", "", "", null, TaskStatus.PENDING, null, null, null, List.of(), null, List.of());
+        "",
+        "",
+        "",
+        null,
+        TaskStatus.PENDING,
+        null,
+        null,
+        null,
+        List.of(),
+        null,
+        List.of(),
+        List.of());
   }
 
   public TaskState withStatus(TaskStatus status) {
@@ -37,7 +50,8 @@ public record TaskState(
         failureReason,
         dependencyTaskIds,
         assignee,
-        attachments);
+        attachments,
+        reassignmentContext);
   }
 
   public TaskState withAssignee(String assignee) {
@@ -52,7 +66,8 @@ public record TaskState(
         failureReason,
         dependencyTaskIds,
         assignee,
-        attachments);
+        attachments,
+        reassignmentContext);
   }
 
   public TaskState withResult(String result) {
@@ -67,7 +82,8 @@ public record TaskState(
         failureReason,
         dependencyTaskIds,
         assignee,
-        attachments);
+        attachments,
+        reassignmentContext);
   }
 
   public TaskState withFailure(String reason) {
@@ -82,6 +98,25 @@ public record TaskState(
         reason,
         dependencyTaskIds,
         assignee,
-        attachments);
+        attachments,
+        reassignmentContext);
+  }
+
+  public TaskState withReassignment(String newAssignee, String context) {
+    var updated = new ArrayList<>(this.reassignmentContext);
+    updated.add(context);
+    return new TaskState(
+        taskId,
+        name,
+        description,
+        instructions,
+        status,
+        resultTypeName,
+        result,
+        failureReason,
+        dependencyTaskIds,
+        newAssignee,
+        attachments,
+        List.copyOf(updated));
   }
 }

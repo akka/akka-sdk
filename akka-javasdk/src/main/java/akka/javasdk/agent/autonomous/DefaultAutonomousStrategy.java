@@ -223,6 +223,24 @@ public final class DefaultAutonomousStrategy implements AutonomousStrategy {
   }
 
   @Override
+  @SafeVarargs
+  public final AutonomousStrategy canHandoffTo(Class<? extends AutonomousAgent>... agents) {
+    var updated = new ArrayList<>(this.capabilities);
+    updated.add(new AgentCapability.Handoff(List.of(agents)));
+    return new DefaultAutonomousStrategy(
+        goal,
+        acceptedTasks,
+        modelProvider,
+        toolInstancesOrClasses,
+        mcpTools,
+        requestGuardrailClassNames,
+        responseGuardrailClassNames,
+        memoryProvider,
+        List.copyOf(updated),
+        maxIterations);
+  }
+
+  @Override
   public AutonomousStrategy maxIterations(int max) {
     return new DefaultAutonomousStrategy(
         goal,
@@ -276,6 +294,14 @@ public final class DefaultAutonomousStrategy implements AutonomousStrategy {
         .filter(AgentCapability.Delegation.class::isInstance)
         .map(AgentCapability.Delegation.class::cast)
         .flatMap(d -> d.agents().stream())
+        .toList();
+  }
+
+  public List<Class<? extends AutonomousAgent>> handoffTargets() {
+    return capabilities.stream()
+        .filter(AgentCapability.Handoff.class::isInstance)
+        .map(AgentCapability.Handoff.class::cast)
+        .flatMap(h -> h.agents().stream())
         .toList();
   }
 

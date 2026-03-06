@@ -29,6 +29,8 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
       List<String> dependencyTaskIds,
       List<TaskAttachment> attachments) {}
 
+  public record ReassignRequest(String newAssignee, String context) {}
+
   @Override
   public TaskState emptyState() {
     return TaskState.empty();
@@ -102,6 +104,18 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
     return effects().persist(new TaskEvent.TaskFailed(taskId, reason)).thenReply(__ -> done());
   }
 
+  public Effect<Done> reassign(ReassignRequest request) {
+    if (currentState().taskId().isEmpty()) {
+      return effects().error("Task does not exist");
+    }
+    if (currentState().status() != TaskStatus.IN_PROGRESS) {
+      return effects().error("Task can only be reassigned when IN_PROGRESS");
+    }
+    return effects()
+        .persist(new TaskEvent.TaskReassigned(taskId, request.newAssignee(), request.context()))
+        .thenReply(__ -> done());
+  }
+
   public ReadOnlyEffect<TaskState> getState() {
     if (currentState().taskId().isEmpty()) {
       return effects().error("Task does not exist");
@@ -124,11 +138,14 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
               null,
               e.dependencyTaskIds() != null ? e.dependencyTaskIds() : List.of(),
               null,
-              e.attachments() != null ? e.attachments() : List.of());
+              e.attachments() != null ? e.attachments() : List.of(),
+              List.of());
       case TaskEvent.TaskAssigned e -> currentState().withAssignee(e.assignee());
       case TaskEvent.TaskStarted e -> currentState().withStatus(TaskStatus.IN_PROGRESS);
       case TaskEvent.TaskCompleted e -> currentState().withResult(e.result());
       case TaskEvent.TaskFailed e -> currentState().withFailure(e.reason());
+      case TaskEvent.TaskReassigned e ->
+          currentState().withReassignment(e.newAssignee(), e.context());
     };
   }
 }
