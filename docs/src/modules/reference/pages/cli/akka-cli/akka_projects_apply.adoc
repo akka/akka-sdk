@@ -19,12 +19,15 @@ akka project apply -f project.yaml
 == Options
 
 ----
-      --dry-run          Validate and show what would be applied without making changes
-  -f, --file string      The YAML file to apply. If not supplied, will read from stdin.
-  -h, --help             help for apply
-      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
-      --project string   project to use if not using the default configured project
-      --region string    region to use if project has more than one region
+      --allow-region-removal      Allow removing regions not present in the descriptor from an existing project
+      --dry-run                   Validate and show what would be applied without making changes
+  -f, --file string               The YAML file to apply. If not supplied, will read from stdin.
+  -h, --help                      help for apply
+      --organization string       Organization for project creation (overrides descriptor spec.organization)
+      --owner string              the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string            project to use if not using the default configured project
+      --project-regions strings   Regions for project creation, comma-separated (overrides descriptor spec.regions)
+      --region string             region to use if project has more than one region
 ----
 
 == Options inherited from parent commands
