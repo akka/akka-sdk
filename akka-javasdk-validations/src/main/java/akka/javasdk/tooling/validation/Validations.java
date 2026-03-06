@@ -53,8 +53,8 @@ public class Validations {
   private static Validation validateComponent(TypeDef typeDef) {
     return componentMustBePublic(typeDef)
         .combine(mustHaveValidComponentId(typeDef))
-        .combine(aclMustOnlyBeOnEndpoints(typeDef))
-        .combine(jwtMustOnlyBeOnEndpoints(typeDef))
+        .combine(aclValidation(typeDef))
+        .combine(jwtValidation(typeDef))
         .combine(TimedActionValidations.validate(typeDef))
         .combine(ConsumerValidations.validate(typeDef))
         .combine(WorkflowValidations.validate(typeDef))
@@ -67,13 +67,18 @@ public class Validations {
   /**
    * Validates that @Acl annotation is not used on non-endpoint components.
    *
-   * <p>@Acl is only allowed on classes annotated with @HttpEndpoint, @GrpcEndpoint or @McpEndpoint,
-   * and on methods within such classes.
+   * <p>@Acl is only allowed on classes annotated with @HttpEndpoint, @GrpcEndpoint, @McpEndpoint,
+   * or @Produce.ServiceStream, and on methods within such classes.
    *
    * @param typeDef the component class to validate
    * @return a Validation result indicating success or failure
    */
-  public static Validation aclMustOnlyBeOnEndpoints(TypeDef typeDef) {
+  public static Validation aclValidation(TypeDef typeDef) {
+    // @Acl is also allowed on consumers with @Produce.ServiceStream
+    if (typeDef.hasAnnotation("akka.javasdk.annotations.Produce.ServiceStream")) {
+      return Validation.Valid.instance();
+    }
+
     List<String> errors = new ArrayList<>();
 
     if (typeDef.hasAnnotation(ACL_ANNOTATION)) {
@@ -81,7 +86,7 @@ public class Validations {
           errorMessage(
               typeDef,
               "@Acl annotation is only allowed on classes annotated with @HttpEndpoint,"
-                  + " @GrpcEndpoint or @McpEndpoint."));
+                  + " @GrpcEndpoint, @McpEndpoint or @Produce.ServiceStream."));
     }
 
     for (MethodDef method : typeDef.getMethods()) {
@@ -90,7 +95,7 @@ public class Validations {
             errorMessage(
                 method,
                 "@Acl annotation is only allowed on methods of classes annotated with"
-                    + " @HttpEndpoint, @GrpcEndpoint or @McpEndpoint."));
+                    + " @HttpEndpoint, @GrpcEndpoint, @McpEndpoint or @Produce.ServiceStream."));
       }
     }
 
@@ -106,7 +111,7 @@ public class Validations {
    * @param typeDef the component class to validate
    * @return a Validation result indicating success or failure
    */
-  public static Validation jwtMustOnlyBeOnEndpoints(TypeDef typeDef) {
+  public static Validation jwtValidation(TypeDef typeDef) {
     List<String> errors = new ArrayList<>();
 
     if (typeDef.hasAnnotation(JWT_ANNOTATION)) {
@@ -328,6 +333,11 @@ public class Validations {
    */
   public static Validation noSubscriptionMethodWithAcl(TypeDef typeDef, String effectTypeName) {
     if (doesNotHaveSubscription(typeDef)) {
+      return Validation.Valid.instance();
+    }
+
+    // @Acl is allowed on methods of consumers with @Produce.ServiceStream
+    if (typeDef.hasAnnotation("akka.javasdk.annotations.Produce.ServiceStream")) {
       return Validation.Valid.instance();
     }
 

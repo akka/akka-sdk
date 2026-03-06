@@ -30,16 +30,30 @@ abstract class AbstractAclAnnotationValidationSpec(val validationMode: Validatio
       assertValid("valid/ValidMcpEndpointWithAcl.java")
     }
 
+    "accept @Acl on class of Consumer with @Produce.ServiceStream" in {
+      assertValid("valid/ValidConsumerWithServiceStreamAndAcl.java")
+    }
+
+    "accept @Acl on method of Consumer with @Produce.ServiceStream" in {
+      assertValid("valid/ValidConsumerWithServiceStreamAndMethodAcl.java")
+    }
+
+    "reject @Acl on a Consumer without @Produce.ServiceStream" in {
+      assertInvalid(
+        "invalid/AclOnConsumer.java",
+        "@Acl annotation is only allowed on classes annotated with @HttpEndpoint, @GrpcEndpoint, @McpEndpoint or @Produce.ServiceStream")
+    }
+
     "reject @Acl on a non-endpoint component class" in {
       assertInvalid(
         "invalid/AclOnComponent.java",
-        "@Acl annotation is only allowed on classes annotated with @HttpEndpoint, @GrpcEndpoint or @McpEndpoint")
+        "@Acl annotation is only allowed on classes annotated with @HttpEndpoint, @GrpcEndpoint, @McpEndpoint or @Produce.ServiceStream")
     }
 
     "reject @Acl on a method of a non-endpoint component" in {
       assertInvalid(
         "invalid/AclOnComponentMethod.java",
-        "@Acl annotation is only allowed on methods of classes annotated with @HttpEndpoint, @GrpcEndpoint or @McpEndpoint")
+        "@Acl annotation is only allowed on methods of classes annotated with @HttpEndpoint, @GrpcEndpoint, @McpEndpoint or @Produce.ServiceStream")
     }
 
     "accept @JWT on class and method of HttpEndpoint" in {
