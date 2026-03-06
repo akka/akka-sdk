@@ -27,6 +27,7 @@ import akka.javasdk.annotations.SnapshotHandler
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.agent.AgentDescriptorFactory
+import akka.javasdk.impl.agent.AutonomousAgentDescriptorFactory
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax._
 import akka.javasdk.impl.serialization.Serializer
@@ -294,6 +295,9 @@ private[impl] object ComponentDescriptorFactory {
       EntityDescriptorFactory
     else if (Reflect.isConsumer(component))
       ConsumerDescriptorFactory
+    else if (Reflect.isAutonomousAgent(component))
+      // Autonomous agents have no command handlers — empty descriptor
+      AutonomousAgentDescriptorFactory
     else if (Reflect.isAgent(component))
       AgentDescriptorFactory
     else

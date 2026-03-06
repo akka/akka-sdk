@@ -1,0 +1,343 @@
+/*
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
+ */
+
+package akka.javasdk.impl.agent
+
+import java.time.Instant
+import java.util.UUID
+
+import scala.collection.mutable.ListBuffer
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
+import scala.jdk.FutureConverters._
+import scala.jdk.OptionConverters.RichOption
+
+import akka.Done
+import akka.actor.typed.ActorSystem
+import akka.annotation.InternalApi
+import akka.javasdk.DependencyProvider
+import akka.javasdk.Metadata
+import akka.javasdk.agent.MemoryProvider
+import akka.javasdk.agent.SessionMessage
+import akka.javasdk.agent.SessionMessage.AiMessage
+import akka.javasdk.agent.SessionMessage.MultimodalUserMessage
+import akka.javasdk.agent.SessionMessage.TokenUsage
+import akka.javasdk.agent.SessionMessage.ToolCallRequest
+import akka.javasdk.agent.SessionMessage.ToolCallResponse
+import akka.javasdk.agent.SessionMessage.UserMessage
+import akka.javasdk.agent._
+import akka.javasdk.agent.autonomous.DefaultAutonomousStrategy
+import akka.javasdk.agent.task.TaskAttachment
+import akka.javasdk.agent.task.TaskEntity
+import akka.javasdk.agent.task.TaskStatus
+import akka.javasdk.client.ComponentClient
+import akka.javasdk.impl.JsonSchema
+import akka.javasdk.impl.agent.SessionMemoryClient.MemorySettings
+import akka.javasdk.impl.client.EntityClientImpl
+import akka.javasdk.impl.reflection.Reflect
+import akka.javasdk.impl.serialization.Serializer
+import akka.runtime.sdk.spi.RegionInfo
+import akka.runtime.sdk.spi.SpiAgent
+import akka.runtime.sdk.spi.SpiAutonomousAgent
+import akka.runtime.sdk.spi.SpiAutonomousAgentStrategy
+import akka.runtime.sdk.spi.SpiTask
+import akka.runtime.sdk.spi.SpiTaskOperations
+import com.typesafe.config.Config
+import io.opentelemetry.api.trace.Tracer
+import io.opentelemetry.context.{ Context => OtelContext }
+import org.slf4j.LoggerFactory
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] final class AutonomousAgentImpl(
+    componentId: String,
+    instanceId: String,
+    factory: AgentContext => AnyRef,
+    sdkExecutionContext: ExecutionContext,
+    tracerFactory: () => Tracer,
+    serializer: Serializer,
+    regionInfo: RegionInfo,
+    componentClient: Option[OtelContext] => ComponentClient,
+    dependencyProvider: Option[DependencyProvider],
+    config: Config,
+    _system: ActorSystem[_],
+    autonomousStrategy: DefaultAutonomousStrategy,
+    override val strategy: SpiAutonomousAgentStrategy)
+    extends SpiAutonomousAgent {
+  import AgentImpl._
+
+  implicit val system: ActorSystem[_] = _system
+
+  private val log = LoggerFactory.getLogger(classOf[AutonomousAgentImpl])
+
+  private lazy val sessionMemoryClient: SessionMemory =
+    deriveMemoryClient(autonomousStrategy.memoryProvider(), telemetryContext = None)
+
+  private def deriveMemoryClient(
+      memoryProvider: MemoryProvider,
+      telemetryContext: Option[OtelContext]): SessionMemory = {
+    memoryProvider match {
+      case _: MemoryProvider.Disabled =>
+        new SessionMemoryClient(componentClient(telemetryContext), MemorySettings.disabled())
+
+      case p: MemoryProvider.LimitedWindowMemoryProvider =>
+        new SessionMemoryClient(
+          componentClient(telemetryContext),
+          new MemorySettings(p.read(), p.write(), p.readLastN(), p.filters()))
+
+      case p: MemoryProvider.CustomMemoryProvider =>
+        p.sessionMemory()
+
+      case p: MemoryProvider.FromConfig =>
+        val actualPath =
+          if (p.configPath() == "")
+            "akka.javasdk.agent.memory"
+          else
+            p.configPath()
+        new SessionMemoryClient(componentClient(telemetryContext), config.getConfig(actualPath))
+    }
+  }
+
+  private lazy val toolExecutor: ToolExecutor = {
+    val agentContext =
+      new AgentContextImpl(instanceId, regionInfo.selfRegion, Metadata.EMPTY, telemetryContext = None, tracerFactory)
+    val agentInstance = factory(agentContext)
+
+    // Agent's own @FunctionTool methods
+    val agentInvokers = FunctionTools.toolInvokersFor(agentInstance)
+
+    // Strategy's additional tool instances or classes
+    val strategyToolInvokers: Map[String, FunctionTools.FunctionToolInvoker] =
+      autonomousStrategy
+        .toolInstancesOrClasses()
+        .asScala
+        .flatMap {
+          case cls: Class[_] if Reflect.isToolCandidate(cls) =>
+            FunctionTools.toolComponentInvokersFor(cls, componentClient(None))
+          case cls: Class[_] =>
+            FunctionTools.toolInvokersFor(cls, dependencyProvider)
+          case any =>
+            FunctionTools.toolInvokersFor(any)
+        }
+        .toMap
+
+    new ToolExecutor(agentInvokers ++ strategyToolInvokers, serializer)
+  }
+
+  // Pre-resolve TaskEntity methods for calling via EntityClientImpl
+  private val createMethod = classOf[TaskEntity].getMethod("create", classOf[TaskEntity.CreateRequest])
+  private val getStateMethod = classOf[TaskEntity].getMethod("getState")
+  private val assignMethod = classOf[TaskEntity].getMethod("assign", classOf[String])
+  private val startMethod = classOf[TaskEntity].getMethod("start")
+  private val completeMethod = classOf[TaskEntity].getMethod("complete", classOf[String])
+  private val failMethod = classOf[TaskEntity].getMethod("fail", classOf[String])
+  private val reassignMethod = classOf[TaskEntity].getMethod("reassign", classOf[TaskEntity.ReassignRequest])
+
+  private def entityClient(taskId: String): EntityClientImpl =
+    componentClient(None).forEventSourcedEntity(taskId).asInstanceOf[EntityClientImpl]
+
+  // --- SpiAutonomousAgent ---
+
+  override val taskOperations: SpiTaskOperations = new SpiTaskOperations {
+    override def createTask(request: SpiTask.CreateTaskRequest): Future[String] = {
+      val taskId = UUID.randomUUID().toString
+      val attachments = request.attachments.map(spiToAttachment).asJava
+      val createReq = new TaskEntity.CreateRequest(
+        request.name,
+        request.description,
+        request.instructions.orNull,
+        request.resultTypeName.orNull,
+        request.dependencyTaskIds.asJava,
+        attachments)
+      entityClient(taskId)
+        .methodRefOneArg[TaskEntity.CreateRequest, Done](createMethod)
+        .invokeAsync(createReq)
+        .asScala
+        .map(_ => taskId)(sdkExecutionContext)
+    }
+
+    override def getTaskState(taskId: String): Future[SpiTask.SpiTaskState] =
+      entityClient(taskId)
+        .methodRefNoArg[akka.javasdk.agent.task.TaskState](getStateMethod)
+        .invokeAsync()
+        .asScala
+        .map(toSpiTaskState)(sdkExecutionContext)
+
+    override def assignTask(taskId: String, assignee: String): Future[Done] =
+      entityClient(taskId)
+        .methodRefOneArg[String, Done](assignMethod)
+        .invokeAsync(assignee)
+        .asScala
+        .map(_ => Done)(sdkExecutionContext)
+
+    override def startTask(taskId: String): Future[Done] =
+      entityClient(taskId)
+        .methodRefNoArg[Done](startMethod)
+        .invokeAsync()
+        .asScala
+        .map(_ => Done)(sdkExecutionContext)
+
+    override def completeTask(taskId: String, resultJson: String): Future[Done] =
+      entityClient(taskId)
+        .methodRefOneArg[String, Done](completeMethod)
+        .invokeAsync(resultJson)
+        .asScala
+        .map(_ => Done)(sdkExecutionContext)
+
+    override def failTask(taskId: String, reason: String): Future[Done] =
+      entityClient(taskId)
+        .methodRefOneArg[String, Done](failMethod)
+        .invokeAsync(reason)
+        .asScala
+        .map(_ => Done)(sdkExecutionContext)
+
+    override def reassignTask(taskId: String, request: SpiTask.ReassignRequest): Future[Done] = {
+      val reassignReq = new TaskEntity.ReassignRequest(request.newAgentComponentId, request.context)
+      entityClient(taskId)
+        .methodRefOneArg[TaskEntity.ReassignRequest, Done](reassignMethod)
+        .invokeAsync(reassignReq)
+        .asScala
+        .map(_ => Done)(sdkExecutionContext)
+    }
+  }
+
+  override def getSessionHistory(sessionId: String): Future[Seq[SpiAgent.ContextMessage]] =
+    Future {
+      val history = sessionMemoryClient.getHistory(sessionId)
+      toSpiContextMessages(history)
+    }(sdkExecutionContext)
+
+  override def addToSessionHistory(sessionId: String, messages: Seq[SpiAgent.ContextMessage]): Future[Done] =
+    Future {
+      groupByUserMessage(messages).foreach { case (userMsgOpt, rest) =>
+        val now = Instant.now()
+        val sessionResponses = toSessionMessages(now, rest)
+        userMsgOpt match {
+          case Some(userMsg) if userMsg.contents.forall(_.isInstanceOf[SpiAgent.TextMessageContent]) =>
+            val text = userMsg.contents.collect { case t: SpiAgent.TextMessageContent => t.text }.mkString(" ")
+            sessionMemoryClient.addInteraction(
+              sessionId,
+              new UserMessage(now, text, componentId),
+              sessionResponses.asJava)
+          case Some(userMsg) =>
+            val contents = userMsg.contents.map {
+              case t: SpiAgent.TextMessageContent =>
+                new SessionMessage.MessageContent.TextMessageContent(t.text): SessionMessage.MessageContent
+              case img: SpiAgent.ImageUriMessageContent =>
+                new SessionMessage.MessageContent.ImageUriMessageContent(
+                  img.uri.toString,
+                  fromSpiDetailLevel(img.detailLevel),
+                  img.mimeType.toJava): SessionMessage.MessageContent
+              case pdf: SpiAgent.PdfUriMessageContent =>
+                new SessionMessage.MessageContent.PdfUriMessageContent(pdf.uri.toString): SessionMessage.MessageContent
+            }.asJava
+            sessionMemoryClient.addInteraction(
+              sessionId,
+              new MultimodalUserMessage(now, contents, componentId),
+              sessionResponses.asJava)
+          case None =>
+            // No user message in this group — store responses only with a synthetic user message.
+            // Text must be non-blank to satisfy LangChain4j validation when replayed.
+            if (sessionResponses.nonEmpty) {
+              sessionMemoryClient.addInteraction(
+                sessionId,
+                new UserMessage(now, "(continued)", componentId),
+                sessionResponses.asJava)
+            }
+        }
+      }
+      Done
+    }(sdkExecutionContext)
+
+  override def callToolFunction(): SpiAgent.ToolCallCommand => Future[String] =
+    request => Future(toolExecutor.execute(request))(sdkExecutionContext)
+
+  // --- Helpers ---
+
+  private def toSpiTaskState(state: akka.javasdk.agent.task.TaskState): SpiTask.SpiTaskState = {
+    val spiStatus = state.status() match {
+      case TaskStatus.PENDING     => SpiTask.SpiTaskStatus.Pending
+      case TaskStatus.IN_PROGRESS => SpiTask.SpiTaskStatus.InProgress
+      case TaskStatus.COMPLETED   => SpiTask.SpiTaskStatus.Completed
+      case TaskStatus.FAILED      => SpiTask.SpiTaskStatus.Failed
+    }
+    val resultTypeName = Option(state.resultTypeName())
+    val resultSchema = resultTypeName
+      .filterNot(_ == classOf[String].getName)
+      .flatMap { typeName =>
+        try Some(JsonSchema.jsonSchemaFor(Class.forName(typeName)))
+        catch {
+          case scala.util.control.NonFatal(e) =>
+            log.debug("Could not generate schema for result type [{}]: {}", typeName, e.getMessage)
+            None
+        }
+      }
+    val attachments = Option(state.attachments())
+      .map(_.asScala.toSeq.map(attachmentToSpi))
+      .getOrElse(Seq.empty)
+    new SpiTask.SpiTaskState(
+      taskId = state.taskId(),
+      name = state.name(),
+      description = state.description(),
+      instructions = Option(state.instructions()).filter(_.nonEmpty),
+      status = spiStatus,
+      resultTypeName = resultTypeName,
+      resultSchema = resultSchema,
+      resultJson = Option(state.result()),
+      failureReason = Option(state.failureReason()),
+      dependencyTaskIds = state.dependencyTaskIds().asScala.toSeq,
+      parentTaskId = None,
+      attachments = attachments,
+      reassignmentContext = Option(state.reassignmentContext()).map(_.asScala.toSeq).getOrElse(Seq.empty))
+  }
+
+  private def attachmentToSpi(ref: TaskAttachment): SpiAgent.MessageContent =
+    AgentImpl.toSpiMessageContent(ref.toMessageContent())
+
+  private def spiToAttachment(mc: SpiAgent.MessageContent): TaskAttachment =
+    TaskAttachment.fromMessageContent(AgentImpl.fromSpiMessageContent(mc))
+
+  private def groupByUserMessage(messages: Seq[SpiAgent.ContextMessage])
+      : Seq[(Option[SpiAgent.ContextMessage.UserMessage], Seq[SpiAgent.ContextMessage])] = {
+    val result = ListBuffer.empty[(Option[SpiAgent.ContextMessage.UserMessage], Seq[SpiAgent.ContextMessage])]
+    var currentUser: Option[SpiAgent.ContextMessage.UserMessage] = None
+    var currentRest = ListBuffer.empty[SpiAgent.ContextMessage]
+
+    messages.foreach {
+      case u: SpiAgent.ContextMessage.UserMessage =>
+        if (currentUser.isDefined || currentRest.nonEmpty) {
+          result += ((currentUser, currentRest.toSeq))
+        }
+        currentUser = Some(u)
+        currentRest = ListBuffer.empty
+      case other =>
+        currentRest += other
+    }
+    if (currentUser.isDefined || currentRest.nonEmpty) {
+      result += ((currentUser, currentRest.toSeq))
+    }
+    result.toSeq
+  }
+
+  private def toSessionMessages(now: Instant, messages: Seq[SpiAgent.ContextMessage]): Seq[SessionMessage] =
+    messages.collect {
+      case m: SpiAgent.ContextMessage.AiMessage =>
+        val toolCallRequests = m.toolRequests.map { req =>
+          new ToolCallRequest(req.id, req.name, req.arguments)
+        }.asJava
+        new AiMessage(
+          now,
+          m.content,
+          componentId,
+          toolCallRequests,
+          m.thinking.toJava,
+          TokenUsage.EMPTY,
+          m.attributes.asJava)
+      case m: SpiAgent.ContextMessage.ToolCallResponseMessage =>
+        new ToolCallResponse(now, componentId, m.id, m.name, m.content)
+    }
+}
