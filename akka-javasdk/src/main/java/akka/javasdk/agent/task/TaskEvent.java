@@ -31,4 +31,7 @@ public sealed interface TaskEvent {
 
   @TypeName("akka-task-failed")
   record TaskFailed(String taskId, String reason) implements TaskEvent {}
+
+  @TypeName("akka-task-reassigned")
+  record TaskReassigned(String taskId, String newAssignee, String context) implements TaskEvent {}
 }

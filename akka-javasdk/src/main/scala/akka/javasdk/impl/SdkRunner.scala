@@ -129,6 +129,7 @@ import akka.runtime.sdk.spi.SpiDevModeSettings
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
 import akka.runtime.sdk.spi.SpiGuardrailSetup
+import akka.runtime.sdk.spi.SpiHandoff
 import akka.runtime.sdk.spi.SpiMockedEventingSettings
 import akka.runtime.sdk.spi.SpiSanitizerEngine
 import akka.runtime.sdk.spi.SpiServiceInfo
@@ -863,11 +864,31 @@ private final class Sdk(
                   acceptedTasks = targetTaskDefs)
               }
 
+            // Build handoffs from handoff targets, resolving target agent task definitions
+            val spiHandoffs: Seq[SpiHandoff] = sdkStrategy
+              .handoffTargets()
+              .asScala
+              .toSeq
+              .map { targetAgentClass =>
+                val targetComponentId = Reflect.readComponentId(targetAgentClass)
+                val (_, targetTaskDefs) = autonomousAgentStrategyMap.getOrElse(
+                  targetComponentId,
+                  throw new IllegalStateException(
+                    s"Handoff target [$targetComponentId] (${targetAgentClass.getName}) not found. " +
+                    "Ensure the target agent is a registered AutonomousAgent component."))
+                val targetDescriptor = autonomousAgentDescriptors.find(_.componentId == targetComponentId)
+                new SpiHandoff(
+                  agentComponentId = targetComponentId,
+                  description = targetDescriptor.flatMap(_.description),
+                  acceptedTasks = targetTaskDefs)
+              }
+
             new SpiAutonomousAgentStrategy(
               goal = sdkStrategy.goal(),
               maxIterations = sdkStrategy.maxIterations(),
               taskDefinitions = spiTaskDefinitions,
               delegations = spiDelegations,
+              handoffs = spiHandoffs,
               modelProvider = spiModelProvider,
               toolDescriptors = spiToolDescriptors,
               mcpClientDescriptors = spiMcpDescriptors,

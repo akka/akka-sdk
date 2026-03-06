@@ -135,6 +135,7 @@ private[impl] final class AutonomousAgentImpl(
   private val startMethod = classOf[TaskEntity].getMethod("start")
   private val completeMethod = classOf[TaskEntity].getMethod("complete", classOf[String])
   private val failMethod = classOf[TaskEntity].getMethod("fail", classOf[String])
+  private val reassignMethod = classOf[TaskEntity].getMethod("reassign", classOf[TaskEntity.ReassignRequest])
 
   private def entityClient(taskId: String): EntityClientImpl =
     componentClient(None).forEventSourcedEntity(taskId).asInstanceOf[EntityClientImpl]
@@ -193,6 +194,15 @@ private[impl] final class AutonomousAgentImpl(
         .invokeAsync(reason)
         .asScala
         .map(_ => Done)(sdkExecutionContext)
+
+    override def reassignTask(taskId: String, request: SpiTask.ReassignRequest): Future[Done] = {
+      val reassignReq = new TaskEntity.ReassignRequest(request.newAgentComponentId, request.context)
+      entityClient(taskId)
+        .methodRefOneArg[TaskEntity.ReassignRequest, Done](reassignMethod)
+        .invokeAsync(reassignReq)
+        .asScala
+        .map(_ => Done)(sdkExecutionContext)
+    }
   }
 
   override def getSessionHistory(sessionId: String): Future[Seq[SpiAgent.ContextMessage]] =
@@ -281,7 +291,8 @@ private[impl] final class AutonomousAgentImpl(
       failureReason = Option(state.failureReason()),
       dependencyTaskIds = state.dependencyTaskIds().asScala.toSeq,
       parentTaskId = None,
-      attachments = attachments)
+      attachments = attachments,
+      reassignmentContext = Option(state.reassignmentContext()).map(_.asScala.toSeq).getOrElse(Seq.empty))
   }
 
   private def attachmentToSpi(ref: TaskAttachment): SpiAgent.MessageContent =
