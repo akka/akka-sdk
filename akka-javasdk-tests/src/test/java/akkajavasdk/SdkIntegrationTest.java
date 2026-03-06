@@ -29,6 +29,7 @@ import akkajavasdk.components.keyvalueentities.user.UserSideEffect;
 import akkajavasdk.components.views.counter.CountersByValue;
 import akkajavasdk.components.views.customer.CustomerByCreationTime;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -474,6 +475,35 @@ public class SdkIntegrationTest extends TestKitSupport {
                 .method(CustomerByCreationTime::getCustomerByTime)
                 .invokeAsync(new CustomerByCreationTime.QueryParameters(createdOn)))
         .customers();
+  }
+
+  @Test
+  public void shouldNotifyAboutESEntityChanges() {
+    var counterId = "notify-counter-" + System.nanoTime();
+    var notifications = new ArrayList<String>();
+
+    componentClient
+        .forEventSourcedEntity(counterId)
+        .notificationStream(CounterEntity::updates)
+        .source()
+        .runForeach(notifications::add, testKit.getMaterializer());
+
+    Integer result =
+        await(
+            componentClient
+                .forEventSourcedEntity(counterId)
+                .method(CounterEntity::increase)
+                .invokeAsync(10));
+
+    assertThat(result).isEqualTo(10);
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(20, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              assertThat(notifications).contains("counter increased to 10");
+            });
   }
 
   private void deleteUser(TestUser user) {
