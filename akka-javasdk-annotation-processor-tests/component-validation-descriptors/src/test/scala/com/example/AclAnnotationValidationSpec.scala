@@ -26,16 +26,20 @@ abstract class AbstractAclAnnotationValidationSpec(val validationMode: Validatio
       assertValid("valid/ValidGrpcEndpointWithAcl.java")
     }
 
+    "accept @Acl on class and method of McpEndpoint" in {
+      assertValid("valid/ValidMcpEndpointWithAcl.java")
+    }
+
     "reject @Acl on a non-endpoint component class" in {
       assertInvalid(
         "invalid/AclOnComponent.java",
-        "@Acl annotation is only allowed on classes annotated with @HttpEndpoint or @GrpcEndpoint")
+        "@Acl annotation is only allowed on classes annotated with @HttpEndpoint, @GrpcEndpoint or @McpEndpoint")
     }
 
     "reject @Acl on a method of a non-endpoint component" in {
       assertInvalid(
         "invalid/AclOnComponentMethod.java",
-        "@Acl annotation is only allowed on methods of classes annotated with @HttpEndpoint or @GrpcEndpoint")
+        "@Acl annotation is only allowed on methods of classes annotated with @HttpEndpoint, @GrpcEndpoint or @McpEndpoint")
     }
 
     "accept @JWT on class and method of HttpEndpoint" in {
@@ -49,13 +53,13 @@ abstract class AbstractAclAnnotationValidationSpec(val validationMode: Validatio
     "reject @JWT on a non-endpoint component class" in {
       assertInvalid(
         "invalid/JwtOnComponent.java",
-        "@JWT annotation is only allowed on classes annotated with @HttpEndpoint or @GrpcEndpoint")
+        "@JWT annotation is only allowed on classes annotated with @HttpEndpoint, @GrpcEndpoint or @McpEndpoint")
     }
 
     "reject @JWT on a method of a non-endpoint component" in {
       assertInvalid(
         "invalid/JwtOnComponentMethod.java",
-        "@JWT annotation is only allowed on methods of classes annotated with @HttpEndpoint or @GrpcEndpoint")
+        "@JWT annotation is only allowed on methods of classes annotated with @HttpEndpoint, @GrpcEndpoint or @McpEndpoint")
     }
   }
 }

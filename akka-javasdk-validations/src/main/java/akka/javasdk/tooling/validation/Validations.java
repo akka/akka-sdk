@@ -24,6 +24,8 @@ public class Validations {
 
   private static final String GRPC_ENDPOINT_ANNOTATION = "akka.javasdk.annotations.GrpcEndpoint";
 
+  private static final String MCP_ENDPOINT_ANNOTATION = "akka.javasdk.annotations.mcp.McpEndpoint";
+
   private static final String ACL_ANNOTATION = "akka.javasdk.annotations.Acl";
 
   private static final String JWT_ANNOTATION = "akka.javasdk.annotations.JWT";
@@ -39,6 +41,9 @@ public class Validations {
       return HttpEndpointValidations.validate(typeDef);
     } else if (typeDef.hasAnnotation(GRPC_ENDPOINT_ANNOTATION)) {
       // no specific validations for grpc endpoint
+      return Validation.Valid.instance();
+    } else if (typeDef.hasAnnotation(MCP_ENDPOINT_ANNOTATION)) {
+      // no specific validations for mcp endpoint
       return Validation.Valid.instance();
     } else {
       return validateComponent(typeDef);
@@ -62,8 +67,8 @@ public class Validations {
   /**
    * Validates that @Acl annotation is not used on non-endpoint components.
    *
-   * <p>@Acl is only allowed on classes annotated with @HttpEndpoint or @GrpcEndpoint, and on
-   * methods within such classes.
+   * <p>@Acl is only allowed on classes annotated with @HttpEndpoint, @GrpcEndpoint or @McpEndpoint,
+   * and on methods within such classes.
    *
    * @param typeDef the component class to validate
    * @return a Validation result indicating success or failure
@@ -75,8 +80,8 @@ public class Validations {
       errors.add(
           errorMessage(
               typeDef,
-              "@Acl annotation is only allowed on classes annotated with @HttpEndpoint or"
-                  + " @GrpcEndpoint."));
+              "@Acl annotation is only allowed on classes annotated with @HttpEndpoint,"
+                  + " @GrpcEndpoint or @McpEndpoint."));
     }
 
     for (MethodDef method : typeDef.getMethods()) {
@@ -85,7 +90,7 @@ public class Validations {
             errorMessage(
                 method,
                 "@Acl annotation is only allowed on methods of classes annotated with"
-                    + " @HttpEndpoint or @GrpcEndpoint."));
+                    + " @HttpEndpoint, @GrpcEndpoint or @McpEndpoint."));
       }
     }
 
@@ -95,8 +100,8 @@ public class Validations {
   /**
    * Validates that @JWT annotation is not used on non-endpoint components.
    *
-   * <p>@JWT is only allowed on classes annotated with @HttpEndpoint or @GrpcEndpoint, and on
-   * methods within such classes.
+   * <p>@JWT is only allowed on classes annotated with @HttpEndpoint, @GrpcEndpoint or @McpEndpoint,
+   * and on methods within such classes.
    *
    * @param typeDef the component class to validate
    * @return a Validation result indicating success or failure
@@ -108,8 +113,8 @@ public class Validations {
       errors.add(
           errorMessage(
               typeDef,
-              "@JWT annotation is only allowed on classes annotated with @HttpEndpoint or"
-                  + " @GrpcEndpoint."));
+              "@JWT annotation is only allowed on classes annotated with @HttpEndpoint,"
+                  + " @GrpcEndpoint or @McpEndpoint."));
     }
 
     for (MethodDef method : typeDef.getMethods()) {
@@ -118,7 +123,7 @@ public class Validations {
             errorMessage(
                 method,
                 "@JWT annotation is only allowed on methods of classes annotated with"
-                    + " @HttpEndpoint or @GrpcEndpoint."));
+                    + " @HttpEndpoint, @GrpcEndpoint or @McpEndpoint."));
       }
     }
 
