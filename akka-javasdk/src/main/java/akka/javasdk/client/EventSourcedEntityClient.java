@@ -7,6 +7,7 @@ package akka.javasdk.client;
 import akka.annotation.DoNotInherit;
 import akka.japi.function.Function;
 import akka.japi.function.Function2;
+import akka.javasdk.NotificationPublisher;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 
 /** Not for user extension */
@@ -25,4 +26,11 @@ public interface EventSourcedEntityClient {
    */
   <T, A1, R> ComponentMethodRef1<A1, R> method(
       Function2<T, A1, EventSourcedEntity.Effect<R>> methodRef);
+
+  /**
+   * Pass in an Event Sourced Entity notification stream getter method reference, e.g. {@code
+   * MyEntity::updates}
+   */
+  <T, R> ComponentStreamMethodRef<R> notificationStream(
+      Function<T, NotificationPublisher.NotificationStream<R>> methodRef);
 }
