@@ -36,6 +36,16 @@ You also have the option of enabling Cross-Origin Resource Sharing (CORS) for th
 
 Routes give you the ability to direct incoming traffic to a single hostname to more than one service. To manage this, you can use the `akka routes` command. Before you create a route, you need to provision a hostname.
 
+[IMPORTANT]
+====
+**Path Matching and Rewriting**
+
+When defining a route with a `prefix`, please note the following:
+* **No Path Rewriting:** Akka does not strip or rewrite the prefix before passing the request to your service. The service receives the full URI path exactly as the client sent it. For example, if you route `/serviceA` to a service, a request to `/serviceA/doStuff` arrives at the service as `/serviceA/doStuff`, not `/doStuff`.
+
+* **Literal Matching Only:** The `prefix` is matched as a literal string. Wildcards (e.g., `*` or `#`) are not supported and will be interpreted as literal characters.
+====
+
 ==== Provisioning a custom hostname
 
 If you want to provision a custom hostname, you first need to register it with your project. Only one project can use a given hostname. Let's say the hostname you want to register is called `ecommerce.acme.org`. To register a hostname, use the `akka project hostname add` command:
@@ -69,6 +79,11 @@ Let's assume you want to expose two HTTP services:
 
 . `shopping-cart`, which has an HTTP Endpoint with path `/carts`
 . `product-info`, which has an HTTP Endpoint with path `/product`
+
+[NOTE]
+====
+Because Akka does not perform path stripping, your service implementation must be aware of the full path defined in the route. If you map the prefix `/serviceA` to a service that internally expects `/doStuff`, the client must call `/serviceA/doStuff`, and the service must handle that full path.
+====
 
 Let's also assume that you want to name the route `acme-ecommerce`, and that the hostname you want to serve it at is `ecommerce.acme.org`, and that you've already added this hostname to the project following the instructions above.
 
