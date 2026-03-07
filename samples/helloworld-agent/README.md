@@ -83,3 +83,36 @@ akka service deploy helloworld-agent helloworld-agent:tag-name --push \
 ```
 
 Refer to [Deploy and manage services](https://doc.akka.io/operations/services/deploy-service.html) for more information.
+
+---
+
+## Spec-Driven Development (SDD)
+
+Spec-Driven Development (SDD) is an AI-assisted coding paradigm where structured, natural-language specifications serve as the executable source of truth. Instead of writing code directly, developers use tools like [GitHub Spec Kit](https://github.com/github/spec-kit) to define architectural intent and guide AI agents through a strict, multi-phase implementation pipeline. By iterating on these living specifications rather than the raw codebase, this project rapidly generates features while maintaining strict alignment with system constraints.
+
+### Setup
+
+Initialize Spec Kit commands in your project (requires Claude Code):
+
+```shell
+uvx --from git+https://github.com/github/spec-kit.git specify init . --ai claude
+```
+
+### Workflow Commands
+
+Use these `/speckit` commands in Claude Code to add new features to the application:
+
+* `/speckit.constitution` - Establish project principles
+* `/speckit.specify` - Create baseline specification
+* `/speckit.clarify` (optional) - Ask structured questions to de-risk ambiguous areas before planning (run before `/speckit.plan` if used)
+* `/speckit.plan` - Create implementation plan
+* `/speckit.tasks` - Generate actionable tasks
+* `/speckit.implement` - Execute implementation
+
+### Exercise: Re-implement from specs
+
+As an exercise, you can re-implement this application entirely from the specifications:
+
+1. Remove all source files: `rm -rf src/`
+2. Uncheck all tasks in `specs/001-hello-world-agent/tasks.md` (reset checkboxes to `- [ ]`)
+3. Run `/speckit.implement` in Claude Code to generate the implementation from the specs
