@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory
  * INTERNAL API
  */
 @InternalApi
-private[impl] object JsonSchema {
+private[javasdk] object JsonSchema {
 
   private val log = LoggerFactory.getLogger(getClass)
 
@@ -217,6 +217,54 @@ private[impl] object JsonSchema {
     }.toMap
     // All proto3 fields are always present (they have defaults)
     new JsonSchemaObject(description = description, properties = properties, required = fields.map(_.getName).sorted)
+  }
+
+  /**
+   * Render a JSON Schema string for the given class. Returns a standard JSON Schema object. Callable from Java.
+   */
+  def jsonSchemaStringFor(clazz: Class[_]): String = {
+    renderSchemaDataType(jsonSchemaFor(clazz), indent = 0)
+  }
+
+  private def renderSchemaDataType(dt: JsonSchemaDataType, indent: Int): String = {
+    val pad = "  " * indent
+    dt match {
+      case obj: JsonSchemaObject =>
+        if (obj.properties.isEmpty) {
+          s"""${pad}{ "type": "object" }"""
+        } else {
+          val propsStr = obj.properties
+            .map { case (name, propType) =>
+              s"""${pad}    "$name": ${renderSchemaDataType(propType, indent + 2).trim}"""
+            }
+            .mkString(",\n")
+          val reqStr = obj.required.map(r => s""""$r"""").mkString(", ")
+          val descStr = obj.description.map(d => s"""\n${pad}  "description": "$d",""").getOrElse("")
+          s"""|${pad}{
+              |${pad}  "type": "object",$descStr
+              |${pad}  "properties": {
+              |$propsStr
+              |${pad}  },
+              |${pad}  "required": [$reqStr]
+              |${pad}}""".stripMargin
+        }
+      case _: JsonSchemaString =>
+        val descStr = dt.description.map(d => s""", "description": "$d"""").getOrElse("")
+        s"""${pad}{ "type": "string"$descStr }"""
+      case _: JsonSchemaInteger =>
+        val descStr = dt.description.map(d => s""", "description": "$d"""").getOrElse("")
+        s"""${pad}{ "type": "integer"$descStr }"""
+      case _: JsonSchemaNumber =>
+        val descStr = dt.description.map(d => s""", "description": "$d"""").getOrElse("")
+        s"""${pad}{ "type": "number"$descStr }"""
+      case _: JsonSchemaBoolean =>
+        val descStr = dt.description.map(d => s""", "description": "$d"""").getOrElse("")
+        s"""${pad}{ "type": "boolean"$descStr }"""
+      case arr: JsonSchemaArray =>
+        val itemsStr = renderSchemaDataType(arr.items, indent + 1).trim
+        val descStr = arr.description.map(d => s""", "description": "$d"""").getOrElse("")
+        s"""${pad}{ "type": "array", "items": $itemsStr$descStr }"""
+    }
   }
 
 }

@@ -1,0 +1,20 @@
+## Brainstorm — emergent coordination via shared environment
+## Multiple ideators contribute to a shared idea board, then a curator selects the best.
+
+### Start a brainstorm session (spawns ideator agents)
+POST http://localhost:9000/brainstorm
+Content-Type: application/json
+
+{"topic": "Innovative ways to reduce food waste in urban restaurants", "numIdeators": 3}
+
+### Check the idea board (replace boardId from above)
+GET http://localhost:9000/brainstorm/{{boardId}}/board
+
+### Trigger curation (after ideators finish — check board to see ideator status)
+POST http://localhost:9000/brainstorm/{{boardId}}/curate
+
+### Check curator result (replace taskId from curate response)
+GET http://localhost:9000/brainstorm/task/{{taskId}}
+
+### Check individual ideator task (replace taskId from start response)
+GET http://localhost:9000/brainstorm/task/{{taskId}}

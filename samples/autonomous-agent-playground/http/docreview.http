@@ -1,0 +1,16 @@
+## Document Review — multi-modal content attachment
+## Demonstrates attaching document content to a task. The LLM reviews the
+## actual document text, not just a description. For PDFs or images, use
+## PdfMessageContent/ImageMessageContent with a ContentLoader on the agent.
+
+### Submit a contract for compliance review
+POST http://localhost:9000/docreview
+Content-Type: application/json
+
+{
+  "document": "SERVICES AGREEMENT\n\n1. PARTIES: Acme Corp (Provider) and Widget Inc (Client)\n2. TERM: January 1 2025 through December 31 2025\n3. SERVICES: Provider shall deliver consulting services as described in Exhibit A\n4. COMPENSATION: Client shall pay Provider USD 150,000 in monthly installments\n5. CONFIDENTIALITY: Both parties agree to maintain confidentiality of proprietary information\n6. TERMINATION: Either party may terminate with 30 days written notice\n7. LIABILITY: Provider liability shall not exceed total fees paid under this agreement\n8. GOVERNING LAW: This agreement shall be governed by the laws of Delaware\n\nSigned: _______________  Date: _______________",
+  "reviewInstructions": "Review this contract for compliance. Check for proper terms, liability clauses, and confidentiality provisions."
+}
+
+### Check review status (replace with id from above)
+GET http://localhost:9000/docreview/{{id}}

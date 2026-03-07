@@ -1,0 +1,11 @@
+## Dev Team — collaborative team with shared task list
+## Team lead forms a team, creates tasks, developers claim and complete them.
+
+### Start a project
+POST http://localhost:9000/projects
+Content-Type: application/json
+
+{"description": "Build a REST API for a todo list application with CRUD operations"}
+
+### Check project status (replace with id from above)
+GET http://localhost:9000/projects/{{id}}

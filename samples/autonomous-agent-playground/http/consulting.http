@@ -1,0 +1,17 @@
+## Consulting Engagement — delegation + handoff composition
+## Coordinator delegates research subtasks and escalates complex problems.
+
+### Submit a standard consulting request (delegation)
+POST http://localhost:9000/consulting
+Content-Type: application/json
+
+{"problem": "Our customer acquisition cost has increased 40% year-over-year"}
+
+### Submit a complex request that triggers escalation (handoff)
+POST http://localhost:9000/consulting
+Content-Type: application/json
+
+{"problem": "We need to navigate regulatory compliance for a cross-border merger"}
+
+### Check consulting status (replace with id from above)
+GET http://localhost:9000/consulting/{{id}}
