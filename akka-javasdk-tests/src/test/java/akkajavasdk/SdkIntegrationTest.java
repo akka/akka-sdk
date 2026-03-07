@@ -19,6 +19,7 @@ import akkajavasdk.components.actions.echo.EchoAction;
 import akkajavasdk.components.actions.hierarchy.HierarchyTimed;
 import akkajavasdk.components.eventsourcedentities.counter.Counter;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEntity;
+import akkajavasdk.components.eventsourcedentities.counter.CounterEntityWithNotifications;
 import akkajavasdk.components.keyvalueentities.customer.CustomerEntity;
 import akkajavasdk.components.keyvalueentities.user.ProdCounterEntity;
 import akkajavasdk.components.keyvalueentities.user.StageCounterEntity;
@@ -29,6 +30,7 @@ import akkajavasdk.components.keyvalueentities.user.UserSideEffect;
 import akkajavasdk.components.views.counter.CountersByValue;
 import akkajavasdk.components.views.customer.CustomerByCreationTime;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -474,6 +476,35 @@ public class SdkIntegrationTest extends TestKitSupport {
                 .method(CustomerByCreationTime::getCustomerByTime)
                 .invokeAsync(new CustomerByCreationTime.QueryParameters(createdOn)))
         .customers();
+  }
+
+  @Test
+  public void shouldNotifyAboutESEntityChanges() {
+    var counterId = "notify-counter-" + System.nanoTime();
+    var notifications = new ArrayList<String>();
+
+    componentClient
+        .forEventSourcedEntity(counterId)
+        .notificationStream(CounterEntityWithNotifications::updates)
+        .source()
+        .runForeach(notifications::add, testKit.getMaterializer());
+
+    Integer result =
+        await(
+            componentClient
+                .forEventSourcedEntity(counterId)
+                .method(CounterEntityWithNotifications::increase)
+                .invokeAsync(10));
+
+    assertThat(result).isEqualTo(10);
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(20, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              assertThat(notifications).contains("counter increased to 10");
+            });
   }
 
   private void deleteUser(TestUser user) {

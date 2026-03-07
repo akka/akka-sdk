@@ -185,6 +185,24 @@ private[javasdk] final case class EventSourcedEntityClientImpl(
   override def method[T, A1, R](
       methodRef: function.Function2[T, A1, EventSourcedEntity.Effect[R]]): ComponentMethodRef1[A1, R] =
     createMethodRef2(methodRef)
+
+  override def notificationStream[T, R](
+      methodRef: function.Function[T, NotificationStream[R]]): ComponentStreamMethodRef[R] = {
+    val method = MethodRefResolver.resolveMethodRef(methodRef)
+    val expectedComponentSuperclass = classOf[EventSourcedEntity[_, _]]
+    val declaringClass = method.getDeclaringClass
+    if (!expectedComponentSuperclass.isAssignableFrom(declaringClass)) {
+      throw new IllegalArgumentException(s"$declaringClass is not a subclass of $expectedComponentSuperclass")
+    }
+    val componentId = ComponentDescriptorFactory.readComponentIdValue(declaringClass)
+    val returnType = Reflect.getReturnType(declaringClass, method)
+    val req = new EntityRequest(componentId, entityId, "", BytesPayload.empty, SpiMetadata.empty)
+    () =>
+      entityClient
+        .notificationStream(req)
+        .map(reply => serializer.fromBytes[R](returnType, reply.payload))
+        .asJava
+  }
 }
 
 /**
