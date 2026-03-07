@@ -126,6 +126,33 @@ include::sdk:example$event-sourced-customer-registry-subscriber/src/main/resourc
 
 With both services configured, we can start them independently by running `mvn compile exec:java` in two separate terminals.
 
+== Invoking cloud based services from local services
+
+Sometimes, when developing services locally that depend on other services, rather than running those services locally as well, it's more convenient to use instances of those services running in the cloud. Akka allows this through its backoffice proxy. The cloud services do not need to be exposed to the internet, rather, requests are forwarded through a proxy that authenticates and authorizes developers using their Akka platform credentials.
+
+To do this, you will need to have the xref:operations:cli/index.adoc[Akka CLI] installed on your path, and be logged in with the backoffice or admin role on the project you wish to use. Alternatively, if the Akka CLI is not installed, the `AKKA_REFRESH_TOKEN` environment variable can be set with a valid refresh or service token.
+
+Backoffice services can be configured in `src/main/resources/application.conf`, by specifying the project that the services run in:
+
+[source,json,indent=0]
+----
+include::sdk:example$doc-snippets/src/main/resources/application.conf[tags=backoffice-service-configuration]
+----
+
+With the above configuration, all calls made to `my-service-a` and `my-service-b` from your locally running service will be proxied to the project `my-akka-project` hosted in the cloud. This includes invoking other services using the xref:http-endpoints.adoc#http_client_provider[HTTP client provider] or gRPC client provider, consuming events from xref:consuming-producing.adoc#s2s-eventing[Service to Service Eventing] producers hosted in other services, and invoking xref:mcp-endpoints.adoc[MCP Endpoints] hosted in other services.
+
+Other configuration options are shown here:
+
+[source,json,indent=0]
+----
+include::sdk:example$doc-snippets/src/main/resources/application.conf[tags=backoffice-service-configuration-custom]
+----
+
+* `project` - This can either be the project UUID, or the project name.
+* `organization` - This is usually not necessary, however if you ar referring to the project by its name, and you are a member of two organizations that have projects with that same name, this will be used to disambiguate them. Either an organization UUID or an organization name can be set here.
+* `service-name` - Can be used if you wish to use a service with a different name running in the cloud to the one referenced from your locally running service.
+* `region` - If you have a multi-region project, and you don't want to use the primary region, this can be used to select the region.
+
 [#local_cluster]
 == Running a local cluster
 
