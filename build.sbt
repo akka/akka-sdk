@@ -24,6 +24,7 @@ lazy val `akka-javasdk-root` = project
     akkaJavaSdk,
     akkaJavaSdkTestKit,
     akkaJavaSdkTests,
+    akkaRuntimeDependencyEnforcer,
     akkaJavaSdkParent)
   // samplesCompilationProject and annotationProcessorTestProject are composite project
   // to aggregate them we need to map over them
@@ -142,6 +143,22 @@ lazy val annotationProcessorTestProject: CompositeProject =
           "-Aakka.javasdk.groupId=com.example",
           "-Aakka.javasdk.artifactId=test"))
   }
+
+lazy val akkaRuntimeDependencyEnforcer =
+  Project(id = "akka-runtime-dependency-enforcer", base = file("akka-runtime-dependency-enforcer"))
+    .enablePlugins(Publish)
+    .disablePlugins(CiReleasePlugin)
+    .settings(
+      name := "akka-runtime-dependency-enforcer",
+      crossPaths := false,
+      autoScalaLibrary := false, // pure Java, no Scala dependency
+      Compile / javacOptions ++= Seq("-encoding", "UTF-8", "--release", "11"),
+      libraryDependencies ++= Seq(
+        "org.apache.maven.enforcer" % "enforcer-api" % "3.5.0" % Provided,
+        "org.apache.maven" % "maven-core" % "3.9.9" % Provided,
+        "javax.inject" % "javax.inject" % "1" % Provided,
+        Dependencies.junit5 % Test,
+        "net.aichler" % "jupiter-interface" % net.aichler.jupiter.sbt.Import.JupiterKeys.jupiterVersion.value % Test))
 
 lazy val akkaJavaSdkParent =
   Project(id = "akka-javasdk-parent", base = file("akka-javasdk-parent"))

@@ -412,6 +412,40 @@
                 <artifactId>docker-maven-plugin</artifactId>
             </plugin>
 
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.5.0</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>io.akka</groupId>
+                        <artifactId>akka-runtime-dependency-enforcer</artifactId>
+                        <version>${akka-javasdk.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.akka</groupId>
+                        <artifactId>akka-runtime-dependencies</artifactId>
+                        <version>${akka-runtime.version}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>check-runtime-dependency-conflicts</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <akkaRuntimeDependencyCheck>
+                                    <failOnConflict>true</failOnConflict>
+                                    <versionStrictness>newer-only</versionStrictness>
+                                </akkaRuntimeDependencyCheck>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
     </build>
 
