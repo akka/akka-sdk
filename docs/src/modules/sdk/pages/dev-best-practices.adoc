@@ -48,6 +48,15 @@ Deciding how many components and concepts to fit into a single service can be co
 - *You gain security*. Services serve as a security boundary both in your system overall and between teams.
 - *You get granular visibility into costs*. Services are all billed separately, so it's easier to see and understand costs and billing on a per-service basis if you break your services up in some way that matches your organizational needs overall.
 
+=== Payload and state size
+
+When designing your entity state and the messages (commands and events) that flow between services, you must account for the platform's resource limits.
+
+* **Maximum Payload Size**: Individual requests and responses, as well as entity states and events, can generally have a payload size up to **12 MB**.
+* **Entity Latency & Throughput**: While the hard limit is higher, requests and responses specifically targetting or coming from entities should stay below **500 KB**. 
+
+Exceeding these "soft" limits for entities can lead to increased latency and memory pressure, as these payloads are frequently serialized and transmitted across the managed cluster. If you need to associate large assets (like images or large documents) with an entity, the best practice is to store the asset in an external blob store and keep only the reference (URL/ID) in the Akka entity state.
+
 [#message-deduplication]
 == Message deduplication
 
