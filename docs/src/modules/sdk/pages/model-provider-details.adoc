@@ -222,6 +222,14 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Bedrock.html[`Mod
 | String
 | Control thinking for Gemini 3 models, exact values depend on the specific model chosen, must be empty for 2.5 models. See Google Gemini docs for more details: https://ai.google.dev/gemini-api/docs/thinking#thinking-levels
 
+| media-resolution
+| String
+| Defines the level for media resolution. Possible values: `MEDIA_RESOLUTION_UNSPECIFIED`, `MEDIA_RESOLUTION_LOW`, `MEDIA_RESOLUTION_MEDIUM`, `MEDIA_RESOLUTION_HIGH`, `MEDIA_RESOLUTION_ULTRA_HIGH`. See https://ai.google.dev/gemini-api/docs/media-resolution for details
+
+| media-resolution-per-part-enabled
+| Boolean
+| When enabled, allows setting media resolution for individual media objects (like images) within your request
+
 | additional-model-request-headers
 | List of String
 | List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. Can also be set via `ADDITIONAL_GOOGLE_AI_GEMINI_REQUEST_HEADERS_N` environment variables.
