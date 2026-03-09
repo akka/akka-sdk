@@ -652,7 +652,9 @@ private[impl] final class AgentImpl[A <: Agent](
             p.maxRetries(),
             p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq),
           p.thinkingBudget.toScala.map(_.intValue()),
-          p.thinkingLevel)
+          p.thinkingLevel,
+          p.mediaResolution(),
+          p.mediaResolutionPerPartEnabled())
       case p: ModelProvider.HuggingFace =>
         new SpiAgent.ModelProvider.HuggingFace(
           p.accessToken(),

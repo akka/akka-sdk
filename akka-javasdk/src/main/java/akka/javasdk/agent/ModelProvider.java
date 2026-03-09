@@ -347,6 +347,8 @@ public sealed interface ModelProvider {
         "",
         Optional.empty(),
         "",
+        "MEDIA_RESOLUTION_UNSPECIFIED",
+        false,
         List.of());
   }
 
@@ -363,6 +365,8 @@ public sealed interface ModelProvider {
       String baseUrl,
       Optional<Integer> thinkingBudget,
       String thinkingLevel,
+      String mediaResolution,
+      Boolean mediaResolutionPerPartEnabled,
       /** Additional HTTP headers to include in each request to the model API */
       List<HttpHeader> additionalModelRequestHeaders)
       implements ModelProvider {
@@ -393,6 +397,8 @@ public sealed interface ModelProvider {
           "",
           Optional.empty(),
           "",
+          "MEDIA_RESOLUTION_UNSPECIFIED",
+          false,
           List.of());
     }
 
@@ -413,6 +419,8 @@ public sealed interface ModelProvider {
           config.getString("base-url"),
           thinkingBudget,
           config.getString("thinking-level"),
+          config.getString("media-resolution"),
+          config.getBoolean("media-resolution-per-part-enabled"),
           headersFromConfig(config));
     }
 
@@ -429,6 +437,8 @@ public sealed interface ModelProvider {
           baseUrl,
           thinkingBudget,
           thinkingLevel,
+          mediaResolution,
+          mediaResolutionPerPartEnabled,
           additionalModelRequestHeaders);
     }
 
@@ -445,6 +455,8 @@ public sealed interface ModelProvider {
           baseUrl,
           thinkingBudget,
           thinkingLevel,
+          mediaResolution,
+          mediaResolutionPerPartEnabled,
           additionalModelRequestHeaders);
     }
 
@@ -461,6 +473,8 @@ public sealed interface ModelProvider {
           baseUrl,
           thinkingBudget,
           thinkingLevel,
+          mediaResolution,
+          mediaResolutionPerPartEnabled,
           additionalModelRequestHeaders);
     }
 
@@ -477,6 +491,8 @@ public sealed interface ModelProvider {
           baseUrl,
           thinkingBudget,
           thinkingLevel,
+          mediaResolution,
+          mediaResolutionPerPartEnabled,
           additionalModelRequestHeaders);
     }
 
@@ -493,6 +509,8 @@ public sealed interface ModelProvider {
           baseUrl,
           thinkingBudget,
           thinkingLevel,
+          mediaResolution,
+          mediaResolutionPerPartEnabled,
           additionalModelRequestHeaders);
     }
 
@@ -509,6 +527,8 @@ public sealed interface ModelProvider {
           baseUrl,
           thinkingBudget,
           thinkingLevel,
+          mediaResolution,
+          mediaResolutionPerPartEnabled,
           additionalModelRequestHeaders);
     }
 
@@ -525,6 +545,8 @@ public sealed interface ModelProvider {
           baseUrl,
           thinkingBudget,
           thinkingLevel,
+          mediaResolution,
+          mediaResolutionPerPartEnabled,
           additionalModelRequestHeaders);
     }
 
@@ -541,6 +563,8 @@ public sealed interface ModelProvider {
           baseUrl,
           thinkingBudget,
           thinkingLevel,
+          mediaResolution,
+          mediaResolutionPerPartEnabled,
           additionalModelRequestHeaders);
     }
 
@@ -557,6 +581,8 @@ public sealed interface ModelProvider {
           baseUrl,
           thinkingBudget,
           thinkingLevel,
+          mediaResolution,
+          mediaResolutionPerPartEnabled,
           additionalModelRequestHeaders);
     }
 
@@ -573,6 +599,8 @@ public sealed interface ModelProvider {
           baseUrl,
           thinkingBudget,
           thinkingLevel,
+          mediaResolution,
+          mediaResolutionPerPartEnabled,
           additionalModelRequestHeaders);
     }
 
@@ -589,6 +617,8 @@ public sealed interface ModelProvider {
           baseUrl,
           thinkingBudget,
           thinkingLevel,
+          mediaResolution,
+          mediaResolutionPerPartEnabled,
           additionalModelRequestHeaders);
     }
 
@@ -606,6 +636,8 @@ public sealed interface ModelProvider {
           baseUrl,
           thinkingBudget,
           thinkingLevel,
+          mediaResolution,
+          mediaResolutionPerPartEnabled,
           additionalModelRequestHeaders);
     }
   }
