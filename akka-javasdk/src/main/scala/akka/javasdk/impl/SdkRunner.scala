@@ -111,6 +111,7 @@ import akka.runtime.sdk.spi.McpEndpointConstructionContext
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.RemoteIdentification
 import akka.runtime.sdk.spi.SpiAgent
+import akka.runtime.sdk.spi.SpiBackofficeSettings
 import akka.runtime.sdk.spi.SpiComponents
 import akka.runtime.sdk.spi.SpiConfiguredGuardrail
 import akka.runtime.sdk.spi.SpiDeployedEventingSettings
@@ -176,7 +177,8 @@ object SdkRunner {
             eventingSupport = extractBrokerConfig(applicationConf.getConfig("akka.javasdk.dev-mode.eventing")),
             mockedEventing = SpiMockedEventingSettings.empty,
             testSetting = new SpiTestSettings(testMode = false, debugTracing = false),
-            selfServiceName = None))
+            selfServiceName = None,
+            backoffice = new SpiBackofficeSettings("", "", Map.empty)))
       else
         None
 
