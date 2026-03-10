@@ -440,6 +440,14 @@
                                     <failOnConflict>true</failOnConflict>
                                     <versionStrictness>newer-only</versionStrictness>
                                 </akkaRuntimeDependencyCheck>
+                                <requireMavenVersion>
+                                    <version>[3.9.0,)</version>
+                                    <message>You must use Maven 3.9.0 or higher to build this project! See https://doc.akka.io/getting-started/starthere.html</message>
+                                </requireMavenVersion>
+                                <requireJavaVersion>
+                                    <version>[21,)</version>
+                                    <message>This project requires Java 21 or higher! See https://doc.akka.io/getting-started/starthere.html</message>
+                                </requireJavaVersion>
                             </rules>
                         </configuration>
                     </execution>
