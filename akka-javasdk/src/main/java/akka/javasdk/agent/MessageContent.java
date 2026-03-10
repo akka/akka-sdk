@@ -116,6 +116,10 @@ public sealed interface MessageContent {
      *
      * <p>The detail level affects both the quality of image analysis and the number of tokens
      * consumed by the AI model.
+     *
+     * <p>Some models might require additional configuration to actually apply this detail level.
+     * For example, when using Gemini, per-part image resolution must be enabled via the {@code
+     * akka.javasdk.agent.google-ai-gemini.media-resolution-per-part-enabled} setting.
      */
     public enum DetailLevel {
       /** Lower resolution processing, faster and uses fewer tokens. */
