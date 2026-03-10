@@ -13,7 +13,7 @@ Current versions
 == March 2026
 
 * Akka CLI 3.0.49
-- Support for Speckit driven development using `akka specify`
+- Support for Spec Kit driven development using `akka specify`
 
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.15[Akka SDK 3.5.15]
 - PDF documents support in Agent user message
