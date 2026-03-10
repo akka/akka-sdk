@@ -2,7 +2,7 @@
  * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.enforcer;
+package akka.javasdk.enforcer;
 
 import static org.junit.jupiter.api.Assertions.*;
 

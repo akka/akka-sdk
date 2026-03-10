@@ -2,7 +2,7 @@
  * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.enforcer;
+package akka.javasdk.enforcer;
 
 import org.apache.maven.artifact.versioning.ComparableVersion;
 

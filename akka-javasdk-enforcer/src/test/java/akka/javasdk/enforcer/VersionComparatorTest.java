@@ -2,12 +2,11 @@
  * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.enforcer;
+package akka.javasdk.enforcer;
 
-import static akka.enforcer.VersionComparator.*;
-import static akka.enforcer.VersionComparator.Direction.*;
-import static akka.enforcer.VersionComparator.Strictness.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static akka.javasdk.enforcer.VersionComparator.*;
+import static akka.javasdk.enforcer.VersionComparator.Direction.*;
+import static akka.javasdk.enforcer.VersionComparator.Strictness.*;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

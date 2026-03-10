@@ -419,7 +419,7 @@
                 <dependencies>
                     <dependency>
                         <groupId>io.akka</groupId>
-                        <artifactId>akka-runtime-dependency-enforcer</artifactId>
+                        <artifactId>akka-javasdk-enforcer</artifactId>
                         <version>${akka-javasdk.version}</version>
                     </dependency>
                     <dependency>
@@ -430,7 +430,7 @@
                 </dependencies>
                 <executions>
                     <execution>
-                        <id>check-runtime-dependency-conflicts</id>
+                        <id>enforce-build-rules</id>
                         <goals>
                             <goal>enforce</goal>
                         </goals>

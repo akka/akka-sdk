@@ -1,4 +1,4 @@
-# Akka Runtime Dependency Enforcer
+# Akka SDK Enforcer
 
 A custom Maven Enforcer rule that detects dependency version conflicts between user applications and the Akka runtime at build time, before deployment to the platform.
 
@@ -18,18 +18,18 @@ This project is one piece of a three-part solution:
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  1. akka-runtime build (sbt)                                    │
+│  1. akka-runtime build (sbt)                                     │
 │                                                                  │
 │  runtime-core ──── all runtime dependencies declared here        │
 │       │                                                          │
 │  runtime-dependencies ──── depends on runtime-core               │
-│       │                     resolves its full dependency tree     │
-│       │                     generates properties manifest        │
-│       ▼                     publishes as akka-runtime-dependencies│
+│       │                    resolves its full dependency tree     │
+│       │                    generates properties manifest         │
+│       ▼                    publishes as akka-runtime-dependencies│
 │  META-INF/akka-runtime-dependencies.properties                   │
 │    com.google.guava%guava=33.5.0-jre                             │
 │    com.fasterxml.jackson.core%jackson-databind=2.18.3            │
-│    io.grpc:grpc-api=1.72.0                                      │
+│    io.grpc:grpc-api=1.72.0                                       │
 │    ...                                                           │
 └──────────────────────────────────────────────────────────────────┘
                               │
@@ -37,14 +37,14 @@ This project is one piece of a three-part solution:
                               │ the properties file, no transitive deps)
                               ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│  2. akka-runtime-dependency-enforcer (this project)                      │
+│  2. akka-javasdk-enforcer (this project)                         │
 │                                                                  │
 │  AkkaRuntimeDependencyRule                                       │
-│    - loads the manifest from the plugin classpath                 │
-│    - walks the application's resolved dependency tree             │
-│    - compares versions using Maven's ComparableVersion            │
+│    - loads the manifest from the plugin classpath                │
+│    - walks the application's resolved dependency tree            │
+│    - compares versions using Maven's ComparableVersion           │
 │    - reports conflicts as errors or warnings                     │
-│    - configurable strictness and excludes                         │
+│    - configurable strictness and excludes                        │
 └──────────────────────────────────────────────────────────────────┘
                               │
                               │ wired into the parent POM so every
@@ -56,8 +56,8 @@ This project is one piece of a three-part solution:
 │  <plugin>                                                        │
 │    maven-enforcer-plugin                                         │
 │    <dependencies>                                                │
-│      akka-runtime-dependency-enforcer        ← the rule                  │
-│      akka-runtime-dependencies  ← the manifest              │
+│      akka-javasdk-enforcer      ← the rule                       │
+│      akka-runtime-dependencies  ← the manifest                   │
 │    </dependencies>                                               │
 │    <rules>                                                       │
 │      <akkaRuntimeDependencyCheck>                                │

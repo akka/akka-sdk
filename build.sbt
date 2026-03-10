@@ -24,7 +24,7 @@ lazy val `akka-javasdk-root` = project
     akkaJavaSdk,
     akkaJavaSdkTestKit,
     akkaJavaSdkTests,
-    akkaRuntimeDependencyEnforcer,
+    akkaJavaSdkEnforcer,
     akkaJavaSdkParent)
   // samplesCompilationProject and annotationProcessorTestProject are composite project
   // to aggregate them we need to map over them
@@ -144,12 +144,12 @@ lazy val annotationProcessorTestProject: CompositeProject =
           "-Aakka.javasdk.artifactId=test"))
   }
 
-lazy val akkaRuntimeDependencyEnforcer =
-  Project(id = "akka-runtime-dependency-enforcer", base = file("akka-runtime-dependency-enforcer"))
+lazy val akkaJavaSdkEnforcer =
+  Project(id = "akka-javasdk-enforcer", base = file("akka-javasdk-enforcer"))
     .enablePlugins(Publish)
     .disablePlugins(CiReleasePlugin)
     .settings(
-      name := "akka-runtime-dependency-enforcer",
+      name := "akka-javasdk-enforcer",
       crossPaths := false,
       autoScalaLibrary := false, // pure Java, no Scala dependency
       Compile / javacOptions ++= Seq("-encoding", "UTF-8", "--release", "11"),
