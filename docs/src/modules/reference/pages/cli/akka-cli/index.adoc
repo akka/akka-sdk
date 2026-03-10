@@ -300,6 +300,7 @@ The xref:reference:cli/akka-cli/akka_secrets.adoc[akka secret] command includes 
 * xref:reference:cli/akka-cli/akka_secrets_external_create.adoc[akka secrets external create]
 * xref:reference:cli/akka-cli/akka_secrets_external_create_aws.adoc[akka secrets external create aws]
 * xref:reference:cli/akka-cli/akka_secrets_external_create_azure.adoc[akka secrets external create azure]
+* xref:reference:cli/akka-cli/akka_secrets_external_create_gcp.adoc[akka secrets external create gcp]
 * xref:reference:cli/akka-cli/akka_secrets_external_delete.adoc[akka secrets external delete]
 * xref:reference:cli/akka-cli/akka_secrets_external_get.adoc[akka secrets external get]
 * xref:reference:cli/akka-cli/akka_secrets_external_info.adoc[akka secrets external info]
@@ -307,6 +308,7 @@ The xref:reference:cli/akka-cli/akka_secrets.adoc[akka secret] command includes 
 * xref:reference:cli/akka-cli/akka_secrets_external_update.adoc[akka secrets external update]
 * xref:reference:cli/akka-cli/akka_secrets_external_update_aws.adoc[akka secrets external update aws]
 * xref:reference:cli/akka-cli/akka_secrets_external_update_azure.adoc[akka secrets external update azure]
+* xref:reference:cli/akka-cli/akka_secrets_external_update_gcp.adoc[akka secrets external update gcp]
 * xref:reference:cli/akka-cli/akka_secrets_get.adoc[akka secrets get]
 * xref:reference:cli/akka-cli/akka_secrets_list.adoc[akka secrets list]
 
@@ -391,6 +393,9 @@ The xref:reference:cli/akka-cli/akka_local.adoc[akka local] command includes the
 * xref:reference:cli/akka-cli/akka_local_services_views_drop.adoc[akka local services views drop]
 * xref:reference:cli/akka-cli/akka_local_services_views_get-state.adoc[akka local services views get-state]
 * xref:reference:cli/akka-cli/akka_local_services_views_list.adoc[akka local services views list]
+* xref:reference:cli/akka-cli/akka_local_start.adoc[akka local start]
+* xref:reference:cli/akka-cli/akka_local_status.adoc[akka local status]
+* xref:reference:cli/akka-cli/akka_local_stop.adoc[akka local stop]
 
 == Display version
 The `akka version` commands allow you to display the CLI version. The detail are available in xref:reference:cli/akka-cli/akka_version.adoc[akka version].

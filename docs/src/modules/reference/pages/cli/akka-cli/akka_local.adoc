@@ -35,6 +35,9 @@ The `akka local` commands help with local development by providing ways to inter
 * link:akka_local_console.html[akka local console]	 - Start the Akka local console.
 * link:akka_local_remote.html[akka local remote]	 - Manage remote Akka services.
 * link:akka_local_services.html[akka local services]	 - Manage Akka services locally.
+* link:akka_local_start.html[akka local start]	 - Start the local development environment in background mode (no TUI).
+* link:akka_local_status.html[akka local status]	 - Show status of the local development environment.
+* link:akka_local_stop.html[akka local stop]	 - Stop the local development environment daemon.
 
 [discrete]
 

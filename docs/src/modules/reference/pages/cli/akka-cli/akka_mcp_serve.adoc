@@ -1,15 +1,35 @@
-= akka secrets external update
+= akka mcp serve
 
-Update an external secret in the current project.
+Start the MCP server.
 
 == Synopsis
 
-The `akka secrets external update` command updates an external secret in the currently configured project.
+Start an MCP server that exposes Akka CLI operations as MCP tools.
+
+By default, the server uses stdio transport for IDE integration (Claude Desktop, VS Code, Cursor).
+All toolsets are enabled by default.
+
+Configure in Claude Desktop or VS Code:
+
+{     "mcpServers": {       "akka": {         "command": "akka",         "args": ["mcp", "serve"]       }     }   }
+
+----
+akka mcp serve [flags]
+----
+
+== Examples
+
+----
+  akka mcp serve                              # all toolsets, stdio
+  akka mcp serve --toolsets projects,services  # only these toolsets
+  akka mcp serve --toolsets all                # explicitly enable all
+----
 
 == Options
 
 ----
-  -h, --help   help for update
+  -h, --help              help for serve
+      --toolsets string   Comma-separated list of toolsets to enable (default: all). Available: projects, services, routes, descriptor, sdd, local, build
 ----
 
 == Options inherited from parent commands
@@ -30,10 +50,7 @@ The `akka secrets external update` command updates an external secret in the cur
 
 == SEE ALSO
 
-* link:akka_secrets_external.html[akka secrets external]	 - Manage external secrets for an Akka project.
-* link:akka_secrets_external_update_aws.html[akka secrets external update aws]	 - Update an AWS external secret in the current project.
-* link:akka_secrets_external_update_azure.html[akka secrets external update azure]	 - Update an Azure KeyVault external secret in the current project.
-* link:akka_secrets_external_update_gcp.html[akka secrets external update gcp]	 - Update a GCP external secret in the current project.
+* link:akka_mcp.html[akka mcp]	 - MCP server for AI agent integration.
 
 [discrete]
 
