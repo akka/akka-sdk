@@ -103,6 +103,9 @@ private[javasdk] final class KeyValueEntityEffectImpl[S]
     this.asInstanceOf[KeyValueEntityEffectImpl[T]]
   }
 
+  override def thenReply[T](replySupplier: java.util.function.Supplier[T]): KeyValueEntityEffectImpl[T] =
+    thenReply(replySupplier.get())
+
   override def updateReplicationFilter(filter: ReplicationFilter.Builder): OnSuccessBuilder[S] = {
     _replicationFilter = filter
     this

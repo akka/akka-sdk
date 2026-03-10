@@ -479,7 +479,7 @@ public class SdkIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldNotifyAboutESEntityChanges() {
-    var counterId = "notify-counter-" + System.nanoTime();
+    var counterId = "notify-es-counter-" + System.nanoTime();
     var notifications = new ArrayList<String>();
 
     componentClient
@@ -503,6 +503,35 @@ public class SdkIntegrationTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               assertThat(notifications).contains("counter increased to 10");
+            });
+  }
+
+  @Test
+  public void shouldNotifyAboutKVEntityChanges() {
+    var counterId = "notify-kv-counter-" + System.nanoTime();
+    var notifications = new ArrayList<String>();
+
+    componentClient
+        .forKeyValueEntity(counterId)
+        .notificationStream(TestCounterEntity::updates)
+        .source()
+        .runForeach(notifications::add, testKit.getMaterializer());
+
+    Integer result =
+        await(
+            componentClient
+                .forKeyValueEntity(counterId)
+                .method(TestCounterEntity::increase)
+                .invokeAsync(10));
+
+    assertThat(result).isEqualTo(110);
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(20, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              assertThat(notifications).contains("counter set to 110");
             });
   }
 
