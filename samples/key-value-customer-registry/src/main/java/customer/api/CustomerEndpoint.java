@@ -1,7 +1,6 @@
 package customer.api;
 
 import akka.NotUsed;
-import akka.actor.Cancellable;
 import akka.http.javadsl.model.ContentTypes;
 import akka.http.javadsl.model.HttpEntities;
 import akka.http.javadsl.model.HttpResponse;
@@ -32,10 +31,8 @@ import customer.application.CustomersByName;
 import customer.application.CustomersListByName;
 import customer.domain.Address;
 import customer.domain.Customer;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 // Opened up for access from the public internet to make the sample service easy to try out.
 // For actual services meant for production this must be carefully considered, and often set more limited
@@ -149,63 +146,22 @@ public class CustomerEndpoint extends AbstractHttpEndpoint {
   // end::sse-view-updates[]
 
   // tag::sse-customer-changes[]
-  private record CustomerStreamState(Optional<Customer> customer, boolean isSame) {}
-
   @Get("/stream-customer-changes/{customerId}")
   public HttpResponse streamCustomerChanges(String customerId) {
-    Source<Customer, Cancellable> stateEvery5Seconds =
-      // stream of ticks, one immediately, then one every five seconds
-      Source.tick(Duration.ZERO, Duration.ofSeconds(5), "tick") // <1>
-        // for each tick, request the entity state
-        .mapAsync(
-          1,
-          __ ->
-            // Note: not safe to turn this into `.invoke()` in a stream `.map()`
-            componentClient
-              .forKeyValueEntity(customerId)
-              .method(CustomerEntity::getCustomer)
-              .invokeAsync()
-              .handle((Customer customer, Throwable error) -> {
-                if (error == null) {
-                  return Optional.of(customer);
-                } else if (error instanceof IllegalArgumentException) {
-                  // calling getCustomer throws IllegalArgument if the customer does not exist
-                  // we want the stream to continue polling in that case,
-                  // so turn it into an empty optional
-                  return Optional.<Customer>empty();
-                } else {
-                  throw new RuntimeException(
-                    "Unexpected error polling customer state",
-                    error
-                  );
-                }
-              })
-        )
-        // then filter out the empty optionals and return the actual
-        // customer states for nonempty so that the stream contains only Customer elements
-        .filter(Optional::isPresent)
-        .map(Optional::get);
+    var currentState = componentClient
+      .forKeyValueEntity(customerId)
+      .method(CustomerEntity::getCustomer)
+      .invoke(); // <1>
 
-    // deduplicate, so that we don't emit if the state did not change from last time
-    Source<Customer, Cancellable> streamOfChanges = stateEvery5Seconds // <2>
-      .scan(
-        new CustomerStreamState(Optional.empty(), true),
-        (state, newCustomer) ->
-          new CustomerStreamState(
-            Optional.of(newCustomer),
-            state.customer.isPresent() && state.customer.get().equals(newCustomer)
-          )
-      )
-      .filterNot(state -> state.isSame || state.customer.isEmpty())
-      .map(state -> state.customer.get());
+    var notifications = componentClient
+      .forKeyValueEntity(customerId)
+      .notificationStream(CustomerEntity::updates)
+      .source();
 
-    // now turn each changed internal state representation into public API representation,
-    // just like get endpoint above
-    Source<ApiCustomer, Cancellable> streamOfChangesAsApiType = // <3>
-      streamOfChanges.map(customer -> toApiCustomer(customerId, customer));
-
-    // turn into server sent event response
-    return HttpResponses.serverSentEvents(streamOfChangesAsApiType); // <4>
+    var source = Source.single(currentState) // <2>
+      .concat(notifications)
+      .map(customer -> toApiCustomer(customerId, customer)); // <3>
+    return HttpResponses.serverSentEvents(source); // <4>
   }
 
   // end::sse-customer-changes[]
