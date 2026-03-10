@@ -105,6 +105,7 @@ a|
 |Key Value Entity
 a|
 * `akka.javasdk.keyvalueentity.KeyValueEntityContext` for access to the entity id
+* `akka.javasdk.NotificationPublisher` for xref:key-value-entities.adoc#_notification[publishing notifications] to subscribers
 |===
 
 == Custom dependency injection
