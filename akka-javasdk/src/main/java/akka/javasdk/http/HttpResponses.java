@@ -200,9 +200,10 @@ public class HttpResponses {
    * HTTP response.
    *
    * @param resourcePath A relative path to the resource folder <code>static-resources</code> on the
-   *     class path. Must not start with <code>/</code>
+   *     class path. Must not start with <code>/</code>. An empty path or a path ending with <code>/
+   *     </code> will serve <code>index.html</code> from that directory.
    * @return A 404 not found response if there is no such resource. 403 forbidden if the path
-   *     contains <code>..</code> or references a folder.
+   *     contains <code>..</code>.
    */
   public static HttpResponse staticResource(String resourcePath) {
     return HttpClassPathResource.fromStaticPath(resourcePath);
@@ -216,7 +217,8 @@ public class HttpResponses {
    * @param prefixToStrip Strip this prefix from the request path, to create the actual path
    *     relative to <code>static-resources</code> to load the resource from. Must not be empty.
    * @return A 404 not found response if there is no such resource. 403 forbidden if the path
-   *     contains <code>..</code> or references a folder.
+   *     contains <code>..</code>. When the stripped path is empty or ends with <code>/</code>,
+   *     <code>index.html</code> is served automatically.
    * @throws RuntimeException if the request path does not start with <code>prefixToStrip</code> or
    *     if <code>prefixToStrip</code> is empty
    */
@@ -226,7 +228,13 @@ public class HttpResponses {
     actualPrefixToStrip =
         actualPrefixToStrip.endsWith("/") ? actualPrefixToStrip : actualPrefixToStrip + "/";
     var fullPath = request.getUri().getPathString();
-    if (!fullPath.startsWith(actualPrefixToStrip)) {
+    String strippedPath;
+    if (fullPath.startsWith(actualPrefixToStrip)) {
+      strippedPath = fullPath.substring(actualPrefixToStrip.length());
+    } else if ((fullPath + "/").equals(actualPrefixToStrip)) {
+      // Path is exactly the prefix without trailing slash, e.g. GET /pages with prefix /pages
+      strippedPath = "";
+    } else {
       throw new RuntimeException(
           "Request path ["
               + fullPath
@@ -234,7 +242,6 @@ public class HttpResponses {
               + prefixToStrip
               + "]");
     }
-    var strippedPath = fullPath.substring(actualPrefixToStrip.length());
     return staticResource(strippedPath);
   }
 

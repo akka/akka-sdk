@@ -123,6 +123,27 @@ public class HttpEndpointTest extends TestKitSupport {
   }
 
   @Test
+  public void shouldServeIndexHtmlForDirectoryPaths() throws Exception {
+    // trailing slash serves index.html
+    var trailingSlash = httpClient.GET("/static/").invoke();
+    assertThat(trailingSlash.status()).isEqualTo(StatusCodes.OK);
+    assertThat(trailingSlash.httpResponse().entity().getContentType())
+        .isEqualTo(ContentTypes.TEXT_HTML_UTF8);
+
+    try (InputStream in =
+        this.getClass().getClassLoader().getResourceAsStream("static-resources/index.html")) {
+      var bytes = ByteString.fromArray(in.readAllBytes());
+      assertThat(trailingSlash.body()).isEqualTo(bytes);
+    }
+
+    // exact prefix with no trailing slash also serves index.html
+    var noTrailingSlash = httpClient.GET("/static").invoke();
+    assertThat(noTrailingSlash.status()).isEqualTo(StatusCodes.OK);
+    assertThat(noTrailingSlash.httpResponse().entity().getContentType())
+        .isEqualTo(ContentTypes.TEXT_HTML_UTF8);
+  }
+
+  @Test
   public void return404ForNonexistentResource() {
     var response = httpClient.GET("/static/does-not-exist").invoke();
     assertThat(response.status()).isEqualTo(StatusCodes.NOT_FOUND);
