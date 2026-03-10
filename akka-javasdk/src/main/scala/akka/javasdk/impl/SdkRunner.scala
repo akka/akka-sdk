@@ -68,6 +68,7 @@ import akka.javasdk.impl.agent.AgentRegistryImpl
 import akka.javasdk.impl.agent.GuardrailProvider
 import akka.javasdk.impl.agent.OverrideModelProvider
 import akka.javasdk.impl.agent.PromptTemplateClient
+import akka.javasdk.impl.backoffice.BackofficeAccessTokenCache
 import akka.javasdk.impl.client.ComponentClientImpl
 import akka.javasdk.impl.consumer.ConsumerImpl
 import akka.javasdk.impl.consumer.MessageContextImpl
@@ -111,7 +112,6 @@ import akka.runtime.sdk.spi.McpEndpointConstructionContext
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.RemoteIdentification
 import akka.runtime.sdk.spi.SpiAgent
-import akka.runtime.sdk.spi.SpiBackofficeSettings
 import akka.runtime.sdk.spi.SpiComponents
 import akka.runtime.sdk.spi.SpiConfiguredGuardrail
 import akka.runtime.sdk.spi.SpiDeployedEventingSettings
@@ -167,7 +167,8 @@ object SdkRunner {
     val sanitizationSettings = Sanitization.loadSettings(applicationConf)
 
     val devModeSettings =
-      if (applicationConf.getBoolean("akka.javasdk.dev-mode.enabled"))
+      if (applicationConf.getBoolean("akka.javasdk.dev-mode.enabled")) {
+        val backofficeSettings = BackofficeSettingsLoader.loadBackofficeSettings(applicationConf)
         Some(
           new SpiDevModeSettings(
             httpPort = applicationConf.getInt("akka.javasdk.dev-mode.http-port"),
@@ -178,9 +179,8 @@ object SdkRunner {
             mockedEventing = SpiMockedEventingSettings.empty,
             testSetting = new SpiTestSettings(testMode = false, debugTracing = false),
             selfServiceName = None,
-            backoffice = new SpiBackofficeSettings("", "", Map.empty)))
-      else
-        None
+            backoffice = backofficeSettings))
+      } else None
 
     val agentInteractionLogEnabled =
       devModeSettings.isDefined || // always enabled in dev mode
@@ -246,7 +246,7 @@ class SdkRunner private (
   def applicationConfig: Config =
     ApplicationConfig.loadApplicationConf
 
-  override def getSettings: SpiSettings =
+  override lazy val getSettings: SpiSettings =
     extractSpiSettings(applicationConfig)
 
   override def start(startContext: StartContext): Future[SpiComponents] = {
@@ -264,7 +264,7 @@ class SdkRunner private (
         disabledComponents,
         overrideDisabledComponents,
         startedPromise,
-        getSettings.devMode.map(_.serviceName),
+        getSettings,
         startContext.sanitizer)
       Future.successful(app.spiComponents)
     } catch {
@@ -346,7 +346,7 @@ private final class Sdk(
     disabledComponents: Set[Class[_]],
     overrideDisabledComponents: Boolean,
     startedPromise: Promise[StartupContext],
-    serviceNameOverride: Option[String],
+    spiSettings: SpiSettings,
     runtimeSanitizer: SpiSanitizerEngine) {
 
   import Sdk._
@@ -359,7 +359,19 @@ private final class Sdk(
   @volatile private var dependencyProviderOpt: Option[DependencyProvider] = dependencyProviderOverride
 
   private val applicationConfig = ApplicationConfig(system).getConfig
-  private val sdkSettings = Settings(applicationConfig.getConfig("akka.javasdk"))
+  private val sdkSettings = Settings(applicationConfig.getConfig("akka.javasdk"), spiSettings)
+
+  spiSettings.devMode.foreach { devMode =>
+    if (devMode.backoffice.refreshToken.nonEmpty) {
+      val (apiServerHost, apiServerPort) = devMode.backoffice.apiServer.split(":", 2) match {
+        case Array(host)       => (host, 443)
+        case Array(host, port) => (host, port.toInt)
+        case _                 => (devMode.backoffice.apiServer, 443)
+      }
+      BackofficeAccessTokenCache(system)
+        .init(apiServerHost, apiServerPort, devMode.backoffice.refreshToken)
+    }
+  }
 
   private val sdkTracerFactory: () => Tracer = () => tracerFactory(TraceInstrumentation.InstrumentationScopeName)
 
@@ -921,6 +933,8 @@ private final class Sdk(
         useFor = g.useFor.map(_.toString),
         config = g.config)
     })
+
+    val serviceNameOverride = sdkSettings.devModeSettings.map(_.serviceName)
 
     new SpiComponents(
       serviceInfo = new SpiServiceInfo(
