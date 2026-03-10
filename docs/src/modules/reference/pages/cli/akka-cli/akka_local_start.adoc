@@ -1,15 +1,24 @@
-= akka secrets external update
+= akka local start
 
-Update an external secret in the current project.
+Start the local development environment in background mode (no TUI).
 
 == Synopsis
 
-The `akka secrets external update` command updates an external secret in the currently configured project.
+Start the Akka local development environment in daemon mode.
+This starts the gRPC proxy, service registry, HTTP server, and trace collection -- the same infrastructure as 'akka local console' -- but without the interactive terminal UI.
+
+Designed for use by AI agents via MCP tools.
+The daemon writes its PID and state to ~/.akka/local/ for process management.
+
+----
+akka local start [flags]
+----
 
 == Options
 
 ----
-  -h, --help   help for update
+  -h, --help          help for start
+  -p, --port uint16   HTTP port for the local console. (default 9889)
 ----
 
 == Options inherited from parent commands
@@ -30,10 +39,7 @@ The `akka secrets external update` command updates an external secret in the cur
 
 == SEE ALSO
 
-* link:akka_secrets_external.html[akka secrets external]	 - Manage external secrets for an Akka project.
-* link:akka_secrets_external_update_aws.html[akka secrets external update aws]	 - Update an AWS external secret in the current project.
-* link:akka_secrets_external_update_azure.html[akka secrets external update azure]	 - Update an Azure KeyVault external secret in the current project.
-* link:akka_secrets_external_update_gcp.html[akka secrets external update gcp]	 - Update a GCP external secret in the current project.
+* link:akka_local.html[akka local]	 - Interact with and manage Akka services running locally.
 
 [discrete]
 

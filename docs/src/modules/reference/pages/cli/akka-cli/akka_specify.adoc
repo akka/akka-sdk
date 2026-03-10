@@ -1,15 +1,16 @@
-= akka secrets external update
+= akka specify
 
-Update an external secret in the current project.
+Initialize and manage AI-assisted Akka development projects.
 
 == Synopsis
 
-The `akka secrets external update` command updates an external secret in the currently configured project.
+The 'akka specify' commands set up Akka projects for AI-assisted development.
+Use 'akka specify init' to create a new project with all the resources needed for AI coding agents, including slash commands, templates, and MCP configuration.
 
 == Options
 
 ----
-  -h, --help   help for update
+  -h, --help   help for specify
 ----
 
 == Options inherited from parent commands
@@ -30,10 +31,8 @@ The `akka secrets external update` command updates an external secret in the cur
 
 == SEE ALSO
 
-* link:akka_secrets_external.html[akka secrets external]	 - Manage external secrets for an Akka project.
-* link:akka_secrets_external_update_aws.html[akka secrets external update aws]	 - Update an AWS external secret in the current project.
-* link:akka_secrets_external_update_azure.html[akka secrets external update azure]	 - Update an Azure KeyVault external secret in the current project.
-* link:akka_secrets_external_update_gcp.html[akka secrets external update gcp]	 - Update a GCP external secret in the current project.
+* link:akka.html[akka]	 - Akka control
+* link:akka_specify_init.html[akka specify init]	 - Initialize a new Akka project for AI-assisted development.
 
 [discrete]
 
