@@ -7,6 +7,7 @@ package akka.javasdk.enforcer;
 import static akka.javasdk.enforcer.VersionComparator.*;
 import static akka.javasdk.enforcer.VersionComparator.Direction.*;
 import static akka.javasdk.enforcer.VersionComparator.Strictness.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
