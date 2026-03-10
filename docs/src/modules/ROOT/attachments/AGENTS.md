@@ -25,7 +25,7 @@ Access these documentation files for detailed patterns:
 - `akka-context/sdk/agents/streaming.html.md` - Streaming model responses with agents
 - `akka-context/sdk/agents/orchestrating.html.md` - Orchestrating multiple agents
 - `akka-context/sdk/agents/guardrails.html.md` - Constraining and controlling agent behavior with guardrails
-- `akka-context/sdk/agents/evaluating.html.md` - Evaluating and judging the responses from LLMs via agents
+- `akka-context/sdk/agents/llm_eval.html.md` - Evaluating and judging the responses from LLMs via agents
 - `akka-context/sdk/agents/testing.html.md` - Testing agents
 - `akka-context/getting-started/planner-agent/dynamic-team.html.md` - Dynamic agent planning and orchestration
 - `akka-context/sdk/event-sourced-entities.html.md` - Event sourced entity

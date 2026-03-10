@@ -22,7 +22,7 @@
 - [Streaming agent responses](https://doc.akka.io/sdk/agents/streaming.html.md): Streaming model responses with agents.
 - [Orchestrating multiple agents](https://doc.akka.io/sdk/agents/orchestrating.html.md): Orchestrating and supervising multiple agents.
 - [Providing guardrails](https://doc.akka.io/sdk/agents/guardrails.html.md): Constraining and controlling agent behavior with guardrails.
-- [Evaluating model responses](https://doc.akka.io/sdk/agents/evaluating.html.md): Evaluating and judging the responses from LLMs via agents.
+- [Evaluating model responses](https://doc.akka.io/sdk/agents/llm_eval.html.md): Evaluating and judging the responses from LLMs via agents.
 - [Testing agents](https://doc.akka.io/sdk/agents/testing.html.md): Testing agents and agentic behavior.
 - [Implementing Event Sourced Entities](https://doc.akka.io/sdk/event-sourced-entities.html.md): How to create entities that store their state as a sequence of events.
 - [Implementing Key Value Entities](https://doc.akka.io/sdk/key-value-entities.html.md): Guide to implementing entities that store their state directly.
