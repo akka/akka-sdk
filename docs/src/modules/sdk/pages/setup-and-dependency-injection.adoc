@@ -89,15 +89,22 @@ Furthermore, the following component specific types can also be injected:
 | Injectable classes
 
 | Agent
-|`akka.javasdk.agent.AgentContext` for access to the session id that the agent participate in
+a|
+* `akka.javasdk.agent.AgentContext` for access to the session id that the agent participate in
 | Endpoint
-|`akka.javasdk.http.RequestContext` with access to request related things
+a|
+* `akka.javasdk.http.RequestContext` with access to request related things
 |Workflow
-|`akka.javasdk.workflow.WorkflowContext` for access to the workflow id
+a|
+* `akka.javasdk.workflow.WorkflowContext` for access to the workflow id
+* `akka.javasdk.NotificationPublisher` for xref:workflows.adoc#_notification[publishing notifications] to subscribers
 |Event Sourced Entity
-|`akka.javasdk.eventsourcedentity.EventSourcedEntityContext` for access to the entity id
+a|
+* `akka.javasdk.eventsourcedentity.EventSourcedEntityContext` for access to the entity id
+* `akka.javasdk.NotificationPublisher` for xref:event-sourced-entities.adoc#_notification[publishing notifications] to subscribers
 |Key Value Entity
-|`akka.javasdk.keyvalueentity.KeyValueEntityContext` for access to the entity id
+a|
+* `akka.javasdk.keyvalueentity.KeyValueEntityContext` for access to the entity id
 |===
 
 == Custom dependency injection

@@ -430,6 +430,8 @@ Note that on client reconnects, this example will start the reconnected stream w
 on the use case it might be possible to continue just emitting changes by extracting event ids and handle a `RequestContext.lastSeenSseEventId`
 being present in the request.
 
+TIP: For Event Sourced Entities and Workflows, consider using the `NotificationPublisher` instead of polling. It pushes updates to subscribers in real-time without the overhead of periodic requests. See xref:event-sourced-entities.adoc#_notification[Event Sourced Entity Notifications] and xref:workflows.adoc#_notification[Workflow Notifications].
+
 ==== Testing streaming responses
 
 The testkit contains a `akka.javasdk.testkit.SseRouteTester` which can be used for covering
