@@ -79,7 +79,7 @@ When designing your entity state and the messages (commands and events) that flo
 |===
 
 ==== The 1 MB Replication Ceiling
-While an entity can technically store a state or snapshot up to **10 MB**, any state change or event exceeding **1 MB** will fail to replicate across the Akka cluster. 
+While an entity can technically store a state or snapshot up to **10 MB**, any state change or event exceeding **1 MB** will fail to replicate across regions. 
 
 [IMPORTANT]
 ====
