@@ -20,6 +20,7 @@ Each sample focuses on a specific capability or coordination pattern. They progr
 | **devteam** | Team | Team lead decomposes project into tasks, developers self-coordinate |
 | **brainstorm** | Team (emergent) | Team generates ideas on shared board, lead curates |
 | **editorial** | Team + external input | Team lead with writers, human approval of final publication |
+| **deepdive** | All capabilities | Comprehensive demo: handoff, delegation, teams, emergent, task deps, external input, nested orchestration |
 
 ---
 
@@ -193,3 +194,182 @@ A team lead coordinates writers who collaborate on a publication. Writers work o
 **Agents:** Editorial lead (team lead), writer agents (team members)
 
 **Demonstrates:** Team capability with external input. Collaborative writing with peer review. Human-in-the-loop approval for the final publication. Combines the team coordination pattern with external gating — the team produces the work, but a human makes the final call.
+
+---
+
+## deepdive
+
+A comprehensive demo application that exercises all coordination capabilities in a single coherent system. A user submits a technology topic and the system produces a thoroughly researched, debated, and reviewed deep-dive article — with every orchestration decision driven by LLMs, not code.
+
+15 agent types across 4 levels of nesting cover delegation, handoff, collaborative teams, emergent coordination, task dependencies, external input, and LLM-driven looping.
+
+### Agent hierarchy
+
+```mermaid
+graph TD
+    User([User]) -->|POST /deepdive| Intake[IntakeAgent]
+
+    Intake -->|handoff| TDD[TechDeepDiveAgent]
+    Intake -->|handoff| QT[QuickTakeAgent]
+
+    TDD -->|delegates| AG1[AngleGenerator x3]
+    TDD -->|delegates| BC[BrainstormCurator]
+    TDD -->|delegates| TR[TrendResearcher]
+    TDD -->|delegates| TechR[TechnicalResearcher]
+    TDD -->|delegates| CR[CommunityResearcher]
+    TDD -->|delegates| CompR[ComparisonResearcher]
+    TDD -->|delegates| Mod[Moderator]
+    TDD -->|delegates| W[WriterAgent]
+    TDD -->|delegates| Ed[EditorAgent]
+    TDD -->|delegates| FC[FactCheckerAgent]
+
+    Mod -->|team lead| Adv[AdvocateAgent]
+    Mod -->|team lead| Skp[SkepticAgent]
+
+    TR -.->|dependsOn| CR
+    TechR -.->|dependsOn| CompR
+
+    subgraph "Level 0 — Entry"
+        Intake
+    end
+    subgraph "Level 1 — Orchestration"
+        TDD
+        QT
+    end
+    subgraph "Level 2 — Brainstorm swarm"
+        AG1
+        BC
+    end
+    subgraph "Level 2 — Research"
+        TR
+        TechR
+        CR
+        CompR
+    end
+    subgraph "Level 2 — Writing & Review"
+        W
+        Ed
+        FC
+    end
+    subgraph "Levels 2-3 — Debate team"
+        Mod
+        Adv
+        Skp
+    end
+
+    style Intake fill:#f9d71c,color:#000
+    style TDD fill:#4a90d9,color:#fff
+    style QT fill:#4a90d9,color:#fff
+    style Mod fill:#e07b53,color:#fff
+    style Adv fill:#e07b53,color:#fff
+    style Skp fill:#e07b53,color:#fff
+    style AG1 fill:#8bc34a,color:#000
+    style BC fill:#8bc34a,color:#000
+```
+
+### Pipeline flow
+
+```mermaid
+flowchart LR
+    Intake[Phase 0\nIntake\n_handoff_] --> Brainstorm[Phase 1\nBrainstorm\n_emergent_]
+    Brainstorm --> Research[Phase 2\nResearch\n_delegation +\ntask deps_]
+    Research --> Debate[Phase 3\nDebate\n_team_]
+    Debate -->|gaps found| Research
+    Debate --> Write[Phase 4\nWrite\n_delegation_]
+    Write --> Review[Phase 5\nReview\n_delegation_]
+    Review -->|issues found| Write
+    Review --> Approval[Phase 6\nEditorial\nApproval\n_external input_]
+    Approval -->|rejected| Write
+    Approval --> Final([Final Article])
+
+    style Intake fill:#f9d71c,color:#000
+    style Approval fill:#ff6b6b,color:#fff
+    style Final fill:#4caf50,color:#fff
+```
+
+**Agents:**
+
+Agents are organized by nesting depth in the orchestration hierarchy. Level 0 is the entry point that receives user requests. Level 1 agents own the main task. Level 2 agents are delegated to by level 1. Level 3 agents operate inside a level 2 sub-team. The levels are structural (who contains whom), not temporal — level 2 agents appear in multiple phases of the pipeline.
+
+*Entry (level 0):*
+- IntakeAgent — classifies incoming requests and hands off to the appropriate orchestrator
+
+*Orchestration (level 1):*
+- TechDeepDiveAgent — top-level orchestrator for full deep-dive articles; delegates to all sub-teams and manages the overall pipeline
+- QuickTakeAgent — lightweight agent for simple opinion requests (handoff target from IntakeAgent)
+
+*Brainstorm swarm (level 2):*
+- AngleGenerator — runs as 3 independent instances with different prompt biases (contrarian, practical, historical); writes ideas to a shared board without coordinating with other generators
+- BrainstormCurator — reads the shared board, merges overlapping ideas, selects the 3-4 strongest angles as the research agenda
+
+*Research (level 2):*
+- TrendResearcher — gathers trend data, adoption curves, industry momentum (web search/fetch tools; no task dependencies)
+- TechnicalResearcher — investigates architecture, performance, ecosystem maturity (web search/fetch tools; no task dependencies)
+- CommunityResearcher — finds community sentiment, forum discussions, migration stories (web search/fetch tools; depends on TrendResearcher — needs trend context to search for relevant reactions)
+- ComparisonResearcher — compares subject technology against alternatives (web search/fetch tools; depends on TechnicalResearcher — needs technical details for meaningful comparison)
+
+*Debate team (levels 2-3):*
+- Moderator — team lead for the debate; creates the team, adds members, creates debate tasks in a shared task list, structures rounds via messages, synthesises conclusions, disbands the team
+- AdvocateAgent — team member; claims debate tasks, reads the Skeptic's arguments via peer messages, argues in favor of the technology
+- SkepticAgent — team member; claims debate tasks, reads the Advocate's arguments via peer messages, challenges claims and highlights weaknesses
+
+*Writing and review (level 2):*
+- WriterAgent — drafts and revises the article; receives research, debate synthesis, and reviewer feedback as context
+- EditorAgent — reviews structure, flow, clarity, and style; returns actionable editorial notes
+- FactCheckerAgent — verifies claims against research findings; flags unsupported claims with severity levels
+
+**Tasks:**
+- ARTICLE → `Article(title, content, summary)` — the top-level output; created by IntakeAgent, completed by TechDeepDiveAgent
+- QUICK_TAKE → `QuickTake(title, opinion, confidence)` — for simple requests routed to QuickTakeAgent
+- BRAINSTORM → `BrainstormResult(angles: List<Angle>)` — curated angle set from the brainstorm phase
+- ANGLE → `Angle(title, description, priority)` — individual angle contributed by an AngleGenerator
+- RESEARCH → `ResearchFindings(topic, facts, sources)` — findings from each researcher
+- DEBATE_SYNTHESIS → `DebateSynthesis(consensus, disputes, gaps)` — Moderator's summary of the debate
+- DEBATE_POSITION → `DebatePosition(position, arguments, evidence)` — each debater's contribution
+- DRAFT → `ArticleDraft(title, content, wordCount)` — article draft from WriterAgent
+- EDIT_REVIEW → `EditReview(assessment, suggestions, approved)` — editorial feedback
+- FACT_CHECK → `FactCheckResult(claims: List<ClaimVerification>, allVerified)` — fact-check results
+
+**Flow:**
+
+Phases describe the temporal sequence of the pipeline. Phase 0 happens before TechDeepDiveAgent is involved. Phases 1-6 are driven by the orchestrator's LLM in typical order, though the LLM controls actual sequencing and may loop between phases.
+
+*Phase 0 — Intake (handoff).* A user submits a topic via `POST /deepdive`. The IntakeAgent receives an ARTICLE task, classifies the request, and hands off to the appropriate orchestrator. A deep technical topic goes to TechDeepDiveAgent (full pipeline). A simpler request ("quick take on the new React compiler") goes to QuickTakeAgent (lightweight, no sub-teams). The IntakeAgent transfers ownership — it's done after handoff.
+
+*Phase 1 — Brainstorm (emergent/swarm).* The TechDeepDiveAgent delegates to the brainstorm swarm. Three AngleGenerator instances run independently, each with a different prompt bias: one contrarian ("what if conventional wisdom is wrong?"), one practical ("what would a practitioner care about?"), one historical ("what precedents or parallels exist?"). Each writes ideas to a shared board via domain tools. They don't coordinate directly — they influence each other only through what's on the board (stigmergy). The BrainstormCurator then reads the board, merges overlapping ideas, and selects the strongest angles as the research agenda. Different topics produce different angle selections.
+
+*Phase 2 — Research (delegation + task dependencies).* The TechDeepDiveAgent delegates to four researchers. TrendResearcher and TechnicalResearcher have no dependencies and start immediately in parallel. CommunityResearcher depends on TrendResearcher (needs trend context to search for relevant community reactions). ComparisonResearcher depends on TechnicalResearcher (needs technical details for meaningful comparisons). The framework enforces this ordering via `dependsOn()`. All researchers use web search and web fetch tools to find real data — blog posts, benchmarks, documentation, forum discussions.
+
+*Phase 3 — Debate (collaborative team).* The TechDeepDiveAgent delegates to the Moderator, who creates a team with AdvocateAgent and SkepticAgent as members. The Moderator creates debate tasks in a shared task list ("Opening arguments", "Rebuttals", "Final positions") and structures rounds via messages. The Advocate and Skeptic claim tasks, read each other's arguments via peer messages, and respond directly. The Skeptic might challenge a performance claim; the Advocate adjusts their position. This is the team pattern — not delegation, where workers are isolated. Members influence each other's reasoning through direct exchange. The Moderator synthesises conclusions and disbands the team.
+
+*Research ↔ Debate loop.* The TechDeepDiveAgent reads the debate synthesis. If the Skeptic raised points the research didn't adequately cover, the orchestrator's LLM decides to loop back to the ResearchTeam with targeted questions. The goal mentions "max 2 research cycles" but the decision to loop is the LLM's.
+
+*Phase 4 — Write (delegation).* The TechDeepDiveAgent delegates to the WriterAgent with all accumulated context: selected angles, research findings, debate synthesis. The writer produces an ArticleDraft.
+
+*Phase 5 — Review (delegation).* The TechDeepDiveAgent delegates to the EditorAgent and FactCheckerAgent. The editor reviews structure, flow, and clarity. The fact-checker verifies claims against the research findings.
+
+*Write ↔ Review loop.* If reviewers flag issues, the orchestrator's LLM sends the article back to the WriterAgent with the feedback, then through review again. The goal mentions "max 2 revision rounds" but the decision is the LLM's.
+
+*Phase 6 — Editorial approval (external input).* After reviews pass, a task guard rule determines the article requires human sign-off. The task transitions to `WAITING_FOR_INPUT`. The system surfaces the article to a human reviewer. The human can approve (→ final article published) or reject with feedback ("the intro is too technical") → the orchestrator loops back to the WriterAgent with the human's note, then through review again.
+
+**Coordination capabilities exercised:**
+
+| Capability | Implementation |
+|---|---|
+| Handoff | IntakeAgent → TechDeepDiveAgent or QuickTakeAgent; ownership transfers, intake agent is done |
+| Delegation | TechDeepDiveAgent → all sub-teams; ResearchTeam → researchers; ReviewTeam → reviewers |
+| Team (collaborative) | DebateTeam: Moderator (lead) + Advocate + Skeptic with shared task list and peer messaging |
+| Emergent (swarm) | BrainstormSwarm: 3 independent generators + curator; shared board, no direct coordination |
+| Task dependencies | CommunityResearcher dependsOn TrendResearcher; ComparisonResearcher dependsOn TechnicalResearcher |
+| External input | Editorial approval gate before final publication; human can approve or reject with feedback |
+| LLM-driven looping | Research↔Debate loop, Write↔Review loop, approval rejection loop — all LLM decisions |
+| Nested orchestration | TechDeepDive delegates to Moderator, who internally runs a team; 4 levels of nesting |
+
+**HTTP API:**
+
+- `POST /deepdive` — submit a topic; returns task ID for the top-level ARTICLE task
+- `GET /deepdive/{taskId}` — check status, current phase, intermediate results
+- `POST /deepdive/{taskId}/approve` — approve the article for publication
+- `POST /deepdive/{taskId}/reject` — reject with feedback, triggering a revision loop
+
+**Demonstrates:** All AutonomousAgent coordination capabilities in a single application. LLM-driven orchestration with no workflow steps or if-statements controlling the flow. Nested orchestration where sub-teams use different coordination patterns internally. Natural looping driven by LLM judgment. Human-in-the-loop gating for the final output. Real tool use (web search/fetch) at the leaf agents. The full spectrum from simple handoff routing to complex multi-level delegation with emergent brainstorming and collaborative debate.
