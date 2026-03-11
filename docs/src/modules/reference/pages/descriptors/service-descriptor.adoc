@@ -25,6 +25,8 @@ The *ServiceSpec* defines the detailed configuration of an Akka service, includi
 
 |*image*        |string _required_         |The name of the docker image for the service container
 |*env*          |[]<<EnvVar>>              |Environment variables to be set in the service's container
+|*labels*       |map[string]string         |Labels to attach to the service. Labels are key-value pairs used to organize and categorize services. Disabled by default.
+|*annotations*  |map[string]string         |Annotations to attach to the service. Annotations are key-value pairs used to attach arbitrary non-identifying metadata to services. Disabled by default.
 |*jwt*          |<<ServiceJwt>>            |JWT configuration for the service
 |*resources*    |<<ServiceResources>>      |Resource configuration for the service, including instance size and autoscaling
 |*volumeMounts* |[]<<VolumeMount>>         |Volume mounts to mount in the service's container

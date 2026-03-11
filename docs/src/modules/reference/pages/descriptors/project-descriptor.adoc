@@ -89,10 +89,17 @@ spec:
   resources:
     runtime:
       mode: embedded
+  labels:
+    team: commerce
+    tier: backend
+  annotations:
+    contact: team-commerce@example.com
   env:
     - name: ENABLE_SOME_FEATURE
       value: true
 ----
+
+NOTE: Custom labels and annotations are disabled by default.
 
 [#route]
 === Route
@@ -499,6 +506,8 @@ spec:
   labels:
     team: commerce
     tier: backend
+  annotations:
+    contact: team-commerce@example.com
 ---
 resource: Route
 resourceVersion: v1
