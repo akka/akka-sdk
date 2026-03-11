@@ -16,6 +16,8 @@ Current versions
 - Google Vertex AI model support
 - Access to deployed services from dev mode
 - Notifications for event sourced entities
+- Default primary selection changed to request-region
+- Improved authentication for Google Pub/Sub
 
 * Akka CLI 3.0.50
 - More improvement for spec driven development.
