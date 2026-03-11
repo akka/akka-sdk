@@ -30,6 +30,7 @@ The main components of an Akka service are:
 
 - Stateful [Entities](../reference/glossary.html#entity)
 - Stateful [Workflows](../reference/glossary.html#workflow)
+- [Agents](../reference/glossary.html#agent)
 - [Views](../reference/glossary.html#view)
 - [Timed Actions](../reference/glossary.html#timed_action)
 - [Consumers](../reference/glossary.html#consumer)
@@ -41,24 +42,28 @@ We recommend that you separate the service API and Entity domain data model. Sep
 
 In Akka, services can be stateful or stateless, and the components you implement depend on the service type.
 
-Stateful services utilize components like [Event Sourced Entities](../java/event-sourced-entities.html), [Key Value Entities](../java/key-value-entities.html), [Workflows](../java/workflows.html), and [Views](../java/views.html), while stateless services focus on exposing functionality via [HTTP Endpoints](../java/http-endpoints.html). Typically, a stateful service is centered around one Entity type but may also include Endpoints and Views to expose or retrieve data.
+Stateful services utilize components like [Event Sourced Entities](../sdk/event-sourced-entities.html), [Key Value Entities](../sdk/key-value-entities.html), [Workflows](../sdk/workflows.html), [Agents](../sdk/agents.html), and [Views](../sdk/views.html), while stateless services focus on exposing functionality via [HTTP Endpoints](../sdk/http-endpoints.html). Typically, a stateful service is centered around one Entity type but may also include Endpoints and Views to expose or retrieve data.
 
 ### <a href="about:blank#_entities"></a> Entities
 
 Stateful services encapsulate business logic in Key Value Entities or Event Sourced Entities. At runtime, command messages invoke operations on Entities. A command may only act on one Entity at a time.
 
-|  | To learn more about Akka entities see [Implementing Event Sourced Entities](../java/event-sourced-entities.html) and [Implementing key value entities](../java/key-value-entities.html). |
+|  | To learn more about Akka entities see [Implementing Event Sourced Entities](../sdk/event-sourced-entities.html) and [Implementing key value entities](../sdk/key-value-entities.html). |
 If you would like to update multiple Entities from a single request, you can compose that in the Endpoint, Consumer or Workflow.
 
 Services can interact asynchronously with other services and with external systems. Event Sourced Entities emit events to a journal, which other services can consume. By defining your Consumer components, any service can expose their own events and consume events produced by other services or external systems.
 
 ### <a href="about:blank#_workflows"></a> Workflows
 
-Akka Workflows are high-level descriptions to easily align business requirements with their implementation in code. Orchestration across multiple services including failure scenarios and compensating actions is simple with [Workflows](../java/workflows.html).
+Akka Workflows are high-level descriptions to easily align business requirements with their implementation in code. Orchestration across multiple services including failure scenarios and compensating actions is simple with [Workflows](../sdk/workflows.html).
+
+### <a href="about:blank#_agents"></a> Agents
+
+Akka Agents interact with AI models to perform specific tasks. An agent is typically backed by a large language model (LLM), maintains contextual history in a session memory, and can invoke tools as directed by the model. Multiple agents can share the same session to collaborate on a common goal. For more information see [Implementing agents](../sdk/agents.html).
 
 ### <a href="about:blank#_views"></a> Views
 
-A View provides a way to retrieve state from multiple Entities based on a query. You can create views from Key Value Entity state, Event Sourced Entity events, and by subscribing to topics. For more information about writing views see [Implementing Views](../java/views.html).
+A View provides a way to retrieve state from multiple Entities based on a query. You can create views from Key Value Entity state, Event Sourced Entity events, and by subscribing to topics. For more information about writing views see [Implementing Views](../sdk/views.html).
 
 ### <a href="about:blank#_timed_actions"></a> Timed Actions
 
@@ -66,11 +71,62 @@ Timed Actions allow scheduling future calls, such as verifying process completio
 
 For more details and examples take a look at the following topics:
 
-- [Event Sourced Entities](../java/event-sourced-entities.html)
-- [Key Value Entities](../java/key-value-entities.html)
-- [Workflows](../java/workflows.html)
-- [Views](../java/views.html)
-- [Timed Actions](../java/timed-actions.html)
+- [Event Sourced Entities](../sdk/event-sourced-entities.html)
+- [Key Value Entities](../sdk/key-value-entities.html)
+- [Workflows](../sdk/workflows.html)
+- [Agents](../sdk/agents.html)
+- [Views](../sdk/views.html)
+- [Timed Actions](../sdk/timed-actions.html)
+
+## <a href="about:blank#_components_in_shared_libraries"></a> Components in shared libraries
+
+Akka components can be defined in shared library JARs and automatically discovered when those libraries are included as dependencies. This enables code reuse across multiple services.
+
+### <a href="about:blank#_creating_a_component_library"></a> Creating a component library
+
+To create a library containing Akka components, use the Akka parent pom as you would for any Akka service. The parent pom configures everything needed for component discovery automatically.
+
+Since a shared library is not a deployable service, set `non-akka-service` to `true` in the properties section. This prevents building a Docker image for the library.
+
+```xml
+<parent>
+  <groupId>io.akka</groupId>
+  <artifactId>akka-javasdk-parent</artifactId>
+  <version>${akka-sdk.version}</version>
+</parent>
+
+<properties>
+  <non-akka-service>true</non-akka-service>
+</properties>
+```
+When you compile the library, Akka generates a descriptor file that lists all components. At runtime, Akka scans the classpath for these descriptors and automatically registers all discovered components.
+
+### <a href="about:blank#_using_a_component_library"></a> Using a component library
+
+To use components from a library, add it as a dependency in your project. No additional configuration is required—components are discovered automatically at startup.
+
+```xml
+<dependency>
+  <groupId>com.example</groupId>
+  <artifactId>my-component-library</artifactId>
+  <version>1.0.0</version>
+</dependency>
+```
+
+### <a href="about:blank#_what_to_share"></a> What to share
+
+Not all components are equally suited for sharing. Consider the following guidelines:
+
+**Good candidates for sharing:**
+
+- **Agents** - Agents are stateless and perform tasks based on inputs, making them safe to share across services.
+- **Consumers and Views subscribing to external data** - When a Consumer or View subscribes to data from outside the service—either from a broker (e.g., Kafka) or via [service-to-service streaming](../sdk/consuming-producing.html#s2s-eventing) —sharing allows multiple services to process the same external data stream or maintain the same projection.
+**Use with caution:**
+
+- **Entities and Workflows** - Sharing entity or workflow classes can be misleading. The same class in different services creates separate, isolated data stores. Akka treats them as completely distinct components with separate persistence. If you share an entity class, each service will have its own independent set of entity instances with no shared state.
+- **Consumers and Views subscribing to local components** - Sharing these only makes sense if the source components are also shared. Otherwise, the shared Consumer or View would reference components that don’t exist in the consuming service.
+- **Endpoints** - Sharing an endpoint means sharing all the components it depends on. If any dependency is a stateful component (Entity, Workflow), each service creates its own isolated data store—giving a misleading sense of shared data. Consider whether services truly need identical routes, or if one service should own the endpoint and others call it via [service-to-service calls](../sdk/consuming-producing.html#s2s-eventing).
+TIP: Start with a "share nothing" approach. Only share Akka components when there is a clear benefit and you understand the implications for stateful dependencies.
 
 ## <a href="about:blank#_endpoints"></a> Exposing components through Endpoints and Consumers
 
@@ -83,9 +139,9 @@ flow between different services. This makes them essential for coordinating acti
 
 For more information, refer to:
 
-- [Designing HTTP endpoints](../java/http-endpoints.html)
-- [Designing gRPC Endpoints](../java/grpc-endpoints.html)
-- [Consuming and producing](../java/consuming-producing.html)
+- [Designing HTTP endpoints](../sdk/http-endpoints.html)
+- [Designing gRPC Endpoints](../sdk/grpc-endpoints.html)
+- [Consuming and producing](../sdk/consuming-producing.html)
 
 ## <a href="about:blank#_create_unit_tests"></a> Testing your application
 
@@ -105,7 +161,7 @@ End-to-end tests validate the entire application by simulating real-world user s
 
 ## <a href="about:blank#_run_locally"></a> Running locally
 
-You can test and debug your services by [running them locally](../java/running-locally.html) before deploying your *Service*. This gives you a local debug experience that is convenient and easy.
+You can test and debug your services by [running them locally](../sdk/running-locally.html) before deploying your *Service*. This gives you a local debug experience that is convenient and easy.
 
 ## <a href="about:blank#_package_service"></a> Package service
 
@@ -128,7 +184,7 @@ Now that you have a project and have deployed it you should familiarize yourself
 
 The following topics may also be of interest.
 
-- [Developer best practices](../java/dev-best-practices.html)
+- [Developer best practices](../sdk/dev-best-practices.html)
 
 <!-- <footer> -->
 <!-- <nav> -->

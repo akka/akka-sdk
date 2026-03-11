@@ -302,6 +302,56 @@ If it’s important for some read requests to have seen latest writes you can us
 
 The operational aspects are described in [Regions](../operations/regions/index.html).
 
+### <a href="about:blank#_replication_filters"></a> Replication filters
+
+Events are by default replicated to all regions that have been enabled for the service. For regulatory reasons or as cost optimization it is possible to filter which regions that participate in the replication for a specific entity. This can be changed at runtime by the entity itself.
+
+ShoppingCartEntity.java
+```java
+import akka.Done;
+import akka.javasdk.annotations.Component;
+import akka.javasdk.annotations.EnableReplicationFilter;
+import akka.javasdk.eventsourcedentity.EventSourcedEntity;
+import akka.javasdk.eventsourcedentity.ReplicationFilter;
+
+@Component(id = "shopping-cart")
+@EnableReplicationFilter // (1)
+public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, ShoppingCartEvent> {
+
+
+  public Effect<Done> replicateTo(String region) {
+    return effects()
+      .updateReplicationFilter(ReplicationFilter.includeRegion(region)) // (2)
+      .thenReply(__ -> Done.getInstance());
+  }
+
+}
+```
+
+| **1** | Enable the replication filter feature by adding the `@EnableReplicationFilter` annotation. |
+| **2** | Define the replication filter with the `updateReplicationFilter` effect. |
+After enabling the replication filter the entity is still replicated to all regions until specific regions are defined with the `updateReplicationFilter` effect. This effect can be combined with persisting events and thereby also updating the state of the entity. It can also be used without persisting additional events, e.g. if it’s an explicit command to change the filter, but it’s not changing the state of the entity.
+
+The filter can only be updated from the entity’s primary region. With the `request-region` primary selection strategy, updating the filter from a non-primary region will cause that region to become the new primary. The filter is durable for the specific entity instance and can be changed without deploying a new version.
+
+In the <a href="_attachments/api/akka/javasdk/eventsourcedentity/ReplicationFilter.html">`ReplicationFilter`</a> you define the regions to be included or excluded in the replication. The region where the update is made, the so-called self region, is automatically included in the replication filter and cannot be excluded. The changes are additive for each entity instance, meaning that if you first `updateReplicationFilter` and include `gcp-us-east1` and then later make another `updateReplicationFilter` and include `aws-us-east-2` from the same entity, then both `gcp-us-east1` and `aws-us-east-2` are included.
+
+When you add the `@EnableReplicationFilter` annotation the entity will still replicate to all regions until you have defined a filter with `updateReplicationFilter`. You can define the filter when persisting events, including the first event. For example, this is how to effectively disable replication to other regions for a specific entity by defining a filter that only includes the self region:
+
+ShoppingCartEntity.java
+```java
+public Effect<Done> createCart(String userId) {
+    var selfRegion = commandContext().selfRegion();
+    return effects()
+      .persist(new CartCreated(commandContext().entityId(), userId))
+      .updateReplicationFilter(ReplicationFilter.includeRegion(selfRegion))
+      .thenReply(__ -> Done.getInstance());
+  }
+```
+If you start with an entity with such self region filter in `gcp-us-east1`, and then later receive a command (not read-only) for this entity instance in another `aws-us-east-2`, it will automatically synchronize all events in from `gcp-us-east1` before handling the command in `gcp-us-east1`. Such command will also automatically include `aws-us-east-2` to the replication filter and events will be replicated to both `gcp-us-east1` and `aws-us-east-2`. You can remove a region from the replication with `ReplicationFilter.excludeRegion`.
+
+|  | If you first have a region included in the filter and then exclude it in the filter, the entity instance will still exist in the excluded region, but without receiving any new events. In other words, the state will remain as the old state if you access it with read-only commands in the excluded region. |
+
 ## <a href="about:blank#_side_effects"></a> Side effects
 
 An entity doesn’t perform any external side effects aside from persisting events and replying to the request. Side effects can be handled from the Workflow, Consumer, or Endpoint components that are calling the entity.

@@ -1,0 +1,20 @@
+= Service reference configuration (HOCON)
+include::ROOT:partial$include.adoc[]
+
+== Akka SDK reference configuration
+
+Akka SDK Services are configured through configuration files in the https://github.com/lightbend/config?tab=readme-ov-file#using-hocon-the-json-superset[HOCON format].
+
+Below shows the complete default configuration for Akka Services.
+
+For configuration of AI model providers, please refer to xref:sdk:model-provider-details.adoc[AI model provider configuration].
+
+[source,hocon,indent=0]
+----
+include::sdk:example$akka-javasdk/src/main/resources/reference.conf[tag=reference]
+----
+
+== References
+- xref:sdk:setup-and-dependency-injection.adoc[]
+- xref:sdk:model-provider-details.adoc[]
+- https://github.com/lightbend/config[Typesafe Config / HOCON]

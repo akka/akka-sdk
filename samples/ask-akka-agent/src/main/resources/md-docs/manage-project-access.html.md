@@ -55,6 +55,7 @@ akka config set project <project name>
 
 ## <a href="about:blank#_granting_a_role"></a> Granting a role
 
+|  | When using *OpenID Connect* (OIDC), see [OIDC setup](../../reference/security/oidc-setup.html#assigning_project_level_roles). |
 You can grant a project role to a user in two ways:
 
 ### <a href="about:blank#_1_invite_a_user_to_the_project_by_e_mail"></a> 1. Invite a user to the project by e-mail

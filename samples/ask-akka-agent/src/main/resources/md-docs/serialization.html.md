@@ -16,10 +16,10 @@ You need to make the messages, events, or the state of Akka components serializa
 2. If you are using Java `class` then you need to annotate them with the [proper Jackson annotation](https://github.com/FasterXML/jackson-annotations#usage-general).
 Akka uses a predefined `Jackson` configuration, for serialization. Use the `JsonSupport` utility to update the `ObjectMapper` with your custom requirements. To minimize the number of `Jackson` annotations, Java classes are compiled with the `-parameters` flag.
 
-[CustomerRegistrySetup.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-customer-registry/src/main/java/customer/CustomerRegistrySetup.java)
+[Bootstrap.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-customer-registry/src/main/java/customer/Bootstrap.java)
 ```java
 @Setup
-public class CustomerRegistrySetup implements ServiceSetup {
+public class Bootstrap implements ServiceSetup {
 
 
   @Override
@@ -254,6 +254,63 @@ public void shouldDeserializeCustomerCreated_V0() throws IOException {
 
 | **1** | Loading old payload from a file. |
 | **2** | Deserializing with the latest schema. |
+
+## <a href="about:blank#_protobuf_serialization"></a> Protobuf Serialization
+
+As an alternative to JSON with Jackson, it is possible to use Protobuf messages.
+In most cases the messages are serialized to binary form for storage.
+
+Protobuf serialization is an advanced feature and not recommended as the default choice.
+
+It is possible to use Protobuf messages for:
+
+### <a href="about:blank#_event_sourced_entity"></a> Event Sourced Entity
+
+Entity state and events, commands and their replies.
+
+Since there is no way to mark a sealed interface for the distinct event types `applyEvent` must accept `com.google.protobuf.GeneratedMessageV3` and do its own type
+matching for the expected message types.
+
+The concrete Event Sourced Entity class must also have the annotation `akka.javasdk.annotations.ProtoEventTypes` listing all event types that the entity will use.
+
+### <a href="about:blank#_key_value_entity"></a> Key Value Entity
+
+Entity state, commands and their replies.
+
+### <a href="about:blank#_workflow"></a> Workflow
+
+Workflow state and step input, commands and their replies.
+
+### <a href="about:blank#_consumer"></a> Consumer
+
+Consumer input and output.
+
+The consumer handler method must accept `com.google.protobuf.GeneratedMessageV3` and do its own type
+matching for the expected message types.
+
+If it is consuming events from an Event Sourced Entity or a Key Value entity in the same service,
+the concrete message types are inferred. For all other cases the consumer class must be annotated with `akka.javasdk.annotations.ProtoEventTypes` listing all event types that the consumer will accept.
+
+Unlisted message types arriving will fail the stream and stall the consumer until a service version
+supporting the event type is deployed.
+
+### <a href="about:blank#_view"></a> View
+
+View updater input, view state, query input and result type.
+
+For views the state, input and output are serialized to JSON and not a binary representation.
+
+If the updater is consuming events from an Event Sourced Entity or a Key Value entity in the same service,
+the concrete message types are inferred. For all other cases the updater class must be annotated with `akka.javasdk.annotations.ProtoEventTypes` listing all event types that the updater will accept.
+
+Unlisted message types arriving will fail the stream and stall view updates until a service version
+supporting the event type is deployed.
+
+### <a href="about:blank#_agent"></a> Agent
+
+Commands and their replies.
+
+For agents the messages are serialized to JSON and not a binary representation.
 
 <!-- <footer> -->
 <!-- <nav> -->

@@ -10,6 +10,7 @@ import static java.util.function.Function.identity;
 import akka.Done;
 import akka.javasdk.CommandException;
 import akka.javasdk.Metadata;
+import akka.javasdk.NotificationPublisher;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
@@ -34,6 +35,12 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
 
   public record DoIncrease(int amount) {}
 
+  private final NotificationPublisher<String> notificationPublisher;
+
+  public CounterEntity(NotificationPublisher<String> notificationPublisher) {
+    this.notificationPublisher = notificationPublisher;
+  }
+
   @Override
   public Counter emptyState() {
     return new Counter(0);
@@ -53,9 +60,21 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
 
     if (metadata.has(META_KEY)) {
       var eventMetadata = Metadata.EMPTY.add(META_KEY, metadata.getLast(META_KEY).get());
-      return effects().persistWithMetadata(event, eventMetadata).thenReply(Counter::value);
+      return effects()
+          .persistWithMetadata(event, eventMetadata)
+          .thenReply(
+              newState -> {
+                notificationPublisher.publish("counter increased to " + newState.value());
+                return newState.value();
+              });
     } else {
-      return effects().persist(event).thenReply(Counter::value);
+      return effects()
+          .persist(event)
+          .thenReply(
+              newState -> {
+                notificationPublisher.publish("counter increased to " + newState.value());
+                return newState.value();
+              });
     }
   }
 
@@ -188,6 +207,10 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
     } else {
       return effects().reply("No error triggered for: " + errorType);
     }
+  }
+
+  public NotificationPublisher.NotificationStream<String> updates() {
+    return notificationPublisher.stream();
   }
 
   @Override

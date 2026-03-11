@@ -13,6 +13,8 @@ import com.example.application.TransferWorkflowWithNotifications;
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 public class WorkflowEndpoint {
 
+  public record TransferUpdate(String message) {} // <1>
+
   // end::workflow-notification[]
   private final ComponentClient componentClient;
 
@@ -23,12 +25,12 @@ public class WorkflowEndpoint {
   // tag::workflow-notification[]
   @Get("/updates/{transferId}")
   public HttpResponse updates(String transferId) {
-    return HttpResponses.serverSentEvents(
-      componentClient
-        .forWorkflow(transferId)
-        .notificationStream(TransferWorkflowWithNotifications::updates) // <1>
-        .source()
-    );
+    var source = componentClient
+      .forWorkflow(transferId)
+      .notificationStream(TransferWorkflowWithNotifications::updates)
+      .source()
+      .map(msg -> new TransferUpdate(msg)); // <2>
+    return HttpResponses.serverSentEvents(source);
   }
 }
 // end::workflow-notification[]

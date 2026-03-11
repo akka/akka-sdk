@@ -18,6 +18,7 @@ auditable
 [Aa]utoscaling
 authMechanism
 Avro
+aws
 azureMonitor
 [Bb]ackoffice
 Bastian
@@ -164,6 +165,7 @@ prepending
 [Pp]ropagations
 proto
 [Pp]rotobuf
+proxied
 Qodo
 [Qq]uantiles
 Quatrini

@@ -4,8 +4,20 @@
 # abort script if a command fails
 set -e
 
-find target/site -type d -name support -prune -o -type d -name reference -prune -o -type d -name _attachments -prune -o -type d -name services -prune -o -type d -name libraries -prune -o -name "404.html" -prune -o -name "*.adoc\[\].html" -prune -o \
-  -type f -name "*.html" -exec sh -c 'npx -y d2m@latest -e -i {} -o {}.md ' \;
+find target/site \
+  -type d -name support -prune -o \
+  -type d -name java -prune -o \
+  -type d -path "*/reference/cli" -prune -o \
+  -type d -path "*/reference/security-announcements" -prune -o \
+  -type d -path "*/reference/release-notes" -prune -o \
+  -type d -path "*/sdk/ask-akka" -prune -o \
+  -type d -name _attachments -prune -o \
+  -type d -name services -prune -o \
+  -type d -name libraries -prune -o \
+  -name "404.html" -prune -o \
+  -name "*.adoc\[\].html" -prune -o \
+  -type f -name "*.html" \
+  -exec sh -c 'npx -y d2m@latest -e -i "$1" -o "$1.md"' sh {} \;
 
 # replace numbered references in code snippets
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -17,7 +29,7 @@ fi
 cp docs/src/modules/ROOT/pages/llms.txt target/site/
 
 mkdir -p target/docs-md
-rsync -av --prune-empty-dirs --include="*/" --include="*.html.md" --exclude="*" target/site/ target/docs-md/
+rsync -av --prune-empty-dirs --include="*/" --exclude="reference/**" --include="*.html.md" --exclude="*" target/site/ target/docs-md/
 (cd target/docs-md && zip -r ../../target/site/sdk/_attachments/akka-docs-md.zip .)
 
 # update ask-akka-agent

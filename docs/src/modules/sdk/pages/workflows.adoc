@@ -211,6 +211,7 @@ include::example$transfer-workflow-compensation/src/main/java/com/example/transf
 <1> Accepts the request only when status is `WAITING_FOR_ACCEPTANCE`.
 <2> Otherwise, rejects the requests.
 
+[#_notification]
 == Notification
 
 When a workflow is running, clients often need to track its progress. Rather than repeatedly polling the workflow state, you can use the `NotificationPublisher` to push updates to subscribers in real-time. This is more efficient and provides a better user experience, especially for long-running workflows.
@@ -246,7 +247,8 @@ Clients subscribe to workflow notifications using the `ComponentClient`. The not
 ----
 include::example$doc-snippets/src/main/java/com/example/api/WorkflowEndpoint.java[tag=workflow-notification]
 ----
-<1> Use `notificationStream()` with a method reference to the workflow's stream method. The returned source can be consumed directly or wrapped with `HttpResponses.serverSentEvents()` for SSE delivery to HTTP clients.
+<1> Define API-specific records to avoid exposing internal domain types outside the service.
+<2> Map notifications to API records using the `map` operator on the notification source. The result can be wrapped with `HttpResponses.serverSentEvents()` for SSE delivery to HTTP clients.
 
 You can find the full source code of workflow notification sample in the link:https://github.com/akka-samples/multi-agent[akka-samples/multi-agent GitHub Repository, window="new"].
 

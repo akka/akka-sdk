@@ -25,7 +25,7 @@ Access these documentation files for detailed patterns:
 - `akka-context/sdk/agents/streaming.html.md` - Streaming model responses with agents
 - `akka-context/sdk/agents/orchestrating.html.md` - Orchestrating multiple agents
 - `akka-context/sdk/agents/guardrails.html.md` - Constraining and controlling agent behavior with guardrails
-- `akka-context/sdk/agents/evaluating.html.md` - Evaluating and judging the responses from LLMs via agents
+- `akka-context/sdk/agents/llm_eval.html.md` - Evaluating and judging the responses from LLMs via agents
 - `akka-context/sdk/agents/testing.html.md` - Testing agents
 - `akka-context/getting-started/planner-agent/dynamic-team.html.md` - Dynamic agent planning and orchestration
 - `akka-context/sdk/event-sourced-entities.html.md` - Event sourced entity
@@ -230,6 +230,8 @@ private StepEffect compensateWithdrawStep() {
     .thenEnd();
 }
 ```
+
+Note: `maxRetries()` for the WorkflowSettings is inherited from Workflow — NO static import needed
 
 ### Agent with Tools
 
@@ -569,6 +571,7 @@ public class MyEndpointIntegrationTest extends TestKitSupport {
 - Create multiple command handlers in Agent
 - Return protobuf types from domain layer
 - Import `WorkflowSettings` -> WorkflowSettings is an inner class of Workflow, so no additional import is needed
+- Static import `maxRetries` -> `maxRetries()` is inherited from `Workflow`, just call it directly without any import
 
 ✅ **DO:**
 - Use Java records for immutable data

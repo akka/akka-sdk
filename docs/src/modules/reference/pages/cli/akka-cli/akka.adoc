@@ -34,6 +34,7 @@ Welcome to the Akka CLI, for more information on its usage please visit the docu
 * link:akka_docs.html[akka docs]	 - Open the Akka documentation page
 * link:akka_local.html[akka local]	 - Interact with and manage Akka services running locally.
 * link:akka_logs.html[akka logs]	 - Display the last few lines of logs for a specific service.
+* link:akka_mcp.html[akka mcp]	 - MCP server for AI agent integration.
 * link:akka_organizations.html[akka organizations]	 - Manage your organizations on Akka
 * link:akka_projects.html[akka projects]	 - Manage your Akka projects.
 * link:akka_regions.html[akka regions]	 - Manage available regions.
@@ -42,6 +43,7 @@ Welcome to the Akka CLI, for more information on its usage please visit the docu
 * link:akka_secrets.html[akka secrets]	 - Manage secrets for an Akka project.
 * link:akka_service-configs.html[akka service-configs]	 - Manage service configs for a Akka project.
 * link:akka_services.html[akka services]	 - Manage and deploy services on Akka.
+* link:akka_specify.html[akka specify]	 - Initialize and manage AI-assisted Akka development projects.
 * link:akka_version.html[akka version]	 - Print the akka CLI version
 
 [discrete]

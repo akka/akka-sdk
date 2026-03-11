@@ -15,6 +15,10 @@ Observability configuration is configured per Akka project. All services in that
 
 When updating observability configuration, the changes will not take effect until a service is restarted.
 
+## <a href="about:blank#_exported_metrics"></a> Exported metrics
+
+For a complete list of metrics recorded and exported by Akka, see the [metrics reference](../../reference/telemetry/metrics.html).
+
 ## <a href="about:blank#_working_with_observability_descriptors"></a> Working with observability descriptors
 
 The Akka observability descriptor allows observability export configuration to be specified in a YAML file, for versioning and reuse across projects and environments.
@@ -133,6 +137,39 @@ akka project observability set default otlp --endpoint otlp.example.com:4317
 ```
 In addition, the OTLP exporter supports [TLS configuration](about:blank#_tls_configuration) and [custom headers](about:blank#_custom_headers). A full reference of configuration options is available in [the reference documentation](../../reference/descriptors/observability-descriptor.html#_observabilityotlp).
 
+### <a href="about:blank#_otlp_http"></a> OTLP HTTP
+
+OTLP HTTP is the HTTP-based protocol used by OpenTelemetry, as an alternative to the gRPC-based OTLP exporter. It is supported for logs, metrics, and traces. This exporter is useful in environments where HTTP is preferred over gRPC, such as when behind proxies or firewalls that don’t support HTTP/2.
+
+The primary piece of configuration it needs is a base URL endpoint. The exporter will automatically append the appropriate path for logs, metrics, or traces (e.g., `/v1/logs`, `/v1/metrics`, `/v1/traces`).
+
+Descriptor
+```yaml
+default:
+  otlpHttp:
+    endpointBaseUrl: https://otlp.example.com:4318
+```
+CLI
+```command
+akka project observability set default otlp-http --endpoint-base-url https://otlp.example.com:4318
+```
+By default, the exporter uses Protobuf encoding. To use JSON encoding instead:
+
+Descriptor
+```yaml
+default:
+  otlpHttp:
+    endpointBaseUrl: https://otlp.example.com:4318
+    encoding: json
+```
+CLI
+```command
+akka project observability set default otlp-http \
+  --endpoint-base-url https://otlp.example.com:4318 \
+  --encoding json
+```
+In addition, the OTLP HTTP exporter supports [TLS configuration](about:blank#_tls_configuration) and [custom headers](about:blank#_custom_headers). A full reference of configuration options is available in [the reference documentation](../../reference/descriptors/observability-descriptor.html#_observabilityotlphttp).
+
 ### <a href="about:blank#_prometheus_remote_write"></a> Prometheus Remote Write
 
 The Prometheus remote write protocol is supported for exporting metrics. It is generally used to write metrics into Cortex and similar long term metrics databases for Prometheus. The primary piece of configuration it needs is an endpoint. For example:
@@ -169,6 +206,24 @@ akka project observability set default splunk-hec \
   --token-secret-name my-splunk-token --token-secret-key token
 ```
 In addition, the Splunk HEC exporter supports [TLS configuration](about:blank#_tls_configuration). A full reference of configuration options is available in [the reference documentation](../../reference/descriptors/observability-descriptor.html#_observabilitysplunkhec).
+
+### <a href="about:blank#_azure_monitor"></a> Azure Monitor
+
+Azure Monitor is supported for exporting logs, metrics, and traces. The primary piece of configuration it needs is an Azure Monitor connection string, which can be obtained from your Application Insights resource in the Azure portal.
+
+|  | Replace the `XXXXXXXX` placeholder values with the actual values from your Azure Application Insights connection string. |
+Descriptor
+```yaml
+default:
+  azureMonitor:
+    connectionString: InstrumentationKey=XXXXXXXX;IngestionEndpoint=https://centralus-2.in.applicationinsights.azure.com/;LiveEndpoint=https://centralus.livediagnostics.monitor.azure.com/;ApplicationId=XXXXXXXX
+```
+CLI
+```command
+akka project observability set default azure-monitor \
+  --connection-string "InstrumentationKey=XXXXXXXX;IngestionEndpoint=https://centralus-2.in.applicationinsights.azure.com/;LiveEndpoint=https://centralus.livediagnostics.monitor.azure.com/;ApplicationId=XXXXXXXX"
+```
+A full reference of configuration options is available in [the reference documentation](../../reference/descriptors/observability-descriptor.html#_observabilityazuremonitor).
 
 ### <a href="about:blank#_google_cloud"></a> Google Cloud
 
@@ -341,6 +396,7 @@ This will show the observability agent logs for all instances of the service. An
 ## <a href="about:blank#_see_also"></a> See also
 
 - <a href="../../reference/cli/akka-cli/akka_projects_observability.html#_see_also">`akka project observability` commands</a>
+- [Exported metrics reference](../../reference/telemetry/metrics.html)
 
 <!-- <footer> -->
 <!-- <nav> -->

@@ -42,7 +42,7 @@ To maintain modularity:
 - Avoid exposing domain types directly to the outside world.
 - The API layer should not call the domain layer directly.
 - Inner layers should not depend on or be aware of outer layers.
-For more on coding structure and practical considerations, see the [coding guidelines](../java/ai-coding-assistant-guidelines.html).
+For more on coding structure and practical considerations, see the [coding guidelines](../sdk/ai-coding-assistant-guidelines.html).
 
 ### <a href="about:blank#_domain"></a> Domain
 
@@ -60,11 +60,11 @@ Most classes in this layer are based on Akka-provided building blocks. The domai
 
 This layer connects your service to the outside world. It defines endpoints that expose application functionality over HTTP or gRPC. Requests are handled here and passed on to the application layer.
 
-Endpoints use <a href="../java/component-and-service-calls.html#_component_client">`ComponentClient`</a> to call Akka components in the application layer. This maintains separation of concerns and ensures runtime boundaries are respected.
+Endpoints use <a href="../sdk/component-and-service-calls.html#_component_client">`ComponentClient`</a> to call Akka components in the application layer. This maintains separation of concerns and ensures runtime boundaries are respected.
 
 The API layer may also expose public event models over Kafka or other channels. External systems should interact with your service only through this layer.
 
-Access control and request validation also belong here. For HTTP-specific guidance, see [Designing HTTP Endpoints](../java/http-endpoints.html).
+Access control and request validation also belong here. For HTTP-specific guidance, see [Designing HTTP Endpoints](../sdk/http-endpoints.html).
 
 ## <a href="about:blank#_akka_services"></a> Akka Services
 
@@ -78,8 +78,8 @@ Once familiar with the project structure, continue with:
 - [Akka Deployment Model](deployment-model.html)
 - [Development process](development-process.html)
 - [Memory models](state-model.html)
-- [Development best practices](../java/dev-best-practices.html)
-You may also begin development right away using the [Akka SDK](../java/index.html).
+- [Development best practices](../sdk/dev-best-practices.html)
+You may also begin development right away using the [Akka SDK](../sdk/index.html).
 
 <!-- <footer> -->
 <!-- <nav> -->

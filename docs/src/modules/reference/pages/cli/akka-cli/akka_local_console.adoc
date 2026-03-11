@@ -13,9 +13,10 @@ akka local console [flags]
 == Options
 
 ----
-      --force-asset-check   This forces a check for a new version of the local console assets.
-  -h, --help                help for console
-  -p, --port uint16         The port on which the local console will run. (default 9889)
+      --bind-address string   The address to bind to. (default "127.0.0.1")
+      --force-asset-check     This forces a check for a new version of the local console assets.
+  -h, --help                  help for console
+  -p, --port uint16           The port on which the local console will run. (default 9889)
 ----
 
 == Options inherited from parent commands

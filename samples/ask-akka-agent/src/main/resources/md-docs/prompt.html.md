@@ -41,6 +41,116 @@ public class ActivityAgent extends Agent {
 | **3** | Define the user message for the specific request, and use in the effect builder. |
 Keep in mind that some models have preferences in how you wrap or label user input within the system prompt and you’ll need to take that into account when defining your system message.
 
+## <a href="about:blank#_multimodal_user_message"></a> Multimodal user message
+
+Multimodal AI models can process not only text but also images or PDF, enabling agents to analyze visual content, extract information from documents, or answer questions about images.
+
+To send images or PDF along with text to an AI model, use the `UserMessage` class which supports multimodal content:
+
+[ImageProcessingAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/application/ImageProcessingAgent.java)
+```java
+public Effect<String> ask() {
+  return effects()
+    .systemMessage("You are image analyses tool")
+    .userMessage(
+      UserMessage.from( // (1)
+        TextMessageContent.from("What do you see?"), // (2)
+        ImageMessageContent.fromUrl("https://example/image.png") // (3)
+      )
+    )
+    .thenReply();
+}
+```
+
+| **1** | Create a `UserMessage` with multiple content elements |
+| **2** | Add text content using `TextMessageContent.from()` |
+| **3** | Add image content using `ImageMessageContent.fromUrl()` |
+
+|  | Not all AI models support vision or PDF capabilities. Ensure your configured model provider supports the input types before using multimodal messages. |
+
+### <a href="about:blank#_custom_content_loading"></a> Custom content loading
+
+Some AI models are able to fetch images or PDF from publicly accessible URLs. When you need to load content from authenticated endpoints, private storage systems, or custom sources, you can implement a custom `ContentLoader`.
+
+The `ContentLoader` interface provides a single `load` method that receives a `LoadableMessageContent`. Use pattern matching to handle each content type, fetch the data, and return it along with the appropriate MIME type:
+
+[CustomContentLoadingAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/application/CustomContentLoadingAgent.java)
+```java
+@Component(id = "custom-content-loading-agent")
+public class CustomContentLoadingAgent extends Agent {
+
+  private final HttpClient httpClient;
+
+  public CustomContentLoadingAgent(HttpClient httpClient) {
+    this.httpClient = httpClient;
+  }
+
+  public class MyContentLoader implements ContentLoader { // (1)
+
+    private final String userToken;
+
+    public MyContentLoader(String userToken) {
+      this.userToken = userToken;
+    }
+
+    @Override
+    public LoadedContent load(MessageContent.LoadableMessageContent content) {
+      return switch (content) {
+        case MessageContent.ImageUrlMessageContent image -> {
+          StrictResponse<ByteString> response = httpClient // (2)
+            .GET(image.url().toString())
+            .addCredentials(HttpCredentials.createOAuth2BearerToken(userToken))
+            .invoke();
+
+          byte[] data = response.body().toArray();
+          String actualMimeType = response
+            .httpResponse()
+            .entity()
+            .getContentType()
+            .mediaType()
+            .toString(); // (3)
+
+          yield new LoadedContent(data, Optional.of(actualMimeType)); // (4)
+        }
+        case MessageContent.PdfUrlMessageContent pdf -> throw new RuntimeException(
+          "Not implemented"
+        );
+      };
+    }
+  }
+```
+
+| **1** | Implement the `ContentLoader` interface |
+| **2** | Fetch image data with authentication using the URL from `ImageUrlMessageContent` |
+| **3** | Extract the actual MIME type of the image from the response |
+| **4** | Return `LoadedContent` with the data and MIME type |
+To use your custom content loader, pass it to the agent effect builder:
+
+[CustomContentLoadingAgent.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/application/CustomContentLoadingAgent.java)
+```java
+public record AnalyzeRequest(String imageUri, String pdfUri, String userToken) {}
+
+public Effect<String> analyzeImage(AnalyzeRequest request) {
+  return effects()
+    .systemMessage("You are a document analysis assistant.")
+    .contentLoader(new MyContentLoader(request.userToken())) // (1)
+    .userMessage(
+      UserMessage.from(
+        TextMessageContent.from("Describe this image and summarize the PDF"),
+        ImageMessageContent.fromUrl(request.imageUri), // (2)
+        PdfMessageContent.fromUrl(request.pdfUri) // (3)
+      )
+    )
+    .thenReply();
+}
+```
+
+| **1** | Register the custom content loader with the effect |
+| **2** | `ImageUrlMessageContent` is passed to your loader when processing the user message |
+The content loader instance can be created per-request like in this example (to support per-request credentials) or shared globally via dependency injection. If shared, ensure the implementation is thread-safe as it may be used by multiple concurrent agent interactions.
+
+|  | If the `load` method throws an exception, the entire agent request fails. |
+
 ## <a href="about:blank#_using_dynamic_prompts_with_templates"></a> Using dynamic prompts with templates
 
 As an alternative to hard-coded prompts, there is a built-in prompt template entity. The advantage of using the prompt template entity is that you can change the prompts at runtime without restarting or redeploying the service. Because the prompt template is managed as an entity, you retain full change history.

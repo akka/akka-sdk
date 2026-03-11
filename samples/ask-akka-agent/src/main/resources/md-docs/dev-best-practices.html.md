@@ -67,10 +67,10 @@ To demonstrate this, let’s consider a simple example of a `CustomerStore` that
 ```java
 public class CustomerStore {
 
-  public CompletionStage<Optional<Customer>> getById(String customerId) {
+  public Optional<Customer> getById(String customerId) {
   }
 
-  public CompletionStage<Done> save(String customerId, Customer customer) {
+  public void save(String customerId, Customer customer) {
   }
 
 }
@@ -92,43 +92,34 @@ public class CustomerStoreUpdater extends Consumer {
   public Effect onEffect(CustomerEvent event) { // (1)
     var customerId = messageContext().eventSubject().get();
     return switch (event) {
-      case CustomerCreated created -> effects()
-        .asyncDone(
+      case CustomerCreated created -> {
+        customerStore.save(
+          customerId,
+          new Customer(created.email(), created.name(), created.address())
+        );
+        yield effects().done();
+      }
+      case NameChanged nameChanged -> {
+        var customer = customerStore.getById(customerId);
+        if (customer.isPresent()) {
+          customerStore.save(customerId, customer.get().withName(nameChanged.newName()));
+          yield effects().done();
+        } else {
+          throw new IllegalStateException("Customer not found: " + customerId);
+        }
+      }
+      case AddressChanged addressChanged -> {
+        var customer = customerStore.getById(customerId);
+        if (customer.isPresent()) {
           customerStore.save(
             customerId,
-            new Customer(created.email(), created.name(), created.address())
-          )
-        );
-      case NameChanged nameChanged -> effects()
-        .asyncDone(
-          customerStore
-            .getById(customerId)
-            .thenCompose(customer -> {
-              if (customer.isPresent()) {
-                return customerStore.save(
-                  customerId,
-                  customer.get().withName(nameChanged.newName())
-                );
-              } else {
-                throw new IllegalStateException("Customer not found: " + customerId);
-              }
-            })
-        );
-      case AddressChanged addressChanged -> effects()
-        .asyncDone(
-          customerStore
-            .getById(customerId)
-            .thenCompose(customer -> {
-              if (customer.isPresent()) {
-                return customerStore.save(
-                  customerId,
-                  customer.get().withAddress(addressChanged.address())
-                );
-              } else {
-                throw new IllegalStateException("Customer not found: " + customerId);
-              }
-            })
-        );
+            customer.get().withAddress(addressChanged.address())
+          );
+          yield effects().done();
+        } else {
+          throw new IllegalStateException("Customer not found: " + customerId);
+        }
+      }
     };
   }
 }
@@ -238,18 +229,16 @@ public class CounterStore {
 
   private Map<String, CounterEntry> store = new ConcurrentHashMap<>();
 
-  public CompletionStage<Optional<CounterEntry>> getById(String counterId) {
-    return completedFuture(Optional.ofNullable(store.get(counterId)));
+  public Optional<CounterEntry> getById(String counterId) {
+    return Optional.ofNullable(store.get(counterId));
   }
 
-  public CompletionStage<Done> save(CounterEntry counterEntry) {
-    return completedFuture(store.put(counterEntry.counterId(), counterEntry)).thenApply(
-      __ -> done()
-    );
+  public void save(CounterEntry counterEntry) {
+    store.put(counterEntry.counterId(), counterEntry);
   }
 
-  public CompletionStage<Collection<CounterEntry>> getAll() {
-    return completedFuture(store.values());
+  public Collection<CounterEntry> getAll() {
+    return store.values();
   }
 }
 ```
@@ -269,26 +258,20 @@ public class CounterStoreUpdater extends Consumer {
     var counterId = messageContext().eventSubject().get();
     var newSeqNum = messageContext().metadata().asCloudEvent().sequence();
 
-    return effects()
-      .asyncEffect(
-        counterStore
-          .getById(counterId) // (1)
-          .thenApply(counterEntry -> {
-            var currentSeqNum = counterEntry.map(CounterEntry::seqNum).orElse(0L);
-            if (!newSeqNum.isPresent()) { // (2)
-              // missing sequence number, can't deduplicate
-              return processEvent(counterEvent, counterEntry, 0L);
-            } else {
-              if (newSeqNum.get() <= currentSeqNum) {
-                //duplicate, can be ignored
-                return effects().ignore(); // (3)
-              } else {
-                // not a duplicate
-                return processEvent(counterEvent, counterEntry, newSeqNum.get()); // (4)
-              }
-            }
-          })
-      );
+    var counterEntry = counterStore.getById(counterId); // (1)
+    var currentSeqNum = counterEntry.map(CounterEntry::seqNum).orElse(0L);
+    if (!newSeqNum.isPresent()) { // (2)
+      // missing sequence number, can't deduplicate
+      return processEvent(counterEvent, counterEntry, 0L);
+    } else {
+      if (newSeqNum.get() <= currentSeqNum) {
+        //duplicate, can be ignored
+        return effects().ignore(); // (3)
+      } else {
+        // not a duplicate
+        return processEvent(counterEvent, counterEntry, newSeqNum.get()); // (4)
+      }
+    }
   }
 
   private Effect processEvent(
@@ -305,7 +288,8 @@ public class CounterStoreUpdater extends Consumer {
           currentValue + increased.value(),
           seqNum
         );
-        yield effects().asyncDone(counterStore.save(updatedEntry)); // (5)
+        counterStore.save(updatedEntry); // (5)
+        yield effects().done();
       }
       case ValueMultiplied multiplied -> {
         var updatedEntry = new CounterEntry(
@@ -313,7 +297,8 @@ public class CounterStoreUpdater extends Consumer {
           currentValue * multiplied.multiplier(),
           seqNum
         );
-        yield effects().asyncDone(counterStore.save(updatedEntry)); // (5)
+        counterStore.save(updatedEntry); // (5)
+        yield effects().done();
       }
     };
   }
@@ -474,7 +459,7 @@ Keep in mind that using collection types not supported by the Jackson serializat
 
 <!-- <footer> -->
 <!-- <nav> -->
-[AI model provider configuration](model-provider-details.html) [Using an AI coding assistant](ai-coding-assistant.html)
+[Data sanitization](sanitization.html) [Using an AI coding assistant](ai-coding-assistant.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

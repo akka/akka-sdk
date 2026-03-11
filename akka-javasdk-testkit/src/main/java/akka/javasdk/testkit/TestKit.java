@@ -964,7 +964,7 @@ public class TestKit {
   @SuppressWarnings("unchecked")
   public <T extends AkkaGrpcClient> T getGrpcEndpointClient(
       Class<T> grpcClientClass, Principal requestPrincipal) {
-    var client = grpcClientProvider.createNewClientFor(grpcClientClass, serviceName, false);
+    var client = grpcClientProvider.createNewClientFor(grpcClientClass, serviceName);
     if (requestPrincipal == Principal.SELF) {
       // no need to use this method, but let's allow it
       return getGrpcEndpointClient(grpcClientClass);

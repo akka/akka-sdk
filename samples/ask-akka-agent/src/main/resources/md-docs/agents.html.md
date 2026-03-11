@@ -75,10 +75,31 @@ akka.javasdk {
 
     openai {
       model-name = "gpt-4o-mini"
+      api-key = ${?OPENAI_API_KEY}
     }
   }
 }
 ```
+The `model-provider` property points to the name of another configuration section, in this case `akka.javasdk.agent.openai`. That configuration section contains the actual configuration for the model provider, according to the properties described in [model provider reference configurations](model-provider-details.html#_reference_configurations).
+
+Another example where we have selected `anthropic` with `claude-sonnet-4` as the default model provider:
+
+src/main/resources/application.conf
+```json
+akka.javasdk {
+  agent {
+    model-provider = anthropic
+
+    anthropic {
+      model-name = "claude-opus-4-6"
+      api-key = ${?ANTHROPIC_API_KEY}
+      max-tokens = 5000
+    }
+  }
+}
+```
+The API key can be defined with an environment variable, `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` in the above examples.
+
 The default model will be used if the agent doesn’t specify another model. Different agents can use different models by defining the `ModelProvider` in the Agent effect:
 
 MyAgent.java
@@ -106,6 +127,7 @@ Available model providers for hosted models are:
 | Provider | Site |
 | --- | --- |
 | Anthropic | [anthropic.com](https://www.anthropic.com/) |
+| Bedrock | [aws.amazon.com](https://aws.amazon.com/bedrock/) |
 | GoogleAIGemini | [gemini.google.com](https://gemini.google.com/) |
 | Hugging Face | [huggingface.co](https://huggingface.co/) |
 | OpenAi | [openai.com](https://openai.com/) |
@@ -117,7 +139,7 @@ Additionally, these model providers for locally running models are supported:
 | Ollama | [ollama.com](https://ollama.com/) |
 Each model provider may have different settings and those are described in [AI model provider configuration](model-provider-details.html)
 
-It is also possible to plug in a custom model by implementing the <a href="_attachments/api/akka/javasdk/agent/ModelProvider.Custom.html">`ModelProvider.Custom`</a> interface and use it with `ModelProvider.custom`.
+It is also possible to plug in a custom model by implementing the <a href="_attachments/api/akka/javasdk/agent/ModelProvider.Custom.html">`ModelProvider.Custom`</a> interface and use it with `ModelProvider.custom`. That involves the underlying implementations of LangChain4J `ChatModel` and optionally `StreamingChatModel`. Refer to the [Langchain4j](https://docs.langchain4j.dev/) documentation or reference implementations for how to implement the `ChatModel` and `StreamingChatModel`.
 
 ## <a href="about:blank#_use_componentclient_in_an_agent"></a> Use ComponentClient in an agent
 

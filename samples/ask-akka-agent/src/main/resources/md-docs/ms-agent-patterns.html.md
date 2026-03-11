@@ -25,6 +25,8 @@ The way Akka approaches this problem is through workflows and best practices in 
 
 The key difference between direct agent communication and Akka’s approach is that in Akka the workflow makes the decision as to which agents are called, when they’re called, and if they’re called concurrently. Agents then become small, easily managed pieces of code to manage discrete interactions with a model. The results of those interactions can be reused in many different ways by the guiding workflows.
 
+This orchestration approach is often called the **supervisor pattern**: a central workflow acts as the supervisor, coordinating multiple worker agents. Agents don’t communicate directly with each other—instead, the supervisor decides which agents to call, in what order, and how to handle their outputs. This separation keeps agents simple and reusable while centralizing reliability concerns like durable execution steps, retries, and failure handling in the workflow.
+
 The rest of this document goes through all of [Microsoft’s agent design patterns](https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns) and illustrates how that pattern can be accomplished using Akka’s components.
 
 ## <a href="about:blank#_sequential_orchestration"></a> Sequential orchestration
@@ -171,11 +173,15 @@ Magentic orchestration is a pattern for open-ended, complex problems that don’
 
 While the origin of the term `magentic` is open for debate, our best guess for the origin of this word is that it’s a portmanteau of *“multi-agent agentic”* or *“multi-agentic”*.
 
+In this dynamic variant of the supervisor pattern, an AI model creates the plan, decides the next step, evaluates results, and determines when the goal has been achieved. The workflow still provides durable execution with built-in retry mechanisms—the AI influences **what** happens, but the workflow ensures it happens **reliably**.
+
 When we use workflows as ubiquitous coordinators and allow agents to be small, purpose-built model interaction components, then the need for individual, concrete patterns becomes less explicit. We don’t need to rewrite agents if we want to use them in different ways, we can either change how planning agents work or modify small bits of logic in the workflow.
 
 ### <a href="about:blank#_examples_5"></a> Examples
 
 In our [Akka dynamic orchestration](../getting-started/planner-agent/dynamic-team.html) example, we illustrate a planning and evaluation loop, as well as re-planning.
+
+Additionally, the [Akka adaptive multi-agent sample](https://github.com/akka-samples/adaptive-multi-agent) implements the [MagenticOne pattern](https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/magentic-one.html).
 
 <!-- <footer> -->
 <!-- <nav> -->

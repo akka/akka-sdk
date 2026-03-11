@@ -29,7 +29,7 @@ Static primary selection mode impacts Key Value Entities by specifying one regio
 
 Changing primary regions is a serious operation and should be thought out carefully. Ideally you plan this ahead of time and synchronize the regions by allowing the replication lag to drop to zero. You can put the project into a read only mode that will stop any writes from happening if you want to be sure that there will be zero data collisions when you change the primary.
 
-|  | At this time [Key Value Entities](../java/key-value-entities.html) do not replicate data between regions, but Akka will route all traffic to the correct region for reads and writes. If you change the primary region on a project with Key Value Entities the current state of the entities will be lost. |
+|  | At this time [Key Value Entities](../sdk/key-value-entities.html) do not replicate data between regions, but Akka will route all traffic to the correct region for reads and writes. If you change the primary region on a project with Key Value Entities the current state of the entities will be lost. |
 
 ### <a href="about:blank#_container_registries"></a> Container registries
 
@@ -37,7 +37,7 @@ Container registries are regional in Akka. If you decide to use [Configure an ex
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Enable CLI command completion](cli/command-completion.html) [Reference](../reference/index.html)
+[System Configuration](cli/system-config.html) [Reference](../reference/index.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

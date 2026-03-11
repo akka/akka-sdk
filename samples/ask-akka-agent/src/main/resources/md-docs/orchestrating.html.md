@@ -11,6 +11,8 @@
 
 A single agent performs one well-defined task. Several agents can collaborate to achieve a common goal. The agents should be orchestrated from a predefined workflow or a dynamically created plan.
 
+This orchestration approach is often called the **supervisor pattern**: a central workflow acts as the supervisor, coordinating multiple worker agents. Agents don’t communicate directly with each other—instead, the supervisor decides which agents to call, in what order, and how to handle their outputs. This separation keeps agents simple and reusable while centralizing reliability concerns like durable execution steps, retries and failure handling in the workflow.
+
 ## <a href="about:blank#_using_a_predefined_workflow"></a> Using a predefined workflow
 
 Let’s first look at how to define a workflow that orchestrates several agents in a predefined steps. This is similar to the <a href="calling.html">`ActivityAgentManager`</a> that was illustrated above, but it uses both the `WeatherAgent` and the `ActivityAgent`. First it retrieves the weather forecast and then it finds suitable activities.
@@ -124,7 +126,9 @@ To create a more flexible and autonomous agentic system you want to analyze the 
 
 There are several approaches for the planning, such as using deterministic algorithms or using AI also for the planning. We will look at how we can use AI for analyzing a request, selecting agents and in which order to use them.
 
-We split the planning into two steps and use two separate agents for these tasks. It’s not always necessary to use several steps for the planning. You have to experiment with what works best for your problem domain.
+In this dynamic variant of the supervisor pattern, an AI model creates the plan, decides the next step, evaluates results, and determines when the goal has been achieved. The workflow still provides durable execution with built-in retry mechanisms—the AI influences **what** happens, but the workflow ensures it happens **reliably**.
+
+In the following example we split the planning into two steps and use two separate agents for these tasks. It’s not always necessary to use several steps for the planning. You have to experiment with what works best for your problem domain.
 
 1. Select agents that are useful for a certain problem.
 2. Decide in which order to use the agents and give each agent precise instructions for its task.
@@ -326,6 +330,15 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // (1
 
   public record Request(String userId, String message) {}
 
+  public sealed interface AgentTeamNotification {
+    record StatusUpdate(String msg) implements AgentTeamNotification {}
+
+    record LlmResponseStart() implements AgentTeamNotification {}
+
+    record LlmResponseDelta(String response) implements AgentTeamNotification {}
+
+    record LlmResponseEnd() implements AgentTeamNotification {}
+  }
 
   @Override
   public WorkflowSettings settings() {
@@ -360,6 +373,9 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // (1
       .invoke(currentState().userQuery); // (4)
 
     logger.info("Selected agents: {}", selection.agents());
+    notificationPublisher.publish(
+      new AgentTeamNotification.StatusUpdate("Agents selected: " + selection.agents())
+    );
     if (selection.agents().isEmpty()) {
       var newState = currentState()
         .withFinalAnswer("Couldn't find any agent(s) able to respond to the original query.")
@@ -387,6 +403,11 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // (1
       .invoke(new PlannerAgent.Request(currentState().userQuery, agentSelection)); // (6)
 
     logger.info("Execution plan: {}", plan);
+    notificationPublisher.publish(
+      new AgentTeamNotification.StatusUpdate(
+        "Execution plan formed. Number of steps: " + plan.steps().size()
+      )
+    );
     return stepEffects()
       .updateState(currentState().withPlan(plan))
       .thenTransitionTo(AgentTeamWorkflow::executePlanStep); // (7)
@@ -399,6 +420,9 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // (1
       "Executing plan step (agent:{}), asking {}",
       stepPlan.agentId(),
       stepPlan.query()
+    );
+    notificationPublisher.publish(
+      new AgentTeamNotification.StatusUpdate("Calling: " + stepPlan.agentId())
     );
     var agentResponse = callAgent(stepPlan.agentId(), stepPlan.query()); // (9)
     if (agentResponse.startsWith("ERROR")) {
@@ -440,11 +464,26 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // (1
   @StepName("summarize")
   private StepEffect summarizeStep() { // (2)
     var agentsAnswers = currentState().agentResponses.values();
-    var finalAnswer = componentClient
+
+    var tokenSource = componentClient
       .forAgent()
       .inSession(sessionId())
-      .method(SummarizerAgent::summarize)
-      .invoke(new SummarizerAgent.Request(currentState().userQuery, agentsAnswers));
+      .tokenStream(SummarizerAgent::summarize)
+      .source(new SummarizerAgent.Request(currentState().userQuery, agentsAnswers));
+
+    notificationPublisher.publish(new AgentTeamNotification.LlmResponseStart());
+    var finalAnswer = notificationPublisher.publishTokenStream(
+      tokenSource,
+      10,
+      ofMillis// (200),
+      AgentTeamNotification.LlmResponseDelta::new,
+      materializer
+    );
+
+    notificationPublisher.publish(new AgentTeamNotification.LlmResponseEnd());
+    notificationPublisher.publish(
+      new AgentTeamNotification.StatusUpdate("All steps completed!")
+    );
 
     return stepEffects()
       .updateState(currentState().withFinalAnswer(finalAnswer).complete())
@@ -454,7 +493,7 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // (1
 }
 ```
 
-| **1** | It’s a workflow, with reliable and durable execution. |
+| **1** | It’s a workflow, with reliable and durable execution. Some steps use the [notification system](streaming.html#_streaming_from_the_workflow) to inform subscribers about the progress. |
 | **2** | The steps are select - plan - execute - summarize. |
 | **3** | The workflow starts by selecting agents. |
 | **4** | which is performed by the `SelectorAgent`. |
@@ -481,6 +520,8 @@ private String callAgent(String agentId, String query) {
 }
 ```
 You find the full source code for this multi-agent sample in the [akka-samples/multi-agent GitHub Repository](https://github.com/akka-samples/multi-agent).
+
+A more advanced sample illustrates [adaptive multi-agent orchestration](https://github.com/akka-samples/adaptive-multi-agent). It re-evaluates progress after each agent response and dynamically adjusts its strategy.
 
 <!-- <footer> -->
 <!-- <nav> -->

@@ -379,30 +379,20 @@ private StepEffect detectFraudsStep() {
 
 ## <a href="about:blank#_pausing_workflow"></a> Pausing workflow
 
-A long-running workflow can be paused while waiting for some additional information to continue processing. A special `pause` transition can be used to inform Akka that the execution of the Workflow should be postponed. By launching a Workflow command handler, the user can then resume the processing. Additionally, a Timer can be scheduled to automatically inform the Workflow that the expected time for the additional data has passed.
+A long-running workflow can be paused while waiting for some additional information to continue processing. A special `pause` transition can be used to inform Akka that the execution of the Workflow should be postponed. By launching a Workflow command handler, the user can then resume the processing. Optionally, you can specify a pause timeout and timeout handler that will be automatically invoked to inform the Workflow that the expected time for the additional input has passed.
 
 [TransferWorkflow.java](https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java)
 ```java
 private StepEffect waitForAcceptanceStep() {
-  String transferId = currentState().transferId();
-  timers()
-    .createSingleTimer(
-      "acceptanceTimeout-" + transferId,
-      ofHours// (8),
-      componentClient
-        .forWorkflow(transferId)
-        .method(TransferWorkflow::acceptanceTimeout)
-        .deferred()
-    ); // (1)
-
-  return stepEffects().thenPause(); // (2)
+  return stepEffects()
+    .thenPause( // (1)
+      pauseSetting(ofHours// (8)).timeoutHandler(TransferWorkflow::acceptanceTimeout) // (2)
+    );
 }
 ```
 
-| **1** | Schedules a timer as a Workflow step action. Make sure that the timer name is unique for every Workflow instance. |
-| **2** | Pauses the Workflow execution. |
-
-|  | Remember to cancel the timer once the Workflow is resumed. |
+| **1** | Pauses the Workflow execution. |
+| **2** | Specifies a pause duration and a timeout handler. The timeout handler should return `Effect<Done>`. |
 
 |  | Exposing additional mutational methods from the Workflow implementation should be done with special caution.
 Accepting a call to such a method should only be possible when the Workflow is in the expected state. If the workflow
@@ -429,29 +419,117 @@ public Effect<String> accept() {
 | **1** | Accepts the request only when status is `WAITING_FOR_ACCEPTANCE`. |
 | **2** | Otherwise, rejects the requests. |
 
+## <a href="about:blank#_notification"></a> Notification
+
+When a workflow is running, clients often need to track its progress. Rather than repeatedly polling the workflow state, you can use the `NotificationPublisher` to push updates to subscribers in real-time. This is more efficient and provides a better user experience, especially for long-running workflows.
+
+The notification mechanism works as follows:
+
+1. The workflow injects a `NotificationPublisher<T>` where `T` is the notification message type
+2. During step execution, the workflow calls `publish(message)` to send notifications
+3. The workflow exposes a method returning `NotificationStream<T>` for clients to subscribe
+4. Clients use the `ComponentClient` to subscribe and receive notifications as a stream
+
+### <a href="about:blank#_publishing_notifications"></a> Publishing notifications
+
+To add notifications to a workflow, inject the `NotificationPublisher` in the constructor and call `publish()` at appropriate points during execution.
+
+[TransferWorkflowWithNotifications.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/application/TransferWorkflowWithNotifications.java)
+```java
+@Component(id = "transfer")
+public class TransferWorkflowWithNotifications extends Workflow<TransferState> {
+
+  private final NotificationPublisher<String> notificationPublisher;
+
+  public TransferWorkflowWithNotifications(
+    NotificationPublisher<String> notificationPublisher
+  ) { // (1)
+    this.notificationPublisher = notificationPublisher;
+  }
+
+  private StepEffect withdrawStep() {
+    // TODO: implement your step logic here
+    notificationPublisher.publish("Withdraw completed"); // (2)
+    return stepEffects()
+      .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
+      .thenTransitionTo(TransferWorkflowWithNotifications::depositStep);
+  }
+
+  private StepEffect depositStep() {
+    // TODO: implement your step logic here
+    notificationPublisher.publish("Deposit completed"); // (2)
+    return stepEffects().updateState(currentState().withStatus(COMPLETED)).thenEnd();
+  }
+
+  public NotificationStream<String> updates() { // (3)
+    return notificationPublisher.stream();
+  }
+
+}
+```
+
+| **1** | Inject `NotificationPublisher` typed with your notification message type. This can be a simple `String`, a Java Record, or a sealed interface for multiple message types. |
+| **2** | Publish notifications at key points in the workflow to inform subscribers of the progress. |
+| **3** | Expose the notification stream via a public method. Clients will reference this method when subscribing. |
+
+|  | For workflows with different types of updates (status changes, progress percentages, error messages), consider using a sealed interface to define your notification types. This allows subscribers to handle different notification types appropriately. |
+
+### <a href="about:blank#_subscribing_to_notifications"></a> Subscribing to notifications
+
+Clients subscribe to workflow notifications using the `ComponentClient`. The notifications are delivered as a reactive stream, which can be exposed to external clients as Server-Sent Events (SSE).
+
+[WorkflowEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/doc-snippets/src/main/java/com/example/api/WorkflowEndpoint.java)
+```java
+@HttpEndpoint("/transfer")
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
+public class WorkflowEndpoint {
+
+  @Get("/updates/{transferId}")
+  public HttpResponse updates(String transferId) {
+    return HttpResponses.serverSentEvents(
+      componentClient
+        .forWorkflow(transferId)
+        .notificationStream(TransferWorkflowWithNotifications::updates) // (1)
+        .source()
+    );
+  }
+}
+```
+
+| **1** | Use `notificationStream()` with a method reference to the workflow’s stream method. The returned source can be consumed directly or wrapped with `HttpResponses.serverSentEvents()` for SSE delivery to HTTP clients. |
+You can find the full source code of workflow notification sample in the [akka-samples/multi-agent GitHub Repository](https://github.com/akka-samples/multi-agent).
+
+|  | The notification stream is a live stream that emits messages only after the client creates the stream—it does not replay historical messages. While the stream is running, it delivers all messages in order without message loss. If the stream detects missing messages, it will fail, allowing clients to reconnect and recover. |
+
+|  | Notifications should not be used for building business logic. Akka does not guarantee delivery of every notification. Messages may be lost due to network issues, client disconnections, or other transient failures. If your application requires reliable state synchronization, implement a reconciliation mechanism that fetches the authoritative workflow state when needed. |
+
 ## <a href="about:blank#_error_handling"></a> Error handling
 
 Design for failure is one of the key attributes of all Akka components. Workflow has the richest set of configurations from all of them. It’s essential to build robust and reliable solutions.
 
-### <a href="about:blank#_step_timeouts"></a> Step Timeouts
+### <a href="about:blank#_timeouts"></a> Timeouts
 
-Each workflow step has a default timeout of 5 seconds. You can override this default for all steps in the workflow `settings` method, or set a custom timeout for individual steps.
+Each workflow step has a default timeout of 5 seconds. You can override this default for all steps in the workflow `settings` method, or set a custom timeout for individual steps. You can also specify global workflow duration timeout with optional timeout command handler.
+
+NOTE Workflow timeout should be greater than the step timeout. Otherwise, the workflow settings validation will report an exception at runtime.
 
 [TransferWorkflow.java](https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java)
 ```java
 @Override
 public WorkflowSettings settings() {
   return WorkflowSettings.builder()
-    .defaultStepTimeout(ofSeconds// (2)) // (1)
-    .stepTimeout(TransferWorkflow::failoverHandlerStep, ofSeconds// (1)) // (2)
+    .timeout(ofSeconds// (10)) // (1)
+    .defaultStepTimeout(ofSeconds// (2)) // (2)
+    .stepTimeout(TransferWorkflow::failoverHandlerStep, ofSeconds// (1)) // (3)
     .build();
 }
 ```
 
-| **1** | Sets a default timeout for all workflow steps. |
-| **2** | Overrides the step timeout for a specific step. |
+| **1** | Sets a global workflow timeout. |
+| **2** | Sets a default timeout for all workflow steps. |
+| **3** | Overrides the step timeout for a specific step. |
 
-|  | If you need a global workflow timeout, consider using durable timers as described in the [Pausing workflow](about:blank#_pausing_workflow) section. |
+|  | When a global workflow timeout occurs, the workflow finishes and no further transitions are allowed. You can optionally define a timeout handler that executes one final step to handle the timeout situation gracefully, but that step must end the workflow (other transitions will be ignored). |
 
 ### <a href="about:blank#_recover_strategy"></a> Recover strategy
 

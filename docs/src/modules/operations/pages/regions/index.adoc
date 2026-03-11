@@ -44,12 +44,12 @@ Stateful components like Event Sourced Entities and Workflows can be replicated 
 
 There are two operational choices for deciding where the primary is located:
 
-* *pinned-region* mode - one region is defined as the primary for the project, and all stateful component instances will use that region as primary
 * *request-region* mode - the primary is selected by each individual component instance based on where the write requests occur
+* *pinned-region* mode - one region is defined as the primary for the project, and all stateful component instances will use that region as primary
 
 IMPORTANT: Before changing the primary selection mode, make sure that you understand and follow the steps described in the <<_how_to>>.
 
-The pinned-region mode is used by default. To use request-region mode you need to deploy the service with a xref:services/deploy-service.adoc#apply[service descriptor]:
+The request-region mode is used by default. To use pinned-region mode you need to deploy the service with a xref:services/deploy-service.adoc#apply[service descriptor]:
 
 [source, yaml]
 ----
@@ -62,7 +62,7 @@ service:
   replication:
     mode: replicated-read
     replicatedRead:
-      primarySelectionMode: request-region
+      primarySelectionMode: pinned-region
 ----
 
 When using request-region mode, all regions must be available when the first write request is made to an entity or when switching primary region by handling a write request for an entity in another region than the currently selected primary region.
@@ -85,7 +85,7 @@ service:
       primarySelectionMode: none
 ----
 
-To use the pinned-region primary selection mode again you set `pinned-region` in the service descriptor:
+To use the request-region primary selection mode again you set `request-region` in the service descriptor:
 
 [source, yaml]
 ----
@@ -98,7 +98,7 @@ service:
   replication:
     mode: replicated-read
     replicatedRead:
-      primarySelectionMode: pinned-region
+      primarySelectionMode: request-region
 ----
 
 == Setting the primary region of a project
@@ -164,25 +164,25 @@ image:dashboard-control-tower-replication.png[]
 . You need to xref:services/invoke-service.adoc[expose the services] in the new region.
 . Stateful components are automatically replicated to the new region. This may take some time, and you can see progress in the replication section in the Control Tower. The event consumption lag will at first be high and then close to zero when the replication has been completed.
 
+=== Switch from request-region to pinned-region primary selection mode for stateful components
+
+The default primary selection mode for stateful components is the request-region mode, as explained in <<selecting-primary>>, and you might want to change that to pinned-region after the first deployment. That section also describes how you change the primary selection mode with a service descriptor.
+
+pinned-region mode takes precedence over request-region in the sense that a component instance will change its primary to the pinned-region region when there is a new write request to the component instance, and it persists a new event.
+
+. First, change to the `none` primary selection mode. This is a read-only mode for all regions and all write requests will be rejected. The reason for changing to this intermediate mode is to make sure that all events have been replicated without creating new events.
+. Wait until the deployment of the `none` primary selection mode has been successfully propagated to all regions. Observe in the Akka Console that the rolling update has been completed in all regions. You can also make sure that replicated events reach zero in the replication section in the Control Tower.
+. Change to `pinned-region` primary selection mode.
+
 === Switch from pinned-region to request-region primary selection mode for stateful components
 
-The default primary selection mode for stateful components is the pinned-region mode, as explained in <<selecting-primary>>, and you might want to change that to request-region after the first deployment. That section also describes how you change the primary selection mode with a service descriptor.
+<<selecting-primary>> describes how you change the primary selection mode with a service descriptor.
 
 Component instances that have already been created will continue to have their primary in the original pinned-region primary region, and will switch primary region when write requests occur in the other region(s).
 
 . First, change to the `none` primary selection mode. This is a read-only mode for all regions and all write requests will be rejected. The reason for changing to this intermediate mode is to make sure that all events have been replicated without creating new events.
 . Wait until the deployment of the `none` primary selection mode has been successfully propagated to all regions. Observe in the Akka Console that the rolling update has been completed in all regions. You can also make sure that replicated events reach zero in the replication section in the Control Tower.
 . Change to `request-region` primary selection mode.
-
-=== Switch from request-region to pinned-region primary selection mode for stateful components
-
-pinned-region mode takes precedence over request-region in the sense that a component instance will change its primary to the pinned-region region when there is a new write request to the component instance, and it persists a new event.
-
-<<selecting-primary>> describes how you change the primary selection mode with a service descriptor.
-
-. First, change to the `none` primary selection mode. This is a read-only mode for all regions and all write requests will be rejected. The reason for changing to this intermediate mode is to make sure that all events have been replicated without creating new events.
-. Wait until the deployment of the `none` primary selection mode has been successfully propagated to all regions. Observe in the Akka Console that the rolling update has been completed in all regions. You can also make sure that replicated events reach zero in the replication section in the Control Tower.
-. Change to `pinned-region` primary selection mode.
 
 === Change the pinned-region primary region for stateful components
 

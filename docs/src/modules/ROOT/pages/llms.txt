@@ -22,7 +22,7 @@
 - [Streaming agent responses](https://doc.akka.io/sdk/agents/streaming.html.md): Streaming model responses with agents.
 - [Orchestrating multiple agents](https://doc.akka.io/sdk/agents/orchestrating.html.md): Orchestrating and supervising multiple agents.
 - [Providing guardrails](https://doc.akka.io/sdk/agents/guardrails.html.md): Constraining and controlling agent behavior with guardrails.
-- [Evaluating model responses](https://doc.akka.io/sdk/agents/evaluating.html.md): Evaluating and judging the responses from LLMs via agents.
+- [Evaluating model responses](https://doc.akka.io/sdk/agents/llm_eval.html.md): Evaluating and judging the responses from LLMs via agents.
 - [Testing agents](https://doc.akka.io/sdk/agents/testing.html.md): Testing agents and agentic behavior.
 - [Implementing Event Sourced Entities](https://doc.akka.io/sdk/event-sourced-entities.html.md): How to create entities that store their state as a sequence of events.
 - [Implementing Key Value Entities](https://doc.akka.io/sdk/key-value-entities.html.md): Guide to implementing entities that store their state directly.
@@ -58,11 +58,10 @@
 
 ## Optional
 
-- [TLS certificates](https://doc.akka.io/security/tls-certificates.html.md): Guide to configuring and managing TLS certificates for secure communications in Akka services.
-- [Access Control List concepts](https://doc.akka.io/security/acls.html.md): Core concepts behind Access Control Lists and how they secure Akka services.
+- [TLS certificates](https://doc.akka.io/operations/tls-certificates.html.md): Guide to configuring and managing TLS certificates for secure communications in Akka services.
+- [Access Control List concepts](https://doc.akka.io/concepts/acls.html.md): Core concepts behind Access Control Lists and how they secure Akka services.
 - [Developing Access Control Lists (ACLs)](https://doc.akka.io/sdk/access-control.html.md): Implementing ACLs to control access to your Akka service endpoints.
-- [Securing](https://doc.akka.io/security/index.html.md): Overview of security features and best practices for Akka services.
-- [JSON Web Tokens (JWTs)](https://doc.akka.io/security/jwts.html.md): Understanding JWT concepts and their role in Akka authentication.
+- [JSON Web Tokens (JWTs)](https://doc.akka.io/reference/jwts.html.md): Understanding JWT concepts and their role in Akka authentication.
 - [Developing JSON Web Tokens (JWT)](https://doc.akka.io/sdk/auth-with-jwts.html.md): Implementing JWT-based authentication in your Akka services.
 - [Message broker integrations](https://doc.akka.io/sdk/message-brokers.html.md): Connecting Akka services with external message brokers for reliable communication.
 - [Streaming](https://doc.akka.io/sdk/streaming.html.md): Working with streaming data in Akka applications.

@@ -11,6 +11,8 @@
 
 Access to an organization is controlled by assigning roles to users. The available roles are: **superuser**, **project-admin**, **billing-admin**, and **member**.
 
+|  | Akka supports access management via Single Sign-on (SSO) through the *OpenID Connect* standard. For details, check [OpenID Connect Setup](../../reference/security/oidc-setup.html). |
+
 | Permission | superuser | project-admin | billing-admin | member |
 | --- | --- | --- | --- | --- |
 | View organization users | ✅ | ✅ | ✅ | ✅ |
@@ -43,6 +45,7 @@ fd21044c-b973-4220-8f65-0f7d317bb23b   superuser   jane.citizen   jane.citizen@e
 
 ## <a href="about:blank#_granting_a_role"></a> Granting a role
 
+|  | When using *OpenID Connect* (OIDC), see [OIDC setup](../../reference/security/oidc-setup.html#assigning_organization_level_roles). |
 You can grant a role to a user in two ways:
 
 ### <a href="about:blank#_1_invite_a_user_by_email"></a> 1. Invite a User by Email
@@ -98,6 +101,7 @@ To resend an invitation, cancel the previous one and reissue the invite.
 ## <a href="about:blank#_see_also"></a> See also
 
 - [Managing project users](../projects/manage-project-access.html)
+- [OpenID Connect Setup](../../reference/security/oidc-setup.html)
 - <a href="../../reference/cli/akka-cli/akka_organizations_users.html#_see_also">`akka organizations users` commands</a>
 - <a href="../../reference/cli/akka-cli/akka_organizations_invitations.html#_see_also">`akka organizations invitations` commands</a>
 

@@ -1,0 +1,118 @@
+<!-- <nav> -->
+- [Akka](../index.html)
+- [Reference](index.html)
+- [Migration guide](migration-guide.html)
+
+<!-- </nav> -->
+
+# Migration Guide
+
+## <a href="about:blank#_sdk_3_5_5"></a> SDK 3.5.5
+
+Akka SDK 3.5.5 deprecates the `@AgentDescription` annotation in favor of using `@Component` for agent metadata (name and description) and the new `@AgentRole` annotation for specifying agent roles. This change aligns agent configuration with other component types and provides a more consistent API.
+
+### <a href="about:blank#_migrating_from_agentdescription_to_component_and_agentrole"></a> Migrating from @AgentDescription to @Component and @AgentRole
+
+The `@AgentDescription` annotation is now deprecated. To migrate your agent classes:
+
+**For agent name and description**:
+
+- Remove the `@AgentDescription` annotation
+- If using `@AgentDescription.role` field, add an `@AgentRole` annotation instead.
+- Add or update the `@Component` annotation with `name` and `description` fields:
+Before:
+```java
+@Component(id = "my-agent")
+@AgentDescription(
+    name = "My Agent",
+    description = "An agent that does something useful",
+    role = "worker")
+public class MyAgent extends Agent {
+    // ...
+}
+```
+After:
+```java
+@Component(
+    id = "my-agent",
+    name = "My Agent",
+    description = "An agent that does something useful")
+@AgentRole("worker")
+public class MyAgent extends Agent {
+    // ...
+}
+```
+**Update imports**:
+
+- Add `import akka.javasdk.annotations.AgentRole;` if you’re using agent roles
+- Keep `import akka.javasdk.annotations.Component;`
+**Backward compatibility**:
+
+- The framework will continue to support `@AgentDescription` for backward compatibility
+- However, you cannot use both the old and new annotations for the same fields (e.g., both `@AgentDescription.name` and `@Component.name` will cause a validation error)
+- New features and improvements will only be available with the new annotation style
+
+## <a href="about:blank#_sdk_3_5_4"></a> SDK 3.5.4
+
+Akka SDK 3.5.4 introduces a new `@Component` annotation, replacing the legacy `@ComponentId` for identifying components. This change streamlines component configuration and enables new features and improvements. The migration is straightforward and ensures backward compatibility for existing codebases.
+
+## <a href="about:blank#_migrating_from_componentid_to_component"></a> Migrating from @ComponentId to @Component
+
+The `@ComponentId` annotation is now deprecated in favor of the new `@Component` annotation. To migrate your codebase:
+
+**Replace usages of `@ComponentId`**:
+
+- Remove the `@ComponentId("your-id")` annotation from your component classes.
+- Add the `@Component` annotation, specifying the required `id` and optionally `name` and `description` fields:
+
+```java
+@Component(id = "your-id",
+           name = "Your Name",
+           description = "Description")
+public class YourComponent { ... }
+```
+**Update imports**:
+
+- Change `import akka.javasdk.annotations.ComponentId;` to `import akka.javasdk.annotations.Component;`
+**Test backward compatibility**:
+
+- The framework will continue to support `@ComponentId` for backward compatibility, but new features and improvements will only be available with `@Component`.
+
+## <a href="about:blank#_sdk_3_3_0"></a> SDK 3.3.0
+
+This release introduces support for Java 21 virtual threads across all user component and endpoint logic. As a result, it is now safe to perform blocking I/O operations without occupying underlying OS threads.
+
+You no longer need to use `CompletionStage` or `CompletableFuture` composition when making calls using component clients, HTTP clients, or gRPC clients. Where services previously used `.invokeAsync()` and handled a future, you can now simply use `.invoke()` and work directly with the returned result.
+
+### <a href="about:blank#_breaking_changes"></a> Breaking Changes
+
+To simplify usage and improve developer experience, this release includes a few breaking changes. If your service
+relies on any of the following features, you will need to update your implementation:
+
+- gRPC endpoints for unary and client streaming methods now return the response message directly, instead of wrapping it in a `CompletionStage`.
+- gRPC clients now return the response value directly for unary and client streaming calls. For asynchronous behavior, the request builder APIs (`grpcClient.someMethod().invokeAsync(parameter)`) are still available.
+
+### <a href="about:blank#_deprecations"></a> Deprecations
+
+Timer scheduling and cancellation via `TimerScheduler.startSingleTimer(…​)` and `TimerScheduler.cancel()` are now
+deprecated. Instead, use `TimerScheduler.createSingleTimer(…​)` and `TimerScheduler.delete()`. Note that these two
+new methods are blocking operations that return `void`.
+
+If you still prefer non-blocking operations, new asynchronous alternatives have been introduced: `createSingleTimerAsync()` and `deleteAsync()`.
+
+### <a href="about:blank#_blocking_and_parallelism"></a> Blocking and Parallelism
+
+To support parallel execution of blocking logic within completion stages, the Service Setup, Endpoints, Consumers, Timed Actions, and Workflows can now accept a `java.util.concurrent.Executor` via their constructors.
+
+The Akka SDK provides a virtual-thread-enabled executor that is safe for running blocking operations. When using the standard Java `CompletableFuture` or `CompletionStage` APIs, you can supply this executor as an additional parameter to methods accepting lambdas, enabling safe parallelism for blocking tasks.
+
+<!-- <footer> -->
+<!-- <nav> -->
+[Support resources](support.html) [API documentation](api-docs.html)
+<!-- </nav> -->
+
+<!-- </footer> -->
+
+<!-- <aside> -->
+
+<!-- </aside> -->

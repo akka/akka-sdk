@@ -7,7 +7,7 @@
 
 # Using an AI coding assistant
 
-AI coding assistants can increase your productivity when developing Akka services. This guide will give you some practical hints of how to setup Akka knowledge and how to prompt the AI assistant. We are using [Qodo](https://www.qodo.ai/), [Cursor](https://www.cursor.com/) and IntelliJ IDEA as examples of such coding assistants, but the techniques are applicable for other tools as well.
+AI coding assistants can increase your productivity when developing Akka services. This guide will give you some practical hints of how to setup Akka knowledge and how to prompt the AI assistant. We are using [Claude code](https://docs.claude.com/en/docs/claude-code/overview), [Qodo](https://www.qodo.ai/), [Cursor](https://www.cursor.com/) and [IntelliJ IDEA](https://www.jetbrains.com/help/idea/ai-assistant-in-jetbrains-ides.html) as examples of such coding assistants, but the techniques are applicable for other tools as well.
 
 Some key benefits of using an AI coding assistant:
 
@@ -57,42 +57,53 @@ The markdown documentation is published according to the widely used standard pr
 
 ## <a href="about:blank#_setup_ai_assistant_to_use_the_akka_documentation"></a> Setup AI assistant to use the Akka documentation
 
-We need to make the AI coding assistant aware of the latest Akka documentation. Different assistants support this in different ways, and we will use a few as examples of how to do it.
-
-Another convenient way is to use the Akka CLI. See [installation instructions](../getting-started/quick-install-cli.html). It will download the markdown documentation.
+We need to make the AI coding assistant aware of the latest Akka documentation. The Akka CLI will help you with this. [Install the Akka CLI](../getting-started/quick-install-cli.html) and run:
 
 ```command
 akka code init
 ```
 
-### <a href="about:blank#_cursor"></a> Cursor
+1. Select an example, such as the "Hello world agent".
+2. The CLI will download the Akka documentation and place it in the `akka-context` directory.
+3. Select which AI coding assistant to use. The CLI will describe the additional steps of how to configure the assistant.
+Make sure that you download the latest documentation regularly to make use of documentation improvements and new features. This can be done with:
 
-Cursor can use documentation from a custom website, and include relevant information to the LLM by similarity search of that content.
+```command
+akka code context-update .
+```
+The `akka-context` documentation bundle is also available as [akka-docs-md.zip](../sdk/_attachments/akka-docs-md.zip) if you prefer that.
+
+Add `akka-context` to your `.gitignore` file, if you use git.
+
+If your AI coding assistant isn’t included in the Akka CLI you can use the [AGENTS.md](https://agents.md/) option in the Akka CLI, or download it from [Akka AGENTS.md](../_attachments/AGENTS.md).
+
+### <a href="about:blank#_notes_about_claude_code"></a> Notes about Claude code
+
+For [Claude code](https://www.anthropic.com/claude-code) the `CLAUDE.md` from the Akka CLI includes the detailed instructions from `AGENTS.md`. The reason for the separation into two files is that you should be able to download updated versions of `AGENTS.md` and have your custom instructions in `CLAUDE.md` remain unchanged.
+
+This `CLAUDE.md` also defines an iterative generation workflow. You can modify or remove that if you prefer another way of working with Claude.
+
+### <a href="about:blank#_notes_about_copilot"></a> Notes about Copilot
+
+If you are using [Github Copilot](https://github.com/features/copilot) as a standalone editor or [as a CLI](https://docs.github.com/en/copilot/concepts/agents/about-copilot-cli), then it should automatically detect the context from the files used during code initialization. If it is not using the `akka-context` directory, then you can manually add this directory by attaching it to context in your copilot chat, either with the paperclip (📎) icon in the IDE or with the `#` prefix in either app.
+
+### <a href="about:blank#_notes_about_cursor"></a> Notes about Cursor
+
+An alternative to the local `akka-context` documentation is to use documentation from a custom website, and include relevant information to the LLM by similarity search of that content.
 
 You can point it directly to `https://doc.akka.io/llms-full.txt`, which is already in LLM-friendly markdown format.
-
-Alternatively, you could use `https://doc.akka.io/sdk/` as the base URL of the custom docs, and it would crawl the HTML pages. It’s important to point at `https://doc.akka.io/sdk/`, and not `https://doc.akka.io/` since the latter also includes documentation about the Akka libraries that you don’t want to use when developing with the Akka SDK.
 
 You find the settings for custom documentation in: Cursor Settings > Features > Docs
 
 In the chat window it is important that you include the Akka documentation as context. Type `@Docs` - tab, and select the custom Akka docs that you added in the settings.
 
-### <a href="about:blank#_qodo"></a> Qodo
+### <a href="about:blank#_notes_about_qodo"></a> Notes about Qodo
 
-For Qodo you need to download the markdown documentation files and include them in the project directory. Qodo will index the content and include relevant information to the LLM.
+In the chat window it is important that you include the Akka documentation as context. Use `@` to include the `akka-context` folder.
 
-1. Download the [akka-docs-md.zip](../java/_attachments/akka-docs-md.zip).
-2. Unzip the content and place in a folder `akka-context/` in your development project.
-3. Add `akka-context/` to your `.gitignore` file, if you use git.
+### <a href="about:blank#_notes_about_intellij_idea_ai_assistant"></a> Notes about IntelliJ IDEA AI assistant
 
-|  | It would have been more convenient to only download `llms-full.txt`, but currently it seems like Qodo can’t handle a large file like that. |
-In the chat window it is important that you include the Akka documentation as context. Click `Add context` and select `Files and folders` and select `Full project` or the `akka-context` folder.
-
-Make sure that you download the latest documentation regularly to make use of documentation improvements and new features.
-
-### <a href="about:blank#_intellij_idea_ai_assistant"></a> IntelliJ IDEA AI assistant
-
-For the AI assistant in IntelliJ IDEA you need to download the [llms-ctx.txt](https://doc.akka.io/llms-ctx.txt) file and place it in the root of the project directory. The AI assistant will include relevant information to the LLM.
+For the AI assistant in IntelliJ IDEA you can download the [llms-ctx.txt](https://doc.akka.io/llms-ctx.txt) file and place it in the root of the project directory. The AI assistant will include relevant information to the LLM.
 
 Add `llms-ctx.txt` to your `.gitignore` file, if you use git.
 
@@ -100,34 +111,15 @@ It is important that you include the Akka documentation as context by enabling `
 
 Make sure that you download the latest documentation regularly to make use of documentation improvements and new features.
 
-### <a href="about:blank#_claude_code"></a> Claude code
+### <a href="about:blank#_notes_about_gemini_cli"></a> Notes about Gemini CLI
 
-For [Claude code](https://www.anthropic.com/claude-code) you need to define a `CLAUDE.md` file with the following instructions:
+For Gemini CLI you can use `akka code init` and select Claude as coding assistant. Then rename the file `CLAUDE.md` to `GEMINI.md`.
 
-```md
-# CLAUDE.md
+If Gemini CLI doesn’t make use of the documentation in `akka-context` directory it can be because it is listed in `.gitignore`. Then you have to remove `akka-context` from `.gitignore`.
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+### <a href="about:blank#_notes_about_openai_codex"></a> Notes about OpenAI Codex
 
-## Build and Development Commands
-
-See @README.md for a project overview, and how to build, test and run the application.
-
-## Coding guidelines
-
-Use the guidelines in @akka-context/sdk/ai-coding-assistant-guidelines.html.md when writing code in this project.
-
-## Akka documentation
-
-You find the reference documentation of Akka in the akka-context directory and sub-directories.
-Read this documentation to answer questions about Akka or finding code templates for writing Akka code.
-```
-Download the markdown documentation files and include them in the project directory.
-
-1. Download the [akka-docs-md.zip](../java/_attachments/akka-docs-md.zip).
-2. Unzip the content and place in a folder `akka-context/` in your development project.
-3. Add `akka-context/` to your `.gitignore` file, if you use git.
-Make sure that you download the latest documentation regularly to make use of documentation improvements and new features.
+If Codex doesn’t make use of the documentation in `akka-context` directory it can be because it is listed in `.gitignore`. Then you have to remove `akka-context` from `.gitignore`.
 
 ## <a href="about:blank#_verify_that_it_works"></a> Verify that it works
 
@@ -159,9 +151,11 @@ Make sure that you pull the latest samples regularly to make use of improvements
 
 ## <a href="about:blank#_coding_guidelines"></a> Coding guidelines
 
-The coding assistant will generate more accurate code if we give it some detailed instructions. We have prepared such [guidelines](ai-coding-assistant-guidelines.html) that you can use as a template.
+The coding assistant will generate more accurate code if we give it some detailed instructions. We have prepared such [guidelines](ai-coding-assistant-guidelines.html) that you can use as a template. You find even more detailed instructions in [AGENTS.md](../_attachments/AGENTS.md)
 
-At the beginning of your chat session include a prompt like this:
+For some assistants you can define instructions in configuration settings or files like `AGENTS.md` or `CLAUDE.md`.
+
+If your AI coding assistant doesn’t support that, you can include the guidelines directly in the chat session prompt like this:
 
 ```none
 Don't generate any code yet, but remember the following guidelines and use them when writing code in this project.
@@ -251,7 +245,7 @@ If you see an error message when running the application or tests you can try to
 
 <!-- <footer> -->
 <!-- <nav> -->
-[Developer best practices](dev-best-practices.html) [Operating](../operations/index.html)
+[Developer best practices](dev-best-practices.html) [Running a local cluster](local-cluster.html)
 <!-- </nav> -->
 
 <!-- </footer> -->

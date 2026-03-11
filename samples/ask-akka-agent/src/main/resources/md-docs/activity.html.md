@@ -140,6 +140,7 @@ akka.javasdk {
 
     openai {
       model-name = "gpt-4o-mini"
+      api-key = ${?OPENAI_API_KEY}
     }
   }
 }
@@ -175,13 +176,18 @@ In Madrid, you can visit historic sites like the Royal Palace, stroll in Retiro 
 the Prado and Reina Sofia art museums, savor local cuisine at Mercado de San Miguel, or take a
 guided walking tour through lively neighborhoods such as Malasaña and Chueca.
 ```
+If you decide to use the local console’s request builder instead of `curl`, you might see something similar to the
+following screenshot (if you’re following along step-by-step, your output will show fewer steps):
+
+![Request builder output in the local console](../_images/multiagent_request_builder.png)
+
 
 |  | It may take 10s of seconds for the AI model to respond. |
 
 ## <a href="about:blank#_next_steps"></a> Next steps
 
 - To make the activity suggestions more personalized, we will add user preferences that the `ActivityAgent` will use. Continue with [User preferences](preferences.html).
-- Learn more about the <a href="../../java/agents.html">`Agent` component</a>.
+- Learn more about the <a href="../../sdk/agents.html">`Agent` component</a>.
 
 <!-- <footer> -->
 <!-- <nav> -->

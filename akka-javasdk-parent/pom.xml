@@ -56,8 +56,8 @@
         <docker.image>${project.artifactId}</docker.image>
         <docker.tag>${project.version}-${build.timestamp}</docker.tag>
 
-        <!-- note that this image does never actually run the service, it's just a means for distribution -->
-        <docker.base.image>alpine:3.14</docker.base.image>
+        <!-- note that this image does never actually run the service in a JVM, it's just a means for distribution -->
+        <docker.base.image>us-docker.pkg.dev/kalix-images/infrastructure/alpine:3.23.3</docker.base.image>
         <docker.platform>linux/amd64</docker.platform>
 
         <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>

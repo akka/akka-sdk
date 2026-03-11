@@ -36,7 +36,7 @@ Requests are only allowed if they have a bearer token that can be validated by o
 
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsImtpZCI6ImtleTEifQ.eyJpc3MiOiJteS1pc3N1ZXIifQ.-MLcf1-kB_1OQIZdy9_wYiFZcMOHsHOE8aJryS1tWq4 You can check in [https://jwt.io/](https://jwt.io/) that this token contains the claim in the payload `iss: my-issuer`.
 
-|  | It is recommended that `bearerTokenIssuers` contains the issuer that you use in your JWT key configuration. See [https://doc.akka.io/security/jwts.html](https://doc.akka.io/security/jwts.html). Otherwise, any services with a trusted key can impersonate the issuer. |
+|  | It is recommended that `bearerTokenIssuers` contains the issuer that you use in your JWT key configuration. See [https://doc.akka.io/reference/jwts.html](https://doc.akka.io/reference/jwts.html). Otherwise, any services with a trusted key can impersonate the issuer. |
 
 ### <a href="about:blank#_configuring_jwt_at_class_level_or_method_level"></a> Configuring JWT at class level or method level
 
