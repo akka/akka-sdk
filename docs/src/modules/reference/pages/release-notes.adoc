@@ -17,8 +17,12 @@ Current versions
 - Access to deployed services from dev mode
 - Notifications for event sourced entities
 
+* Akka CLI 3.0.50
+- More improvement for spec driven development.
+- Adding more commands to MCP plugin.
+
 * Akka CLI 3.0.49
-- Support for Spec Kit driven development using `akka specify`
+- Support for spec driven development using `akka specify`
 
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.15[Akka SDK 3.5.15]
 - PDF documents support in Agent user message
