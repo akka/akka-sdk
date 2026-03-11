@@ -13,7 +13,7 @@ Current versions
 == March 2026
 
 * Akka CLI 3.0.50
-- More improvmenet for spec driven development.
+- More improvement for spec driven development.
 - Adding more commands to MCP plugin.
 
 * Akka CLI 3.0.49
