@@ -152,7 +152,7 @@ include::example$event-sourced-customer-registry/src/main/java/customer/applicat
 
 === Ignoring events
 
-You can ignore events by returning `Effect.ignore` for those you are not interested in. Using a `sealed interface` for the events is a good practice to ensure that all events types are handled.
+You can ignore events by returning `effects().ignore()` for those you are not interested in. Using a `sealed interface` for the events is a good practice to ensure that all events types are handled.
 
 [#es_delete]
 === Handling Event Sourced Entity deletes
