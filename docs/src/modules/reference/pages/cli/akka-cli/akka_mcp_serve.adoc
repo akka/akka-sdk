@@ -29,7 +29,7 @@ akka mcp serve [flags]
 
 ----
   -h, --help              help for serve
-      --toolsets string   Comma-separated list of toolsets to enable (default: all). Available: projects, services, routes, descriptor, sdd, local, build
+      --toolsets string   Comma-separated list of toolsets to enable (default: all). Available: projects, services, routes, descriptor, sdd, local, build, git
 ----
 
 == Options inherited from parent commands
