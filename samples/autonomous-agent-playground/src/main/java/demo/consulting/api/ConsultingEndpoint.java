@@ -5,19 +5,20 @@ import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.http.HttpException;
 import demo.consulting.application.ConsultingCoordinator;
 import demo.consulting.application.ConsultingTasks;
+import demo.consulting.domain.ConsultingResult;
+
 import java.util.UUID;
 
-@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
-@HttpEndpoint("/consulting")
+@HttpEndpoint("/engagements")
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 public class ConsultingEndpoint {
 
-  public record ConsultingRequest(String problem) {}
-
-  public record ConsultingResponse(String id) {}
-
-  public record ConsultingStatus(String status, ConsultingTasks.ConsultingResult result) {}
+  public record EngagementRequest(String problem) {}
+  public record EngagementResponse(String taskId) {}
+  public record EngagementStatus(String status, ConsultingResult result) {}
 
   private final ComponentClient componentClient;
 
@@ -26,16 +27,21 @@ public class ConsultingEndpoint {
   }
 
   @Post
-  public ConsultingResponse create(ConsultingRequest request) {
+  public EngagementResponse submitEngagement(EngagementRequest request) {
+    if (request.problem() == null || request.problem().isBlank()) {
+      throw HttpException.badRequest("Problem description must not be empty");
+    }
+
     var taskId = componentClient
-      .forAutonomousAgent(ConsultingCoordinator.class, UUID.randomUUID().toString())
-      .runSingleTask(ConsultingTasks.ENGAGEMENT.instructions(request.problem()));
-    return new ConsultingResponse(taskId);
+        .forAutonomousAgent(ConsultingCoordinator.class, UUID.randomUUID().toString())
+        .runSingleTask(ConsultingTasks.ENGAGEMENT.instructions(request.problem()));
+
+    return new EngagementResponse(taskId);
   }
 
   @Get("/{taskId}")
-  public ConsultingStatus get(String taskId) {
+  public EngagementStatus getResult(String taskId) {
     var snapshot = componentClient.forTask(ConsultingTasks.ENGAGEMENT).get(taskId);
-    return new ConsultingStatus(snapshot.status().name(), snapshot.result());
+    return new EngagementStatus(snapshot.status().name(), snapshot.result());
   }
 }

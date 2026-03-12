@@ -4,34 +4,22 @@ import akka.javasdk.annotations.FunctionTool;
 
 public class ConsultingTools {
 
-  @FunctionTool(description = "Perform a preliminary assessment of a client problem.")
+  @FunctionTool(description = "Perform a preliminary assessment of a client problem. Returns a text assessment of the problem's nature and scope.")
   public String assessProblem(String problemDescription) {
-    return (
-      "Preliminary assessment for '" +
-      problemDescription +
-      "': " +
-      "Complexity: moderate. Involves integration challenges and process redesign. " +
-      "Estimated scope: 3-6 months. Key risks: legacy system dependencies, " +
-      "change management resistance."
-    );
+    return "Preliminary assessment for '" + problemDescription + "': " +
+        "This problem involves " + problemDescription.toLowerCase() + ". " +
+        "Key areas to evaluate: scope, stakeholder impact, and timeline.";
   }
 
-  @FunctionTool(
-    description = "Check if a problem exceeds standard consulting scope and needs escalation."
-  )
+  @FunctionTool(description = "Check if a problem exceeds standard consulting scope and needs escalation to senior expertise. Returns COMPLEX or STANDARD classification.")
   public String checkComplexity(String assessment) {
-    if (
-      assessment.toLowerCase().contains("regulatory") ||
-      assessment.toLowerCase().contains("merger")
-    ) {
-      return (
-        "COMPLEX: This problem involves regulatory or M&A considerations " +
-        "that exceed standard consulting scope. Recommend escalation to senior consultant."
-      );
+    var lower = assessment.toLowerCase();
+    if (lower.contains("regulatory") || lower.contains("compliance") ||
+        lower.contains("m&a") || lower.contains("merger") || lower.contains("acquisition")) {
+      return "COMPLEX: Recommend escalation to senior consultant. " +
+          "This problem involves high-stakes regulatory or strategic concerns requiring senior expertise.";
     }
-    return (
-      "STANDARD: This problem is within standard consulting scope. " +
-      "Can be handled with research and analysis."
-    );
+    return "STANDARD: Can be handled with research and analysis. " +
+        "This problem is within standard consulting scope.";
   }
 }

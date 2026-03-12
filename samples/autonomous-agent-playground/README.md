@@ -120,6 +120,25 @@ A coordinator that can both delegate routine research to a subordinate and hand 
 
 **Demonstrates:** Composing delegation and handoff in a single agent. The key distinction: delegation creates a child task and retains ownership of the parent — the coordinator synthesises results. Handoff transfers ownership of the current task to another agent — the coordinator steps back entirely. Shared tools across agents for consistent assessment. Routing logic driven by the LLM using domain tools.
 
+**Try it:**
+
+```bash
+# Submit a standard problem (delegation flow)
+curl -X POST http://localhost:9000/engagements \
+  -H "Content-Type: application/json" \
+  -d '{"problem": "How to improve supply chain efficiency"}'
+# Returns: {"taskId":"<task-id>"}
+
+# Submit a complex problem (handoff flow)
+curl -X POST http://localhost:9000/engagements \
+  -H "Content-Type: application/json" \
+  -d '{"problem": "Regulatory compliance for our upcoming merger"}'
+
+# Poll for result
+curl http://localhost:9000/engagements/<task-id>
+# Returns: {"status":"COMPLETED","result":{"assessment":"...","recommendation":"...","escalated":false}}
+```
+
 ---
 
 ## support
