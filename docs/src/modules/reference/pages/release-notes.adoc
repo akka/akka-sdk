@@ -12,6 +12,9 @@ Current versions
 
 == March 2026
 
+* Akka CLI 3.0.51
+- More improvement for spec driven development.
+
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.16[Akka SDK 3.5.16]
 - Google Vertex AI model support
 - Access to deployed services from dev mode
