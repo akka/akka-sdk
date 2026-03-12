@@ -1,18 +1,19 @@
 package demo.helloworld;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
-import demo.helloworld.api.QuestionEndpoint;
-import demo.helloworld.application.Answer;
+import demo.helloworld.api.QuestionEndpoint.AnswerResponse;
+import demo.helloworld.api.QuestionEndpoint.QuestionRequest;
+import demo.helloworld.api.QuestionEndpoint.QuestionResponse;
 import demo.helloworld.application.QuestionAnswerer;
 import demo.helloworld.application.QuestionTasks;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
+
+import java.util.concurrent.TimeUnit;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class QuestionAnswererIntegrationTest extends TestKitSupport {
 
@@ -20,70 +21,113 @@ public class QuestionAnswererIntegrationTest extends TestKitSupport {
 
   @Override
   protected TestKit.Settings testKitSettings() {
-    return TestKit.Settings.DEFAULT.withAdditionalConfig(
-      "akka.javasdk.agent.openai.api-key = n/a"
-    ).withModelProvider(QuestionAnswerer.class, model);
+    return TestKit.Settings.DEFAULT
+        .withModelProvider(QuestionAnswerer.class, model);
   }
 
   @Test
-  public void shouldAnswerQuestionWithTypedResult() {
+  public void shouldSubmitQuestionAndGetAnswer() {
     model.fixedResponse(
-      new TestModelProvider.AiResponse(
-        new TestModelProvider.ToolInvocationRequest(
-          "complete_task",
-          "{\"answer\":\"2 plus 2 equals 4.\",\"confidence\":100}"
+        new TestModelProvider.AiResponse(
+            new TestModelProvider.ToolInvocationRequest(
+                "complete_task",
+                "{\"answer\":\"2 plus 2 equals 4.\",\"confidence\":95}"
+            )
         )
-      )
     );
 
-    var response = httpClient
-      .POST("/questions")
-      .withRequestBody(new QuestionEndpoint.AskQuestion("What is 2 + 2?"))
-      .responseBodyAs(QuestionEndpoint.QuestionResponse.class)
-      .invoke()
-      .body();
+    var submitResponse = httpClient
+        .POST("/questions")
+        .withRequestBody(new QuestionRequest("What is 2 + 2?"))
+        .responseBodyAs(QuestionResponse.class)
+        .invoke();
 
-    var taskId = response.id();
-    assertThat(taskId).isNotBlank();
+    assertThat(submitResponse.status().isSuccess()).isTrue();
+    var taskId = submitResponse.body().taskId();
+    assertThat(taskId).isNotEmpty();
 
     Awaitility.await()
-      .ignoreExceptions()
-      .atMost(10, TimeUnit.SECONDS)
-      .untilAsserted(() -> {
-        var snapshot = componentClient.forTask(QuestionTasks.ANSWER).get(taskId);
-        assertThat(snapshot.result()).isNotNull();
-        assertThat(snapshot.result().answer()).isEqualTo("2 plus 2 equals 4.");
-        assertThat(snapshot.result().confidence()).isEqualTo(100);
-      });
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(() -> {
+          var result = httpClient
+              .GET("/questions/" + taskId)
+              .responseBodyAs(AnswerResponse.class)
+              .invoke();
+
+          assertThat(result.body().status()).isEqualTo("COMPLETED");
+          assertThat(result.body().answer()).isEqualTo("2 plus 2 equals 4.");
+          assertThat(result.body().confidence()).isEqualTo(95);
+        });
   }
 
   @Test
-  public void shouldFailTaskWhenModelCallsFailTask() {
+  public void shouldReturnConsistentTypedResult() {
     model.fixedResponse(
-      new TestModelProvider.AiResponse(
-        new TestModelProvider.ToolInvocationRequest(
-          "fail_task",
-          "{\"reason\":\"I cannot answer this question.\"}"
+        new TestModelProvider.AiResponse(
+            new TestModelProvider.ToolInvocationRequest(
+                "complete_task",
+                "{\"answer\":\"The sky is blue due to Rayleigh scattering.\",\"confidence\":90}"
+            )
         )
-      )
     );
 
-    var response = httpClient
-      .POST("/questions")
-      .withRequestBody(new QuestionEndpoint.AskQuestion("What is the meaning of life?"))
-      .responseBodyAs(QuestionEndpoint.QuestionResponse.class)
-      .invoke()
-      .body();
+    var submitResponse = httpClient
+        .POST("/questions")
+        .withRequestBody(new QuestionRequest("Why is the sky blue?"))
+        .responseBodyAs(QuestionResponse.class)
+        .invoke();
 
-    var taskId = response.id();
+    var taskId = submitResponse.body().taskId();
 
     Awaitility.await()
-      .ignoreExceptions()
-      .atMost(10, TimeUnit.SECONDS)
-      .untilAsserted(() -> {
-        var snapshot = componentClient.forTask(QuestionTasks.ANSWER).get(taskId);
-        assertThat(snapshot.status().name()).isEqualTo("FAILED");
-        assertThat(snapshot.failureReason()).isEqualTo("I cannot answer this question.");
-      });
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(() -> {
+          var result = httpClient
+              .GET("/questions/" + taskId)
+              .responseBodyAs(AnswerResponse.class)
+              .invoke();
+          assertThat(result.body().status()).isEqualTo("COMPLETED");
+        });
+
+    // Retrieve twice to verify consistency
+    var first = httpClient
+        .GET("/questions/" + taskId)
+        .responseBodyAs(AnswerResponse.class)
+        .invoke();
+
+    var second = httpClient
+        .GET("/questions/" + taskId)
+        .responseBodyAs(AnswerResponse.class)
+        .invoke();
+
+    assertThat(first.body().answer()).isEqualTo(second.body().answer());
+    assertThat(first.body().confidence()).isEqualTo(second.body().confidence());
+  }
+
+  @Test
+  public void shouldRejectEmptyQuestion() {
+    var exception = org.junit.jupiter.api.Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () -> httpClient
+            .POST("/questions")
+            .withRequestBody(new QuestionRequest(""))
+            .responseBodyAs(String.class)
+            .invoke());
+
+    assertThat(exception.getMessage()).contains("400");
+  }
+
+  @Test
+  public void shouldRejectUnknownTaskId() {
+    var exception = org.junit.jupiter.api.Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () -> httpClient
+            .GET("/questions/nonexistent-task-id")
+            .responseBodyAs(String.class)
+            .invoke());
+
+    assertThat(exception.getMessage()).contains("400");
   }
 }

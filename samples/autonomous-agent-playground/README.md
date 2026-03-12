@@ -36,6 +36,20 @@ The simplest autonomous agent sample. A single agent answers a question and retu
 
 **Demonstrates:** Basic autonomous agent lifecycle — task creation, agent execution, typed result retrieval. No coordination, no tools, no multi-agent interaction. The minimum viable autonomous agent.
 
+**Try it:**
+
+```bash
+# Submit a question
+curl -X POST http://localhost:9000/questions \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What is 2 + 2?"}'
+# Returns: {"taskId":"<task-id>"}
+
+# Poll for the result
+curl http://localhost:9000/questions/<task-id>
+# Returns: {"answer":"...","confidence":95,"status":"COMPLETED"}
+```
+
 ---
 
 ## pipeline
