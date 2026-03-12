@@ -31,12 +31,14 @@ Access these documentation files for detailed patterns:
 - `akka-context/sdk/event-sourced-entities.html.md` - Event sourced entity
 - `akka-context/sdk/key-value-entities.html.md` - Key value entity, simple state management
 - `akka-context/sdk/views.html.md` - Query models and projections
+- `akka-context/reference/views/**` - Detailed reference docs of views
 - `akka-context/sdk/workflows.html.md` - Saga patterns and orchestration
 - `akka-context/sdk/consuming-producing.html.md` - Event consumption and topics
 - `akka-context/sdk/http-endpoints.html.md` - RESTful APIs
 - `akka-context/sdk/grpc-endpoints.html.md` - Protocol buffer APIs
 - `akka-context/sdk/timed-actions.html.md` - Scheduling and timers
 - `akka-context/sdk/setup-and-dependency-injection.html.md` - Service bootstrap and dependency injection
+- `akka-context/reference/config/reference.html.md` - Full configuration reference
 - `ai-coding-assistant-guidelines.html.md` - Best practices
 
 ### When to Read Documentation

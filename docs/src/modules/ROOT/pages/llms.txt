@@ -29,6 +29,7 @@
 - [Implementing Workflows](https://doc.akka.io/sdk/workflows.html.md): Creating and managing long-running business processes with Akka workflows.
 - [Consuming and producing](https://doc.akka.io/sdk/consuming-producing.html.md):  Stream-based interaction between components, other Akka services and other systems. The source of events can be the journal of an Event Sourced Entity, state changes in a Key Value Entity or Workflows, or a message broker topic.
 - [Implementing Views](https://doc.akka.io/sdk/views.html.md): Building read-optimized projections of your entity data.
+- [Views reference](https://doc.akka.io/reference/views/index.html.md): Detailed reference docs of views.
 - [Designing HTTP Endpoints](https://doc.akka.io/sdk/http-endpoints.html.md): Creating REST APIs with Akka's HTTP endpoints.
 - [Designing gRPC Endpoints](https://doc.akka.io/sdk/grpc-endpoints.html.md): Building high-performance APIs with gRPC support.
 - [Designing MCP Endpoints](https://doc.akka.io/sdk/mcp-endpoints.html.md): MCP Endpoints allow you to expose a services to MCP clients such as LLM chat agent desktop applications and agents running on other services.
@@ -37,6 +38,7 @@
 - [Errors and failures](https://doc.akka.io/sdk/errors-and-failures.html.md): Handling and managing errors in Akka applications.
 - [Setup and configuration](https://doc.akka.io/sdk/setup-and-configuration/index.html.md): Configuring and initializing Akka services.
 - [Setup and dependency injection](https://doc.akka.io/sdk/setup-and-dependency-injection.html.md): Integrating dependency injection with Akka services.
+- [Configuration reference](https://doc.akka.io/reference/config/reference.html.md): Full configuration reference.
 - [Serialization](https://doc.akka.io/sdk/serialization.html.md): Configuring and customizing serialization for entity data and messages.
 - [Retrieval-Augmented Generation (RAG)](https://doc.akka.io/sdk/rag.html.md): Performing semantic search on a vector database to find relevant content and enrich the request to the AI model.
 - [Architecture model](https://doc.akka.io/concepts/architecture-model.html.md): Key architectural patterns and principles used in Akka.
