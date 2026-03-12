@@ -27,6 +27,7 @@ Access these documentation files for detailed patterns:
 - `akka-context/sdk/agents/guardrails.html.md` - Constraining and controlling agent behavior with guardrails
 - `akka-context/sdk/agents/evaluating.html.md` - Evaluating and judging the responses from LLMs via agents
 - `akka-context/sdk/agents/testing.html.md` - Testing agents
+- `akka-context/sdk/autonomous-agents.html.md` - Autonomous agents with durable execution and multi-agent coordination
 - `akka-context/getting-started/planner-agent/dynamic-team.html.md` - Dynamic agent planning and orchestration
 - `akka-context/sdk/event-sourced-entities.html.md` - Event sourced entity
 - `akka-context/sdk/key-value-entities.html.md` - Key value entity, simple state management
@@ -44,6 +45,7 @@ Access these documentation files for detailed patterns:
 **MANDATORY - Always read documentation BEFORE coding for:**
 - **Workflows** - ALWAYS read `workflows.html.md` first time in session (complex patterns, compensation, recovery)
 - **Agents** - ALWAYS read `agents.html.md` first time in session (LLM integration, tools, streaming)
+- **Autonomous Agents** - ALWAYS read `autonomous-agents.html.md` first time in session (durable execution, tasks, multi-agent coordination)
 - **First-time component generation** - Read relevant doc for ANY component type not yet created in this session
 - **User-specified features you're uncertain about**
 - **API mismatches or errors**
@@ -71,6 +73,25 @@ Access these documentation files for detailed patterns:
 - Model config: prefer default in config, override with `.model(ModelProvider.openAi()...)` if needed
 - Error handling with `.onFailure(throwable -> fallbackValue)`
 - When calling from workflow: use long timeouts (60s), limited retries (maxRetries(2))
+
+**Autonomous Agent**
+- Extends `AutonomousAgent`, has `@Component(id = "...")`
+- Implements single `strategy()` method returning `Strategy` — NO command handlers
+- Agent is a process: runs, works on assigned tasks, stops
+- Tasks are separate persistent entities with typed results — the coordination primitive
+- Task definitions: `Task.define("name").description("...").resultConformsTo(ResultRecord.class)`
+- Task instances: add per-request `.instructions(String)` and `.attach(MessageContent...)` to a definition
+- Task lifecycle: `PENDING → IN_PROGRESS → COMPLETED` (or `FAILED`)
+- Client API via `ComponentClient`:
+  - `componentClient.forAutonomousAgent(AgentClass.class, instanceId).runSingleTask(task)` — one-shot
+  - `componentClient.forTask(taskDef).create(task)` — pre-create tasks
+  - `componentClient.forAutonomousAgent(AgentClass.class, instanceId).assignTasks(taskIds...)` — assign multiple
+  - `componentClient.forTask(taskDef).get(taskId)` — query typed result via `TaskSnapshot<R>`
+- Instance ID typically `UUID.randomUUID().toString()` for one-off work
+- Stateless design (no mutable state in agent class) — tasks carry state
+- `@FunctionTool` methods can also be defined directly on the agent class
+- Components (Entities, Views, Workflows) can be used as tools by passing their `Class`
+- Task dependencies: `task.dependsOn(otherTaskId)` — agent respects ordering
 
 **Event Sourced Entity**
 - Extends `EventSourcedEntity<State, Event>`, has `@Component(id = "...")`
@@ -128,8 +149,9 @@ com.{org}.{app-name}.domain/
   - NO Akka dependencies
 
 com.{org}.{app-name}.application/
-  - Entities, Views, Workflows, Agents
+  - Entities, Views, Workflows, Agents, Autonomous Agents
   - Consumers, Timed Actions
+  - Task definition classes (e.g., ResearchTasks)
 
 com.{org}.{app-name}.api/
   - HTTP/gRPC Endpoints
@@ -141,7 +163,9 @@ src/main/proto/
 
 ### Naming Conventions
 
-- Agent: `{Purpose}Agent` (e.g., `ActivityAgent`)
+- Agent (request-based): `{Purpose}Agent` (e.g., `ActivityAgent`)
+- Autonomous Agent: `{Purpose}Agent` or `{Role}Agent` (e.g., `ResearchCoordinator`, `TriageAgent`)
+- Task definitions: `{Domain}Tasks` (e.g., `ResearchTasks`, `SupportTasks`)
 - Entity: `{DomainName}Entity` (e.g., `CreditCardEntity`)
 - View: `{DomainName}{ByQueryField}View` (e.g., `CreditCardsByCardholderView`)
 - Workflow: `{ProcessName}Workflow` (e.g., `BankTransferWorkflow`)
@@ -567,6 +591,11 @@ public class MyEndpointIntegrationTest extends TestKitSupport {
 - Add `@Component` or `@ComponentId` to HTTP/gRPC endpoints
 - Use deprecated `testKit.call`  -> use `testKit.method(...).invoke(...)`
 - Create multiple command handlers in Agent
+- Add command handlers to AutonomousAgent → it only has `strategy()`
+- Use `Agent` base class for autonomous agents → use `AutonomousAgent`
+- Use `componentClient.forAgent()` for autonomous agents → use `componentClient.forAutonomousAgent()`
+- Create task instances without instructions → always add `.instructions()` for per-request context
+- Use `strategy()` in request-based Agent → use `effects()` chain; `strategy()` is for AutonomousAgent only
 - Return protobuf types from domain layer
 - Import `WorkflowSettings` -> WorkflowSettings is an inner class of Workflow, so no additional import is needed
 
@@ -578,7 +607,9 @@ public class MyEndpointIntegrationTest extends TestKitSupport {
 - Inject `EventSourcedEntityContext` if accessing entity ID in `emptyState()`
 - Use `Awaitility.await()` for view tests
 - Follow package structure strictly
-- Use `TestModelProvider` to mock AI in agent tests
+- Use `TestModelProvider` to mock AI in agent and autonomous agent tests
+- Define task types as `static final` constants in a `{Domain}Tasks` class
+- Use `UUID.randomUUID().toString()` for one-off autonomous agent instance IDs
 - Add `ce-subject` metadata when producing to topics
 - Handle errors in Timed Actions to avoid infinite rescheduling
 - Define `.proto` files in `src/main/proto` for gRPC
@@ -598,6 +629,20 @@ Before presenting code, verify:
 - [ ] Use `responseConformsTo()` for structured responses (not `responseAs()`)
 - [ ] Handle errors from JSON parsing, tool calls, or model with `.onFailure()`
 - [ ] Session ID strategy defined (UUID, workflow ID, etc.)
+
+**Autonomous Agent**
+- [ ] **STOP: Did you read `autonomous-agents.html.md` BEFORE writing any code?** (Required for first autonomous agent in session)
+- [ ] Extends `AutonomousAgent`, NOT `Agent`
+- [ ] Has `@Component(id = "...")` annotation
+- [ ] Implements `strategy()` method, NO command handlers
+- [ ] Goal describes purpose, not coordination mechanics
+- [ ] Declares accepted task types with `.accepts()`
+- [ ] Task definitions are `static final` constants with `.resultConformsTo()`
+- [ ] Result types are Java records
+- [ ] `maxIterations()` set appropriately for task complexity
+- [ ] Rich descriptions in `@FunctionTool` methods
+- [ ] Coordination capabilities match the pattern needed (delegation vs handoff vs both)
+- [ ] Agent class is stateless (no mutable fields)
 
 **Events & State**
 - [ ] Events have `@TypeName` annotations

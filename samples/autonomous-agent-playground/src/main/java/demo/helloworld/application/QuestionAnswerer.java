@@ -10,8 +10,9 @@ public class QuestionAnswerer extends AutonomousAgent {
   @Override
   public Strategy strategy() {
     return Strategy.autonomous()
-      .goal("Answer questions clearly and concisely, showing reasoning step by step.")
-      .accepts(QuestionTasks.ANSWER)
-      .maxIterations(3);
+        .goal("Answer questions clearly and concisely, showing reasoning step by step. " +
+            "Provide a confidence score from 0 to 100.")
+        .accepts(QuestionTasks.ANSWER)
+        .maxIterations(3);
   }
 }
