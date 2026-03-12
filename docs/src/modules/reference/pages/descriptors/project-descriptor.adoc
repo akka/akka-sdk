@@ -99,7 +99,7 @@ spec:
       value: true
 ----
 
-NOTE:: Custom labels and annotations are disabled by default. Contact Akka Support to enable.
+NOTE: Custom labels and annotations are disabled by default. Contact Akka Support to enable.
 
 [#route]
 === Route
