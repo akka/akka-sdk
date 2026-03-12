@@ -47,7 +47,23 @@ Unlike a request-based Agent (which uses a session ID), an Autonomous Agent uses
 
 An Autonomous Agent extends `AutonomousAgent` and implements a single `strategy()` method that returns the agent's configuration.
 
-<!-- TODO: code snippet — minimal QuestionAnswerer agent with @Component, strategy(), goal, accepts, maxIterations -->
+```java
+import akka.javasdk.agent.autonomous.AutonomousAgent;
+import akka.javasdk.agent.autonomous.Strategy;
+import akka.javasdk.annotations.Component;
+
+@Component(id = "question-answerer") // <2>
+public class QuestionAnswerer extends AutonomousAgent { // <1>
+
+  @Override
+  public Strategy strategy() { // <3>
+    return Strategy.autonomous()
+      .goal("Answer questions clearly and concisely, showing reasoning step by step.")
+      .accepts(QuestionTasks.ANSWER)
+      .maxIterations(3);
+  }
+}
+```
 
 | **1** | Create a class that extends `AutonomousAgent`. |
 | **2** | Annotate the class with `@Component` and pass a unique identifier for this agent type. |
@@ -63,13 +79,19 @@ The `strategy()` method returns a `Strategy` built with a fluent builder API. `S
 
 The goal is the agent's high-level purpose — what it achieves, not how it coordinates. The runtime combines the goal with capability-specific context and tool descriptions to build the system message sent to the LLM.
 
-<!-- TODO: code snippet — strategy with goal text -->
+```java
+Strategy.autonomous()
+  .goal("Answer questions clearly and concisely, showing reasoning step by step.")
+```
 
 ### Accepted task types
 
 An agent declares which task types it can work on with `accepts()`. The agent will only process tasks whose definition matches one of the accepted types.
 
-<!-- TODO: code snippet — .accepts(MyTasks.REVIEW, MyTasks.SUMMARIZE) -->
+```java
+Strategy.autonomous()
+  .accepts(PipelineTasks.COLLECT, PipelineTasks.ANALYZE, PipelineTasks.REPORT)
+```
 
 ### Tools
 
@@ -79,23 +101,79 @@ Methods on tool objects must be annotated with `@FunctionTool`. The description 
 
 Components — Workflows, Event Sourced Entities, Key Value Entities, and Views — can also be used as tools. Pass the component `Class` (not an instance) to `tools()`.
 
-<!-- TODO: code snippet — .tools(new MyTools()) with @FunctionTool methods -->
+```java
+public class ConsultingTools {
 
-Tools can also be defined directly on the agent class as `@FunctionTool` methods, just like with request-based Agents.
+  @FunctionTool(description = "Perform a preliminary assessment of a client problem.")
+  public String assessProblem(String problemDescription) {
+    return "Preliminary assessment for '" + problemDescription + "': ...";
+  }
 
-<!-- TODO: code snippet — @FunctionTool method on agent class -->
+  @FunctionTool(description = "Check if a problem exceeds standard consulting scope and needs escalation.")
+  public String checkComplexity(String assessment) {
+    if (assessment.toLowerCase().contains("regulatory")) {
+      return "COMPLEX: Recommend escalation to senior consultant.";
+    }
+    return "STANDARD: Can be handled with research and analysis.";
+  }
+}
+```
+
+Register the tool object in the strategy:
+
+```java
+Strategy.autonomous()
+  .tools(new ConsultingTools())
+```
+
+Tools can also be defined directly on the agent class as `@FunctionTool` methods, just like with request-based Agents. These are discovered automatically and do not need to be registered via `tools()` in the strategy.
+
+```java
+@Component(id = "report-agent")
+public class ReportAgent extends AutonomousAgent {
+
+  @Override
+  public Strategy strategy() {
+    return Strategy.autonomous()
+      .goal("Process report phases: collect data, analyze findings, produce comprehensive reports.")
+      .accepts(PipelineTasks.COLLECT, PipelineTasks.ANALYZE, PipelineTasks.REPORT)
+      .maxIterations(5);
+  }
+
+  @FunctionTool(description = "Collect data on a topic and return findings")
+  public String collectData(String topic) {
+    return "Collected data on: " + topic;
+  }
+
+  @FunctionTool(description = "Analyze data and return analysis")
+  public String analyzeData(String data) {
+    return "Analysis of: " + data;
+  }
+}
+```
+
+See [Extending agents with function tools](agents/extending.html) for details on tool annotations, parameter descriptions, return types, and component tools.
 
 ### MCP tools
 
 Remote MCP (Model Context Protocol) tool endpoints are added with `mcpTools()`.
 
-<!-- TODO: code snippet — .mcpTools(RemoteMcpTools.create(...)) -->
+```java
+Strategy.autonomous()
+  .mcpTools(RemoteMcpTools.create("https://mcp.example.com/tools"))
+```
+
+See [Extending agents with function tools](agents/extending.html) for details on configuring MCP tool endpoints.
 
 ### Guardrails
 
 Request and response guardrails constrain the LLM interaction at each iteration. Request guardrails evaluate prompts before they are sent to the LLM. Response guardrails evaluate responses received from the LLM.
 
-<!-- TODO: code snippet — .requestGuardrails(MyGuardrail.class).responseGuardrails(MyOtherGuardrail.class) -->
+```java
+Strategy.autonomous()
+  .requestGuardrails(MyRequestGuardrail.class)
+  .responseGuardrails(MyResponseGuardrail.class)
+```
 
 See [Guardrails](agents/guardrails.html) for details on implementing guardrail classes.
 
@@ -103,23 +181,51 @@ See [Guardrails](agents/guardrails.html) for details on implementing guardrail c
 
 Session memory configuration controls how conversation history across iterations is managed. By default, memory accumulates across iterations. Use `MemoryProvider` to limit the window or disable memory.
 
-<!-- TODO: code snippet — .memory(MemoryProvider.limitedWindow().readLast(20)) -->
+```java
+Strategy.autonomous()
+  .memory(MemoryProvider.limitedWindow().readLast(20))
+```
 
 ### Iteration limit
 
 `maxIterations()` sets the maximum number of LLM iterations before the agent fails the current task. The default is 10. Set this based on the expected complexity of the work — simple tasks may need only 3 iterations, while complex coordination may need more.
 
-<!-- TODO: code snippet — .maxIterations(5) -->
+```java
+Strategy.autonomous()
+  .maxIterations(5)
+```
 
 ### Model
 
 By default, the agent uses the model configured in `application.conf` (see [Configuring the model](agents.html#model)). Override with `modelProvider()` to use a different model for this agent.
 
-<!-- TODO: code snippet — .modelProvider(ModelProvider.openAi()...) -->
+```java
+Strategy.autonomous()
+  .modelProvider(ModelProvider.openAi().withModel("gpt-4o"))
+```
 
 ### Complete strategy example
 
-<!-- TODO: code snippet — full strategy() method showing goal, accepts, tools, maxIterations, and a coordination capability together -->
+```java
+@Component(id = "consulting-coordinator")
+public class ConsultingCoordinator extends AutonomousAgent {
+
+  @Override
+  public Strategy strategy() {
+    return Strategy.autonomous()
+      .goal("""
+        Deliver actionable consulting recommendations. Assess each client \
+        problem, determine its complexity, and ensure it reaches the right \
+        level of expertise for resolution. \
+        """)
+      .accepts(ConsultingTasks.ENGAGEMENT)
+      .tools(new ConsultingTools())
+      .canDelegateTo(ConsultingResearcher.class)
+      .canHandoffTo(SeniorConsultant.class)
+      .maxIterations(10);
+  }
+}
+```
 
 ## <a href="about:blank#_tasks"></a> Tasks
 
@@ -133,17 +239,49 @@ Tasks are the coordination primitive — they flow between agents, and the coord
 
 Task definitions are immutable constants, typically declared as `static final` fields. A definition specifies the task name, a description of what kind of work it represents, and the expected result type.
 
-<!-- TODO: code snippet — TaskDefinition constants with .define(), .description(), .resultConformsTo() -->
+```java
+import akka.javasdk.agent.task.Task;
+
+public class ResearchTasks {
+
+  public static final Task<ResearchBrief> BRIEF = Task
+    .define("Brief")
+    .description("Produce a research brief on a given topic")
+    .resultConformsTo(ResearchBrief.class);
+
+  public static final Task<ResearchFindings> FINDINGS = Task
+    .define("Findings")
+    .description("Research a topic and produce factual findings")
+    .resultConformsTo(ResearchFindings.class);
+
+  public static final Task<AnalysisReport> ANALYSIS = Task
+    .define("Analysis")
+    .description("Analyse a topic and produce a trend analysis report")
+    .resultConformsTo(AnalysisReport.class);
+}
+```
 
 The result type is a Java record. The agent's LLM output is validated against this schema, and the typed result is available when querying the completed task.
 
-<!-- TODO: code snippet — result record (e.g. ResearchBrief with title, summary, keyFindings) -->
+```java
+public record ResearchBrief(String title, String summary, List<String> keyFindings) {}
+
+public record ResearchFindings(String topic, List<String> facts, List<String> sources) {}
+
+public record AnalysisReport(String topic, String assessment, List<String> trends) {}
+```
 
 ### Creating task instances
 
 Task definitions are templates. To create an actual task instance, add per-request details — instructions and optional attachments — to a definition. The definition itself is unchanged (all methods return new instances).
 
-<!-- TODO: code snippet — REVIEW.instructions("Review this document").attach(TextMessageContent.from(document)) -->
+```java
+import akka.javasdk.agent.MessageContent.TextMessageContent;
+
+var task = ReviewTasks.REVIEW
+  .instructions("Check for GDPR compliance in data handling sections")
+  .attach(TextMessageContent.from(documentText));
+```
 
 ### Task lifecycle
 
@@ -163,15 +301,40 @@ A task progresses through these statuses:
 
 Query a task's current state with `ComponentClient`. The snapshot includes the status, description, instructions, typed result (if completed), and failure reason (if failed).
 
-<!-- TODO: code snippet — componentClient.forTask(MyTasks.REVIEW).get(taskId) -->
+```java
+var snapshot = componentClient.forTask(ReviewTasks.REVIEW).get(taskId);
+var status = snapshot.status();       // PENDING, IN_PROGRESS, COMPLETED, or FAILED
+var result = snapshot.result();       // typed ReviewResult (null if not completed)
+var reason = snapshot.failureReason(); // failure reason (null if not failed)
+```
 
 ### Task dependencies
 
 Tasks can declare dependencies on other tasks. A task with dependencies will not be started by the agent until all dependencies have completed. This enables pipeline patterns where work flows through ordered phases.
 
-<!-- TODO: code snippet — ANALYZE.instructions(...).dependsOn(collectTaskId) -->
+```java
+// Create collect task (no dependencies)
+var collectId = componentClient
+  .forTask(PipelineTasks.COLLECT)
+  .create(PipelineTasks.COLLECT
+    .instructions("Collect data on: " + topic));
 
-Dependencies are specified by task ID, which means tasks must be created (via `TaskClient.create()`) before they can be referenced as dependencies.
+// Create analyze task (depends on collect)
+var analyzeId = componentClient
+  .forTask(PipelineTasks.ANALYZE)
+  .create(PipelineTasks.ANALYZE
+    .instructions("Analyze data for: " + topic)
+    .dependsOn(collectId));
+
+// Create report task (depends on analyze)
+var reportId = componentClient
+  .forTask(PipelineTasks.REPORT)
+  .create(PipelineTasks.REPORT
+    .instructions("Write report for: " + topic)
+    .dependsOn(analyzeId));
+```
+
+Dependencies are specified by task ID, which means tasks must be created (via `componentClient.forTask(...).create(...)`) before they can be referenced as dependencies.
 
 ### Task notifications
 
@@ -187,7 +350,11 @@ Autonomous agents and tasks are managed through `ComponentClient`.
 
 The simplest pattern: create a task, start an agent, and automatically stop the agent when done. `runSingleTask` handles all of this in one call.
 
-<!-- TODO: code snippet — componentClient.forAutonomousAgent(MyAgent.class, UUID.randomUUID().toString()).runSingleTask(task) -->
+```java
+var taskId = componentClient
+  .forAutonomousAgent(QuestionAnswerer.class, UUID.randomUUID().toString())
+  .runSingleTask(QuestionTasks.ANSWER.instructions("What is 2 + 2?"));
+```
 
 This returns the task ID for later status checks. Each call spins up an independent agent instance.
 
@@ -197,23 +364,43 @@ For more control — multiple tasks, pipelines, or long-lived agents — create 
 
 **Create tasks:**
 
-<!-- TODO: code snippet — componentClient.forTask(MyTasks.COLLECT).create(task) returning taskId -->
+```java
+var collectId = componentClient
+  .forTask(PipelineTasks.COLLECT)
+  .create(PipelineTasks.COLLECT.instructions("Collect data on: " + topic));
+```
 
 **Assign tasks to an agent:**
 
-<!-- TODO: code snippet — componentClient.forAutonomousAgent(MyAgent.class, agentId).assignTasks(taskId1, taskId2, taskId3) -->
+```java
+var agentInstanceId = UUID.randomUUID().toString();
+componentClient
+  .forAutonomousAgent(ReportAgent.class, agentInstanceId)
+  .assignTasks(collectId, analyzeId, reportId);
+```
 
 Tasks are queued if the agent is busy. The agent processes them in order, respecting dependencies.
 
 **Stop an agent:**
 
-<!-- TODO: code snippet — componentClient.forAutonomousAgent(MyAgent.class, agentId).stop() -->
+```java
+componentClient
+  .forAutonomousAgent(ReportAgent.class, agentInstanceId)
+  .stop();
+```
 
 ### Querying task results
 
 Task results are typed based on the task definition's `resultConformsTo` type.
 
-<!-- TODO: code snippet — TaskSnapshot<ResearchBrief> snapshot = componentClient.forTask(ResearchTasks.BRIEF).get(taskId); snapshot.result().keyFindings() -->
+```java
+var snapshot = componentClient.forTask(ResearchTasks.BRIEF).get(taskId);
+if (snapshot.status() == TaskStatus.COMPLETED) {
+  ResearchBrief brief = snapshot.result();
+  var title = brief.title();
+  var findings = brief.keyFindings();
+}
+```
 
 ## <a href="about:blank#_coordination_patterns"></a> Coordination patterns
 
@@ -311,7 +498,10 @@ The coordination patterns above are implemented through capabilities — each ad
 
 A coordinator declares delegation targets with `canDelegateTo()`. The framework provides a tool for each target that the LLM can call. For example, if the coordinator can delegate to a `Researcher`, the LLM sees a `delegateToResearcher` tool. When called, the tool creates a task, spawns a `Researcher` agent, assigns the task, awaits the result, and returns it to the coordinator's tool loop.
 
-<!-- TODO: code snippet — .canDelegateTo(Researcher.class, Analyst.class) -->
+```java
+Strategy.autonomous()
+  .canDelegateTo(Researcher.class, Analyst.class)
+```
 
 The coordinator pauses while workers execute, then resumes with their results. Delegated agents shut down after their task completes. The coordinator maintains full context and is responsible for synthesising the results.
 
@@ -319,13 +509,74 @@ The coordinator pauses while workers execute, then resumes with their results. D
 
 **When to use:** Tasks that decompose into distinct subtasks benefiting from isolated, focused contexts. Good for parallel execution and when independent perspectives are needed.
 
-<!-- TODO: code snippet — full ResearchCoordinator example with canDelegateTo -->
+The coordinator delegates to specialist agents that each accept their own task type:
+
+```java
+@Component(id = "research-coordinator")
+public class ResearchCoordinator extends AutonomousAgent {
+
+  @Override
+  public Strategy strategy() {
+    return Strategy.autonomous()
+      .goal("""
+        Produce comprehensive research briefs by synthesising findings \
+        from multiple specialist perspectives. \
+        """)
+      .accepts(ResearchTasks.BRIEF)
+      .canDelegateTo(Researcher.class, Analyst.class)
+      .maxIterations(5);
+  }
+}
+```
+
+Each delegation target is a standalone agent with its own strategy and accepted task types:
+
+```java
+@Component(id = "researcher",
+  description = "Researches topics to find key facts and relevant context")
+public class Researcher extends AutonomousAgent {
+
+  @Override
+  public Strategy strategy() {
+    return Strategy.autonomous()
+      .goal("""
+        You are a thorough researcher. When given a topic, find key facts, \
+        important details, and relevant context. \
+        """)
+      .accepts(ResearchTasks.FINDINGS)
+      .maxIterations(3);
+  }
+}
+```
+
+```java
+@Component(id = "analyst",
+  description = "Analyses topics to identify trends and produce actionable insights")
+public class Analyst extends AutonomousAgent {
+
+  @Override
+  public Strategy strategy() {
+    return Strategy.autonomous()
+      .goal("""
+        You are an insightful analyst. When given a topic, analyse its implications, \
+        identify trends and patterns, and produce actionable insights. \
+        """)
+      .accepts(ResearchTasks.ANALYSIS)
+      .maxIterations(3);
+  }
+}
+```
+
+The `description` in the `@Component` annotation is included in the delegation tool description so the coordinator's LLM knows when to delegate to each specialist.
 
 ### Handoff
 
 An agent declares handoff targets with `canHandoffTo()`. The framework provides a tool that transfers the current task to another agent. Unlike delegation, handoff transfers ownership — the current agent is done and the target agent takes over.
 
-<!-- TODO: code snippet — .canHandoffTo(BillingSpecialist.class, TechnicalSpecialist.class) -->
+```java
+Strategy.autonomous()
+  .canHandoffTo(BillingSpecialist.class, TechnicalSpecialist.class)
+```
 
 Unlike delegation, handoff is peer-to-peer — the handing-off agent directly reassigns the task, closer to the actor `forward` pattern. The task entity updates its assignee and records the handoff context. The new agent picks up the task with the accumulated context from the handoff.
 
@@ -333,7 +584,59 @@ Unlike delegation, handoff is peer-to-peer — the handing-off agent directly re
 
 **When to use:** Routing and triage patterns where a classifier determines which specialist should handle a request. Clear stages with specialisation at each stage.
 
-<!-- TODO: code snippet — full TriageAgent example with canHandoffTo -->
+The triage agent classifies requests and hands off to the appropriate specialist:
+
+```java
+@Component(id = "triage-agent")
+public class TriageAgent extends AutonomousAgent {
+
+  @Override
+  public Strategy strategy() {
+    return Strategy.autonomous()
+      .goal("""
+        Classify customer support requests and ensure they are resolved \
+        by the appropriate specialist. \
+        """)
+      .accepts(SupportTasks.RESOLVE)
+      .canHandoffTo(BillingSpecialist.class, TechnicalSpecialist.class)
+      .maxIterations(3);
+  }
+}
+```
+
+Handoff targets accept the same task type — the task moves between agents:
+
+```java
+@Component(id = "billing-specialist",
+  description = "Resolves billing disputes, payment issues, and invoice queries")
+public class BillingSpecialist extends AutonomousAgent {
+
+  @Override
+  public Strategy strategy() {
+    return Strategy.autonomous()
+      .goal("Resolve billing and payment issues for customers.")
+      .accepts(SupportTasks.RESOLVE)
+      .maxIterations(5);
+  }
+}
+```
+
+```java
+@Component(id = "technical-specialist",
+  description = "Diagnoses and resolves technical problems, bugs, and service outages")
+public class TechnicalSpecialist extends AutonomousAgent {
+
+  @Override
+  public Strategy strategy() {
+    return Strategy.autonomous()
+      .goal("Diagnose and resolve technical issues for customers.")
+      .accepts(SupportTasks.RESOLVE)
+      .maxIterations(5);
+  }
+}
+```
+
+Note that the triage agent has a low `maxIterations(3)` since it only needs to classify, while specialists have `maxIterations(5)` for the actual resolution work.
 
 ### Teams
 
@@ -365,7 +668,28 @@ Capabilities compose freely. An agent can combine:
 - **Delegation with external input** — delegate writing and editing to specialists, request editorial approval for the final output
 - **Teams with external input** — team members collaborate, with human approval required for final publication
 
-<!-- TODO: code snippet — strategy with combined .canDelegateTo() and .canHandoffTo() -->
+```java
+@Component(id = "consulting-coordinator")
+public class ConsultingCoordinator extends AutonomousAgent {
+
+  @Override
+  public Strategy strategy() {
+    return Strategy.autonomous()
+      .goal("""
+        Deliver actionable consulting recommendations. Assess each client \
+        problem, determine its complexity, and ensure it reaches the right \
+        level of expertise for resolution. \
+        """)
+      .accepts(ConsultingTasks.ENGAGEMENT)
+      .tools(new ConsultingTools())
+      .canDelegateTo(ConsultingResearcher.class)   // delegate research subtasks
+      .canHandoffTo(SeniorConsultant.class)         // hand off complex problems
+      .maxIterations(10);
+  }
+}
+```
+
+The LLM decides at runtime whether to delegate a subtask (retaining ownership) or hand off the entire task (transferring ownership). Domain tools like `assessProblem` and `checkComplexity` give the LLM the information it needs to make this decision.
 
 ## <a href="about:blank#_context_management"></a> Context management
 
@@ -421,7 +745,53 @@ The coordination patterns compose at different levels. Some examples:
 
 Autonomous agents are tested using `TestModelProvider` to mock LLM responses, following the same pattern as request-based agents.
 
-<!-- TODO: code snippet — TestKitSupport test with TestModelProvider for AutonomousAgent, showing task creation and result assertion -->
+```java
+import akka.javasdk.testkit.TestKit;
+import akka.javasdk.testkit.TestKitSupport;
+import akka.javasdk.testkit.TestModelProvider;
+import org.awaitility.Awaitility;
+import java.util.concurrent.TimeUnit;
+
+public class QuestionAnswererIntegrationTest extends TestKitSupport {
+
+  private final TestModelProvider model = new TestModelProvider();
+
+  @Override
+  protected TestKit.Settings testKitSettings() {
+    return TestKit.Settings.DEFAULT
+      .withModelProvider(QuestionAnswerer.class, model);
+  }
+
+  @Test
+  public void shouldAnswerQuestionWithTypedResult() {
+    // Mock the LLM to call the built-in complete_task tool
+    model.fixedResponse(
+      new TestModelProvider.AiResponse(
+        new TestModelProvider.ToolInvocationRequest(
+          "complete_task",
+          "{\"answer\":\"2 plus 2 equals 4.\",\"confidence\":100}"
+        )
+      )
+    );
+
+    // Create and run a task
+    var taskId = componentClient
+      .forAutonomousAgent(QuestionAnswerer.class, "test-instance")
+      .runSingleTask(QuestionTasks.ANSWER.instructions("What is 2 + 2?"));
+
+    // Poll for completion (execution is asynchronous)
+    Awaitility.await()
+      .ignoreExceptions()
+      .atMost(10, TimeUnit.SECONDS)
+      .untilAsserted(() -> {
+        var snapshot = componentClient.forTask(QuestionTasks.ANSWER).get(taskId);
+        assertThat(snapshot.result()).isNotNull();
+        assertThat(snapshot.result().answer()).isEqualTo("2 plus 2 equals 4.");
+        assertThat(snapshot.result().confidence()).isEqualTo(100);
+      });
+  }
+}
+```
 
 Key points:
 - Create a `TestModelProvider` instance as a field
