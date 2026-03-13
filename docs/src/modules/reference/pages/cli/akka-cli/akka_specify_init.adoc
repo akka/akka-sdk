@@ -25,7 +25,7 @@ Examples:   akka specify init my-service    # clone sample into new directory   
 akka specify init .             # install resources in current directory   claude
 
 ----
-akka specify init [name] [flags]
+akka specify init [directory] [flags]
 ----
 
 == Options

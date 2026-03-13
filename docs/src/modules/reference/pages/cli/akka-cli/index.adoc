@@ -365,6 +365,7 @@ The xref:reference:cli/akka-cli/akka_services.adoc[akka services] command includ
 * xref:reference:cli/akka-cli/akka_services_views_drop.adoc[akka services views drop]
 * xref:reference:cli/akka-cli/akka_services_views_get-state.adoc[akka services views get-state]
 * xref:reference:cli/akka-cli/akka_services_views_list.adoc[akka services views list]
+* xref:reference:cli/akka-cli/akka_services_views_query.adoc[akka services views query]
 
 == Run Akka services locally
 The `akka local` commands allow you to run and manage locally running Akka services.
@@ -393,6 +394,7 @@ The xref:reference:cli/akka-cli/akka_local.adoc[akka local] command includes the
 * xref:reference:cli/akka-cli/akka_local_services_views_drop.adoc[akka local services views drop]
 * xref:reference:cli/akka-cli/akka_local_services_views_get-state.adoc[akka local services views get-state]
 * xref:reference:cli/akka-cli/akka_local_services_views_list.adoc[akka local services views list]
+* xref:reference:cli/akka-cli/akka_local_services_views_query.adoc[akka local services views query]
 * xref:reference:cli/akka-cli/akka_local_start.adoc[akka local start]
 * xref:reference:cli/akka-cli/akka_local_status.adoc[akka local status]
 * xref:reference:cli/akka-cli/akka_local_stop.adoc[akka local stop]

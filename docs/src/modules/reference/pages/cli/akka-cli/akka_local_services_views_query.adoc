@@ -1,15 +1,30 @@
-= akka local services views
+= akka local services views query
 
-Manage views.
+Query a view method.
 
 == Synopsis
 
-The `akka local service views` commands manage the views for an Akka project, including listing of existing views and deleting views and their data when a view is no longer used.
+The `akka local service views query` command calls a view query method with a JSON payload and prints the JSON response.
+
+----
+akka local services views query SERVICE VIEW_ID METHOD_NAME [flags]
+----
+
+== Examples
+
+----
+
+> akka local service views query customer-registry CustomerByEmail getByEmail -d '{"email": "alice@example.com"}'
+----
 
 == Options
 
 ----
-  -h, --help   help for views
+  -d, --data string      The JSON payload to send with the request. (default "{}")
+  -h, --help             help for query
+      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string   project to use if not using the default configured project
+      --region string    region to use if project has more than one region
 ----
 
 == Options inherited from parent commands
@@ -30,12 +45,7 @@ The `akka local service views` commands manage the views for an Akka project, in
 
 == SEE ALSO
 
-* link:akka_local_services.html[akka local services]	 - Manage Akka services locally.
-* link:akka_local_services_views_describe.html[akka local services views describe]	 - Describe a view.
-* link:akka_local_services_views_drop.html[akka local services views drop]	 - Delete the data for an inactive view.
-* link:akka_local_services_views_get-state.html[akka local services views get-state]	 - Get view state.
-* link:akka_local_services_views_list.html[akka local services views list]	 - List all views.
-* link:akka_local_services_views_query.html[akka local services views query]	 - Query a view method.
+* link:akka_local_services_views.html[akka local services views]	 - Manage views.
 
 [discrete]
 
