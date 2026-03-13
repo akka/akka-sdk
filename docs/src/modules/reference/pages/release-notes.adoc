@@ -12,6 +12,9 @@ Current versions
 
 == March 2026
 
+* Akka CLI 3.0.52
+- `akka services views query` a view query method with a Json payload, also avilable for local development.
+
 * Akka CLI 3.0.51
 - More improvement for spec driven development.
 
