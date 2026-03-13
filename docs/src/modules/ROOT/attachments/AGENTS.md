@@ -450,6 +450,12 @@ public class CounterToTopicConsumer extends Consumer {
 }
 ```
 
+### Endpoint with web UI
+
+Static resources such as HTML, CSS files can be packaged together with the service.
+See documentation "Serving static content" in `akka-context/sdk/http-endpoints.html.md`.
+If the user gives no style preferences, you should use something similar to the CSS in `akka-context/ui/default-akka-style.css`
+
 ### Agent Testing Pattern
 
 ```java
