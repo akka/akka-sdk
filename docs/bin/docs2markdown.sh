@@ -29,7 +29,17 @@ fi
 cp docs/src/modules/ROOT/pages/llms.txt target/site/
 
 mkdir -p target/docs-md
-rsync -av --prune-empty-dirs --include="*/" --include="reference/views/**" --include="reference/config/**" --include="reference/jwts.html.md" --exclude="reference/**" --include="*.html.md" --exclude="*" target/site/ target/docs-md/
+rsync -av --prune-empty-dirs \
+  --include="*/" \
+  --include="reference/views/**" \
+  --include="reference/config/**" \
+  --include="reference/jwts.html.md" \
+  --exclude="reference/**" \
+  --include="*.html.md" \
+  --exclude="*" \
+  target/site/ target/docs-md/
+mkdir -p target/docs-md/ui
+cp target/site/_attachments/default-akka-style.css target/docs-md/ui/
 (cd target/docs-md && zip -r ../../target/site/sdk/_attachments/akka-docs-md.zip .)
 
 # update ask-akka-agent
