@@ -31,6 +31,8 @@
 ***** xref:operations:services/custom-truststore.adoc[]
 
 **** xref:operations:regions/index.adoc[]
+***** xref:operations:regions/setup.adoc[]
+***** xref:operations:regions/infrastructure.adoc[]
 
 **** xref:operations:tls-certificates.adoc[]
 
