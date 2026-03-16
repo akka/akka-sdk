@@ -211,6 +211,7 @@ sourceType
 [Ss]plunk
 src
 SREs
+stdin
 [Ss]tackdriver
 [Ss]treamable
 subcommand
