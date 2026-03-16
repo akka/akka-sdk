@@ -101,8 +101,7 @@ public class ActivityWorkflow extends Workflow<ActivityWorkflow.State> {
 
   public Effect<String> start(String request) {
     return effects()
-      .transitionTo(ActivityWorkflow::summarizeStep)
-      .withInput(request)
+      .transitionTo(ActivityWorkflow::summarizeStep, request)
       .thenReply("Started");
   }
 

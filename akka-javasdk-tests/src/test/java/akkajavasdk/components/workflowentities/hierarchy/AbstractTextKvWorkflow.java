@@ -13,8 +13,7 @@ public abstract class AbstractTextKvWorkflow extends Workflow<AbstractTextKvWork
 
   protected StepEffect dummyStepInParent(String text) {
     return stepEffects()
-        .thenTransitionTo(AbstractTextKvWorkflow::dummyStepInInterface)
-        .withInput(text + "[abstract]");
+        .thenTransitionTo(AbstractTextKvWorkflow::dummyStepInInterface, text + "[abstract]");
   }
 
   @Override

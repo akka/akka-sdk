@@ -191,8 +191,7 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
       return stepEffects().updateState(newState).thenEnd(); // terminate workflow
     } else {
       return stepEffects()
-        .thenTransitionTo(AgentTeamWorkflow::createPlanStep)
-        .withInput(selection); // <5>
+        .thenTransitionTo(AgentTeamWorkflow::createPlanStep, selection); // <5>
     }
   }
 

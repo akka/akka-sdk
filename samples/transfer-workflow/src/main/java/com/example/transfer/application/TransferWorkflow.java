@@ -43,8 +43,7 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
 
     return stepEffects()
       .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
-      .thenTransitionTo(TransferWorkflow::depositStep) // <5>
-      .withInput(depositInput);
+      .thenTransitionTo(TransferWorkflow::depositStep, depositInput); // <5>
   }
 
   @StepName("deposit") // <2>
@@ -75,8 +74,7 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
 
       return effects()
         .updateState(initialState) // <6>
-        .transitionTo(TransferWorkflow::withdrawStep) // <7>
-        .withInput(withdrawInput)
+        .transitionTo(TransferWorkflow::withdrawStep, withdrawInput) // <7>
         .thenReply(done()); // <8>
     }
   }

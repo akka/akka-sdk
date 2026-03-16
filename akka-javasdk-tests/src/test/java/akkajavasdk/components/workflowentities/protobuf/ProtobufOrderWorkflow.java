@@ -60,8 +60,7 @@ public class ProtobufOrderWorkflow extends Workflow<OrderWorkflowState> {
 
     return effects()
         .updateState(newState)
-        .transitionTo(ProtobufOrderWorkflow::validateOrder)
-        .withInput(validateInput)
+        .transitionTo(ProtobufOrderWorkflow::validateOrder, validateInput)
         .thenReply("Order created");
   }
 
@@ -96,8 +95,7 @@ public class ProtobufOrderWorkflow extends Workflow<OrderWorkflowState> {
 
     return stepEffects()
         .updateState(state)
-        .thenTransitionTo(ProtobufOrderWorkflow::processPayment)
-        .withInput(paymentInput);
+        .thenTransitionTo(ProtobufOrderWorkflow::processPayment, paymentInput);
   }
 
   @StepName("process-payment")
@@ -121,8 +119,7 @@ public class ProtobufOrderWorkflow extends Workflow<OrderWorkflowState> {
 
     return stepEffects()
         .updateState(state)
-        .thenTransitionTo(ProtobufOrderWorkflow::shipOrder)
-        .withInput(shipInput);
+        .thenTransitionTo(ProtobufOrderWorkflow::shipOrder, shipInput);
   }
 
   @StepName("ship-order")

@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl.workflow
 
+import scala.annotation.nowarn
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.DurationConverters.JavaDurationOps
 
@@ -109,6 +110,13 @@ object WorkflowEffects {
         TransitionalEffectImpl(persistence, StepTransition(stepName, None, Some(method.getDeclaringClass)))
       }
 
+      override def transitionTo[W, I](lambda: function.Function2[W, I, Workflow.StepEffect], input: I): Transitional = {
+        val method = MethodRefResolver.resolveMethodRef(lambda)
+        val stepName = WorkflowDescriptor.stepMethodName(method)
+        TransitionalEffectImpl(persistence, StepTransition(stepName, Some(input), Some(method.getDeclaringClass)))
+      }
+
+      @nowarn("msg=deprecated")
       override def transitionTo[W, I](
           lambda: function.Function2[W, I, Workflow.StepEffect]): WithInput[I, Transitional] = {
         val method = MethodRefResolver.resolveMethodRef(lambda)
@@ -246,6 +254,13 @@ object WorkflowEffects {
       TransitionalEffectImpl(persistence, StepTransition(stepName, None, Some(method.getDeclaringClass)))
     }
 
+    override def transitionTo[W, I](lambda: function.Function2[W, I, Workflow.StepEffect], input: I): Transitional = {
+      val method = MethodRefResolver.resolveMethodRef(lambda)
+      val stepName = WorkflowDescriptor.stepMethodName(method)
+      TransitionalEffectImpl(persistence, StepTransition(stepName, Some(input), Some(method.getDeclaringClass)))
+    }
+
+    @nowarn("msg=deprecated")
     override def transitionTo[W, I](
         lambda: function.Function2[W, I, Workflow.StepEffect]): WithInput[I, Transitional] = {
       val method = MethodRefResolver.resolveMethodRef(lambda)
@@ -261,6 +276,7 @@ object WorkflowEffects {
 
   }
 
+  @nowarn("msg=deprecated")
   private final case class EffectCallWithInputImpl[I, S](
       persistence: Persistence[S],
       stepName: String,
@@ -284,6 +300,13 @@ object WorkflowEffects {
         val stepName = WorkflowDescriptor.stepMethodName(method)
         WorkflowStepEffectImpl(persistence, StepTransition(stepName, None, Some(method.getDeclaringClass)))
       }
+      override def thenTransitionTo[W, I](lambda: function.Function2[W, I, StepEffect], input: I): StepEffect = {
+        val method = MethodRefResolver.resolveMethodRef(lambda)
+        val stepName = WorkflowDescriptor.stepMethodName(method)
+        WorkflowStepEffectImpl(persistence, StepTransition(stepName, Some(input), Some(method.getDeclaringClass)))
+      }
+
+      @nowarn("msg=deprecated")
       override def thenTransitionTo[W, I](lambda: function.Function2[W, I, StepEffect]): WithInput[I, StepEffect] = {
         val method = MethodRefResolver.resolveMethodRef(lambda)
         val stepName = WorkflowDescriptor.stepMethodName(method)
@@ -359,6 +382,13 @@ object WorkflowEffects {
       WorkflowStepEffectImpl(persistence, StepTransition(stepName, None, Some(method.getDeclaringClass)))
     }
 
+    override def thenTransitionTo[W, I](lambda: function.Function2[W, I, StepEffect], input: I): StepEffect = {
+      val method = MethodRefResolver.resolveMethodRef(lambda)
+      val stepName = WorkflowDescriptor.stepMethodName(method)
+      WorkflowStepEffectImpl(persistence, StepTransition(stepName, Some(input), Some(method.getDeclaringClass)))
+    }
+
+    @nowarn("msg=deprecated")
     override def thenTransitionTo[W, I](lambda: function.Function2[W, I, StepEffect]): WithInput[I, StepEffect] = {
       val method = MethodRefResolver.resolveMethodRef(lambda)
       val stepName = WorkflowDescriptor.stepMethodName(method)
@@ -383,6 +413,7 @@ object WorkflowEffects {
 
   }
 
+  @nowarn("msg=deprecated")
   private final case class StepEffectCallWithInputImpl[I, S](
       persistence: Persistence[S],
       stepName: String,
