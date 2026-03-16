@@ -49,6 +49,10 @@ In this example:
 
 Each section (`exporters`, `logs`, `metrics`, `traces`) accepts an array of exporter configurations, allowing multiple destinations. The specific `logs`, `metrics`, and `traces` sections add to the default exporters rather than replacing them.
 
+[NOTE]
+====
+All configuration details are listed in xref:reference:descriptors/observability-descriptor.adoc[].
+====
 
 === Updating the observability configuration
 
@@ -540,5 +544,6 @@ This will show the observability agent logs for all instances of the service. An
 
 == See also
 
+- xref:reference:descriptors/observability-descriptor.adoc[]
 - xref:reference:cli/akka-cli/akka_projects_observability.adoc#_see_also[`akka project observability` commands]
 - xref:reference:telemetry/metrics.adoc[Exported metrics reference]
