@@ -1532,9 +1532,15 @@ public abstract class Workflow<S> {
       Optional<T> failoverStepInput,
       Optional<StepHandler> stepHandler) {
 
+    /**
+     * @deprecated Use the overloaded failoverTo methods that accept the input parameter directly
+     *     instead.
+     */
+    @Deprecated
     public record RecoveryInput<I>(
         int maxRetries, String stepName, akka.japi.function.Function2<?, I, StepEffect> lambda)
         implements WithInput<I, RecoverStrategy<I>> {
+      @SuppressWarnings("deprecation")
       public RecoverStrategy<I> withInput(I input) {
         return new RecoverStrategy<>(
             maxRetries,
@@ -1586,10 +1592,34 @@ public abstract class Workflow<S> {
        * Once max retries are exceeded, transition to a given step method with input parameter.
        *
        * @param lambda Reference to the step method to transition to
+       * @param input The input parameter for the failover step
+       * @param <W> The workflow type containing the step method
+       * @param <I> The input parameter type for the step
+       * @return A recovery strategy transitioning to the specified step with input
+       */
+      public <W, I> RecoverStrategy<I> failoverTo(
+          akka.japi.function.Function2<W, I, StepEffect> lambda, I input) {
+        var method = MethodRefResolver.resolveMethodRef(lambda);
+        var stepName = WorkflowDescriptor.stepMethodName(method);
+        return new RecoverStrategy<>(
+            maxRetries,
+            stepName,
+            Optional.of(input),
+            Optional.of(new StepHandler.OneArgStepHandler(lambda, input)));
+      }
+
+      /**
+       * Once max retries are exceeded, transition to a given step method with input parameter.
+       *
+       * @param lambda Reference to the step method to transition to
        * @param <W> The workflow type containing the step method
        * @param <I> The input parameter type for the step
        * @return A builder to provide the input parameter for the recovery strategy
+       * @deprecated Use {@link MaxRetries#failoverTo(akka.japi.function.Function2, Object)}
+       *     instead.
        */
+      @Deprecated
+      @SuppressWarnings("deprecation")
       public <W, I> RecoveryInput<I> failoverTo(
           akka.japi.function.Function2<W, I, StepEffect> lambda) {
         var method = MethodRefResolver.resolveMethodRef(lambda);
@@ -1642,10 +1672,35 @@ public abstract class Workflow<S> {
      * parameter.
      *
      * @param lambda Reference to the step method to transition to
+     * @param input The input parameter for the failover step
+     * @param <W> The workflow type containing the step method
+     * @param <I> The input parameter type for the step
+     * @return A recovery strategy transitioning to the specified step with input
+     */
+    public static <W, I> RecoverStrategy<I> failoverTo(
+        akka.japi.function.Function2<W, I, StepEffect> lambda, I input) {
+      var method = MethodRefResolver.resolveMethodRef(lambda);
+      var stepName = WorkflowDescriptor.stepMethodName(method);
+      return new RecoverStrategy<>(
+          0,
+          stepName,
+          Optional.of(input),
+          Optional.of(new StepHandler.OneArgStepHandler(lambda, input)));
+    }
+
+    /**
+     * In case of a step fails, don't retry but transition to a given step method with input
+     * parameter.
+     *
+     * @param lambda Reference to the step method to transition to
      * @param <W> The workflow type containing the step method
      * @param <I> The input parameter type for the step
      * @return A builder to provide the input parameter for the recovery strategy
+     * @deprecated Use {@link RecoverStrategy#failoverTo(akka.japi.function.Function2, Object)}
+     *     instead.
      */
+    @Deprecated
+    @SuppressWarnings("deprecation")
     public static <W, I> RecoveryInput<I> failoverTo(
         akka.japi.function.Function2<W, I, StepEffect> lambda) {
       var method = MethodRefResolver.resolveMethodRef(lambda);
