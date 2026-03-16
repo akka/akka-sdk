@@ -124,7 +124,9 @@ If you want to deploy your service to Akka's infrastructure through _Akka Automa
 == Specify your ideas!
 The greatest barrier to building new things is rarely the idea. It's usually in the implementation. Spec-driven development frees you from this barrier, letting you turn your ideas into specification and plan prompts, and watching as Claude (or whatever agent you're using) generates and populates a to-do list and implements all of the code for you. 
 
-You no longer have to invest massive amounts of time in "what-if" scenarios, you can just _specify and go_. Using SDD with careful feature scoping and concise technical implementation plans, you're never more than a matter of minutes from a feature you can interact with. With Akka, you know those features will automatically be powerful, resilient, scalable distributed systems.
+You no longer have to invest massive amounts of time in "what-if" scenarios, you can just _specify and go_. All you need is `init` ➡ `specify` ➡ `clarify` ➡ `plan` ➡ `tasks` ➡ `implement` and `build`.
+
+Using SDD with careful feature scoping and concise technical implementation plans, you're never more than a matter of minutes from a feature you can interact with. With Akka, you know those features will automatically be powerful, resilient, scalable distributed systems.
 
 == References
 While there are many different formal patterns and practices for spec-driven development out there, Akka uses https://github.github.com/spec-kit/index.html[spec-kit] as a pattern.
