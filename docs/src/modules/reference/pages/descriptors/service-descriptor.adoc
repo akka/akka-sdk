@@ -24,6 +24,7 @@ The *ServiceSpec* defines the detailed configuration of an Akka service, includi
 |Field          |Type                      |Description
 
 |*image*        |string _required_         |The name of the docker image for the service container
+|*serviceConfig* |string                   |The name of a service config to apply to this service. The service config must exist in the same project. See xref:operations:services/service-config.adoc[].
 |*env*          |[]<<EnvVar>>              |Environment variables to be set in the service's container
 |*labels*       |map[string]string         |Labels to attach to the service. Labels are key-value pairs used to organize and categorize services. Disabled by default.
 |*annotations*  |map[string]string         |Annotations to attach to the service. Annotations are key-value pairs used to attach arbitrary non-identifying metadata to services. Disabled by default.
