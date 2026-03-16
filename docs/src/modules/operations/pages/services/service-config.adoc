@@ -1,0 +1,96 @@
+= Service configuration overrides
+include::ROOT:partial$include.adoc[]
+
+Service configs allow you to provide https://github.com/lightbend/config/blob/main/HOCON.md[HOCON, window="new"] configuration that overrides a service's `application.conf`. This is useful for tuning settings per environment without rebuilding the service image.
+
+A service config is a named resource in an Akka project. Once created, it can be associated with a service. When the service starts, the configuration from the service config is loaded and overrides matching keys in the service's bundled `application.conf`.
+
+== Managing service configs
+
+=== Creating a service config
+
+Create a service config from a HOCON file:
+
+[source,command line]
+----
+akka service-configs create my-config --from-file /path/to/config.conf
+----
+
+The file should contain valid HOCON configuration. For example:
+
+.config.conf
+[source,hocon]
+----
+some.setting = "value"
+another.setting = 42
+----
+
+You can also read from stdin using `-` as the file path:
+
+[source,command line]
+----
+cat config.conf | akka service-configs create my-config --from-file -
+----
+
+If a service config with the given name already exists, it will be updated with the new content.
+
+=== Listing service configs
+
+[source,command line]
+----
+akka service-configs list
+----
+
+=== Getting a service config
+
+[source,command line]
+----
+akka service-configs get my-config
+----
+
+=== Deleting a service config
+
+[source,command line]
+----
+akka service-configs delete my-config
+----
+
+NOTE: A service config cannot be deleted while it is referenced by a service.
+
+== Associating a service config with a service
+
+To apply a service config to a service:
+
+[source,command line]
+----
+akka services set-config my-service --service-config my-config
+----
+
+The service config must exist before it can be associated with a service. After setting the config, restart the service for changes to take effect.
+
+To remove the association:
+
+[source,command line]
+----
+akka services remove-config my-service
+----
+
+A service config can also be referenced in a service descriptor using the `serviceConfig` field:
+
+[source,yaml]
+----
+name: my-service
+service:
+  image: my-image:1.0.0
+  serviceConfig: my-config
+  resources:
+    runtime:
+      mode: embedded
+----
+
+== See also
+
+- xref:reference:cli/akka-cli/akka_service-configs.adoc[`akka service-configs` commands]
+- xref:reference:cli/akka-cli/akka_services_set-config.adoc[`akka services set-config` command]
+- xref:reference:cli/akka-cli/akka_services_remove-config.adoc[`akka services remove-config` command]
+- xref:reference:descriptors/project-descriptor.adoc#service-config[ServiceConfig in project descriptor]

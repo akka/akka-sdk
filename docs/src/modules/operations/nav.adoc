@@ -25,6 +25,7 @@
 
 **** xref:operations:services/index.adoc[]
 ***** xref:operations:services/deploy-service.adoc[]
+***** xref:operations:services/service-config.adoc[]
 ***** xref:operations:services/invoke-service.adoc[]
 ***** xref:operations:services/view-data.adoc[]
 ***** xref:operations:services/data-management.adoc[]
