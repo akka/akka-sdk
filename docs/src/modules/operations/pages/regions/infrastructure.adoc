@@ -6,7 +6,7 @@ Akka multi-region is a series of features that allows Akka applications to repli
 This page describes the infrastructure in place to enable these features. It does not explain the replication itself,
 for a detailed understanding of how Akka replicates data across regions, the best place to go is the
 https://doc.akka.io/libraries/akka-core/current/typed/replicated-eventsourcing.html[Akka libraries
-documentation on replicated event sourcing].
+documentation, window="new"] on replicated event sourcing.
 
 The Akka infrastructure relies on three main features enabling multi-region replication:
 
