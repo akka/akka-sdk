@@ -151,3 +151,4 @@ Using SDD with careful feature scoping and concise technical implementation plan
 * The functionality in the custom slash-commands (`/akka.*`) is implemented through the Akka CLI as an https://modelcontextprotocol.io/docs/getting-started/intro[MCP server, window="new"].
 
 * xref:operations:cli/installation.adoc[]
+* xref:ai-coding-assistant.adoc[]
