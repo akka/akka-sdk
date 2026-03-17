@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Spec-driven development is a natural evolution of prompting AI assistants to generate code. It treats specifications as actionable, executable artifacts. These artifacts are the only source of truth, the code is entirely AI-generated, and divergence from the specification can be automatically detected and used to fail builds in an automated CI pipeline. 
+Spec-Driven Development is a natural evolution of prompting AI assistants to generate code. It treats specifications as actionable, executable documents. These documents are the only source of truth, the code is entirely AI-generated, and divergence from the specification can be automatically detected and used to fail builds in an automated CI pipeline. 
 
 == AI assistance maturity levels
 It may help to think of the steps in this evolution as different levels in a maturity model for AI-assisted development. For some of us these levels are chronological but others may have jumped directly into later levels. There is no objectively right or wrong level, but we're focused on the highest maturity level in this document.
@@ -11,26 +11,26 @@ It may help to think of the steps in this evolution as different levels in a mat
 With direct prompting, you supply prompts to your favorite AI assistant and get generated code back. This can be useful for demonstrations and sample applications, but this level has no reliable source of truth. AI assistants are well known for producing different output for the same prompt. Attempts to move toward a reliable source of truth and decrease the random nature of the output lead to the next maturity level.
 
 === Single-file specification
-While code assistant chat logs can be saved and exported, they're unsuitable for use as a source of truth, a specification, or an artifact that can be committed to version control. The next evolution is typically when people create a single specification file in markdown. This file contains the entirety of an application specification, including the details on _what_ is being built, _why_ it is being built, and _how_ it should be built (tech specifications). 
+While code assistant chat logs can be saved and exported, they're unsuitable for use as a source of truth, a specification, or a document that can be committed to version control. The next evolution is typically when people create a single specification file in markdown. This file contains the entirety of an application specification, including the details on _what_ is being built, _why_ it is being built, and _how_ it should be built (tech specifications). 
 
 This maturity level has a single source of truth (the spec file) which can be version controlled. More importantly, LLMs can be used to judge how well the generated code conforms to the specification. Deviations above a certain threshold can be used to fail builds and trigger human-in-the-loop workflows that may result in many iterations refining the specification.
 
-Crucially, this single file is almost always written completely by a human. This becomes unwieldy once a specification reaches a certain level of complexity.
+Crucially, this single file specification is usually written mostly by humans. This becomes unwieldy once a specification reaches a certain level of complexity.
 
 === Formal spec-driven process
 A single `SPEC.md` or `specification.md` file may be enough for some projects. Many sample or demonstration applications can be built properly with just a single file. However, when our needs and complexity reach a certain point, we need a formal process. This process is iterative, git-friendly, and enlists the aid of the AI assistant both in building the spec and generating the code from it. It addresses the need to build formal specifications that are consumable by both human and AI alike while reducing random and unexpected output. This process is covered in detail in this document.
 
 == Using Akka specify
-Akka makes it incredibly easy to get started with a new _spec-first_ project. Instead of using `akka code init`, use the newer `akka specify init` command. This will give you everything you need to kick off your spec-first development cycle.
+Akka makes it incredibly easy to get started with a new _Spec-Driven_ project. Instead of using `akka code init`, use the newer `akka specify init` command. This will give you everything you need to kick off your Spec-Driven development cycle.
 
-NOTE: At the moment the only supported assistant is Claude, but support for other assistants is coming soon. For other agents, you can manually add Akka as an MCP server using the `_mcp.json` file that comes with the new project template.
+NOTE: At the moment the only supported assistant is Claude Code, but support for other assistants is coming soon. For other agents, you can manually add Akka as an MCP server using the `_mcp.json` file that comes with the new project template.
 
 === Initialization and constitution adoption
 Running `akka specify init` will populate a project directory with an empty Akka project. In addition, it grabs all of the markdown templates necessary for the spec-driven process. Once you've run this command, change to the directory of your new project (if you're not already there) and launch your favorite code assistant.
 
-One of the important files that comes with your new project is a **constitution**. The constitution is where unbreakable rules for the entire project are defined. This file contains mandates about technology requirements, design rules, and more. Akka will give you a default constitution that contains all of the mandatory requirements for Akka applications. In addition to the Akka-specific constitution, the initialization process lets you add an additional layer of constitution. You can use this to include mandates from your company, organization, team, etc. It then becomes easy to maintain your own constitution while still benefiting from Akka's rules. 
+One of the important files that comes with your new project is a **constitution**. The `constitution.md` file is where unbreakable rules for the entire project are defined. This file contains mandates about technology requirements, design rules, and more. Akka will give you a default constitution that contains all of the mandatory requirements for Akka applications. In addition to the Akka-specific constitution, the initialization process lets you add an additional layer of constitution. You can use this to include mandates from your company, organization, team, etc. It then becomes easy to maintain your own constitution while still benefiting from Akka's rules. 
 
-The constitution is typically defined once at the start of a project and only refined as necessary. Constitution amendments are to be treated as one-off exceptions and not as part of the core development loop.
+The constitution is typically defined once at the start of a project and only refined as necessary. Constitution amendments are considered one-off exceptions and not as part of the core development loop.
 
 === Specify a feature
 It's possible to specify an entire application by supplying a prompt to the `/akka.specify` agent command, but it isn't recommended. If your application is simple enough that it can be specified in a single prompt or file, you should use a single-file spec as the full spec-driven process is likely overkill for your needs.
@@ -117,19 +117,19 @@ You should never have to leave your agent chat during the spec-driven SDLC. If y
 * Your service is launched
 * Your service will be _exercised through the real endpoints_ to verify functionality. This is like building and exercising a custom Postman script or writing and using your own shell script, except its easier and automated.
 * The build command leaves your service running, so you can exercise it manually, including using the Akka console's built-in request tracking.
-* If you make changes to any of the artifacts, either from within or without your agent chat, your service will be recompiled and automatically restarted
+* If you make changes to any of the documents, either from within or without your agent chat, your service will be recompiled and automatically restarted
 
 If you want to deploy your service to Akka's infrastructure through _Akka Automated Operations_, you can simply use the `/akka.deploy` command. This command will prompt you for the organization and project into which you want to deploy. It then seamlessly deploys your service, automatically doing a rolling update of the service cluster if one is already running.
 
 == Specify your ideas!
-The greatest barrier to building new things is rarely the idea. It's usually in the implementation. Spec-driven development frees you from this barrier, letting you turn your ideas into specification and plan prompts, and watching as Claude (or whatever agent you're using) generates and populates a to-do list and implements all of the code for you. 
+The greatest barrier to building new things is rarely the idea. It's usually in the implementation. Spec-Driven Development frees you from this barrier, letting you turn your ideas into specification and plan prompts, and watching as Claude (or whatever agent you're using) generates and populates a to-do list and implements all of the code for you. 
 
 You no longer have to invest massive amounts of time in "what-if" scenarios, you can just _specify and go_. All you need is `init` ➡ `specify` ➡ `clarify` ➡ `plan` ➡ `tasks` ➡ `implement` and `build`.
 
 Using SDD with careful feature scoping and concise technical implementation plans, you're never more than a matter of minutes from a feature you can interact with. With Akka, you know those features will automatically be powerful, resilient, scalable distributed systems.
 
 == References
-While there are many different formal patterns and practices for spec-driven development out there, Akka uses https://github.github.com/spec-kit/index.html[spec-kit] as a pattern.
+While there are many different formal patterns and practices for Spec-Driven development out there, Akka uses https://github.github.com/spec-kit/index.html[spec-kit] as a pattern.
 
 The functionality in the custom slash-commands (`/akka.*`) is implemented through the Akka CLI as an https://modelcontextprotocol.io/docs/getting-started/intro[MCP server].
 
