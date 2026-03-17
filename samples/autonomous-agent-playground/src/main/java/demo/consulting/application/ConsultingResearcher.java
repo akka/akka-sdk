@@ -1,7 +1,7 @@
 package demo.consulting.application;
 
+import akka.javasdk.agent.autonomous.AgentDefinition;
 import akka.javasdk.agent.autonomous.AutonomousAgent;
-import akka.javasdk.agent.autonomous.Strategy;
 import akka.javasdk.annotations.Component;
 
 @Component(
@@ -11,16 +11,15 @@ import akka.javasdk.annotations.Component;
 public class ConsultingResearcher extends AutonomousAgent {
 
   @Override
-  public Strategy strategy() {
-    return Strategy.autonomous()
+  public AgentDefinition definition() {
+    return define()
       .goal(
         """
         Research the given topic thoroughly and produce a clear, \
         factual summary of your findings. \
         """
       )
-      .accepts(ConsultingTasks.RESEARCH)
       .tools(new ConsultingTools())
-      .maxIterations(5);
+      .capabilities(canAcceptTasks(ConsultingTasks.RESEARCH).maxIterationsPerTask(5));
   }
 }

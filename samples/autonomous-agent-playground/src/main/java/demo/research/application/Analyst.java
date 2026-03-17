@@ -1,7 +1,7 @@
 package demo.research.application;
 
+import akka.javasdk.agent.autonomous.AgentDefinition;
 import akka.javasdk.agent.autonomous.AutonomousAgent;
-import akka.javasdk.agent.autonomous.Strategy;
 import akka.javasdk.annotations.Component;
 
 @Component(
@@ -11,15 +11,14 @@ import akka.javasdk.annotations.Component;
 public class Analyst extends AutonomousAgent {
 
   @Override
-  public Strategy strategy() {
-    return Strategy.autonomous()
+  public AgentDefinition definition() {
+    return define()
       .goal(
         """
         You are an insightful analyst. When given a topic, analyse its implications, \
         identify trends and patterns, and produce actionable insights. \
         """
       )
-      .accepts(ResearchTasks.ANALYSIS)
-      .maxIterations(3);
+      .capabilities(canAcceptTasks(ResearchTasks.ANALYSIS).maxIterationsPerTask(3));
   }
 }

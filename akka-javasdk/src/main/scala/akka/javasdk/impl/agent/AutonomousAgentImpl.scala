@@ -28,20 +28,19 @@ import akka.javasdk.agent.SessionMessage.ToolCallRequest
 import akka.javasdk.agent.SessionMessage.ToolCallResponse
 import akka.javasdk.agent.SessionMessage.UserMessage
 import akka.javasdk.agent._
-import akka.javasdk.agent.autonomous.DefaultAutonomousStrategy
 import akka.javasdk.agent.task.TaskAttachment
 import akka.javasdk.agent.task.TaskEntity
 import akka.javasdk.agent.task.TaskStatus
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.JsonSchema
 import akka.javasdk.impl.agent.SessionMemoryClient.MemorySettings
+import akka.javasdk.impl.agent.autonomous.AgentDefinitionImpl
 import akka.javasdk.impl.client.EntityClientImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAutonomousAgent
-import akka.runtime.sdk.spi.SpiAutonomousAgentStrategy
 import akka.runtime.sdk.spi.SpiTask
 import akka.runtime.sdk.spi.SpiTaskOperations
 import com.typesafe.config.Config
@@ -65,8 +64,14 @@ private[impl] final class AutonomousAgentImpl(
     dependencyProvider: Option[DependencyProvider],
     config: Config,
     _system: ActorSystem[_],
-    autonomousStrategy: DefaultAutonomousStrategy,
-    override val strategy: SpiAutonomousAgentStrategy)
+    agentDefinition: AgentDefinitionImpl,
+    override val goal: String,
+    override val modelProvider: SpiAgent.ModelProvider,
+    override val toolDescriptors: Seq[SpiAgent.ToolDescriptor],
+    override val mcpClientDescriptors: Seq[SpiAgent.McpToolEndpointDescriptor],
+    override val requestGuardrails: Seq[SpiAgent.Guardrail],
+    override val responseGuardrails: Seq[SpiAgent.Guardrail],
+    override val capabilities: Seq[SpiAutonomousAgent.Capability])
     extends SpiAutonomousAgent {
   import AgentImpl._
 
@@ -75,7 +80,7 @@ private[impl] final class AutonomousAgentImpl(
   private val log = LoggerFactory.getLogger(classOf[AutonomousAgentImpl])
 
   private lazy val sessionMemoryClient: SessionMemory =
-    deriveMemoryClient(autonomousStrategy.memoryProvider(), telemetryContext = None)
+    deriveMemoryClient(agentDefinition.memoryProvider, telemetryContext = None)
 
   private def deriveMemoryClient(
       memoryProvider: MemoryProvider,
@@ -110,22 +115,18 @@ private[impl] final class AutonomousAgentImpl(
     // Agent's own @FunctionTool methods
     val agentInvokers = FunctionTools.toolInvokersFor(agentInstance)
 
-    // Strategy's additional tool instances or classes
-    val strategyToolInvokers: Map[String, FunctionTools.FunctionToolInvoker] =
-      autonomousStrategy
-        .toolInstancesOrClasses()
-        .asScala
-        .flatMap {
-          case cls: Class[_] if Reflect.isToolCandidate(cls) =>
-            FunctionTools.toolComponentInvokersFor(cls, componentClient(None))
-          case cls: Class[_] =>
-            FunctionTools.toolInvokersFor(cls, dependencyProvider)
-          case any =>
-            FunctionTools.toolInvokersFor(any)
-        }
-        .toMap
+    // Definition's additional tool instances or classes
+    val definitionToolInvokers: Map[String, FunctionTools.FunctionToolInvoker] =
+      agentDefinition.toolInstancesOrClasses.asScala.flatMap {
+        case cls: Class[_] if Reflect.isToolCandidate(cls) =>
+          FunctionTools.toolComponentInvokersFor(cls, componentClient(None))
+        case cls: Class[_] =>
+          FunctionTools.toolInvokersFor(cls, dependencyProvider)
+        case any =>
+          FunctionTools.toolInvokersFor(any)
+      }.toMap
 
-    new ToolExecutor(agentInvokers ++ strategyToolInvokers, serializer)
+    new ToolExecutor(agentInvokers ++ definitionToolInvokers, serializer)
   }
 
   // Pre-resolve TaskEntity methods for calling via EntityClientImpl
@@ -135,6 +136,7 @@ private[impl] final class AutonomousAgentImpl(
   private val startMethod = classOf[TaskEntity].getMethod("start")
   private val completeMethod = classOf[TaskEntity].getMethod("complete", classOf[String])
   private val failMethod = classOf[TaskEntity].getMethod("fail", classOf[String])
+  private val cancelMethod = classOf[TaskEntity].getMethod("cancel", classOf[String])
   private val reassignMethod = classOf[TaskEntity].getMethod("reassign", classOf[TaskEntity.ReassignRequest])
 
   private def entityClient(taskId: String): EntityClientImpl =
@@ -191,6 +193,13 @@ private[impl] final class AutonomousAgentImpl(
     override def failTask(taskId: String, reason: String): Future[Done] =
       entityClient(taskId)
         .methodRefOneArg[String, Done](failMethod)
+        .invokeAsync(reason)
+        .asScala
+        .map(_ => Done)(sdkExecutionContext)
+
+    override def cancelTask(taskId: String, reason: String): Future[Done] =
+      entityClient(taskId)
+        .methodRefOneArg[String, Done](cancelMethod)
         .invokeAsync(reason)
         .asScala
         .map(_ => Done)(sdkExecutionContext)
@@ -261,9 +270,11 @@ private[impl] final class AutonomousAgentImpl(
   private def toSpiTaskState(state: akka.javasdk.agent.task.TaskState): SpiTask.SpiTaskState = {
     val spiStatus = state.status() match {
       case TaskStatus.PENDING     => SpiTask.SpiTaskStatus.Pending
+      case TaskStatus.ASSIGNED    => SpiTask.SpiTaskStatus.Assigned
       case TaskStatus.IN_PROGRESS => SpiTask.SpiTaskStatus.InProgress
       case TaskStatus.COMPLETED   => SpiTask.SpiTaskStatus.Completed
       case TaskStatus.FAILED      => SpiTask.SpiTaskStatus.Failed
+      case TaskStatus.CANCELLED   => SpiTask.SpiTaskStatus.Cancelled
     }
     val resultTypeName = Option(state.resultTypeName())
     val resultSchema = resultTypeName
@@ -290,7 +301,6 @@ private[impl] final class AutonomousAgentImpl(
       resultJson = Option(state.result()),
       failureReason = Option(state.failureReason()),
       dependencyTaskIds = state.dependencyTaskIds().asScala.toSeq,
-      parentTaskId = None,
       attachments = attachments,
       reassignmentContext = Option(state.reassignmentContext()).map(_.asScala.toSeq).getOrElse(Seq.empty))
   }

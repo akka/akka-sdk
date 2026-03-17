@@ -73,18 +73,14 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
     if (currentState().taskId().isEmpty()) {
       return effects().error("Task does not exist");
     }
-    if (currentState().status() != TaskStatus.PENDING) {
-      return effects().error("Task can only be started when PENDING");
-    }
-    if (currentState().assignee() == null) {
-      return effects().error("Task must be assigned before it can be started");
+    if (currentState().status() != TaskStatus.ASSIGNED) {
+      return effects().error("Task can only be started when ASSIGNED");
     }
     return effects().persist(new TaskEvent.TaskStarted(taskId)).thenReply(__ -> done());
   }
 
   public Effect<Done> complete(String result) {
-    if (currentState().status() == TaskStatus.COMPLETED
-        || currentState().status() == TaskStatus.FAILED) {
+    if (isTerminal()) {
       return effects().reply(done()); // idempotent for any terminal state
     }
     if (currentState().status() != TaskStatus.IN_PROGRESS) {
@@ -94,14 +90,24 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
   }
 
   public Effect<Done> fail(String reason) {
-    if (currentState().status() == TaskStatus.COMPLETED
-        || currentState().status() == TaskStatus.FAILED) {
+    if (isTerminal()) {
       return effects().reply(done()); // idempotent for any terminal state
     }
     if (currentState().status() != TaskStatus.IN_PROGRESS) {
       return effects().error("Task can only be failed when IN_PROGRESS");
     }
     return effects().persist(new TaskEvent.TaskFailed(taskId, reason)).thenReply(__ -> done());
+  }
+
+  public Effect<Done> cancel(String reason) {
+    if (isTerminal()) {
+      return effects().reply(done()); // idempotent for any terminal state
+    }
+    if (currentState().status() != TaskStatus.PENDING
+        && currentState().status() != TaskStatus.ASSIGNED) {
+      return effects().error("Task can only be cancelled when PENDING or ASSIGNED");
+    }
+    return effects().persist(new TaskEvent.TaskCancelled(taskId, reason)).thenReply(__ -> done());
   }
 
   public Effect<Done> reassign(ReassignRequest request) {
@@ -114,6 +120,12 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
     return effects()
         .persist(new TaskEvent.TaskReassigned(taskId, request.newAssignee(), request.context()))
         .thenReply(__ -> done());
+  }
+
+  private boolean isTerminal() {
+    return currentState().status() == TaskStatus.COMPLETED
+        || currentState().status() == TaskStatus.FAILED
+        || currentState().status() == TaskStatus.CANCELLED;
   }
 
   public ReadOnlyEffect<TaskState> getState() {
@@ -144,6 +156,7 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
       case TaskEvent.TaskStarted e -> currentState().withStatus(TaskStatus.IN_PROGRESS);
       case TaskEvent.TaskCompleted e -> currentState().withResult(e.result());
       case TaskEvent.TaskFailed e -> currentState().withFailure(e.reason());
+      case TaskEvent.TaskCancelled e -> currentState().withCancellation(e.reason());
       case TaskEvent.TaskReassigned e ->
           currentState().withReassignment(e.newAssignee(), e.context());
     };

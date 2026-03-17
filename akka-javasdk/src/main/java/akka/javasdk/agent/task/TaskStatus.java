@@ -6,7 +6,9 @@ package akka.javasdk.agent.task;
 
 public enum TaskStatus {
   PENDING,
+  ASSIGNED,
   IN_PROGRESS,
   COMPLETED,
-  FAILED
+  FAILED,
+  CANCELLED
 }

@@ -1,7 +1,7 @@
 package demo.research.application;
 
+import akka.javasdk.agent.autonomous.AgentDefinition;
 import akka.javasdk.agent.autonomous.AutonomousAgent;
-import akka.javasdk.agent.autonomous.Strategy;
 import akka.javasdk.annotations.Component;
 
 @Component(
@@ -11,15 +11,14 @@ import akka.javasdk.annotations.Component;
 public class Researcher extends AutonomousAgent {
 
   @Override
-  public Strategy strategy() {
-    return Strategy.autonomous()
+  public AgentDefinition definition() {
+    return define()
       .goal(
         """
         You are a thorough researcher. When given a topic, find key facts, \
         important details, and relevant context. \
         """
       )
-      .accepts(ResearchTasks.FINDINGS)
-      .maxIterations(3);
+      .capabilities(canAcceptTasks(ResearchTasks.FINDINGS).maxIterationsPerTask(3));
   }
 }
