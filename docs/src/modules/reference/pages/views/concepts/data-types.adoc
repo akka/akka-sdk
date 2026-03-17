@@ -40,7 +40,7 @@ View queries support the following data types:
 
 | Timestamp
 | `java.time.Instant`
-| Point in time with microsecond precision
+| Point in time with microsecond precision. Supported range: `1970-01-01T00:00:00Z` (`Instant.EPOCH`) to `9999-12-31T23:59:59.999Z`. Note that `Instant.MIN` and `Instant.MAX` are outside this range and cannot be used as query parameters or stored in view state
 
 | Date and Time
 | `java.time.ZonedDateTime`
@@ -123,6 +123,8 @@ Timestamp literals are written as ISO-8601 formatted strings in single quotes:
 ----
 WHERE createdTime > '2023-01-01T00:00:00Z'
 ----
+
+The supported range for timestamp values is `1970-01-01T00:00:00Z` (`Instant.EPOCH`) to `9999-12-31T23:59:59.999Z`. Values outside this range — including `Instant.MIN` and `Instant.MAX` — are rejected with an error.
 
 == Type Conversion
 
