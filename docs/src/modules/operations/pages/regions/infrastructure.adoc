@@ -4,10 +4,11 @@ include::ROOT:partial$include.adoc[]
 
 Akka multi-region is a series of features that allows Akka applications to replicate state between multiple Akka regions.
 This page describes the infrastructure in place to enable these features. It does not explain the replication itself,
-for a detailed understanding of how Akka replicates data across regions, the best place to go is the Akka libraries
-documentation on replicated event sourcing.
+for a detailed understanding of how Akka replicates data across regions, the best place to go is the
+https://doc.akka.io/libraries/akka-core/current/typed/replicated-eventsourcing.html[Akka libraries
+documentation on replicated event sourcing].
 
-The Akka infrastucture relies on three main features enabling multi-region replication:
+The Akka infrastructure relies on three main features enabling multi-region replication:
 
 . Multi-region certificates
 . Multi-region ingress
@@ -28,7 +29,7 @@ isolated from each other, and cannot communicate or authenticate between each ot
 different environments, for example, there may be a production region group, and a development region group.
 
 === mTLS Authentication
-All cross-region communication is authenticated using mutual Transport Layer Security (mTLS). So, every client, and every
+All cross-region communication is authenticated using mutual Transport Layer Security (mTLS). Every client, and every
 service, has a certificate issued to it, and unless both sides authenticate with each other using the client and server
 certificate, the communication is blocked.
 
@@ -82,7 +83,7 @@ For detailed instructions, see the custom server certificates documentation.
 For customers using a `secondary_apps_domain_name` for region or cluster-level failover routing, the same customer-provided
 `ClusterIssuer` used for auto-generated hostname certificates is reused to automatically provision certificates for the secondary
 hostname.
-This configuration enables DNS-level healthchecks and global traffic management patterns. The DNS structure follows a two-tier pattern:
+This configuration enables DNS-level health checks and global traffic management patterns. The DNS structure follows a two-tier pattern:
 `*.$\{SECONDARY_APPS_HOSTNAME}` is configured as a CNAME record pointing to `$\{SECONDARY_APPS_HOSTNAME}`. The `$\{SECONDARY_APPS_HOSTNAME}`
 itself is configured as an A record pointing to the load balancer IP addresses. This separation is what enables failover routing with health
 monitoring at the A record level, since CNAME records do not support health checks.
