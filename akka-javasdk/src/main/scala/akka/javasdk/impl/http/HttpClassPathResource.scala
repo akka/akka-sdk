@@ -48,15 +48,20 @@ object HttpClassPathResource {
     if (relativePath.startsWith("/"))
       throw new IllegalArgumentException(s"Illegal path [$relativePath], is relative, must not start with '/'")
 
-    if (relativePath.contains("..")) {
+    // Serve index.html for directory-like paths (empty or trailing slash)
+    val effectivePath =
+      if (relativePath.isEmpty || relativePath.endsWith("/")) relativePath + "index.html"
+      else relativePath
+
+    if (effectivePath.contains("..")) {
       HttpResponse
         .create()
         .withStatus(StatusCodes.FORBIDDEN)
         .withEntity("Relative paths not allowed")
     } else {
 
-      val actualPath = PredefinedStaticResourcesPath + relativePath
-      val url = getClass.getResource(PredefinedStaticResourcesPath + relativePath)
+      val actualPath = PredefinedStaticResourcesPath + effectivePath
+      val url = getClass.getResource(actualPath)
       if (url == null) {
         HttpResponse.create().withStatus(StatusCodes.NOT_FOUND)
       } else {
