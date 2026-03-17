@@ -23,7 +23,7 @@ A single `SPEC.md` or `specification.md` file may be enough for some projects. M
 == Using Akka specify
 Akka makes it incredibly easy to get started with a new _spec-first_ project. The CLI command `akka specify init` configures your coding assistant. This will give you everything you need to kick off your spec-first development cycle.
 
-Please refer to xref:operations:cli/installation.adoc[] for installlation instructions.
+Please refer to xref:operations:cli/installation.adoc[] for installation instructions.
 
 NOTE: At the moment the only supported assistant is Claude, but support for other assistants is coming soon. For other agents, you can manually add Akka as an MCP server using the `_mcp.json` file that comes with the new project template.
 
