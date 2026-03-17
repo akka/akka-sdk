@@ -1,0 +1,48 @@
+/*
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
+ */
+
+package akka.javasdk.agent.autonomous.capability;
+
+import akka.javasdk.agent.autonomous.AutonomousAgent;
+import akka.javasdk.agent.task.TaskDefinition;
+
+/**
+ * Declares that an agent can accept and process tasks of the specified types. Created via {@link
+ * AutonomousAgent#canAcceptTasks} or {@link TaskAcceptance#of}.
+ *
+ * <p>Multiple {@code TaskAcceptance} capabilities can be declared on a single agent to configure
+ * different settings (iteration limits, handoff targets, delegation targets) per task group.
+ */
+public interface TaskAcceptance extends AgentCapability {
+
+  /** Default maximum iterations before the agent fails the current task. */
+  int DEFAULT_MAX_ITERATIONS = 10;
+
+  /** Create a task acceptance capability for the given task definitions. */
+  @SafeVarargs
+  static TaskAcceptance of(TaskDefinition<?>... tasks) {
+    return akka.javasdk.impl.agent.autonomous.capability.TaskAcceptanceImpl.create(tasks);
+  }
+
+  /**
+   * Maximum iterations before the agent fails the current task. Default {@value
+   * DEFAULT_MAX_ITERATIONS}.
+   */
+  TaskAcceptance maxIterationsPerTask(int max);
+
+  /**
+   * Allow this agent to hand off tasks in this group to one of the specified agents. Unlike
+   * delegation, handoff transfers ownership — the current agent is done and the target agent takes
+   * over.
+   */
+  @SuppressWarnings("unchecked")
+  TaskAcceptance canHandoffTo(Class<? extends AutonomousAgent>... agents);
+
+  /**
+   * Allow this agent to delegate subtasks to the specified worker agents when processing tasks in
+   * this group. The agent pauses while workers execute, then resumes with their results.
+   */
+  @SuppressWarnings("unchecked")
+  TaskAcceptance canDelegateTo(Class<? extends AutonomousAgent>... agents);
+}

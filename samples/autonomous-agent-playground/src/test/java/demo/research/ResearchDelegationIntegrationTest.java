@@ -39,11 +39,11 @@ public class ResearchDelegationIntegrationTest extends TestKitSupport {
       .reply(
         List.of(
           new TestModelProvider.ToolInvocationRequest(
-            "delegate_to_researcher",
+            "delegate_Findings_to_researcher",
             "{\"instructions\":\"Research quantum computing fundamentals\"}"
           ),
           new TestModelProvider.ToolInvocationRequest(
-            "delegate_to_analyst",
+            "delegate_Analysis_to_analyst",
             "{\"instructions\":\"Analyse quantum computing market trends\"}"
           )
         )
@@ -75,7 +75,7 @@ public class ResearchDelegationIntegrationTest extends TestKitSupport {
 
     // Coordinator's second LLM call: after receiving delegation results, synthesize
     coordinatorModel
-      .whenToolResult(tr -> tr.name().startsWith("delegate_"))
+      .whenMessage(msg -> msg.contains("Continue working"))
       .reply(
         new TestModelProvider.ToolInvocationRequest(
           "complete_task",

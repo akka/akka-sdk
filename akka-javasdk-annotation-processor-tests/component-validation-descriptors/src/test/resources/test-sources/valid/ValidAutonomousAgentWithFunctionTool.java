@@ -1,7 +1,7 @@
 package com.example;
 
 import akka.javasdk.agent.autonomous.AutonomousAgent;
-import akka.javasdk.agent.autonomous.Strategy;
+import akka.javasdk.agent.autonomous.AgentDefinition;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.FunctionTool;
 
@@ -9,8 +9,8 @@ import akka.javasdk.annotations.FunctionTool;
 public class ValidAutonomousAgentWithFunctionTool extends AutonomousAgent {
 
   @Override
-  public Strategy strategy() {
-    return Strategy.autonomous().goal("Test goal");
+  public AgentDefinition definition() {
+    return define().goal("Test goal");
   }
 
   @FunctionTool(description = "A helper tool")

@@ -4,8 +4,8 @@
 
 package demo.pipeline.application;
 
+import akka.javasdk.agent.autonomous.AgentDefinition;
 import akka.javasdk.agent.autonomous.AutonomousAgent;
-import akka.javasdk.agent.autonomous.Strategy;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.FunctionTool;
 
@@ -13,13 +13,18 @@ import akka.javasdk.annotations.FunctionTool;
 public class ReportAgent extends AutonomousAgent {
 
   @Override
-  public Strategy strategy() {
-    return Strategy.autonomous()
+  public AgentDefinition definition() {
+    return define()
       .goal(
         "Process report phases: collect data, analyze findings, produce comprehensive reports."
       )
-      .accepts(PipelineTasks.COLLECT, PipelineTasks.ANALYZE, PipelineTasks.REPORT)
-      .maxIterations(5);
+      .capabilities(
+        canAcceptTasks(
+          PipelineTasks.COLLECT,
+          PipelineTasks.ANALYZE,
+          PipelineTasks.REPORT
+        ).maxIterationsPerTask(5)
+      );
   }
 
   @FunctionTool(description = "Collect data on a topic and return findings")

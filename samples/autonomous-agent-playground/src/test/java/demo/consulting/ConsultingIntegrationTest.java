@@ -58,7 +58,7 @@ public class ConsultingIntegrationTest extends TestKitSupport {
       .whenToolResult(tr -> tr.name().equals("ConsultingTools_checkComplexity"))
       .reply(
         new TestModelProvider.ToolInvocationRequest(
-          "delegate_to_consulting_researcher",
+          "delegate_Research_to_consulting_researcher",
           "{\"instructions\":\"Research supply chain optimization best practices\"}"
         )
       );
@@ -77,7 +77,7 @@ public class ConsultingIntegrationTest extends TestKitSupport {
 
     // Coordinator synthesises after delegation result
     coordinatorModel
-      .whenToolResult(tr -> tr.name().startsWith("delegate_"))
+      .whenMessage(msg -> msg.contains("Continue working"))
       .reply(
         new TestModelProvider.ToolInvocationRequest(
           "complete_task",
