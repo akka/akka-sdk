@@ -1,0 +1,52 @@
+/*
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
+ */
+
+package akka.javasdk.impl.agent.autonomous.capability
+
+import java.util
+
+import akka.annotation.InternalApi
+import akka.javasdk.agent.autonomous.AutonomousAgent
+import akka.javasdk.agent.autonomous.capability.TaskAcceptance
+import akka.javasdk.agent.task.TaskDefinition
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+final case class TaskAcceptanceImpl(
+    taskDefinitions: util.List[TaskDefinition[_]],
+    maxIterations: Int,
+    handoffTargets: util.List[Class[_ <: AutonomousAgent]],
+    delegationTargets: util.List[Class[_ <: AutonomousAgent]])
+    extends TaskAcceptance {
+
+  override def maxIterationsPerTask(max: Int): TaskAcceptance =
+    copy(maxIterations = max)
+
+  override def canHandoffTo(agents: Class[_ <: AutonomousAgent]*): TaskAcceptance = {
+    val result = new util.ArrayList[Class[_ <: AutonomousAgent]](handoffTargets)
+    agents.foreach(result.add)
+    copy(handoffTargets = util.Collections.unmodifiableList(result))
+  }
+
+  override def canDelegateTo(agents: Class[_ <: AutonomousAgent]*): TaskAcceptance = {
+    val result = new util.ArrayList[Class[_ <: AutonomousAgent]](delegationTargets)
+    agents.foreach(result.add)
+    copy(delegationTargets = util.Collections.unmodifiableList(result))
+  }
+}
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+object TaskAcceptanceImpl {
+  def create(tasks: Array[TaskDefinition[_]]): TaskAcceptanceImpl =
+    TaskAcceptanceImpl(
+      taskDefinitions = util.List.of(tasks: _*),
+      maxIterations = TaskAcceptance.DEFAULT_MAX_ITERATIONS,
+      handoffTargets = util.List.of(),
+      delegationTargets = util.List.of())
+}

@@ -1,17 +1,18 @@
 package demo.helloworld.application;
 
 import akka.javasdk.agent.autonomous.AutonomousAgent;
-import akka.javasdk.agent.autonomous.Strategy;
+import akka.javasdk.agent.autonomous.AgentDefinition;
 import akka.javasdk.annotations.Component;
 
 @Component(id = "question-answerer")
 public class QuestionAnswerer extends AutonomousAgent {
 
   @Override
-  public Strategy strategy() {
-    return Strategy.autonomous()
+  public AgentDefinition definition() {
+    return define()
       .goal("Answer questions clearly and concisely, showing reasoning step by step.")
-      .accepts(QuestionTasks.ANSWER)
-      .maxIterations(3);
+      .capabilities(
+          canAcceptTasks(QuestionTasks.ANSWER)
+              .maxIterationsPerTask(3));
   }
 }

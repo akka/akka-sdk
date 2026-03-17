@@ -60,7 +60,7 @@ public record TaskState(
         name,
         description,
         instructions,
-        status,
+        TaskStatus.ASSIGNED,
         resultTypeName,
         result,
         failureReason,
@@ -93,6 +93,22 @@ public record TaskState(
         description,
         instructions,
         TaskStatus.FAILED,
+        resultTypeName,
+        result,
+        reason,
+        dependencyTaskIds,
+        assignee,
+        attachments,
+        reassignmentContext);
+  }
+
+  public TaskState withCancellation(String reason) {
+    return new TaskState(
+        taskId,
+        name,
+        description,
+        instructions,
+        TaskStatus.CANCELLED,
         resultTypeName,
         result,
         reason,

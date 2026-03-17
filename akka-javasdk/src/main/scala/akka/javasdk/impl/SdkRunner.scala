@@ -45,7 +45,6 @@ import akka.javasdk.agent.AgentContext
 import akka.javasdk.agent.AgentRegistry
 import akka.javasdk.agent.ModelProvider
 import akka.javasdk.agent.autonomous.AutonomousAgent
-import akka.javasdk.agent.autonomous.DefaultAutonomousStrategy
 import akka.javasdk.agent.task.TaskTemplate
 import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.ComponentId
@@ -75,6 +74,8 @@ import akka.javasdk.impl.agent.FunctionTools
 import akka.javasdk.impl.agent.GuardrailProvider
 import akka.javasdk.impl.agent.OverrideModelProvider
 import akka.javasdk.impl.agent.PromptTemplateClient
+import akka.javasdk.impl.agent.autonomous.AgentDefinitionImpl
+import akka.javasdk.impl.agent.autonomous.capability.TaskAcceptanceImpl
 import akka.javasdk.impl.client.ComponentClientImpl
 import akka.javasdk.impl.consumer.ConsumerImpl
 import akka.javasdk.impl.consumer.MessageContextImpl
@@ -120,16 +121,13 @@ import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.RemoteIdentification
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAutonomousAgent
-import akka.runtime.sdk.spi.SpiAutonomousAgentStrategy
 import akka.runtime.sdk.spi.SpiComponents
 import akka.runtime.sdk.spi.SpiConfiguredGuardrail
-import akka.runtime.sdk.spi.SpiDelegation
 import akka.runtime.sdk.spi.SpiDeployedEventingSettings
 import akka.runtime.sdk.spi.SpiDevModeSettings
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
 import akka.runtime.sdk.spi.SpiGuardrailSetup
-import akka.runtime.sdk.spi.SpiHandoff
 import akka.runtime.sdk.spi.SpiMockedEventingSettings
 import akka.runtime.sdk.spi.SpiSanitizerEngine
 import akka.runtime.sdk.spi.SpiServiceInfo
@@ -520,10 +518,10 @@ private final class Sdk(
   private var viewDescriptors = Vector.empty[ViewDescriptor]
   private var agentDescriptors = Vector.empty[AgentDescriptor]
   private var autonomousAgentDescriptors = Vector.empty[AutonomousAgentDescriptor]
-  // Populated during scanning: componentId → (sdkStrategy, spiTaskDefinitions)
+  // Populated during scanning: componentId → (agentDefinition, spiTaskDefinitions)
   // Used by delegation wiring inside instanceFactory (called lazily after all agents registered)
-  private var autonomousAgentStrategyMap =
-    Map.empty[String, (DefaultAutonomousStrategy, Seq[SpiTask.SpiTaskDefinition])]
+  private var autonomousAgentDefinitionMap =
+    Map.empty[String, (AgentDefinitionImpl, Seq[SpiTask.SpiTaskDefinition])]
   private var agentRegistryInfo = Vector.empty[AgentRegistryImpl.AgentDetails]
   // guardrail name => component ids
   private var guardrailEnabledForComponent = Map.empty[String, Set[String]]
@@ -748,153 +746,127 @@ private final class Sdk(
             guardrailEnabledForComponent.getOrElse(guardrailName, Set.empty) + componentId)
         }
 
-        // Strategy is required for AutonomousAgent — instantiate to read it
-        val sdkStrategy: DefaultAutonomousStrategy = {
+        // Definition is required for AutonomousAgent — instantiate to read it
+        val agentDefinition: AgentDefinitionImpl = {
           val tempAgent = wiredInstance("AutonomousAgent", autonomousAgentClass) {
             sideEffectingComponentInjects(None)
           }
-          tempAgent.strategy() match {
-            case autonomousStrategy: DefaultAutonomousStrategy =>
-              if (autonomousStrategy.goal().isEmpty)
+          tempAgent.definition() match {
+            case impl: AgentDefinitionImpl =>
+              if (impl.goal.isEmpty)
                 logger.warn(
-                  "AutonomousAgent [{}] has no goal configured. Set a goal via Strategy.autonomous().goal(...)",
+                  "AutonomousAgent [{}] has no goal configured. Set a goal via define().goal(...)",
                   clz.getName)
-              autonomousStrategy
+              impl
             case other =>
               throw new IllegalStateException(
-                s"AutonomousAgent ${clz.getName} strategy() must return an AutonomousStrategy, got: $other")
+                s"AutonomousAgent ${clz.getName} definition() must return a definition created via define(), got: $other")
           }
         }
 
-        // Task definitions are computed eagerly (they don't depend on per-instance state like model provider)
-        // and stored in the strategy map so delegation targets can reference them.
-        val spiTaskDefinitions: Seq[SpiTask.SpiTaskDefinition] =
-          sdkStrategy.acceptedTasks().asScala.toSeq.map { taskDef =>
-            val resultType = taskDef.resultType()
-            val resultSchema =
-              if (resultType == classOf[String]) None
-              else {
-                try Some(JsonSchema.jsonSchemaFor(resultType))
-                catch { case scala.util.control.NonFatal(_) => None }
-              }
-            val (instructionTemplate, templateParams) = taskDef match {
-              case t: TaskTemplate[_] =>
-                val params = t.templateParameterNames().asScala.toSeq.map { name =>
-                  new SpiTask.SpiTemplateParameter(name, name)
-                }
-                (Option(t.instructionTemplate()).filter(_.nonEmpty), params)
-              case _ => (None, Seq.empty)
+        // Extract all task definitions from capabilities eagerly so delegation targets can reference them.
+        val sdkTaskAcceptances = agentDefinition.capabilities.asScala.toSeq.collect { case ta: TaskAcceptanceImpl =>
+          ta
+        }
+
+        def toSpiTaskDefinition(taskDef: akka.javasdk.agent.task.TaskDefinition[_]): SpiTask.SpiTaskDefinition = {
+          val resultType = taskDef.resultType()
+          val resultSchema =
+            if (resultType == classOf[String]) None
+            else {
+              try Some(JsonSchema.jsonSchemaFor(resultType))
+              catch { case scala.util.control.NonFatal(_) => None }
             }
-            new SpiTask.SpiTaskDefinition(
-              name = taskDef.name(),
-              description = taskDef.description(),
-              resultTypeName = resultType.getName,
-              resultSchema = resultSchema,
-              instructionTemplate = instructionTemplate,
-              templateParameters = templateParams)
+          val (instructionTemplate, templateParams) = taskDef match {
+            case t: TaskTemplate[_] =>
+              val params = t.templateParameterNames().asScala.toSeq.map { name =>
+                new SpiTask.SpiTemplateParameter(name, name)
+              }
+              (Option(t.instructionTemplate()).filter(_.nonEmpty), params)
+            case _ => (None, Seq.empty)
           }
-        autonomousAgentStrategyMap = autonomousAgentStrategyMap.updated(componentId, (sdkStrategy, spiTaskDefinitions))
+          new SpiTask.SpiTaskDefinition(
+            name = taskDef.name(),
+            description = taskDef.description(),
+            resultTypeName = resultType.getName,
+            resultSchema = resultSchema,
+            instructionTemplate = instructionTemplate,
+            templateParameters = templateParams)
+        }
+
+        val allSpiTaskDefinitions: Seq[SpiTask.SpiTaskDefinition] =
+          sdkTaskAcceptances.flatMap(_.taskDefinitions.asScala).map(toSpiTaskDefinition)
+        autonomousAgentDefinitionMap =
+          autonomousAgentDefinitionMap.updated(componentId, (agentDefinition, allSpiTaskDefinitions))
+
+        def resolveHandoffTargets(
+            sdkHandoffTargets: Seq[Class[_ <: AutonomousAgent]]): Seq[SpiAutonomousAgent.HandoffTarget] =
+          sdkHandoffTargets.map { targetAgentClass =>
+            val targetComponentId = Reflect.readComponentId(targetAgentClass)
+            val (_, targetTaskDefs) = autonomousAgentDefinitionMap.getOrElse(
+              targetComponentId,
+              throw new IllegalStateException(
+                s"Handoff target [$targetComponentId] (${targetAgentClass.getName}) not found. " +
+                "Ensure the target agent is a registered AutonomousAgent component."))
+            val targetDescriptor = autonomousAgentDescriptors.find(_.componentId == targetComponentId)
+            new SpiAutonomousAgent.HandoffTarget(
+              agentComponentId = targetComponentId,
+              description = targetDescriptor.flatMap(_.description),
+              acceptedTasks = targetTaskDefs)
+          }
+
+        def resolveDelegationTargets(
+            sdkDelegationTargets: Seq[Class[_ <: AutonomousAgent]]): Seq[SpiAutonomousAgent.DelegationTarget] =
+          sdkDelegationTargets.map { targetAgentClass =>
+            val targetComponentId = Reflect.readComponentId(targetAgentClass)
+            val (_, targetTaskDefs) = autonomousAgentDefinitionMap.getOrElse(
+              targetComponentId,
+              throw new IllegalStateException(
+                s"Delegation target [$targetComponentId] (${targetAgentClass.getName}) not found. " +
+                "Ensure the target agent is a registered AutonomousAgent component."))
+            val targetDescriptor = autonomousAgentDescriptors.find(_.componentId == targetComponentId)
+            new SpiAutonomousAgent.DelegationTarget(
+              agentComponentId = targetComponentId,
+              description = targetDescriptor.flatMap(_.description),
+              acceptedTasks = targetTaskDefs)
+          }
 
         val instanceFactory: SpiAutonomousAgent.FactoryContext => SpiAutonomousAgent = { factoryContext =>
-          // Strategy is resolved per-instance so that test model provider overrides,
+          // Model provider is resolved per-instance so that test overrides,
           // which are applied after startup, are visible at entity creation time.
-          val spiStrategy: SpiAutonomousAgentStrategy = {
-            val spiModelProvider = {
-              val sdkProvider =
-                overrideModelProvider
-                  .getModelProviderForAgent(componentId)
-                  .getOrElse(if (sdkStrategy.modelProvider() != null) sdkStrategy.modelProvider()
-                  else ModelProvider.fromConfig())
-              AgentImpl.toSpiModelProvider(sdkProvider, applicationConfig, componentId)(system)
-            }
-            val toolClasses: Seq[Class[_]] = sdkStrategy
-              .toolInstancesOrClasses()
-              .asScala
-              .map {
-                case cls: Class[_] => cls
-                case any           => any.getClass
-              }
-              .toSeq
-            val spiToolDescriptors =
-              FunctionTools.descriptorsFor(autonomousAgentClass) ++ toolClasses.flatMap(FunctionTools.descriptorsFor)
-            val spiMcpDescriptors =
-              AgentImpl.toSpiMcpEndpoints(sdkStrategy.mcpTools().asScala.toSeq, agentGuardrails, sdkExecutionContext)
-            val spiTaskDefinitions: Seq[SpiTask.SpiTaskDefinition] =
-              sdkStrategy.acceptedTasks().asScala.toSeq.map { taskDef =>
-                val resultType = taskDef.resultType()
-                val resultSchema =
-                  if (resultType == classOf[String]) None
-                  else {
-                    try Some(JsonSchema.jsonSchemaFor(resultType))
-                    catch { case scala.util.control.NonFatal(_) => None }
-                  }
-                val (instructionTemplate, templateParams) = taskDef match {
-                  case t: TaskTemplate[_] =>
-                    val params = t.templateParameterNames().asScala.toSeq.map { name =>
-                      new SpiTask.SpiTemplateParameter(name, name)
-                    }
-                    (Option(t.instructionTemplate()).filter(_.nonEmpty), params)
-                  case _ => (None, Seq.empty)
-                }
-                new SpiTask.SpiTaskDefinition(
-                  name = taskDef.name(),
-                  description = taskDef.description(),
-                  resultTypeName = resultType.getName,
-                  resultSchema = resultSchema,
-                  instructionTemplate = instructionTemplate,
-                  templateParameters = templateParams)
-              }
-
-            // Build delegations from delegation targets, resolving target agent task definitions
-            val spiDelegations: Seq[SpiDelegation] = sdkStrategy
-              .delegationTargets()
-              .asScala
-              .toSeq
-              .map { targetAgentClass =>
-                val targetComponentId = Reflect.readComponentId(targetAgentClass)
-                val (_, targetTaskDefs) = autonomousAgentStrategyMap.getOrElse(
-                  targetComponentId,
-                  throw new IllegalStateException(
-                    s"Delegation target [$targetComponentId] (${targetAgentClass.getName}) not found. " +
-                    "Ensure the target agent is a registered AutonomousAgent component."))
-                val targetDescriptor = autonomousAgentDescriptors.find(_.componentId == targetComponentId)
-                new SpiDelegation(
-                  agentComponentId = targetComponentId,
-                  description = targetDescriptor.flatMap(_.description),
-                  acceptedTasks = targetTaskDefs)
-              }
-
-            // Build handoffs from handoff targets, resolving target agent task definitions
-            val spiHandoffs: Seq[SpiHandoff] = sdkStrategy
-              .handoffTargets()
-              .asScala
-              .toSeq
-              .map { targetAgentClass =>
-                val targetComponentId = Reflect.readComponentId(targetAgentClass)
-                val (_, targetTaskDefs) = autonomousAgentStrategyMap.getOrElse(
-                  targetComponentId,
-                  throw new IllegalStateException(
-                    s"Handoff target [$targetComponentId] (${targetAgentClass.getName}) not found. " +
-                    "Ensure the target agent is a registered AutonomousAgent component."))
-                val targetDescriptor = autonomousAgentDescriptors.find(_.componentId == targetComponentId)
-                new SpiHandoff(
-                  agentComponentId = targetComponentId,
-                  description = targetDescriptor.flatMap(_.description),
-                  acceptedTasks = targetTaskDefs)
-              }
-
-            new SpiAutonomousAgentStrategy(
-              goal = sdkStrategy.goal(),
-              maxIterations = sdkStrategy.maxIterations(),
-              taskDefinitions = spiTaskDefinitions,
-              delegations = spiDelegations,
-              handoffs = spiHandoffs,
-              modelProvider = spiModelProvider,
-              toolDescriptors = spiToolDescriptors,
-              mcpClientDescriptors = spiMcpDescriptors,
-              requestGuardrails = agentGuardrails.modelRequestGuardrails,
-              responseGuardrails = agentGuardrails.modelResponseGuardrails)
+          val spiModelProvider = {
+            val sdkProvider =
+              overrideModelProvider
+                .getModelProviderForAgent(componentId)
+                .getOrElse(if (agentDefinition.modelProvider != null) agentDefinition.modelProvider
+                else ModelProvider.fromConfig())
+            AgentImpl.toSpiModelProvider(sdkProvider, applicationConfig, componentId)(system)
           }
+          val toolClasses: Seq[Class[_]] = agentDefinition.toolInstancesOrClasses.asScala.map {
+            case cls: Class[_] => cls
+            case any           => any.getClass
+          }.toSeq
+          val spiToolDescriptors =
+            FunctionTools.descriptorsFor(autonomousAgentClass) ++ toolClasses.flatMap(FunctionTools.descriptorsFor)
+          val spiMcpDescriptors =
+            AgentImpl.toSpiMcpEndpoints(agentDefinition.mcpTools.asScala.toSeq, agentGuardrails, sdkExecutionContext)
+
+          // Build SPI capabilities from SDK capabilities
+          val spiCapabilities: Seq[SpiAutonomousAgent.Capability] = {
+            val capabilities = Seq.newBuilder[SpiAutonomousAgent.Capability]
+            sdkTaskAcceptances.foreach { ta =>
+              val spiTaskDefs = ta.taskDefinitions.asScala.toSeq.map(toSpiTaskDefinition)
+              val spiHandoffs = resolveHandoffTargets(ta.handoffTargets.asScala.toSeq)
+              val spiDelegations = resolveDelegationTargets(ta.delegationTargets.asScala.toSeq)
+              capabilities += new SpiAutonomousAgent.TaskAcceptance(
+                taskDefinitions = spiTaskDefs,
+                maxIterationsPerTask = ta.maxIterations,
+                handoffs = spiHandoffs,
+                delegations = spiDelegations)
+            }
+            capabilities.result()
+          }
+
           new AutonomousAgentImpl(
             componentId,
             factoryContext.instanceId,
@@ -910,8 +882,14 @@ private final class Sdk(
             dependencyProviderOpt,
             applicationConfig,
             system,
-            sdkStrategy,
-            spiStrategy)
+            agentDefinition,
+            goal = agentDefinition.goal,
+            modelProvider = spiModelProvider,
+            toolDescriptors = spiToolDescriptors,
+            mcpClientDescriptors = spiMcpDescriptors,
+            requestGuardrails = agentGuardrails.modelRequestGuardrails,
+            responseGuardrails = agentGuardrails.modelResponseGuardrails,
+            capabilities = spiCapabilities)
         }
 
         autonomousAgentDescriptors :+=

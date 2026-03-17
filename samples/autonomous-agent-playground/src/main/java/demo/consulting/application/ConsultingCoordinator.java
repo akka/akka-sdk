@@ -1,7 +1,7 @@
 package demo.consulting.application;
 
 import akka.javasdk.agent.autonomous.AutonomousAgent;
-import akka.javasdk.agent.autonomous.Strategy;
+import akka.javasdk.agent.autonomous.AgentDefinition;
 import akka.javasdk.annotations.Component;
 
 /**
@@ -14,8 +14,8 @@ import akka.javasdk.annotations.Component;
 public class ConsultingCoordinator extends AutonomousAgent {
 
   @Override
-  public Strategy strategy() {
-    return Strategy.autonomous()
+  public AgentDefinition definition() {
+    return define()
       .goal(
         """
         Deliver actionable consulting recommendations. Assess each client \
@@ -23,10 +23,10 @@ public class ConsultingCoordinator extends AutonomousAgent {
         level of expertise for resolution. \
         """
       )
-      .accepts(ConsultingTasks.ENGAGEMENT)
       .tools(new ConsultingTools())
-      .canDelegateTo(ConsultingResearcher.class)
-      .canHandoffTo(SeniorConsultant.class)
-      .maxIterations(10);
+      .capabilities(
+          canAcceptTasks(ConsultingTasks.ENGAGEMENT)
+              .canHandoffTo(SeniorConsultant.class)
+              .canDelegateTo(ConsultingResearcher.class));
   }
 }
