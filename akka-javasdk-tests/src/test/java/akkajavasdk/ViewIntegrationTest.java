@@ -23,6 +23,7 @@ import akkajavasdk.components.views.AllTheTypesView;
 import akkajavasdk.components.views.UserCounter;
 import akkajavasdk.components.views.UserCounters;
 import akkajavasdk.components.views.UserCountersView;
+import akkajavasdk.components.views.counter.CountersByValueStructuralMapping;
 import akkajavasdk.components.views.counter.CountersByValueSubscriptions;
 import akkajavasdk.components.views.counter.CountersByValueWithIgnore;
 import akkajavasdk.components.views.hierarchy.HierarchyCountersByValue;
@@ -575,6 +576,39 @@ public class ViewIntegrationTest extends TestKitSupport {
     assertThat(bobCounters.name).isEqualTo(bob.name());
     assertThat(bobCounters.counters)
         .containsOnly(new UserCounter("c2", 22), new UserCounter("c4", 44));
+  }
+
+  @Test
+  public void verifyStructuralMappingOfQueryResultToCompatibleType() {
+    // Regression test: table stores Counter rows, but query result uses CounterDTO — a different
+    // type with the same field names and types. Structural (duck-type) mapping should work.
+    var id = newId();
+    await(
+        componentClient.forEventSourcedEntity(id).method(CounterEntity::increase).invokeAsync(99));
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(20, TimeUnit.SECONDS)
+        .until(
+            () ->
+                await(
+                        componentClient
+                            .forView()
+                            .method(CountersByValueStructuralMapping::getCounterByValue)
+                            .invokeAsync(new CountersByValueStructuralMapping.QueryParameters(99)))
+                    .counters()
+                    .size(),
+            new IsEqual<>(1));
+
+    var result =
+        await(
+            componentClient
+                .forView()
+                .method(CountersByValueStructuralMapping::getCounterByValue)
+                .invokeAsync(new CountersByValueStructuralMapping.QueryParameters(99)));
+
+    assertThat(result.counters()).hasSize(1);
+    assertThat(result.counters().get(0).value()).isEqualTo(99);
   }
 
   private void createUser(TestUser user) {
