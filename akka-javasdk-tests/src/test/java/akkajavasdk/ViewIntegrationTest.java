@@ -580,8 +580,9 @@ public class ViewIntegrationTest extends TestKitSupport {
 
   @Test
   public void verifyStructuralMappingOfQueryResultToCompatibleType() {
-    // Regression test: table stores Counter rows, but query result uses CounterDTO — a different
-    // type with the same field names and types. Structural (duck-type) mapping should work.
+    // Regression test: table stores CounterRow (entityId, value, meta), but query result uses
+    // CounterDTO — a different type with the same field names and types. Structural (duck-type)
+    // mapping should work.
     var id = newId();
     await(
         componentClient.forEventSourcedEntity(id).method(CounterEntity::increase).invokeAsync(99));
@@ -608,7 +609,9 @@ public class ViewIntegrationTest extends TestKitSupport {
                 .invokeAsync(new CountersByValueStructuralMapping.QueryParameters(99)));
 
     assertThat(result.counters()).hasSize(1);
-    assertThat(result.counters().get(0).value()).isEqualTo(99);
+    var dto = result.counters().get(0);
+    assertThat(dto.value()).isEqualTo(99);
+    assertThat(dto.entityId()).isEqualTo(id);
   }
 
   private void createUser(TestUser user) {

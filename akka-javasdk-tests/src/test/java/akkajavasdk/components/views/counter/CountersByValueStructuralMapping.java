@@ -9,40 +9,42 @@ import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
-import akkajavasdk.components.eventsourcedentities.counter.Counter;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEntity;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEvent;
 import java.util.List;
 
 /**
- * Tests structural/duck-type mapping: the table stores Counter rows, but the query result maps them
- * to CounterDTO which is a different type with the same fields.
+ * Tests structural/duck-type mapping: the table stores CounterRow rows, but the query result maps
+ * them to CounterDTO — a different type with the same field names and types.
  */
 @Component(id = "counters_by_value_structural_mapping")
 public class CountersByValueStructuralMapping extends View {
 
-  // Different type from Counter but structurally identical (same field names and types)
-  public record CounterDTO(int value, String meta) {}
+  // Custom table row type with three fields
+  public record CounterRow(String entityId, int value, String meta) {}
+
+  // Different type from CounterRow but structurally identical (same field names and types)
+  public record CounterDTO(String entityId, int value, String meta) {}
 
   @Consume.FromEventSourcedEntity(CounterEntity.class)
-  public static class Counters extends TableUpdater<Counter> {
+  public static class Counters extends TableUpdater<CounterRow> {
 
     @Override
-    public Counter emptyRow() {
-      return new Counter(0);
+    public CounterRow emptyRow() {
+      return new CounterRow(updateContext().eventSubject().orElse(""), 0, "");
     }
 
-    public Effect<Counter> onEvent(CounterEvent event) {
-      Counter counter = rowState();
-      var updatedCounter =
+    public Effect<CounterRow> onEvent(CounterEvent event) {
+      CounterRow row = rowState();
+      var updated =
           switch (event) {
-            case CounterEvent.ValueIncreased valueIncreased ->
-                counter.onValueIncreased(valueIncreased);
-            case CounterEvent.ValueMultiplied valueMultiplied ->
-                counter.onValueMultiplied(valueMultiplied);
-            case CounterEvent.ValueSet valueSet -> counter.onValueSet(valueSet);
+            case CounterEvent.ValueIncreased e ->
+                new CounterRow(row.entityId(), row.value() + e.value(), row.meta());
+            case CounterEvent.ValueMultiplied e ->
+                new CounterRow(row.entityId(), row.value() * e.value(), row.meta());
+            case CounterEvent.ValueSet e -> new CounterRow(row.entityId(), e.value(), row.meta());
           };
-      return effects().updateRow(updatedCounter);
+      return effects().updateRow(updated);
     }
   }
 
