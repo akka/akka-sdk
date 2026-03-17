@@ -37,6 +37,7 @@ spec:
     - googleCloud:
         serviceAccountKeySecret:
           name: gcp-credentials
+    - kalixConsole: {}
   metrics: []
   traces: []
 ----
@@ -44,10 +45,10 @@ spec:
 In this example:
 
 * The `exporters` section defines default exporters applied to logs, metrics, and traces.
-* The `logs` section adds an additional Google Cloud exporter specifically for logs (in addition to the default exporters).
-* The `metrics` and `traces` sections are empty arrays, meaning they only use the default exporters.
+* The `logs` section overrides the default exporters for logs. It configures both a Google Cloud exporter and the Akka Console exporter. Without explicitly including `kalixConsole` here, logs would only be sent to Google Cloud.
+* The `metrics` and `traces` sections are empty arrays, meaning they use the default exporters.
 
-Each section (`exporters`, `logs`, `metrics`, `traces`) accepts an array of exporter configurations, allowing multiple destinations. The specific `logs`, `metrics`, and `traces` sections add to the default exporters rather than replacing them.
+Each section (`exporters`, `logs`, `metrics`, `traces`) accepts an array of exporter configurations, allowing multiple destinations. When a specific `logs`, `metrics`, or `traces` section is defined, it *replaces* the default exporters for that category. To continue sending data to a default destination, you must include it in the specific section as well. An empty array (`[]`) means the category falls back to the default exporters.
 
 [NOTE]
 ====
