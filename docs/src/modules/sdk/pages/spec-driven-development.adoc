@@ -49,7 +49,7 @@ The prompt for the feature specification should exclusively define the _what_ an
 [cols="1"]
 :table-caption: Prompt
 |===
-|_**/akka.specify** core users - The chess application manages its own users. It does not integrate with federation technologies like OAuth. Users are uniquely identified by a username and they authenticate via password. Users can edit their profile and supply a friendly name and upload a small avatar image. Email verification is not used. Users can delete their own accounts. Users can view the profile of other users, but anonymous (not logged in) users cannot see any data._
+|**/akka.specify** core users - _The chess application manages its own users. It does not integrate with federation technologies like OAuth. Users are uniquely identified by a username and they authenticate via password. Users can edit their profile and supply a friendly name and upload a small avatar image. Email verification is not used. Users can delete their own accounts. Users can view the profile of other users, but anonymous (not logged in) users cannot see any data._
 |===
 
 This creates a new specification in the `specs/001-core-users` directory, in the `001-core-users` branch. At this stage, resist the temptation to go and manually edit the spec. Clarification is the next step.
