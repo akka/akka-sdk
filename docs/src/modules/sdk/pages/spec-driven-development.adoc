@@ -21,7 +21,9 @@ Crucially, this single file is almost always written completely by a human. This
 A single `SPEC.md` or `specification.md` file may be enough for some projects. Many sample or demonstration applications can be built properly with just a single file. However, when our needs and complexity reach a certain point, we need a formal process. This process is iterative, git-friendly, and enlists the aid of the AI assistant both in building the spec and generating the code from it. It addresses the need to build formal specifications that are consumable by both human and AI alike while reducing random and unexpected output. This process is covered in detail in this document.
 
 == Using Akka specify
-Akka makes it incredibly easy to get started with a new _spec-first_ project. Instead of using `akka code init`, use the newer `akka specify init` command. This will give you everything you need to kick off your spec-first development cycle.
+Akka makes it incredibly easy to get started with a new _spec-first_ project. The CLI command `akka specify init` configures your coding assistant. This will give you everything you need to kick off your spec-first development cycle.
+
+Please refer to xref:operations:cli/installation.adoc[] for installlation instructions.
 
 NOTE: At the moment the only supported assistant is Claude, but support for other assistants is coming soon. For other agents, you can manually add Akka as an MCP server using the `_mcp.json` file that comes with the new project template.
 
@@ -130,8 +132,22 @@ You no longer have to invest massive amounts of time in "what-if" scenarios, you
 
 Using SDD with careful feature scoping and concise technical implementation plans, you're never more than a matter of minutes from a feature you can interact with. With Akka, you know those features will automatically be powerful, resilient, scalable distributed systems.
 
+== SDD commands in your coding assistant
+
+[cols="1,~"]
+|====
+|`/akka.specify`   | Supply a prompt to produce your feature spec
+|`/akka.clarify`   | Find gaps in your spec
+|`/akka.plan`      | Convert your spec into a technical implementation plan
+|`/akka.tasks`     | Itemize the work required to build according to the spec
+|`/akka.implement` | Generate the required code, tests, harnesses, etc.
+|`/akka.build`     | Build, test, and run locally with hot reloading
+|`/akka.deploy`    | Deploy to Akka Automated Operations
+|====
+
 == References
-While there are many different formal patterns and practices for spec-driven development out there, Akka uses https://github.github.com/spec-kit/index.html[spec-kit] as a pattern.
+* While there are many different formal patterns and practices for spec-driven development out there, Akka uses https://github.github.com/spec-kit/index.html[spec-kit, window="new"] as a pattern.
 
-The functionality in the custom slash-commands (`/akka.*`) is implemented through the Akka CLI as an https://modelcontextprotocol.io/docs/getting-started/intro[MCP server].
+* The functionality in the custom slash-commands (`/akka.*`) is implemented through the Akka CLI as an https://modelcontextprotocol.io/docs/getting-started/intro[MCP server, window="new"].
 
+* xref:operations:cli/installation.adoc[]
