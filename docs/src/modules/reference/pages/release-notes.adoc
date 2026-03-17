@@ -14,7 +14,7 @@ Current versions
 
 * Akka CLI 3.0.53
 - Added an optional custom constitution to `akka specify`
-- Check of `akka specify` resources have remote updates
+- Check if `akka specify` resources have remote updates
 - Better text formatting when printing service configs
 
 * Akka CLI 3.0.52
