@@ -35,6 +35,7 @@ The `akka service views` commands manage the views for an Akka project, includin
 * link:akka_services_views_drop.html[akka services views drop]	 - Delete the data for an inactive view.
 * link:akka_services_views_get-state.html[akka services views get-state]	 - Get view state.
 * link:akka_services_views_list.html[akka services views list]	 - List all views.
+* link:akka_services_views_query.html[akka services views query]	 - Query a view method.
 
 [discrete]
 

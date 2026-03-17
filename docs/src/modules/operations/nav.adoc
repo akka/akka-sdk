@@ -25,12 +25,15 @@
 
 **** xref:operations:services/index.adoc[]
 ***** xref:operations:services/deploy-service.adoc[]
+***** xref:operations:services/service-config.adoc[]
 ***** xref:operations:services/invoke-service.adoc[]
 ***** xref:operations:services/view-data.adoc[]
 ***** xref:operations:services/data-management.adoc[]
 ***** xref:operations:services/custom-truststore.adoc[]
 
 **** xref:operations:regions/index.adoc[]
+***** xref:operations:regions/setup.adoc[]
+***** xref:operations:regions/infrastructure.adoc[]
 
 **** xref:operations:tls-certificates.adoc[]
 
