@@ -19,6 +19,7 @@ In this guide, you will:
 
 include::ROOT:partial$local-dev-prerequisites.adoc[]
 * Git
+* xref:quick-install-cli.adoc[Akka CLI]
 * An AI coding assistant like Claude Code to build and implement the specification
 * https://platform.openai.com/api-keys[OpenAI API key, window="new"]
 
@@ -36,8 +37,10 @@ To start a new project using Spec-Driven Development, we use the `akka specify i
 
 This will copy the default Akka template files, give you a chance to add your own additional constitution (which you can skip for this exercise), and set up an empty Akka service project with a Maven `pom.xml` file. It will also set the directory up as a git repository.
 
+Once you've successfully initialized the project, you can start Claude Code in your terminal. This guide doesn't cover using the web app.
+
 == Specify the main feature
-To specify the main feature of the application, we use `/akka.specify`. The following prompt shows this in action. If you're feeling adventurous, you can experiment with changing the prompt to see how it affects the final results.
+To specify the main feature of the application, we use `/akka.specify`. The following prompt shows this in action. If you're feeling adventurous, you can experiment with changing the prompt to see how it affects the final results. Copy and paste this `/akka.specify` command into your agent session:
 
 .Hello agent single feature
 [cols="1"]
@@ -73,6 +76,8 @@ Under normal circumstances you would use `/akka.clarify` to fill in potential ga
 
 == Create a plan
 Once we've got a specification we're pleased with, we need to create an implementation plan. This plan tells the coding assistant _how_ to implement the specification. Here is where we dictate the technical architecture and requirements.
+
+Copy and paste this slash command into your Claude session:
 
 .Technical implementation plan
 [cols="1"]
