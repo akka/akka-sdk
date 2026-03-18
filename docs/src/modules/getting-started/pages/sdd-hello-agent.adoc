@@ -150,7 +150,7 @@ This plan looks good and the architecture is exactly what we wanted, so now we c
 
 == Generate tasks
 
-To generate the tasks from this plan, simply run `/akka.tasks`
+To generate the tasks from this plan, run `/akka.tasks`
 
 Here's a sample summary output from generating tasks. Note that it has analyzed which tasks can be done in parallel.
 
