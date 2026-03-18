@@ -545,6 +545,7 @@ private[impl] final class AgentImpl[A <: Agent](
             m.text(),
             toolRequests,
             m.thinking().toScala,
+            m.tokenUsage().inputTokens() + m.tokenUsage().outputTokens(),
             m.attributes().asScala.toMap)
         case m: UserMessage =>
           new SpiAgent.ContextMessage.UserMessage(m.text())
