@@ -187,7 +187,7 @@ Here's a sample summary output from generating tasks. Note that it has analyzed 
 With the plan and tasks ready to go, we can move on to implementation. It's worth noting that the actual writing of the code is one of the smaller parts of the process, and is done at the end of the feature definition, not the beginning.
 
 == Implement the agent
-Now it's time to generate some code. Just run the `/akka.implement` command and allow it to proceed with any operations for which it requests permission.
+Now it's time to generate some code. Run the `/akka.implement` command and allow it to proceed with any operations for which it requests permission.
 
 During implementation it is not unusual to see your AI assistant get a number of things wrong. Code may fail to compile and tests might not pass. We should try and leave the agent alone and let it try and fix the problems on its own before we intervene. Only if it looks like the agent is stuck (>5 attempts to fix the same thing) should we step in and provide instructions to solve the problem. This implementation is simple enough that errors and failure loops are unlikely.
 
