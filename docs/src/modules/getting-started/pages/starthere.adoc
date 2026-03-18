@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-You might be excited to start your journey learning and building with Akka, but there are a few things you need to get set up first. This will only take a minute.
+Before you start your journey building and learning with Akka, there are a few things you need to get set up first. This only takes a minute.
 
 == Prerequisites
 
@@ -10,19 +10,11 @@ include::ROOT:partial$local-dev-prerequisites.adoc[]
 * xref:quick-install-cli.adoc[Akka CLI]
 * Git
 
-== Creating an empty project
+Before you start exploring all of the samples, let's make sure that your environment and your local tool chain all work properly. 
 
-Before you start exploring all of the samples, make sure that your environment and your local tool chain all work properly. 
+== Configuring your secure repository token
 
-To verify this, first create a new, _empty_ project by typing `akka code init` in a terminal window and selecting the empty project template. If this is the first time you've run `akka code init`, then it will ask you to go through authenticating against your free _support account_ in a browser (discussed in the next section). You will then choose whether you want the token for the private repository to be in your Maven `settings.xml` file or if you want to add it manually to the project's `pom.xml`. 
-
-For the purposes of this test to make sure everything is working, select the option to have the CLI automatically put the repository URL in `settings.xml`.
-
-Next, `cd` into the directory that was just created and type `mvn compile`. If you did not configure the secure repository token properly, then you may get a compile error with authorization failure/access denied messages. If you get Java compilation errors, check to make sure that you have the JDK installed and configured properly.
-
-If you were able to create and build an empty project, then you're all set and you can continue on to the samples.
-
-== Generating a secure repository token
+If you haven't already done so, you will need to get a secure repository token that allows you to use the Akka SDK as a project dependency. If you have a token configured, you can skip to the next section.
 
 When you go to the https://account.akka.io/token[repository token, window="new"] page, you will be presented with two options:
 
@@ -32,4 +24,17 @@ When you go to the https://account.akka.io/token[repository token, window="new"]
 Remember that this account is an _Akka **support** account_ and is not the same thing as a paid _Akka cloud_ account. This account is specifically for interacting with support and downloading Akka dependency binaries from the secure Maven repository.
 
 Once registered and authenticated, you will see that a secure token has been generated for you. This token will then be automatically detected and used whenever you use the Akka CLI to create new projects.
+
+Unless your environment has specific needs, selecting the option to have the CLI automatically place the token in your Maven global `settings.xml` file is the easiest way to proceed.
+
+== Creating an empty project
+
+TIP: If you're already using an AI coding assistant and want to build your first apps with xref:sdk:spec-driven-development.adoc[Spec-Driven Development], then you can use the `akka specify init` command instead.
+
+To verify that your environment can compile Akka applications, create a new, _empty_ project by typing `akka code init` in a terminal window and selecting the empty project template. If this is the first time you've run `akka code init`, then it will ask you to go through authenticating against your free _support account_ in a browser (discussed in the next section). You will then choose whether you want the token for the private repository to be in your Maven `settings.xml` file or if you want to add it manually to the project's `pom.xml`. 
+
+Next, `cd` into the directory that was just created and type `mvn compile`. If you did not configure the secure repository token properly, then you may get a compile error with authorization failure/access denied messages. If you get Java compilation errors, check to make sure that you have the JDK installed and configured properly.
+
+If you were able to create and build an empty project, then you're all set and you can continue on to the tutorials.
+
 
