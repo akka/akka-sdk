@@ -629,6 +629,12 @@ private final class Sdk(
                 case p if p == classOf[KeyValueEntityContext] => context
                 case s if s == classOf[Sanitizer]             => sanitizer
                 case r if r == classOf[AgentRegistry]         => agentRegistry
+                case p if p == classOf[NotificationPublisher[_]] =>
+                  new NotificationPublisher[Any] {
+                    override def publish(msg: Any): Unit = {
+                      factoryContext.publishToTopic.apply(serializer.toBytes(msg))
+                    }
+                  }
               })
         }
         keyValueEntityDescriptors :+=
