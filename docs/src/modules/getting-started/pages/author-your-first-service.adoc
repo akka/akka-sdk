@@ -3,7 +3,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-TIP: Looking for the xref:sdk:spec-driven-development.adoc[Spec-Driven Development] version of this tutorial? xref:getting-started:sdd-hello-agent.adoc[click here].
+TIP: As alternative without coding in Java, you may use xref:sdk:spec-driven-development.adoc[Spec-Driven Development] to create a version of the xref:getting-started:sdd-hello-agent.adoc[].
 
 == Introduction 
 
