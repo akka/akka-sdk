@@ -9,6 +9,7 @@
 ## Docs
 
 - [AI coding assistant guidelines](https://doc.akka.io/sdk/ai-coding-assistant-guidelines.html.md): Guidelines for efficient use of AI coding assistant tools with Akka.
+- [Spec-driven development](https://doc.akka.io/sdk/spec-driven-development.html.md)
 - [Developer best practices](https://doc.akka.io/sdk/dev-best-practices.html.md): Guidelines and recommended patterns for effective Akka SDK development.
 - [Developing](https://doc.akka.io/sdk/index.html.md): Overview of the development process with the Akka SDK.
 - [Components](https://doc.akka.io/sdk/components/index.html.md): Introduction to Akka's core building blocks and their usage.
