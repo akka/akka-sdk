@@ -28,8 +28,7 @@ public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> 
       if (currentState() == null) {
         return effects()
             .updateState(new TransferState(transfer, "started"))
-            .transitionTo(TransferWorkflowWithFraudDetection::detectFraud)
-            .withInput(transfer)
+            .transitionTo(TransferWorkflowWithFraudDetection::detectFraud, transfer)
             .thenReply(new Message("transfer started"));
       } else {
         return effects().reply(new Message("transfer started already"));
@@ -46,8 +45,7 @@ public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> 
           new Withdraw(currentState().transfer().from(), currentState().transfer().amount());
       return effects()
           .updateState(currentState().asAccepted())
-          .transitionTo(TransferWorkflowWithFraudDetection::withdraw)
-          .withInput(withdrawInput)
+          .transitionTo(TransferWorkflowWithFraudDetection::withdraw, withdrawInput)
           .thenReply(new Message("transfer accepted"));
 
     } else {
@@ -85,8 +83,7 @@ public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> 
 
         return stepEffects()
             .updateState(state)
-            .thenTransitionTo(TransferWorkflowWithFraudDetection::withdraw)
-            .withInput(withdrawInput);
+            .thenTransitionTo(TransferWorkflowWithFraudDetection::withdraw, withdrawInput);
       }
       case TransferRequiresManualAcceptation __ -> {
         return stepEffects().updateState(state).thenPause();
@@ -110,8 +107,7 @@ public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> 
 
     return stepEffects()
         .updateState(state)
-        .thenTransitionTo(TransferWorkflowWithFraudDetection::deposit)
-        .withInput(depositInput);
+        .thenTransitionTo(TransferWorkflowWithFraudDetection::deposit, depositInput);
   }
 
   private StepEffect deposit(Deposit deposit) {

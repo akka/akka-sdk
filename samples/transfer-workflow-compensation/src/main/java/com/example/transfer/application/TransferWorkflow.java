@@ -83,8 +83,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
         );
         yield stepEffects()
           .updateState(currentState().withStatus(WITHDRAW_SUCCEEDED))
-          .thenTransitionTo(TransferWorkflow::depositStep)
-          .withInput(depositInput);
+          .thenTransitionTo(TransferWorkflow::depositStep, depositInput);
       }
       case Failure failure -> {
         logger.warn("Withdraw failed with msg: {}", failure.errorMsg());
@@ -175,8 +174,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
         Withdraw withdrawInput = new Withdraw(initialState.withdrawId(), transfer.amount());
         yield stepEffects()
           .updateState(initialState)
-          .thenTransitionTo(TransferWorkflow::withdrawStep)
-          .withInput(withdrawInput);
+          .thenTransitionTo(TransferWorkflow::withdrawStep, withdrawInput);
       }
       case MANUAL_ACCEPTANCE_REQUIRED -> { // <3>
         // end::detect-frauds[]
@@ -226,8 +224,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
         Withdraw withdrawInput = new Withdraw(initialState.withdrawId(), transfer.amount());
         return effects()
           .updateState(initialState)
-          .transitionTo(TransferWorkflow::withdrawStep)
-          .withInput(withdrawInput)
+          .transitionTo(TransferWorkflow::withdrawStep, withdrawInput)
           .thenReply("transfer started");
       }
     }
@@ -258,8 +255,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
       // tag::resuming[]
       Withdraw withdrawInput = new Withdraw(currentState().withdrawId(), transfer.amount());
       return effects()
-        .transitionTo(TransferWorkflow::withdrawStep)
-        .withInput(withdrawInput)
+        .transitionTo(TransferWorkflow::withdrawStep, withdrawInput)
         .thenReply("transfer accepted");
     } else { // <2>
       return effects()
