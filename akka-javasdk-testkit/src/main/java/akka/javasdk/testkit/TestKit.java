@@ -860,6 +860,7 @@ public class TestKit {
               serializer,
               startupContext.agentRegistry().agentClassById(),
               Option.empty(),
+              Option.empty(),
               runtimeActorSystem.executionContext(),
               runtimeActorSystem);
       agentRegistry = startupContext.agentRegistry();

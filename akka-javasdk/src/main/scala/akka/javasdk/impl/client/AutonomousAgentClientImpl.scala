@@ -14,8 +14,11 @@ import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
+import akka.javasdk.agent.autonomous.AgentSetup
 import akka.javasdk.agent.task.Task
 import akka.javasdk.client.AutonomousAgentClient
+import akka.javasdk.impl.agent.autonomous.AgentSetupImpl
+import akka.javasdk.impl.agent.autonomous.CapabilityConverter
 import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
 import org.slf4j.LoggerFactory
@@ -28,6 +31,7 @@ private[javasdk] final class AutonomousAgentClientImpl(
     agentInstanceId: String,
     agentComponentId: String,
     runtimeComponentClients: RuntimeComponentClients,
+    agentCapabilityConverter: Option[CapabilityConverter],
     serializer: Serializer,
     callMetadata: Option[Metadata])(implicit ec: ExecutionContext, system: ActorSystem[_])
     extends AutonomousAgentClient {
@@ -79,6 +83,18 @@ private[javasdk] final class AutonomousAgentClientImpl(
             .map(_ => ())
         }
       }
+      .map(_ => Done.done())
+      .asJava
+  }
+
+  override def setupAsync(setup: AgentSetup): CompletionStage[Done] = {
+    val setupImpl = setup.asInstanceOf[AgentSetupImpl]
+    log.debug("setup: agent=[{}] instance=[{}]", agentComponentId, agentInstanceId)
+    val converter = agentCapabilityConverter.getOrElse(
+      throw new IllegalStateException("Agent capability converter not available in this context"))
+    val spiCapabilities = converter.toSpiCapabilities(setupImpl.capabilities)
+    runtimeComponentClients.autonomousAgentClient
+      .applySetup(agentComponentId, agentInstanceId, setupImpl.goal, spiCapabilities)
       .map(_ => Done.done())
       .asJava
   }

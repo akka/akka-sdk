@@ -45,7 +45,6 @@ import akka.javasdk.agent.AgentContext
 import akka.javasdk.agent.AgentRegistry
 import akka.javasdk.agent.ModelProvider
 import akka.javasdk.agent.autonomous.AutonomousAgent
-import akka.javasdk.agent.task.TaskTemplate
 import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.GrpcEndpoint
@@ -63,7 +62,6 @@ import akka.javasdk.http.HttpClientProvider
 import akka.javasdk.http.RequestContext
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerDestination
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerSource
-import akka.javasdk.impl.JsonSchema
 import akka.javasdk.impl.Sdk.StartupContext
 import akka.javasdk.impl.SdkRunner.extractSpiSettings
 import akka.javasdk.impl.agent.AgentImpl
@@ -75,7 +73,7 @@ import akka.javasdk.impl.agent.GuardrailProvider
 import akka.javasdk.impl.agent.OverrideModelProvider
 import akka.javasdk.impl.agent.PromptTemplateClient
 import akka.javasdk.impl.agent.autonomous.AgentDefinitionImpl
-import akka.javasdk.impl.agent.autonomous.capability.DelegationImpl
+import akka.javasdk.impl.agent.autonomous.CapabilityConverter
 import akka.javasdk.impl.agent.autonomous.capability.TaskAcceptanceImpl
 import akka.javasdk.impl.client.ComponentClientImpl
 import akka.javasdk.impl.consumer.ConsumerImpl
@@ -527,6 +525,16 @@ private final class Sdk(
   // guardrail name => component ids
   private var guardrailEnabledForComponent = Map.empty[String, Set[String]]
 
+  /** Lazy capability converter — constructed on first use, after all autonomous agents are registered. */
+  private lazy val agentCapabilityConverter: CapabilityConverter = {
+    val autonomousConfig = applicationConfig.getConfig("akka.javasdk.agent.autonomous")
+    new CapabilityConverter(
+      agentDefinitionMap = autonomousAgentDefinitionMap,
+      agentDescriptors = autonomousAgentDescriptors,
+      defaultMaxIterationsPerTask = autonomousConfig.getInt("max-iterations-per-task"),
+      defaultMaxParallelWorkers = autonomousConfig.getInt("delegation.max-parallel-workers"))
+  }
+
   private def isProvided(clz: Class[_]): Boolean = {
     !sdkSettings.devModeSettings.exists(_.showProvidedComponents) &&
     ComponentLocator.providedComponents.contains(clz)
@@ -765,72 +773,13 @@ private final class Sdk(
           }
         }
 
-        val sdkTaskAcceptances =
-          agentDefinition.capabilities.asScala.toSeq.collect { case ta: TaskAcceptanceImpl => ta }
-        val sdkDelegations =
-          agentDefinition.capabilities.asScala.toSeq.collect { case d: DelegationImpl => d }
-
-        def toSpiTaskDefinition(taskDef: akka.javasdk.agent.task.TaskDefinition[_]): SpiTask.SpiTaskDefinition = {
-          val resultType = taskDef.resultType()
-          val resultSchema =
-            if (resultType == classOf[String]) None
-            else {
-              try Some(JsonSchema.jsonSchemaFor(resultType))
-              catch { case scala.util.control.NonFatal(_) => None }
-            }
-          val (instructionTemplate, templateParams) = taskDef match {
-            case t: TaskTemplate[_] =>
-              val params = t.templateParameterNames().asScala.toSeq.map { name =>
-                new SpiTask.SpiTemplateParameter(name, name)
-              }
-              (Option(t.instructionTemplate()).filter(_.nonEmpty), params)
-            case _ => (None, Seq.empty)
-          }
-          new SpiTask.SpiTaskDefinition(
-            name = taskDef.name(),
-            description = taskDef.description(),
-            resultTypeName = resultType.getName,
-            resultSchema = resultSchema,
-            instructionTemplate = instructionTemplate,
-            templateParameters = templateParams)
-        }
-
         val allSpiTaskDefinitions: Seq[SpiTask.SpiTaskDefinition] =
-          sdkTaskAcceptances.flatMap(_.taskDefinitions.asScala).map(toSpiTaskDefinition)
+          agentDefinition.capabilities.asScala.toSeq
+            .collect { case ta: TaskAcceptanceImpl => ta }
+            .flatMap(_.taskDefinitions.asScala)
+            .map(CapabilityConverter.toSpiTaskDefinition)
         autonomousAgentDefinitionMap =
           autonomousAgentDefinitionMap.updated(componentId, (agentDefinition, allSpiTaskDefinitions))
-
-        def resolveHandoffTargets(
-            sdkHandoffTargets: Seq[Class[_ <: AutonomousAgent]]): Seq[SpiAutonomousAgent.HandoffTarget] =
-          sdkHandoffTargets.map { targetAgentClass =>
-            val targetComponentId = Reflect.readComponentId(targetAgentClass)
-            val (_, targetTaskDefs) = autonomousAgentDefinitionMap.getOrElse(
-              targetComponentId,
-              throw new IllegalStateException(
-                s"Handoff target [$targetComponentId] (${targetAgentClass.getName}) not found. " +
-                "Ensure the target agent is a registered AutonomousAgent component."))
-            val targetDescriptor = autonomousAgentDescriptors.find(_.componentId == targetComponentId)
-            new SpiAutonomousAgent.HandoffTarget(
-              agentComponentId = targetComponentId,
-              description = targetDescriptor.flatMap(_.description),
-              acceptedTasks = targetTaskDefs)
-          }
-
-        def resolveDelegationTargets(
-            sdkDelegationTargets: Seq[Class[_ <: AutonomousAgent]]): Seq[SpiAutonomousAgent.DelegationTarget] =
-          sdkDelegationTargets.map { targetAgentClass =>
-            val targetComponentId = Reflect.readComponentId(targetAgentClass)
-            val (_, targetTaskDefs) = autonomousAgentDefinitionMap.getOrElse(
-              targetComponentId,
-              throw new IllegalStateException(
-                s"Delegation target [$targetComponentId] (${targetAgentClass.getName}) not found. " +
-                "Ensure the target agent is a registered AutonomousAgent component."))
-            val targetDescriptor = autonomousAgentDescriptors.find(_.componentId == targetComponentId)
-            new SpiAutonomousAgent.DelegationTarget(
-              agentComponentId = targetComponentId,
-              description = targetDescriptor.flatMap(_.description),
-              acceptedTasks = targetTaskDefs)
-          }
 
         val instanceFactory: SpiAutonomousAgent.FactoryContext => SpiAutonomousAgent = { factoryContext =>
           // Model provider is resolved per-instance so that test overrides,
@@ -852,33 +801,8 @@ private final class Sdk(
           val spiMcpDescriptors =
             AgentImpl.toSpiMcpEndpoints(agentDefinition.mcpTools.asScala.toSeq, agentGuardrails, sdkExecutionContext)
 
-          // Config defaults for autonomous agent settings
-          val autonomousConfig = applicationConfig.getConfig("akka.javasdk.agent.autonomous")
-          val defaultMaxIterationsPerTask = autonomousConfig.getInt("max-iterations-per-task")
-          val defaultMaxParallelWorkers = autonomousConfig.getInt("delegation.max-parallel-workers")
-
           // Build SPI capabilities from SDK capabilities
-          val spiCapabilities: Seq[SpiAutonomousAgent.Capability] = {
-            val capabilities = Seq.newBuilder[SpiAutonomousAgent.Capability]
-            sdkTaskAcceptances.foreach { ta =>
-              val spiTaskDefs = ta.taskDefinitions.asScala.toSeq.map(toSpiTaskDefinition)
-              val spiHandoffs = resolveHandoffTargets(ta.handoffTargets.asScala.toSeq)
-              capabilities += new SpiAutonomousAgent.TaskAcceptance(
-                taskDefinitions = spiTaskDefs,
-                maxIterationsPerTask = ta.maxIterations.getOrElse(defaultMaxIterationsPerTask),
-                handoffs = spiHandoffs)
-            }
-            if (sdkDelegations.nonEmpty) {
-              val delegationGroups = sdkDelegations.map { d =>
-                val targets = resolveDelegationTargets(d.delegationTargets.asScala.toSeq)
-                new SpiAutonomousAgent.DelegationGroup(
-                  delegationTargets = targets,
-                  maxParallelWorkers = d.maxParallel.getOrElse(defaultMaxParallelWorkers))
-              }
-              capabilities += new SpiAutonomousAgent.DelegationOrchestrator(delegationGroups)
-            }
-            capabilities.result()
-          }
+          val spiCapabilities = agentCapabilityConverter.toSpiCapabilities(agentDefinition.capabilities)
 
           new AutonomousAgentImpl(
             componentId,
@@ -1296,9 +1220,12 @@ private final class Sdk(
   }
 
   private def componentClient(telemetryContext: Option[OtelContext]): ComponentClient = {
-    ComponentClientImpl(runtimeComponentClients, serializer, agentRegistry.agentClassById, telemetryContext)(
-      sdkExecutionContext,
-      system)
+    ComponentClientImpl(
+      runtimeComponentClients,
+      serializer,
+      agentRegistry.agentClassById,
+      Some(agentCapabilityConverter),
+      telemetryContext)(sdkExecutionContext, system)
   }
 
   private def timerScheduler(telemetryContext: Option[OtelContext]): TimerScheduler = {

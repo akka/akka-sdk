@@ -103,10 +103,14 @@ private[javasdk] final class TaskClientImpl[R](
           throw new IllegalStateException(
             "TaskClient was not created with a task definition; cannot deserialize result"))
         .resultType()
-      // TaskState.result is raw JSON of type R written by the agent via the complete_task tool.
-      // The Type overload of fromBytes bypasses content-type validation, accepting raw JSON.
-      val resultBytes = new BytesPayload(ByteString.fromString(taskState.result()), "application/json")
-      serializer.fromBytes[R](resultType.asInstanceOf[java.lang.reflect.Type], resultBytes)
+      if (resultType == classOf[String]) {
+        // String results are stored as raw text by the runtime (not JSON-encoded)
+        taskState.result().asInstanceOf[R]
+      } else {
+        // Typed results are stored as JSON — deserialize via the serializer
+        val resultBytes = new BytesPayload(ByteString.fromString(taskState.result()), "application/json")
+        serializer.fromBytes[R](resultType.asInstanceOf[java.lang.reflect.Type], resultBytes)
+      }
     }
   }
 }
