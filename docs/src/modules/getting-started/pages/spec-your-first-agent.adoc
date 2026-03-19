@@ -245,7 +245,7 @@ If you can verify that no previous instances of your service are running and tha
   ├───────────────┼─────────────────────────────────────────────────────┤
   │ Tests         │ 4 passed, 0 failed                                  │
   ├───────────────┼─────────────────────────────────────────────────────┤
-  │ Local service │ Running on localhost:9000 (proxy on localhost:9889) │
+  │ Local service │ Running on localhost:9000                           │
   └───────────────┴─────────────────────────────────────────────────────┘
 
   Endpoint available: POST http://localhost:9000/greet
