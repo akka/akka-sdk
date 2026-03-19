@@ -233,7 +233,7 @@ If we're satisfied with these results, we can move on to the next step.
 == Exercise the agent API
 Exercising the agent API is easy. At this point, run `/akka.build`. This will recompile your project, run tests, and issue a sample command to the RESTful API endpoint.
 
-If you can verify that no previous instances of your service are running and that no stale processes are running on port `9889`, this will save time by not making your AI assistant do that check.
+If you can verify that no previous instances of your service are running and that no stale processes are running on port `9000`, this will save time by not making your AI assistant do that check.
 
 ```
   Local Build Results
