@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-== Introduction 
+== Introduction
 
 include::ROOT:partial$concepts-intro.adoc[]
 
@@ -13,7 +13,6 @@ In this guide, you will:
 * Explore a basic AI Agent that acts as a creative greeter.
 * Explore a basic HTTP Endpoint to interact with the agent.
 * Run your service locally with the `/akka.build` agent command.
-* Explore the local console to observe your running service.
 
 == Prerequisites
 
@@ -25,7 +24,7 @@ include::ROOT:partial$local-dev-prerequisites.adoc[]
 
 Akka has support for many AI providers, and this sample is using OpenAI. Sign up for free at https://platform.openai.com/api-keys[platform.openai.com/api-keys, window="new"].
 
-This sample is going to default to using OpenAI as the model provider. 
+This sample is going to default to using OpenAI as the model provider.
 
 IMPORTANT: Before proceeding, you **MUST** set the `OPENAI_API_KEY` environment variable and make it available to child processes (on Mac/Linux, that means using `export`) before running `akka specify` or starting your coding assistant in the terminal.
 
@@ -54,19 +53,19 @@ After submitting that prompt, you will be asked for permission to run a number o
 When using Claude, you will get a summary of the specification as the assistant understands it. It might look like the following:
 
 ```
-  Branch: 001-greeter-agent                                                                 
-  Spec file: specs/001-greeter-agent/spec.md                                                
-  Checklist: specs/001-greeter-agent/checklists/requirements.md — all items pass      
+  Branch: 001-greeter-agent
+  Spec file: specs/001-greeter-agent/spec.md
+  Checklist: specs/001-greeter-agent/checklists/requirements.md — all items pass
 
-  What the spec covers:                                                                     
-                                                                                            
-  - User Story 1 (P1): First greeting always in English, personalized with the user's name  
+  What the spec covers:
+
+  - User Story 1 (P1): First greeting always in English, personalized with the user's name
   - User Story 2 (P1): Subsequent greetings in randomly chosen, non-repeating languages per
-  session                                                                                   
-  - User Story 3 (P2): Session isolation — independent language tracking across sessions  
-  - 7 functional requirements, 4 success criteria, 4 edge cases                             
-                                                                                            
-  No clarification questions needed — the feature description was clear enough to make      
+  session
+  - User Story 3 (P2): Session isolation — independent language tracking across sessions
+  - 7 functional requirements, 4 success criteria, 4 edge cases
+
+  No clarification questions needed — the feature description was clear enough to make
   reasonable assumptions (documented in the Assumptions section).
 ```
 
@@ -111,45 +110,45 @@ This implementation should result in a single agent, the `HelloWorldAgent`, and 
 As usual with AI, the results will vary. Here's an example of a summary of the plan that we might get with Claude Code:
 
 ```
-  Branch: 001-greeter-agent                                                                 
-                                                                                            
-  Generated Artifacts                                                                       
-                                                                                            
-  ┌───────────────────────────────────────────────┬──────────────────────────────────────┐  
+  Branch: 001-greeter-agent
+
+  Generated Artifacts
+
+  ┌───────────────────────────────────────────────┬──────────────────────────────────────┐
   │                     File                      │               Purpose                │
-  ├───────────────────────────────────────────────┼──────────────────────────────────────┤  
-  │ specs/001-greeter-agent/plan.md               │ Implementation plan with component   │
-  │                                               │ design                               │  
-  ├───────────────────────────────────────────────┼──────────────────────────────────────┤  
-  │                                               │ Decisions on session memory, model   │  
-  │ specs/001-greeter-agent/research.md           │ config, session ID strategy, error   │  
-  │                                               │ handling                             │  
-  ├───────────────────────────────────────────────┼──────────────────────────────────────┤  
-  │ specs/001-greeter-agent/data-model.md         │ Data model (API records only, no     │
-  │                                               │ entities)                            │  
   ├───────────────────────────────────────────────┼──────────────────────────────────────┤
-  │ specs/001-greeter-agent/contracts/http-api.md │ HTTP API contract for POST /greet    │  
+  │ specs/001-greeter-agent/plan.md               │ Implementation plan with component   │
+  │                                               │ design                               │
+  ├───────────────────────────────────────────────┼──────────────────────────────────────┤
+  │                                               │ Decisions on session memory, model   │
+  │ specs/001-greeter-agent/research.md           │ config, session ID strategy, error   │
+  │                                               │ handling                             │
+  ├───────────────────────────────────────────────┼──────────────────────────────────────┤
+  │ specs/001-greeter-agent/data-model.md         │ Data model (API records only, no     │
+  │                                               │ entities)                            │
+  ├───────────────────────────────────────────────┼──────────────────────────────────────┤
+  │ specs/001-greeter-agent/contracts/http-api.md │ HTTP API contract for POST /greet    │
   ├───────────────────────────────────────────────┼──────────────────────────────────────┤
   │ specs/001-greeter-agent/quickstart.md         │ Build, run, and test instructions    │
-  └───────────────────────────────────────────────┴──────────────────────────────────────┘  
-   
-  Architecture Summary                                                                      
-                                                            
-  - HelloWorldAgent — single Akka Agent with the verbatim system prompt, using SDK session  
-  memory and config-driven model provider                   
+  └───────────────────────────────────────────────┴──────────────────────────────────────┘
+
+  Architecture Summary
+
+  - HelloWorldAgent — single Akka Agent with the verbatim system prompt, using SDK session
+  memory and config-driven model provider
   - HelloWorldEndpoint — POST /greet accepting {"user": "...", "text": "..."}, using user as
-   session ID, returning 500 on model config failure                                        
+   session ID, returning 500 on model config failure
   - No domain objects, no entities, no views — pure agent + endpoint
-  - Tests — agent unit test with TestModelProvider, endpoint integration test with          
-  httpClient                                                                                
-                                                                                            
-  Constitution Check                                                                        
-                                                            
-  All four principles pass: Akka SDK First, Design Principles, Test Coverage, Simplicity.   
-                                                            
+  - Tests — agent unit test with TestModelProvider, endpoint integration test with
+  httpClient
+
+  Constitution Check
+
+  All four principles pass: Akka SDK First, Design Principles, Test Coverage, Simplicity.
+
 ```
 
-Remember that this is just the plan - _no code has been written yet._ 
+Remember that this is just the plan - _no code has been written yet._
 
 This plan looks good and the architecture is exactly what we wanted, so now we can convert this plan into an itemized set of working tasks.
 
@@ -160,33 +159,33 @@ To generate the tasks from this plan, run `/akka.tasks`
 Here's a sample summary output from generating tasks. Note that it has analyzed which tasks can be done in parallel.
 
 ```
-  Summary                                                                                   
-                                                                                            
-  ┌───────────────────────────┬──────────────────────────────────────────┐                  
-  │          Metric           │                  Value                   │                  
-  ├───────────────────────────┼──────────────────────────────────────────┤                  
+  Summary
+
+  ┌───────────────────────────┬──────────────────────────────────────────┐
+  │          Metric           │                  Value                   │
+  ├───────────────────────────┼──────────────────────────────────────────┤
   │ Total tasks               │ 8                                        │
   ├───────────────────────────┼──────────────────────────────────────────┤
-  │ Phase 1 (Setup)           │ 1 task — application.conf                │                  
-  ├───────────────────────────┼──────────────────────────────────────────┤                  
-  │ Phase 2 (Foundational)    │ 1 task — HelloWorldAgent                 │                  
-  ├───────────────────────────┼──────────────────────────────────────────┤                  
+  │ Phase 1 (Setup)           │ 1 task — application.conf                │
+  ├───────────────────────────┼──────────────────────────────────────────┤
+  │ Phase 2 (Foundational)    │ 1 task — HelloWorldAgent                 │
+  ├───────────────────────────┼──────────────────────────────────────────┤
   │ Phase 3 (US1 & US2 - MVP) │ 3 tasks — endpoint + 2 tests             │
-  ├───────────────────────────┼──────────────────────────────────────────┤                  
+  ├───────────────────────────┼──────────────────────────────────────────┤
   │ Phase 4 (US3)             │ 1 task — session isolation test          │
-  ├───────────────────────────┼──────────────────────────────────────────┤                  
+  ├───────────────────────────┼──────────────────────────────────────────┤
   │ Phase 5 (Polish)          │ 2 tasks — README + quickstart validation │
-  └───────────────────────────┴──────────────────────────────────────────┘                  
-  
-  Parallel Opportunities                                                                    
-                                                            
-  - T004 (agent test) and T005 (endpoint integration test) can run in parallel after T003   
-  - T007 (README) and T008 (quickstart) can run in parallel 
-                                                                                            
-  MVP Scope                                                                                 
-                                                                                            
-  User Stories 1 & 2 (Phase 3) — after just 5 tasks (T001–T005), the service is fully       
-  functional with a tested greeting flow.  
+  └───────────────────────────┴──────────────────────────────────────────┘
+
+  Parallel Opportunities
+
+  - T004 (agent test) and T005 (endpoint integration test) can run in parallel after T003
+  - T007 (README) and T008 (quickstart) can run in parallel
+
+  MVP Scope
+
+  User Stories 1 & 2 (Phase 3) — after just 5 tasks (T001–T005), the service is fully
+  functional with a tested greeting flow.
 ```
 
 With the plan and tasks ready to go, we can move on to implementation. It's worth noting that the actual writing of the code is one of the smaller parts of the process, and is done at the end of the feature definition, not the beginning.
@@ -201,29 +200,29 @@ If you're not happy with the generated results, consider re-running the implemen
 Here's an example summary of an implementation phase:
 
 ```
-  Summary                                                                                   
-                                                                                            
-  ┌──────┬────────┬──────────────────────────────────────────────────────────────────────┐  
-  │ Task │ Status │                                 File                                 │  
-  ├──────┼────────┼──────────────────────────────────────────────────────────────────────┤  
+  Summary
+
+  ┌──────┬────────┬──────────────────────────────────────────────────────────────────────┐
+  │ Task │ Status │                                 File                                 │
+  ├──────┼────────┼──────────────────────────────────────────────────────────────────────┤
   │ T001 │ Done   │ src/main/resources/application.conf                                  │
   ├──────┼────────┼──────────────────────────────────────────────────────────────────────┤
-  │ T002 │ Done   │ src/main/java/com/example/application/HelloWorldAgent.java           │  
-  ├──────┼────────┼──────────────────────────────────────────────────────────────────────┤  
-  │ T003 │ Done   │ src/main/java/com/example/api/HelloWorldEndpoint.java                │  
-  ├──────┼────────┼──────────────────────────────────────────────────────────────────────┤  
-  │ T004 │ Done   │ src/test/java/com/example/application/HelloWorldAgentTest.java       │  
-  ├──────┼────────┼──────────────────────────────────────────────────────────────────────┤  
-  │ T005 │ Done   │ src/test/java/com/example/api/HelloWorldEndpointIntegrationTest.java │  
-  ├──────┼────────┼──────────────────────────────────────────────────────────────────────┤  
+  │ T002 │ Done   │ src/main/java/com/example/application/HelloWorldAgent.java           │
+  ├──────┼────────┼──────────────────────────────────────────────────────────────────────┤
+  │ T003 │ Done   │ src/main/java/com/example/api/HelloWorldEndpoint.java                │
+  ├──────┼────────┼──────────────────────────────────────────────────────────────────────┤
+  │ T004 │ Done   │ src/test/java/com/example/application/HelloWorldAgentTest.java       │
+  ├──────┼────────┼──────────────────────────────────────────────────────────────────────┤
+  │ T005 │ Done   │ src/test/java/com/example/api/HelloWorldEndpointIntegrationTest.java │
+  ├──────┼────────┼──────────────────────────────────────────────────────────────────────┤
   │ T006 │ Done   │ (session isolation test in T005's file)                              │
-  ├──────┼────────┼──────────────────────────────────────────────────────────────────────┤  
+  ├──────┼────────┼──────────────────────────────────────────────────────────────────────┤
   │ T007 │ Done   │ README.md                                                            │
-  ├──────┼────────┼──────────────────────────────────────────────────────────────────────┤  
+  ├──────┼────────┼──────────────────────────────────────────────────────────────────────┤
   │ T008 │ Done   │ Build verified via mvn verify                                        │
-  └──────┴────────┴──────────────────────────────────────────────────────────────────────┘  
-                                                                                          
-  All 4 tests pass (1 agent unit + 3 endpoint integration). mvn verify succeeds.  
+  └──────┴────────┴──────────────────────────────────────────────────────────────────────┘
+
+  All 4 tests pass (1 agent unit + 3 endpoint integration). mvn verify succeeds.
 ```
 If you can, resist the temptation to go look at the code right now. Exercise the application and make sure it does what you want before looking at the code. If the app fails to meet core requirements, then the code is all going to be thrown away anyway as you'll re-do the `plan` or `specify` phases.
 
@@ -266,10 +265,8 @@ If you can verify that no previous instances of your service are running and tha
 We shouldn't have to leave the Claude session for any reason.
 
 == Next steps
-Next we move on to a more involved tutorial that uses multiple components to create a multi-agent trip planning system. We also encourage you to take a look at the various samples and tutorials and see if you can work backwards from the implementation to come up with the specification and then go through a spec-driven flow. 
+Next we move on to a more involved tutorial that uses multiple components to create a multi-agent trip planning system. We also encourage you to take a look at the various samples and tutorials and see if you can work backwards from the implementation to come up with the specification and then go through a spec-driven flow.
 
 The more you go through the spec-driven process, the better and more precise you'll find your specs.
 
-If you want to see how the code-first version of this tutorial unfolds, xref:getting-started:author-your-first-service.adoc[click here].
-
-
+If you want to see how the code-first version of this tutorial unfolds, see xref:getting-started:author-your-first-service.adoc[].
