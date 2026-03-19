@@ -22,6 +22,7 @@ import akka.javasdk.client.TimedActionClient
 import akka.javasdk.client.ViewClient
 import akka.javasdk.client.WorkflowClient
 import akka.javasdk.impl.MetadataImpl
+import akka.javasdk.impl.agent.autonomous.CapabilityConverter
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
@@ -37,6 +38,7 @@ private[javasdk] final case class ComponentClientImpl(
     runtimeComponentClients: RuntimeComponentClients,
     serializer: Serializer,
     agentClassById: Map[String, Class[Agent]],
+    agentCapabilityConverter: Option[CapabilityConverter],
     telemetryContext: Option[OtelContext])(implicit ec: ExecutionContext, system: ActorSystem[_])
     extends ComponentClient {
 
@@ -86,6 +88,7 @@ private[javasdk] final case class ComponentClientImpl(
         agentId,
         Reflect.readComponentId(agentClass),
         runtimeComponentClients,
+        agentCapabilityConverter,
         serializer,
         callMetadata)
 

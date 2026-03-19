@@ -88,6 +88,7 @@ class ComponentClientTest {
             serializer,
             null,
             Option.empty(),
+            Option.empty(),
             ExecutionContext.global(),
             null);
   }

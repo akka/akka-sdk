@@ -6,6 +6,7 @@ package akka.javasdk.client;
 
 import akka.Done;
 import akka.annotation.DoNotInherit;
+import akka.javasdk.agent.autonomous.AgentSetup;
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.agent.task.Task;
 import java.util.concurrent.CompletionStage;
@@ -54,6 +55,23 @@ public interface AutonomousAgentClient {
    * @param taskIds IDs of previously created tasks
    */
   CompletionStage<Done> assignTasksAsync(String... taskIds);
+
+  /**
+   * Apply per-instance configuration to this agent. The goal overrides the static goal from the
+   * agent's definition, and capabilities extend the static capabilities.
+   *
+   * @param setup the per-instance configuration
+   */
+  default void setup(AgentSetup setup) {
+    setupAsync(setup).toCompletableFuture().join();
+  }
+
+  /**
+   * Async variant of {@link #setup}.
+   *
+   * @param setup the per-instance configuration
+   */
+  CompletionStage<Done> setupAsync(AgentSetup setup);
 
   /** Stop the agent. */
   default void stop() {
