@@ -87,6 +87,7 @@ hasSuffix
 hyperscaler
 hyperscalers
 hoc
+[Hh]ola
 hostname
 hostnames
 Hotari
