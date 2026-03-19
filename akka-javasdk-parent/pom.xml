@@ -412,6 +412,48 @@
                 <artifactId>docker-maven-plugin</artifactId>
             </plugin>
 
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.5.0</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>io.akka</groupId>
+                        <artifactId>akka-javasdk-enforcer</artifactId>
+                        <version>${akka-javasdk.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.akka</groupId>
+                        <artifactId>akka-runtime-dependencies</artifactId>
+                        <version>${akka-runtime.version}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>enforce-build-rules</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <akkaRuntimeDependencyCheck>
+                                    <failOnConflict>true</failOnConflict>
+                                    <versionStrictness>newer-only</versionStrictness>
+                                </akkaRuntimeDependencyCheck>
+                                <requireMavenVersion>
+                                    <version>[3.9.0,)</version>
+                                    <message>You must use Maven 3.9.0 or higher to build this project! See https://doc.akka.io/getting-started/starthere.html</message>
+                                </requireMavenVersion>
+                                <requireJavaVersion>
+                                    <version>[21,)</version>
+                                    <message>This project requires Java 21 or higher! See https://doc.akka.io/getting-started/starthere.html</message>
+                                </requireJavaVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
     </build>
 
