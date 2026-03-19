@@ -872,6 +872,11 @@ private final class Sdk(
           val spiMcpDescriptors =
             AgentImpl.toSpiMcpEndpoints(agentDefinition.mcpTools.asScala.toSeq, agentGuardrails, sdkExecutionContext)
 
+          // Config defaults for autonomous agent settings
+          val autonomousConfig = applicationConfig.getConfig("akka.javasdk.agent.autonomous")
+          val defaultMaxIterationsPerTask = autonomousConfig.getInt("max-iterations-per-task")
+          val defaultMaxParallelWorkers = autonomousConfig.getInt("delegation.max-parallel-workers")
+
           // Build SPI capabilities from SDK capabilities
           val spiCapabilities: Seq[SpiAutonomousAgent.Capability] = {
             val capabilities = Seq.newBuilder[SpiAutonomousAgent.Capability]
@@ -880,12 +885,17 @@ private final class Sdk(
               val spiHandoffs = resolveHandoffTargets(ta.handoffTargets.asScala.toSeq)
               capabilities += new SpiAutonomousAgent.TaskAcceptance(
                 taskDefinitions = spiTaskDefs,
-                maxIterationsPerTask = ta.maxIterations,
+                maxIterationsPerTask = ta.maxIterations.getOrElse(defaultMaxIterationsPerTask),
                 handoffs = spiHandoffs)
             }
-            sdkDelegations.foreach { d =>
-              val spiDelegations = resolveDelegationTargets(d.delegationTargets.asScala.toSeq)
-              capabilities += new SpiAutonomousAgent.DelegationOrchestrator(delegations = spiDelegations)
+            if (sdkDelegations.nonEmpty) {
+              val delegationGroups = sdkDelegations.map { d =>
+                val targets = resolveDelegationTargets(d.delegationTargets.asScala.toSeq)
+                new SpiAutonomousAgent.DelegationGroup(
+                  delegationTargets = targets,
+                  maxParallelWorkers = d.maxParallel.getOrElse(defaultMaxParallelWorkers))
+              }
+              capabilities += new SpiAutonomousAgent.DelegationOrchestrator(delegationGroups)
             }
             capabilities.result()
           }

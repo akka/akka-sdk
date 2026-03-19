@@ -14,7 +14,12 @@ import akka.javasdk.agent.autonomous.capability.Delegation
  * INTERNAL API
  */
 @InternalApi
-final case class DelegationImpl(delegationTargets: util.List[Class[_ <: AutonomousAgent]]) extends Delegation
+final case class DelegationImpl(delegationTargets: util.List[Class[_ <: AutonomousAgent]], maxParallel: Option[Int])
+    extends Delegation {
+
+  override def maxParallelWorkers(max: Int): Delegation =
+    copy(maxParallel = Some(max))
+}
 
 /**
  * INTERNAL API
@@ -22,5 +27,5 @@ final case class DelegationImpl(delegationTargets: util.List[Class[_ <: Autonomo
 @InternalApi
 object DelegationImpl {
   def create(agents: Array[Class[_ <: AutonomousAgent]]): DelegationImpl =
-    DelegationImpl(delegationTargets = util.List.of(agents: _*))
+    DelegationImpl(delegationTargets = util.List.of(agents: _*), maxParallel = None)
 }
