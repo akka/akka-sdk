@@ -114,7 +114,7 @@ Access these documentation files for detailed patterns:
 - Has `@HttpEndpoint(path)`, NO `@Component`
 - Use `@Get`, `@Post`, `@Put`, `@Delete`
 - Inject `ComponentClient`, return API-specific types
-- **Optional:** extend `AbstractHttpEndpoint` (`akka.javasdk.http.AbstractHttpEndpoint`) to access `requestContext()` (headers, query params, JWT claims, tracing) without constructor injection
+- **Optional:** extend `AbstractHttpEndpoint` (`akka.javasdk.http.AbstractHttpEndpoint`) to access `requestContext()` (headers, query parameters, JWT claims, tracing) without constructor injection
 
 **gRPC Endpoint**
 - Has `@GrpcEndpoint`, NO `@Component`
