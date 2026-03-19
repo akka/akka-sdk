@@ -18,8 +18,7 @@ import akka.javasdk.agent.task.TaskDefinition
 final case class TaskAcceptanceImpl(
     taskDefinitions: util.List[TaskDefinition[_]],
     maxIterations: Int,
-    handoffTargets: util.List[Class[_ <: AutonomousAgent]],
-    delegationTargets: util.List[Class[_ <: AutonomousAgent]])
+    handoffTargets: util.List[Class[_ <: AutonomousAgent]])
     extends TaskAcceptance {
 
   override def maxIterationsPerTask(max: Int): TaskAcceptance =
@@ -29,12 +28,6 @@ final case class TaskAcceptanceImpl(
     val result = new util.ArrayList[Class[_ <: AutonomousAgent]](handoffTargets)
     agents.foreach(result.add)
     copy(handoffTargets = util.Collections.unmodifiableList(result))
-  }
-
-  override def canDelegateTo(agents: Class[_ <: AutonomousAgent]*): TaskAcceptance = {
-    val result = new util.ArrayList[Class[_ <: AutonomousAgent]](delegationTargets)
-    agents.foreach(result.add)
-    copy(delegationTargets = util.Collections.unmodifiableList(result))
   }
 }
 
@@ -47,6 +40,5 @@ object TaskAcceptanceImpl {
     TaskAcceptanceImpl(
       taskDefinitions = util.List.of(tasks: _*),
       maxIterations = TaskAcceptance.DEFAULT_MAX_ITERATIONS,
-      handoffTargets = util.List.of(),
-      delegationTargets = util.List.of())
+      handoffTargets = util.List.of())
 }

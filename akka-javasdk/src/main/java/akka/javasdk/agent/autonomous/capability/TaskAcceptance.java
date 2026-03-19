@@ -12,7 +12,7 @@ import akka.javasdk.agent.task.TaskDefinition;
  * AutonomousAgent#canAcceptTasks} or {@link TaskAcceptance#of}.
  *
  * <p>Multiple {@code TaskAcceptance} capabilities can be declared on a single agent to configure
- * different settings (iteration limits, handoff targets, delegation targets) per task group.
+ * different settings (iteration limits, handoff targets) per task group.
  */
 public interface TaskAcceptance extends AgentCapability {
 
@@ -38,11 +38,4 @@ public interface TaskAcceptance extends AgentCapability {
    */
   @SuppressWarnings("unchecked")
   TaskAcceptance canHandoffTo(Class<? extends AutonomousAgent>... agents);
-
-  /**
-   * Allow this agent to delegate subtasks to the specified worker agents when processing tasks in
-   * this group. The agent pauses while workers execute, then resumes with their results.
-   */
-  @SuppressWarnings("unchecked")
-  TaskAcceptance canDelegateTo(Class<? extends AutonomousAgent>... agents);
 }

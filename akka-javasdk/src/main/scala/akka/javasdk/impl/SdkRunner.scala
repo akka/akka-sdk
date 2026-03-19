@@ -75,6 +75,7 @@ import akka.javasdk.impl.agent.GuardrailProvider
 import akka.javasdk.impl.agent.OverrideModelProvider
 import akka.javasdk.impl.agent.PromptTemplateClient
 import akka.javasdk.impl.agent.autonomous.AgentDefinitionImpl
+import akka.javasdk.impl.agent.autonomous.capability.DelegationImpl
 import akka.javasdk.impl.agent.autonomous.capability.TaskAcceptanceImpl
 import akka.javasdk.impl.client.ComponentClientImpl
 import akka.javasdk.impl.consumer.ConsumerImpl
@@ -764,10 +765,10 @@ private final class Sdk(
           }
         }
 
-        // Extract all task definitions from capabilities eagerly so delegation targets can reference them.
-        val sdkTaskAcceptances = agentDefinition.capabilities.asScala.toSeq.collect { case ta: TaskAcceptanceImpl =>
-          ta
-        }
+        val sdkTaskAcceptances =
+          agentDefinition.capabilities.asScala.toSeq.collect { case ta: TaskAcceptanceImpl => ta }
+        val sdkDelegations =
+          agentDefinition.capabilities.asScala.toSeq.collect { case d: DelegationImpl => d }
 
         def toSpiTaskDefinition(taskDef: akka.javasdk.agent.task.TaskDefinition[_]): SpiTask.SpiTaskDefinition = {
           val resultType = taskDef.resultType()
@@ -857,12 +858,14 @@ private final class Sdk(
             sdkTaskAcceptances.foreach { ta =>
               val spiTaskDefs = ta.taskDefinitions.asScala.toSeq.map(toSpiTaskDefinition)
               val spiHandoffs = resolveHandoffTargets(ta.handoffTargets.asScala.toSeq)
-              val spiDelegations = resolveDelegationTargets(ta.delegationTargets.asScala.toSeq)
               capabilities += new SpiAutonomousAgent.TaskAcceptance(
                 taskDefinitions = spiTaskDefs,
                 maxIterationsPerTask = ta.maxIterations,
-                handoffs = spiHandoffs,
-                delegations = spiDelegations)
+                handoffs = spiHandoffs)
+            }
+            sdkDelegations.foreach { d =>
+              val spiDelegations = resolveDelegationTargets(d.delegationTargets.asScala.toSeq)
+              capabilities += new SpiAutonomousAgent.DelegationOrchestrator(delegations = spiDelegations)
             }
             capabilities.result()
           }

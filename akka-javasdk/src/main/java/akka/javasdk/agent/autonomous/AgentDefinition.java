@@ -63,5 +63,4 @@ public interface AgentDefinition {
 
   /** Session memory configuration for conversation history across iterations. */
   AgentDefinition memory(MemoryProvider memory);
-
 }

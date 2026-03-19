@@ -12,5 +12,6 @@ import akka.javasdk.agent.autonomous.AutonomousAgent;
  * {@link AutonomousAgent} and passed to {@link AgentDefinition#capabilities}.
  *
  * @see TaskAcceptance
+ * @see Delegation
  */
 public interface AgentCapability {}
