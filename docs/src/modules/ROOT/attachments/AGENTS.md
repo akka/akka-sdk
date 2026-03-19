@@ -114,12 +114,14 @@ Access these documentation files for detailed patterns:
 - Has `@HttpEndpoint(path)`, NO `@Component`
 - Use `@Get`, `@Post`, `@Put`, `@Delete`
 - Inject `ComponentClient`, return API-specific types
+- **Optional:** extend `AbstractHttpEndpoint` (`akka.javasdk.http.AbstractHttpEndpoint`) to access `requestContext()` (headers, query parameters, JWT claims, tracing) without constructor injection
 
 **gRPC Endpoint**
 - Has `@GrpcEndpoint`, NO `@Component`
 - Implements interface from `.proto` (in `src/main/proto`)
 - Class name with `Impl` suffix (e.g., `CustomerGrpcEndpointImpl`)
 - Return protobuf types, use private `toApi()` converters
+- **Optional:** extend `AbstractGrpcEndpoint` (`akka.javasdk.grpc.AbstractGrpcEndpoint`) to access `requestContext()` (headers, JWT claims, principals, tracing) without constructor injection
 
 ### Package Structure
 
@@ -153,6 +155,39 @@ src/main/proto/
 - gRPC Endpoint: `{DomainName}GrpcEndpointImpl` (e.g., `CustomerGrpcEndpointImpl`)
 - Events: `{DomainName}Event` sealed interface (e.g., `CreditCardEvent`)
 - State: `{DomainName}` or `{DomainName}State` (e.g., `CreditCard`)
+
+## Key Imports Reference
+
+Component base classes follow `akka.javasdk.<component-package>.<ClassName>`:
+
+| Class | Import |
+|-------|--------|
+| `Agent` | `akka.javasdk.agent.Agent` |
+| `Consumer` | `akka.javasdk.consumer.Consumer` |
+| `EventSourcedEntity` | `akka.javasdk.eventsourcedentity.EventSourcedEntity` |
+| `KeyValueEntity` | `akka.javasdk.keyvalueentity.KeyValueEntity` |
+| `TimedAction` | `akka.javasdk.timedaction.TimedAction` |
+| `View` | `akka.javasdk.view.View` |
+| `Workflow` | `akka.javasdk.workflow.Workflow` |
+| `ComponentClient` | `akka.javasdk.client.ComponentClient` |
+| `AbstractHttpEndpoint` | `akka.javasdk.http.AbstractHttpEndpoint` |
+| `AbstractGrpcEndpoint` | `akka.javasdk.grpc.AbstractGrpcEndpoint` |
+
+Annotations are in `akka.javasdk.annotations.*`:
+
+| Annotation | Import |
+|------------|--------|
+| `@Acl` | `akka.javasdk.annotations.Acl` |
+| `@AgentRole` | `akka.javasdk.annotations.AgentRole` |
+| `@Component` | `akka.javasdk.annotations.Component` |
+| `@FunctionTool` | `akka.javasdk.annotations.FunctionTool` |
+| `@GrpcEndpoint` | `akka.javasdk.annotations.GrpcEndpoint` |
+| `@Query` | `akka.javasdk.annotations.Query` |
+| `@StepName` | `akka.javasdk.annotations.StepName` |
+| `@TypeName` | `akka.javasdk.annotations.TypeName` |
+| `@Get`, `@Post`, `@Put`, `@Delete`, `@HttpEndpoint` | `akka.javasdk.annotations.http.*` |
+| `@Consume` | `akka.javasdk.annotations.Consume` |
+| `@Produce` | `akka.javasdk.annotations.Produce` |
 
 ## Critical Patterns & Rules
 
@@ -575,6 +610,7 @@ public class MyEndpointIntegrationTest extends TestKitSupport {
 - Use deprecated `@ComponentId`  -> use `@Component(id = ")`
 - Use deprecated `@AgentDescription`  -> use `@Component(id = ")` and `@AgentRole`
 - Add `@Component` or `@ComponentId` to HTTP/gRPC endpoints
+- Inject `RequestContext` or `GrpcRequestContext` as constructor parameters when extending `AbstractHttpEndpoint` / `AbstractGrpcEndpoint` → use `requestContext()` method instead
 - Use deprecated `testKit.call`  -> use `testKit.method(...).invoke(...)`
 - Create multiple command handlers in Agent
 - Return protobuf types from domain layer
