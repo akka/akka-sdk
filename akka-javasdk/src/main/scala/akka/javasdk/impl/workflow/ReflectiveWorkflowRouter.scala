@@ -135,7 +135,9 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       }
       val otelContext = context.tracing().asInstanceOf[SpanTracingImpl].context
       val componentClient =
-        ComponentClientImpl(runtimeComponentClients, serializer, Map.empty, otelContext)(sdkExecutionContext, system)
+        ComponentClientImpl(runtimeComponentClients, serializer, Map.empty, None, otelContext)(
+          sdkExecutionContext,
+          system)
       val workflowClient = componentClient.forWorkflow(workflowContext.workflowId())
       toSpiCommandEffect(result.asInstanceOf[Workflow.Effect[_]], workflowClient, workflow)
     } else {
@@ -220,7 +222,9 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
           }
         val otelContext = commandContext.tracing().asInstanceOf[SpanTracingImpl].context
         val componentClient =
-          ComponentClientImpl(runtimeComponentClients, serializer, Map.empty, otelContext)(sdkExecutionContext, system)
+          ComponentClientImpl(runtimeComponentClients, serializer, Map.empty, None, otelContext)(
+            sdkExecutionContext,
+            system)
         val workflowClient = componentClient.forWorkflow(workflowContext.workflowId())
         effect.map(stepEffect => toSpiStepTransitionalEffect(stepEffect, workflowClient, workflow))
       }
