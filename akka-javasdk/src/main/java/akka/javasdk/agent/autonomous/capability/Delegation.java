@@ -1,0 +1,22 @@
+/*
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
+ */
+
+package akka.javasdk.agent.autonomous.capability;
+
+import akka.javasdk.agent.autonomous.AutonomousAgent;
+
+/**
+ * Declares that an agent can delegate subtasks to other autonomous agents. The delegating agent
+ * pauses while workers execute, then resumes with their results.
+ *
+ * <p>Created via {@link AutonomousAgent#canDelegateTo} or {@link Delegation#to}.
+ */
+public interface Delegation extends AgentCapability {
+
+  /** Create a delegation capability for the given target agents. */
+  @SuppressWarnings("unchecked")
+  static Delegation to(Class<? extends AutonomousAgent>... agents) {
+    return akka.javasdk.impl.agent.autonomous.capability.DelegationImpl.create(agents);
+  }
+}

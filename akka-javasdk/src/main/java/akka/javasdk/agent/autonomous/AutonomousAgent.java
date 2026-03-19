@@ -6,9 +6,11 @@ package akka.javasdk.agent.autonomous;
 
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.autonomous.capability.AgentCapability;
+import akka.javasdk.agent.autonomous.capability.Delegation;
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.agent.task.TaskDefinition;
 import akka.javasdk.impl.agent.autonomous.AgentDefinitionImpl;
+import akka.javasdk.impl.agent.autonomous.capability.DelegationImpl;
 
 /**
  * An autonomous AI agent component that operates independently to complete tasks.
@@ -43,13 +45,22 @@ public abstract class AutonomousAgent {
 
   /**
    * Declare that this agent can accept and process tasks of the specified types. Returns a {@link
-   * TaskAcceptance} capability that can be further configured with iteration limits, handoff
-   * targets, and delegation targets.
+   * TaskAcceptance} capability that can be further configured with iteration limits and handoff
+   * targets.
    *
    * <p>Multiple calls with different task definitions allow per-task-group settings.
    */
   @SafeVarargs
   protected final TaskAcceptance canAcceptTasks(TaskDefinition<?>... tasks) {
     return TaskAcceptance.of(tasks);
+  }
+
+  /**
+   * Declare that this agent can delegate subtasks to the specified worker agents. The delegating
+   * agent pauses while workers execute, then resumes with their results.
+   */
+  @SafeVarargs
+  protected final Delegation canDelegateTo(Class<? extends AutonomousAgent>... agents) {
+    return DelegationImpl.create(agents);
   }
 }

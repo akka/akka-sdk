@@ -17,9 +17,8 @@ public class ResearchCoordinator extends AutonomousAgent {
         """
       )
       .capabilities(
-        canAcceptTasks(ResearchTasks.BRIEF)
-          .maxIterationsPerTask(5)
-          .canDelegateTo(Researcher.class, Analyst.class)
-      );
+          canAcceptTasks(ResearchTasks.BRIEF)
+            .maxIterationsPerTask(5),
+          canDelegateTo(Researcher.class, Analyst.class));
   }
 }
