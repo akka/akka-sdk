@@ -19,4 +19,11 @@ public interface Delegation extends AgentCapability {
   static Delegation to(Class<? extends AutonomousAgent>... agents) {
     return akka.javasdk.impl.agent.autonomous.capability.DelegationImpl.create(agents);
   }
+
+  /**
+   * Maximum number of worker agents that can execute delegated subtasks concurrently. Default is
+   * configured via {@code akka.javasdk.agent.autonomous.delegation.max-parallel-workers} in
+   * application.conf.
+   */
+  Delegation maxParallelWorkers(int max);
 }

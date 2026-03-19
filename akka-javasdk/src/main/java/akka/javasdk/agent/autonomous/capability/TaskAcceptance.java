@@ -16,9 +16,6 @@ import akka.javasdk.agent.task.TaskDefinition;
  */
 public interface TaskAcceptance extends AgentCapability {
 
-  /** Default maximum iterations before the agent fails the current task. */
-  int DEFAULT_MAX_ITERATIONS = 10;
-
   /** Create a task acceptance capability for the given task definitions. */
   @SafeVarargs
   static TaskAcceptance of(TaskDefinition<?>... tasks) {
@@ -26,8 +23,8 @@ public interface TaskAcceptance extends AgentCapability {
   }
 
   /**
-   * Maximum iterations before the agent fails the current task. Default {@value
-   * DEFAULT_MAX_ITERATIONS}.
+   * Maximum iterations before the agent fails the current task. Default is configured via {@code
+   * akka.javasdk.agent.autonomous.max-iterations-per-task} in application.conf.
    */
   TaskAcceptance maxIterationsPerTask(int max);
 
