@@ -3,7 +3,9 @@
 
 include::ROOT:partial$include.adoc[]
 
-== Introduction 
+TIP: As alternative without coding in Java, you may use xref:sdk:spec-driven-development.adoc[Spec-Driven Development] to create a version of the xref:getting-started:spec-your-first-agent.adoc[].
+
+== Introduction
 
 include::ROOT:partial$concepts-intro.adoc[]
 
@@ -121,8 +123,8 @@ curl -i -XPOST --location "http://localhost:9000/hello" \
 Which will reply with an AI-generated greeting, such as:
 [source]
 ----
-Hello (English)! So great to meet you, Alice! I'm here to add some zest to our conversation 
-with greetings from around the world. Let's have some fun learning them together! 
+Hello (English)! So great to meet you, Alice! I'm here to add some zest to our conversation
+with greetings from around the world. Let's have some fun learning them together!
 Feel free to ask about anything else too!
 
 Previous greetings:
@@ -142,7 +144,7 @@ The AI-generated reply might be:
 [source]
 ----
 Bonjour (French)! Ah, New York, the city that never sleeps! It's almost like you need a
-coffee the size of the Eiffel Tower to keep up with it. 
+coffee the size of the Eiffel Tower to keep up with it.
 What's your favorite thing about living in such a vibrant city?
 
 Previous greetings:
@@ -283,6 +285,6 @@ This is a simple Hello World service, so there isn't much to see here yet. Howev
 
 Now that you have a basic service running, it's time to learn more about building real services in Akka.
 
+* See the xref:getting-started:spec-your-first-agent.adoc[Spec-first greeting agent] sample if you use an AI assistant and want to see a xref:sdk:spec-driven-development.adoc[Spec-Driven Development] alternative to this example.
 * See xref:getting-started:planner-agent/index.adoc[multi-agent planner] to build a more realistic application.
 * xref:quick-deploy.adoc[]
-
