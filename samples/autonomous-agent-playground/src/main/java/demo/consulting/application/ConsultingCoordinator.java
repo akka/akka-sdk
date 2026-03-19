@@ -25,9 +25,8 @@ public class ConsultingCoordinator extends AutonomousAgent {
       )
       .tools(new ConsultingTools())
       .capabilities(
-        canAcceptTasks(ConsultingTasks.ENGAGEMENT)
-          .canHandoffTo(SeniorConsultant.class)
-          .canDelegateTo(ConsultingResearcher.class)
-      );
+          canAcceptTasks(ConsultingTasks.ENGAGEMENT)
+            .canHandoffTo(SeniorConsultant.class),
+          canDelegateTo(ConsultingResearcher.class));
   }
 }
