@@ -8,8 +8,10 @@ import akka.javasdk.agent.autonomous.AgentSetup
 import akka.javasdk.agent.autonomous.capability.AgentCapability
 import akka.javasdk.agent.autonomous.capability.Delegation
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance
+import akka.javasdk.agent.autonomous.capability.TeamLeadership
 import akka.javasdk.impl.agent.autonomous.capability.DelegationImpl
 import akka.javasdk.impl.agent.autonomous.capability.TaskAcceptanceImpl
+import akka.javasdk.impl.agent.autonomous.capability.TeamLeadershipImpl
 
 /**
  * Implicit conversions from public API types to their impl types for test assertions.
@@ -28,8 +30,13 @@ trait AutonomousAgentImplSupport {
     def impl: DelegationImpl = delegation.asInstanceOf[DelegationImpl]
   }
 
+  implicit class TeamLeadershipOps(teamLeadership: TeamLeadership) {
+    def impl: TeamLeadershipImpl = teamLeadership.asInstanceOf[TeamLeadershipImpl]
+  }
+
   implicit class AgentCapabilityOps(capability: AgentCapability) {
     def asTaskAcceptance: TaskAcceptanceImpl = capability.asInstanceOf[TaskAcceptanceImpl]
     def asDelegation: DelegationImpl = capability.asInstanceOf[DelegationImpl]
+    def asTeamLeadership: TeamLeadershipImpl = capability.asInstanceOf[TeamLeadershipImpl]
   }
 }

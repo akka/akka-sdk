@@ -13,7 +13,9 @@ import akka.javasdk.agent.task.TaskDefinition
 import akka.javasdk.agent.task.TaskTemplate
 import akka.javasdk.impl.JsonSchema
 import akka.javasdk.impl.agent.autonomous.capability.DelegationImpl
+import akka.javasdk.impl.agent.autonomous.capability.MemberTypeImpl
 import akka.javasdk.impl.agent.autonomous.capability.TaskAcceptanceImpl
+import akka.javasdk.impl.agent.autonomous.capability.TeamLeadershipImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.runtime.sdk.spi.AutonomousAgentDescriptor
 import akka.runtime.sdk.spi.SpiAutonomousAgent
@@ -54,7 +56,14 @@ private[javasdk] class CapabilityConverter(
         Seq(new SpiAutonomousAgent.DelegationOrchestrator(delegationGroups))
       } else Seq.empty
 
-    spiTaskAcceptances ++ spiDelegationOrchestrators
+    val teamLeaderships = allCapabilities.collect { case t: TeamLeadershipImpl => t }
+    val spiTeamLeads: Seq[SpiAutonomousAgent.Capability] =
+      if (teamLeaderships.nonEmpty) {
+        val memberTypes = teamLeaderships.flatMap(_.members).map(resolveTeamMemberType)
+        Seq(new SpiAutonomousAgent.TeamLead(memberTypes))
+      } else Seq.empty
+
+    spiTaskAcceptances ++ spiDelegationOrchestrators ++ spiTeamLeads
   }
 
   private def resolveHandoffTargets(
@@ -72,6 +81,21 @@ private[javasdk] class CapabilityConverter(
         description = targetDescriptor.flatMap(_.description),
         acceptedTasks = targetTaskDefinitions)
     }
+
+  private def resolveTeamMemberType(memberType: MemberTypeImpl): SpiAutonomousAgent.TeamMemberType = {
+    val targetComponentId = Reflect.readComponentId(memberType.agentClass)
+    val (_, targetTaskDefinitions) = agentDefinitionMap.getOrElse(
+      targetComponentId,
+      throw new IllegalStateException(
+        s"Team member type [$targetComponentId] (${memberType.agentClass.getName}) not found. " +
+        "Ensure the target agent is a registered AutonomousAgent component."))
+    val targetDescriptor = agentDescriptors.find(_.componentId == targetComponentId)
+    new SpiAutonomousAgent.TeamMemberType(
+      agentComponentId = targetComponentId,
+      description = targetDescriptor.flatMap(_.description),
+      maxInstances = memberType.maxMemberInstances,
+      acceptedTasks = targetTaskDefinitions)
+  }
 
   private def resolveDelegationTargets(
       sdkDelegationTargets: Seq[Class[_ <: AutonomousAgent]]): Seq[SpiAutonomousAgent.DelegationTarget] =

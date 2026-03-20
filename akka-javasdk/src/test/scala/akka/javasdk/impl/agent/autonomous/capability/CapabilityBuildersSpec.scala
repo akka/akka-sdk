@@ -6,6 +6,7 @@ package akka.javasdk.impl.agent.autonomous.capability
 
 import scala.jdk.CollectionConverters._
 
+import akka.javasdk.agent.autonomous.AutonomousAgent
 import akka.javasdk.agent.autonomous.capability.Delegation
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance
 import akka.javasdk.agent.task.Task
@@ -75,6 +76,39 @@ class CapabilityBuildersSpec extends AnyWordSpec with Matchers with AutonomousAg
 
       original.impl.maxParallel shouldBe None
       modified.impl.maxParallel shouldBe Some(5)
+    }
+  }
+
+  "TeamLeadership" should {
+
+    // Dummy agent classes for testing
+    abstract class DummyDeveloper extends AutonomousAgent
+    abstract class DummyReviewer extends AutonomousAgent
+
+    "create with member types" in {
+      val developer = new MemberTypeImpl(classOf[DummyDeveloper], 3)
+      val reviewer = new MemberTypeImpl(classOf[DummyReviewer], 1)
+      val leadership = TeamLeadershipImpl.create(Array(developer, reviewer))
+
+      leadership.members should have size 2
+      leadership.members.head.agentClass shouldBe classOf[DummyDeveloper]
+      leadership.members.head.maxMemberInstances shouldBe 3
+      leadership.members(1).agentClass shouldBe classOf[DummyReviewer]
+      leadership.members(1).maxMemberInstances shouldBe 1
+    }
+
+    "default maxInstances to 1" in {
+      val memberType = new MemberTypeImpl(classOf[DummyDeveloper], 1)
+
+      memberType.maxMemberInstances shouldBe 1
+    }
+
+    "set maxInstances on member type" in {
+      val original = new MemberTypeImpl(classOf[DummyDeveloper], 1)
+      val modified = original.maxInstances(5).asInstanceOf[MemberTypeImpl]
+
+      modified.maxMemberInstances shouldBe 5
+      original.maxMemberInstances shouldBe 1 // original unchanged
     }
   }
 }
