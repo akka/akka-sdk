@@ -33,9 +33,11 @@ public class DynamicEndpoint {
     var agentId = UUID.randomUUID().toString();
     var agent = componentClient.forAutonomousAgent(DynamicAgent.class, agentId);
 
-    agent.setup(AgentSetup.create()
+    agent.setup(
+      AgentSetup.create()
         .goal("Produce a concise summary of the given content, highlighting key points.")
-        .capabilities(TaskAcceptance.of(DynamicTasks.SUMMARIZE)));
+        .capabilities(TaskAcceptance.of(DynamicTasks.SUMMARIZE))
+    );
 
     var taskId = agent.runSingleTask(DynamicTasks.SUMMARIZE.instructions(request.content()));
     return new TaskResponse(taskId);
@@ -46,9 +48,11 @@ public class DynamicEndpoint {
     var agentId = UUID.randomUUID().toString();
     var agent = componentClient.forAutonomousAgent(DynamicAgent.class, agentId);
 
-    agent.setup(AgentSetup.create()
+    agent.setup(
+      AgentSetup.create()
         .goal("Translate the given content to French, preserving tone and meaning.")
-        .capabilities(TaskAcceptance.of(DynamicTasks.TRANSLATE)));
+        .capabilities(TaskAcceptance.of(DynamicTasks.TRANSLATE))
+    );
 
     var taskId = agent.runSingleTask(DynamicTasks.TRANSLATE.instructions(request.content()));
     return new TaskResponse(taskId);
