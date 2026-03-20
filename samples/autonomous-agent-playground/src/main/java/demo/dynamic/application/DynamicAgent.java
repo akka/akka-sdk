@@ -1,7 +1,7 @@
 package demo.dynamic.application;
 
-import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.agent.autonomous.AgentDefinition;
+import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.annotations.Component;
 
 /**
