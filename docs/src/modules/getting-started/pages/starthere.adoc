@@ -29,7 +29,7 @@ Unless your environment has specific needs, selecting the option to have the CLI
 
 == Creating an empty project
 
-TIP: If you're already using an AI coding assistant and want to build your first apps with xref:sdk:spec-your-first-agent.adoc[Spec-Driven Development], then you can use the `akka specify init` command instead.
+TIP: If you're already using an AI coding assistant and want to build your first apps with xref:getting-started:spec-your-first-agent.adoc[Spec-Driven Development], then you can use the `akka specify init` command instead.
 
 To verify that your environment can compile Akka applications, create a new, _empty_ project by typing `akka code init` in a terminal window and selecting the empty project template. If this is the first time you've run `akka code init`, then it will ask you to go through authenticating against your free _support account_ in a browser (discussed in the next section). You will then choose whether you want the token for the private repository to be in your Maven `settings.xml` file or if you want to add it manually to the project's `pom.xml`. 
 
