@@ -28,6 +28,8 @@ import akka.javasdk.agent.SessionMessage.ToolCallRequest
 import akka.javasdk.agent.SessionMessage.ToolCallResponse
 import akka.javasdk.agent.SessionMessage.UserMessage
 import akka.javasdk.agent._
+import akka.javasdk.agent.task.BacklogEntity
+import akka.javasdk.agent.task.BacklogState
 import akka.javasdk.agent.task.TaskAttachment
 import akka.javasdk.agent.task.TaskEntity
 import akka.javasdk.agent.task.TaskStatus
@@ -41,6 +43,8 @@ import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAutonomousAgent
+import akka.runtime.sdk.spi.SpiBacklog
+import akka.runtime.sdk.spi.SpiBacklogOperations
 import akka.runtime.sdk.spi.SpiTask
 import akka.runtime.sdk.spi.SpiTaskOperations
 import com.typesafe.config.Config
@@ -130,17 +134,30 @@ private[impl] final class AutonomousAgentImpl(
   }
 
   // Pre-resolve TaskEntity methods for calling via EntityClientImpl
-  private val createMethod = classOf[TaskEntity].getMethod("create", classOf[TaskEntity.CreateRequest])
-  private val getStateMethod = classOf[TaskEntity].getMethod("getState")
-  private val assignMethod = classOf[TaskEntity].getMethod("assign", classOf[String])
-  private val startMethod = classOf[TaskEntity].getMethod("start")
-  private val completeMethod = classOf[TaskEntity].getMethod("complete", classOf[String])
-  private val failMethod = classOf[TaskEntity].getMethod("fail", classOf[String])
-  private val cancelMethod = classOf[TaskEntity].getMethod("cancel", classOf[String])
-  private val reassignMethod = classOf[TaskEntity].getMethod("reassign", classOf[TaskEntity.ReassignRequest])
+  private val taskCreateMethod = classOf[TaskEntity].getMethod("create", classOf[TaskEntity.CreateRequest])
+  private val taskGetStateMethod = classOf[TaskEntity].getMethod("getState")
+  private val taskAssignMethod = classOf[TaskEntity].getMethod("assign", classOf[String])
+  private val taskStartMethod = classOf[TaskEntity].getMethod("start")
+  private val taskCompleteMethod = classOf[TaskEntity].getMethod("complete", classOf[String])
+  private val taskFailMethod = classOf[TaskEntity].getMethod("fail", classOf[String])
+  private val taskCancelMethod = classOf[TaskEntity].getMethod("cancel", classOf[String])
+  private val taskReassignMethod = classOf[TaskEntity].getMethod("reassign", classOf[TaskEntity.ReassignRequest])
 
-  private def entityClient(taskId: String): EntityClientImpl =
+  private def taskEntityClient(taskId: String): EntityClientImpl =
     componentClient(None).forEventSourcedEntity(taskId).asInstanceOf[EntityClientImpl]
+
+  // Pre-resolve BacklogEntity methods for calling via EntityClientImpl
+  private val backlogCreateMethod = classOf[BacklogEntity].getMethod("create", classOf[String])
+  private val backlogAddTaskMethod = classOf[BacklogEntity].getMethod("addTask", classOf[String])
+  private val backlogClaimMethod = classOf[BacklogEntity].getMethod("claim", classOf[BacklogEntity.ClaimRequest])
+  private val backlogReleaseMethod = classOf[BacklogEntity].getMethod("release", classOf[String])
+  private val backlogTransferMethod =
+    classOf[BacklogEntity].getMethod("transfer", classOf[BacklogEntity.TransferRequest])
+  private val backlogCancelUnclaimedMethod = classOf[BacklogEntity].getMethod("cancelUnclaimed")
+  private val backlogGetStateMethod = classOf[BacklogEntity].getMethod("getState")
+
+  private def backlogEntityClient(backlogId: String): EntityClientImpl =
+    componentClient(None).forEventSourcedEntity(backlogId).asInstanceOf[EntityClientImpl]
 
   // --- SpiAutonomousAgent ---
 
@@ -155,63 +172,114 @@ private[impl] final class AutonomousAgentImpl(
         request.resultTypeName.orNull,
         request.dependencyTaskIds.asJava,
         attachments)
-      entityClient(taskId)
-        .methodRefOneArg[TaskEntity.CreateRequest, Done](createMethod)
+      taskEntityClient(taskId)
+        .methodRefOneArg[TaskEntity.CreateRequest, Done](taskCreateMethod)
         .invokeAsync(createReq)
         .asScala
         .map(_ => taskId)(sdkExecutionContext)
     }
 
     override def getTaskState(taskId: String): Future[SpiTask.SpiTaskState] =
-      entityClient(taskId)
-        .methodRefNoArg[akka.javasdk.agent.task.TaskState](getStateMethod)
+      taskEntityClient(taskId)
+        .methodRefNoArg[akka.javasdk.agent.task.TaskState](taskGetStateMethod)
         .invokeAsync()
         .asScala
         .map(toSpiTaskState)(sdkExecutionContext)
 
     override def assignTask(taskId: String, assignee: String): Future[Done] =
-      entityClient(taskId)
-        .methodRefOneArg[String, Done](assignMethod)
+      taskEntityClient(taskId)
+        .methodRefOneArg[String, Done](taskAssignMethod)
         .invokeAsync(assignee)
         .asScala
         .map(_ => Done)(sdkExecutionContext)
 
     override def startTask(taskId: String): Future[Done] =
-      entityClient(taskId)
-        .methodRefNoArg[Done](startMethod)
+      taskEntityClient(taskId)
+        .methodRefNoArg[Done](taskStartMethod)
         .invokeAsync()
         .asScala
         .map(_ => Done)(sdkExecutionContext)
 
     override def completeTask(taskId: String, resultJson: String): Future[Done] =
-      entityClient(taskId)
-        .methodRefOneArg[String, Done](completeMethod)
+      taskEntityClient(taskId)
+        .methodRefOneArg[String, Done](taskCompleteMethod)
         .invokeAsync(resultJson)
         .asScala
         .map(_ => Done)(sdkExecutionContext)
 
     override def failTask(taskId: String, reason: String): Future[Done] =
-      entityClient(taskId)
-        .methodRefOneArg[String, Done](failMethod)
+      taskEntityClient(taskId)
+        .methodRefOneArg[String, Done](taskFailMethod)
         .invokeAsync(reason)
         .asScala
         .map(_ => Done)(sdkExecutionContext)
 
     override def cancelTask(taskId: String, reason: String): Future[Done] =
-      entityClient(taskId)
-        .methodRefOneArg[String, Done](cancelMethod)
+      taskEntityClient(taskId)
+        .methodRefOneArg[String, Done](taskCancelMethod)
         .invokeAsync(reason)
         .asScala
         .map(_ => Done)(sdkExecutionContext)
 
     override def reassignTask(taskId: String, request: SpiTask.ReassignRequest): Future[Done] = {
       val reassignReq = new TaskEntity.ReassignRequest(request.newAgentComponentId, request.context)
-      entityClient(taskId)
-        .methodRefOneArg[TaskEntity.ReassignRequest, Done](reassignMethod)
+      taskEntityClient(taskId)
+        .methodRefOneArg[TaskEntity.ReassignRequest, Done](taskReassignMethod)
         .invokeAsync(reassignReq)
         .asScala
         .map(_ => Done)(sdkExecutionContext)
     }
+  }
+
+  override val backlogOperations: SpiBacklogOperations = new SpiBacklogOperations {
+    override def createBacklog(backlogId: String, name: String): Future[Done] =
+      backlogEntityClient(backlogId)
+        .methodRefOneArg[String, Done](backlogCreateMethod)
+        .invokeAsync(name)
+        .asScala
+        .map(_ => Done)(sdkExecutionContext)
+
+    override def addTask(backlogId: String, taskId: String): Future[Done] =
+      backlogEntityClient(backlogId)
+        .methodRefOneArg[String, Done](backlogAddTaskMethod)
+        .invokeAsync(taskId)
+        .asScala
+        .map(_ => Done)(sdkExecutionContext)
+
+    override def claimTask(backlogId: String, taskId: String, claimedBy: String): Future[Done] =
+      backlogEntityClient(backlogId)
+        .methodRefOneArg[BacklogEntity.ClaimRequest, Done](backlogClaimMethod)
+        .invokeAsync(new BacklogEntity.ClaimRequest(taskId, claimedBy))
+        .asScala
+        .map(_ => Done)(sdkExecutionContext)
+
+    override def releaseTask(backlogId: String, taskId: String): Future[Done] =
+      backlogEntityClient(backlogId)
+        .methodRefOneArg[String, Done](backlogReleaseMethod)
+        .invokeAsync(taskId)
+        .asScala
+        .map(_ => Done)(sdkExecutionContext)
+
+    override def transferTask(backlogId: String, taskId: String, transferredTo: String): Future[Done] =
+      backlogEntityClient(backlogId)
+        .methodRefOneArg[BacklogEntity.TransferRequest, Done](backlogTransferMethod)
+        .invokeAsync(new BacklogEntity.TransferRequest(taskId, transferredTo))
+        .asScala
+        .map(_ => Done)(sdkExecutionContext)
+
+    override def cancelUnclaimed(backlogId: String): Future[Done] =
+      backlogEntityClient(backlogId)
+        .methodRefNoArg[Done](backlogCancelUnclaimedMethod)
+        .invokeAsync()
+        .asScala
+        .map(_ => Done)(sdkExecutionContext)
+
+    override def getState(backlogId: String): Future[SpiBacklog.SpiBacklogState] =
+      backlogEntityClient(backlogId)
+        .methodRefNoArg[BacklogState](backlogGetStateMethod)
+        .invokeAsync()
+        .asScala
+        .map(toSpiBacklogState)(sdkExecutionContext)
   }
 
   override def getSessionHistory(sessionId: String): Future[Seq[SpiAgent.ContextMessage]] =
@@ -303,6 +371,16 @@ private[impl] final class AutonomousAgentImpl(
       dependencyTaskIds = state.dependencyTaskIds().asScala.toSeq,
       attachments = attachments,
       reassignmentContext = Option(state.reassignmentContext()).map(_.asScala.toSeq).getOrElse(Seq.empty))
+  }
+
+  private def toSpiBacklogState(state: BacklogState): SpiBacklog.SpiBacklogState = {
+    import scala.jdk.CollectionConverters._
+    val entries = state.entries().asScala.toSeq.map { entry =>
+      new SpiBacklog.SpiBacklogEntry(
+        taskId = entry.taskId(),
+        claimedBy = if (entry.claimedBy().isPresent) Some(entry.claimedBy().get()) else None)
+    }
+    new SpiBacklog.SpiBacklogState(state.name(), entries)
   }
 
   private def attachmentToSpi(ref: TaskAttachment): SpiAgent.MessageContent =

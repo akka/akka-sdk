@@ -21,6 +21,7 @@ import akka.javasdk.agent.autonomous.AutonomousAgent
 import akka.javasdk.agent.evaluator.HallucinationEvaluator
 import akka.javasdk.agent.evaluator.SummarizationEvaluator
 import akka.javasdk.agent.evaluator.ToxicityEvaluator
+import akka.javasdk.agent.task.BacklogEntity
 import akka.javasdk.agent.task.TaskEntity
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
@@ -215,7 +216,8 @@ private[javasdk] object ComponentLocator {
     classOf[SummarizationEvaluator],
     classOf[HallucinationEvaluator])
 
-  val autonomousAgentProvidedComponents: Seq[Class[_]] = Seq(classOf[TaskEntity])
+  val autonomousAgentProvidedComponents: Seq[Class[_]] =
+    Seq(classOf[TaskEntity], classOf[BacklogEntity])
 
   // Keep for backwards compat with anything referencing the old name
   val providedComponents: Seq[Class[_]] = agentProvidedComponents ++ autonomousAgentProvidedComponents
