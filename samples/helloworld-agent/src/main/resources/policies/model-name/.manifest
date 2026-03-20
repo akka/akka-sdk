@@ -1,0 +1,1 @@
+{"revision":"","roots":[""],"wasm":[{"entrypoint":"akka/policy/model/name","module":"/policy.wasm"},{"entrypoint":"akka/policy/model/name/violations","module":"/policy.wasm"}],"rego_version":1}
