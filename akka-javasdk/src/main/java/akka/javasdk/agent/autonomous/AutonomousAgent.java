@@ -8,9 +8,9 @@ import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.autonomous.capability.AgentCapability;
 import akka.javasdk.agent.autonomous.capability.Delegation;
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
+import akka.javasdk.agent.autonomous.capability.TeamLeadership;
 import akka.javasdk.agent.task.TaskDefinition;
 import akka.javasdk.impl.agent.autonomous.AgentDefinitionImpl;
-import akka.javasdk.impl.agent.autonomous.capability.DelegationImpl;
 
 /**
  * An autonomous AI agent component that operates independently to complete tasks.
@@ -61,6 +61,23 @@ public abstract class AutonomousAgent {
    */
   @SafeVarargs
   protected final Delegation canDelegateTo(Class<? extends AutonomousAgent>... agents) {
-    return DelegationImpl.create(agents);
+    return Delegation.to(agents);
+  }
+
+  /**
+   * Declare that this agent can lead a team of autonomous agents. The team lead creates backlogs,
+   * adds team members, monitors progress, and disbands the team when work is complete.
+   */
+  protected final TeamLeadership canLeadTeam(TeamLeadership.MemberType... memberTypes) {
+    return TeamLeadership.of(memberTypes);
+  }
+
+  /**
+   * Define a team member type. Used with {@link #canLeadTeam} to specify which agent types can be
+   * added to the team.
+   */
+  protected final TeamLeadership.MemberType teamMember(
+      Class<? extends AutonomousAgent> agentClass) {
+    return TeamLeadership.MemberType.of(agentClass);
   }
 }
