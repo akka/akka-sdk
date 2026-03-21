@@ -48,9 +48,9 @@ public class PipelineIntegrationTest extends TestKitSupport {
       .invoke()
       .body();
 
-    assertThat(response.collectId()).isNotBlank();
-    assertThat(response.analyzeId()).isNotBlank();
-    assertThat(response.reportId()).isNotBlank();
+    assertThat(response.collectTaskId()).isNotBlank();
+    assertThat(response.analyzeTaskId()).isNotBlank();
+    assertThat(response.reportTaskId()).isNotBlank();
 
     // Wait for the final report task to complete (it depends on analyze, which depends on collect)
     Awaitility.await()
@@ -58,21 +58,21 @@ public class PipelineIntegrationTest extends TestKitSupport {
       .atMost(30, TimeUnit.SECONDS)
       .untilAsserted(() -> {
         var reportSnapshot = componentClient
-          .forTask(PipelineTasks.REPORT)
-          .get(response.reportId());
+          .forTask(response.reportTaskId())
+          .get(PipelineTasks.REPORT);
         assertThat(reportSnapshot.status().name()).isEqualTo("COMPLETED");
         assertThat(reportSnapshot.result()).isNotNull();
       });
 
     // Verify all phases completed in dependency order
     var collectSnapshot = componentClient
-      .forTask(PipelineTasks.COLLECT)
-      .get(response.collectId());
+      .forTask(response.collectTaskId())
+      .get(PipelineTasks.COLLECT);
     assertThat(collectSnapshot.status().name()).isEqualTo("COMPLETED");
 
     var analyzeSnapshot = componentClient
-      .forTask(PipelineTasks.ANALYZE)
-      .get(response.analyzeId());
+      .forTask(response.analyzeTaskId())
+      .get(PipelineTasks.ANALYZE);
     assertThat(analyzeSnapshot.status().name()).isEqualTo("COMPLETED");
   }
 }

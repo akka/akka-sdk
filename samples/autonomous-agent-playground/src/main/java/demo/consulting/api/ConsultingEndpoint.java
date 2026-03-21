@@ -35,7 +35,7 @@ public class ConsultingEndpoint {
 
   @Get("/{taskId}")
   public ConsultingStatus get(String taskId) {
-    var snapshot = componentClient.forTask(ConsultingTasks.ENGAGEMENT).get(taskId);
+    var snapshot = componentClient.forTask(taskId).get(ConsultingTasks.ENGAGEMENT);
     return new ConsultingStatus(snapshot.status().name(), snapshot.result());
   }
 }

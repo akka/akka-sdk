@@ -34,6 +34,6 @@ public class QuestionEndpoint {
 
   @Get("/{taskId}")
   public Answer getAnswer(String taskId) {
-    return componentClient.forTask(QuestionTasks.ANSWER).get(taskId).result();
+    return componentClient.forTask(taskId).get(QuestionTasks.ANSWER).result();
   }
 }

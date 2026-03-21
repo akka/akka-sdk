@@ -38,18 +38,19 @@ private[javasdk] final class AutonomousAgentClientImpl(
 
   private val log = LoggerFactory.getLogger(classOf[AutonomousAgentClientImpl])
 
-  private val taskHelper = new TaskClientImpl[AnyRef](None, runtimeComponentClients, serializer, callMetadata)
-
   override def runSingleTaskAsync(task: Task[_]): CompletionStage[String] = {
+    val taskId = java.util.UUID.randomUUID().toString
     log.debug(
-      "runSingleTask: agent=[{}] instance=[{}] task=[{}]",
+      "runSingleTask: agent=[{}] instance=[{}] task=[{}] taskId=[{}]",
       agentComponentId,
       agentInstanceId,
-      task.description())
-    taskHelper
-      .createAsync(task.asInstanceOf[Task[AnyRef]])
+      task.description(),
+      taskId)
+    val taskClient = new TaskClientImpl(taskId, runtimeComponentClients, serializer, callMetadata)
+    taskClient
+      .createAsync(task)
       .asScala
-      .flatMap { taskId =>
+      .flatMap { _ =>
         log.debug(
           "runSingleTask: task created [{}], sending AssignTask to agent instance [{}]",
           taskId,

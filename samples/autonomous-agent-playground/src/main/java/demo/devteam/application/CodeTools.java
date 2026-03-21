@@ -5,8 +5,8 @@ import akka.javasdk.annotations.FunctionTool;
 public class CodeTools {
 
   @FunctionTool(
-      description =
-          "Write code for a given file path and description. Returns the code that was written.")
+    description = "Write code for a given file path and description. Returns the code that was written."
+  )
   public String writeCode(String filePath, String description) {
     return "Code written to " + filePath + ": implemented " + description;
   }

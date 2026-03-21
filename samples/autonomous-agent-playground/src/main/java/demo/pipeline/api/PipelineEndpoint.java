@@ -22,18 +22,12 @@ public class PipelineEndpoint {
 
   public record PipelineResponse(
     String pipelineId,
-    String collectId,
-    String analyzeId,
-    String reportId
+    String collectTaskId,
+    String analyzeTaskId,
+    String reportTaskId
   ) {}
 
   public record PhaseStatus(String status, ReportResult result) {}
-
-  public record PipelineStatusResponse(
-    PhaseStatus collect,
-    PhaseStatus analyze,
-    PhaseStatus report
-  ) {}
 
   private final ComponentClient componentClient;
 
@@ -44,49 +38,40 @@ public class PipelineEndpoint {
   @Post
   public PipelineResponse create(CreatePipeline request) {
     // Create collect task (no dependencies)
-    // prettier-ignore
-    var collectId = componentClient
-      .forTask(PipelineTasks.COLLECT)
-      .create(PipelineTasks.COLLECT
-        .instructions("Collect data on: " + request.topic()));
+    var collectTaskId = componentClient
+      .forTask(UUID.randomUUID().toString())
+      .create(PipelineTasks.COLLECT.instructions("Collect data on: " + request.topic()));
 
     // Create analyze task (depends on collect)
-    // prettier-ignore
-    var analyzeId = componentClient
-      .forTask(PipelineTasks.ANALYZE)
-      .create(PipelineTasks.ANALYZE
-        .instructions("Analyze data for: " + request.topic())
-        .dependsOn(collectId));
+    var analyzeTaskId = componentClient
+      .forTask(UUID.randomUUID().toString())
+      .create(
+        PipelineTasks.ANALYZE.instructions("Analyze data for: " + request.topic()).dependsOn(
+          collectTaskId
+        )
+      );
 
     // Create report task (depends on analyze)
-    // prettier-ignore
-    var reportId = componentClient
-      .forTask(PipelineTasks.REPORT)
-      .create(PipelineTasks.REPORT
-        .instructions("Write report for: " + request.topic())
-        .dependsOn(analyzeId));
+    var reportTaskId = componentClient
+      .forTask(UUID.randomUUID().toString())
+      .create(
+        PipelineTasks.REPORT.instructions("Write report for: " + request.topic()).dependsOn(
+          analyzeTaskId
+        )
+      );
 
     // Assign all tasks to a single agent instance
     var agentInstanceId = UUID.randomUUID().toString();
     componentClient
       .forAutonomousAgent(ReportAgent.class, agentInstanceId)
-      .assignTasks(collectId, analyzeId, reportId);
+      .assignTasks(collectTaskId, analyzeTaskId, reportTaskId);
 
-    return new PipelineResponse(agentInstanceId, collectId, analyzeId, reportId);
-  }
-
-  @Get("/all/{pipelineId}")
-  public PipelineStatusResponse getStatus(String pipelineId) {
-    // This is a convenience endpoint; in practice you'd track the task IDs
-    // For the integration test, we'll query individual tasks by ID instead
-    throw new UnsupportedOperationException(
-      "Use GET /pipeline/{taskId} to query individual task status"
-    );
+    return new PipelineResponse(agentInstanceId, collectTaskId, analyzeTaskId, reportTaskId);
   }
 
   @Get("/{taskId}")
   public PhaseStatus getPhaseStatus(String taskId) {
-    var snapshot = componentClient.forTask(PipelineTasks.COLLECT).get(taskId);
+    var snapshot = componentClient.forTask(taskId).get(PipelineTasks.COLLECT);
     return new PhaseStatus(snapshot.status().name(), snapshot.result());
   }
 }

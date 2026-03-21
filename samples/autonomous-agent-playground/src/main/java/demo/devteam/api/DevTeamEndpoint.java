@@ -24,10 +24,9 @@ public class DevTeamEndpoint {
 
   @Post
   public ProjectResponse create(ProjectRequest request) {
-    var taskId =
-        componentClient
-            .forAutonomousAgent(ProjectLead.class, UUID.randomUUID().toString())
-            .runSingleTask(ProjectTasks.PLAN.instructions(request.description()));
+    var taskId = componentClient
+      .forAutonomousAgent(ProjectLead.class, UUID.randomUUID().toString())
+      .runSingleTask(ProjectTasks.PLAN.instructions(request.description()));
     return new ProjectResponse(taskId);
   }
 }

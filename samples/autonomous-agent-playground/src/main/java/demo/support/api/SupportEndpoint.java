@@ -35,7 +35,7 @@ public class SupportEndpoint {
 
   @Get("/{taskId}")
   public SupportStatus get(String taskId) {
-    var snapshot = componentClient.forTask(SupportTasks.RESOLVE).get(taskId);
+    var snapshot = componentClient.forTask(taskId).get(SupportTasks.RESOLVE);
     return new SupportStatus(snapshot.status().name(), snapshot.result());
   }
 }

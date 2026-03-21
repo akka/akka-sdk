@@ -101,7 +101,7 @@ public class ResearchDelegationIntegrationTest extends TestKitSupport {
       .ignoreExceptions()
       .atMost(30, TimeUnit.SECONDS)
       .untilAsserted(() -> {
-        var snapshot = componentClient.forTask(ResearchTasks.BRIEF).get(taskId);
+        var snapshot = componentClient.forTask(taskId).get(ResearchTasks.BRIEF);
         assertThat(snapshot.result()).isNotNull();
         assertThat(snapshot.result().title()).isEqualTo("Quantum Computing Brief");
         assertThat(snapshot.result().keyFindings()).hasSize(4);

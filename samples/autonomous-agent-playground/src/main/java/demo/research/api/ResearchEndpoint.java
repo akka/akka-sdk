@@ -36,7 +36,7 @@ public class ResearchEndpoint {
 
   @Get("/{taskId}")
   public ResearchStatus get(String taskId) {
-    var snapshot = componentClient.forTask(ResearchTasks.BRIEF).get(taskId);
+    var snapshot = componentClient.forTask(taskId).get(ResearchTasks.BRIEF);
     return new ResearchStatus(snapshot.status().name(), snapshot.result());
   }
 }

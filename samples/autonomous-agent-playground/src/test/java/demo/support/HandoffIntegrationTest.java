@@ -70,7 +70,7 @@ public class HandoffIntegrationTest extends TestKitSupport {
       .ignoreExceptions()
       .atMost(30, TimeUnit.SECONDS)
       .untilAsserted(() -> {
-        var snapshot = componentClient.forTask(SupportTasks.RESOLVE).get(taskId);
+        var snapshot = componentClient.forTask(taskId).get(SupportTasks.RESOLVE);
         assertThat(snapshot.result()).isNotNull();
         assertThat(snapshot.result().category()).isEqualTo("billing");
         assertThat(snapshot.result().resolved()).isTrue();
@@ -115,7 +115,7 @@ public class HandoffIntegrationTest extends TestKitSupport {
       .ignoreExceptions()
       .atMost(30, TimeUnit.SECONDS)
       .untilAsserted(() -> {
-        var snapshot = componentClient.forTask(SupportTasks.RESOLVE).get(taskId);
+        var snapshot = componentClient.forTask(taskId).get(SupportTasks.RESOLVE);
         assertThat(snapshot.result()).isNotNull();
         assertThat(snapshot.result().category()).isEqualTo("technical");
         assertThat(snapshot.result().resolved()).isTrue();
