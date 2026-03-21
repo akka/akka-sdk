@@ -6,10 +6,8 @@ import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import demo.helloworld.api.QuestionEndpoint;
-import demo.helloworld.application.Answer;
 import demo.helloworld.application.QuestionAnswerer;
 import demo.helloworld.application.QuestionTasks;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
@@ -50,7 +48,7 @@ public class QuestionAnswererIntegrationTest extends TestKitSupport {
       .ignoreExceptions()
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(() -> {
-        var snapshot = componentClient.forTask(QuestionTasks.ANSWER).get(taskId);
+        var snapshot = componentClient.forTask(taskId).get(QuestionTasks.ANSWER);
         assertThat(snapshot.result()).isNotNull();
         assertThat(snapshot.result().answer()).isEqualTo("2 plus 2 equals 4.");
         assertThat(snapshot.result().confidence()).isEqualTo(100);
@@ -81,7 +79,7 @@ public class QuestionAnswererIntegrationTest extends TestKitSupport {
       .ignoreExceptions()
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(() -> {
-        var snapshot = componentClient.forTask(QuestionTasks.ANSWER).get(taskId);
+        var snapshot = componentClient.forTask(taskId).get(QuestionTasks.ANSWER);
         assertThat(snapshot.status().name()).isEqualTo("FAILED");
         assertThat(snapshot.failureReason()).isEqualTo("I cannot answer this question.");
       });

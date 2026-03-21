@@ -7,7 +7,6 @@ package akka.javasdk.client;
 import akka.annotation.DoNotInherit;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.autonomous.AutonomousAgent;
-import akka.javasdk.agent.task.TaskDefinition;
 
 /**
  * Utility to send requests to other components by composing a call that can be executed by the
@@ -78,8 +77,7 @@ public interface ComponentClient {
   /**
    * Select a task for querying its status and result.
    *
-   * @param taskDefinition the task definition that provides the result type
-   * @param <R> the result type of the task
+   * @param taskId the task entity ID
    */
-  <R> TaskClient<R> forTask(TaskDefinition<R> taskDefinition);
+  TaskClient forTask(String taskId);
 }

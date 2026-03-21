@@ -4,7 +4,6 @@
 
 package akka.javasdk.impl.client
 
-import java.util.UUID
 import java.util.concurrent.CompletionStage
 
 import scala.concurrent.ExecutionContext
@@ -33,21 +32,20 @@ import org.slf4j.LoggerFactory
  * INTERNAL API
  */
 @InternalApi
-private[javasdk] final class TaskClientImpl[R](
-    taskDefinition: Option[TaskDefinition[R]],
+private[javasdk] final class TaskClientImpl(
+    taskId: String,
     runtimeComponentClients: RuntimeComponentClients,
     serializer: Serializer,
     callMetadata: Option[Metadata])(implicit ec: ExecutionContext)
-    extends TaskClient[R] {
+    extends TaskClient {
 
-  private val log = LoggerFactory.getLogger(classOf[TaskClientImpl[_]])
+  private val log = LoggerFactory.getLogger(classOf[TaskClientImpl])
 
   private val TaskEntityComponentId = "akka-task"
 
   private def spiMetadata: SpiMetadata = callMetadata.fold(SpiMetadata.empty)(MetadataImpl.toSpi)
 
-  override def createAsync(task: Task[R]): CompletionStage[String] = {
-    val taskId = UUID.randomUUID().toString
+  override def createAsync[R](task: Task[R]): CompletionStage[String] = {
     log.debug(
       "createTask: id=[{}] description=[{}] resultType=[{}]",
       taskId,
@@ -72,7 +70,7 @@ private[javasdk] final class TaskClientImpl[R](
       .asJava
   }
 
-  override def getAsync(taskId: String): CompletionStage[TaskSnapshot[R]] = {
+  override def getAsync[R](taskDefinition: TaskDefinition[R]): CompletionStage[TaskSnapshot[R]] = {
     log.debug("getTask: id=[{}]", taskId)
     runtimeComponentClients.eventSourcedEntityClient
       .send(new EntityRequest(TaskEntityComponentId, taskId, "GetState", BytesPayload.empty, spiMetadata))
@@ -87,22 +85,18 @@ private[javasdk] final class TaskClientImpl[R](
               taskState.status(),
               taskState.description(),
               taskState.instructions(),
-              deserializeResult(taskState),
+              deserializeResult(taskState, taskDefinition),
               taskState.failureReason())
         }
       }
       .asJava
   }
 
-  private def deserializeResult(taskState: TaskState): R = {
+  private def deserializeResult[R](taskState: TaskState, taskDefinition: TaskDefinition[R]): R = {
     if (taskState.result() == null) {
       null.asInstanceOf[R]
     } else {
-      val resultType = taskDefinition
-        .getOrElse(
-          throw new IllegalStateException(
-            "TaskClient was not created with a task definition; cannot deserialize result"))
-        .resultType()
+      val resultType = taskDefinition.resultType()
       if (resultType == classOf[String]) {
         // String results are stored as raw text by the runtime (not JSON-encoded)
         taskState.result().asInstanceOf[R]

@@ -10,8 +10,8 @@ public class Developer extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-        .goal("Implement features with clean, tested code.")
-        .capabilities(canAcceptTasks(DeveloperTasks.IMPLEMENT))
-        .tools(new CodeTools());
+      .goal("Implement features with clean, tested code.")
+      .capabilities(canAcceptTasks(DeveloperTasks.IMPLEMENT))
+      .tools(new CodeTools());
   }
 }

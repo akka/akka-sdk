@@ -103,7 +103,7 @@ public class ConsultingIntegrationTest extends TestKitSupport {
       .ignoreExceptions()
       .atMost(30, TimeUnit.SECONDS)
       .untilAsserted(() -> {
-        var snapshot = componentClient.forTask(ConsultingTasks.ENGAGEMENT).get(taskId);
+        var snapshot = componentClient.forTask(taskId).get(ConsultingTasks.ENGAGEMENT);
         assertThat(snapshot.result()).isNotNull();
         assertThat(snapshot.result().escalated()).isFalse();
         assertThat(snapshot.result().recommendation()).contains("demand forecasting");
@@ -172,7 +172,7 @@ public class ConsultingIntegrationTest extends TestKitSupport {
       .ignoreExceptions()
       .atMost(30, TimeUnit.SECONDS)
       .untilAsserted(() -> {
-        var snapshot = componentClient.forTask(ConsultingTasks.ENGAGEMENT).get(taskId);
+        var snapshot = componentClient.forTask(taskId).get(ConsultingTasks.ENGAGEMENT);
         assertThat(snapshot.result()).isNotNull();
         assertThat(snapshot.result().escalated()).isTrue();
         assertThat(snapshot.result().recommendation()).contains("regulatory counsel");

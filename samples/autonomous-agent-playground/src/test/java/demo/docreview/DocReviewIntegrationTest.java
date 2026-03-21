@@ -60,7 +60,7 @@ public class DocReviewIntegrationTest extends TestKitSupport {
       .ignoreExceptions()
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(() -> {
-        var snapshot = componentClient.forTask(ReviewTasks.REVIEW).get(taskId);
+        var snapshot = componentClient.forTask(taskId).get(ReviewTasks.REVIEW);
         assertThat(snapshot.result()).isNotNull();
         assertThat(snapshot.result().compliant()).isTrue();
         assertThat(snapshot.result().assessment()).isEqualTo("Compliant");

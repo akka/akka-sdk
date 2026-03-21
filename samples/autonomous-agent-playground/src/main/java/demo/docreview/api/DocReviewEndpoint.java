@@ -45,6 +45,6 @@ public class DocReviewEndpoint {
 
   @Get("/{taskId}")
   public ReviewResult getReview(String taskId) {
-    return componentClient.forTask(ReviewTasks.REVIEW).get(taskId).result();
+    return componentClient.forTask(taskId).get(ReviewTasks.REVIEW).result();
   }
 }

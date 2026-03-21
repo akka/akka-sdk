@@ -11,7 +11,6 @@ import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.autonomous.AutonomousAgent
-import akka.javasdk.agent.task.TaskDefinition
 import akka.javasdk.client.AgentClient
 import akka.javasdk.client.AutonomousAgentClient
 import akka.javasdk.client.ComponentClient
@@ -92,8 +91,8 @@ private[javasdk] final case class ComponentClientImpl(
         serializer,
         callMetadata)
 
-  override def forTask[R](taskDefinition: TaskDefinition[R]): TaskClient[R] =
-    if (taskDefinition eq null) throw new NullPointerException("Task definition is null")
-    else new TaskClientImpl[R](Some(taskDefinition), runtimeComponentClients, serializer, callMetadata)
+  override def forTask(taskId: String): TaskClient =
+    if (taskId eq null) throw new NullPointerException("Task ID is null")
+    else new TaskClientImpl(taskId, runtimeComponentClients, serializer, callMetadata)
 
 }

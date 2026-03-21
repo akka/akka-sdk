@@ -24,9 +24,9 @@ final case class TaskAcceptanceImpl(
   override def maxIterationsPerTask(max: Int): TaskAcceptance =
     copy(maxIterations = Some(max))
 
-  override def canHandoffTo(agents: Class[_ <: AutonomousAgent]*): TaskAcceptance = {
+  override def addHandoffTargets(agents: util.List[Class[_ <: AutonomousAgent]]): TaskAcceptance = {
     val result = new util.ArrayList[Class[_ <: AutonomousAgent]](handoffTargets)
-    agents.foreach(result.add)
+    result.addAll(agents)
     copy(handoffTargets = util.Collections.unmodifiableList(result))
   }
 }
