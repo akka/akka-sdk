@@ -7,7 +7,6 @@ package akka.javasdk.impl.agent
 import java.time.Instant
 import java.util.UUID
 
-import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
@@ -290,18 +289,18 @@ private[impl] final class AutonomousAgentImpl(
 
   override def addToSessionHistory(sessionId: String, messages: Seq[SpiAgent.ContextMessage]): Future[Done] =
     Future {
-      groupByUserMessage(messages).foreach { case (userMsgOpt, rest) =>
+      if (messages.nonEmpty) {
         val now = Instant.now()
-        val sessionResponses = toSessionMessages(now, rest)
-        userMsgOpt match {
-          case Some(userMsg) if userMsg.contents.forall(_.isInstanceOf[SpiAgent.TextMessageContent]) =>
-            val text = userMsg.contents.collect { case t: SpiAgent.TextMessageContent => t.text }.mkString(" ")
+        messages.head match {
+          case u: SpiAgent.ContextMessage.UserMessage
+              if u.contents.forall(_.isInstanceOf[SpiAgent.TextMessageContent]) =>
+            val text = u.contents.collect { case t: SpiAgent.TextMessageContent => t.text }.mkString(" ")
             sessionMemoryClient.addInteraction(
               sessionId,
               new UserMessage(now, text, componentId),
-              sessionResponses.asJava)
-          case Some(userMsg) =>
-            val contents = userMsg.contents.map {
+              toSessionMessages(now, messages.tail).asJava)
+          case u: SpiAgent.ContextMessage.UserMessage =>
+            val contents = u.contents.map {
               case t: SpiAgent.TextMessageContent =>
                 new SessionMessage.MessageContent.TextMessageContent(t.text): SessionMessage.MessageContent
               case img: SpiAgent.ImageUriMessageContent =>
@@ -315,16 +314,14 @@ private[impl] final class AutonomousAgentImpl(
             sessionMemoryClient.addInteraction(
               sessionId,
               new MultimodalUserMessage(now, contents, componentId),
-              sessionResponses.asJava)
-          case None =>
-            // No user message in this group — store responses only with a synthetic user message.
-            // Text must be non-blank to satisfy LangChain4j validation when replayed.
-            if (sessionResponses.nonEmpty) {
-              sessionMemoryClient.addInteraction(
-                sessionId,
-                new UserMessage(now, "(continued)", componentId),
-                sessionResponses.asJava)
-            }
+              toSessionMessages(now, messages.tail).asJava)
+          case _ =>
+            // No user message — partial interaction (e.g. tool call responses
+            // completing the previous AI message's tool calls)
+            sessionMemoryClient.addInteraction(
+              sessionId,
+              null.asInstanceOf[UserMessage],
+              toSessionMessages(now, messages).asJava)
         }
       }
       Done
@@ -388,28 +385,6 @@ private[impl] final class AutonomousAgentImpl(
 
   private def spiToAttachment(mc: SpiAgent.MessageContent): TaskAttachment =
     TaskAttachment.fromMessageContent(AgentImpl.fromSpiMessageContent(mc))
-
-  private def groupByUserMessage(messages: Seq[SpiAgent.ContextMessage])
-      : Seq[(Option[SpiAgent.ContextMessage.UserMessage], Seq[SpiAgent.ContextMessage])] = {
-    val result = ListBuffer.empty[(Option[SpiAgent.ContextMessage.UserMessage], Seq[SpiAgent.ContextMessage])]
-    var currentUser: Option[SpiAgent.ContextMessage.UserMessage] = None
-    var currentRest = ListBuffer.empty[SpiAgent.ContextMessage]
-
-    messages.foreach {
-      case u: SpiAgent.ContextMessage.UserMessage =>
-        if (currentUser.isDefined || currentRest.nonEmpty) {
-          result += ((currentUser, currentRest.toSeq))
-        }
-        currentUser = Some(u)
-        currentRest = ListBuffer.empty
-      case other =>
-        currentRest += other
-    }
-    if (currentUser.isDefined || currentRest.nonEmpty) {
-      result += ((currentUser, currentRest.toSeq))
-    }
-    result.toSeq
-  }
 
   private def toSessionMessages(now: Instant, messages: Seq[SpiAgent.ContextMessage]): Seq[SessionMessage] =
     messages.collect {
