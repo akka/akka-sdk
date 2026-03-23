@@ -8,11 +8,12 @@ import scala.jdk.CollectionConverters._
 
 import akka.annotation.InternalApi
 import akka.javasdk.agent.autonomous.AutonomousAgent
-import akka.javasdk.agent.autonomous.capability.AgentCapability
+import akka.javasdk.impl.agent.autonomous.capability.AgentCapability
 import akka.javasdk.agent.task.TaskDefinition
 import akka.javasdk.agent.task.TaskTemplate
 import akka.javasdk.impl.JsonSchema
 import akka.javasdk.impl.agent.autonomous.capability.DelegationImpl
+import akka.javasdk.impl.agent.autonomous.capability.HandoffImpl
 import akka.javasdk.impl.agent.autonomous.capability.MemberTypeImpl
 import akka.javasdk.impl.agent.autonomous.capability.TaskAcceptanceImpl
 import akka.javasdk.impl.agent.autonomous.capability.TeamLeadershipImpl
@@ -42,7 +43,7 @@ private[javasdk] class CapabilityConverter(
         new SpiAutonomousAgent.TaskAcceptance(
           taskDefinitions = ta.taskDefinitions.asScala.toSeq.map(CapabilityConverter.toSpiTaskDefinition),
           maxIterationsPerTask = ta.maxIterations.getOrElse(defaultMaxIterationsPerTask),
-          handoffs = resolveHandoffTargets(ta.handoffTargets.asScala.toSeq))
+          handoffs = resolveHandoffTargets(allCapabilities))
     }
 
     val delegations = allCapabilities.collect { case d: DelegationImpl => d }
@@ -66,9 +67,10 @@ private[javasdk] class CapabilityConverter(
     spiTaskAcceptances ++ spiDelegationOrchestrators ++ spiTeamLeads
   }
 
-  private def resolveHandoffTargets(
-      sdkHandoffTargets: Seq[Class[_ <: AutonomousAgent]]): Seq[SpiAutonomousAgent.HandoffTarget] =
-    sdkHandoffTargets.map { targetAgentClass =>
+  /** Resolve handoff targets from HandoffImpl capabilities. */
+  private def resolveHandoffTargets(allCapabilities: Seq[AgentCapability]): Seq[SpiAutonomousAgent.HandoffTarget] = {
+    val handoffTargetClasses = allCapabilities.collect { case h: HandoffImpl => h.targetAgent }.distinct
+    handoffTargetClasses.map { targetAgentClass =>
       val targetComponentId = Reflect.readComponentId(targetAgentClass)
       val (_, targetTaskDefinitions) = agentDefinitionMap.getOrElse(
         targetComponentId,
@@ -81,6 +83,7 @@ private[javasdk] class CapabilityConverter(
         description = targetDescriptor.flatMap(_.description),
         acceptedTasks = targetTaskDefinitions)
     }
+  }
 
   private def resolveTeamMemberType(memberType: MemberTypeImpl): SpiAutonomousAgent.TeamMemberType = {
     val targetComponentId = Reflect.readComponentId(memberType.agentClass)

@@ -89,7 +89,7 @@ private[javasdk] final class AutonomousAgentClientImpl(
   }
 
   override def setupAsync(setup: AgentSetup): CompletionStage[Done] = {
-    val setupImpl = setup.asInstanceOf[AgentSetupImpl]
+    val setupImpl = setup.asInstanceOf[AgentSetupImpl].build()
     log.debug("setup: agent=[{}] instance=[{}]", agentComponentId, agentInstanceId)
     val converter = agentCapabilityConverter.getOrElse(
       throw new IllegalStateException("Agent capability converter not available in this context"))

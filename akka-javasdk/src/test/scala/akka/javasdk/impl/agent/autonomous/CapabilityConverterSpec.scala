@@ -4,10 +4,9 @@
 
 package akka.javasdk.impl.agent.autonomous
 
-import akka.javasdk.agent.autonomous.capability.Delegation
-import akka.javasdk.agent.autonomous.capability.TaskAcceptance
 import akka.javasdk.agent.task.Task
 import akka.javasdk.impl.agent.autonomous.capability.DelegationImpl
+import akka.javasdk.impl.agent.autonomous.capability.TaskAcceptanceImpl
 import akka.runtime.sdk.spi.SpiAutonomousAgent
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -72,7 +71,7 @@ class CapabilityConverterSpec extends AnyWordSpec with Matchers {
       defaultMaxParallelWorkers = 3)
 
     "convert task acceptance with default max iterations" in {
-      val taskAcceptance = TaskAcceptance.of(stringTask)
+      val taskAcceptance = TaskAcceptanceImpl.create(Array(stringTask))
       val capabilities = converter.toSpiCapabilities(java.util.List.of(taskAcceptance))
 
       capabilities should have size 1
@@ -84,7 +83,7 @@ class CapabilityConverterSpec extends AnyWordSpec with Matchers {
     }
 
     "convert task acceptance with explicit max iterations" in {
-      val taskAcceptance = TaskAcceptance.of(stringTask).maxIterationsPerTask(5)
+      val taskAcceptance = TaskAcceptanceImpl.create(Array(stringTask)).copy(maxIterations = Some(5))
       val capabilities = converter.toSpiCapabilities(java.util.List.of(taskAcceptance))
 
       capabilities should have size 1
@@ -93,8 +92,8 @@ class CapabilityConverterSpec extends AnyWordSpec with Matchers {
     }
 
     "convert multiple task acceptances" in {
-      val acceptance1 = TaskAcceptance.of(stringTask)
-      val acceptance2 = TaskAcceptance.of(typedTask).maxIterationsPerTask(20)
+      val acceptance1 = TaskAcceptanceImpl.create(Array(stringTask))
+      val acceptance2 = TaskAcceptanceImpl.create(Array(typedTask)).copy(maxIterations = Some(20))
       val capabilities = converter.toSpiCapabilities(java.util.List.of(acceptance1, acceptance2))
 
       capabilities should have size 2
@@ -117,7 +116,7 @@ class CapabilityConverterSpec extends AnyWordSpec with Matchers {
     }
 
     "convert delegation with explicit max parallel workers" in {
-      val delegation = Delegation.to().maxParallelWorkers(7).asInstanceOf[DelegationImpl]
+      val delegation = DelegationImpl.create(Array()).copy(maxParallel = Some(7))
       val capabilities = converter.toSpiCapabilities(java.util.List.of(delegation))
 
       val orchestrator = capabilities.head.asInstanceOf[SpiAutonomousAgent.DelegationOrchestrator]
@@ -125,7 +124,7 @@ class CapabilityConverterSpec extends AnyWordSpec with Matchers {
     }
 
     "convert mixed task acceptance and delegation" in {
-      val taskAcceptance = TaskAcceptance.of(stringTask)
+      val taskAcceptance = TaskAcceptanceImpl.create(Array(stringTask))
       val delegation = DelegationImpl.create(Array())
       val capabilities = converter.toSpiCapabilities(java.util.List.of(taskAcceptance, delegation))
 
@@ -140,8 +139,8 @@ class CapabilityConverterSpec extends AnyWordSpec with Matchers {
     }
 
     "merge multiple delegations into single orchestrator" in {
-      val delegation1 = DelegationImpl.create(Array()).maxParallelWorkers(2).asInstanceOf[DelegationImpl]
-      val delegation2 = DelegationImpl.create(Array()).maxParallelWorkers(5).asInstanceOf[DelegationImpl]
+      val delegation1 = DelegationImpl.create(Array()).copy(maxParallel = Some(2))
+      val delegation2 = DelegationImpl.create(Array()).copy(maxParallel = Some(5))
       val capabilities = converter.toSpiCapabilities(java.util.List.of(delegation1, delegation2))
 
       val orchestrators = capabilities.collect { case o: SpiAutonomousAgent.DelegationOrchestrator => o }

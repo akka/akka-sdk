@@ -8,14 +8,17 @@ import akka.javasdk.agent.Guardrail;
 import akka.javasdk.agent.MemoryProvider;
 import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.agent.RemoteMcpTools;
-import akka.javasdk.agent.autonomous.capability.AgentCapability;
+import akka.javasdk.agent.task.TaskDefinition;
 
 /**
  * Defines an autonomous agent's configuration: goal, tools, model provider, guardrails, memory, and
  * capabilities. Built via {@link AutonomousAgent#define()} and returned from {@link
  * AutonomousAgent#definition()}.
  *
- * <p>Each fluent method returns a new immutable instance.
+ * <p>Each fluent method returns a new immutable instance. Capability entry points ({@code can*}
+ * methods) return narrowed builder types with capability-specific modifiers. Calling any general
+ * configuration method or another {@code can*} method returns the base {@code AgentDefinition}
+ * type, losing the narrowed modifiers.
  */
 public interface AgentDefinition {
 
@@ -25,9 +28,6 @@ public interface AgentDefinition {
    * descriptions to build the system message.
    */
   AgentDefinition goal(String goal);
-
-  /** Declare the agent's capabilities: task acceptance, delegation, etc. */
-  AgentDefinition capabilities(AgentCapability... capabilities);
 
   /** The LLM model provider for this agent. */
   AgentDefinition modelProvider(ModelProvider provider);
@@ -63,4 +63,40 @@ public interface AgentDefinition {
 
   /** Session memory configuration for conversation history across iterations. */
   AgentDefinition memory(MemoryProvider memory);
+
+  /**
+   * Declare that this agent can accept and process tasks of the specified types. Returns a {@link
+   * AutonomousAgent.TaskAcceptanceBuilder} for task-specific modifiers like iteration limits.
+   *
+   * <p>Multiple calls allow per-task-group settings with different limits.
+   */
+  @SuppressWarnings("unchecked")
+  AutonomousAgent.TaskAcceptanceBuilder canAcceptTasks(TaskDefinition<?>... tasks);
+
+  /**
+   * Declare that this agent can hand off tasks to the specified agent. Unlike delegation, handoff
+   * transfers ownership — the current agent is done and the target agent takes over.
+   *
+   * <p>Call multiple times to declare multiple handoff targets.
+   */
+  AgentDefinition canHandoffTo(Class<? extends AutonomousAgent> agent);
+
+  /**
+   * Declare that this agent can delegate subtasks to the specified worker agent. The delegating
+   * agent pauses while the worker executes, then resumes with the result.
+   *
+   * <p>Returns a {@link AutonomousAgent.DelegationBuilder} for delegation-specific modifiers. Call
+   * multiple times for different delegation targets.
+   */
+  AutonomousAgent.DelegationBuilder canDelegateTo(Class<? extends AutonomousAgent> agent);
+
+  /**
+   * Declare that this agent can lead a team of autonomous agents. The team lead creates backlogs,
+   * adds team members, monitors progress, and disbands the team when work is complete.
+   *
+   * <p>Returns a {@link AutonomousAgent.TeamBuilder} — at least one {@link
+   * AutonomousAgent.TeamBuilder#withMember} call is required before continuing the definition
+   * chain.
+   */
+  AutonomousAgent.TeamBuilder canLeadTeam();
 }

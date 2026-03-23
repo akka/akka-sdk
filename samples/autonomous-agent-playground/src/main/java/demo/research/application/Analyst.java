@@ -19,6 +19,7 @@ public class Analyst extends AutonomousAgent {
         identify trends and patterns, and produce actionable insights. \
         """
       )
-      .capabilities(canAcceptTasks(ResearchTasks.ANALYSIS).maxIterationsPerTask(3));
+      .canAcceptTasks(ResearchTasks.ANALYSIS)
+      .maxIterationsPerTask(3);
   }
 }

@@ -1,7 +1,6 @@
 package demo.dynamic.api;
 
 import akka.javasdk.agent.autonomous.AgentSetup;
-import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
@@ -36,7 +35,7 @@ public class DynamicEndpoint {
     agent.setup(
       AgentSetup.create()
         .goal("Produce a concise summary of the given content, highlighting key points.")
-        .capabilities(TaskAcceptance.of(DynamicTasks.SUMMARIZE))
+        .canAcceptTasks(DynamicTasks.SUMMARIZE)
     );
 
     var taskId = agent.runSingleTask(DynamicTasks.SUMMARIZE.instructions(request.content()));
@@ -51,7 +50,7 @@ public class DynamicEndpoint {
     agent.setup(
       AgentSetup.create()
         .goal("Translate the given content to French, preserving tone and meaning.")
-        .capabilities(TaskAcceptance.of(DynamicTasks.TRANSLATE))
+        .canAcceptTasks(DynamicTasks.TRANSLATE)
     );
 
     var taskId = agent.runSingleTask(DynamicTasks.TRANSLATE.instructions(request.content()));

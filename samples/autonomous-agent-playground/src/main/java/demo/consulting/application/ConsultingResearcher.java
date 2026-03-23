@@ -20,6 +20,7 @@ public class ConsultingResearcher extends AutonomousAgent {
         """
       )
       .tools(new ConsultingTools())
-      .capabilities(canAcceptTasks(ConsultingTasks.RESEARCH).maxIterationsPerTask(5));
+      .canAcceptTasks(ConsultingTasks.RESEARCH)
+      .maxIterationsPerTask(5);
   }
 }

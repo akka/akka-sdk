@@ -11,6 +11,7 @@ public class QuestionAnswerer extends AutonomousAgent {
   public AgentDefinition definition() {
     return define()
       .goal("Answer questions clearly and concisely, showing reasoning step by step.")
-      .capabilities(canAcceptTasks(QuestionTasks.ANSWER).maxIterationsPerTask(3));
+      .canAcceptTasks(QuestionTasks.ANSWER)
+      .maxIterationsPerTask(3);
   }
 }

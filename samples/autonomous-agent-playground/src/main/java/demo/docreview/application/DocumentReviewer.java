@@ -18,6 +18,7 @@ public class DocumentReviewer extends AutonomousAgent {
         "Review documents for regulatory and compliance standards, " +
         "providing structured assessments with specific findings."
       )
-      .capabilities(canAcceptTasks(ReviewTasks.REVIEW).maxIterationsPerTask(5));
+      .canAcceptTasks(ReviewTasks.REVIEW)
+      .maxIterationsPerTask(5);
   }
 }

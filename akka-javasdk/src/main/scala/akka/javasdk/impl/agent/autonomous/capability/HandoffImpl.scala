@@ -11,10 +11,4 @@ import akka.javasdk.agent.autonomous.AutonomousAgent
  * INTERNAL API
  */
 @InternalApi
-final case class TeamLeadershipImpl(members: Seq[MemberTypeImpl]) extends AgentCapability
-
-/**
- * INTERNAL API
- */
-@InternalApi
-final case class MemberTypeImpl(agentClass: Class[_ <: AutonomousAgent], maxMemberInstances: Int)
+final case class HandoffImpl(targetAgent: Class[_ <: AutonomousAgent]) extends AgentCapability

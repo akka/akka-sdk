@@ -8,18 +8,13 @@ import java.util
 
 import akka.annotation.InternalApi
 import akka.javasdk.agent.autonomous.AutonomousAgent
-import akka.javasdk.agent.autonomous.capability.Delegation
 
 /**
  * INTERNAL API
  */
 @InternalApi
 final case class DelegationImpl(delegationTargets: util.List[Class[_ <: AutonomousAgent]], maxParallel: Option[Int])
-    extends Delegation {
-
-  override def maxParallelWorkers(max: Int): Delegation =
-    copy(maxParallel = Some(max))
-}
+    extends AgentCapability
 
 /**
  * INTERNAL API

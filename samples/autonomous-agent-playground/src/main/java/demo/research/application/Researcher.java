@@ -19,6 +19,7 @@ public class Researcher extends AutonomousAgent {
         important details, and relevant context. \
         """
       )
-      .capabilities(canAcceptTasks(ResearchTasks.FINDINGS).maxIterationsPerTask(3));
+      .canAcceptTasks(ResearchTasks.FINDINGS)
+      .maxIterationsPerTask(3);
   }
 }

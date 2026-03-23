@@ -782,11 +782,12 @@ private final class Sdk(
           }
           tempAgent.definition() match {
             case impl: AgentDefinitionImpl =>
-              if (impl.goal.isEmpty)
+              val built = impl.build()
+              if (built.goal.isEmpty)
                 logger.warn(
                   "AutonomousAgent [{}] has no goal configured. Set a goal via define().goal(...)",
                   clz.getName)
-              impl
+              built
             case other =>
               throw new IllegalStateException(
                 s"AutonomousAgent ${clz.getName} definition() must return a definition created via define(), got: $other")
