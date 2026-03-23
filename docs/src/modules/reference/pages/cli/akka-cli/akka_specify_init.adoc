@@ -7,16 +7,15 @@ Initialize a new Akka project for AI-assisted development.
 Initialize a project with everything needed for AI-assisted Akka development.
 This command:
 
-. Verifies Maven is configured with the Akka resolver (prompts for setup if needed)
 . Clones an Akka sample project (or uses the current directory with '.')
 . Downloads the Akka SDK constitution (and additional constitution, if configured)
 . Installs slash commands and templates
 . Configures the MCP server for AI agent integration
 
-The Akka resolver is required to download Akka SDK dependencies.
-If your Maven settings.xml is not configured, this command will open a browser to log in to your free Akka support account and provision a resolver token.
-
 The cloned repository includes CLAUDE.md, AGENTS.md, and Akka AI context files that are version-synchronized with the SDK.
+
+NOTE: Building the project requires the Akka resolver in your Maven settings.xml.
+If not yet configured, the AI agent's build command will guide you through setup.
 
 After running this command, open Claude Code (or your preferred AI agent) in the project directory to start developing.
 
@@ -31,8 +30,9 @@ akka specify init [directory] [flags]
 == Options
 
 ----
-      --agent string   AI agent to configure (claude-code, cursor, generic). (default "claude-code")
-  -h, --help           help for init
+      --agent string    AI agent to configure (claude-code, cursor, generic). (default "claude-code")
+  -h, --help            help for init
+      --skip-commands   Skip slash-command installation (use when commands are provided by a plugin).
 ----
 
 == Options inherited from parent commands
