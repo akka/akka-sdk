@@ -9,7 +9,7 @@ include::ROOT:partial$concepts-intro.adoc[]
 In this guide, you will:
 
 * Verify your development environment
-* Specify the "hello world" agent, following the pattern described xref:sdk:spec-driven-development.adoc[here].
+* Specify the "hello world" agent, following the pattern described in the xref:sdk:spec-driven-development.adoc[Spec-Driven Development] documentation.
 * Explore a basic AI Agent that acts as a creative greeter.
 * Explore a basic HTTP Endpoint to interact with the agent.
 * Run your service locally with the `/akka.build` agent command.
@@ -18,18 +18,59 @@ In this guide, you will:
 
 include::ROOT:partial$local-dev-prerequisites.adoc[]
 * Git
-* xref:quick-install-cli.adoc[Akka CLI]
 * An AI coding assistant like Claude Code to build and implement the specification
+* xref:quick-install-cli.adoc[Akka CLI] (_installed automatically if you use the Akka Claude Code plugin_)
 * https://platform.openai.com/api-keys[OpenAI API key, window="new"]
 
-Akka has support for many AI providers, and this sample is using OpenAI. Sign up for free at https://platform.openai.com/api-keys[platform.openai.com/api-keys, window="new"].
-
-This sample is going to default to using OpenAI as the model provider.
+Akka has support for many AI providers, and this sample code uses OpenAI. Sign up for free at https://platform.openai.com/api-keys[platform.openai.com/api-keys, window="new"]. Note that the _application code_ uses OpenAI, not necessarily your AI coding assistant.
 
 IMPORTANT: Before proceeding, you **MUST** set the `OPENAI_API_KEY` environment variable and make it available to child processes (on Mac/Linux, that means using `export`) before running `akka specify` or starting your coding assistant in the terminal.
 
+== Install the Claude Code Plugin (optional)
+If you're using Claude Code, then you can take advantage of the plugin marketplace to install the https://github.com/akka/ai-marketplace[Akka specification plugin, window="new"], which will also automatically install and verify the Akka CLI for you.
+
+With Claude Code running within the directory you plan to use for your new project, issue the following commands:
+
+```
+/plugin marketplace add akka/ai-marketplace
+/plugin install akka-specify@ai-marketplace
+/reload-plugins
+/akka-specify:setup
+```
+
+You should now have everything you need to easily use Spec-Driven Development to build Akka applications, including the CLI. A typical output from Claude Code looks as follows (your output will vary slightly):
+
+```
+/akka-specify:setup — Complete
+
+    Java 23 (Temurin)      ✓ installed
+    Maven 3.9.10           ✓ installed
+    Akka CLI dev-3.0.53    ✓ installed
+    Akka download token    ⚠ could not verify (dot-directory restriction)
+    Docker                 ✓ available
+    MCP capabilities       ✓ all available (sdd, build, local, platform, git)
+    SDK version            ✓ 3.5.16 (latest)
+    Project scaffolded     ✓ com.example:akka-ssd-test-19
+    Akka context docs      ✓ 203 files
+    AI keys                ⏭ deferred (not needed for standard development)
+
+  One thing to verify: I couldn't check ~/.m2/settings.xml due to the dot-directory permission restriction. If you haven't previously run `akka code token`, you'll need to do so before Maven can download Akka SDK dependencies. You can run it with `! akka code token` — it will open a browser for a free Akka account login.
+
+  IMPORTANT: The MCP server configuration (.mcp.json) was created during setup. Claude Code only loads MCP servers at session start, so you need to restart. Use `claude --resume` to restart without losing your session context. After restarting, the Akka MCP tools will be available.
+
+  Ready to go! After restarting, run /akka-specify:specify to start building your first feature.
+```
+
+As the instructions say, you'll need to restart Claude Code in order to load the newly installed MCP server from the Akka CLI. 
+
+IMPORTANT: From now on, any time you see `/akka.{command}` in the documentation referring to using Claude Code _without_ the marketplace plugin, you should substitute the `/akka-specify:{command}` plugin-based alternative.
+
+Now you're ready to initialize a specification.
+
 == Initialize a specification
-To start a new project using Spec-Driven Development, we use the `akka specify init` command. You have two options here:
+If you're using the Claude Code Akka marketplace plugin, you can skip this step and go directly to specifying the main feature.
+
+If you're using the CLI to start a new project using Spec-Driven Development, we use the `akka specify init` command. You have a few options here:
 
 * Type `akka specify init helloworld-agent` to create a new directory called `helloworld-agent`
 * Manually create your own directory, `cd` into that directory, and run `akka specify init .`
@@ -39,7 +80,7 @@ This will copy the default Akka template files, give you a chance to add your ow
 Once you've successfully initialized the project, you can start Claude Code in your terminal. This guide doesn't cover using the web app.
 
 == Specify the main feature
-To specify the main feature of the application, we use `/akka.specify`. The following prompt shows this in action. If you're feeling adventurous, you can experiment with changing the prompt to see how it affects the final results. Copy and paste this `/akka.specify` command into your agent session:
+To specify the main feature of the application, we use `/akka.specify` (`/akka-specify:specify` in the Claude Code plugin). The following prompt shows this in action. If you're feeling adventurous, you can experiment with changing the prompt to see how it affects the final results. Copy and paste this `/akka.specify` (or `/akka-specify:specify`) command into your agent session:
 
 .Hello agent single feature
 [cols="1"]
@@ -76,7 +117,7 @@ Under normal circumstances you would use `/akka.clarify` to fill in potential ga
 == Create a plan
 Once we've got a specification we're pleased with, we need to create an implementation plan. This plan tells the coding assistant _how_ to implement the specification. Here is where we dictate the technical architecture and requirements.
 
-Copy and paste this slash command into your Claude session:
+Copy and paste this slash command into your Claude session (use `/akka-specify:plan` if you're using the marketplace plugin):
 
 .Technical implementation plan
 [cols="1"]
@@ -154,7 +195,7 @@ This plan looks good and the architecture is exactly what we wanted, so now we c
 
 == Generate tasks
 
-To generate the tasks from this plan, run `/akka.tasks`
+To generate the tasks from this plan, run `/akka.tasks` (or `/akka-specify:tasks` when using the plugin)
 
 Here's a sample summary output from generating tasks. Note that it has analyzed which tasks can be done in parallel.
 
@@ -191,7 +232,7 @@ Here's a sample summary output from generating tasks. Note that it has analyzed 
 With the plan and tasks ready to go, we can move on to implementation. It's worth noting that the actual writing of the code is one of the smaller parts of the process, and is done at the end of the feature definition, not the beginning.
 
 == Implement the agent
-Now it's time to generate some code. Run the `/akka.implement` command and allow it to proceed with any operations for which it requests permission.
+Now it's time to generate some code. Run the `/akka.implement` (or `/akka-specify:implement` with the plugin) command and allow it to proceed with any operations for which it requests permission.
 
 During implementation it is not unusual to see your AI assistant get a number of things wrong. Code may fail to compile and tests might not pass. We should try and leave the agent alone and let it try and fix the problems on its own before we intervene. Only if it looks like the agent is stuck (>5 attempts to fix the same thing) should we step in and provide instructions to solve the problem. This implementation is simple enough that errors and failure loops are unlikely.
 
@@ -231,7 +272,7 @@ It's also a recommended practice to not commit this feature branch back to `main
 If we're satisfied with these results, we can move on to the next step.
 
 == Exercise the agent API
-Exercising the agent API is easy. At this point, run `/akka.build`. This will recompile your project, run tests, and issue a sample command to the RESTful API endpoint.
+Exercising the agent API is easy. At this point, run `/akka.build` (or `/akka-specify:build`). This will recompile your project, run tests, and issue a sample command to the RESTful API endpoint.
 
 If you can verify that no previous instances of your service are running and that no stale processes are running on port `9000`, this will save time by not making your AI assistant do that check.
 
