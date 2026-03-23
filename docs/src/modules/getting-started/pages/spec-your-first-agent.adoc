@@ -32,7 +32,7 @@ IMPORTANT: Before proceeding, you **MUST** set the `OPENAI_API_KEY` environment 
 To start a new project using Spec-Driven Development, we use the `akka specify init` command. You have two options here:
 
 * Type `akka specify init helloworld-agent` to create a new directory called `helloworld-agent`
-* Manually create your own directory, `cd` into that directory, and run `akka specify init --here`
+* Manually create your own directory, `cd` into that directory, and run `akka specify init .`
 
 This will copy the default Akka template files, give you a chance to add your own additional constitution (which you can skip for this exercise), and set up an empty Akka service project with a Maven `pom.xml` file. It will also set the directory up as a git repository.
 
