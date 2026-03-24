@@ -7,6 +7,7 @@ package akka.javasdk.agent.task;
 import static akka.Done.done;
 
 import akka.Done;
+import akka.javasdk.NotificationPublisher;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
@@ -16,9 +17,13 @@ import java.util.List;
 public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
 
   private final String taskId;
+  private final NotificationPublisher<TaskNotification> notificationPublisher;
 
-  public TaskEntity(EventSourcedEntityContext context) {
+  public TaskEntity(
+      EventSourcedEntityContext context,
+      NotificationPublisher<TaskNotification> notificationPublisher) {
     this.taskId = context.entityId();
+    this.notificationPublisher = notificationPublisher;
   }
 
   public record CreateRequest(
@@ -83,20 +88,34 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
     if (isTerminal()) {
       return effects().reply(done()); // idempotent for any terminal state
     }
-    if (currentState().status() != TaskStatus.IN_PROGRESS) {
-      return effects().error("Task can only be completed when IN_PROGRESS");
+    if (currentState().status() != TaskStatus.ASSIGNED
+        && currentState().status() != TaskStatus.IN_PROGRESS) {
+      return effects().error("Task can only be completed when ASSIGNED or IN_PROGRESS");
     }
-    return effects().persist(new TaskEvent.TaskCompleted(taskId, result)).thenReply(__ -> done());
+    return effects()
+        .persist(new TaskEvent.TaskCompleted(taskId, result))
+        .thenReply(
+            __ -> {
+              notificationPublisher.publish(new TaskNotification.Completed(taskId, result));
+              return done();
+            });
   }
 
   public Effect<Done> fail(String reason) {
     if (isTerminal()) {
       return effects().reply(done()); // idempotent for any terminal state
     }
-    if (currentState().status() != TaskStatus.IN_PROGRESS) {
-      return effects().error("Task can only be failed when IN_PROGRESS");
+    if (currentState().status() != TaskStatus.ASSIGNED
+        && currentState().status() != TaskStatus.IN_PROGRESS) {
+      return effects().error("Task can only be failed when ASSIGNED or IN_PROGRESS");
     }
-    return effects().persist(new TaskEvent.TaskFailed(taskId, reason)).thenReply(__ -> done());
+    return effects()
+        .persist(new TaskEvent.TaskFailed(taskId, reason))
+        .thenReply(
+            __ -> {
+              notificationPublisher.publish(new TaskNotification.Failed(taskId, reason));
+              return done();
+            });
   }
 
   public Effect<Done> cancel(String reason) {
@@ -107,7 +126,13 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
         && currentState().status() != TaskStatus.ASSIGNED) {
       return effects().error("Task can only be cancelled when PENDING or ASSIGNED");
     }
-    return effects().persist(new TaskEvent.TaskCancelled(taskId, reason)).thenReply(__ -> done());
+    return effects()
+        .persist(new TaskEvent.TaskCancelled(taskId, reason))
+        .thenReply(
+            __ -> {
+              notificationPublisher.publish(new TaskNotification.Cancelled(taskId, reason));
+              return done();
+            });
   }
 
   public Effect<Done> reassign(ReassignRequest request) {
@@ -126,6 +151,10 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
     return currentState().status() == TaskStatus.COMPLETED
         || currentState().status() == TaskStatus.FAILED
         || currentState().status() == TaskStatus.CANCELLED;
+  }
+
+  public NotificationPublisher.NotificationStream<TaskNotification> notifications() {
+    return notificationPublisher.stream();
   }
 
   public ReadOnlyEffect<TaskState> getState() {

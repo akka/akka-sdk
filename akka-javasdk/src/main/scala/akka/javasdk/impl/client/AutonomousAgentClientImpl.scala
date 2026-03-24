@@ -21,6 +21,7 @@ import akka.javasdk.impl.agent.autonomous.AgentSetupImpl
 import akka.javasdk.impl.agent.autonomous.CapabilityConverter
 import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
+import akka.stream.Materializer
 import org.slf4j.LoggerFactory
 
 /**
@@ -46,7 +47,8 @@ private[javasdk] final class AutonomousAgentClientImpl(
       agentInstanceId,
       task.description(),
       taskId)
-    val taskClient = new TaskClientImpl(taskId, runtimeComponentClients, serializer, callMetadata)
+    val taskClient =
+      new TaskClientImpl(taskId, runtimeComponentClients, serializer, callMetadata, Materializer.matFromSystem(system))
     taskClient
       .createAsync(task)
       .asScala

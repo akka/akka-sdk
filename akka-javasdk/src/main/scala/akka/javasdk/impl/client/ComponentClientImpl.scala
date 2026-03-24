@@ -25,6 +25,7 @@ import akka.javasdk.impl.agent.autonomous.CapabilityConverter
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
+import akka.stream.Materializer
 import io.opentelemetry.context.{ Context => OtelContext }
 
 /**
@@ -93,6 +94,7 @@ private[javasdk] final case class ComponentClientImpl(
 
   override def forTask(taskId: String): TaskClient =
     if (taskId eq null) throw new NullPointerException("Task ID is null")
-    else new TaskClientImpl(taskId, runtimeComponentClients, serializer, callMetadata)
+    else
+      new TaskClientImpl(taskId, runtimeComponentClients, serializer, callMetadata, Materializer.matFromSystem(system))
 
 }
