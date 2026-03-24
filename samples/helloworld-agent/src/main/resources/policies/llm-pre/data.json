@@ -1,0 +1,10 @@
+{
+  "toolcall" : {
+    "agents": {
+      "weather": 5,
+      "hello-world-agent": 3
+     }
+  },
+
+  "session": 2500
+}
