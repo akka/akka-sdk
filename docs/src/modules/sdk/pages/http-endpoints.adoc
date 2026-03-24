@@ -83,7 +83,7 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java
 
 === Query parameters ===
 
-Accessing query parameter is done through the `requestContext()`, inherited from link:{attachmentsdir}/api/akka/javasdk/http/AbstractHttpEndpoint.html[AbstractHttpEndpoint].
+Accessing query parameter is done through the `requestContext().queryParams`, inherited from link:{attachmentsdir}/api/akka/javasdk/http/AbstractHttpEndpoint.html[AbstractHttpEndpoint].
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
