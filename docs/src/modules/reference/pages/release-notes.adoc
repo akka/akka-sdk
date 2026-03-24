@@ -12,6 +12,10 @@ Current versions
 
 == March 2026
 
+* Akka CLI 3.0.55
+- Support for spec driven development using VS Code and Copilot
+- Improved shutdown of local Akkk services started by an AI agent
+
 * Akka CLI 3.0.54
 - Updates to `akka specifiy`
 
