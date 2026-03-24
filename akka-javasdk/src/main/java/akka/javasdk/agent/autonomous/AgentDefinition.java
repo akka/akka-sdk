@@ -8,7 +8,11 @@ import akka.javasdk.agent.Guardrail;
 import akka.javasdk.agent.MemoryProvider;
 import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.agent.RemoteMcpTools;
-import akka.javasdk.agent.autonomous.capability.AgentCapability;
+import akka.javasdk.agent.autonomous.capability.Delegation;
+import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
+import akka.javasdk.agent.autonomous.capability.TeamLeadership;
+import akka.javasdk.agent.task.TaskDefinition;
+import java.util.function.UnaryOperator;
 
 /**
  * Defines an autonomous agent's configuration: goal, tools, model provider, guardrails, memory, and
@@ -26,8 +30,63 @@ public interface AgentDefinition {
    */
   AgentDefinition goal(String goal);
 
-  /** Declare the agent's capabilities: task acceptance, delegation, etc. */
-  AgentDefinition capabilities(AgentCapability... capabilities);
+  /**
+   * Declare that this agent can accept and process a task of the specified type, with default
+   * settings.
+   */
+  AgentDefinition canAcceptTask(TaskDefinition<?> task);
+
+  /**
+   * Declare that this agent can accept and process a task of the specified type, with custom
+   * settings. The configuration function receives a {@link TaskAcceptance} builder that can be used
+   * to set iteration limits and handoff targets.
+   *
+   * <p>Example:
+   *
+   * <pre>{@code
+   * define()
+   *     .canAcceptTask(MyTasks.REVIEW, task -> task
+   *         .maxIterationsPerTask(3)
+   *         .canHandoffTo(SeniorReviewer.class, LegalReviewer.class))
+   * }</pre>
+   */
+  AgentDefinition canAcceptTask(TaskDefinition<?> task, UnaryOperator<TaskAcceptance> config);
+
+  /**
+   * Declare that this agent can delegate subtasks to the specified worker agent, with default
+   * settings. The delegating agent pauses while workers execute, then resumes with their results.
+   */
+  AgentDefinition canDelegateTo(Class<? extends AutonomousAgent> agent);
+
+  /**
+   * Declare that this agent can delegate subtasks to the specified worker agent, with custom
+   * settings. The configuration function receives a {@link Delegation} builder.
+   *
+   * <p>Example:
+   *
+   * <pre>{@code
+   * define()
+   *     .canDelegateTo(Researcher.class, delegation -> delegation
+   *         .maxParallelWorkers(3))
+   * }</pre>
+   */
+  AgentDefinition canDelegateTo(
+      Class<? extends AutonomousAgent> agent, UnaryOperator<Delegation> config);
+
+  /**
+   * Declare that this agent can lead a team of autonomous agents. The configuration function
+   * receives a {@link TeamLeadership} builder to specify which agent types can be team members.
+   *
+   * <p>Example:
+   *
+   * <pre>{@code
+   * define()
+   *     .canLeadTeam(team -> team
+   *         .withMember(Developer.class, member -> member.maxInstances(3))
+   *         .withMember(Reviewer.class))
+   * }</pre>
+   */
+  AgentDefinition canLeadTeam(UnaryOperator<TeamLeadership> config);
 
   /** The LLM model provider for this agent. */
   AgentDefinition modelProvider(ModelProvider provider);

@@ -7,8 +7,7 @@ package akka.javasdk.impl.agent.autonomous
 import scala.jdk.CollectionConverters._
 
 import akka.javasdk.agent.autonomous.AgentSetup
-import akka.javasdk.agent.autonomous.capability.Delegation
-import akka.javasdk.agent.autonomous.capability.TaskAcceptance
+import akka.javasdk.agent.autonomous.AutonomousAgent
 import akka.javasdk.agent.task.Task
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -19,6 +18,8 @@ class AgentSetupSpec extends AnyWordSpec with Matchers with AutonomousAgentImplS
     .define("TestTask")
     .description("A test task")
     .resultConformsTo(classOf[String])
+
+  abstract class DummyWorker extends AutonomousAgent
 
   "AgentSetup" should {
 
@@ -41,18 +42,28 @@ class AgentSetupSpec extends AnyWordSpec with Matchers with AutonomousAgentImplS
       setup.goal shouldBe Some("Second goal")
     }
 
-    "set capabilities" in {
-      val setup = AgentSetup.create().capabilities(TaskAcceptance.of(testTask)).impl
+    "set task acceptance capability" in {
+      val setup = AgentSetup.create().canAcceptTask(testTask).impl
 
       setup.capabilities.asScala should have size 1
       setup.capabilities.asScala.head.asTaskAcceptance
     }
 
+    "set task acceptance with config" in {
+      val setup = AgentSetup
+        .create()
+        .canAcceptTask(testTask, task => task.maxIterationsPerTask(5))
+        .impl
+
+      setup.capabilities.asScala should have size 1
+      setup.capabilities.asScala.head.asTaskAcceptance.maxIterations shouldBe Some(5)
+    }
+
     "accumulate capabilities" in {
       val setup = AgentSetup
         .create()
-        .capabilities(TaskAcceptance.of(testTask))
-        .capabilities(Delegation.to())
+        .canAcceptTask(testTask)
+        .canDelegateTo(classOf[DummyWorker])
         .impl
 
       setup.capabilities.asScala should have size 2
@@ -64,7 +75,8 @@ class AgentSetupSpec extends AnyWordSpec with Matchers with AutonomousAgentImplS
       val setup = AgentSetup
         .create()
         .goal("Analyse data")
-        .capabilities(TaskAcceptance.of(testTask).maxIterationsPerTask(5), Delegation.to().maxParallelWorkers(2))
+        .canAcceptTask(testTask, task => task.maxIterationsPerTask(5))
+        .canDelegateTo(classOf[DummyWorker], delegation => delegation.maxParallelWorkers(2))
         .impl
 
       setup.goal shouldBe Some("Analyse data")
@@ -74,7 +86,7 @@ class AgentSetupSpec extends AnyWordSpec with Matchers with AutonomousAgentImplS
     "be immutable — each method returns a new instance" in {
       val setup1 = AgentSetup.create()
       val setup2 = setup1.goal("A goal")
-      val setup3 = setup2.capabilities(TaskAcceptance.of(testTask))
+      val setup3 = setup2.canAcceptTask(testTask)
 
       setup1.impl.goal shouldBe None
       setup1.impl.capabilities.asScala shouldBe empty

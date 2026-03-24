@@ -22,6 +22,6 @@ public class SeniorConsultant extends AutonomousAgent {
         """
       )
       .tools(new ConsultingTools())
-      .capabilities(canAcceptTasks(ConsultingTasks.ENGAGEMENT));
+      .canAcceptTask(ConsultingTasks.ENGAGEMENT);
   }
 }

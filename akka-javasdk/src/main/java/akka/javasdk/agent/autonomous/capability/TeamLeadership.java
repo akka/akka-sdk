@@ -5,29 +5,37 @@
 package akka.javasdk.agent.autonomous.capability;
 
 import akka.javasdk.agent.autonomous.AutonomousAgent;
+import java.util.function.UnaryOperator;
 
 /**
- * Declares that an agent can lead a team of autonomous agents. The team lead creates backlogs, adds
- * team members, monitors progress, and disbands the team when work is complete.
+ * Builder for team leadership configuration. Used inside the configuration function passed to
+ * {@link akka.javasdk.agent.autonomous.AgentDefinition#canLeadTeam}.
  *
- * <p>Created via {@link AutonomousAgent#canLeadTeam}.
+ * <p>The team lead creates backlogs, adds team members, monitors progress, and disbands the team
+ * when work is complete.
  */
 public interface TeamLeadership extends AgentCapability {
 
-  /** Create a team leadership capability with the given member types. */
-  static TeamLeadership of(MemberType... memberTypes) {
-    return akka.javasdk.impl.agent.autonomous.capability.TeamLeadershipImpl.create(memberTypes);
-  }
+  /**
+   * Add a member type to the team with default settings (maxInstances = 1).
+   *
+   * @param agentClass the autonomous agent class that can serve as a team member
+   */
+  TeamLeadership withMember(Class<? extends AutonomousAgent> agentClass);
 
-  /** A type of team member that can be added to the team. */
-  interface MemberType {
+  /**
+   * Add a member type to the team with custom configuration.
+   *
+   * @param agentClass the autonomous agent class that can serve as a team member
+   * @param config configuration function for the member type
+   */
+  TeamLeadership withMember(
+      Class<? extends AutonomousAgent> agentClass, UnaryOperator<MemberConfig> config);
 
-    /** Create a member type for the given agent class. */
-    static MemberType of(Class<? extends AutonomousAgent> agentClass) {
-      return new akka.javasdk.impl.agent.autonomous.capability.MemberTypeImpl(agentClass, 1);
-    }
+  /** Configuration for a team member type. */
+  interface MemberConfig {
 
     /** Maximum number of instances of this member type that can be added to the team. */
-    MemberType maxInstances(int max);
+    MemberConfig maxInstances(int max);
   }
 }

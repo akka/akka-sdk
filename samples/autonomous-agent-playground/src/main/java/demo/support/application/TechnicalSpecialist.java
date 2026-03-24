@@ -14,6 +14,7 @@ public class TechnicalSpecialist extends AutonomousAgent {
   public AgentDefinition definition() {
     return define()
       .goal("Diagnose and resolve technical issues for customers.")
-      .capabilities(canAcceptTasks(SupportTasks.RESOLVE).maxIterationsPerTask(5));
+      .canAcceptTask(SupportTasks.RESOLVE, task -> task
+        .maxIterationsPerTask(5));
   }
 }

@@ -18,13 +18,9 @@ public class ReportAgent extends AutonomousAgent {
       .goal(
         "Process report phases: collect data, analyze findings, produce comprehensive reports."
       )
-      .capabilities(
-        canAcceptTasks(
-          PipelineTasks.COLLECT,
-          PipelineTasks.ANALYZE,
-          PipelineTasks.REPORT
-        ).maxIterationsPerTask(5)
-      );
+      .canAcceptTask(PipelineTasks.COLLECT)
+      .canAcceptTask(PipelineTasks.ANALYZE)
+      .canAcceptTask(PipelineTasks.REPORT);
   }
 
   @FunctionTool(description = "Collect data on a topic and return findings")

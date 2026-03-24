@@ -7,9 +7,8 @@ package akka.javasdk.impl.agent.autonomous.capability
 import scala.jdk.CollectionConverters._
 
 import akka.javasdk.agent.autonomous.AutonomousAgent
-import akka.javasdk.agent.autonomous.capability.Delegation
-import akka.javasdk.agent.autonomous.capability.TaskAcceptance
 import akka.javasdk.agent.task.Task
+import akka.javasdk.impl.agent.autonomous.AgentDefinitionImpl
 import akka.javasdk.impl.agent.autonomous.AutonomousAgentImplSupport
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -26,70 +25,144 @@ class CapabilityBuildersSpec extends AnyWordSpec with Matchers with AutonomousAg
     .description("Second task")
     .resultConformsTo(classOf[String])
 
-  "TaskAcceptance" should {
+  // Dummy agent classes for testing
+  abstract class AgentA extends AutonomousAgent
+  abstract class AgentB extends AutonomousAgent
+  abstract class DummyDeveloper extends AutonomousAgent
+  abstract class DummyReviewer extends AutonomousAgent
 
-    "create with task definitions" in {
-      val acceptance = TaskAcceptance.of(task1, task2).impl
+  "canAcceptTask" should {
 
-      acceptance.taskDefinitions.asScala should have size 2
-      acceptance.taskDefinitions.asScala.head.name() shouldBe "Task1"
-      acceptance.taskDefinitions.asScala(1).name() shouldBe "Task2"
+    "create with task definition (no config)" in {
+      val definition = AgentDefinitionImpl
+        .empty()
+        .canAcceptTask(task1)
+        .asInstanceOf[AgentDefinitionImpl]
+
+      definition.capabilities.asScala should have size 1
+      val ta = definition.capabilities.asScala.head.asTaskAcceptance
+      ta.taskDefinitions.asScala should have size 1
+      ta.taskDefinitions.asScala.head.name() shouldBe "Task1"
+    }
+
+    "accumulate multiple task types" in {
+      val definition = AgentDefinitionImpl
+        .empty()
+        .canAcceptTask(task1)
+        .canAcceptTask(task2)
+        .asInstanceOf[AgentDefinitionImpl]
+
+      definition.capabilities.asScala should have size 2
+      definition.capabilities.asScala.head.asTaskAcceptance.taskDefinitions.asScala.head.name() shouldBe "Task1"
+      definition.capabilities.asScala(1).asTaskAcceptance.taskDefinitions.asScala.head.name() shouldBe "Task2"
     }
 
     "use config default for max iterations" in {
-      TaskAcceptance.of(task1).impl.maxIterations shouldBe None
+      val definition = AgentDefinitionImpl
+        .empty()
+        .canAcceptTask(task1)
+        .asInstanceOf[AgentDefinitionImpl]
+
+      definition.capabilities.asScala.head.asTaskAcceptance.maxIterations shouldBe None
     }
 
-    "set explicit max iterations" in {
-      TaskAcceptance.of(task1).maxIterationsPerTask(5).impl.maxIterations shouldBe Some(5)
+    "set explicit max iterations via lambda" in {
+      val definition = AgentDefinitionImpl
+        .empty()
+        .canAcceptTask(task1, task => task.maxIterationsPerTask(5))
+        .asInstanceOf[AgentDefinitionImpl]
+
+      definition.capabilities.asScala.head.asTaskAcceptance.maxIterations shouldBe Some(5)
+    }
+
+    "set handoff targets via lambda" in {
+      val definition = AgentDefinitionImpl
+        .empty()
+        .canAcceptTask(task1, task => task.canHandoffTo(classOf[AgentA], classOf[AgentB]))
+        .asInstanceOf[AgentDefinitionImpl]
+
+      val ta = definition.capabilities.asScala.head.asTaskAcceptance
+      ta.handoffTargets.asScala should have size 2
+      ta.handoffTargets.asScala.head shouldBe classOf[AgentA]
+      ta.handoffTargets.asScala(1) shouldBe classOf[AgentB]
+    }
+
+    "scope handoffs per task" in {
+      val definition = AgentDefinitionImpl
+        .empty()
+        .canAcceptTask(
+          task1,
+          task =>
+            task
+              .maxIterationsPerTask(10)
+              .canHandoffTo(classOf[AgentA]))
+        .canAcceptTask(
+          task2,
+          task =>
+            task
+              .maxIterationsPerTask(3)
+              .canHandoffTo(classOf[AgentB]))
+        .asInstanceOf[AgentDefinitionImpl]
+
+      definition.capabilities.asScala should have size 2
+
+      val ta1 = definition.capabilities.asScala.head.asTaskAcceptance
+      ta1.taskDefinitions.asScala.head.name() shouldBe "Task1"
+      ta1.maxIterations shouldBe Some(10)
+      ta1.handoffTargets.asScala should contain only classOf[AgentA]
+
+      val ta2 = definition.capabilities.asScala(1).asTaskAcceptance
+      ta2.taskDefinitions.asScala.head.name() shouldBe "Task2"
+      ta2.maxIterations shouldBe Some(3)
+      ta2.handoffTargets.asScala should contain only classOf[AgentB]
     }
 
     "start with empty handoff targets" in {
-      TaskAcceptance.of(task1).impl.handoffTargets.asScala shouldBe empty
-    }
+      val definition = AgentDefinitionImpl
+        .empty()
+        .canAcceptTask(task1)
+        .asInstanceOf[AgentDefinitionImpl]
 
-    "be immutable — maxIterationsPerTask returns new instance" in {
-      val original = TaskAcceptance.of(task1)
-      val modified = original.maxIterationsPerTask(5)
-
-      original.impl.maxIterations shouldBe None
-      modified.impl.maxIterations shouldBe Some(5)
+      definition.capabilities.asScala.head.asTaskAcceptance.handoffTargets.asScala shouldBe empty
     }
   }
 
-  "Delegation" should {
+  "canDelegateTo" should {
 
-    "create empty via static factory" in {
-      val delegation = Delegation.to().impl
+    "create with target agent (no config)" in {
+      val definition = AgentDefinitionImpl
+        .empty()
+        .canDelegateTo(classOf[AgentA])
+        .asInstanceOf[AgentDefinitionImpl]
 
-      delegation.delegationTargets.asScala shouldBe empty
-      delegation.maxParallel shouldBe None
+      definition.capabilities.asScala should have size 1
+      val d = definition.capabilities.asScala.head.asDelegation
+      d.delegationTargets.asScala should have size 1
+      d.maxParallel shouldBe None
     }
 
-    "set max parallel workers" in {
-      Delegation.to().maxParallelWorkers(3).impl.maxParallel shouldBe Some(3)
-    }
+    "set max parallel workers via lambda" in {
+      val definition = AgentDefinitionImpl
+        .empty()
+        .canDelegateTo(classOf[AgentA], delegation => delegation.maxParallelWorkers(3))
+        .asInstanceOf[AgentDefinitionImpl]
 
-    "be immutable — maxParallelWorkers returns new instance" in {
-      val original = Delegation.to()
-      val modified = original.maxParallelWorkers(5)
-
-      original.impl.maxParallel shouldBe None
-      modified.impl.maxParallel shouldBe Some(5)
+      definition.capabilities.asScala.head.asDelegation.maxParallel shouldBe Some(3)
     }
   }
 
-  "TeamLeadership" should {
-
-    // Dummy agent classes for testing
-    abstract class DummyDeveloper extends AutonomousAgent
-    abstract class DummyReviewer extends AutonomousAgent
+  "canLeadTeam" should {
 
     "create with member types" in {
-      val developer = new MemberTypeImpl(classOf[DummyDeveloper], 3)
-      val reviewer = new MemberTypeImpl(classOf[DummyReviewer], 1)
-      val leadership = TeamLeadershipImpl.create(Array(developer, reviewer))
+      val definition = AgentDefinitionImpl
+        .empty()
+        .canLeadTeam(team =>
+          team
+            .withMember(classOf[DummyDeveloper], member => member.maxInstances(3))
+            .withMember(classOf[DummyReviewer]))
+        .asInstanceOf[AgentDefinitionImpl]
 
+      val leadership = definition.capabilities.asScala.head.asTeamLeadership
       leadership.members should have size 2
       leadership.members.head.agentClass shouldBe classOf[DummyDeveloper]
       leadership.members.head.maxMemberInstances shouldBe 3
@@ -98,17 +171,31 @@ class CapabilityBuildersSpec extends AnyWordSpec with Matchers with AutonomousAg
     }
 
     "default maxInstances to 1" in {
-      val memberType = new MemberTypeImpl(classOf[DummyDeveloper], 1)
+      val definition = AgentDefinitionImpl
+        .empty()
+        .canLeadTeam(team => team.withMember(classOf[DummyDeveloper]))
+        .asInstanceOf[AgentDefinitionImpl]
 
-      memberType.maxMemberInstances shouldBe 1
+      val leadership = definition.capabilities.asScala.head.asTeamLeadership
+      leadership.members.head.maxMemberInstances shouldBe 1
     }
+  }
 
-    "set maxInstances on member type" in {
-      val original = new MemberTypeImpl(classOf[DummyDeveloper], 1)
-      val modified = original.maxInstances(5).asInstanceOf[MemberTypeImpl]
+  "mixed capabilities" should {
 
-      modified.maxMemberInstances shouldBe 5
-      original.maxMemberInstances shouldBe 1 // original unchanged
+    "accumulate on AgentDefinition" in {
+      val definition = AgentDefinitionImpl
+        .empty()
+        .goal("Test agent")
+        .canAcceptTask(task1, task => task.maxIterationsPerTask(5))
+        .canDelegateTo(classOf[AgentA], delegation => delegation.maxParallelWorkers(2))
+        .canLeadTeam(team => team.withMember(classOf[DummyDeveloper]))
+        .asInstanceOf[AgentDefinitionImpl]
+
+      definition.capabilities.asScala should have size 3
+      definition.capabilities.asScala(0).asTaskAcceptance
+      definition.capabilities.asScala(1).asDelegation
+      definition.capabilities.asScala(2).asTeamLeadership
     }
   }
 }

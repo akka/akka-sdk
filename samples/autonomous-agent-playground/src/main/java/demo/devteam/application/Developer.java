@@ -11,7 +11,7 @@ public class Developer extends AutonomousAgent {
   public AgentDefinition definition() {
     return define()
       .goal("Implement features with clean, tested code.")
-      .capabilities(canAcceptTasks(DeveloperTasks.IMPLEMENT))
+      .canAcceptTask(DeveloperTasks.IMPLEMENT)
       .tools(new CodeTools());
   }
 }

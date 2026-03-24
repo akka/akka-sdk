@@ -4,21 +4,11 @@
 
 package akka.javasdk.agent.autonomous.capability;
 
-import akka.javasdk.agent.autonomous.AutonomousAgent;
-
 /**
- * Declares that an agent can delegate subtasks to other autonomous agents. The delegating agent
- * pauses while workers execute, then resumes with their results.
- *
- * <p>Created via {@link AutonomousAgent#canDelegateTo} or {@link Delegation#to}.
+ * Builder for delegation configuration. Used inside the configuration function passed to {@link
+ * akka.javasdk.agent.autonomous.AgentDefinition#canDelegateTo}.
  */
 public interface Delegation extends AgentCapability {
-
-  /** Create a delegation capability for the given target agents. */
-  @SuppressWarnings("unchecked")
-  static Delegation to(Class<? extends AutonomousAgent>... agents) {
-    return akka.javasdk.impl.agent.autonomous.capability.DelegationImpl.create(agents);
-  }
 
   /**
    * Maximum number of worker agents that can execute delegated subtasks concurrently. Default is

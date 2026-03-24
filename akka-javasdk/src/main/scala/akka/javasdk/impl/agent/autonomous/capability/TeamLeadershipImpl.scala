@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.agent.autonomous.capability
 
+import java.util.function.UnaryOperator
+
 import akka.annotation.InternalApi
 import akka.javasdk.agent.autonomous.AutonomousAgent
 import akka.javasdk.agent.autonomous.capability.TeamLeadership
@@ -12,24 +14,27 @@ import akka.javasdk.agent.autonomous.capability.TeamLeadership
  * INTERNAL API
  */
 @InternalApi
-final case class TeamLeadershipImpl(members: Seq[MemberTypeImpl]) extends TeamLeadership
+final case class TeamLeadershipImpl(members: Seq[MemberTypeImpl]) extends TeamLeadership {
 
-/**
- * INTERNAL API
- */
-@InternalApi
-final case class MemberTypeImpl(agentClass: Class[_ <: AutonomousAgent], maxMemberInstances: Int)
-    extends TeamLeadership.MemberType {
+  override def withMember(agentClass: Class[_ <: AutonomousAgent]): TeamLeadership =
+    copy(members = members :+ MemberTypeImpl(agentClass, 1))
 
-  override def maxInstances(max: Int): TeamLeadership.MemberType =
-    copy(maxMemberInstances = max)
+  override def withMember(
+      agentClass: Class[_ <: AutonomousAgent],
+      config: UnaryOperator[TeamLeadership.MemberConfig]): TeamLeadership = {
+    val initial: TeamLeadership.MemberConfig = MemberTypeImpl(agentClass, 1)
+    val configured = config.apply(initial).asInstanceOf[MemberTypeImpl]
+    copy(members = members :+ configured)
+  }
 }
 
 /**
  * INTERNAL API
  */
 @InternalApi
-object TeamLeadershipImpl {
-  def create(members: Array[TeamLeadership.MemberType]): TeamLeadershipImpl =
-    TeamLeadershipImpl(members.toSeq.map(_.asInstanceOf[MemberTypeImpl]))
+final case class MemberTypeImpl(agentClass: Class[_ <: AutonomousAgent], maxMemberInstances: Int)
+    extends TeamLeadership.MemberConfig {
+
+  override def maxInstances(max: Int): TeamLeadership.MemberConfig =
+    copy(maxMemberInstances = max)
 }

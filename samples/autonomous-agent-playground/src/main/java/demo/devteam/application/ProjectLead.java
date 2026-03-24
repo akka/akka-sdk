@@ -14,9 +14,9 @@ public class ProjectLead extends AutonomousAgent {
   public AgentDefinition definition() {
     return define()
       .goal("Deliver completed software projects with all features implemented and tested.")
-      .capabilities(
-        canAcceptTasks(ProjectTasks.PLAN).maxIterationsPerTask(40),
-        canLeadTeam(teamMember(Developer.class).maxInstances(3))
-      );
+      .canAcceptTask(ProjectTasks.PLAN, task -> task
+        .maxIterationsPerTask(40))
+      .canLeadTeam(team -> team
+        .withMember(Developer.class, member -> member.maxInstances(3)));
   }
 }

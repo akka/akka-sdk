@@ -4,8 +4,12 @@
 
 package akka.javasdk.agent.autonomous;
 
-import akka.javasdk.agent.autonomous.capability.AgentCapability;
+import akka.javasdk.agent.autonomous.capability.Delegation;
+import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
+import akka.javasdk.agent.autonomous.capability.TeamLeadership;
+import akka.javasdk.agent.task.TaskDefinition;
 import akka.javasdk.impl.agent.autonomous.AgentSetupImpl;
+import java.util.function.UnaryOperator;
 
 /**
  * Per-instance configuration applied on top of an agent's static {@link AgentDefinition}. Use this
@@ -29,6 +33,19 @@ public interface AgentSetup {
    */
   AgentSetup goal(String goal);
 
-  /** Add capabilities for this instance, extending the static capabilities. */
-  AgentSetup capabilities(AgentCapability... capabilities);
+  /** Declare that this agent instance can accept and process a task of the specified type. */
+  AgentSetup canAcceptTask(TaskDefinition<?> task);
+
+  /** Declare that this agent instance can accept and process a task, with custom settings. */
+  AgentSetup canAcceptTask(TaskDefinition<?> task, UnaryOperator<TaskAcceptance> config);
+
+  /** Declare that this agent instance can delegate subtasks to the specified worker agent. */
+  AgentSetup canDelegateTo(Class<? extends AutonomousAgent> agent);
+
+  /** Declare that this agent instance can delegate subtasks, with custom settings. */
+  AgentSetup canDelegateTo(
+      Class<? extends AutonomousAgent> agent, UnaryOperator<Delegation> config);
+
+  /** Declare that this agent instance can lead a team of autonomous agents. */
+  AgentSetup canLeadTeam(UnaryOperator<TeamLeadership> config);
 }
