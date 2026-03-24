@@ -153,6 +153,7 @@ private[impl] final class AutonomousAgentImpl(
   private val backlogTransferMethod =
     classOf[BacklogEntity].getMethod("transfer", classOf[BacklogEntity.TransferRequest])
   private val backlogCancelUnclaimedMethod = classOf[BacklogEntity].getMethod("cancelUnclaimed")
+  private val backlogCloseMethod = classOf[BacklogEntity].getMethod("close")
   private val backlogGetStateMethod = classOf[BacklogEntity].getMethod("getState")
 
   private def backlogEntityClient(backlogId: String): EntityClientImpl =
@@ -273,17 +274,19 @@ private[impl] final class AutonomousAgentImpl(
         .asScala
         .map(_ => Done)(sdkExecutionContext)
 
+    override def closeBacklog(backlogId: String): Future[Done] =
+      backlogEntityClient(backlogId)
+        .methodRefNoArg[Done](backlogCloseMethod)
+        .invokeAsync()
+        .asScala
+        .map(_ => Done)(sdkExecutionContext)
+
     override def getState(backlogId: String): Future[SpiBacklog.SpiBacklogState] =
       backlogEntityClient(backlogId)
         .methodRefNoArg[BacklogState](backlogGetStateMethod)
         .invokeAsync()
         .asScala
         .map(toSpiBacklogState)(sdkExecutionContext)
-
-    override def closeBacklog(backlogId: String): Future[Done] = {
-      // FIXME ?
-      Future.successful(Done)
-    }
   }
 
   override def getSessionHistory(sessionId: String): Future[Seq[SpiAgent.ContextMessage]] =
@@ -382,7 +385,7 @@ private[impl] final class AutonomousAgentImpl(
         taskId = entry.taskId(),
         claimedBy = if (entry.claimedBy().isPresent) Some(entry.claimedBy().get()) else None)
     }
-    new SpiBacklog.SpiBacklogState(state.name(), entries)
+    new SpiBacklog.SpiBacklogState(state.name(), entries, state.closed())
   }
 
   private def attachmentToSpi(ref: TaskAttachment): SpiAgent.MessageContent =

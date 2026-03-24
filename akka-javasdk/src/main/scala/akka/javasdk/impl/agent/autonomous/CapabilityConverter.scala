@@ -13,9 +13,9 @@ import akka.javasdk.agent.task.TaskDefinition
 import akka.javasdk.agent.task.TaskTemplate
 import akka.javasdk.impl.JsonSchema
 import akka.javasdk.impl.agent.autonomous.capability.DelegationImpl
-import akka.javasdk.impl.agent.autonomous.capability.TeamMemberImpl
 import akka.javasdk.impl.agent.autonomous.capability.TaskAcceptanceImpl
 import akka.javasdk.impl.agent.autonomous.capability.TeamLeadershipImpl
+import akka.javasdk.impl.agent.autonomous.capability.TeamMemberImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.runtime.sdk.spi.AutonomousAgentDescriptor
 import akka.runtime.sdk.spi.SpiAutonomousAgent
