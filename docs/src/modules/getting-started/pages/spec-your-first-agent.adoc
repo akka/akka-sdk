@@ -63,7 +63,7 @@ You should now have everything you need to easily use Spec-Driven Development to
 
 As the instructions say, you'll need to restart Claude Code in order to load the newly installed MCP server from the Akka CLI. 
 
-IMPORTANT: From now on, any time you see `/akka.{command}` in the documentation referring to using Claude Code _without_ the marketplace plugin, you should substitute the `/akka-specify:{command}` plugin-based alternative.
+IMPORTANT: From now on, any time you see `/akka.\{command\}` in the documentation referring to using Claude Code _without_ the marketplace plugin, you should substitute the `/akka-specify:\{command\}` plugin-based alternative.
 
 Now you're ready to initialize a specification.
 
