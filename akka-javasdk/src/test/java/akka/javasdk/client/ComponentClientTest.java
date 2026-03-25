@@ -22,6 +22,7 @@ import akka.javasdk.testmodels.view.ViewTestModels;
 import akka.javasdk.testmodels.view.ViewTestModels.UserByEmailWithGet;
 import akka.runtime.sdk.spi.*;
 import akka.runtime.sdk.spi.AgentClient;
+import akka.runtime.sdk.spi.AutonomousAgentClient;
 import akka.runtime.sdk.spi.TimedActionClient;
 import akka.runtime.sdk.spi.ViewClient;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -75,12 +76,18 @@ class ComponentClientTest {
           public TimedActionClient timedActionClient() {
             return null;
           }
+
+          @Override
+          public AutonomousAgentClient autonomousAgentClient() {
+            return null;
+          }
         };
     componentClient =
         new ComponentClientImpl(
             dummyComponentClients,
             serializer,
             null,
+            Option.empty(),
             Option.empty(),
             ExecutionContext.global(),
             null);

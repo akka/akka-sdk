@@ -6,6 +6,7 @@ package akka.javasdk.client;
 
 import akka.annotation.DoNotInherit;
 import akka.javasdk.agent.Agent;
+import akka.javasdk.agent.autonomous.AutonomousAgent;
 
 /**
  * Utility to send requests to other components by composing a call that can be executed by the
@@ -62,4 +63,21 @@ public interface ComponentClient {
 
   /** Select {@link Agent} as a call target component. */
   AgentClient forAgent();
+
+  /**
+   * Select an {@link AutonomousAgent} as a call target component.
+   *
+   * @param agentClass the autonomous agent class
+   * @param agentId the instance id
+   * @param <T> the autonomous agent type
+   */
+  <T extends AutonomousAgent> AutonomousAgentClient forAutonomousAgent(
+      Class<T> agentClass, String agentId);
+
+  /**
+   * Select a task for querying its status and result.
+   *
+   * @param taskId the task entity ID
+   */
+  TaskClient forTask(String taskId);
 }

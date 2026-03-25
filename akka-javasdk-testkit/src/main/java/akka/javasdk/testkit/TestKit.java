@@ -591,8 +591,11 @@ public class TestKit {
           modelProvidersByAgentId);
     }
 
-    public Settings withModelProvider(
-        Class<? extends Agent> agentClass, ModelProvider modelProvider) {
+    /**
+     * Override the model provider for an {@link Agent} or {@link AutonomousAgent} component. The
+     * class must be annotated with {@code @Component(id = "...")} or {@code @ComponentId}.
+     */
+    public Settings withModelProvider(Class<?> agentClass, ModelProvider modelProvider) {
       var componentId = getComponentId(agentClass);
       var newModelProvidersByAgentId = new HashMap<>(modelProvidersByAgentId);
       newModelProvidersByAgentId.put(componentId, modelProvider);
@@ -856,6 +859,7 @@ public class TestKit {
               componentClients,
               serializer,
               startupContext.agentRegistry().agentClassById(),
+              Option.empty(),
               Option.empty(),
               runtimeActorSystem.executionContext(),
               runtimeActorSystem);

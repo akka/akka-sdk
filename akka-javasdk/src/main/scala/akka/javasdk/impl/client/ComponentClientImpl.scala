@@ -10,14 +10,19 @@ import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.agent.Agent
+import akka.javasdk.agent.autonomous.AutonomousAgent
 import akka.javasdk.client.AgentClient
+import akka.javasdk.client.AutonomousAgentClient
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.client.EventSourcedEntityClient
 import akka.javasdk.client.KeyValueEntityClient
+import akka.javasdk.client.TaskClient
 import akka.javasdk.client.TimedActionClient
 import akka.javasdk.client.ViewClient
 import akka.javasdk.client.WorkflowClient
 import akka.javasdk.impl.MetadataImpl
+import akka.javasdk.impl.agent.autonomous.CapabilityConverter
+import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
 import io.opentelemetry.context.{ Context => OtelContext }
@@ -32,6 +37,7 @@ private[javasdk] final case class ComponentClientImpl(
     runtimeComponentClients: RuntimeComponentClients,
     serializer: Serializer,
     agentClassById: Map[String, Class[Agent]],
+    agentCapabilityConverter: Option[CapabilityConverter],
     telemetryContext: Option[OtelContext])(implicit ec: ExecutionContext, system: ActorSystem[_])
     extends ComponentClient {
 
@@ -72,5 +78,21 @@ private[javasdk] final case class ComponentClientImpl(
 
   override def forAgent(): AgentClient =
     AgentClientImpl(runtimeComponentClients.agentClient, serializer, callMetadata, agentClassById, sessionId = "")
+
+  override def forAutonomousAgent[T <: AutonomousAgent](agentClass: Class[T], agentId: String): AutonomousAgentClient =
+    if (agentId eq null) throw new NullPointerException("Autonomous agent id is null")
+    else if (agentId.isEmpty) throw new IllegalArgumentException("Empty autonomous agent id not allowed")
+    else
+      new AutonomousAgentClientImpl(
+        agentId,
+        Reflect.readComponentId(agentClass),
+        runtimeComponentClients,
+        agentCapabilityConverter,
+        serializer,
+        callMetadata)
+
+  override def forTask(taskId: String): TaskClient =
+    if (taskId eq null) throw new NullPointerException("Task ID is null")
+    else new TaskClientImpl(taskId, runtimeComponentClients, serializer, callMetadata)
 
 }
