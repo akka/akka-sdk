@@ -54,8 +54,9 @@ This configures your environment — ensuring the Akka CLI is installed, Java an
 NOTE: Not using Claude Code? Akka supports 30 different AI assist tools. Visit https://doc.akka.io[doc.akka.io] for installation instructions for your tool.
 
 [TIP.manual]
+.Without the plugin
 ====
-If you are unable to install the marketplace plugin or clone the repository, fall back to the Akka CLI:
+If you are unable to install the marketplace plugin or clone the plugin from the repository, fall back to the Akka CLI:
 
 . Install the Akka CLI (see xref:operations:cli/installation.adoc[]).
 . Run `akka specify init <dir>` to provision a new AI-assist ready project.
