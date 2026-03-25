@@ -12,7 +12,7 @@ include::ROOT:partial$include.adoc[]
 Akka is a full-stack platform that brings together three dimensions into a single, coherent system:
 
 * *Reliability* (Runtime) — Akka's runtime manages persistence, consistency, replication, and self-healing so your services stay available under real-world conditions.
-* *Risk Control* (Governance) — Built-in access control, request validation, region-aware deployment, explainability, interaction logging, intent logging, and an OPA-driven policy enforcement engine let you enforce governance without bolting on external tools.
+* *Risk Control* (Governance) — Built-in access control, request validation, region-aware deployment, and operational boundaries let you enforce policy without bolting on external tools.
 * *Repeatability* (Developer Experience) — A clear project structure, layered separation of concerns, and Akka-provided building blocks mean you can develop, test, and iterate predictably across teams and services.
 
 These three dimensions are reflected directly in how you structure your code, how you deploy your services, and how you operate them in production. The sections below show you how each maps to the architecture of an Akka project.
