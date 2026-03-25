@@ -1,4 +1,4 @@
-= Governance & the runtime
+= Governance & the Runtime
 :page-summary: Why bolt-on governance fails for agentic AI and how Akka embeds governance directly in the runtime for EU AI Act compliance.
 :page-persona: builder-developer, builder-ai-ml, governance-compliance, governance-infosec
 
