@@ -25,8 +25,8 @@ Orchestrate multiple agents that collaborate on shared goals, hand off tasks to 
 
 The following sample projects demonstrate this pattern:
 
-* {sample-base-url}/multi-agent[multi-agent] -- multiple agents coordinating on a shared task with structured handoffs
-* {sample-base-url}/customer-service-chat[customer-service-chat] -- multi-agent customer service system with routing and specialization
+* link:{sample-base-url}/multi-agent[multi-agent] -- multiple agents coordinating on a shared task with structured handoffs
+* link:{sample-base-url}/customer-service-chat[customer-service-chat] -- multi-agent customer service system with routing and specialization
 
 == See Also
 

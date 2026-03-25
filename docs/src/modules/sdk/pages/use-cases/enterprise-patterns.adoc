@@ -26,9 +26,9 @@ Implement classic enterprise patterns with Akka including shopping carts, custom
 
 The following sample projects demonstrate this pattern:
 
-* {sample-base-url}/shopping-cart-quickstart[shopping-cart-quickstart] -- event sourced shopping cart with views and projections
-* {sample-base-url}/choreography-saga-quickstart[choreography-saga-quickstart] -- choreography-based saga for distributed business transactions
-* {sample-base-url}/spring-dependency-injection[spring-dependency-injection] -- integrating Akka components with Spring dependency injection
+* link:{sample-base-url}/shopping-cart-quickstart[shopping-cart-quickstart] -- event sourced shopping cart with views and projections
+* link:{sample-base-url}/choreography-saga-quickstart[choreography-saga-quickstart] -- choreography-based saga for distributed business transactions
+* link:{sample-base-url}/spring-dependency-injection[spring-dependency-injection] -- integrating Akka components with Spring dependency injection
 
 == See Also
 
