@@ -1,9 +1,11 @@
 = Build your first agent
 :page-aliases: java:build-your-first-application.adoc, java:author-your-first-service.adoc, sdk:author-your-first-service.adoc
+:page-summary: Hands-on tutorial to build your first Akka agent — start with Spec-Driven Development or follow the classic manual approach.
+:page-persona: builder-developer
 
 include::ROOT:partial$include.adoc[]
 
-TIP: As alternative without coding in Java, you may use xref:sdk:spec-driven-development.adoc[Spec-Driven Development] to create a version of the xref:getting-started:spec-your-first-agent.adoc[].
+TIP: The recommended way to build your first agent is with xref:getting-started:spec-your-first-agent.adoc[Spec-Driven Development]. The tutorial below walks through the manual, hands-on Java approach — ideal for understanding how Akka components work under the hood.
 
 == Introduction
 
@@ -207,7 +209,7 @@ Something like:
 ----
 Hello, Blackbeard! (English)
 
-What a fantastic name you have! It’s not every day I get to chat with a legendary pirate.
+What a fantastic name you have! It's not every day I get to chat with a legendary pirate.
 So tell me, do you sail the high seas or do you prefer to dock at the local coffee shop
 for a pirate-themed chai latte?
 
@@ -288,3 +290,9 @@ Now that you have a basic service running, it's time to learn more about buildin
 * See the xref:getting-started:spec-your-first-agent.adoc[Spec-first greeting agent] sample if you use an AI assistant and want to see a xref:sdk:spec-driven-development.adoc[Spec-Driven Development] alternative to this example.
 * See xref:getting-started:planner-agent/index.adoc[multi-agent planner] to build a more realistic application.
 * xref:quick-deploy.adoc[]
+
+== See also
+
+* xref:sdk:spec-driven-development.adoc[]
+* xref:getting-started:planner-agent/index.adoc[]
+* link:{url-ext-akkademy}[Akkademy training, window="new"]
