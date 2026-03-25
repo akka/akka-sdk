@@ -28,6 +28,16 @@ These are guarantees no other agentic AI vendor makes:
 * Fully sovereign cloud deployment option preserving HA/DR across China, EU, Singapore, and more
 * Real-time AI policy enforcement engine fully embedded within the runtime
 
+== Service Tiers
+
+[cols="1,3"]
+|===
+| Fast Prod | A private, multi-tenant Akka installation in your VPC or datacenter — isolated per team and project, sized for most production workloads from day one.
+| Day 2 Ops | Adds elastic scaling (to zero when idle, to millions of TPS under load), live CVE patching, rolling app updates, and AI explainability tooling.
+| Business Continuity | Active-active HA/DR across multiple regions or clouds — sub-1 minute RTO, zero byte RPO, and conflict resolution when regions split.
+| Sovereign Cloud | Country-isolated configuration for regulatory requirements — all traffic and data stays in-region, with local SREs and a private federation plane.
+|===
+
 == Application Types
 
 Akka supports a range of application patterns:
