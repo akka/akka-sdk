@@ -29,7 +29,7 @@ include::ROOT:partial$local-dev-prerequisites.adoc[]
 * Git
 * xref:quick-install-cli.adoc[Akka CLI]
 
-== Install the Claude Code Plugin (optional)
+== Install the Claude Code Plugin
 If you're using Claude Code, then you can take advantage of the plugin marketplace to install the https://github.com/akka/ai-marketplace[Akka specification plugin, window="new"], which will also automatically install and verify the Akka CLI for you.
 
 With Claude Code running within the directory you plan to use for your new project, issue the following commands:
