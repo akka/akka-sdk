@@ -6,11 +6,6 @@ include::ROOT:partial$include.adoc[]
 
 == Get started with Akka
 
-[TIP]
-====
-*New to Akka? Start here.*
-====
-
 The fastest way to start building with Akka is to install the Akka plugin and run a specification. No Java or Maven setup required — the plugin handles everything.
 
 === Step 1: Install the Akka plugin
