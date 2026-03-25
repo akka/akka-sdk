@@ -480,6 +480,18 @@ public abstract class EventSourcedEntity<S, E> {
       OnSuccessBuilder<S> deleteEntity();
 
       /**
+       * Set a time-to-live for the entity. The entity will be automatically deleted after the given
+       * duration has elapsed since the last event was persisted, if no further events have been
+       * persisted.
+       *
+       * <p>A subsequent persist without {@code expireAfter} will cancel the TTL. To keep the entity
+       * expiring after further updates, each persist must include {@code expireAfter}.
+       *
+       * @param duration The duration after which the entity will be deleted.
+       */
+      OnSuccessBuilder<S> expireAfter(java.time.Duration duration);
+
+      /**
        * Reply after for example {@code persist} event.
        *
        * @param replyMessage Function to create the reply message from the new state.

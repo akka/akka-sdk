@@ -7,7 +7,6 @@ package akka.javasdk.impl.keyvalueentity
 import java.util.Optional
 
 import scala.concurrent.Future
-import scala.jdk.DurationConverters._
 import scala.util.control.NonFatal
 
 import akka.annotation.InternalApi
@@ -156,7 +155,7 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
                   deleteEntity = false,
                   stateMetadata,
                   replicationFilter = commandEffect.replFilter.toSpi,
-                  ttl = commandEffect.ttl.map(_.toScala)))
+                  ttl = commandEffect.ttl))
           }
 
         case DeleteEntity =>
