@@ -1,4 +1,4 @@
-= Autonomous Agents
+= Autonomous agents
 :page-summary: Build agents that independently process data, make decisions, and take actions with minimal human intervention.
 :page-persona: builder-developer, builder-ai-ml
 
