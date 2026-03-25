@@ -1,0 +1,37 @@
+= RAG & Knowledge
+:page-summary: Build retrieval-augmented generation systems with vector embeddings, knowledge indexing, and conversational memory.
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+Build retrieval-augmented generation (RAG) systems that ground LLM responses in your own data. This pattern covers knowledge indexing, vector embeddings for semantic search, and combining retrieved context with conversational memory to produce accurate, sourced answers.
+
+== Overview
+
+=== When to Use This Pattern
+
+* You need an agent that answers questions grounded in your organization's documents or data
+* Your application requires semantic search over a knowledge base with vector embeddings
+* You want to combine retrieved context with conversation history for accurate responses
+* You need to index and update knowledge sources as they change over time
+
+=== Akka Components Involved
+
+* *Agents* -- conversational interface that queries knowledge and generates grounded responses
+* *Views* -- index and query knowledge bases, including vector similarity search
+* *HTTP Endpoints* -- expose RAG-powered agents and knowledge ingestion APIs
+
+== Sample Projects
+
+The following sample projects demonstrate this pattern:
+
+* {sample-base-url}/ask-akka-agent[ask-akka-agent] -- RAG agent that answers questions about Akka documentation using vector search and conversational memory
+
+== Pattern Walkthrough
+
+_Code walkthrough coming soon. This section will include an annotated walkthrough of a sample project showing how the system is composed._
+
+== See Also
+
+* xref:sdk:agents.adoc[]
+* xref:sdk:integrations/rag.adoc[]

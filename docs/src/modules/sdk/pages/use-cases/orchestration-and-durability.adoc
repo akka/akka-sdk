@@ -1,0 +1,42 @@
+= Orchestration & Durability
+:page-summary: Build long-running, multi-step business processes with compensation, saga patterns, and reliable timers.
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+Build long-running, multi-step business processes that survive failures and recover gracefully. This pattern covers durable workflow orchestration with compensation logic, saga patterns for distributed transactions, and reliable timers for scheduled operations -- all with built-in fault tolerance.
+
+== Overview
+
+=== When to Use This Pattern
+
+* You need multi-step business processes that must complete reliably despite failures
+* Your application requires compensation logic to undo partial work when a step fails
+* You want to implement saga patterns for coordinating distributed transactions
+* You need reliable timers or scheduled actions that survive process restarts
+
+=== Akka Components Involved
+
+* *Workflows* -- define multi-step processes with compensation, retries, and durable state
+* *Timed Actions* -- schedule reliable timers and periodic operations
+* *Entities* -- maintain durable state for each step in the orchestration
+
+== Sample Projects
+
+The following sample projects demonstrate this pattern:
+
+* {sample-base-url}/transfer-workflow[transfer-workflow] -- basic multi-step transfer workflow
+* {sample-base-url}/transfer-workflow-orchestration[transfer-workflow-orchestration] -- orchestration-based saga for fund transfers
+* {sample-base-url}/transfer-workflow-compensation[transfer-workflow-compensation] -- transfer workflow with compensation logic for failure recovery
+* {sample-base-url}/choreography-saga-quickstart[choreography-saga-quickstart] -- choreography-based saga pattern for distributed coordination
+* {sample-base-url}/reliable-timers[reliable-timers] -- durable timers that survive restarts and failures
+
+== Pattern Walkthrough
+
+_Code walkthrough coming soon. This section will include an annotated walkthrough of a sample project showing how the system is composed._
+
+== See Also
+
+* xref:sdk:workflows.adoc[]
+* xref:sdk:timed-actions.adoc[]
+* xref:concepts:saga-patterns.adoc[]

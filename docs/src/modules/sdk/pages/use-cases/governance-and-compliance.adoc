@@ -1,0 +1,44 @@
+= Governance & Compliance
+:page-summary: Enforce runtime policies, sanitize PII, and ensure EU AI Act compliance with built-in governance.
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+Enforce runtime policies, sanitize personally identifiable information (PII), and build toward EU AI Act compliance with Akka's built-in governance capabilities. This pattern covers guardrails that validate agent inputs and outputs, sanitization pipelines that scrub sensitive data, and observability hooks for audit trails and compliance reporting.
+
+NOTE: *Status: Partial* -- This pattern guide describes the governance approach and available components. A dedicated governance-focused sample project is pending; a full code walkthrough will be added when that sample is available.
+
+== Overview
+
+=== When to Use This Pattern
+
+* You need to enforce content policies or safety guardrails on agent inputs and outputs
+* Your application must sanitize PII before it reaches an LLM or is stored in logs
+* You are building toward EU AI Act compliance and need audit trails for AI decisions
+* You want human-in-the-loop verification steps for high-stakes agent actions
+
+=== Akka Components Involved
+
+* *Guardrails* -- validate and filter agent inputs and outputs against defined policies
+* *Sanitizers* -- detect and redact PII and sensitive data in agent interactions
+* *Agents* -- integrate governance checks into the agent processing pipeline
+
+== Sample Projects
+
+The following sample projects demonstrate aspects of this pattern:
+
+* {sample-base-url}/medical-discharge-tagging[medical-discharge-tagging] -- human verification workflow for AI-generated medical classifications
+* {sample-base-url}/transfer-workflow-compensation[transfer-workflow-compensation] -- compensation logic demonstrating rollback and recovery controls
+* {sample-base-url}/tracing[tracing] -- observability and tracing for audit trail and compliance reporting
+
+NOTE: A dedicated governance-focused sample may be needed for a full end-to-end walkthrough of this pattern.
+
+== Pattern Walkthrough
+
+_Code walkthrough coming soon. This section will include an annotated walkthrough of a dedicated governance sample project showing how guardrails, sanitizers, and compliance controls are composed._
+
+== See Also
+
+* xref:sdk:agents/guardrails.adoc[]
+* xref:sdk:sanitization.adoc[]
+* xref:concepts:governance-and-the-runtime.adoc[]

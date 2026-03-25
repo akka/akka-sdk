@@ -1,0 +1,18 @@
+= Use Cases
+:page-summary: Pattern guides for building common agentic AI systems with Akka, each backed by real sample projects.
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+Use case guides show you how to build common patterns with Akka. Each guide explains the pattern, identifies which Akka components are involved, and walks through a real sample project showing how the system is composed.
+
+* xref:sdk:use-cases/conversational-ai.adoc[]
+* xref:sdk:use-cases/autonomous-agents.adoc[]
+* xref:sdk:use-cases/multi-agent-systems.adoc[]
+* xref:sdk:use-cases/memory-and-state.adoc[]
+* xref:sdk:use-cases/rag-and-knowledge.adoc[]
+* xref:sdk:use-cases/streaming-ai.adoc[]
+* xref:sdk:use-cases/orchestration-and-durability.adoc[]
+* xref:sdk:use-cases/apis-and-exposure.adoc[]
+* xref:sdk:use-cases/governance-and-compliance.adoc[]
+* xref:sdk:use-cases/enterprise-patterns.adoc[]
