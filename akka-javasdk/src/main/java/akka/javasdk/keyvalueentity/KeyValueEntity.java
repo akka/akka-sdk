@@ -422,10 +422,6 @@ public abstract class KeyValueEntity<S> {
        * <p>As soon as a new update is done, the TTL is no longer applied. To keep the TTL in effect
        * after subsequent updates, each update will have to be marked with {@code expireAfter}.
        *
-       * <p>Avoid using this with short values for Key Value Entities with consumers or views. The
-       * entity may end up being deleted before a downstream consumer or view has seen the latest
-       * update.
-       *
        * @param ttl the duration from the time of this write after which the entity will be deleted
        * @return an effect builder for chaining additional operations
        */
