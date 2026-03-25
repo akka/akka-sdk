@@ -5,7 +5,9 @@
 package akka.javasdk.testkit;
 
 import io.grpc.Status;
+import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Represents the result of an EventSourcedEntity handling a command when run in through the
@@ -72,4 +74,9 @@ public interface EventSourcedResult<R> {
    * @return The next event if it is of type E, for additional assertions.
    */
   <E> E getNextEventOfType(Class<E> expectedClass);
+
+  /**
+   * @return the TTL set via {@code expireAfter} on the persist effect, or empty if no TTL was set
+   */
+  Optional<Duration> getExpireAfter();
 }

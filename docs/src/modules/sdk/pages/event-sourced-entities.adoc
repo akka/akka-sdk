@@ -71,6 +71,7 @@ An Event Sourced Entity Effect can either:
 * persist events and send a reply to the caller
 * directly reply to the caller if the command is not requesting any state change
 * instruct Akka to delete the entity and send a reply to the caller
+* set a time-to-live for automatic deletion of the entity
 * return an error message
 
 For additional details, refer to xref:concepts:declarative-effects.adoc[Declarative Effects].
@@ -161,6 +162,19 @@ It is not allowed to persist more events after the entity has been "marked" as d
 It is best to not reuse the same entity id after deletion, but if that happens after the entity has been completely removed it will be instantiated as a completely new entity without any knowledge of previous state.
 
 Note that xref:views.adoc#ve_delete[deleting View state] must be handled explicitly.
+
+==== Automatic expiry
+
+As an alternative to explicit deletion, you can set a time-to-live on a persist effect using `expireAfter`. The entity will be automatically deleted once the given duration has elapsed since the last event was persisted, if no further events have been persisted.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/ttl/ShoppingCartEntity.java[ShoppingCartEntity.java]
+----
+include::example$doc-snippets/src/main/java/com/example/ttl/ShoppingCartEntity.java[tag=expire]
+----
+<1> The entity will be deleted 30 days after this persist if no further events are persisted.
+
+A subsequent persist without `expireAfter` will cancel the TTL. To keep the entity expiring after further updates, each persist must include `expireAfter`.
 
 == Snapshots
 

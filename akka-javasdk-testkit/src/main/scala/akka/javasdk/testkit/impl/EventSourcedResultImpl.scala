@@ -4,10 +4,13 @@
 
 package akka.javasdk.testkit.impl
 
+import java.time.Duration
 import java.util.Collections
+import java.util.Optional
 import java.util.{ List => JList }
 
 import scala.jdk.CollectionConverters._
+import scala.jdk.OptionConverters.RichOption
 
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.effect.ErrorReplyImpl
@@ -119,4 +122,6 @@ private[akka] final class EventSourcedResultImpl[R, S, E](
     }
 
   override def didEmitEvents(): Boolean = didPersistEvents()
+
+  override def getExpireAfter(): Optional[Duration] = effect.ttl.toJava
 }
