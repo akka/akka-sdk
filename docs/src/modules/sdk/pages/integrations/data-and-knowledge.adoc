@@ -1,0 +1,43 @@
+= Data & knowledge
+:page-summary: Connect to vector databases, relational databases, NoSQL, and search engines via standard Java client libraries. No caching layer needed.
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+Akka connects to any data store with a Java client library. No proprietary adapters or Akka-specific wrappers are needed.
+
+== Vector databases
+
+Use vector databases for semantic search and RAG workflows. Connect via their Java client libraries:
+
+* **Pinecone** — https://docs.pinecone.io/docs/java-client[Java client, window="new"]
+* **Weaviate** — https://weaviate.io/developers/weaviate/client-libraries/java[Java client, window="new"]
+* **Qdrant** — https://qdrant.tech/documentation/interfaces/[Java client, window="new"]
+* **Chroma** — via REST API or community Java clients
+* **pgvector** — via JDBC with the pgvector extension
+
+== Relational databases
+
+* **PostgreSQL** — via JDBC
+* **MySQL** — via JDBC
+
+== NoSQL databases
+
+* **MongoDB** — https://www.mongodb.com/docs/drivers/java/sync/current/[Java driver, window="new"]
+* **DynamoDB** — https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/dynamodb.html[AWS SDK for Java, window="new"]
+* **Cassandra** — https://docs.datastax.com/en/developer/java-driver/latest/[DataStax Java driver, window="new"]
+
+== Search engines
+
+* **Elasticsearch** — https://www.elastic.co/guide/en/elasticsearch/client/java-api-client/current/index.html[Java API client, window="new"]
+* **OpenSearch** — https://opensearch.org/docs/latest/clients/java/[Java client, window="new"]
+
+== No caching layer needed
+
+Akka's Entity components (Event Sourced Entities, Key Value Entities) are in-memory systems of durable record. All data is durable, immutable, and in-memory with sub-10ms access. There is no need for a separate cache like Redis. Your Entities _are_ your cache — with persistence guarantees that Redis cannot provide.
+
+== See also
+
+* xref:sdk:event-sourced-entities.adoc[Event Sourced Entities]
+* xref:sdk:key-value-entities.adoc[Key Value Entities]
+* xref:sdk:use-cases/rag-and-knowledge.adoc[RAG & knowledge use case]

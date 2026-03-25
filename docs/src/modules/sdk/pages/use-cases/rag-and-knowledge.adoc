@@ -8,26 +8,66 @@ Build retrieval-augmented generation (RAG) systems that ground LLM responses in 
 
 == Overview
 
-=== When to Use This Pattern
+An AI model only knows about information that it was trained with. Domain-specific knowledge or the latest documentation must be given as input to the AI model as additional context.
 
-* You need an agent that answers questions grounded in your organization's documents or data
+It would be inefficient, costly, or not even possible to provide all content in the request to the AI. Retrieval-Augmented Generation (RAG) solves this by performing a semantic search on a vector database to find relevant content, which is then added to the user message in the request to the AI model.
+
+Implementing RAG involves two main stages:
+
+* **Data ingestion:** Source documents (e.g., product documentation, articles) are loaded, split into manageable chunks, converted into numerical representations (embeddings) using an embedding model, and stored in a vector database.
+* **Retrieval and generation:** When a user asks a question, the system retrieves the most relevant chunks from the vector database and passes them to the language model along with the original question to generate an answer.
+
+=== When to use this pattern
+
+* You need an Agent that answers questions grounded in your organization's documents or data
 * Your application requires semantic search over a knowledge base with vector embeddings
 * You want to combine retrieved context with conversation history for accurate responses
 * You need to index and update knowledge sources as they change over time
 
-=== Akka Components Involved
+=== Akka components involved
 
 * *Agents* -- conversational interface that queries knowledge and generates grounded responses
-* *Views* -- index and query knowledge bases, including vector similarity search
-* *HTTP Endpoints* -- expose RAG-powered agents and knowledge ingestion APIs
+* *Workflows* -- orchestrate the knowledge indexing pipeline
+* *HTTP Endpoints* -- expose RAG-powered Agents and knowledge ingestion APIs
 
-== Sample Projects
+== Using LangChain4J
 
-The following sample projects demonstrate this pattern:
+There are many libraries for integrating with vector databases. Here is a concrete example using https://docs.langchain4j.dev/tutorials/rag[LangChain4J, window="new"].
 
-* {sample-base-url}/ask-akka-agent[ask-akka-agent] -- RAG agent that answers questions about Akka documentation using vector search and conversational memory
+[source,java,indent=0]
+.{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/application/Knowledge.java[Knowledge.java]
+----
+include::sdk:example$ask-akka-agent/src/main/java/akka/ask/agent/application/Knowledge.java[tag=class]
+----
+<1> Use the RAG support from LangChain4J, which consists of a `ContentRetriever`
+<2> and a `RetrievalAugmentor`.
+<3> Create a request from the user question.
+<4> Augment the request with relevant content.
+<5> Construct the new user message that includes the retrieved content.
 
-== See Also
+This `Knowledge` class is then used in an Agent to enrich the user message.
 
-* xref:sdk:agents.adoc[]
-* xref:sdk:integrations/rag.adoc[]
+== Enrich the context from other components
+
+Sometimes a similar retrieval-and-augment approach can be used without a vector database, especially when the required context is structured and can be fetched directly. This follows the same RAG pattern but targets specific data sources like Entities or Views:
+
+[source,java,indent=0]
+.ActivityAgent.java
+----
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgentMore.java[tag=di]
+----
+<1> Inject the `ComponentClient` as a constructor parameter.
+<2> Retrieve preferences from an Entity.
+<3> Enrich the user message with the preferences.
+
+== Sample projects
+
+* {sample-base-url}/ask-akka-agent[ask-akka-agent] -- RAG Agent that answers questions about Akka documentation using vector search and conversational memory
+
+The guide xref:getting-started:ask-akka-agent/index.adoc[AI Agent that performs a RAG Workflow] illustrates how to create embeddings for vector databases and how to add knowledge to fixed LLMs.
+
+== See also
+
+* xref:sdk:agents.adoc[Agents]
+* xref:sdk:integrations/data-and-knowledge.adoc[Data & knowledge integrations]
+* xref:getting-started:ask-akka-agent/index.adoc[RAG chat Agent tutorial]
