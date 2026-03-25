@@ -1,4 +1,4 @@
-= Designing HTTP endpoints
+= Designing HTTP Endpoints
 
 include::ROOT:partial$include.adoc[]
 
