@@ -72,7 +72,7 @@ NOTE: Not using Claude Code? Akka supports 31 different AI assist utilities. Vis
 
 Now you're ready to initialize a specification.
 
-== Initialize a specification
+== Initialize a new spec-driven project
 If you're using the Claude Code Akka marketplace plugin, you can skip this step and go directly to specifying the main feature.
 
 If you're using the CLI to start a new project using Spec-Driven Development, we use the `akka specify init` command. You have a few options here:
