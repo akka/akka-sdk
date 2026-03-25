@@ -67,12 +67,45 @@ This activates the installed plugin and makes all SDD skills available.
 +
 This configures your environment — ensuring the Akka CLI is installed, Java and Maven are available, and your Akka download token is properly configured. Once setup completes, you are ready to start building.
 
-NOTE: Not using Claude Code? Akka supports 30 different AI assist tools. You can also clone the Akka plugin directly from the Akka repository. Visit https://doc.akka.io[doc.akka.io] for installation instructions for your tool.
+=== Alternative: Install from a cloned repository
+
+If the AI Marketplace is not available in your environment, you can clone the Akka plugin repository and install it locally:
+
+. **Clone the Akka AI marketplace repository:**
++
+[source,bash]
+----
+git clone https://github.com/akka/ai-marketplace.git
+----
+
+. **In Claude Code, add the cloned directory as a local marketplace:**
++
+[source]
+----
+/plugin marketplace add /path/to/ai-marketplace
+----
+
+. **Install the Akka plugin from the local marketplace:**
++
+[source]
+----
+/plugin install akka-specify@ai-marketplace
+/reload-plugins
+----
+
+. **Run the Akka setup:**
++
+[source]
+----
+/akka-specify:setup
+----
+
+NOTE: Not using Claude Code? Akka supports 30 different AI assist tools. Visit https://doc.akka.io[doc.akka.io] for installation instructions for your tool.
 
 [TIP.manual]
 .Without the plugin
 ====
-If you are unable to install the marketplace plugin or clone the plugin from the repository, fall back to the Akka CLI:
+If you are unable to install the marketplace plugin or clone the repository, fall back to the Akka CLI:
 
 . Install the Akka CLI (see xref:operations:cli/installation.adoc[]).
 . Run `akka specify init <dir>` to provision a new AI-assist ready project.
