@@ -35,7 +35,7 @@ Then in Claude Code:
 /reload-plugins
 ----
 
-NOTE: Not using Claude Code? Akka supports 30 different AI assist tools. Visit https://doc.akka.io[doc.akka.io] for plugin installation instructions for your tool.
+NOTE: Not using Claude Code? Akka supports 30 different AI assist tools. See xref:sdk:spec-driven-development.adoc[Spec-Driven Development] for plugin installation instructions for your tool.
 
 === Step 2: Set up your environment
 
