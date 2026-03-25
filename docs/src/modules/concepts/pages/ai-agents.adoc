@@ -10,6 +10,8 @@ include::ROOT:partial$include.adoc[]
 
 AI agents are components that integrate with AI to perceive their environment, make decisions, and take actions toward a specific goal. Agents can have varying degrees of human intervention from none (completely autonomous) to requiring a human to approve each action the agent takes.
 
+Building a demo agent is easy. Getting that agent into production -- reliable, auditable, and repeatable at scale -- is where most frameworks fall apart. This page explains why, and how Akka addresses these challenges at the platform level.
+
 == Overview
 
 In Akka, an AI Agent is a lightweight, single-purpose component that interacts with one or more AI models to accomplish a discrete goal. Agents are first-class citizens of the platform: they benefit from the same durability, scalability, and observability guarantees that Akka provides to all of its components.
@@ -22,6 +24,39 @@ Use AI Agents in Akka when you need to:
 * Enforce cost controls, governance policies, and risk boundaries on model usage.
 
 Agents relate to other Akka components in a direct way: xref:concepts:ms-agent-patterns.adoc[Workflows] orchestrate Agents, xref:concepts:state-model.adoc[Entities] store the durable state Agents depend on, and xref:concepts:inter-agent-comms.adoc[inter-agent communication] connects Agents to each other and to external systems via protocols like MCP, A2A, and ACP.
+
+
+== The three barriers to production AI
+
+Most AI agent frameworks excel at prototyping but collapse under production demands. Three recurring barriers explain why.
+
+=== The Production Gap
+
+Frameworks optimized for notebook-style demos rarely address the realities of distributed infrastructure: network partitions, node failures, backpressure, and regional failover. When you move from a single-process prototype to a multi-region deployment, the gap between "it works on my laptop" and "it works in production" becomes enormous. Akka was built for distributed systems from the ground up, closing this gap by default.
+
+=== The Liability problem
+
+Every call to an LLM carries risk: hallucinated outputs, uncontrolled token spend, data leakage, and actions taken without audit trails. Most frameworks treat these as the developer's problem. In regulated industries -- finance, healthcare, logistics -- liability without platform-level safeguards is a non-starter.
+
+=== The Specialist Trap
+
+Many agent frameworks require deep expertise in both AI/ML and distributed systems simultaneously. This creates a hiring bottleneck and a fragile codebase that only a handful of engineers can maintain. A production-ready platform must separate these concerns so that AI engineers focus on prompts and models while the platform handles resilience and scale.
+
+== How Akka solves these: three dimensions
+
+Akka addresses the three barriers through three reinforcing dimensions.
+
+=== Reliability
+
+Akka runs your agents on a distributed runtime with built-in clustering, automatic failover, and durable state. If a node goes down, the agent's work is not lost. Session memory, conversation history, and in-flight orchestrations survive failures without any custom recovery code on your part. This is the same infrastructure that powers mission-critical systems at link:{url-story-walmart}[Walmart], link:{url-story-verizon}[Verizon], and link:{url-story-capital-one}[Capital One].
+
+=== Risk control
+
+Akka gives you platform-level controls over token budgets, model access policies, and human-in-the-loop checkpoints. The xref:concepts:governance-and-the-runtime.adoc[governance model] enforces boundaries declaratively, so you do not rely on every developer remembering to add guardrails in application code. Audit trails are built into the event-sourced state model, making every agent decision traceable.
+
+=== Repeatability
+
+Because agents in Akka are small, single-purpose components orchestrated by workflows, you can reuse, recombine, and test them independently. Evaluation runs, prompt refinement, and regression testing become repeatable processes rather than ad-hoc experiments. New team members contribute agents without needing to understand the full distributed systems stack.
 
 == Tokens and streaming
 
