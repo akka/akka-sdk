@@ -1,4 +1,4 @@
-= Development Process
+= Development process
 :page-summary: How to build Akka services using Spec-Driven Development (SDD) as the primary workflow, with manual setup as a fallback.
 :page-when-to-use: Starting a new Akka service or onboarding team members to the Akka development lifecycle.
 :page-related: xref:sdk:spec-driven-development.adoc[], xref:concepts:architecture-model.adoc[], xref:sdk:dev-best-practices.adoc[]
