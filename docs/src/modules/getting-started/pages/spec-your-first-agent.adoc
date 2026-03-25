@@ -68,6 +68,8 @@ As the instructions say, you'll need to restart Claude Code in order to load the
 
 IMPORTANT: From now on, any time you see `/akka.\{command\}` in the documentation referring to using Claude Code _without_ the marketplace plugin, you should substitute the `/akka:\{command\}` plugin-based alternative.
 
+NOTE: Not using Claude Code? Akka supports 31 different AI assist utilities. Visit xref:sdk:spec-driven-development.adoc[Spec-Driven Development] for details on how to configure each.
+
 Now you're ready to initialize a specification.
 
 == Initialize a specification
