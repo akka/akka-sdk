@@ -1,0 +1,64 @@
+= Why Akka
+:page-summary: Three barriers stand between AI prototypes and production-grade agentic systems. Akka solves them with Reliability, Risk Control, and Repeatability.
+:page-persona: all
+
+include::ROOT:partial$include.adoc[]
+
+Akka is the agentic systems platform built for Reliability, Risk Control, and Repeatability at enterprise scale.
+
+== What Stands Between You and Reliable AI
+
+Three barriers prevent AI prototypes from becoming production-grade agentic systems.
+
+=== The Production Gap
+
+AI frameworks built for demos cannot deliver the durability, resilience, and reliability that production systems demand. When your agent must process millions of transactions, survive hardware failures, and guarantee data consistency, most frameworks fail.
+
+=== Liability
+
+Failures in resilience, governance, and safety carry severe legal, financial, and reputational consequences. Without a runtime that enforces policies, explains its decisions, and contains failures as they happen, agentic AI remains too risky to deploy at enterprise scale.
+
+=== The Specialist Trap
+
+Consistent delivery breaks down when agentic AI depends on a handful of experts. One departure and your roadmap stalls. You need a platform that enables every team to deliver reliably, regardless of distributed systems expertise.
+
+== How Akka Makes AI Reliable
+
+Akka delivers reliable AI across three dimensions.
+
+=== Reliability
+
+Guaranteed, production-proven outcomes. Akka guarantees 99.9999% availability with active-active HA/DR and resilience backed by indemnities — contractual commitments, not aspirational targets. Sub-1 minute RTO, zero byte RPO. Proven over 18 years in more than 100,000 production deployments.
+
+=== Risk Control
+
+Resilience, compliance, and sovereignty built in. Runtime-embedded governance enforces policies and contains failures as they happen — compliance built in, not bolted on. Self-explanation and self-containment are properties of every deployment, meeting the requirements of the EU AI Act and other emerging AI regulations.
+
+=== Repeatability
+
+Consistent, scalable development across teams. One platform with golden-path workflows that give every team — regardless of role, skill set, or location — a consistent, governed path to production. Spec-Driven Development means anyone who can write requirements can build agentic systems.
+
+== How Akka Compares
+
+No other agentic AI vendor delivers a full-stack platform with governance built into the runtime.
+
+[cols="1,3"]
+|===
+| Temporal | Orchestration only. No agents, no memory, no governance, no AI-specific capabilities.
+| LangChain | A developer framework, not a platform. No runtime, no HA/DR, no operational guarantees, no built-in governance.
+| n8n | A workflow automation tool. No clustering, no resilience guarantees, no compliance posture.
+|===
+
+== Next Steps
+
+* xref:ROOT:what-is-akka.adoc[What is Akka] — Learn about the platform, its components, and service tiers
+* xref:ROOT:who-uses-akka.adoc[Who Uses Akka] — Find the documentation path for your role
+* xref:getting-started:index.adoc[Tutorials] — Start building with Akka
+
+== See Also
+
+* link:{url-blog-what-is-agentic}[What is Agentic AI?, window="new"]
+* link:{url-blog-experience-matters}[Agentic AI: Why Experience Matters More Than Hype, window="new"]
+* link:{url-blog-frameworks-guide}[Agentic AI Frameworks: A 2026 Guide, window="new"]
+* link:{url-blog-video-overview}[Video: Overview of Akka Agentic Platform, window="new"]
+* link:{url-akka-benchmarks}[Akka Performance Benchmarks, window="new"] — 1.4M TPS, 9ms latency
