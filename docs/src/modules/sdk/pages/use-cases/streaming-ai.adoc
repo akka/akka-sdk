@@ -14,12 +14,15 @@ Process real-time data streams with AI-powered feedback loops, event-driven cons
 * Your application requires real-time feedback loops where AI responses trigger further actions
 * You want to consume events from message brokers and enrich them with LLM processing
 * You need streaming token-by-token agent responses for responsive user experiences
+* You want to stream LLM responses through an orchestration Workflow and back out to an Endpoint
 
 === Akka Components Involved
 
-* *Consumers* -- subscribe to event streams from entities or external message brokers
+* *Consumers* -- subscribe to event streams from Entities or external message brokers
 * *Agents* -- process streaming data with LLM-powered analysis and generate streaming responses
-* *Event Sourced Entities* -- produce durable event streams that consumers subscribe to
+* *Workflows* -- orchestrate streaming pipelines that route LLM responses through multi-step processing
+* *Event Sourced Entities* -- produce durable event streams that Consumers subscribe to
+* *HTTP Endpoints* -- expose streaming responses to clients via WebSocket or server-sent events
 
 == Sample Projects
 
@@ -32,3 +35,7 @@ The following sample projects demonstrate this pattern:
 
 * xref:sdk:consuming-producing.adoc[]
 * xref:sdk:agents/streaming.adoc[]
+* xref:sdk:workflows.adoc[]
+* xref:sdk:http-endpoints.adoc[]
+* link:{url-blog-streaming}[Akka Streaming: High-performance stream processing, window="new"]
+* link:{url-blog-gemini-video}[Building a real-time video AI service with Google Gemini, window="new"]
