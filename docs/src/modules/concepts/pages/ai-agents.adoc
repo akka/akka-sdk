@@ -10,8 +10,6 @@ include::ROOT:partial$include.adoc[]
 
 AI agents are components that integrate with AI to perceive their environment, make decisions, and take actions toward a specific goal. Agents can have varying degrees of human intervention from none (completely autonomous) to requiring a human to approve each action the agent takes.
 
-Building a demo agent is easy. Getting that agent into production -- reliable, auditable, and repeatable at scale -- is where most frameworks fall apart. This page explains why, and how Akka addresses these challenges at the platform level.
-
 == Overview
 
 In Akka, an AI Agent is a lightweight, single-purpose component that interacts with one or more AI models to accomplish a discrete goal. Agents are first-class citizens of the platform: they benefit from the same durability, scalability, and observability guarantees that Akka provides to all of its components.
