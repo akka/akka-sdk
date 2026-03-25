@@ -53,7 +53,7 @@ This ensures the Akka CLI is installed, Java and Maven are available, and your A
 /akka.specify hello-world - A simple greeting agent that responds in different languages and remembers which languages it has used.
 ----
 
-You now have a running Akka service built entirely from a specification. See xref:sdk:spec-driven-development.adoc[Spec-Driven Development] for the full SDD workflow.
+Akka will start building a specification and then guide you on which next steps you need to execute to build an implementation plan, execute implementation steps, build the service, and test it. See xref:sdk:spec-driven-development.adoc[Spec-Driven Development] for the full SDD workflow.
 
 [TIP.manual]
 .No plugin capability for your AI assist?
