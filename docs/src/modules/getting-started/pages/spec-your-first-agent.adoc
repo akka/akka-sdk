@@ -14,15 +14,20 @@ In this guide, you will:
 
 == Prerequisites
 
-include::ROOT:partial$local-dev-prerequisites.adoc[]
-* Git
 * An AI coding assistant like Claude Code to build and implement the specification
-* xref:quick-install-cli.adoc[Akka CLI] (_installed automatically if you use the Akka Claude Code plugin_)
 * https://platform.openai.com/api-keys[OpenAI API key, window="new"]
 
 Akka has support for many AI providers, and this sample code uses OpenAI. Sign up for free at https://platform.openai.com/api-keys[platform.openai.com/api-keys, window="new"]. Note that the _application code_ uses OpenAI, not necessarily your AI coding assistant.
 
 IMPORTANT: Before proceeding, you **MUST** set the `OPENAI_API_KEY` environment variable and make it available to child processes (on Mac/Linux, that means using `export`) before running `akka specify` or starting your coding assistant in the terminal.
+
+=== Additional prerequisites for those without an AI marketplace
+
+If you are not using the Akka plugin (which installs these automatically), you will need:
+
+include::ROOT:partial$local-dev-prerequisites.adoc[]
+* Git
+* xref:quick-install-cli.adoc[Akka CLI]
 
 == Install the Claude Code Plugin (optional)
 If you're using Claude Code, then you can take advantage of the plugin marketplace to install the https://github.com/akka/ai-marketplace[Akka specification plugin, window="new"], which will also automatically install and verify the Akka CLI for you.
