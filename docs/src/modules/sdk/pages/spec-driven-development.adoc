@@ -27,21 +27,59 @@ Spec-Driven Development (SDD) turns your natural-language specifications into th
 
 == Getting started with SDD
 
-The fastest way to start a Spec-Driven project is through the AI Marketplace plugin for your coding assistant. Install the **Akka plugin** from your assistant's marketplace, and SDD commands (`/akka.specify`, `/akka.clarify`, `/akka.plan`, etc.) become available immediately.
+=== Install the Akka plugin
+
+The fastest way to get started is to install the Akka plugin from the AI Marketplace. In Claude Code, run these commands:
+
+. **Add the Akka marketplace:**
++
+[source]
+----
+/plugin marketplace add akka/ai-marketplace
+----
++
+This registers the Akka plugin catalog with Claude Code.
+
+. **Install the Akka plugin:**
++
+[source]
+----
+/plugin install akka-specify@ai-marketplace
+----
++
+This installs the Akka skill, which includes the CLI, MCP server, AI coding assistant, and project scaffolding.
+
+. **Reload plugins:**
++
+[source]
+----
+/reload-plugins
+----
++
+This activates the installed plugin and makes all SDD skills available.
+
+. **Run the Akka setup:**
++
+[source]
+----
+/akka-specify:setup
+----
++
+This configures your environment — ensuring the Akka CLI is installed, Java and Maven are available, and your Akka download token is properly configured. Once setup completes, you are ready to start building.
+
+NOTE: Not using Claude Code? Akka supports 30 different AI assist tools. You can also clone the Akka plugin directly from the Akka repository. Visit https://doc.akka.io[doc.akka.io] for installation instructions for your tool.
 
 [TIP.manual]
-.Without the AI Marketplace
+.Without the plugin
 ====
-If the AI Marketplace is not available in your environment, fall back to the Akka CLI:
+If you are unable to install the marketplace plugin or clone the plugin from the repository, fall back to the Akka CLI:
 
 . Install the Akka CLI (see xref:operations:cli/installation.adoc[]).
-. Run `akka specify init` to scaffold an empty Akka project with all SDD templates.
+. Run `akka specify init <dir>` to provision a new AI-assist ready project.
 . Launch your AI coding assistant from the new project directory.
 
 The `_mcp.json` file included in the project template lets you manually register Akka as an MCP server for any compatible agent.
 ====
-
-NOTE: At the moment the only supported assistant is Claude Code, but support for other assistants is coming soon. For other agents, you can manually add Akka as an MCP server using the `_mcp.json` file that comes with the new project template.
 
 == AI assistance maturity levels
 
@@ -62,12 +100,10 @@ A single `SPEC.md` or `specification.md` file may be enough for some projects. M
 
 == Using Akka specify
 
-Akka makes it easy to get started with a new _Spec-Driven_ project. Instead of using `akka code init`, use the `akka specify init` command. This gives you everything you need to kick off your Spec-Driven development cycle.
-
-Refer to xref:operations:cli/installation.adoc[] for installation instructions.
+If you installed the Akka plugin (recommended), the `/akka-specify:setup` skill handles project initialization for you. The information below describes what happens under the hood, and applies if you used the `akka specify init <dir>` fallback.
 
 === Initialization and constitution adoption
-Running `akka specify init` populates a project directory with an empty Akka project. In addition, it grabs all of the markdown templates necessary for the spec-driven process. Once you have run this command, change to the directory of your new project (if you are not already there) and launch your favorite code assistant.
+Running `akka specify init <dir>` provisions a new AI-assist ready project directory. It scaffolds an empty Akka project and grabs all of the markdown templates necessary for the spec-driven process. Once you have run this command, change to the directory of your new project (if you are not already there) and launch your favorite code assistant.
 
 One of the important files that comes with your new project is a **constitution**. The `constitution.md` file is where unbreakable rules for the entire project are defined. This file contains mandates about technology requirements, design rules, and more. Akka gives you a default constitution that contains all of the mandatory requirements for Akka applications. In addition to the Akka-specific constitution, the initialization process lets you add an additional layer of constitution. Use this to include mandates from your company, organization, team, etc. It then becomes easy to maintain your own constitution while still benefiting from Akka's rules.
 
