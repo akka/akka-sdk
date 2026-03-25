@@ -1,12 +1,46 @@
-=  Akka Automated Operations
+= Akka Automated Operations
+:page-summary: Akka Automated Operations (AAO) delivers fully automated infrastructure management for your Akka services — from elastic scaling and multi-region replication to self-healing recovery — so you focus on business logic while AAO handles Day 2 and beyond.
+:page-when-to-use: Use AAO when you need production-grade operations for Akka services: automated deployments, observability, multi-region resilience, or sovereign cloud requirements.
+:page-related: xref:concepts:deployment-model.adoc[], xref:operations:services/index.adoc[], xref:operations:regions/index.adoc[]
+:page-prerequisites: Familiarity with the xref:concepts:deployment-model.adoc[].
+:page-persona: operator-platform, operator-sre
 
 include::ROOT:partial$include.adoc[]
 
-Akka Agentic Platform provides capabilities to manage, monitor and gather insights from your application and its services once they are deployed. These resources will guide you through operating Akka applications and services on Akka Automated Operations. You should already be familiar with the xref:concepts:deployment-model.adoc[].
+== Overview
 
-== Full automation through Akka Automated Operations
+Akka Automated Operations (AAO) is the operational backbone of the Akka platform. It manages, monitors, and gathers insights from your deployed Akka services so you can focus on building rather than babysitting infrastructure.
 
-Akka Automated Operations are based on a Kubernetes-based control plane and application plane for executing Akka services with fully-automated operations to enable elasticity, agility and resilience.
+AAO is built on a Kubernetes-based control plane and application plane purpose-designed for executing Akka services with fully automated operations. It handles elasticity, agility, and resilience out of the box — you deploy your service and AAO takes care of the rest.
+
+*When to use AAO:*
+
+* You are moving an Akka service to production and need zero-touch deployments, scaling, and recovery.
+* You require multi-region replication with automatic failover for business-critical workloads.
+* You need deep observability — logs, metrics, and traces — integrated from day one.
+* You operate under regulatory or data-sovereignty constraints that demand dedicated infrastructure.
+
+== Service tiers
+
+AAO aligns with four service tiers, each building on the previous:
+
+Fast Prod:: Get to production fast. AAO provisions your service, configures networking and TLS, and gives you a running endpoint within minutes. Ideal for proofs of concept, internal tools, and early-stage services.
+
+Day 2 Ops:: Once you are in production, AAO provides continuous delivery integration, log and metric exports, alerting hooks, and rolling upgrades — everything you need to keep services healthy day after day.
+
+Business Continuity:: For mission-critical workloads, AAO delivers multi-region replication, automatic failover, and self-healing recovery. Your services target *99.9999% availability* with *sub-one-minute RTO* and *zero-byte RPO* — data is replicated before any acknowledgment, so nothing is lost even when an entire region is destroyed.
+
+Sovereign Cloud:: When regulatory, compliance, or data-residency requirements dictate where your data lives, AAO can run on dedicated infrastructure in the regions you choose, giving you full control over the blast radius and data jurisdiction.
+
+== Reliability
+
+Reliability is a first-class dimension across every AAO tier. The platform is designed around the principle that failures are inevitable and recovery must be automatic:
+
+* *99.9999% availability target* — six nines, measured across regions.
+* *Sub-one-minute RTO* — your service resumes serving traffic in under 60 seconds after a region-level failure.
+* *Zero-byte RPO* — event-sourced state is replicated synchronously across regions; no data is lost.
+
+These guarantees are not aspirational — they are architectural. AAO continuously monitors region health, redistributes traffic on anomaly detection, and brings replacement capacity online without human intervention.
 
 == Deploying and Managing Services
 
@@ -57,3 +91,9 @@ Using the Akka CLI, you control all aspects of your Akka account from your comma
 - xref:operations:cli/installation.adoc[]
 - xref:operations:cli/using-cli.adoc[]
 - xref:operations:cli/command-completion.adoc[]
+
+== See Also
+
+* {url-akka-aao}[Akka Automated Operations product page^]
+* {url-blog-demo-surviving-split}[Demo: Surviving the split — how Akka handles disaster scenarios^]
+* {url-blog-demo-destroyed-region}[Demo: Recovering a completely destroyed region^]
