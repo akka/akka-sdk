@@ -1,4 +1,4 @@
-= Data Sanitization
+= Data sanitization
 include::ROOT:partial$include.adoc[]
 :page-summary: Runtime-level PII scrubbing that enforces data governance as a built-in property of your Akka service, not an afterthought.
 :page-when-to-use: When your service handles user-generated content containing personally identifiable information (PII) and you need automated, consistent sanitization across logs and agent interactions.
