@@ -54,7 +54,6 @@ This configures your environment — ensuring the Akka CLI is installed, Java an
 NOTE: Not using Claude Code? Akka supports 30 different AI assist tools. Visit https://doc.akka.io[doc.akka.io] for installation instructions for your tool.
 
 [TIP.manual]
-.Without the plugin
 ====
 If you are unable to install the marketplace plugin or clone the repository, fall back to the Akka CLI:
 
@@ -207,7 +206,6 @@ Using SDD with careful feature scoping and concise technical implementation plan
 == See also
 
 * {url-blog-introducing-specify}[Introducing Akka Specify, window="new"] -- the blog post that launched SDD on Akka.
-* {url-blog-demo-code-init}[Akka Code Init Demo, window="new"] -- see an Akka project scaffolded live.
 * https://github.github.com/spec-kit/index.html[spec-kit, window="new"] -- the specification pattern Akka's SDD process follows.
 * https://modelcontextprotocol.io/docs/getting-started/intro[Model Context Protocol (MCP), window="new"] -- the protocol behind the `/akka.*` slash-commands.
 * xref:operations:cli/installation.adoc[]
