@@ -65,7 +65,7 @@ Akka will start building a specification and then guide you on which next steps 
 
 These tutorials walk you through all of the Spec-Driven Development commands — from writing a specification through clarification, planning, implementation, and build. You use your AI assist to drive the entire workflow.
 
-[options="header", cols="2,1"]
+[options="header", cols="2,1", width="100%"]
 |=======================
 | Tutorial | Level
 | xref:getting-started:spec-your-first-agent.adoc[Spec-first greeting Agent] — Build an Agent using all SDD commands end-to-end | Beginner
@@ -77,7 +77,7 @@ These tutorials walk you step by step through building Akka systems by writing J
 
 === Build your first Agent
 
-[options="header", cols="2,1"]
+[options="header", cols="2,1", width="100%"]
 |=======================
 | Tutorial | Level
 | xref:getting-started:author-your-first-service.adoc[Hello world Agent] — Build an Agent by hand in Java | Beginner
