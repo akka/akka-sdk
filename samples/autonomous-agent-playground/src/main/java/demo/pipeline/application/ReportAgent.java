@@ -6,6 +6,7 @@ package demo.pipeline.application;
 
 import akka.javasdk.agent.autonomous.AgentDefinition;
 import akka.javasdk.agent.autonomous.AutonomousAgent;
+import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.FunctionTool;
 
@@ -18,13 +19,12 @@ public class ReportAgent extends AutonomousAgent {
       .goal(
         "Process report phases: collect data, analyze findings, produce comprehensive reports."
       )
-      .capabilities(
-        canAcceptTasks(
+      .capability(
+        TaskAcceptance.of(
           PipelineTasks.COLLECT,
           PipelineTasks.ANALYZE,
           PipelineTasks.REPORT
-        ).maxIterationsPerTask(5)
-      );
+        ).maxIterationsPerTask(5));
   }
 
   @FunctionTool(description = "Collect data on a topic and return findings")

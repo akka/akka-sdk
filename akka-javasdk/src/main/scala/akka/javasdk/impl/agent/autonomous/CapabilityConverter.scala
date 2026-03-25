@@ -13,7 +13,7 @@ import akka.javasdk.agent.task.TaskDefinition
 import akka.javasdk.agent.task.TaskTemplate
 import akka.javasdk.impl.JsonSchema
 import akka.javasdk.impl.agent.autonomous.capability.DelegationImpl
-import akka.javasdk.impl.agent.autonomous.capability.MemberTypeImpl
+import akka.javasdk.impl.agent.autonomous.capability.TeamMemberImpl
 import akka.javasdk.impl.agent.autonomous.capability.TaskAcceptanceImpl
 import akka.javasdk.impl.agent.autonomous.capability.TeamLeadershipImpl
 import akka.javasdk.impl.reflection.Reflect
@@ -59,8 +59,8 @@ private[javasdk] class CapabilityConverter(
     val teamLeaderships = allCapabilities.collect { case t: TeamLeadershipImpl => t }
     val spiTeamLeads: Seq[SpiAutonomousAgent.Capability] =
       if (teamLeaderships.nonEmpty) {
-        val memberTypes = teamLeaderships.flatMap(_.members).map(resolveTeamMemberType)
-        Seq(new SpiAutonomousAgent.TeamLead(memberTypes))
+        val teamMembers = teamLeaderships.flatMap(_.members).map(resolveTeamMember)
+        Seq(new SpiAutonomousAgent.TeamLead(teamMembers))
       } else Seq.empty
 
     spiTaskAcceptances ++ spiDelegationOrchestrators ++ spiTeamLeads
@@ -82,18 +82,18 @@ private[javasdk] class CapabilityConverter(
         acceptedTasks = targetTaskDefinitions)
     }
 
-  private def resolveTeamMemberType(memberType: MemberTypeImpl): SpiAutonomousAgent.TeamMemberType = {
-    val targetComponentId = Reflect.readComponentId(memberType.agentClass)
+  private def resolveTeamMember(teamMember: TeamMemberImpl): SpiAutonomousAgent.TeamMemberType = {
+    val targetComponentId = Reflect.readComponentId(teamMember.agentClass)
     val (_, targetTaskDefinitions) = agentDefinitionMap.getOrElse(
       targetComponentId,
       throw new IllegalStateException(
-        s"Team member type [$targetComponentId] (${memberType.agentClass.getName}) not found. " +
+        s"Team member type [$targetComponentId] (${teamMember.agentClass.getName}) not found. " +
         "Ensure the target agent is a registered AutonomousAgent component."))
     val targetDescriptor = agentDescriptors.find(_.componentId == targetComponentId)
     new SpiAutonomousAgent.TeamMemberType(
       agentComponentId = targetComponentId,
       description = targetDescriptor.flatMap(_.description),
-      maxInstances = memberType.maxMemberInstances,
+      maxInstances = teamMember.maxMemberInstances,
       acceptedTasks = targetTaskDefinitions)
   }
 

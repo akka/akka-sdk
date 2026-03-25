@@ -2,6 +2,7 @@ package demo.research.application;
 
 import akka.javasdk.agent.autonomous.AgentDefinition;
 import akka.javasdk.agent.autonomous.AutonomousAgent;
+import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 
 @Component(
@@ -19,6 +20,6 @@ public class Analyst extends AutonomousAgent {
         identify trends and patterns, and produce actionable insights. \
         """
       )
-      .capabilities(canAcceptTasks(ResearchTasks.ANALYSIS).maxIterationsPerTask(3));
+      .capability(TaskAcceptance.of(ResearchTasks.ANALYSIS).maxIterationsPerTask(3));
   }
 }

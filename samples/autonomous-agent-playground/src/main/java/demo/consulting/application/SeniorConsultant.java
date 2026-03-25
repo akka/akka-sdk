@@ -2,6 +2,7 @@ package demo.consulting.application;
 
 import akka.javasdk.agent.autonomous.AgentDefinition;
 import akka.javasdk.agent.autonomous.AutonomousAgent;
+import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 
 @Component(
@@ -22,6 +23,6 @@ public class SeniorConsultant extends AutonomousAgent {
         """
       )
       .tools(new ConsultingTools())
-      .capabilities(canAcceptTasks(ConsultingTasks.ENGAGEMENT));
+      .capability(TaskAcceptance.of(ConsultingTasks.ENGAGEMENT));
   }
 }

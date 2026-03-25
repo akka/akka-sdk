@@ -10,7 +10,7 @@ import java.util.List;
 
 /**
  * Declares that an agent can accept and process tasks of the specified types. Created via {@link
- * AutonomousAgent#canAcceptTasks} or {@link TaskAcceptance#of}.
+ * TaskAcceptance#of}.
  *
  * <p>Multiple {@code TaskAcceptance} capabilities can be declared on a single agent to configure
  * different settings (iteration limits, handoff targets) per task group.

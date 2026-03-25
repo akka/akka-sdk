@@ -10,7 +10,7 @@ import akka.javasdk.agent.autonomous.AutonomousAgent;
  * Declares that an agent can delegate subtasks to other autonomous agents. The delegating agent
  * pauses while workers execute, then resumes with their results.
  *
- * <p>Created via {@link AutonomousAgent#canDelegateTo} or {@link Delegation#to}.
+ * <p>Created via {@link Delegation#to}.
  */
 public interface Delegation extends AgentCapability {
 

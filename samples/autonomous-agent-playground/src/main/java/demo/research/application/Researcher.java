@@ -2,6 +2,7 @@ package demo.research.application;
 
 import akka.javasdk.agent.autonomous.AgentDefinition;
 import akka.javasdk.agent.autonomous.AutonomousAgent;
+import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 
 @Component(
@@ -19,6 +20,6 @@ public class Researcher extends AutonomousAgent {
         important details, and relevant context. \
         """
       )
-      .capabilities(canAcceptTasks(ResearchTasks.FINDINGS).maxIterationsPerTask(3));
+      .capability(TaskAcceptance.of(ResearchTasks.FINDINGS).maxIterationsPerTask(3));
   }
 }

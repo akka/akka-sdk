@@ -42,7 +42,7 @@ class AgentSetupSpec extends AnyWordSpec with Matchers with AutonomousAgentImplS
     }
 
     "set capabilities" in {
-      val setup = AgentSetup.create().capabilities(TaskAcceptance.of(testTask)).impl
+      val setup = AgentSetup.create().capability(TaskAcceptance.of(testTask)).impl
 
       setup.capabilities.asScala should have size 1
       setup.capabilities.asScala.head.asTaskAcceptance
@@ -51,8 +51,8 @@ class AgentSetupSpec extends AnyWordSpec with Matchers with AutonomousAgentImplS
     "accumulate capabilities" in {
       val setup = AgentSetup
         .create()
-        .capabilities(TaskAcceptance.of(testTask))
-        .capabilities(Delegation.to())
+        .capability(TaskAcceptance.of(testTask))
+        .capability(Delegation.to())
         .impl
 
       setup.capabilities.asScala should have size 2
@@ -64,7 +64,8 @@ class AgentSetupSpec extends AnyWordSpec with Matchers with AutonomousAgentImplS
       val setup = AgentSetup
         .create()
         .goal("Analyse data")
-        .capabilities(TaskAcceptance.of(testTask).maxIterationsPerTask(5), Delegation.to().maxParallelWorkers(2))
+        .capability(TaskAcceptance.of(testTask).maxIterationsPerTask(5))
+        .capability(Delegation.to().maxParallelWorkers(2))
         .impl
 
       setup.goal shouldBe Some("Analyse data")
@@ -74,7 +75,7 @@ class AgentSetupSpec extends AnyWordSpec with Matchers with AutonomousAgentImplS
     "be immutable — each method returns a new instance" in {
       val setup1 = AgentSetup.create()
       val setup2 = setup1.goal("A goal")
-      val setup3 = setup2.capabilities(TaskAcceptance.of(testTask))
+      val setup3 = setup2.capability(TaskAcceptance.of(testTask))
 
       setup1.impl.goal shouldBe None
       setup1.impl.capabilities.asScala shouldBe empty

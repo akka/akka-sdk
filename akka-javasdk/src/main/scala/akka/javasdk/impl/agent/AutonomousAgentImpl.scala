@@ -279,6 +279,11 @@ private[impl] final class AutonomousAgentImpl(
         .invokeAsync()
         .asScala
         .map(toSpiBacklogState)(sdkExecutionContext)
+
+    override def closeBacklog(backlogId: String): Future[Done] = {
+      // FIXME ?
+      Future.successful(Done)
+    }
   }
 
   override def getSessionHistory(sessionId: String): Future[Seq[SpiAgent.ContextMessage]] =

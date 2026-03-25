@@ -2,6 +2,7 @@ package demo.support.application;
 
 import akka.javasdk.agent.autonomous.AgentDefinition;
 import akka.javasdk.agent.autonomous.AutonomousAgent;
+import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 
 @Component(
@@ -14,6 +15,6 @@ public class BillingSpecialist extends AutonomousAgent {
   public AgentDefinition definition() {
     return define()
       .goal("Resolve billing and payment issues for customers.")
-      .capabilities(canAcceptTasks(SupportTasks.RESOLVE).maxIterationsPerTask(5));
+      .capability(TaskAcceptance.of(SupportTasks.RESOLVE).maxIterationsPerTask(5));
   }
 }
