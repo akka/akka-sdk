@@ -71,7 +71,7 @@ These tutorials walk you through all of the Spec-Driven Development commands —
 | xref:getting-started:spec-your-first-agent.adoc[Spec-first greeting Agent] — Build an Agent using all SDD commands end-to-end | Beginner
 |=======================
 
-== Hands-on tutorials
+== Code-driven tutorials
 
 These tutorials walk you step by step through building Akka systems by writing Java code. They are ideal for understanding how Akka components work under the hood.
 
