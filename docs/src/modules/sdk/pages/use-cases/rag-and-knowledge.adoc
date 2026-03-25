@@ -1,4 +1,4 @@
-= RAG & Knowledge
+= RAG & knowledge
 :page-summary: Build retrieval-augmented generation systems with vector embeddings, knowledge indexing, and conversational memory.
 :page-persona: builder-developer, builder-ai-ml
 

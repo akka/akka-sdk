@@ -1,4 +1,4 @@
-= Governance & Compliance
+= Governance & compliance
 :page-summary: Enforce runtime policies, sanitize PII, and ensure EU AI Act compliance with built-in governance.
 :page-persona: builder-developer, builder-ai-ml
 

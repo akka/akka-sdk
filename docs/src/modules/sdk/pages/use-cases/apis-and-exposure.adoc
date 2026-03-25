@@ -1,4 +1,4 @@
-= APIs & Exposure
+= APIs & exposure
 :page-summary: Expose your agentic systems via REST, gRPC, MCP, OpenAPI, and WebSocket endpoints with authentication.
 :page-persona: builder-developer, builder-ai-ml
 

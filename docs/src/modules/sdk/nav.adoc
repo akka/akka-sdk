@@ -23,7 +23,7 @@
 *** xref:sdk:workflows.adoc[Workflows]
 *** xref:sdk:timed-actions.adoc[Timers]
 *** xref:sdk:consuming-producing.adoc[Consumers]
-** xref:sdk:use-cases/index.adoc[Use Cases]
+** xref:sdk:use-cases/index.adoc[Use cases]
 *** xref:sdk:use-cases/conversational-ai.adoc[]
 *** xref:sdk:use-cases/autonomous-agents.adoc[]
 *** xref:sdk:use-cases/multi-agent-systems.adoc[]

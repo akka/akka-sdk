@@ -1,4 +1,4 @@
-= Memory & State
+= Memory & state
 :page-summary: Persist and manage durable state with sub-10ms access using event sourcing and key-value patterns.
 :page-persona: builder-developer, builder-ai-ml
 

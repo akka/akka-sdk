@@ -1,4 +1,4 @@
-= Enterprise Patterns
+= Enterprise patterns
 :page-summary: Classic enterprise patterns including shopping carts, customer registries, saga orchestration, and Spring integration.
 :page-persona: builder-developer, builder-ai-ml
 

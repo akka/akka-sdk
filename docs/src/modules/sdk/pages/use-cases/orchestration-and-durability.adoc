@@ -1,4 +1,4 @@
-= Orchestration & Durability
+= Orchestration & durability
 :page-summary: Build long-running, multi-step business processes with compensation, saga patterns, and reliable timers.
 :page-persona: builder-developer, builder-ai-ml
 

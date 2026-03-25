@@ -1,4 +1,4 @@
-= Use Cases
+= Use cases
 :page-summary: Pattern guides for building common agentic AI systems with Akka, each backed by real sample projects.
 :page-persona: builder-developer, builder-ai-ml
 
