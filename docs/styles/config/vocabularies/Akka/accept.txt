@@ -262,8 +262,11 @@ Zolotko
 [Aa]nthropic
 biopharma
 decisioning
+Datadog
 Doctolib
+Dynatrace
 [Ee]xplainability
+Grafana
 [Ii]nfosec
 Hanafee
 Llaama
@@ -274,6 +277,10 @@ reputational
 Swiggy
 Telecom
 Tubi
+Pinecone
+Weaviate
+Qdrant
+pgvector
 Linode
 classpath
 kubectl
