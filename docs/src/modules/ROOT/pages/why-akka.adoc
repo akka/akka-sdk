@@ -38,17 +38,6 @@ Resilience, compliance, and sovereignty built in. Runtime-embedded governance en
 
 Consistent, scalable development across teams. One platform with golden-path workflows that give every team — regardless of role, skill set, or location — a consistent, governed path to production. Spec-Driven Development means anyone who can write requirements can build agentic systems.
 
-== How Akka Compares
-
-No other agentic AI vendor delivers a full-stack platform with governance built into the runtime.
-
-[cols="1,3"]
-|===
-| Temporal | Orchestration only. No agents, no memory, no governance, no AI-specific capabilities.
-| LangChain | A developer framework, not a platform. No runtime, no HA/DR, no operational guarantees, no built-in governance.
-| n8n | A workflow automation tool. No clustering, no resilience guarantees, no compliance posture.
-|===
-
 == Next Steps
 
 * xref:ROOT:what-is-akka.adoc[What is Akka] — Learn about the platform, its components, and service tiers

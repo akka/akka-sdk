@@ -8,8 +8,9 @@ A curated collection of Akka technical content beyond the SDK documentation.
 
 == Foundational Works
 
-* link:{url-ext-reactive-manifesto}[The Reactive Manifesto, window="new"] — By Jonas Boner, Dave Farley, Roland Kuhn, Martin Thompson. Four pillars: Responsive, Resilient, Elastic, Message Driven. The foundational philosophy behind Akka.
-* link:{url-ext-reactive-principles}[The Reactive Principles, window="new"] — By Jonas Boner et al. 8 principles and 6 patterns for cloud-native and edge-native design. Companion to the Reactive Manifesto.
+* https://www.oreilly.com/library/view/principles-and-patterns/9781098181260/[Principles and Patterns for Distributed Application Architecture, window="new"] — By Jonas Bonér (O'Reilly, 2025). The definitive guide to distributed systems architecture from Akka's founder and CTO.
+* link:{url-ext-reactive-manifesto}[The Reactive Manifesto, window="new"] — By Jonas Bonér, Dave Farley, Roland Kuhn, Martin Thompson. Four pillars: Responsive, Resilient, Elastic, Message Driven. The foundational philosophy behind Akka.
+* link:{url-ext-reactive-principles}[The Reactive Principles, window="new"] — By Jonas Bonér et al. 8 principles and 6 patterns for cloud-native and edge-native design. Companion to the Reactive Manifesto.
 * **Reactive Design Patterns** (Manning) — By Roland Kuhn, Brian Hanafee, Jamie Allen. Patterns for building reactive systems.
 
 == Product Pages

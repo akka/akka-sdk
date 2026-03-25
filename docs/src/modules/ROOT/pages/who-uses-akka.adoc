@@ -1,4 +1,4 @@
-= Who Uses Akka
+= Who uses Akka
 :page-summary: Persona-based navigation — find the documentation that matters for your role.
 :page-persona: all
 

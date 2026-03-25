@@ -1,0 +1,2 @@
+// Resources
+* xref:ROOT:resources.adoc[Resources]
