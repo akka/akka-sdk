@@ -205,22 +205,22 @@ End-to-end tests validate the entire application by simulating real-world user s
 
 You can test and debug your services by xref:sdk:running-locally.adoc[running them locally] before deploying your _Service_. This gives you a local debug experience that is convenient and easy.
 
-[#_package_service]
-== Package service
+[#_package_and_deploy]
+== Package and deploy
 
-You use Docker to package your service and any of its dependencies for deployment. Distributing services as docker images makes Akka more cloud friendly and works well with containerization tools.
+You use Docker to package your service and any of its dependencies for deployment. From there, you have two paths to production:
 
-See xref:operations:projects/container-registries.adoc[container registries] for more information.
+* **Direct deployment to Akka** — Use the Akka CLI or Console to deploy your packaged service directly to Akka Automated Operations. This is the fastest path for teams that manage deployments through Akka.
+* **GitOps via CI/CD** — Commit your changes to trigger your enterprise CI/CD pipelines (e.g., GitHub Actions) that build, test, and ready your services for deployment using a GitOps methodology. This is the path for enterprises with established deployment governance.
 
-[#_deploy]
-== Deploy
+Both paths package your service as a Docker image and deploy it to the same Akka runtime.
 
-After testing locally, deploy your service to Akka Automated Operations (akka.io) using the CLI or the Console.
+The following pages provide more information:
 
-The following pages provide information about deployment:
-
-* xref:operations:projects/index.adoc[Akka projects]
+* xref:operations:projects/container-registries.adoc[Container registries]
 * xref:operations:services/deploy-service.adoc#_deploying_a_service[Deploying a packaged service]
+* xref:operations:projects/index.adoc[Akka projects]
+* xref:operations:integrating-cicd/index.adoc[CI/CD integration]
 
 == Next steps
 
