@@ -61,6 +61,16 @@ This ensures the Akka CLI is installed, Java and Maven are available, and your A
 
 Akka will start building a specification and then guide you on which next steps you need to execute to build an implementation plan, execute implementation steps, build the service, and test it. See xref:sdk:spec-driven-development.adoc[Spec-Driven Development] for the full SDD workflow.
 
+== Spec-driven tutorials
+
+These tutorials walk you through all of the Spec-Driven Development commands — from writing a specification through clarification, planning, implementation, and build. You use your AI assist to drive the entire workflow.
+
+[options="header", cols="2,1"]
+|=======================
+| Tutorial | Level
+| xref:getting-started:spec-your-first-agent.adoc[Spec-first greeting Agent] — Build an Agent using all SDD commands end-to-end | Beginner
+|=======================
+
 == Hands-on tutorials
 
 These tutorials walk you step by step through building Akka systems by writing Java code. They are ideal for understanding how Akka components work under the hood.
@@ -70,7 +80,6 @@ These tutorials walk you step by step through building Akka systems by writing J
 [options="header", cols="2,1"]
 |=======================
 | Tutorial | Level
-| xref:getting-started:spec-your-first-agent.adoc[Spec-first greeting Agent] — Build an Agent using Spec-Driven Development | Beginner
 | xref:getting-started:author-your-first-service.adoc[Hello world Agent] — Build an Agent by hand in Java | Beginner
 |=======================
 
