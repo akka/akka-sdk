@@ -12,7 +12,7 @@ Akka provides several built-in patterns for event-driven communication:
 
 * **Service-to-service eventing** — Components within and across Akka services communicate through durable event streams. No broker required.
 * **Brokerless pub/sub** — Event Sourced Entities emit events to a journal that other components subscribe to directly.
-* **Event-driven Consumers** — Subscribe to Entity events, key-value state changes, or Workflow transitions and react to them in real time.
+* **Event-driven Consumers** — Subscribe to entity events, key-value state changes, or Workflow transitions and react to them in real time.
 
 Akka handles end-to-end backpressure automatically and uses the event journal as a durable buffer to decouple producers and consumers. You implement the handler function; Akka manages the stream lifecycle.
 
@@ -20,7 +20,7 @@ Examples of built-in streaming:
 
 * Views are updated asynchronously from a stream of events. You implement the update handler.
 * Views can stream query results, with the receiver controlling the pace.
-* Consumers process event streams from Entities, other services, or message broker topics.
+* Consumers process event streams from entities, other services, or message broker topics.
 * Consumers can produce events to other services or publish to a message broker topic.
 
 For more advanced streaming needs, you can use Akka Streams directly. See the https://doc.akka.io/libraries/akka-core/current/stream/stream-introduction.html[Akka libraries documentation, window="new"] and https://doc.akka.io/libraries/alpakka/current/[Alpakka, window="new"] for streaming connectors.
@@ -55,6 +55,7 @@ Implement webhooks for external system callbacks using xref:sdk:http-endpoints.a
 
 * xref:sdk:consuming-producing.adoc[Consumers]
 * xref:sdk:streaming.adoc[Streaming]
+* xref:sdk:message-brokers.adoc[Message broker integrations]
 * xref:operations:projects/message-brokers.adoc[Configure message brokers]
 * xref:reference:cli/akka-cli/akka_projects_config.adoc#_see_also[`akka projects config` commands]
 * https://doc.akka.io/libraries/alpakka/current[Alpakka connectors, window="new"]
