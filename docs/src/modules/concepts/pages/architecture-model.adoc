@@ -1,12 +1,27 @@
-= Project structure
+= Architecture
+:page-summary: Akka is a full-stack platform that unifies developer experience, runtime, and governance into a single system for building resilient, production-grade services.
+:page-when-to-use: When you need to understand how Akka structures projects, separates concerns, and connects development practices to runtime reliability and operational governance.
+:page-related: xref:deployment-model.adoc[], xref:state-model.adoc[], xref:development-process.adoc[]
+:page-prerequisites: Familiarity with service-oriented architecture and basic Java project conventions.
+:page-persona: Architect, Tech Lead, Senior Developer
 
 include::ROOT:partial$include.adoc[]
 
-Akka encourages a project structure that separates your system’s Application Programming Interfaces (APIs), Akka component logic, and business logic into different directories.
+== Overview
 
-This structure supports a clear separation of concerns. It helps enable iterative development, testing in isolation, predictable packaging, and the ability to externalize configuration and static assets.
+Akka is a full-stack platform that brings together three dimensions into a single, coherent system:
+
+* *Reliability* (Runtime) — Akka's runtime manages persistence, consistency, replication, and self-healing so your services stay available under real-world conditions.
+* *Risk Control* (Governance) — Built-in access control, request validation, region-aware deployment, and operational boundaries let you enforce policy without bolting on external tools.
+* *Repeatability* (Developer Experience) — A clear project structure, layered separation of concerns, and Akka-provided building blocks mean you can develop, test, and iterate predictably across teams and services.
+
+These three dimensions are reflected directly in how you structure your code, how you deploy your services, and how you operate them in production. The sections below show you how each maps to the architecture of an Akka project.
 
 == Akka project structure
+
+Akka encourages a project structure that separates your system's Application Programming Interfaces (APIs), Akka component logic, and business logic into different directories.
+
+This structure supports a clear separation of concerns. It helps you enable iterative development, test in isolation, package predictably, and externalize configuration and static assets.
 
 A typical Akka project might have a layout like the following:
 
@@ -28,7 +43,7 @@ src/
 * The `resources` directory includes configuration files and other static content.
 * The `test` directory contains unit and integration tests. Its structure mirrors `main` to make it easier to relate tests to the code they verify.
 
-Keeping these areas distinct can help improve clarity and long-term maintainability. It also encourages testing and runtime separation.
+Keeping these areas distinct improves clarity and long-term maintainability. It also encourages testing and runtime separation — a direct expression of the *Repeatability* dimension.
 
 == Conceptual layers
 
@@ -46,13 +61,13 @@ For more on coding structure and practical considerations, see the xref:sdk:ai-c
 
 This layer contains business rules and domain concepts. It does not depend on Akka or other runtime concerns. These are plain Java classes, often using `record` to reduce boilerplate. Examples include logic to enforce limits, compute totals, or apply rules.
 
-You can write unit tests for this layer without needing to start Akka or the runtime. The domain package remains isolated, focused, and easy to change.
+You can write unit tests for this layer without needing to start Akka or the runtime. The domain package remains isolated, focused, and easy to change. This isolation is the foundation of the *Repeatability* dimension — you can develop and validate business logic independently of infrastructure.
 
 === Application
 
 This layer connects the domain model to the Akka runtime. It contains the components that handle persistence, coordination, and external interaction. These components follow event-driven patterns and manage state in a way that supports consistency and responsiveness.
 
-Most classes in this layer are based on Akka-provided building blocks. The domain logic remains in the inner layer. This layer makes it operational.
+Most classes in this layer are based on Akka-provided building blocks. The domain logic remains in the inner layer. This layer makes it operational. By managing persistence, replication, and recovery automatically, the application layer delivers the *Reliability* dimension of the platform.
 
 === API
 
@@ -62,7 +77,7 @@ Endpoints use xref:sdk:component-and-service-calls.adoc#_component_client[`Compo
 
 The API layer may also expose public event models over Kafka or other channels. External systems should interact with your service only through this layer.
 
-Access control and request validation also belong here. For HTTP-specific guidance, see xref:sdk:http-endpoints.adoc[Designing HTTP Endpoints].
+Access control and request validation also belong here — this is where the *Risk Control* dimension is enforced at the service boundary. For HTTP-specific guidance, see xref:sdk:http-endpoints.adoc[Designing HTTP Endpoints].
 
 == Akka Services
 
@@ -70,7 +85,7 @@ image:ROOT:service.png[Services,width=100,float=left] A _Project_ may contain mu
 
 == Next steps
 
-Once familiar with the project structure, continue with:
+Once you are familiar with the project structure, continue with:
 
 - xref:deployment-model.adoc[Akka Deployment Model]
 - xref:development-process.adoc[Development process]
@@ -78,3 +93,9 @@ Once familiar with the project structure, continue with:
 - xref:sdk:dev-best-practices.adoc[Development best practices]
 
 You may also begin development right away using the xref:sdk:index.adoc[Akka SDK].
+
+== See Also
+
+- {url-akka-how-it-works}[How Akka Works]
+- {url-blog-cell-based}[Cell-Based Architecture]
+- {url-blog-clustering}[Clustering in Akka]
