@@ -37,6 +37,12 @@ Then in Claude Code:
 
 NOTE: Not using Claude Code? Akka supports 30 different AI assist tools. See xref:sdk:spec-driven-development.adoc[Spec-Driven Development] for plugin installation instructions for your tool.
 
+[TIP.manual]
+.No plugin capability for your AI assist?
+====
+If your AI assist tool does not support plugins, install the Akka CLI instead and use `akka specify init <dir>` to provision a new project. See xref:sdk:spec-driven-development.adoc#_getting_started_with_sdd[Spec-Driven Development] for full instructions.
+====
+
 === Step 2: Set up your environment
 
 [source]
@@ -54,12 +60,6 @@ This ensures the Akka CLI is installed, Java and Maven are available, and your A
 ----
 
 Akka will start building a specification and then guide you on which next steps you need to execute to build an implementation plan, execute implementation steps, build the service, and test it. See xref:sdk:spec-driven-development.adoc[Spec-Driven Development] for the full SDD workflow.
-
-[TIP.manual]
-.No plugin capability for your AI assist?
-====
-If your AI assist tool does not support plugins, install the Akka CLI instead and use `akka specify init <dir>` to provision a new project. See xref:sdk:spec-driven-development.adoc#_getting_started_with_sdd[Spec-Driven Development] for full instructions.
-====
 
 == Hands-on tutorials
 
