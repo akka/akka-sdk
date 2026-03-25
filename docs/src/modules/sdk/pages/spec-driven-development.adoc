@@ -27,78 +27,29 @@ Spec-Driven Development (SDD) turns your natural-language specifications into th
 
 == Getting started with SDD
 
-=== Install the Akka plugin
+=== Step 1: Install the Akka plugin
 
-The fastest way to get started is to install the Akka plugin from the AI Marketplace. In Claude Code, run these commands:
+In Claude Code, install the Akka plugin from the AI Marketplace:
 
-. **Add the Akka marketplace:**
-+
 [source]
 ----
 /plugin marketplace add akka/ai-marketplace
-----
-+
-This registers the Akka plugin catalog with Claude Code.
-
-. **Install the Akka plugin:**
-+
-[source]
-----
 /plugin install akka-specify@ai-marketplace
-----
-+
-This installs the Akka skill, which includes the CLI, MCP server, AI coding assistant, and project scaffolding.
-
-. **Reload plugins:**
-+
-[source]
-----
 /reload-plugins
 ----
-+
-This activates the installed plugin and makes all SDD skills available.
 
-. **Run the Akka setup:**
-+
+This registers the Akka marketplace, installs the Akka skill (CLI, MCP server, AI coding assistant, and project scaffolding), and activates it.
+
+TIP: If you are unable to add the marketplace, clone the Akka plugin repository and add it as a local marketplace instead: `git clone https://github.com/akka/ai-marketplace.git` then `/plugin marketplace add /path/to/ai-marketplace`
+
+=== Step 2: Set up your environment
+
 [source]
 ----
 /akka-specify:setup
 ----
-+
+
 This configures your environment — ensuring the Akka CLI is installed, Java and Maven are available, and your Akka download token is properly configured. Once setup completes, you are ready to start building.
-
-=== Alternative: Install from a cloned repository
-
-If the AI Marketplace is not available in your environment, you can clone the Akka plugin repository and install it locally:
-
-. **Clone the Akka AI marketplace repository:**
-+
-[source,bash]
-----
-git clone https://github.com/akka/ai-marketplace.git
-----
-
-. **In Claude Code, add the cloned directory as a local marketplace:**
-+
-[source]
-----
-/plugin marketplace add /path/to/ai-marketplace
-----
-
-. **Install the Akka plugin from the local marketplace:**
-+
-[source]
-----
-/plugin install akka-specify@ai-marketplace
-/reload-plugins
-----
-
-. **Run the Akka setup:**
-+
-[source]
-----
-/akka-specify:setup
-----
 
 NOTE: Not using Claude Code? Akka supports 30 different AI assist tools. Visit https://doc.akka.io[doc.akka.io] for installation instructions for your tool.
 
