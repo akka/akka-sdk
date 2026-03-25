@@ -1,4 +1,5 @@
 = Glossary of Terms
+:page-summary: "Glossary of Akka terms including AI, agentic systems, distributed systems, and governance terminology."
 
 include::ROOT:partial$include.adoc[]
 
@@ -49,7 +50,7 @@ An _event handler_ is the only piece of code that is allowed to _update_ the sta
 
 [[event_sourced_entity]]Event Sourced Entity:: A type of <<entity>> that stores its state using a journal of events, and restores its state by replaying that journal. These are discussed in more detail in xref:concepts:state-model.adoc#_the_event_sourced_state_model[Event Sourced state model].
 
-[[guardrails]]Guardrails:: Runtime policy enforcement mechanisms that validate, filter, or block Agent inputs and outputs. Guardrails ensure AI Agents operate within defined safety boundaries, supporting compliance with regulations such as the <<eu_ai_act>>.
+[[guardrails]]Guardrails:: Runtime policy enforcement mechanisms that validate, filter, or block Agent inputs and outputs. Guardrails ensure AI Agents operate within defined safety boundaries, supporting compliance with regulations such as the EU AI Act.
 
 [[id]]ID:: An id used to identify instances of a <<stateful_component>>s.
 
@@ -67,15 +68,13 @@ An _event handler_ is the only piece of code that is allowed to _update_ the sta
 
 [[project]]Project:: A project is the root of one or more <<service>>s that are meant to be deployed and run together. The project is a logical container for these services and provides common management capabilities.
 
-[[reliability]]Reliability:: An Akka dimension -- 99.9999% availability, active-active high availability and disaster recovery (HA/DR), with contractual commitments and indemnities. One of the <<three_dimensions>>.
+[[reliability]]Reliability:: An Akka dimension — 99.9999% availability, active-active high availability and disaster recovery (HA/DR), with contractual commitments and indemnities.
 
-[[repeatability]]Repeatability:: An Akka dimension -- consistent development across teams via golden paths and <<sdd,Spec-Driven Development>>. Repeatability eliminates dependency on scarce distributed systems experts by encoding best practices into specifications that AI can execute. One of the <<three_dimensions>>.
-
-[[risk_control]]Risk Control:: An Akka dimension -- runtime-embedded governance, policy enforcement, and <<eu_ai_act>> compliance. Risk Control includes <<guardrails>>, audit trails, and <<sanitizer,sanitization>> to ensure AI systems operate within regulatory and organizational boundaries. One of the <<three_dimensions>>.
+[[repeatability]]Repeatability:: An Akka dimension — consistent development across teams via golden paths and <<sdd,Spec-Driven Development>>. Repeatability eliminates dependency on scarce distributed systems experts by encoding best practices into specifications that AI can execute.
 
 [[runtime]]Runtime:: When you deploy a <<service>>, Akka wraps it with the runtime. The runtime manages entity state, and exposes the service implementation to the rest of the system. It translates incoming messages to commands and sends them to the service. The runtime also forms a cluster with other instances of the same service, allowing advanced distributed state management features such as sharding, replication and addressed communication between instances.
 
-[[sanitizer]]Sanitizer:: A data sanitization component that scrubs personally identifiable information (PII) from Agent interactions while preserving explainability and audit trails. Sanitizers support <<risk_control>> and <<eu_ai_act>> compliance.
+[[sanitizer]]Sanitizer:: A data sanitization component that scrubs personally identifiable information (PII) from Agent interactions while preserving explainability and audit trails.
 
 [[sdd]]SDD (Spec-Driven Development):: Akka's primary development approach where specifications are the source of truth and code is AI-generated. SDD uses a <<constitution>> for project-wide rules and individual specs for each component, enabling repeatable, high-quality development without requiring distributed systems expertise.
 
