@@ -1,4 +1,4 @@
-= Multi-Agent systems
+= Multi-agent systems
 :page-summary: Orchestrate multiple agents collaborating on shared goals with tool planning and handoffs.
 :page-persona: builder-developer, builder-ai-ml
 
