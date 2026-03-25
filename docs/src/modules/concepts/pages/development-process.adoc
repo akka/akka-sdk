@@ -42,8 +42,7 @@ If you need to build a service without SDD — for example, when prototyping out
 . <<_endpoints>>
 . <<_create_unit_tests>>
 . <<_run_locally>>
-. <<_package_service>>
-. <<_deploy>>
+. <<_package_and_deploy>>
 
 The sections below describe each of these steps in detail.
 ====
