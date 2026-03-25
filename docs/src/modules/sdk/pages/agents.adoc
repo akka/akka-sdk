@@ -1,15 +1,46 @@
-= Implementing agents
+= Agents
 
 include::ROOT:partial$include.adoc[]
 
+:page-component-type: agent
+:page-summary: Build AI agents that interact with large language models, maintain session memory, and invoke tools to perform tasks.
+:page-when-to-use: Use when you need LLM-backed autonomous or semi-autonomous behavior with tool calling, session context, and multi-agent collaboration.
+:page-related: xref:concepts:ai-agents.adoc[], xref:sdk:agents/guardrails.adoc[], xref:sdk:agents/memory.adoc[], xref:sdk:workflows.adoc[], xref:sdk:key-value-entities.adoc[]
+:page-prerequisites: Familiarity with Akka components, a configured model provider (OpenAI, Anthropic, etc.)
+:page-persona: developer
+
+== Overview
+
 image:ROOT:agent.png[Agent,width=100,float=left]An Agent interacts with an AI model to perform a specific task. It is typically backed by a large language model (LLM). It maintains contextual history in a session memory, which may be shared between multiple agents that are collaborating on the same goal. It may provide function tools and call them as requested by the model.
 
+=== When to use Agents
+
+Use an Agent when you need to:
+
+* Interact with a large language model to interpret user intent, generate content, or make decisions.
+* Maintain conversational context across multiple turns via session memory.
+* Call tools dynamically based on model responses (function calling).
+* Collaborate across multiple agents sharing the same session.
+
+=== When NOT to use Agents
+
+* **Stateful business logic without AI** -- use xref:sdk:key-value-entities.adoc[Entities] to manage state with deterministic rules.
+* **Multi-step deterministic orchestration** -- use xref:sdk:workflows.adoc[Workflows] to coordinate steps that do not require LLM reasoning.
+* If the task can be handled by a simple request/response with no model interaction, an xref:sdk:http-endpoints.adoc[Endpoint] is sufficient.
+
+=== How Agents relate to other components
+
+* **Workflows** orchestrate multi-step processes and can invoke Agents as one of those steps.
+* **Entities** hold durable state that Agents can read or write via the `ComponentClient`.
+* **Endpoints** expose Agents over HTTP so external clients can reach them.
+
 == Identify the agent
-Every component in Akka needs to be identifiable by the rest of the system. This usually involves two different forms of identification: a **component ID** an **instance ID**. We use component IDs as a way to identify the component _class_ and distinguish it from others. Instance identifiers are, as the name implies, unique identifiers for an instance of a component.
 
-As with all other components, we supply an identifier for the component class using the `@Component` annotation.
+Every component in Akka needs to be identifiable by the rest of the system. This usually involves two different forms of identification: a **component ID** and an **instance ID**. You identify the component _class_ with a component ID to distinguish it from others. Instance identifiers are, as the name implies, unique identifiers for an instance of a component.
 
-In the case of agents, we don't supply a unique identifier for the instance of the agent. Instead, we supply an identifier for the _session_ to which the agent is bound. This lets you have multiple components with different component IDs all performing various agentic tasks within the same shared session.
+As with all other components, you supply an identifier for the component class using the `@Component` annotation.
+
+In the case of agents, you don't supply a unique identifier for the instance of the agent. Instead, you supply an identifier for the _session_ to which the agent is bound. This lets you have multiple components with different component IDs all performing various agentic tasks within the same shared session.
 
 [#_effect_api]
 == Agent's effect API
@@ -28,7 +59,7 @@ The Agent's Effect defines the operations that Akka should perform when an incom
 
 For additional details, refer to xref:concepts:declarative-effects.adoc[Declarative Effects].
 
-== Skeleton
+== Basic Agent Structure
 
 An agent implementation has the following code structure.
 
@@ -43,7 +74,7 @@ include::example$doc-snippets/src/main/java/com/example/application/MyAgent.java
 
 NOTE: The `@Component` value `my-agent` is common for all instances of this agent and must be unique across the different components in the service.
 
-An agent must have one command handler method that is public and returns `Effect<T>`, where `T` it the type of the reply. Alternatively it can return `StreamEffect` for xref:agents/streaming.adoc[streaming responses].
+An agent must have one command handler method that is public and returns `Effect<T>`, where `T` is the type of the reply. Alternatively it can return `StreamEffect` for xref:agents/streaming.adoc[streaming responses].
 
 Command handlers in Akka may take one or no parameters as input. If you need multiple parameters for a command, you can wrap them in a record class and pass an instance of that to the command handler as the sole parameter.
 
@@ -62,7 +93,7 @@ include::sdk:example$doc-snippets/src/main/resources/application.conf[tags=agent
 
 The `model-provider` property points to the name of another configuration section, in this case `akka.javasdk.agent.openai`. That configuration section contains the actual configuration for the model provider, according to the properties described in xref:model-provider-details.adoc#_reference_configurations[model provider reference configurations].
 
-Another example where we have selected `anthropic` with `claude-sonnet-4` as the default model provider:
+Another example where you select `anthropic` with `claude-sonnet-4` as the default model provider:
 
 [source,json,indent=0]
 .src/main/resources/application.conf
@@ -134,4 +165,10 @@ This also illustrates the important point that the context of the request to the
 
 The ability to reach into the rest of a distributed Akka application to _augment_ requests makes behavior like Retrieval Augmented Generation (RAG) simple and less error prone than doing things manually without Akka.
 
+== See Also
 
+* xref:concepts:ai-agents.adoc[AI Agents concepts]
+* xref:sdk:agents/guardrails.adoc[Guardrails]
+* xref:sdk:agents/memory.adoc[Agent Memory]
+* link:{url-blog-agents}[Akka Agents deep-dive, window="new"]
+* link:{url-blog-mcp-a2a-acp}[MCP, A2A, ACP: What Does It All Mean?, window="new"]
