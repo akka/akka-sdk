@@ -56,7 +56,7 @@ NOTE: Not using Claude Code? Akka supports 30 different AI assist tools. Visit h
 [TIP.manual]
 .Without the plugin
 ====
-If you are unable to install the marketplace plugin or clone the plugin from the repository, fall back to the Akka CLI:
+If you are unable to install the marketplace plugin or clone the repository, fall back to the Akka CLI:
 
 . Install the Akka CLI (see xref:operations:cli/installation.adoc[]).
 . Run `akka specify init <dir>` to provision a new AI-assist ready project.
