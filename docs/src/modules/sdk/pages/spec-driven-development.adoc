@@ -82,6 +82,7 @@ Crucially, this single file specification is usually written mostly by humans. I
 A single `SPEC.md` or `specification.md` file may be enough for some projects. Many sample or demonstration applications can be built properly with just a single file. However, when your needs and complexity reach a certain point, you need a formal process. This process is iterative, git-friendly, and enlists the aid of the AI assistant both in building the spec and generating the code from it. It addresses the need to build formal specifications that are consumable by both human and AI alike while reducing random and unexpected output. This process is covered in detail below.
 
 == Using Akka specify
+Akka makes it incredibly easy to get started with a new _Spec-Driven_ project. Instead of using `akka code init`, use the newer `akka specify init` command. This will give you everything you need to kick off your Spec-Driven development cycle.
 
 If you installed the Akka plugin (recommended), the `/akka:setup` skill handles project initialization for you. The information below describes what happens under the hood, and applies if you used the `akka specify init <dir>` fallback.
 
@@ -206,6 +207,7 @@ Using SDD with careful feature scoping and concise technical implementation plan
 == See also
 
 * {url-blog-introducing-specify}[Introducing Akka Specify, window="new"] -- the blog post that launched SDD on Akka.
+* {url-blog-demo-code-init}[Akka Code Init Demo, window="new"] -- see an Akka project scaffolded live.
 * https://github.github.com/spec-kit/index.html[spec-kit, window="new"] -- the specification pattern Akka's SDD process follows.
 * https://modelcontextprotocol.io/docs/getting-started/intro[Model Context Protocol (MCP), window="new"] -- the protocol behind the `/akka.*` slash-commands.
 * xref:operations:cli/installation.adoc[]
