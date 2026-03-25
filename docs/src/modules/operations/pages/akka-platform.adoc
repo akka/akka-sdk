@@ -20,6 +20,18 @@ AAO is built on a Kubernetes-based control plane and application plane purpose-d
 * You need deep observability — logs, metrics, and traces — integrated from day one.
 * You operate under regulatory or data-sovereignty constraints that demand dedicated infrastructure.
 
+== Service tiers
+
+AAO aligns with four service tiers, each building on the previous:
+
+Fast Prod:: Get to production fast. AAO provisions your service, configures networking and TLS, and gives you a running endpoint within minutes. Ideal for proofs of concept, internal tools, and early-stage services.
+
+Day 2 Ops:: Once you are in production, AAO provides continuous delivery integration, log and metric exports, alerting hooks, and rolling upgrades — everything you need to keep services healthy day after day.
+
+Business Continuity:: For mission-critical workloads, AAO delivers multi-region replication, automatic failover, and self-healing recovery. Your services target *99.9999% availability* with *sub-one-minute RTO* and *zero-byte RPO* — data is replicated before any acknowledgment, so nothing is lost even when an entire region is destroyed.
+
+Sovereign Cloud:: When regulatory, compliance, or data-residency requirements dictate where your data lives, AAO can run on dedicated infrastructure in the regions you choose, giving you full control over the blast radius and data jurisdiction.
+
 == Reliability
 
 Reliability is a first-class dimension across every AAO tier. The platform is designed around the principle that failures are inevitable and recovery must be automatic:
