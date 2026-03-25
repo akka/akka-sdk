@@ -33,10 +33,6 @@ The following sample projects demonstrate aspects of this pattern:
 
 NOTE: A dedicated governance-focused sample may be needed for a full end-to-end walkthrough of this pattern.
 
-== Pattern Walkthrough
-
-_Code walkthrough coming soon. This section will include an annotated walkthrough of a dedicated governance sample project showing how guardrails, sanitizers, and compliance controls are composed._
-
 == See Also
 
 * xref:sdk:agents/guardrails.adoc[]

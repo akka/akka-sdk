@@ -28,10 +28,6 @@ The following sample projects demonstrate this pattern:
 * {sample-base-url}/endpoint-jwt[endpoint-jwt] -- HTTP endpoint with JWT-based authentication
 * {sample-base-url}/trip-booking-with-tools[trip-booking-with-tools] -- agent exposed via multiple endpoint types with tool integration
 
-== Pattern Walkthrough
-
-_Code walkthrough coming soon. This section will include an annotated walkthrough of a sample project showing how the system is composed._
-
 == See Also
 
 * xref:sdk:http-endpoints.adoc[]

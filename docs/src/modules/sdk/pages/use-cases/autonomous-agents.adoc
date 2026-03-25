@@ -29,10 +29,6 @@ The following sample projects demonstrate this pattern:
 * {sample-base-url}/medical-discharge-tagging[medical-discharge-tagging] -- agent that classifies and tags medical discharge records
 * {sample-base-url}/iot-sensor-monitoring[iot-sensor-monitoring] -- agent that monitors IoT sensor data and triggers alerts
 
-== Pattern Walkthrough
-
-_Code walkthrough coming soon. This section will include an annotated walkthrough of a sample project showing how the system is composed._
-
 == See Also
 
 * xref:sdk:agents.adoc[]

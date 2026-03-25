@@ -30,10 +30,6 @@ The following sample projects demonstrate this pattern:
 * {sample-base-url}/key-value-customer-registry[key-value-customer-registry] -- key-value entity pattern for customer data
 * {sample-base-url}/event-sourced-customer-registry[event-sourced-customer-registry] -- event sourced entity pattern for customer data
 
-== Pattern Walkthrough
-
-_Code walkthrough coming soon. This section will include an annotated walkthrough of a sample project showing how the system is composed._
-
 == See Also
 
 * xref:sdk:event-sourced-entities.adoc[]

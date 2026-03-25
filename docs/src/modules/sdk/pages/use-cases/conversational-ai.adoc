@@ -29,10 +29,6 @@ The following sample projects demonstrate this pattern:
 * {sample-base-url}/customer-service-chat[customer-service-chat] -- full customer service agent with multi-turn memory and tool use
 * {sample-base-url}/travel-planning-agent[travel-planning-agent] -- travel planning assistant with session state and external integrations
 
-== Pattern Walkthrough
-
-_Code walkthrough coming soon. This section will include an annotated walkthrough of a sample project showing how the system is composed._
-
 == See Also
 
 * xref:sdk:agents.adoc[]

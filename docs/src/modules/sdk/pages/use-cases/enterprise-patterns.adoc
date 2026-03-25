@@ -30,10 +30,6 @@ The following sample projects demonstrate this pattern:
 * {sample-base-url}/choreography-saga-quickstart[choreography-saga-quickstart] -- choreography-based saga for distributed business transactions
 * {sample-base-url}/spring-dependency-injection[spring-dependency-injection] -- integrating Akka components with Spring dependency injection
 
-== Pattern Walkthrough
-
-_Code walkthrough coming soon. This section will include an annotated walkthrough of a sample project showing how the system is composed._
-
 == See Also
 
 * xref:sdk:event-sourced-entities.adoc[]

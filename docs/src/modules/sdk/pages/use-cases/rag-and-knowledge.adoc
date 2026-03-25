@@ -27,10 +27,6 @@ The following sample projects demonstrate this pattern:
 
 * {sample-base-url}/ask-akka-agent[ask-akka-agent] -- RAG agent that answers questions about Akka documentation using vector search and conversational memory
 
-== Pattern Walkthrough
-
-_Code walkthrough coming soon. This section will include an annotated walkthrough of a sample project showing how the system is composed._
-
 == See Also
 
 * xref:sdk:agents.adoc[]

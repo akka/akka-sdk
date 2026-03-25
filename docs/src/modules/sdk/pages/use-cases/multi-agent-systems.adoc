@@ -28,10 +28,6 @@ The following sample projects demonstrate this pattern:
 * {sample-base-url}/multi-agent[multi-agent] -- multiple agents coordinating on a shared task with structured handoffs
 * {sample-base-url}/customer-service-chat[customer-service-chat] -- multi-agent customer service system with routing and specialization
 
-== Pattern Walkthrough
-
-_Code walkthrough coming soon. This section will include an annotated walkthrough of a sample project showing how the system is composed._
-
 == See Also
 
 * xref:sdk:agents/orchestrating.adoc[]

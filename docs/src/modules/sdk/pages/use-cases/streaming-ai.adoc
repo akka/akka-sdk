@@ -28,10 +28,6 @@ The following sample projects demonstrate this pattern:
 * {sample-base-url}/iot-sensor-monitoring[iot-sensor-monitoring] -- real-time AI analysis of IoT sensor data streams
 * {sample-base-url}/event-sourced-customer-registry-subscriber[event-sourced-customer-registry-subscriber] -- event-driven consumer that reacts to entity state changes
 
-== Pattern Walkthrough
-
-_Code walkthrough coming soon. This section will include an annotated walkthrough of a sample project showing how the system is composed._
-
 == See Also
 
 * xref:sdk:consuming-producing.adoc[]
