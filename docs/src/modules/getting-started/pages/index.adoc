@@ -15,7 +15,7 @@ The fastest way to start building with Akka is to install the Akka plugin and ru
 
 === Step 1: Install the Akka plugin
 
-In Claude Code, run these commands:
+In Claude Code, install the Akka plugin from the AI Marketplace:
 
 [source]
 ----
@@ -24,7 +24,23 @@ In Claude Code, run these commands:
 /reload-plugins
 ----
 
-NOTE: Not using Claude Code? Akka supports 30 different AI assist tools. You can also clone the Akka plugin directly from the Akka repository. Visit https://doc.akka.io[doc.akka.io] for installation instructions for your tool.
+TIP: If you are unable to add the marketplace, clone the Akka plugin repository and add it as a local marketplace instead:
+
+[source,bash]
+----
+git clone https://github.com/akka/ai-marketplace.git
+----
+
+Then in Claude Code:
+
+[source]
+----
+/plugin marketplace add /path/to/ai-marketplace
+/plugin install akka-specify@ai-marketplace
+/reload-plugins
+----
+
+NOTE: Not using Claude Code? Akka supports 30 different AI assist tools. Visit https://doc.akka.io[doc.akka.io] for plugin installation instructions for your tool.
 
 === Step 2: Set up your environment
 
@@ -45,13 +61,9 @@ This ensures the Akka CLI is installed, Java and Maven are available, and your A
 You now have a running Akka service built entirely from a specification. See xref:sdk:spec-driven-development.adoc[Spec-Driven Development] for the full SDD workflow.
 
 [TIP.manual]
-.Without the plugin
+.No plugin capability for your AI assist?
 ====
-If you cannot install the plugin, use the Akka CLI directly:
-
-. Install the Akka CLI (see xref:operations:cli/installation.adoc[]).
-. Run `akka specify init <dir>` to provision a new AI-assist ready project.
-. Launch your AI coding assistant from the new project directory.
+If your AI assist tool does not support plugins, install the Akka CLI instead and use `akka specify init <dir>` to provision a new project. See xref:sdk:spec-driven-development.adoc#_getting_started_with_sdd[Spec-Driven Development] for full instructions.
 ====
 
 == Hands-on tutorials
