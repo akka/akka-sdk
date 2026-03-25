@@ -34,7 +34,7 @@ In Claude Code, install the Akka plugin from the AI Marketplace:
 [source]
 ----
 /plugin marketplace add akka/ai-marketplace
-/plugin install akka-specify@ai-marketplace
+/plugin install akka@ai-marketplace
 /reload-plugins
 ----
 
@@ -46,7 +46,7 @@ TIP: If you are unable to add the marketplace, clone the Akka plugin repository 
 
 [source]
 ----
-/akka-specify:setup
+/akka:setup
 ----
 
 This configures your environment — ensuring the Akka CLI is installed, Java and Maven are available, and your Akka download token is properly configured. Once setup completes, you are ready to start building.
@@ -84,7 +84,7 @@ A single `SPEC.md` or `specification.md` file may be enough for some projects. M
 
 == Using Akka specify
 
-If you installed the Akka plugin (recommended), the `/akka-specify:setup` skill handles project initialization for you. The information below describes what happens under the hood, and applies if you used the `akka specify init <dir>` fallback.
+If you installed the Akka plugin (recommended), the `/akka:setup` skill handles project initialization for you. The information below describes what happens under the hood, and applies if you used the `akka specify init <dir>` fallback.
 
 === Initialization and constitution adoption
 Running `akka specify init <dir>` provisions a new AI-assist ready project directory. It scaffolds an empty Akka project and grabs all of the markdown templates necessary for the spec-driven process. Once you have run this command, change to the directory of your new project (if you are not already there) and launch your favorite code assistant.

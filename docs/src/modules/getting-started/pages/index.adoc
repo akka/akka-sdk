@@ -15,7 +15,7 @@ In Claude Code, install the Akka plugin from the AI Marketplace:
 [source]
 ----
 /plugin marketplace add akka/ai-marketplace
-/plugin install akka-specify@ai-marketplace
+/plugin install akka@ai-marketplace
 /reload-plugins
 ----
 
@@ -31,7 +31,7 @@ Then in Claude Code:
 [source]
 ----
 /plugin marketplace add /path/to/ai-marketplace
-/plugin install akka-specify@ai-marketplace
+/plugin install akka@ai-marketplace
 /reload-plugins
 ----
 
@@ -41,7 +41,7 @@ NOTE: Not using Claude Code? Akka supports 30 different AI assist tools. Visit h
 
 [source]
 ----
-/akka-specify:setup
+/akka:setup
 ----
 
 This ensures the Akka CLI is installed, Java and Maven are available, and your Akka download token is properly configured.
