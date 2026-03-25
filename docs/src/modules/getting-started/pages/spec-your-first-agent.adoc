@@ -43,8 +43,8 @@ You should now have everything you need to easily use Spec-Driven Development to
 ```
 /akka-specify:setup — Complete
 
-    Java 23 (Temurin)      ✓ installed
-    Maven 3.9.10           ✓ installed
+    Java 25 (Temurin)      ✓ installed
+    Maven 3.9.11           ✓ installed
     Akka CLI dev-3.0.53    ✓ installed
     Akka download token    ⚠ could not verify (dot-directory restriction)
     Docker                 ✓ available
