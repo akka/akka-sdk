@@ -9,8 +9,6 @@ TIP: The recommended way to build your first agent is with xref:getting-started:
 
 == Introduction
 
-include::ROOT:partial$concepts-intro.adoc[]
-
 In this guide, you will:
 
 * Set up your development environment.
