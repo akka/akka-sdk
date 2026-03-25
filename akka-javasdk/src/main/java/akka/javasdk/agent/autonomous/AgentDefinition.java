@@ -26,8 +26,8 @@ public interface AgentDefinition {
    */
   AgentDefinition goal(String goal);
 
-  /** Declare the agent's capabilities: task acceptance, delegation, etc. */
-  AgentDefinition capabilities(AgentCapability... capabilities);
+  /** Add a capability to this agent: task acceptance, delegation, etc. */
+  AgentDefinition capability(AgentCapability capability);
 
   /** The LLM model provider for this agent. */
   AgentDefinition modelProvider(ModelProvider provider);

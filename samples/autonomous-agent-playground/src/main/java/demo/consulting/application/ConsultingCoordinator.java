@@ -2,6 +2,8 @@ package demo.consulting.application;
 
 import akka.javasdk.agent.autonomous.AgentDefinition;
 import akka.javasdk.agent.autonomous.AutonomousAgent;
+import akka.javasdk.agent.autonomous.capability.Delegation;
+import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 
 /**
@@ -24,10 +26,11 @@ public class ConsultingCoordinator extends AutonomousAgent {
         """
       )
       .tools(new ConsultingTools())
-      .capabilities(
-          canAcceptTasks(ConsultingTasks.ENGAGEMENT)
-            .canHandoffTo(SeniorConsultant.class),
-          canDelegateTo(ConsultingResearcher.class)
+      .capability(
+          TaskAcceptance.of(ConsultingTasks.ENGAGEMENT)
+            .canHandoffTo(SeniorConsultant.class))
+      .capability(
+          Delegation.to(ConsultingResearcher.class)
               .maxParallelWorkers(2));
   }
 }

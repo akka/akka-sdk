@@ -6,6 +6,7 @@ package demo.docreview.application;
 
 import akka.javasdk.agent.autonomous.AgentDefinition;
 import akka.javasdk.agent.autonomous.AutonomousAgent;
+import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 
 @Component(id = "document-reviewer")
@@ -18,6 +19,6 @@ public class DocumentReviewer extends AutonomousAgent {
         "Review documents for regulatory and compliance standards, " +
         "providing structured assessments with specific findings."
       )
-      .capabilities(canAcceptTasks(ReviewTasks.REVIEW).maxIterationsPerTask(5));
+      .capability(TaskAcceptance.of(ReviewTasks.REVIEW).maxIterationsPerTask(5));
   }
 }

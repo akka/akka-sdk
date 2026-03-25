@@ -2,6 +2,7 @@ package demo.support.application;
 
 import akka.javasdk.agent.autonomous.AgentDefinition;
 import akka.javasdk.agent.autonomous.AutonomousAgent;
+import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 
 @Component(id = "triage-agent")
@@ -16,10 +17,9 @@ public class TriageAgent extends AutonomousAgent {
         by the appropriate specialist. \
         """
       )
-      .capabilities(
-        canAcceptTasks(SupportTasks.RESOLVE)
+      .capability(
+        TaskAcceptance.of(SupportTasks.RESOLVE)
           .maxIterationsPerTask(3)
-          .canHandoffTo(BillingSpecialist.class, TechnicalSpecialist.class)
-      );
+          .canHandoffTo(BillingSpecialist.class, TechnicalSpecialist.class));
   }
 }

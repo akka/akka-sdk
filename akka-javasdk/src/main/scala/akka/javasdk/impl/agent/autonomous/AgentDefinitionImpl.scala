@@ -32,8 +32,8 @@ final case class AgentDefinitionImpl(
   override def goal(goal: String): AgentDefinition =
     copy(goal = goal)
 
-  override def capabilities(capabilities: AgentCapability*): AgentDefinition =
-    copy(capabilities = concat(this.capabilities, capabilities))
+  override def capability(capability: AgentCapability): AgentDefinition =
+    copy(capabilities = concat(this.capabilities, Seq(capability)))
 
   override def modelProvider(provider: ModelProvider): AgentDefinition =
     copy(modelProvider = provider)

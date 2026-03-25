@@ -2,6 +2,7 @@ package demo.consulting.application;
 
 import akka.javasdk.agent.autonomous.AgentDefinition;
 import akka.javasdk.agent.autonomous.AutonomousAgent;
+import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 
 @Component(
@@ -20,6 +21,6 @@ public class ConsultingResearcher extends AutonomousAgent {
         """
       )
       .tools(new ConsultingTools())
-      .capabilities(canAcceptTasks(ConsultingTasks.RESEARCH).maxIterationsPerTask(5));
+      .capability(TaskAcceptance.of(ConsultingTasks.RESEARCH).maxIterationsPerTask(5));
   }
 }

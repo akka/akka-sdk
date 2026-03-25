@@ -19,9 +19,9 @@ final case class AgentSetupImpl(goal: Option[String], capabilities: util.List[Ag
   override def goal(goal: String): AgentSetup =
     copy(goal = Some(goal))
 
-  override def capabilities(capabilities: AgentCapability*): AgentSetup = {
+  override def capability(capability: AgentCapability): AgentSetup = {
     val result = new util.ArrayList[AgentCapability](this.capabilities)
-    capabilities.foreach(result.add)
+    result.add(capability)
     copy(capabilities = util.Collections.unmodifiableList(result))
   }
 }

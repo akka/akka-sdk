@@ -29,6 +29,6 @@ public interface AgentSetup {
    */
   AgentSetup goal(String goal);
 
-  /** Add capabilities for this instance, extending the static capabilities. */
-  AgentSetup capabilities(AgentCapability... capabilities);
+  /** Add a capability for this instance, extending the static capabilities. */
+  AgentSetup capability(AgentCapability capability);
 }
