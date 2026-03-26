@@ -1,0 +1,94 @@
+= Who uses Akka
+:page-summary: Persona-based navigation — find the documentation that matters for your role.
+:page-persona: all
+
+include::ROOT:partial$include.adoc[]
+
+Akka serves builders, operators, and governance teams. Find the documentation path for your role.
+
+== Builders
+
+=== Application Developers
+
+The broadest group — from senior distributed systems engineers to developers with no distributed systems background. Golden paths and Spec-Driven Development enable consistent delivery regardless of skill level.
+
+* xref:sdk:spec-driven-development.adoc[Spec-Driven Development] — The primary way to build with Akka
+* xref:getting-started:index.adoc[Tutorials] — Hands-on walkthroughs
+* xref:sdk:components/index.adoc[SDK Components] — Agents, Workflows, Entities, Endpoints, Views, Consumers, Timed Actions
+* xref:sdk:integrations/index.adoc[Integrations] — Connect to external systems
+* xref:sdk:running-locally.adoc[Local Development Setup]
+
+=== AI/ML Engineers
+
+Focused on agent design, prompt engineering, model selection, and guardrail tuning.
+
+* xref:sdk:agents.adoc[Agents] — Build AI-backed agents
+* xref:sdk:agents/guardrails.adoc[Guardrails] — Runtime policy enforcement
+* xref:sdk:model-provider-details.adoc[Model Provider Configuration] — Anthropic, OpenAI, Google, AWS Bedrock, and more
+* xref:sdk:agents/memory.adoc[Agent Memory] — Session and durable memory
+* xref:sdk:agents/orchestrating.adoc[Multi-Agent Orchestration]
+
+=== Product Managers / Business Analysts
+
+Spec-Driven Development means you do not need to write code. Describe requirements in plain language and contribute to system design.
+
+* xref:sdk:spec-driven-development.adoc[Spec-Driven Development] — Author specs, not code
+
+== Operators
+
+=== Platform Engineers / PlatformOps
+
+Own the Akka installation, manage tenants, enforce golden paths, and onboard teams.
+
+* xref:operations:akka-platform.adoc[Akka Automated Operations (AAO)]
+* xref:operations:projects/index.adoc[Project Management]
+* xref:operations:organizations/index.adoc[Organization Management]
+* xref:operations:services/deploy-service.adoc[Deploying Services]
+
+=== SREs / DevOps
+
+Monitor availability, manage HA/DR, handle scaling and incidents.
+
+* xref:concepts:multi-region.adoc[Multi-Region & Resilience]
+* xref:operations:observability-and-monitoring/index.adoc[Observability & Monitoring]
+* xref:operations:regions/index.adoc[Region Management]
+* xref:operations:cli/index.adoc[CLI Reference]
+* xref:operations:integrating-cicd/index.adoc[CI/CD Integration]
+
+== Governance & Oversight
+
+=== Compliance Analysts
+
+Use explainability tooling, interaction logging, and causal analysis to satisfy regulatory requirements.
+
+* xref:concepts:governance-and-the-runtime.adoc[Governance & the Runtime] — Why bolt-on governance fails
+* xref:sdk:agents/guardrails.adoc[Guardrails] — Runtime policy enforcement
+* xref:sdk:sanitization.adoc[Data Sanitization] — PII scrubbing with right to explain
+
+=== InfoSec Engineers
+
+Configure and audit guardrails, policy enforcement, and access controls.
+
+* xref:sdk:access-control.adoc[Access Control]
+* xref:sdk:auth-with-jwts.adoc[JWT Authentication]
+* xref:operations:projects/secrets.adoc[Secrets Management]
+* xref:operations:tls-certificates.adoc[TLS Certificates]
+
+=== FinOps
+
+Track token consumption, optimize costs, and report on spend across teams and projects.
+
+* xref:operations:observability-and-monitoring/metrics.adoc[Metrics & Monitoring]
+* xref:operations:organizations/billing.adoc[Billing]
+
+== Customer Stories
+
+Akka is trusted by innovative, regulated, and global enterprises. More than 2 billion people touch an application powered by Akka every day.
+
+* **AI/Agentic:** link:{url-story-swiggy}[Swiggy, window="new"], link:{url-story-manulife}[Manulife, window="new"], link:{url-story-llaama}[Llaama, window="new"], link:{url-story-mrcall}[MrCall, window="new"], link:{url-story-deductive-ai}[DeductiveAI, window="new"]
+* **Financial Services:** link:{url-story-capital-one}[Capital One, window="new"]
+* **Healthcare:** link:{url-story-doctolib}[Doctolib, window="new"], link:{url-story-leap-rail}[Leap Rail, window="new"]
+* **Manufacturing/IoT:** link:{url-story-renault}[Renault, window="new"], link:{url-story-john-deere}[John Deere, window="new"], link:{url-story-cern}[CERN, window="new"]
+* **E-Commerce:** link:{url-story-tubi}[Tubi, window="new"], link:{url-story-walmart}[Walmart, window="new"]
+* **Telecom:** link:{url-story-verizon}[Verizon, window="new"]
+* link:{url-story-all}[All Customer Stories, window="new"]
