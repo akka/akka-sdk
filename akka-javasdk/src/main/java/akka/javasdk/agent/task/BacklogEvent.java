@@ -25,4 +25,7 @@ public sealed interface BacklogEvent {
 
   @TypeName("akka-backlog-unclaimed-cancelled")
   record UnclaimedCancelled() implements BacklogEvent {}
+
+  @TypeName("akka-backlog-closed")
+  record BacklogClosed() implements BacklogEvent {}
 }
