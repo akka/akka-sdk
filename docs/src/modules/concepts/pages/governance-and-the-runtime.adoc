@@ -48,7 +48,7 @@ Akka holds more than 19 compliance certifications including:
 == Related Documentation
 
 * xref:sdk:agents/guardrails.adoc[Guardrails] — Configure runtime policy enforcement
-* xref:sdk:sanitization.adoc[Data Sanitization] — PII scrubbing implementation
+* xref:sdk:sanitization.adoc[Data sanitization] — PII scrubbing implementation
 * xref:sdk:access-control.adoc[Access Control] — Service-level access control lists
 
 == See Also

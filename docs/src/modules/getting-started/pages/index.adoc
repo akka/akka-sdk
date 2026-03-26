@@ -1,52 +1,102 @@
 = Tutorials
+:page-summary: Get started with Akka — install the plugin, run your first specification, or explore hands-on tutorials.
+:page-persona: builder-developer, builder-ai-ml, builder-pm
 
-Start with a guided tutorial or explore working samples. The resources below help you learn by building services and agents with Akka.
+include::ROOT:partial$include.adoc[]
 
-== Tutorials
+== Get started with Akka
 
-These hands-on tutorials walk you step by step through building real Akka systems, from your first minimal agentic service to fully featured applications like shopping carts and AI agents. Each tutorial includes guided instructions, runnable code, and explanations of key concepts.
+The fastest way to start building with Akka is to install the Akka plugin and run a specification. No Java or Maven setup required — the plugin handles everything.
 
-=== Build your first service
+=== Step 1: Install the Akka plugin
 
-[TIP]
+In Claude Code, install the Akka plugin from the AI Marketplace:
+
+[source]
+----
+/plugin marketplace add akka/ai-marketplace
+/plugin install akka@ai-marketplace
+/reload-plugins
+----
+
+TIP: If you are unable to add the marketplace, clone the Akka plugin repository and add it as a local marketplace instead:
+
+[source,bash]
+----
+git clone https://github.com/akka/ai-marketplace.git
+----
+
+Then in Claude Code:
+
+[source]
+----
+/plugin marketplace add /path/to/ai-marketplace
+/plugin install akka@ai-marketplace
+/reload-plugins
+----
+
+NOTE: Not using Claude Code? Akka supports 30 different AI assist tools. See xref:sdk:spec-driven-development.adoc[Spec-Driven Development] for plugin installation instructions for your tool.
+
+[TIP.manual]
+.No plugin capability for your AI assist?
 ====
-*New to Akka? Start here.*
+If your AI assist tool does not support plugins, install the Akka CLI instead and use `akka specify init <dir>` to provision a new project. See xref:sdk:spec-driven-development.adoc#_getting_started_with_sdd[Spec-Driven Development] for full instructions.
 ====
 
-A good first step for learning how services are structured and how Akka processes requests.
+=== Step 2: Set up your environment
 
-[options="header", cols="2,1"]
+[source]
+----
+/akka:setup
+----
+
+This ensures the Akka CLI is installed, Java and Maven are available, and your Akka download token is properly configured.
+
+=== Step 3: Run your first specification
+
+[source]
+----
+/akka.specify hello-world - A simple greeting agent that responds in different languages and remembers which languages it has used.
+----
+
+Akka will start building a specification and then guide you on which next steps you need to execute to build an implementation plan, execute implementation steps, build the service, and test it. See xref:sdk:spec-driven-development.adoc[Spec-Driven Development] for the full SDD workflow.
+
+== Spec-driven tutorials
+
+These tutorials walk you through all of the Spec-Driven Development commands — from writing a specification through clarification, planning, implementation, and build. You use your AI assist to drive the entire workflow.
+
+[options="header", cols="2,1", width="100%"]
 |=======================
 | Tutorial | Level
-| xref:getting-started:spec-your-first-agent.adoc[Use specifications building your first agentic Hello World service] | Beginner
-| xref:getting-started:author-your-first-service.adoc[Implement and run your first agentic Hello World service] | Beginner
+| xref:getting-started:spec-your-first-agent.adoc[Spec-first greeting Agent] — Build an Agent using all SDD commands end-to-end | Beginner
+|=======================
+
+== Code-driven tutorials
+
+These tutorials walk you step by step through building Akka systems by writing Java code. They are ideal for understanding how Akka components work under the hood.
+
+=== Build your first Agent
+
+[options="header", cols="2,1", width="100%"]
+|=======================
+| Tutorial | Level
+| xref:getting-started:author-your-first-service.adoc[Hello world Agent] — Build an Agent by hand in Java | Beginner
 |=======================
 
 === Build a multi-agent system
 
-Add agents and other components step-by-step. The final application will consist of dynamic orchestration of multiple agents. A workflow manages the user query process, handling the sequential steps of agent selection, plan creation, execution, and summarization.
+Add Agents and other components step-by-step. The final application consists of dynamic orchestration of multiple Agents. A Workflow manages the user query process, handling the sequential steps of Agent selection, plan creation, execution, and summarization.
 
 [options="header", cols="2,1"]
 |=======================
 | Tutorial | Level
-| xref:planner-agent/activity.adoc[Part 1: Activity agent] — An Agent (with session memory) that suggests real-world activities using an LLM. | Beginner
+| xref:planner-agent/activity.adoc[Part 1: Activity Agent] — An Agent (with session memory) that suggests real-world activities using an LLM. | Beginner
 | xref:planner-agent/preferences.adoc[Part 2: User preferences] — An Entity (long-term memory) to personalize the suggestions. | Beginner
-| xref:planner-agent/weather.adoc[Part 3: Weather agent] — A weather forecasting Agent that uses an external service as an agent tool. | Beginner
-| xref:planner-agent/team.adoc[Part 4: Orchestrate the agents] — A Workflow that coordinates long-running calls across the agents. | Intermediate
+| xref:planner-agent/weather.adoc[Part 3: Weather Agent] — A weather forecasting Agent that uses an external service as an Agent tool. | Beginner
+| xref:planner-agent/team.adoc[Part 4: Orchestrate the Agents] — A Workflow that coordinates long-running calls across the Agents. | Intermediate
 | xref:planner-agent/list.adoc[Part 5: List by user] — A View that creates a read-only projection (i.e. a query) of all activity suggestions for a user. | Beginner
 | xref:planner-agent/dynamic-team.adoc[Part 6: Dynamic orchestration] — An Agent that creates a dynamic plan using an LLM, and a Workflow that executes the plan. | Advanced
 | xref:planner-agent/eval.adoc[Part 7: Evaluation on changes] — A Consumer that streams user preference changes to trigger an Agent. | Intermediate
-|=======================
-
-=== Build a shopping cart system
-
-Explore a complete e-commerce service and learn key Akka concepts by implementing a real-world system. These lessons walk you through defining agents, handling state, processing commands, and responding to user-specific queries.
-
-[options="header", cols="2,1"]
-|=======================
-| Tutorial | Level
-| xref:shopping-cart/build-and-deploy-shopping-cart.adoc[Part 1: Build a basic shopping cart with persistent state and command handling] | Beginner
-| xref:shopping-cart/addview.adoc[Part 2: Add user-specific lookup with JWT-based authentication] | Intermediate
 |=======================
 
 === Build an AI RAG Agent
@@ -56,10 +106,21 @@ Learn how to implement a Retrieval-Augmented Generation (RAG) pipeline with Akka
 [options="header", cols="2,1"]
 |=======================
 | Tutorial | Level
-| xref:ask-akka-agent/the-agent.adoc[Part 1: The agent] | Beginner
-| xref:ask-akka-agent/indexer.adoc[Part 2: Build a workflow that indexes knowledge using semantic embeddings] | Intermediate
+| xref:ask-akka-agent/the-agent.adoc[Part 1: The Agent] | Beginner
+| xref:ask-akka-agent/indexer.adoc[Part 2: Build a Workflow that indexes knowledge using semantic embeddings] | Intermediate
 | xref:ask-akka-agent/rag.adoc[Part 3: Executing RAG queries] | Intermediate
-| xref:ask-akka-agent/endpoints.adoc[Part 4: Adding UI endpoints] | Advanced
+| xref:ask-akka-agent/endpoints.adoc[Part 4: Adding UI Endpoints] | Advanced
+|=======================
+
+=== Build a shopping cart system
+
+Explore a complete e-commerce service and learn key Akka concepts by implementing a real-world system. These lessons walk you through defining Entities, handling state, processing commands, and responding to user-specific queries.
+
+[options="header", cols="2,1"]
+|=======================
+| Tutorial | Level
+| xref:shopping-cart/build-and-deploy-shopping-cart.adoc[Part 1: Build a basic shopping cart with persistent state and command handling] | Beginner
+| xref:shopping-cart/addview.adoc[Part 2: Add user-specific lookup with JWT-based authentication] | Intermediate
 |=======================
 
 == Explore sample applications
