@@ -63,7 +63,7 @@ Use explainability tooling, interaction logging, and causal analysis to satisfy 
 
 * xref:concepts:governance-and-the-runtime.adoc[Governance & the Runtime] — Why bolt-on governance fails
 * xref:sdk:agents/guardrails.adoc[Guardrails] — Runtime policy enforcement
-* xref:sdk:sanitization.adoc[Data Sanitization] — PII scrubbing with right to explain
+* xref:sdk:sanitization.adoc[Data sanitization] — PII scrubbing with right to explain
 
 === InfoSec Engineers
 

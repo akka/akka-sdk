@@ -1,4 +1,5 @@
 // Top-level landing pages
 * xref:ROOT:why-akka.adoc[Why Akka]
 ** xref:ROOT:what-is-akka.adoc[What is Akka]
-** xref:ROOT:who-uses-akka.adoc[Who Uses Akka]
+** xref:ROOT:who-uses-akka.adoc[Who uses Akka]
+* xref:getting-started:index.adoc[Getting started]
