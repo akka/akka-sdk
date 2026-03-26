@@ -8,7 +8,7 @@ jobs:
     runs-on: Akka-Default
     steps:
     - name: Checkout Global Scripts
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: akka/github-actions-scripts
         path: scripts
@@ -21,13 +21,11 @@ jobs:
 
     - name: Checkout
       # https://github.com/actions/checkout/releases
-      # v4.1.1
-      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+      uses: actions/checkout@v6
 
     - name: Set up Ruby
       # https://github.com/ruby/setup-ruby/releases
-      # v1.177.0
-      uses: ruby/setup-ruby@6615b4b8a02c78c4d711c06df4b8a20aa685a45d
+      uses: ruby/setup-ruby@v1.289.0
       with:
         ruby-version: '3.1'
 
@@ -48,8 +46,7 @@ jobs:
 
     - name: Create Pull Request
       # https://github.com/peter-evans/create-pull-request/releases
-      # v7.0.5
-      uses: peter-evans/create-pull-request@5e914681df9dc83aa4e4905692ca88beb2f9e91f
+      uses: peter-evans/create-pull-request@v8.0.0
       with:
         title: "docs: akka CLI docs"
         branch-suffix: short-commit-hash
