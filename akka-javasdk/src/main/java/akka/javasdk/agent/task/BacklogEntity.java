@@ -32,7 +32,7 @@ public final class BacklogEntity extends EventSourcedEntity<BacklogState, Backlo
   /** Create this backlog with a name. */
   public Effect<Done> create(String name) {
     if (currentState().closed()) {
-      return effects().error("Backlog is closed");
+      return closedError();
     }
     if (currentState().isCreated()) {
       return effects().reply(done()); // idempotent
@@ -43,7 +43,7 @@ public final class BacklogEntity extends EventSourcedEntity<BacklogState, Backlo
   /** Add a task ID reference to this backlog. The task must already exist in TaskEntity. */
   public Effect<Done> addTask(String taskId) {
     if (currentState().closed()) {
-      return effects().error("Backlog is closed");
+      return closedError();
     }
     if (currentState().containsTask(taskId)) {
       return effects().reply(done()); // idempotent
@@ -54,7 +54,7 @@ public final class BacklogEntity extends EventSourcedEntity<BacklogState, Backlo
   /** Atomic first-come-first-served claim. */
   public Effect<Done> claim(ClaimRequest request) {
     if (currentState().closed()) {
-      return effects().error("Backlog is closed");
+      return closedError();
     }
     if (!currentState().containsTask(request.taskId())) {
       return effects().error("Task " + request.taskId() + " is not in this backlog");
@@ -72,7 +72,7 @@ public final class BacklogEntity extends EventSourcedEntity<BacklogState, Backlo
   /** Release a claimed task back to unclaimed. */
   public Effect<Done> release(String taskId) {
     if (currentState().closed()) {
-      return effects().error("Backlog is closed");
+      return closedError();
     }
     if (!currentState().containsTask(taskId)) {
       return effects().error("Task " + taskId + " is not in this backlog");
@@ -86,7 +86,7 @@ public final class BacklogEntity extends EventSourcedEntity<BacklogState, Backlo
   /** Transfer a claimed task directly to a different agent. */
   public Effect<Done> transfer(TransferRequest request) {
     if (currentState().closed()) {
-      return effects().error("Backlog is closed");
+      return closedError();
     }
     if (!currentState().containsTask(request.taskId())) {
       return effects().error("Task " + request.taskId() + " is not in this backlog");
@@ -99,7 +99,7 @@ public final class BacklogEntity extends EventSourcedEntity<BacklogState, Backlo
   /** Remove all unclaimed tasks from the backlog. */
   public Effect<Done> cancelUnclaimed() {
     if (currentState().closed()) {
-      return effects().error("Backlog is closed");
+      return closedError();
     }
     if (currentState().unclaimedTaskIds().isEmpty()) {
       return effects().reply(done()); // nothing to cancel
@@ -118,6 +118,10 @@ public final class BacklogEntity extends EventSourcedEntity<BacklogState, Backlo
   /** Get the current state of the backlog. */
   public ReadOnlyEffect<BacklogState> getState() {
     return effects().reply(currentState());
+  }
+
+  private Effect<Done> closedError() {
+    return effects().error("Backlog is closed");
   }
 
   @Override
