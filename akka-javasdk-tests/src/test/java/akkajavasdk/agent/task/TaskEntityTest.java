@@ -16,13 +16,14 @@ import akka.javasdk.agent.task.TaskState;
 import akka.javasdk.agent.task.TaskStatus;
 import akka.javasdk.testkit.EventSourcedResult;
 import akka.javasdk.testkit.EventSourcedTestKit;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import org.junit.jupiter.api.Test;
 
 public class TaskEntityTest {
 
-  private final List<TaskNotification> publishedNotifications = new ArrayList<>();
+  private final ConcurrentLinkedQueue<TaskNotification> publishedNotifications =
+      new ConcurrentLinkedQueue<>();
 
   private final NotificationPublisher<TaskNotification> testPublisher =
       msg -> publishedNotifications.add(msg);
@@ -211,10 +212,9 @@ public class TaskEntityTest {
 
     testKit.method(TaskEntity::complete).invoke("{\"summary\":\"done\"}");
 
-    assertThat(publishedNotifications).hasSize(1);
-    assertThat(publishedNotifications.getFirst()).isInstanceOf(TaskNotification.Completed.class);
-    var completed = (TaskNotification.Completed) publishedNotifications.getFirst();
+    var completed = (TaskNotification.Completed) publishedNotifications.poll();
     assertThat(completed.result()).isEqualTo("{\"summary\":\"done\"}");
+    assertThat(publishedNotifications).isEmpty();
   }
 
   @Test
@@ -227,10 +227,9 @@ public class TaskEntityTest {
 
     testKit.method(TaskEntity::fail).invoke("something broke");
 
-    assertThat(publishedNotifications).hasSize(1);
-    assertThat(publishedNotifications.getFirst()).isInstanceOf(TaskNotification.Failed.class);
-    var failed = (TaskNotification.Failed) publishedNotifications.getFirst();
+    var failed = (TaskNotification.Failed) publishedNotifications.poll();
     assertThat(failed.reason()).isEqualTo("something broke");
+    assertThat(publishedNotifications).isEmpty();
   }
 
   @Test
@@ -241,10 +240,9 @@ public class TaskEntityTest {
 
     testKit.method(TaskEntity::cancel).invoke("no longer needed");
 
-    assertThat(publishedNotifications).hasSize(1);
-    assertThat(publishedNotifications.getFirst()).isInstanceOf(TaskNotification.Cancelled.class);
-    var cancelled = (TaskNotification.Cancelled) publishedNotifications.getFirst();
+    var cancelled = (TaskNotification.Cancelled) publishedNotifications.poll();
     assertThat(cancelled.reason()).isEqualTo("no longer needed");
+    assertThat(publishedNotifications).isEmpty();
   }
 
   @Test
@@ -260,8 +258,8 @@ public class TaskEntityTest {
     result.getNextEventOfType(TaskEvent.TaskCompleted.class);
     assertThat(testKit.getState().status()).isEqualTo(TaskStatus.COMPLETED);
     assertThat(testKit.getState().result()).isEqualTo("{\"approvedBy\":\"editor\"}");
-    assertThat(publishedNotifications).hasSize(1);
-    assertThat(publishedNotifications.getFirst()).isInstanceOf(TaskNotification.Completed.class);
+    assertThat(publishedNotifications.poll()).isInstanceOf(TaskNotification.Completed.class);
+    assertThat(publishedNotifications).isEmpty();
   }
 
   @Test
@@ -276,8 +274,8 @@ public class TaskEntityTest {
     result.getNextEventOfType(TaskEvent.TaskFailed.class);
     assertThat(testKit.getState().status()).isEqualTo(TaskStatus.FAILED);
     assertThat(testKit.getState().failureReason()).isEqualTo("rejected by editor");
-    assertThat(publishedNotifications).hasSize(1);
-    assertThat(publishedNotifications.getFirst()).isInstanceOf(TaskNotification.Failed.class);
+    assertThat(publishedNotifications.poll()).isInstanceOf(TaskNotification.Failed.class);
+    assertThat(publishedNotifications).isEmpty();
   }
 
   @Test

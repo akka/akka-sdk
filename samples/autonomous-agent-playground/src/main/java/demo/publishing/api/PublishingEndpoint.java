@@ -121,7 +121,10 @@ public class PublishingEndpoint {
   public String approve(String approvalTaskId, ApproveRequest request) {
     var taskClient = componentClient.forTask(approvalTaskId);
     taskClient.assign(request.approvedBy());
-    taskClient.complete(new ApprovalDecision(request.approvedBy(), request.comment()));
+    taskClient.complete(
+      PublishingTasks.APPROVAL,
+      new ApprovalDecision(request.approvedBy(), request.comment())
+    );
     return "Approved";
   }
 

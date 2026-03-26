@@ -4,6 +4,7 @@
 
 package akka.javasdk.client;
 
+import akka.Done;
 import akka.annotation.DoNotInherit;
 import akka.javasdk.agent.task.Task;
 import akka.javasdk.agent.task.TaskDefinition;
@@ -56,26 +57,30 @@ public interface TaskClient {
    * @param assignee identifier of the owner (e.g., a user ID, team name, or process identifier)
    * @return a CompletionStage that completes when the task has been assigned
    */
-  CompletionStage<Void> assignAsync(String assignee);
+  CompletionStage<Done> assignAsync(String assignee);
 
   /**
-   * Complete a task with a result. The task must be assigned first (via {@link #assign} or by the
-   * agent runtime). For tasks not yet in progress, completion is allowed directly from the assigned
-   * state — no separate start step is needed.
+   * Complete a task with a typed result. The task must be assigned first (via {@link #assign} or by
+   * the agent runtime). For tasks not yet in progress, completion is allowed directly from the
+   * assigned state — no separate start step is needed.
    *
-   * @param result the task result, serialized to JSON
+   * @param taskDefinition the task definition, used for result type validation
+   * @param result the task result
+   * @param <R> the result type of the task
    */
-  default void complete(Object result) {
-    completeAsync(result).toCompletableFuture().join();
+  default <R> void complete(TaskDefinition<R> taskDefinition, R result) {
+    completeAsync(taskDefinition, result).toCompletableFuture().join();
   }
 
   /**
    * Async variant of {@link #complete}.
    *
-   * @param result the task result, serialized to JSON
+   * @param taskDefinition the task definition, used for result type validation
+   * @param result the task result
+   * @param <R> the result type of the task
    * @return a CompletionStage that completes when the task has been completed
    */
-  CompletionStage<Void> completeAsync(Object result);
+  <R> CompletionStage<Done> completeAsync(TaskDefinition<R> taskDefinition, R result);
 
   /**
    * Fail a task with a reason. The task must be assigned first (via {@link #assign} or by the agent
@@ -93,7 +98,7 @@ public interface TaskClient {
    * @param reason the failure reason
    * @return a CompletionStage that completes when the task has been failed
    */
-  CompletionStage<Void> failAsync(String reason);
+  CompletionStage<Done> failAsync(String reason);
 
   // --- querying ---
 

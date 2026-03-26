@@ -171,36 +171,35 @@ private[javasdk] final class TaskClientImpl(
       .asJava
   }
 
-  override def assignAsync(assignee: String): CompletionStage[Void] = {
+  override def assignAsync(assignee: String): CompletionStage[Done] = {
     log.debug("assignTask: id=[{}] assignee=[{}]", taskId, assignee)
     val payload = serializer.toBytes(assignee)
-    runtimeComponentClients.eventSourcedEntityClient
-      .send(new EntityRequest(TaskEntityComponentId, taskId, "Assign", payload, spiMetadata))
-      .map(_ => null: Void)
-      .asJava
+    sendCommand("Assign", payload)
   }
 
-  override def completeAsync(result: AnyRef): CompletionStage[Void] = {
+  override def completeAsync[R](taskDefinition: TaskDefinition[R], result: R): CompletionStage[Done] = {
     log.debug("completeTask: id=[{}]", taskId)
-    val resultJson = if (result.isInstanceOf[String]) {
-      result.asInstanceOf[String]
-    } else {
-      val resultBytes = serializer.toBytes(result)
-      resultBytes.bytes.utf8String
+    val resultJson = result match {
+      case s: String => s
+      case other     => serializer.json.toJsonString(other)
     }
-    val payload = serializer.toBytes(resultJson)
-    runtimeComponentClients.eventSourcedEntityClient
-      .send(new EntityRequest(TaskEntityComponentId, taskId, "Complete", payload, spiMetadata))
-      .map(_ => null: Void)
-      .asJava
+    sendCommand("Complete", serializer.toBytes(resultJson))
   }
 
-  override def failAsync(reason: String): CompletionStage[Void] = {
+  override def failAsync(reason: String): CompletionStage[Done] = {
     log.debug("failTask: id=[{}] reason=[{}]", taskId, reason)
-    val payload = serializer.toBytes(reason)
+    sendCommand("Fail", serializer.toBytes(reason))
+  }
+
+  private def sendCommand(methodName: String, payload: BytesPayload): CompletionStage[Done] = {
     runtimeComponentClients.eventSourcedEntityClient
-      .send(new EntityRequest(TaskEntityComponentId, taskId, "Fail", payload, spiMetadata))
-      .map(_ => null: Void)
+      .send(new EntityRequest(TaskEntityComponentId, taskId, methodName, payload, spiMetadata))
+      .map { reply =>
+        reply.exceptionPayload.foreach { exBytes =>
+          throw serializer.json.exceptionFromBytes(exBytes)
+        }
+        Done.done()
+      }
       .asJava
   }
 
