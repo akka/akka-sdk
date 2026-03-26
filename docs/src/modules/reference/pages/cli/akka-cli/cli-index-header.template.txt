@@ -17,6 +17,11 @@ The xref:reference:cli/akka-cli/akka_auth.adoc[] command offers these options:
 == Enable auto-completion for your shell
 The xref:reference:cli/akka-cli/akka_completion.adoc[akka completion] command generates auto-completion configuration for common shells. See xref:operations:cli/command-completion.adoc[Enable command completion] for more information.
 
+== Use your AI assistant to implement an Akka Service from a specification
+The 'akka specify' commands set up Akka projects for AI-assisted development. Use 'akka specify init' to create a new project with all the resources needed for AI coding agents, including slash commands, templates, and MCP configuration.
+
+<AKKA_SPECIFY_CMD>
+
 == Initialize a source code project
 To start a source code project for a new Akka Service, the `akka code init` command offers an interactive experience to get you started.
 Using it, you can select from the samples catalog or create an empty source code project including instructions for your favorite AI
@@ -105,6 +110,13 @@ The `akka services` commands manipulate the services in your Akka Project.
 The xref:reference:cli/akka-cli/akka_services.adoc[akka services] command includes the following options:
 
 <AKKA_SERVICES_CMD>
+
+== Configure services
+The `akka service-configs` commands allow configuring services.
+
+The xref:reference:cli/akka-cli/akka_service-configs.adoc[akka service-configs] command includes the following options:
+
+<AKKA_SERVICE_CONFIGS_CMD>
 
 == Run Akka services locally
 The `akka local` commands allow you to run and manage locally running Akka services.
