@@ -15,7 +15,7 @@ This command:
 The cloned repository includes CLAUDE.md, AGENTS.md, and Akka AI context files that are version-synchronized with the SDK.
 
 NOTE: Building the project requires the Akka resolver in your Maven settings.xml.
-If not yet configured, the AI agent's build command will guide you through setup.
+If not yet configured, this command will guide you through setup before initializing the project.
 
 After running this command, open Claude Code (or your preferred AI agent) in the project directory to start developing.
 
