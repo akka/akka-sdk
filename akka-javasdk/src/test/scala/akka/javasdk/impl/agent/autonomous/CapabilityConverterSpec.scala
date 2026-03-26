@@ -68,6 +68,7 @@ class CapabilityConverterSpec extends AnyWordSpec with Matchers {
     val converter = new CapabilityConverter(
       agentDefinitionMap = Map.empty,
       agentDescriptors = Seq.empty,
+      requestBasedAgentDescriptors = Seq.empty,
       defaultMaxIterationsPerTask = 10,
       defaultMaxParallelWorkers = 3)
 
@@ -147,6 +148,32 @@ class CapabilityConverterSpec extends AnyWordSpec with Matchers {
       val orchestrators = capabilities.collect { case o: SpiAutonomousAgent.DelegationOrchestrator => o }
       orchestrators should have size 1
       orchestrators.head.delegationGroups should have size 2
+    }
+
+    "convert request-based delegation with default max parallel workers" in {
+      val delegation = DelegationImpl.createRequestBased(Array())
+      val capabilities = converter.toSpiCapabilities(java.util.List.of(delegation))
+
+      capabilities should have size 1
+      val orchestrator = capabilities.head.asInstanceOf[SpiAutonomousAgent.DelegationOrchestrator]
+      orchestrator.delegationGroups should have size 1
+      orchestrator.delegationGroups.head.delegationTargets shouldBe empty
+      orchestrator.delegationGroups.head.requestBasedTargets shouldBe empty
+      orchestrator.delegationGroups.head.maxParallelWorkers shouldBe 3
+    }
+
+    "merge autonomous and request-based delegations into single orchestrator" in {
+      val autonomousDelegation = DelegationImpl.create(Array()).maxParallelWorkers(2).asInstanceOf[DelegationImpl]
+      val requestBasedDelegation =
+        DelegationImpl.createRequestBased(Array()).maxParallelWorkers(4).asInstanceOf[DelegationImpl]
+      val capabilities =
+        converter.toSpiCapabilities(java.util.List.of(autonomousDelegation, requestBasedDelegation))
+
+      val orchestrators = capabilities.collect { case o: SpiAutonomousAgent.DelegationOrchestrator => o }
+      orchestrators should have size 1
+      orchestrators.head.delegationGroups should have size 2
+      orchestrators.head.delegationGroups(0).maxParallelWorkers shouldBe 2
+      orchestrators.head.delegationGroups(1).maxParallelWorkers shouldBe 4
     }
   }
 }

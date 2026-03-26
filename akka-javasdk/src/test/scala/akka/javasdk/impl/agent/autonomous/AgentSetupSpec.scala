@@ -72,6 +72,18 @@ class AgentSetupSpec extends AnyWordSpec with Matchers with AutonomousAgentImplS
       setup.capabilities.asScala should have size 2
     }
 
+    "accumulate request-based delegation capability" in {
+      val setup = AgentSetup
+        .create()
+        .capability(TaskAcceptance.of(testTask))
+        .capability(Delegation.toRequestBased())
+        .impl
+
+      setup.capabilities.asScala should have size 2
+      setup.capabilities.asScala.head.asTaskAcceptance
+      setup.capabilities.asScala(1).asDelegation
+    }
+
     "be immutable — each method returns a new instance" in {
       val setup1 = AgentSetup.create()
       val setup2 = setup1.goal("A goal")

@@ -545,6 +545,7 @@ private final class Sdk(
     new CapabilityConverter(
       agentDefinitionMap = autonomousAgentDefinitionMap,
       agentDescriptors = autonomousAgentDescriptors,
+      requestBasedAgentDescriptors = agentDescriptors,
       defaultMaxIterationsPerTask = autonomousConfig.getInt("max-iterations-per-task"),
       defaultMaxParallelWorkers = autonomousConfig.getInt("delegation.max-parallel-workers"))
   }

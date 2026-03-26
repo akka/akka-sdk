@@ -6,6 +6,7 @@ package akka.javasdk.impl.agent.autonomous.capability
 
 import scala.jdk.CollectionConverters._
 
+import akka.javasdk.agent.Agent
 import akka.javasdk.agent.autonomous.AutonomousAgent
 import akka.javasdk.agent.autonomous.capability.Delegation
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance
@@ -77,7 +78,30 @@ class CapabilityBuildersSpec extends AnyWordSpec with Matchers with AutonomousAg
       original.impl.maxParallel shouldBe None
       modified.impl.maxParallel shouldBe Some(5)
     }
+
+    "create request-based delegation via static factory" in {
+      val delegation = Delegation.toRequestBased().impl
+
+      delegation.requestBasedTargets.asScala shouldBe empty
+      delegation.delegationTargets.asScala shouldBe empty
+      delegation.maxParallel shouldBe None
+    }
+
+    "create request-based delegation with agent classes" in {
+      val delegation = Delegation.toRequestBased(classOf[DummyAgent]).impl
+
+      delegation.requestBasedTargets.asScala should have size 1
+      delegation.requestBasedTargets.asScala.head shouldBe classOf[DummyAgent]
+      delegation.delegationTargets.asScala shouldBe empty
+    }
+
+    "set max parallel workers on request-based delegation" in {
+      Delegation.toRequestBased().maxParallelWorkers(4).impl.maxParallel shouldBe Some(4)
+    }
   }
+
+  // Dummy agent for testing request-based delegation
+  abstract class DummyAgent extends Agent
 
   "TeamLeadership" should {
 
