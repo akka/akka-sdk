@@ -18,7 +18,7 @@ LLM providers are supported natively — 9 providers built into the SDK: Anthrop
 Akka connects to any data store with a Java client library.
 
 * **Vector databases:** Pinecone, Weaviate, Qdrant, Chroma, pgvector — via their Java client libraries
-* **Relational databases:** PostgreSQL, MySQL — via JDBC
+* **Relational databases:** PostgreSQL, MySQL — via R2DBC or JDBC
 * **NoSQL databases:** MongoDB, DynamoDB, Cassandra — via their Java client libraries
 * **Search engines:** Elasticsearch, OpenSearch — via their Java client libraries
 * xref:sdk:use-cases/rag-and-knowledge.adoc[Retrieval-Augmented Generation (RAG)] — semantic search on vector databases to enrich AI model requests

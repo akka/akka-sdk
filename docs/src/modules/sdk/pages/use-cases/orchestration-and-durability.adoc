@@ -25,11 +25,10 @@ Build long-running, multi-step business processes that survive failures and reco
 
 The following sample projects demonstrate this pattern:
 
-* https://github.com/akka-samples/transfer-workflow[transfer-workflow] -- basic multi-step transfer workflow
-* https://github.com/akka-samples/transfer-workflow-orchestration[transfer-workflow-orchestration] -- orchestration-based saga for fund transfers
-* https://github.com/akka-samples/transfer-workflow-compensation[transfer-workflow-compensation] -- transfer workflow with compensation logic for failure recovery
-* https://github.com/akka-samples/choreography-saga-quickstart[choreography-saga-quickstart] -- choreography-based saga pattern for distributed coordination
-* https://github.com/akka/akka-sdk/blob/main/samples/reliable-timers[reliable-timers] -- durable timers that survive restarts and failures
+* https://github.com/akka-samples/transfer-workflow[transfer-workflow,window="new"] -- basic multi-step transfer workflow
+* https://github.com/akka-samples/transfer-workflow-orchestration[transfer-workflow-orchestration,window="new"] -- orchestration-based saga for fund transfers
+* https://github.com/akka-samples/transfer-workflow-compensation[transfer-workflow-compensation,window="new"] -- transfer workflow with compensation logic for failure recovery
+* https://github.com/akka-samples/choreography-saga-quickstart[choreography-saga-quickstart,window="new"] -- choreography-based saga pattern for distributed coordination
 
 == See Also
 
