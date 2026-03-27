@@ -56,6 +56,8 @@ The following types can be injected in all component types:
 | Access the user defined configuration picked up from `application.conf`
 | `akka.javasdk.Sanitizer`
 | Allows for applying sanitization, see xref:sdk:sanitization.adoc[]
+| `io.opentelemetry.api.metrics.Meter`
+| Allows to create custom Open Telemetry metrics, see xref:sdk:metric.adoc[]
 |===
 
 The following types can be injected in Service Setup, HTTP Endpoints, gRPC Endpoints, Agents, Consumers, Timed Actions, and Workflows:

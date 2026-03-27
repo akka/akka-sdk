@@ -134,6 +134,7 @@ import akka.stream.Materializer
 import akka.stream.SystemMaterializer
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import io.opentelemetry.api.metrics.Meter
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
@@ -259,6 +260,7 @@ class SdkRunner private (
         startContext.componentClients,
         startContext.remoteIdentification,
         startContext.tracerFactory,
+        startContext.sdkMeter,
         startContext.regionInfo,
         dependencyProvider,
         disabledComponents,
@@ -341,6 +343,7 @@ private final class Sdk(
     runtimeComponentClients: ComponentClients,
     remoteIdentification: Option[RemoteIdentification],
     tracerFactory: String => Tracer,
+    sdkMeter: Meter,
     regionInfo: RegionInfo,
     dependencyProviderOverride: Option[DependencyProvider],
     disabledComponents: Set[Class[_]],
@@ -815,6 +818,7 @@ private final class Sdk(
       // The type does not guarantee this is a Java concurrent Executor, but we know it is, since supplied from runtime
       sdkExecutionContext.asInstanceOf[Executor]
     case s if s == classOf[Sanitizer] => sanitizer
+    case s if s == classOf[Meter]     => sdkMeter
   }
 
   val spiComponents: SpiComponents = {
