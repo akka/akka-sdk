@@ -40,7 +40,7 @@ Every call to an LLM carries risk: hallucinated outputs, uncontrolled token spen
 
 Many agent frameworks require deep expertise in both AI/ML and distributed systems simultaneously. This creates a hiring bottleneck and a fragile codebase that only a handful of engineers can maintain. A production-ready platform must separate these concerns so that AI engineers focus on prompts and models while the platform handles resilience and scale.
 
-== How Akka solves these: three dimensions
+== How Akka solves these: Three dimensions
 
 Akka addresses the three barriers through three reinforcing dimensions.
 

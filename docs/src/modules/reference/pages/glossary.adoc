@@ -72,6 +72,8 @@ An _event handler_ is the only piece of code that is allowed to _update_ the sta
 
 [[repeatability]]Repeatability:: An Akka dimension — consistent development across teams via golden paths and <<sdd,Spec-Driven Development>>. Repeatability eliminates dependency on scarce distributed systems experts by encoding best practices into specifications that AI can execute.
 
+[[risk_control]]Risk Control:: An Akka dimension -- runtime-embedded governance, policy enforcement, and <<eu_ai_act>> compliance. Risk Control includes <<guardrails>>, audit trails, and <<sanitizer,sanitization>> to ensure AI systems operate within regulatory and organizational boundaries. One of the <<three_dimensions>>.
+
 [[runtime]]Runtime:: When you deploy a <<service>>, Akka wraps it with the runtime. The runtime manages entity state, and exposes the service implementation to the rest of the system. It translates incoming messages to commands and sends them to the service. The runtime also forms a cluster with other instances of the same service, allowing advanced distributed state management features such as sharding, replication and addressed communication between instances.
 
 [[sanitizer]]Sanitizer:: A data sanitization component that scrubs personally identifiable information (PII) from Agent interactions while preserving explainability and audit trails.
