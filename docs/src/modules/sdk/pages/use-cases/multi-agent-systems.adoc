@@ -25,8 +25,7 @@ Orchestrate multiple agents that collaborate on shared goals, hand off tasks to 
 
 The following sample projects demonstrate this pattern:
 
-* https://github.com/akka-samples/multi-agent[multi-agent] -- multiple agents coordinating on a shared task with structured handoffs
-* https://github.com/akka/akka-sdk/blob/main/samples/customer-service-chat[customer-service-chat] -- multi-agent customer service system with routing and specialization
+* https://github.com/akka-samples/multi-agent[multi-agent,window="new"] -- multiple agents coordinating on a shared task with structured handoffs
 
 == See Also
 
