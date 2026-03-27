@@ -1,6 +1,7 @@
 = Messaging & events
 :page-summary: Akka-native messaging first, external message brokers when needed. Built-in brokerless pub/sub, service-to-service eventing, and streaming.
 :page-persona: builder-developer
+:page-aliases: sdk:message-brokers.adoc
 
 include::ROOT:partial$include.adoc[]
 
@@ -29,6 +30,7 @@ For more advanced streaming needs, you can use Akka Streams directly. See the ht
 * xref:sdk:consuming-producing.adoc[Consumers]
 * xref:sdk:streaming.adoc[Streaming]
 
+[#external]
 == External message brokers
 
 When you need to integrate with systems outside Akka, use external message brokers. Akka offers built-in integrations for:

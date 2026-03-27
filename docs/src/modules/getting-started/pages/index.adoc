@@ -1,6 +1,7 @@
 = Tutorials
 :page-summary: Get started with Akka — install the plugin, run your first specification, or explore hands-on tutorials.
 :page-persona: builder-developer, builder-ai-ml, builder-pm
+:page-aliases: getting-started:starthere.adoc
 
 include::ROOT:partial$include.adoc[]
 

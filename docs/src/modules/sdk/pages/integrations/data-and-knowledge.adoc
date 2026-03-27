@@ -18,8 +18,8 @@ Use vector databases for semantic search and RAG workflows. Connect via their Ja
 
 == Relational databases
 
-* **PostgreSQL** — via JDBC
-* **MySQL** — via JDBC
+* **PostgreSQL** — via R2DBC or JDBC
+* **MySQL** — via R2DBC or JDBC
 
 == NoSQL databases
 
