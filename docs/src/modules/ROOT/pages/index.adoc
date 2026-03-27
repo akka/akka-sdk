@@ -5,12 +5,19 @@ Akka is the agentic systems platform built for Reliability, Risk Control, and Re
 [discrete]
 == xref:ROOT:why-akka.adoc[Why Akka]
 
-Three barriers stand between AI prototypes and production: the **Production Gap**, **Liability**, and the **Specialist Trap**. xref:ROOT:why-akka.adoc[Learn how Akka solves them].
+Three barriers stand between AI prototypes and production:
+
+* the **Production Gap**,
+* **Liability**,
+* and the **Specialist Trap**.
+
+Learn xref:ROOT:why-akka.adoc[how Akka solves them].
 
 [discrete]
 == xref:ROOT:what-is-akka.adoc[What is Akka]
 
-Platform overview, capabilities, service tiers, and application types. xref:ROOT:who-uses-akka.adoc[Find the docs for your role].
+Akka is the only full-stack platform for agentic AI: developer experience, runtime, and governance in one integrated system.
+Learn xref:ROOT:what-is-akka.adoc[about what Akka provides] or find xref:ROOT:who-uses-akka.adoc[the docs for your role].
 
 [discrete]
 == xref:getting-started:index.adoc[Tutorials]
@@ -84,9 +91,11 @@ Platform overview, capabilities, service tiers, and application types. xref:ROOT
 [discrete]
 == xref:ROOT:resources.adoc[Resources]
 
-Blogs, demos, webinars, customer stories, foundational works, training, and community.
+Blogs, demos, webinars, customer stories, foundational works, training, and community links are
+listed in the xref:ROOT:resources.adoc[Resources] section.
 
 [discrete]
 == xref:libraries:index.adoc[Akka Libraries]
 
 Libraries for building and running responsive applications, used in production for over a decade.
+Learn about xref:libraries:index.adoc[the Akka Libraries].

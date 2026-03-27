@@ -1,5 +1,0 @@
-= Retrieval-Augmented Generation (RAG)
-
-include::ROOT:partial$include.adoc[]
-
-This content has moved to xref:sdk:use-cases/rag-and-knowledge.adoc[RAG & knowledge].

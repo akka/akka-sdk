@@ -21,7 +21,7 @@ Akka connects to any data store with a Java client library.
 * **Relational databases:** PostgreSQL, MySQL — via JDBC
 * **NoSQL databases:** MongoDB, DynamoDB, Cassandra — via their Java client libraries
 * **Search engines:** Elasticsearch, OpenSearch — via their Java client libraries
-* xref:sdk:rag.adoc[Retrieval-Augmented Generation (RAG)] — semantic search on vector databases to enrich AI model requests
+* xref:sdk:use-cases/rag-and-knowledge.adoc[Retrieval-Augmented Generation (RAG)] — semantic search on vector databases to enrich AI model requests
 
 === No caching layer needed
 
@@ -37,7 +37,7 @@ Akka's Entity components (Event Sourced Entities, Key Value Entities) are in-mem
 
 When you need to integrate with systems outside Akka, use external message brokers via their Java client libraries:
 
-* xref:sdk:message-brokers.adoc[Message brokers] — Kafka, Google Pub/Sub, Azure Event Hubs
+* xref:sdk:integrations/messaging-and-events.adoc#external[Message brokers] — Kafka, Google Pub/Sub, Azure Event Hubs
 * Webhooks for external system callbacks — implement via xref:sdk:http-endpoints.adoc[HTTP Endpoints]
 
 == APIs & protocols
