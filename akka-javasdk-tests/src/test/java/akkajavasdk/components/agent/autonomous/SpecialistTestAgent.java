@@ -16,6 +16,6 @@ public class SpecialistTestAgent extends AutonomousAgent {
   public AgentDefinition definition() {
     return define()
         .goal("Resolve billing support requests.")
-        .capability(TaskAcceptance.of(DelegationTaskDefs.RESOLVE).maxIterationsPerTask(3));
+        .capability(TaskAcceptance.of(TestTasks.RESOLVE).maxIterationsPerTask(3));
   }
 }

@@ -17,7 +17,7 @@ public class CoordinatorAgent extends AutonomousAgent {
   public AgentDefinition definition() {
     return define()
         .goal("Coordinate research by delegating to workers and synthesising results.")
-        .capability(TaskAcceptance.of(DelegationTaskDefs.RESEARCH).maxIterationsPerTask(5))
+        .capability(TaskAcceptance.of(TestTasks.RESEARCH).maxIterationsPerTask(5))
         .capability(Delegation.to(WorkerAgent.class).maxParallelWorkers(2));
   }
 }

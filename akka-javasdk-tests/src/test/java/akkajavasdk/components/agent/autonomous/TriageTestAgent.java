@@ -17,7 +17,7 @@ public class TriageTestAgent extends AutonomousAgent {
     return define()
         .goal("Classify support requests and hand off to the appropriate specialist.")
         .capability(
-            TaskAcceptance.of(DelegationTaskDefs.RESOLVE)
+            TaskAcceptance.of(TestTasks.RESOLVE)
                 .maxIterationsPerTask(3)
                 .canHandoffTo(SpecialistTestAgent.class));
   }

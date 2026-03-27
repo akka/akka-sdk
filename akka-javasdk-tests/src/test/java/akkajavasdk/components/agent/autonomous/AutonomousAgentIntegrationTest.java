@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 public class AutonomousAgentIntegrationTest extends TestKitSupport {
 
-  private final TestModelProvider simpleModel = new TestModelProvider();
+  private final TestModelProvider testAgentModel = new TestModelProvider();
   private final TestModelProvider toolModel = new TestModelProvider();
   private final TestModelProvider coordinatorModel = new TestModelProvider();
   private final TestModelProvider workerModel = new TestModelProvider();
@@ -33,7 +33,7 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
   protected TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT
         .withAdditionalConfig("akka.javasdk.agent.openai.api-key = n/a")
-        .withModelProvider(SimpleAutonomousAgent.class, simpleModel)
+        .withModelProvider(TestAutonomousAgent.class, testAgentModel)
         .withModelProvider(ToolUsingAgent.class, toolModel)
         .withModelProvider(CoordinatorAgent.class, coordinatorModel)
         .withModelProvider(WorkerAgent.class, workerModel)
@@ -45,7 +45,7 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
 
   @AfterEach
   public void afterEach() {
-    simpleModel.reset();
+    testAgentModel.reset();
     toolModel.reset();
     coordinatorModel.reset();
     workerModel.reset();
@@ -56,16 +56,16 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
   }
 
   @Test
-  public void shouldCompleteSimpleTask() {
-    simpleModel.fixedResponse(
+  public void shouldCompleteTaskWithTypedResult() {
+    testAgentModel.fixedResponse(
         new AiResponse(
             new ToolInvocationRequest(
-                "complete_task", "{\"answer\":\"42 is the answer.\",\"confidence\":95}")));
+                "complete_task", "{\"value\":\"42 is the answer.\",\"score\":95}")));
 
     var taskId =
         componentClient
-            .forAutonomousAgent(SimpleAutonomousAgent.class, UUID.randomUUID().toString())
-            .runSingleTask(SimpleTaskDefs.ANSWER.instructions("What is the meaning of life?"));
+            .forAutonomousAgent(TestAutonomousAgent.class, UUID.randomUUID().toString())
+            .runSingleTask(TestTasks.TEST_TASK.instructions("What is the meaning of life?"));
 
     assertThat(taskId).isNotBlank();
 
@@ -74,31 +74,53 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () -> {
-              var snapshot = componentClient.forTask(taskId).get(SimpleTaskDefs.ANSWER);
+              var snapshot = componentClient.forTask(taskId).get(TestTasks.TEST_TASK);
               assertThat(snapshot.result()).isNotNull();
-              assertThat(snapshot.result().answer()).isEqualTo("42 is the answer.");
-              assertThat(snapshot.result().confidence()).isEqualTo(95);
+              assertThat(snapshot.result().value()).isEqualTo("42 is the answer.");
+              assertThat(snapshot.result().score()).isEqualTo(95);
             });
   }
 
   @Test
-  public void shouldFailTask() {
-    simpleModel.fixedResponse(
+  public void shouldCompleteTaskWithStringResult() {
+    testAgentModel.fixedResponse(
         new AiResponse(
             new ToolInvocationRequest(
-                "fail_task", "{\"reason\":\"Cannot answer this question.\"}")));
+                "complete_task", "{\"result\":\"The capital of France is Paris.\"}")));
 
     var taskId =
         componentClient
-            .forAutonomousAgent(SimpleAutonomousAgent.class, UUID.randomUUID().toString())
-            .runSingleTask(SimpleTaskDefs.ANSWER.instructions("Unanswerable question"));
+            .forAutonomousAgent(TestAutonomousAgent.class, UUID.randomUUID().toString())
+            .runSingleTask(TestTasks.STRING_TASK.instructions("What is the capital of France?"));
 
     Awaitility.await()
         .ignoreExceptions()
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () -> {
-              var snapshot = componentClient.forTask(taskId).get(SimpleTaskDefs.ANSWER);
+              var snapshot = componentClient.forTask(taskId).get(TestTasks.STRING_TASK);
+              assertThat(snapshot.result()).isEqualTo("The capital of France is Paris.");
+            });
+  }
+
+  @Test
+  public void shouldFailTask() {
+    testAgentModel.fixedResponse(
+        new AiResponse(
+            new ToolInvocationRequest(
+                "fail_task", "{\"reason\":\"Cannot answer this question.\"}")));
+
+    var taskId =
+        componentClient
+            .forAutonomousAgent(TestAutonomousAgent.class, UUID.randomUUID().toString())
+            .runSingleTask(TestTasks.TEST_TASK.instructions("Unanswerable question"));
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var snapshot = componentClient.forTask(taskId).get(TestTasks.TEST_TASK);
               assertThat(snapshot.status().name()).isEqualTo("FAILED");
               assertThat(snapshot.failureReason()).isEqualTo("Cannot answer this question.");
             });
@@ -118,23 +140,22 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
             result ->
                 new AiResponse(
                     new ToolInvocationRequest(
-                        "complete_task",
-                        "{\"answer\":\"Today is 2025-01-15.\",\"confidence\":100}")));
+                        "complete_task", "{\"value\":\"Today is 2025-01-15.\",\"score\":100}")));
 
     var taskId =
         componentClient
             .forAutonomousAgent(ToolUsingAgent.class, UUID.randomUUID().toString())
-            .runSingleTask(SimpleTaskDefs.ANSWER.instructions("What is today's date?"));
+            .runSingleTask(TestTasks.TEST_TASK.instructions("What is today's date?"));
 
     Awaitility.await()
         .ignoreExceptions()
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () -> {
-              var snapshot = componentClient.forTask(taskId).get(SimpleTaskDefs.ANSWER);
+              var snapshot = componentClient.forTask(taskId).get(TestTasks.TEST_TASK);
               assertThat(snapshot.result()).isNotNull();
-              assertThat(snapshot.result().answer()).isEqualTo("Today is 2025-01-15.");
-              assertThat(snapshot.result().confidence()).isEqualTo(100);
+              assertThat(snapshot.result().value()).isEqualTo("Today is 2025-01-15.");
+              assertThat(snapshot.result().score()).isEqualTo(100);
             });
   }
 
@@ -168,14 +189,14 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
     var taskId =
         componentClient
             .forAutonomousAgent(CoordinatorAgent.class, UUID.randomUUID().toString())
-            .runSingleTask(DelegationTaskDefs.RESEARCH.instructions("Research quantum computing"));
+            .runSingleTask(TestTasks.RESEARCH.instructions("Research quantum computing"));
 
     Awaitility.await()
         .ignoreExceptions()
         .atMost(30, TimeUnit.SECONDS)
         .untilAsserted(
             () -> {
-              var snapshot = componentClient.forTask(taskId).get(DelegationTaskDefs.RESEARCH);
+              var snapshot = componentClient.forTask(taskId).get(TestTasks.RESEARCH);
               assertThat(snapshot.result()).isNotNull();
               assertThat(snapshot.result().title()).isEqualTo("Quantum Computing Summary");
               assertThat(snapshot.result().summary()).contains("parallel computation");
@@ -201,14 +222,14 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
     var taskId =
         componentClient
             .forAutonomousAgent(TriageTestAgent.class, UUID.randomUUID().toString())
-            .runSingleTask(DelegationTaskDefs.RESOLVE.instructions("I was charged twice."));
+            .runSingleTask(TestTasks.RESOLVE.instructions("I was charged twice."));
 
     Awaitility.await()
         .ignoreExceptions()
         .atMost(30, TimeUnit.SECONDS)
         .untilAsserted(
             () -> {
-              var snapshot = componentClient.forTask(taskId).get(DelegationTaskDefs.RESOLVE);
+              var snapshot = componentClient.forTask(taskId).get(TestTasks.RESOLVE);
               assertThat(snapshot.result()).isNotNull();
               assertThat(snapshot.result().category()).isEqualTo("billing");
               assertThat(snapshot.result().resolved()).isTrue();
@@ -232,22 +253,22 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
         .whenMessage(msg -> msg.contains("Continue working"))
         .reply(
             new ToolInvocationRequest(
-                "complete_task", "{\"answer\":\"Claim verified.\",\"confidence\":90}"));
+                "complete_task", "{\"value\":\"Claim verified.\",\"score\":90}"));
 
     var taskId =
         componentClient
             .forAutonomousAgent(RequestDelegatingAgent.class, UUID.randomUUID().toString())
-            .runSingleTask(SimpleTaskDefs.ANSWER.instructions("Please verify: the sky is blue."));
+            .runSingleTask(TestTasks.TEST_TASK.instructions("Please verify: the sky is blue."));
 
     Awaitility.await()
         .ignoreExceptions()
         .atMost(30, TimeUnit.SECONDS)
         .untilAsserted(
             () -> {
-              var snapshot = componentClient.forTask(taskId).get(SimpleTaskDefs.ANSWER);
+              var snapshot = componentClient.forTask(taskId).get(TestTasks.TEST_TASK);
               assertThat(snapshot.result()).isNotNull();
-              assertThat(snapshot.result().answer()).isEqualTo("Claim verified.");
-              assertThat(snapshot.result().confidence()).isEqualTo(90);
+              assertThat(snapshot.result().value()).isEqualTo("Claim verified.");
+              assertThat(snapshot.result().score()).isEqualTo(90);
             });
   }
 }

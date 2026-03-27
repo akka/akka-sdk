@@ -17,7 +17,7 @@ public class ToolUsingAgent extends AutonomousAgent {
   public AgentDefinition definition() {
     return define()
         .goal("Answer questions using available tools.")
-        .capability(TaskAcceptance.of(SimpleTaskDefs.ANSWER).maxIterationsPerTask(5))
+        .capability(TaskAcceptance.of(TestTasks.TEST_TASK).maxIterationsPerTask(5))
         .tools(new DateService());
   }
 
