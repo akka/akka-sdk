@@ -75,6 +75,11 @@ class ComponentClientTest {
           public TimedActionClient timedActionClient() {
             return null;
           }
+
+          @Override
+          public SpiObjectStorage objectStorage() {
+            return null;
+          }
         };
     componentClient =
         new ComponentClientImpl(
