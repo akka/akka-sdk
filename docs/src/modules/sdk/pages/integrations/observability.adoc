@@ -1,0 +1,25 @@
+= Observability
+:page-summary: Built-in OpenTelemetry metrics and logs exporting to any OTEL-compatible backend.
+:page-persona: builder-developer, operator-sre
+
+include::ROOT:partial$include.adoc[]
+
+Akka exports metrics and logs via OpenTelemetry (OTEL), the industry standard for observability. Feed data into any OTEL-compatible backend without additional libraries or configuration.
+
+== Supported backends
+
+Any OTEL-compatible backend works with Akka, including:
+
+* **Grafana** (Loki, Tempo, Mimir)
+* **Datadog**
+* **New Relic**
+* **Splunk**
+* **Dynatrace**
+* **Elastic Observability**
+
+== See also
+
+* xref:operations:observability-and-monitoring/index.adoc[Observability and monitoring]
+* xref:operations:observability-and-monitoring/metrics.adoc[Metrics]
+* xref:operations:observability-and-monitoring/traces.adoc[Traces]
+* xref:operations:observability-and-monitoring/observability-exports.adoc[Exporting metrics, logs, and traces]

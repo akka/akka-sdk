@@ -1,0 +1,36 @@
+= Enterprise patterns
+:page-summary: Classic enterprise patterns including shopping carts, customer registries, saga orchestration, and Spring integration.
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+Implement classic enterprise patterns with Akka including shopping carts, customer registries, saga orchestration, and Spring framework integration. These patterns demonstrate how Akka's entity model, workflow engine, and view system handle traditional enterprise use cases with built-in durability, scalability, and low-latency access.
+
+== Overview
+
+=== When to Use This Pattern
+
+* You are building e-commerce systems with shopping carts, inventories, or order management
+* Your application needs customer or entity registries with CRUD operations and search
+* You want to implement saga patterns for coordinating multi-service business transactions
+* You need to integrate Akka components with an existing Spring-based application
+
+=== Akka Components Involved
+
+* *Event Sourced Entities* -- model domain objects with full event history and temporal queries
+* *Key Value Entities* -- simple stateful entities for registries and lookups
+* *Workflows* -- orchestrate multi-step business processes and saga patterns
+* *Views* -- build queryable projections over entity state for search and reporting
+
+== Sample Projects
+
+The following sample projects demonstrate this pattern:
+
+* https://github.com/akka-samples/shopping-cart-quickstart[shopping-cart-quickstart,window="new"] -- event sourced shopping cart with views and projections
+* https://github.com/akka-samples/choreography-saga-quickstart[choreography-saga-quickstart,window="new"] -- choreography-based saga for distributed business transactions
+
+== See Also
+
+* xref:sdk:event-sourced-entities.adoc[]
+* xref:sdk:workflows.adoc[]
+* xref:concepts:saga-patterns.adoc[]

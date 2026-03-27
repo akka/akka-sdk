@@ -189,6 +189,8 @@ Annotations are in `akka.javasdk.annotations.*`:
 | `@Consume` | `akka.javasdk.annotations.Consume` |
 | `@Produce` | `akka.javasdk.annotations.Produce` |
 
+Some classes that are not specific to component are in the `akka.javasdk` package, such as `NotificationPublisher`.
+
 ## Critical Patterns & Rules
 
 ### Domain Logic Pattern
@@ -576,6 +578,7 @@ public class MyEndpointIntegrationTest extends TestKitSupport {
         .invoke();
 
     assertThat(response.status().isSuccess()).isTrue();
+    assertThat(response.status()).isEqualTo(akka.http.javadsl.model.StatusCodes.CREATED);
     assertThat(response.body().value).isEqualTo(3);
   }
 }

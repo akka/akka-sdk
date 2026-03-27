@@ -12,6 +12,16 @@ Current versions
 
 == March 2026
 
+* Akka CLI 3.0.56
+- The Akka AI Marketplace plugin has changed name to `akka`, the CLI will now download this plugin when initializing a project with AI context.
+
+* Akka CLI 3.0.55
+- Support for spec driven development using VS Code and Copilot
+- Improved shutdown of local Akka services started by an AI agent
+
+* Akka CLI 3.0.54
+- Updates to `akka specifiy`
+
 * Akka CLI 3.0.53
 - Added an optional custom constitution to `akka specify`
 - Check if `akka specify` resources have remote updates

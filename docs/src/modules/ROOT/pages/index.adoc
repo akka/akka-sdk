@@ -1,16 +1,33 @@
-= Welcome to Akka
+= Akka Documentation
 
-Akka is a platform for building, running and evaluating agentic systems. It includes a framework, runtime, streaming engine, and memory store for creating any kind of agentic system: AI, autonomous, real-time, adaptive, transactional, analytical, or edge. The Akka Runtime is the most widely adopted actor-based runtime in the world, enabling high-throughput, stateful services that are resilient, elastic and responsive. Akka runs on any infrastructure: public cloud, private cloud or on-premises.
+Akka is the agentic systems platform built for Reliability, Risk Control, and Repeatability at enterprise scale. The only full-stack platform for agentic AI: developer experience, runtime, and governance in one integrated system.
+
+[discrete]
+== xref:ROOT:why-akka.adoc[Why Akka]
+
+Three barriers stand between AI prototypes and production:
+
+* the **Production Gap**,
+* **Liability**,
+* and the **Specialist Trap**.
+
+Learn xref:ROOT:why-akka.adoc[how Akka solves them].
+
+[discrete]
+== xref:ROOT:what-is-akka.adoc[What is Akka]
+
+Akka is the only full-stack platform for agentic AI: developer experience, runtime, and governance in one integrated system.
+Learn xref:ROOT:what-is-akka.adoc[about what Akka provides] or find xref:ROOT:who-uses-akka.adoc[the docs for your role].
 
 [discrete]
 == xref:getting-started:index.adoc[Tutorials]
 
-**Start here**: a hands-on introduction, guiding you through your first steps.
+**Start here**: hands-on introduction to building with Akka.
 
-* xref:getting-started:author-your-first-service.adoc[Build your first agent] 
+* xref:getting-started:spec-your-first-agent.adoc[Spec-first greeting agent] — Build your first agent with Spec-Driven Development
+* xref:getting-started:author-your-first-service.adoc[Hello world agent] — Classic hands-on tutorial
 * xref:getting-started:planner-agent/index.adoc[Build an AI multi-agent planner]
 * xref:getting-started:samples.adoc[Explore other sample applications]
-* xref:concepts:index.adoc[Foundations for building transactional and agentic AI services]
 
 [.akka-docs-homepage-grid]
 ====
@@ -18,32 +35,29 @@ Akka is a platform for building, running and evaluating agentic systems. It incl
 [.grid-item]
 --
 [discrete]
-== xref:concepts:index.adoc[Understanding]
+== xref:sdk:index.adoc[Developing]
 
-**Foundational topics** that explain how Akka services are designed and behave.
+**Build with Akka** — Spec-Driven Development, SDK components, use cases, and integrations.
 
-* xref:concepts:concepts.adoc[Agentic AI concepts]
-* xref:concepts:distributed-systems.adoc[]
-* xref:concepts:deployment-model.adoc[Deployment model]
-* xref:concepts:development-process.adoc[Development process]
-* xref:concepts:ai-agents.adoc[AI agents]
-* xref:concepts:state-model.adoc[]
-* xref:concepts:saga-patterns.adoc[Saga patterns]
-* xref:concepts:multi-region.adoc[Multi-region operations]
+* xref:sdk:spec-driven-development.adoc[Spec-Driven Development]
+* xref:sdk:agents.adoc[Agents]
+* xref:sdk:workflows.adoc[Orchestration]
+* xref:sdk:event-sourced-entities.adoc[Memory]
+* xref:sdk:consuming-producing.adoc[Streaming]
 --
 
 [.grid-item]
 --
 [discrete]
-== xref:sdk:index.adoc[Developing]
+== xref:concepts:index.adoc[Understanding]
 
-**Implementation guidance** for key components and development patterns.
+**Foundational topics** on how Akka services are designed and behave.
 
-* xref:sdk:workflows.adoc[Orchestration]
-* xref:sdk:agents.adoc[Agents]
-* xref:sdk:event-sourced-entities.adoc[Memory]
-* xref:sdk:consuming-producing.adoc[Streaming]
-* xref:sdk:running-locally.adoc[Set up your local dev environment]
+* xref:concepts:ai-agents.adoc[AI agents]
+* xref:concepts:governance-and-the-runtime.adoc[Governance & the runtime]
+* xref:concepts:architecture-model.adoc[Architecture]
+* xref:concepts:distributed-systems.adoc[]
+* xref:concepts:multi-region.adoc[Multi-region operations]
 --
 
 [.grid-item]
@@ -51,12 +65,12 @@ Akka is a platform for building, running and evaluating agentic systems. It incl
 [discrete]
 == xref:operations:index.adoc[Operating]
 
-**Practical guidance** for deploying, observing and managing Akka services.
+**Deploy, observe, and manage** Akka services in production.
 
-* xref:operations:cli/installation.adoc[]
+* xref:operations:akka-platform.adoc[Akka Automated Operations]
 * xref:operations:services/deploy-service.adoc[]
 * xref:operations:observability-and-monitoring/metrics.adoc[]
-* xref:operations:projects/message-brokers.adoc[]
+* xref:operations:cli/installation.adoc[]
 * xref:operations:integrating-cicd/github-actions.adoc[]
 --
 
@@ -65,7 +79,7 @@ Akka is a platform for building, running and evaluating agentic systems. It incl
 [discrete]
 == xref:reference:index.adoc[Reference]
 
-**Technical reference material** for releases, APIs, tooling and terminology.
+**Technical reference** for releases, APIs, tooling, and terminology.
 
 * xref:reference:release-notes.adoc[Release notes]
 * xref:reference:api-docs.adoc[API documentation]
@@ -75,6 +89,13 @@ Akka is a platform for building, running and evaluating agentic systems. It incl
 ====
 
 [discrete]
+== xref:ROOT:resources.adoc[Resources]
+
+Blogs, demos, webinars, customer stories, foundational works, training, and community links are
+listed in the xref:ROOT:resources.adoc[Resources] section.
+
+[discrete]
 == xref:libraries:index.adoc[Akka Libraries]
 
-Akka provides a set of libraries for building and running responsive applications that have been used in production for over a decade.
+Libraries for building and running responsive applications, used in production for over a decade.
+Learn about xref:libraries:index.adoc[the Akka Libraries].

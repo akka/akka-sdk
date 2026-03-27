@@ -1,0 +1,33 @@
+= Multi-agent systems
+:page-summary: Orchestrate multiple agents collaborating on shared goals with tool planning and handoffs.
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+Orchestrate multiple agents that collaborate on shared goals, hand off tasks to specialized peers, and coordinate through structured workflows. Multi-agent systems decompose complex problems into sub-tasks handled by purpose-built agents, using tool planning and inter-agent communication to produce coherent outcomes.
+
+== Overview
+
+=== When to Use This Pattern
+
+* Your problem requires multiple specialized agents collaborating toward a shared goal
+* You need structured handoffs between agents with different capabilities or tool sets
+* Your system requires a supervisor or planner agent that delegates work to sub-agents
+* You want to build agentic pipelines where one agent's output feeds into another
+
+=== Akka Components Involved
+
+* *Agents* -- individual specialized agents with distinct roles and tool sets
+* *Workflows* -- orchestrate agent-to-agent handoffs and coordination logic
+* *Session Memory* -- share context and state across collaborating agents
+
+== Sample Projects
+
+The following sample projects demonstrate this pattern:
+
+* https://github.com/akka-samples/multi-agent[multi-agent,window="new"] -- multiple agents coordinating on a shared task with structured handoffs
+
+== See Also
+
+* xref:sdk:agents/orchestrating.adoc[]
+* xref:concepts:inter-agent-comms.adoc[]

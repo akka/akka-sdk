@@ -1,9 +1,69 @@
 = Integrations
+:page-summary: Akka runs on the JVM — integrate with any system that has a Java client library. No proprietary adapters needed.
+:page-persona: builder-developer, builder-ai-ml
+
 include::ROOT:partial$include.adoc[]
 
-Akka enables seamless communication between services, components and external systems. The following integration options are available:
+Akka runs on the JVM. All integrations use industry-standard Java APIs and client libraries. No proprietary adapters or Akka-specific wrappers are needed. If a Java client exists for it, you can use it in Akka.
 
-* xref:sdk:component-and-service-calls.adoc[Component and Service Calls]: Directly invoke other services or components within your application.
-* xref:sdk:message-brokers.adoc[Message Brokers]: Publish to and subscribe to events from external message brokers like Kafka or Pulsar.
-* xref:sdk:streaming.adoc[Streaming]: Built-in support for processing and reacting to streams of data.
-* xref:sdk:rag.adoc[]: Enrich the context to an AI model with relevant content, using semantic search on a vector database, or retrieve structured information from entities and views.
+== AI & models
+
+LLM providers are supported natively — 9 providers built into the SDK: Anthropic, OpenAI, Google AI Gemini, Google Cloud Vertex AI, AWS Bedrock, Ollama, LocalAI, Hugging Face, plus custom providers via the `ModelProvider.Custom` interface.
+
+* xref:sdk:agents.adoc[Agents] — how Agents interact with AI models
+* xref:sdk:model-provider-details.adoc[Model provider details] — configuration for each provider
+
+== Data & knowledge
+
+Akka connects to any data store with a Java client library.
+
+* **Vector databases:** Pinecone, Weaviate, Qdrant, Chroma, pgvector — via their Java client libraries
+* **Relational databases:** PostgreSQL, MySQL — via R2DBC or JDBC
+* **NoSQL databases:** MongoDB, DynamoDB, Cassandra — via their Java client libraries
+* **Search engines:** Elasticsearch, OpenSearch — via their Java client libraries
+* xref:sdk:use-cases/rag-and-knowledge.adoc[Retrieval-Augmented Generation (RAG)] — semantic search on vector databases to enrich AI model requests
+
+=== No caching layer needed
+
+Akka's Entity components (Event Sourced Entities, Key Value Entities) are in-memory systems of durable record. All data is durable, immutable, and in-memory with sub-10ms access. There is no need for a separate cache like Redis. Your Entities _are_ your cache — with persistence guarantees that Redis cannot provide.
+
+== Messaging & events
+
+**Akka-native first.** Akka has built-in messaging capabilities that should be your primary path. These are durable, integrated with the runtime, and require no external infrastructure:
+
+* xref:sdk:component-and-service-calls.adoc[Component and service calls] — invoke other services and components directly
+* xref:sdk:consuming-producing.adoc[Consumers] — brokerless pub/sub, service-to-service eventing, event-driven consumption
+* xref:sdk:streaming.adoc[Streaming] — built-in stream processing
+
+When you need to integrate with systems outside Akka, use external message brokers via their Java client libraries:
+
+* xref:sdk:integrations/messaging-and-events.adoc#external[Message brokers] — Kafka, Google Pub/Sub, Azure Event Hubs
+* Webhooks for external system callbacks — implement via xref:sdk:http-endpoints.adoc[HTTP Endpoints]
+
+== APIs & protocols
+
+Akka provides built-in support for exposing your services:
+
+* xref:sdk:http-endpoints.adoc[HTTP Endpoints] — REST APIs with JSON
+* xref:sdk:http-endpoints.adoc#_openapi_endpoint_schema[OpenAPI] — schema generation (built-in)
+* xref:sdk:http-endpoints.adoc#websocket[WebSockets] — real-time bidirectional communication (built-in)
+* xref:sdk:grpc-endpoints.adoc[gRPC Endpoints] — high-performance APIs
+* xref:sdk:mcp-endpoints.adoc[MCP Endpoints] — expose Agent functions to remote LLMs via `@FunctionTool` annotations
+
+=== Agent protocol support
+
+A2A, ACP, and MCP clients are baked into Akka's Agent component. Agents natively consume tools and communicate with other Agents via all three protocols. No external libraries needed.
+
+The Akka CLI also provides a built-in MCP server (`akka mcp serve`) that exposes CLI operations as MCP tools for Claude Desktop, VS Code, and Cursor.
+
+* link:{url-blog-mcp-a2a-acp}[MCP, A2A, ACP: What does it all mean?, window="new"]
+
+== Identity & security
+
+* **Akka-native secret management** (built-in) — project-level secrets injected as environment variables, supporting generic secrets, symmetric/asymmetric keys, TLS certificates, and CA bundles. Key rotation without environment variable changes. Values are never exposed in CLI or Console. See xref:operations:projects/secrets.adoc[Manage secrets].
+* **External secrets:** Azure KeyVault integration (currently documented). See xref:operations:projects/external-secrets.adoc[Manage external secrets].
+* **Other external providers** (AWS Secrets Manager, GCP Secret Manager, HashiCorp Vault) — via standard Java APIs.
+
+== Observability
+
+* **OpenTelemetry metrics and logs exporting** (built-in) — feed into any OTEL-compatible backend: Grafana, Datadog, New Relic, and others. See xref:operations:observability-and-monitoring/index.adoc[Observability and monitoring].

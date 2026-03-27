@@ -1,0 +1,35 @@
+= Conversational AI
+:page-summary: Build conversational AI agents with session memory, streaming responses, and multi-turn interactions.
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+Build conversational AI agents that maintain session memory across multi-turn interactions, stream responses in real time, and handle complex dialogue flows. This pattern covers stateful chat agents that remember context, adapt to user intent, and integrate with external tools and knowledge sources.
+
+== Overview
+
+=== When to Use This Pattern
+
+* You need a chat-based agent that remembers prior turns in a conversation
+* Your application requires streaming token-by-token responses to end users
+* You want to build a customer-facing assistant with tool use and contextual memory
+* You need multi-turn interactions where each turn builds on previous context
+
+=== Akka Components Involved
+
+* *Agents* -- core conversational logic and LLM integration
+* *HTTP Endpoints* -- expose the agent via REST or WebSocket for client applications
+* *Session Memory (Key Value Entities)* -- persist conversation history and session state with sub-10ms access
+
+== Sample Projects
+
+The following sample projects demonstrate this pattern:
+
+* https://github.com/akka-samples/helloworld-agent[helloworld-agent,window="new"] -- minimal agent showing basic conversational interaction
+* https://github.com/akka-samples/travel-agent[travel-planning-agent,window="new"] -- travel planning assistant with session state and external integrations
+
+== See Also
+
+* xref:sdk:agents.adoc[]
+* xref:sdk:agents/memory.adoc[]
+* xref:sdk:agents/streaming.adoc[]

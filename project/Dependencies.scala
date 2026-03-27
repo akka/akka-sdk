@@ -7,12 +7,12 @@ object Dependencies {
     val ProtocolVersionMajor = 1
     val ProtocolVersionMinor = 1
   }
-  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.5.46")
+  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.5.47")
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
   // for prod code, they are marked as Provided, but testkit still requires the alignment
   val AkkaVersion = "2.10.17"
-  val AkkaHttpVersion = "10.7.3" // Note: should at least the Akka HTTP version required by Akka gRPC
+  val AkkaHttpVersion = "10.7.4" // Note: should at least the Akka HTTP version required by Akka gRPC
   val AkkaGrpcVersion = akka.grpc.gen.BuildInfo.version
   val GoogleProtobufVersion = akka.grpc.gen.BuildInfo.googleProtobufVersion
 
@@ -112,7 +112,9 @@ object Dependencies {
     akkaSdkSpi,
     // FIXME: Not sure why this is needed, 1.4.5 from akka-core somehow trumps 1.4.6 from spi/runtime without it
     typesafeConfig,
-    // make sure these two are on the classpath for users to consume http request/response APIs and streams
+    // make sure these are on the classpath for users to consume http request/response APIs and streams
+    // and to align versions
+    "com.typesafe.akka" %% "akka-http" % AkkaHttpVersion,
     "com.typesafe.akka" %% "akka-http-core" % AkkaHttpVersion,
     akkaDependency("akka-stream"),
     akkaDependency("akka-actor-typed") % Provided,

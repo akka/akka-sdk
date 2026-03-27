@@ -1,0 +1,56 @@
+= What is Akka
+:page-summary: Akka is the only full-stack platform for agentic AI: developer experience, runtime, and governance in one integrated system.
+:page-persona: all
+
+include::ROOT:partial$include.adoc[]
+
+Akka is the only full-stack platform for agentic AI: developer experience, runtime, and governance in one integrated system.
+
+== Platform Overview
+
+Akka combines everything you need to build, run, and govern agentic AI systems:
+
+* **Spec-Driven Development** — Describe what you need in plain language. Akka generates the full specification and a production-ready system. Engineers, product managers, and non-technical builders can all contribute.
+* **Professional SDK** — Multi-agent orchestration (A2A, ACP, MCP), autonomous and sequential agents with tools and handoffs, real-time stream processing, durable memory with sub-10ms read/write, and HTTP/gRPC APIs.
+* **Runtime** — Clustering, resilience, zero trust networking, data sharding, and traffic steering. Deploy on Akka's cloud, within your hyperscaler VPC, or on your own Kubernetes infrastructure.
+* **Integrated Tooling** — Developers get tracing, debugging, and agent analysis. Operations gets a control tower with OTEL export. Compliance gets explainability and interaction logging. FinOps gets token tracking and cost optimization. InfoSec gets policy enforcement and guardrails.
+* **Automated Operations (AAO)** — A private, regionalized installation within your VPC. Active-active HA/DR, elastic scaling to 10 million agentic TPS with scale-to-zero, no-downtime rolling updates, and live CVE patching.
+
+== What Makes Akka Unique
+
+These are guarantees no other agentic AI vendor makes:
+
+* 99.9999% availability guarantee for your agentic AI applications and services
+* Resilience guarantee backed by indemnities on the security and integrity of your data
+* Sub-10ms read/write of agentic AI memory (most vendors offer ~200ms bolt-on memory)
+* Shared compute model that lowers cloud infrastructure costs up to 90%
+* Sub-1 minute Recovery Time Objective with 0 byte Recovery Point Objective
+* Fully sovereign cloud deployment option preserving HA/DR across China, EU, Singapore, and more
+* Real-time AI policy enforcement engine fully embedded within the runtime
+
+== Application Types
+
+Akka supports a range of application patterns:
+
+* link:{url-akka-app-agentic-ai}[Agentic AI, window="new"] — Conversational, autonomous, composable, fault-tolerant agents
+* link:{url-akka-app-event-sourced}[Event-Sourced, window="new"] — Immutable event log, state reconstruction, CQRS
+* link:{url-akka-app-transactional}[Transactional, window="new"] — ACID compliance, distributed consensus, 1.4M TPS
+* link:{url-akka-app-digital-twins}[Digital Twins, window="new"] — Real-time sync, bidirectional data flow
+* link:{url-akka-app-durable-execution}[Durable Execution, window="new"] — Long-lived workflows, persistent state
+* link:{url-akka-app-analytics}[Analytics, window="new"] — Real-time and batch processing, materialized views
+* link:{url-akka-app-streaming}[Streaming, window="new"] — Unbounded data flows, backpressure, stateful operations
+* link:{url-akka-app-edge}[Edge, window="new"] — Edge-to-cloud services, 25MB binaries, millions of nodes
+
+== Next Steps
+
+* xref:ROOT:who-uses-akka.adoc[Who Uses Akka] — Find the documentation path for your role
+* xref:getting-started:index.adoc[Tutorials] — Start building
+* xref:sdk:spec-driven-development.adoc[Spec-Driven Development] — The primary development approach
+
+== See Also
+
+* link:{url-akka-platform}[Akka Platform Overview, window="new"]
+* link:{url-akka-how-it-works}[How Akka Works, window="new"]
+* link:{url-akka-pricing}[Pricing, window="new"]
+* link:{url-akka-trust-center}[Trust Center, window="new"] — Compliance certifications
+* link:{url-akka-professional-services}[Professional Services, window="new"]
