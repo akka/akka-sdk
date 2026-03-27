@@ -1,0 +1,37 @@
+= Memory & state
+:page-summary: Persist and manage durable state with sub-10ms access using event sourcing and key-value patterns.
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+Persist and manage durable state with sub-10ms access latency using event sourcing and key-value patterns. This use case covers how to model stateful entities, maintain conversation memory, build queryable views over your data, and choose the right persistence pattern for your application's needs.
+
+== Overview
+
+=== When to Use This Pattern
+
+* You need durable, low-latency state that survives restarts and scales horizontally
+* Your application requires event sourcing for full audit trails and temporal queries
+* You want simple key-value storage for session memory, caches, or configuration
+* You need to build read-optimized views that aggregate data across multiple entities
+
+=== Akka Components Involved
+
+* *Event Sourced Entities* -- persist state as an immutable sequence of events with full history
+* *Key Value Entities* -- store and retrieve state directly with simple get/set semantics
+* *Views* -- build read-optimized projections over entity state for queries and reporting
+
+== Sample Projects
+
+The following sample projects demonstrate this pattern:
+
+* https://github.com/akka/akka-sdk/blob/main/samples/travel-planning-agent[travel-planning-agent] -- session memory for multi-turn travel planning conversations
+* https://github.com/akka/akka-sdk/blob/main/samples/shopping-cart-quickstart[shopping-cart-quickstart] -- event sourced shopping cart with views
+* https://github.com/akka/akka-sdk/blob/main/samples/key-value-customer-registry[key-value-customer-registry] -- key-value entity pattern for customer data
+* https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-customer-registry[event-sourced-customer-registry] -- event sourced entity pattern for customer data
+
+== See Also
+
+* xref:sdk:event-sourced-entities.adoc[]
+* xref:sdk:key-value-entities.adoc[]
+* xref:sdk:views.adoc[]

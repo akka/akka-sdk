@@ -61,7 +61,7 @@ Monitor availability, manage HA/DR, handle scaling and incidents.
 
 Use explainability tooling, interaction logging, and causal analysis to satisfy regulatory requirements.
 
-* xref:concepts:governance-and-the-runtime.adoc[Governance & the Runtime] — Why bolt-on governance fails
+* xref:concepts:governance-and-the-runtime.adoc[Governance & the runtime] — Why bolt-on governance fails
 * xref:sdk:agents/guardrails.adoc[Guardrails] — Runtime policy enforcement
 * xref:sdk:sanitization.adoc[Data sanitization] — PII scrubbing with right to explain
 
