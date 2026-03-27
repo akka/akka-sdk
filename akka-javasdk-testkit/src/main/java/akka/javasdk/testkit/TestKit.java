@@ -44,7 +44,19 @@ import akka.javasdk.timer.TimerScheduler;
 import akka.javasdk.workflow.Workflow;
 import akka.pattern.Patterns;
 import akka.runtime.sdk.spi.ComponentClients;
+import akka.runtime.sdk.spi.SpiBackofficeSettings$;
 import akka.runtime.sdk.spi.SpiDevModeSettings;
+import akka.runtime.sdk.spi.SpiDevObjectStorageBucketConfig;
+import akka.runtime.sdk.spi.SpiDevObjectStorageFilesystemBucketConfig;
+import akka.runtime.sdk.spi.SpiDevObjectStorageGcsBucketConfig;
+import akka.runtime.sdk.spi.SpiDevObjectStorageGcsCredentials;
+import akka.runtime.sdk.spi.SpiDevObjectStorageGcsNativeCredentials$;
+import akka.runtime.sdk.spi.SpiDevObjectStorageGcsServiceAccountKeyCredentials;
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3BucketConfig;
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3Credentials;
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3NativeCredentials$;
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3ProfileCredentials;
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3StaticCredentials;
 import akka.runtime.sdk.spi.SpiEventingSupportSettings;
 import akka.runtime.sdk.spi.SpiMockedEventingSettings;
 import akka.runtime.sdk.spi.SpiSettings;
@@ -56,8 +68,11 @@ import com.typesafe.config.ConfigFactory;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -254,7 +269,8 @@ public class TestKit {
             false,
             new HashMap<>(),
             new HashMap<>(),
-            new HashMap<>());
+            new HashMap<>(),
+            Collections.emptyList());
 
     /** The name of this service when deployed. */
     public final String serviceName;
@@ -292,6 +308,8 @@ public class TestKit {
      */
     public final Map<String, Map<Class<? extends AkkaGrpcClient>, AkkaGrpcClient>> grpcMocks;
 
+    public final List<ObjectStorageBucketConfig> objectStorageBuckets;
+
     public enum EventingSupport {
       /**
        * This is the default type used and allows the testing eventing integrations without an
@@ -325,7 +343,8 @@ public class TestKit {
         boolean overrideDisabledComponents,
         Map<String, ModelProvider> modelProvidersByAgentId,
         Map<String, Function<HttpRequest, HttpResponse>> httpMocks,
-        Map<String, Map<Class<? extends AkkaGrpcClient>, AkkaGrpcClient>> grpcMocks) {
+        Map<String, Map<Class<? extends AkkaGrpcClient>, AkkaGrpcClient>> grpcMocks,
+        List<ObjectStorageBucketConfig> objectStorageBuckets) {
       this.serviceName = serviceName;
       this.aclEnabled = aclEnabled;
       this.eventingSupport = eventingSupport;
@@ -337,6 +356,7 @@ public class TestKit {
       this.modelProvidersByAgentId = modelProvidersByAgentId;
       this.httpMocks = httpMocks;
       this.grpcMocks = grpcMocks;
+      this.objectStorageBuckets = objectStorageBuckets;
     }
 
     /**
@@ -360,7 +380,8 @@ public class TestKit {
           overrideDisabledComponents,
           modelProvidersByAgentId,
           httpMocks,
-          grpcMocks);
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     /**
@@ -380,7 +401,8 @@ public class TestKit {
           overrideDisabledComponents,
           modelProvidersByAgentId,
           httpMocks,
-          grpcMocks);
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     /**
@@ -400,7 +422,8 @@ public class TestKit {
           overrideDisabledComponents,
           modelProvidersByAgentId,
           httpMocks,
-          grpcMocks);
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     /**
@@ -421,7 +444,8 @@ public class TestKit {
           overrideDisabledComponents,
           modelProvidersByAgentId,
           httpMocks,
-          grpcMocks);
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     public Settings withKeyValueEntityIncomingMessages(
@@ -448,7 +472,8 @@ public class TestKit {
           overrideDisabledComponents,
           modelProvidersByAgentId,
           httpMocks,
-          grpcMocks);
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     public Settings withEventSourcedEntityIncomingMessages(
@@ -475,7 +500,8 @@ public class TestKit {
           overrideDisabledComponents,
           modelProvidersByAgentId,
           httpMocks,
-          grpcMocks);
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     public Settings withWorkflowIncomingMessages(Class<? extends Workflow<?>> workflowClass) {
@@ -498,7 +524,8 @@ public class TestKit {
           overrideDisabledComponents,
           modelProvidersByAgentId,
           httpMocks,
-          grpcMocks);
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     /** Mock the incoming events flow from a Topic. */
@@ -514,7 +541,8 @@ public class TestKit {
           overrideDisabledComponents,
           modelProvidersByAgentId,
           httpMocks,
-          grpcMocks);
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     /** Mock the outgoing events flow for a Topic. */
@@ -530,7 +558,8 @@ public class TestKit {
           overrideDisabledComponents,
           modelProvidersByAgentId,
           httpMocks,
-          grpcMocks);
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     /**
@@ -564,7 +593,8 @@ public class TestKit {
           overrideDisabledComponents,
           modelProvidersByAgentId,
           httpMocks,
-          grpcMocks);
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     /**
@@ -583,7 +613,8 @@ public class TestKit {
           overrideDisabledComponents,
           modelProvidersByAgentId,
           httpMocks,
-          grpcMocks);
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     /**
@@ -610,7 +641,8 @@ public class TestKit {
           overrideDisabledComponents,
           modelProvidersByAgentId,
           httpMocks,
-          grpcMocks);
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     /**
@@ -629,7 +661,8 @@ public class TestKit {
           overrideDisabledComponents,
           modelProvidersByAgentId,
           httpMocks,
-          grpcMocks);
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     /**
@@ -649,7 +682,8 @@ public class TestKit {
           true,
           modelProvidersByAgentId,
           httpMocks,
-          grpcMocks);
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     /**
@@ -671,7 +705,8 @@ public class TestKit {
           true,
           modelProvidersByAgentId,
           httpMocks,
-          grpcMocks);
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     public Settings withModelProvider(
@@ -690,7 +725,8 @@ public class TestKit {
           overrideDisabledComponents,
           newModelProvidersByAgentId,
           httpMocks,
-          grpcMocks);
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     /**
@@ -724,7 +760,33 @@ public class TestKit {
           overrideDisabledComponents,
           modelProvidersByAgentId,
           newHttpMocks,
-          grpcMocks);
+          grpcMocks,
+          objectStorageBuckets);
+    }
+
+    /**
+     * Add a named object-storage bucket for use in dev mode / integration tests. When any bucket is
+     * configured, only the named buckets are accessible (same as production).
+     *
+     * @param bucket the bucket configuration
+     * @return The updated settings.
+     */
+    public Settings withObjectStorageBucket(ObjectStorageBucketConfig bucket) {
+      var newBuckets = new ArrayList<>(objectStorageBuckets);
+      newBuckets.add(bucket);
+      return new Settings(
+          serviceName,
+          aclEnabled,
+          eventingSupport,
+          mockedEventing,
+          dependencyProvider,
+          additionalConfig,
+          disabledComponents,
+          overrideDisabledComponents,
+          modelProvidersByAgentId,
+          httpMocks,
+          grpcMocks,
+          newBuckets);
     }
 
     /**
@@ -765,7 +827,8 @@ public class TestKit {
           overrideDisabledComponents,
           modelProvidersByAgentId,
           httpMocks,
-          newGrpcMocks);
+          newGrpcMocks,
+          objectStorageBuckets);
     }
 
     @Override
@@ -923,6 +986,12 @@ public class TestKit {
                     "dev-mode must be enabled"); // it's set from overridden applicationConfig
               // method
 
+              scala.collection.immutable.List<SpiDevObjectStorageBucketConfig>
+                  spiObjectStorageBuckets =
+                      scala.jdk.javaapi.CollectionConverters.asScala(
+                              toSpiObjectStorageBuckets(settings.objectStorageBuckets))
+                          .toList();
+
               SpiDevModeSettings devModeSettings =
                   new SpiDevModeSettings(
                       runtimePort,
@@ -932,7 +1001,9 @@ public class TestKit {
                       eventingSettings,
                       mockedEventingSettings,
                       new SpiTestSettings(true, true),
-                      Some.apply(serviceName));
+                      Some.apply(serviceName),
+                      SpiBackofficeSettings$.MODULE$.empty(),
+                      spiObjectStorageBuckets);
 
               return s.withDevMode(devModeSettings);
             }
@@ -1244,6 +1315,49 @@ public class TestKit {
       Class<? extends EventSourcedEntity<?, ?>> eventSourcedEntityClass) {
     String componentId = getComponentId(eventSourcedEntityClass);
     return getEventSourcedEntityIncomingMessages(componentId);
+  }
+
+  private static List<SpiDevObjectStorageBucketConfig> toSpiObjectStorageBuckets(
+      List<ObjectStorageBucketConfig> buckets) {
+    List<SpiDevObjectStorageBucketConfig> result = new ArrayList<>(buckets.size());
+    for (ObjectStorageBucketConfig bucket : buckets) {
+      if (bucket instanceof ObjectStorageBucketConfig.Impl.Filesystem) {
+        ObjectStorageBucketConfig.Impl.Filesystem fs =
+            (ObjectStorageBucketConfig.Impl.Filesystem) bucket;
+        scala.Option<String> scalaDir = scala.Option.apply(fs.directory.orElse(null));
+        result.add(new SpiDevObjectStorageFilesystemBucketConfig(fs.name, scalaDir));
+      } else if (bucket instanceof ObjectStorageBucketConfig.Impl.S3) {
+        ObjectStorageBucketConfig.Impl.S3 s3 = (ObjectStorageBucketConfig.Impl.S3) bucket;
+        SpiDevObjectStorageS3Credentials creds;
+        if (s3.credentials instanceof ObjectStorageBucketConfig.S3StaticCredentials) {
+          ObjectStorageBucketConfig.S3StaticCredentials sc =
+              (ObjectStorageBucketConfig.S3StaticCredentials) s3.credentials;
+          creds = new SpiDevObjectStorageS3StaticCredentials(sc.accessKeyId, sc.secretAccessKey);
+        } else if (s3.credentials instanceof ObjectStorageBucketConfig.S3ProfileCredentials) {
+          ObjectStorageBucketConfig.S3ProfileCredentials pc =
+              (ObjectStorageBucketConfig.S3ProfileCredentials) s3.credentials;
+          creds = new SpiDevObjectStorageS3ProfileCredentials(pc.profileName);
+        } else {
+          creds = SpiDevObjectStorageS3NativeCredentials$.MODULE$;
+        }
+        result.add(new SpiDevObjectStorageS3BucketConfig(s3.name, s3.bucket, s3.region, creds));
+      } else if (bucket instanceof ObjectStorageBucketConfig.Impl.Gcs) {
+        ObjectStorageBucketConfig.Impl.Gcs gcs = (ObjectStorageBucketConfig.Impl.Gcs) bucket;
+        SpiDevObjectStorageGcsCredentials creds;
+        if (gcs.credentials instanceof ObjectStorageBucketConfig.GcsServiceAccountKeyCredentials) {
+          ObjectStorageBucketConfig.GcsServiceAccountKeyCredentials sak =
+              (ObjectStorageBucketConfig.GcsServiceAccountKeyCredentials) gcs.credentials;
+          creds = new SpiDevObjectStorageGcsServiceAccountKeyCredentials(sak.path);
+        } else {
+          creds = SpiDevObjectStorageGcsNativeCredentials$.MODULE$;
+        }
+        result.add(new SpiDevObjectStorageGcsBucketConfig(gcs.name, gcs.bucket, creds));
+      } else {
+        throw new IllegalArgumentException(
+            "Unknown ObjectStorageBucketConfig type: " + bucket.getClass());
+      }
+    }
+    return result;
   }
 
   @SuppressWarnings("deprecation")
