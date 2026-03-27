@@ -4,13 +4,17 @@
 
 package akkajavasdk.components.agent.autonomous;
 
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.completeTask;
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.delegateTo;
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.failTask;
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.handoffTo;
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.sendTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import akka.javasdk.testkit.TestModelProvider.AiResponse;
-import akka.javasdk.testkit.TestModelProvider.ToolInvocationRequest;
 import akkajavasdk.components.agent.SomeAgent;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -57,10 +61,7 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldCompleteTaskWithTypedResult() {
-    testAgentModel.fixedResponse(
-        new AiResponse(
-            new ToolInvocationRequest(
-                "complete_task", "{\"value\":\"42 is the answer.\",\"score\":95}")));
+    testAgentModel.fixedResponse(completeTask("{\"value\":\"42 is the answer.\",\"score\":95}"));
 
     var taskId =
         componentClient
@@ -83,10 +84,7 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldCompleteTaskWithStringResult() {
-    testAgentModel.fixedResponse(
-        new AiResponse(
-            new ToolInvocationRequest(
-                "complete_task", "{\"result\":\"The capital of France is Paris.\"}")));
+    testAgentModel.fixedResponse(completeTask("{\"result\":\"The capital of France is Paris.\"}"));
 
     var taskId =
         componentClient
@@ -105,10 +103,7 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldFailTask() {
-    testAgentModel.fixedResponse(
-        new AiResponse(
-            new ToolInvocationRequest(
-                "fail_task", "{\"reason\":\"Cannot answer this question.\"}")));
+    testAgentModel.fixedResponse(failTask("Cannot answer this question."));
 
     var taskId =
         componentClient
@@ -131,16 +126,14 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
     // First LLM call: agent invokes the tool
     toolModel
         .whenMessage(msg -> msg.contains("today"))
-        .reply(new ToolInvocationRequest("DateService_getToday", ""));
+        .reply(new TestModelProvider.ToolInvocationRequest("DateService_getToday", ""));
 
     // After tool result, complete the task
     toolModel
         .whenToolResult(result -> result.content().equals("2025-01-15"))
         .thenReply(
             result ->
-                new AiResponse(
-                    new ToolInvocationRequest(
-                        "complete_task", "{\"value\":\"Today is 2025-01-15.\",\"score\":100}")));
+                new AiResponse(completeTask("{\"value\":\"Today is 2025-01-15.\",\"score\":100}")));
 
     var taskId =
         componentClient
@@ -165,24 +158,20 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
     coordinatorModel
         .whenMessage(msg -> msg.contains("quantum"))
         .reply(
-            new ToolInvocationRequest(
-                "delegate_Findings_to_worker_agent",
-                "{\"instructions\":\"Research quantum computing fundamentals\"}"));
+            delegateTo(
+                TestTasks.FINDINGS, WorkerAgent.class, "Research quantum computing fundamentals"));
 
     // Worker completes with findings
     workerModel.fixedResponse(
-        new AiResponse(
-            new ToolInvocationRequest(
-                "complete_task",
-                "{\"topic\":\"Quantum Computing\",\"findings\":\"Qubits enable parallel"
-                    + " computation.\"}")));
+        completeTask(
+            "{\"topic\":\"Quantum Computing\",\"findings\":\"Qubits enable parallel"
+                + " computation.\"}"));
 
     // Coordinator synthesizes after receiving delegation result
     coordinatorModel
         .whenMessage(msg -> msg.contains("Continue working"))
         .reply(
-            new ToolInvocationRequest(
-                "complete_task",
+            completeTask(
                 "{\"title\":\"Quantum Computing Summary\",\"summary\":\"Qubits enable parallel"
                     + " computation.\"}"));
 
@@ -207,17 +196,12 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
   public void shouldHandoffToSpecialist() {
     // Triage agent classifies as billing and hands off
     triageModel.fixedResponse(
-        new AiResponse(
-            new ToolInvocationRequest(
-                "handoff_to_specialist_agent",
-                "{\"context\":\"Customer has a billing dispute.\"}")));
+        handoffTo(SpecialistTestAgent.class, "Customer has a billing dispute."));
 
     // Specialist resolves
     specialistModel.fixedResponse(
-        new AiResponse(
-            new ToolInvocationRequest(
-                "complete_task",
-                "{\"category\":\"billing\",\"resolution\":\"Refund issued.\",\"resolved\":true}")));
+        completeTask(
+            "{\"category\":\"billing\",\"resolution\":\"Refund issued.\",\"resolved\":true}"));
 
     var taskId =
         componentClient
@@ -241,9 +225,7 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
     // Autonomous agent delegates to request-based SomeAgent
     requestDelegatingModel
         .whenMessage(msg -> msg.contains("verify"))
-        .reply(
-            new ToolInvocationRequest(
-                "send_MapLlmResponse_to_some_agent", "{\"claim\":\"The sky is blue.\"}"));
+        .reply(sendTo(SomeAgent.class, "mapLlmResponse", "{\"claim\":\"The sky is blue.\"}"));
 
     // SomeAgent responds
     someAgentModel.fixedResponse("{\"response\":\"Verified: the sky is indeed blue.\"}");
@@ -251,9 +233,7 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
     // Autonomous agent synthesizes after receiving result
     requestDelegatingModel
         .whenMessage(msg -> msg.contains("Continue working"))
-        .reply(
-            new ToolInvocationRequest(
-                "complete_task", "{\"value\":\"Claim verified.\",\"score\":90}"));
+        .reply(completeTask("{\"value\":\"Claim verified.\",\"score\":90}"));
 
     var taskId =
         componentClient
