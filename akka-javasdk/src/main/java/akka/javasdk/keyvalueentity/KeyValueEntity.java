@@ -11,6 +11,7 @@ import akka.javasdk.client.ComponentClient;
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityEffectImpl;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
 
 /**
  * Key Value Entities are stateful components that persist their complete state on every change.
@@ -388,6 +389,18 @@ public abstract class KeyValueEntity<S> {
        * @return an effect that will perform the state operation and then send the reply
        */
       <T> Effect<T> thenReply(T message, Metadata metadata);
+
+      /**
+       * Sends a reply message to the caller after the state operation (update or delete) completes
+       * successfully. The reply is computed by the given supplier, which is called after the state
+       * operation succeeds. This is useful for performing side effects (such as publishing
+       * notifications) that should only happen after a successful persist.
+       *
+       * @param replySupplier a supplier that produces the reply message
+       * @param <T> the type of the reply message
+       * @return an effect that will perform the state operation and then send the reply
+       */
+      <T> Effect<T> thenReply(Supplier<T> replySupplier);
 
       /**
        * Change the replication filter for this entity, combined with updating state.

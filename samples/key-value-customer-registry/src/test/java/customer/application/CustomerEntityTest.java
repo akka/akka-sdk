@@ -17,7 +17,7 @@ public class CustomerEntityTest {
   @Test
   public void testCustomerNameChange() {
     KeyValueEntityTestKit<Customer, CustomerEntity> testKit = KeyValueEntityTestKit.of(
-      CustomerEntity::new
+      () -> new CustomerEntity(msg -> {})
     );
     {
       KeyValueEntityResult<Done> result = testKit
@@ -38,7 +38,7 @@ public class CustomerEntityTest {
   @Test
   public void testCustomerAddressChange() {
     KeyValueEntityTestKit<Customer, CustomerEntity> testKit = KeyValueEntityTestKit.of(
-      CustomerEntity::new
+      () -> new CustomerEntity(msg -> {})
     );
     {
       KeyValueEntityResult<Done> result = testKit
