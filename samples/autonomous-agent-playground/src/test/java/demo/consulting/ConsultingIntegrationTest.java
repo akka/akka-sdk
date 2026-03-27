@@ -9,6 +9,7 @@ import demo.consulting.api.ConsultingEndpoint;
 import demo.consulting.application.ConsultingCoordinator;
 import demo.consulting.application.ConsultingResearcher;
 import demo.consulting.application.ConsultingTasks;
+import demo.consulting.application.FactCheckAgent;
 import demo.consulting.application.SeniorConsultant;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -20,6 +21,7 @@ public class ConsultingIntegrationTest extends TestKitSupport {
   private final TestModelProvider coordinatorModel = new TestModelProvider();
   private final TestModelProvider researcherModel = new TestModelProvider();
   private final TestModelProvider seniorModel = new TestModelProvider();
+  private final TestModelProvider factCheckModel = new TestModelProvider();
 
   @Override
   protected TestKit.Settings testKitSettings() {
@@ -28,7 +30,8 @@ public class ConsultingIntegrationTest extends TestKitSupport {
     )
       .withModelProvider(ConsultingCoordinator.class, coordinatorModel)
       .withModelProvider(ConsultingResearcher.class, researcherModel)
-      .withModelProvider(SeniorConsultant.class, seniorModel);
+      .withModelProvider(SeniorConsultant.class, seniorModel)
+      .withModelProvider(FactCheckAgent.class, factCheckModel);
   }
 
   @Test
@@ -107,6 +110,72 @@ public class ConsultingIntegrationTest extends TestKitSupport {
         assertThat(snapshot.result()).isNotNull();
         assertThat(snapshot.result().escalated()).isFalse();
         assertThat(snapshot.result().recommendation()).contains("demand forecasting");
+      });
+  }
+
+  @Test
+  public void shouldDelegateToRequestBasedFactCheckAgent() {
+    // Coordinator: assess → delegate fact-check to request-based agent → synthesise
+    coordinatorModel
+      .whenMessage(msg -> msg.contains("climate impact"))
+      .reply(
+        List.of(
+          new TestModelProvider.ToolInvocationRequest(
+            "ConsultingTools_assessProblem",
+            "{\"problemDescription\":\"climate impact of proposed changes\"}"
+          )
+        )
+      );
+
+    coordinatorModel
+      .whenToolResult(tr -> tr.name().equals("ConsultingTools_assessProblem"))
+      .reply(
+        new TestModelProvider.ToolInvocationRequest(
+          "send_CheckFacts_to_fact_check_agent",
+          "{\"claim\":\"The proposed changes will reduce carbon emissions by 40%\"}"
+        )
+      );
+
+    // Fact-check agent responds
+    factCheckModel.fixedResponse(
+      "{\"verified\":true,\"confidence\":75," +
+      "\"explanation\":\"Industry data supports 30-45% reduction range.\"}"
+    );
+
+    // Coordinator synthesises after fact-check result
+    coordinatorModel
+      .whenMessage(msg -> msg.contains("Continue working"))
+      .reply(
+        new TestModelProvider.ToolInvocationRequest(
+          "complete_task",
+          "{\"assessment\":\"Climate impact claim verified with moderate confidence\"," +
+          "\"recommendation\":\"Proceed with changes; claims are broadly supported by data.\"," +
+          "\"escalated\":false}"
+        )
+      );
+
+    var response = httpClient
+      .POST("/consulting")
+      .withRequestBody(
+        new ConsultingEndpoint.ConsultingRequest(
+          "Verify the climate impact claims of our proposed changes"
+        )
+      )
+      .responseBodyAs(ConsultingEndpoint.ConsultingResponse.class)
+      .invoke()
+      .body();
+
+    var taskId = response.id();
+    assertThat(taskId).isNotBlank();
+
+    Awaitility.await()
+      .ignoreExceptions()
+      .atMost(30, TimeUnit.SECONDS)
+      .untilAsserted(() -> {
+        var snapshot = componentClient.forTask(taskId).get(ConsultingTasks.ENGAGEMENT);
+        assertThat(snapshot.result()).isNotNull();
+        assertThat(snapshot.result().escalated()).isFalse();
+        assertThat(snapshot.result().recommendation()).contains("broadly supported");
       });
   }
 

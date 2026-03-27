@@ -61,7 +61,7 @@ import java.util.function.Function;
  * <p>For reliable execution with error handling and retries, consider calling agents from a {@link
  * akka.javasdk.workflow.Workflow}.
  */
-public abstract class Agent {
+public abstract class Agent implements AgentDelegationWorker {
 
   public record TokenUsage(int inputTokens, int outputTokens) {}
 

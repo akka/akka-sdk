@@ -7,6 +7,7 @@ package akka.javasdk.impl.agent.autonomous
 import scala.jdk.CollectionConverters._
 
 import akka.annotation.InternalApi
+import akka.javasdk.agent.Agent
 import akka.javasdk.agent.autonomous.AutonomousAgent
 import akka.javasdk.agent.autonomous.capability.AgentCapability
 import akka.javasdk.agent.task.TaskDefinition
@@ -17,6 +18,7 @@ import akka.javasdk.impl.agent.autonomous.capability.TaskAcceptanceImpl
 import akka.javasdk.impl.agent.autonomous.capability.TeamLeadershipImpl
 import akka.javasdk.impl.agent.autonomous.capability.TeamMemberImpl
 import akka.javasdk.impl.reflection.Reflect
+import akka.runtime.sdk.spi.AgentDescriptor
 import akka.runtime.sdk.spi.AutonomousAgentDescriptor
 import akka.runtime.sdk.spi.SpiAutonomousAgent
 import akka.runtime.sdk.spi.SpiTask
@@ -31,6 +33,7 @@ import akka.runtime.sdk.spi.SpiTask
 private[javasdk] class CapabilityConverter(
     agentDefinitionMap: Map[String, (AgentDefinitionImpl, Seq[SpiTask.SpiTaskDefinition])],
     agentDescriptors: Seq[AutonomousAgentDescriptor],
+    requestBasedAgentDescriptors: Seq[AgentDescriptor],
     defaultMaxIterationsPerTask: Int,
     defaultMaxParallelWorkers: Int) {
 
@@ -51,6 +54,7 @@ private[javasdk] class CapabilityConverter(
         val delegationGroups = delegations.map { d =>
           new SpiAutonomousAgent.DelegationGroup(
             delegationTargets = resolveDelegationTargets(d.delegationTargets.asScala.toSeq),
+            requestBasedTargets = resolveRequestBasedDelegationTargets(d.requestBasedTargets.asScala.toSeq),
             maxParallelWorkers = d.maxParallel.getOrElse(defaultMaxParallelWorkers))
         }
         Seq(new SpiAutonomousAgent.DelegationOrchestrator(delegationGroups))
@@ -111,6 +115,31 @@ private[javasdk] class CapabilityConverter(
         agentComponentId = targetComponentId,
         description = targetDescriptor.flatMap(_.description),
         acceptedTasks = targetTaskDefinitions)
+    }
+
+  private def resolveRequestBasedDelegationTargets(
+      sdkTargets: Seq[Class[_ <: Agent]]): Seq[SpiAutonomousAgent.RequestBasedDelegationTarget] =
+    sdkTargets.map { agentClass =>
+      val componentId = Reflect.readComponentId(agentClass)
+      val effectMethod =
+        agentClass.getDeclaredMethods
+          .find { method =>
+            Reflect.isCommandHandlerCandidate[Agent.Effect[_]](method) ||
+            Reflect.isCommandHandlerCandidate[Agent.StreamEffect](method)
+          }
+          .getOrElse {
+            throw new IllegalStateException(
+              s"Request-based delegation target [$componentId] (${agentClass.getName}) doesn't have " +
+              "a public method returning Agent.Effect or Agent.StreamEffect.")
+          }
+      val methodName = effectMethod.getName.capitalize
+      val requestSchema = JsonSchema.jsonSchemaFor(effectMethod)
+      val descriptor = requestBasedAgentDescriptors.find(_.componentId == componentId)
+      new SpiAutonomousAgent.RequestBasedDelegationTarget(
+        agentComponentId = componentId,
+        description = descriptor.flatMap(_.description),
+        methodName = methodName,
+        requestSchema = requestSchema)
     }
 }
 

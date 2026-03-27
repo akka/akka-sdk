@@ -9,8 +9,8 @@ import akka.javasdk.annotations.Component;
 /**
  * Consulting coordinator — demonstrates delegation + handoff on the same agent.
  *
- * <p>Can delegate research subtasks to a researcher (delegation) and escalate complex problems to a
- * senior consultant (handoff).
+ * <p>Can delegate research subtasks to a researcher (delegation), escalate complex problems to a
+ * senior consultant (handoff), and delegate fact-checking to a request-based agent.
  */
 @Component(id = "consulting-coordinator")
 public class ConsultingCoordinator extends AutonomousAgent {
@@ -29,6 +29,7 @@ public class ConsultingCoordinator extends AutonomousAgent {
       .capability(
         TaskAcceptance.of(ConsultingTasks.ENGAGEMENT).canHandoffTo(SeniorConsultant.class)
       )
-      .capability(Delegation.to(ConsultingResearcher.class).maxParallelWorkers(2));
+      .capability(Delegation.to(ConsultingResearcher.class).maxParallelWorkers(2))
+      .capability(Delegation.to(FactCheckAgent.class));
   }
 }

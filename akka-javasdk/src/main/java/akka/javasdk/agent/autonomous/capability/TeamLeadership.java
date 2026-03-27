@@ -5,6 +5,8 @@
 package akka.javasdk.agent.autonomous.capability;
 
 import akka.javasdk.agent.autonomous.AutonomousAgent;
+import akka.javasdk.impl.agent.autonomous.capability.TeamLeadershipImpl;
+import akka.javasdk.impl.agent.autonomous.capability.TeamMemberImpl;
 
 /**
  * Declares that an agent can lead a team of autonomous agents. The team lead creates backlogs, adds
@@ -15,8 +17,8 @@ import akka.javasdk.agent.autonomous.AutonomousAgent;
 public interface TeamLeadership extends AgentCapability {
 
   /** Create a team leadership capability with the given member types. */
-  static TeamLeadership of(TeamMember member, TeamMember... members) {
-    return akka.javasdk.impl.agent.autonomous.capability.TeamLeadershipImpl.create(member, members);
+  static TeamLeadership of(TeamMember first, TeamMember... rest) {
+    return TeamLeadershipImpl.create(first, rest);
   }
 
   /** A team member type that can be added to the team. */
@@ -24,7 +26,7 @@ public interface TeamLeadership extends AgentCapability {
 
     /** Create a team member type for the given agent class. */
     static TeamMember of(Class<? extends AutonomousAgent> agentClass) {
-      return new akka.javasdk.impl.agent.autonomous.capability.TeamMemberImpl(agentClass, 1);
+      return new TeamMemberImpl(agentClass, 1);
     }
 
     /** Maximum number of instances of this member type that can be added to the team. */

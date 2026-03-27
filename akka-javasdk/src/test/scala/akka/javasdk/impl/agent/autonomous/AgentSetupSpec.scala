@@ -7,9 +7,9 @@ package akka.javasdk.impl.agent.autonomous
 import scala.jdk.CollectionConverters._
 
 import akka.javasdk.agent.autonomous.AgentSetup
-import akka.javasdk.agent.autonomous.capability.Delegation
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance
 import akka.javasdk.agent.task.Task
+import akka.javasdk.impl.agent.autonomous.capability.DelegationImpl
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -52,7 +52,7 @@ class AgentSetupSpec extends AnyWordSpec with Matchers with AutonomousAgentImplS
       val setup = AgentSetup
         .create()
         .capability(TaskAcceptance.of(testTask))
-        .capability(Delegation.to())
+        .capability(DelegationImpl.create(Array()))
         .impl
 
       setup.capabilities.asScala should have size 2
@@ -65,7 +65,7 @@ class AgentSetupSpec extends AnyWordSpec with Matchers with AutonomousAgentImplS
         .create()
         .goal("Analyse data")
         .capability(TaskAcceptance.of(testTask).maxIterationsPerTask(5))
-        .capability(Delegation.to().maxParallelWorkers(2))
+        .capability(DelegationImpl.create(Array()).maxParallelWorkers(2))
         .impl
 
       setup.goal shouldBe Some("Analyse data")

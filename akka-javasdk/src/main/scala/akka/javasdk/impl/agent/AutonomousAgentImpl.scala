@@ -335,8 +335,8 @@ private[impl] final class AutonomousAgentImpl(
       Done
     }(sdkExecutionContext)
 
-  override def callToolFunction(): SpiAgent.ToolCallCommand => Future[String] =
-    request => Future(toolExecutor.execute(request))(sdkExecutionContext)
+  override def callToolFunction(request: SpiAgent.ToolCallCommand): Future[String] =
+    Future(toolExecutor.execute(request))(sdkExecutionContext)
 
   // --- Helpers ---
 
