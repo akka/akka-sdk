@@ -1452,7 +1452,7 @@ public abstract class Workflow<S> {
    * @return MaxRetries strategy.
    */
   public MaxRetries maxRetries(int maxRetries) {
-    return RecoverStrategy.maxRetries(maxRetries);
+    return new MaxRetries(maxRetries);
   }
 
   public record RecoverStrategy<T>(
@@ -1530,7 +1530,10 @@ public abstract class Workflow<S> {
     /**
      * Set the number of retries for a failed step, {@code maxRetries} equals 0 means that the step
      * won't retry in case of failure.
+     *
+     * @deprecated Use the instance method {@link Workflow#maxRetries(int)} instead.
      */
+    @Deprecated
     public static MaxRetries maxRetries(int maxRetries) {
       return new MaxRetries(maxRetries);
     }
