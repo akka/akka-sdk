@@ -1,5 +1,0 @@
-= Getting started
-
-include::ROOT:partial$include.adoc[]
-
-This page has moved. See xref:getting-started:index.adoc[Tutorials].
