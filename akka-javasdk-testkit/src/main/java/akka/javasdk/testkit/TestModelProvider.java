@@ -8,6 +8,9 @@ import akka.japi.Pair;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.MessageContent;
 import akka.javasdk.agent.ModelProvider;
+import akka.javasdk.agent.task.TaskDefinition;
+import akka.javasdk.annotations.Component;
+import akka.javasdk.annotations.ComponentId;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ImageContent;
@@ -448,6 +451,228 @@ public final class TestModelProvider implements ModelProvider.Custom {
         (value) -> value instanceof ToolResult tResult && toolResult.equals(tResult);
 
     return new WhenToolReplyClause(this, messagePredicate);
+  }
+
+  /**
+   * Factory methods for {@link ToolInvocationRequest} instances that correspond to the internal
+   * tools exposed by the autonomous agent runtime to the LLM.
+   */
+  public static final class AutonomousAgentTools {
+
+    private AutonomousAgentTools() {}
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for the {@code complete_task} tool, with the given
+     * result JSON. The JSON must conform to the task's result type schema.
+     */
+    public static ToolInvocationRequest completeTask(String resultJson) {
+      return new ToolInvocationRequest("complete_task", resultJson);
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for the {@code fail_task} tool.
+     *
+     * @param reason the failure reason
+     */
+    public static ToolInvocationRequest failTask(String reason) {
+      return new ToolInvocationRequest("fail_task", "{\"reason\":" + toJsonString(reason) + "}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for a {@code handoff_to_<agent>} tool, deriving the
+     * tool name from the target agent's component ID.
+     *
+     * @param agentClass the agent class to hand off to (must carry {@code @Component} or
+     *     {@code @ComponentId})
+     * @param context context passed to the receiving agent
+     */
+    public static ToolInvocationRequest handoffTo(Class<?> agentClass, String context) {
+      var toolName = "handoff_to_" + sanitize(componentId(agentClass));
+      return new ToolInvocationRequest(toolName, "{\"context\":" + toJsonString(context) + "}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for a {@code delegate_<task>_to_<agent>} tool,
+     * deriving the tool name from the task definition and the target agent's component ID.
+     *
+     * @param task the task definition being delegated
+     * @param agentClass the agent class to delegate to (must carry {@code @Component} or
+     *     {@code @ComponentId})
+     * @param instructions instructions passed to the delegated agent
+     */
+    public static ToolInvocationRequest delegateTo(
+        TaskDefinition<?> task, Class<?> agentClass, String instructions) {
+      var toolName =
+          "delegate_" + sanitize(task.name()) + "_to_" + sanitize(componentId(agentClass));
+      return new ToolInvocationRequest(
+          toolName, "{\"instructions\":" + toJsonString(instructions) + "}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for a {@code send_<Method>_to_<agent>} tool, used
+     * when an autonomous agent delegates to a request-based agent. The method name has its first
+     * letter capitalized to match the runtime naming convention.
+     *
+     * @param agentClass the request-based agent class (must carry {@code @Component} or
+     *     {@code @ComponentId})
+     * @param methodName the exact name of the agent method to invoke
+     * @param argsJson the JSON arguments to pass (must match the method's parameter type)
+     */
+    public static ToolInvocationRequest sendTo(
+        Class<?> agentClass, String methodName, String argsJson) {
+      var capitalizedMethod = Character.toUpperCase(methodName.charAt(0)) + methodName.substring(1);
+      var toolName =
+          "send_" + sanitize(capitalizedMethod) + "_to_" + sanitize(componentId(agentClass));
+      return new ToolInvocationRequest(toolName, argsJson);
+    }
+
+    // --- Team capability ---
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for an {@code add_<agent>_to_team} tool, deriving the
+     * tool name from the team member agent's component ID.
+     *
+     * @param agentClass the agent class to add to the team (must carry {@code @Component} or
+     *     {@code @ComponentId})
+     */
+    public static ToolInvocationRequest addToTeam(Class<?> agentClass) {
+      return new ToolInvocationRequest(
+          "add_" + sanitize(componentId(agentClass)) + "_to_team", "{}");
+    }
+
+    /** Creates a {@link ToolInvocationRequest} for the fixed {@code get_team_status} tool. */
+    public static ToolInvocationRequest getTeamStatus() {
+      return new ToolInvocationRequest("get_team_status", "{}");
+    }
+
+    /** Creates a {@link ToolInvocationRequest} for the fixed {@code disband_team} tool. */
+    public static ToolInvocationRequest disbandTeam() {
+      return new ToolInvocationRequest("disband_team", "{}");
+    }
+
+    // --- Backlog capability (managed/orchestrator side) ---
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for a {@code create_<task>_for_<backlog>_backlog}
+     * tool.
+     *
+     * @param task the task definition to create
+     * @param backlogName the name of the backlog
+     * @param instructions instructions for the task
+     */
+    public static ToolInvocationRequest createForBacklog(
+        TaskDefinition<?> task, String backlogName, String instructions) {
+      var toolName =
+          "create_" + sanitize(task.name()) + "_for_" + sanitize(backlogName) + "_backlog";
+      return new ToolInvocationRequest(
+          toolName, "{\"instructions\":" + toJsonString(instructions) + "}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for a {@code get_<backlog>_managed_backlog_status}
+     * tool.
+     *
+     * @param backlogName the name of the backlog
+     */
+    public static ToolInvocationRequest getManagedBacklogStatus(String backlogName) {
+      return new ToolInvocationRequest(
+          "get_" + sanitize(backlogName) + "_managed_backlog_status", "{}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for a {@code cancel_unclaimed_from_<backlog>_backlog}
+     * tool.
+     *
+     * @param backlogName the name of the backlog
+     */
+    public static ToolInvocationRequest cancelUnclaimedFromBacklog(String backlogName) {
+      return new ToolInvocationRequest(
+          "cancel_unclaimed_from_" + sanitize(backlogName) + "_backlog", "{}");
+    }
+
+    // --- Backlog capability (worker/consumer side) ---
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for a {@code get_<backlog>_backlog_status} tool.
+     *
+     * @param backlogName the name of the backlog
+     */
+    public static ToolInvocationRequest getBacklogStatus(String backlogName) {
+      return new ToolInvocationRequest("get_" + sanitize(backlogName) + "_backlog_status", "{}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for a {@code claim_task_from_<backlog>_backlog} tool.
+     *
+     * @param backlogName the name of the backlog
+     * @param taskId the ID of the task to claim
+     */
+    public static ToolInvocationRequest claimTaskFromBacklog(String backlogName, String taskId) {
+      return new ToolInvocationRequest(
+          "claim_task_from_" + sanitize(backlogName) + "_backlog",
+          "{\"taskId\":" + toJsonString(taskId) + "}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for a {@code release_task_from_<backlog>_backlog}
+     * tool.
+     *
+     * @param backlogName the name of the backlog
+     * @param taskId the ID of the task to release
+     */
+    public static ToolInvocationRequest releaseTaskFromBacklog(String backlogName, String taskId) {
+      return new ToolInvocationRequest(
+          "release_task_from_" + sanitize(backlogName) + "_backlog",
+          "{\"taskId\":" + toJsonString(taskId) + "}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for a {@code transfer_task_from_<backlog>_backlog}
+     * tool.
+     *
+     * @param backlogName the name of the backlog
+     * @param taskId the ID of the task to transfer
+     * @param transferredTo identifier of the agent to transfer the task to
+     */
+    public static ToolInvocationRequest transferTaskFromBacklog(
+        String backlogName, String taskId, String transferredTo) {
+      return new ToolInvocationRequest(
+          "transfer_task_from_" + sanitize(backlogName) + "_backlog",
+          "{\"taskId\":"
+              + toJsonString(taskId)
+              + ",\"transferredTo\":"
+              + toJsonString(transferredTo)
+              + "}");
+    }
+
+    // --- Messaging capability ---
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for the fixed {@code send_message} tool.
+     *
+     * @param message the message content to send
+     */
+    public static ToolInvocationRequest sendMessage(String message) {
+      return new ToolInvocationRequest(
+          "send_message", "{\"message\":" + toJsonString(message) + "}");
+    }
+
+    private static String componentId(Class<?> agentClass) {
+      var component = agentClass.getAnnotation(Component.class);
+      if (component != null && !component.id().isEmpty()) return component.id();
+      var componentId = agentClass.getAnnotation(ComponentId.class);
+      if (componentId != null && !componentId.value().isEmpty()) return componentId.value();
+      throw new IllegalArgumentException(
+          agentClass.getName() + " is not annotated with @Component(id = ...) or @ComponentId");
+    }
+
+    private static String sanitize(String name) {
+      return name.replaceAll("[^a-zA-Z0-9_]", "_");
+    }
+
+    private static String toJsonString(String value) {
+      return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+    }
   }
 
   /** Resets all previously added response configurations. */
