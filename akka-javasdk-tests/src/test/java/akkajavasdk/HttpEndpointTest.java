@@ -347,6 +347,30 @@ public class HttpEndpointTest extends TestKitSupport {
   }
 
   @Test
+  void shouldUploadAndDownloadObjectViaEndpoint() {
+    var content = "hello from object storage";
+    var uploadResponse =
+        httpClient
+            .POST("/object-storage/hello.txt")
+            .withRequestBody(content)
+            .responseBodyAs(String.class)
+            .invoke();
+    assertThat(uploadResponse.status()).isEqualTo(StatusCodes.OK);
+    assertThat(uploadResponse.body()).contains("25 bytes").contains("hello.txt");
+
+    var downloadResponse =
+        httpClient.GET("/object-storage/hello.txt").responseBodyAs(String.class).invoke();
+    assertThat(downloadResponse.status()).isEqualTo(StatusCodes.OK);
+    assertThat(downloadResponse.body()).isEqualTo(content);
+  }
+
+  @Test
+  void shouldReturnNotFoundForMissingObject() {
+    var response = httpClient.GET("/object-storage/does-not-exist.txt").invoke();
+    assertThat(response.status()).isEqualTo(StatusCodes.NOT_FOUND);
+  }
+
+  @Test
   void shouldSupportBinaryWebSockets() {
     var webSocketRouteTester = testKit.getSelfWebSocketRouteTester();
 
