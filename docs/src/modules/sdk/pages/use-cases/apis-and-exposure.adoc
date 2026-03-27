@@ -1,0 +1,35 @@
+= APIs & exposure
+:page-summary: Expose your agentic systems via REST, gRPC, MCP, OpenAPI, and WebSocket endpoints with authentication.
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+Expose your agentic systems through a variety of endpoint types including REST, gRPC, MCP, and WebSocket interfaces. This pattern covers how to define typed APIs, add JWT-based authentication, generate OpenAPI specifications, and expose agents as MCP-compatible tool servers for integration with external AI systems.
+
+== Overview
+
+=== When to Use This Pattern
+
+* You need to expose agents or services via REST APIs with OpenAPI documentation
+* Your application requires gRPC endpoints for high-performance service-to-service communication
+* You want to expose agents as MCP tool servers for integration with AI assistants and IDEs
+* You need JWT-based authentication and authorization on your endpoints
+
+=== Akka Components Involved
+
+* *HTTP Endpoints* -- REST APIs with OpenAPI generation and WebSocket support
+* *gRPC Endpoints* -- strongly-typed service-to-service communication
+* *MCP Endpoints* -- expose agents as Model Context Protocol tool servers
+
+== Sample Projects
+
+The following sample projects demonstrate this pattern:
+
+* https://github.com/akka/akka-sdk/blob/main/samples/endpoint-jwt[endpoint-jwt] -- HTTP endpoint with JWT-based authentication
+* https://github.com/akka/akka-sdk/blob/main/samples/trip-booking-with-tools[trip-booking-with-tools] -- agent exposed via multiple endpoint types with tool integration
+
+== See Also
+
+* xref:sdk:http-endpoints.adoc[]
+* xref:sdk:grpc-endpoints.adoc[]
+* xref:sdk:mcp-endpoints.adoc[]

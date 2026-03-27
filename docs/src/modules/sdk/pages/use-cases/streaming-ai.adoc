@@ -1,0 +1,41 @@
+= Streaming AI
+:page-summary: Process real-time data streams with AI feedback loops, event-driven consumers, and streaming agent responses.
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+Process real-time data streams with AI-powered feedback loops, event-driven consumers, and streaming agent responses. This pattern covers consuming events from external systems, applying AI analysis in real time, and producing enriched outputs or triggering downstream actions based on streaming data.
+
+== Overview
+
+=== When to Use This Pattern
+
+* You need to process a continuous stream of events with AI-powered analysis
+* Your application requires real-time feedback loops where AI responses trigger further actions
+* You want to consume events from message brokers and enrich them with LLM processing
+* You need streaming token-by-token agent responses for responsive user experiences
+* You want to stream LLM responses through an orchestration Workflow and back out to an Endpoint
+
+=== Akka Components Involved
+
+* *Consumers* -- subscribe to event streams from Entities or external message brokers
+* *Agents* -- process streaming data with LLM-powered analysis and generate streaming responses
+* *Workflows* -- orchestrate streaming pipelines that route LLM responses through multi-step processing
+* *Event Sourced Entities* -- produce durable event streams that Consumers subscribe to
+* *HTTP Endpoints* -- expose streaming responses to clients via WebSocket or server-sent events
+
+== Sample Projects
+
+The following sample projects demonstrate this pattern:
+
+* https://github.com/akka/akka-sdk/blob/main/samples/iot-sensor-monitoring[iot-sensor-monitoring] -- real-time AI analysis of IoT sensor data streams
+* https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-customer-registry-subscriber[event-sourced-customer-registry-subscriber] -- event-driven consumer that reacts to entity state changes
+
+== See Also
+
+* xref:sdk:consuming-producing.adoc[]
+* xref:sdk:agents/streaming.adoc[]
+* xref:sdk:workflows.adoc[]
+* xref:sdk:http-endpoints.adoc[]
+* link:{url-blog-streaming}[Akka Streaming: High-performance stream processing, window="new"]
+* link:{url-blog-gemini-video}[Building a real-time video AI service with Google Gemini, window="new"]
