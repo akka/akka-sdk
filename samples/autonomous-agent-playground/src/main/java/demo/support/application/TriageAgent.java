@@ -20,6 +20,7 @@ public class TriageAgent extends AutonomousAgent {
       .capability(
         TaskAcceptance.of(SupportTasks.RESOLVE)
           .maxIterationsPerTask(3)
-          .canHandoffTo(BillingSpecialist.class, TechnicalSpecialist.class));
+          .canHandoffTo(BillingSpecialist.class, TechnicalSpecialist.class)
+      );
   }
 }

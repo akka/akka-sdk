@@ -24,7 +24,8 @@ public class ReportAgent extends AutonomousAgent {
           PipelineTasks.COLLECT,
           PipelineTasks.ANALYZE,
           PipelineTasks.REPORT
-        ).maxIterationsPerTask(5));
+        ).maxIterationsPerTask(5)
+      );
   }
 
   @FunctionTool(description = "Collect data on a topic and return findings")

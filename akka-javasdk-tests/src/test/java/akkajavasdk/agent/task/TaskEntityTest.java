@@ -8,16 +8,29 @@ import static akka.Done.done;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.Done;
+import akka.javasdk.NotificationPublisher;
 import akka.javasdk.agent.task.TaskEntity;
 import akka.javasdk.agent.task.TaskEvent;
+import akka.javasdk.agent.task.TaskNotification;
 import akka.javasdk.agent.task.TaskState;
 import akka.javasdk.agent.task.TaskStatus;
 import akka.javasdk.testkit.EventSourcedResult;
 import akka.javasdk.testkit.EventSourcedTestKit;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import org.junit.jupiter.api.Test;
 
 public class TaskEntityTest {
+
+  private final ConcurrentLinkedQueue<TaskNotification> publishedNotifications =
+      new ConcurrentLinkedQueue<>();
+
+  private final NotificationPublisher<TaskNotification> testPublisher =
+      msg -> publishedNotifications.add(msg);
+
+  private EventSourcedTestKit<TaskState, TaskEvent, TaskEntity> createTestKit() {
+    return EventSourcedTestKit.of(ctx -> new TaskEntity(ctx, testPublisher));
+  }
 
   private TaskEntity.CreateRequest createRequest(String name) {
     return new TaskEntity.CreateRequest(
@@ -26,7 +39,7 @@ public class TaskEntityTest {
 
   @Test
   public void shouldCreateTask() {
-    var testKit = EventSourcedTestKit.of(TaskEntity::new);
+    var testKit = createTestKit();
     EventSourcedResult<Done> result =
         testKit.method(TaskEntity::create).invoke(createRequest("research"));
     assertThat(result.getReply()).isEqualTo(done());
@@ -37,7 +50,7 @@ public class TaskEntityTest {
 
   @Test
   public void shouldRejectDuplicateCreate() {
-    var testKit = EventSourcedTestKit.of(TaskEntity::new);
+    var testKit = createTestKit();
     testKit.method(TaskEntity::create).invoke(createRequest("research"));
     EventSourcedResult<Done> result =
         testKit.method(TaskEntity::create).invoke(createRequest("research"));
@@ -46,7 +59,7 @@ public class TaskEntityTest {
 
   @Test
   public void shouldAssignTask() {
-    var testKit = EventSourcedTestKit.of(TaskEntity::new);
+    var testKit = createTestKit();
     testKit.method(TaskEntity::create).invoke(createRequest("research"));
 
     EventSourcedResult<Done> result = testKit.method(TaskEntity::assign).invoke("agent-1");
@@ -58,7 +71,7 @@ public class TaskEntityTest {
 
   @Test
   public void shouldRejectAssignWhenNotPending() {
-    var testKit = EventSourcedTestKit.of(TaskEntity::new);
+    var testKit = createTestKit();
     testKit.method(TaskEntity::create).invoke(createRequest("research"));
     testKit.method(TaskEntity::assign).invoke("agent-1");
 
@@ -68,7 +81,7 @@ public class TaskEntityTest {
 
   @Test
   public void shouldStartTask() {
-    var testKit = EventSourcedTestKit.of(TaskEntity::new);
+    var testKit = createTestKit();
     testKit.method(TaskEntity::create).invoke(createRequest("research"));
     testKit.method(TaskEntity::assign).invoke("agent-1");
 
@@ -80,7 +93,7 @@ public class TaskEntityTest {
 
   @Test
   public void shouldCompleteTask() {
-    var testKit = EventSourcedTestKit.of(TaskEntity::new);
+    var testKit = createTestKit();
     testKit.method(TaskEntity::create).invoke(createRequest("research"));
     testKit.method(TaskEntity::assign).invoke("agent-1");
     testKit.method(TaskEntity::start).invoke();
@@ -95,7 +108,7 @@ public class TaskEntityTest {
 
   @Test
   public void shouldCompleteIdempotentlyWhenTerminal() {
-    var testKit = EventSourcedTestKit.of(TaskEntity::new);
+    var testKit = createTestKit();
     testKit.method(TaskEntity::create).invoke(createRequest("research"));
     testKit.method(TaskEntity::assign).invoke("agent-1");
     testKit.method(TaskEntity::start).invoke();
@@ -109,7 +122,7 @@ public class TaskEntityTest {
 
   @Test
   public void shouldFailTask() {
-    var testKit = EventSourcedTestKit.of(TaskEntity::new);
+    var testKit = createTestKit();
     testKit.method(TaskEntity::create).invoke(createRequest("research"));
     testKit.method(TaskEntity::assign).invoke("agent-1");
     testKit.method(TaskEntity::start).invoke();
@@ -123,7 +136,7 @@ public class TaskEntityTest {
 
   @Test
   public void shouldCancelPendingTask() {
-    var testKit = EventSourcedTestKit.of(TaskEntity::new);
+    var testKit = createTestKit();
     testKit.method(TaskEntity::create).invoke(createRequest("research"));
 
     EventSourcedResult<Done> result = testKit.method(TaskEntity::cancel).invoke("no longer needed");
@@ -134,7 +147,7 @@ public class TaskEntityTest {
 
   @Test
   public void shouldCancelAssignedTask() {
-    var testKit = EventSourcedTestKit.of(TaskEntity::new);
+    var testKit = createTestKit();
     testKit.method(TaskEntity::create).invoke(createRequest("research"));
     testKit.method(TaskEntity::assign).invoke("agent-1");
 
@@ -145,7 +158,7 @@ public class TaskEntityTest {
 
   @Test
   public void shouldRejectCancelWhenInProgress() {
-    var testKit = EventSourcedTestKit.of(TaskEntity::new);
+    var testKit = createTestKit();
     testKit.method(TaskEntity::create).invoke(createRequest("research"));
     testKit.method(TaskEntity::assign).invoke("agent-1");
     testKit.method(TaskEntity::start).invoke();
@@ -156,7 +169,7 @@ public class TaskEntityTest {
 
   @Test
   public void shouldReassignTask() {
-    var testKit = EventSourcedTestKit.of(TaskEntity::new);
+    var testKit = createTestKit();
     testKit.method(TaskEntity::create).invoke(createRequest("research"));
     testKit.method(TaskEntity::assign).invoke("agent-1");
     testKit.method(TaskEntity::start).invoke();
@@ -174,7 +187,7 @@ public class TaskEntityTest {
 
   @Test
   public void shouldGetState() {
-    var testKit = EventSourcedTestKit.of(TaskEntity::new);
+    var testKit = createTestKit();
     testKit.method(TaskEntity::create).invoke(createRequest("research"));
 
     EventSourcedResult<TaskState> result = testKit.method(TaskEntity::getState).invoke();
@@ -184,8 +197,117 @@ public class TaskEntityTest {
 
   @Test
   public void shouldRejectGetStateForNonExistentTask() {
-    var testKit = EventSourcedTestKit.of(TaskEntity::new);
+    var testKit = createTestKit();
     EventSourcedResult<TaskState> result = testKit.method(TaskEntity::getState).invoke();
     assertThat(result.isError()).isTrue();
+  }
+
+  @Test
+  public void shouldPublishNotificationOnComplete() {
+    var testKit = createTestKit();
+    testKit.method(TaskEntity::create).invoke(createRequest("research"));
+    testKit.method(TaskEntity::assign).invoke("agent-1");
+    testKit.method(TaskEntity::start).invoke();
+    publishedNotifications.clear();
+
+    testKit.method(TaskEntity::complete).invoke("{\"summary\":\"done\"}");
+
+    var completed = (TaskNotification.Completed) publishedNotifications.poll();
+    assertThat(completed.result()).isEqualTo("{\"summary\":\"done\"}");
+    assertThat(publishedNotifications).isEmpty();
+  }
+
+  @Test
+  public void shouldPublishNotificationOnFail() {
+    var testKit = createTestKit();
+    testKit.method(TaskEntity::create).invoke(createRequest("research"));
+    testKit.method(TaskEntity::assign).invoke("agent-1");
+    testKit.method(TaskEntity::start).invoke();
+    publishedNotifications.clear();
+
+    testKit.method(TaskEntity::fail).invoke("something broke");
+
+    var failed = (TaskNotification.Failed) publishedNotifications.poll();
+    assertThat(failed.reason()).isEqualTo("something broke");
+    assertThat(publishedNotifications).isEmpty();
+  }
+
+  @Test
+  public void shouldPublishNotificationOnCancel() {
+    var testKit = createTestKit();
+    testKit.method(TaskEntity::create).invoke(createRequest("research"));
+    publishedNotifications.clear();
+
+    testKit.method(TaskEntity::cancel).invoke("no longer needed");
+
+    var cancelled = (TaskNotification.Cancelled) publishedNotifications.poll();
+    assertThat(cancelled.reason()).isEqualTo("no longer needed");
+    assertThat(publishedNotifications).isEmpty();
+  }
+
+  @Test
+  public void shouldCompleteAssignedTask() {
+    var testKit = createTestKit();
+    testKit.method(TaskEntity::create).invoke(createRequest("approval"));
+    testKit.method(TaskEntity::assign).invoke("editor@example.com");
+    publishedNotifications.clear();
+
+    EventSourcedResult<Done> result =
+        testKit.method(TaskEntity::complete).invoke("{\"approvedBy\":\"editor\"}");
+    assertThat(result.getReply()).isEqualTo(done());
+    result.getNextEventOfType(TaskEvent.TaskCompleted.class);
+    assertThat(testKit.getState().status()).isEqualTo(TaskStatus.COMPLETED);
+    assertThat(testKit.getState().result()).isEqualTo("{\"approvedBy\":\"editor\"}");
+    assertThat(publishedNotifications.poll()).isInstanceOf(TaskNotification.Completed.class);
+    assertThat(publishedNotifications).isEmpty();
+  }
+
+  @Test
+  public void shouldFailAssignedTask() {
+    var testKit = createTestKit();
+    testKit.method(TaskEntity::create).invoke(createRequest("approval"));
+    testKit.method(TaskEntity::assign).invoke("editor@example.com");
+    publishedNotifications.clear();
+
+    EventSourcedResult<Done> result = testKit.method(TaskEntity::fail).invoke("rejected by editor");
+    assertThat(result.getReply()).isEqualTo(done());
+    result.getNextEventOfType(TaskEvent.TaskFailed.class);
+    assertThat(testKit.getState().status()).isEqualTo(TaskStatus.FAILED);
+    assertThat(testKit.getState().failureReason()).isEqualTo("rejected by editor");
+    assertThat(publishedNotifications.poll()).isInstanceOf(TaskNotification.Failed.class);
+    assertThat(publishedNotifications).isEmpty();
+  }
+
+  @Test
+  public void shouldRejectCompleteWhenPending() {
+    var testKit = createTestKit();
+    testKit.method(TaskEntity::create).invoke(createRequest("research"));
+
+    EventSourcedResult<Done> result =
+        testKit.method(TaskEntity::complete).invoke("{\"summary\":\"done\"}");
+    assertThat(result.isError()).isTrue();
+  }
+
+  @Test
+  public void shouldRejectFailWhenPending() {
+    var testKit = createTestKit();
+    testKit.method(TaskEntity::create).invoke(createRequest("research"));
+
+    EventSourcedResult<Done> result = testKit.method(TaskEntity::fail).invoke("something broke");
+    assertThat(result.isError()).isTrue();
+  }
+
+  @Test
+  public void shouldNotPublishNotificationOnIdempotentComplete() {
+    var testKit = createTestKit();
+    testKit.method(TaskEntity::create).invoke(createRequest("research"));
+    testKit.method(TaskEntity::assign).invoke("agent-1");
+    testKit.method(TaskEntity::start).invoke();
+    testKit.method(TaskEntity::complete).invoke("{\"summary\":\"done\"}");
+    publishedNotifications.clear();
+
+    testKit.method(TaskEntity::complete).invoke("{\"other\":\"result\"}");
+
+    assertThat(publishedNotifications).isEmpty();
   }
 }
