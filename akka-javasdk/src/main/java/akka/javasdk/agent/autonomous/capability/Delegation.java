@@ -4,29 +4,28 @@
 
 package akka.javasdk.agent.autonomous.capability;
 
-import akka.javasdk.agent.Agent;
-import akka.javasdk.agent.autonomous.AutonomousAgent;
+import akka.javasdk.agent.AgentDelegationWorker;
 import akka.javasdk.impl.agent.autonomous.capability.DelegationImpl;
 
 /**
  * Declares that an agent can delegate subtasks to other agents. The delegating agent pauses while
  * workers execute, then resumes with their results.
  *
- * <p>Created via {@link Delegation#to} for autonomous agents or {@link Delegation#toRequestBased}
- * for request-based agents.
+ * <p>Created via {@link Delegation#to}, accepting both autonomous ({@link
+ * akka.javasdk.agent.autonomous.AutonomousAgent}) and request-based ({@link
+ * akka.javasdk.agent.Agent}) agent targets.
  */
 public interface Delegation extends AgentCapability {
 
-  /** Create a delegation capability for the given autonomous agent targets. */
-  @SuppressWarnings("unchecked")
-  static Delegation to(Class<? extends AutonomousAgent>... agents) {
-    return DelegationImpl.create(agents);
-  }
-
-  /** Create a delegation capability for the given request-based agent targets. */
-  @SuppressWarnings("unchecked")
-  static Delegation toRequestBased(Class<? extends Agent>... agents) {
-    return DelegationImpl.createRequestBased(agents);
+  /**
+   * Create a delegation capability for the given agent targets. Accepts both autonomous agents and
+   * request-based agents.
+   */
+  @SafeVarargs
+  static Delegation to(
+      Class<? extends AgentDelegationWorker> first,
+      Class<? extends AgentDelegationWorker>... rest) {
+    return DelegationImpl.create(first, rest);
   }
 
   /**

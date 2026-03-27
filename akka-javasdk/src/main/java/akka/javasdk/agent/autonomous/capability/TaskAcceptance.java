@@ -6,7 +6,7 @@ package akka.javasdk.agent.autonomous.capability;
 
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.agent.task.TaskDefinition;
-import java.util.List;
+import akka.javasdk.impl.agent.autonomous.capability.TaskAcceptanceImpl;
 
 /**
  * Declares that an agent can accept and process tasks of the specified types. Created via {@link
@@ -19,8 +19,8 @@ public abstract class TaskAcceptance implements AgentCapability {
 
   /** Create a task acceptance capability for the given task definitions. */
   @SafeVarargs
-  public static TaskAcceptance of(TaskDefinition<?>... tasks) {
-    return akka.javasdk.impl.agent.autonomous.capability.TaskAcceptanceImpl.create(tasks);
+  public static TaskAcceptance of(TaskDefinition<?> first, TaskDefinition<?>... rest) {
+    return TaskAcceptanceImpl.create(first, rest);
   }
 
   /**
@@ -35,11 +35,12 @@ public abstract class TaskAcceptance implements AgentCapability {
    * over.
    */
   @SafeVarargs
-  public final TaskAcceptance canHandoffTo(Class<? extends AutonomousAgent>... agents) {
-    return addHandoffTargets(List.of(agents));
+  public final TaskAcceptance canHandoffTo(
+      Class<? extends AutonomousAgent> first, Class<? extends AutonomousAgent>... rest) {
+    return addHandoffTargets(first, rest);
   }
 
   /** Internal method for adding handoff targets — implemented by the impl class. */
   protected abstract TaskAcceptance addHandoffTargets(
-      List<Class<? extends AutonomousAgent>> agents);
+      Class<? extends AutonomousAgent> first, Class<? extends AutonomousAgent>[] rest);
 }

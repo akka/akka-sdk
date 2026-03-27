@@ -4,7 +4,6 @@
 
 package akka.javasdk.impl.agent.autonomous
 
-import akka.javasdk.agent.autonomous.capability.Delegation
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance
 import akka.javasdk.agent.task.Task
 import akka.javasdk.impl.agent.autonomous.capability.DelegationImpl
@@ -118,7 +117,7 @@ class CapabilityConverterSpec extends AnyWordSpec with Matchers {
     }
 
     "convert delegation with explicit max parallel workers" in {
-      val delegation = Delegation.to().maxParallelWorkers(7).asInstanceOf[DelegationImpl]
+      val delegation = DelegationImpl.create(Array()).maxParallelWorkers(7).asInstanceOf[DelegationImpl]
       val capabilities = converter.toSpiCapabilities(java.util.List.of(delegation))
 
       val orchestrator = capabilities.head.asInstanceOf[SpiAutonomousAgent.DelegationOrchestrator]
@@ -140,18 +139,8 @@ class CapabilityConverterSpec extends AnyWordSpec with Matchers {
       capabilities shouldBe empty
     }
 
-    "merge multiple delegations into single orchestrator" in {
-      val delegation1 = DelegationImpl.create(Array()).maxParallelWorkers(2).asInstanceOf[DelegationImpl]
-      val delegation2 = DelegationImpl.create(Array()).maxParallelWorkers(5).asInstanceOf[DelegationImpl]
-      val capabilities = converter.toSpiCapabilities(java.util.List.of(delegation1, delegation2))
-
-      val orchestrators = capabilities.collect { case o: SpiAutonomousAgent.DelegationOrchestrator => o }
-      orchestrators should have size 1
-      orchestrators.head.delegationGroups should have size 2
-    }
-
     "convert request-based delegation with default max parallel workers" in {
-      val delegation = DelegationImpl.createRequestBased(Array())
+      val delegation = DelegationImpl.create(Array())
       val capabilities = converter.toSpiCapabilities(java.util.List.of(delegation))
 
       capabilities should have size 1
@@ -162,12 +151,11 @@ class CapabilityConverterSpec extends AnyWordSpec with Matchers {
       orchestrator.delegationGroups.head.maxParallelWorkers shouldBe 3
     }
 
-    "merge autonomous and request-based delegations into single orchestrator" in {
-      val autonomousDelegation = DelegationImpl.create(Array()).maxParallelWorkers(2).asInstanceOf[DelegationImpl]
-      val requestBasedDelegation =
-        DelegationImpl.createRequestBased(Array()).maxParallelWorkers(4).asInstanceOf[DelegationImpl]
+    "merge two delegation groups into single orchestrator" in {
+      val delegation1 = DelegationImpl.create(Array()).maxParallelWorkers(2).asInstanceOf[DelegationImpl]
+      val delegation2 = DelegationImpl.create(Array()).maxParallelWorkers(4).asInstanceOf[DelegationImpl]
       val capabilities =
-        converter.toSpiCapabilities(java.util.List.of(autonomousDelegation, requestBasedDelegation))
+        converter.toSpiCapabilities(java.util.List.of(delegation1, delegation2))
 
       val orchestrators = capabilities.collect { case o: SpiAutonomousAgent.DelegationOrchestrator => o }
       orchestrators should have size 1

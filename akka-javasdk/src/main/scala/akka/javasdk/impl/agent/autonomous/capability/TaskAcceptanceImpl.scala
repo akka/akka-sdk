@@ -24,9 +24,11 @@ final case class TaskAcceptanceImpl(
   override def maxIterationsPerTask(max: Int): TaskAcceptance =
     copy(maxIterations = Some(max))
 
-  override def addHandoffTargets(agents: util.List[Class[_ <: AutonomousAgent]]): TaskAcceptance = {
+  override def addHandoffTargets(
+      first: Class[_ <: AutonomousAgent],
+      rest: Array[Class[_ <: AutonomousAgent]]): TaskAcceptance = {
     val result = new util.ArrayList[Class[_ <: AutonomousAgent]](handoffTargets)
-    result.addAll(agents)
+    result.addAll(util.List.of((first +: rest.toSeq): _*))
     copy(handoffTargets = util.Collections.unmodifiableList(result))
   }
 }
@@ -36,6 +38,9 @@ final case class TaskAcceptanceImpl(
  */
 @InternalApi
 object TaskAcceptanceImpl {
-  def create(tasks: Array[TaskDefinition[_]]): TaskAcceptanceImpl =
-    TaskAcceptanceImpl(taskDefinitions = util.List.of(tasks: _*), maxIterations = None, handoffTargets = util.List.of())
+  def create(first: TaskDefinition[_], rest: Array[TaskDefinition[_]]): TaskAcceptanceImpl =
+    TaskAcceptanceImpl(
+      taskDefinitions = util.List.of((first +: rest.toSeq): _*),
+      maxIterations = None,
+      handoffTargets = util.List.of())
 }

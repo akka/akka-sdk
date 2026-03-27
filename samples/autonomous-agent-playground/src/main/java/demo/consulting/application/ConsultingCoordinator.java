@@ -30,6 +30,6 @@ public class ConsultingCoordinator extends AutonomousAgent {
         TaskAcceptance.of(ConsultingTasks.ENGAGEMENT).canHandoffTo(SeniorConsultant.class)
       )
       .capability(Delegation.to(ConsultingResearcher.class).maxParallelWorkers(2))
-      .capability(Delegation.toRequestBased(FactCheckAgent.class));
+      .capability(Delegation.to(FactCheckAgent.class));
   }
 }

@@ -60,48 +60,44 @@ class CapabilityBuildersSpec extends AnyWordSpec with Matchers with AutonomousAg
 
   "Delegation" should {
 
-    "create empty via static factory" in {
-      val delegation = Delegation.to().impl
-
-      delegation.delegationTargets.asScala shouldBe empty
-      delegation.maxParallel shouldBe None
-    }
-
     "set max parallel workers" in {
-      Delegation.to().maxParallelWorkers(3).impl.maxParallel shouldBe Some(3)
+      Delegation.to(classOf[DummyAutonomousAgent]).maxParallelWorkers(3).impl.maxParallel shouldBe Some(3)
     }
 
     "be immutable — maxParallelWorkers returns new instance" in {
-      val original = Delegation.to()
+      val original = Delegation.to(classOf[DummyAutonomousAgent])
       val modified = original.maxParallelWorkers(5)
 
       original.impl.maxParallel shouldBe None
       modified.impl.maxParallel shouldBe Some(5)
     }
 
-    "create request-based delegation via static factory" in {
-      val delegation = Delegation.toRequestBased().impl
-
-      delegation.requestBasedTargets.asScala shouldBe empty
-      delegation.delegationTargets.asScala shouldBe empty
-      delegation.maxParallel shouldBe None
-    }
-
-    "create request-based delegation with agent classes" in {
-      val delegation = Delegation.toRequestBased(classOf[DummyAgent]).impl
+    "partition request-based agents into requestBasedTargets" in {
+      val delegation = Delegation.to(classOf[DummyAgent]).impl
 
       delegation.requestBasedTargets.asScala should have size 1
       delegation.requestBasedTargets.asScala.head shouldBe classOf[DummyAgent]
       delegation.delegationTargets.asScala shouldBe empty
     }
 
-    "set max parallel workers on request-based delegation" in {
-      Delegation.toRequestBased().maxParallelWorkers(4).impl.maxParallel shouldBe Some(4)
+    "partition autonomous agents into delegationTargets" in {
+      val delegation = Delegation.to(classOf[DummyAutonomousAgent]).impl
+
+      delegation.delegationTargets.asScala should have size 1
+      delegation.delegationTargets.asScala.head shouldBe classOf[DummyAutonomousAgent]
+      delegation.requestBasedTargets.asScala shouldBe empty
+    }
+
+    "partition mixed autonomous and request-based agents" in {
+      val delegation = Delegation.to(classOf[DummyAutonomousAgent], classOf[DummyAgent]).impl
+
+      delegation.delegationTargets.asScala should contain only classOf[DummyAutonomousAgent]
+      delegation.requestBasedTargets.asScala should contain only classOf[DummyAgent]
     }
   }
 
-  // Dummy agent for testing request-based delegation
   abstract class DummyAgent extends Agent
+  abstract class DummyAutonomousAgent extends AutonomousAgent
 
   "TeamLeadership" should {
 

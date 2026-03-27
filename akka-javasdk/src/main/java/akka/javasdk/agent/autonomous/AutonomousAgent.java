@@ -22,7 +22,7 @@ import akka.javasdk.impl.agent.autonomous.AgentDefinitionImpl;
  *
  * @see AgentDefinition
  */
-public abstract class AutonomousAgent {
+public abstract class AutonomousAgent implements akka.javasdk.agent.AgentDelegationWorker {
 
   /**
    * Define this autonomous agent. The definition configures the agent's goal, tools, model
