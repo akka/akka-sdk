@@ -5,9 +5,10 @@
 package akka.javasdk.testkit;
 
 import akka.javasdk.NotificationPublisher;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Test implementation of {@link NotificationPublisher} that collects all published notifications
@@ -24,7 +25,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class TestNotificationPublisher<T> implements NotificationPublisher<T> {
 
-  private final List<T> notifications = new CopyOnWriteArrayList<>();
+  private final List<T> notifications = new ArrayList<>();
 
   @Override
   public void publish(T msg) {
