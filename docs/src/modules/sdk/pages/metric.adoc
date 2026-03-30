@@ -1,0 +1,40 @@
+= Metrics
+include::ROOT:partial$include.adoc[]
+
+The Akka runtime exposes metrics that provide deep insights into the performance and behavior of your application. Metrics covers all components but also exposes internal runtime statistics. In addition to these Akka-specific metrics, standard https://github.com/open-telemetry/opentelemetry-java-instrumentation/tree/main/instrumentation/runtime-telemetry/library[JVM metrics] are also available, giving you comprehensive visibility into memory usage, garbage collection, thread pools, and other JVM-level operations.
+
+== Custom Metrics
+
+In addition to the built-in metrics, you can define custom application-level metrics to track business-specific operations and behavior. Custom metrics allow you to instrument your code with counters, gauges, timers, and distribution summaries to measure what matters most for your application. These metrics integrate seamlessly with the Akka metrics infrastructure and can be xref:operations:observability-and-monitoring/observability-exports.adoc[exported] to the same monitoring systems as the runtime metrics.
+
+The OpenTelemetry `Meter` interface can be xref:setup-and-dependency-injection.adoc#_dependency_injection[injected] directly into any Akka component, but we recommend encapsulating your metrics definitions in a dedicated class. This keeps metric names, descriptions, and units in one place and provides a convenient API for the rest of your application. It's recommended to follow Open Telemetry https://opentelemetry.io/docs/specs/semconv/general/metrics/[Semantic conventions].
+
+[source,java,indent=0]
+.{sample-base-url}/src/main/java/com/example/application/ShoppingCartMetrics.java[ShoppingCartMetrics.java]
+----
+include::example$key-value-shopping-cart/src/main/java/com/example/application/ShoppingCartMetrics.java[tag=metrics]
+----
+<1> Injects the OpenTelemetry `Meter` provided by the Akka runtime.
+<2> Creates a custom counter metric. Please follow Open Telemetry
+<3> Exposes a convenient accessor method.
+
+Use it in your components.
+
+[source,java,indent=0]
+.{sample-base-url}/src/main/java/com/example/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
+----
+include::example$key-value-shopping-cart/src/main/java/com/example/api/ShoppingCartEndpoint.java[tag=metrics]
+----
+<1> Injects `ShoppingCartMetrics` via constructor.
+<2> Increments the cart-created counter.
+
+Wire the metrics class in your `Bootstrap` so it is available for xref:setup-and-dependency-injection.adoc#_dependency_injection[dependency injection].
+
+[source,java,indent=0]
+.{sample-base-url}/src/main/java/com/example/Bootstrap.java[Bootstrap.java]
+----
+include::example$key-value-shopping-cart/src/main/java/com/example/Bootstrap.java[tag=metrics]
+----
+<1> Registers `ShoppingCartMetrics` as a dependency, making it injectable into any component.
+
+You can validate your metrics locally by running the service with `-Dakka.runtime.telemetry.metrics.disabled=false` parameter and pointing to an open telemetry backend with `OPENTELEMETRY_COLLECTOR_ENDPOINT` environment variable.
