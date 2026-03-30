@@ -130,5 +130,31 @@ class CapabilityBuildersSpec extends AnyWordSpec with Matchers with AutonomousAg
       modified.maxMemberInstances shouldBe 5
       original.maxMemberInstances shouldBe 1 // original unchanged
     }
+
+    "default maxConcurrentTeams to 1" in {
+      val developer = new TeamMemberImpl(classOf[DummyDeveloper], 1)
+      val leadership = TeamLeadershipImpl.create(developer, Array())
+
+      leadership.maxConcurrentTeamsValue shouldBe 1
+    }
+
+    "set maxConcurrentTeams" in {
+      import akka.javasdk.agent.autonomous.capability.TeamLeadership
+      val leadership = TeamLeadership
+        .of(TeamLeadership.TeamMember.of(classOf[DummyDeveloper]))
+        .maxConcurrentTeams(3)
+        .impl
+
+      leadership.maxConcurrentTeamsValue shouldBe 3
+    }
+
+    "be immutable — maxConcurrentTeams returns new instance" in {
+      import akka.javasdk.agent.autonomous.capability.TeamLeadership
+      val original = TeamLeadership.of(TeamLeadership.TeamMember.of(classOf[DummyDeveloper]))
+      val modified = original.maxConcurrentTeams(4)
+
+      original.impl.maxConcurrentTeamsValue shouldBe 1
+      modified.impl.maxConcurrentTeamsValue shouldBe 4
+    }
   }
 }

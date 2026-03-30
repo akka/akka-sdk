@@ -171,6 +171,11 @@ public final class TestModelProvider implements ModelProvider.Custom {
       provider.addResponse(predicate, msg -> response);
     }
 
+    /** Reply dynamically based on the input message. Evaluated on each matching request. */
+    public void replyWith(Function<InputMessage, AiResponse> handler) {
+      provider.addResponse(predicate, handler);
+    }
+
     /** Reply with a runtime exception for matching requests. */
     public void failWith(RuntimeException error) {
       provider.addResponse(

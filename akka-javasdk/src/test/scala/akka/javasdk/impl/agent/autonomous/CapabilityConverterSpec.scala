@@ -5,9 +5,12 @@
 package akka.javasdk.impl.agent.autonomous
 
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance
+import akka.javasdk.agent.autonomous.capability.TeamLeadership
 import akka.javasdk.agent.task.Task
 import akka.javasdk.impl.agent.autonomous.capability.DelegationImpl
+import akka.runtime.sdk.spi.AutonomousAgentDescriptor
 import akka.runtime.sdk.spi.SpiAutonomousAgent
+import akka.runtime.sdk.spi.SpiTask
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -67,6 +70,31 @@ class CapabilityConverterSpec extends AnyWordSpec with Matchers {
     val converter = new CapabilityConverter(
       agentDefinitionMap = Map.empty,
       agentDescriptors = Seq.empty,
+      requestBasedAgentDescriptors = Seq.empty,
+      defaultMaxIterationsPerTask = 10,
+      defaultMaxParallelWorkers = 3)
+
+    // Converter with team member agents registered
+    val dummyFactory: SpiAutonomousAgent.FactoryContext => SpiAutonomousAgent = _ => null
+    val teamConverter = new CapabilityConverter(
+      agentDefinitionMap = Map(
+        "test-developer" -> (AgentDefinitionImpl.empty(), Seq.empty[SpiTask.SpiTaskDefinition]),
+        "test-reviewer" -> (AgentDefinitionImpl.empty(), Seq.empty[SpiTask.SpiTaskDefinition])),
+      agentDescriptors = Seq(
+        new AutonomousAgentDescriptor(
+          "test-developer",
+          classOf[TestTeamAgents.TestDeveloper].getName,
+          None,
+          Some("A test developer agent"),
+          dummyFactory,
+          provided = false),
+        new AutonomousAgentDescriptor(
+          "test-reviewer",
+          classOf[TestTeamAgents.TestReviewer].getName,
+          None,
+          Some("A test reviewer agent"),
+          dummyFactory,
+          provided = false)),
       requestBasedAgentDescriptors = Seq.empty,
       defaultMaxIterationsPerTask = 10,
       defaultMaxParallelWorkers = 3)
@@ -162,6 +190,45 @@ class CapabilityConverterSpec extends AnyWordSpec with Matchers {
       orchestrators.head.delegationGroups should have size 2
       orchestrators.head.delegationGroups(0).maxParallelWorkers shouldBe 2
       orchestrators.head.delegationGroups(1).maxParallelWorkers shouldBe 4
+    }
+
+    "convert team leadership with default maxConcurrentTeams" in {
+      val teamLeadership = TeamLeadership
+        .of(TeamLeadership.TeamMember.of(classOf[TestTeamAgents.TestDeveloper]))
+
+      val capabilities = teamConverter.toSpiCapabilities(java.util.List.of(teamLeadership))
+
+      capabilities should have size 1
+      val teamLead = capabilities.head.asInstanceOf[SpiAutonomousAgent.TeamLead]
+      teamLead.memberTypes should have size 1
+      teamLead.memberTypes.head.agentComponentId shouldBe "test-developer"
+      teamLead.maxConcurrentTeams shouldBe 1
+    }
+
+    "convert team leadership with explicit maxConcurrentTeams" in {
+      val teamLeadership = TeamLeadership
+        .of(TeamLeadership.TeamMember.of(classOf[TestTeamAgents.TestDeveloper]))
+        .maxConcurrentTeams(3)
+
+      val capabilities = teamConverter.toSpiCapabilities(java.util.List.of(teamLeadership))
+
+      val teamLead = capabilities.head.asInstanceOf[SpiAutonomousAgent.TeamLead]
+      teamLead.maxConcurrentTeams shouldBe 3
+    }
+
+    "convert team leadership with multiple member types" in {
+      val teamLeadership = TeamLeadership.of(
+        TeamLeadership.TeamMember.of(classOf[TestTeamAgents.TestDeveloper]).maxInstances(3),
+        TeamLeadership.TeamMember.of(classOf[TestTeamAgents.TestReviewer]))
+
+      val capabilities = teamConverter.toSpiCapabilities(java.util.List.of(teamLeadership))
+
+      val teamLead = capabilities.head.asInstanceOf[SpiAutonomousAgent.TeamLead]
+      teamLead.memberTypes should have size 2
+      teamLead.memberTypes(0).agentComponentId shouldBe "test-developer"
+      teamLead.memberTypes(0).maxInstances shouldBe 3
+      teamLead.memberTypes(1).agentComponentId shouldBe "test-reviewer"
+      teamLead.memberTypes(1).maxInstances shouldBe 1
     }
   }
 }
