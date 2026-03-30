@@ -17,7 +17,6 @@ import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.http.javadsl.{ model => jm }
 import akka.http.scaladsl.{ model => sm }
-import akka.japi.Pair
 import akka.javasdk.objectstorage.ObjectMetadata
 import akka.javasdk.objectstorage.ObjectStorage
 import akka.javasdk.objectstorage.ObjectStore
@@ -67,11 +66,11 @@ private[impl] final class ObjectStoreImpl(spiClient: SpiObjectStoreClient, syste
         .get(key)
         .map(opt => OptionConverters.toJava(opt.map(so => new StoreObject(toPublicMetadata(so.metadata), so.data)))))
 
-  override def putAsync(key: String, data: ByteString): CompletionStage[ObjectMetadata] =
-    FutureConverters.asJava(spiClient.put(key, data, None).map(toPublicMetadata))
+  override def putAsync(key: String, data: ByteString): CompletionStage[Done] =
+    FutureConverters.asJava(spiClient.put(key, data, None))
 
-  override def putAsync(key: String, data: ByteString, contentType: jm.ContentType): CompletionStage[ObjectMetadata] =
-    FutureConverters.asJava(spiClient.put(key, data, Some(toSpiContentType(contentType))).map(toPublicMetadata))
+  override def putAsync(key: String, data: ByteString, contentType: jm.ContentType): CompletionStage[Done] =
+    FutureConverters.asJava(spiClient.put(key, data, Some(toSpiContentType(contentType))))
 
   override def deleteAsync(key: String): CompletionStage[Done] =
     FutureConverters.asJava(spiClient.delete(key))
@@ -84,10 +83,10 @@ private[impl] final class ObjectStoreImpl(spiClient: SpiObjectStoreClient, syste
   override def get(key: String): Optional[StoreObject] =
     getAsync(key).toCompletableFuture.get()
 
-  override def put(key: String, data: ByteString): ObjectMetadata =
+  override def put(key: String, data: ByteString): Done =
     putAsync(key, data).toCompletableFuture.get()
 
-  override def put(key: String, data: ByteString, contentType: jm.ContentType): ObjectMetadata =
+  override def put(key: String, data: ByteString, contentType: jm.ContentType): Done =
     putAsync(key, data, contentType).toCompletableFuture.get()
 
   override def delete(key: String): Done =
@@ -101,23 +100,15 @@ private[impl] final class ObjectStoreImpl(spiClient: SpiObjectStoreClient, syste
   override def list(prefix: String): JSource[ObjectMetadata, NotUsed] =
     spiClient.list(prefix).map(toPublicMetadata).asJava
 
-  override def getStreamAsync(
-      key: String): CompletionStage[Optional[Pair[ObjectMetadata, JSource[ByteString, NotUsed]]]] =
-    FutureConverters.asJava(
-      spiClient
-        .getStream(key)
-        .map(opt =>
-          OptionConverters.toJava(opt.map { case (meta, source) =>
-            Pair.create(toPublicMetadata(meta), source.asJava)
-          })))
+  override def getStreamAsync(key: String): CompletionStage[Optional[JSource[ByteString, NotUsed]]] =
+    FutureConverters.asJava(spiClient.getStream(key).map(opt => OptionConverters.toJava(opt.map(_.asJava))))
 
-  override def putStreamAsync(key: String, data: JSource[ByteString, _]): CompletionStage[ObjectMetadata] =
-    FutureConverters.asJava(spiClient.putStream(key, data.asScala, None).map(toPublicMetadata))
+  override def putStreamAsync(key: String, data: JSource[ByteString, _]): CompletionStage[Done] =
+    FutureConverters.asJava(spiClient.putStream(key, data.asScala, None))
 
   override def putStreamAsync(
       key: String,
       data: JSource[ByteString, _],
-      contentType: jm.ContentType): CompletionStage[ObjectMetadata] =
-    FutureConverters.asJava(
-      spiClient.putStream(key, data.asScala, Some(toSpiContentType(contentType))).map(toPublicMetadata))
+      contentType: jm.ContentType): CompletionStage[Done] =
+    FutureConverters.asJava(spiClient.putStream(key, data.asScala, Some(toSpiContentType(contentType))))
 }

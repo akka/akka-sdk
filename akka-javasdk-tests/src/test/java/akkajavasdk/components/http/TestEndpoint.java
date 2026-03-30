@@ -130,9 +130,8 @@ public class TestEndpoint extends AbstractHttpEndpoint {
 
   @Post("/object-storage/{key}")
   public HttpResponse uploadObject(String key, Strict body) {
-    var metadata =
-        objectStorage.forBucket("test-bucket").put(key, body.getData(), body.getContentType());
-    return HttpResponses.ok("uploaded " + metadata.size + " bytes as [" + metadata.key + "]");
+    objectStorage.forBucket("test-bucket").put(key, body.getData(), body.getContentType());
+    return HttpResponses.ok("uploaded " + body.getData().length() + " bytes as [" + key + "]");
   }
 
   @Get("/object-storage/{key}")

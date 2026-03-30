@@ -46,13 +46,13 @@ import akka.runtime.sdk.spi.SpiDevObjectStorageBucketConfig;
 import akka.runtime.sdk.spi.SpiDevObjectStorageFilesystemBucketConfig;
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsBucketConfig;
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsCredentials;
+import akka.runtime.sdk.spi.SpiDevObjectStorageGcsNativeCredentials$;
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsServiceAccountKeyCredentials;
-import akka.runtime.sdk.spi.SpiDevObjectStorageGcsWorkloadIdentity$;
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3BucketConfig;
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3Credentials;
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3NativeCredentials$;
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3ProfileCredentials;
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3StaticCredentials;
-import akka.runtime.sdk.spi.SpiDevObjectStorageS3WorkloadIdentity$;
 import akka.runtime.sdk.spi.SpiEventingSupportSettings;
 import akka.runtime.sdk.spi.SpiMockedEventingSettings;
 import akka.runtime.sdk.spi.SpiSettings;
@@ -1133,7 +1133,7 @@ public class TestKit {
               (ObjectStorageBucketConfig.S3ProfileCredentials) s3.credentials;
           creds = new SpiDevObjectStorageS3ProfileCredentials(pc.profileName);
         } else {
-          creds = SpiDevObjectStorageS3WorkloadIdentity$.MODULE$;
+          creds = SpiDevObjectStorageS3NativeCredentials$.MODULE$;
         }
         result.add(new SpiDevObjectStorageS3BucketConfig(s3.name, s3.bucket, s3.region, creds));
       } else if (bucket instanceof ObjectStorageBucketConfig.Impl.Gcs) {
@@ -1144,7 +1144,7 @@ public class TestKit {
               (ObjectStorageBucketConfig.GcsServiceAccountKeyCredentials) gcs.credentials;
           creds = new SpiDevObjectStorageGcsServiceAccountKeyCredentials(sak.path);
         } else {
-          creds = SpiDevObjectStorageGcsWorkloadIdentity$.MODULE$;
+          creds = SpiDevObjectStorageGcsNativeCredentials$.MODULE$;
         }
         result.add(new SpiDevObjectStorageGcsBucketConfig(gcs.name, gcs.bucket, creds));
       } else {
