@@ -282,7 +282,9 @@ public abstract class Consumer {
        * processing occurs.
        *
        * @return an Effect that ignores the current message
+       * @deprecated Use `effect().done()` instead, it has the same effect
        */
+      @Deprecated(forRemoval = true, since = "3.5.17")
       Effect ignore();
     }
   }

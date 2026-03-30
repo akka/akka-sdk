@@ -19,7 +19,7 @@ import akka.javasdk.consumer.Consumer
  * INTERNAL API
  */
 @InternalApi
-private[impl] object ConsumerEffectImpl {
+private[javasdk] object ConsumerEffectImpl {
   sealed abstract class PrimaryEffect extends Consumer.Effect {}
 
   final case class ProduceEffect[T](msg: T, metadata: Option[Metadata]) extends PrimaryEffect {}
