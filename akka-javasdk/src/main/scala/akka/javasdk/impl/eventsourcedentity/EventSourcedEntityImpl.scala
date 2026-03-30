@@ -209,7 +209,8 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
                 metadata,
                 deleteEntity,
                 eventsMetadata.iterator.map(MetadataImpl.toSpi).toVector,
-                replicationFilter = commandEffect.replFilter.toSpi))
+                replicationFilter = commandEffect.replFilter.toSpi,
+                ttl = None))
         }
       }
 
