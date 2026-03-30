@@ -25,6 +25,8 @@ import java.util.function.Supplier;
  * EventSourcedTestKit.of} methods. The returned testkit is stateful, and it holds internally the
  * state of the entity.
  *
+ * The {@link TestNotificationPublisher} can be used when entity constructor requires {@link akka.javasdk.NotificationPublisher}.
+ *
  * <p>Use the {@code call} methods to interact with the testkit.
  */
 public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
