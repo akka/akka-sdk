@@ -39,7 +39,8 @@ public interface ObjectStore {
   /**
    * Store an object without an explicit content type.
    *
-   * <p>Blocks the calling thread until the operation completes.
+   * <p>Blocks the calling thread until the operation completes. Use {@link #getMetadata(String)} to
+   * retrieve metadata after the write if needed.
    *
    * @param key object key within the bucket
    * @param data content to store
@@ -49,7 +50,8 @@ public interface ObjectStore {
   /**
    * Store an object with an explicit content type.
    *
-   * <p>Blocks the calling thread until the operation completes.
+   * <p>Blocks the calling thread until the operation completes. Use {@link #getMetadata(String)} to
+   * retrieve metadata after the write if needed.
    *
    * @param key object key within the bucket
    * @param data content to store
@@ -88,12 +90,13 @@ public interface ObjectStore {
   /**
    * Retrieve an object as a streaming source, or {@link Optional#empty()} if no object exists for
    * the given key. Prefer this over {@link #get(String)} for large objects that may not fit in JVM
-   * heap.
+   * heap. Use {@link #getMetadataAsync(String)} to retrieve metadata separately if needed.
    */
   CompletionStage<Optional<Source<ByteString, NotUsed>>> getStreamAsync(String key);
 
   /**
-   * Store an object from a streaming source without an explicit content type.
+   * Store an object from a streaming source without an explicit content type. Use {@link
+   * #getMetadataAsync(String)} to retrieve metadata after the write if needed.
    *
    * @param key object key within the bucket
    * @param data stream of content chunks
@@ -101,7 +104,8 @@ public interface ObjectStore {
   CompletionStage<Done> putStreamAsync(String key, Source<ByteString, ?> data);
 
   /**
-   * Store an object from a streaming source with an explicit content type.
+   * Store an object from a streaming source with an explicit content type. Use {@link
+   * #getMetadataAsync(String)} to retrieve metadata after the write if needed.
    *
    * @param key object key within the bucket
    * @param data stream of content chunks
@@ -118,13 +122,13 @@ public interface ObjectStore {
 
   /**
    * Async variant of {@link #put(String, ByteString)}. Returns a {@link CompletionStage} that
-   * completes with the stored object's metadata.
+   * completes when the object has been stored.
    */
   CompletionStage<Done> putAsync(String key, ByteString data);
 
   /**
    * Async variant of {@link #put(String, ByteString, ContentType)}. Returns a {@link
-   * CompletionStage} that completes with the stored object's metadata.
+   * CompletionStage} that completes when the object has been stored.
    */
   CompletionStage<Done> putAsync(String key, ByteString data, ContentType contentType);
 

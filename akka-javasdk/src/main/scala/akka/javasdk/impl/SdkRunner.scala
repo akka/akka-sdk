@@ -81,15 +81,14 @@ import akka.javasdk.impl.http.HttpClientProviderImpl
 import akka.javasdk.impl.http.HttpRequestContextImpl
 import akka.javasdk.impl.http.JwtClaimsImpl
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityImpl
+import akka.javasdk.impl.objectstorage.ObjectStorageImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
 import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.javasdk.impl.timedaction.TimedActionImpl
-import akka.javasdk.impl.objectstorage.ObjectStorageImpl
 import akka.javasdk.impl.timer.TimerSchedulerImpl
-import akka.javasdk.objectstorage.ObjectStorage
 import akka.javasdk.impl.view.ViewDescriptorFactory
 import akka.javasdk.impl.workflow.WorkflowContextImpl
 import akka.javasdk.impl.workflow.WorkflowImpl
@@ -97,6 +96,7 @@ import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.keyvalueentity.KeyValueEntityContext
 import akka.javasdk.mcp.AbstractMcpEndpoint
 import akka.javasdk.mcp.McpRequestContext
+import akka.javasdk.objectstorage.ObjectStorage
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.timer.TimerScheduler
 import akka.javasdk.tooling.validation.Validation
@@ -124,9 +124,11 @@ import akka.runtime.sdk.spi.SpiDevModeSettings
 import akka.runtime.sdk.spi.SpiDevObjectStorageBucketConfig
 import akka.runtime.sdk.spi.SpiDevObjectStorageFilesystemBucketConfig
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsBucketConfig
+import akka.runtime.sdk.spi.SpiDevObjectStorageGcsNativeCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsServiceAccountKeyCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsNativeCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3BucketConfig
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3NativeCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3ProfileCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3StaticCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3NativeCredentials
@@ -258,7 +260,7 @@ object SdkRunner {
           new SpiDevObjectStorageS3ProfileCredentials(cred.getString("profile-name"))
         case other =>
           throw new IllegalArgumentException(
-            s"Unknown S3 credentials type [$other] for dev bucket [$bucketName]. Valid: workload-identity, static, profile")
+            s"Unknown S3 credentials type [$other] for dev bucket [$bucketName]. Valid: native, static, profile")
       }
     }
   }
@@ -273,7 +275,7 @@ object SdkRunner {
         case "service-account-key" => new SpiDevObjectStorageGcsServiceAccountKeyCredentials(cred.getString("path"))
         case other =>
           throw new IllegalArgumentException(
-            s"Unknown GCS credentials type [$other] for dev bucket [$bucketName]. Valid: workload-identity, service-account-key")
+            s"Unknown GCS credentials type [$other] for dev bucket [$bucketName]. Valid: native, service-account-key")
       }
     }
   }
