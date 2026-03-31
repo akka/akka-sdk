@@ -128,7 +128,7 @@ Note that xref:views.adoc#ve_delete[deleting View state] must be handled explici
 
 ==== Automatic expiry
 
-As an alternative to explicit deletion, you can set a time-to-live on a state update using `expireAfter`. The entity will be automatically deleted once the given duration has elapsed since the write, if no further update has been made.
+As an alternative to explicit deletion, you can set a time-to-live (TTL) on a state update using `expireAfter`. The entity will be automatically deleted once the given duration has elapsed without any further updates being made.
 
 [source,java,indent=0]
 .{sample-base-url}/key-value-counter/src/main/java/com/example/application/CounterEntity.java[CounterEntity.java]
