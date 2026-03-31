@@ -4,7 +4,6 @@
 
 package akka.javasdk.impl.objectstorage
 
-import java.net.URI
 import java.util
 import java.util.Optional
 import java.util.concurrent.CompletionStage
@@ -19,9 +18,6 @@ import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.http.javadsl.{ model => jm }
 import akka.http.scaladsl.{ model => sm }
-import akka.javasdk.agent.MessageContent.ImageMessageContent.DetailLevel
-import akka.javasdk.agent.MessageContent.ImageUrlMessageContent
-import akka.javasdk.agent.MessageContent.PdfUrlMessageContent
 import akka.javasdk.objectstorage.ObjectMetadata
 import akka.javasdk.objectstorage.ObjectStorage
 import akka.javasdk.objectstorage.ObjectStore
@@ -39,18 +35,20 @@ import akka.util.ByteString
 @InternalApi
 private[impl] final class ObjectStorageImpl(spiObjectStorage: SpiObjectStorage, system: ActorSystem[_])
     extends ObjectStorage {
-  override def forBucket(bucketName: String): ObjectStore =
-    new ObjectStoreImpl(bucketName, spiObjectStorage.client(bucketName), system)
+  override def forBucket(bucket: String): ObjectStore =
+    new ObjectStoreImpl(bucket, spiObjectStorage.client(bucket), system)
 }
 
 /**
  * INTERNAL API
  */
 @InternalApi
-private[impl] final class ObjectStoreImpl(bucketName: String, spiClient: SpiObjectStoreClient, system: ActorSystem[_])
+private[impl] final class ObjectStoreImpl(bucket: String, spiClient: SpiObjectStoreClient, system: ActorSystem[_])
     extends ObjectStore {
 
   private implicit val ec: ExecutionContext = system.executionContext
+
+  override def bucketName(): String = bucket
 
   private def toPublicMetadata(m: SpiObjectMetadata): ObjectMetadata =
     new ObjectMetadata(
@@ -125,14 +123,4 @@ private[impl] final class ObjectStoreImpl(bucketName: String, spiClient: SpiObje
       contentType: jm.ContentType): CompletionStage[Done] =
     FutureConverters.asJava(spiClient.putStream(key, data.asScala, Some(toSpiContentType(contentType))))
 
-  // ── MessageContent helpers ────────────────────────────────────────────────
-
-  override def asImageContent(key: String): ImageUrlMessageContent =
-    new ImageUrlMessageContent(objectUri(key), DetailLevel.AUTO)
-
-  override def asPdfContent(key: String): PdfUrlMessageContent =
-    new PdfUrlMessageContent(objectUri(key))
-
-  private def objectUri(key: String): URI =
-    URI.create(s"object://$bucketName/$key")
 }

@@ -21,6 +21,11 @@ public sealed interface MessageContent {
 
   sealed interface LoadableMessageContent extends MessageContent {}
 
+  /** A named object-storage bucket, used to create content referencing stored objects. */
+  interface BucketRef {
+    String bucketName();
+  }
+
   /**
    * Text content within a user message.
    *
@@ -56,6 +61,18 @@ public sealed interface MessageContent {
       this.uri = uri;
       this.detailLevel = detailLevel;
       this.mimeType = mimeType;
+    }
+
+    /**
+     * Creates image content referencing an object in a bucket via the {@code object://} URI scheme.
+     *
+     * @param bucket the object-storage bucket
+     * @param key the object key within the bucket
+     */
+    public static ImageUrlMessageContent create(BucketRef bucket, String key) {
+      return new ImageUrlMessageContent(
+          URI.create("object://" + bucket.bucketName() + "/" + key),
+          ImageMessageContent.DetailLevel.AUTO);
     }
 
     /**
@@ -186,6 +203,16 @@ public sealed interface MessageContent {
     @JsonCreator
     public PdfUrlMessageContent(URI uri) {
       this.uri = uri;
+    }
+
+    /**
+     * Creates PDF content referencing an object in a bucket via the {@code object://} URI scheme.
+     *
+     * @param bucket the object-storage bucket
+     * @param key the object key within the bucket
+     */
+    public static PdfUrlMessageContent create(BucketRef bucket, String key) {
+      return new PdfUrlMessageContent(URI.create("object://" + bucket.bucketName() + "/" + key));
     }
 
     /**

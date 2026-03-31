@@ -25,7 +25,7 @@ import java.util.concurrent.CompletionStage;
  * <p>Not for user extension.
  */
 @DoNotInherit
-public interface ObjectStore {
+public interface ObjectStore extends MessageContent.BucketRef {
 
   /**
    * Retrieve an object, returning both its metadata and full content, or {@link Optional#empty()}
@@ -158,28 +158,4 @@ public interface ObjectStore {
    * with the metadata, or an empty {@link Optional} if no object exists for the given key.
    */
   CompletionStage<Optional<ObjectMetadata>> getMetadataAsync(String key);
-
-  // ── MessageContent helpers ────────────────────────────────────────────────
-
-  /**
-   * Creates an {@link akka.javasdk.agent.MessageContent.ImageUrlMessageContent} referencing this
-   * object via the {@code object://} scheme understood by the Akka runtime. The URL has the form
-   * {@code object://[bucket]/[key]}. The resulting content can be passed directly to an AI agent
-   * message without fetching the bytes locally first.
-   *
-   * @param key object key within the bucket
-   * @return image message content pointing at this object
-   */
-  MessageContent.ImageUrlMessageContent asImageContent(String key);
-
-  /**
-   * Creates a {@link akka.javasdk.agent.MessageContent.PdfUrlMessageContent} referencing this
-   * object via the {@code object://} scheme understood by the Akka runtime. The URL has the form
-   * {@code object://[bucket]/[key]}. The resulting content can be passed directly to an AI agent
-   * message without fetching the bytes locally first.
-   *
-   * @param key object key within the bucket
-   * @return PDF message content pointing at this object
-   */
-  MessageContent.PdfUrlMessageContent asPdfContent(String key);
 }
