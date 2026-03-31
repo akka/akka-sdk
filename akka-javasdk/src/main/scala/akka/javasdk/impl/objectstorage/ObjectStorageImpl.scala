@@ -4,7 +4,6 @@
 
 package akka.javasdk.impl.objectstorage
 
-import java.net.URI
 import java.util
 import java.util.Optional
 import java.util.concurrent.CompletionStage
@@ -17,9 +16,6 @@ import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.http.javadsl.{ model => jm }
 import akka.http.scaladsl.{ model => sm }
-import akka.javasdk.agent.MessageContent.ImageMessageContent.DetailLevel
-import akka.javasdk.agent.MessageContent.ImageUrlMessageContent
-import akka.javasdk.agent.MessageContent.PdfUrlMessageContent
 import akka.javasdk.objectstorage.ObjectMetadata
 import akka.javasdk.objectstorage.ObjectStorage
 import akka.javasdk.objectstorage.ObjectStore
@@ -53,6 +49,8 @@ private[impl] final class ObjectStoreImpl(bucketName: String, spiClient: SpiObje
     extends ObjectStore {
 
   private implicit val ec: ExecutionContext = system.executionContext
+
+  override def bucketName(): String = bucket
 
   private def toPublicMetadata(m: SpiObjectMetadata): ObjectMetadata =
     new ObjectMetadata(
@@ -130,14 +128,4 @@ private[impl] final class ObjectStoreImpl(bucketName: String, spiClient: SpiObje
       contentType: jm.ContentType): CompletionStage[Done] =
     FutureConverters.asJava(spiClient.putStream(key, data.asScala, Some(toSpiContentType(contentType)), Map.empty))
 
-  // ── MessageContent helpers ────────────────────────────────────────────────
-
-  override def asImageContent(key: String): ImageUrlMessageContent =
-    new ImageUrlMessageContent(objectUri(key), DetailLevel.AUTO)
-
-  override def asPdfContent(key: String): PdfUrlMessageContent =
-    new PdfUrlMessageContent(objectUri(key))
-
-  private def objectUri(key: String): URI =
-    URI.create(s"object://$bucketName/$key")
 }
