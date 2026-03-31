@@ -25,9 +25,9 @@ Persist and manage durable state with sub-10ms access latency using event sourci
 
 The following sample projects demonstrate this pattern:
 
-* https://github.com/akka-samples/travel-agent[travel-planning-agent,window="new"] -- session memory for multi-turn travel planning conversations
-* https://github.com/akka-samples/shopping-cart-quickstart[shopping-cart-quickstart,window="new"] -- event sourced shopping cart with views
-* https://github.com/akka-samples/event-sourced-customer-registry[event-sourced-customer-registry,window="new"] -- event sourced entity pattern for customer data
+* link:{sample-base-url}/travel-agent[travel-planning-agent,window="new"] -- session memory for multi-turn travel planning conversations
+* link:{sample-base-url}/shopping-cart-quickstart[shopping-cart-quickstart,window="new"] -- event sourced shopping cart with views
+* link:{sample-base-url}/event-sourced-customer-registry[event-sourced-customer-registry,window="new"] -- event sourced entity pattern for customer data
 
 == See Also
 

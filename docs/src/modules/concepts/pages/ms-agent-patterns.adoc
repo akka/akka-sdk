@@ -108,9 +108,9 @@ The main piece of functionality that makes group chat style patterns work is the
 
 Here are just a few sample applications that make use of explicit sessions via the `inSession` function on the agent client builder:
 
-* https://github.com/akka-samples/ask-akka-agent[ask-akka-agent, window="new"] - An agentic conversation sample
-* https://github.com/akka-samples/multi-agent[multi-agent, window="new"] - Our classic multi-agent sample
-* https://github.com/akka-samples/trip-agent[trip-agent, window="new"] - A trip planning agent
+* link:{sample-base-url}/ask-akka-agent[ask-akka-agent, window="new"] - An agentic conversation sample
+* link:{sample-base-url}/multi-agent[multi-agent, window="new"] - Our classic multi-agent sample
+* link:{sample-base-url}/trip-agent[trip-agent, window="new"] - A trip planning agent
 
 == Handoff orchestration
 https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns#handoff-orchestration[Handoff orchestration, window="new"] refers to empowering agents to defer or to hand off work to some other part of the process. In this pattern the plan and tasks are not completely known until receiving the initial input. Part of the dynamic planning process involves choosing which agents will be involved and which will not.
@@ -144,6 +144,6 @@ When we use workflows as ubiquitous coordinators and allow agents to be small, p
 === Examples
 In our xref:getting-started:planner-agent/dynamic-team.adoc[Akka dynamic orchestration] example, we illustrate a planning and evaluation loop, as well as re-planning.
 
-Additionally, the link:https://github.com/akka-samples/adaptive-multi-agent[Akka adaptive multi-agent sample, window="new"] implements the https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/magentic-one.html[MagenticOne pattern, window="new"].
+Additionally, the link:{sample-base-url}/adaptive-multi-agent[Akka adaptive multi-agent sample, window="new"] implements the https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/magentic-one.html[MagenticOne pattern, window="new"].
 
 

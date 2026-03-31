@@ -250,7 +250,7 @@ include::example$doc-snippets/src/main/java/com/example/api/WorkflowEndpoint.jav
 <1> Define API-specific records to avoid exposing internal domain types outside the service.
 <2> Map notifications to API records using the `map` operator on the notification source. The result can be wrapped with `HttpResponses.serverSentEvents()` for SSE delivery to HTTP clients.
 
-You can find the full source code of workflow notification sample in the link:https://github.com/akka-samples/multi-agent[akka-samples/multi-agent GitHub Repository, window="new"].
+You can find the full source code of workflow notification sample in the link:{sample-base-url}/multi-agent[akka-samples/multi-agent GitHub Repository, window="new"].
 
 
 IMPORTANT: The notification stream is a live stream that emits messages only after the client creates the stream—it does not replay historical messages. While the stream is running, it delivers all messages in order without message loss. If the stream detects missing messages, it will fail, allowing clients to reconnect and recover.

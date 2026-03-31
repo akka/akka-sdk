@@ -13,7 +13,7 @@ akka code init --name helloworld-agent --repo akka-samples/empty.git
 
 [sidebar]
 ****
-Alternatively, you can clone the link:https://github.com/akka-samples/empty[GitHub Repository, window="new"] directly:
+Alternatively, you can clone the link:{sample-base-url}/empty[GitHub Repository, window="new"] directly:
 
 [source, command line]
 ----

@@ -27,8 +27,8 @@ NOTE: *Status: Partial* -- This pattern guide describes the governance approach 
 
 The following sample projects demonstrate aspects of this pattern:
 
-* https://github.com/akka-samples/medical-tagging-agent[medical-discharge-tagging,window="new"] -- human verification workflow for AI-generated medical classifications
-* https://github.com/akka-samples/transfer-workflow-compensation[transfer-workflow-compensation,window="new"] -- compensation logic demonstrating rollback and recovery controls
+* link:{sample-base-url}/medical-tagging-agent[medical-discharge-tagging,window="new"] -- human verification workflow for AI-generated medical classifications
+* link:{sample-base-url}/transfer-workflow-compensation[transfer-workflow-compensation,window="new"] -- compensation logic demonstrating rollback and recovery controls
 
 NOTE: A dedicated governance-focused sample may be needed for a full end-to-end walkthrough of this pattern.
 

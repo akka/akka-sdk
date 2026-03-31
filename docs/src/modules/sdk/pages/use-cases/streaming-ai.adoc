@@ -28,8 +28,8 @@ Process real-time data streams with AI-powered feedback loops, event-driven cons
 
 The following sample projects demonstrate this pattern:
 
-* https://github.com/akka-samples/temperature-monitoring-agent[iot-sensor-monitoring,window="new"] -- real-time AI analysis of IoT sensor data streams
-* https://github.com/akka-samples/event-sourced-customer-registry[event-sourced-customer-registry-subscriber,window="new"] -- event-driven consumer that reacts to entity state changes
+* link:{sample-base-url}/temperature-monitoring-agent[iot-sensor-monitoring,window="new"] -- real-time AI analysis of IoT sensor data streams
+* link:{sample-base-url}/event-sourced-customer-registry[event-sourced-customer-registry-subscriber,window="new"] -- event-driven consumer that reacts to entity state changes
 
 == See Also
 

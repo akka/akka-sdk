@@ -63,7 +63,7 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 
 == Sample projects
 
-* https://github.com/akka-samples/ask-akka-agent[ask-akka-agent,window="new"] -- RAG Agent that answers questions about Akka documentation using vector search and conversational memory
+* link:{sample-base-url}/ask-akka-agent[ask-akka-agent,window="new"] -- RAG Agent that answers questions about Akka documentation using vector search and conversational memory
 
 The guide xref:getting-started:ask-akka-agent/index.adoc[AI Agent that performs a RAG Workflow] illustrates how to create embeddings for vector databases and how to add knowledge to fixed LLMs.
 

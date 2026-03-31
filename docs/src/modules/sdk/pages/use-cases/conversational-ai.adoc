@@ -25,8 +25,8 @@ Build conversational AI agents that maintain session memory across multi-turn in
 
 The following sample projects demonstrate this pattern:
 
-* https://github.com/akka-samples/helloworld-agent[helloworld-agent,window="new"] -- minimal agent showing basic conversational interaction
-* https://github.com/akka-samples/travel-agent[travel-planning-agent,window="new"] -- travel planning assistant with session state and external integrations
+* link:{sample-base-url}/helloworld-agent[helloworld-agent,window="new"] -- minimal agent showing basic conversational interaction
+* link:{sample-base-url}/travel-agent[travel-planning-agent,window="new"] -- travel planning assistant with session state and external integrations
 
 == See Also
 
