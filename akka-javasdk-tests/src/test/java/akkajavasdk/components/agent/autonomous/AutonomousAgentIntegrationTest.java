@@ -11,11 +11,16 @@ import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.handof
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.sendTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import akka.javasdk.agent.Agent;
+import akka.javasdk.agent.autonomous.Notification;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import akka.javasdk.testkit.TestModelProvider.AiResponse;
 import akkajavasdk.components.agent.SomeAgent;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
@@ -249,6 +254,95 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
               assertThat(snapshot.result()).isNotNull();
               assertThat(snapshot.result().value()).isEqualTo("Claim verified.");
               assertThat(snapshot.result().score()).isEqualTo(90);
+            });
+  }
+
+  @Test
+  public void shouldReceiveLifecycleNotifications() {
+    testAgentModel.fixedResponse(
+        new AiResponse(
+            "",
+            List.of(completeTask("{\"value\":\"done\",\"score\":1}")),
+            Optional.of(new Agent.TokenUsage(150, 42))));
+
+    var agentId = UUID.randomUUID().toString();
+    var agentClient = componentClient.forAutonomousAgent(TestAutonomousAgent.class, agentId);
+
+    // Subscribe to notifications before triggering the agent
+    var notifications = new ArrayList<Notification>();
+    agentClient.notificationStream().runForeach(notifications::add, testKit.getMaterializer());
+
+    var taskId =
+        agentClient.runSingleTask(TestTasks.TEST_TASK.instructions("Do something simple."));
+
+    // Wait for the task to complete
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var snapshot = componentClient.forTask(taskId).get(TestTasks.TEST_TASK);
+              assertThat(snapshot.result()).isNotNull();
+            });
+
+    // Verify we received lifecycle notifications
+    Awaitility.await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              assertThat(notifications)
+                  .anySatisfy(n -> assertThat(n).isInstanceOf(Notification.Activated.class));
+              assertThat(notifications)
+                  .anySatisfy(n -> assertThat(n).isInstanceOf(Notification.IterationStarted.class));
+              assertThat(notifications)
+                  .anySatisfy(
+                      n -> assertThat(n).isInstanceOf(Notification.IterationCompleted.class));
+              assertThat(notifications)
+                  .anySatisfy(n -> assertThat(n).isInstanceOf(Notification.Stopped.class));
+
+              // Verify token counts are available on IterationCompleted
+              var iterationCompleted =
+                  notifications.stream()
+                      .filter(n -> n instanceof Notification.IterationCompleted)
+                      .map(n -> (Notification.IterationCompleted) n)
+                      .findFirst()
+                      .orElseThrow();
+              assertThat(iterationCompleted.inputTokens()).isEqualTo(150);
+              assertThat(iterationCompleted.outputTokens()).isEqualTo(42);
+            });
+  }
+
+  @Test
+  public void shouldReceiveNotificationsOnFailedTask() {
+    testAgentModel.fixedResponse(failTask("Something went wrong."));
+
+    var agentId = UUID.randomUUID().toString();
+    var agentClient = componentClient.forAutonomousAgent(TestAutonomousAgent.class, agentId);
+
+    var notifications = new ArrayList<Notification>();
+    agentClient.notificationStream().runForeach(notifications::add, testKit.getMaterializer());
+
+    var taskId = agentClient.runSingleTask(TestTasks.TEST_TASK.instructions("This will fail."));
+
+    // Wait for the task to fail
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var snapshot = componentClient.forTask(taskId).get(TestTasks.TEST_TASK);
+              assertThat(snapshot.status().name()).isEqualTo("FAILED");
+            });
+
+    // Verify notifications include activation and stop
+    Awaitility.await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              assertThat(notifications)
+                  .anySatisfy(n -> assertThat(n).isInstanceOf(Notification.Activated.class));
+              assertThat(notifications)
+                  .anySatisfy(n -> assertThat(n).isInstanceOf(Notification.Stopped.class));
             });
   }
 }

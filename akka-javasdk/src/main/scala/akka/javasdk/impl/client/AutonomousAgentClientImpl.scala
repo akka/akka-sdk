@@ -11,16 +11,20 @@ import scala.concurrent.Future
 import scala.jdk.FutureConverters._
 
 import akka.Done
+import akka.NotUsed
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.agent.autonomous.AgentSetup
+import akka.javasdk.agent.autonomous.Notification
 import akka.javasdk.agent.task.Task
 import akka.javasdk.client.AutonomousAgentClient
 import akka.javasdk.impl.agent.autonomous.AgentSetupImpl
 import akka.javasdk.impl.agent.autonomous.CapabilityConverter
 import akka.javasdk.impl.serialization.Serializer
+import akka.runtime.sdk.spi.SpiAutonomousAgent.{ Notification => SpiNotification }
 import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
+import akka.stream.javadsl.Source
 import akka.stream.Materializer
 import org.slf4j.LoggerFactory
 
@@ -42,7 +46,7 @@ private[javasdk] final class AutonomousAgentClientImpl(
   override def runSingleTaskAsync(task: Task[_]): CompletionStage[String] = {
     val taskId = java.util.UUID.randomUUID().toString
     log.debug(
-      "runSingleTask: agent=[{}] instance=[{}] task=[{}] taskId=[{}]",
+      "runSingleTask: agent [{}] instance [{}] task [{}] taskId [{}]",
       agentComponentId,
       agentInstanceId,
       task.description(),
@@ -76,11 +80,14 @@ private[javasdk] final class AutonomousAgentClientImpl(
   }
 
   override def assignTasksAsync(taskIds: String*): CompletionStage[Done] = {
-    log.debug("assignTasks: agent=[{}] instance=[{}] tasks={}", agentComponentId, agentInstanceId, taskIds)
+    log.debug(
+      "assignTasks: agent [{}] instance [{}] tasks [{}]",
+      agentComponentId,
+      agentInstanceId,
+      taskIds.mkString(", "))
     taskIds
       .foldLeft(Future.successful(())) { (prev, taskId) =>
         prev.flatMap { _ =>
-          log.debug("assignTasks: sending AssignTask [{}] to agent instance [{}]", taskId, agentInstanceId)
           runtimeComponentClients.autonomousAgentClient
             .assignTask(agentComponentId, agentInstanceId, taskId)
             .map(_ => ())
@@ -92,7 +99,7 @@ private[javasdk] final class AutonomousAgentClientImpl(
 
   override def setupAsync(setup: AgentSetup): CompletionStage[Done] = {
     val setupImpl = setup.asInstanceOf[AgentSetupImpl]
-    log.debug("setup: agent=[{}] instance=[{}]", agentComponentId, agentInstanceId)
+    log.debug("setup: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
     val converter = agentCapabilityConverter.getOrElse(
       throw new IllegalStateException("Agent capability converter not available in this context"))
     val spiCapabilities = converter.toSpiCapabilities(setupImpl.capabilities)
@@ -103,10 +110,28 @@ private[javasdk] final class AutonomousAgentClientImpl(
   }
 
   override def stopAsync(): CompletionStage[Done] = {
-    log.debug("stop: agent=[{}] instance=[{}]", agentComponentId, agentInstanceId)
+    log.debug("stop: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
     runtimeComponentClients.autonomousAgentClient
       .stop(agentComponentId, agentInstanceId)
       .map(_ => Done.done())
       .asJava
+  }
+
+  override def notificationStream(): Source[Notification, NotUsed] = {
+    log.debug("notificationStream: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
+    runtimeComponentClients.autonomousAgentClient
+      .notificationStream(agentComponentId, agentInstanceId)
+      .map(toNotification)
+      .asJava
+  }
+
+  private def toNotification(spi: SpiNotification): Notification = spi match {
+    case _: SpiNotification.Activated        => new Notification.Activated
+    case _: SpiNotification.Deactivated      => new Notification.Deactivated
+    case _: SpiNotification.IterationStarted => new Notification.IterationStarted
+    case c: SpiNotification.IterationCompleted =>
+      new Notification.IterationCompleted(c.inputTokens, c.outputTokens)
+    case f: SpiNotification.IterationFailed => new Notification.IterationFailed(f.reason)
+    case _: SpiNotification.Stopped         => new Notification.Stopped
   }
 }
