@@ -33,6 +33,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 
 ## SDK Components
 
+- [Components overview](https://doc.akka.io/sdk/components/index.html.md): Introduction to Akka's core building blocks and their usage
 - [Agents](https://doc.akka.io/sdk/agents.html.md): AI model-backed components with session memory and multi-agent collaboration
 - [Workflows](https://doc.akka.io/sdk/workflows.html.md): Long-running, multi-step business processes with compensation
 - [Event Sourced Entities](https://doc.akka.io/sdk/event-sourced-entities.html.md): State persistence via immutable event log
@@ -63,6 +64,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Component and service calls](https://doc.akka.io/sdk/component-and-service-calls.html.md): Invoke other services and components directly
 - [AI & models](https://doc.akka.io/sdk/integrations/ai-and-models.html.md): 9 built-in LLM providers plus custom provider support
 - [Data & knowledge](https://doc.akka.io/sdk/integrations/data-and-knowledge.html.md): Vector DBs, relational, NoSQL, search engines. No caching layer needed.
+- [Message broker integrations](https://doc.akka.io/sdk/integrations/messaging-and-events.html.md): Connecting Akka services with external message brokers
 - [Messaging & events](https://doc.akka.io/sdk/integrations/messaging-and-events.html.md): Akka-native first, external brokers when needed
 - [APIs & protocols](https://doc.akka.io/sdk/integrations/apis-and-protocols.html.md): REST, OpenAPI, WebSocket, gRPC, MCP, A2A, ACP
 - [Identity & security](https://doc.akka.io/sdk/integrations/identity-and-security.html.md): Native secrets, Azure KeyVault, standard Java APIs
@@ -79,6 +81,12 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Multi-region operations](https://doc.akka.io/concepts/multi-region.html.md): Active-active HA/DR across regions
 - [Declarative effects](https://doc.akka.io/concepts/declarative-effects.html.md): Composable, testable side effects
 - [Saga patterns](https://doc.akka.io/concepts/saga-patterns.html.md): Distributed transaction patterns
+- [AI orchestration patterns](https://doc.akka.io/concepts/ms-agent-patterns.html.md): Patterns for composing and orchestrating agentic applications
+- [Inter-agent communications](https://doc.akka.io/concepts/inter-agent-comms.html.md): Patterns for agent collaboration and communication
+- [gRPC vs HTTP Endpoints](https://doc.akka.io/concepts/grpc-vs-http-endpoints.html.md): Comparison of gRPC and HTTP endpoint types and when to use each
+- [Entity state models](https://doc.akka.io/concepts/state-model.html.md): Understanding different entity state modeling approaches in Akka
+- [Deployment model](https://doc.akka.io/concepts/deployment-model.html.md): Understanding how Akka services are packaged and deployed
+- [Developer best practices](https://doc.akka.io/sdk/dev-best-practices.html.md): Guidelines and recommended patterns for effective Akka SDK development
 
 ## Operating
 
@@ -98,9 +106,57 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Model provider details](https://doc.akka.io/sdk/model-provider-details.html.md): Anthropic, OpenAI, Google, AWS Bedrock, Ollama, and more
 - [Guardrails](https://doc.akka.io/sdk/agents/guardrails.html.md): Runtime policy enforcement
 - [Data sanitization](https://doc.akka.io/sdk/sanitization.html.md): PII scrubbing with right to explain
+- [Choosing the prompt](https://doc.akka.io/sdk/agents/prompt.html.md): Choosing the prompts for agents
+- [Calling agents](https://doc.akka.io/sdk/agents/calling.html.md): Calling agents from Akka code
+- [Managing session memory](https://doc.akka.io/sdk/agents/memory.html.md): Managing agent session memory
+- [Structured responses](https://doc.akka.io/sdk/agents/structured.html.md): Handling strongly typed responses from LLMs
+- [Handling failures](https://doc.akka.io/sdk/agents/failures.html.md): Handling agent failures
+- [Extending agents with function tools](https://doc.akka.io/sdk/agents/extending.html.md): Extending agents with function (callback) tools
+- [Streaming agent responses](https://doc.akka.io/sdk/agents/streaming.html.md): Streaming model responses with agents
+- [Orchestrating multiple agents](https://doc.akka.io/sdk/agents/orchestrating.html.md): Orchestrating and supervising multiple agents
+- [Evaluating model responses](https://doc.akka.io/sdk/agents/llm_eval.html.md): Evaluating and judging the responses from LLMs via agents
+- [Testing agents](https://doc.akka.io/sdk/agents/testing.html.md): Testing agents and agentic behavior
+- [Views reference](https://doc.akka.io/reference/views/index.html.md): Detailed reference for views
+- [View Query Syntax](https://doc.akka.io/reference/views/syntax/query.html.md): View query language syntax
+- [View Query Result Mapping](https://doc.akka.io/reference/views/concepts/result-mapping.html.md): How view query results are mapped into Java classes
+- [Advanced Views](https://doc.akka.io/reference/views/concepts/advanced-views.html.md): Views for queries over tables populated from multiple different entities
+- [Setup and configuration](https://doc.akka.io/sdk/setup-and-configuration/index.html.md): Configuring and initializing Akka services
+- [Setup and dependency injection](https://doc.akka.io/sdk/setup-and-dependency-injection.html.md): Integrating dependency injection with Akka services
+- [Serialization](https://doc.akka.io/sdk/serialization.html.md): Configuring and customizing serialization for entity data and messages
+- [Retrieval-Augmented Generation (RAG)](https://doc.akka.io/getting-started/ask-akka-agent/rag.html.md): Semantic search on vector databases to enrich AI model requests
 
 ## Optional
 
+- [Run a service locally](https://doc.akka.io/sdk/running-locally.html.md): Steps to run and test Akka services in a local development environment
+- [AI coding assistant](https://doc.akka.io/sdk/ai-coding-assistant.html.md): How to set up AI coding assistant tools with Akka
+- [Access Control List concepts](https://doc.akka.io/concepts/acls.html.md): Core concepts behind Access Control Lists and how they secure Akka services
+- [Developing Access Control Lists (ACLs)](https://doc.akka.io/sdk/access-control.html.md): Implementing ACLs to control access to your Akka service endpoints
+- [JSON Web Tokens (JWTs)](https://doc.akka.io/reference/jwts.html.md): Understanding JWT concepts and their role in Akka authentication
+- [Developing JSON Web Tokens (JWT)](https://doc.akka.io/sdk/auth-with-jwts.html.md): Implementing JWT-based authentication in your Akka services
+- [TLS certificates](https://doc.akka.io/operations/tls-certificates.html.md): Configuring and managing TLS certificates for secure communications
+- [Operator best practices](https://doc.akka.io/operations/operator-best-practices.html.md): Recommendations for effectively operating Akka services in production
+- [View logs](https://doc.akka.io/operations/observability-and-monitoring/view-logs.html.md): Accessing and analyzing logs from Akka services
+- [View traces](https://doc.akka.io/operations/observability-and-monitoring/traces.html.md): Working with distributed tracing in Akka applications
+- [View metrics](https://doc.akka.io/operations/observability-and-monitoring/metrics.html.md): Monitoring performance metrics for Akka services
+- [Exporting metrics, logs, and traces](https://doc.akka.io/operations/observability-and-monitoring/observability-exports.html.md): Sending observability data to external monitoring systems
+- [Using the Akka CLI](https://doc.akka.io/operations/cli/using-cli.html.md): Guide to the Akka Command Line Interface for managing services
+- [Enable CLI command completion](https://doc.akka.io/operations/cli/command-completion.html.md): Setting up command completion for the Akka CLI
+- [Configure message brokers](https://doc.akka.io/operations/projects/message-brokers.html.md): Setting up and configuring message brokers for Akka services
+- [Using Aiven for Apache Kafka](https://doc.akka.io/operations/projects/broker-aiven.html.md): Integrating Aiven-hosted Kafka with Akka services
+- [Using Confluent Cloud as Kafka service](https://doc.akka.io/operations/projects/broker-confluent.html.md): Setting up Confluent Cloud Kafka for use with Akka services
+- [Using AWS MSK as Kafka service](https://doc.akka.io/operations/projects/broker-aws-msk.html.md): Configuring AWS Managed Streaming for Kafka with Akka services
+- [Using Google Cloud Pub/Sub as message broker](https://doc.akka.io/operations/projects/broker-google-pubsub.html.md): Integrating Google Cloud Pub/Sub with Akka services
+- [Projects](https://doc.akka.io/operations/projects/index.html.md): Managing projects in the Akka Platform
+- [Create a new project](https://doc.akka.io/operations/projects/create-project.html.md): Steps to create and configure a new project in the Akka Platform
+- [Managing project users](https://doc.akka.io/operations/projects/manage-project-access.html.md): Controlling user access to projects in the Akka Platform
+- [Configure a container registry](https://doc.akka.io/operations/projects/container-registries.html.md): Setting up and managing container registries for Akka deployments
+- [Configure an external container registry](https://doc.akka.io/operations/projects/external-container-registries.html.md): Setting up external container registries for Akka service deployments
+- [Organizations](https://doc.akka.io/operations/organizations/index.html.md): Working with organizations in the Akka Platform
+- [Managing organization users](https://doc.akka.io/operations/organizations/manage-users.html.md): Adding, removing, and managing user access within your organization
+- [Regions](https://doc.akka.io/operations/organizations/regions.html.md): Understanding geographical regions for Akka Platform deployments
+- [Billing](https://doc.akka.io/operations/organizations/billing.html.md): Managing billing and subscription information for Akka Platform
+- [Operating - Akka Automated Operations (AAO)](https://doc.akka.io/operations/akka-platform.html.md): Automatically manages, monitors, and gathers insights from your deployed services and managed infrastructure.
+- [Operating - Self-managed nodes](https://doc.akka.io/operations/index.html.md): Guide to running Akka on self-managed infrastructure
 - [Why Akka](https://doc.akka.io/why-akka.html.md): Three barriers, three dimensions
 - [What is Akka](https://doc.akka.io/what-is-akka.html.md): Platform overview and application types
 - [Who uses Akka](https://doc.akka.io/who-uses-akka.html.md): Persona-based documentation navigation
@@ -108,7 +164,6 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Customer Stories](https://akka.io/customer-stories): Production deployments by industry
 - [Reactive Manifesto](https://www.reactivemanifesto.org): Foundational philosophy behind Akka
 - [Reactive Principles](https://www.reactiveprinciples.org): Cloud-native and edge-native design principles
-- [Akkademy](https://akkademy.akka.io): Free training courses
 - [Blog](https://akka.io/blog): Technical articles and product updates
 - [Corporate context (akka.io/llms.txt)](https://akka.io/llms.txt): Business, pricing, partnerships, and go-to-market
 
