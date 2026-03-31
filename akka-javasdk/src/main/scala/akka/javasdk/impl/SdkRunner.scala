@@ -81,7 +81,7 @@ import akka.javasdk.impl.http.HttpClientProviderImpl
 import akka.javasdk.impl.http.HttpRequestContextImpl
 import akka.javasdk.impl.http.JwtClaimsImpl
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityImpl
-import akka.javasdk.impl.objectstorage.ObjectStorageImpl
+import akka.javasdk.impl.objectstorage.ObjectStoreProviderImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
 import akka.javasdk.impl.serialization.Serializer
@@ -96,7 +96,7 @@ import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.keyvalueentity.KeyValueEntityContext
 import akka.javasdk.mcp.AbstractMcpEndpoint
 import akka.javasdk.mcp.McpRequestContext
-import akka.javasdk.objectstorage.ObjectStorage
+import akka.javasdk.objectstorage.ObjectStoreProvider
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.timer.TimerScheduler
 import akka.javasdk.tooling.validation.Validation
@@ -444,7 +444,7 @@ private[javasdk] object Sdk {
     classOf[Retries],
     classOf[AgentContext],
     classOf[AgentRegistry],
-    classOf[ObjectStorage])
+    classOf[ObjectStoreProvider])
 }
 
 /**

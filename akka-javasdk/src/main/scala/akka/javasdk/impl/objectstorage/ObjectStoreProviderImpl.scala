@@ -16,8 +16,7 @@ import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.http.javadsl.{ model => jm }
 import akka.http.scaladsl.{ model => sm }
-import akka.javasdk.objectstorage.ObjectMetadata
-import akka.javasdk.objectstorage.ObjectStorage
+import akka.javasdk.objectstorage.{ObjectMetadata, ObjectStoreProvider}
 import akka.javasdk.objectstorage.ObjectStore
 import akka.javasdk.objectstorage.StoreObject
 import akka.runtime.sdk.spi.SpiObjectStorage

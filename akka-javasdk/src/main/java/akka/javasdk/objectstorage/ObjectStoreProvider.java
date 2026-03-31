@@ -15,7 +15,7 @@ import akka.annotation.DoNotInherit;
  * <p>Not for user extension.
  */
 @DoNotInherit
-public interface ObjectStorage {
+public interface ObjectStoreProvider {
 
   /**
    * Returns a client for the named bucket. The bucket must be configured in the application
