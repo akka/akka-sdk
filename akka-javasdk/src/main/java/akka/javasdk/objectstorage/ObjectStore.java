@@ -11,6 +11,7 @@ import akka.http.javadsl.model.ContentType;
 import akka.javasdk.agent.MessageContent;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
@@ -25,8 +26,6 @@ import java.util.concurrent.CompletionStage;
  */
 @DoNotInherit
 public interface ObjectStore {
-
-  // ── Primary (blocking / Loom-friendly) API ──────────────────────────────
 
   /**
    * Retrieve an object, returning both its metadata and full content, or {@link Optional#empty()}
@@ -68,6 +67,23 @@ public interface ObjectStore {
   Done delete(String key);
 
   /**
+   * List all objects whose keys start with {@code prefix}. Pass an empty string to list all objects
+   * in the bucket.
+   *
+   * <p>Be careful listing buckets with large numbers of entries, all will be collected into memory
+   * of the service.
+   */
+  List<ObjectMetadata> list(String prefix);
+
+  /**
+   * List all objects in the bucket.
+   *
+   * <p>Be careful listing buckets with large numbers of entries, all will be collected into memory
+   * of the service.
+   */
+  List<ObjectMetadata> list();
+
+  /**
    * Retrieve only the metadata for an object without downloading its content, or {@link
    * Optional#empty()} if no object exists for the given key.
    *
@@ -75,18 +91,14 @@ public interface ObjectStore {
    */
   Optional<ObjectMetadata> getMetadata(String key);
 
-  // ── Streaming ───────────────────────────────────────────────────────────
-
   /**
    * List all objects whose keys start with {@code prefix}. Pass an empty string to list all objects
    * in the bucket.
    */
-  Source<ObjectMetadata, NotUsed> list(String prefix);
+  Source<ObjectMetadata, NotUsed> streamList(String prefix);
 
   /** List all objects in the bucket. */
-  default Source<ObjectMetadata, NotUsed> list() {
-    return list("");
-  }
+  Source<ObjectMetadata, NotUsed> streamList();
 
   /**
    * Retrieve an object as a streaming source, or {@link Optional#empty()} if no object exists for

@@ -5,6 +5,7 @@
 package akka.javasdk.impl.objectstorage
 
 import java.net.URI
+import java.util
 import java.util.Optional
 import java.util.concurrent.CompletionStage
 
@@ -28,6 +29,7 @@ import akka.javasdk.objectstorage.StoreObject
 import akka.runtime.sdk.spi.SpiObjectStorage
 import akka.runtime.sdk.spi.SpiObjectStoreClient
 import akka.runtime.sdk.spi.{ ObjectMetadata => SpiObjectMetadata }
+import akka.stream.javadsl.Sink
 import akka.stream.javadsl.{ Source => JSource }
 import akka.util.ByteString
 
@@ -100,10 +102,16 @@ private[impl] final class ObjectStoreImpl(bucketName: String, spiClient: SpiObje
   override def getMetadata(key: String): Optional[ObjectMetadata] =
     getMetadataAsync(key).toCompletableFuture.get()
 
+  override def list(prefix: String): util.List[ObjectMetadata] =
+    streamList(prefix).runWith(Sink.seq[ObjectMetadata], system).toCompletableFuture.get()
+
+  override def list(): util.List[ObjectMetadata] = list("")
   // ── Streaming ────────────────────────────────────────────────────────────
 
-  override def list(prefix: String): JSource[ObjectMetadata, NotUsed] =
+  override def streamList(prefix: String): JSource[ObjectMetadata, NotUsed] =
     spiClient.list(prefix).map(toPublicMetadata).asJava
+
+  override def streamList(): JSource[ObjectMetadata, NotUsed] = streamList("")
 
   override def getStreamAsync(key: String): CompletionStage[Optional[JSource[ByteString, NotUsed]]] =
     FutureConverters.asJava(spiClient.getStream(key).map(opt => OptionConverters.toJava(opt.map(_.asJava))))
