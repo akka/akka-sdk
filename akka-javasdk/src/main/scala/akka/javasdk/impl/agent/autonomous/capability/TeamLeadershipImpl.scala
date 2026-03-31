@@ -12,7 +12,12 @@ import akka.javasdk.agent.autonomous.capability.TeamLeadership
  * INTERNAL API
  */
 @InternalApi
-final case class TeamLeadershipImpl(members: Seq[TeamMemberImpl]) extends TeamLeadership
+final case class TeamLeadershipImpl(members: Seq[TeamMemberImpl], maxConcurrentTeamsValue: Int = 1)
+    extends TeamLeadership {
+
+  override def maxConcurrentTeams(max: Int): TeamLeadership =
+    copy(maxConcurrentTeamsValue = max)
+}
 
 /**
  * INTERNAL API

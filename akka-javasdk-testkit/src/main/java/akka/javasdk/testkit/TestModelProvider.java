@@ -5,12 +5,16 @@
 package akka.javasdk.testkit;
 
 import akka.japi.Pair;
+import akka.javasdk.JsonSupport;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.MessageContent;
 import akka.javasdk.agent.ModelProvider;
+import akka.javasdk.agent.task.Task;
 import akka.javasdk.agent.task.TaskDefinition;
+import akka.javasdk.agent.task.TaskTemplate;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.ComponentId;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ImageContent;
@@ -25,10 +29,12 @@ import dev.langchain4j.model.output.FinishReason;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -114,6 +120,8 @@ public final class TestModelProvider implements ModelProvider.Custom {
   private List<Pair<Predicate<InputMessage>, Function<InputMessage, AiResponse>>>
       responsePredicates = new ArrayList<>();
 
+  private Function<List<InputMessage>, InputMessage> messageSelector = List::getLast;
+
   public static class MissingModelResponseException extends RuntimeException {}
 
   private final Function<InputMessage, AiResponse> catchMissingResponse =
@@ -174,6 +182,11 @@ public final class TestModelProvider implements ModelProvider.Custom {
       provider.addResponse(predicate, msg -> response);
     }
 
+    /** Reply dynamically based on the input message. Evaluated on each matching request. */
+    public void reply(Function<InputMessage, AiResponse> handler) {
+      provider.addResponse(predicate, handler);
+    }
+
     /** Reply with a runtime exception for matching requests. */
     public void failWith(RuntimeException error) {
       provider.addResponse(
@@ -205,7 +218,7 @@ public final class TestModelProvider implements ModelProvider.Custom {
     return new ChatModel() {
       @Override
       public ChatResponse doChat(ChatRequest chatRequest) {
-        var inputMessage = getLastInputMessage(chatRequest);
+        var inputMessage = selectInputMessage(chatRequest);
         var textResponse = getResponse(inputMessage);
         return chatResponse(textResponse);
       }
@@ -217,7 +230,7 @@ public final class TestModelProvider implements ModelProvider.Custom {
     return new StreamingChatModel() {
       @Override
       public void doChat(ChatRequest chatRequest, StreamingChatResponseHandler handler) {
-        var inputMessage = getLastInputMessage(chatRequest);
+        var inputMessage = selectInputMessage(chatRequest);
         var response = getResponse(inputMessage);
 
         if (response.message != null) {
@@ -237,53 +250,75 @@ public final class TestModelProvider implements ModelProvider.Custom {
         .toList();
   }
 
-  /** Extracts the last input message from a chat request. */
-  private InputMessage getLastInputMessage(ChatRequest chatRequest) {
-    return Optional.ofNullable(chatRequest.messages().getLast())
-        .filter(
-            chatMessage ->
-                chatMessage instanceof dev.langchain4j.data.message.UserMessage
-                    || chatMessage instanceof ToolExecutionResultMessage)
-        .map(
-            chatMessage -> {
-              if (chatMessage instanceof dev.langchain4j.data.message.UserMessage userMessage) {
-                List<MessageContent> contents =
-                    userMessage.contents().stream()
-                        .<MessageContent>map(
-                            content ->
-                                switch (content) {
-                                  case TextContent textContent ->
-                                      MessageContent.TextMessageContent.from(textContent.text());
-                                  case ImageContent imageContent -> {
-                                    if (imageContent.image().url() != null) {
-                                      try {
-                                        yield MessageContent.ImageMessageContent.fromUrl(
-                                            imageContent.image().url().toURL(),
-                                            toDetailLevel(imageContent.detailLevel()));
-                                      } catch (MalformedURLException e) {
-                                        throw new RuntimeException(
-                                            "Can't transform "
-                                                + imageContent.image().url()
-                                                + " to URL",
-                                            e);
-                                      }
-                                    } else {
-                                      throw new IllegalStateException(
-                                          "Not supported image content without url.");
-                                    }
-                                  }
-                                  default ->
-                                      throw new IllegalStateException(
-                                          "Not supported content type: " + content);
-                                })
-                        .toList();
-                return new UserMessage(contents);
-              } else {
-                ToolExecutionResultMessage result = (ToolExecutionResultMessage) chatMessage;
-                return new ToolResult(result.toolName(), result.text());
-              }
-            })
-        .orElseThrow(() -> new RuntimeException("No input message found"));
+  /**
+   * Selects the input message to respond to, using the configured message selector applied to all
+   * new input messages since the last AI response.
+   */
+  private InputMessage selectInputMessage(ChatRequest chatRequest) {
+    var newMessages = getNewInputMessages(chatRequest);
+    if (newMessages.isEmpty()) {
+      throw new RuntimeException("No input message found");
+    }
+    return messageSelector.apply(newMessages);
+  }
+
+  /**
+   * Extracts all input messages since the last AI response in the conversation. These are the new
+   * messages for the current turn — tool results and user messages that the model should react to.
+   */
+  private List<InputMessage> getNewInputMessages(ChatRequest chatRequest) {
+    var messages = chatRequest.messages();
+    var result = new ArrayList<InputMessage>();
+    // Walk backwards from the end, collecting user messages and tool results,
+    // stopping at the last AI message (which was our previous response).
+    for (int i = messages.size() - 1; i >= 0; i--) {
+      var msg = messages.get(i);
+      if (msg instanceof AiMessage) {
+        break;
+      }
+      var converted = toInputMessage(msg);
+      if (converted != null) {
+        result.addFirst(converted);
+      }
+    }
+    return result;
+  }
+
+  /** Converts a langchain4j chat message to an {@link InputMessage}, or null if not applicable. */
+  private InputMessage toInputMessage(dev.langchain4j.data.message.ChatMessage chatMessage) {
+    if (chatMessage instanceof dev.langchain4j.data.message.UserMessage userMessage) {
+      List<MessageContent> contents =
+          userMessage.contents().stream()
+              .<MessageContent>map(
+                  content ->
+                      switch (content) {
+                        case TextContent textContent ->
+                            MessageContent.TextMessageContent.from(textContent.text());
+                        case ImageContent imageContent -> {
+                          if (imageContent.image().url() != null) {
+                            try {
+                              yield MessageContent.ImageMessageContent.fromUrl(
+                                  imageContent.image().url().toURL(),
+                                  toDetailLevel(imageContent.detailLevel()));
+                            } catch (MalformedURLException e) {
+                              throw new RuntimeException(
+                                  "Can't transform " + imageContent.image().url() + " to URL", e);
+                            }
+                          } else {
+                            throw new IllegalStateException(
+                                "Not supported image content without url.");
+                          }
+                        }
+                        default ->
+                            throw new IllegalStateException(
+                                "Not supported content type: " + content);
+                      })
+              .toList();
+      return new UserMessage(contents);
+    } else if (chatMessage instanceof ToolExecutionResultMessage toolResult) {
+      return new ToolResult(toolResult.toolName(), toolResult.text());
+    }
+    return null;
   }
 
   private MessageContent.ImageMessageContent.DetailLevel toDetailLevel(
@@ -373,6 +408,11 @@ public final class TestModelProvider implements ModelProvider.Custom {
     new WhenClause(this, inputMessage -> true).reply(new AiResponse(request));
   }
 
+  /** Configures a dynamic response for each input message. */
+  public void fixedResponse(Function<InputMessage, AiResponse> handler) {
+    new WhenClause(this, inputMessage -> true).reply(handler);
+  }
+
   /**
    * Configures to respond when the passed string predicate matches the content of an {@link
    * InputMessage}. The predicate is applied to content of {@link UserMessage} or {@link
@@ -454,6 +494,19 @@ public final class TestModelProvider implements ModelProvider.Custom {
   }
 
   /**
+   * Configures a custom message selector that determines which input message from the current turn
+   * is passed to response predicates. The selector receives all new input messages since the last
+   * AI response (tool results and user messages) and returns the one to respond to.
+   *
+   * <p>The default selector picks the last message.
+   */
+  public TestModelProvider withMessageSelector(
+      Function<List<InputMessage>, InputMessage> selector) {
+    this.messageSelector = selector;
+    return this;
+  }
+
+  /**
    * Factory methods for {@link ToolInvocationRequest} instances that correspond to the internal
    * tools exposed by the autonomous agent runtime to the LLM.
    */
@@ -461,12 +514,99 @@ public final class TestModelProvider implements ModelProvider.Custom {
 
     private AutonomousAgentTools() {}
 
+    // --- Tool name constants ---
+
+    /** Tool name for completing a task. */
+    public static final String COMPLETE_TASK = "complete_task";
+
+    /** Tool name for failing a task. */
+    public static final String FAIL_TASK = "fail_task";
+
+    /** Tool name for creating a team. */
+    public static final String CREATE_TEAM = "create_team";
+
+    /** Tool name for getting team status. */
+    public static final String GET_TEAM_STATUS = "get_team_status";
+
+    /** Tool name for disbanding a team. */
+    public static final String DISBAND_TEAM = "disband_team";
+
+    /** Tool name for getting managed backlog status (lead side). */
+    public static final String GET_MANAGED_BACKLOG_STATUS = "get_managed_backlog_status";
+
+    /** Tool name for cancelling unclaimed tasks from backlog (lead side). */
+    public static final String CANCEL_UNCLAIMED_TASKS_FROM_BACKLOG =
+        "cancel_unclaimed_tasks_from_backlog";
+
+    /** Tool name for getting backlog status (member side). */
+    public static final String GET_BACKLOG_STATUS = "get_backlog_status";
+
+    /** Tool name for claiming a task (member side). */
+    public static final String CLAIM_TASK = "claim_task";
+
+    /** Tool name for releasing a task (member side). */
+    public static final String RELEASE_TASK = "release_task";
+
+    /** Tool name for transferring a task (member side). */
+    public static final String TRANSFER_TASK = "transfer_task";
+
+    /** Tool name for sending a message. */
+    public static final String SEND_MESSAGE = "send_message";
+
+    /**
+     * Returns the tool name for a {@code handoff_to_<agent>} tool, derived from the target agent's
+     * component ID.
+     */
+    public static String handoffToToolName(Class<?> agentClass) {
+      return "handoff_to_" + sanitize(componentId(agentClass));
+    }
+
+    /**
+     * Returns the tool name for a {@code delegate_<task>_to_<agent>} tool, derived from the task
+     * definition and target agent's component ID.
+     */
+    public static String delegateToToolName(TaskDefinition<?> task, Class<?> agentClass) {
+      return "delegate_" + sanitize(task.name()) + "_to_" + sanitize(componentId(agentClass));
+    }
+
+    /**
+     * Returns the tool name for a {@code create_<taskType>_task_for_backlog} tool, derived from the
+     * task definition name.
+     */
+    public static String createTaskForBacklogToolName(TaskDefinition<?> task) {
+      return "create_" + sanitize(task.name()) + "_task_for_backlog";
+    }
+
+    /**
+     * Returns the tool name for a {@code send_<Method>_to_<agent>} tool, derived from the method
+     * name and target agent's component ID.
+     */
+    public static String sendToToolName(Class<?> agentClass, String methodName) {
+      var capitalizedMethod = Character.toUpperCase(methodName.charAt(0)) + methodName.substring(1);
+      return "send_" + sanitize(capitalizedMethod) + "_to_" + sanitize(componentId(agentClass));
+    }
+
+    // --- Tool invocation request factory methods ---
+
     /**
      * Creates a {@link ToolInvocationRequest} for the {@code complete_task} tool, with the given
      * result JSON. The JSON must conform to the task's result type schema.
      */
     public static ToolInvocationRequest completeTask(String resultJson) {
-      return new ToolInvocationRequest("complete_task", resultJson);
+      return new ToolInvocationRequest(COMPLETE_TASK, resultJson);
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for the {@code complete_task} tool, serializing the
+     * given result object to JSON.
+     */
+    public static ToolInvocationRequest completeTask(Object result) {
+      try {
+        return new ToolInvocationRequest(
+            COMPLETE_TASK, JsonSupport.getObjectMapper().writeValueAsString(result));
+      } catch (JsonProcessingException e) {
+        throw new IllegalArgumentException("Failed to serialize task result to JSON", e);
+      }
     }
 
     /**
@@ -495,17 +635,33 @@ public final class TestModelProvider implements ModelProvider.Custom {
      * Creates a {@link ToolInvocationRequest} for a {@code delegate_<task>_to_<agent>} tool,
      * deriving the tool name from the task definition and the target agent's component ID.
      *
-     * @param task the task definition being delegated
+     * @param task the task being delegated
      * @param agentClass the agent class to delegate to (must carry {@code @Component} or
      *     {@code @ComponentId})
      * @param instructions instructions passed to the delegated agent
      */
     public static ToolInvocationRequest delegateTo(
-        TaskDefinition<?> task, Class<?> agentClass, String instructions) {
+        Task<?> task, Class<?> agentClass, String instructions) {
       var toolName =
           "delegate_" + sanitize(task.name()) + "_to_" + sanitize(componentId(agentClass));
       return new ToolInvocationRequest(
           toolName, "{\"instructions\":" + toJsonString(instructions) + "}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for a {@code delegate_<task>_to_<agent>} tool,
+     * filling template parameters for a {@link TaskTemplate}.
+     *
+     * @param task the task template being delegated
+     * @param agentClass the agent class to delegate to (must carry {@code @Component} or
+     *     {@code @ComponentId})
+     * @param templateParams values for the template parameters
+     */
+    public static ToolInvocationRequest delegateTo(
+        TaskTemplate<?> task, Class<?> agentClass, Map<String, String> templateParams) {
+      var toolName =
+          "delegate_" + sanitize(task.name()) + "_to_" + sanitize(componentId(agentClass));
+      return new ToolInvocationRequest(toolName, templateParamsToJson(templateParams));
     }
 
     /**
@@ -528,119 +684,278 @@ public final class TestModelProvider implements ModelProvider.Custom {
 
     // --- Team capability ---
 
-    /**
-     * Creates a {@link ToolInvocationRequest} for an {@code add_<agent>_to_team} tool, deriving the
-     * tool name from the team member agent's component ID.
-     *
-     * @param agentClass the agent class to add to the team (must carry {@code @Component} or
-     *     {@code @ComponentId})
-     */
-    public static ToolInvocationRequest addToTeam(Class<?> agentClass) {
-      return new ToolInvocationRequest(
-          "add_" + sanitize(componentId(agentClass)) + "_to_team", "{}");
+    /** Specifies a team member type and count for a {@code create_team} tool invocation. */
+    public record TeamMemberSpec(Class<?> agentClass, int count) {
+      public TeamMemberSpec(Class<?> agentClass) {
+        this(agentClass, 1);
+      }
     }
 
-    /** Creates a {@link ToolInvocationRequest} for the fixed {@code get_team_status} tool. */
+    /**
+     * Creates a {@link ToolInvocationRequest} for the {@code create_team} tool.
+     *
+     * @param members the team member specifications (type derived from component ID, with count)
+     */
+    public static ToolInvocationRequest createTeam(TeamMemberSpec... members) {
+      var membersJson =
+          java.util.Arrays.stream(members)
+              .map(
+                  m ->
+                      "{\"type\":"
+                          + toJsonString(componentId(m.agentClass))
+                          + ",\"count\":"
+                          + m.count
+                          + "}")
+              .collect(java.util.stream.Collectors.joining(",", "[", "]"));
+      return new ToolInvocationRequest("create_team", "{\"members\":" + membersJson + "}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for the {@code get_team_status} tool. The {@code
+     * team_id} is optional when there is only one active team.
+     */
     public static ToolInvocationRequest getTeamStatus() {
       return new ToolInvocationRequest("get_team_status", "{}");
     }
 
-    /** Creates a {@link ToolInvocationRequest} for the fixed {@code disband_team} tool. */
+    /**
+     * Creates a {@link ToolInvocationRequest} for the {@code get_team_status} tool with a specific
+     * team ID. Required when multiple teams are active.
+     */
+    public static ToolInvocationRequest getTeamStatus(String teamId) {
+      return new ToolInvocationRequest(
+          "get_team_status", "{\"team_id\":" + toJsonString(teamId) + "}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for the {@code disband_team} tool. The {@code
+     * team_id} is optional when there is only one active team.
+     */
     public static ToolInvocationRequest disbandTeam() {
       return new ToolInvocationRequest("disband_team", "{}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for the {@code disband_team} tool with a specific
+     * team ID. Required when multiple teams are active.
+     */
+    public static ToolInvocationRequest disbandTeam(String teamId) {
+      return new ToolInvocationRequest(
+          "disband_team", "{\"team_id\":" + toJsonString(teamId) + "}");
     }
 
     // --- Backlog capability (managed/orchestrator side) ---
 
     /**
-     * Creates a {@link ToolInvocationRequest} for a {@code create_<task>_for_<backlog>_backlog}
-     * tool.
+     * Creates a {@link ToolInvocationRequest} for a {@code create_<taskType>_task_for_backlog}
+     * tool. The {@code backlog_id} is auto-resolved when there is only one backlog.
+     *
+     * <p>For {@link TaskTemplate} definitions, use the overload that accepts a {@code Map} of
+     * template parameter values instead.
      *
      * @param task the task definition to create
-     * @param backlogName the name of the backlog
      * @param instructions instructions for the task
      */
-    public static ToolInvocationRequest createForBacklog(
-        TaskDefinition<?> task, String backlogName, String instructions) {
-      var toolName =
-          "create_" + sanitize(task.name()) + "_for_" + sanitize(backlogName) + "_backlog";
+    public static ToolInvocationRequest createTaskForBacklog(Task<?> task, String instructions) {
+      var toolName = "create_" + sanitize(task.name()) + "_task_for_backlog";
       return new ToolInvocationRequest(
           toolName, "{\"instructions\":" + toJsonString(instructions) + "}");
     }
 
     /**
-     * Creates a {@link ToolInvocationRequest} for a {@code get_<backlog>_managed_backlog_status}
-     * tool.
+     * Creates a {@link ToolInvocationRequest} for a {@code create_<taskType>_task_for_backlog}
+     * tool, filling template parameters for a {@link TaskTemplate}. The {@code backlog_id} is
+     * auto-resolved when there is only one backlog.
      *
-     * @param backlogName the name of the backlog
+     * @param task the task template to create
+     * @param templateParams values for the template parameters (e.g. "feature", "requirements")
      */
-    public static ToolInvocationRequest getManagedBacklogStatus(String backlogName) {
-      return new ToolInvocationRequest(
-          "get_" + sanitize(backlogName) + "_managed_backlog_status", "{}");
+    public static ToolInvocationRequest createTaskForBacklog(
+        TaskTemplate<?> task, Map<String, String> templateParams) {
+      var toolName = "create_" + sanitize(task.name()) + "_task_for_backlog";
+      return new ToolInvocationRequest(toolName, templateParamsToJson(templateParams));
     }
 
     /**
-     * Creates a {@link ToolInvocationRequest} for a {@code cancel_unclaimed_from_<backlog>_backlog}
-     * tool.
+     * Creates a {@link ToolInvocationRequest} for a {@code create_<taskType>_task_for_backlog} tool
+     * with a specific backlog ID. Required when multiple backlogs exist.
      *
-     * @param backlogName the name of the backlog
+     * @param task the task definition to create
+     * @param backlogId the backlog ID
+     * @param instructions instructions for the task
      */
-    public static ToolInvocationRequest cancelUnclaimedFromBacklog(String backlogName) {
+    public static ToolInvocationRequest createTaskForBacklog(
+        Task<?> task, String backlogId, String instructions) {
+      var toolName = "create_" + sanitize(task.name()) + "_task_for_backlog";
       return new ToolInvocationRequest(
-          "cancel_unclaimed_from_" + sanitize(backlogName) + "_backlog", "{}");
+          toolName,
+          "{\"backlog_id\":"
+              + toJsonString(backlogId)
+              + ",\"instructions\":"
+              + toJsonString(instructions)
+              + "}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for a {@code create_<taskType>_task_for_backlog} tool
+     * with a specific backlog ID, filling template parameters for a {@link TaskTemplate}.
+     *
+     * @param task the task template to create
+     * @param backlogId the backlog ID
+     * @param templateParams values for the template parameters
+     */
+    public static ToolInvocationRequest createTaskForBacklog(
+        TaskTemplate<?> task, String backlogId, Map<String, String> templateParams) {
+      var toolName = "create_" + sanitize(task.name()) + "_task_for_backlog";
+      var params = new java.util.LinkedHashMap<>(templateParams);
+      return new ToolInvocationRequest(
+          toolName,
+          "{\"backlog_id\":"
+              + toJsonString(backlogId)
+              + ","
+              + templateParamsToJson(params).substring(1));
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for the {@code get_managed_backlog_status} tool. The
+     * {@code backlog_id} is auto-resolved when there is only one backlog.
+     */
+    public static ToolInvocationRequest getManagedBacklogStatus() {
+      return new ToolInvocationRequest("get_managed_backlog_status", "{}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for the {@code get_managed_backlog_status} tool with
+     * a specific backlog ID. Required when multiple backlogs exist.
+     */
+    public static ToolInvocationRequest getManagedBacklogStatus(String backlogId) {
+      return new ToolInvocationRequest(
+          "get_managed_backlog_status", "{\"backlog_id\":" + toJsonString(backlogId) + "}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for the {@code cancel_unclaimed_tasks_from_backlog}
+     * tool. The {@code backlog_id} is auto-resolved when there is only one backlog.
+     */
+    public static ToolInvocationRequest cancelUnclaimedTasksFromBacklog() {
+      return new ToolInvocationRequest("cancel_unclaimed_tasks_from_backlog", "{}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for the {@code cancel_unclaimed_tasks_from_backlog}
+     * tool with a specific backlog ID. Required when multiple backlogs exist.
+     */
+    public static ToolInvocationRequest cancelUnclaimedTasksFromBacklog(String backlogId) {
+      return new ToolInvocationRequest(
+          "cancel_unclaimed_tasks_from_backlog",
+          "{\"backlog_id\":" + toJsonString(backlogId) + "}");
     }
 
     // --- Backlog capability (worker/consumer side) ---
 
     /**
-     * Creates a {@link ToolInvocationRequest} for a {@code get_<backlog>_backlog_status} tool.
-     *
-     * @param backlogName the name of the backlog
+     * Creates a {@link ToolInvocationRequest} for the {@code get_backlog_status} tool. The {@code
+     * backlog_id} is auto-resolved when there is only one backlog.
      */
-    public static ToolInvocationRequest getBacklogStatus(String backlogName) {
-      return new ToolInvocationRequest("get_" + sanitize(backlogName) + "_backlog_status", "{}");
+    public static ToolInvocationRequest getBacklogStatus() {
+      return new ToolInvocationRequest("get_backlog_status", "{}");
     }
 
     /**
-     * Creates a {@link ToolInvocationRequest} for a {@code claim_task_from_<backlog>_backlog} tool.
+     * Creates a {@link ToolInvocationRequest} for the {@code get_backlog_status} tool with a
+     * specific backlog ID. Required when multiple backlogs exist.
+     */
+    public static ToolInvocationRequest getBacklogStatus(String backlogId) {
+      return new ToolInvocationRequest(
+          "get_backlog_status", "{\"backlog_id\":" + toJsonString(backlogId) + "}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for the {@code claim_task} tool.
      *
-     * @param backlogName the name of the backlog
      * @param taskId the ID of the task to claim
      */
-    public static ToolInvocationRequest claimTaskFromBacklog(String backlogName, String taskId) {
-      return new ToolInvocationRequest(
-          "claim_task_from_" + sanitize(backlogName) + "_backlog",
-          "{\"taskId\":" + toJsonString(taskId) + "}");
+    public static ToolInvocationRequest claimTask(String taskId) {
+      return new ToolInvocationRequest("claim_task", "{\"task_id\":" + toJsonString(taskId) + "}");
     }
 
     /**
-     * Creates a {@link ToolInvocationRequest} for a {@code release_task_from_<backlog>_backlog}
-     * tool.
+     * Creates a {@link ToolInvocationRequest} for the {@code claim_task} tool with a specific
+     * backlog ID. Required when multiple backlogs exist.
      *
-     * @param backlogName the name of the backlog
+     * @param backlogId the backlog ID
+     * @param taskId the ID of the task to claim
+     */
+    public static ToolInvocationRequest claimTask(String backlogId, String taskId) {
+      return new ToolInvocationRequest(
+          "claim_task",
+          "{\"backlog_id\":"
+              + toJsonString(backlogId)
+              + ",\"task_id\":"
+              + toJsonString(taskId)
+              + "}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for the {@code release_task} tool.
+     *
      * @param taskId the ID of the task to release
      */
-    public static ToolInvocationRequest releaseTaskFromBacklog(String backlogName, String taskId) {
+    public static ToolInvocationRequest releaseTask(String taskId) {
       return new ToolInvocationRequest(
-          "release_task_from_" + sanitize(backlogName) + "_backlog",
-          "{\"taskId\":" + toJsonString(taskId) + "}");
+          "release_task", "{\"task_id\":" + toJsonString(taskId) + "}");
     }
 
     /**
-     * Creates a {@link ToolInvocationRequest} for a {@code transfer_task_from_<backlog>_backlog}
-     * tool.
+     * Creates a {@link ToolInvocationRequest} for the {@code release_task} tool with a specific
+     * backlog ID. Required when multiple backlogs exist.
      *
-     * @param backlogName the name of the backlog
+     * @param backlogId the backlog ID
+     * @param taskId the ID of the task to release
+     */
+    public static ToolInvocationRequest releaseTask(String backlogId, String taskId) {
+      return new ToolInvocationRequest(
+          "release_task",
+          "{\"backlog_id\":"
+              + toJsonString(backlogId)
+              + ",\"task_id\":"
+              + toJsonString(taskId)
+              + "}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for the {@code transfer_task} tool.
+     *
      * @param taskId the ID of the task to transfer
      * @param transferredTo identifier of the agent to transfer the task to
      */
-    public static ToolInvocationRequest transferTaskFromBacklog(
-        String backlogName, String taskId, String transferredTo) {
+    public static ToolInvocationRequest transferTask(String taskId, String transferredTo) {
       return new ToolInvocationRequest(
-          "transfer_task_from_" + sanitize(backlogName) + "_backlog",
-          "{\"taskId\":"
+          "transfer_task",
+          "{\"task_id\":"
               + toJsonString(taskId)
-              + ",\"transferredTo\":"
+              + ",\"transferred_to\":"
+              + toJsonString(transferredTo)
+              + "}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for the {@code transfer_task} tool with a specific
+     * backlog ID. Required when multiple backlogs exist.
+     *
+     * @param backlogId the backlog ID
+     * @param taskId the ID of the task to transfer
+     * @param transferredTo identifier of the agent to transfer the task to
+     */
+    public static ToolInvocationRequest transferTask(
+        String backlogId, String taskId, String transferredTo) {
+      return new ToolInvocationRequest(
+          "transfer_task",
+          "{\"backlog_id\":"
+              + toJsonString(backlogId)
+              + ",\"task_id\":"
+              + toJsonString(taskId)
+              + ",\"transferred_to\":"
               + toJsonString(transferredTo)
               + "}");
     }
@@ -673,10 +988,17 @@ public final class TestModelProvider implements ModelProvider.Custom {
     private static String toJsonString(String value) {
       return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
     }
+
+    private static String templateParamsToJson(Map<String, String> params) {
+      return params.entrySet().stream()
+          .map(e -> toJsonString(e.getKey()) + ":" + toJsonString(e.getValue()))
+          .collect(Collectors.joining(",", "{", "}"));
+    }
   }
 
   /** Resets all previously added response configurations. */
   public void reset() {
     responsePredicates = new ArrayList<>();
+    messageSelector = List::getLast;
   }
 }

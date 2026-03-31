@@ -21,6 +21,9 @@ public interface TeamLeadership extends AgentCapability {
     return TeamLeadershipImpl.create(first, rest);
   }
 
+  /** Maximum number of teams this lead can run concurrently. Defaults to 1. */
+  TeamLeadership maxConcurrentTeams(int max);
+
   /** A team member type that can be added to the team. */
   interface TeamMember {
 

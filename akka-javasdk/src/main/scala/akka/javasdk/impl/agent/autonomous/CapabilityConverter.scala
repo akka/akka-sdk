@@ -62,10 +62,9 @@ private[javasdk] class CapabilityConverter(
 
     val teamLeaderships = allCapabilities.collect { case t: TeamLeadershipImpl => t }
     val spiTeamLeads: Seq[SpiAutonomousAgent.Capability] =
-      if (teamLeaderships.nonEmpty) {
-        val teamMembers = teamLeaderships.flatMap(_.members).map(resolveTeamMember)
-        Seq(new SpiAutonomousAgent.TeamLead(teamMembers))
-      } else Seq.empty
+      teamLeaderships.map { t =>
+        new SpiAutonomousAgent.TeamLead(t.members.map(resolveTeamMember), t.maxConcurrentTeamsValue)
+      }
 
     spiTaskAcceptances ++ spiDelegationOrchestrators ++ spiTeamLeads
   }
