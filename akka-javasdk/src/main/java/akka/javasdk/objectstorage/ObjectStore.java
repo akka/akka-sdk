@@ -8,6 +8,7 @@ import akka.Done;
 import akka.NotUsed;
 import akka.annotation.DoNotInherit;
 import akka.http.javadsl.model.ContentType;
+import akka.javasdk.agent.MessageContent.LoadableMessageContent;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import java.util.Optional;
@@ -145,4 +146,28 @@ public interface ObjectStore {
    * with the metadata, or an empty {@link Optional} if no object exists for the given key.
    */
   CompletionStage<Optional<ObjectMetadata>> getMetadataAsync(String key);
+
+  // ── MessageContent helpers ────────────────────────────────────────────────
+
+  /**
+   * Creates an {@link akka.javasdk.agent.MessageContent.ImageUrlMessageContent} referencing this
+   * object via the {@code object://} scheme understood by the Akka runtime. The URL has the form
+   * {@code object://[bucket]/[key]}. The resulting content can be passed directly to an AI agent
+   * message without fetching the bytes locally first.
+   *
+   * @param key object key within the bucket
+   * @return image message content pointing at this object
+   */
+  LoadableMessageContent asImageContent(String key);
+
+  /**
+   * Creates a {@link akka.javasdk.agent.MessageContent.PdfUrlMessageContent} referencing this
+   * object via the {@code object://} scheme understood by the Akka runtime. The URL has the form
+   * {@code object://[bucket]/[key]}. The resulting content can be passed directly to an AI agent
+   * message without fetching the bytes locally first.
+   *
+   * @param key object key within the bucket
+   * @return PDF message content pointing at this object
+   */
+  LoadableMessageContent asPdfContent(String key);
 }
