@@ -1,24 +1,65 @@
 package demo.devteam;
 
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.CLAIM_TASK;
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.COMPLETE_TASK;
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.CREATE_TEAM;
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.DISBAND_TEAM;
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.GET_BACKLOG_STATUS;
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.GET_MANAGED_BACKLOG_STATUS;
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.claimTask;
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.completeTask;
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.createTaskForBacklog;
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.createTaskForBacklogToolName;
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.createTeam;
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.disbandTeam;
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.getBacklogStatus;
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.getManagedBacklogStatus;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
+import akka.javasdk.testkit.TestModelProvider.AiResponse;
+import akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.TeamMemberSpec;
 import demo.devteam.api.DevTeamEndpoint;
+import demo.devteam.application.CodeDeliverable;
 import demo.devteam.application.Developer;
+import demo.devteam.application.DeveloperTasks;
 import demo.devteam.application.ProjectLead;
 import demo.devteam.application.ProjectTasks;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 public class DevTeamIntegrationTest extends TestKitSupport {
 
-  private final TestModelProvider leadModel = new TestModelProvider();
-  private final TestModelProvider developerModel = new TestModelProvider();
+  private final TestModelProvider leadModel = new TestModelProvider()
+    .withMessageSelector(DevTeamIntegrationTest::preferToolResult);
+  private final TestModelProvider developerModel = new TestModelProvider()
+    .withMessageSelector(DevTeamIntegrationTest::preferToolResult);
+
+  /** Select the last tool result if present, otherwise the last message. */
+  private static TestModelProvider.InputMessage preferToolResult(
+    List<TestModelProvider.InputMessage> messages
+  ) {
+    return messages
+      .stream()
+      .filter(m -> m instanceof TestModelProvider.ToolResult)
+      .reduce((a, b) -> b)
+      .orElse(messages.getLast());
+  }
+
+  private static final String IMPLEMENT_TASK_TOOL = createTaskForBacklogToolName(
+    DeveloperTasks.IMPLEMENT
+  );
+
+  private static final Pattern TASK_ID_PATTERN = Pattern.compile(
+    "\"task_id\"\\s*:\\s*\"([^\"]+)\""
+  );
 
   @Override
   protected TestKit.Settings testKitSettings() {
@@ -29,39 +70,70 @@ public class DevTeamIntegrationTest extends TestKitSupport {
       .withModelProvider(Developer.class, developerModel);
   }
 
+  /** Configure the developer model to react to backlog messages. */
+  private void setupDeveloperModel(Object taskResult) {
+    developerModel.fixedResponse(msg -> {
+      if (msg instanceof TestModelProvider.UserMessage) {
+        return new AiResponse("Ready for work.");
+      }
+      if (msg instanceof TestModelProvider.ToolResult toolResult) {
+        return switch (toolResult.name()) {
+          case GET_BACKLOG_STATUS -> {
+            var matcher = TASK_ID_PATTERN.matcher(toolResult.content());
+            if (matcher.find()) {
+              yield new AiResponse(claimTask(matcher.group(1)));
+            }
+            yield new AiResponse(getBacklogStatus());
+          }
+          case CLAIM_TASK -> new AiResponse(completeTask(taskResult));
+          case COMPLETE_TASK -> new AiResponse(getBacklogStatus());
+          default -> new AiResponse(getBacklogStatus());
+        };
+      }
+      return new AiResponse(getBacklogStatus());
+    });
+  }
+
   @Test
   public void shouldFormTeamAndCoordinateWork() {
-    // Lead iteration 1: create a team with one developer
-    leadModel
-      .whenMessage(msg -> msg.contains("Plan and execute a project"))
-      .reply(
-        new TestModelProvider.ToolInvocationRequest(
-          "create_team",
-          "{\"members\":[{\"type\":\"developer\",\"count\":1}]}"
-        )
-      );
+    // Lead: react to tool results to drive the team workflow
+    leadModel.fixedResponse(msg -> {
+      if (msg instanceof TestModelProvider.UserMessage) {
+        return new AiResponse(createTeam(new TeamMemberSpec(Developer.class)));
+      }
+      if (msg instanceof TestModelProvider.ToolResult toolResult) {
+        return switch (toolResult.name()) {
+          case CREATE_TEAM -> new AiResponse(
+            createTaskForBacklog(
+              DeveloperTasks.IMPLEMENT,
+              Map.of("feature", "auth", "requirements", "Build authentication module")
+            )
+          );
+          case String s when s.equals(IMPLEMENT_TASK_TOOL) -> new AiResponse(
+            getManagedBacklogStatus()
+          );
+          case GET_MANAGED_BACKLOG_STATUS -> {
+            if (toolResult.content().contains("completed")) {
+              yield new AiResponse(disbandTeam());
+            }
+            yield new AiResponse(getManagedBacklogStatus());
+          }
+          case DISBAND_TEAM -> new AiResponse(
+            completeTask(
+              new ProjectTasks.ProjectResult(
+                "Project delivered with auth module.",
+                List.of("auth module")
+              )
+            )
+          );
+          default -> new AiResponse("Continuing work.");
+        };
+      }
+      return new AiResponse("Continuing work.");
+    });
 
-    // Lead iteration 2: complete the project
-    leadModel
-      .whenMessage(msg -> msg.contains("Continue working"))
-      .reply(
-        new TestModelProvider.ToolInvocationRequest(
-          "complete_task",
-          "{\"summary\":\"Project delivered with auth module.\"," +
-          "\"deliverables\":[\"auth module\"]}"
-        )
-      );
-
-    // Developer: complete task when assigned
-    developerModel.fixedResponse(
-      new TestModelProvider.AiResponse(
-        new TestModelProvider.ToolInvocationRequest(
-          "complete_task",
-          "{\"feature\":\"auth\"," +
-          "\"implementation\":\"OAuth2 authentication module\"," +
-          "\"tests\":\"All auth tests passing\"}"
-        )
-      )
+    setupDeveloperModel(
+      new CodeDeliverable("auth", "OAuth2 authentication module", "All auth tests passing")
     );
 
     var response = httpClient
@@ -87,77 +159,56 @@ public class DevTeamIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldRecreateTeamForSecondPhase() {
-    var leadStep = new AtomicInteger(0);
+    var teamsCreated = new AtomicInteger(0);
 
-    // Lead steps: create -> add items -> disband -> create -> add -> disband -> complete
-    // The runtime sends UserMessage prompts, so we sequence via whenMessage with a counter.
-    // Each step is registered as a separate predicate that matches exactly once.
-    var steps = List.<TestModelProvider.ToolInvocationRequest>of(
-      // step 0: initial task assignment — create first team
-      new TestModelProvider.ToolInvocationRequest(
-        "create_team",
-        "{\"members\":[{\"type\":\"developer\",\"count\":1}]}"
-      ),
-      // step 1: add backlog item for phase 1
-      new TestModelProvider.ToolInvocationRequest(
-        "add_backlog_item",
-        "{\"name\":\"Implement\",\"description\":\"Build the API layer\"}"
-      ),
-      // step 2: check team status (give developer time to complete)
-      new TestModelProvider.ToolInvocationRequest(
-        "get_team_status",
-        "{}"
-      ),
-      // step 3: disband first team
-      new TestModelProvider.ToolInvocationRequest(
-        "disband_team",
-        "{}"
-      ),
-      // step 4: create second team for phase 2
-      new TestModelProvider.ToolInvocationRequest(
-        "create_team",
-        "{\"members\":[{\"type\":\"developer\",\"count\":1}]}"
-      ),
-      // step 5: add backlog item for phase 2
-      new TestModelProvider.ToolInvocationRequest(
-        "add_backlog_item",
-        "{\"name\":\"Implement\",\"description\":\"Build the test suite\"}"
-      ),
-      // step 6: check second team status
-      new TestModelProvider.ToolInvocationRequest(
-        "get_team_status",
-        "{}"
-      ),
-      // step 7: disband second team
-      new TestModelProvider.ToolInvocationRequest(
-        "disband_team",
-        "{}"
-      ),
-      // step 8: complete the project
-      new TestModelProvider.ToolInvocationRequest(
-        "complete_task",
-        "{\"summary\":\"Project delivered in two phases.\"," +
-        "\"deliverables\":[\"API layer\",\"test suite\"]}"
-      )
-    );
+    // Lead: two-phase workflow — create team, add task, wait, disband, repeat, then complete
+    leadModel.fixedResponse(msg -> {
+      if (msg instanceof TestModelProvider.UserMessage) {
+        // Initial task assignment — create first team
+        teamsCreated.incrementAndGet();
+        return new AiResponse(createTeam(new TeamMemberSpec(Developer.class)));
+      }
+      if (msg instanceof TestModelProvider.ToolResult toolResult) {
+        return switch (toolResult.name()) {
+          case CREATE_TEAM -> {
+            var params = teamsCreated.get() == 1
+              ? Map.of("feature", "API", "requirements", "Build the API layer")
+              : Map.of("feature", "tests", "requirements", "Build the test suite");
+            yield new AiResponse(createTaskForBacklog(DeveloperTasks.IMPLEMENT, params));
+          }
+          case String s when s.equals(IMPLEMENT_TASK_TOOL) -> new AiResponse(
+            getManagedBacklogStatus()
+          );
+          case GET_MANAGED_BACKLOG_STATUS -> {
+            if (toolResult.content().contains("completed")) {
+              yield new AiResponse(disbandTeam());
+            }
+            yield new AiResponse(getManagedBacklogStatus());
+          }
+          case DISBAND_TEAM -> {
+            if (teamsCreated.get() < 2) {
+              // First phase done — start second phase
+              teamsCreated.incrementAndGet();
+              yield new AiResponse(createTeam(new TeamMemberSpec(Developer.class)));
+            }
+            // Both phases done — complete the project
+            yield new AiResponse(
+              completeTask(
+                new ProjectTasks.ProjectResult(
+                  "Project delivered in two phases.",
+                  List.of("API layer", "test suite")
+                )
+              )
+            );
+          }
+          default -> new AiResponse("Continuing work.");
+        };
+      }
+      return new AiResponse("Continuing work.");
+    });
 
-    // Use replyWith for lazy evaluation — advances through steps on each lead model call
-    leadModel
-      .whenMessage(msg -> true)
-      .replyWith(msg -> new TestModelProvider.AiResponse(
-        steps.get(Math.min(leadStep.getAndIncrement(), steps.size() - 1))
-      ));
-
-    // Developer: always complete assigned tasks
-    developerModel.fixedResponse(
-      new TestModelProvider.AiResponse(
-        new TestModelProvider.ToolInvocationRequest(
-          "complete_task",
-          "{\"feature\":\"implementation\"," +
-          "\"implementation\":\"Completed implementation\"," +
-          "\"tests\":\"All tests passing\"}"
-        )
-      )
+    setupDeveloperModel(
+      new CodeDeliverable("implementation", "Completed implementation", "All tests passing")
     );
 
     var response = httpClient
