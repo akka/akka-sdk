@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl.objectstorage
 
+import java.net.URI
 import java.util.Optional
 import java.util.concurrent.CompletionStage
 import scala.concurrent.ExecutionContext
@@ -15,6 +16,10 @@ import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.http.javadsl.{ model => jm }
 import akka.http.scaladsl.{ model => sm }
+import akka.javasdk.agent.MessageContent.ImageMessageContent.DetailLevel
+import akka.javasdk.agent.MessageContent.ImageUrlMessageContent
+import akka.javasdk.agent.MessageContent.LoadableMessageContent
+import akka.javasdk.agent.MessageContent.PdfUrlMessageContent
 import akka.javasdk.objectstorage.ObjectMetadata
 import akka.javasdk.objectstorage.ObjectStorage
 import akka.javasdk.objectstorage.ObjectStore
@@ -36,14 +41,14 @@ private[impl] final class ObjectStorageImpl(
     otelContext: Option[OtelContext])
     extends ObjectStorage {
   override def forBucket(bucketName: String): ObjectStore =
-    new ObjectStoreImpl(spiObjectStorage.client(bucketName, otelContext), system)
+    new ObjectStoreImpl(bucketName, spiObjectStorage.client(bucketName, otelContext), system)
 }
 
 /**
  * INTERNAL API
  */
 @InternalApi
-private[impl] final class ObjectStoreImpl(spiClient: SpiObjectStorageClient, system: ActorSystem[_])
+private[impl] final class ObjectStoreImpl(bucketName: String, spiClient: SpiObjectStorageClient, system: ActorSystem[_])
     extends ObjectStore {
 
   private implicit val ec: ExecutionContext = system.executionContext
@@ -117,4 +122,15 @@ private[impl] final class ObjectStoreImpl(spiClient: SpiObjectStorageClient, sys
       data: JSource[ByteString, _],
       contentType: jm.ContentType): CompletionStage[Done] =
     FutureConverters.asJava(spiClient.putStream(key, data.asScala, Some(toSpiContentType(contentType)), Map.empty))
+
+  // ── MessageContent helpers ────────────────────────────────────────────────
+
+  override def asImageContent(key: String): LoadableMessageContent =
+    new ImageUrlMessageContent(objectUri(key), DetailLevel.AUTO)
+
+  override def asPdfContent(key: String): LoadableMessageContent =
+    new PdfUrlMessageContent(objectUri(key))
+
+  private def objectUri(key: String): URI =
+    URI.create(s"object://$bucketName/$key")
 }

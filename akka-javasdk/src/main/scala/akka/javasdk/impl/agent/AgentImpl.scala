@@ -354,11 +354,11 @@ private[impl] final class AgentImpl[A <: Agent](
         new SpiAgent.TextMessageContent(content.text())
       case content: MessageContent.ImageUrlMessageContent =>
         new SpiAgent.ImageUriMessageContent(
-          content.url().toURI,
+          content.uri(),
           toSpiDetailLevel(content.detailLevel()),
           content.mimeType().toScala)
       case content: MessageContent.PdfUrlMessageContent =>
-        new SpiAgent.PdfUriMessageContent(content.url().toURI)
+        new SpiAgent.PdfUriMessageContent(content.uri())
     }
   }
 
@@ -397,9 +397,9 @@ private[impl] final class AgentImpl[A <: Agent](
             val detailLevel = fromSpiDetailLevel(content.detailLevel)
             val mimeType =
               content.mimeType.map(java.util.Optional.of[String]).getOrElse(java.util.Optional.empty[String]())
-            new MessageContent.ImageUrlMessageContent(content.uri.toURL, detailLevel, mimeType)
+            new MessageContent.ImageUrlMessageContent(content.uri, detailLevel, mimeType)
           case content: SpiAgent.PdfUriMessageContent =>
-            new PdfUrlMessageContent(content.uri.toURL)
+            new PdfUrlMessageContent(content.uri)
         }
     }
 
@@ -518,11 +518,11 @@ private[impl] final class AgentImpl[A <: Agent](
         new SessionMessage.MessageContent.TextMessageContent(content.text)
       case content: ImageUrlMessageContent =>
         new SessionMessage.MessageContent.ImageUriMessageContent(
-          content.url().toString,
+          content.uri().toString,
           content.detailLevel(),
           content.mimeType())
       case content: PdfUrlMessageContent =>
-        new SessionMessage.MessageContent.PdfUriMessageContent(content.url().toString)
+        new SessionMessage.MessageContent.PdfUriMessageContent(content.uri().toString)
     }
   }
 
