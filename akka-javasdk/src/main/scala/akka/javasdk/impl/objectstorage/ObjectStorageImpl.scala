@@ -20,7 +20,6 @@ import akka.http.javadsl.{ model => jm }
 import akka.http.scaladsl.{ model => sm }
 import akka.javasdk.agent.MessageContent.ImageMessageContent.DetailLevel
 import akka.javasdk.agent.MessageContent.ImageUrlMessageContent
-import akka.javasdk.agent.MessageContent.LoadableMessageContent
 import akka.javasdk.agent.MessageContent.PdfUrlMessageContent
 import akka.javasdk.objectstorage.ObjectMetadata
 import akka.javasdk.objectstorage.ObjectStorage
@@ -120,10 +119,10 @@ private[impl] final class ObjectStoreImpl(bucketName: String, spiClient: SpiObje
 
   // ── MessageContent helpers ────────────────────────────────────────────────
 
-  override def asImageContent(key: String): LoadableMessageContent =
+  override def asImageContent(key: String): ImageUrlMessageContent =
     new ImageUrlMessageContent(objectUri(key), DetailLevel.AUTO)
 
-  override def asPdfContent(key: String): LoadableMessageContent =
+  override def asPdfContent(key: String): PdfUrlMessageContent =
     new PdfUrlMessageContent(objectUri(key))
 
   private def objectUri(key: String): URI =

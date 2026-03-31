@@ -8,7 +8,7 @@ import akka.Done;
 import akka.NotUsed;
 import akka.annotation.DoNotInherit;
 import akka.http.javadsl.model.ContentType;
-import akka.javasdk.agent.MessageContent.LoadableMessageContent;
+import akka.javasdk.agent.MessageContent;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import java.util.Optional;
@@ -158,7 +158,7 @@ public interface ObjectStore {
    * @param key object key within the bucket
    * @return image message content pointing at this object
    */
-  LoadableMessageContent asImageContent(String key);
+  MessageContent.ImageUrlMessageContent asImageContent(String key);
 
   /**
    * Creates a {@link akka.javasdk.agent.MessageContent.PdfUrlMessageContent} referencing this
@@ -169,5 +169,5 @@ public interface ObjectStore {
    * @param key object key within the bucket
    * @return PDF message content pointing at this object
    */
-  LoadableMessageContent asPdfContent(String key);
+  MessageContent.PdfUrlMessageContent asPdfContent(String key);
 }
