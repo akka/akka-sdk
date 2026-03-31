@@ -155,7 +155,7 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
                   deleteEntity = false,
                   stateMetadata,
                   replicationFilter = commandEffect.replFilter.toSpi,
-                  ttl = None))
+                  ttl = commandEffect.ttl))
           }
 
         case DeleteEntity =>

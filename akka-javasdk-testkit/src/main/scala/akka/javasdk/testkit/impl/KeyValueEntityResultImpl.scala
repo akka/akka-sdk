@@ -4,6 +4,11 @@
 
 package akka.javasdk.testkit.impl
 
+import java.time.Duration
+import java.util.Optional
+
+import scala.jdk.OptionConverters.RichOption
+
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
@@ -48,5 +53,7 @@ private[akka] final class KeyValueEntityResultImpl[R](effect: KeyValueEntityEffe
   }
 
   override def stateWasDeleted(): Boolean = effect.primaryEffect eq KeyValueEntityEffectImpl.DeleteEntity
+
+  override def getExpireAfter(): Optional[Duration] = effect.ttl.toJava
 
 }

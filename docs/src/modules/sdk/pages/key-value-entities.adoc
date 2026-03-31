@@ -126,6 +126,19 @@ It is best to not reuse the same entity id after deletion, but if that happens a
 
 Note that xref:views.adoc#ve_delete[deleting View state] must be handled explicitly.
 
+==== Automatic expiry
+
+As an alternative to explicit deletion, you can set a time-to-live (TTL) on a state update using `expireAfter`. The entity will be automatically deleted once the given duration has elapsed without any further updates being made.
+
+[source,java,indent=0]
+.{sample-base-url}/key-value-counter/src/main/java/com/example/application/CounterEntity.java[CounterEntity.java]
+----
+include::example$key-value-counter/src/main/java/com/example/application/CounterEntity.java[tags=expire]
+----
+<1> The entity will be deleted 30 days after this write if no further update is made.
+
+A subsequent update without `expireAfter` will cancel the TTL. To keep the entity expiring after further updates, each update must include `expireAfter`.
+
 [#_replication]
 include::partial$mutli-region-replication.adoc[]
 

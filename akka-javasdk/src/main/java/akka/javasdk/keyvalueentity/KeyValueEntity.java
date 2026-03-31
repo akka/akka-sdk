@@ -9,6 +9,7 @@ import akka.javasdk.CommandException;
 import akka.javasdk.Metadata;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityEffectImpl;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
@@ -413,6 +414,18 @@ public abstract class KeyValueEntity<S> {
        * @return an effect builder for chaining additional operations
        */
       OnSuccessBuilder<S> updateReplicationFilter(ReplicationFilter.Builder filter);
+
+      /**
+       * Sets a time-to-live for this entity. The entity will be automatically deleted once the
+       * given duration has elapsed and no further update was done.
+       *
+       * <p>As soon as a new update is done, the TTL is no longer applied. To keep the TTL in effect
+       * after subsequent updates, each update will have to be marked with {@code expireAfter}.
+       *
+       * @param ttl the duration from the time of this write after which the entity will be deleted
+       * @return an effect builder for chaining additional operations
+       */
+      OnSuccessBuilder<S> expireAfter(Duration ttl);
     }
   }
 
