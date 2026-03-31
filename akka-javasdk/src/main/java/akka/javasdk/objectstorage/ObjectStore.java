@@ -8,7 +8,6 @@ import akka.Done;
 import akka.NotUsed;
 import akka.annotation.DoNotInherit;
 import akka.http.javadsl.model.ContentType;
-import akka.javasdk.agent.MessageContent;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import java.util.List;
@@ -25,7 +24,9 @@ import java.util.concurrent.CompletionStage;
  * <p>Not for user extension.
  */
 @DoNotInherit
-public interface ObjectStore extends MessageContent.BucketRef {
+public interface ObjectStore {
+
+  String bucketName();
 
   /**
    * Retrieve an object, returning both its metadata and full content, or {@link Optional#empty()}
