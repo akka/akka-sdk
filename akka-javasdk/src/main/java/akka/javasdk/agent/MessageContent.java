@@ -4,6 +4,7 @@
 
 package akka.javasdk.agent;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -48,6 +49,14 @@ public sealed interface MessageContent {
   record ImageUrlMessageContent(
       URI uri, ImageMessageContent.DetailLevel detailLevel, Optional<String> mimeType)
       implements LoadableMessageContent {
+
+    @JsonCreator
+    public ImageUrlMessageContent(
+        URI uri, ImageMessageContent.DetailLevel detailLevel, Optional<String> mimeType) {
+      this.uri = uri;
+      this.detailLevel = detailLevel;
+      this.mimeType = mimeType;
+    }
 
     /**
      * Image content within a user message, referenced by URI.
@@ -173,6 +182,11 @@ public sealed interface MessageContent {
    * @param uri The URI pointing to the PDF
    */
   record PdfUrlMessageContent(URI uri) implements LoadableMessageContent {
+
+    @JsonCreator
+    public PdfUrlMessageContent(URI uri) {
+      this.uri = uri;
+    }
 
     /**
      * @deprecated Use {@link #PdfUrlMessageContent(URI)} instead.
