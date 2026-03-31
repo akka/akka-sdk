@@ -16,7 +16,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Client for a single named bucket. Obtained via {@link ObjectStorage#forBucket(String)}.
+ * Client for a single named bucket. Obtained via {@link ObjectStoreProvider#forBucket(String)}.
  *
  * <p>The primary API is blocking and designed for use on Loom virtual threads. For reactive /
  * non-blocking use cases each operation also has an {@code Async} variant that returns a {@link

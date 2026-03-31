@@ -18,8 +18,7 @@ import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.http.javadsl.{ model => jm }
 import akka.http.scaladsl.{ model => sm }
-import akka.javasdk.objectstorage.ObjectMetadata
-import akka.javasdk.objectstorage.ObjectStorage
+import akka.javasdk.objectstorage.{ObjectMetadata, ObjectStoreProvider}
 import akka.javasdk.objectstorage.ObjectStore
 import akka.javasdk.objectstorage.StoreObject
 import akka.runtime.sdk.spi.SpiObjectStorage
@@ -33,8 +32,8 @@ import akka.util.ByteString
  * INTERNAL API
  */
 @InternalApi
-private[impl] final class ObjectStorageImpl(spiObjectStorage: SpiObjectStorage, system: ActorSystem[_])
-    extends ObjectStorage {
+private[impl] final class ObjectStoreProviderImpl(spiObjectStorage: SpiObjectStorage, system: ActorSystem[_])
+    extends ObjectStoreProvider {
   override def forBucket(bucket: String): ObjectStore =
     new ObjectStoreImpl(bucket, spiObjectStorage.client(bucket), system)
 }
