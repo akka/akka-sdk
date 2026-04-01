@@ -11,21 +11,21 @@ import akka.http.javadsl.model.ContentType;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 /**
  * Client for a single named bucket. Obtained via {@link ObjectStoreProvider#forBucket(String)}.
  *
- * <p>The primary API is blocking and designed for use on Loom virtual threads. For reactive /
- * non-blocking use cases each operation also has an {@code Async} variant that returns a {@link
- * CompletionStage}.
- *
  * <p>Not for user extension.
  */
 @DoNotInherit
 public interface ObjectStore {
 
+  /**
+   * @return The logical name of the bucket this store interacts with
+   */
   String bucketName();
 
   /**
@@ -59,6 +59,19 @@ public interface ObjectStore {
    * @param contentType MIME type of the content
    */
   Done put(String key, ByteString data, ContentType contentType);
+
+  /**
+   * Store an object with an explicit content type.
+   *
+   * <p>Blocks the calling thread until the operation completes. Use {@link #getMetadata(String)} to
+   * retrieve metadata after the write if needed.
+   *
+   * @param key object key within the bucket
+   * @param data content to store
+   * @param contentType MIME type of the content
+   * @param metadata Additional metadata to store with the data
+   */
+  Done put(String key, ByteString data, ContentType contentType, Map<String, String> metadata);
 
   /**
    * Delete the object with the given key. Succeeds silently if the key does not exist.
@@ -128,6 +141,21 @@ public interface ObjectStore {
   CompletionStage<Done> putStreamAsync(
       String key, Source<ByteString, ?> data, ContentType contentType);
 
+  /**
+   * Store an object from a streaming source with an explicit content type. Use {@link
+   * #getMetadataAsync(String)} to retrieve metadata after the write if needed.
+   *
+   * @param key object key within the bucket
+   * @param data stream of content chunks
+   * @param contentType MIME type of the content
+   * @param metadata Additional metadata to store with the data
+   */
+  CompletionStage<Done> putStreamAsync(
+      String key,
+      Source<ByteString, ?> data,
+      ContentType contentType,
+      Map<String, String> metadata);
+
   // ── Async variants ───────────────────────────────────────────────────────
 
   /**
@@ -147,6 +175,13 @@ public interface ObjectStore {
    * CompletionStage} that completes when the object has been stored.
    */
   CompletionStage<Done> putAsync(String key, ByteString data, ContentType contentType);
+
+  /**
+   * Async variant of {@link #put(String, ByteString, ContentType, Map)}. Returns a {@link
+   * CompletionStage} that completes when the object has been stored.
+   */
+  CompletionStage<Done> putAsync(
+      String key, ByteString data, ContentType contentType, Map<String, String> metadata);
 
   /**
    * Async variant of {@link #delete(String)}. Returns a {@link CompletionStage} that completes when

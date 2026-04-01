@@ -890,7 +890,7 @@ private final class Sdk(
     case e if e == classOf[Executor]           =>
       // The type does not guarantee this is a Java concurrent Executor, but we know it is, since supplied from runtime
       sdkExecutionContext.asInstanceOf[Executor]
-    case s if s == classOf[Sanitizer]     => sanitizer
+    case s if s == classOf[Sanitizer]           => sanitizer
     case o if o == classOf[ObjectStoreProvider] => objectStorage
   }
 
