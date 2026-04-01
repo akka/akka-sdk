@@ -72,4 +72,60 @@ public sealed interface Notification {
   final class Stopped implements Notification {
     public Stopped() {}
   }
+
+  /** Agent started working on a task. */
+  final class TaskStarted implements Notification {
+    private final String taskId;
+    private final String taskName;
+
+    public TaskStarted(String taskId, String taskName) {
+      this.taskId = taskId;
+      this.taskName = taskName;
+    }
+
+    /** The task ID. */
+    public String taskId() {
+      return taskId;
+    }
+
+    /** The task name. */
+    public String taskName() {
+      return taskName;
+    }
+  }
+
+  /** Agent completed a task successfully. */
+  final class TaskCompleted implements Notification {
+    private final String taskId;
+
+    public TaskCompleted(String taskId) {
+      this.taskId = taskId;
+    }
+
+    /** The task ID. */
+    public String taskId() {
+      return taskId;
+    }
+  }
+
+  /** Agent failed a task. */
+  final class TaskFailed implements Notification {
+    private final String taskId;
+    private final String reason;
+
+    public TaskFailed(String taskId, String reason) {
+      this.taskId = taskId;
+      this.reason = reason;
+    }
+
+    /** The task ID. */
+    public String taskId() {
+      return taskId;
+    }
+
+    /** The failure reason. */
+    public String reason() {
+      return reason;
+    }
+  }
 }

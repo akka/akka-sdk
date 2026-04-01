@@ -431,6 +431,9 @@ The notification stream emits the following event types:
 | `Notification.IterationStarted` | LLM call beginning |
 | `Notification.IterationCompleted` | Iteration completed — includes `inputTokens()` and `outputTokens()` |
 | `Notification.IterationFailed` | Iteration failed — includes `reason()` |
+| `Notification.TaskStarted` | Agent started working on a task — includes `taskId()` and `taskName()` |
+| `Notification.TaskCompleted` | Agent completed a task — includes `taskId()` |
+| `Notification.TaskFailed` | Agent failed a task — includes `taskId()` and `reason()` |
 | `Notification.Stopped` | Agent stopped |
 
 Subscribe before triggering the agent to avoid missing early events. The stream stays open as long as the agent instance exists — use it for dashboards, logging, cost tracking, or coordinating external processes with agent progress.

@@ -121,11 +121,11 @@ private[javasdk] final class AutonomousAgentClientImpl(
     log.debug("notificationStream: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
     runtimeComponentClients.autonomousAgentClient
       .notificationStream(agentComponentId, agentInstanceId)
-      .map(toNotification)
+      .collect(toNotification)
       .asJava
   }
 
-  private def toNotification(spi: SpiNotification): Notification = spi match {
+  private val toNotification: PartialFunction[SpiNotification, Notification] = {
     case _: SpiNotification.Activated        => new Notification.Activated
     case _: SpiNotification.Deactivated      => new Notification.Deactivated
     case _: SpiNotification.IterationStarted => new Notification.IterationStarted
@@ -133,5 +133,9 @@ private[javasdk] final class AutonomousAgentClientImpl(
       new Notification.IterationCompleted(c.inputTokens, c.outputTokens)
     case f: SpiNotification.IterationFailed => new Notification.IterationFailed(f.reason)
     case _: SpiNotification.Stopped         => new Notification.Stopped
+    case t: SpiNotification.TaskStarted     => new Notification.TaskStarted(t.taskId, t.taskName)
+    case t: SpiNotification.TaskCompleted   => new Notification.TaskCompleted(t.taskId)
+    case t: SpiNotification.TaskFailed      => new Notification.TaskFailed(t.taskId, t.reason)
+    // ignore unknown because the runtime should be able to add new notification events without breaking old SDK
   }
 }

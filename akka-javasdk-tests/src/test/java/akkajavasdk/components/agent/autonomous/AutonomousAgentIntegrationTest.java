@@ -309,6 +309,24 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
                       .orElseThrow();
               assertThat(iterationCompleted.inputTokens()).isEqualTo(150);
               assertThat(iterationCompleted.outputTokens()).isEqualTo(42);
+
+              // Verify task lifecycle notifications
+              var taskStarted =
+                  notifications.stream()
+                      .filter(n -> n instanceof Notification.TaskStarted)
+                      .map(n -> (Notification.TaskStarted) n)
+                      .findFirst()
+                      .orElseThrow();
+              assertThat(taskStarted.taskId()).isEqualTo(taskId);
+              assertThat(taskStarted.taskName()).isNotBlank();
+
+              var taskCompleted =
+                  notifications.stream()
+                      .filter(n -> n instanceof Notification.TaskCompleted)
+                      .map(n -> (Notification.TaskCompleted) n)
+                      .findFirst()
+                      .orElseThrow();
+              assertThat(taskCompleted.taskId()).isEqualTo(taskId);
             });
   }
 
@@ -334,7 +352,7 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
               assertThat(snapshot.status().name()).isEqualTo("FAILED");
             });
 
-    // Verify notifications include activation and stop
+    // Verify notifications include activation, task failure, and stop
     Awaitility.await()
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
@@ -343,6 +361,23 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
                   .anySatisfy(n -> assertThat(n).isInstanceOf(Notification.Activated.class));
               assertThat(notifications)
                   .anySatisfy(n -> assertThat(n).isInstanceOf(Notification.Stopped.class));
+
+              var taskStarted =
+                  notifications.stream()
+                      .filter(n -> n instanceof Notification.TaskStarted)
+                      .map(n -> (Notification.TaskStarted) n)
+                      .findFirst()
+                      .orElseThrow();
+              assertThat(taskStarted.taskId()).isEqualTo(taskId);
+
+              var taskFailed =
+                  notifications.stream()
+                      .filter(n -> n instanceof Notification.TaskFailed)
+                      .map(n -> (Notification.TaskFailed) n)
+                      .findFirst()
+                      .orElseThrow();
+              assertThat(taskFailed.taskId()).isEqualTo(taskId);
+              assertThat(taskFailed.reason()).isNotBlank();
             });
   }
 }
