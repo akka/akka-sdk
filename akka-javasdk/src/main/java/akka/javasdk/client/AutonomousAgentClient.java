@@ -5,10 +5,13 @@
 package akka.javasdk.client;
 
 import akka.Done;
+import akka.NotUsed;
 import akka.annotation.DoNotInherit;
 import akka.javasdk.agent.autonomous.AgentSetup;
 import akka.javasdk.agent.autonomous.AutonomousAgent;
+import akka.javasdk.agent.autonomous.Notification;
 import akka.javasdk.agent.task.Task;
+import akka.stream.javadsl.Source;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -80,4 +83,16 @@ public interface AutonomousAgentClient {
 
   /** Async variant of {@link #stop}. */
   CompletionStage<Done> stopAsync();
+
+  /**
+   * Subscribe to lifecycle notifications for this agent instance. Notifications are published by
+   * the runtime as the agent progresses through its execution loop.
+   *
+   * <p>The returned source emits events such as {@link Notification.Activated}, {@link
+   * Notification.IterationStarted}, {@link Notification.IterationCompleted}, and {@link
+   * Notification.Stopped}.
+   *
+   * @return a source of notification events
+   */
+  Source<Notification, NotUsed> notificationStream();
 }

@@ -407,6 +407,34 @@ if (snapshot.status() == TaskStatus.COMPLETED) {
 }
 ```
 
+### Agent lifecycle notifications
+
+Subscribe to lifecycle notifications for an agent instance to observe its execution progress in real time. Notifications are published by the runtime — not by user code — as the agent moves through its execution loop.
+
+```java
+import akka.javasdk.agent.autonomous.Notification;
+
+var agentClient = componentClient
+  .forAutonomousAgent(QuestionAnswerer.class, agentInstanceId);
+
+var notifications = new ArrayList<Notification>();
+agentClient.notificationStream()
+  .runForeach(notifications::add, materializer);
+```
+
+The notification stream emits the following event types:
+
+| Notification | Description |
+| --- | --- |
+| `Notification.Activated` | Agent transitioned from idle to processing |
+| `Notification.Deactivated` | No more work, back to idle |
+| `Notification.IterationStarted` | LLM call beginning |
+| `Notification.IterationCompleted` | Iteration completed — includes `inputTokens()` and `outputTokens()` |
+| `Notification.IterationFailed` | Iteration failed — includes `reason()` |
+| `Notification.Stopped` | Agent stopped |
+
+Subscribe before triggering the agent to avoid missing early events. The stream stays open as long as the agent instance exists — use it for dashboards, logging, cost tracking, or coordinating external processes with agent progress.
+
 ## <a href="about:blank#_coordination_patterns"></a> Coordination patterns
 
 LLMs perform best with focused context. As tasks grow more complex, a single agent's context becomes diluted — too much information, too many concerns, competing objectives. Multi-agent patterns address this by scoping context so that each agent can operate with clarity.
