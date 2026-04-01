@@ -67,6 +67,8 @@ The following types can be injected in Service Setup, HTTP Endpoints, gRPC Endpo
 
 |`akka.javasdk.client.ComponentClient`
 | For interaction between components, see xref:component-and-service-calls.adoc[]
+| `akka.javasdk.objectstorage.ObjectStoreProvider`
+| For storing and retrieving binary objects in named buckets, see xref:integrations/object-storage.adoc[]
 | `akka.javasdk.http.HttpClientProvider`
 | For creating clients to make calls between Akka services and also to other HTTP servers, see xref:component-and-service-calls.adoc[]
 | `akka.javasdk.grpc.GrpcClientProvider`
