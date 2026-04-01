@@ -686,6 +686,15 @@ define()
   .capability(TeamLeadership.of(TeamMember.of(Developer.class).maxInstances(3)));
 ```
 
+By default, the lead can only run one team at a time. Use `maxConcurrentTeams` to allow the lead to manage multiple teams simultaneously — for example, when the task requires separate teams working on independent concerns in parallel:
+
+```java
+define()
+  .capability(
+    TeamLeadership.of(TeamMember.of(Developer.class).maxInstances(3))
+      .maxConcurrentTeams(2));
+```
+
 **Context flow:** Exchanged. Agents communicate as they work, sending messages that shape each other's reasoning. Each agent has its own context, influenced by the messages it receives.
 
 **When to use:** Interdependent work where agents need to see each other's contributions, or when quality benefits from peer review. Good for collaborative problem-solving where different expertise needs to be actively integrated.
@@ -787,6 +796,8 @@ The coordination patterns compose at different levels. Some examples:
 Autonomous agents are tested using `TestModelProvider` to mock LLM responses, following the same pattern as request-based agents.
 
 ```java
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.completeTask;
+
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
@@ -807,12 +818,7 @@ public class QuestionAnswererIntegrationTest extends TestKitSupport {
   public void shouldAnswerQuestionWithTypedResult() {
     // Mock the LLM to call the built-in complete_task tool
     model.fixedResponse(
-      new TestModelProvider.AiResponse(
-        new TestModelProvider.ToolInvocationRequest(
-          "complete_task",
-          "{\"answer\":\"2 plus 2 equals 4.\",\"confidence\":100}"
-        )
-      )
+      completeTask("{\"answer\":\"2 plus 2 equals 4.\",\"confidence\":100}")
     );
 
     // Create and run a task
@@ -840,6 +846,120 @@ Key points:
 - Use `.fixedResponse()` to control what the LLM returns
 - Create tasks and assign them to agents using `componentClient`
 - Use `Awaitility.await()` to poll for task completion since execution is asynchronous
+
+### AutonomousAgentTools
+
+The `TestModelProvider.AutonomousAgentTools` class provides factory methods for the built-in coordination tools that the runtime exposes to the LLM. Use these instead of constructing raw `ToolInvocationRequest` instances with string tool names.
+
+**Task lifecycle tools:**
+
+```java
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.*;
+
+// Complete a task — result JSON must match the task's result type schema
+completeTask("{\"title\":\"Report\",\"summary\":\"Done.\"}");
+
+// Fail a task with a reason
+failTask("Not enough information to proceed.");
+```
+
+**Handoff and delegation tools:**
+
+```java
+// Hand off the current task to another agent
+handoffTo(BillingSpecialist.class, "Customer has billing dispute");
+
+// Delegate a subtask to a worker agent
+delegateTo(ResearchTasks.FINDINGS, Researcher.class, "Research quantum computing");
+
+// Invoke a method on a request-based agent
+sendTo(SomeAgent.class, "processData", "{\"input\":\"value\"}");
+```
+
+**Testing a delegation flow:**
+
+```java
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.*;
+import akka.javasdk.testkit.TestModelProvider.AiResponse;
+
+public class ResearchCoordinatorIntegrationTest extends TestKitSupport {
+
+  private final TestModelProvider coordinatorModel = new TestModelProvider();
+  private final TestModelProvider researcherModel = new TestModelProvider();
+
+  @Override
+  protected TestKit.Settings testKitSettings() {
+    return TestKit.Settings.DEFAULT
+      .withModelProvider(ResearchCoordinator.class, coordinatorModel)
+      .withModelProvider(Researcher.class, researcherModel);
+  }
+
+  @AfterEach
+  public void afterEach() {
+    coordinatorModel.reset();
+    researcherModel.reset();
+  }
+
+  @Test
+  public void shouldDelegateAndSynthesise() {
+    // Coordinator delegates to researcher when asked about quantum
+    coordinatorModel
+      .whenMessage(msg -> msg.contains("quantum"))
+      .reply(delegateTo(ResearchTasks.FINDINGS, Researcher.class, "Research quantum computing"));
+
+    // Researcher completes with findings
+    researcherModel.fixedResponse(
+      completeTask("{\"topic\":\"Quantum Computing\",\"findings\":\"Qubits enable parallel computation.\"}"));
+
+    // After receiving the delegation result, coordinator completes the brief
+    coordinatorModel
+      .whenMessage(msg -> msg.contains("Continue working"))
+      .reply(completeTask("{\"title\":\"Quantum Computing\",\"summary\":\"Qubits enable parallel computation.\"}"));
+
+    var taskId = componentClient
+      .forAutonomousAgent(ResearchCoordinator.class, UUID.randomUUID().toString())
+      .runSingleTask(ResearchTasks.BRIEF.instructions("Research quantum computing"));
+
+    Awaitility.await()
+      .ignoreExceptions()
+      .atMost(10, TimeUnit.SECONDS)
+      .untilAsserted(() -> {
+        var snapshot = componentClient.forTask(taskId).get(ResearchTasks.BRIEF);
+        assertThat(snapshot.result()).isNotNull();
+        assertThat(snapshot.result().title()).isEqualTo("Quantum Computing");
+      });
+  }
+}
+```
+
+**Testing a handoff flow:**
+
+```java
+// Triage agent classifies request and hands off
+triageModel
+  .whenMessage(msg -> msg.contains("billing"))
+  .reply(handoffTo(BillingSpecialist.class, "Customer has a billing question"));
+
+// Specialist completes the task
+specialistModel.fixedResponse(completeTask("{\"resolved\":true,\"response\":\"Refund issued.\"}"));
+```
+
+**Testing tool use before completion:**
+
+```java
+// First LLM call: agent invokes a domain tool
+model
+  .whenMessage(msg -> msg.contains("today"))
+  .reply(new TestModelProvider.ToolInvocationRequest("DateService_getToday", ""));
+
+// After tool result, complete the task
+model
+  .whenToolResult(result -> result.content().equals("2025-01-15"))
+  .thenReply(result -> new AiResponse(
+      completeTask("{\"value\":\"Today is 2025-01-15.\",\"score\":100}")));
+```
+
+Call `model.reset()` in `@AfterEach` to clear all configured responses between tests.
 
 ## <a href="about:blank#_samples"></a> Samples
 
