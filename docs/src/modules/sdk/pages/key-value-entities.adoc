@@ -172,6 +172,47 @@ If you start with an entity with such self region filter in `gcp-us-east1`, and 
 
 NOTE: If you first have a region included in the filter and then exclude it in the filter, the entity instance will still exist in the excluded region, but without receiving any new state changes. In other words, the state will remain as the old state if you access it with read-only commands in the excluded region.
 
+[#_notification]
+== Notification
+
+When a Key Value Entity processes commands, clients often need to track changes in real-time. Rather than repeatedly polling the entity state, you can use the `NotificationPublisher` to push updates to subscribers. This is more efficient and provides a better user experience, especially for entities with frequent state changes.
+
+The notification mechanism works as follows:
+
+. The entity injects a `NotificationPublisher<T>` where `T` is the notification message type
+. During command handling, the entity calls `publish(message)` to send notifications
+. The entity exposes a method returning `NotificationStream<T>` for clients to subscribe
+. Clients use the `ComponentClient` to subscribe and receive notifications as a stream
+
+=== Publishing notifications
+
+To add notifications to a Key Value Entity, inject the `NotificationPublisher` in the constructor and call `publish()` inside `thenReply`, after the state has been successfully persisted.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/UserEntityWithNotifications.java[UserEntityWithNotifications.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/UserEntityWithNotifications.java[tag=entity-notification]
+----
+<1> Inject `NotificationPublisher` typed with your notification message type. This can be a simple `String`, a Java Record, or a sealed interface for multiple message types.
+<2> Publish notifications inside `thenReply` using the `Supplier` overload, after the state has been successfully persisted. This prevents sending notifications if the persist fails.
+<3> Expose the notification stream via a public method. Clients will reference this method when subscribing.
+
+=== Subscribing to notifications
+
+Clients subscribe to entity notifications using the `ComponentClient`. The notifications are delivered as a reactive stream, which can be exposed to external clients as Server-Sent Events (SSE). Map domain types to API records before exposing them to avoid leaking internal domain types.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/UserEndpoint.java[UserEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/UserEndpoint.java[tag=entity-notification]
+----
+<1> Define API-specific records to avoid exposing internal domain types outside the service.
+<2> Map domain notifications to API records using the `map` operator on the notification source.
+
+IMPORTANT: The notification stream is a live stream that emits messages only after the client creates the stream—it does not replay historical messages. While the stream is running, it delivers all messages in order without message loss. If the stream detects missing messages, it will fail, allowing clients to reconnect and recover.
+
+WARNING: Notifications should not be used for building business logic. Akka does not guarantee delivery of every notification. Messages may be lost due to network issues, client disconnections, or other transient failures. If your application requires reliable state synchronization, implement a reconciliation mechanism that fetches the authoritative entity state when needed.
+
 == Side effects
 
 An entity doesn't perform any external side effects aside from persisting state changes and replying to the request. Side effects can be handled from the Workflow, Consumer, or Endpoint components that are calling the entity.
