@@ -1,0 +1,23 @@
+= Specify reference
+
+Commands available through the Akka AI Marketplace plugin for xref:sdk:spec-driven-development.adoc[Spec-driven development].
+
+These commands are used from within an AI coding assistant (such as Claude Code) after installing the Akka plugin.
+
+[cols="1,~"]
+|====
+|`/akka.setup`        | Configure your environment (CLI, Java, Maven, Akka tokens)
+|`/akka.constitution`  | Create or update the project constitution
+|`/akka.specify`      | Supply a prompt to produce your feature spec
+|`/akka.clarify`      | Find gaps in your spec
+|`/akka.plan`         | Convert your spec into a technical implementation plan
+|`/akka.tasks`        | Itemize the work required to build according to the spec
+|`/akka.analyze`      | Cross-artifact consistency and quality analysis
+|`/akka.checklist`    | Generate a custom checklist for the current feature
+|`/akka.implement`    | Generate the required code, tests, harnesses, etc.
+|`/akka.review`       | Review code against spec, plan, and constitution
+|`/akka.build`        | Build, test, and run locally with hot reloading
+|`/akka.inspect`      | Inspect a running service's runtime state against the spec
+|`/akka.deploy`       | Deploy to Akka Automated Operations
+|`/akka.issues`       | Convert tasks into GitHub issues
+|====

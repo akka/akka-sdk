@@ -1,0 +1,24 @@
+= /akka.implement
+
+Generate the required code, tests, and harnesses.
+
+== Usage
+
+[source]
+----
+/akka:implement
+----
+
+== Description
+
+Processes and executes all tasks defined in `tasks.md`, generating application code, unit tests, and integration tests. The agent iterates through compilation failures and test failures toward a working implementation.
+
+During this step, it is normal to see the agent make mistakes and self-correct. Only intervene if you see the agent diverging from the solution over time instead of converging.
+
+The default Akka constitution mandates both unit and integration tests, which are generated and verified during this step.
+
+== See also
+
+* xref:sdk:spec-driven-development.adoc[]
+* xref:reference:specify/tasks.adoc[]
+* xref:reference:specify/build.adoc[]

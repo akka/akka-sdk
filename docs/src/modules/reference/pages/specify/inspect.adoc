@@ -1,0 +1,32 @@
+= /akka.inspect
+
+Inspect a running service's runtime state against the specification.
+
+== Usage
+
+[source]
+----
+/akka:inspect
+----
+
+== Description
+
+Inspects a running service at runtime by exercising API endpoints, verifying internal state through backoffice tools, and validating the UI through browser tools -- all driven by the feature specification.
+
+The inspection workflow:
+
+1. Verifies the service is running and a feature spec exists
+2. Extracts API endpoints and entities from the spec
+3. Exercises API endpoints with test requests
+4. Verifies entity state via backoffice tools
+5. Validates the UI in the browser
+6. Summarizes findings
+7. Offers next steps
+
+Works with both locally running services (after `/akka.build`) and deployed services (after `/akka.deploy`).
+
+== See also
+
+* xref:sdk:spec-driven-development.adoc[]
+* xref:reference:specify/build.adoc[]
+* xref:reference:specify/deploy.adoc[]

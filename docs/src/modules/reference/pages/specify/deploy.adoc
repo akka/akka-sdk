@@ -1,0 +1,22 @@
+= /akka.deploy
+
+Deploy the service to Akka Automated Operations.
+
+== Usage
+
+[source]
+----
+/akka:deploy
+----
+
+== Description
+
+Builds a container image, pushes it, and deploys the service to the Akka platform. Prompts for organization and project, then seamlessly deploys with automatic rolling updates if a service is already running.
+
+After deployment, the command verifies component health and inspects the deployed service using backoffice tools.
+
+== See also
+
+* xref:sdk:spec-driven-development.adoc[]
+* xref:reference:specify/build.adoc[]
+* xref:reference:specify/inspect.adoc[]

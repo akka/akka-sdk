@@ -1,4 +1,4 @@
-= Spec-Driven Development
+= Spec-driven development
 :page-summary: Treat specifications as executable, version-controlled documents that are the single source of truth. AI generates all code; divergence from the spec fails the build.
 :page-when-to-use: Use when building any non-trivial Akka application where you want repeatable, auditable, AI-generated code tied to a formal specification.
 :page-related: xref:ai-coding-assistant.adoc[], xref:operations:cli/installation.adoc[]
@@ -11,7 +11,7 @@ include::ROOT:partial$include.adoc[]
 
 Spec-Driven Development (SDD) turns your natural-language specifications into the single source of truth for an entire application. You write the _what_ and _why_; AI generates all the code.
 
-*What it does.* SDD provides a structured, iterative workflow -- specify, clarify, plan, task, implement, build, deploy -- backed by a constitution of unbreakable project rules. Every artifact is version-controlled, and automated CI can detect divergence between specification and code.
+*What it does.* SDD provides a structured, iterative workflow -- specify, clarify, plan, task, implement, build, inspect, deploy -- backed by a constitution of unbreakable project rules. Every artifact is version-controlled, and automated CI can detect divergence between specification and code.
 
 *When to use it.*
 
@@ -169,7 +169,7 @@ The default Akka constitution mandates both unit and integration tests, so these
 
 When the code is complete, you should be able to exercise any RESTful APIs or user interfaces created. Akka makes this step easier as well.
 
-=== Build, exercise, and deploy
+=== Build and run locally
 You should never have to leave your agent chat during the spec-driven SDLC. If you use the `/akka.build` command, you get a ton of extra bonus features beyond a simple `mvn compile exec:java`.
 
 * Pre-existing services are shut down
@@ -180,12 +180,31 @@ You should never have to leave your agent chat during the spec-driven SDLC. If y
 * The build command leaves your service running, so you can exercise it manually, including using the Akka console's built-in request tracking.
 * If you make changes to any of the documents, either from within or outside your agent chat, your service is recompiled and automatically restarted
 
-If you want to deploy your service to Akka's infrastructure through _Akka Automated Operations_, use the `/akka.deploy` command. This command prompts you for the organization and project into which you want to deploy. It then seamlessly deploys your service, automatically doing a rolling update of the service cluster if one is already running.
+=== Inspect the running service
+Once your service is running -- either locally after `/akka.build` or deployed via `/akka.deploy` -- use the `/akka.inspect` command to verify it against your specification. Inspect exercises your service at runtime:
+
+* Verifies the service is running and a feature spec exists
+* Extracts API endpoints and entities from the spec
+* Exercises API endpoints with test requests
+* Verifies entity state via backoffice tools
+* Validates the UI in the browser
+* Summarizes findings and offers next steps
+
+This is spec-driven _verification_ -- your agent checks that the running service actually behaves the way the specification says it should. If inspect finds issues, iterate with `/akka.implement` and `/akka.build` before deploying.
+
+=== Deploy to Akka
+If you want to deploy your service to Akka's infrastructure through _Akka Automated Operations_, use the `/akka.deploy` command. This command prompts you for the organization and project into which you want to deploy. It then seamlessly deploys your service, automatically doing a rolling update of the service cluster if one is already running. After deployment, the command verifies component health and inspects the deployed service using backoffice tools.
+
+=== Review and analyze
+Two additional commands help you maintain quality as your project evolves:
+
+* `/akka.review` reviews the implemented code against the spec, plan, and constitution. Use this after implementation to catch deviations before they compound.
+* `/akka.analyze` performs a non-destructive cross-artifact consistency and quality analysis across your spec, plan, and task list. Use this after task generation to verify that all artifacts are aligned before implementation begins.
 
 == Specify your ideas!
 The greatest barrier to building new things is rarely the idea. It is usually in the implementation. Spec-Driven Development frees you from this barrier, letting you turn your ideas into specification and plan prompts, and watching as your agent generates and populates a to-do list and implements all of the code for you.
 
-You no longer have to invest massive amounts of time in "what-if" scenarios -- you can just _specify and go_. All you need is `init` -> `specify` -> `clarify` -> `plan` -> `tasks` -> `implement` and `build`.
+You no longer have to invest massive amounts of time in "what-if" scenarios -- you can just _specify and go_. All you need is `init` -> `specify` -> `clarify` -> `plan` -> `tasks` -> `implement` -> `build` -> `inspect` -> `deploy`.
 
 Using SDD with careful feature scoping and concise technical implementation plans, you are never more than a matter of minutes from a feature you can interact with. With Akka, those features automatically become powerful, resilient, scalable distributed systems.
 
@@ -193,13 +212,20 @@ Using SDD with careful feature scoping and concise technical implementation plan
 
 [cols="1,~"]
 |====
-|`/akka.specify`   | Supply a prompt to produce your feature spec
-|`/akka.clarify`   | Find gaps in your spec
-|`/akka.plan`      | Convert your spec into a technical implementation plan
-|`/akka.tasks`     | Itemize the work required to build according to the spec
-|`/akka.implement` | Generate the required code, tests, harnesses, etc.
-|`/akka.build`     | Build, test, and run locally with hot reloading
-|`/akka.deploy`    | Deploy to Akka Automated Operations
+|`/akka.setup`        | Configure your environment (CLI, Java, Maven, Akka tokens)
+|`/akka.constitution`  | Create or update the project constitution
+|`/akka.specify`      | Supply a prompt to produce your feature spec
+|`/akka.clarify`      | Find gaps in your spec
+|`/akka.plan`         | Convert your spec into a technical implementation plan
+|`/akka.tasks`        | Itemize the work required to build according to the spec
+|`/akka.analyze`      | Cross-artifact consistency and quality analysis
+|`/akka.checklist`    | Generate a custom checklist for the current feature
+|`/akka.implement`    | Generate the required code, tests, harnesses, etc.
+|`/akka.review`       | Review code against spec, plan, and constitution
+|`/akka.build`        | Build, test, and run locally with hot reloading
+|`/akka.inspect`      | Inspect a running service's runtime state against the spec
+|`/akka.deploy`       | Deploy to Akka Automated Operations
+|`/akka.issues`       | Convert tasks into GitHub issues
 |====
 
 == See also
