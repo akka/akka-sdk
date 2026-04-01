@@ -11,7 +11,7 @@ Identify gaps in the current feature specification.
 
 == Description
 
-Analyzes the constitution, feature specification, and conversation history to identify underspecified areas. Asks up to 5 highly targeted clarification questions and encodes answers back into the spec.
+Analyzes the constitution, feature specification, and conversation history to identify areas that lack sufficient detail. Asks up to 5 highly targeted clarification questions and encodes answers back into the spec.
 
 Typical clarification questions address areas such as:
 
