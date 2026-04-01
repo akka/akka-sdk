@@ -12,6 +12,9 @@ Current versions
 
 == March 2026
 
+* Akka CLI 3.0.57
+- Two new set of commands for the MCP server, browser and backoffice commands.
+
 * Akka CLI 3.0.56
 - The Akka AI Marketplace plugin has changed name to `akka`, the CLI will now download this plugin when initializing a project with AI context.
 
