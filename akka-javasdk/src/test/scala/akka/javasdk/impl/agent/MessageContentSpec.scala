@@ -4,19 +4,22 @@
 
 package akka.javasdk.impl.agent
 
-import akka.{Done, NotUsed}
+import java.util
+import java.util.Optional
+import java.util.concurrent.CompletionStage
+
+import akka.Done
+import akka.NotUsed
 import akka.http.javadsl.model.ContentType
 import akka.javasdk.agent.MessageContent.ImageUrlMessageContent
 import akka.javasdk.agent.MessageContent.PdfUrlMessageContent
-import akka.javasdk.objectstorage.{ObjectMetadata, ObjectStore, StoreObject}
+import akka.javasdk.objectstorage.ObjectMetadata
+import akka.javasdk.objectstorage.ObjectStore
+import akka.javasdk.objectstorage.StoreObject
 import akka.stream.javadsl.Source
 import akka.util.ByteString
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-
-import java.util
-import java.util.Optional
-import java.util.concurrent.CompletionStage
 
 class MessageContentSpec extends AnyWordSpec with Matchers {
 
@@ -25,6 +28,11 @@ class MessageContentSpec extends AnyWordSpec with Matchers {
     override def get(key: String): Optional[StoreObject] = ???
     override def put(key: String, data: ByteString): Done = ???
     override def put(key: String, data: ByteString, contentType: ContentType): Done = ???
+    override def put(
+        key: String,
+        data: ByteString,
+        contentType: ContentType,
+        metadata: util.Map[String, String]): Done = ???
     override def delete(key: String): Done = ???
     override def list(prefix: String): util.List[ObjectMetadata] = ???
     override def list(): util.List[ObjectMetadata] = ???
@@ -33,10 +41,23 @@ class MessageContentSpec extends AnyWordSpec with Matchers {
     override def streamList(): Source[ObjectMetadata, NotUsed] = ???
     override def getStreamAsync(key: String): CompletionStage[Optional[Source[ByteString, NotUsed]]] = ???
     override def putStreamAsync(key: String, data: Source[ByteString, _]): CompletionStage[Done] = ???
-    override def putStreamAsync(key: String, data: Source[ByteString, _], contentType: ContentType): CompletionStage[Done] = ???
+    override def putStreamAsync(
+        key: String,
+        data: Source[ByteString, _],
+        contentType: ContentType): CompletionStage[Done] = ???
+    override def putStreamAsync(
+        key: String,
+        data: Source[ByteString, _],
+        contentType: ContentType,
+        metadata: util.Map[String, String]): CompletionStage[Done] = ???
     override def getAsync(key: String): CompletionStage[Optional[StoreObject]] = ???
     override def putAsync(key: String, data: ByteString): CompletionStage[Done] = ???
     override def putAsync(key: String, data: ByteString, contentType: ContentType): CompletionStage[Done] = ???
+    override def putAsync(
+        key: String,
+        data: ByteString,
+        contentType: ContentType,
+        metadata: util.Map[String, String]): CompletionStage[Done] = ???
     override def deleteAsync(key: String): CompletionStage[Done] = ???
     override def getMetadataAsync(key: String): CompletionStage[Optional[ObjectMetadata]] = ???
   }

@@ -14,7 +14,6 @@ import akka.javasdk.objectstorage.ObjectStore;
 import akka.javasdk.objectstorage.ObjectStoreProvider;
 import akka.javasdk.objectstorage.StoreObject;
 import com.example.application.ImageDescriptionAgent;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,7 +27,10 @@ public class ImageUploadEndpoint {
   // tag::inject-bucket[]
   private final ObjectStoreProvider objectStoreProvider;
 
-  public ImageUploadEndpoint(ComponentClient componentClient, ObjectStoreProvider objectStoreProvider) { // <1>
+  public ImageUploadEndpoint(
+    ComponentClient componentClient,
+    ObjectStoreProvider objectStoreProvider
+  ) { // <1>
     this.componentClient = componentClient;
     this.objectStoreProvider = objectStoreProvider;
   }
@@ -44,11 +46,12 @@ public class ImageUploadEndpoint {
     var imageContent = MessageContent.ImageUrlMessageContent.create(imageBucket, key); // <2>
 
     return componentClient
-        .forAgent()
-        .inSession("image-" + key)
-        .method(ImageDescriptionAgent::describe)
-        .invoke(imageContent); // <3>
+      .forAgent()
+      .inSession("image-" + key)
+      .method(ImageDescriptionAgent::describe)
+      .invoke(imageContent); // <3>
   }
+
   // end::put-describe[]
 
   // tag::inject-bucket[]
@@ -59,11 +62,16 @@ public class ImageUploadEndpoint {
     Optional<StoreObject> maybeObject = imageBucket.get(key);
     if (maybeObject.isPresent()) {
       StoreObject object = maybeObject.get();
-      return HttpResponses.of(StatusCodes.OK, object.metadata.contentType.orElse(ContentTypes.APPLICATION_OCTET_STREAM), object.data.toArray());
+      return HttpResponses.of(
+        StatusCodes.OK,
+        object.metadata.contentType.orElse(ContentTypes.APPLICATION_OCTET_STREAM),
+        object.data.toArray()
+      );
     } else {
       return HttpResponses.notFound();
     }
   }
+
   // end::inject-bucket[]
 
   // tag::list-delete[]
@@ -72,7 +80,6 @@ public class ImageUploadEndpoint {
     var imageBucket = objectStoreProvider.forBucket("images");
     return imageBucket.list();
   }
-
 
   @Delete("/{key}")
   public HttpResponse deleteImage(String key) {
