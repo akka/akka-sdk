@@ -24,4 +24,5 @@ It performs the following:
 == See also
 
 * xref:sdk:spec-driven-development.adoc[]
+* xref:reference:specify/index.adoc[]
 * xref:operations:cli/installation.adoc[]

@@ -11,7 +11,7 @@ include::ROOT:partial$include.adoc[]
 
 Spec-Driven Development (SDD) turns your natural-language specifications into the single source of truth for an entire application. You write the _what_ and _why_; AI generates all the code.
 
-*What it does.* SDD provides a structured, iterative workflow -- specify, clarify, plan, task, implement, build, inspect, deploy -- backed by a constitution of unbreakable project rules. Every artifact is version-controlled, and automated CI can detect divergence between specification and code.
+*What it does.* SDD provides a structured, iterative workflow -- specify, clarify, plan, task, implement, build, deploy, inspect -- backed by a constitution of unbreakable project rules. Every artifact is version-controlled, and automated CI can detect divergence between specification and code.
 
 *When to use it.*
 
@@ -212,21 +212,23 @@ Using SDD with careful feature scoping and concise technical implementation plan
 
 [cols="1,~"]
 |====
-|`/akka.setup`        | Configure your environment (CLI, Java, Maven, Akka tokens)
-|`/akka.constitution`  | Create or update the project constitution
-|`/akka.specify`      | Supply a prompt to produce your feature spec
-|`/akka.clarify`      | Find gaps in your spec
-|`/akka.plan`         | Convert your spec into a technical implementation plan
-|`/akka.tasks`        | Itemize the work required to build according to the spec
-|`/akka.analyze`      | Cross-artifact consistency and quality analysis
-|`/akka.checklist`    | Generate a custom checklist for the current feature
-|`/akka.implement`    | Generate the required code, tests, harnesses, etc.
-|`/akka.review`       | Review code against spec, plan, and constitution
-|`/akka.build`        | Build, test, and run locally with hot reloading
-|`/akka.inspect`      | Inspect a running service's runtime state against the spec
-|`/akka.deploy`       | Deploy to Akka Automated Operations
-|`/akka.issues`       | Convert tasks into GitHub issues
+|xref:reference:specify/setup.adoc[`/akka.setup`]               | Configure your environment (CLI, Java, Maven, Akka tokens)
+|xref:reference:specify/constitution.adoc[`/akka.constitution`] | Create or update the project constitution
+|xref:reference:specify/specify.adoc[`/akka.specify`]           | Supply a prompt to produce your feature spec
+|xref:reference:specify/clarify.adoc[`/akka.clarify`]           | Find gaps in your spec
+|xref:reference:specify/plan.adoc[`/akka.plan`]                 | Convert your spec into a technical implementation plan
+|xref:reference:specify/tasks.adoc[`/akka.tasks`]               | Itemize the work required to build according to the spec
+|xref:reference:specify/analyze.adoc[`/akka.analyze`]           | Cross-artifact consistency and quality analysis
+|xref:reference:specify/checklist.adoc[`/akka.checklist`]       | Generate a custom checklist for the current feature
+|xref:reference:specify/implement.adoc[`/akka.implement`]       | Generate the required code, tests, harnesses, etc.
+|xref:reference:specify/review.adoc[`/akka.review`]             | Review code against spec, plan, and constitution
+|xref:reference:specify/build.adoc[`/akka.build`]               | Build, test, and run locally with hot reloading
+|xref:reference:specify/inspect.adoc[`/akka.inspect`]           | Inspect a running service's runtime state against the spec
+|xref:reference:specify/deploy.adoc[`/akka.deploy`]             | Deploy to Akka Automated Operations
+|xref:reference:specify/issues.adoc[`/akka.issues`]             | Convert tasks into GitHub issues
 |====
+
+These commands are also listed in the xref:reference:specify/index.adoc[].
 
 == See also
 

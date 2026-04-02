@@ -24,5 +24,6 @@ Provides a full local development loop with the following capabilities:
 == See also
 
 * xref:sdk:spec-driven-development.adoc[]
+* xref:reference:specify/index.adoc[]
 * xref:reference:specify/implement.adoc[]
 * xref:reference:specify/inspect.adoc[]

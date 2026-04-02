@@ -24,5 +24,6 @@ Run this command iteratively until no further clarifications are needed.
 == See also
 
 * xref:sdk:spec-driven-development.adoc[]
+* xref:reference:specify/index.adoc[]
 * xref:reference:specify/specify.adoc[]
 * xref:reference:specify/plan.adoc[]

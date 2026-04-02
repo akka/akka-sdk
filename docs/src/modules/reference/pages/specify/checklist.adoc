@@ -16,4 +16,5 @@ Generates a feature-specific checklist based on user requirements and the curren
 == See also
 
 * xref:sdk:spec-driven-development.adoc[]
+* xref:reference:specify/index.adoc[]
 * xref:reference:specify/tasks.adoc[]

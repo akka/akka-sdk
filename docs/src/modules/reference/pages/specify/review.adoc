@@ -16,4 +16,5 @@ Reviews the generated code to verify it conforms to the feature specification, i
 == See also
 
 * xref:sdk:spec-driven-development.adoc[]
+* xref:reference:specify/index.adoc[]
 * xref:reference:specify/implement.adoc[]

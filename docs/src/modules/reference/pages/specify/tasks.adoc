@@ -18,5 +18,6 @@ Review and discuss the generated tasks with your agent before proceeding to impl
 == See also
 
 * xref:sdk:spec-driven-development.adoc[]
+* xref:reference:specify/index.adoc[]
 * xref:reference:specify/plan.adoc[]
 * xref:reference:specify/implement.adoc[]

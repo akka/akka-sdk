@@ -27,4 +27,5 @@ Users can edit their profile and upload a small avatar image.
 == See also
 
 * xref:sdk:spec-driven-development.adoc[]
+* xref:reference:specify/index.adoc[]
 * xref:reference:specify/clarify.adoc[]

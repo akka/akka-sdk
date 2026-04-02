@@ -28,5 +28,6 @@ Works with both locally running services (after `/akka.build`) and deployed serv
 == See also
 
 * xref:sdk:spec-driven-development.adoc[]
+* xref:reference:specify/index.adoc[]
 * xref:reference:specify/build.adoc[]
 * xref:reference:specify/deploy.adoc[]

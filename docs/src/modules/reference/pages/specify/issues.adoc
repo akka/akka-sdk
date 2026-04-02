@@ -16,4 +16,5 @@ Converts existing tasks from `tasks.md` into actionable, dependency-ordered GitH
 == See also
 
 * xref:sdk:spec-driven-development.adoc[]
+* xref:reference:specify/index.adoc[]
 * xref:reference:specify/tasks.adoc[]

@@ -18,5 +18,6 @@ The plan defines the _how_ of your application: service architecture, endpoint d
 == See also
 
 * xref:sdk:spec-driven-development.adoc[]
+* xref:reference:specify/index.adoc[]
 * xref:reference:specify/clarify.adoc[]
 * xref:reference:specify/tasks.adoc[]

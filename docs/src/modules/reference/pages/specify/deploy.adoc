@@ -18,5 +18,6 @@ After deployment, the command verifies component health and inspects the deploye
 == See also
 
 * xref:sdk:spec-driven-development.adoc[]
+* xref:reference:specify/index.adoc[]
 * xref:reference:specify/build.adoc[]
 * xref:reference:specify/inspect.adoc[]
