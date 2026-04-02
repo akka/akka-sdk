@@ -1,7 +1,7 @@
 import akka.grpc.sbt.AkkaGrpcPlugin
 import sbt.*
 import sbt.Keys.*
-import de.heikoseeberger.sbtheader.{AutomateHeaderPlugin, HeaderPlugin}
+import de.heikoseeberger.sbtheader.{ AutomateHeaderPlugin, HeaderPlugin }
 import org.scalafmt.sbt.ScalafmtPlugin
 import org.scalafmt.sbt.ScalafmtPlugin.autoImport.scalafmtOnCompile
 import sbtprotoc.ProtocPlugin
