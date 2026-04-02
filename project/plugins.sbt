@@ -17,7 +17,7 @@ addSbtPlugin("com.thoughtworks.sbt-api-mappings" % "sbt-api-mappings" % "3.0.2")
 libraryDependencies += "com.google.guava" % "guava" % "33.3.1-jre"
 
 // optional scalafix plugin for organize imports
-optionalSbtPlugin(sys.props.contains("build.scalafix"))("ch.epfl.scala" % "sbt-scalafix" % "0.14.3")
+optionalSbtPlugin(sys.props.contains("build.scalafix"))("ch.epfl.scala" % "sbt-scalafix" % "0.14.5")
 
 def optionalSbtPlugin(predicate: Boolean)(module: ModuleID): Setting[Seq[ModuleID]] = {
   libraryDependencies ++= {
