@@ -11,6 +11,7 @@ import scala.annotation.nowarn
 import scala.collection.breakOut
 import com.github.sbt.AutomateJavaFormatterPlugin
 import com.github.sbt.JavaFormatterPlugin.autoImport.javafmtOnCompile
+import sbtdynver.DynVerPlugin
 
 object CommonSettings extends AutoPlugin {
 
@@ -54,6 +55,10 @@ object CommonSettings extends AutoPlugin {
       run / javaOptions ++= {
         sys.props.collect { case (key, value) if key.startsWith("akka") => s"-D$key=$value" }(breakOut)
       },
+      // silence some sbt linting noise
+      excludeLintKeys += scmInfo,
+      excludeLintKeys += DynVerPlugin.autoImport.dynverSonatypeSnapshots,
+      excludeLintKeys += scalacOptions,
       additionalValidation := performAdditionalValidation((ThisBuild / baseDirectory).value)) ++ (
       if (sys.props.contains("disable.apidocs"))
         Seq(Compile / doc / sources := Seq.empty, Compile / packageDoc / publishArtifact := false)
