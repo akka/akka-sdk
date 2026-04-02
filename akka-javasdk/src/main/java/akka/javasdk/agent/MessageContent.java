@@ -4,7 +4,7 @@
 
 package akka.javasdk.agent;
 
-import akka.javasdk.objectstorage.ObjectStore;
+import akka.javasdk.objectstorage.ObjectStorage;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -65,7 +65,7 @@ public sealed interface MessageContent {
      * @param bucket the object-storage bucket
      * @param key the object key within the bucket
      */
-    public static ImageUrlMessageContent create(ObjectStore bucket, String key) {
+    public static ImageUrlMessageContent create(ObjectStorage bucket, String key) {
       return new ImageUrlMessageContent(
           URI.create("object://" + bucket.bucketName() + "/" + key),
           ImageMessageContent.DetailLevel.AUTO);
@@ -207,7 +207,7 @@ public sealed interface MessageContent {
      * @param bucket the object-storage bucket
      * @param key the object key within the bucket
      */
-    public static PdfUrlMessageContent create(ObjectStore bucket, String key) {
+    public static PdfUrlMessageContent create(ObjectStorage bucket, String key) {
       return new PdfUrlMessageContent(URI.create("object://" + bucket.bucketName() + "/" + key));
     }
 

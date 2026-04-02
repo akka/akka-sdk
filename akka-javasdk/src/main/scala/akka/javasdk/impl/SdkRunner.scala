@@ -78,7 +78,7 @@ import akka.javasdk.impl.http.HttpClientProviderImpl
 import akka.javasdk.impl.http.HttpRequestContextImpl
 import akka.javasdk.impl.http.JwtClaimsImpl
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityImpl
-import akka.javasdk.impl.objectstorage.ObjectStoreProviderImpl
+import akka.javasdk.impl.objectstorage.ObjectStorageProviderImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
 import akka.javasdk.impl.serialization.Serializer
@@ -93,7 +93,7 @@ import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.keyvalueentity.KeyValueEntityContext
 import akka.javasdk.mcp.AbstractMcpEndpoint
 import akka.javasdk.mcp.McpRequestContext
-import akka.javasdk.objectstorage.ObjectStoreProvider
+import akka.javasdk.objectstorage.ObjectStorageProvider
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.timer.TimerScheduler
 import akka.javasdk.tooling.validation.Validation
@@ -403,7 +403,7 @@ private[javasdk] object Sdk {
     classOf[Retries],
     classOf[AgentContext],
     classOf[AgentRegistry],
-    classOf[ObjectStoreProvider])
+    classOf[ObjectStorageProvider])
 }
 
 /**
@@ -890,8 +890,8 @@ private final class Sdk(
     case e if e == classOf[Executor]           =>
       // The type does not guarantee this is a Java concurrent Executor, but we know it is, since supplied from runtime
       sdkExecutionContext.asInstanceOf[Executor]
-    case s if s == classOf[Sanitizer]           => sanitizer
-    case o if o == classOf[ObjectStoreProvider] => objectStorage
+    case s if s == classOf[Sanitizer]             => sanitizer
+    case o if o == classOf[ObjectStorageProvider] => objectStorage
   }
 
   val spiComponents: SpiComponents = {
@@ -1203,8 +1203,8 @@ private final class Sdk(
       system)
   }
 
-  private lazy val objectStorage: ObjectStoreProvider =
-    new ObjectStoreProviderImpl(runtimeComponentClients.objectStorage, system)
+  private lazy val objectStorage: ObjectStorageProvider =
+    new ObjectStorageProviderImpl(runtimeComponentClients.objectStorage, system)
 
   private def timerScheduler(telemetryContext: Option[OtelContext]): TimerScheduler = {
     val metadata = telemetryContext match {

@@ -18,7 +18,7 @@ import akka.javasdk.annotations.http.WebSocket;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.AbstractHttpEndpoint;
 import akka.javasdk.http.HttpResponses;
-import akka.javasdk.objectstorage.ObjectStoreProvider;
+import akka.javasdk.objectstorage.ObjectStorageProvider;
 import akka.stream.javadsl.Flow;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
@@ -34,10 +34,10 @@ public class TestEndpoint extends AbstractHttpEndpoint {
 
   private final Sanitizer sanitizer;
   private final ComponentClient componentClient;
-  private final ObjectStoreProvider objectStorage;
+  private final ObjectStorageProvider objectStorage;
 
   public TestEndpoint(
-      Sanitizer sanitizer, ComponentClient componentClient, ObjectStoreProvider objectStorage) {
+      Sanitizer sanitizer, ComponentClient componentClient, ObjectStorageProvider objectStorage) {
     this.sanitizer = sanitizer;
     this.componentClient = componentClient;
     this.objectStorage = objectStorage;
