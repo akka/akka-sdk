@@ -486,6 +486,11 @@ public class CounterToTopicConsumer extends Consumer {
   }
 }
 ```
+### HTTP Endpoints
+
+Favor endpoint APIs that follow REST principles. 
+
+When an HTTP method returns an `akka.http.javadsl.model.HttpResponse` instead of a custom type and it can return errors, avoid throwing exceptions. Instead, use HTTP error response methods such as `akka.javasdk.http.HttpResponses.badRequest` or `akka.javasdk.http.HttpResponses.notFound`.
 
 ### Endpoint with web UI
 
@@ -679,4 +684,3 @@ Before presenting code, verify:
 - [ ] View tests use event publishing + `Awaitility`
 - [ ] Endpoint tests use `httpClient` not `componentClient`
 - [ ] Agent tests use `TestModelProvider` with `.fixedResponse()` or `.whenMessage()`
-
