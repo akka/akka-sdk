@@ -16,6 +16,7 @@
     <logger name="akka.javasdk.impl.client.AutonomousAgentClientImpl" level="DEBUG"/>
     <logger name="akka.javasdk.impl.client.TaskClientImpl" level="DEBUG"/>
 
-    <!-- Runtime autonomous agent workflow -->
+    <!-- Runtime autonomous agent -->
     <logger name="kalix.runtime.agent.autonomous" level="DEBUG"/>
+<!--    <logger name="kalix.runtime.agent.AkkaLangChain4jHttpClient" level="TRACE"/>-->
 </included>

@@ -127,8 +127,6 @@ A triage agent classifies customer support requests and hands off to the appropr
 
 ## publishing
 
-*Not yet implemented.*
-
 A coordinator delegates writing and editing to specialist agents, then requests editorial approval before publishing. Combines delegation with external (human) input.
 
 **Agents:** Publishing coordinator, writer, editor
@@ -162,8 +160,6 @@ A moderator agent leads a structured debate between debater agents. Debaters arg
 ---
 
 ## devteam
-
-*Not yet implemented.*
 
 A team lead decomposes a software project into tasks. Developer agents claim tasks from a shared list, work on them independently, and message peers when coordination is needed. The lead monitors progress and disbands the team when done.
 
