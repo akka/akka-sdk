@@ -37,6 +37,37 @@ include::example$doc-snippets/src/main/java/com/example/application/ImageProcess
 
 NOTE: Not all AI models support vision or PDF capabilities. Ensure your configured model provider supports the input types before using multimodal messages.
 
+[#object-storage-content]
+=== Loading content from object storage
+
+When you store images or PDFs in xref:sdk:integrations/object-storage.adoc[object storage], you can pass them to an agent without writing a custom `ContentLoader`.
+
+If one of the `*UrlMessageContent` message content classes are used and the URI in it has the format `object://[bucket-name]/[key]` the runtime will look for a configured bucket with that name and load the payload from `key` in it.
+
+Use the factory methods `ImageUrlMessageContent.create(bucket, key)` or `PdfUrlMessageContent.create(bucket, key)` to create a content reference backed by an `object://` URI and the bucket `ObjectStorage` is in scope.
+
+Upload an image and create the content reference in an endpoint:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ImageUploadEndpoint.java[ImageUploadEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/ImageUploadEndpoint.java[tag=put-describe]
+----
+<1> Store the uploaded bytes in the bucket, preserving the original content type.
+<2> Create an `ImageUrlMessageContent` that references the stored object via `object://images/<key>` — no download happens here.
+<3> Pass the content reference to the agent; the SDK fetches the image from the bucket before forwarding it to the model.
+
+Receive and use the content reference in the agent:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/ImageDescriptionAgent.java[ImageDescriptionAgent.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/ImageDescriptionAgent.java[tag=describe]
+----
+<1> The `ImageUrlMessageContent` passed by the caller is included directly in the `UserMessage`.
+
+The same pattern works for PDFs using `PdfUrlMessageContent.create(bucket, key)`. See xref:sdk:integrations/object-storage.adoc[Object storage] for how to configure buckets and how the backend behaves in dev mode and tests.
+
 === Custom content loading
 
 Some AI models are able to fetch images or PDF from publicly accessible URLs. When you need to load content from authenticated endpoints, private storage systems, or custom sources, you can implement a custom `ContentLoader`.

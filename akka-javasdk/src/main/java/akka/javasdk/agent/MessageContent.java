@@ -4,6 +4,8 @@
 
 package akka.javasdk.agent;
 
+import akka.javasdk.objectstorage.ObjectStorage;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -39,24 +41,79 @@ public sealed interface MessageContent {
   }
 
   /**
-   * Image content within a user message, referenced by URL.
+   * Image content within a user message, referenced by URI.
    *
-   * @param url The URL pointing to the image
+   * @param uri The URI pointing to the image
    * @param detailLevel The level of detail for image processing
    * @param mimeType The mimeType of the image, e.g. 'image/jpeg', 'image/png'
    */
   record ImageUrlMessageContent(
-      URL url, ImageMessageContent.DetailLevel detailLevel, Optional<String> mimeType)
+      URI uri, ImageMessageContent.DetailLevel detailLevel, Optional<String> mimeType)
       implements LoadableMessageContent {
 
+    @JsonCreator
+    public ImageUrlMessageContent(
+        URI uri, ImageMessageContent.DetailLevel detailLevel, Optional<String> mimeType) {
+      this.uri = uri;
+      this.detailLevel = detailLevel;
+      this.mimeType = mimeType;
+    }
+
     /**
-     * Image content within a user message, referenced by URL.
+     * Creates image content referencing an object in a bucket via the {@code object://} URI scheme.
      *
-     * @param url The URL pointing to the image
+     * @param bucket the object-storage bucket
+     * @param key the object key within the bucket
+     */
+    public static ImageUrlMessageContent create(ObjectStorage bucket, String key) {
+      return new ImageUrlMessageContent(
+          URI.create("object://" + bucket.bucketName() + "/" + key),
+          ImageMessageContent.DetailLevel.AUTO);
+    }
+
+    /**
+     * Image content within a user message, referenced by URI.
+     *
+     * @param uri The URI pointing to the image
      * @param detailLevel The level of detail for image processing
      */
+    public ImageUrlMessageContent(URI uri, ImageMessageContent.DetailLevel detailLevel) {
+      this(uri, detailLevel, Optional.empty());
+    }
+
+    /**
+     * @deprecated Use {@link #ImageUrlMessageContent(URI, ImageMessageContent.DetailLevel,
+     *     Optional)} instead.
+     */
+    @Deprecated(forRemoval = true)
+    public ImageUrlMessageContent(
+        URL url, ImageMessageContent.DetailLevel detailLevel, Optional<String> mimeType) {
+      this(URI.create(url.toString()), detailLevel, mimeType);
+    }
+
+    /**
+     * @deprecated Use {@link #ImageUrlMessageContent(URI, ImageMessageContent.DetailLevel)}
+     *     instead.
+     */
+    @Deprecated(forRemoval = true)
     public ImageUrlMessageContent(URL url, ImageMessageContent.DetailLevel detailLevel) {
-      this(url, detailLevel, Optional.empty());
+      this(URI.create(url.toString()), detailLevel, Optional.empty());
+    }
+
+    /**
+     * Returns the URI as a {@link URL} for backwards compatibility.
+     *
+     * @deprecated Use {@link #uri()} instead.
+     * @throws RuntimeException if the URI cannot be converted to a URL (e.g. for {@code object://}
+     *     URIs)
+     */
+    @Deprecated(forRemoval = true)
+    public URL url() {
+      try {
+        return uri.toURL();
+      } catch (MalformedURLException e) {
+        throw new RuntimeException("Cannot convert URI to URL: " + uri, e);
+      }
     }
   }
 
@@ -70,11 +127,7 @@ public sealed interface MessageContent {
      * @return A new ImageUrlMessageContent instance with AUTO detail level
      */
     public static ImageUrlMessageContent fromUrl(String url) {
-      try {
-        return ImageMessageContent.fromUrl(URI.create(url).toURL());
-      } catch (MalformedURLException e) {
-        throw new RuntimeException("Can't transform " + url + " to URL", e);
-      }
+      return new ImageUrlMessageContent(URI.create(url), DetailLevel.AUTO);
     }
 
     /**
@@ -84,7 +137,7 @@ public sealed interface MessageContent {
      * @return A new ImageUrlMessageContent instance with AUTO detail level
      */
     public static ImageUrlMessageContent fromUrl(URL url) {
-      return new ImageUrlMessageContent(url, DetailLevel.AUTO);
+      return new ImageUrlMessageContent(URI.create(url.toString()), DetailLevel.AUTO);
     }
 
     /**
@@ -95,7 +148,7 @@ public sealed interface MessageContent {
      * @return A new ImageUrlMessageContent instance
      */
     public static ImageUrlMessageContent fromUrl(URL url, DetailLevel detailLevel) {
-      return new ImageUrlMessageContent(url, detailLevel);
+      return new ImageUrlMessageContent(URI.create(url.toString()), detailLevel);
     }
 
     /**
@@ -108,7 +161,8 @@ public sealed interface MessageContent {
      */
     public static ImageUrlMessageContent fromUrl(
         URL url, DetailLevel detailLevel, String mimeType) {
-      return new ImageUrlMessageContent(url, detailLevel, Optional.of(mimeType));
+      return new ImageUrlMessageContent(
+          URI.create(url.toString()), detailLevel, Optional.of(mimeType));
     }
 
     /**
@@ -136,11 +190,51 @@ public sealed interface MessageContent {
   }
 
   /**
-   * PDF content within a user message, referenced by URL.
+   * PDF content within a user message, referenced by URI.
    *
-   * @param url The URL pointing to the PDF
+   * @param uri The URI pointing to the PDF
    */
-  record PdfUrlMessageContent(URL url) implements LoadableMessageContent {}
+  record PdfUrlMessageContent(URI uri) implements LoadableMessageContent {
+
+    @JsonCreator
+    public PdfUrlMessageContent(URI uri) {
+      this.uri = uri;
+    }
+
+    /**
+     * Creates PDF content referencing an object in a bucket via the {@code object://} URI scheme.
+     *
+     * @param bucket the object-storage bucket
+     * @param key the object key within the bucket
+     */
+    public static PdfUrlMessageContent create(ObjectStorage bucket, String key) {
+      return new PdfUrlMessageContent(URI.create("object://" + bucket.bucketName() + "/" + key));
+    }
+
+    /**
+     * @deprecated Use {@link #PdfUrlMessageContent(URI)} instead.
+     */
+    @Deprecated(forRemoval = true)
+    public PdfUrlMessageContent(URL url) {
+      this(URI.create(url.toString()));
+    }
+
+    /**
+     * Returns the URI as a {@link URL} for backwards compatibility.
+     *
+     * @deprecated Use {@link #uri()} instead.
+     * @throws RuntimeException if the URI cannot be converted to a URL (e.g. for {@code object://}
+     *     URIs)
+     */
+    @Deprecated(forRemoval = true)
+    public URL url() {
+      try {
+        return uri.toURL();
+      } catch (MalformedURLException e) {
+        throw new RuntimeException("Cannot convert URI to URL: " + uri, e);
+      }
+    }
+  }
 
   /** Factory methods for creating PDF message content. */
   record PdfMessageContent() {
@@ -152,11 +246,7 @@ public sealed interface MessageContent {
      * @return A new PdfUrlMessageContent instance
      */
     public static PdfUrlMessageContent fromUrl(String url) {
-      try {
-        return PdfMessageContent.fromUrl(URI.create(url).toURL());
-      } catch (MalformedURLException e) {
-        throw new RuntimeException("Can't transform " + url + " to URL", e);
-      }
+      return new PdfUrlMessageContent(URI.create(url));
     }
 
     /**
@@ -166,7 +256,7 @@ public sealed interface MessageContent {
      * @return A new PdfUrlMessageContent instance
      */
     public static PdfUrlMessageContent fromUrl(URL url) {
-      return new PdfUrlMessageContent(url);
+      return new PdfUrlMessageContent(URI.create(url.toString()));
     }
   }
 }

@@ -78,6 +78,7 @@ import akka.javasdk.impl.http.HttpClientProviderImpl
 import akka.javasdk.impl.http.HttpRequestContextImpl
 import akka.javasdk.impl.http.JwtClaimsImpl
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityImpl
+import akka.javasdk.impl.objectstorage.ObjectStorageProviderImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
 import akka.javasdk.impl.serialization.Serializer
@@ -92,6 +93,7 @@ import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.keyvalueentity.KeyValueEntityContext
 import akka.javasdk.mcp.AbstractMcpEndpoint
 import akka.javasdk.mcp.McpRequestContext
+import akka.javasdk.objectstorage.ObjectStorageProvider
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.timer.TimerScheduler
 import akka.javasdk.tooling.validation.Validation
@@ -116,6 +118,15 @@ import akka.runtime.sdk.spi.SpiComponents
 import akka.runtime.sdk.spi.SpiConfiguredGuardrail
 import akka.runtime.sdk.spi.SpiDeployedEventingSettings
 import akka.runtime.sdk.spi.SpiDevModeSettings
+import akka.runtime.sdk.spi.SpiDevObjectStorageBucketConfig
+import akka.runtime.sdk.spi.SpiDevObjectStorageFilesystemBucketConfig
+import akka.runtime.sdk.spi.SpiDevObjectStorageGcsBucketConfig
+import akka.runtime.sdk.spi.SpiDevObjectStorageGcsNativeCredentials
+import akka.runtime.sdk.spi.SpiDevObjectStorageGcsServiceAccountKeyCredentials
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3BucketConfig
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3NativeCredentials
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3ProfileCredentials
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3StaticCredentials
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
 import akka.runtime.sdk.spi.SpiGuardrailSetup
@@ -169,6 +180,8 @@ object SdkRunner {
     val devModeSettings =
       if (applicationConf.getBoolean("akka.javasdk.dev-mode.enabled")) {
         val backofficeSettings = BackofficeSettingsLoader.loadBackofficeSettings(applicationConf)
+        val objectStorageBuckets =
+          extractDevObjectStorageBuckets(applicationConf.getConfig("akka.javasdk.dev-mode.object-storage"))
         Some(
           new SpiDevModeSettings(
             httpPort = applicationConf.getInt("akka.javasdk.dev-mode.http-port"),
@@ -179,7 +192,8 @@ object SdkRunner {
             mockedEventing = SpiMockedEventingSettings.empty,
             testSetting = new SpiTestSettings(testMode = false, debugTracing = false),
             selfServiceName = None,
-            backoffice = backofficeSettings))
+            backoffice = backofficeSettings,
+            objectStorageBuckets = objectStorageBuckets))
       } else None
 
     val agentInteractionLogEnabled =
@@ -197,6 +211,67 @@ object SdkRunner {
       devModeSettings,
       Some(sanitizationSettings),
       Some(spiDeployedEventingSettings))
+  }
+
+  private def extractDevObjectStorageBuckets(objectStorageConf: Config): Seq[SpiDevObjectStorageBucketConfig] = {
+    import scala.jdk.CollectionConverters._
+    objectStorageConf.getList("buckets").asScala.toSeq.map {
+      case co: com.typesafe.config.ConfigObject =>
+        val c = co.toConfig
+        val name = c.getString("name")
+        c.getString("provider") match {
+          case "filesystem" =>
+            val directory = if (c.hasPath("directory")) Some(c.getString("directory")) else None
+            new SpiDevObjectStorageFilesystemBucketConfig(name, directory)
+          case "s3" =>
+            val creds = parseDevS3Credentials(name, c)
+            new SpiDevObjectStorageS3BucketConfig(name, c.getString("bucket"), c.getString("region"), creds)
+          case "gcs" =>
+            val creds = parseDevGcsCredentials(name, c)
+            new SpiDevObjectStorageGcsBucketConfig(name, c.getString("bucket"), creds)
+          case other =>
+            throw new IllegalArgumentException(
+              s"Unknown object storage provider [$other] for dev bucket [$name]. Supported: 'filesystem', 's3', 'gcs'")
+        }
+      case other =>
+        throw new IllegalArgumentException(
+          s"Expected object in akka.javasdk.dev-mode.object-storage.buckets, got [$other]")
+    }
+  }
+
+  private def parseDevS3Credentials(bucketName: String, c: com.typesafe.config.Config) = {
+    if (!c.hasPath("credentials") || c.getValue("credentials").unwrapped() == "native")
+      SpiDevObjectStorageS3NativeCredentials
+    else {
+      val cred = c.getConfig("credentials")
+      cred.getString("type") match {
+        case "native" => SpiDevObjectStorageS3NativeCredentials
+        case "static" =>
+          new SpiDevObjectStorageS3StaticCredentials(
+            cred.getString("access-key-id"),
+            cred.getString("secret-access-key"))
+        case "profile" =>
+          new SpiDevObjectStorageS3ProfileCredentials(cred.getString("profile-name"))
+        case other =>
+          throw new IllegalArgumentException(
+            s"Unknown S3 credentials type [$other] for dev bucket [$bucketName]. Valid: native, static, profile")
+      }
+    }
+  }
+
+  private def parseDevGcsCredentials(bucketName: String, c: com.typesafe.config.Config) = {
+    if (!c.hasPath("credentials") || c.getValue("credentials").unwrapped() == "native")
+      SpiDevObjectStorageGcsNativeCredentials
+    else {
+      val cred = c.getConfig("credentials")
+      cred.getString("type") match {
+        case "native"              => SpiDevObjectStorageGcsNativeCredentials
+        case "service-account-key" => new SpiDevObjectStorageGcsServiceAccountKeyCredentials(cred.getString("path"))
+        case other =>
+          throw new IllegalArgumentException(
+            s"Unknown GCS credentials type [$other] for dev bucket [$bucketName]. Valid: native, service-account-key")
+      }
+    }
   }
 
   private def extractBrokerConfig(eventingConf: Config): SpiEventingSupportSettings = {
@@ -327,7 +402,8 @@ private[javasdk] object Sdk {
     classOf[KeyValueEntityContext],
     classOf[Retries],
     classOf[AgentContext],
-    classOf[AgentRegistry])
+    classOf[AgentRegistry],
+    classOf[ObjectStorageProvider])
 }
 
 /**
@@ -820,7 +896,8 @@ private final class Sdk(
     case e if e == classOf[Executor]           =>
       // The type does not guarantee this is a Java concurrent Executor, but we know it is, since supplied from runtime
       sdkExecutionContext.asInstanceOf[Executor]
-    case s if s == classOf[Sanitizer] => sanitizer
+    case s if s == classOf[Sanitizer]             => sanitizer
+    case o if o == classOf[ObjectStorageProvider] => objectStorage
   }
 
   val spiComponents: SpiComponents = {
@@ -1131,6 +1208,9 @@ private final class Sdk(
       sdkExecutionContext,
       system)
   }
+
+  private lazy val objectStorage: ObjectStorageProvider =
+    new ObjectStorageProviderImpl(runtimeComponentClients.objectStorage, system)
 
   private def timerScheduler(telemetryContext: Option[OtelContext]): TimerScheduler = {
     val metadata = telemetryContext match {

@@ -1,0 +1,197 @@
+/*
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
+ */
+
+package akka.javasdk.objectstorage;
+
+import akka.Done;
+import akka.NotUsed;
+import akka.annotation.DoNotInherit;
+import akka.http.javadsl.model.ContentType;
+import akka.stream.javadsl.Source;
+import akka.util.ByteString;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CompletionStage;
+
+/**
+ * Client for a single named bucket. Obtained via {@link ObjectStorageProvider#forBucket(String)}.
+ *
+ * <p>Not for user extension.
+ */
+@DoNotInherit
+public interface ObjectStorage {
+
+  /**
+   * @return The logical name of the bucket this store interacts with
+   */
+  String bucketName();
+
+  /**
+   * Retrieve an object, returning both its metadata and full content, or {@link Optional#empty()}
+   * if no object exists for the given key.
+   *
+   * <p>Blocks the calling thread until the operation completes. Safe to call on a Loom virtual
+   * thread. For large objects prefer {@link #getStreamAsync(String)}.
+   */
+  Optional<StorageObject> get(String key);
+
+  /**
+   * Store an object without an explicit content type.
+   *
+   * <p>Blocks the calling thread until the operation completes. Use {@link #getMetadata(String)} to
+   * retrieve metadata after the write if needed.
+   *
+   * @param key object key within the bucket
+   * @param data content to store
+   */
+  Done put(String key, ByteString data);
+
+  /**
+   * Store an object with an explicit content type.
+   *
+   * <p>Blocks the calling thread until the operation completes. Use {@link #getMetadata(String)} to
+   * retrieve metadata after the write if needed.
+   *
+   * @param key object key within the bucket
+   * @param data content to store
+   * @param contentType MIME type of the content
+   */
+  Done put(String key, ByteString data, ContentType contentType);
+
+  /**
+   * Store an object with an explicit content type.
+   *
+   * <p>Blocks the calling thread until the operation completes. Use {@link #getMetadata(String)} to
+   * retrieve metadata after the write if needed.
+   *
+   * @param key object key within the bucket
+   * @param data content to store
+   * @param contentType MIME type of the content
+   * @param metadata Additional metadata to store with the data
+   */
+  Done put(String key, ByteString data, ContentType contentType, Map<String, String> metadata);
+
+  /**
+   * Delete the object with the given key. Succeeds silently if the key does not exist.
+   *
+   * <p>Blocks the calling thread until the operation completes.
+   */
+  Done delete(String key);
+
+  /**
+   * List all objects whose keys start with {@code prefix}. Pass an empty string to list all objects
+   * in the bucket.
+   *
+   * <p>Be careful listing buckets with large numbers of entries, all will be collected into memory
+   * of the service.
+   */
+  List<ObjectMetadata> list(String prefix);
+
+  /**
+   * List all objects in the bucket.
+   *
+   * <p>Be careful listing buckets with large numbers of entries, all will be collected into memory
+   * of the service.
+   */
+  List<ObjectMetadata> list();
+
+  /**
+   * Retrieve only the metadata for an object without downloading its content, or {@link
+   * Optional#empty()} if no object exists for the given key.
+   *
+   * <p>Blocks the calling thread until the operation completes.
+   */
+  Optional<ObjectMetadata> getMetadata(String key);
+
+  /**
+   * List all objects whose keys start with {@code prefix}. Pass an empty string to list all objects
+   * in the bucket.
+   */
+  Source<ObjectMetadata, NotUsed> streamList(String prefix);
+
+  /** List all objects in the bucket. */
+  Source<ObjectMetadata, NotUsed> streamList();
+
+  /**
+   * Retrieve an object as a streaming source, or {@link Optional#empty()} if no object exists for
+   * the given key. Prefer this over {@link #get(String)} for large objects that may not fit in JVM
+   * heap. Use {@link #getMetadataAsync(String)} to retrieve metadata separately if needed.
+   */
+  CompletionStage<Optional<Source<ByteString, NotUsed>>> getStreamAsync(String key);
+
+  /**
+   * Store an object from a streaming source without an explicit content type. Use {@link
+   * #getMetadataAsync(String)} to retrieve metadata after the write if needed.
+   *
+   * @param key object key within the bucket
+   * @param data stream of content chunks
+   */
+  CompletionStage<Done> putStreamAsync(String key, Source<ByteString, ?> data);
+
+  /**
+   * Store an object from a streaming source with an explicit content type. Use {@link
+   * #getMetadataAsync(String)} to retrieve metadata after the write if needed.
+   *
+   * @param key object key within the bucket
+   * @param data stream of content chunks
+   * @param contentType MIME type of the content
+   */
+  CompletionStage<Done> putStreamAsync(
+      String key, Source<ByteString, ?> data, ContentType contentType);
+
+  /**
+   * Store an object from a streaming source with an explicit content type. Use {@link
+   * #getMetadataAsync(String)} to retrieve metadata after the write if needed.
+   *
+   * @param key object key within the bucket
+   * @param data stream of content chunks
+   * @param contentType MIME type of the content
+   * @param metadata Additional metadata to store with the data
+   */
+  CompletionStage<Done> putStreamAsync(
+      String key,
+      Source<ByteString, ?> data,
+      ContentType contentType,
+      Map<String, String> metadata);
+
+  // ── Async variants ───────────────────────────────────────────────────────
+
+  /**
+   * Async variant of {@link #get(String)}. Returns a {@link CompletionStage} that completes with
+   * the object, or an empty {@link Optional} if no object exists for the given key.
+   */
+  CompletionStage<Optional<StorageObject>> getAsync(String key);
+
+  /**
+   * Async variant of {@link #put(String, ByteString)}. Returns a {@link CompletionStage} that
+   * completes when the object has been stored.
+   */
+  CompletionStage<Done> putAsync(String key, ByteString data);
+
+  /**
+   * Async variant of {@link #put(String, ByteString, ContentType)}. Returns a {@link
+   * CompletionStage} that completes when the object has been stored.
+   */
+  CompletionStage<Done> putAsync(String key, ByteString data, ContentType contentType);
+
+  /**
+   * Async variant of {@link #put(String, ByteString, ContentType, Map)}. Returns a {@link
+   * CompletionStage} that completes when the object has been stored.
+   */
+  CompletionStage<Done> putAsync(
+      String key, ByteString data, ContentType contentType, Map<String, String> metadata);
+
+  /**
+   * Async variant of {@link #delete(String)}. Returns a {@link CompletionStage} that completes when
+   * the object has been deleted.
+   */
+  CompletionStage<Done> deleteAsync(String key);
+
+  /**
+   * Async variant of {@link #getMetadata(String)}. Returns a {@link CompletionStage} that completes
+   * with the metadata, or an empty {@link Optional} if no object exists for the given key.
+   */
+  CompletionStage<Optional<ObjectMetadata>> getMetadataAsync(String key);
+}

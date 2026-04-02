@@ -5,7 +5,10 @@
 package akkajavasdk.components.http;
 
 import akka.NotUsed;
+import akka.http.javadsl.model.ContentTypes;
+import akka.http.javadsl.model.HttpEntity.Strict;
 import akka.http.javadsl.model.HttpResponse;
+import akka.http.javadsl.model.StatusCodes;
 import akka.javasdk.Sanitizer;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
@@ -15,6 +18,7 @@ import akka.javasdk.annotations.http.WebSocket;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.AbstractHttpEndpoint;
 import akka.javasdk.http.HttpResponses;
+import akka.javasdk.objectstorage.ObjectStorageProvider;
 import akka.stream.javadsl.Flow;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
@@ -30,10 +34,13 @@ public class TestEndpoint extends AbstractHttpEndpoint {
 
   private final Sanitizer sanitizer;
   private final ComponentClient componentClient;
+  private final ObjectStorageProvider objectStorage;
 
-  public TestEndpoint(Sanitizer sanitizer, ComponentClient componentClient) {
+  public TestEndpoint(
+      Sanitizer sanitizer, ComponentClient componentClient, ObjectStorageProvider objectStorage) {
     this.sanitizer = sanitizer;
     this.componentClient = componentClient;
+    this.objectStorage = objectStorage;
   }
 
   private boolean constructedOnVt = Thread.currentThread().isVirtual();
@@ -119,5 +126,22 @@ public class TestEndpoint extends AbstractHttpEndpoint {
                 return bytes.dropRight(bytes.length() - limit);
               } else return bytes;
             });
+  }
+
+  @Post("/object-storage/{key}")
+  public HttpResponse uploadObject(String key, Strict body) {
+    objectStorage.forBucket("test-bucket").put(key, body.getData(), body.getContentType());
+    return HttpResponses.ok("uploaded " + body.getData().length() + " bytes as [" + key + "]");
+  }
+
+  @Get("/object-storage/{key}")
+  public HttpResponse downloadObject(String key) {
+    var result = objectStorage.forBucket("test-bucket").get(key);
+    if (result.isEmpty()) return HttpResponses.notFound();
+    return HttpResponse.create()
+        .withStatus(StatusCodes.OK)
+        .withEntity(
+            result.get().metadata.contentType.orElse(ContentTypes.APPLICATION_OCTET_STREAM),
+            result.get().data);
   }
 }

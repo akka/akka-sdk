@@ -1,0 +1,135 @@
+= Object storage
+:page-summary: Store and retrieve binary objects (images, PDFs, documents) in named buckets. Integrates with AI agents via object:// URIs for multimodal content.
+:page-persona: builder-developer, builder-ai-ml
+:page-related: xref:sdk:agents/prompt.adoc[], xref:sdk:integrations/data-and-knowledge.adoc[]
+
+include::ROOT:partial$include.adoc[]
+
+Object storage lets you store and retrieve binary objects — images, PDFs, documents, or any other binary data — in named buckets. The SDK provides a built-in `ObjectStorageProvider` that you can inject into any side-effecting component (endpoints, workflows, agents, consumers, timed actions).
+
+Objects stored in buckets are directly accessible to AI agents via `object://` URIs. The SDK resolves these automatically when sending multimodal content to an LLM, with no custom content-loading code required. See xref:sdk:agents/prompt.adoc#object-storage-content[Loading content from object storage] for details.
+
+== Getting an ObjectStorage
+
+Inject `ObjectStorageProvider` into your component and call `forBucket` to obtain an `ObjectStorage` for a specific bucket:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ImageUploadEndpoint.java[ImageUploadEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/ImageUploadEndpoint.java[tag=inject-bucket]
+----
+<1> `ObjectStorageProvider` is injected by the SDK — no manual wiring needed.
+<2> `forBucket` returns an `ObjectStorage` scoped to the named bucket.
+
+== Storing and retrieving objects
+
+`ObjectStorage` has a straightforward API designed for small to medium size binary payloads, plus streaming variants for large objects.
+
+=== Regular API
+
+These operations all work with the entire object in the heap of the service:
+
+[cols="1,3", width=85%]
+|===
+| Method | Description
+
+| `put(key, data)` | Store an object. Optionally include a `ContentType`.
+| `get(key)` | Retrieve an object with its full content, or `Optional.empty()` if not found.
+| `getMetadata(key)` | Retrieve only the metadata without downloading the content.
+| `delete(key)` | Delete an object. Succeeds silently if the key does not exist.
+| `list()` | List all objects in the bucket as an in-memory `List`. Use `list(prefix)` to filter by key prefix.
+
+|===
+
+=== Streaming API
+
+For large objects that may not fit comfortably in JVM heap, use the streaming variants instead. They will allow working with smaller chunks of the payload at a time, for example for streaming out to a HTTP client:
+
+[cols="1,3", width=85%]
+|===
+| Method | Description
+
+| `putStreamAsync(key, source)` | Store an object from an Akka Streams `Source<ByteString, ?>`. Optionally include a `ContentType`.
+| `getStreamAsync(key)` | Retrieve an object as a streaming `Source<ByteString, NotUsed>`, or an empty `Optional` if the key does not exist.
+| `streamList()` | Stream object metadata as a `Source<ObjectMetadata, NotUsed>` — prefer over `list()` for large buckets. Use `streamList(prefix)` to filter by key prefix.
+
+|===
+
+=== Example: upload, list, and delete
+
+The following endpoint stores an uploaded image, invokes an AI agent to describe it, and exposes list and delete operations:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ImageUploadEndpoint.java[ImageUploadEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/ImageUploadEndpoint.java[tag=put-describe]
+----
+<1> Store the uploaded bytes under a generated key, preserving the original content type.
+<2> Create an `ImageUrlMessageContent` referencing the stored object via an `object://` URI — no download happens yet.
+<3> Pass the content reference to the agent; the SDK resolves and sends the image to the model.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ImageUploadEndpoint.java[ImageUploadEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/ImageUploadEndpoint.java[tag=list-delete]
+----
+
+=== Object metadata
+
+`ObjectMetadata` contains:
+
+[cols="1,3", width=85%]
+|===
+| Field | Description
+
+| `key` | The object key within the bucket.
+| `size` | Size in bytes.
+| `contentType` | MIME type, if set at write time.
+| `eTag` | Opaque version identifier, if provided by the backend.
+| `lastModified` | Timestamp of the last write.
+
+|===
+
+== Object storage and AI agents
+
+Objects stored in buckets can be passed directly to AI agents as multimodal content. The factory methods `ImageUrlMessageContent.create(bucket, key)` and `PdfUrlMessageContent.create(bucket, key)` produce content references using an `object://` URI scheme. The SDK loads the data from the bucket automatically before sending the request to the model.
+
+See xref:sdk:agents/prompt.adoc#object-storage-content[Loading content from object storage] for a full example.
+
+== Development mode
+
+In dev mode (running locally with `mvn compile exec:java`), the SDK uses a local filesystem backend by default. No bucket configuration is required — any bucket name is accepted and objects are stored under a directory inside `target/`.
+
+To test against a real backend in dev mode, or to configure specific bucket names with explicit providers, add entries to `application.conf`:
+
+[source,hocon]
+.src/main/resources/application.conf
+----
+akka.javasdk.dev-mode.object-storage.buckets = [
+  # Filesystem backend (explicit directory)
+  { name = "images", provider = "filesystem", directory = "target/dev-images" }
+
+  # S3-compatible backend (e.g. MinIO or AWS S3 with static credentials)
+  # { name = "documents", provider = "s3", bucket = "my-bucket", region = "us-east-1"
+  #   credentials { type = "static", access-key-id = "AKID", secret-access-key = "secret" } }
+
+  # Google Cloud Storage with a service-account key file
+  # { name = "assets", provider = "gcs", bucket = "my-gcs-bucket"
+  #   credentials { type = "service-account-key", path = "/secrets/sa-key.json" } }
+]
+----
+
+S3 and GCS buckets without any explicit authentication configured will both rely on their respective default authentication options, see https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/credentials-chain.html#credentials-default[S3], https://doc.akka.io/libraries/alpakka/current/google-common.html#configuration[GCS] for more details.
+
+When the `buckets` list is non-empty, only the named buckets are accessible — matching production behavior. When it is empty (the default), all names are accepted.
+
+== Testing
+
+Integration tests that use `TestKitSupport` automatically get an in-memory object storage backend. No external infrastructure or configuration is needed. Any bucket name is accepted and objects are stored in memory for the duration of the test.
+
+NOTE: Each test class starts its own runtime instance, so the in-memory store is isolated between test classes. Test methods within the same class share the same store.
+
+== See also
+
+* xref:sdk:agents/prompt.adoc#object-storage-content[Multimodal agents with object storage]
+* xref:sdk:integrations/data-and-knowledge.adoc[Data & knowledge integrations]
