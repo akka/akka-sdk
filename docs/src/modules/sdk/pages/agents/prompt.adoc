@@ -44,7 +44,7 @@ When you store images or PDFs in xref:sdk:integrations/object-storage.adoc[objec
 
 If one of the `*UrlMessageContent` message content classes are used and the URI in it has the format `object://[bucket-name]/[key]` the runtime will look for a configured bucket with that name and load the payload from `key` in it.
 
-Use the factory methods `ImageUrlMessageContent.create(bucket, key)` or `PdfUrlMessageContent.create(bucket, key)` to create a content reference backed by an `object://` URI and the bucket `ObjectStore` is in scope.
+Use the factory methods `ImageUrlMessageContent.create(bucket, key)` or `PdfUrlMessageContent.create(bucket, key)` to create a content reference backed by an `object://` URI and the bucket `ObjectStorage` is in scope.
 
 Upload an image and create the content reference in an endpoint:
 

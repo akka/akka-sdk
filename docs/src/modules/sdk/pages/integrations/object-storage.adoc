@@ -5,25 +5,25 @@
 
 include::ROOT:partial$include.adoc[]
 
-Object storage lets you store and retrieve binary objects — images, PDFs, documents, or any other binary data — in named buckets. The SDK provides a built-in `ObjectStoreProvider` that you can inject into any side-effecting component (endpoints, workflows, agents, consumers, timed actions).
+Object storage lets you store and retrieve binary objects — images, PDFs, documents, or any other binary data — in named buckets. The SDK provides a built-in `ObjectStorageProvider` that you can inject into any side-effecting component (endpoints, workflows, agents, consumers, timed actions).
 
 Objects stored in buckets are directly accessible to AI agents via `object://` URIs. The SDK resolves these automatically when sending multimodal content to an LLM, with no custom content-loading code required. See xref:sdk:agents/prompt.adoc#object-storage-content[Loading content from object storage] for details.
 
-== Getting an ObjectStore
+== Getting an ObjectStorage
 
-Inject `ObjectStoreProvider` into your component and call `forBucket` to obtain an `ObjectStore` for a specific bucket:
+Inject `ObjectStorageProvider` into your component and call `forBucket` to obtain an `ObjectStorage` for a specific bucket:
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/ImageUploadEndpoint.java[ImageUploadEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ImageUploadEndpoint.java[tag=inject-bucket]
 ----
-<1> `ObjectStoreProvider` is injected by the SDK — no manual wiring needed.
-<2> `forBucket` returns an `ObjectStore` scoped to the named bucket.
+<1> `ObjectStorageProvider` is injected by the SDK — no manual wiring needed.
+<2> `forBucket` returns an `ObjectStorage` scoped to the named bucket.
 
 == Storing and retrieving objects
 
-`ObjectStore` has a straightforward API designed for small to medium size binary payloads, plus streaming variants for large objects.
+`ObjectStorage` has a straightforward API designed for small to medium size binary payloads, plus streaming variants for large objects.
 
 === Regular API
 

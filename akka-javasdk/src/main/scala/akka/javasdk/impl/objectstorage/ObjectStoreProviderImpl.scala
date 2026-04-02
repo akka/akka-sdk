@@ -19,9 +19,9 @@ import akka.http.javadsl.model.ContentType
 import akka.http.javadsl.{ model => jm }
 import akka.http.scaladsl.{ model => sm }
 import akka.javasdk.objectstorage.ObjectMetadata
-import akka.javasdk.objectstorage.ObjectStore
-import akka.javasdk.objectstorage.ObjectStoreProvider
-import akka.javasdk.objectstorage.StoreObject
+import akka.javasdk.objectstorage.ObjectStorage
+import akka.javasdk.objectstorage.ObjectStorageProvider
+import akka.javasdk.objectstorage.StorageObject
 import akka.runtime.sdk.spi.SpiObjectStorage
 import akka.runtime.sdk.spi.SpiObjectStorageClient
 import akka.runtime.sdk.spi.{ ObjectMetadata => SpiObjectMetadata }
@@ -34,11 +34,11 @@ import io.opentelemetry.context.{ Context => OtelContext }
  * INTERNAL API
  */
 @InternalApi
-private[impl] final class ObjectStorageImpl(
+private[impl] final class ObjectStorageProviderImpl(
     spiObjectStorage: SpiObjectStorage,
     system: ActorSystem[_],
     otelContext: Option[OtelContext])
-    extends ObjectStorage {
+    extends ObjectStorageProvider {
   override def forBucket(bucketName: String): ObjectStore =
     new ObjectStoreImpl(bucketName, spiObjectStorage.client(bucketName, otelContext), system)
 }
@@ -47,8 +47,8 @@ private[impl] final class ObjectStorageImpl(
  * INTERNAL API
  */
 @InternalApi
-private[impl] final class ObjectStoreImpl(bucketName: String, spiClient: SpiObjectStorageClient, system: ActorSystem[_])
-    extends ObjectStore {
+private[impl] final class ObjectStorageImpl(bucket: String, spiClient: SpiObjectStorageClient, system: ActorSystem[_])
+    extends ObjectStorage {
 
   private implicit val ec: ExecutionContext = system.executionContext
 
@@ -69,11 +69,11 @@ private[impl] final class ObjectStoreImpl(bucketName: String, spiClient: SpiObje
 
   // ── Async implementations ────────────────────────────────────────────────
 
-  override def getAsync(key: String): CompletionStage[Optional[StoreObject]] =
+  override def getAsync(key: String): CompletionStage[Optional[StorageObject]] =
     FutureConverters.asJava(
       spiClient
         .get(key)
-        .map(opt => OptionConverters.toJava(opt.map(so => new StoreObject(toPublicMetadata(so.metadata), so.data)))))
+        .map(opt => OptionConverters.toJava(opt.map(so => new StorageObject(toPublicMetadata(so.metadata), so.data)))))
 
   override def putAsync(key: String, data: ByteString): CompletionStage[Done] =
     FutureConverters.asJava(spiClient.put(key, data, None, Map.empty))
@@ -96,7 +96,7 @@ private[impl] final class ObjectStoreImpl(bucketName: String, spiClient: SpiObje
 
   // ── Blocking (Loom-friendly) API — delegates to async ───────────────────
 
-  override def get(key: String): Optional[StoreObject] =
+  override def get(key: String): Optional[StorageObject] =
     getAsync(key).toCompletableFuture.get()
 
   override def put(key: String, data: ByteString): Unit =

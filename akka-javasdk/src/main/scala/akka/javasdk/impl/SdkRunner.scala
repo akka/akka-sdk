@@ -81,7 +81,7 @@ import akka.javasdk.impl.http.HttpClientProviderImpl
 import akka.javasdk.impl.http.HttpRequestContextImpl
 import akka.javasdk.impl.http.JwtClaimsImpl
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityImpl
-import akka.javasdk.impl.objectstorage.ObjectStoreProviderImpl
+import akka.javasdk.impl.objectstorage.ObjectStorageProviderImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
 import akka.javasdk.impl.serialization.Serializer
@@ -96,7 +96,7 @@ import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.keyvalueentity.KeyValueEntityContext
 import akka.javasdk.mcp.AbstractMcpEndpoint
 import akka.javasdk.mcp.McpRequestContext
-import akka.javasdk.objectstorage.ObjectStoreProvider
+import akka.javasdk.objectstorage.ObjectStorageProvider
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.timer.TimerScheduler
 import akka.javasdk.tooling.validation.Validation
@@ -444,7 +444,7 @@ private[javasdk] object Sdk {
     classOf[Retries],
     classOf[AgentContext],
     classOf[AgentRegistry],
-    classOf[ObjectStoreProvider])
+    classOf[ObjectStorageProvider])
 }
 
 /**
@@ -947,6 +947,7 @@ private final class Sdk(
     case s if s == classOf[Sanitizer]          => sanitizer
     case s if s == classOf[Meter]              => sdkMeter
     case o if o == classOf[ObjectStorage]      => objectStorage(telemetryContext)
+    case o if o == classOf[ObjectStorageProvider] => objectStorage(telemetryContext)
   }
 
   val spiComponents: SpiComponents = {
@@ -1277,8 +1278,8 @@ private final class Sdk(
       system)
   }
 
-  private def objectStorage(telemetryContext: Option[OtelContext]): ObjectStorage =
-    new ObjectStorageImpl(runtimeComponentClients.objectStorage, system, telemetryContext)
+  private def objectStorage(telemetryContext: Option[OtelContext]): ObjectStorageProvider =
+    new ObjectStorageProviderImpl(runtimeComponentClients.objectStorage, system, telemetryContext)
 
   private def timerScheduler(telemetryContext: Option[OtelContext]): TimerScheduler = {
     val metadata = telemetryContext match {
