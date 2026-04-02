@@ -514,79 +514,13 @@ public final class TestModelProvider implements ModelProvider.Custom {
 
     private AutonomousAgentTools() {}
 
-    // --- Tool name constants ---
+    // --- Task lifecycle ---
 
     /** Tool name for completing a task. */
     public static final String COMPLETE_TASK = "complete_task";
 
     /** Tool name for failing a task. */
     public static final String FAIL_TASK = "fail_task";
-
-    /** Tool name for creating a team. */
-    public static final String CREATE_TEAM = "create_team";
-
-    /** Tool name for getting team status. */
-    public static final String GET_TEAM_STATUS = "get_team_status";
-
-    /** Tool name for disbanding a team. */
-    public static final String DISBAND_TEAM = "disband_team";
-
-    /** Tool name for getting managed backlog status (lead side). */
-    public static final String GET_MANAGED_BACKLOG_STATUS = "get_managed_backlog_status";
-
-    /** Tool name for cancelling unclaimed tasks from backlog (lead side). */
-    public static final String CANCEL_UNCLAIMED_TASKS_FROM_BACKLOG =
-        "cancel_unclaimed_tasks_from_backlog";
-
-    /** Tool name for getting backlog status (member side). */
-    public static final String GET_BACKLOG_STATUS = "get_backlog_status";
-
-    /** Tool name for claiming a task (member side). */
-    public static final String CLAIM_TASK = "claim_task";
-
-    /** Tool name for releasing a task (member side). */
-    public static final String RELEASE_TASK = "release_task";
-
-    /** Tool name for transferring a task (member side). */
-    public static final String TRANSFER_TASK = "transfer_task";
-
-    /** Tool name for sending a message. */
-    public static final String SEND_MESSAGE = "send_message";
-
-    /**
-     * Returns the tool name for a {@code handoff_to_<agent>} tool, derived from the target agent's
-     * component ID.
-     */
-    public static String handoffToToolName(Class<?> agentClass) {
-      return "handoff_to_" + sanitize(componentId(agentClass));
-    }
-
-    /**
-     * Returns the tool name for a {@code delegate_<task>_to_<agent>} tool, derived from the task
-     * definition and target agent's component ID.
-     */
-    public static String delegateToToolName(TaskDefinition<?> task, Class<?> agentClass) {
-      return "delegate_" + sanitize(task.name()) + "_to_" + sanitize(componentId(agentClass));
-    }
-
-    /**
-     * Returns the tool name for a {@code create_<taskType>_task_for_backlog} tool, derived from the
-     * task definition name.
-     */
-    public static String createTaskForBacklogToolName(TaskDefinition<?> task) {
-      return "create_" + sanitize(task.name()) + "_task_for_backlog";
-    }
-
-    /**
-     * Returns the tool name for a {@code send_<Method>_to_<agent>} tool, derived from the method
-     * name and target agent's component ID.
-     */
-    public static String sendToToolName(Class<?> agentClass, String methodName) {
-      var capitalizedMethod = Character.toUpperCase(methodName.charAt(0)) + methodName.substring(1);
-      return "send_" + sanitize(capitalizedMethod) + "_to_" + sanitize(componentId(agentClass));
-    }
-
-    // --- Tool invocation request factory methods ---
 
     /**
      * Creates a {@link ToolInvocationRequest} for the {@code complete_task} tool, with the given
@@ -618,6 +552,16 @@ public final class TestModelProvider implements ModelProvider.Custom {
       return new ToolInvocationRequest("fail_task", "{\"reason\":" + toJsonString(reason) + "}");
     }
 
+    // --- Handoff ---
+
+    /**
+     * Returns the tool name for a {@code handoff_to_<agent>} tool, derived from the target agent's
+     * component ID.
+     */
+    public static String handoffToToolName(Class<?> agentClass) {
+      return "handoff_to_" + sanitize(componentId(agentClass));
+    }
+
     /**
      * Creates a {@link ToolInvocationRequest} for a {@code handoff_to_<agent>} tool, deriving the
      * tool name from the target agent's component ID.
@@ -629,6 +573,25 @@ public final class TestModelProvider implements ModelProvider.Custom {
     public static ToolInvocationRequest handoffTo(Class<?> agentClass, String context) {
       var toolName = "handoff_to_" + sanitize(componentId(agentClass));
       return new ToolInvocationRequest(toolName, "{\"context\":" + toJsonString(context) + "}");
+    }
+
+    // --- Delegation ---
+
+    /**
+     * Returns the tool name for a {@code delegate_<task>_to_<agent>} tool, derived from the task
+     * definition and target agent's component ID.
+     */
+    public static String delegateToToolName(TaskDefinition<?> task, Class<?> agentClass) {
+      return "delegate_" + sanitize(task.name()) + "_to_" + sanitize(componentId(agentClass));
+    }
+
+    /**
+     * Returns the tool name for a {@code send_<Method>_to_<agent>} tool, derived from the method
+     * name and target agent's component ID.
+     */
+    public static String sendToToolName(Class<?> agentClass, String methodName) {
+      var capitalizedMethod = Character.toUpperCase(methodName.charAt(0)) + methodName.substring(1);
+      return "send_" + sanitize(capitalizedMethod) + "_to_" + sanitize(componentId(agentClass));
     }
 
     /**
@@ -683,6 +646,15 @@ public final class TestModelProvider implements ModelProvider.Custom {
     }
 
     // --- Team capability ---
+
+    /** Tool name for creating a team. */
+    public static final String CREATE_TEAM = "create_team";
+
+    /** Tool name for getting team status. */
+    public static final String GET_TEAM_STATUS = "get_team_status";
+
+    /** Tool name for disbanding a team. */
+    public static final String DISBAND_TEAM = "disband_team";
 
     /** Specifies a team member type and count for a {@code create_team} tool invocation. */
     public record TeamMemberSpec(Class<?> agentClass, int count) {
@@ -745,6 +717,21 @@ public final class TestModelProvider implements ModelProvider.Custom {
     }
 
     // --- Backlog capability (managed/orchestrator side) ---
+
+    /** Tool name for getting managed backlog status (lead side). */
+    public static final String GET_MANAGED_BACKLOG_STATUS = "get_managed_backlog_status";
+
+    /** Tool name for cancelling unclaimed tasks from backlog (lead side). */
+    public static final String CANCEL_UNCLAIMED_TASKS_FROM_BACKLOG =
+        "cancel_unclaimed_tasks_from_backlog";
+
+    /**
+     * Returns the tool name for a {@code create_<taskType>_task_for_backlog} tool, derived from the
+     * task definition name.
+     */
+    public static String createTaskForBacklogToolName(TaskDefinition<?> task) {
+      return "create_" + sanitize(task.name()) + "_task_for_backlog";
+    }
 
     /**
      * Creates a {@link ToolInvocationRequest} for a {@code create_<taskType>_task_for_backlog}
@@ -852,6 +839,18 @@ public final class TestModelProvider implements ModelProvider.Custom {
     }
 
     // --- Backlog capability (worker/consumer side) ---
+
+    /** Tool name for getting backlog status (member side). */
+    public static final String GET_BACKLOG_STATUS = "get_backlog_status";
+
+    /** Tool name for claiming a task (member side). */
+    public static final String CLAIM_TASK = "claim_task";
+
+    /** Tool name for releasing a task (member side). */
+    public static final String RELEASE_TASK = "release_task";
+
+    /** Tool name for transferring a task (member side). */
+    public static final String TRANSFER_TASK = "transfer_task";
 
     /**
      * Creates a {@link ToolInvocationRequest} for the {@code get_backlog_status} tool. The {@code
@@ -962,6 +961,9 @@ public final class TestModelProvider implements ModelProvider.Custom {
 
     // --- Messaging capability ---
 
+    /** Tool name for sending a message. */
+    public static final String SEND_MESSAGE = "send_message";
+
     /**
      * Creates a {@link ToolInvocationRequest} for the fixed {@code send_message} tool.
      *
@@ -970,6 +972,176 @@ public final class TestModelProvider implements ModelProvider.Custom {
     public static ToolInvocationRequest sendMessage(String message) {
       return new ToolInvocationRequest(
           "send_message", "{\"message\":" + toJsonString(message) + "}");
+    }
+
+    // --- Moderation capability (moderator side) ---
+
+    /** Tool name for starting a moderated conversation. */
+    public static final String START_CONVERSATION = "start_conversation";
+
+    /** Tool name for providing a prompt during a scripted conversation step. */
+    public static final String PROVIDE_PROMPT = "provide_prompt";
+
+    /** Tool name for directing a participant in a conversation (directed mode). */
+    public static final String DIRECT = "direct";
+
+    /** Tool name for broadcasting a message to a conversation. */
+    public static final String BROADCAST = "broadcast";
+
+    /** Tool name for ending a moderated conversation (directed mode). */
+    public static final String END_CONVERSATION = "end_conversation";
+
+    // --- Moderation capability (participant/turn side) ---
+
+    /**
+     * Tool name for submitting a turn response. Used by participants when they have the floor, and
+     * by the moderator for their own turns in scripted conversations.
+     */
+    public static final String SUBMIT_TURN = "submit_turn";
+
+    /** Participant reference for scripted conversations, with type and reference name. */
+    public record ParticipantRef(String type, String as) {
+      public ParticipantRef(String type) {
+        this(type, type);
+      }
+    }
+
+    /** A step in a scripted conversation, specifying speaker and guidance. */
+    public record ScriptStep(String speaker, String guidance) {}
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for the {@code start_conversation} tool with a
+     * scripted pattern. The moderator defines participants and a turn script upfront.
+     *
+     * @param topic the conversation topic
+     * @param participants the participant references (type and reference name)
+     * @param script the ordered turn sequence
+     */
+    public static ToolInvocationRequest startScriptedConversation(
+        String topic,
+        java.util.List<ParticipantRef> participants,
+        java.util.List<ScriptStep> script) {
+      var participantsJson =
+          participants.stream()
+              .map(
+                  p ->
+                      "{\"type\":"
+                          + toJsonString(p.type())
+                          + ",\"as\":"
+                          + toJsonString(p.as())
+                          + "}")
+              .collect(java.util.stream.Collectors.joining(",", "[", "]"));
+      var scriptJson =
+          script.stream()
+              .map(
+                  s ->
+                      "{\"speaker\":"
+                          + toJsonString(s.speaker())
+                          + ",\"guidance\":"
+                          + toJsonString(s.guidance())
+                          + "}")
+              .collect(java.util.stream.Collectors.joining(",", "[", "]"));
+      return new ToolInvocationRequest(
+          START_CONVERSATION,
+          "{\"pattern\":"
+              + toJsonString("scripted")
+              + ",\"topic\":"
+              + toJsonString(topic)
+              + ",\"participants\":"
+              + participantsJson
+              + ",\"script\":"
+              + scriptJson
+              + "}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for the {@code start_conversation} tool with a
+     * directed pattern. The moderator controls each turn dynamically.
+     *
+     * @param topic the conversation topic
+     * @param maxRounds safety limit on conversation rounds
+     * @param participants the participant references (type and reference name)
+     */
+    public static ToolInvocationRequest startDirectedConversation(
+        String topic, int maxRounds, java.util.List<ParticipantRef> participants) {
+      var participantsJson =
+          participants.stream()
+              .map(
+                  p ->
+                      "{\"type\":"
+                          + toJsonString(p.type())
+                          + ",\"as\":"
+                          + toJsonString(p.as())
+                          + "}")
+              .collect(java.util.stream.Collectors.joining(",", "[", "]"));
+      return new ToolInvocationRequest(
+          START_CONVERSATION,
+          "{\"pattern\":"
+              + toJsonString("directed")
+              + ",\"topic\":"
+              + toJsonString(topic)
+              + ",\"rounds\":"
+              + maxRounds
+              + ",\"participants\":"
+              + participantsJson
+              + "}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for the {@code provide_prompt} tool (scripted mode).
+     * Provides a contextual prompt for the current participant step.
+     *
+     * @param prompt the prompt to give to the participant
+     */
+    public static ToolInvocationRequest providePrompt(String prompt) {
+      return new ToolInvocationRequest(PROVIDE_PROMPT, "{\"prompt\":" + toJsonString(prompt) + "}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for the {@code direct} tool (directed mode only).
+     * Grants the floor to a named participant with a direction message.
+     *
+     * @param participantRef the reference name of the participant to direct
+     * @param message the direction message for the participant
+     */
+    public static ToolInvocationRequest direct(String participantRef, String message) {
+      return new ToolInvocationRequest(
+          DIRECT,
+          "{\"participant\":"
+              + toJsonString(participantRef)
+              + ",\"message\":"
+              + toJsonString(message)
+              + "}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for the {@code broadcast} tool. Posts a message to
+     * the conversation without granting the floor.
+     *
+     * @param message the message to broadcast
+     */
+    public static ToolInvocationRequest broadcast(String message) {
+      return new ToolInvocationRequest(BROADCAST, "{\"message\":" + toJsonString(message) + "}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for the {@code end_conversation} tool (directed mode
+     * only). Ends the conversation and receives the full transcript.
+     */
+    public static ToolInvocationRequest endConversation() {
+      return new ToolInvocationRequest(END_CONVERSATION, "{}");
+    }
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for the {@code submit_turn} tool. Used by
+     * participants to submit their response, and by the moderator for their own turns in scripted
+     * conversations.
+     *
+     * @param response the response message
+     */
+    public static ToolInvocationRequest submitTurn(String response) {
+      return new ToolInvocationRequest(
+          SUBMIT_TURN, "{\"response\":" + toJsonString(response) + "}");
     }
 
     private static String componentId(Class<?> agentClass) {

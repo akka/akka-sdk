@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl.agent.autonomous
 
+import akka.javasdk.agent.autonomous.capability.Moderation
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance
 import akka.javasdk.agent.autonomous.capability.TeamLeadership
 import akka.javasdk.agent.task.Task
@@ -190,6 +191,93 @@ class CapabilityConverterSpec extends AnyWordSpec with Matchers {
       orchestrators.head.delegationGroups should have size 2
       orchestrators.head.delegationGroups(0).maxParallelWorkers shouldBe 2
       orchestrators.head.delegationGroups(1).maxParallelWorkers shouldBe 4
+    }
+
+    // Converter with moderation participant agents registered
+    val moderationConverter = new CapabilityConverter(
+      agentDefinitionMap = Map(
+        "test-advocate" -> (AgentDefinitionImpl.empty(), Seq.empty[SpiTask.SpiTaskDefinition]),
+        "test-critic" -> (AgentDefinitionImpl.empty(), Seq.empty[SpiTask.SpiTaskDefinition])),
+      agentDescriptors = Seq(
+        new AutonomousAgentDescriptor(
+          "test-advocate",
+          classOf[TestModerationAgents.TestAdvocate].getName,
+          None,
+          Some("A test advocate agent"),
+          dummyFactory,
+          provided = false),
+        new AutonomousAgentDescriptor(
+          "test-critic",
+          classOf[TestModerationAgents.TestCritic].getName,
+          None,
+          Some("A test critic agent"),
+          dummyFactory,
+          provided = false)),
+      requestBasedAgentDescriptors = Seq.empty,
+      defaultMaxIterationsPerTask = 10,
+      defaultMaxParallelWorkers = 3)
+
+    "convert moderation with default values" in {
+      val moderation = Moderation
+        .of(classOf[TestModerationAgents.TestAdvocate])
+
+      val capabilities = moderationConverter.toSpiCapabilities(java.util.List.of(moderation))
+
+      capabilities should have size 1
+      val spiModeration = capabilities.head.asInstanceOf[SpiAutonomousAgent.Moderation]
+      spiModeration.participantTypes should have size 1
+      spiModeration.participantTypes.head.agentComponentId shouldBe "test-advocate"
+      spiModeration.participantTypes.head.description shouldBe Some("A test advocate agent")
+      spiModeration.maxRounds shouldBe 5
+      spiModeration.maxIterationsPerTurn shouldBe 10
+      spiModeration.maxConcurrentConversations shouldBe 1
+    }
+
+    "convert moderation with explicit maxRounds" in {
+      val moderation = Moderation
+        .of(classOf[TestModerationAgents.TestAdvocate])
+        .maxRounds(10)
+
+      val capabilities = moderationConverter.toSpiCapabilities(java.util.List.of(moderation))
+
+      val spiModeration = capabilities.head.asInstanceOf[SpiAutonomousAgent.Moderation]
+      spiModeration.maxRounds shouldBe 10
+    }
+
+    "convert moderation with explicit maxIterationsPerTurn" in {
+      val moderation = Moderation
+        .of(classOf[TestModerationAgents.TestAdvocate])
+        .maxIterationsPerTurn(3)
+
+      val capabilities = moderationConverter.toSpiCapabilities(java.util.List.of(moderation))
+
+      val spiModeration = capabilities.head.asInstanceOf[SpiAutonomousAgent.Moderation]
+      spiModeration.maxIterationsPerTurn shouldBe 3
+    }
+
+    "convert moderation with explicit maxConcurrentConversations" in {
+      val moderation = Moderation
+        .of(classOf[TestModerationAgents.TestAdvocate])
+        .maxConcurrentConversations(4)
+
+      val capabilities = moderationConverter.toSpiCapabilities(java.util.List.of(moderation))
+
+      val spiModeration = capabilities.head.asInstanceOf[SpiAutonomousAgent.Moderation]
+      spiModeration.maxConcurrentConversations shouldBe 4
+    }
+
+    "convert moderation with multiple participant types" in {
+      val moderation =
+        Moderation.of(classOf[TestModerationAgents.TestAdvocate], classOf[TestModerationAgents.TestCritic])
+
+      val capabilities = moderationConverter.toSpiCapabilities(java.util.List.of(moderation))
+
+      val spiModeration = capabilities.head.asInstanceOf[SpiAutonomousAgent.Moderation]
+      spiModeration.participantTypes should have size 2
+      spiModeration.participantTypes(0).agentComponentId shouldBe "test-advocate"
+      spiModeration.participantTypes(0).description shouldBe Some("A test advocate agent")
+      spiModeration.participantTypes(1).agentComponentId shouldBe "test-critic"
+      spiModeration.participantTypes(1).description shouldBe Some("A test critic agent")
     }
 
     "convert team leadership with default maxConcurrentTeams" in {
