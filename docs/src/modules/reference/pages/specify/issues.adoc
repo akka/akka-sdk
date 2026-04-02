@@ -1,0 +1,20 @@
+= /akka.issues
+
+Convert tasks into GitHub issues.
+
+== Usage
+
+[source]
+----
+/akka:issues
+----
+
+== Description
+
+Converts existing tasks from `tasks.md` into actionable, dependency-ordered GitHub issues for the feature based on available design artifacts.
+
+== See also
+
+* xref:sdk:spec-driven-development.adoc[]
+* xref:reference:specify/index.adoc[]
+* xref:reference:specify/tasks.adoc[]

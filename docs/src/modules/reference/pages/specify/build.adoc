@@ -1,0 +1,29 @@
+= /akka.build
+
+Build, test, and run the service locally.
+
+== Usage
+
+[source]
+----
+/akka:build
+----
+
+== Description
+
+Provides a full local development loop with the following capabilities:
+
+* Pre-existing services are shut down
+* Anything using the target port is shut down
+* The service is recompiled and all tests are run
+* The service is launched
+* The service is exercised through real endpoints to verify functionality
+* The service remains running for manual exercise
+* If documents change, the service is automatically recompiled and restarted
+
+== See also
+
+* xref:sdk:spec-driven-development.adoc[]
+* xref:reference:specify/index.adoc[]
+* xref:reference:specify/implement.adoc[]
+* xref:reference:specify/inspect.adoc[]

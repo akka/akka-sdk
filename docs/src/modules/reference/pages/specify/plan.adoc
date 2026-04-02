@@ -1,0 +1,23 @@
+= /akka.plan
+
+Convert a feature specification into a technical implementation plan.
+
+== Usage
+
+[source]
+----
+/akka:plan {implementation prompt}
+----
+
+== Description
+
+Takes a natural-language prompt describing the technical architecture and design decisions, then generates a formal implementation plan. The input is a prompt -- not the final plan. The agent produces the final plan as output, categorized by priority and functional requirements.
+
+The plan defines the _how_ of your application: service architecture, endpoint design, authentication strategy, UI approach, and more.
+
+== See also
+
+* xref:sdk:spec-driven-development.adoc[]
+* xref:reference:specify/index.adoc[]
+* xref:reference:specify/clarify.adoc[]
+* xref:reference:specify/tasks.adoc[]

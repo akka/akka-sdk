@@ -1,0 +1,21 @@
+= /akka.constitution
+
+Create or update the project constitution.
+
+== Usage
+
+[source]
+----
+/akka:constitution
+----
+
+== Description
+
+The constitution defines unbreakable project rules regarding technology requirements and design decisions. This command creates or updates `constitution.md` from interactive or provided principle inputs, ensuring all dependent templates stay in sync.
+
+Akka provides a default constitution containing mandatory Akka application requirements. Use this command to layer additional organizational or team-level rules on top.
+
+== See also
+
+* xref:sdk:spec-driven-development.adoc[]
+* xref:reference:specify/index.adoc[]
