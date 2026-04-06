@@ -182,12 +182,7 @@ See [Guardrails](agents/guardrails.html) for details on implementing guardrail c
 
 ### Memory
 
-Session memory configuration controls how conversation history across iterations is managed. By default, memory accumulates across iterations. Use `MemoryProvider` to limit the window or disable memory.
-
-```java
-define()
-  .memory(MemoryProvider.limitedWindow().readLast(20))
-```
+Session memory configuration controls how conversation history across iterations is managed. By default, memory accumulates across iterations.
 
 ### Iteration limit
 

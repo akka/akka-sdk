@@ -26,7 +26,7 @@ public abstract class AutonomousAgent implements akka.javasdk.agent.AgentDelegat
 
   /**
    * Define this autonomous agent. The definition configures the agent's goal, tools, model
-   * provider, guardrails, memory, and capabilities.
+   * provider, guardrails, and capabilities.
    *
    * @return the agent definition
    */

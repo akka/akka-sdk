@@ -18,7 +18,6 @@ import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.DependencyProvider
 import akka.javasdk.Metadata
-import akka.javasdk.agent.MemoryProvider
 import akka.javasdk.agent.SessionMessage
 import akka.javasdk.agent.SessionMessage.AiMessage
 import akka.javasdk.agent.SessionMessage.MultimodalUserMessage
@@ -34,7 +33,6 @@ import akka.javasdk.agent.task.TaskEntity
 import akka.javasdk.agent.task.TaskStatus
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.JsonSchema
-import akka.javasdk.impl.agent.SessionMemoryClient.MemorySettings
 import akka.javasdk.impl.agent.autonomous.AgentDefinitionImpl
 import akka.javasdk.impl.client.EntityClientImpl
 import akka.javasdk.impl.reflection.Reflect
@@ -47,6 +45,7 @@ import akka.runtime.sdk.spi.SpiBacklogOperations
 import akka.runtime.sdk.spi.SpiTask
 import akka.runtime.sdk.spi.SpiTaskOperations
 import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.LoggerFactory
@@ -83,31 +82,14 @@ private[impl] final class AutonomousAgentImpl(
   private val log = LoggerFactory.getLogger(classOf[AutonomousAgentImpl])
 
   private lazy val sessionMemoryClient: SessionMemory =
-    deriveMemoryClient(agentDefinition.memoryProvider, telemetryContext = None)
+    deriveMemoryClient(telemetryContext = None)
 
-  private def deriveMemoryClient(
-      memoryProvider: MemoryProvider,
-      telemetryContext: Option[OtelContext]): SessionMemory = {
-    memoryProvider match {
-      case _: MemoryProvider.Disabled =>
-        new SessionMemoryClient(componentClient(telemetryContext), MemorySettings.disabled())
-
-      case p: MemoryProvider.LimitedWindowMemoryProvider =>
-        new SessionMemoryClient(
-          componentClient(telemetryContext),
-          new MemorySettings(p.read(), p.write(), p.readLastN(), p.filters()))
-
-      case p: MemoryProvider.CustomMemoryProvider =>
-        p.sessionMemory()
-
-      case p: MemoryProvider.FromConfig =>
-        val actualPath =
-          if (p.configPath() == "")
-            "akka.javasdk.agent.memory"
-          else
-            p.configPath()
-        new SessionMemoryClient(componentClient(telemetryContext), config.getConfig(actualPath))
-    }
+  private def deriveMemoryClient(telemetryContext: Option[OtelContext]): SessionMemory = {
+    // always enabled
+    val memoryConfig = ConfigFactory
+      .parseString("enabled=true")
+      .withFallback(config.getConfig("akka.javasdk.agent.memory"))
+    new SessionMemoryClient(componentClient(telemetryContext), memoryConfig)
   }
 
   private lazy val toolExecutor: ToolExecutor = {

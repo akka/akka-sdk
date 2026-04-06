@@ -5,13 +5,12 @@
 package akka.javasdk.agent.autonomous;
 
 import akka.javasdk.agent.Guardrail;
-import akka.javasdk.agent.MemoryProvider;
 import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.agent.RemoteMcpTools;
 import akka.javasdk.agent.autonomous.capability.AgentCapability;
 
 /**
- * Defines an autonomous agent's configuration: goal, tools, model provider, guardrails, memory, and
+ * Defines an autonomous agent's configuration: goal, tools, model provider, guardrails, and
  * capabilities. Built via {@link AutonomousAgent#define()} and returned from {@link
  * AutonomousAgent#definition()}.
  *
@@ -60,7 +59,4 @@ public interface AgentDefinition {
   /** Guardrails evaluated on responses received from the LLM. */
   @SuppressWarnings("unchecked")
   AgentDefinition responseGuardrails(Class<? extends Guardrail>... guardrails);
-
-  /** Session memory configuration for conversation history across iterations. */
-  AgentDefinition memory(MemoryProvider memory);
 }
