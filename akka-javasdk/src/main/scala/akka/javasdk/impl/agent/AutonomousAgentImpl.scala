@@ -295,10 +295,15 @@ private[impl] final class AutonomousAgentImpl(
       toSpiContextMessages(history)
     }(sdkExecutionContext)
 
-  override def addToSessionHistory(sessionId: String, messages: Seq[SpiAgent.ContextMessage]): Future[Done] =
+  override def addToSessionHistory(
+      sessionId: String,
+      messages: Seq[SpiAgent.ContextMessage],
+      inputTokens: Int,
+      outputTokens: Int): Future[Done] =
     Future {
       if (messages.nonEmpty) {
         val now = Instant.now()
+        val tokenUsage = new TokenUsage(inputTokens, outputTokens)
         messages.head match {
           case u: SpiAgent.ContextMessage.UserMessage
               if u.contents.forall(_.isInstanceOf[SpiAgent.TextMessageContent]) =>
@@ -306,7 +311,7 @@ private[impl] final class AutonomousAgentImpl(
             sessionMemoryClient.addInteraction(
               sessionId,
               new UserMessage(now, text, componentId),
-              toSessionMessages(now, messages.tail).asJava)
+              toSessionMessages(now, messages.tail, tokenUsage).asJava)
           case u: SpiAgent.ContextMessage.UserMessage =>
             val contents = u.contents.map {
               case t: SpiAgent.TextMessageContent =>
@@ -322,14 +327,14 @@ private[impl] final class AutonomousAgentImpl(
             sessionMemoryClient.addInteraction(
               sessionId,
               new MultimodalUserMessage(now, contents, componentId),
-              toSessionMessages(now, messages.tail).asJava)
+              toSessionMessages(now, messages.tail, tokenUsage).asJava)
           case _ =>
             // No user message — partial interaction (e.g. tool call responses
             // completing the previous AI message's tool calls)
             sessionMemoryClient.addInteraction(
               sessionId,
               null.asInstanceOf[UserMessage],
-              toSessionMessages(now, messages).asJava)
+              toSessionMessages(now, messages, tokenUsage).asJava)
         }
       }
       Done
@@ -394,20 +399,16 @@ private[impl] final class AutonomousAgentImpl(
   private def spiToAttachment(mc: SpiAgent.MessageContent): TaskAttachment =
     TaskAttachment.fromMessageContent(AgentImpl.fromSpiMessageContent(mc))
 
-  private def toSessionMessages(now: Instant, messages: Seq[SpiAgent.ContextMessage]): Seq[SessionMessage] =
+  private def toSessionMessages(
+      now: Instant,
+      messages: Seq[SpiAgent.ContextMessage],
+      tokenUsage: TokenUsage): Seq[SessionMessage] =
     messages.collect {
       case m: SpiAgent.ContextMessage.AiMessage =>
         val toolCallRequests = m.toolRequests.map { req =>
           new ToolCallRequest(req.id, req.name, req.arguments)
         }.asJava
-        new AiMessage(
-          now,
-          m.content,
-          componentId,
-          toolCallRequests,
-          m.thinking.toJava,
-          TokenUsage.EMPTY,
-          m.attributes.asJava)
+        new AiMessage(now, m.content, componentId, toolCallRequests, m.thinking.toJava, tokenUsage, m.attributes.asJava)
       case m: SpiAgent.ContextMessage.ToolCallResponseMessage =>
         new ToolCallResponse(now, componentId, m.id, m.name, m.content)
     }
