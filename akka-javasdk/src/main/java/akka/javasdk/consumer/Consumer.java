@@ -279,12 +279,11 @@ public abstract class Consumer {
        *
        * <p>Use this to filter out messages that should not be processed, such as events that are
        * not relevant to the Consumer's logic. The message will be acknowledged but no further
-       * processing occurs.
+       * processing occurs. Effectively the same as {@link #done()}, but signals the intent that
+       * the message was deliberately skipped rather than processed.
        *
        * @return an Effect that ignores the current message
-       * @deprecated Use `effect().done()` instead, it has the same effect
        */
-      @Deprecated(forRemoval = true, since = "3.5.17")
       Effect ignore();
     }
   }

@@ -23,7 +23,7 @@ import java.util.function.Supplier;
  *
  * <p>Use the {@code method} methods to interact with the testkit.
  */
-public class ConsumerTestKit<C extends Consumer> {
+public final class ConsumerTestKit<C extends Consumer> {
 
   private final Supplier<C> consumerFactory;
 
