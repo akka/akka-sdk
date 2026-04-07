@@ -96,9 +96,9 @@ public class CustomContentLoadingAgent extends Agent {
     @Override
     public LoadedContent load(MessageContent.LoadableMessageContent content) {
       return switch (content) {
-        case MessageContent.ImageUrlMessageContent image -> {
+        case MessageContent.ImageUriMessageContent image -> {
           StrictResponse<ByteString> response = httpClient // (2)
-            .GET(image.url().toString())
+            .GET(image.uri().toString())
             .addCredentials(HttpCredentials.createOAuth2BearerToken(userToken))
             .invoke();
 
@@ -112,16 +112,17 @@ public class CustomContentLoadingAgent extends Agent {
 
           yield new LoadedContent(data, Optional.of(actualMimeType)); // (4)
         }
-        case MessageContent.PdfUrlMessageContent pdf -> throw new RuntimeException(
+        case MessageContent.PdfUriMessageContent pdf -> throw new RuntimeException(
           "Not implemented"
         );
+        default -> throw new IllegalStateException("Unsupported content " + content);
       };
     }
   }
 ```
 
 | **1** | Implement the `ContentLoader` interface |
-| **2** | Fetch image data with authentication using the URL from `ImageUrlMessageContent` |
+| **2** | Fetch image data with authentication using the URI from `ImageUriMessageContent` |
 | **3** | Extract the actual MIME type of the image from the response |
 | **4** | Return `LoadedContent` with the data and MIME type |
 To use your custom content loader, pass it to the agent effect builder:
@@ -137,8 +138,8 @@ public Effect<String> analyzeImage(AnalyzeRequest request) {
     .userMessage(
       UserMessage.from(
         TextMessageContent.from("Describe this image and summarize the PDF"),
-        ImageMessageContent.fromUrl(request.imageUri), // (2)
-        PdfMessageContent.fromUrl(request.pdfUri) // (3)
+        ImageMessageContent.fromUri(URI.create(request.imageUri)), // (2)
+        PdfMessageContent.fromUri(URI.create(request.pdfUri)) // (3)
       )
     )
     .thenReply();
@@ -146,7 +147,7 @@ public Effect<String> analyzeImage(AnalyzeRequest request) {
 ```
 
 | **1** | Register the custom content loader with the effect |
-| **2** | `ImageUrlMessageContent` is passed to your loader when processing the user message |
+| **2** | `ImageUriMessageContent` is passed to your loader when processing the user message |
 The content loader instance can be created per-request like in this example (to support per-request credentials) or shared globally via dependency injection. If shared, ensure the implementation is thread-safe as it may be used by multiple concurrent agent interactions.
 
 |  | If the `load` method throws an exception, the entire agent request fails. |

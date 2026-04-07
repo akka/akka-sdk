@@ -30,7 +30,9 @@ import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.agent
 import akka.javasdk.agent.MessageContent.ImageMessageContent
+import akka.javasdk.agent.MessageContent.ImageUriMessageContent
 import akka.javasdk.agent.MessageContent.ImageUrlMessageContent
+import akka.javasdk.agent.MessageContent.PdfUriMessageContent
 import akka.javasdk.agent.MessageContent.PdfUrlMessageContent
 import akka.javasdk.agent.SessionMessage.AiMessage
 import akka.javasdk.agent.SessionMessage.MultimodalUserMessage
@@ -348,17 +350,25 @@ private[impl] final class AgentImpl[A <: Agent](
     new SpiAgent.UserMessage(contents.toSeq)
   }
 
+  @nowarn("cat=deprecation")
   private def toSpiMessageContent(messageContent: MessageContent): SpiAgent.MessageContent = {
     messageContent match {
       case content: MessageContent.TextMessageContent =>
         new SpiAgent.TextMessageContent(content.text())
-      case content: MessageContent.ImageUrlMessageContent =>
+      case content: MessageContent.ImageUriMessageContent =>
         new SpiAgent.ImageUriMessageContent(
           content.uri(),
           toSpiDetailLevel(content.detailLevel()),
           content.mimeType().toScala)
-      case content: MessageContent.PdfUrlMessageContent =>
+      case content: MessageContent.ImageUrlMessageContent =>
+        new SpiAgent.ImageUriMessageContent(
+          URI.create(content.url().toString),
+          toSpiDetailLevel(content.detailLevel()),
+          content.mimeType().toScala)
+      case content: MessageContent.PdfUriMessageContent =>
         new SpiAgent.PdfUriMessageContent(content.uri())
+      case content: MessageContent.PdfUrlMessageContent =>
+        new SpiAgent.PdfUriMessageContent(URI.create(content.url().toString))
     }
   }
 
@@ -397,9 +407,9 @@ private[impl] final class AgentImpl[A <: Agent](
             val detailLevel = fromSpiDetailLevel(content.detailLevel)
             val mimeType =
               content.mimeType.map(java.util.Optional.of[String]).getOrElse(java.util.Optional.empty[String]())
-            new MessageContent.ImageUrlMessageContent(content.uri, detailLevel, mimeType)
+            new MessageContent.ImageUriMessageContent(content.uri, detailLevel, mimeType)
           case content: SpiAgent.PdfUriMessageContent =>
-            new PdfUrlMessageContent(content.uri)
+            new PdfUriMessageContent(content.uri)
         }
     }
 
@@ -512,17 +522,25 @@ private[impl] final class AgentImpl[A <: Agent](
     }
   }
 
+  @nowarn("cat=deprecation")
   private def toSessionMemoryContent(messageContent: MessageContent): SessionMessage.MessageContent = {
     messageContent match {
       case content: MessageContent.TextMessageContent =>
         new SessionMessage.MessageContent.TextMessageContent(content.text)
-      case content: ImageUrlMessageContent =>
+      case content: ImageUriMessageContent =>
         new SessionMessage.MessageContent.ImageUriMessageContent(
           content.uri().toString,
           content.detailLevel(),
           content.mimeType())
-      case content: PdfUrlMessageContent =>
+      case content: ImageUrlMessageContent =>
+        new SessionMessage.MessageContent.ImageUriMessageContent(
+          content.url().toString,
+          content.detailLevel(),
+          content.mimeType())
+      case content: PdfUriMessageContent =>
         new SessionMessage.MessageContent.PdfUriMessageContent(content.uri().toString)
+      case content: PdfUrlMessageContent =>
+        new SessionMessage.MessageContent.PdfUriMessageContent(content.url().toString)
     }
   }
 

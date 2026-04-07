@@ -20,15 +20,16 @@ import java.util.Optional;
  *   @Override
  *   public LoadedContent load(MessageContent.LoadableMessageContent content) {
  *     return switch (content) {
- *       case MessageContent.ImageUrlMessageContent image -> {
- *         byte[] data = fetchFromStorage(image.url());
+ *       case MessageContent.ImageUriMessageContent image -> {
+ *         byte[] data = fetchFromStorage(image.uri());
  *         String mimeType = image.mimeType().orElse("image/jpeg");
  *         yield new LoadedContent(data, Optional.of(mimeType));
  *       }
- *       case MessageContent.PdfUrlMessageContent pdf -> {
- *         byte[] data = fetchFromStorage(pdf.url());
+ *       case MessageContent.PdfUriMessageContent pdf -> {
+ *         byte[] data = fetchFromStorage(pdf.uri());
  *         yield new LoadedContent(data);
  *       }
+ *       default -> throw new IllegalStateException("Unsupported content " + content);
  *     };
  *   }
  * }
@@ -80,9 +81,9 @@ public interface ContentLoader {
    * <p>Use pattern matching on the content parameter to handle different content types:
    *
    * <ul>
-   *   <li>{@link MessageContent.ImageUrlMessageContent} — provides the URL, detail level, and
+   *   <li>{@link MessageContent.ImageUriMessageContent} — provides the URI, detail level, and
    *       optional MIME type hint
-   *   <li>{@link MessageContent.PdfUrlMessageContent} — provides the URL of the PDF
+   *   <li>{@link MessageContent.PdfUriMessageContent} — provides the URI of the PDF
    * </ul>
    *
    * <p>If the method throws, the entire agent request is failed.

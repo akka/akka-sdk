@@ -44,7 +44,7 @@ When you store images or PDFs in xref:sdk:integrations/object-storage.adoc[objec
 
 If one of the `*UrlMessageContent` message content classes are used and the URI in it has the format `object://[bucket-name]/[key]` the runtime will look for a configured bucket with that name and load the payload from `key` in it.
 
-Use the factory methods `ImageUrlMessageContent.create(bucket, key)` or `PdfUrlMessageContent.create(bucket, key)` to create a content reference backed by an `object://` URI and the bucket `ObjectStorage` is in scope.
+Use the factory methods `ImageMessageContent.create(bucket, key)` or `PdfMessageContent.create(bucket, key)` to create a content reference backed by an `object://` URI and the bucket `ObjectStorage` is in scope.
 
 Upload an image and create the content reference in an endpoint:
 
@@ -54,7 +54,7 @@ Upload an image and create the content reference in an endpoint:
 include::example$doc-snippets/src/main/java/com/example/api/ImageUploadEndpoint.java[tag=put-describe]
 ----
 <1> Store the uploaded bytes in the bucket, preserving the original content type.
-<2> Create an `ImageUrlMessageContent` that references the stored object via `object://images/<key>` — no download happens here.
+<2> Create an `ImageUriMessageContent` that references the stored object via `object://images/<key>` — no download happens here.
 <3> Pass the content reference to the agent; the SDK fetches the image from the bucket before forwarding it to the model.
 
 Receive and use the content reference in the agent:
@@ -64,9 +64,9 @@ Receive and use the content reference in the agent:
 ----
 include::example$doc-snippets/src/main/java/com/example/application/ImageDescriptionAgent.java[tag=describe]
 ----
-<1> The `ImageUrlMessageContent` passed by the caller is included directly in the `UserMessage`.
+<1> The `ImageUriMessageContent` passed by the caller is included directly in the `UserMessage`.
 
-The same pattern works for PDFs using `PdfUrlMessageContent.create(bucket, key)`. See xref:sdk:integrations/object-storage.adoc[Object storage] for how to configure buckets and how the backend behaves in dev mode and tests.
+The same pattern works for PDFs using `PdfMessageContent.create(bucket, key)`. See xref:sdk:integrations/object-storage.adoc[Object storage] for how to configure buckets and how the backend behaves in dev mode and tests.
 
 === Custom content loading
 
@@ -80,7 +80,7 @@ The `ContentLoader` interface provides a single `load` method that receives a `L
 include::example$doc-snippets/src/main/java/com/example/application/CustomContentLoadingAgent.java[tag=custom-content-loader]
 ----
 <1> Implement the `ContentLoader` interface
-<2> Fetch image data with authentication using the URL from `ImageUrlMessageContent`
+<2> Fetch image data with authentication using the URI from `ImageUriMessageContent`
 <3> Extract the actual MIME type of the image from the response
 <4> Return `LoadedContent` with the data and MIME type
 
@@ -92,7 +92,7 @@ To use your custom content loader, pass it to the agent effect builder:
 include::example$doc-snippets/src/main/java/com/example/application/CustomContentLoadingAgent.java[tag=using-custom-loader]
 ----
 <1> Register the custom content loader with the effect
-<2> `ImageUrlMessageContent` is passed to your loader when processing the user message
+<2> `ImageUriMessageContent` is passed to your loader when processing the user message
 
 
 The content loader instance can be created per-request like in this example (to support per-request credentials) or shared globally via dependency injection. If shared, ensure the implementation is thread-safe as it may be used by multiple concurrent agent interactions.

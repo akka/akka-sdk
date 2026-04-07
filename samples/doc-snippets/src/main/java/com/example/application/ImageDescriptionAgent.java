@@ -16,7 +16,7 @@ public class ImageDescriptionAgent extends Agent {
     """;
 
   // tag::describe[]
-  public Effect<String> describe(MessageContent.ImageUrlMessageContent imageContent) {
+  public Effect<String> describe(MessageContent.ImageUriMessageContent imageContent) {
     var userMessage = UserMessage.from(
       MessageContent.TextMessageContent.from("Please describe this image in detail."),
       imageContent // <1>

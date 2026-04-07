@@ -8,6 +8,7 @@ import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.MessageContent;
 import akka.javasdk.agent.UserMessage;
 import akka.javasdk.annotations.Component;
+import java.net.URI;
 
 @Component(id = "some-multi-modal-user-message-agent")
 public class SomeMultiModalUserMessageAgent extends Agent {
@@ -19,7 +20,7 @@ public class SomeMultiModalUserMessageAgent extends Agent {
         .userMessage(
             UserMessage.from(
                 MessageContent.TextMessageContent.from("testing"),
-                MessageContent.ImageMessageContent.fromUrl("https://example.com")))
+                MessageContent.ImageMessageContent.fromUri(URI.create("https://example.com"))))
         .thenReply();
   }
 }

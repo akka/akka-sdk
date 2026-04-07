@@ -42,7 +42,7 @@ public class ImageUploadEndpoint {
     var key = UUID.randomUUID().toString();
     var imageBucket = objectStorageProvider.forBucket("images"); // <2>
     imageBucket.put(key, body.getData(), body.getContentType()); // <1>
-    var imageContent = MessageContent.ImageUrlMessageContent.create(imageBucket, key); // <2>
+    var imageContent = MessageContent.ImageMessageContent.create(imageBucket, key); // <2>
 
     return componentClient
       .forAgent()

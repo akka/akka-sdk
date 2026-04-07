@@ -87,7 +87,7 @@ public interface ImageLoader extends ContentLoader {
 
   default LoadedContent load(MessageContent.LoadableMessageContent content) {
     switch (content) {
-      case MessageContent.ImageUrlMessageContent image -> {
+      case MessageContent.ImageUriMessageContent image -> {
         var loadedImage = load(image.uri(), image.detailLevel(), image.mimeType());
         return new LoadedContent(loadedImage.data, loadedImage.mimeType);
       }

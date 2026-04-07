@@ -65,7 +65,7 @@ The following endpoint stores an uploaded image, invokes an AI agent to describe
 include::example$doc-snippets/src/main/java/com/example/api/ImageUploadEndpoint.java[tag=put-describe]
 ----
 <1> Store the uploaded bytes under a generated key, preserving the original content type.
-<2> Create an `ImageUrlMessageContent` referencing the stored object via an `object://` URI — no download happens yet.
+<2> Create an `ImageUriMessageContent` referencing the stored object via an `object://` URI — no download happens yet.
 <3> Pass the content reference to the agent; the SDK resolves and sends the image to the model.
 
 [source,java,indent=0]
@@ -92,7 +92,7 @@ include::example$doc-snippets/src/main/java/com/example/api/ImageUploadEndpoint.
 
 == Object storage and AI agents
 
-Objects stored in buckets can be passed directly to AI agents as multimodal content. The factory methods `ImageUrlMessageContent.create(bucket, key)` and `PdfUrlMessageContent.create(bucket, key)` produce content references using an `object://` URI scheme. The SDK loads the data from the bucket automatically before sending the request to the model.
+Objects stored in buckets can be passed directly to AI agents as multimodal content. The factory methods `ImageMessageContent.create(bucket, key)` and `PdfMessageContent.create(bucket, key)` produce content references using an `object://` URI scheme. The SDK loads the data from the bucket automatically before sending the request to the model.
 
 See xref:sdk:agents/prompt.adoc#object-storage-content[Loading content from object storage] for a full example.
 
