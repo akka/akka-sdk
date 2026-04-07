@@ -946,8 +946,8 @@ private final class Sdk(
       sdkExecutionContext.asInstanceOf[Executor]
     case s if s == classOf[Sanitizer]          => sanitizer
     case s if s == classOf[Meter]              => sdkMeter
-    case o if o == classOf[ObjectStorage]      => objectStorage(telemetryContext)
-    case o if o == classOf[ObjectStorageProvider] => objectStorage(telemetryContext)
+    case o if o == classOf[ObjectStorageProvider] =>
+      objectStorageProvider(telemetryContext)
   }
 
   val spiComponents: SpiComponents = {
@@ -1278,8 +1278,8 @@ private final class Sdk(
       system)
   }
 
-  private def objectStorage(telemetryContext: Option[OtelContext]): ObjectStorageProvider =
-    new ObjectStorageProviderImpl(runtimeComponentClients.objectStorage, system, telemetryContext)
+  private lazy val objectStorageProvider: ObjectStorageProviderImpl =
+    new ObjectStorageProviderImpl(runtimeComponentClients.objectStorage, system, None)
 
   private def timerScheduler(telemetryContext: Option[OtelContext]): TimerScheduler = {
     val metadata = telemetryContext match {
@@ -1293,6 +1293,12 @@ private final class Sdk(
     telemetryContext match {
       case None          => httpClientProvider
       case Some(context) => httpClientProvider.withTelemetryContext(context)
+    }
+
+  private def objectStorageProvider(telemetryContext: Option[OtelContext]): ObjectStorageProvider =
+    telemetryContext match {
+      case None          => objectStorageProvider
+      case Some(context) => objectStorageProvider.withTelemetryContext(context)
     }
 
   private def grpcClientProvider(telemetryContext: Option[OtelContext]): GrpcClientProvider =

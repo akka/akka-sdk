@@ -34,13 +34,15 @@ public class TestEndpoint extends AbstractHttpEndpoint {
 
   private final Sanitizer sanitizer;
   private final ComponentClient componentClient;
-  private final ObjectStorageProvider objectStorage;
+  private final ObjectStorageProvider objectStorageProvider;
 
   public TestEndpoint(
-      Sanitizer sanitizer, ComponentClient componentClient, ObjectStorageProvider objectStorage) {
+      Sanitizer sanitizer,
+      ComponentClient componentClient,
+      ObjectStorageProvider objectStorageProvider) {
     this.sanitizer = sanitizer;
     this.componentClient = componentClient;
-    this.objectStorage = objectStorage;
+    this.objectStorageProvider = objectStorageProvider;
   }
 
   private boolean constructedOnVt = Thread.currentThread().isVirtual();
@@ -130,13 +132,13 @@ public class TestEndpoint extends AbstractHttpEndpoint {
 
   @Post("/object-storage/{key}")
   public HttpResponse uploadObject(String key, Strict body) {
-    objectStorage.forBucket("test-bucket").put(key, body.getData(), body.getContentType());
+    objectStorageProvider.forBucket("test-bucket").put(key, body.getData(), body.getContentType());
     return HttpResponses.ok("uploaded " + body.getData().length() + " bytes as [" + key + "]");
   }
 
   @Get("/object-storage/{key}")
   public HttpResponse downloadObject(String key) {
-    var result = objectStorage.forBucket("test-bucket").get(key);
+    var result = objectStorageProvider.forBucket("test-bucket").get(key);
     if (result.isEmpty()) return HttpResponses.notFound();
     return HttpResponse.create()
         .withStatus(StatusCodes.OK)

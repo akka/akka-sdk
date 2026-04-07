@@ -28,19 +28,21 @@ import akka.runtime.sdk.spi.{ ObjectMetadata => SpiObjectMetadata }
 import akka.stream.javadsl.Sink
 import akka.stream.javadsl.{ Source => JSource }
 import akka.util.ByteString
-import io.opentelemetry.context.{ Context => OtelContext }
+import io.opentelemetry.context.Context
 
 /**
  * INTERNAL API
  */
-@InternalApi
 private[impl] final class ObjectStorageProviderImpl(
     spiObjectStorage: SpiObjectStorage,
     system: ActorSystem[_],
-    otelContext: Option[OtelContext])
+    otelContext: Option[Context])
     extends ObjectStorageProvider {
-  override def forBucket(bucketName: String): ObjectStore =
-    new ObjectStoreImpl(bucketName, spiObjectStorage.client(bucketName, otelContext), system)
+  override def forBucket(bucket: String): ObjectStorage =
+    new ObjectStorageImpl(bucket, spiObjectStorage.client(bucket, otelContext), system)
+
+  def withTelemetryContext(context: Context): ObjectStorageProvider =
+    new ObjectStorageProviderImpl(spiObjectStorage, system, Some(context))
 }
 
 /**
