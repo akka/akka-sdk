@@ -58,21 +58,13 @@ private[javasdk] final class AutonomousAgentClientImpl(
       .asScala
       .flatMap { _ =>
         log.debug(
-          "runSingleTask: task created [{}], sending AssignTask to agent instance [{}]",
+          "runSingleTask: task created [{}], sending AssignTask with stopWhenDone to agent instance [{}]",
           taskId,
           agentInstanceId)
         runtimeComponentClients.autonomousAgentClient
-          .assignTask(agentComponentId, agentInstanceId, taskId)
-          .flatMap { _ =>
-            log.debug(
-              "runSingleTask: AssignTask ack for task [{}], sending AutoStop to instance [{}]",
-              taskId,
-              agentInstanceId)
-            runtimeComponentClients.autonomousAgentClient
-              .autoStop(agentComponentId, agentInstanceId)
-          }
+          .assignTask(agentComponentId, agentInstanceId, taskId, stopWhenDone = true)
           .map { _ =>
-            log.debug("runSingleTask: AutoStop ack for instance [{}], returning taskId [{}]", agentInstanceId, taskId)
+            log.debug("runSingleTask: AssignTask ack for task [{}], returning taskId [{}]", taskId, agentInstanceId)
             taskId
           }
       }
@@ -89,7 +81,7 @@ private[javasdk] final class AutonomousAgentClientImpl(
       .foldLeft(Future.successful(())) { (prev, taskId) =>
         prev.flatMap { _ =>
           runtimeComponentClients.autonomousAgentClient
-            .assignTask(agentComponentId, agentInstanceId, taskId)
+            .assignTask(agentComponentId, agentInstanceId, taskId, stopWhenDone = false)
             .map(_ => ())
         }
       }
