@@ -8,7 +8,6 @@ import java.util
 
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Guardrail
-import akka.javasdk.agent.MemoryProvider
 import akka.javasdk.agent.ModelProvider
 import akka.javasdk.agent.RemoteMcpTools
 import akka.javasdk.agent.autonomous.AgentDefinition
@@ -25,7 +24,6 @@ final case class AgentDefinitionImpl(
     mcpTools: util.List[RemoteMcpTools],
     requestGuardrailClassNames: util.List[String],
     responseGuardrailClassNames: util.List[String],
-    memoryProvider: MemoryProvider,
     capabilities: util.List[AgentCapability])
     extends AgentDefinition {
 
@@ -50,9 +48,6 @@ final case class AgentDefinitionImpl(
   override def responseGuardrails(guardrails: Class[_ <: Guardrail]*): AgentDefinition =
     copy(responseGuardrailClassNames = concat(responseGuardrailClassNames, guardrails.map(_.getName)))
 
-  override def memory(memory: MemoryProvider): AgentDefinition =
-    copy(memoryProvider = memory)
-
   private def concat[T](existing: util.List[T], additions: Seq[T]): util.List[T] = {
     val result = new util.ArrayList[T](existing)
     additions.foreach(result.add)
@@ -73,6 +68,5 @@ object AgentDefinitionImpl {
       mcpTools = util.List.of(),
       requestGuardrailClassNames = util.List.of(),
       responseGuardrailClassNames = util.List.of(),
-      memoryProvider = MemoryProvider.fromConfig(),
       capabilities = util.List.of())
 }
