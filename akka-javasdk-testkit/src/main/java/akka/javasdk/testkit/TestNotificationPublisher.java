@@ -23,7 +23,7 @@ import java.util.List;
  *
  * @param <T> the type of notification messages
  */
-public class TestNotificationPublisher<T> implements NotificationPublisher<T> {
+public final class TestNotificationPublisher<T> implements NotificationPublisher<T> {
 
   private final List<T> notifications = new ArrayList<>();
 
