@@ -5,7 +5,6 @@
 package akka.javasdk.testkit;
 
 import akka.javasdk.NotificationPublisher;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
