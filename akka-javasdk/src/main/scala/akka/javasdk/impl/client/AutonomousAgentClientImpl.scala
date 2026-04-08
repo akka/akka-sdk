@@ -23,6 +23,7 @@ import akka.javasdk.agent.autonomous.AutonomousAgent
 import akka.javasdk.agent.autonomous.Notification
 import akka.javasdk.agent.task.Task
 import akka.javasdk.client.AutonomousAgentClient
+import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.agent.autonomous.AgentSetupImpl
 import akka.javasdk.impl.agent.autonomous.CapabilityConverter
 import akka.javasdk.impl.serialization.Serializer
@@ -66,7 +67,12 @@ private[javasdk] final class AutonomousAgentClientImpl(
           taskId,
           agentInstanceId)
         runtimeComponentClients.autonomousAgentClient
-          .assignTask(agentComponentId, agentInstanceId, taskId, stopWhenDone = true)
+          .assignTask(
+            agentComponentId,
+            agentInstanceId,
+            taskId,
+            stopWhenDone = true,
+            callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
           .map { _ =>
             log.debug("runSingleTask: AssignTask ack for task [{}], returning taskId [{}]", taskId, agentInstanceId)
             taskId
@@ -85,7 +91,7 @@ private[javasdk] final class AutonomousAgentClientImpl(
       .foldLeft(Future.successful(())) { (prev, taskId) =>
         prev.flatMap { _ =>
           runtimeComponentClients.autonomousAgentClient
-            .assignTask(agentComponentId, agentInstanceId, taskId, stopWhenDone = false)
+            .assignTask(agentComponentId, agentInstanceId, taskId, stopWhenDone = false, None) //TODO fixme
             .map(_ => ())
         }
       }

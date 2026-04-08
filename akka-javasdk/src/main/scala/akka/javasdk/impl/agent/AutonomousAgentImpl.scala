@@ -33,6 +33,8 @@ import akka.javasdk.agent.task.TaskEntity
 import akka.javasdk.agent.task.TaskStatus
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.JsonSchema
+import akka.javasdk.impl.MetadataImpl
+import akka.javasdk.impl.agent.SessionMemoryClient.MemorySettings
 import akka.javasdk.impl.agent.autonomous.AgentDefinitionImpl
 import akka.javasdk.impl.client.EntityClientImpl
 import akka.javasdk.impl.reflection.Reflect
@@ -48,6 +50,7 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
+import io.opentelemetry.context.{ Context => TelemetryContext }
 import org.slf4j.LoggerFactory
 
 /**
@@ -144,7 +147,7 @@ private[impl] final class AutonomousAgentImpl(
   // --- SpiAutonomousAgent ---
 
   override val taskOperations: SpiTaskOperations = new SpiTaskOperations {
-    override def createTask(request: SpiTask.CreateTaskRequest): Future[String] = {
+    override def createTask(request: SpiTask.CreateTaskRequest, context: Option[TelemetryContext]): Future[String] = {
       val taskId = UUID.randomUUID().toString
       val attachments = request.attachments.map(spiToAttachment).asJava
       val createReq = new TaskEntity.CreateRequest(
@@ -156,57 +159,68 @@ private[impl] final class AutonomousAgentImpl(
         attachments)
       taskEntityClient(taskId)
         .methodRefOneArg[TaskEntity.CreateRequest, Done](taskCreateMethod)
+        .withMetadata(MetadataImpl.of(context))
         .invokeAsync(createReq)
         .asScala
         .map(_ => taskId)(sdkExecutionContext)
     }
 
-    override def getTaskState(taskId: String): Future[SpiTask.SpiTaskState] =
+    override def getTaskState(taskId: String, context: Option[TelemetryContext]): Future[SpiTask.SpiTaskState] =
       taskEntityClient(taskId)
         .methodRefNoArg[akka.javasdk.agent.task.TaskState](taskGetStateMethod)
+        .withMetadata(MetadataImpl.of(context))
         .invokeAsync()
         .asScala
         .map(toSpiTaskState)(sdkExecutionContext)
 
-    override def assignTask(taskId: String, assignee: String): Future[Done] =
+    override def assignTask(taskId: String, assignee: String, context: Option[TelemetryContext]): Future[Done] =
       taskEntityClient(taskId)
         .methodRefOneArg[String, Done](taskAssignMethod)
+        .withMetadata(MetadataImpl.of(context))
         .invokeAsync(assignee)
         .asScala
         .map(_ => Done)(sdkExecutionContext)
 
-    override def startTask(taskId: String): Future[Done] =
+    override def startTask(taskId: String, context: Option[TelemetryContext]): Future[Done] =
       taskEntityClient(taskId)
         .methodRefNoArg[Done](taskStartMethod)
+        .withMetadata(MetadataImpl.of(context))
         .invokeAsync()
         .asScala
         .map(_ => Done)(sdkExecutionContext)
 
-    override def completeTask(taskId: String, resultJson: String): Future[Done] =
+    override def completeTask(taskId: String, resultJson: String, context: Option[TelemetryContext]): Future[Done] =
       taskEntityClient(taskId)
         .methodRefOneArg[String, Done](taskCompleteMethod)
+        .withMetadata(MetadataImpl.of(context))
         .invokeAsync(resultJson)
         .asScala
         .map(_ => Done)(sdkExecutionContext)
 
-    override def failTask(taskId: String, reason: String): Future[Done] =
+    override def failTask(taskId: String, reason: String, context: Option[TelemetryContext]): Future[Done] =
       taskEntityClient(taskId)
         .methodRefOneArg[String, Done](taskFailMethod)
+        .withMetadata(MetadataImpl.of(context))
         .invokeAsync(reason)
         .asScala
         .map(_ => Done)(sdkExecutionContext)
 
-    override def cancelTask(taskId: String, reason: String): Future[Done] =
+    override def cancelTask(taskId: String, reason: String, context: Option[TelemetryContext]): Future[Done] =
       taskEntityClient(taskId)
         .methodRefOneArg[String, Done](taskCancelMethod)
+        .withMetadata(MetadataImpl.of(context))
         .invokeAsync(reason)
         .asScala
         .map(_ => Done)(sdkExecutionContext)
 
-    override def reassignTask(taskId: String, request: SpiTask.ReassignRequest): Future[Done] = {
+    override def reassignTask(
+        taskId: String,
+        request: SpiTask.ReassignRequest,
+        context: Option[TelemetryContext]): Future[Done] = {
       val reassignReq = new TaskEntity.ReassignRequest(request.newAgentComponentId, request.context)
       taskEntityClient(taskId)
         .methodRefOneArg[TaskEntity.ReassignRequest, Done](taskReassignMethod)
+        .withMetadata(MetadataImpl.of(context))
         .invokeAsync(reassignReq)
         .asScala
         .map(_ => Done)(sdkExecutionContext)
@@ -271,9 +285,11 @@ private[impl] final class AutonomousAgentImpl(
         .map(toSpiBacklogState)(sdkExecutionContext)
   }
 
-  override def getSessionHistory(sessionId: String): Future[Seq[SpiAgent.ContextMessage]] =
+  override def getSessionHistory(
+      sessionId: String,
+      context: Option[TelemetryContext]): Future[Seq[SpiAgent.ContextMessage]] =
     Future {
-      val history = sessionMemoryClient.getHistory(sessionId)
+      val history = deriveMemoryClient(context).getHistory(sessionId)
       toSpiContextMessages(history)
     }(sdkExecutionContext)
 
@@ -281,11 +297,13 @@ private[impl] final class AutonomousAgentImpl(
       sessionId: String,
       messages: Seq[SpiAgent.ContextMessage],
       inputTokens: Int,
-      outputTokens: Int): Future[Done] =
+      outputTokens: Int,
+      context: Option[TelemetryContext]): Future[Done] =
     Future {
       if (messages.nonEmpty) {
         val now = Instant.now()
         val tokenUsage = new TokenUsage(inputTokens, outputTokens)
+        val sessionMemoryClient = deriveMemoryClient(context)
         messages.head match {
           case u: SpiAgent.ContextMessage.UserMessage
               if u.contents.forall(_.isInstanceOf[SpiAgent.TextMessageContent]) =>
