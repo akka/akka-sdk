@@ -552,20 +552,22 @@ private final class Sdk(
   }
 
   // Restricted injector for the throwaway temp instance used to read definition().
-  // Supplies a ComponentClient that does NOT reference agentCapabilityConverter,
-  // so reading definition() cannot force the lazy val with an incomplete registry.
+  // The supplied dependencies are never invoked (the temp instance is discarded),
+  // so they must not touch lazy state still being populated by the scanning loop
+  // (agentCapabilityConverter, agentRegistry).
   private def scanTimeAutonomousAgentInjects: PartialFunction[Class[_], Any] = {
     val scanTimeComponentClient: ComponentClient =
       ComponentClientImpl(
         runtimeComponentClients,
         serializer,
-        agentRegistry.agentClassById,
+        agentClassById = Map.empty,
         agentCapabilityConverter = None,
         telemetryContext = None)(sdkExecutionContext, system)
+    val scanTimeAgentRegistry: AgentRegistry = new AgentRegistryImpl(Set.empty)
 
     val overrides: PartialFunction[Class[_], Any] = {
-      case p if p == classOf[ComponentClient] =>
-        scanTimeComponentClient
+      case p if p == classOf[ComponentClient] => scanTimeComponentClient
+      case r if r == classOf[AgentRegistry]   => scanTimeAgentRegistry
     }
     overrides.orElse(sideEffectingComponentInjects(None))
   }
