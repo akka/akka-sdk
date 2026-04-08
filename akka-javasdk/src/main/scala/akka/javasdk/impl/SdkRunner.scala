@@ -539,7 +539,8 @@ private final class Sdk(
   // guardrail name => component ids
   private var guardrailEnabledForComponent = Map.empty[String, Set[String]]
 
-  /** Lazy capability converter — constructed on first use, after all autonomous agents are registered. */
+  // Lazy: snapshots the var registries above. Must not be forced before scanning
+  // completes; see scanTimeAutonomousAgentInjects for the only scan-time path.
   private lazy val agentCapabilityConverter: CapabilityConverter = {
     val autonomousConfig = applicationConfig.getConfig("akka.javasdk.agent.autonomous")
     new CapabilityConverter(
@@ -548,6 +549,25 @@ private final class Sdk(
       requestBasedAgentDescriptors = agentDescriptors,
       defaultMaxIterationsPerTask = autonomousConfig.getInt("max-iterations-per-task"),
       defaultMaxParallelWorkers = autonomousConfig.getInt("delegation.max-parallel-workers"))
+  }
+
+  // Restricted injector for the throwaway temp instance used to read definition().
+  // Supplies a ComponentClient that does NOT reference agentCapabilityConverter,
+  // so reading definition() cannot force the lazy val with an incomplete registry.
+  private def scanTimeAutonomousAgentInjects: PartialFunction[Class[_], Any] = {
+    val scanTimeComponentClient: ComponentClient =
+      ComponentClientImpl(
+        runtimeComponentClients,
+        serializer,
+        agentRegistry.agentClassById,
+        agentCapabilityConverter = None,
+        telemetryContext = None)(sdkExecutionContext, system)
+
+    val overrides: PartialFunction[Class[_], Any] = {
+      case p if p == classOf[ComponentClient] =>
+        scanTimeComponentClient
+    }
+    overrides.orElse(sideEffectingComponentInjects(None))
   }
 
   private def isProvided(clz: Class[_]): Boolean = {
@@ -776,10 +796,11 @@ private final class Sdk(
             guardrailEnabledForComponent.getOrElse(guardrailName, Set.empty) + componentId)
         }
 
-        // Definition is required for AutonomousAgent — instantiate to read it
+        // Throwaway instance to read definition() — uses scan-time injects so
+        // ComponentClient injection cannot force agentCapabilityConverter mid-scan.
         val agentDefinition: AgentDefinitionImpl = {
           val tempAgent = wiredInstance("AutonomousAgent", autonomousAgentClass) {
-            sideEffectingComponentInjects(None)
+            scanTimeAutonomousAgentInjects
           }
           tempAgent.definition() match {
             case impl: AgentDefinitionImpl =>
