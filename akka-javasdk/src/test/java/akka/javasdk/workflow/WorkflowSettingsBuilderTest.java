@@ -23,15 +23,16 @@ public class WorkflowSettingsBuilderTest {
           .stepTimeout(TestWorkflow::stepWithTimeoutAndRecovery, Duration.ofSeconds(3))
           .stepRecovery(
               TestWorkflow::stepWithTimeoutAndRecovery,
-              maxRetries(2).failoverTo(TestWorkflow::interruptStep))
+              RecoverStrategy.maxRetries(2).failoverTo(TestWorkflow::interruptStep))
           // redefine settings for stepWithTimeoutAndRecovery
           .stepTimeout(TestWorkflow::stepWithTimeoutAndRecovery, Duration.ofSeconds(4))
           .stepRecovery(
               TestWorkflow::stepWithTimeoutAndRecovery,
-              maxRetries(1).failoverTo(TestWorkflow::interruptStep))
+              RecoverStrategy.maxRetries(1).failoverTo(TestWorkflow::interruptStep))
           .stepTimeout(TestWorkflow::stepWithTimeout, Duration.ofSeconds(3))
           .stepRecovery(
-              TestWorkflow::stepWithRecovery, maxRetries(1).failoverTo(TestWorkflow::interruptStep))
+              TestWorkflow::stepWithRecovery,
+              RecoverStrategy.maxRetries(1).failoverTo(TestWorkflow::interruptStep))
           .build();
     }
 

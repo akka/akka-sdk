@@ -72,7 +72,7 @@ Access these documentation files for detailed patterns:
 - Structured responses: use `responseConformsTo(Class)` (preferred) or `responseAs(Class)` with manual JSON instructions
 - Model config: prefer default in config, override with `.model(ModelProvider.openAi()...)` if needed
 - Error handling with `.onFailure(throwable -> fallbackValue)`
-- When calling from workflow: use long timeouts (60s), limited retries (maxRetries(2))
+- When calling from workflow: use long timeouts (60s), limited retries (RecoverStrategy.maxRetries(2))
 
 **Event Sourced Entity**
 - Extends `EventSourcedEntity<State, Event>`, has `@Component(id = "...")`
@@ -253,7 +253,7 @@ public WorkflowSettings settings() {
     .defaultStepTimeout(ofSeconds(2))
     .stepRecovery(
       TransferWorkflow::depositStep,
-      maxRetries(2).failoverTo(TransferWorkflow::compensateWithdrawStep))
+      RecoverStrategy.maxRetries(2).failoverTo(TransferWorkflow::compensateWithdrawStep))
     .build();
 }
 
@@ -269,8 +269,6 @@ private StepEffect compensateWithdrawStep() {
     .thenEnd();
 }
 ```
-
-Note: `maxRetries()` for the WorkflowSettings is inherited from Workflow — NO static import needed
 
 ### Agent with Tools
 
@@ -326,7 +324,7 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
   public WorkflowSettings settings() {
     return WorkflowSettings.builder()
       .stepTimeout(AgentTeamWorkflow::askWeather, ofSeconds(60)) // Long timeout for AI
-      .defaultStepRecovery(maxRetries(2).failoverTo(AgentTeamWorkflow::errorStep))
+      .defaultStepRecovery(RecoverStrategy.maxRetries(2).failoverTo(AgentTeamWorkflow::errorStep))
       .build();
   }
 
@@ -398,7 +396,7 @@ public class DynamicAgentWorkflow extends Workflow<DynamicAgentWorkflow.State> {
   public WorkflowSettings settings() {
     return WorkflowSettings.builder()
       .defaultStepTimeout(ofSeconds(60))
-      .defaultStepRecovery(maxRetries(1).failoverTo(DynamicAgentWorkflow::summarizeStep))
+      .defaultStepRecovery(RecoverStrategy.maxRetries(1).failoverTo(DynamicAgentWorkflow::summarizeStep))
       .build();
   }
 
@@ -623,7 +621,7 @@ public class MyEndpointIntegrationTest extends TestKitSupport {
 - Create multiple command handlers in Agent
 - Return protobuf types from domain layer
 - Import `WorkflowSettings` -> WorkflowSettings is an inner class of Workflow, so no additional import is needed
-- Static import `maxRetries` -> `maxRetries()` is inherited from `Workflow`, just call it directly without any import
+- Static import `maxRetries` -> use `RecoverStrategy.maxRetries()` (import `Workflow.RecoverStrategy`)
 
 ✅ **DO:**
 - Use Java records for immutable data
