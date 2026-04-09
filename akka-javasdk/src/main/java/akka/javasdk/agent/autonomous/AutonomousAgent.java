@@ -24,6 +24,9 @@ import akka.javasdk.impl.agent.autonomous.AgentDefinitionImpl;
  */
 public abstract class AutonomousAgent implements akka.javasdk.agent.AgentDelegationWorker {
 
+  /** Token usage statistics for an autonomous agent. */
+  public record TokenUsage(int inputTokens, int outputTokens) {}
+
   /**
    * Define this autonomous agent. The definition configures the agent's goal, tools, model
    * provider, guardrails, and capabilities.

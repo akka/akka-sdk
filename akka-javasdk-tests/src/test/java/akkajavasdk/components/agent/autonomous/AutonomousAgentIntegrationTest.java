@@ -307,8 +307,8 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
                       .map(n -> (Notification.IterationCompleted) n)
                       .findFirst()
                       .orElseThrow();
-              assertThat(iterationCompleted.inputTokens()).isEqualTo(150);
-              assertThat(iterationCompleted.outputTokens()).isEqualTo(42);
+              assertThat(iterationCompleted.tokenUsage().inputTokens()).isEqualTo(150);
+              assertThat(iterationCompleted.tokenUsage().outputTokens()).isEqualTo(42);
 
               // Verify task lifecycle notifications
               var taskStarted =
@@ -328,6 +328,70 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
                       .orElseThrow();
               assertThat(taskCompleted.taskId()).isEqualTo(taskId);
             });
+  }
+
+  @Test
+  public void shouldGetAgentState() {
+    testAgentModel.fixedResponse(completeTask("{\"value\":\"done\",\"score\":1}"));
+
+    var agentId = UUID.randomUUID().toString();
+    var agentClient = componentClient.forAutonomousAgent(TestAutonomousAgent.class, agentId);
+
+    var taskId =
+        agentClient.runSingleTask(TestTasks.TEST_TASK.instructions("Do something simple."));
+
+    // Wait for the task to complete
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var snapshot = componentClient.forTask(taskId).get(TestTasks.TEST_TASK);
+              assertThat(snapshot.result()).isNotNull();
+            });
+
+    // After completion, query agent state
+    var state = agentClient.getState();
+    assertThat(state).isNotNull();
+    assertThat(state.goal()).isNotNull();
+    assertThat(state.totalTokenUsage()).isNotNull();
+  }
+
+  @Test
+  public void shouldPauseAndResumeAgent() {
+    testAgentModel.fixedResponse(completeTask("{\"value\":\"done after resume\",\"score\":1}"));
+
+    var agentId = UUID.randomUUID().toString();
+    var agentClient = componentClient.forAutonomousAgent(TestAutonomousAgent.class, agentId);
+
+    // Pause the agent before assigning any work
+    agentClient.pause();
+
+    var state = agentClient.getState();
+    assertThat(state.paused()).isTrue();
+
+    // Create a task and assign it — the agent should not process it while paused
+    var taskId =
+        componentClient
+            .forTask(UUID.randomUUID().toString())
+            .create(TestTasks.TEST_TASK.instructions("Do something."));
+    agentClient.assignTasks(taskId);
+
+    // Resume the agent so it can process the task
+    agentClient.resume();
+
+    // Wait for the task to complete after resume
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var snapshot = componentClient.forTask(taskId).get(TestTasks.TEST_TASK);
+              assertThat(snapshot.result()).isNotNull();
+            });
+
+    var stateAfterResume = agentClient.getState();
+    assertThat(stateAfterResume.paused()).isFalse();
   }
 
   @Test

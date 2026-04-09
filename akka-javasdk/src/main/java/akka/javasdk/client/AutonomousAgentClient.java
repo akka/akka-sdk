@@ -8,6 +8,7 @@ import akka.Done;
 import akka.NotUsed;
 import akka.annotation.DoNotInherit;
 import akka.javasdk.agent.autonomous.AgentSetup;
+import akka.javasdk.agent.autonomous.AgentState;
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.agent.autonomous.Notification;
 import akka.javasdk.agent.task.Task;
@@ -75,6 +76,34 @@ public interface AutonomousAgentClient {
    * @param setup the per-instance configuration
    */
   CompletionStage<Done> setupAsync(AgentSetup setup);
+
+  /**
+   * Get the current state of this agent instance.
+   *
+   * @return a summary of the agent's current state
+   */
+  default AgentState getState() {
+    return getStateAsync().toCompletableFuture().join();
+  }
+
+  /** Async variant of {@link #getState}. */
+  CompletionStage<AgentState> getStateAsync();
+
+  /** Pause the agent. A paused agent stops iterating until resumed. */
+  default void pause() {
+    pauseAsync().toCompletableFuture().join();
+  }
+
+  /** Async variant of {@link #pause}. */
+  CompletionStage<Done> pauseAsync();
+
+  /** Resume a previously paused agent. */
+  default void resume() {
+    resumeAsync().toCompletableFuture().join();
+  }
+
+  /** Async variant of {@link #resume}. */
+  CompletionStage<Done> resumeAsync();
 
   /** Stop the agent. */
   default void stop() {
