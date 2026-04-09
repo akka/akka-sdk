@@ -24,8 +24,8 @@ import akka.javasdk.impl.agent.autonomous.CapabilityConverter
 import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.SpiAutonomousAgent.{ Notification => SpiNotification }
 import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
-import akka.stream.javadsl.Source
 import akka.stream.Materializer
+import akka.stream.javadsl.Source
 import org.slf4j.LoggerFactory
 
 /**

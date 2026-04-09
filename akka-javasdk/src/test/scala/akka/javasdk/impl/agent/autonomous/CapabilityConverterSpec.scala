@@ -231,4 +231,5 @@ class CapabilityConverterSpec extends AnyWordSpec with Matchers {
       teamLead.memberTypes(1).maxInstances shouldBe 1
     }
   }
+
 }
