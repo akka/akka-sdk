@@ -144,6 +144,7 @@ Okta
 onboarding
 operationalized
 (?i)OpenID
+OpenTelemetry
 (?i)OSGi
 (?i)OTLP
 parseable
