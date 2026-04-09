@@ -98,7 +98,7 @@ The following is a list of all natively supported model configurations. Remember
 
 | cache-system-messages
 | Boolean
-| Enable prompt caching of the last system message. Disabled by default. See https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching[Anthropic prompt caching] for details.
+| Enable prompt caching of the last system message. Disabled by default. See https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching[Anthropic prompt caching,window="new"] for details.
 
 | cache-tools
 | Boolean
@@ -170,7 +170,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Anthropic.html[`M
 
 | prompt-caching
 | String
-| Enable prompt caching for Anthropic Claude or Amazon Nova models by selecting where the cache point is placed. Valid values: `""` (disabled, default), `"after-system"`, `"after-user-message"`, `"after-tools"`. See https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-caching.html[AWS Bedrock prompt caching] for details.
+| Enable prompt caching for Anthropic Claude or Amazon Nova models by selecting where the cache point is placed. Valid values: `""` (disabled, default), `"after-system"`, `"after-user-message"`, `"after-tools"`. See https://docs.aws.amazon.com/bedrock/latest/userguide/capacity-limits-cost-optimization.html#prompt-caching[AWS Bedrock prompt caching,window="new"] for details.
 
 | additional-model-request-headers
 | List<String>
