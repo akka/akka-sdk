@@ -56,7 +56,9 @@ public class TransferWorkflow extends Workflow<TransferState> {
       .stepTimeout(TransferWorkflow::failoverHandlerStep, ofSeconds(1)) // <3>
       // end::step-timeout[]
       // tag::recover-strategy[]
-      .defaultStepRecovery(RecoverStrategy.maxRetries(1).failoverTo(TransferWorkflow::failoverHandlerStep)) // <1>
+      .defaultStepRecovery(
+        RecoverStrategy.maxRetries(1).failoverTo(TransferWorkflow::failoverHandlerStep)
+      ) // <1>
       .stepRecovery(
         TransferWorkflow::depositStep,
         RecoverStrategy.maxRetries(2).failoverTo(TransferWorkflow::compensateWithdrawStep)
