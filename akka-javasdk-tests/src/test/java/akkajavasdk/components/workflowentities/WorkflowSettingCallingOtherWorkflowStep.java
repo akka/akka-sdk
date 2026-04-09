@@ -24,7 +24,8 @@ public class WorkflowSettingCallingOtherWorkflowStep extends Workflow<String> {
     return WorkflowSettings.builder()
         .stepRecovery(
             WorkflowWithTimeout::counterStep,
-            RecoverStrategy.maxRetries(10).failoverTo(WorkflowSettingCallingOtherWorkflowStep::someStep))
+            RecoverStrategy.maxRetries(10)
+                .failoverTo(WorkflowSettingCallingOtherWorkflowStep::someStep))
         .build();
   }
 

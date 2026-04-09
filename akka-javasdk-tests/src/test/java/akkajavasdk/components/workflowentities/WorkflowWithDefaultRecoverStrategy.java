@@ -26,7 +26,8 @@ public class WorkflowWithDefaultRecoverStrategy extends Workflow<FailingCounterS
     return WorkflowSettings.builder()
         .defaultStepTimeout(ofSeconds(10))
         .defaultStepRecovery(
-            RecoverStrategy.maxRetries(1).failoverTo(WorkflowWithDefaultRecoverStrategy::counterStepFailover))
+            RecoverStrategy.maxRetries(1)
+                .failoverTo(WorkflowWithDefaultRecoverStrategy::counterStepFailover))
         .build();
   }
 

@@ -31,7 +31,8 @@ public class WorkflowSettingsBuilderTest {
               RecoverStrategy.maxRetries(1).failoverTo(TestWorkflow::interruptStep))
           .stepTimeout(TestWorkflow::stepWithTimeout, Duration.ofSeconds(3))
           .stepRecovery(
-              TestWorkflow::stepWithRecovery, RecoverStrategy.maxRetries(1).failoverTo(TestWorkflow::interruptStep))
+              TestWorkflow::stepWithRecovery,
+              RecoverStrategy.maxRetries(1).failoverTo(TestWorkflow::interruptStep))
           .build();
     }
 
