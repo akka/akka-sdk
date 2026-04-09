@@ -16,6 +16,7 @@ import akka.Done;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
+import akka.javasdk.workflow.Workflow.RecoverStrategy;
 import com.example.transfer.domain.TransferState;
 import com.example.transfer.domain.TransferState.Transfer;
 import com.example.wallet.application.WalletEntity;
@@ -55,10 +56,10 @@ public class TransferWorkflow extends Workflow<TransferState> {
       .stepTimeout(TransferWorkflow::failoverHandlerStep, ofSeconds(1)) // <3>
       // end::step-timeout[]
       // tag::recover-strategy[]
-      .defaultStepRecovery(maxRetries(1).failoverTo(TransferWorkflow::failoverHandlerStep)) // <1>
+      .defaultStepRecovery(RecoverStrategy.maxRetries(1).failoverTo(TransferWorkflow::failoverHandlerStep)) // <1>
       .stepRecovery(
         TransferWorkflow::depositStep,
-        maxRetries(2).failoverTo(TransferWorkflow::compensateWithdrawStep)
+        RecoverStrategy.maxRetries(2).failoverTo(TransferWorkflow::compensateWithdrawStep)
       ) // <2>
       // tag::step-timeout[]
       .build();

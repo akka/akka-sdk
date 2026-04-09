@@ -9,6 +9,7 @@ import static java.time.Duration.ofSeconds;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
+import akka.javasdk.workflow.Workflow.RecoverStrategy;
 import akkajavasdk.components.actions.echo.Message;
 
 @Component(id = "workflow-with-default-recover-strategy")
@@ -25,7 +26,7 @@ public class WorkflowWithDefaultRecoverStrategy extends Workflow<FailingCounterS
     return WorkflowSettings.builder()
         .defaultStepTimeout(ofSeconds(10))
         .defaultStepRecovery(
-            maxRetries(1).failoverTo(WorkflowWithDefaultRecoverStrategy::counterStepFailover))
+            RecoverStrategy.maxRetries(1).failoverTo(WorkflowWithDefaultRecoverStrategy::counterStepFailover))
         .build();
   }
 

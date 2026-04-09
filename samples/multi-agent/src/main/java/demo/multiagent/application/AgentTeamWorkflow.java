@@ -13,6 +13,7 @@ import akka.javasdk.annotations.StepName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.client.DynamicMethodRef;
 import akka.javasdk.workflow.Workflow;
+import akka.javasdk.workflow.Workflow.RecoverStrategy;
 import akka.stream.Materializer;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -126,10 +127,10 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
   public WorkflowSettings settings() {
     return WorkflowSettings.builder()
       .defaultStepTimeout(ofSeconds(30))
-      .defaultStepRecovery(maxRetries(1).failoverTo(AgentTeamWorkflow::interruptStep))
+      .defaultStepRecovery(RecoverStrategy.maxRetries(1).failoverTo(AgentTeamWorkflow::interruptStep))
       .stepRecovery(
         AgentTeamWorkflow::selectAgentsStep,
-        maxRetries(1).failoverTo(AgentTeamWorkflow::summarizeStep)
+        RecoverStrategy.maxRetries(1).failoverTo(AgentTeamWorkflow::summarizeStep)
       )
       .build();
   }
