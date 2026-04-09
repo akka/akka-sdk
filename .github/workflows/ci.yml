@@ -26,7 +26,7 @@ jobs:
     runs-on: Akka-Default
     steps:
       - name: Checkout Global Scripts
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: akka/github-actions-scripts
           path: scripts
@@ -39,8 +39,7 @@ jobs:
 
       - name: Checkout
         # https://github.com/actions/checkout/releases
-        # v4.1.1
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        uses: actions/checkout@v6
 
       - name: Checkout GitHub merge
         if: github.event.pull_request
@@ -50,8 +49,7 @@ jobs:
 
       - name: Restore Coursier cache
         # https://github.com/actions/cache/releases
-        # v4.2.0
-        uses: actions/cache/restore@1bd1e32a3bdc45362d1e726936510720a7c30a57
+        uses: actions/cache/restore@v5
         with:
           path: |
             ~/.cache/coursier
@@ -65,8 +63,7 @@ jobs:
 
       - name: Set up JDK 21
         # https://github.com/coursier/setup-action/releases
-        # v1.3.5
-        uses: coursier/setup-action@7bde40eee928896f074dbb76d22dd772eed5c65f
+        uses: coursier/setup-action@v3.0.0
         with:
           jvm: temurin:1.21
 
@@ -102,7 +99,6 @@ jobs:
         run: |
           sbt --client "additionalValidation" || \
             { echo "[error] Additional validation failed."; false; }
-        
 
       - name: sbt shutdown
         run: |
@@ -113,7 +109,7 @@ jobs:
     runs-on: Akka-Default
     steps:
       - name: Checkout Global Scripts
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: akka/github-actions-scripts
           path: scripts
@@ -126,8 +122,7 @@ jobs:
 
       - name: Checkout
         # https://github.com/actions/checkout/releases
-        # v4.1.1
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        uses: actions/checkout@v6
 
       - name: Checkout GitHub merge
         if: github.event.pull_request
@@ -137,8 +132,7 @@ jobs:
 
       - name: Cache Coursier cache
         # https://github.com/actions/cache/releases
-        # v4.2.0
-        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cache/coursier
@@ -152,15 +146,13 @@ jobs:
 
       - name: Set up JDK 21
         # https://github.com/coursier/setup-action/releases
-        # v1.3.5
-        uses: coursier/setup-action@7bde40eee928896f074dbb76d22dd772eed5c65f
+        uses: coursier/setup-action@v3.0.0
         with:
           jvm: temurin:1.21
 
       - name: Cache Maven repository
         # https://github.com/actions/cache/releases
-        # v4.2.0
-        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57
+        uses: actions/cache@v5
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('akka-javasdk-parent/pom.xml') }}
@@ -174,7 +166,7 @@ jobs:
           # the SDK_VERSION is later used to run the maven tests (see below)
           .github/determine-sdk-version.sh
           SDK_VERSION="$(cat ~/akka-javasdk-version.txt)"
-          echo "SDK version: '${SDK_VERSION}'" 
+          echo "SDK version: '${SDK_VERSION}'"
 
       - name: Package io.akka dependencies
         run: |-
@@ -183,8 +175,7 @@ jobs:
 
       - name: Upload io.akka dependencies
         # https://github.com/actions/upload-artifact/releases
-        # v4.3.2
-        uses: actions/upload-artifact@1746f4ab65b179e0ea60a494b83293b640dd5bba
+        uses: actions/upload-artifact@v7
         with:
           name: m2-cache
           path: ~/dependencies.tar.gz
@@ -198,7 +189,7 @@ jobs:
 
     steps:
       - name: Checkout Global Scripts
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: akka/github-actions-scripts
           path: scripts
@@ -211,8 +202,7 @@ jobs:
 
       - name: Checkout
         # https://github.com/actions/checkout/releases
-        # v4.1.1
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        uses: actions/checkout@v6
 
       - name: Checkout GitHub merge
         if: github.event.pull_request
@@ -222,8 +212,7 @@ jobs:
 
       - name: Restore Coursier cache
         # https://github.com/actions/cache/releases
-        # v4.2.0
-        uses: actions/cache/restore@1bd1e32a3bdc45362d1e726936510720a7c30a57
+        uses: actions/cache/restore@v5
         with:
           path: |
             ~/.cache/coursier
@@ -237,15 +226,13 @@ jobs:
 
       - name: Set up JDK 21
         # https://github.com/coursier/setup-action/releases
-        # v1.3.5
-        uses: coursier/setup-action@7bde40eee928896f074dbb76d22dd772eed5c65f
+        uses: coursier/setup-action@v3.0.0
         with:
           jvm: temurin:1.21
 
       - name: Download io.akka dependencies
         # https://github.com/actions/download-artifact/releases
-        # v4.1.5
-        uses: actions/download-artifact@8caf195ad4b1dee92908e23f56eeb0696f1dd42d
+        uses: actions/download-artifact@v8
         with:
           name: m2-cache
           path: ~/
@@ -260,12 +247,12 @@ jobs:
 
   check-docker-image-contents:
     name: Check service docker image contents
-    needs: [ checks, publish-local ] # usually done via now disabled check-samples-in-ci
+    needs: [checks, publish-local] # usually done via now disabled check-samples-in-ci
     runs-on: Akka-Default
 
     steps:
       - name: Checkout Global Scripts
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: akka/github-actions-scripts
           path: scripts
@@ -278,8 +265,7 @@ jobs:
 
       - name: Checkout
         # https://github.com/actions/checkout/releases
-        # v4.1.1
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        uses: actions/checkout@v6
 
       - name: Checkout GitHub merge
         if: github.event.pull_request
@@ -289,15 +275,13 @@ jobs:
 
       - name: Set up JDK 21
         # https://github.com/coursier/setup-action/releases
-        # v1.3.5
-        uses: coursier/setup-action@7bde40eee928896f074dbb76d22dd772eed5c65f
+        uses: coursier/setup-action@v3.0.0
         with:
           jvm: temurin:1.21
 
       - name: Cache Maven repository
         # https://github.com/actions/cache/releases
-        # v4.2.0
-        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57
+        uses: actions/cache@v5
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('akka-javasdk-parent/pom.xml') }}
@@ -306,8 +290,7 @@ jobs:
 
       - name: Download io.akka dependencies
         # https://github.com/actions/download-artifact/releases
-        # v4.1.5
-        uses: actions/download-artifact@8caf195ad4b1dee92908e23f56eeb0696f1dd42d
+        uses: actions/download-artifact@v8
         with:
           name: m2-cache
           path: ~/
@@ -341,7 +324,7 @@ jobs:
   maven-samples:
     name: Maven samples
     # needs: check-samples-in-ci
-    needs: [checks, publish-local] # usually done via now disabled check-samples-in-ci 
+    needs: [checks, publish-local] # usually done via now disabled check-samples-in-ci
     runs-on: Akka-Default
 
     strategy:
@@ -380,7 +363,7 @@ jobs:
 
     steps:
       - name: Checkout Global Scripts
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: akka/github-actions-scripts
           path: scripts
@@ -393,8 +376,7 @@ jobs:
 
       - name: Checkout
         # https://github.com/actions/checkout/releases
-        # v4.1.1
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        uses: actions/checkout@v6
 
       - name: Checkout GitHub merge
         if: github.event.pull_request
@@ -404,15 +386,13 @@ jobs:
 
       - name: Set up JDK 21
         # https://github.com/coursier/setup-action/releases
-        # v1.3.5
-        uses: coursier/setup-action@7bde40eee928896f074dbb76d22dd772eed5c65f
+        uses: coursier/setup-action@v3.0.0
         with:
           jvm: temurin:1.21
 
       - name: Cache Maven repository
         # https://github.com/actions/cache/releases
-        # v4.2.0
-        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57
+        uses: actions/cache@v5
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('akka-javasdk-parent/pom.xml') }}
@@ -421,8 +401,7 @@ jobs:
 
       - name: Download io.akka dependencies
         # https://github.com/actions/download-artifact/releases
-        # v4.1.5
-        uses: actions/download-artifact@8caf195ad4b1dee92908e23f56eeb0696f1dd42d
+        uses: actions/download-artifact@v8
         with:
           name: m2-cache
           path: ~/
@@ -436,7 +415,6 @@ jobs:
         run: |-
           export SDK_VERSION=$(cat ~/akka-javasdk-version.txt)
           ./updateSdkVersions.sh java samples/
-
 
       - name: ${{ matrix.sample }} check-formatting
         env:
