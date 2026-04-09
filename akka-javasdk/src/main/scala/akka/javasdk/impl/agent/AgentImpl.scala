@@ -638,7 +638,9 @@ private[impl] final class AgentImpl[A <: Agent](
             p.responseTimeout().toScala,
             p.maxRetries(),
             p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq),
-          thinkingBudgetTokens = p.thinkingBudgetTokens)
+          thinkingBudgetTokens = p.thinkingBudgetTokens,
+          cacheSystemMessages = p.cacheSystemMessages,
+          cacheTools = p.cacheTools)
       case p: ModelProvider.GoogleAIGemini =>
         new SpiAgent.ModelProvider.GoogleAIGemini(
           p.apiKey(),
@@ -737,7 +739,15 @@ private[impl] final class AgentImpl[A <: Agent](
             FiniteDuration.apply(30, TimeUnit.SECONDS),
             p.responseTimeout().toScala,
             p.maxRetries(),
-            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq))
+            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq),
+          promptCaching = p.promptCaching.toScala.map {
+            case ModelProvider.BedrockPromptCachePlacement.AFTER_SYSTEM =>
+              SpiAgent.ModelProvider.BedrockPromptCachePlacement.AfterSystem
+            case ModelProvider.BedrockPromptCachePlacement.AFTER_USER_MESSAGE =>
+              SpiAgent.ModelProvider.BedrockPromptCachePlacement.AfterUserMessage
+            case ModelProvider.BedrockPromptCachePlacement.AFTER_TOOLS =>
+              SpiAgent.ModelProvider.BedrockPromptCachePlacement.AfterTools
+          })
     }
   }
 

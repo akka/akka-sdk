@@ -67,6 +67,11 @@ class ComponentClientTest {
           }
 
           @Override
+          public SpiObjectStorage objectStorage() {
+            return null;
+          }
+
+          @Override
           public ViewClient viewClient() {
             return null;
           }
