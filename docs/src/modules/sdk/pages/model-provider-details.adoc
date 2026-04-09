@@ -96,6 +96,14 @@ The following is a list of all natively supported model configurations. Remember
 | Integer
 | A maximum number of tokens to spend on thinking, use 0 to disable thinking
 
+| cache-system-messages
+| Boolean
+| Enable prompt caching of the last system message. Disabled by default. See https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching[Anthropic prompt caching] for details.
+
+| cache-tools
+| Boolean
+| Enable prompt caching of the last tool definition. Disabled by default.
+
 | additional-model-request-headers
 | List<String>
 | List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. Can also be set via `ADDITIONAL_ANTHROPIC_REQUEST_HEADERS_N` environment variables.
@@ -159,6 +167,10 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Anthropic.html[`M
 | max-retries
 | Integer
 | Retry this many times if the request to the model fails
+
+| prompt-caching
+| String
+| Enable prompt caching for Anthropic Claude or Amazon Nova models by selecting where the cache point is placed. Valid values: `""` (disabled, default), `"after-system"`, `"after-user-message"`, `"after-tools"`. See https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-caching.html[AWS Bedrock prompt caching] for details.
 
 | additional-model-request-headers
 | List<String>
