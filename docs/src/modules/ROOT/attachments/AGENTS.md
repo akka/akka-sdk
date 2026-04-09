@@ -270,8 +270,6 @@ private StepEffect compensateWithdrawStep() {
 }
 ```
 
-Note: `maxRetries()` for the WorkflowSettings is inherited from Workflow — NO static import needed
-
 ### Agent with Tools
 
 ```java
