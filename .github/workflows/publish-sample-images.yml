@@ -20,7 +20,7 @@ jobs:
       latest-tag: ${{ steps.check.outputs.latest-tag }}
     steps:
       - name: Checkout Global Scripts
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: akka/github-actions-scripts
           path: scripts
@@ -32,7 +32,7 @@ jobs:
           ./scripts/setup_global_resolver.sh
 
       - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        uses: actions/checkout@v6
         with:
           # Use the same branch/commit as the original workflow when triggered by workflow_run
           ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref }}
@@ -61,7 +61,7 @@ jobs:
     if: needs.validate-tag.outputs.should-publish == 'true'
     steps:
       - name: Checkout Global Scripts
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: akka/github-actions-scripts
           path: scripts
@@ -74,8 +74,7 @@ jobs:
 
       - name: Checkout
         # https://github.com/actions/checkout/releases
-        # v4.1.1
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        uses: actions/checkout@v6
         with:
           # Use the same branch/commit as the original workflow when triggered by workflow_run
           ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref }}
@@ -84,11 +83,10 @@ jobs:
 
       - name: Cache Coursier cache
         # https://github.com/coursier/cache-action/releases
-        # v6.4.5
-        uses: coursier/cache-action@1ff273bff02a8787bc9f1877d347948af647956d
+        uses: coursier/cache-action@v8.1.0
 
       - name: Cache M2 dependencies
-        uses: actions/cache@v4.2.0
+        uses: actions/cache@v5
         with:
           path: ~/.m2/repository
           key: maven-repo-${{ hashFiles('**/pom.xml') }}
@@ -96,8 +94,7 @@ jobs:
 
       - name: Set up JDK 21
         # https://github.com/coursier/setup-action/releases
-        # v1.3.5
-        uses: coursier/setup-action@7bde40eee928896f074dbb76d22dd772eed5c65f
+        uses: coursier/setup-action@v3.0.0
         with:
           jvm: temurin:1.21
 
