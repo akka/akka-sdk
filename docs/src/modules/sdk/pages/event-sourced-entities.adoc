@@ -122,8 +122,8 @@ As mentioned above, the business logic for updating the state was placed on the 
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tag=addItem]
 ----
 <1> For an existing item, we will make sure to sum the existing quantity with the incoming one.
-<2> Returns an update list of items without the existing item.
-<3> Adds the update item to the shopping cart.
+<2> Returns an updated list of items without the existing item.
+<3> Adds the updated item to the shopping cart.
 <4> Returns a new instance of the shopping cart with the updated line items.
 
 
@@ -137,7 +137,7 @@ To have access to the current state of the entity we can use `currentState()` as
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tag=getCart]
 ----
 <1> Stores the `entityId` on an internal attribute so we can use it later.
-<2> Provides initial state - overriding `emptyState()` is optional but if not doing it, be careful to deal with a `currentState()` with a `null` value when receiving the first command or event.
+<2> Provides initial state - we recommend always overriding `emptyState()` to return a sensible default. If not overridden, `currentState()` will return `null` until the first event is persisted, which requires null checks in all command and event handlers.
 <3> Returns the current state as reply for the request.
 
 IMPORTANT: We are returning the internal state directly back to the requester. In the endpoint, it's usually best to convert this internal domain model into a public model so the internal representation is free to evolve without breaking clients code.
@@ -266,7 +266,7 @@ WARNING: Notifications should not be used for building business logic. Akka does
 
 == Side effects
 
-An entity doesn't perform any external side effects aside from persisting events and replying to the request. Side effects can be handled from the Workflow, Consumer, or Endpoint components that are calling the entity.
+An entity doesn't perform any external side effects aside from persisting events, replying to the request, and publishing notifications. Other side effects, such as calling external services or other components, should be handled from the Workflow, Consumer, or Endpoint components that are calling the entity.
 
 == Testing the entity
 
@@ -284,13 +284,13 @@ include::example$shopping-cart-quickstart/src/test/java/shoppingcart/application
 ----
 <1> Creates the TestKit passing the constructor of the Entity.
 <2> Calls the method `addItem` from the Entity in the `EventSourcedTestKit` with quantity `10`.
-<3> Asserts the return value is `"OK"`.
-<4> Returns the next event of type `IdemAdded` and asserts on the quantity.
+<3> Asserts the return value is `Done`.
+<4> Returns the next event of type `ItemAdded` and asserts on the quantity.
 <5> Add a new item with quantity `5`.
 <6> Asserts that the total number of events should be 2.
 <7> Calls the `getCart` method and asserts that quantity should be `15`.
 
-NOTE: The `EventSourcedTestKit` is stateful, and it holds the state of a single entity instance in memory. If you want to test more than one entity in a test, you need to create multiple instance of `EventSourcedTestKit`.
+NOTE: The `EventSourcedTestKit` is stateful, and it holds the state of a single entity instance in memory. If you want to test more than one entity in a test, you need to create multiple instances of `EventSourcedTestKit`.
 
 *EventSourcedResult*
 
@@ -320,9 +320,9 @@ include::example$shopping-cart-quickstart/src/test/java/shoppingcart/ShoppingCar
 ----
 <1> Note the test class must extend `TestKitSupport`.
 <2> A built-in component client is provided to interact with the components.
-<3> Request to create a new shopping cart with id `cart-abc`.
-<4> Request to add an item to the cart.
-<5> Request to retrieve current status of the shopping cart.
-<6> Assert there should only be one item.
+<3> Identify the entity instance by its id `cart-abc`.
+<4> Call the `addItem` command handler on the entity.
+<5> Retrieve the current shopping cart state.
+<6> Assert there should only be one item remaining after removal.
 
 NOTE: The integration tests in samples can be run using `mvn verify`.
