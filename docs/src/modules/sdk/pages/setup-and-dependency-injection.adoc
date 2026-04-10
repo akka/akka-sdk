@@ -185,7 +185,7 @@ WARNING: Don't use `ConfigFactory.load()` since that will not load the `applicat
 
 === Test configuration
 
-Test that are using the `TestKitSupport` are loading configuration from `src/test/resourced/application-test.conf` if that exists, otherwise from `application.conf`.
+Test that are using the `TestKitSupport` are loading configuration from `src/test/resources/application-test.conf` if that exists, otherwise from `application.conf`.
 
 [source,json,indent=0]
 .src/test/resources/application-test.conf

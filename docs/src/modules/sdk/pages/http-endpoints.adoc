@@ -223,18 +223,6 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java
 <2> Return a bad request response
 <3> Return an ok response, you can still use arbitrary objects and get them serialized to JSON
 
-`akka.javasdk.http.HttpResponses` provides convenient factories for common response message types without
-having to reach for the Akka HTTP model APIs directly:
-
-[source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
-----
-include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=low-level-response]
-----
-<1> Declare the return type as `akka.http.javadsl.model.HttpResponse`
-<2> Return a bad request response
-<3> Return an ok response
-
 Dropping all the way down to the Akka HTTP API:
 
 [source,java,indent=0]
@@ -321,8 +309,6 @@ include::example$doc-snippets/src/main/java/com/example/api/StaticResourcesEndpo
 <3> Strip the `/pages` prefix from the request path and serve the matching file from `static-resources`. For example, a request to `/pages/images/example.png` serves `src/main/resources/static-resources/images/example.png`.
 
 When the request path ends with `/` or is exactly the prefix with no trailing slash (e.g. `GET /pages` or `GET /pages/`), `index.html` from that directory is served automatically. This makes it straightforward to serve single-page applications where the root of the static subtree should return the application HTML page.
-
-When the request path ends with `/` or is exactly the prefix with no trailing slash (e.g. `GET /static` or `GET /static/`), `index.html` from that directory is served automatically. This makes it straightforward to serve single-page applications where the root of the static subtree should return the application HTML page.
 
 NOTE: This is convenient for service documentation or small self-contained services with web user interface but is not intended
  for production, where coupling of the service lifecycle with the user interface would mean that a new service version would need to be deployed for any changes in the user interface.
