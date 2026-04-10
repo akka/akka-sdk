@@ -586,12 +586,11 @@ public final class TestModelProvider implements ModelProvider.Custom {
     }
 
     /**
-     * Returns the tool name for a {@code send_<Method>_to_<agent>} tool, derived from the method
-     * name and target agent's component ID.
+     * Returns the tool name for a {@code delegate_to_<agent>} tool for request-based agent
+     * delegation, derived from the target agent's component ID.
      */
     public static String sendToToolName(Class<?> agentClass, String methodName) {
-      var capitalizedMethod = Character.toUpperCase(methodName.charAt(0)) + methodName.substring(1);
-      return "send_" + sanitize(capitalizedMethod) + "_to_" + sanitize(componentId(agentClass));
+      return "delegate_to_" + sanitize(componentId(agentClass));
     }
 
     /**
@@ -628,20 +627,19 @@ public final class TestModelProvider implements ModelProvider.Custom {
     }
 
     /**
-     * Creates a {@link ToolInvocationRequest} for a {@code send_<Method>_to_<agent>} tool, used
-     * when an autonomous agent delegates to a request-based agent. The method name has its first
-     * letter capitalized to match the runtime naming convention.
+     * Creates a {@link ToolInvocationRequest} for a {@code delegate_to_<agent>} tool, used when an
+     * autonomous agent delegates to a request-based agent. The method name is not part of the tool
+     * name — the runtime resolves it from the agent's definition.
      *
      * @param agentClass the request-based agent class (must carry {@code @Component} or
      *     {@code @ComponentId})
-     * @param methodName the exact name of the agent method to invoke
+     * @param methodName the exact name of the agent method to invoke (kept for API compatibility
+     *     but not used in the tool name)
      * @param argsJson the JSON arguments to pass (must match the method's parameter type)
      */
     public static ToolInvocationRequest sendTo(
         Class<?> agentClass, String methodName, String argsJson) {
-      var capitalizedMethod = Character.toUpperCase(methodName.charAt(0)) + methodName.substring(1);
-      var toolName =
-          "send_" + sanitize(capitalizedMethod) + "_to_" + sanitize(componentId(agentClass));
+      var toolName = "delegate_to_" + sanitize(componentId(agentClass));
       return new ToolInvocationRequest(toolName, argsJson);
     }
 
