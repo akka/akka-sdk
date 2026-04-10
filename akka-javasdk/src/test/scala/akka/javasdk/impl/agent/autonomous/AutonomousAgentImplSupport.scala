@@ -7,9 +7,11 @@ package akka.javasdk.impl.agent.autonomous
 import akka.javasdk.agent.autonomous.AgentSetup
 import akka.javasdk.agent.autonomous.capability.AgentCapability
 import akka.javasdk.agent.autonomous.capability.Delegation
+import akka.javasdk.agent.autonomous.capability.Moderation
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance
 import akka.javasdk.agent.autonomous.capability.TeamLeadership
 import akka.javasdk.impl.agent.autonomous.capability.DelegationImpl
+import akka.javasdk.impl.agent.autonomous.capability.ModerationImpl
 import akka.javasdk.impl.agent.autonomous.capability.TaskAcceptanceImpl
 import akka.javasdk.impl.agent.autonomous.capability.TeamLeadershipImpl
 
@@ -34,9 +36,14 @@ trait AutonomousAgentImplSupport {
     def impl: TeamLeadershipImpl = teamLeadership.asInstanceOf[TeamLeadershipImpl]
   }
 
+  implicit class ModerationOps(moderation: Moderation) {
+    def impl: ModerationImpl = moderation.asInstanceOf[ModerationImpl]
+  }
+
   implicit class AgentCapabilityOps(capability: AgentCapability) {
     def asTaskAcceptance: TaskAcceptanceImpl = capability.asInstanceOf[TaskAcceptanceImpl]
     def asDelegation: DelegationImpl = capability.asInstanceOf[DelegationImpl]
     def asTeamLeadership: TeamLeadershipImpl = capability.asInstanceOf[TeamLeadershipImpl]
+    def asModeration: ModerationImpl = capability.asInstanceOf[ModerationImpl]
   }
 }

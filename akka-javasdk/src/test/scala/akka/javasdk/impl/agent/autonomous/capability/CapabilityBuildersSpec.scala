@@ -9,6 +9,7 @@ import scala.jdk.CollectionConverters._
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.autonomous.AutonomousAgent
 import akka.javasdk.agent.autonomous.capability.Delegation
+import akka.javasdk.agent.autonomous.capability.Moderation
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance
 import akka.javasdk.agent.task.Task
 import akka.javasdk.impl.agent.autonomous.AutonomousAgentImplSupport
@@ -98,6 +99,89 @@ class CapabilityBuildersSpec extends AnyWordSpec with Matchers with AutonomousAg
 
   abstract class DummyAgent extends Agent
   abstract class DummyAutonomousAgent extends AutonomousAgent
+
+  "Moderation" should {
+
+    abstract class DummyAdvocate extends AutonomousAgent
+    abstract class DummyCritic extends AutonomousAgent
+
+    "create with participant types" in {
+      val moderation = ModerationImpl.create(classOf[DummyAdvocate], Array(classOf[DummyCritic]))
+
+      moderation.participants should have size 2
+      moderation.participants.head shouldBe classOf[DummyAdvocate]
+      moderation.participants(1) shouldBe classOf[DummyCritic]
+    }
+
+    "default maxRounds to 5" in {
+      val moderation = ModerationImpl.create(classOf[DummyAdvocate], Array())
+
+      moderation.maxRoundsValue shouldBe 5
+    }
+
+    "set explicit maxRounds" in {
+      val moderation = Moderation
+        .of(classOf[DummyAdvocate])
+        .maxRounds(10)
+        .impl
+
+      moderation.maxRoundsValue shouldBe 10
+    }
+
+    "default maxIterationsPerTurn to 10" in {
+      val moderation = ModerationImpl.create(classOf[DummyAdvocate], Array())
+
+      moderation.maxIterationsPerTurnValue shouldBe 10
+    }
+
+    "set explicit maxIterationsPerTurn" in {
+      val moderation = Moderation
+        .of(classOf[DummyAdvocate])
+        .maxIterationsPerTurn(3)
+        .impl
+
+      moderation.maxIterationsPerTurnValue shouldBe 3
+    }
+
+    "default maxConcurrentConversations to 1" in {
+      val moderation = ModerationImpl.create(classOf[DummyAdvocate], Array())
+
+      moderation.maxConcurrentConversationsValue shouldBe 1
+    }
+
+    "set explicit maxConcurrentConversations" in {
+      val moderation = Moderation
+        .of(classOf[DummyAdvocate])
+        .maxConcurrentConversations(4)
+        .impl
+
+      moderation.maxConcurrentConversationsValue shouldBe 4
+    }
+
+    "be immutable — maxRounds returns new instance" in {
+      val original = Moderation.of(classOf[DummyAdvocate])
+      val modified = original.maxRounds(8)
+
+      original.impl.maxRoundsValue shouldBe 5
+      modified.impl.maxRoundsValue shouldBe 8
+    }
+
+    "be immutable — maxIterationsPerTurn returns new instance" in {
+      val original = Moderation.of(classOf[DummyAdvocate])
+      val modified = original.maxIterationsPerTurn(20)
+
+      original.impl.maxIterationsPerTurnValue shouldBe 10
+      modified.impl.maxIterationsPerTurnValue shouldBe 20
+    }
+
+    "be immutable — maxConcurrentConversations returns new instance" in {
+      val original = Moderation.of(classOf[DummyAdvocate])
+      val modified = original.maxConcurrentConversations(3)
+
+      original.impl.maxConcurrentConversationsValue shouldBe 1
+      modified.impl.maxConcurrentConversationsValue shouldBe 3
+    }
+  }
 
   "TeamLeadership" should {
 

@@ -523,7 +523,7 @@ Many agents operate in parallel with minimal individual context, following simpl
 
 ## <a href="about:blank#_coordination_capabilities"></a> Coordination capabilities
 
-The coordination patterns above are implemented through capabilities — each adds tools to the agent's LLM loop. The agent's LLM sees domain tools alongside coordination tools and decides which to call. Capabilities map to the patterns: `canHandoffTo` enables sequential patterns, `Delegation` enables delegative patterns, and `TeamLeadership` enables collaborative and emergent patterns.
+The coordination patterns above are implemented through capabilities — each adds tools to the agent's LLM loop. The agent's LLM sees domain tools alongside coordination tools and decides which to call. Capabilities map to the patterns: `canHandoffTo` enables sequential patterns, `Delegation` enables delegative patterns, `TeamLeadership` enables collaborative and emergent patterns, and `Moderation` enables structured turn-taking conversations.
 
 ### Delegation
 
@@ -697,6 +697,107 @@ define()
 
 **When to use:** Interdependent work where agents need to see each other's contributions, or when quality benefits from peer review. Good for collaborative problem-solving where different expertise needs to be actively integrated.
 
+### Moderation
+
+A moderator agent orchestrates turn-taking conversations between participant agents. The moderator declares which agent types can participate, and the framework manages conversation setup, turn-taking, and transcript collection. Participant agents are simple — they define a goal and the framework handles the conversation mechanics automatically.
+
+```java
+import akka.javasdk.agent.autonomous.capability.Moderation;
+
+define()
+  .capability(Moderation.of(TechnicalReviewer.class, StyleReviewer.class, ComplianceReviewer.class))
+```
+
+Configuration options:
+
+```java
+Moderation.of(Buyer.class, Seller.class)
+  .maxRounds(5)                    // safety limit for directed mode (default 5)
+  .maxIterationsPerTurn(10)        // max LLM iterations per participant turn (default 10)
+  .maxConcurrentConversations(1)   // max simultaneous conversations (default 1)
+```
+
+**Context flow:** Structured turn-taking. The moderator sees the full conversation history and generates contextual prompts for each participant. Participants see the moderator's prompt along with new entries from the conversation since their last turn, so they can respond to what others have said.
+
+**When to use:** Multi-perspective analysis where different specialists contribute sequentially (peer review, compliance checks), or adaptive discussions where the moderator reads responses and decides the next step (negotiations, interviews).
+
+Two conversation modes shape how the moderator controls the flow:
+
+#### Scripted conversations
+
+In scripted mode, the moderator's LLM defines a turn sequence upfront — who speaks, in what order, and what each turn should cover. The framework then drives execution step by step. At each participant step, the moderator generates a contextual prompt informed by the conversation so far. At moderator steps, the moderator contributes its own message (for example, a synthesis or summary). After all steps complete, the conversation finishes and the moderator receives the full transcript.
+
+This mode suits structured processes with a known sequence — peer reviews where each specialist reviews in order, multi-stage assessments, or any workflow where the moderator knows the steps ahead of time but wants to generate contextual prompts as the conversation unfolds.
+
+```java
+@Component(
+  id = "review-moderator",
+  description = "Coordinates peer review of documents through specialist reviewers")
+public class ReviewModerator extends AutonomousAgent {
+
+  @Override
+  public AgentDefinition definition() {
+    return define()
+      .goal("Coordinate document peer review and synthesize reviewer findings.")
+      .capability(TaskAcceptance.of(ReviewTasks.REVIEW))
+      .capability(
+        Moderation.of(TechnicalReviewer.class, StyleReviewer.class, ComplianceReviewer.class));
+  }
+}
+```
+
+Participant agents need only a goal — the framework provides the conversation tools:
+
+```java
+@Component(id = "technical-reviewer", description = "Reviews documents for technical accuracy")
+public class TechnicalReviewer extends AutonomousAgent {
+
+  @Override
+  public AgentDefinition definition() {
+    return define().goal("Review documents for technical accuracy, correctness, and completeness.");
+  }
+}
+```
+
+The `description` in the `@Component` annotation is shown to the moderator's LLM so it understands each participant's expertise when generating prompts.
+
+#### Directed conversations
+
+In directed mode, the moderator's LLM has full dynamic control over the conversation. It decides who speaks next, what direction to give them, and when to end the conversation — all based on the responses received so far. This enables adaptive flows where the conversation shape depends on its content.
+
+`maxRounds` acts as a safety limit in directed mode — the conversation ends automatically if the round limit is reached, preventing runaway conversations.
+
+```java
+@Component(id = "facilitator", description = "Facilitates negotiations between parties")
+public class Facilitator extends AutonomousAgent {
+
+  @Override
+  public AgentDefinition definition() {
+    return define()
+      .goal("Facilitate negotiations and help parties reach agreement.")
+      .capability(TaskAcceptance.of(NegotiationTasks.NEGOTIATE))
+      .capability(Moderation.of(Buyer.class, Seller.class).maxRounds(5));
+  }
+}
+```
+
+#### Multiple participants of the same type
+
+The moderator's LLM can use multiple instances of the same participant type with different reference names. For example, two critics with different review focuses — the reference name distinguishes them in the conversation:
+
+```java
+@Component(id = "critic", description = "Reviews and critiques from a specific perspective")
+public class Critic extends AutonomousAgent {
+
+  @Override
+  public AgentDefinition definition() {
+    return define().goal("Provide critical analysis from the assigned perspective.");
+  }
+}
+```
+
+The moderator declares `Critic.class` once in its `Moderation.of(...)` capability. At runtime, the moderator's LLM can create multiple participant references — for example, a "technical-reviewer" and a "financial-reviewer" — both backed by the same `Critic` agent type but operating with different context based on the prompts the moderator generates for each.
+
 ### External input
 
 <!-- TODO: External input capability is defined in design notes but not yet implemented in the SDK API. The following describes the planned design. -->
@@ -714,6 +815,7 @@ Capabilities compose freely. An agent can combine:
 - **Delegation with handoff** — delegate to specialists for most work, hand off edge cases to a different agent type
 - **Delegation with external input** — delegate writing and editing to specialists, request editorial approval for the final output
 - **Teams with external input** — team members collaborate, with human approval required for final publication
+- **Moderation with delegation** — moderate a conversation between specialists, then delegate follow-up work based on the outcome
 
 ```java
 @Component(id = "consulting-coordinator")

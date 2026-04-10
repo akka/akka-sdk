@@ -14,6 +14,7 @@ import akka.javasdk.agent.task.TaskDefinition
 import akka.javasdk.agent.task.TaskTemplate
 import akka.javasdk.impl.JsonSchema
 import akka.javasdk.impl.agent.autonomous.capability.DelegationImpl
+import akka.javasdk.impl.agent.autonomous.capability.ModerationImpl
 import akka.javasdk.impl.agent.autonomous.capability.TaskAcceptanceImpl
 import akka.javasdk.impl.agent.autonomous.capability.TeamLeadershipImpl
 import akka.javasdk.impl.agent.autonomous.capability.TeamMemberImpl
@@ -66,7 +67,17 @@ private[javasdk] class CapabilityConverter(
         new SpiAutonomousAgent.TeamLead(t.members.map(resolveTeamMember), t.maxConcurrentTeamsValue)
       }
 
-    spiTaskAcceptances ++ spiDelegationOrchestrators ++ spiTeamLeads
+    val moderations = allCapabilities.collect { case m: ModerationImpl => m }
+    val spiModerations: Seq[SpiAutonomousAgent.Capability] =
+      moderations.map { m =>
+        new SpiAutonomousAgent.Moderation(
+          m.participants.map(resolveModerationParticipant),
+          m.maxRoundsValue,
+          m.maxIterationsPerTurnValue,
+          m.maxConcurrentConversationsValue)
+      }
+
+    spiTaskAcceptances ++ spiDelegationOrchestrators ++ spiTeamLeads ++ spiModerations
   }
 
   private def resolveHandoffTargets(
@@ -84,6 +95,20 @@ private[javasdk] class CapabilityConverter(
         description = targetDescriptor.flatMap(_.description),
         acceptedTasks = targetTaskDefinitions)
     }
+
+  private def resolveModerationParticipant(
+      participantClass: Class[_ <: AutonomousAgent]): SpiAutonomousAgent.ModerationParticipant = {
+    val targetComponentId = Reflect.readComponentId(participantClass)
+    agentDefinitionMap.getOrElse(
+      targetComponentId,
+      throw new IllegalStateException(
+        s"Moderation participant [$targetComponentId] (${participantClass.getName}) not found. " +
+        "Ensure the target agent is a registered AutonomousAgent component."))
+    val targetDescriptor = agentDescriptors.find(_.componentId == targetComponentId)
+    new SpiAutonomousAgent.ModerationParticipant(
+      agentComponentId = targetComponentId,
+      description = targetDescriptor.flatMap(_.description))
+  }
 
   private def resolveTeamMember(teamMember: TeamMemberImpl): SpiAutonomousAgent.TeamMemberType = {
     val targetComponentId = Reflect.readComponentId(teamMember.agentClass)
