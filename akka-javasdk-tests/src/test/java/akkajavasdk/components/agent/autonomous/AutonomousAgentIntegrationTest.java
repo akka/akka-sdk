@@ -352,9 +352,11 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
 
     // After completion, query agent state
     var state = agentClient.getState();
-    assertThat(state).isNotNull();
-    assertThat(state.goal()).isNotNull();
+    assertThat(state.phase()).isEqualTo("PHASE_STOPPED");
+    assertThat(state.paused()).isFalse();
     assertThat(state.totalTokenUsage()).isNotNull();
+    assertThat(state.currentTask()).isEmpty();
+    assertThat(state.pendingTaskIds()).isEmpty();
   }
 
   @Test

@@ -389,6 +389,45 @@ componentClient
   .stop();
 ```
 
+### Pause and resume
+
+A running agent can be paused and later resumed. While paused, the agent stops iterating — it will not start new LLM calls or process queued tasks. Tasks already assigned remain in the queue and are processed when the agent resumes.
+
+```java
+// Pause the agent
+componentClient
+  .forAutonomousAgent(ReportAgent.class, agentInstanceId)
+  .pause();
+
+// Resume the agent
+componentClient
+  .forAutonomousAgent(ReportAgent.class, agentInstanceId)
+  .resume();
+```
+
+Async variants `pauseAsync()` and `resumeAsync()` return `CompletionStage<Done>`.
+
+### Agent state
+
+Query the current state of an agent instance with `getState()`. The returned `AgentState` provides a snapshot of the agent's execution status.
+
+```java
+var state = componentClient
+  .forAutonomousAgent(ReportAgent.class, agentInstanceId)
+  .getState();
+
+state.phase();           // execution phase, e.g. "PHASE_RUNNING", "PHASE_STOPPED"
+state.paused();          // whether the agent is paused
+state.goal();            // the agent's current goal
+state.totalTokenUsage(); // cumulative token usage (inputTokens, outputTokens)
+state.currentTask();     // Optional<TaskInfo> — the task currently being worked on
+state.pendingTaskIds();  // List<String> — IDs of tasks queued but not yet started
+```
+
+The `currentTask()` returns an `Optional<AgentState.TaskInfo>` containing the `taskId` and `taskName` of the task the agent is actively processing. When the agent is idle or between tasks, it is empty.
+
+The async variant `getStateAsync()` returns `CompletionStage<AgentState>`.
+
 ### Querying task results
 
 Task results are typed based on the task definition's `resultConformsTo` type.
@@ -407,14 +446,10 @@ if (snapshot.status() == TaskStatus.COMPLETED) {
 Subscribe to lifecycle notifications for an agent instance to observe its execution progress in real time. Notifications are published by the runtime — not by user code — as the agent moves through its execution loop.
 
 ```java
-import akka.javasdk.agent.autonomous.Notification;
-
-var agentClient = componentClient
-  .forAutonomousAgent(QuestionAnswerer.class, agentInstanceId);
-
-var notifications = new ArrayList<Notification>();
-agentClient.notificationStream()
-  .runForeach(notifications::add, materializer);
+componentClient
+  .forAutonomousAgent(QuestionAnswerer.class, agentInstanceId)
+  .notificationStream()
+  .runForeach(System.out::println, materializer);
 ```
 
 The notification stream emits the following event types:
