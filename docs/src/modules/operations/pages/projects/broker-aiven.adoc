@@ -34,7 +34,7 @@ akka config get-project
 akka secret create tls-ca kafka-ca-cert --cert ./ca.pem
 ----
 
-. Copy the CA password from the "Connection Information" and store it in an Akka secret (e.g. called `kafka-secret`)
+. Copy the SASL password from the "Connection Information" and store it in an Akka secret (e.g. called `kafka-secret`)
 +
 [source, command window]
 ----
@@ -76,7 +76,7 @@ Browser::
 Instructions from Aiven's https://docs.aiven.io/docs/products/kafka/howto/create-topic[Creating an Apache Kafka topic, window="new"]
 
 . Open the https://console.aiven.io/[Aiven Console, window="new"].
-. In the Services page, click on the Aiven for Apache Kafka® service where you want to crate the topic.
+. In the Services page, click on the Aiven for Apache Kafka® service where you want to create the topic.
 . Select the Topics tab:
 .. In the Add new topic section, enter a name for your topic.
 .. In the Advanced configuration you can set the replication factor, number of partitions and other advanced settings. These can be modified later.

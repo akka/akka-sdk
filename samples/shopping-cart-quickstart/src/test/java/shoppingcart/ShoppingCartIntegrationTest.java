@@ -12,7 +12,7 @@ public class ShoppingCartIntegrationTest extends TestKitSupport { // <1>
 
   @Test
   public void createAndManageCart() {
-    String cartId = "card-abc";
+    String cartId = "cart-abc";
     var item1 = new LineItem("tv", "Super TV 55'", 1);
     var response1 = componentClient // <2>
       .forEventSourcedEntity(cartId) // <3>
