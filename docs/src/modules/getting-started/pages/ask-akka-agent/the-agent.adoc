@@ -48,20 +48,20 @@ The system message provides system-level instructions to the AI model that defin
 
 The user message represents the specific query, instruction, or input that will be processed by the model to generate a response.
 
-For this agent we want immediate visual feedback, and use the `StreamEffecct` to be able to stream the response to the client using server-sent events (SSE).
+For this agent we want immediate visual feedback, and use the `StreamEffect` to be able to stream the response to the client using server-sent events (SSE).
 
 == Add an Endpoint
 
 Add a new file `AskHttpEndpoint.java` to `src/main/java/akka/ask/agent/api/`
 
-[source,java,ident=0]
+[source,java,indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/api/AskHttpEndpoint.java[AskHttpEndpoint.java]
 ----
 include::sdk:example$ask-akka-agent/src/main/java/akka/ask/agent/api/AskHttpEndpoint.java[tag=endpoint]
 ----
 <1> Inject the `ComponentClient`, which is used to call the agent.
-<2> Call the `AskAkkaAgent created in the previous step
-<3> Use the `serverSentEvents` function to easily send a stream via SSE
+<2> Call the `AskAkkaAgent` created in the previous step
+<3> Use `HttpResponses.streamText(responseStream)` to easily send a stream via SSE
 
 The `userId` and `sessionId` parameters are required in `QueryRequest` along with the `question` field.
 
