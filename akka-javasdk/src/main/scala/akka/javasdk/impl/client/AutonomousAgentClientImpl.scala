@@ -16,6 +16,8 @@ import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.agent.autonomous.AgentSetup
+import akka.javasdk.agent.autonomous.AgentState
+import akka.javasdk.agent.autonomous.AutonomousAgent
 import akka.javasdk.agent.autonomous.Notification
 import akka.javasdk.agent.task.Task
 import akka.javasdk.client.AutonomousAgentClient
@@ -101,6 +103,36 @@ private[javasdk] final class AutonomousAgentClientImpl(
       .asJava
   }
 
+  override def getStateAsync(): CompletionStage[AgentState] = {
+    log.debug("getState: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
+    runtimeComponentClients.autonomousAgentClient
+      .getState(agentComponentId, agentInstanceId)
+      .map { spiState =>
+        new AgentState(
+          spiState.phase,
+          spiState.paused,
+          spiState.goal,
+          new AutonomousAgent.TokenUsage(spiState.totalInputTokens, spiState.totalOutputTokens))
+      }
+      .asJava
+  }
+
+  override def pauseAsync(): CompletionStage[Done] = {
+    log.debug("pause: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
+    runtimeComponentClients.autonomousAgentClient
+      .pause(agentComponentId, agentInstanceId)
+      .map(_ => Done.done())
+      .asJava
+  }
+
+  override def resumeAsync(): CompletionStage[Done] = {
+    log.debug("resume: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
+    runtimeComponentClients.autonomousAgentClient
+      .resume(agentComponentId, agentInstanceId)
+      .map(_ => Done.done())
+      .asJava
+  }
+
   override def stopAsync(): CompletionStage[Done] = {
     log.debug("stop: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
     runtimeComponentClients.autonomousAgentClient
@@ -122,7 +154,7 @@ private[javasdk] final class AutonomousAgentClientImpl(
     case _: SpiNotification.Deactivated      => new Notification.Deactivated
     case _: SpiNotification.IterationStarted => new Notification.IterationStarted
     case c: SpiNotification.IterationCompleted =>
-      new Notification.IterationCompleted(c.inputTokens, c.outputTokens)
+      new Notification.IterationCompleted(new AutonomousAgent.TokenUsage(c.inputTokens, c.outputTokens))
     case f: SpiNotification.IterationFailed => new Notification.IterationFailed(f.reason)
     case _: SpiNotification.Stopped         => new Notification.Stopped
     case t: SpiNotification.TaskStarted     => new Notification.TaskStarted(t.taskId, t.taskName)

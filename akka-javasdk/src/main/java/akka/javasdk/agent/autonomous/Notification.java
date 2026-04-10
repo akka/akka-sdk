@@ -35,22 +35,15 @@ public sealed interface Notification {
 
   /** Agent iteration completed successfully. */
   final class IterationCompleted implements Notification {
-    private final int inputTokens;
-    private final int outputTokens;
+    private final AutonomousAgent.TokenUsage tokenUsage;
 
-    public IterationCompleted(int inputTokens, int outputTokens) {
-      this.inputTokens = inputTokens;
-      this.outputTokens = outputTokens;
+    public IterationCompleted(AutonomousAgent.TokenUsage tokenUsage) {
+      this.tokenUsage = tokenUsage;
     }
 
-    /** Number of input tokens consumed by this iteration. */
-    public int inputTokens() {
-      return inputTokens;
-    }
-
-    /** Number of output tokens produced by this iteration. */
-    public int outputTokens() {
-      return outputTokens;
+    /** Token usage for this iteration. */
+    public AutonomousAgent.TokenUsage tokenUsage() {
+      return tokenUsage;
     }
   }
 
