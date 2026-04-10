@@ -11,6 +11,7 @@ import java.util
 import scala.util.control.NonFatal
 
 import akka.annotation.InternalApi
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.BytesPayload
 
@@ -19,6 +20,9 @@ import akka.runtime.sdk.spi.BytesPayload
  */
 @InternalApi
 object CommandSerialization {
+
+  // Content type used by autonomous agent delegation for tool call arguments
+  private val UntypedJsonObjectContentType = JsonSerializer.JsonContentTypePrefix + "object"
 
   def deserializeComponentClientCommand(
       method: Method,
@@ -37,7 +41,14 @@ object CommandSerialization {
       try {
         parameterTypes.head match {
           case paramClass: Class[_] =>
-            Some(serializer.fromBytes(paramClass, command).asInstanceOf[AnyRef])
+            // When the payload is an untyped JSON object (e.g. from autonomous agent delegation where
+            // the LLM produces tool call arguments as a JSON object wrapping the method parameter),
+            // unwrap the single property value to match the expected parameter type.
+            if (command.contentType == UntypedJsonObjectContentType) {
+              Some(unwrapSingleParameter(method, command, paramClass, serializer))
+            } else {
+              Some(serializer.fromBytes(paramClass, command).asInstanceOf[AnyRef])
+            }
           case parameterizedType: ParameterizedType =>
             if (classOf[java.util.Collection[_]]
                 .isAssignableFrom(parameterizedType.getRawType.asInstanceOf[Class[_]])) {
@@ -64,5 +75,27 @@ object CommandSerialization {
             ex)
       }
     }
+  }
+
+  /**
+   * Unwraps a single property from a JSON object payload, matching the ToolExecutor pattern. The JSON from LLM tool
+   * calls is always an object like {"paramName": value}, where paramName matches the method parameter name.
+   */
+  private def unwrapSingleParameter(
+      method: Method,
+      command: BytesPayload,
+      paramClass: Class[_],
+      serializer: Serializer): AnyRef = {
+    val mapper = serializer.objectMapper
+    val jsonNode = mapper.readTree(command.bytes.toArrayUnsafe())
+    val paramName = method.getParameters.head.getName
+    val valueNode = jsonNode.get(paramName)
+    if (valueNode == null) {
+      throw new IllegalArgumentException(
+        s"JSON object does not contain expected property [$paramName] " +
+        s"for method [${method.getDeclaringClass.getName}.${method.getName}]")
+    }
+    val javaType = mapper.getTypeFactory.constructType(paramClass)
+    mapper.treeToValue(valueNode, javaType).asInstanceOf[AnyRef]
   }
 }
