@@ -8,7 +8,9 @@ import java.util.concurrent.CompletionStage
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
 import scala.jdk.FutureConverters._
+import scala.jdk.OptionConverters._
 
 import akka.Done
 import akka.NotUsed
@@ -112,7 +114,9 @@ private[javasdk] final class AutonomousAgentClientImpl(
           spiState.phase,
           spiState.paused,
           spiState.goal,
-          new AutonomousAgent.TokenUsage(spiState.totalInputTokens, spiState.totalOutputTokens))
+          new AutonomousAgent.TokenUsage(spiState.totalInputTokens, spiState.totalOutputTokens),
+          spiState.currentTask.map(t => new AgentState.TaskInfo(t.taskId, t.taskName)).toJava,
+          spiState.pendingTaskIds.asJava)
       }
       .asJava
   }

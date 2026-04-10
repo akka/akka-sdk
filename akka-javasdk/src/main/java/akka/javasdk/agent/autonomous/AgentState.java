@@ -5,6 +5,8 @@
 package akka.javasdk.agent.autonomous;
 
 import akka.annotation.DoNotInherit;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Summary of an autonomous agent's current state.
@@ -14,17 +16,29 @@ import akka.annotation.DoNotInherit;
 @DoNotInherit
 public final class AgentState {
 
+  /** Information about a task: its id and name. */
+  public record TaskInfo(String taskId, String taskName) {}
+
   private final String phase;
   private final boolean paused;
   private final String goal;
   private final AutonomousAgent.TokenUsage totalTokenUsage;
+  private final Optional<TaskInfo> currentTask;
+  private final List<String> pendingTaskIds;
 
   public AgentState(
-      String phase, boolean paused, String goal, AutonomousAgent.TokenUsage totalTokenUsage) {
+      String phase,
+      boolean paused,
+      String goal,
+      AutonomousAgent.TokenUsage totalTokenUsage,
+      Optional<TaskInfo> currentTask,
+      List<String> pendingTaskIds) {
     this.phase = phase;
     this.paused = paused;
     this.goal = goal;
     this.totalTokenUsage = totalTokenUsage;
+    this.currentTask = currentTask;
+    this.pendingTaskIds = pendingTaskIds;
   }
 
   /** The current phase of the agent (e.g. "idle", "running", "stopped"). */
@@ -45,5 +59,15 @@ public final class AgentState {
   /** Total token usage for this agent instance. */
   public AutonomousAgent.TokenUsage totalTokenUsage() {
     return totalTokenUsage;
+  }
+
+  /** The task currently being worked on, if any. */
+  public Optional<TaskInfo> currentTask() {
+    return currentTask;
+  }
+
+  /** The ids of tasks that are pending (queued but not yet started). */
+  public List<String> pendingTaskIds() {
+    return pendingTaskIds;
   }
 }
