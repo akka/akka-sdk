@@ -927,16 +927,12 @@ public final class TestModelProvider implements ModelProvider.Custom {
      * Creates a {@link ToolInvocationRequest} for the {@code transfer_task} tool.
      *
      * @param taskId the ID of the task to transfer
-     * @param transferredTo identifier of the agent to transfer the task to
+     * @param agentId the ID of the agent to transfer the task to
      */
-    public static ToolInvocationRequest transferTask(String taskId, String transferredTo) {
+    public static ToolInvocationRequest transferTask(String taskId, String agentId) {
       return new ToolInvocationRequest(
           "transfer_task",
-          "{\"task_id\":"
-              + toJsonString(taskId)
-              + ",\"transferred_to\":"
-              + toJsonString(transferredTo)
-              + "}");
+          "{\"task_id\":" + toJsonString(taskId) + ",\"agent_id\":" + toJsonString(agentId) + "}");
     }
 
     /**
@@ -945,18 +941,18 @@ public final class TestModelProvider implements ModelProvider.Custom {
      *
      * @param backlogId the backlog ID
      * @param taskId the ID of the task to transfer
-     * @param transferredTo identifier of the agent to transfer the task to
+     * @param agentId the ID of the agent to transfer the task to
      */
     public static ToolInvocationRequest transferTask(
-        String backlogId, String taskId, String transferredTo) {
+        String backlogId, String taskId, String agentId) {
       return new ToolInvocationRequest(
           "transfer_task",
           "{\"backlog_id\":"
               + toJsonString(backlogId)
               + ",\"task_id\":"
               + toJsonString(taskId)
-              + ",\"transferred_to\":"
-              + toJsonString(transferredTo)
+              + ",\"agent_id\":"
+              + toJsonString(agentId)
               + "}");
     }
 
@@ -1080,7 +1076,8 @@ public final class TestModelProvider implements ModelProvider.Custom {
      * @param prompt the prompt to give to the participant
      */
     public static ToolInvocationRequest providePrompt(String prompt) {
-      return new ToolInvocationRequest(PROVIDE_PROMPT, "{\"content\":" + toJsonString(prompt) + "}");
+      return new ToolInvocationRequest(
+          PROVIDE_PROMPT, "{\"content\":" + toJsonString(prompt) + "}");
     }
 
     /**
