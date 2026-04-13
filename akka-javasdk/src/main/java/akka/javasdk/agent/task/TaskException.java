@@ -42,4 +42,36 @@ public abstract sealed class TaskException extends RuntimeException {
       super(taskId, reason);
     }
   }
+
+  /** Thrown when a task result is retrieved with a mismatched task definition. */
+  public static final class TypeMismatch extends TaskException {
+    private TypeMismatch(String taskId, String reason) {
+      super(taskId, reason);
+    }
+
+    public static TypeMismatch forName(String taskId, String actualName, String requestedName) {
+      return new TypeMismatch(
+          taskId,
+          "Task ["
+              + taskId
+              + "] was created with task definition ["
+              + actualName
+              + "] but was requested with ["
+              + requestedName
+              + "]");
+    }
+
+    public static TypeMismatch forResultType(
+        String taskId, String actualType, String requestedType) {
+      return new TypeMismatch(
+          taskId,
+          "Task ["
+              + taskId
+              + "] has result type ["
+              + actualType
+              + "] but was requested as ["
+              + requestedType
+              + "]");
+    }
+  }
 }

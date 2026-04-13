@@ -28,6 +28,7 @@ import org.scalatest.wordspec.AnyWordSpecLike
 
 object TaskClientImplSpec {
   case class TestResult(value: String, score: Int)
+  case class OtherResult(title: String, summary: String)
 
   case class RecordedCommand(methodName: String, payload: BytesPayload) {
     def payloadAs[T](implicit ct: reflect.ClassTag[T], serializer: Serializer): T =
@@ -241,6 +242,38 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
       snapshot.status() shouldBe TaskStatus.FAILED
       snapshot.failureReason() shouldBe "something broke"
     }
+
+    "throw TypeMismatch when task definition name does not match" in {
+      val otherTask: Task[TestResult] = Task
+        .define("Other task")
+        .description("A different task")
+        .resultConformsTo(classOf[TestResult])
+
+      val mock =
+        mockEntityClient(taskState(TaskStatus.COMPLETED, result = """{"value":"done","score":42}"""))
+      val client = createClient(mock)
+
+      val ex = client.getAsync(otherTask).asScala.failed.futureValue
+      ex shouldBe a[TaskException.TypeMismatch]
+      ex.getMessage should include("Other task")
+      ex.getMessage should include("Test task")
+    }
+
+    "throw TypeMismatch when result type does not match" in {
+      val otherTask: Task[OtherResult] = Task
+        .define("Test task") // same name, different result type
+        .description("A different task")
+        .resultConformsTo(classOf[OtherResult])
+
+      val mock =
+        mockEntityClient(taskState(TaskStatus.COMPLETED, result = """{"value":"done","score":42}"""))
+      val client = createClient(mock)
+
+      val ex = client.getAsync(otherTask).asScala.failed.futureValue
+      ex shouldBe a[TaskException.TypeMismatch]
+      ex.getMessage should include(classOf[OtherResult].getName)
+      ex.getMessage should include(classOf[TestResult].getName)
+    }
   }
 
   "TaskClientImpl resultAsync" should {
@@ -301,6 +334,52 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
 
       val ex = failedWith[TaskException.Cancelled](future)
       ex.reason() shouldBe "cancelled via notification"
+    }
+
+    "throw TypeMismatch when task definition name does not match for already completed task" in {
+      val otherTask: Task[TestResult] = Task
+        .define("Other task")
+        .description("A different task")
+        .resultConformsTo(classOf[TestResult])
+
+      val client =
+        createClient(mockEntityClient(taskState(TaskStatus.COMPLETED, result = """{"value":"done","score":42}""")))
+
+      val ex = client.resultAsync(otherTask).asScala.failed.futureValue
+      ex shouldBe a[TaskException.TypeMismatch]
+      ex.getMessage should include("Other task")
+      ex.getMessage should include("Test task")
+    }
+
+    "throw TypeMismatch when result type does not match for already completed task" in {
+      val otherTask: Task[OtherResult] = Task
+        .define("Test task")
+        .description("A different task")
+        .resultConformsTo(classOf[OtherResult])
+
+      val client =
+        createClient(mockEntityClient(taskState(TaskStatus.COMPLETED, result = """{"value":"done","score":42}""")))
+
+      val ex = client.resultAsync(otherTask).asScala.failed.futureValue
+      ex shouldBe a[TaskException.TypeMismatch]
+      ex.getMessage should include(classOf[OtherResult].getName)
+      ex.getMessage should include(classOf[TestResult].getName)
+    }
+
+    "throw TypeMismatch when task definition name does not match for in-progress task" in {
+      val otherTask: Task[TestResult] = Task
+        .define("Other task")
+        .description("A different task")
+        .resultConformsTo(classOf[TestResult])
+
+      val notificationPromise = Promise[EntityReply]()
+      val client =
+        createClient(mockEntityClient(taskState(TaskStatus.IN_PROGRESS), Source.future(notificationPromise.future)))
+
+      val ex = client.resultAsync(otherTask).asScala.failed.futureValue
+      ex shouldBe a[TaskException.TypeMismatch]
+      ex.getMessage should include("Other task")
+      ex.getMessage should include("Test task")
     }
   }
 }

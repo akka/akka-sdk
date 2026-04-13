@@ -204,7 +204,20 @@ private[javasdk] final class TaskClientImpl(
   }
 
   private def deserializeResult[R](taskState: TaskState, taskDefinition: TaskDefinition[R]): R = {
+    validateTaskDefinition(taskState, taskDefinition)
     deserializeResultFromString(taskState.result(), taskDefinition)
+  }
+
+  private def validateTaskDefinition[R](taskState: TaskState, taskDefinition: TaskDefinition[R]): Unit = {
+    if (taskState.name() != taskDefinition.name()) {
+      throw TaskException.TypeMismatch.forName(taskId, taskState.name(), taskDefinition.name())
+    }
+    if (taskState.resultTypeName() != taskDefinition.resultType().getName) {
+      throw TaskException.TypeMismatch.forResultType(
+        taskId,
+        taskState.resultTypeName(),
+        taskDefinition.resultType().getName)
+    }
   }
 
   private def deserializeResultFromString[R](resultString: String, taskDefinition: TaskDefinition[R]): R = {
