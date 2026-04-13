@@ -7,8 +7,10 @@ package akka.javasdk.testkit;
 import akka.japi.Pair;
 import akka.javasdk.JsonSupport;
 import akka.javasdk.agent.Agent;
+import akka.javasdk.agent.AgentDelegationWorker;
 import akka.javasdk.agent.MessageContent;
 import akka.javasdk.agent.ModelProvider;
+import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.agent.task.Task;
 import akka.javasdk.agent.task.TaskDefinition;
 import akka.javasdk.agent.task.TaskTemplate;
@@ -558,7 +560,7 @@ public final class TestModelProvider implements ModelProvider.Custom {
      * Returns the tool name for a {@code handoff_to_<agent>} tool, derived from the target agent's
      * component ID.
      */
-    public static String handoffToToolName(Class<?> agentClass) {
+    public static String handoffToToolName(Class<? extends AutonomousAgent> agentClass) {
       return "handoff_to_" + sanitize(componentId(agentClass));
     }
 
@@ -566,11 +568,12 @@ public final class TestModelProvider implements ModelProvider.Custom {
      * Creates a {@link ToolInvocationRequest} for a {@code handoff_to_<agent>} tool, deriving the
      * tool name from the target agent's component ID.
      *
-     * @param agentClass the agent class to hand off to (must carry {@code @Component} or
+     * @param agentClass the autonomous agent class to hand off to (must carry {@code @Component} or
      *     {@code @ComponentId})
      * @param context context passed to the receiving agent
      */
-    public static ToolInvocationRequest handoffTo(Class<?> agentClass, String context) {
+    public static ToolInvocationRequest handoffTo(
+        Class<? extends AutonomousAgent> agentClass, String context) {
       var toolName = "handoff_to_" + sanitize(componentId(agentClass));
       return new ToolInvocationRequest(toolName, "{\"context\":" + toJsonString(context) + "}");
     }
@@ -581,7 +584,8 @@ public final class TestModelProvider implements ModelProvider.Custom {
      * Returns the tool name for a {@code delegate_<task>_to_<agent>} tool, derived from the task
      * definition and target agent's component ID.
      */
-    public static String delegateToToolName(TaskDefinition<?> task, Class<?> agentClass) {
+    public static String delegateToToolName(
+        TaskDefinition<?> task, Class<? extends AgentDelegationWorker> agentClass) {
       return "delegate_" + sanitize(task.name()) + "_to_" + sanitize(componentId(agentClass));
     }
 
@@ -589,7 +593,7 @@ public final class TestModelProvider implements ModelProvider.Custom {
      * Returns the tool name for a {@code delegate_to_<agent>} tool for request-based agent
      * delegation, derived from the target agent's component ID.
      */
-    public static String sendToToolName(Class<?> agentClass, String methodName) {
+    public static String delegateToToolName(Class<? extends AgentDelegationWorker> agentClass) {
       return "delegate_to_" + sanitize(componentId(agentClass));
     }
 
@@ -603,7 +607,7 @@ public final class TestModelProvider implements ModelProvider.Custom {
      * @param instructions instructions passed to the delegated agent
      */
     public static ToolInvocationRequest delegateTo(
-        Task<?> task, Class<?> agentClass, String instructions) {
+        Task<?> task, Class<? extends AgentDelegationWorker> agentClass, String instructions) {
       var toolName =
           "delegate_" + sanitize(task.name()) + "_to_" + sanitize(componentId(agentClass));
       return new ToolInvocationRequest(
@@ -620,7 +624,9 @@ public final class TestModelProvider implements ModelProvider.Custom {
      * @param templateParams values for the template parameters
      */
     public static ToolInvocationRequest delegateTo(
-        TaskTemplate<?> task, Class<?> agentClass, Map<String, String> templateParams) {
+        TaskTemplate<?> task,
+        Class<? extends AgentDelegationWorker> agentClass,
+        Map<String, String> templateParams) {
       var toolName =
           "delegate_" + sanitize(task.name()) + "_to_" + sanitize(componentId(agentClass));
       return new ToolInvocationRequest(toolName, templateParamsToJson(templateParams));
@@ -628,17 +634,15 @@ public final class TestModelProvider implements ModelProvider.Custom {
 
     /**
      * Creates a {@link ToolInvocationRequest} for a {@code delegate_to_<agent>} tool, used when an
-     * autonomous agent delegates to a request-based agent. The method name is not part of the tool
-     * name — the runtime resolves it from the agent's definition.
+     * autonomous agent delegates to a request-based agent. The runtime resolves the target method
+     * from the agent's definition (request-based agents have a single effect method).
      *
      * @param agentClass the request-based agent class (must carry {@code @Component} or
      *     {@code @ComponentId})
-     * @param methodName the exact name of the agent method to invoke (kept for API compatibility
-     *     but not used in the tool name)
      * @param argsJson the JSON arguments to pass (must match the method's parameter type)
      */
-    public static ToolInvocationRequest sendTo(
-        Class<?> agentClass, String methodName, String argsJson) {
+    public static ToolInvocationRequest delegateTo(
+        Class<? extends AgentDelegationWorker> agentClass, String argsJson) {
       var toolName = "delegate_to_" + sanitize(componentId(agentClass));
       return new ToolInvocationRequest(toolName, argsJson);
     }

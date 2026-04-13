@@ -8,7 +8,6 @@ import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.comple
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.delegateTo;
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.failTask;
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.handoffTo;
-import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.sendTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.javasdk.agent.Agent;
@@ -234,7 +233,7 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
     // Autonomous agent delegates to request-based SomeAgent
     requestDelegatingModel
         .whenMessage(msg -> msg.contains("verify"))
-        .reply(sendTo(SomeAgent.class, "mapLlmResponse", "{\"claim\":\"The sky is blue.\"}"));
+        .reply(delegateTo(SomeAgent.class, "{\"claim\":\"The sky is blue.\"}"));
 
     // SomeAgent responds
     someAgentModel.fixedResponse("{\"response\":\"Verified: the sky is indeed blue.\"}");
@@ -465,7 +464,7 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
     // The CommandSerialization unwrap fix extracts the value matching the method parameter name
     requestDelegatingModel
         .whenMessage(msg -> msg.contains("verify"))
-        .reply(sendTo(SomeAgent.class, "mapLlmResponse", "{\"question\":\"The sky is blue.\"}"));
+        .reply(delegateTo(SomeAgent.class, "{\"question\":\"The sky is blue.\"}"));
 
     // SomeAgent passes the unwrapped question as user message to the model,
     // verify it arrived correctly
@@ -513,9 +512,8 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
     requestDelegatingModel
         .whenMessage(msg -> msg.contains("round"))
         .reply(
-            sendTo(
+            delegateTo(
                 FactCheckAgent.class,
-                "checkFact",
                 "{\"request\":{\"claim\":\"The earth is round.\",\"confidence\":95}}"));
 
     // FactCheckAgent builds its user message from the record fields,
