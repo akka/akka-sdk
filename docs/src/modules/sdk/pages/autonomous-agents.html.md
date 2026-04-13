@@ -1007,8 +1007,8 @@ handoffTo(BillingSpecialist.class, "Customer has billing dispute");
 // Delegate a subtask to a worker agent
 delegateTo(ResearchTasks.FINDINGS, Researcher.class, "Research quantum computing");
 
-// Invoke a method on a request-based agent
-sendTo(SomeAgent.class, "processData", "{\"input\":\"value\"}");
+// Delegate to a request-based agent
+delegateTo(SomeAgent.class, "{\"input\":\"value\"}");
 ```
 
 **Testing a delegation flow:**

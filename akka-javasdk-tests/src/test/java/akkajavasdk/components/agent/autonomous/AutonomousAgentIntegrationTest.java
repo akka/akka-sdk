@@ -8,7 +8,6 @@ import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.comple
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.delegateTo;
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.failTask;
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.handoffTo;
-import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.sendTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.javasdk.agent.Agent;
@@ -17,6 +16,7 @@ import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import akka.javasdk.testkit.TestModelProvider.AiResponse;
+import akkajavasdk.components.agent.FactCheckAgent;
 import akkajavasdk.components.agent.SomeAgent;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +37,7 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
   private final TestModelProvider specialistModel = new TestModelProvider();
   private final TestModelProvider requestDelegatingModel = new TestModelProvider();
   private final TestModelProvider someAgentModel = new TestModelProvider();
+  private final TestModelProvider factCheckAgentModel = new TestModelProvider();
 
   @Override
   protected TestKit.Settings testKitSettings() {
@@ -49,7 +50,8 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
         .withModelProvider(TriageTestAgent.class, triageModel)
         .withModelProvider(SpecialistTestAgent.class, specialistModel)
         .withModelProvider(RequestDelegatingAgent.class, requestDelegatingModel)
-        .withModelProvider(SomeAgent.class, someAgentModel);
+        .withModelProvider(SomeAgent.class, someAgentModel)
+        .withModelProvider(FactCheckAgent.class, factCheckAgentModel);
   }
 
   @AfterEach
@@ -62,6 +64,7 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
     specialistModel.reset();
     requestDelegatingModel.reset();
     someAgentModel.reset();
+    factCheckAgentModel.reset();
   }
 
   @Test
@@ -230,7 +233,7 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
     // Autonomous agent delegates to request-based SomeAgent
     requestDelegatingModel
         .whenMessage(msg -> msg.contains("verify"))
-        .reply(sendTo(SomeAgent.class, "mapLlmResponse", "{\"claim\":\"The sky is blue.\"}"));
+        .reply(delegateTo(SomeAgent.class, "{\"claim\":\"The sky is blue.\"}"));
 
     // SomeAgent responds
     someAgentModel.fixedResponse("{\"response\":\"Verified: the sky is indeed blue.\"}");
@@ -444,6 +447,102 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
                       .orElseThrow();
               assertThat(taskFailed.taskId()).isEqualTo(taskId);
               assertThat(taskFailed.reason()).isNotBlank();
+            });
+  }
+
+  @Test
+  public void shouldUnwrapDelegatedCommandPayload() {
+    // Prefer ToolResult messages so we can match on the delegation response content
+    requestDelegatingModel.withMessageSelector(
+        messages ->
+            messages.stream()
+                .filter(m -> m instanceof TestModelProvider.ToolResult)
+                .findFirst()
+                .orElse(messages.getLast()));
+
+    // LLM tool call args wrap the String parameter under its name: {"question": "..."}
+    // The CommandSerialization unwrap fix extracts the value matching the method parameter name
+    requestDelegatingModel
+        .whenMessage(msg -> msg.contains("verify"))
+        .reply(delegateTo(SomeAgent.class, "{\"question\":\"The sky is blue.\"}"));
+
+    // SomeAgent passes the unwrapped question as user message to the model,
+    // verify it arrived correctly
+    someAgentModel
+        .whenMessage(msg -> msg.contains("The sky is blue."))
+        .reply("Verified: the sky is indeed blue.");
+
+    // After successful delegation, the tool result contains SomeAgent's response.
+    // Match on that content so a failed delegation ("Delegation failed: ...") won't match.
+    requestDelegatingModel
+        .whenToolResult(result -> result.content().contains("sky is indeed blue"))
+        .thenReply(
+            result -> new AiResponse(completeTask("{\"value\":\"Claim verified.\",\"score\":90}")));
+
+    var taskId =
+        componentClient
+            .forAutonomousAgent(RequestDelegatingAgent.class, UUID.randomUUID().toString())
+            .runSingleTask(TestTasks.TEST_TASK.instructions("Please verify: the sky is blue."));
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(30, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var snapshot = componentClient.forTask(taskId).get(TestTasks.TEST_TASK);
+              assertThat(snapshot.result()).isNotNull();
+              assertThat(snapshot.result().value()).isEqualTo("Claim verified.");
+              assertThat(snapshot.result().score()).isEqualTo(90);
+            });
+  }
+
+  @Test
+  public void shouldUnwrapTypedParameterWhenDelegatingToRequestBasedAgent() {
+    // Prefer ToolResult messages so we can match on the delegation response content
+    requestDelegatingModel.withMessageSelector(
+        messages ->
+            messages.stream()
+                .filter(m -> m instanceof TestModelProvider.ToolResult)
+                .findFirst()
+                .orElse(messages.getLast()));
+
+    // LLM tool call args wrap the record parameter under its name:
+    // {"request": {"claim": "...", "confidence": 95}}
+    // The unwrap fix extracts the inner object and deserializes it as FactCheckRequest
+    requestDelegatingModel
+        .whenMessage(msg -> msg.contains("round"))
+        .reply(
+            delegateTo(
+                FactCheckAgent.class,
+                "{\"request\":{\"claim\":\"The earth is round.\",\"confidence\":95}}"));
+
+    // FactCheckAgent builds its user message from the record fields,
+    // verify both fields arrived correctly
+    factCheckAgentModel
+        .whenMessage(msg -> msg.contains("The earth is round.") && msg.contains("95"))
+        .reply("Confirmed: the earth is round.");
+
+    // Match on the successful delegation result — "Confirmed" only appears
+    // in FactCheckAgent's model response, not in the initial task instructions
+    requestDelegatingModel
+        .whenToolResult(result -> result.content().contains("Confirmed"))
+        .thenReply(
+            result -> new AiResponse(completeTask("{\"value\":\"Fact confirmed.\",\"score\":95}")));
+
+    var taskId =
+        componentClient
+            .forAutonomousAgent(RequestDelegatingAgent.class, UUID.randomUUID().toString())
+            .runSingleTask(TestTasks.TEST_TASK.instructions("Check: the earth is round."));
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(30, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var snapshot = componentClient.forTask(taskId).get(TestTasks.TEST_TASK);
+              assertThat(snapshot.result()).isNotNull();
+              assertThat(snapshot.result().value()).isEqualTo("Fact confirmed.");
+              assertThat(snapshot.result().score()).isEqualTo(95);
             });
   }
 }
