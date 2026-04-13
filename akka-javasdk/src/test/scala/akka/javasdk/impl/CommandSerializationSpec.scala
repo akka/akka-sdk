@@ -7,8 +7,8 @@ package akka.javasdk.impl
 import akka.javasdk.JsonSupport
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.serialization.Serializer
-import akka.util.ByteString
 import akka.runtime.sdk.spi.BytesPayload
+import akka.util.ByteString
 import org.scalatest.TestSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
