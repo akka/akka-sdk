@@ -27,6 +27,11 @@ public class TestAutonomousAgent extends AutonomousAgent {
   public AgentDefinition definition() {
     return define()
         .goal("Test agent")
-        .capability(TaskAcceptance.of(TestTasks.TEST_TASK, TestTasks.STRING_TASK));
+        .capability(
+            TaskAcceptance.of(
+                TestTasks.TEST_TASK,
+                TestTasks.STRING_TASK,
+                TestTasks.INTEGER_TASK,
+                TestTasks.BOOLEAN_TASK));
   }
 }

@@ -100,8 +100,7 @@ public class TeamBacklogIntegrationTest extends TestKitSupport {
               case GET_TEAM_STATUS -> new AiResponse(disbandTeam());
               case DISBAND_TEAM ->
                   new AiResponse(
-                      completeTask(
-                          "{\"summary\":\"Team created and disbanded.\",\"tasksCompleted\":0}"));
+                      completeTask(new TestTasks.PlanResult("Team created and disbanded.", 0)));
               default -> new AiResponse("Continuing work.");
             };
           }
@@ -146,8 +145,7 @@ public class TeamBacklogIntegrationTest extends TestKitSupport {
               case GET_MANAGED_BACKLOG_STATUS -> new AiResponse(cancelUnclaimedTasksFromBacklog());
               case CANCEL_UNCLAIMED_TASKS_FROM_BACKLOG -> new AiResponse(disbandTeam());
               case DISBAND_TEAM ->
-                  new AiResponse(
-                      completeTask("{\"summary\":\"Backlog managed.\",\"tasksCompleted\":0}"));
+                  new AiResponse(completeTask(new TestTasks.PlanResult("Backlog managed.", 0)));
               default -> new AiResponse("Continuing work.");
             };
           }
@@ -193,8 +191,7 @@ public class TeamBacklogIntegrationTest extends TestKitSupport {
               case GET_MANAGED_BACKLOG_STATUS -> new AiResponse(disbandTeam());
               case DISBAND_TEAM ->
                   new AiResponse(
-                      completeTask(
-                          "{\"summary\":\"Template task created.\",\"tasksCompleted\":0}"));
+                      completeTask(new TestTasks.PlanResult("Template task created.", 0)));
               default -> new AiResponse("Continuing work.");
             };
           }
@@ -244,8 +241,7 @@ public class TeamBacklogIntegrationTest extends TestKitSupport {
                 yield new AiResponse(getManagedBacklogStatus());
               }
               case DISBAND_TEAM ->
-                  new AiResponse(
-                      completeTask("{\"summary\":\"Work completed.\",\"tasksCompleted\":1}"));
+                  new AiResponse(completeTask(new TestTasks.PlanResult("Work completed.", 1)));
               default -> new AiResponse("Continuing work.");
             };
           }
@@ -266,7 +262,7 @@ public class TeamBacklogIntegrationTest extends TestKitSupport {
               }
               case CLAIM_TASK ->
                   new AiResponse(
-                      completeTask("{\"item\":\"Feature X\",\"output\":\"Implemented.\"}"));
+                      completeTask(new TestTasks.WorkItemResult("Feature X", "Implemented.")));
               case COMPLETE_TASK -> new AiResponse(getBacklogStatus());
               default -> new AiResponse(getBacklogStatus());
             };
@@ -315,8 +311,7 @@ public class TeamBacklogIntegrationTest extends TestKitSupport {
                 yield new AiResponse(getManagedBacklogStatus());
               }
               case DISBAND_TEAM ->
-                  new AiResponse(
-                      completeTask("{\"summary\":\"Release tested.\",\"tasksCompleted\":1}"));
+                  new AiResponse(completeTask(new TestTasks.PlanResult("Release tested.", 1)));
               default -> new AiResponse("Continuing work.");
             };
           }
@@ -346,7 +341,7 @@ public class TeamBacklogIntegrationTest extends TestKitSupport {
                 // Second claim: complete it
                 yield new AiResponse(
                     completeTask(
-                        "{\"item\":\"Releasable task\",\"output\":\"Done after release.\"}"));
+                        new TestTasks.WorkItemResult("Releasable task", "Done after release.")));
               }
               case RELEASE_TASK -> new AiResponse(getBacklogStatus());
               case COMPLETE_TASK -> new AiResponse(getBacklogStatus());
@@ -396,8 +391,7 @@ public class TeamBacklogIntegrationTest extends TestKitSupport {
                 yield new AiResponse(getManagedBacklogStatus());
               }
               case DISBAND_TEAM ->
-                  new AiResponse(
-                      completeTask("{\"summary\":\"Transfer tested.\",\"tasksCompleted\":1}"));
+                  new AiResponse(completeTask(new TestTasks.PlanResult("Transfer tested.", 1)));
               default -> new AiResponse("Continuing work.");
             };
           }
@@ -424,14 +418,14 @@ public class TeamBacklogIntegrationTest extends TestKitSupport {
                 }
                 yield new AiResponse(
                     completeTask(
-                        "{\"item\":\"Transferable task\",\"output\":\"Completed after"
-                            + " transfer.\"}"));
+                        new TestTasks.WorkItemResult(
+                            "Transferable task", "Completed after transfer.")));
               }
               case TRANSFER_TASK ->
                   new AiResponse(
                       completeTask(
-                          "{\"item\":\"Transferable task\",\"output\":\"Completed after"
-                              + " transfer.\"}"));
+                          new TestTasks.WorkItemResult(
+                              "Transferable task", "Completed after transfer.")));
               case COMPLETE_TASK -> new AiResponse(getBacklogStatus());
               default -> new AiResponse(getBacklogStatus());
             };

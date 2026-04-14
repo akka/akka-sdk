@@ -103,7 +103,7 @@ public class DirectedModerationIntegrationTest extends TestKitSupport {
               case END_CONVERSATION ->
                   new AiResponse(
                       completeTask(
-                          "{\"topic\":\"Directed debate\",\"conclusion\":\"Agreement reached.\"}"));
+                          new TestTasks.ModerationResult("Directed debate", "Agreement reached.")));
               case COMPLETE_TASK -> new AiResponse("Done.");
               default -> new AiResponse("Acknowledged.");
             };

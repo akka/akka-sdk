@@ -5,6 +5,7 @@
 package akkajavasdk.components.agent.autonomous;
 
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.completeTask;
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.completeTaskJson;
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.delegateTo;
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.failTask;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -62,7 +63,7 @@ public class TaskIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldCompleteTaskWithTypedResult() {
-    testAgentModel.fixedResponse(completeTask("{\"value\":\"42 is the answer.\",\"score\":95}"));
+    testAgentModel.fixedResponse(completeTask(new TestTasks.TestResult("42 is the answer.", 95)));
 
     var taskId =
         componentClient
@@ -85,7 +86,7 @@ public class TaskIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldCompleteTaskWithStringResult() {
-    testAgentModel.fixedResponse(completeTask("{\"result\":\"The capital of France is Paris.\"}"));
+    testAgentModel.fixedResponse(completeTask("The capital of France is Paris."));
 
     var taskId =
         componentClient
@@ -99,6 +100,64 @@ public class TaskIntegrationTest extends TestKitSupport {
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.STRING_TASK);
               assertThat(snapshot.result()).isEqualTo("The capital of France is Paris.");
+            });
+  }
+
+  @Test
+  public void shouldCompleteTaskWithJsonStringResult() {
+    testAgentModel.fixedResponse(
+        completeTaskJson("{\"result\":\"The capital of France is Paris.\"}"));
+
+    var taskId =
+        componentClient
+            .forAutonomousAgent(TestAutonomousAgent.class, UUID.randomUUID().toString())
+            .runSingleTask(TestTasks.STRING_TASK.instructions("What is the capital of France?"));
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var snapshot = componentClient.forTask(taskId).get(TestTasks.STRING_TASK);
+              assertThat(snapshot.result()).isEqualTo("The capital of France is Paris.");
+            });
+  }
+
+  @Test
+  public void shouldCompleteTaskWithIntegerResult() {
+    testAgentModel.fixedResponse(completeTask(42));
+
+    var taskId =
+        componentClient
+            .forAutonomousAgent(TestAutonomousAgent.class, UUID.randomUUID().toString())
+            .runSingleTask(TestTasks.INTEGER_TASK.instructions("What is the answer?"));
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var snapshot = componentClient.forTask(taskId).get(TestTasks.INTEGER_TASK);
+              assertThat(snapshot.result()).isEqualTo(42);
+            });
+  }
+
+  @Test
+  public void shouldCompleteTaskWithBooleanResult() {
+    testAgentModel.fixedResponse(completeTask(true));
+
+    var taskId =
+        componentClient
+            .forAutonomousAgent(TestAutonomousAgent.class, UUID.randomUUID().toString())
+            .runSingleTask(TestTasks.BOOLEAN_TASK.instructions("Is the sky blue?"));
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var snapshot = componentClient.forTask(taskId).get(TestTasks.BOOLEAN_TASK);
+              assertThat(snapshot.result()).isTrue();
             });
   }
 
@@ -132,7 +191,8 @@ public class TaskIntegrationTest extends TestKitSupport {
         .whenToolResult(result -> result.content().equals("2025-01-15"))
         .thenReply(
             result ->
-                new AiResponse(completeTask("{\"value\":\"Today is 2025-01-15.\",\"score\":100}")));
+                new AiResponse(
+                    completeTask(new TestTasks.TestResult("Today is 2025-01-15.", 100))));
 
     var taskId =
         componentClient
@@ -171,7 +231,8 @@ public class TaskIntegrationTest extends TestKitSupport {
     requestDelegatingModel
         .whenToolResult(result -> result.content().contains("sky is indeed blue"))
         .thenReply(
-            result -> new AiResponse(completeTask("{\"value\":\"Claim verified.\",\"score\":90}")));
+            result ->
+                new AiResponse(completeTask(new TestTasks.TestResult("Claim verified.", 90))));
 
     var taskId =
         componentClient
@@ -213,7 +274,8 @@ public class TaskIntegrationTest extends TestKitSupport {
     requestDelegatingModel
         .whenToolResult(result -> result.content().contains("Confirmed"))
         .thenReply(
-            result -> new AiResponse(completeTask("{\"value\":\"Fact confirmed.\",\"score\":95}")));
+            result ->
+                new AiResponse(completeTask(new TestTasks.TestResult("Fact confirmed.", 95))));
 
     var taskId =
         componentClient
@@ -245,14 +307,14 @@ public class TaskIntegrationTest extends TestKitSupport {
 
     // Worker completes the delegated work item
     teamWorkerModel.fixedResponse(
-        completeTask("{\"item\":\"Login page\",\"output\":\"Implemented OAuth login flow.\"}"));
+        completeTask(new TestTasks.WorkItemResult("Login page", "Implemented OAuth login flow.")));
 
     // Coordinator synthesizes worker result into research result
     templateDelegatingModel
         .whenMessage(msg -> msg.contains("Continue working"))
         .reply(
             completeTask(
-                "{\"title\":\"Login Feature\",\"summary\":\"OAuth login flow implemented.\"}"));
+                new TestTasks.ResearchResult("Login Feature", "OAuth login flow implemented.")));
 
     var taskId =
         componentClient
