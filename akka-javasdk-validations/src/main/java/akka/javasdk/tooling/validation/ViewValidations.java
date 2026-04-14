@@ -12,12 +12,15 @@ import static akka.javasdk.tooling.validation.Validations.strictlyPublicCommandH
 import static akka.javasdk.tooling.validation.Validations.subscriptionMethodMustHaveOneParameter;
 
 import akka.javasdk.validation.ast.AnnotationDef;
+import akka.javasdk.validation.ast.FieldDef;
 import akka.javasdk.validation.ast.MethodDef;
 import akka.javasdk.validation.ast.TypeDef;
 import akka.javasdk.validation.ast.TypeRefDef;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /** Contains validation logic specific to View components. */
 public class ViewValidations {
@@ -284,6 +287,7 @@ public class ViewValidations {
     String effectType = "akka.javasdk.view.TableUpdater.Effect";
     return viewTableUpdaterMustHaveConsumeAnnotation(tableUpdater)
         .combine(validateViewUpdaterRowType(tableUpdater))
+        .combine(validateViewRowTypeFields(tableUpdater))
         .combine(viewDeleteHandlerValidation(tableUpdater))
         .combine(viewCommonStateSubscriptionValidation(tableUpdater))
         .combine(viewMustHaveCorrectUpdateHandlerWhenTransformingViewUpdates(tableUpdater))
@@ -593,6 +597,147 @@ public class ViewValidations {
     }
 
     return Validation.Valid.instance();
+  }
+
+  private static final Set<String> COLLECTION_TYPE_NAMES =
+      Set.of(
+          "java.util.Collection",
+          "java.util.List",
+          "java.util.Set",
+          "java.util.SortedSet",
+          "java.util.NavigableSet",
+          "java.util.Queue",
+          "java.util.Deque");
+
+  private static boolean isCollectionType(TypeRefDef typeRef) {
+    return COLLECTION_TYPE_NAMES.contains(typeRef.getRawQualifiedName());
+  }
+
+  private static boolean isOptionalType(TypeRefDef typeRef) {
+    return typeRef.getRawQualifiedName().equals("java.util.Optional");
+  }
+
+  /**
+   * Validates the fields of a view row type for unsupported type combinations like
+   * Optional&lt;Collection&gt;, Collection&lt;Optional&gt;, and nested collections.
+   *
+   * @param tableUpdater the TableUpdater class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation validateViewRowTypeFields(TypeDef tableUpdater) {
+    List<TypeRefDef> typeArgs = tableUpdater.getSuperclassTypeArguments();
+    if (typeArgs.isEmpty()) {
+      return Validation.Valid.instance();
+    }
+
+    TypeRefDef rowType = typeArgs.getFirst();
+    if (isPrimitiveWrapper(rowType)) {
+      return Validation.Valid.instance(); // already reported by validateViewUpdaterRowType
+    }
+
+    Optional<TypeDef> rowTypeDef = rowType.resolveTypeDef();
+    if (rowTypeDef.isEmpty()) {
+      return Validation.Valid.instance();
+    }
+
+    List<String> errors = new ArrayList<>();
+    validateFieldsRecursively(
+        rowTypeDef.get(), rowType.getRawQualifiedName(), errors, new HashSet<>());
+    return Validation.of(errors);
+  }
+
+  /**
+   * Recursively validates fields of a type for unsupported type patterns.
+   *
+   * @param typeDef the type to inspect
+   * @param path the path to this type (for error messages)
+   * @param errors list to collect error messages
+   * @param seen set of already visited type names to prevent infinite recursion
+   */
+  private static void validateFieldsRecursively(
+      TypeDef typeDef, String path, List<String> errors, Set<String> seen) {
+    if (!seen.add(typeDef.getQualifiedName())) {
+      return; // already visited, avoid infinite recursion
+    }
+
+    for (FieldDef field : typeDef.getFields()) {
+      TypeRefDef fieldType = field.getType();
+      String fieldPath = path + "." + field.getName();
+      validateTypeRecursively(fieldType, fieldPath, errors, seen);
+    }
+  }
+
+  /**
+   * Validates a type reference for unsupported patterns and recurses into user-defined types.
+   *
+   * @param typeRef the type reference to validate
+   * @param fieldPath the path for error messages
+   * @param errors list to collect error messages
+   * @param seen set of already visited type names to prevent infinite recursion
+   */
+  private static void validateTypeRecursively(
+      TypeRefDef typeRef, String fieldPath, List<String> errors, Set<String> seen) {
+
+    if (isOptionalType(typeRef)) {
+      List<TypeRefDef> args = typeRef.getTypeArguments();
+      if (!args.isEmpty()) {
+        TypeRefDef inner = args.getFirst();
+        if (isCollectionType(inner)) {
+          String innerSimpleName = simpleNameOf(inner.getRawQualifiedName());
+          errors.add(
+              "View field '"
+                  + fieldPath
+                  + "' has type Optional<"
+                  + innerSimpleName
+                  + "<...>> which is not supported. Use a collection type directly instead, it will"
+                  + " be empty when there is no data.");
+        } else {
+          // recurse into the Optional's inner type
+          validateTypeRecursively(inner, fieldPath, errors, seen);
+        }
+      }
+    } else if (isCollectionType(typeRef)) {
+      List<TypeRefDef> args = typeRef.getTypeArguments();
+      if (!args.isEmpty()) {
+        TypeRefDef inner = args.getFirst();
+        if (isOptionalType(inner)) {
+          String collSimpleName = simpleNameOf(typeRef.getRawQualifiedName());
+          errors.add(
+              "View field '"
+                  + fieldPath
+                  + "' has type "
+                  + collSimpleName
+                  + "<Optional<...>> which is not supported. "
+                  + "Use Optional fields inside a nested class in the collection instead.");
+        } else if (isCollectionType(inner)) {
+          errors.add(
+              "View field '"
+                  + fieldPath
+                  + "' has a nested collection type which is not supported. "
+                  + "Use a nested class containing the inner collection instead.");
+        } else {
+          // recurse into the collection's element type
+          validateTypeRecursively(inner, fieldPath, errors, seen);
+        }
+      }
+    } else if (!isPrimitiveWrapper(typeRef) && !isBuiltInType(typeRef)) {
+      // User-defined type - recurse into its fields
+      Optional<TypeDef> resolved = typeRef.resolveTypeDef();
+      resolved.ifPresent(td -> validateFieldsRecursively(td, fieldPath, errors, seen));
+    }
+  }
+
+  private static boolean isBuiltInType(TypeRefDef typeRef) {
+    String name = typeRef.getRawQualifiedName();
+    return name.startsWith("java.")
+        || name.startsWith("javax.")
+        || name.startsWith("akka.")
+        || name.startsWith("com.google.protobuf.");
+  }
+
+  private static String simpleNameOf(String qualifiedName) {
+    int lastDot = qualifiedName.lastIndexOf('.');
+    return lastDot >= 0 ? qualifiedName.substring(lastDot + 1) : qualifiedName;
   }
 
   /**

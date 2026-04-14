@@ -205,6 +205,26 @@ abstract class AbstractViewValidationSpec(val validationMode: ValidationMode)
         "Methods annotated with @FunctionTool must be public. Method [privateMethod] cannot be annotated with @FunctionTool")
     }
 
+    // View row type field validations
+    "reject View with Optional<List<...>> field" in {
+      assertInvalid("invalid/ViewWithOptionalListField.java", "Optional<List<...>> which is not supported", "tags")
+    }
+
+    "reject View with List<Optional<...>> field" in {
+      assertInvalid("invalid/ViewWithListOptionalField.java", "List<Optional<...>> which is not supported", "values")
+    }
+
+    "reject View with nested collection field" in {
+      assertInvalid(
+        "invalid/ViewWithNestedCollectionField.java",
+        "nested collection type which is not supported",
+        "nested")
+    }
+
+    "reject View with Optional<Set<...>> field" in {
+      assertInvalid("invalid/ViewWithOptionalSetField.java", "Optional<Set<...>> which is not supported", "tags")
+    }
+
     // SnapshotHandler validations
     "accept valid View TableUpdater with @SnapshotHandler for EventSourcedEntity subscription" in {
       assertValid("valid/ValidViewWithSnapshotHandler.java")
