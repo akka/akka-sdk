@@ -65,6 +65,9 @@ private[view] object ViewSchema {
     classOf[java.time.ZonedDateTime] -> SpiTimestamp,
     classOf[java.math.BigDecimal] -> SpiNumeric)
 
+  // Note: view row type field validation (unsupported type combinations like Optional<Collection>,
+  // nested collections, Map, unsupported time types etc.) is handled by ViewValidations which runs
+  // both at compile time (annotation processor) and at runtime (SdkRunner startup).
   def apply(rootType: Type): SpiType = {
     // Note: not tail recursive but trees should not ever be deep enough that it is a problem
     def loop(currentType: Type, seenClasses: Set[Class[_]]): SpiType =
