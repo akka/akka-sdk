@@ -225,6 +225,31 @@ abstract class AbstractViewValidationSpec(val validationMode: ValidationMode)
       assertInvalid("invalid/ViewWithOptionalSetField.java", "Optional<Set<...>> which is not supported", "tags")
     }
 
+    "reject View with Map field" in {
+      assertInvalid("invalid/ViewWithMapField.java", "Map which is not supported", "metadata")
+    }
+
+    "reject View with LocalDate field" in {
+      assertInvalid(
+        "invalid/ViewWithLocalDateField.java",
+        "LocalDate which is not supported",
+        "Supported date/time types are Instant and ZonedDateTime")
+    }
+
+    "reject View with LocalDateTime field" in {
+      assertInvalid(
+        "invalid/ViewWithLocalDateTimeField.java",
+        "LocalDateTime which is not supported",
+        "Supported date/time types are Instant and ZonedDateTime")
+    }
+
+    "reject View with Optional<Optional<...>> field" in {
+      assertInvalid(
+        "invalid/ViewWithOptionalOptionalField.java",
+        "Optional<Optional<...>> which is not supported",
+        "name")
+    }
+
     // SnapshotHandler validations
     "accept valid View TableUpdater with @SnapshotHandler for EventSourcedEntity subscription" in {
       assertValid("valid/ValidViewWithSnapshotHandler.java")

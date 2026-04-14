@@ -609,8 +609,40 @@ public class ViewValidations {
           "java.util.Queue",
           "java.util.Deque");
 
+  private static final Set<String> MAP_TYPE_NAMES =
+      Set.of(
+          "java.util.Map",
+          "java.util.SortedMap",
+          "java.util.NavigableMap",
+          "java.util.HashMap",
+          "java.util.LinkedHashMap",
+          "java.util.TreeMap",
+          "java.util.ConcurrentMap",
+          "java.util.concurrent.ConcurrentMap",
+          "java.util.concurrent.ConcurrentHashMap");
+
+  private static final Set<String> SUPPORTED_TIME_TYPES =
+      Set.of("java.time.Instant", "java.time.ZonedDateTime");
+
+  private static final Set<String> UNSUPPORTED_TIME_TYPES =
+      Set.of(
+          "java.time.LocalDate",
+          "java.time.LocalDateTime",
+          "java.time.LocalTime",
+          "java.time.OffsetDateTime",
+          "java.time.OffsetTime",
+          "java.time.Duration",
+          "java.time.Period",
+          "java.time.Year",
+          "java.time.YearMonth",
+          "java.time.MonthDay");
+
   private static boolean isCollectionType(TypeRefDef typeRef) {
     return COLLECTION_TYPE_NAMES.contains(typeRef.getRawQualifiedName());
+  }
+
+  private static boolean isMapType(TypeRefDef typeRef) {
+    return MAP_TYPE_NAMES.contains(typeRef.getRawQualifiedName());
   }
 
   private static boolean isOptionalType(TypeRefDef typeRef) {
@@ -678,7 +710,22 @@ public class ViewValidations {
   private static void validateTypeRecursively(
       TypeRefDef typeRef, String fieldPath, List<String> errors, Set<String> seen) {
 
-    if (isOptionalType(typeRef)) {
+    if (isMapType(typeRef)) {
+      errors.add(
+          "View field '"
+              + fieldPath
+              + "' has type "
+              + simpleNameOf(typeRef.getRawQualifiedName())
+              + " which is not supported. Views do not support Map types.");
+    } else if (isUnsupportedTimeType(typeRef)) {
+      errors.add(
+          "View field '"
+              + fieldPath
+              + "' has type "
+              + simpleNameOf(typeRef.getRawQualifiedName())
+              + " which is not supported. Supported date/time types are Instant and"
+              + " ZonedDateTime.");
+    } else if (isOptionalType(typeRef)) {
       List<TypeRefDef> args = typeRef.getTypeArguments();
       if (!args.isEmpty()) {
         TypeRefDef inner = args.getFirst();
@@ -691,6 +738,11 @@ public class ViewValidations {
                   + innerSimpleName
                   + "<...>> which is not supported. Use a collection type directly instead, it will"
                   + " be empty when there is no data.");
+        } else if (isOptionalType(inner)) {
+          errors.add(
+              "View field '"
+                  + fieldPath
+                  + "' has type Optional<Optional<...>> which is not supported.");
         } else {
           // recurse into the Optional's inner type
           validateTypeRecursively(inner, fieldPath, errors, seen);
@@ -720,14 +772,22 @@ public class ViewValidations {
           validateTypeRecursively(inner, fieldPath, errors, seen);
         }
       }
-    } else if (!isPrimitiveWrapper(typeRef) && !isBuiltInType(typeRef)) {
+    } else if (!isPrimitiveWrapper(typeRef) && !isKnownSupportedType(typeRef)) {
       // User-defined type - recurse into its fields
       Optional<TypeDef> resolved = typeRef.resolveTypeDef();
       resolved.ifPresent(td -> validateFieldsRecursively(td, fieldPath, errors, seen));
     }
   }
 
-  private static boolean isBuiltInType(TypeRefDef typeRef) {
+  private static boolean isUnsupportedTimeType(TypeRefDef typeRef) {
+    return UNSUPPORTED_TIME_TYPES.contains(typeRef.getRawQualifiedName());
+  }
+
+  /**
+   * Checks if a type is a known supported type that should not be recursed into. This includes JDK
+   * types (other than the ones we explicitly check for), Akka types, and protobuf types.
+   */
+  private static boolean isKnownSupportedType(TypeRefDef typeRef) {
     String name = typeRef.getRawQualifiedName();
     return name.startsWith("java.")
         || name.startsWith("javax.")
