@@ -982,6 +982,62 @@ public final class TestModelProvider implements ModelProvider.Custom {
               + "}");
     }
 
+    // --- Messaging (emergent capability from team membership) ---
+
+    /** Tool name for sending a message to another agent. */
+    public static final String SEND_MESSAGE = "send_message";
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for the {@code send_message} tool. The {@code to}
+     * address can be obtained from the runtime-injected messaging contacts using {@link
+     * #extractContacts(InputMessage)}.
+     *
+     * @param to the agent address from the contacts list (e.g. {@code
+     *     "developer/team-id-developer-1"})
+     * @param message the message to send
+     */
+    public static ToolInvocationRequest sendMessage(String to, String message) {
+      return new ToolInvocationRequest(
+          "send_message",
+          "{\"to\":" + toJsonString(to) + ",\"message\":" + toJsonString(message) + "}");
+    }
+
+    private static final java.util.regex.Pattern CONTACTS_PATTERN =
+        java.util.regex.Pattern.compile("Messaging contacts:\\s*(.+)");
+
+    /**
+     * Extracts messaging contact addresses from input messages. The runtime injects contacts in
+     * user messages with the format {@code "Messaging contacts: agent-type/instance-id, ..."}. This
+     * utility parses those messages and returns the contact addresses.
+     *
+     * <p>Usage example in a test:
+     *
+     * <pre>{@code
+     * leadModel.fixedResponse(msg -> {
+     *   if (msg instanceof TestModelProvider.UserMessage um) {
+     *     var contacts = extractContacts(um);
+     *     if (!contacts.isEmpty()) {
+     *       return new AiResponse(sendMessage(contacts.get(0), "Hello!"));
+     *     }
+     *   }
+     *   return new AiResponse("Acknowledged.");
+     * });
+     * }</pre>
+     *
+     * @param message the input message to extract contacts from
+     * @return list of contact addresses, empty if no contacts found
+     */
+    public static List<String> extractContacts(InputMessage message) {
+      var matcher = CONTACTS_PATTERN.matcher(message.content());
+      if (matcher.find()) {
+        return java.util.Arrays.stream(matcher.group(1).split(","))
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .toList();
+      }
+      return List.of();
+    }
+
     // --- Moderation capability (moderator side) ---
 
     /** Tool name for starting a moderated conversation. */

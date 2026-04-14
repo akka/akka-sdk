@@ -13,6 +13,7 @@ import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.GET_BA
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.GET_MANAGED_BACKLOG_STATUS;
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.GET_TEAM_STATUS;
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.RELEASE_TASK;
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.SEND_MESSAGE;
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.TRANSFER_TASK;
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.cancelUnclaimedTasksFromBacklog;
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.claimTask;
@@ -21,10 +22,12 @@ import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.create
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.createTaskForBacklogToolName;
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.createTeam;
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.disbandTeam;
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.extractContacts;
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.getBacklogStatus;
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.getManagedBacklogStatus;
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.getTeamStatus;
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.releaseTask;
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.sendMessage;
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.transferTask;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -40,7 +43,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -450,10 +452,50 @@ public class TeamBacklogIntegrationTest extends TestKitSupport {
   }
 
   @Test
-  @Disabled(
-      "send_message factory method not yet implemented in AutonomousAgentTools — see team"
-          + " discussion")
   public void shouldSendMessageBetweenTeamMembers() {
-    // Placeholder: test sendMessage(String to, String message) once the factory method is added
+    // Lead: createTeam -> send_message to member -> getManagedBacklogStatus -> disbandTeam ->
+    // completeTask
+    leadModel.fixedResponse(
+        msg -> {
+          return switch (msg) {
+            case TestModelProvider.UserMessage um -> {
+              var contacts = extractContacts(um);
+              if (!contacts.isEmpty()) {
+                // After team setup, send a message to the first member
+                yield new AiResponse(sendMessage(contacts.get(0), "Welcome to the team!"));
+              }
+              // First user message triggers team creation
+              yield new AiResponse(createTeam(new TeamMemberSpec(TeamWorkerAgent.class)));
+            }
+            case TestModelProvider.ToolResult toolResult ->
+                switch (toolResult.name()) {
+                  case CREATE_TEAM -> new AiResponse(getTeamStatus());
+                  case GET_TEAM_STATUS -> new AiResponse(getManagedBacklogStatus());
+                  case SEND_MESSAGE -> new AiResponse(getManagedBacklogStatus());
+                  case GET_MANAGED_BACKLOG_STATUS -> new AiResponse(disbandTeam());
+                  case DISBAND_TEAM ->
+                      new AiResponse(
+                          completeTask(new TestTasks.PlanResult("Message sent to member.", 0)));
+                  default -> new AiResponse("Continuing work.");
+                };
+          };
+        });
+
+    workerModel.fixedResponse("Ready for work.");
+
+    var taskId =
+        componentClient
+            .forAutonomousAgent(TeamLeadAgent.class, UUID.randomUUID().toString())
+            .runSingleTask(TestTasks.PLAN.instructions("Send a message to a team member."));
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(30, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var snapshot = componentClient.forTask(taskId).get(TestTasks.PLAN);
+              assertThat(snapshot.result()).isNotNull();
+              assertThat(snapshot.result().summary()).contains("Message sent");
+            });
   }
 }
