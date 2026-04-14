@@ -166,7 +166,7 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
               Future.successful(
                 new SpiEventSourcedEntity.PersistEffect(
                   events = Vector.empty,
-                  null,
+                  emptyState,
                   reply,
                   metadata,
                   deleteEntity = true,
