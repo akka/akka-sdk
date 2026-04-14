@@ -213,6 +213,18 @@ private[javasdk] class MetadataImpl private (val entries: Seq[SpiMetadataEntry])
     }
   }
 
+  lazy val context: Option[OtelContext] = {
+    val otelContext = W3CTraceContextPropagator
+      .getInstance()
+      .extract(OtelContext.current(), asMetadata(), metadataGetter)
+
+    Span.fromContext(otelContext).getSpanContext.getTraceId match {
+      case "00000000000000000000000000000000" =>
+        None // when no traceId returns io.opentelemetry.api.trace.TraceId.INVALID
+      case _ => Some(otelContext)
+    }
+  }
+
   override def merge(other: Metadata): Metadata = {
     val otherImpl = other.asInstanceOf[MetadataImpl]
     MetadataImpl.of(entries ++ otherImpl.entries)
@@ -291,6 +303,10 @@ object MetadataImpl {
 
   def of(metadata: SpiMetadata): MetadataImpl = {
     of(metadata.entries)
+  }
+
+  def of(context: Option[OtelContext]): MetadataImpl = {
+    context.fold(MetadataImpl.Empty)(MetadataImpl.Empty.withTelemetryContext)
   }
 
   private def ensureContentType(metadata: MetadataImpl): MetadataImpl = {
