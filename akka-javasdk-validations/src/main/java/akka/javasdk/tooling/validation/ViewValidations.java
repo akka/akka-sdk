@@ -621,9 +621,6 @@ public class ViewValidations {
           "java.util.concurrent.ConcurrentMap",
           "java.util.concurrent.ConcurrentHashMap");
 
-  private static final Set<String> SUPPORTED_TIME_TYPES =
-      Set.of("java.time.Instant", "java.time.ZonedDateTime");
-
   private static final Set<String> UNSUPPORTED_TIME_TYPES =
       Set.of(
           "java.time.LocalDate",

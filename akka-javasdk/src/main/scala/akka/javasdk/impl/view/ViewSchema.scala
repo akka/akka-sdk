@@ -65,9 +65,12 @@ private[view] object ViewSchema {
     classOf[java.time.ZonedDateTime] -> SpiTimestamp,
     classOf[java.math.BigDecimal] -> SpiNumeric)
 
+  // Note: view row type field validation (unsupported type combinations like Optional<Collection>,
+  // nested collections, Map, unsupported time types etc.) is handled by ViewValidations which runs
+  // both at compile time (annotation processor) and at runtime (SdkRunner startup).
   def apply(rootType: Type): SpiType = {
     // Note: not tail recursive but trees should not ever be deep enough that it is a problem
-    def loop(currentType: Type, seenClasses: Set[Class[_]], path: String): SpiType =
+    def loop(currentType: Type, seenClasses: Set[Class[_]]): SpiType =
       typeNameMap.get(currentType.getTypeName) match {
         case Some(found) => found
         case None =>
@@ -88,33 +91,9 @@ private[view] object ViewSchema {
                 } else {
                   currentType match {
                     case p: ParameterizedType if clazz == classOf[Optional[_]] =>
-                      val innerType = p.getActualTypeArguments.head
-                      innerType match {
-                        case inner: ParameterizedType
-                            if classOf[java.util.Collection[_]]
-                              .isAssignableFrom(inner.getRawType.asInstanceOf[Class[_]]) =>
-                          throw new IllegalArgumentException(
-                            s"View field '$path' has type Optional<${inner.getRawType.asInstanceOf[Class[_]].getSimpleName}<...>> which is not supported. " +
-                            "Use a collection type directly instead, it will be empty when there is no data.")
-                        case _ =>
-                      }
-                      new SpiOptional(loop(innerType, seenClasses, path).asInstanceOf[SpiNestableType])
+                      new SpiOptional(loop(p.getActualTypeArguments.head, seenClasses).asInstanceOf[SpiNestableType])
                     case p: ParameterizedType if classOf[java.util.Collection[_]].isAssignableFrom(clazz) =>
-                      val innerType = p.getActualTypeArguments.head
-                      innerType match {
-                        case inner: ParameterizedType if inner.getRawType == classOf[Optional[_]] =>
-                          throw new IllegalArgumentException(
-                            s"View field '$path' has type ${clazz.getSimpleName}<Optional<...>> which is not supported. " +
-                            "Use Optional fields inside a nested class in the collection instead.")
-                        case inner: ParameterizedType
-                            if classOf[java.util.Collection[_]]
-                              .isAssignableFrom(inner.getRawType.asInstanceOf[Class[_]]) =>
-                          throw new IllegalArgumentException(
-                            s"View field '$path' has a nested collection type which is not supported. " +
-                            "Use a nested class containing the inner collection instead.")
-                        case _ =>
-                      }
-                      new SpiList(loop(innerType, seenClasses, path).asInstanceOf[SpiNestableType])
+                      new SpiList(loop(p.getActualTypeArguments.head, seenClasses).asInstanceOf[SpiNestableType])
                     case _: Class[_] if classOf[GeneratedMessageV3].isAssignableFrom(clazz) =>
                       protobufSchema(clazz.asInstanceOf[Class[_ <: GeneratedMessageV3]])
                     case _: Class[_] =>
@@ -123,17 +102,14 @@ private[view] object ViewSchema {
                         clazz.getName,
                         clazz.getDeclaredFields
                           .filterNot(f => f.accessFlags().contains(AccessFlag.STATIC))
-                          .map(field =>
-                            new SpiField(
-                              field.getName,
-                              loop(field.getGenericType, seenIncludingThis, path + "." + field.getName)))
+                          .map(field => new SpiField(field.getName, loop(field.getGenericType, seenIncludingThis)))
                           .toSeq)
                   }
                 }
             }
       }
 
-    loop(rootType, Set.empty, rootType.getTypeName)
+    loop(rootType, Set.empty)
   }
 
   private def protobufSchema(clazz: Class[_ <: GeneratedMessageV3]): SpiClass = {

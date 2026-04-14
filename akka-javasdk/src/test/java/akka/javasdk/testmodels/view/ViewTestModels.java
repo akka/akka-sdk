@@ -62,14 +62,6 @@ public class ViewTestModels {
 
   public record Recursive(String id, Recursive child) {}
 
-  public record OptionalList(String id, Optional<List<String>> tags) {}
-
-  public record ListOptional(String id, List<Optional<String>> values) {}
-
-  public record ListOfList(String id, List<List<String>> nested) {}
-
-  public record OptionalSet(String id, Optional<java.util.Set<String>> tags) {}
-
   public record TwoStepRecursive(TwoStepRecursiveChild child) {}
 
   public record TwoStepRecursiveChild(TwoStepRecursive recursive) {}

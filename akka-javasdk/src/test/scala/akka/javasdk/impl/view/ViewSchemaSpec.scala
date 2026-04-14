@@ -64,39 +64,6 @@ class ViewSchemaSpec extends AnyWordSpec with Matchers {
       }
     }
 
-    "reject Optional<List<...>> with a clear error message" in {
-      val error = intercept[IllegalArgumentException] {
-        ViewSchema(classOf[ViewTestModels.OptionalList])
-      }
-      error.getMessage should include("Optional<List<...>>")
-      error.getMessage should include("tags")
-      error.getMessage should include("directly instead")
-    }
-
-    "reject List<Optional<...>> with a clear error message" in {
-      val error = intercept[IllegalArgumentException] {
-        ViewSchema(classOf[ViewTestModels.ListOptional])
-      }
-      error.getMessage should include("List<Optional<...>>")
-      error.getMessage should include("values")
-    }
-
-    "reject nested collections with a clear error message" in {
-      val error = intercept[IllegalArgumentException] {
-        ViewSchema(classOf[ViewTestModels.ListOfList])
-      }
-      error.getMessage should include("nested collection")
-      error.getMessage should include("nested")
-    }
-
-    "reject Optional<Set<...>> with a clear error message" in {
-      val error = intercept[IllegalArgumentException] {
-        ViewSchema(classOf[ViewTestModels.OptionalSet])
-      }
-      error.getMessage should include("Optional<Set<...>>")
-      error.getMessage should include("tags")
-    }
-
     "handle self referencing type trees" in {
       val result = ViewSchema(classOf[ViewTestModels.Recursive])
       result shouldBe a[SpiClass]
