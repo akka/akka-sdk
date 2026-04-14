@@ -7,7 +7,6 @@ package akka.javasdk.testkit;
 import akka.japi.Pair;
 import akka.javasdk.JsonSupport;
 import akka.javasdk.agent.Agent;
-import akka.javasdk.agent.AgentDelegationWorker;
 import akka.javasdk.agent.MessageContent;
 import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.agent.autonomous.AutonomousAgent;
@@ -574,7 +573,7 @@ public final class TestModelProvider implements ModelProvider.Custom {
      */
     public static ToolInvocationRequest handoffTo(
         Class<? extends AutonomousAgent> agentClass, String context) {
-      var toolName = "handoff_to_" + sanitize(componentId(agentClass));
+      var toolName = handoffToToolName(agentClass);
       return new ToolInvocationRequest(toolName, "{\"context\":" + toJsonString(context) + "}");
     }
 
@@ -585,16 +584,8 @@ public final class TestModelProvider implements ModelProvider.Custom {
      * definition and target agent's component ID.
      */
     public static String delegateToToolName(
-        TaskDefinition<?> task, Class<? extends AgentDelegationWorker> agentClass) {
+        TaskDefinition<?> task, Class<? extends AutonomousAgent> agentClass) {
       return "delegate_" + sanitize(task.name()) + "_to_" + sanitize(componentId(agentClass));
-    }
-
-    /**
-     * Returns the tool name for a {@code delegate_to_<agent>} tool for request-based agent
-     * delegation, derived from the target agent's component ID.
-     */
-    public static String delegateToToolName(Class<? extends AgentDelegationWorker> agentClass) {
-      return "delegate_to_" + sanitize(componentId(agentClass));
     }
 
     /**
@@ -607,7 +598,7 @@ public final class TestModelProvider implements ModelProvider.Custom {
      * @param instructions instructions passed to the delegated agent
      */
     public static ToolInvocationRequest delegateTo(
-        Task<?> task, Class<? extends AgentDelegationWorker> agentClass, String instructions) {
+        Task<?> task, Class<? extends AutonomousAgent> agentClass, String instructions) {
       var toolName =
           "delegate_" + sanitize(task.name()) + "_to_" + sanitize(componentId(agentClass));
       return new ToolInvocationRequest(
@@ -625,11 +616,19 @@ public final class TestModelProvider implements ModelProvider.Custom {
      */
     public static ToolInvocationRequest delegateTo(
         TaskTemplate<?> task,
-        Class<? extends AgentDelegationWorker> agentClass,
+        Class<? extends AutonomousAgent> agentClass,
         Map<String, String> templateParams) {
       var toolName =
           "delegate_" + sanitize(task.name()) + "_to_" + sanitize(componentId(agentClass));
       return new ToolInvocationRequest(toolName, templateParamsToJson(templateParams));
+    }
+
+    /**
+     * Returns the tool name for a {@code delegate_to_<agent>} tool for request-based agent
+     * delegation, derived from the target agent's component ID.
+     */
+    public static String delegateToToolName(Class<? extends Agent> agentClass) {
+      return "delegate_to_" + sanitize(componentId(agentClass));
     }
 
     /**
@@ -642,8 +641,8 @@ public final class TestModelProvider implements ModelProvider.Custom {
      * @param argsJson the JSON arguments to pass (must match the method's parameter type)
      */
     public static ToolInvocationRequest delegateTo(
-        Class<? extends AgentDelegationWorker> agentClass, String argsJson) {
-      var toolName = "delegate_to_" + sanitize(componentId(agentClass));
+        Class<? extends Agent> agentClass, String argsJson) {
+      var toolName = delegateToToolName(agentClass);
       return new ToolInvocationRequest(toolName, argsJson);
     }
 
@@ -928,16 +927,12 @@ public final class TestModelProvider implements ModelProvider.Custom {
      * Creates a {@link ToolInvocationRequest} for the {@code transfer_task} tool.
      *
      * @param taskId the ID of the task to transfer
-     * @param transferredTo identifier of the agent to transfer the task to
+     * @param agentId the ID of the agent to transfer the task to
      */
-    public static ToolInvocationRequest transferTask(String taskId, String transferredTo) {
+    public static ToolInvocationRequest transferTask(String taskId, String agentId) {
       return new ToolInvocationRequest(
           "transfer_task",
-          "{\"task_id\":"
-              + toJsonString(taskId)
-              + ",\"transferred_to\":"
-              + toJsonString(transferredTo)
-              + "}");
+          "{\"task_id\":" + toJsonString(taskId) + ",\"agent_id\":" + toJsonString(agentId) + "}");
     }
 
     /**
@@ -946,34 +941,19 @@ public final class TestModelProvider implements ModelProvider.Custom {
      *
      * @param backlogId the backlog ID
      * @param taskId the ID of the task to transfer
-     * @param transferredTo identifier of the agent to transfer the task to
+     * @param agentId the ID of the agent to transfer the task to
      */
     public static ToolInvocationRequest transferTask(
-        String backlogId, String taskId, String transferredTo) {
+        String backlogId, String taskId, String agentId) {
       return new ToolInvocationRequest(
           "transfer_task",
           "{\"backlog_id\":"
               + toJsonString(backlogId)
               + ",\"task_id\":"
               + toJsonString(taskId)
-              + ",\"transferred_to\":"
-              + toJsonString(transferredTo)
+              + ",\"agent_id\":"
+              + toJsonString(agentId)
               + "}");
-    }
-
-    // --- Messaging capability ---
-
-    /** Tool name for sending a message. */
-    public static final String SEND_MESSAGE = "send_message";
-
-    /**
-     * Creates a {@link ToolInvocationRequest} for the fixed {@code send_message} tool.
-     *
-     * @param message the message content to send
-     */
-    public static ToolInvocationRequest sendMessage(String message) {
-      return new ToolInvocationRequest(
-          "send_message", "{\"message\":" + toJsonString(message) + "}");
     }
 
     // --- Moderation capability (moderator side) ---
@@ -1096,7 +1076,8 @@ public final class TestModelProvider implements ModelProvider.Custom {
      * @param prompt the prompt to give to the participant
      */
     public static ToolInvocationRequest providePrompt(String prompt) {
-      return new ToolInvocationRequest(PROVIDE_PROMPT, "{\"prompt\":" + toJsonString(prompt) + "}");
+      return new ToolInvocationRequest(
+          PROVIDE_PROMPT, "{\"content\":" + toJsonString(prompt) + "}");
     }
 
     /**
