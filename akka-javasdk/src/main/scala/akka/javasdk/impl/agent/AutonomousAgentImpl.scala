@@ -34,7 +34,6 @@ import akka.javasdk.agent.task.TaskStatus
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.JsonSchema
 import akka.javasdk.impl.MetadataImpl
-import akka.javasdk.impl.agent.SessionMemoryClient.MemorySettings
 import akka.javasdk.impl.agent.autonomous.AgentDefinitionImpl
 import akka.javasdk.impl.client.EntityClientImpl
 import akka.javasdk.impl.reflection.Reflect
@@ -83,9 +82,6 @@ private[impl] final class AutonomousAgentImpl(
   implicit val system: ActorSystem[_] = _system
 
   private val log = LoggerFactory.getLogger(classOf[AutonomousAgentImpl])
-
-  private lazy val sessionMemoryClient: SessionMemory =
-    deriveMemoryClient(telemetryContext = None)
 
   private def deriveMemoryClient(telemetryContext: Option[OtelContext]): SessionMemory = {
     // always enabled

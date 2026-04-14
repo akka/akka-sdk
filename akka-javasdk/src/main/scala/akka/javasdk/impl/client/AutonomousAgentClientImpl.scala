@@ -91,7 +91,12 @@ private[javasdk] final class AutonomousAgentClientImpl(
       .foldLeft(Future.successful(())) { (prev, taskId) =>
         prev.flatMap { _ =>
           runtimeComponentClients.autonomousAgentClient
-            .assignTask(agentComponentId, agentInstanceId, taskId, stopWhenDone = false, None) //TODO fixme
+            .assignTask(
+              agentComponentId,
+              agentInstanceId,
+              taskId,
+              stopWhenDone = false,
+              callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
             .map(_ => ())
         }
       }
