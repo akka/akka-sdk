@@ -525,17 +525,43 @@ public final class TestModelProvider implements ModelProvider.Custom {
 
     /**
      * Creates a {@link ToolInvocationRequest} for the {@code complete_task} tool, with the given
-     * result JSON. The JSON must conform to the task's result type schema.
+     * raw result JSON string. The JSON must conform to the task's result type schema. Use {@link
+     * #completeTask(Object)} for type-safe serialization of result objects.
      */
-    public static ToolInvocationRequest completeTask(String resultJson) {
+    public static ToolInvocationRequest completeTaskJson(String resultJson) {
+      if (resultJson == null
+          || !resultJson.trim().startsWith("{")
+          || !resultJson.trim().endsWith("}")) {
+        throw new IllegalArgumentException(
+            "resultJson must be a JSON object (starting with '{' and ending with '}'). "
+                + "For type-safe serialization, use completeTask(Object) instead.");
+      }
       return new ToolInvocationRequest(COMPLETE_TASK, resultJson);
     }
 
     /**
      * Creates a {@link ToolInvocationRequest} for the {@code complete_task} tool, serializing the
-     * given result object to JSON.
+     * given result object to JSON. For non-object result types (String, Integer, Number, Boolean,
+     * and collections/arrays), wraps the value in a {@code {"result": ...}} JSON object matching
+     * the runtime's expected format. For object types (records, POJOs), the object's own properties
+     * become the tool arguments directly (passthrough).
      */
     public static ToolInvocationRequest completeTask(Object result) {
+      if (result instanceof String s) {
+        return new ToolInvocationRequest(COMPLETE_TASK, "{\"result\":" + toJsonString(s) + "}");
+      }
+      if (result instanceof Number || result instanceof Boolean) {
+        return new ToolInvocationRequest(COMPLETE_TASK, "{\"result\":" + result + "}");
+      }
+      if (result instanceof java.util.Collection || result.getClass().isArray()) {
+        try {
+          return new ToolInvocationRequest(
+              COMPLETE_TASK,
+              "{\"result\":" + JsonSupport.getObjectMapper().writeValueAsString(result) + "}");
+        } catch (JsonProcessingException e) {
+          throw new IllegalArgumentException("Failed to serialize task result to JSON", e);
+        }
+      }
       try {
         return new ToolInvocationRequest(
             COMPLETE_TASK, JsonSupport.getObjectMapper().writeValueAsString(result));

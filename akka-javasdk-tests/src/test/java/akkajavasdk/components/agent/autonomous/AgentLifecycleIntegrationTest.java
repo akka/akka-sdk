@@ -42,7 +42,7 @@ public class AgentLifecycleIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldGetAgentState() {
-    testAgentModel.fixedResponse(completeTask("{\"value\":\"done\",\"score\":1}"));
+    testAgentModel.fixedResponse(completeTask(new TestTasks.TestResult("done", 1)));
 
     var agentId = UUID.randomUUID().toString();
     var agentClient = componentClient.forAutonomousAgent(TestAutonomousAgent.class, agentId);
@@ -69,7 +69,7 @@ public class AgentLifecycleIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldPauseAndResumeAgent() {
-    testAgentModel.fixedResponse(completeTask("{\"value\":\"done after resume\",\"score\":1}"));
+    testAgentModel.fixedResponse(completeTask(new TestTasks.TestResult("done after resume", 1)));
 
     var agentId = UUID.randomUUID().toString();
     var agentClient = componentClient.forAutonomousAgent(TestAutonomousAgent.class, agentId);
@@ -154,7 +154,7 @@ public class AgentLifecycleIntegrationTest extends TestKitSupport {
     testAgentModel.fixedResponse(
         new AiResponse(
             "",
-            List.of(completeTask("{\"value\":\"done\",\"score\":1}")),
+            List.of(completeTask(new TestTasks.TestResult("done", 1))),
             Optional.of(new Agent.TokenUsage(150, 42))));
 
     var agentId = UUID.randomUUID().toString();

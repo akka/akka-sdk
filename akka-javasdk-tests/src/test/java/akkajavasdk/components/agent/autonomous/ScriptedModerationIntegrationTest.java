@@ -103,8 +103,8 @@ public class ScriptedModerationIntegrationTest extends TestKitSupport {
               // Conversation completed
               return new AiResponse(
                   completeTask(
-                      "{\"topic\":\"Test topic\",\"conclusion\":\"Balanced conclusion"
-                          + " reached.\"}"));
+                      new TestTasks.ModerationResult(
+                          "Test topic", "Balanced conclusion reached.")));
             }
             return new AiResponse("Acknowledged.");
           }

@@ -64,15 +64,15 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
 
     workerModel.fixedResponse(
         completeTask(
-            "{\"topic\":\"Quantum Computing\",\"findings\":\"Qubits enable parallel"
-                + " computation.\"}"));
+            new TestTasks.FindingsResult(
+                "Quantum Computing", "Qubits enable parallel computation.")));
 
     coordinatorModel
         .whenMessage(msg -> msg.contains("Continue working"))
         .reply(
             completeTask(
-                "{\"title\":\"Quantum Computing Summary\",\"summary\":\"Qubits enable parallel"
-                    + " computation.\"}"));
+                new TestTasks.ResearchResult(
+                    "Quantum Computing Summary", "Qubits enable parallel computation.")));
 
     var taskId =
         componentClient
@@ -97,8 +97,7 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
         handoffTo(SpecialistTestAgent.class, "Customer has a billing dispute."));
 
     specialistModel.fixedResponse(
-        completeTask(
-            "{\"category\":\"billing\",\"resolution\":\"Refund issued.\",\"resolved\":true}"));
+        completeTask(new TestTasks.SupportResolution("billing", "Refund issued.", true)));
 
     var taskId =
         componentClient
@@ -127,7 +126,7 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
 
     requestDelegatingModel
         .whenMessage(msg -> msg.contains("Continue working"))
-        .reply(completeTask("{\"value\":\"Claim verified.\",\"score\":90}"));
+        .reply(completeTask(new TestTasks.TestResult("Claim verified.", 90)));
 
     var taskId =
         componentClient

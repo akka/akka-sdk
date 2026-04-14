@@ -29,6 +29,16 @@ public class TestTasks {
   public static final Task<String> STRING_TASK =
       Task.define("String task").description("A task with string result");
 
+  public static final Task<Integer> INTEGER_TASK =
+      Task.define("Integer task")
+          .description("A task with integer result")
+          .resultConformsTo(Integer.class);
+
+  public static final Task<Boolean> BOOLEAN_TASK =
+      Task.define("Boolean task")
+          .description("A task with boolean result")
+          .resultConformsTo(Boolean.class);
+
   public static final Task<ResearchResult> RESEARCH =
       Task.define("Research")
           .description("Produce a research summary")

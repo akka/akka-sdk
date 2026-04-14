@@ -953,7 +953,7 @@ public class QuestionAnswererIntegrationTest extends TestKitSupport {
   public void shouldAnswerQuestionWithTypedResult() {
     // Mock the LLM to call the built-in complete_task tool
     model.fixedResponse(
-      completeTask("{\"answer\":\"2 plus 2 equals 4.\",\"confidence\":100}")
+      completeTask(new QuestionTasks.Answer("2 plus 2 equals 4.", 100))
     );
 
     // Create and run a task
@@ -991,8 +991,11 @@ The `TestModelProvider.AutonomousAgentTools` class provides factory methods for 
 ```java
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.*;
 
-// Complete a task — result JSON must match the task's result type schema
-completeTask("{\"title\":\"Report\",\"summary\":\"Done.\"}");
+// Complete a task — pass a result object matching the task's result type
+completeTask(new ReportTasks.Report("Report", "Done."));
+
+// Complete a task with raw JSON (must be a valid JSON object)
+completeTaskJson("{\"title\":\"Report\",\"summary\":\"Done.\"}");
 
 // Fail a task with a reason
 failTask("Not enough information to proceed.");
@@ -1044,12 +1047,12 @@ public class ResearchCoordinatorIntegrationTest extends TestKitSupport {
 
     // Researcher completes with findings
     researcherModel.fixedResponse(
-      completeTask("{\"topic\":\"Quantum Computing\",\"findings\":\"Qubits enable parallel computation.\"}"));
+      completeTask(new ResearchTasks.Findings("Quantum Computing", "Qubits enable parallel computation.")));
 
     // After receiving the delegation result, coordinator completes the brief
     coordinatorModel
       .whenMessage(msg -> msg.contains("Continue working"))
-      .reply(completeTask("{\"title\":\"Quantum Computing\",\"summary\":\"Qubits enable parallel computation.\"}"));
+      .reply(completeTask(new ResearchTasks.Brief("Quantum Computing", "Qubits enable parallel computation.")));
 
     var taskId = componentClient
       .forAutonomousAgent(ResearchCoordinator.class, UUID.randomUUID().toString())
@@ -1076,7 +1079,7 @@ triageModel
   .reply(handoffTo(BillingSpecialist.class, "Customer has a billing question"));
 
 // Specialist completes the task
-specialistModel.fixedResponse(completeTask("{\"resolved\":true,\"response\":\"Refund issued.\"}"));
+specialistModel.fixedResponse(completeTask(new SupportTasks.Resolution(true, "Refund issued.")));
 ```
 
 **Testing tool use before completion:**
@@ -1091,7 +1094,7 @@ model
 model
   .whenToolResult(result -> result.content().equals("2025-01-15"))
   .thenReply(result -> new AiResponse(
-      completeTask("{\"value\":\"Today is 2025-01-15.\",\"score\":100}")));
+      completeTask(new TestTasks.TestResult("Today is 2025-01-15.", 100))));
 ```
 
 Call `model.reset()` in `@AfterEach` to clear all configured responses between tests.
