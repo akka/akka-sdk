@@ -26,6 +26,7 @@ import akka.javasdk.agent.task.TaskState
 import akka.javasdk.agent.task.TaskStatus
 import akka.javasdk.client.TaskClient
 import akka.javasdk.impl.MetadataImpl
+import akka.javasdk.impl.agent.TaskRuleRunner
 import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.EntityRequest
@@ -33,7 +34,6 @@ import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
 import akka.stream.Materializer
 import akka.stream.scaladsl.Sink
-import akka.util.ByteString
 import org.slf4j.LoggerFactory
 
 /**
@@ -52,6 +52,8 @@ private[javasdk] final class TaskClientImpl(
 
   private val TaskEntityComponentId = "akka-task"
 
+  private val taskRuleRunner = new TaskRuleRunner(materializer.system, serializer)
+
   private def spiMetadata: SpiMetadata = callMetadata.fold(SpiMetadata.empty)(MetadataImpl.toSpi)
 
   override def createAsync[R](task: Task[R]): CompletionStage[String] = {
@@ -61,13 +63,15 @@ private[javasdk] final class TaskClientImpl(
       task.description(),
       task.resultType().getName)
     val attachments = task.attachments().asScala.map(TaskAttachment.fromMessageContent(_)).asJava
+    val ruleClassNames = task.ruleClasses().asScala.map(_.getName).asJava
     val createRequest = new TaskEntity.CreateRequest(
       task.name(),
       task.description(),
       task.instructions(),
       task.resultType().getName,
       task.dependencyTaskIds(),
-      attachments)
+      attachments,
+      ruleClassNames)
     val createPayload = serializer.toBytes(createRequest)
     log.debug("createTask: sending Create to entity [{}], payload contentType=[{}]", taskId, createPayload.contentType)
     runtimeComponentClients.eventSourcedEntityClient
@@ -183,7 +187,29 @@ private[javasdk] final class TaskClientImpl(
       case s: String => s
       case other     => serializer.json.toJsonString(other)
     }
-    sendCommand("Complete", serializer.toBytes(resultJson))
+    runtimeComponentClients.eventSourcedEntityClient
+      .send(new EntityRequest(TaskEntityComponentId, taskId, "GetState", BytesPayload.empty, spiMetadata))
+      .flatMap { reply =>
+        reply.exceptionPayload match {
+          case Some(exBytes) =>
+            throw serializer.json.exceptionFromBytes(exBytes)
+          case None =>
+            val taskState = serializer.fromBytes[TaskState](classOf[TaskState], reply.payload)
+            taskRuleRunner.evaluate(taskState, resultJson) match {
+              case TaskRuleRunner.RuleOutcome.Accepted =>
+                sendCommand("Complete", serializer.toBytes(resultJson)).asScala
+              case TaskRuleRunner.RuleOutcome.Rejected(ruleClassName, reason) =>
+                log.warn(
+                  "Task [{}] [{}] completion rejected by rule [{}]: {}",
+                  taskState.name(),
+                  taskId,
+                  ruleClassName,
+                  reason)
+                sendCommand("Fail", serializer.toBytes("Task rule rejected: " + reason)).asScala
+            }
+        }
+      }
+      .asJava
   }
 
   override def failAsync(reason: String): CompletionStage[Done] = {
@@ -229,9 +255,7 @@ private[javasdk] final class TaskClientImpl(
         // String results are stored as raw text by the runtime (not JSON-encoded)
         resultString.asInstanceOf[R]
       } else {
-        // Typed results are stored as JSON — deserialize via the serializer
-        val resultBytes = new BytesPayload(ByteString.fromString(resultString), "application/json")
-        serializer.fromBytes[R](resultType.asInstanceOf[java.lang.reflect.Type], resultBytes)
+        serializer.json.fromJsonString(resultString, resultType)
       }
     }
   }

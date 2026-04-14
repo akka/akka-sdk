@@ -69,4 +69,10 @@ public class TestTasks {
       Task.define("Moderate")
           .description("Moderate a conversation")
           .resultConformsTo(ModerationResult.class);
+
+  public static final Task<TestResult> VALIDATED_TASK =
+      Task.define("Validated task")
+          .description("A task with rule validation")
+          .resultConformsTo(TestResult.class)
+          .rules(TestResultRule.class);
 }

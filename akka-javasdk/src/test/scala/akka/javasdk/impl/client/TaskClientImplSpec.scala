@@ -9,16 +9,20 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.concurrent.duration._
+import scala.jdk.CollectionConverters._
 import scala.jdk.FutureConverters._
 
 import akka.NotUsed
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.javasdk.agent.task.Task
+import akka.javasdk.agent.task.TaskAttachment
 import akka.javasdk.agent.task.TaskEntity
 import akka.javasdk.agent.task.TaskException
 import akka.javasdk.agent.task.TaskNotification
+import akka.javasdk.agent.task.TaskRule
 import akka.javasdk.agent.task.TaskState
 import akka.javasdk.agent.task.TaskStatus
+import akka.javasdk.agent.task.TaskTemplate
 import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi._
 import akka.stream.scaladsl.Source
@@ -33,6 +37,24 @@ object TaskClientImplSpec {
   case class RecordedCommand(methodName: String, payload: BytesPayload) {
     def payloadAs[T](implicit ct: reflect.ClassTag[T], serializer: Serializer): T =
       serializer.fromBytes(ct.runtimeClass.asInstanceOf[Class[T]], payload)
+  }
+
+  class TestResultRule extends TaskRule[TestResult] {
+    override def onComplete(result: TestResult): TaskRule.Result =
+      if (result.value == null || result.value.isEmpty)
+        new TaskRule.Result.Rejected("value must not be empty")
+      else if (result.score < 10)
+        new TaskRule.Result.Rejected("score must be >= 10, was " + result.score)
+      else
+        new TaskRule.Result.Accepted()
+  }
+
+  class NoBannedContentRule extends TaskRule[TestResult] {
+    override def onComplete(result: TestResult): TaskRule.Result =
+      if (result.value != null && result.value.contains("banned"))
+        new TaskRule.Result.Rejected("value must not contain banned content")
+      else
+        new TaskRule.Result.Accepted()
   }
 }
 
@@ -61,7 +83,11 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
     .define("String task")
     .description("A string task")
 
-  private def taskState(status: TaskStatus, result: String = null, failureReason: String = null): TaskState =
+  private def taskState(
+      status: TaskStatus,
+      result: String = null,
+      failureReason: String = null,
+      ruleClassNames: java.util.List[String] = Seq.empty[String].asJava): TaskState =
     new TaskState(
       "test-task",
       "Test task",
@@ -71,10 +97,11 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
       classOf[TestResult].getName,
       result,
       failureReason,
-      java.util.List.of(),
+      Seq.empty[String].asJava,
       null,
-      java.util.List.of(),
-      java.util.List.of())
+      Seq.empty[TaskAttachment].asJava,
+      Seq.empty[String].asJava,
+      ruleClassNames)
 
   private def entityReplyFor(state: TaskState): EntityReply =
     new EntityReply(serializer.toBytes(state), SpiMetadata.empty, None)
@@ -380,6 +407,126 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
       ex shouldBe a[TaskException.TypeMismatch]
       ex.getMessage should include("Other task")
       ex.getMessage should include("Test task")
+    }
+  }
+
+  "TaskClientImpl completeAsync with rules" should {
+
+    val ruleNames = Seq(classOf[TestResultRule].getName).asJava
+
+    "complete when rule accepts" in {
+      val mock = mockEntityClient(taskState(TaskStatus.IN_PROGRESS, ruleClassNames = ruleNames))
+      val client = createClient(mock)
+
+      client.completeAsync(TEST_TASK, new TestResult("good", 50)).asScala.futureValue
+
+      mock.commands.map(_.methodName) should contain("Complete")
+      mock.commands.map(_.methodName) should not contain "Fail"
+    }
+
+    "fail when value is empty" in {
+      val mock = mockEntityClient(taskState(TaskStatus.IN_PROGRESS, ruleClassNames = ruleNames))
+      val client = createClient(mock)
+
+      client.completeAsync(TEST_TASK, new TestResult("", 50)).asScala.futureValue
+
+      mock.commands.map(_.methodName) should contain("Fail")
+      mock.commands.map(_.methodName) should not contain "Complete"
+      val reason = mock.commands.find(_.methodName == "Fail").get.payloadAs[String]
+      reason shouldBe "Task rule rejected: value must not be empty"
+    }
+
+    "fail when score is below threshold" in {
+      val mock = mockEntityClient(taskState(TaskStatus.IN_PROGRESS, ruleClassNames = ruleNames))
+      val client = createClient(mock)
+
+      client.completeAsync(TEST_TASK, new TestResult("ok", 5)).asScala.futureValue
+
+      mock.commands.map(_.methodName) should contain("Fail")
+      mock.commands.map(_.methodName) should not contain "Complete"
+      val reason = mock.commands.find(_.methodName == "Fail").get.payloadAs[String]
+      reason shouldBe "Task rule rejected: score must be >= 10, was 5"
+    }
+
+    "proceed normally when no rules are defined" in {
+      val mock = mockEntityClient(taskState(TaskStatus.IN_PROGRESS))
+      val client = createClient(mock)
+
+      client.completeAsync(TEST_TASK, new TestResult("done", 42)).asScala.futureValue
+
+      mock.commands.map(_.methodName) should contain("Complete")
+    }
+
+    val bothRules =
+      Seq(classOf[TestResultRule].getName, classOf[NoBannedContentRule].getName).asJava
+
+    "complete when all rules accept" in {
+      val mock = mockEntityClient(taskState(TaskStatus.IN_PROGRESS, ruleClassNames = bothRules))
+      val client = createClient(mock)
+
+      client.completeAsync(TEST_TASK, new TestResult("good", 50)).asScala.futureValue
+
+      mock.commands.map(_.methodName) should contain("Complete")
+      mock.commands.map(_.methodName) should not contain "Fail"
+    }
+
+    "fail when first rule rejects" in {
+      val mock = mockEntityClient(taskState(TaskStatus.IN_PROGRESS, ruleClassNames = bothRules))
+      val client = createClient(mock)
+
+      client.completeAsync(TEST_TASK, new TestResult("ok", 5)).asScala.futureValue
+
+      mock.commands.map(_.methodName) should contain("Fail")
+      val reason = mock.commands.find(_.methodName == "Fail").get.payloadAs[String]
+      reason shouldBe "Task rule rejected: score must be >= 10, was 5"
+    }
+
+    "fail when second rule rejects" in {
+      val mock = mockEntityClient(taskState(TaskStatus.IN_PROGRESS, ruleClassNames = bothRules))
+      val client = createClient(mock)
+
+      client.completeAsync(TEST_TASK, new TestResult("banned stuff", 50)).asScala.futureValue
+
+      mock.commands.map(_.methodName) should contain("Fail")
+      val reason = mock.commands.find(_.methodName == "Fail").get.payloadAs[String]
+      reason shouldBe "Task rule rejected: value must not contain banned content"
+    }
+  }
+
+  "TaskTemplate with rules" should {
+
+    "carry rules through to resolved task" in {
+      val template = TaskTemplate
+        .define("Templated task")
+        .description("A templated task")
+        .resultConformsTo(classOf[TestResult])
+        .instructionTemplate("Process {item}")
+        .rules(classOf[TestResultRule])
+
+      val task = template.params(java.util.Map.of("item", "something"))
+
+      task.ruleClasses().asScala should have size 1
+      task.ruleClasses().asScala.head shouldBe classOf[TestResultRule]
+    }
+
+    "enforce rules on completion of template-resolved task" in {
+      val template = TaskTemplate
+        .define("Test task")
+        .description("A test task")
+        .resultConformsTo(classOf[TestResult])
+        .instructionTemplate("Process {item}")
+        .rules(classOf[TestResultRule])
+
+      val task = template.params(java.util.Map.of("item", "something"))
+      val ruleNames = task.ruleClasses().asScala.map(_.getName).asJava
+      val mock = mockEntityClient(taskState(TaskStatus.IN_PROGRESS, ruleClassNames = ruleNames))
+      val client = createClient(mock)
+
+      client.completeAsync(task, new TestResult("ok", 5)).asScala.futureValue
+
+      mock.commands.map(_.methodName) should contain("Fail")
+      val reason = mock.commands.find(_.methodName == "Fail").get.payloadAs[String]
+      reason shouldBe "Task rule rejected: score must be >= 10, was 5"
     }
   }
 }
