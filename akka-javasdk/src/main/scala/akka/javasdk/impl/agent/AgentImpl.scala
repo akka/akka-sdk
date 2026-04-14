@@ -134,6 +134,7 @@ private[impl] object AgentImpl {
         case "hugging-face"    => ModelProvider.HuggingFace.fromConfig(providerConfig)
         case "ollama"          => ModelProvider.Ollama.fromConfig(providerConfig)
         case "openai"          => ModelProvider.OpenAi.fromConfig(providerConfig)
+        case "azure-openai"    => ModelProvider.AzureOpenAi.fromConfig(providerConfig)
         case "local-ai"        => ModelProvider.LocalAI.fromConfig(providerConfig)
         case "bedrock"         => ModelProvider.Bedrock.fromConfig(providerConfig)
         case "vertex-ai"       => ModelProvider.VertexAi.fromConfig(providerConfig)
@@ -699,6 +700,20 @@ private[impl] final class AgentImpl[A <: Agent](
             p.maxRetries(),
             p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq),
           thinking = p.thinking)
+      case p: ModelProvider.AzureOpenAi =>
+        new SpiAgent.ModelProvider.AzureOpenAi(
+          endpoint = p.endpoint,
+          deploymentName = p.deploymentName,
+          apiKey = p.apiKey,
+          temperature = p.temperature,
+          topP = p.topP,
+          maxTokens = p.maxTokens,
+          maxCompletionTokens = p.maxCompletionTokens,
+          new SpiAgent.ModelSettings(
+            p.connectionTimeout().toScala,
+            p.responseTimeout().toScala,
+            p.maxRetries(),
+            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq))
       case p: ModelProvider.VertexAi =>
         new SpiAgent.ModelProvider.VertexAi(
           modelName = p.modelName,
