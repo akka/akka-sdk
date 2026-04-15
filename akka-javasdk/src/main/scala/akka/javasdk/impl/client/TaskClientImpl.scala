@@ -20,6 +20,7 @@ import akka.javasdk.agent.task.TaskAttachment
 import akka.javasdk.agent.task.TaskDefinition
 import akka.javasdk.agent.task.TaskEntity
 import akka.javasdk.agent.task.TaskException
+import akka.javasdk.agent.task.TaskKey
 import akka.javasdk.agent.task.TaskNotification
 import akka.javasdk.agent.task.TaskSnapshot
 import akka.javasdk.agent.task.TaskState
@@ -56,7 +57,7 @@ private[javasdk] final class TaskClientImpl(
 
   private def spiMetadata: SpiMetadata = callMetadata.fold(SpiMetadata.empty)(MetadataImpl.toSpi)
 
-  override def createAsync[R](task: Task[R]): CompletionStage[String] = {
+  override def createAsync[R](task: Task[R]): CompletionStage[TaskKey] = {
     log.debug(
       "createTask: id=[{}] description=[{}] resultType=[{}]",
       taskId,
@@ -78,7 +79,7 @@ private[javasdk] final class TaskClientImpl(
       .send(new EntityRequest(TaskEntityComponentId, taskId, "Create", createPayload, spiMetadata))
       .map { _ =>
         log.debug("createTask: entity [{}] created successfully", taskId)
-        taskId
+        new TaskKey(taskId, task.name())
       }
       .asJava
   }

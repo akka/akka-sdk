@@ -22,6 +22,7 @@ import akka.javasdk.agent.autonomous.AgentState
 import akka.javasdk.agent.autonomous.AutonomousAgent
 import akka.javasdk.agent.autonomous.Notification
 import akka.javasdk.agent.task.Task
+import akka.javasdk.agent.task.TaskKey
 import akka.javasdk.client.AutonomousAgentClient
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.agent.autonomous.AgentSetupImpl
@@ -49,33 +50,41 @@ private[javasdk] final class AutonomousAgentClientImpl(
   private val log = LoggerFactory.getLogger(classOf[AutonomousAgentClientImpl])
 
   override def runSingleTaskAsync(task: Task[_]): CompletionStage[String] = {
-    val taskId = java.util.UUID.randomUUID().toString
+    val taskKey = new TaskKey(java.util.UUID.randomUUID().toString, task.name())
     log.debug(
-      "runSingleTask: agent [{}] instance [{}] task [{}] taskId [{}]",
+      "runSingleTask: agent [{}] instance [{}] task [{}] - [{}]",
       agentComponentId,
       agentInstanceId,
       task.description(),
-      taskId)
+      taskKey)
+
     val taskClient =
-      new TaskClientImpl(taskId, runtimeComponentClients, serializer, callMetadata, Materializer.matFromSystem(system))
+      new TaskClientImpl(
+        taskKey.id(),
+        runtimeComponentClients,
+        serializer,
+        callMetadata,
+        Materializer.matFromSystem(system))
+
     taskClient
       .createAsync(task)
       .asScala
       .flatMap { _ =>
         log.debug(
           "runSingleTask: task created [{}], sending AssignTask with stopWhenDone to agent instance [{}]",
-          taskId,
+          taskKey,
           agentInstanceId)
+
         runtimeComponentClients.autonomousAgentClient
           .assignTask(
             agentComponentId,
             agentInstanceId,
-            taskId,
+            taskKey.id(),
             stopWhenDone = true,
             callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
           .map { _ =>
-            log.debug("runSingleTask: AssignTask ack for task [{}], returning taskId [{}]", taskId, agentInstanceId)
-            taskId
+            log.debug("runSingleTask: AssignTask ack for task [{}], returning id [{}]", taskKey, agentInstanceId)
+            taskKey.id()
           }
       }
       .asJava
@@ -87,8 +96,9 @@ private[javasdk] final class AutonomousAgentClientImpl(
       agentComponentId,
       agentInstanceId,
       taskIds.mkString(", "))
+
     taskIds
-      .foldLeft(Future.successful(())) { (prev, taskId) =>
+      .foldLeft(Future.successful(Done.done())) { (prev, taskId) =>
         prev.flatMap { _ =>
           runtimeComponentClients.autonomousAgentClient
             .assignTask(
@@ -97,26 +107,25 @@ private[javasdk] final class AutonomousAgentClientImpl(
               taskId,
               stopWhenDone = false,
               callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
-            .map(_ => ())
         }
       }
-      .map(_ => Done.done())
       .asJava
   }
 
   override def setupAsync(setup: AgentSetup): CompletionStage[Done] = {
     val setupImpl = setup.asInstanceOf[AgentSetupImpl]
     log.debug("setup: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
+
     val converter = agentCapabilityConverter.getOrElse(
       throw new IllegalStateException("Agent capability converter not available in this context"))
+
     val spiCapabilities = converter.toSpiCapabilities(setupImpl.capabilities)
     runtimeComponentClients.autonomousAgentClient
       .applySetup(agentComponentId, agentInstanceId, setupImpl.goal, spiCapabilities)
-      .map(_ => Done.done())
       .asJava
   }
 
-  override def getStateAsync(): CompletionStage[AgentState] = {
+  override def getStateAsync: CompletionStage[AgentState] = {
     log.debug("getState: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
     runtimeComponentClients.autonomousAgentClient
       .getState(agentComponentId, agentInstanceId)
@@ -136,7 +145,6 @@ private[javasdk] final class AutonomousAgentClientImpl(
     log.debug("pause: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
     runtimeComponentClients.autonomousAgentClient
       .pause(agentComponentId, agentInstanceId)
-      .map(_ => Done.done())
       .asJava
   }
 
@@ -144,7 +152,6 @@ private[javasdk] final class AutonomousAgentClientImpl(
     log.debug("resume: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
     runtimeComponentClients.autonomousAgentClient
       .resume(agentComponentId, agentInstanceId)
-      .map(_ => Done.done())
       .asJava
   }
 
@@ -152,7 +159,6 @@ private[javasdk] final class AutonomousAgentClientImpl(
     log.debug("stop: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
     runtimeComponentClients.autonomousAgentClient
       .stop(agentComponentId, agentInstanceId)
-      .map(_ => Done.done())
       .asJava
   }
 

@@ -9,10 +9,10 @@ import java.util.Map;
 import java.util.Optional;
 
 /** State of a backlog entity — tracks task references and their claim status. */
-public record BacklogState(String name, Map<String, Optional<String>> tasks, boolean closed) {
+public record BacklogState(String name, Map<String, Entry> tasks, boolean closed) {
 
-  /** An entry in the backlog: task ID and who has claimed it (if anyone). */
-  public record Entry(String taskId, Optional<String> claimedBy) {}
+  /** An entry in the backlog: task ID, task name, and who has claimed it (if anyone). */
+  public record Entry(String taskId, String taskName, Optional<String> claimedBy) {}
 
   public static BacklogState empty() {
     return new BacklogState("", Map.of(), false);
@@ -31,27 +31,33 @@ public record BacklogState(String name, Map<String, Optional<String>> tasks, boo
   }
 
   public boolean isClaimed(String taskId) {
-    return tasks.containsKey(taskId) && tasks.get(taskId).isPresent();
+    return tasks.containsKey(taskId) && tasks.get(taskId).claimedBy().isPresent();
+  }
+
+  public String taskName(String taskId) {
+    var entry = tasks.get(taskId);
+    return entry != null ? entry.taskName() : "";
   }
 
   public Optional<String> claimedBy(String taskId) {
-    return tasks.getOrDefault(taskId, Optional.empty());
+    var entry = tasks.get(taskId);
+    return entry != null ? entry.claimedBy() : Optional.empty();
   }
 
   public List<Entry> entries() {
-    return tasks.entrySet().stream().map(e -> new Entry(e.getKey(), e.getValue())).toList();
+    return List.copyOf(tasks.values());
   }
 
   public List<String> unclaimedTaskIds() {
     return tasks.entrySet().stream()
-        .filter(e -> e.getValue().isEmpty())
+        .filter(e -> e.getValue().claimedBy().isEmpty())
         .map(Map.Entry::getKey)
         .toList();
   }
 
   public List<String> claimedTaskIds() {
     return tasks.entrySet().stream()
-        .filter(e -> e.getValue().isPresent())
+        .filter(e -> e.getValue().claimedBy().isPresent())
         .map(Map.Entry::getKey)
         .toList();
   }
@@ -60,27 +66,31 @@ public record BacklogState(String name, Map<String, Optional<String>> tasks, boo
     return new BacklogState(name, tasks, closed);
   }
 
-  public BacklogState withTaskAdded(String taskId) {
+  public BacklogState withTaskAdded(String taskId, String taskName) {
     var updated = new java.util.HashMap<>(tasks);
-    updated.put(taskId, Optional.empty());
+    updated.put(taskId, new Entry(taskId, taskName, Optional.empty()));
     return new BacklogState(name, Map.copyOf(updated), closed);
   }
 
   public BacklogState withTaskClaimed(String taskId, String claimedBy) {
     var updated = new java.util.HashMap<>(tasks);
-    updated.put(taskId, Optional.of(claimedBy));
+    var existing = updated.get(taskId);
+    var taskName = existing != null ? existing.taskName() : "";
+    updated.put(taskId, new Entry(taskId, taskName, Optional.of(claimedBy)));
     return new BacklogState(name, Map.copyOf(updated), closed);
   }
 
   public BacklogState withTaskReleased(String taskId) {
     var updated = new java.util.HashMap<>(tasks);
-    updated.put(taskId, Optional.empty());
+    var existing = updated.get(taskId);
+    var taskName = existing != null ? existing.taskName() : "";
+    updated.put(taskId, new Entry(taskId, taskName, Optional.empty()));
     return new BacklogState(name, Map.copyOf(updated), closed);
   }
 
   public BacklogState withUnclaimedRemoved() {
     var updated = new java.util.HashMap<>(tasks);
-    updated.entrySet().removeIf(e -> e.getValue().isEmpty());
+    updated.entrySet().removeIf(e -> e.getValue().claimedBy().isEmpty());
     return new BacklogState(name, Map.copyOf(updated), closed);
   }
 

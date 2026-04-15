@@ -29,7 +29,8 @@ public class TaskClientIntegrationTest extends TestKitSupport {
   public void shouldCreateTask() {
     var taskId = newTaskId();
     var created = componentClient.forTask(taskId).create(TEST_TASK.instructions("do something"));
-    assertThat(created).isEqualTo(taskId);
+    assertThat(created.id()).isEqualTo(taskId);
+    assertThat(created.name()).isEqualTo(TEST_TASK.name());
   }
 
   // --- get ---

@@ -79,11 +79,11 @@ public class AgentLifecycleIntegrationTest extends TestKitSupport {
     var state = agentClient.getState();
     assertThat(state.paused()).isTrue();
 
-    var taskId =
+    var taskKey =
         componentClient
             .forTask(UUID.randomUUID().toString())
             .create(TestTasks.TEST_TASK.instructions("Do something."));
-    agentClient.assignTasks(taskId);
+    agentClient.assignTasks(taskKey.id());
 
     agentClient.resume();
 
@@ -92,7 +92,7 @@ public class AgentLifecycleIntegrationTest extends TestKitSupport {
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () -> {
-              var snapshot = componentClient.forTask(taskId).get(TestTasks.TEST_TASK);
+              var snapshot = componentClient.forTask(taskKey.id()).get(TestTasks.TEST_TASK);
               assertThat(snapshot.result()).isNotNull();
             });
 

@@ -30,6 +30,7 @@ import akka.javasdk.agent.task.BacklogEntity
 import akka.javasdk.agent.task.BacklogState
 import akka.javasdk.agent.task.TaskAttachment
 import akka.javasdk.agent.task.TaskEntity
+import akka.javasdk.agent.task.TaskKey
 import akka.javasdk.agent.task.TaskState
 import akka.javasdk.agent.task.TaskStatus
 import akka.javasdk.client.ComponentClient
@@ -133,7 +134,7 @@ private[impl] final class AutonomousAgentImpl(
 
   // Pre-resolve BacklogEntity methods for calling via EntityClientImpl
   private val backlogCreateMethod = classOf[BacklogEntity].getMethod("create", classOf[String])
-  private val backlogAddTaskMethod = classOf[BacklogEntity].getMethod("addTask", classOf[String])
+  private val backlogAddTaskMethod = classOf[BacklogEntity].getMethod("addTask", classOf[TaskKey])
   private val backlogClaimMethod = classOf[BacklogEntity].getMethod("claim", classOf[BacklogEntity.ClaimRequest])
   private val backlogReleaseMethod = classOf[BacklogEntity].getMethod("release", classOf[String])
   private val backlogTransferMethod =
@@ -181,7 +182,6 @@ private[impl] final class AutonomousAgentImpl(
         .withMetadata(MetadataImpl.of(context))
         .invokeAsync(assignee)
         .asScala
-        .map(_ => Done)(sdkExecutionContext)
 
     override def startTask(taskId: String, context: Option[TelemetryContext]): Future[Done] =
       taskEntityClient(taskId)
@@ -189,7 +189,6 @@ private[impl] final class AutonomousAgentImpl(
         .withMetadata(MetadataImpl.of(context))
         .invokeAsync()
         .asScala
-        .map(_ => Done)(sdkExecutionContext)
 
     override def completeTask(taskId: String, resultJson: String, context: Option[TelemetryContext]): Future[Done] =
       taskEntityClient(taskId)
@@ -205,7 +204,7 @@ private[impl] final class AutonomousAgentImpl(
                 .withMetadata(MetadataImpl.of(context))
                 .invokeAsync(resultJson)
                 .asScala
-                .map(_ => Done)(sdkExecutionContext)
+
             case TaskRuleRunner.RuleOutcome.Rejected(ruleClassName, reason) =>
               log.warn(
                 "Task [{}] [{}] completion rejected by rule [{}]: {}",
@@ -229,7 +228,6 @@ private[impl] final class AutonomousAgentImpl(
         .withMetadata(MetadataImpl.of(context))
         .invokeAsync(reason)
         .asScala
-        .map(_ => Done)(sdkExecutionContext)
 
     override def cancelTask(taskId: String, reason: String, context: Option[TelemetryContext]): Future[Done] =
       taskEntityClient(taskId)
@@ -237,7 +235,6 @@ private[impl] final class AutonomousAgentImpl(
         .withMetadata(MetadataImpl.of(context))
         .invokeAsync(reason)
         .asScala
-        .map(_ => Done)(sdkExecutionContext)
 
     override def reassignTask(
         taskId: String,
@@ -249,7 +246,6 @@ private[impl] final class AutonomousAgentImpl(
         .withMetadata(MetadataImpl.of(context))
         .invokeAsync(reassignReq)
         .asScala
-        .map(_ => Done)(sdkExecutionContext)
     }
   }
 
@@ -259,49 +255,43 @@ private[impl] final class AutonomousAgentImpl(
         .methodRefOneArg[String, Done](backlogCreateMethod)
         .invokeAsync(name)
         .asScala
-        .map(_ => Done)(sdkExecutionContext)
 
-    override def addTask(backlogId: String, taskId: String): Future[Done] =
+    override def addTask(backlogId: String, taskId: String, taskName: String): Future[Done] =
       backlogEntityClient(backlogId)
-        .methodRefOneArg[String, Done](backlogAddTaskMethod)
-        .invokeAsync(taskId)
+        .methodRefOneArg[TaskKey, Done](backlogAddTaskMethod)
+        .invokeAsync(new TaskKey(taskId, taskName))
         .asScala
-        .map(_ => Done)(sdkExecutionContext)
 
-    override def claimTask(backlogId: String, taskId: String, claimedBy: String): Future[Done] =
+    override def claimTask(backlogId: String, taskId: String, claimedBy: String): Future[Done] = {
       backlogEntityClient(backlogId)
         .methodRefOneArg[BacklogEntity.ClaimRequest, Done](backlogClaimMethod)
         .invokeAsync(new BacklogEntity.ClaimRequest(taskId, claimedBy))
         .asScala
-        .map(_ => Done)(sdkExecutionContext)
+    }
 
     override def releaseTask(backlogId: String, taskId: String): Future[Done] =
       backlogEntityClient(backlogId)
         .methodRefOneArg[String, Done](backlogReleaseMethod)
         .invokeAsync(taskId)
         .asScala
-        .map(_ => Done)(sdkExecutionContext)
 
     override def transferTask(backlogId: String, taskId: String, transferredTo: String): Future[Done] =
       backlogEntityClient(backlogId)
         .methodRefOneArg[BacklogEntity.TransferRequest, Done](backlogTransferMethod)
         .invokeAsync(new BacklogEntity.TransferRequest(taskId, transferredTo))
         .asScala
-        .map(_ => Done)(sdkExecutionContext)
 
     override def cancelUnclaimed(backlogId: String): Future[Done] =
       backlogEntityClient(backlogId)
         .methodRefNoArg[Done](backlogCancelUnclaimedMethod)
         .invokeAsync()
         .asScala
-        .map(_ => Done)(sdkExecutionContext)
 
     override def closeBacklog(backlogId: String): Future[Done] =
       backlogEntityClient(backlogId)
         .methodRefNoArg[Done](backlogCloseMethod)
         .invokeAsync()
         .asScala
-        .map(_ => Done)(sdkExecutionContext)
 
     override def getState(backlogId: String): Future[SpiBacklog.SpiBacklogState] =
       backlogEntityClient(backlogId)
@@ -415,6 +405,7 @@ private[impl] final class AutonomousAgentImpl(
     val entries = state.entries().asScala.toSeq.map { entry =>
       new SpiBacklog.SpiBacklogEntry(
         taskId = entry.taskId(),
+        taskName = entry.taskName(),
         claimedBy = if (entry.claimedBy().isPresent) Some(entry.claimedBy().get()) else None)
     }
     new SpiBacklog.SpiBacklogState(state.name(), entries, state.closed())

@@ -175,8 +175,9 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
       val mock = mockEntityClient(taskState(TaskStatus.PENDING))
       val client = createClient(mock)
 
-      val taskId = client.createAsync(TEST_TASK.instructions("do something")).asScala.futureValue
-      taskId shouldBe "test-task"
+      val taskKey = client.createAsync(TEST_TASK.instructions("do something")).asScala.futureValue
+      taskKey.id() shouldBe "test-task"
+      taskKey.name() shouldBe TEST_TASK.name()
 
       val createCmd = mock.commands.find(_.methodName == "Create").get
       val request = createCmd.payloadAs[TaskEntity.CreateRequest]

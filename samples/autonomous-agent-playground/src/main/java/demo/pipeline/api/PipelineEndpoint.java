@@ -38,25 +38,25 @@ public class PipelineEndpoint {
   @Post
   public PipelineResponse create(CreatePipeline request) {
     // Create collect task (no dependencies)
-    var collectTaskId = componentClient
+    var collectTask = componentClient
       .forTask(UUID.randomUUID().toString())
       .create(PipelineTasks.COLLECT.instructions("Collect data on: " + request.topic()));
 
     // Create analyze task (depends on collect)
-    var analyzeTaskId = componentClient
+    var analyzeTask = componentClient
       .forTask(UUID.randomUUID().toString())
       .create(
         PipelineTasks.ANALYZE.instructions("Analyze data for: " + request.topic()).dependsOn(
-          collectTaskId
+          collectTask.id()
         )
       );
 
     // Create report task (depends on analyze)
-    var reportTaskId = componentClient
+    var reportTask = componentClient
       .forTask(UUID.randomUUID().toString())
       .create(
         PipelineTasks.REPORT.instructions("Write report for: " + request.topic()).dependsOn(
-          analyzeTaskId
+          analyzeTask.id()
         )
       );
 
@@ -64,9 +64,14 @@ public class PipelineEndpoint {
     var agentInstanceId = UUID.randomUUID().toString();
     componentClient
       .forAutonomousAgent(ReportAgent.class, agentInstanceId)
-      .assignTasks(collectTaskId, analyzeTaskId, reportTaskId);
+      .assignTasks(collectTask.id(), analyzeTask.id(), reportTask.id());
 
-    return new PipelineResponse(agentInstanceId, collectTaskId, analyzeTaskId, reportTaskId);
+    return new PipelineResponse(
+      agentInstanceId,
+      collectTask.id(),
+      analyzeTask.id(),
+      reportTask.id()
+    );
   }
 
   @Get("/{taskId}")
