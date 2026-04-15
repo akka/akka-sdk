@@ -9,7 +9,7 @@ import akka.javasdk.agent.autonomous.AutonomousAgent;
 
 /**
  * A capability that an autonomous agent can have. Capabilities are declared via factory methods on
- * {@link AutonomousAgent} and passed to {@link AgentDefinition#capabilities}.
+ * {@link AutonomousAgent} and passed to {@link AgentDefinition#capability}.
  *
  * @see TaskAcceptance
  * @see Delegation
