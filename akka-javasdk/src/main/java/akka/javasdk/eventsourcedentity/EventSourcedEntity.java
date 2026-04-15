@@ -212,8 +212,8 @@ public abstract class EventSourcedEntity<S, E> {
 
   /**
    * Provides access to additional context and metadata when handling an event in the {@link
-   * #applyEvent(E)} method. This includes information such as the sequence number of the event
-   * being processed.
+   * EventSourcedEntity#applyEvent} method. This includes information such as the sequence number of
+   * the event being processed.
    *
    * <p>This method can only be called from within the {@link #applyEvent(E)} method. Attempting to
    * access it from the constructor or command handler will result in an exception.
@@ -375,7 +375,7 @@ public abstract class EventSourcedEntity<S, E> {
 
       /**
        * Persist a single event. After this event is persisted, the event handler {@link
-       * #applyEvent(E event)} is called in order to update the entity state.
+       * EventSourcedEntity#applyEvent} is called in order to update the entity state.
        */
       OnSuccessBuilder<S> persist(E event);
 
@@ -395,8 +395,8 @@ public abstract class EventSourcedEntity<S, E> {
 
       /**
        * Persist a single event and additional metadata together with the event. After this event is
-       * persisted, the event handler {@link #applyEvent(E event)} is called in order to update the
-       * entity state.
+       * persisted, the event handler {@link EventSourcedEntity#applyEvent} is called in order to
+       * update the entity state.
        */
       OnSuccessBuilder<S> persistWithMetadata(E event, Metadata metadata);
 
