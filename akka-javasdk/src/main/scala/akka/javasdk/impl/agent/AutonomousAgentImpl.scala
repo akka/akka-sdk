@@ -30,6 +30,7 @@ import akka.javasdk.agent.task.BacklogEntity
 import akka.javasdk.agent.task.BacklogState
 import akka.javasdk.agent.task.TaskAttachment
 import akka.javasdk.agent.task.TaskEntity
+import akka.javasdk.agent.task.TaskState
 import akka.javasdk.agent.task.TaskStatus
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.JsonSchema
@@ -113,6 +114,8 @@ private[impl] final class AutonomousAgentImpl(
     new ToolExecutor(agentInvokers ++ definitionToolInvokers, serializer)
   }
 
+  private val taskRuleRunner = new TaskRuleRunner(system.classicSystem, serializer)
+
   // Pre-resolve TaskEntity methods for calling via EntityClientImpl
   private val taskCreateMethod = classOf[TaskEntity].getMethod("create", classOf[TaskEntity.CreateRequest])
   private val taskGetStateMethod = classOf[TaskEntity].getMethod("getState")
@@ -152,7 +155,8 @@ private[impl] final class AutonomousAgentImpl(
         request.instructions.orNull,
         request.resultTypeName.orNull,
         request.dependencyTaskIds.asJava,
-        attachments)
+        attachments,
+        Seq.empty[String].asJava)
       taskEntityClient(taskId)
         .methodRefOneArg[TaskEntity.CreateRequest, Done](taskCreateMethod)
         .withMetadata(MetadataImpl.of(context))
@@ -163,7 +167,7 @@ private[impl] final class AutonomousAgentImpl(
 
     override def getTaskState(taskId: String, context: Option[TelemetryContext]): Future[SpiTask.SpiTaskState] =
       taskEntityClient(taskId)
-        .methodRefNoArg[akka.javasdk.agent.task.TaskState](taskGetStateMethod)
+        .methodRefNoArg[TaskState](taskGetStateMethod)
         .withMetadata(MetadataImpl.of(context))
         .invokeAsync()
         .asScala
@@ -187,11 +191,34 @@ private[impl] final class AutonomousAgentImpl(
 
     override def completeTask(taskId: String, resultJson: String, context: Option[TelemetryContext]): Future[Done] =
       taskEntityClient(taskId)
-        .methodRefOneArg[String, Done](taskCompleteMethod)
+        .methodRefNoArg[TaskState](taskGetStateMethod)
         .withMetadata(MetadataImpl.of(context))
-        .invokeAsync(resultJson)
+        .invokeAsync()
         .asScala
-        .map(_ => Done)(sdkExecutionContext)
+        .flatMap { taskState =>
+          taskRuleRunner.evaluate(taskState, resultJson) match {
+            case TaskRuleRunner.RuleOutcome.Accepted =>
+              taskEntityClient(taskId)
+                .methodRefOneArg[String, Done](taskCompleteMethod)
+                .withMetadata(MetadataImpl.of(context))
+                .invokeAsync(resultJson)
+                .asScala
+                .map(_ => Done)(sdkExecutionContext)
+            case TaskRuleRunner.RuleOutcome.Rejected(ruleClassName, reason) =>
+              log.warn(
+                "Task [{}] [{}] completion rejected by rule [{}]: {}",
+                taskState.name(),
+                taskId,
+                ruleClassName,
+                reason)
+              taskEntityClient(taskId)
+                .methodRefOneArg[String, Done](taskFailMethod)
+                .withMetadata(MetadataImpl.of(context))
+                .invokeAsync("Task rule rejected: " + reason)
+                .asScala
+                .map(_ => Done)(sdkExecutionContext)
+          }
+        }(sdkExecutionContext)
 
     override def failTask(taskId: String, reason: String, context: Option[TelemetryContext]): Future[Done] =
       taskEntityClient(taskId)

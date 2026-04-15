@@ -31,12 +31,19 @@ public final class TaskTemplate<R> implements TaskDefinition<R> {
   private final String description;
   private final Class<R> resultType;
   private final String instructionTemplate;
+  private final List<Class<? extends TaskRule<R>>> ruleClasses;
 
-  TaskTemplate(String name, String description, Class<R> resultType, String instructionTemplate) {
+  TaskTemplate(
+      String name,
+      String description,
+      Class<R> resultType,
+      String instructionTemplate,
+      List<Class<? extends TaskRule<R>>> ruleClasses) {
     this.name = name;
     this.description = description;
     this.resultType = resultType;
     this.instructionTemplate = instructionTemplate;
+    this.ruleClasses = ruleClasses;
   }
 
   /**
@@ -47,7 +54,7 @@ public final class TaskTemplate<R> implements TaskDefinition<R> {
    * @param name a stable identifier for this task type
    */
   public static TaskTemplate<String> define(String name) {
-    return new TaskTemplate<>(name, "", String.class, "");
+    return new TaskTemplate<>(name, "", String.class, "", List.of());
   }
 
   @Override
@@ -62,7 +69,8 @@ public final class TaskTemplate<R> implements TaskDefinition<R> {
 
   /** Set the description of this task — what kind of work it represents. */
   public TaskTemplate<R> description(String description) {
-    return new TaskTemplate<>(this.name, description, this.resultType, this.instructionTemplate);
+    return new TaskTemplate<>(
+        this.name, description, this.resultType, this.instructionTemplate, this.ruleClasses);
   }
 
   @Override
@@ -76,12 +84,14 @@ public final class TaskTemplate<R> implements TaskDefinition<R> {
    * @param <S> The new result type
    */
   public <S> TaskTemplate<S> resultConformsTo(Class<S> type) {
-    return new TaskTemplate<>(this.name, this.description, type, this.instructionTemplate);
+    return new TaskTemplate<>(
+        this.name, this.description, type, this.instructionTemplate, List.of());
   }
 
   /** Set the instruction template with {@code {paramName}} placeholders. */
   public TaskTemplate<R> instructionTemplate(String template) {
-    return new TaskTemplate<>(this.name, this.description, this.resultType, template);
+    return new TaskTemplate<>(
+        this.name, this.description, this.resultType, template, this.ruleClasses);
   }
 
   /** The instruction template string with {@code {paramName}} placeholders. */
@@ -97,6 +107,29 @@ public final class TaskTemplate<R> implements TaskDefinition<R> {
       names.add(matcher.group(1));
     }
     return names;
+  }
+
+  /** Rule classes that validate the result before accepting completion, or an empty list. */
+  public List<Class<? extends TaskRule<R>>> ruleClasses() {
+    return ruleClasses;
+  }
+
+  /**
+   * Return a new task template with the given rules. Rules carry through to any {@link Task}
+   * produced by {@link #params} or {@link #instructions}.
+   */
+  @SafeVarargs
+  public final TaskTemplate<R> rules(
+      Class<? extends TaskRule<R>> firstRule, Class<? extends TaskRule<R>>... moreRules) {
+    var updated = new ArrayList<>(this.ruleClasses);
+    updated.add(firstRule);
+    updated.addAll(List.of(moreRules));
+    return new TaskTemplate<>(
+        this.name,
+        this.description,
+        this.resultType,
+        this.instructionTemplate,
+        List.copyOf(updated));
   }
 
   /**
@@ -117,11 +150,12 @@ public final class TaskTemplate<R> implements TaskDefinition<R> {
       }
       resolved = resolved.replace("{" + paramName + "}", value);
     }
-    return new Task<>(name, description, resultType, resolved, List.of(), List.of());
+    return new Task<>(name, description, resultType, resolved, List.of(), List.of(), ruleClasses);
   }
 
   /** Override the template with free-form instructions, returning a submittable {@link Task}. */
   public Task<R> instructions(String instructions) {
-    return new Task<>(name, description, resultType, instructions, List.of(), List.of());
+    return new Task<>(
+        name, description, resultType, instructions, List.of(), List.of(), ruleClasses);
   }
 }

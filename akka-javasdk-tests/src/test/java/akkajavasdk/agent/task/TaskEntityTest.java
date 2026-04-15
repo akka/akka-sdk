@@ -34,7 +34,7 @@ public class TaskEntityTest {
 
   private TaskEntity.CreateRequest createRequest(String name) {
     return new TaskEntity.CreateRequest(
-        name, "description", "instructions", "String", List.of(), List.of());
+        name, "description", "instructions", "String", List.of(), List.of(), List.of());
   }
 
   @Test

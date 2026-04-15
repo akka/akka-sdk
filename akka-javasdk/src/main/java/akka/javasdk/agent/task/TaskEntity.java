@@ -32,7 +32,8 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
       String instructions,
       String resultTypeName,
       List<String> dependencyTaskIds,
-      List<TaskAttachment> attachments) {}
+      List<TaskAttachment> attachments,
+      List<String> ruleClassNames) {}
 
   public record ReassignRequest(String newAssignee, String context) {}
 
@@ -48,6 +49,7 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
     var deps =
         request.dependencyTaskIds() != null ? request.dependencyTaskIds() : List.<String>of();
     var atts = request.attachments() != null ? request.attachments() : List.<TaskAttachment>of();
+    var rules = request.ruleClassNames() != null ? request.ruleClassNames() : List.<String>of();
     return effects()
         .persist(
             new TaskEvent.TaskCreated(
@@ -57,7 +59,8 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
                 request.instructions(),
                 request.resultTypeName(),
                 deps,
-                atts))
+                atts,
+                rules))
         .thenReply(__ -> done());
   }
 
@@ -180,7 +183,8 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
               e.dependencyTaskIds() != null ? e.dependencyTaskIds() : List.of(),
               null,
               e.attachments() != null ? e.attachments() : List.of(),
-              List.of());
+              List.of(),
+              e.ruleClassNames() != null ? e.ruleClassNames() : List.of());
       case TaskEvent.TaskAssigned e -> currentState().withAssignee(e.assignee());
       case TaskEvent.TaskStarted e -> currentState().withStatus(TaskStatus.IN_PROGRESS);
       case TaskEvent.TaskCompleted e -> currentState().withResult(e.result());

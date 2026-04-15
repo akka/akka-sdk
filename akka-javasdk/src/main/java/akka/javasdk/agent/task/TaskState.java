@@ -20,7 +20,8 @@ public record TaskState(
     List<String> dependencyTaskIds,
     String assignee,
     List<TaskAttachment> attachments,
-    List<String> reassignmentContext) {
+    List<String> reassignmentContext,
+    List<String> ruleClassNames) {
 
   public static TaskState empty() {
     return new TaskState(
@@ -34,6 +35,7 @@ public record TaskState(
         null,
         List.of(),
         null,
+        List.of(),
         List.of(),
         List.of());
   }
@@ -51,7 +53,8 @@ public record TaskState(
         dependencyTaskIds,
         assignee,
         attachments,
-        reassignmentContext);
+        reassignmentContext,
+        ruleClassNames);
   }
 
   public TaskState withAssignee(String assignee) {
@@ -67,7 +70,8 @@ public record TaskState(
         dependencyTaskIds,
         assignee,
         attachments,
-        reassignmentContext);
+        reassignmentContext,
+        ruleClassNames);
   }
 
   public TaskState withResult(String result) {
@@ -83,7 +87,8 @@ public record TaskState(
         dependencyTaskIds,
         assignee,
         attachments,
-        reassignmentContext);
+        reassignmentContext,
+        ruleClassNames);
   }
 
   public TaskState withFailure(String reason) {
@@ -99,7 +104,8 @@ public record TaskState(
         dependencyTaskIds,
         assignee,
         attachments,
-        reassignmentContext);
+        reassignmentContext,
+        ruleClassNames);
   }
 
   public TaskState withCancellation(String reason) {
@@ -115,7 +121,8 @@ public record TaskState(
         dependencyTaskIds,
         assignee,
         attachments,
-        reassignmentContext);
+        reassignmentContext,
+        ruleClassNames);
   }
 
   public TaskState withReassignment(String newAssignee, String context) {
@@ -133,6 +140,7 @@ public record TaskState(
         dependencyTaskIds,
         newAssignee,
         attachments,
-        List.copyOf(updated));
+        List.copyOf(updated),
+        ruleClassNames);
   }
 }

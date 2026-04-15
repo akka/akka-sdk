@@ -29,6 +29,7 @@ public final class Task<R> implements TaskDefinition<R> {
   private final String instructions;
   private final List<MessageContent> attachments;
   private final List<String> dependencyTaskIds;
+  private final List<Class<? extends TaskRule<R>>> ruleClasses;
 
   Task(
       String name,
@@ -36,13 +37,15 @@ public final class Task<R> implements TaskDefinition<R> {
       Class<R> resultType,
       String instructions,
       List<MessageContent> attachments,
-      List<String> dependencyTaskIds) {
+      List<String> dependencyTaskIds,
+      List<Class<? extends TaskRule<R>>> ruleClasses) {
     this.name = name;
     this.description = description;
     this.resultType = resultType;
     this.instructions = instructions;
     this.attachments = attachments;
     this.dependencyTaskIds = dependencyTaskIds;
+    this.ruleClasses = ruleClasses;
   }
 
   /**
@@ -52,7 +55,7 @@ public final class Task<R> implements TaskDefinition<R> {
    * @param name a stable identifier for this task type
    */
   public static Task<String> define(String name) {
-    return new Task<>(name, "", String.class, "", List.of(), List.of());
+    return new Task<>(name, "", String.class, "", List.of(), List.of(), List.of());
   }
 
   @Override
@@ -73,7 +76,8 @@ public final class Task<R> implements TaskDefinition<R> {
         this.resultType,
         this.instructions,
         this.attachments,
-        this.dependencyTaskIds);
+        this.dependencyTaskIds,
+        this.ruleClasses);
   }
 
   @Override
@@ -97,7 +101,8 @@ public final class Task<R> implements TaskDefinition<R> {
         this.resultType,
         instructions,
         this.attachments,
-        this.dependencyTaskIds);
+        this.dependencyTaskIds,
+        this.ruleClasses);
   }
 
   /** Content attached to this task (images, PDFs), or an empty list. */
@@ -115,7 +120,8 @@ public final class Task<R> implements TaskDefinition<R> {
         this.resultType,
         this.instructions,
         List.copyOf(updated),
-        this.dependencyTaskIds);
+        this.dependencyTaskIds,
+        this.ruleClasses);
   }
 
   /**
@@ -130,7 +136,8 @@ public final class Task<R> implements TaskDefinition<R> {
         type,
         this.instructions,
         this.attachments,
-        this.dependencyTaskIds);
+        this.dependencyTaskIds,
+        List.of());
   }
 
   /** Task IDs that must complete before this task can start, or an empty list. */
@@ -151,6 +158,32 @@ public final class Task<R> implements TaskDefinition<R> {
         this.resultType,
         this.instructions,
         this.attachments,
+        List.copyOf(updated),
+        this.ruleClasses);
+  }
+
+  /** Rule classes that validate the result before accepting completion, or an empty list. */
+  public List<Class<? extends TaskRule<R>>> ruleClasses() {
+    return ruleClasses;
+  }
+
+  /**
+   * Return a new task with the given rules. Rules are evaluated in order when the task is
+   * completed. If any rule rejects the result, the task is failed instead of completed.
+   */
+  @SafeVarargs
+  public final Task<R> rules(
+      Class<? extends TaskRule<R>> firstRule, Class<? extends TaskRule<R>>... moreRules) {
+    var updated = new ArrayList<>(this.ruleClasses);
+    updated.add(firstRule);
+    updated.addAll(List.of(moreRules));
+    return new Task<>(
+        this.name,
+        this.description,
+        this.resultType,
+        this.instructions,
+        this.attachments,
+        this.dependencyTaskIds,
         List.copyOf(updated));
   }
 }
