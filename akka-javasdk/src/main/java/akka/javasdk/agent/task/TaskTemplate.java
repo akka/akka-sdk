@@ -119,9 +119,11 @@ public final class TaskTemplate<R> implements TaskDefinition<R> {
    * produced by {@link #params} or {@link #instructions}.
    */
   @SafeVarargs
-  public final TaskTemplate<R> rules(Class<? extends TaskRule<R>>... ruleClasses) {
+  public final TaskTemplate<R> rules(
+      Class<? extends TaskRule<R>> firstRule, Class<? extends TaskRule<R>>... moreRules) {
     var updated = new ArrayList<>(this.ruleClasses);
-    updated.addAll(List.of(ruleClasses));
+    updated.add(firstRule);
+    updated.addAll(List.of(moreRules));
     return new TaskTemplate<>(
         this.name,
         this.description,

@@ -172,9 +172,11 @@ public final class Task<R> implements TaskDefinition<R> {
    * completed. If any rule rejects the result, the task is failed instead of completed.
    */
   @SafeVarargs
-  public final Task<R> rules(Class<? extends TaskRule<R>>... ruleClasses) {
+  public final Task<R> rules(
+      Class<? extends TaskRule<R>> firstRule, Class<? extends TaskRule<R>>... moreRules) {
     var updated = new ArrayList<>(this.ruleClasses);
-    updated.addAll(List.of(ruleClasses));
+    updated.add(firstRule);
+    updated.addAll(List.of(moreRules));
     return new Task<>(
         this.name,
         this.description,
