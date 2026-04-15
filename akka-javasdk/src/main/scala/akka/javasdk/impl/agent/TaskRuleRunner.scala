@@ -60,20 +60,21 @@ private[javasdk] class TaskRuleRunner(system: ActorSystem, serializer: Serialize
 
   private def runRules(ruleClassNames: Seq[String], result: Any): RuleOutcome = {
     ruleClassNames.iterator
-      .map { className =>
+      .flatMap { className =>
         dynamicAccess.createInstanceFor[TaskRule[Any]](className, Nil) match {
           case Success(rule) =>
-            val ruleResult = rule.onComplete(result)
-            (className, Some(ruleResult))
+            rule.onComplete(result) match {
+              case rejected: TaskRule.Result.Rejected =>
+                log.debug("Task rule [{}] rejected: {}", className, rejected.reason())
+                Some(RuleOutcome.Rejected(className, rejected.reason()))
+              case _ => None
+            }
           case Failure(ex) =>
             log.error("Failed to instantiate task rule [{}]: {}", className, ex.getMessage)
-            return RuleOutcome.Rejected(className, s"Failed to instantiate task rule: ${ex.getMessage}")
+            Some(RuleOutcome.Rejected(className, s"Failed to instantiate task rule: ${ex.getMessage}"))
         }
       }
-      .collectFirst { case (className, Some(rejected: TaskRule.Result.Rejected)) =>
-        log.debug("Task rule [{}] rejected: {}", className, rejected.reason())
-        RuleOutcome.Rejected(className, rejected.reason())
-      }
+      .nextOption()
       .getOrElse(RuleOutcome.Accepted)
   }
 }
