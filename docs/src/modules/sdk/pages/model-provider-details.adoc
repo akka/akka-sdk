@@ -143,6 +143,30 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Anthropic.html[`M
 | Integer
 | Max token quota. Leave as –1 for model default
 
+| frequency-penalty
+| Float
+| Penalizes repeated tokens based on their frequency in the text so far (-2.0 to 2.0)
+
+| presence-penalty
+| Float
+| Penalizes tokens that have already appeared in the text (-2.0 to 2.0)
+
+| seed
+| Long
+| Seed for deterministic sampling, for reproducible outputs. Leave as –1 for unset
+
+| stop
+| List of String
+| Sequences where the model will stop generating further tokens
+
+| reasoning-effort
+| String
+| Reasoning effort level for o-series models. One of `low`, `medium`, `high`
+
+| service-version
+| String
+| Azure OpenAI API service version override, e.g. `2024-02-15-preview`
+
 | connection-timeout
 | Duration
 | Fail the request if connecting to the model API takes longer than this

@@ -709,6 +709,12 @@ private[impl] final class AgentImpl[A <: Agent](
           topP = p.topP,
           maxTokens = p.maxTokens,
           maxCompletionTokens = p.maxCompletionTokens,
+          frequencyPenalty = p.frequencyPenalty,
+          presencePenalty = p.presencePenalty,
+          seed = p.seed,
+          stop = p.stop.asScala.toList,
+          reasoningEffort = p.reasoningEffort,
+          serviceVersion = p.serviceVersion,
           new SpiAgent.ModelSettings(
             p.connectionTimeout().toScala,
             p.responseTimeout().toScala,
