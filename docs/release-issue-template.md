@@ -1,4 +1,4 @@
-# Release Akka SDK 
+# Release Akka SDK $VERSION$
 
 ### Prepare
 
@@ -10,9 +10,11 @@ You can see the Akka Runtime version on prod [on grafana](https://app.groundcove
 
 ### Cutting the release 
 
-- [ ] Update the "Change date" on [the license](../blob/main/LICENSE#L9) to release date plus three years
-- [ ] Use the "Generate release notes" button to create [a new release](https://github.com/akka/akka-sdk/releases/new) with the appropriate tag.
-    - Review the generated notes and "Publish release"
+- [ ] Update the license version and change date, merge the PR created by:
+    ```
+    bin/update-license-and-pr.sh $VERSION$
+    ```
+- [ ] [Draft](https://github.com/akka/akka-sdk/releases/new?tag=v$VERSION$) a new release with the tag version `v$VERSION$`. Use the **Generate release notes** button and finally press **Publish release**.
     - CI will automatically publish to the repository based on the tag
     - CI will update the docs/kalix-current branch
 
@@ -23,11 +25,14 @@ You can see the Akka Runtime version on prod [on grafana](https://app.groundcove
 
 ### Publish latest docs
 - [ ] Add a summary of relevant changes into `docs/src/modules/reference/pages/release-notes.adoc`
-- [ ] Create a PR and merge `main` into `docs-current` (do not squash)
-    - Note that the PR will be pretty big normally, not only involving documentation files.
+- [ ] Create a PR and merge (do not squash) `main` into `docs-current`.
+    Note that the PR will be pretty big normally, not only involving documentation files.
+    ```
+    gh pr create --base docs-current --head main --title "Publish docs for $VERSION$" --body "MERGE, DON'T SQUASH"
+    ```
 
 ### Update samples
-- [ ] Run https://github.com/akka/akka-sdk/actions/workflows/pr-akka-samples.yml from the release tag 
+- [ ] Run https://github.com/akka/akka-sdk/actions/workflows/pr-akka-samples.yml from the release tag `v$VERSION$`
 - [ ] Merge auto-PRs in akka-samples https://github.com/orgs/akka-samples/repositories?q=sort%3Aname-asc
   - Easiest is to use `.github/akka-sample-sdk-bump-prs.sh` script to collect all PR links or do it manually from "Open PR with changes" in https://github.com/akka/akka-sdk/actions/workflows/pr-akka-samples.yml
 - [ ] Bump runtime SDK projects 
