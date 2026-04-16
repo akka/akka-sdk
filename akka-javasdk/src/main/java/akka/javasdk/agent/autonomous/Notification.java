@@ -13,7 +13,7 @@ import akka.annotation.DoNotInherit;
  * execution loop. They are not published by user code.
  *
  * <p>Subscribe to notifications via {@link
- * akka.javasdk.client.AutonomousAgentClient#notifications()}.
+ * akka.javasdk.client.AutonomousAgentClient#notificationStream()}.
  */
 @DoNotInherit
 public sealed interface Notification {
