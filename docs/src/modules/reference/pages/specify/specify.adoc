@@ -1,0 +1,31 @@
+= /akka.specify
+
+Supply a prompt to produce a feature specification.
+
+== Usage
+
+[source]
+----
+/akka:specify {feature short description} - {feature specification prompt}
+----
+
+== Description
+
+Creates a new feature specification from a natural-language description. The short description is converted to kebab case and used as both the spec directory name and git branch name (e.g., `001-core-users`).
+
+The prompt should define exclusively the _what_ and _why_ of the feature, excluding technical implementation details.
+
+== Example
+
+[source]
+----
+/akka:specify core users - The application manages its own users.
+Users are uniquely identified by a username and authenticate via password.
+Users can edit their profile and upload a small avatar image.
+----
+
+== See also
+
+* xref:sdk:spec-driven-development.adoc[]
+* xref:reference:specify/index.adoc[]
+* xref:reference:specify/clarify.adoc[]

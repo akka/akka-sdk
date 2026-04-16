@@ -25,12 +25,12 @@ public class StaticResourcesEndpoint {
 
   // end::single-static-resource-from-classpath[]
 
-  // map in all the available packaged static resources under /static
+  // map in all the available packaged static resources under /pages
   // see src/main/resources in project for actual files
   // tag::static-resource-tree-from-classpath[]
-  @Get("/static/**") // <1>
+  @Get("/pages/**") // <1>
   public HttpResponse webPageResources(HttpRequest request) { // <2>
-    return HttpResponses.staticResource(request, "/static/"); // <3>
+    return HttpResponses.staticResource(request, "/pages/"); // <3>
   }
   // end::static-resource-tree-from-classpath[]
 

@@ -63,7 +63,7 @@ jobs:
           git checkout -b ${BRANCH}
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit . -m "chore: bump SDK versions to ${SDK_VERSION}"
+          git commit . -m "bump: SDK ${SDK_VERSION}"
           git push --set-upstream origin ${BRANCH}
         
           gh pr create -B main -t "Auto PR - Bump SDK versions to ${SDK_VERSION}" -b "This PR should update all existing samples (pom.xml and plugins.sbt) and the maven poms. Please review, and merge if okay." || echo "No changes"; exit 0

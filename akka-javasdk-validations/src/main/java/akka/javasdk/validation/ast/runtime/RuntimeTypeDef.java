@@ -5,6 +5,7 @@
 package akka.javasdk.validation.ast.runtime;
 
 import akka.javasdk.validation.ast.AnnotationDef;
+import akka.javasdk.validation.ast.FieldDef;
 import akka.javasdk.validation.ast.MethodDef;
 import akka.javasdk.validation.ast.TypeDef;
 import akka.javasdk.validation.ast.TypeRefDef;
@@ -160,5 +161,13 @@ public record RuntimeTypeDef(Class<?> clazz) implements TypeDef {
   @Override
   public boolean isStatic() {
     return Modifier.isStatic(clazz.getModifiers());
+  }
+
+  @Override
+  public List<FieldDef> getFields() {
+    return Arrays.stream(clazz.getDeclaredFields())
+        .filter(f -> !java.lang.reflect.Modifier.isStatic(f.getModifiers()))
+        .map(f -> (FieldDef) new RuntimeFieldDef(f))
+        .toList();
   }
 }

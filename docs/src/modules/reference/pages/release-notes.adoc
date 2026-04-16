@@ -12,7 +12,22 @@ Current versions
 
 == April 2026
 
-* Akka SDK 3.5.17
+* https://github.com/akka/akka-sdk/releases/tag/v3.5.18[Akka SDK 3.5.18]
+- Automatic expiry for entities
+- Key Value Entity notifications
+- Consumer testkit improvements
+- Agent read timeout bug fix
+
+* Akka CLI 3.0.59
+- `akka local console` bugs fixed
+- Service descriptor correctly uses annotations now
+- Secrets parsing now accepts string with embedded commas
+- Updated broker config commands
+
+* Akka CLI 3.0.58
+- New MCP commands for local cluster management.
+
+* https://github.com/akka/akka-sdk/releases/tag/v3.5.17[Akka SDK 3.5.17]
 - Compile time validation of dependency conflicts with runtime
 - Multiple view improvements
 - Metrics migrated to OpenTelemetry

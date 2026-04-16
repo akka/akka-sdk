@@ -45,7 +45,7 @@ akka projects config set broker  \
   --broker-auth plain \
   --broker-user <API_KEY> \
   --broker-password-secret confluent-api-secret/secret \
-  --broker-bootstrap-servers <bootstrap server address> \
+  --broker-bootstrap-servers <bootstrap server address>
 ----
 
 The `broker-password-secret` refer to the name of the Akka secret created earlier rather than the actual API key secret.

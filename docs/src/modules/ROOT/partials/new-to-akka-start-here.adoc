@@ -2,6 +2,6 @@
 ====
 *New to Akka? Start here:*
 
-Use the xref:getting-started:author-your-first-service.adoc[] guide to get a simple agentic service running locally and interact with it.
+Use the xref:getting-started:spec-your-first-agent.adoc[] guide to use your AI assistant for implementing a simple agentic service, running it locally and interacting with it.
 
 ====

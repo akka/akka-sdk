@@ -154,7 +154,7 @@ To connect your Akka project to Azure Container Registry (ACR), the parameters y
 +
 [source,command line]
 ----
-ACR_REGISTRY_ID=$(az acr show —name akka-registry —query id —output tsv)
+ACR_REGISTRY_ID=$(az acr show --name akka-registry --query id --output tsv)
 ----
 +
 [source,command line]
@@ -165,7 +165,7 @@ SP_PASSWD=$(az ad sp create-for-rbac --name http://akka-docker-reader --scopes $
 +
 [source,command line]
 ----
-SP_APP_ID=$(az ad sp show —id http://akka-docker-reader —query appId —output tsv)
+SP_APP_ID=$(az ad sp show --id http://akka-docker-reader --query appId --output tsv)
 ----
 
 When you use the Akka Console, you only need to fill in the registry name for the Server URL.

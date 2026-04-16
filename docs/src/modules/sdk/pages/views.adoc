@@ -146,7 +146,7 @@ Every time an event is processed by the view, the state of the view can be updat
 include::example$event-sourced-customer-registry/src/main/java/customer/application/CustomersByNameView.java[tags=class]
 ----
 <1> Defines a component id for the view.
-<2> Declares a `TableUpdater` of type `CustomerRow`.
+<2> Declares a `TableUpdater` of type `CustomerEntry`.
 <3> Handles the super type `CustomerEvent` and defines the proper update row method for each subtype.
 
 

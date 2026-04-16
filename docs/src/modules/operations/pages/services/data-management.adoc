@@ -270,7 +270,7 @@ When importing to a service, the first thing Akka will do is pause that service.
 
 If you wish to clear the services database before importing, use the `--truncate` flag. This will delete all existing data in the service.
 
-The names of the files to import can either be specified explicitly, by passing `--event-sourced-entity-object`, `--event-ousrced-entity-snapshot-object` and/or `--value-entity-object` flags, or Akka can use the default filenames that it selects when creating an export. In the latter case, `--s3-object-prefix` and `--gcs-object-prefix` can be used, and `--include-event-sourced-entities` and `--include-value-entities` can be used to control which export types Akka will look for.
+The names of the files to import can either be specified explicitly, by passing `--event-sourced-entity-object`, `--event-sourced-entity-snapshot-object` and/or `--value-entity-object` flags, or Akka can use the default filenames that it selects when creating an export. In the latter case, `--s3-object-prefix` and `--gcs-object-prefix` can be used, and `--include-event-sourced-entities` and `--include-value-entities` can be used to control which export types Akka will look for.
 
 The flags for specifying credentials and object names specific to S3 and GCS are the same as for exporting.
 

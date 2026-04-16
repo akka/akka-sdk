@@ -36,6 +36,7 @@ image::operations:azure-checkpoint-store-sas-token.png[Azure Event Hub Checkpoin
 
 Store the event hub connection string and the checkpoint store SAS token as Akka secrets:
 
+[source, command window]
 ----
 akka secret create generic azure-eventhub-secret \
 --literal connection-string="<hub connection string>" \
@@ -44,6 +45,7 @@ akka secret create generic azure-eventhub-secret \
 
 Configure the broker:
 
+[source, command window]
 ----
 akka projects config set broker \
 --broker-service eventhubs \
