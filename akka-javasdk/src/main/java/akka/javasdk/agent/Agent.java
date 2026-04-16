@@ -259,6 +259,7 @@ public abstract class Agent implements AgentDelegationWorker {
        * @deprecated use contentLoader
        */
       @Deprecated
+      @SuppressWarnings("removal")
       Builder imageLoader(ImageLoader imageLoader);
 
       /**
@@ -626,8 +627,10 @@ public abstract class Agent implements AgentDelegationWorker {
        *
        * @param imageLoader The image loader implementation
        * @return this builder for method chaining
-       * @see ImageLoader
+       * @deprecated use contentLoader
        */
+      @Deprecated
+      @SuppressWarnings("removal")
       Builder imageLoader(ImageLoader imageLoader);
 
       /**

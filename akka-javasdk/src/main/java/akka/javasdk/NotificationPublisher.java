@@ -18,7 +18,7 @@ import java.util.concurrent.CompletionStage;
 /**
  * A publisher for sending notifications to external subscribers. Notifications can be used to
  * stream progress updates, status changes, or any other messages to clients. Currently supported in
- * the Workflow and Event Sourced Entity components.
+ * the Workflow, Event Sourced Entity, and Key Value Entity components.
  *
  * <p>To use notifications in a workflow:
  *

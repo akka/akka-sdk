@@ -189,7 +189,9 @@ object SdkRunner {
             mockedEventing = SpiMockedEventingSettings.empty,
             testSetting = new SpiTestSettings(testMode = false, debugTracing = false),
             selfServiceName = None,
-            backoffice = backofficeSettings))
+            backoffice = backofficeSettings,
+            objectStorageBuckets = Nil // FIXME
+          ))
       } else None
 
     val agentInteractionLogEnabled =
@@ -228,7 +230,10 @@ object SdkRunner {
         case "manual"                 => SpiDeployedEventingSettings.Manual
       }
 
-    new SpiDeployedEventingSettings(Seq(new SpiDeployedEventingSettings.GooglePubSubOverrides(Some(googlePubSubMode))))
+    new SpiDeployedEventingSettings(
+      overrides = Seq(new SpiDeployedEventingSettings.GooglePubSubOverrides(Some(googlePubSubMode))),
+      startEventingFrom = None // FIXME
+    )
   }
 }
 
@@ -678,6 +683,12 @@ private final class Sdk(
                 case p if p == classOf[KeyValueEntityContext] => context
                 case s if s == classOf[Sanitizer]             => sanitizer
                 case r if r == classOf[AgentRegistry]         => agentRegistry
+                case p if p == classOf[NotificationPublisher[_]] =>
+                  new NotificationPublisher[Any] {
+                    override def publish(msg: Any): Unit = {
+                      factoryContext.publishToTopic.apply(serializer.toBytes(msg))
+                    }
+                  }
               })
         }
         keyValueEntityDescriptors :+=

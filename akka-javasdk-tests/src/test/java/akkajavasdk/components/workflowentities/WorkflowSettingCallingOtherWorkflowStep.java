@@ -9,6 +9,7 @@ import static akka.Done.done;
 import akka.Done;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.workflow.Workflow;
+import akka.javasdk.workflow.Workflow.RecoverStrategy;
 
 @Component(id = "workflow-setting-calling-other-workflow")
 public class WorkflowSettingCallingOtherWorkflowStep extends Workflow<String> {
@@ -23,7 +24,8 @@ public class WorkflowSettingCallingOtherWorkflowStep extends Workflow<String> {
     return WorkflowSettings.builder()
         .stepRecovery(
             WorkflowWithTimeout::counterStep,
-            maxRetries(10).failoverTo(WorkflowSettingCallingOtherWorkflowStep::someStep))
+            RecoverStrategy.maxRetries(10)
+                .failoverTo(WorkflowSettingCallingOtherWorkflowStep::someStep))
         .build();
   }
 

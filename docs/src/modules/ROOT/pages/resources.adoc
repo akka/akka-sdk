@@ -1,0 +1,133 @@
+= Resources
+:page-summary: External technical content — blogs, demos, webinars, customer stories, foundational works, training, and community.
+:page-persona: all
+
+include::ROOT:partial$include.adoc[]
+
+A curated collection of Akka technical content beyond the SDK documentation.
+
+== Foundational Works
+
+* https://www.oreilly.com/library/view/principles-and-patterns/9781098181260/[Principles and Patterns for Distributed Application Architecture, window="new"] — By Jonas Bonér (O'Reilly, 2025). The definitive guide to distributed systems architecture from Akka's founder and CTO.
+* link:{url-ext-reactive-manifesto}[The Reactive Manifesto, window="new"] — By Jonas Bonér, Dave Farley, Roland Kuhn, Martin Thompson. Four pillars: Responsive, Resilient, Elastic, Message Driven. The foundational philosophy behind Akka.
+* link:{url-ext-reactive-principles}[The Reactive Principles, window="new"] — By Jonas Bonér et al. 8 principles and 6 patterns for cloud-native and edge-native design. Companion to the Reactive Manifesto.
+* **Reactive Design Patterns** (Manning) — By Roland Kuhn, Brian Hanafee, Jamie Allen. Patterns for building reactive systems.
+
+== Product Pages
+
+* link:{url-akka-platform}[Platform Overview, window="new"]
+* link:{url-akka-agents}[Akka Agents, window="new"]
+* link:{url-akka-orchestration}[Akka Orchestration, window="new"]
+* link:{url-akka-memory}[Akka Memory, window="new"]
+* link:{url-akka-streaming}[Akka Streaming, window="new"]
+* link:{url-akka-aao}[Automated Operations, window="new"]
+* link:{url-akka-how-it-works}[How Akka Works, window="new"]
+* link:{url-akka-pricing}[Pricing, window="new"]
+
+== Application Types
+
+* link:{url-akka-app-agentic-ai}[Agentic AI, window="new"]
+* link:{url-akka-app-event-sourced}[Event-Sourced, window="new"]
+* link:{url-akka-app-transactional}[Transactional, window="new"]
+* link:{url-akka-app-digital-twins}[Digital Twins, window="new"]
+* link:{url-akka-app-durable-execution}[Durable Execution, window="new"]
+* link:{url-akka-app-analytics}[Analytics, window="new"]
+* link:{url-akka-app-streaming}[Streaming, window="new"]
+* link:{url-akka-app-edge}[Edge, window="new"]
+
+== Blogs & Articles
+
+=== Agentic AI Concepts
+
+* link:{url-blog-what-is-agentic}[What is Agentic AI?, window="new"]
+* link:{url-blog-agentic-guide}[What is Agentic AI? (Comprehensive Guide), window="new"]
+* link:{url-blog-agentic-distributed-systems}[Agentic Systems Are Distributed Systems, window="new"]
+* link:{url-blog-event-sourcing-backbone}[Event Sourcing: The Backbone of Agentic AI, window="new"]
+* link:{url-blog-key-capabilities}[5 Key Capabilities for Agentic AI, window="new"]
+* link:{url-blog-experience-matters}[Why Experience Matters More Than Hype, window="new"]
+* link:{url-blog-framework-obstacles}[Beyond the Hype: AI Agent Framework Obstacles, window="new"]
+* link:{url-blog-frameworks-guide}[Agentic AI Frameworks: A 2026 Guide, window="new"]
+* link:{url-blog-trustworthy-ai}[Trustworthy AI with Akka, window="new"]
+* link:{url-blog-demystifying-ai}[Demystifying AI, LLMs, and RAG, window="new"]
+
+=== Architecture & Design Patterns
+
+* link:{url-blog-cell-based}[Cell-Based Architectures and Akka, window="new"]
+* link:{url-blog-multi-region}[Multi-Region Replicated Apps, window="new"]
+* link:{url-blog-six-nines}[Build and Run Apps with 99.9999% Availability, window="new"]
+* link:{url-blog-clustering}[How Does Akka Clustering Work?, window="new"]
+* link:{url-blog-backbone-distributed}[The Backbone of Agentic AI and Distributed Systems, window="new"]
+
+=== Protocols & Standards
+
+* link:{url-blog-mcp-a2a-acp}[MCP, A2A, ACP: What Does It All Mean?, window="new"]
+
+=== Component Deep-Dives
+
+* link:{url-blog-agents}[Akka Agents: Create Agents, MCP Tools, HTTP/gRPC APIs, window="new"]
+* link:{url-blog-orchestration}[Akka Orchestration: Guide, Moderate, and Control Agents, window="new"]
+* link:{url-blog-memory}[Akka Memory: Durable, In-Memory, and Sharded Data, window="new"]
+* link:{url-blog-streaming}[Akka Streaming: High-Performance Stream Processing, window="new"]
+
+=== Use Cases
+
+* link:{url-blog-agentic-use-cases}[21 Agentic AI Use Cases, window="new"]
+* link:{url-blog-financial-services}[Adopting Agentic AI for Financial Services, window="new"]
+
+== Demos & Videos
+
+* link:{url-blog-video-overview}[Video: Overview of Akka Agentic Platform, window="new"]
+* link:{url-blog-demo-multi-agent}[Demo: Build and Deploy Multi-Agent System, window="new"]
+* link:{url-blog-demo-agent-component}[Demo: New Agent Component, window="new"]
+* link:{url-blog-demo-mcp}[Demo: MCP Support in Akka, window="new"]
+* link:{url-blog-demo-temperature}[Demo: Temperature Monitoring Agent, window="new"]
+* link:{url-blog-demo-code-init}[Demo: Akka code init, window="new"]
+* link:{url-blog-demo-workflow-syntax}[Demo: Simplified Workflow Step Syntax, window="new"]
+* link:{url-blog-demo-surviving-split}[Demo: Surviving the Split, window="new"]
+* link:{url-blog-demo-destroyed-region}[Demo: Recovering a Destroyed Region, window="new"]
+* link:{url-blog-demo-all}[All Demos, window="new"]
+
+== Talks & Podcasts
+
+* link:{url-blog-cto-asks-cto}[CTO Asks CTO: Jonas Boner on Akka, AI Agents, Distributed Systems, window="new"]
+* link:{url-blog-techedge-tyler}[TechEdge AI Talks with Tyler Jewell, window="new"]
+* link:{url-blog-infoq-podcast}[InfoQ: Building Agentic AI Systems at Scale, window="new"]
+* link:{url-blog-qcon-concept-to-code}[QCon London: From Concept to Code, window="new"]
+* link:{url-blog-qcon-blueprint}[QCon London: Blueprint for Agentic AI Services, window="new"]
+* link:{url-blog-agents-saas}[AI Agents Are Coming for Your SaaS Stack, window="new"]
+
+== Webinars
+
+* link:{url-blog-webinar-design-patterns}[Design Patterns for Agentic AI, window="new"]
+* link:{url-blog-webinar-event-sourcing}[Mastering Event Sourcing, window="new"]
+* link:{url-blog-webinar-blueprint}[Blueprint for Agentic AI Services, window="new"]
+* link:{url-blog-webinar-certainty}[Creating Certainty in the Age of Agentic AI, window="new"]
+
+== Customer Stories
+
+* link:{url-story-swiggy}[Swiggy — 2x latency improvement in ML/AI platform, window="new"]
+* link:{url-story-manulife}[Manulife — Enterprise agentic AI for financial services, window="new"]
+* link:{url-story-llaama}[Llaama — AI-driven biopharma treatments, window="new"]
+* link:{url-story-mrcall}[MrCall — AI call center, thousands of simultaneous VoIP requests, window="new"]
+* link:{url-story-capital-one}[Capital One — Real-time auto loan decisioning, window="new"]
+* link:{url-story-doctolib}[Doctolib — 1M+ healthcare providers, resilient messaging, window="new"]
+* link:{url-story-verizon}[Verizon — Doubled performance on half hardware, window="new"]
+* link:{url-story-renault}[Renault — Digital twin platform for global manufacturing, window="new"]
+* link:{url-story-cern}[CERN — 2.5M signals per day for physics experiments, window="new"]
+* link:{url-story-all}[All Customer Stories, window="new"]
+
+== Benchmarks
+
+* link:{url-akka-benchmarks}[Akka Performance Benchmarks, window="new"] — 1.4M TPS, 9ms latency, $11.77 per 1K TPS
+
+== Training
+
+* link:{url-ext-akkademy}[Akkademy, window="new"] — Free training courses
+
+== Community
+
+* link:{url-akka-discord}[Discord, window="new"]
+* link:{url-akka-github}[GitHub, window="new"]
+* link:{url-akka-blog}[Blog, window="new"]
+* link:{url-akka-support}[Support Portal, window="new"]
+* link:{url-akka-trust-center}[Trust Center, window="new"]

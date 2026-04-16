@@ -205,6 +205,51 @@ abstract class AbstractViewValidationSpec(val validationMode: ValidationMode)
         "Methods annotated with @FunctionTool must be public. Method [privateMethod] cannot be annotated with @FunctionTool")
     }
 
+    // View row type field validations
+    "reject View with Optional<List<...>> field" in {
+      assertInvalid("invalid/ViewWithOptionalListField.java", "Optional<List<...>> which is not supported", "tags")
+    }
+
+    "reject View with List<Optional<...>> field" in {
+      assertInvalid("invalid/ViewWithListOptionalField.java", "List<Optional<...>> which is not supported", "values")
+    }
+
+    "reject View with nested collection field" in {
+      assertInvalid(
+        "invalid/ViewWithNestedCollectionField.java",
+        "nested collection type which is not supported",
+        "nested")
+    }
+
+    "reject View with Optional<Set<...>> field" in {
+      assertInvalid("invalid/ViewWithOptionalSetField.java", "Optional<Set<...>> which is not supported", "tags")
+    }
+
+    "reject View with Map field" in {
+      assertInvalid("invalid/ViewWithMapField.java", "Map which is not supported", "metadata")
+    }
+
+    "reject View with LocalDate field" in {
+      assertInvalid(
+        "invalid/ViewWithLocalDateField.java",
+        "LocalDate which is not supported",
+        "Supported date/time types are Instant and ZonedDateTime")
+    }
+
+    "reject View with LocalDateTime field" in {
+      assertInvalid(
+        "invalid/ViewWithLocalDateTimeField.java",
+        "LocalDateTime which is not supported",
+        "Supported date/time types are Instant and ZonedDateTime")
+    }
+
+    "reject View with Optional<Optional<...>> field" in {
+      assertInvalid(
+        "invalid/ViewWithOptionalOptionalField.java",
+        "Optional<Optional<...>> which is not supported",
+        "name")
+    }
+
     // SnapshotHandler validations
     "accept valid View TableUpdater with @SnapshotHandler for EventSourcedEntity subscription" in {
       assertValid("valid/ValidViewWithSnapshotHandler.java")

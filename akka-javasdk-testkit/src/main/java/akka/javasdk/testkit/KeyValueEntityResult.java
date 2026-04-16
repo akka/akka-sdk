@@ -4,6 +4,9 @@
 
 package akka.javasdk.testkit;
 
+import java.time.Duration;
+import java.util.Optional;
+
 /**
  * Represents the result of a KeyValueEntity handling a command when run in through the testkit.
  *
@@ -46,4 +49,9 @@ public interface KeyValueEntityResult<R> {
    * @return true if the call deleted the entity
    */
   boolean stateWasDeleted();
+
+  /**
+   * @return the TTL set via {@code expireAfter} on the state update, or empty if no TTL was set
+   */
+  Optional<Duration> getExpireAfter();
 }

@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.keyvalueentity
 
+import java.time.Duration
+
 import akka.annotation.InternalApi
 import akka.javasdk.CommandException
 import akka.javasdk.Metadata
@@ -42,12 +44,14 @@ private[javasdk] final class KeyValueEntityEffectImpl[S]
 
   private var _primaryEffect: PrimaryEffectImpl[S] = NoPrimaryEffect
   private var _secondaryEffect: SecondaryEffectImpl = NoSecondaryEffectImpl
-
   private var _replicationFilter: ReplicationFilter.Builder = ReplicationFilterImpl.empty
+  private var _ttl: Option[Duration] = None
 
   def primaryEffect: PrimaryEffectImpl[S] = _primaryEffect
 
   def secondaryEffect: SecondaryEffectImpl = _secondaryEffect
+
+  def ttl: Option[Duration] = _ttl
 
   def replFilter: ReplicationFilterImpl =
     _replicationFilter match {
@@ -103,8 +107,16 @@ private[javasdk] final class KeyValueEntityEffectImpl[S]
     this.asInstanceOf[KeyValueEntityEffectImpl[T]]
   }
 
+  override def thenReply[T](replySupplier: java.util.function.Supplier[T]): KeyValueEntityEffectImpl[T] =
+    thenReply(replySupplier.get())
+
   override def updateReplicationFilter(filter: ReplicationFilter.Builder): OnSuccessBuilder[S] = {
     _replicationFilter = filter
+    this
+  }
+
+  override def expireAfter(ttl: Duration): OnSuccessBuilder[S] = {
+    _ttl = Some(ttl)
     this
   }
 

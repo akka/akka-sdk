@@ -34,7 +34,7 @@ import java.util.Optional;
  * <p><strong>Query Parameters:</strong> Use {@link #queryParams()} to access URL query parameters
  * with type-safe getters for common types like strings, integers, and booleans.
  *
- * <p><strong>Authentication & Authorization:</strong> Use {@link #getPrincipals()} and {@link
+ * <p><strong>Authentication &amp; Authorization:</strong> Use {@link #getPrincipals()} and {@link
  * #getJwtClaims()} to access authentication information for custom authorization logic. HTTP
  * endpoints support ACL annotations and JWT validation.
  *

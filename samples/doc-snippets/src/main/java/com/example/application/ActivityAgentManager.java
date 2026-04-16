@@ -7,6 +7,7 @@ import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.StepName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
+import akka.javasdk.workflow.Workflow.RecoverStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +54,9 @@ public class ActivityAgentManager extends Workflow<ActivityAgentManager.State> {
   public WorkflowSettings settings() { // <6>
     return WorkflowSettings.builder()
       .stepTimeout(ActivityAgentManager::suggestActivities, ofSeconds(60))
-      .defaultStepRecovery(maxRetries(2).failoverTo(ActivityAgentManager::error))
+      .defaultStepRecovery(
+        RecoverStrategy.maxRetries(2).failoverTo(ActivityAgentManager::error)
+      )
       .build();
   }
 

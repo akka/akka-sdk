@@ -81,6 +81,11 @@ class ComponentClientTest {
           public AutonomousAgentClient autonomousAgentClient() {
             return null;
           }
+
+          @Override
+          public SpiObjectStorage objectStorage() {
+            return null;
+          }
         };
     componentClient =
         new ComponentClientImpl(

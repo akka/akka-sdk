@@ -1,12 +1,33 @@
 = Guardrails
+:page-summary: Runtime-enforced guardrails that validate agent inputs and outputs, providing governance controls for toxicity, PII, jailbreak detection, and compliance without bolting on external tooling.
+:page-when-to-use: When you need to enforce content policies, prevent prompt injection, protect sensitive data, or satisfy regulatory requirements such as the EU AI Act across your agent fleet.
+:page-related: xref:concepts:governance-and-the-runtime.adoc[], xref:sdk:sanitization.adoc[], xref:sdk:agents/index.adoc[]
+:page-prerequisites: An Akka project with at least one agent defined.
+:page-persona: governance-compliance, governance-infosec, developer
 
 include::ROOT:partial$include.adoc[]
 
-Guardrails can protect against harmful inputs, such as jailbreak attempts, and damaging output, such as mentions of a competitor's product.
+== Overview
+
+Guardrails are runtime-enforced checks that validate what goes into and comes out of your agents.
+They protect against harmful inputs — such as jailbreak attempts and prompt injection — and damaging outputs — such as toxic language, hallucinated claims, or accidental disclosure of a competitor's product.
+
+Unlike external validation layers that sit outside your application, Akka guardrails are **part of the runtime itself**.
+You declare them in configuration, and the runtime enforces them on every interaction — whether the request targets a model, an MCP tool, or any other downstream resource.
+This distinction matters: bolt-on governance fails because it depends on developers remembering to call the right library at the right time.
+When governance lives in the runtime, it cannot be bypassed, forgotten, or misconfigured by individual teams.
+
+This architecture directly supports regulatory frameworks such as the **EU AI Act**, which requires that high-risk AI systems embed risk controls into their design rather than relying on after-the-fact auditing.
+Because every guardrail evaluation is recorded in logs, metrics, and traces, you get an auditable compliance trail without extra instrumentation.
 
 NOTE: For protecting sensitive information like PII, see xref:sdk:sanitization.adoc[Sanitization].
 
-A specific guardrail implements the link:{attachmentsdir}/api/akka/javasdk/agent/TextGuardrail.html[`TextGuardrail` interface]. It takes the input or output text as a parameter and a result if it passed the validation or not, including an explanation of why the decision was made. These results are included in metrics and traces. A guardrail can abort the interaction with the model, or only report the problem and continue anyway.
+== Implementing a guardrail
+
+A guardrail implements the link:{attachmentsdir}/api/akka/javasdk/agent/TextGuardrail.html[`TextGuardrail` interface].
+It receives the input or output text as a parameter and returns a result indicating whether the text passed validation, including an explanation of why the decision was made.
+These results are included in metrics and traces.
+A guardrail can abort the interaction with the model, or only report the problem and continue anyway.
 
 An example of a `Guardrail` implementation:
 
@@ -16,7 +37,9 @@ An example of a `Guardrail` implementation:
 include::example$doc-snippets/src/main/java/com/example/guardrail/ToxicGuard.java[tag=all]
 ----
 
-Guardrails are enabled by configuration, to be able to enforce at deployment time that certain guardrails are always used.
+== Configuring guardrails
+
+Guardrails are enabled by configuration, so you can enforce at deployment time that certain guardrails are always active.
 
 [source,conf,indent=0]
 .src/main/resources/application.conf
@@ -51,16 +74,20 @@ akka.javasdk.agent.guardrails {
 
 The implementation class of the guardrail is configured with the `class` property. The class must implement the link:{attachmentsdir}/api/akka/javasdk/agent/TextGuardrail.html[`TextGuardrail` interface]. The class may optionally have a constructor with a link:{attachmentsdir}/api/akka/javasdk/agent/GuardrailContext.html[`GuardrailContext`] parameter, which includes the name and the config section for the specific guardrail. In above code example of the `ToxicGuard` you can see how the configuration property `search-for` is read from the configuration of the `GuardrailContext` parameter.
 
-Agents are selected by matching `agent` or `agent-role` configuration.
+=== Agent selection
 
-* `agents`: enabled for agents with these component ids, if `agents` contain `"*"` the guardrail is enabled for all agents
-* `agent-roles`: enabled for agents with these roles, if agent-roles contain `"*"` the guardrail is enabled for all agents that has a role, but not for agents without a role
+You select which agents a guardrail applies to by matching `agents` or `agent-roles` configuration.
 
-If both `agents` and `agent-roles` are defined it's enough that one of them matches to enable the guardrail for an agent.
+* `agents`: enabled for agents with these component ids. If `agents` contains `"*"`, the guardrail is enabled for all agents.
+* `agent-roles`: enabled for agents with these roles. If `agent-roles` contains `"*"`, the guardrail is enabled for all agents that have a role, but not for agents without a role.
+
+If both `agents` and `agent-roles` are defined, it is enough that one of them matches to enable the guardrail for an agent.
 
 This role is defined in the `@AgentRole` annotation.
 
-The name and the category are reported in logs, metrics and traces. The `category` should classify the type of validation. It can be any value, but a few recommended categories are JAILBREAK, PROMPT_INJECTION, PII, TOXIC, HALLUCINATED, NSFW, FORMAT.
+=== Names, categories, and observability
+
+The name and the category are reported in logs, metrics, and traces. The `category` should classify the type of validation. It can be any value, but a few recommended categories are JAILBREAK, PROMPT_INJECTION, PII, TOXIC, HALLUCINATED, NSFW, FORMAT.
 
 The guardrail can be enabled for certain inputs or outputs with the `use-for` property. The `use-for` property accepts the following values: `model-request`, `model-response`, `mcp-tool-request`, `mcp-tool-response`, and `*`.
 
@@ -87,5 +114,10 @@ akka.javasdk.agent.guardrails {
 
 Here, it's using predefined examples of jailbreak prompts in `guardrail/jailbreak`. Those have been incorporated from https://github.com/verazuo/jailbreak_llms/[https://github.com/verazuo/jailbreak_llms, window="new"], but you can define your own examples and place in a subdirectory of  `src/main/resources/`. All text files in the configured `bad-examples-resource-dir` are included in the similarity search.
 
-This can be used for other things than jailbreak attempt detection.
+You can use this for other things than jailbreak attempt detection.
 
+== See also
+
+* xref:concepts:governance-and-the-runtime.adoc[] — Why governance must live in the runtime, not in a sidecar.
+* xref:sdk:sanitization.adoc[] — Complementary PII protection through input and output sanitization.
+* {url-blog-trustworthy-ai}[Building Trustworthy AI^] — Background on the design principles behind Akka's risk controls.

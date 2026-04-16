@@ -71,7 +71,9 @@ EOM
   AKKA_ROLES_CMD=`grep "akka_roles_" temp-cli-index.txt`
   AKKA_ROUTES_CMD=`grep "akka_routes_" temp-cli-index.txt`
   AKKA_SECRETS_CMD=`grep "akka_secrets_" temp-cli-index.txt`
+  AKKA_SERVICE_CONFIGS_CMD=`grep "akka_service-configs_" temp-cli-index.txt`
   AKKA_SERVICES_CMD=`grep "akka_services_" temp-cli-index.txt`
+  AKKA_SPECIFY_CMD=`grep "akka_specify_" temp-cli-index.txt`
 
   perl -pi.bak -e "s|<AKKA_AUTH_CMD>|${AKKA_AUTH_CMD}|" cli-index.adoc
   perl -pi.bak -e "s|<AKKA_CONFIG_CMD>|${AKKA_CONFIG_CMD}|" cli-index.adoc
@@ -85,7 +87,9 @@ EOM
   perl -pi.bak -e "s|<AKKA_ROLES_CMD>|${AKKA_ROLES_CMD}|" cli-index.adoc
   perl -pi.bak -e "s|<AKKA_ROUTES_CMD>|${AKKA_ROUTES_CMD}|" cli-index.adoc
   perl -pi.bak -e "s|<AKKA_SECRETS_CMD>|${AKKA_SECRETS_CMD}|" cli-index.adoc
+  perl -pi.bak -e "s|<AKKA_SERVICE_CONFIGS_CMD>|${AKKA_SERVICE_CONFIGS_CMD}|" cli-index.adoc
   perl -pi.bak -e "s|<AKKA_SERVICES_CMD>|${AKKA_SERVICES_CMD}|" cli-index.adoc
+  perl -pi.bak -e "s|<AKKA_SPECIFY_CMD>|${AKKA_SPECIFY_CMD}|" cli-index.adoc
 
   echo "patch adoc reference path in cli-index.adoc ..."
   # replace links from "* xref:" to "* xref:reference:akka/" and write it to index.adoc

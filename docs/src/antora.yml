@@ -7,5 +7,6 @@ nav:
 - modules/concepts/nav.adoc
 - modules/sdk/nav.adoc
 - modules/operations/nav.adoc
+- modules/ROOT/resources-nav.adoc
 - modules/reference/nav.adoc
 - modules/libraries/nav.adoc

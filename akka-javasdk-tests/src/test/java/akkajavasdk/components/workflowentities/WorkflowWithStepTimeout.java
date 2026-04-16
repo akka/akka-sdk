@@ -10,6 +10,7 @@ import static java.time.Duration.ofMillis;
 import akka.Done;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.workflow.Workflow;
+import akka.javasdk.workflow.Workflow.RecoverStrategy;
 import akkajavasdk.components.actions.echo.Message;
 
 @Component(id = "workflow-with-step-timeout")
@@ -21,7 +22,7 @@ public class WorkflowWithStepTimeout extends Workflow<FailingCounterState> {
         .defaultStepTimeout(ofMillis(20))
         .stepRecovery(
             WorkflowWithStepTimeout::counterStep,
-            maxRetries(1).failoverTo(WorkflowWithStepTimeout::counterFailover))
+            RecoverStrategy.maxRetries(1).failoverTo(WorkflowWithStepTimeout::counterFailover))
         .build();
   }
 
