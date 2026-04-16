@@ -18,7 +18,6 @@ Current versions
 - Consumer testkit improvements
 - Agent read timeout bug fix
 
-
 * Akka CLI 3.0.59
 - `akka local console` bugs fixed
 - Service descriptor correctly uses annotations now
