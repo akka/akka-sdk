@@ -15,8 +15,8 @@ You can see the Akka Runtime version on prod [on grafana](https://app.groundcove
     bin/update-license-and-pr.sh $VERSION$
     ```
 - [ ] [Draft](https://github.com/akka/akka-sdk/releases/new?tag=v$VERSION$) a new release with the tag version `v$VERSION$`. Use the **Generate release notes** button and finally press **Publish release**.
-    - CI will automatically publish to the repository based on the tag
-    - CI will update the docs/kalix-current branch
+    - [CI](https://github.com/akka/akka-sdk/actions/workflows/publish.yml) will automatically publish to the repository based on the tag
+
 
 ### Update to the latest version
  
@@ -24,7 +24,7 @@ You can see the Akka Runtime version on prod [on grafana](https://app.groundcove
     - SDK `version` in the `samples/*/pom.xml` files
 
 ### Publish latest docs
-- [ ] Add a summary of relevant changes into `docs/src/modules/reference/pages/release-notes.adoc`
+- [ ] Add a summary of relevant changes into [`release-notes.adoc`](https://github.com/akka/akka-sdk/edit/main/docs/src/modules/reference/pages/release-notes.adoc)
 - [ ] Create a PR and merge (do not squash) `main` into `docs-current`.
     Note that the PR will be pretty big normally, not only involving documentation files.
     ```
