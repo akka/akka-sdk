@@ -35,6 +35,8 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
       List<TaskAttachment> attachments,
       List<String> ruleClassNames) {}
 
+  public record RejectResultRequest(String ruleClassName, String reason) {}
+
   public record ReassignRequest(String newAssignee, String context) {}
 
   @Override
@@ -92,8 +94,10 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
       return effects().reply(done()); // idempotent for any terminal state
     }
     if (currentState().status() != TaskStatus.ASSIGNED
-        && currentState().status() != TaskStatus.IN_PROGRESS) {
-      return effects().error("Task can only be completed when ASSIGNED or IN_PROGRESS");
+        && currentState().status() != TaskStatus.IN_PROGRESS
+        && currentState().status() != TaskStatus.RESULT_REJECTED) {
+      return effects()
+          .error("Task can only be completed when ASSIGNED, IN_PROGRESS, or RESULT_REJECTED");
     }
     return effects()
         .persist(new TaskEvent.TaskCompleted(taskId, result))
@@ -104,13 +108,37 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
             });
   }
 
+  public Effect<Done> rejectResult(TaskEntity.RejectResultRequest request) {
+    if (currentState().taskId().isEmpty()) {
+      return effects().error("Task does not exist");
+    }
+    if (currentState().status() != TaskStatus.ASSIGNED
+        && currentState().status() != TaskStatus.IN_PROGRESS
+        && currentState().status() != TaskStatus.RESULT_REJECTED) {
+      return effects()
+          .error("Task result can only be rejected when ASSIGNED, IN_PROGRESS, or RESULT_REJECTED");
+    }
+    return effects()
+        .persist(
+            new TaskEvent.TaskResultRejected(taskId, request.ruleClassName(), request.reason()))
+        .thenReply(
+            __ -> {
+              notificationPublisher.publish(
+                  new TaskNotification.ResultRejected(
+                      taskId, request.ruleClassName(), request.reason()));
+              return done();
+            });
+  }
+
   public Effect<Done> fail(String reason) {
     if (isTerminal()) {
       return effects().reply(done()); // idempotent for any terminal state
     }
     if (currentState().status() != TaskStatus.ASSIGNED
-        && currentState().status() != TaskStatus.IN_PROGRESS) {
-      return effects().error("Task can only be failed when ASSIGNED or IN_PROGRESS");
+        && currentState().status() != TaskStatus.IN_PROGRESS
+        && currentState().status() != TaskStatus.RESULT_REJECTED) {
+      return effects()
+          .error("Task can only be failed when ASSIGNED, IN_PROGRESS, or RESULT_REJECTED");
     }
     return effects()
         .persist(new TaskEvent.TaskFailed(taskId, reason))
@@ -188,6 +216,7 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
       case TaskEvent.TaskAssigned e -> currentState().withAssignee(e.assignee());
       case TaskEvent.TaskStarted e -> currentState().withStatus(TaskStatus.IN_PROGRESS);
       case TaskEvent.TaskCompleted e -> currentState().withResult(e.result());
+      case TaskEvent.TaskResultRejected e -> currentState().withResultRejection(e.reason());
       case TaskEvent.TaskFailed e -> currentState().withFailure(e.reason());
       case TaskEvent.TaskCancelled e -> currentState().withCancellation(e.reason());
       case TaskEvent.TaskReassigned e ->

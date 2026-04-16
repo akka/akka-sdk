@@ -27,6 +27,10 @@ public sealed interface TaskEvent {
   @TypeName("akka-task-started")
   record TaskStarted(String taskId) implements TaskEvent {}
 
+  @TypeName("akka-task-result-rejected")
+  record TaskResultRejected(String taskId, String ruleClassName, String reason)
+      implements TaskEvent {}
+
   @TypeName("akka-task-completed")
   record TaskCompleted(String taskId, String result) implements TaskEvent {}
 

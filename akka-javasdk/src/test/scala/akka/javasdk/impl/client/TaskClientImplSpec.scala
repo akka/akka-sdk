@@ -424,28 +424,28 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
       mock.commands.map(_.methodName) should not contain "Fail"
     }
 
-    "fail when value is empty" in {
+    "reject when value is empty" in {
       val mock = mockEntityClient(taskState(TaskStatus.IN_PROGRESS, ruleClassNames = ruleNames))
       val client = createClient(mock)
 
       client.completeAsync(TEST_TASK, new TestResult("", 50)).asScala.futureValue
 
-      mock.commands.map(_.methodName) should contain("Fail")
+      mock.commands.map(_.methodName) should contain("RejectResult")
       mock.commands.map(_.methodName) should not contain "Complete"
-      val reason = mock.commands.find(_.methodName == "Fail").get.payloadAs[String]
-      reason shouldBe "Task rule rejected: value must not be empty"
+      val request = mock.commands.find(_.methodName == "RejectResult").get.payloadAs[TaskEntity.RejectResultRequest]
+      request.reason() shouldBe "value must not be empty"
     }
 
-    "fail when score is below threshold" in {
+    "reject when score is below threshold" in {
       val mock = mockEntityClient(taskState(TaskStatus.IN_PROGRESS, ruleClassNames = ruleNames))
       val client = createClient(mock)
 
       client.completeAsync(TEST_TASK, new TestResult("ok", 5)).asScala.futureValue
 
-      mock.commands.map(_.methodName) should contain("Fail")
+      mock.commands.map(_.methodName) should contain("RejectResult")
       mock.commands.map(_.methodName) should not contain "Complete"
-      val reason = mock.commands.find(_.methodName == "Fail").get.payloadAs[String]
-      reason shouldBe "Task rule rejected: score must be >= 10, was 5"
+      val request = mock.commands.find(_.methodName == "RejectResult").get.payloadAs[TaskEntity.RejectResultRequest]
+      request.reason() shouldBe "score must be >= 10, was 5"
     }
 
     "proceed normally when no rules are defined" in {
@@ -467,29 +467,29 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
       client.completeAsync(TEST_TASK, new TestResult("good", 50)).asScala.futureValue
 
       mock.commands.map(_.methodName) should contain("Complete")
-      mock.commands.map(_.methodName) should not contain "Fail"
+      mock.commands.map(_.methodName) should not contain "RejectResult"
     }
 
-    "fail when first rule rejects" in {
+    "reject when first rule rejects" in {
       val mock = mockEntityClient(taskState(TaskStatus.IN_PROGRESS, ruleClassNames = bothRules))
       val client = createClient(mock)
 
       client.completeAsync(TEST_TASK, new TestResult("ok", 5)).asScala.futureValue
 
-      mock.commands.map(_.methodName) should contain("Fail")
-      val reason = mock.commands.find(_.methodName == "Fail").get.payloadAs[String]
-      reason shouldBe "Task rule rejected: score must be >= 10, was 5"
+      mock.commands.map(_.methodName) should contain("RejectResult")
+      val request = mock.commands.find(_.methodName == "RejectResult").get.payloadAs[TaskEntity.RejectResultRequest]
+      request.reason() shouldBe "score must be >= 10, was 5"
     }
 
-    "fail when second rule rejects" in {
+    "reject when second rule rejects" in {
       val mock = mockEntityClient(taskState(TaskStatus.IN_PROGRESS, ruleClassNames = bothRules))
       val client = createClient(mock)
 
       client.completeAsync(TEST_TASK, new TestResult("banned stuff", 50)).asScala.futureValue
 
-      mock.commands.map(_.methodName) should contain("Fail")
-      val reason = mock.commands.find(_.methodName == "Fail").get.payloadAs[String]
-      reason shouldBe "Task rule rejected: value must not contain banned content"
+      mock.commands.map(_.methodName) should contain("RejectResult")
+      val request = mock.commands.find(_.methodName == "RejectResult").get.payloadAs[TaskEntity.RejectResultRequest]
+      request.reason() shouldBe "value must not contain banned content"
     }
   }
 
@@ -524,9 +524,9 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
 
       client.completeAsync(task, new TestResult("ok", 5)).asScala.futureValue
 
-      mock.commands.map(_.methodName) should contain("Fail")
-      val reason = mock.commands.find(_.methodName == "Fail").get.payloadAs[String]
-      reason shouldBe "Task rule rejected: score must be >= 10, was 5"
+      mock.commands.map(_.methodName) should contain("RejectResult")
+      val request = mock.commands.find(_.methodName == "RejectResult").get.payloadAs[TaskEntity.RejectResultRequest]
+      request.reason() shouldBe "score must be >= 10, was 5"
     }
   }
 }

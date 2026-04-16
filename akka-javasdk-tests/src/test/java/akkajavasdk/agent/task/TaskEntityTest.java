@@ -298,6 +298,78 @@ public class TaskEntityTest {
   }
 
   @Test
+  public void shouldRejectTask() {
+    var testKit = createTestKit();
+    testKit.method(TaskEntity::create).invoke(createRequest("research"));
+    testKit.method(TaskEntity::assign).invoke("agent-1");
+    testKit.method(TaskEntity::start).invoke();
+    publishedNotifications.clear();
+
+    EventSourcedResult<Done> result =
+        testKit
+            .method(TaskEntity::rejectResult)
+            .invoke(new TaskEntity.RejectResultRequest("com.example.MyRule", "result too short"));
+    assertThat(result.getReply()).isEqualTo(done());
+    result.getNextEventOfType(TaskEvent.TaskResultRejected.class);
+    assertThat(testKit.getState().status()).isEqualTo(TaskStatus.RESULT_REJECTED);
+    assertThat(testKit.getState().failureReason()).isEqualTo("result too short");
+
+    var rejected = (TaskNotification.ResultRejected) publishedNotifications.poll();
+    assertThat(rejected.ruleClassName()).isEqualTo("com.example.MyRule");
+    assertThat(rejected.reason()).isEqualTo("result too short");
+    assertThat(publishedNotifications).isEmpty();
+  }
+
+  @Test
+  public void shouldCompleteAfterRejection() {
+    var testKit = createTestKit();
+    testKit.method(TaskEntity::create).invoke(createRequest("research"));
+    testKit.method(TaskEntity::assign).invoke("agent-1");
+    testKit.method(TaskEntity::start).invoke();
+    testKit
+        .method(TaskEntity::rejectResult)
+        .invoke(new TaskEntity.RejectResultRequest("com.example.MyRule", "result too short"));
+    publishedNotifications.clear();
+
+    EventSourcedResult<Done> result =
+        testKit.method(TaskEntity::complete).invoke("{\"summary\":\"a longer result\"}");
+    assertThat(result.getReply()).isEqualTo(done());
+    assertThat(testKit.getState().status()).isEqualTo(TaskStatus.COMPLETED);
+  }
+
+  @Test
+  public void shouldTrackMultipleRejections() {
+    var testKit = createTestKit();
+    testKit.method(TaskEntity::create).invoke(createRequest("research"));
+    testKit.method(TaskEntity::assign).invoke("agent-1");
+    testKit.method(TaskEntity::start).invoke();
+
+    testKit
+        .method(TaskEntity::rejectResult)
+        .invoke(new TaskEntity.RejectResultRequest("Rule1", "first rejection"));
+    testKit
+        .method(TaskEntity::rejectResult)
+        .invoke(new TaskEntity.RejectResultRequest("Rule2", "second rejection"));
+
+    assertThat(testKit.getState().status()).isEqualTo(TaskStatus.RESULT_REJECTED);
+  }
+
+  @Test
+  public void shouldFailAfterRejection() {
+    var testKit = createTestKit();
+    testKit.method(TaskEntity::create).invoke(createRequest("research"));
+    testKit.method(TaskEntity::assign).invoke("agent-1");
+    testKit.method(TaskEntity::start).invoke();
+    testKit
+        .method(TaskEntity::rejectResult)
+        .invoke(new TaskEntity.RejectResultRequest("com.example.MyRule", "bad result"));
+
+    EventSourcedResult<Done> result = testKit.method(TaskEntity::fail).invoke("giving up");
+    assertThat(result.getReply()).isEqualTo(done());
+    assertThat(testKit.getState().status()).isEqualTo(TaskStatus.FAILED);
+  }
+
+  @Test
   public void shouldNotPublishNotificationOnIdempotentComplete() {
     var testKit = createTestKit();
     testKit.method(TaskEntity::create).invoke(createRequest("research"));

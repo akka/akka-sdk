@@ -91,6 +91,23 @@ public record TaskState(
         ruleClassNames);
   }
 
+  public TaskState withResultRejection(String reason) {
+    return new TaskState(
+        taskId,
+        name,
+        description,
+        instructions,
+        TaskStatus.RESULT_REJECTED,
+        resultTypeName,
+        result,
+        reason,
+        dependencyTaskIds,
+        assignee,
+        attachments,
+        reassignmentContext,
+        ruleClassNames);
+  }
+
   public TaskState withFailure(String reason) {
     return new TaskState(
         taskId,
