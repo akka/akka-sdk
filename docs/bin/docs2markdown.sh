@@ -20,10 +20,12 @@ find target/site \
   -exec sh -c 'npx -y d2m@latest -e -i "$1" -o "$1.md"' sh {} \;
 
 # replace numbered references in code snippets
+# Only match callout numbers at end of line (preceded by space) to avoid
+# breaking code arguments like Counter(0), ofSeconds(30), invoke(10)
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  find target/site -type f -name "*.html.md" -print0 | xargs -0 sed -i '' -E 's/\(([0-9]+)\)/\/\/ (\1)/g'
+  find target/site -type f -name "*.html.md" -print0 | xargs -0 sed -i '' -E 's/ \(([0-9]+)\)$/ \/\/ (\1)/g'
 else
-  find target/site -type f -name "*.html.md" -print0 | xargs -0 sed -i -E 's/\(([0-9]+)\)/\/\/ (\1)/g'
+  find target/site -type f -name "*.html.md" -print0 | xargs -0 sed -i -E 's/ \(([0-9]+)\)$/ \/\/ (\1)/g'
 fi
 
 cp docs/src/modules/ROOT/pages/llms.txt target/site/

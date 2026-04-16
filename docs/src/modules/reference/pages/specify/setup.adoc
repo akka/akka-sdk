@@ -1,0 +1,28 @@
+= /akka.setup
+
+Configure your development environment for Akka Spec-driven development.
+
+== Usage
+
+[source]
+----
+/akka:setup
+----
+
+== Description
+
+Sets up a complete Akka SDK development environment. This command is idempotent and safe to rerun for repair or upgrade.
+
+It performs the following:
+
+* Installs Java and Maven if not present
+* Installs the Akka CLI
+* Configures Akka download tokens
+* Scaffolds a new project
+* Downloads context documentation
+
+== See also
+
+* xref:sdk:spec-driven-development.adoc[]
+* xref:reference:specify/index.adoc[]
+* xref:operations:cli/installation.adoc[]

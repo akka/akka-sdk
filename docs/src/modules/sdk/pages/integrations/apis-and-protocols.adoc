@@ -1,0 +1,39 @@
+= APIs & protocols
+:page-summary: Built-in REST, OpenAPI, WebSocket, gRPC, and MCP support. A2A, ACP, and MCP clients baked into the Agent component.
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+Akka provides built-in support for exposing your services through multiple protocols.
+
+== HTTP
+
+* **REST APIs** — Define JSON-based HTTP endpoints with routing, request/response handling, and access control. See xref:sdk:http-endpoints.adoc[HTTP Endpoints].
+* **OpenAPI** — Schema generation is built in. See xref:sdk:http-endpoints.adoc#_openapi_endpoint_schema[OpenAPI Endpoint schema].
+* **WebSockets** — Real-time bidirectional communication is built in. See xref:sdk:http-endpoints.adoc#websocket[WebSocket support].
+
+== gRPC
+
+High-performance APIs with protocol buffer definitions. See xref:sdk:grpc-endpoints.adoc[gRPC Endpoints].
+
+== MCP (Model Context Protocol)
+
+* **MCP Endpoints** — Expose Agent functions to remote LLMs via `@FunctionTool` annotations. See xref:sdk:mcp-endpoints.adoc[MCP Endpoints].
+* **MCP CLI server** — `akka mcp serve` exposes CLI operations as MCP tools for Claude Desktop, VS Code, and Cursor.
+
+== Agent protocol support
+
+A2A, ACP, and MCP clients are baked into Akka's Agent component. Agents natively consume tools and communicate with other Agents via all three protocols. No external libraries needed.
+
+* **A2A (Agent-to-Agent)** — Google's protocol for agent-to-agent communication
+* **ACP (Agent Communication Protocol)** — Linux Foundation protocol for agent communication
+* **MCP (Model Context Protocol)** — Anthropic's protocol for connecting AI models to external tools
+
+link:{url-blog-mcp-a2a-acp}[MCP, A2A, ACP: What does it all mean?, window="new"]
+
+== See also
+
+* xref:sdk:http-endpoints.adoc[HTTP Endpoints]
+* xref:sdk:grpc-endpoints.adoc[gRPC Endpoints]
+* xref:sdk:mcp-endpoints.adoc[MCP Endpoints]
+* xref:sdk:agents.adoc[Agents]

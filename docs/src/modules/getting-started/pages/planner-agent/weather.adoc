@@ -60,7 +60,7 @@ Linux or macOS::
 --
 [source,command window]
 ----
-export WEATHER_API_KEY=your-openai-api-key
+export WEATHER_API_KEY=your-weather-api-key
 ----
 --
 Windows 10+::
@@ -68,7 +68,7 @@ Windows 10+::
 --
 [source,command window]
 ----
-set WEATHER_API_KEY=your-openai-api-key
+set WEATHER_API_KEY=your-weather-api-key
 ----
 --
 

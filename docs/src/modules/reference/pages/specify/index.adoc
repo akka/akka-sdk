@@ -1,0 +1,23 @@
+= Specify command reference
+
+Commands available through the Akka AI Marketplace plugin for xref:sdk:spec-driven-development.adoc[Spec-driven development].
+
+These commands are used from within an AI coding assistant (such as Claude Code) after installing the Akka plugin.
+
+[cols="1,~"]
+|====
+|xref:specify/setup.adoc[`/akka.setup`]               | Configure your environment (CLI, Java, Maven, Akka tokens)
+|xref:specify/constitution.adoc[`/akka.constitution`] | Create or update the project constitution
+|xref:specify/specify.adoc[`/akka.specify`]           | Supply a prompt to produce your feature spec
+|xref:specify/clarify.adoc[`/akka.clarify`]           | Find gaps in your spec
+|xref:specify/plan.adoc[`/akka.plan`]                 | Convert your spec into a technical implementation plan
+|xref:specify/tasks.adoc[`/akka.tasks`]               | Itemize the work required to build according to the spec
+|xref:specify/analyze.adoc[`/akka.analyze`]           | Cross-artifact consistency and quality analysis
+|xref:specify/checklist.adoc[`/akka.checklist`]       | Generate a custom checklist for the current feature
+|xref:specify/implement.adoc[`/akka.implement`]       | Generate the required code, tests, harnesses, etc.
+|xref:specify/review.adoc[`/akka.review`]             | Review code against spec, plan, and constitution
+|xref:specify/build.adoc[`/akka.build`]               | Build, test, and run locally with hot reloading
+|xref:specify/inspect.adoc[`/akka.inspect`]           | Inspect a running service's runtime state against the spec
+|xref:specify/deploy.adoc[`/akka.deploy`]             | Deploy to Akka Automated Operations
+|xref:specify/issues.adoc[`/akka.issues`]             | Convert tasks into GitHub issues
+|====

@@ -1,0 +1,36 @@
+= Autonomous agents
+:page-summary: Build agents that independently process data, make decisions, and take actions with minimal human intervention.
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+Build agents that operate independently to process data, make decisions, and take actions without requiring constant human oversight. Autonomous agents leverage timed actions for scheduled processing, workflows for multi-step decision pipelines, and durable state to track progress across long-running operations.
+
+== Overview
+
+=== When to Use This Pattern
+
+* You need an agent that runs on a schedule to process incoming data or events
+* Your system requires automated decision-making with minimal human intervention
+* You want to build monitoring agents that detect anomalies and take corrective action
+* You need background processing pipelines that classify, summarize, or tag content
+
+=== Akka Components Involved
+
+* *Agents* -- autonomous decision-making logic and LLM-powered analysis
+* *Timed Actions* -- schedule periodic agent invocations and polling intervals
+* *Workflows* -- orchestrate multi-step autonomous processing pipelines
+
+== Sample Projects
+
+The following sample projects demonstrate this pattern:
+
+* https://github.com/akka-samples/changelog-agent[release-note-summarizer,window="new"] -- agent that autonomously summarizes release notes from upstream sources
+* https://github.com/akka-samples/medical-tagging-agent[medical-discharge-tagging,window="new"] -- agent that classifies and tags medical discharge records
+* https://github.com/akka-samples/temperature-monitoring-agent[temperature-monitoring,window="new"] -- agent that monitors IoT sensor data and triggers alerts
+
+== See Also
+
+* xref:sdk:agents.adoc[]
+* xref:sdk:timed-actions.adoc[]
+* xref:sdk:workflows.adoc[]

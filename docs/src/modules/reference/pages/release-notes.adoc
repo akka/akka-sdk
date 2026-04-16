@@ -10,7 +10,34 @@ Current versions
 * Akka CLI {akka-cli-version}
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
 
+== April 2026
+
+* Akka CLI 3.0.59
+- `akka local console` bugs fixed
+- Service descriptor correctly uses annotations now
+- Secrets parsing now accepts string with embedded commas
+- Updated broker config commands
+
+* Akka CLI 3.0.58
+- New MCP commands for local cluster management.
+
+* Akka SDK 3.5.17
+- Compile time validation of dependency conflicts with runtime
+- Multiple view improvements
+- Metrics migrated to OpenTelemetry
+
+* Akka CLI 3.0.57
+- Two new set of commands for the MCP server, browser and backoffice commands.
+
 == March 2026
+
+
+* Akka CLI 3.0.56
+- The Akka AI Marketplace plugin has changed name to `akka`, the CLI will now download this plugin when initializing a project with AI context.
+
+* Akka CLI 3.0.55
+- Support for spec driven development using VS Code and Copilot
+- Improved shutdown of local Akka services started by an AI agent
 
 * Akka CLI 3.0.54
 - Updates to `akka specifiy`

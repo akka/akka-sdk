@@ -6,6 +6,10 @@ Akka control
 
 Welcome to the Akka CLI, for more information on its usage please visit the documentation https://doc.akka.io/index.html.
 
+----
+akka [flags]
+----
+
 == Options
 
 ----
@@ -20,7 +24,8 @@ Welcome to the Akka CLI, for more information on its usage please visit the docu
   -q, --quiet               set quiet output (helpful when used as part of a script)
       --timeout duration    client command timeout (default 10s)
       --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
-  -v, --verbose             set verbose output
+      --verbose             set verbose output
+  -v, --version             Print the akka CLI version
 ----
 
 == SEE ALSO
@@ -34,7 +39,7 @@ Welcome to the Akka CLI, for more information on its usage please visit the docu
 * link:akka_docs.html[akka docs]	 - Open the Akka documentation page
 * link:akka_local.html[akka local]	 - Interact with and manage Akka services running locally.
 * link:akka_logs.html[akka logs]	 - Display the last few lines of logs for a specific service.
-* link:akka_mcp.html[akka mcp]	 - MCP server for AI agent integration.
+* link:akka_mcp.html[akka mcp]	 - [Incubating] MCP server for AI agent integration.
 * link:akka_organizations.html[akka organizations]	 - Manage your organizations on Akka
 * link:akka_projects.html[akka projects]	 - Manage your Akka projects.
 * link:akka_regions.html[akka regions]	 - Manage available regions.
@@ -43,7 +48,7 @@ Welcome to the Akka CLI, for more information on its usage please visit the docu
 * link:akka_secrets.html[akka secrets]	 - Manage secrets for an Akka project.
 * link:akka_service-configs.html[akka service-configs]	 - Manage service configs for a Akka project.
 * link:akka_services.html[akka services]	 - Manage and deploy services on Akka.
-* link:akka_specify.html[akka specify]	 - Initialize and manage AI-assisted Akka development projects.
+* link:akka_specify.html[akka specify]	 - [Incubating] Initialize and manage AI-assisted Akka development projects.
 * link:akka_version.html[akka version]	 - Print the akka CLI version
 
 [discrete]

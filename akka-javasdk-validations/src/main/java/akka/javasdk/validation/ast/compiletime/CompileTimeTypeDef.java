@@ -5,6 +5,7 @@
 package akka.javasdk.validation.ast.compiletime;
 
 import akka.javasdk.validation.ast.AnnotationDef;
+import akka.javasdk.validation.ast.FieldDef;
 import akka.javasdk.validation.ast.MethodDef;
 import akka.javasdk.validation.ast.TypeDef;
 import akka.javasdk.validation.ast.TypeRefDef;
@@ -13,9 +14,11 @@ import java.util.List;
 import java.util.Optional;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 
@@ -166,6 +169,15 @@ public record CompileTimeTypeDef(TypeElement typeElement) implements TypeDef {
   @Override
   public boolean isStatic() {
     return typeElement.getModifiers().contains(Modifier.STATIC);
+  }
+
+  @Override
+  public List<FieldDef> getFields() {
+    return typeElement.getEnclosedElements().stream()
+        .filter(e -> e.getKind() == ElementKind.FIELD)
+        .filter(e -> !e.getModifiers().contains(Modifier.STATIC))
+        .map(e -> (FieldDef) new CompileTimeFieldDef((VariableElement) e))
+        .toList();
   }
 
   /** Returns the underlying TypeElement for internal use. */

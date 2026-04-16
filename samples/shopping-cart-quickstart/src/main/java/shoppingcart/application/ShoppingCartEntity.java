@@ -102,10 +102,8 @@ public class ShoppingCartEntity
   public ShoppingCart applyEvent(ShoppingCartEvent event) {
     return switch (event) {
       case ShoppingCartEvent.ItemAdded evt -> currentState().addItem(evt.item()); // <5>
-      // end::addItem[]
       case ShoppingCartEvent.ItemRemoved evt -> currentState().removeItem(evt.productId());
       case ShoppingCartEvent.CheckedOut evt -> currentState().onCheckedOut();
-      // tag::addItem[]
     };
   }
   // end::addItem[]

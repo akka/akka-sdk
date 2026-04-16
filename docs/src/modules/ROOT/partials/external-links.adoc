@@ -1,0 +1,128 @@
+// External Link Registry
+// All external URLs are defined here as Antora attributes.
+// To update a URL, change it in this one file — every page picks it up.
+//
+// Naming convention: :url-{source}-{topic}:
+//   source: akka, blog, story, ext
+//   topic: descriptive kebab-case name
+
+// -- akka.io product pages --
+:url-akka-platform: https://akka.io/akka-agentic-ai-platform
+:url-akka-agents: https://akka.io/akka-agents
+:url-akka-orchestration: https://akka.io/akka-orchestration
+:url-akka-memory: https://akka.io/akka-memory
+:url-akka-streaming: https://akka.io/akka-streaming
+:url-akka-aao: https://akka.io/automated-operations
+:url-akka-how-it-works: https://akka.io/how-akka-works
+:url-akka-pricing: https://akka.io/pricing
+:url-akka-trust-center: https://trust.akka.io
+:url-akka-professional-services: https://akka.io/professional-services
+
+// -- akka.io application type pages --
+:url-akka-app-agentic-ai: https://akka.io/app-types/agentic-ai
+:url-akka-app-event-sourced: https://akka.io/app-types/event-sourced
+:url-akka-app-transactional: https://akka.io/app-types/transactional
+:url-akka-app-digital-twins: https://akka.io/app-types/digital-twins
+:url-akka-app-durable-execution: https://akka.io/app-types/durable-execution
+:url-akka-app-analytics: https://akka.io/app-types/analytics
+:url-akka-app-streaming: https://akka.io/app-types/streaming
+:url-akka-app-edge: https://akka.io/app-types/edge
+
+// -- akka.io blog posts: foundational --
+:url-blog-what-is-agentic: https://akka.io/blog/what-is-agentic-ai
+:url-blog-agentic-guide: https://akka.io/what-is-agentic-ai
+:url-blog-agentic-distributed-systems: https://akka.io/blog/agentic-systems-are-distributed-systems
+:url-blog-event-sourcing-backbone: https://akka.io/blog/event-sourcing-the-backbone-of-agentic-ai
+:url-blog-key-capabilities: https://akka.io/blog/key-capabilities-for-agentic-ai
+:url-blog-experience-matters: https://akka.io/blog/agentic-ai-why-experience-matters-more-than-hype
+:url-blog-framework-obstacles: https://akka.io/blog/beyond-the-hype-how-to-address-ai-agent-dev-framework-obstacles
+:url-blog-frameworks-guide: https://akka.io/blog/agentic-ai-frameworks
+:url-blog-trustworthy-ai: https://akka.io/blog/trustworthy-ai-with-akka
+:url-blog-demystifying-ai: https://akka.io/blog/demystifying-ai-llms-and-rag
+
+// -- akka.io blog posts: architecture --
+:url-blog-cell-based: https://akka.io/blog/cell-based-architectures-and-akka
+:url-blog-multi-region: https://akka.io/blog/multi-region-replicated-apps
+:url-blog-six-nines: https://akka.io/blog/build-and-run-apps-with-6-9s-availability
+:url-blog-clustering: https://akka.io/blog/how-does-akka-clustering-work
+:url-blog-backbone-distributed: https://akka.io/blog/the-backbone-of-agentic-ai-distributed-systems-and-oss-sustainability
+
+// -- akka.io blog posts: protocols --
+:url-blog-mcp-a2a-acp: https://akka.io/blog/mcp-a2a-acp-what-does-it-all-mean
+
+// -- akka.io blog posts: component deep-dives --
+:url-blog-agents: https://akka.io/blog/akka-agents-quickly-create-agents-mcp-grpc-api
+:url-blog-orchestration: https://akka.io/blog/akka-orchestration-guide-moderate-and-control-agents
+:url-blog-memory: https://akka.io/blog/akka-memory-durable-in-memory-and-sharded-data
+:url-blog-streaming: https://akka.io/blog/akka-streaming-high-performance-stream-processing-for-real-time-ai
+
+// -- akka.io blog posts: product announcements --
+:url-blog-introducing-specify: https://akka.io/blog/introducing-akka-specify
+:url-blog-agentic-release: https://akka.io/blog/announcing-akkas-agentic-ai-release
+:url-blog-introducing-agent: https://akka.io/blog/introducing-akkas-new-agent-component
+
+// -- akka.io blog posts: tutorials & deep-dives --
+:url-blog-gemini-video: https://akka.io/blog/building-real-time-video-ai-service-with-google-gemini
+:url-blog-workflows: https://akka.io/blog/workflows-with-akka
+:url-blog-agentic-use-cases: https://akka.io/blog/agentic-ai-use-cases
+:url-blog-financial-services: https://akka.io/blog/adopting-agentic-ai-systems-for-financial-services-applications
+
+// -- akka.io blog posts: demos --
+:url-blog-demo-multi-agent: https://akka.io/blog/demo-build-and-deploy-a-multi-agent-system-with-akka
+:url-blog-demo-agent-component: https://akka.io/blog/demo-new-akka-sdk-component-agent
+:url-blog-demo-mcp: https://akka.io/blog/demo-mcp-support-in-akka
+:url-blog-demo-temperature: https://akka.io/blog/demo-temperature-monitoring-agent
+:url-blog-demo-code-init: https://akka.io/blog/akka-code-init-demo
+:url-blog-demo-workflow-syntax: https://akka.io/blog/demo-simplified-workflow-step-syntax
+:url-blog-demo-surviving-split: https://akka.io/blog/demo-surviving-the-split-how-akka-handles-disaster-scenarios
+:url-blog-demo-destroyed-region: https://akka.io/blog/demo-recovering-a-completely-destroyed-region
+:url-blog-demo-all: https://akka.io/blog?tag=demo
+:url-blog-video-overview: https://akka.io/blog/video-akka-overview
+
+// -- akka.io blog posts: talks & podcasts --
+:url-blog-cto-asks-cto: https://akka.io/blog/cto-asks-cto-akka-ai-agents-distributed-systems
+:url-blog-techedge-tyler: https://akka.io/blog/akka-ceo-on-architecting-agentic-scalable-distributed-systems
+:url-blog-infoq-podcast: https://akka.io/blog/building-agentic-ai-systems-at-scale
+:url-blog-qcon-concept-to-code: https://akka.io/blog/from-concept-to-code-navigating-ai-services
+:url-blog-qcon-blueprint: https://akka.io/blog/qcon-london-agentic-ai-services-blueprint
+:url-blog-agents-saas: https://akka.io/blog/ai-agents-are-coming-for-your-saas-stack
+
+// -- akka.io blog posts: webinars --
+:url-blog-webinar-design-patterns: https://akka.io/blog/webinar-agentic-ai-design-patterns
+:url-blog-webinar-event-sourcing: https://akka.io/blog/webinar-mastering-event-sourcing
+:url-blog-webinar-blueprint: https://akka.io/blog/webinar-blueprint-for-agentic-ai-services
+:url-blog-webinar-certainty: https://akka.io/blog/webinar-creating-certainty-in-the-age-of-agentic-ai
+
+// -- akka.io benchmarks --
+:url-akka-benchmarks: https://akka.io/akka-performance-benchmark
+
+// -- customer stories --
+:url-story-all: https://akka.io/customer-stories
+:url-story-swiggy: https://akka.io/blog/2x-latency-improvement-in-swiggy-ml-and-ai-platform
+:url-story-manulife: https://akka.io/blog/manulife-selects-akka-to-operationalize-agentic-ai
+:url-story-llaama: https://akka.io/customer-stories/llaama-helps-biopharma-companies-create-ai-driven-treatments-with-akka
+:url-story-mrcall: https://akka.io/customer-stories/ai-powered-call-center-mrcall-uses-akka-for-simultaneous-voip-requests
+:url-story-leap-rail: https://akka.io/customer-stories/healthcare-ai-startup-leap-rail-akka
+:url-story-deductive-ai: https://akka.io/customer-stories/deductive-ai-accelerates-rca-up-to-90-percent
+:url-story-coho-ai: https://akka.io/customer-stories/coho-ai-brings-innovative-solutions-to-market-75-percent-faster
+:url-story-tubi: https://akka.io/customer-stories/personalized-user-experiences-drive-increased-advertising-revenue-at-tubi
+:url-story-walmart: https://akka.io/customer-stories/walmart-boosts-conversions-by-20-percent-with-akka
+:url-story-capital-one: https://akka.io/customer-stories/capital-one-scales-real-time-auto-loan-decisioning-with-akka
+:url-story-doctolib: https://akka.io/customer-stories/1m-healthcare-providers-rely-on-akka-for-resilient-secure-messaging-via-doctolib
+:url-story-renault: https://akka.io/customer-stories/reflekio-renault-transform-global-manufacturing-akka-based-saas-digital-twin-execution-platform
+:url-story-john-deere: https://akka.io/customer-stories/john-deere-improves-crop-yields-with-precision-agriculture
+:url-story-cern: https://akka.io/customer-stories/akka-helps-keep-groundbreaking-physics-experiments-running-smoothly
+:url-story-verizon: https://akka.io/customer-stories/verizon-wireless-deploys-akka-doubles-business-performance-results
+:url-story-cone-center: https://akka.io/customer-stories/cone-center-chooses-akka-to-build-sophisticated-logistics-applications-for-major-ports-and-distribution-centers
+:url-story-dream11: https://akka.io/customer-stories/scaling-handles-massive-traffic-spikes-with-ease
+
+// -- external / foundational --
+:url-ext-reactive-manifesto: https://www.reactivemanifesto.org
+:url-ext-reactive-principles: https://www.reactiveprinciples.org
+:url-ext-akkademy: https://akkademy.akka.io
+
+// -- community --
+:url-akka-discord: https://discord.com/invite/QZc652rgtf
+:url-akka-github: https://github.com/akka
+:url-akka-blog: https://akka.io/blog
+:url-akka-support: https://support.akka.io

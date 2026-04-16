@@ -130,6 +130,8 @@ With both services configured, we can start them independently by running `mvn c
 
 Sometimes, when developing services locally that depend on other services, rather than running those services locally as well, it's more convenient to use instances of those services running in the cloud. Akka allows this through its backoffice proxy. The cloud services do not need to be exposed to the internet, rather, requests are forwarded through a proxy that authenticates and authorizes developers using their Akka platform credentials.
 
+NOTE: By default, local services use an in-memory data store, so state is lost on each restart. When connecting to cloud-based services, this means views and consumers subscribed to cloud event streams must replay events from the beginning on each restart, which can be slow for large event stores. To preserve local state and offsets across restarts, see <<persistence-enabled>>.
+
 To do this, you will need to have the xref:operations:cli/index.adoc[Akka CLI] installed on your path, and be logged in with the backoffice or admin role on the project you wish to use. Alternatively, if the Akka CLI is not installed, the `AKKA_REFRESH_TOKEN` environment variable can be set with a valid refresh or service token.
 
 Backoffice services can be configured in `src/main/resources/application.conf`, by specifying the project that the services run in:

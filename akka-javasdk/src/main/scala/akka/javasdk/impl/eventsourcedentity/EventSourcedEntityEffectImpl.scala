@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl.eventsourcedentity
 
+import java.time.Duration
 import java.util
 import java.util.function.{ Function => JFunction }
 
@@ -57,8 +58,11 @@ private[javasdk] class EventSourcedEntityEffectImpl[S, E]
   private var _functionSecondaryEffect: Function[S, SecondaryEffectImpl] = _ => NoSecondaryEffectImpl
 
   private var _replicationFilter: ReplicationFilter.Builder = ReplicationFilterImpl.empty
+  private var _ttl: Option[Duration] = None
 
   def primaryEffect: PrimaryEffectImpl = _primaryEffect
+
+  def ttl: Option[Duration] = _ttl
 
   def secondaryEffect(state: S): SecondaryEffectImpl =
     _functionSecondaryEffect(state) match {
@@ -138,6 +142,11 @@ private[javasdk] class EventSourcedEntityEffectImpl[S, E]
 
   override def updateReplicationFilter(filter: ReplicationFilter.Builder): OnSuccessBuilder[S] = {
     _replicationFilter = filter
+    this
+  }
+
+  override def expireAfter(duration: Duration): OnSuccessBuilder[S] = {
+    _ttl = Some(duration)
     this
   }
 }

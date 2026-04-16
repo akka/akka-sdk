@@ -9,8 +9,10 @@ import akka.javasdk.CommandException;
 import akka.javasdk.Metadata;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityEffectImpl;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
 
 /**
  * Key Value Entities are stateful components that persist their complete state on every change.
@@ -390,6 +392,18 @@ public abstract class KeyValueEntity<S> {
       <T> Effect<T> thenReply(T message, Metadata metadata);
 
       /**
+       * Sends a reply message to the caller after the state operation (update or delete) completes
+       * successfully. The reply is computed by the given supplier, which is called after the state
+       * operation succeeds. This is useful for performing side effects (such as publishing
+       * notifications) that should only happen after a successful persist.
+       *
+       * @param replySupplier a supplier that produces the reply message
+       * @param <T> the type of the reply message
+       * @return an effect that will perform the state operation and then send the reply
+       */
+      <T> Effect<T> thenReply(Supplier<T> replySupplier);
+
+      /**
        * Change the replication filter for this entity, combined with updating state.
        *
        * <p>State us by default replicated to all regions that have been enabled for the service.
@@ -413,6 +427,18 @@ public abstract class KeyValueEntity<S> {
        * @return an effect builder for chaining additional operations
        */
       OnSuccessBuilder<S> updateReplicationFilter(ReplicationFilter.Builder filter);
+
+      /**
+       * Sets a time-to-live for this entity. The entity will be automatically deleted once the
+       * given duration has elapsed and no further update was done.
+       *
+       * <p>As soon as a new update is done, the TTL is no longer applied. To keep the TTL in effect
+       * after subsequent updates, each update will have to be marked with {@code expireAfter}.
+       *
+       * @param ttl the duration from the time of this write after which the entity will be deleted
+       * @return an effect builder for chaining additional operations
+       */
+      OnSuccessBuilder<S> expireAfter(Duration ttl);
     }
   }
 

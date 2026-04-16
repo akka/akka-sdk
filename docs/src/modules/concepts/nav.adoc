@@ -15,3 +15,4 @@
 *** xref:concepts:inter-agent-comms.adoc[]
 *** xref:concepts:ms-agent-patterns.adoc[]
 *** xref:concepts:acls.adoc[]
+*** xref:concepts:governance-and-the-runtime.adoc[]

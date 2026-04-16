@@ -1,0 +1,39 @@
+= Identity & security
+:page-summary: Akka-native secret management with Azure KeyVault integration. Other providers via standard Java APIs.
+:page-persona: builder-developer, governance-infosec
+
+include::ROOT:partial$include.adoc[]
+
+== Akka-native secret management
+
+Akka provides built-in secret management at the project level. Secrets are injected as environment variables into your services, supporting:
+
+* Generic secrets (key-value pairs)
+* Symmetric and asymmetric encryption keys
+* TLS certificates and CA bundles
+* Key rotation without environment variable changes
+
+Secret values are never exposed in the CLI or Console.
+
+See xref:operations:projects/secrets.adoc[Manage secrets] for configuration details.
+
+== External secret providers
+
+=== Azure KeyVault
+
+Azure KeyVault integration is built in. See xref:operations:projects/external-secrets.adoc[Manage external secrets] for setup instructions.
+
+=== Other providers
+
+Connect to any secret provider with a Java client library:
+
+* **AWS Secrets Manager** — via the AWS SDK for Java
+* **GCP Secret Manager** — via the Google Cloud Client Libraries for Java
+* **HashiCorp Vault** — via the Vault Java Driver
+
+== See also
+
+* xref:operations:projects/secrets.adoc[Manage secrets]
+* xref:operations:projects/external-secrets.adoc[Manage external secrets]
+* xref:sdk:access-control.adoc[Access control]
+* xref:sdk:auth-with-jwts.adoc[JWT authentication]

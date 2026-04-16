@@ -138,6 +138,8 @@ spec:
 
 Defines external secrets. A descriptor can define multiple ExternalSecret documents, each with a unique name. See xref:reference:descriptors/external-secret-descriptor.adoc[] for the complete reference.
 
+Azure KeyVault example:
+
 [source,yaml]
 ----
 resource: ExternalSecret
@@ -152,6 +154,22 @@ spec:
     objects:
     - name: my-secret
       type: secret
+----
+
+GCP Secret Manager example:
+
+[source,yaml]
+----
+resource: ExternalSecret
+resourceVersion: v1
+metadata:
+  name: my-gcp-secret
+spec:
+  gcp:
+    projectId: my-gcp-project
+    objects:
+    - name: my-secret
+      path: my-secret
 ----
 
 [#secret]

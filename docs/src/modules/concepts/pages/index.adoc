@@ -10,7 +10,7 @@ xref:architecture-model.adoc[Service structure and layers] explains how Akka app
 
 Akka manages the operational aspects of your application. To learn about how Akka Services run in distributed infrastructure and may span multiple _Regions_, see xref:deployment-model.adoc[Deployment Model]. Once deployed, Akka's xref:operations:observability-and-monitoring/index.adoc[Telemetry and Monitoring] provides operational insights into your deployment.
 
-When you are familiar with the main aspects for Akka applications, continue with xref:concepts:development-process.adoc[Development Process] to understand the steps involved to implement a _Service_.
+When you are familiar with the main aspects for Akka applications, continue with xref:concepts:development-process.adoc[Development process] to understand the steps involved to implement a _Service_.
 
 Components in Akka decouple behavior from execution by using xref:declarative-effects.adoc[].
 
