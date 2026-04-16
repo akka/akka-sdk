@@ -122,6 +122,8 @@ private[impl] final class AutonomousAgentImpl(
   private val taskAssignMethod = classOf[TaskEntity].getMethod("assign", classOf[String])
   private val taskStartMethod = classOf[TaskEntity].getMethod("start")
   private val taskCompleteMethod = classOf[TaskEntity].getMethod("complete", classOf[String])
+  private val taskRejectResultMethod =
+    classOf[TaskEntity].getMethod("rejectResult", classOf[TaskEntity.RejectResultRequest])
   private val taskFailMethod = classOf[TaskEntity].getMethod("fail", classOf[String])
   private val taskCancelMethod = classOf[TaskEntity].getMethod("cancel", classOf[String])
   private val taskReassignMethod = classOf[TaskEntity].getMethod("reassign", classOf[TaskEntity.ReassignRequest])
@@ -156,7 +158,7 @@ private[impl] final class AutonomousAgentImpl(
         request.resultTypeName.orNull,
         request.dependencyTaskIds.asJava,
         attachments,
-        Seq.empty[String].asJava)
+        request.ruleClassNames.asJava)
       taskEntityClient(taskId)
         .methodRefOneArg[TaskEntity.CreateRequest, Done](taskCreateMethod)
         .withMetadata(MetadataImpl.of(context))
@@ -211,12 +213,13 @@ private[impl] final class AutonomousAgentImpl(
                 taskId,
                 ruleClassName,
                 reason)
+              val rejectRequest = new TaskEntity.RejectResultRequest(ruleClassName, reason)
               taskEntityClient(taskId)
-                .methodRefOneArg[String, Done](taskFailMethod)
+                .methodRefOneArg[TaskEntity.RejectResultRequest, Done](taskRejectResultMethod)
                 .withMetadata(MetadataImpl.of(context))
-                .invokeAsync("Task rule rejected: " + reason)
+                .invokeAsync(rejectRequest)
                 .asScala
-                .map(_ => Done)(sdkExecutionContext)
+                .flatMap(_ => Future.failed(new SpiTask.TaskResultRejectedException(reason)))(sdkExecutionContext)
           }
         }(sdkExecutionContext)
 
@@ -370,12 +373,13 @@ private[impl] final class AutonomousAgentImpl(
 
   private def toSpiTaskState(state: akka.javasdk.agent.task.TaskState): SpiTask.SpiTaskState = {
     val spiStatus = state.status() match {
-      case TaskStatus.PENDING     => SpiTask.SpiTaskStatus.Pending
-      case TaskStatus.ASSIGNED    => SpiTask.SpiTaskStatus.Assigned
-      case TaskStatus.IN_PROGRESS => SpiTask.SpiTaskStatus.InProgress
-      case TaskStatus.COMPLETED   => SpiTask.SpiTaskStatus.Completed
-      case TaskStatus.FAILED      => SpiTask.SpiTaskStatus.Failed
-      case TaskStatus.CANCELLED   => SpiTask.SpiTaskStatus.Cancelled
+      case TaskStatus.PENDING         => SpiTask.SpiTaskStatus.Pending
+      case TaskStatus.ASSIGNED        => SpiTask.SpiTaskStatus.Assigned
+      case TaskStatus.IN_PROGRESS     => SpiTask.SpiTaskStatus.InProgress
+      case TaskStatus.RESULT_REJECTED => SpiTask.SpiTaskStatus.ResultRejected
+      case TaskStatus.COMPLETED       => SpiTask.SpiTaskStatus.Completed
+      case TaskStatus.FAILED          => SpiTask.SpiTaskStatus.Failed
+      case TaskStatus.CANCELLED       => SpiTask.SpiTaskStatus.Cancelled
     }
     val resultTypeName = Option(state.resultTypeName())
     val resultSchema = resultTypeName

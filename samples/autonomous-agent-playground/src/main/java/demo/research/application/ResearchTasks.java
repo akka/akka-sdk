@@ -14,7 +14,8 @@ public class ResearchTasks {
   public static final Task<ResearchFindings> FINDINGS = Task
     .define("Findings")
     .description("Research a topic and produce factual findings")
-    .resultConformsTo(ResearchFindings.class);
+    .resultConformsTo(ResearchFindings.class)
+    .rules(ResearchFindingsRule.class);
 
   // prettier-ignore
   public static final Task<AnalysisReport> ANALYSIS = Task

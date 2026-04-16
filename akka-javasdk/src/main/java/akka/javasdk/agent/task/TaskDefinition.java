@@ -4,6 +4,8 @@
 
 package akka.javasdk.agent.task;
 
+import java.util.List;
+
 /**
  * A task definition declares what kind of work an agent can do — a description of the task and the
  * expected result type.
@@ -22,4 +24,7 @@ public sealed interface TaskDefinition<R> permits Task, TaskTemplate {
 
   /** The expected result type. */
   Class<R> resultType();
+
+  /** The validation rule classes for this task definition. */
+  List<Class<? extends TaskRule<R>>> ruleClasses();
 }

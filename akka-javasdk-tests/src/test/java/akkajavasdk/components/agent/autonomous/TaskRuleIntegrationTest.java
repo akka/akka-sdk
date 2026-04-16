@@ -57,7 +57,37 @@ public class TaskRuleIntegrationTest extends TestKitSupport {
   }
 
   @Test
-  public void shouldFailTaskWhenRuleRejects() {
+  public void shouldRetryAndCompleteAfterRuleRejects() {
+    // First attempt: bad result rejected by rule. Retry: good result accepted.
+    agentModel
+        .whenMessage(msg -> msg.contains("Do something"))
+        .reply(completeTask(new TestTasks.TestResult("low quality", 3)));
+
+    agentModel
+        .whenMessage(msg -> msg.contains("Reminder"))
+        .reply(completeTask(new TestTasks.TestResult("improved result", 50)));
+
+    var taskId =
+        componentClient
+            .forAutonomousAgent(ValidatedTaskAgent.class, UUID.randomUUID().toString())
+            .runSingleTask(TestTasks.VALIDATED_TASK.instructions("Do something."));
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var snapshot = componentClient.forTask(taskId).get(TestTasks.VALIDATED_TASK);
+              assertThat(snapshot.status()).isEqualTo(TaskStatus.COMPLETED);
+              assertThat(snapshot.result().value()).isEqualTo("improved result");
+              assertThat(snapshot.result().score()).isEqualTo(50);
+            });
+  }
+
+  @Test
+  public void shouldFailAfterRepeatedRuleRejections() {
+    // Agent always returns the same bad result — rule rejects every attempt
+    // until maxIterationsPerTask is exhausted and the runtime fails the task
     agentModel.fixedResponse(completeTask(new TestTasks.TestResult("low quality", 3)));
 
     var taskId =
@@ -72,7 +102,7 @@ public class TaskRuleIntegrationTest extends TestKitSupport {
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.VALIDATED_TASK);
               assertThat(snapshot.status()).isEqualTo(TaskStatus.FAILED);
-              assertThat(snapshot.failureReason()).contains("score must be >= 10");
+              assertThat(snapshot.failureReason()).contains("Max iterations");
             });
   }
 }

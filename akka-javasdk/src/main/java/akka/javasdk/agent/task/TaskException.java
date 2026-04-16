@@ -29,6 +29,20 @@ public abstract sealed class TaskException extends RuntimeException {
     return reason;
   }
 
+  /** Thrown when a task result is rejected by a validation rule. */
+  public static final class ResultRejected extends TaskException {
+    private final String ruleClassName;
+
+    public ResultRejected(String taskId, String ruleClassName, String reason) {
+      super(taskId, reason);
+      this.ruleClassName = ruleClassName;
+    }
+
+    public String ruleClassName() {
+      return ruleClassName;
+    }
+  }
+
   /** Thrown when a task reaches the {@link TaskStatus#FAILED} state. */
   public static final class Failed extends TaskException {
     public Failed(String taskId, String reason) {

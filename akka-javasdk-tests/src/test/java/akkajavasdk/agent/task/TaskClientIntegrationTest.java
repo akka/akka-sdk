@@ -91,7 +91,8 @@ public class TaskClientIntegrationTest extends TestKitSupport {
 
     assertThatThrownBy(
             () -> componentClient.forTask(taskId).complete(TEST_TASK, new TestResult("done", 100)))
-        .hasMessageContaining("Task can only be completed when ASSIGNED or IN_PROGRESS");
+        .hasMessageContaining(
+            "Task can only be completed when ASSIGNED, IN_PROGRESS, or RESULT_REJECTED");
   }
 
   // --- fail ---
@@ -114,7 +115,8 @@ public class TaskClientIntegrationTest extends TestKitSupport {
     componentClient.forTask(taskId).create(TEST_TASK.instructions("do something"));
 
     assertThatThrownBy(() -> componentClient.forTask(taskId).fail("rejected"))
-        .hasMessageContaining("Task can only be failed when ASSIGNED or IN_PROGRESS");
+        .hasMessageContaining(
+            "Task can only be failed when ASSIGNED, IN_PROGRESS, or RESULT_REJECTED");
   }
 
   // --- result ---

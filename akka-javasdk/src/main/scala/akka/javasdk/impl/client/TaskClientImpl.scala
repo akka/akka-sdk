@@ -205,7 +205,8 @@ private[javasdk] final class TaskClientImpl(
                   taskId,
                   ruleClassName,
                   reason)
-                sendCommand("Fail", serializer.toBytes("Task rule rejected: " + reason)).asScala
+                val rejectRequest = new TaskEntity.RejectResultRequest(ruleClassName, reason)
+                sendCommand("RejectResult", serializer.toBytes(rejectRequest)).asScala
             }
         }
       }

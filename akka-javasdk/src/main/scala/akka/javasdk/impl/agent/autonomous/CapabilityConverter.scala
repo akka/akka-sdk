@@ -189,12 +189,14 @@ private[javasdk] object CapabilityConverter {
         (Option(template.instructionTemplate()).filter(_.nonEmpty), parameters)
       case _ => (None, Seq.empty)
     }
+    val ruleClassNames = taskDefinition.ruleClasses().asScala.toSeq.map(_.getName)
     new SpiTask.SpiTaskDefinition(
       name = taskDefinition.name(),
       description = taskDefinition.description(),
       resultTypeName = resultType.getName,
       resultSchema = resultSchema,
       instructionTemplate = instructionTemplate,
-      templateParameters = templateParameters)
+      templateParameters = templateParameters,
+      ruleClassNames = ruleClassNames)
   }
 }

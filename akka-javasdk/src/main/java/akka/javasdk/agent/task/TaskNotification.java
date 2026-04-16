@@ -14,6 +14,10 @@ public sealed interface TaskNotification {
   @TypeName("akka-task-notification-completed")
   record Completed(String taskId, String result) implements TaskNotification {}
 
+  @TypeName("akka-task-notification-result-rejected")
+  record ResultRejected(String taskId, String ruleClassName, String reason)
+      implements TaskNotification {}
+
   @TypeName("akka-task-notification-failed")
   record Failed(String taskId, String reason) implements TaskNotification {}
 
