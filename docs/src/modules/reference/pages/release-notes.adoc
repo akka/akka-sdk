@@ -13,7 +13,7 @@ Current versions
 == April 2026
 
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.18[Akka SDK 3.5.18]
-- TTL based deletion for entities
+- Automatic expiry for entities
 - Key Value Entity notifications
 - Consumer testkit improvements
 - Agent read timeout bug fix
