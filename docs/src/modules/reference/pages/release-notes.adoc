@@ -16,7 +16,7 @@ Current versions
 - TTL based deletion for entities
 - Key Value Entity notifications
 - Consumer testkit improvements
-- Agent read timeout bugfix
+- Agent read timeout bug fix
 
 
 * Akka CLI 3.0.59
