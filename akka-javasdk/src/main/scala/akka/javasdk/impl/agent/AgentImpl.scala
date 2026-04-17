@@ -137,6 +137,7 @@ private[impl] object AgentImpl {
         case "local-ai"        => ModelProvider.LocalAI.fromConfig(providerConfig)
         case "bedrock"         => ModelProvider.Bedrock.fromConfig(providerConfig)
         case "vertex-ai"       => ModelProvider.VertexAi.fromConfig(providerConfig)
+        case "mistral-ai"      => ModelProvider.MistralAi.fromConfig(providerConfig)
         case fqcn if isFqcn(fqcn) =>
           instantiateCustomProvider(fqcn, providerConfig, resolvedConfigPath)
         case other =>
@@ -748,6 +749,26 @@ private[impl] final class AgentImpl[A <: Agent](
             case ModelProvider.BedrockPromptCachePlacement.AFTER_TOOLS =>
               SpiAgent.ModelProvider.BedrockPromptCachePlacement.AfterTools
           })
+            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq))
+      case p: ModelProvider.MistralAi =>
+        new SpiAgent.ModelProvider.MistralAi(
+          apiKey = p.apiKey,
+          modelName = p.modelName,
+          baseUrl = p.baseUrl,
+          temperature = p.temperature,
+          topP = p.topP,
+          maxTokens = p.maxTokens,
+          safePrompt = p.safePrompt,
+          randomSeed = p.randomSeed,
+          frequencyPenalty = p.frequencyPenalty,
+          presencePenalty = p.presencePenalty,
+          stopSequences = p.stopSequences.asScala.toList,
+          thinking = p.thinking,
+          modelSettings = new SpiAgent.ModelSettings(
+            p.connectionTimeout().toScala,
+            p.responseTimeout().toScala,
+            p.maxRetries(),
+            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq))
     }
   }
 
