@@ -64,11 +64,11 @@ You should now have everything you need to easily use Spec-Driven Development to
   Ready to go! After restarting, run /akka:specify to start building your first feature.
 ```
 
-As the instructions say, you'll need to restart Claude Code in order to load the newly installed MCP server from the Akka CLI. 
+As the instructions say, you'll need to restart Claude Code in order to load the newly installed MCP server from the Akka CLI.
 
 IMPORTANT: From now on, any time you see `/akka.\{command\}` in the documentation referring to using Claude Code _without_ the marketplace plugin, you should substitute the `/akka:\{command\}` plugin-based alternative.
 
-NOTE: Not using Claude Code? Akka supports 31 different AI assist utilities. Visit xref:sdk:spec-driven-development.adoc[Spec-Driven Development] for details on how to configure each.
+NOTE: Not using Claude Code? Akka supports 30 different AI assist utilities. Visit xref:sdk:spec-driven-development.adoc[Spec-Driven Development] for details on how to configure each.
 
 Now you're ready to initialize a specification.
 

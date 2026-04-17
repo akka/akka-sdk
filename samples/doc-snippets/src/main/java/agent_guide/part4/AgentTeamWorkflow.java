@@ -10,6 +10,7 @@ import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.StepName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
+import akka.javasdk.workflow.Workflow.RecoverStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +56,7 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
     return WorkflowSettings.builder()
       .stepTimeout(AgentTeamWorkflow::askWeather, ofSeconds(60))
       .stepTimeout(AgentTeamWorkflow::suggestActivities, ofSeconds(60))
-      .defaultStepRecovery(maxRetries(2).failoverTo(AgentTeamWorkflow::error))
+      .defaultStepRecovery(RecoverStrategy.maxRetries(2).failoverTo(AgentTeamWorkflow::error))
       .build();
   }
 

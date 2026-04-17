@@ -26,7 +26,7 @@ import java.util.Optional;
  *   <li>Inject as constructor parameter into MCP endpoint classes
  * </ul>
  *
- * <p><strong>Authentication & Authorization:</strong> Use {@link #getPrincipals()} and {@link
+ * <p><strong>Authentication &amp; Authorization:</strong> Use {@link #getPrincipals()} and {@link
  * #getJwtClaims()} to access authentication information for custom authorization logic. MCP
  * endpoints support ACL annotations and JWT validation.
  *

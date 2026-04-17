@@ -173,4 +173,14 @@ public interface TypeDef {
    * @return true if the type has static modifier
    */
   boolean isStatic();
+
+  /**
+   * Returns the non-static fields declared in this type.
+   *
+   * <p>For record types, these correspond to the record components. For regular classes, these are
+   * the instance fields (excluding static fields).
+   *
+   * @return list of fields
+   */
+  List<FieldDef> getFields();
 }

@@ -54,7 +54,7 @@ Additionally, you should define a workflow recovery strategy so that it doesn't 
 
 [source,java,indent=0]
 ----
-.defaultStepRecovery(maxRetries(2).failoverTo(ActivityAgentManager::error))
+.defaultStepRecovery(RecoverStrategy.maxRetries(2).failoverTo(ActivityAgentManager::error))
 ----
 
 More details in xref:workflows.adoc#_error_handling[Workflow timeouts and recovery strategy].

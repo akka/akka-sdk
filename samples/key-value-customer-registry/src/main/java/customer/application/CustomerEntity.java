@@ -3,6 +3,8 @@ package customer.application;
 // tag::customer[]
 
 import akka.Done;
+import akka.javasdk.NotificationPublisher;
+import akka.javasdk.NotificationPublisher.NotificationStream;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import customer.domain.Address;
@@ -14,13 +16,24 @@ import org.slf4j.LoggerFactory;
 public class CustomerEntity extends KeyValueEntity<Customer> { // <4>
 
   private static final Logger logger = LoggerFactory.getLogger(CustomerEntity.class);
+  // tag::customer-notification[]
+  private final NotificationPublisher<Customer> notificationPublisher;
+
+  public CustomerEntity(NotificationPublisher<Customer> notificationPublisher) {
+    this.notificationPublisher = notificationPublisher;
+  }
+
+  // end::customer-notification[]
 
   public Effect<Done> create(Customer customer) {
     if (currentState() == null) {
       logger.info("Creating customer with id '{}'", commandContext().entityId());
       return effects()
         .updateState(customer) // <6>
-        .thenReply(Done.done()); // <7>
+        .thenReply(() -> { // <7>
+          notificationPublisher.publish(customer);
+          return Done.done();
+        });
     } else {
       return effects().error("Customer exists already");
     }
@@ -38,7 +51,12 @@ public class CustomerEntity extends KeyValueEntity<Customer> { // <4>
         .error("No customer found for id '" + commandContext().entityId() + "'");
     } else {
       Customer updatedCustomer = currentState().withName(newName);
-      return effects().updateState(updatedCustomer).thenReply(Done.done());
+      return effects()
+        .updateState(updatedCustomer)
+        .thenReply(() -> {
+          notificationPublisher.publish(updatedCustomer);
+          return Done.done();
+        });
     }
   }
 
@@ -48,7 +66,12 @@ public class CustomerEntity extends KeyValueEntity<Customer> { // <4>
         .error("No customer found for id '" + commandContext().entityId() + "'");
     } else {
       Customer updatedCustomer = currentState().withAddress(newAddress);
-      return effects().updateState(updatedCustomer).thenReply(Done.done());
+      return effects()
+        .updateState(updatedCustomer)
+        .thenReply(() -> {
+          notificationPublisher.publish(updatedCustomer);
+          return Done.done();
+        });
     }
   }
 
@@ -61,5 +84,11 @@ public class CustomerEntity extends KeyValueEntity<Customer> { // <4>
       return effects().deleteEntity().thenReply(Done.done());
     }
   }
+
+  // tag::customer-notification[]
+  public NotificationStream<Customer> updates() {
+    return notificationPublisher.stream();
+  }
+  // end::customer-notification[]
 }
 // end::customer[]

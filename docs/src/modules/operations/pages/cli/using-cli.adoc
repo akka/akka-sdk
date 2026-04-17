@@ -122,7 +122,7 @@ Required flags:
 * `--docker-username` (your Docker username)
 * `--docker-password` (your Docker password)
 
-TODO:  For more details, see `akka docker -h` or visit xref:reference:cli/akka-cli/akka_docker.adoc[docker] page.
+For more details, see `akka docker -h` or visit the xref:reference:cli/akka-cli/akka_docker.adoc[docker] page.
 [NOTE]
 ====
 For more information about using the Akka Container Registry (ACR) or external container registries, see xref:projects/container-registries.adoc[].
@@ -204,7 +204,7 @@ This table shows the component names, their types, and any associated type IDs.
 
 [TIP]
 ====
-If you want to view the events from an event sourced entity you can use the `akka service components list-events` command.
+If you want to view the events from an event sourced entity you can use the `akka services components list-events` command.
 
 More information about this command in xref:reference:cli/akka-cli/akka_services_components_list-events.adoc[components] page.
 ====

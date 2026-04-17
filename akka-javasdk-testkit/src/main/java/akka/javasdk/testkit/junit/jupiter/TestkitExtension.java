@@ -52,6 +52,7 @@ public final class TestkitExtension implements BeforeAllCallback, AfterAllCallba
    * @deprecated Use {@link #getValueEntityIncomingMessages(Class)} instead.
    */
   @Deprecated(since = "3.4.2", forRemoval = true)
+  @SuppressWarnings("removal")
   public IncomingMessages getValueEntityIncomingMessages(String typeId) {
     return testKit.getKeyValueEntityIncomingMessages(typeId);
   }
@@ -73,6 +74,7 @@ public final class TestkitExtension implements BeforeAllCallback, AfterAllCallba
    * @deprecated Use {@link #getEventSourcedEntityIncomingMessages(Class)} instead.
    */
   @Deprecated(since = "3.4.2", forRemoval = true)
+  @SuppressWarnings("removal")
   public IncomingMessages getEventSourcedEntityIncomingMessages(String typeId) {
     return testKit.getEventSourcedEntityIncomingMessages(typeId);
   }

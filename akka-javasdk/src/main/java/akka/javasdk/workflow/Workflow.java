@@ -1450,7 +1450,9 @@ public abstract class Workflow<S> {
    *
    * @param maxRetries number of retries before giving up.
    * @return MaxRetries strategy.
+   * @deprecated Use the static method {@link RecoverStrategy#maxRetries(int)} instead.
    */
+  @Deprecated
   public MaxRetries maxRetries(int maxRetries) {
     return RecoverStrategy.maxRetries(maxRetries);
   }

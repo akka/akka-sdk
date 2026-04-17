@@ -1,0 +1,23 @@
+= /akka.analyze
+
+Cross-artifact consistency and quality analysis.
+
+== Usage
+
+[source]
+----
+/akka:analyze
+----
+
+== Description
+
+Performs a non-destructive analysis across `spec.md`, `plan.md`, and `tasks.md` to verify consistency and quality. Use this after task generation to confirm that all artifacts are aligned before implementation begins.
+
+This command does not modify any artifacts -- it only reports findings.
+
+== See also
+
+* xref:sdk:spec-driven-development.adoc[]
+* xref:reference:specify/index.adoc[]
+* xref:reference:specify/tasks.adoc[]
+* xref:reference:specify/implement.adoc[]

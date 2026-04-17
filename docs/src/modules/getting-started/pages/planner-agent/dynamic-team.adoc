@@ -69,7 +69,7 @@ After selecting agents, we use a `PlannerAgent` to decide in which order to use 
 ----
 include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/PlannerAgent.java[tag=all]
 ----
-<1> Lookup the agent information for the selected agents from the `AgentRegistry.
+<1> Lookup the agent information for the selected agents from the `AgentRegistry`.
 <2> Detailed instructions and include descriptions (as json) of the agents.
 
 The result from the `PlannerAgent` is a `Plan` with a list of `PlanStep`.

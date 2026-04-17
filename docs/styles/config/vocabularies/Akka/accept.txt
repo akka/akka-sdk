@@ -65,12 +65,14 @@ evolvability
 effectful
 enum
 env
+etcd
 eventhubs
 exfiltration
 externalSecret
 facto
 failover
 fanout
+gcp
 gcpKey
 getOptional
 [Gg]itHub
@@ -159,10 +161,12 @@ Podman
 Postgres
 PostgreSQL
 precalculated
+principalSet
 preconfigured
 prefetching
 prepended
 prepending
+projectId
 [Pp]rometheus
 [Pp]ropagations
 proto
@@ -285,6 +289,7 @@ pgvector
 Linode
 classpath
 kubectl
+kubelet
 dns
 DNS
 Fitbit

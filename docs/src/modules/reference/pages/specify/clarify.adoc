@@ -1,0 +1,29 @@
+= /akka.clarify
+
+Identify gaps in the current feature specification.
+
+== Usage
+
+[source]
+----
+/akka:clarify
+----
+
+== Description
+
+Analyzes the constitution, feature specification, and conversation history to identify areas that lack sufficient detail. Asks up to 5 highly targeted clarification questions and encodes answers back into the spec.
+
+Typical clarification questions address areas such as:
+
+* How entities are uniquely identified
+* What happens during deletion or edge cases
+* Concurrency and session handling
+
+Run this command iteratively until no further clarifications are needed.
+
+== See also
+
+* xref:sdk:spec-driven-development.adoc[]
+* xref:reference:specify/index.adoc[]
+* xref:reference:specify/specify.adoc[]
+* xref:reference:specify/plan.adoc[]

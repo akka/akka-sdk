@@ -1,0 +1,20 @@
+= /akka.checklist
+
+Generate a custom checklist for the current feature.
+
+== Usage
+
+[source]
+----
+/akka:checklist
+----
+
+== Description
+
+Generates a feature-specific checklist based on user requirements and the current specification. Use this to create a tailored verification list for the feature being developed.
+
+== See also
+
+* xref:sdk:spec-driven-development.adoc[]
+* xref:reference:specify/index.adoc[]
+* xref:reference:specify/tasks.adoc[]
