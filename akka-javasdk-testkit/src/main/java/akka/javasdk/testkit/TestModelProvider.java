@@ -19,7 +19,6 @@ import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.model.output.FinishReason;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -253,17 +252,9 @@ public final class TestModelProvider implements ModelProvider.Custom {
                                       MessageContent.TextMessageContent.from(textContent.text());
                                   case ImageContent imageContent -> {
                                     if (imageContent.image().url() != null) {
-                                      try {
-                                        yield MessageContent.ImageMessageContent.fromUrl(
-                                            imageContent.image().url().toURL(),
-                                            toDetailLevel(imageContent.detailLevel()));
-                                      } catch (MalformedURLException e) {
-                                        throw new RuntimeException(
-                                            "Can't transform "
-                                                + imageContent.image().url()
-                                                + " to URL",
-                                            e);
-                                      }
+                                      yield MessageContent.ImageMessageContent.fromUri(
+                                          imageContent.image().url(),
+                                          toDetailLevel(imageContent.detailLevel()));
                                     } else {
                                       throw new IllegalStateException(
                                           "Not supported image content without url.");
