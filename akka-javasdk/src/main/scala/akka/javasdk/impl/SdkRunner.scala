@@ -179,7 +179,8 @@ object SdkRunner {
             mockedEventing = SpiMockedEventingSettings.empty,
             testSetting = new SpiTestSettings(testMode = false, debugTracing = false),
             selfServiceName = None,
-            backoffice = backofficeSettings))
+            backoffice = backofficeSettings,
+            objectStorageBuckets = Seq.empty))
       } else None
 
     val agentInteractionLogEnabled =
@@ -218,7 +219,9 @@ object SdkRunner {
         case "manual"                 => SpiDeployedEventingSettings.Manual
       }
 
-    new SpiDeployedEventingSettings(Seq(new SpiDeployedEventingSettings.GooglePubSubOverrides(Some(googlePubSubMode))))
+    new SpiDeployedEventingSettings(
+      overrides = Seq(new SpiDeployedEventingSettings.GooglePubSubOverrides(Some(googlePubSubMode))),
+      startEventingFrom = None)
   }
 }
 
