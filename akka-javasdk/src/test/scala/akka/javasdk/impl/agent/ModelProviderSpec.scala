@@ -153,6 +153,11 @@ class ModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike w
       m shouldBe ModelProvider.vertexAi()
     }
 
+    "load defaults from config for mistral-ai" in {
+      val m = ModelProvider.MistralAi.fromConfig(defaultConfig.getConfig("akka.javasdk.agent.mistral-ai"))
+      m shouldBe ModelProvider.mistralAi()
+    }
+
     "fail when custom model provider class not found" in {
       assertThrows[IllegalArgumentException] {
         AgentImpl.modelProviderFromConfig(
