@@ -749,7 +749,6 @@ private[impl] final class AgentImpl[A <: Agent](
             case ModelProvider.BedrockPromptCachePlacement.AFTER_TOOLS =>
               SpiAgent.ModelProvider.BedrockPromptCachePlacement.AfterTools
           })
-            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq))
       case p: ModelProvider.MistralAi =>
         new SpiAgent.ModelProvider.MistralAi(
           apiKey = p.apiKey,
