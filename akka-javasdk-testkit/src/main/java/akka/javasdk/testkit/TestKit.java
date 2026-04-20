@@ -1363,6 +1363,15 @@ public class TestKit {
    * transformation path is exercised. The {@code service} must match the service name used by
    * consumers in their {@code @Consume.FromServiceStream} annotation.
    *
+   * <p>Note: the {@code service} value is used by the testkit as a lookup key (and must match what
+   * was registered via {@link Settings#withStreamOutgoingMessages(String, String)}); the underlying
+   * subscription itself is resolved against the service-under-test by {@code streamId}.
+   *
+   * <p>Each call returns a handle whose subscription replays events from the beginning of the
+   * stream. In a suite that shares a single {@code TestKit} across multiple tests, call {@link
+   * EventingTestKit.OutgoingMessages#clear()} at the start of each test to drop events produced by
+   * prior tests.
+   *
    * @param service service name
    * @param streamId service stream id
    */

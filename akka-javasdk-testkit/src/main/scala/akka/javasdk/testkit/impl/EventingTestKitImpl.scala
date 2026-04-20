@@ -79,9 +79,6 @@ object EventingTestKitImpl {
    * The returned testkit can be used to expect and emit events to the proxy as if they came from an actual pub/sub
    * event backend.
    */
-  def start(system: ActorSystem[_], host: String, port: Int, serializer: Serializer): EventingTestKit =
-    start(system, host, port, None, None, None, None, serializer)
-
   def start(
       system: ActorSystem[_],
       host: String,
@@ -192,9 +189,6 @@ final class EventingTestServiceImpl(
     serializer: Serializer)
     extends EventingTestKit {
 
-  def this(system: ActorSystem[_], host: String, port: Int, serializer: Serializer) =
-    this(system, host, port, None, None, None, None, serializer)
-
   private val log = LoggerFactory.getLogger(classOf[EventingTestServiceImpl])
   private implicit val sys: akka.actor.ActorSystem = system.classicSystem
   private implicit val ec: ExecutionContextExecutor = system.executionContext
@@ -272,6 +266,7 @@ final class EventingTestServiceImpl(
           port,
           serviceIdentityHeader,
           serviceIdentityToken,
+          service,
           streamId,
           serializer))
   }

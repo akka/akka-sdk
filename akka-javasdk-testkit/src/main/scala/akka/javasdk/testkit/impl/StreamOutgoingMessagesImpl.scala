@@ -4,16 +4,21 @@
 
 package akka.javasdk.testkit.impl
 
+import akka.Done
+import akka.actor.CoordinatedShutdown
 import akka.actor.typed.ActorSystem
 import akka.grpc.GrpcClientSettings
 import akka.grpc.scaladsl.MetadataBuilder
 import akka.javasdk.impl.serialization.Serializer
+import akka.persistence.Persistence
 import akka.persistence.query.Offset
 import akka.persistence.query.typed.EventEnvelope
 import akka.projection.grpc.consumer.GrpcQuerySettings
 import akka.projection.grpc.consumer.scaladsl.GrpcReadJournal
+import akka.stream.KillSwitches
 import akka.stream.Materializer
 import akka.stream.SystemMaterializer
+import akka.stream.scaladsl.Keep
 import akka.stream.scaladsl.Sink
 import akka.testkit.TestProbe
 import com.google.protobuf.ByteString
@@ -24,13 +29,17 @@ import kalix.testkit.protocol.eventing_test_backend.EmitSingleCommand
 import kalix.testkit.protocol.eventing_test_backend.{ Message => TestkitMessage }
 import org.slf4j.LoggerFactory
 
+import java.util.concurrent.atomic.AtomicBoolean
+import scala.util.Failure
+import scala.util.Success
+
 /**
  * Captures events produced by a `@Produce.ServiceStream` publisher by subscribing to the running service's producer
  * stream via Akka Projection gRPC. No runtime mocking is involved — the real transformation path runs.
  */
 private[testkit] object StreamOutgoingMessagesImpl {
 
-  private val log = LoggerFactory.getLogger(classOf[OutgoingMessagesImpl])
+  private val log = LoggerFactory.getLogger("akka.javasdk.testkit.impl.StreamOutgoingMessagesImpl")
 
   private val GoogleTypeUrlPrefix = "type.googleapis.com/"
   private val JsonTypeUrlPrefix = "json.akka.io/"
@@ -42,11 +51,13 @@ private[testkit] object StreamOutgoingMessagesImpl {
       runtimePort: Int,
       serviceIdentityHeader: Option[String],
       serviceIdentityToken: Option[String],
+      service: String,
       streamId: String,
       serializer: Serializer): OutgoingMessagesImpl = {
 
     val classic = system.classicSystem
     val materializer: Materializer = SystemMaterializer(system).materializer
+    implicit val ec = system.executionContext
     val probe = TestProbe()(classic)
 
     val clientSettings = GrpcClientSettings
@@ -64,14 +75,41 @@ private[testkit] object StreamOutgoingMessagesImpl {
 
     val journal = GrpcReadJournal(querySettings, clientSettings, Seq.empty)(classic)
 
-    val done = journal
-      .eventsBySlices[AnyRef](streamId, 0, 1023, Offset.noOffset)
-      .runWith(Sink.foreach { (env: EventEnvelope[AnyRef]) =>
-        toEmitSingleCommand(env, streamId).foreach(cmd => probe.ref ! cmd)
-      })(materializer)
+    // all slices — testkit runs a single instance covering the full range
+    val sliceRange = Persistence(classic).sliceRanges(1).head
 
-    done.failed.foreach(ex => log.debug("Stream outgoing subscription terminated: {}", ex.toString))(
-      system.executionContext)
+    val shuttingDown = new AtomicBoolean(false)
+
+    val (killSwitch, done) = journal
+      .eventsBySlices[AnyRef](streamId, sliceRange.min, sliceRange.max, Offset.noOffset)
+      .viaMat(KillSwitches.single)(Keep.right)
+      .toMat(Sink.foreach { (env: EventEnvelope[AnyRef]) =>
+        toEmitSingleCommand(env, streamId).foreach(cmd => probe.ref ! cmd)
+      })(Keep.both)
+      .run()(materializer)
+
+    done.onComplete {
+      case Success(_) =>
+        log.debug("Stream [{}] outgoing subscription completed", streamId)
+      case Failure(_) if shuttingDown.get() =>
+        log.debug("Stream [{}] outgoing subscription terminated during shutdown", streamId)
+      case Failure(ex) =>
+        log.warn(
+          "Stream [{}] outgoing subscription failed — expectations on this stream will time out: {}",
+          streamId,
+          ex.toString,
+          ex)
+    }
+
+    CoordinatedShutdown(classic).addTask(
+      CoordinatedShutdown.PhaseBeforeActorSystemTerminate,
+      s"stream-outgoing-testkit-shutdown-$service-$streamId") { () =>
+      shuttingDown.set(true)
+      killSwitch.shutdown()
+      // wait for the stream to fully drain so the actor system doesn't proceed to terminate
+      // mid-teardown, which is what produces abrupt shutdown noise.
+      done.recover { case _ => Done }
+    }
 
     new OutgoingMessagesImpl(probe, serializer)
   }

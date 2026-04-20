@@ -4,11 +4,8 @@
 
 package akka.javasdk.testkit;
 
-import akka.actor.typed.ActorSystem;
-import akka.annotation.InternalApi;
 import akka.javasdk.Metadata;
 import akka.javasdk.impl.serialization.Serializer;
-import akka.javasdk.testkit.impl.EventingTestKitImpl;
 import akka.javasdk.testkit.impl.OutgoingMessagesImpl;
 import akka.javasdk.testkit.impl.TestKitMessageImpl;
 import com.google.protobuf.ByteString;
@@ -16,13 +13,6 @@ import java.time.Duration;
 import java.util.List;
 
 public interface EventingTestKit {
-
-  /** INTERNAL API */
-  @InternalApi
-  static EventingTestKit start(
-      ActorSystem<?> system, String host, int port, Serializer serializer) {
-    return EventingTestKitImpl.start(system, host, port, serializer);
-  }
 
   OutgoingMessages getTopicOutgoingMessages(String topic);
 
