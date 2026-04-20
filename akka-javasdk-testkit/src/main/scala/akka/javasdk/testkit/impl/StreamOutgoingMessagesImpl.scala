@@ -4,6 +4,11 @@
 
 package akka.javasdk.testkit.impl
 
+import java.util.concurrent.atomic.AtomicBoolean
+
+import scala.util.Failure
+import scala.util.Success
+
 import akka.Done
 import akka.actor.CoordinatedShutdown
 import akka.actor.typed.ActorSystem
@@ -30,10 +35,6 @@ import kalix.protocol.component.MetadataEntry
 import kalix.testkit.protocol.eventing_test_backend.EmitSingleCommand
 import kalix.testkit.protocol.eventing_test_backend.{ Message => TestkitMessage }
 import org.slf4j.LoggerFactory
-
-import java.util.concurrent.atomic.AtomicBoolean
-import scala.util.Failure
-import scala.util.Success
 
 /**
  * Captures events produced by a `@Produce.ServiceStream` publisher by subscribing to the running service's producer
