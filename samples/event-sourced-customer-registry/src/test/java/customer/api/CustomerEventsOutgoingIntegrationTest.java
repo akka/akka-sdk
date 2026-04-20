@@ -70,7 +70,10 @@ public class CustomerEventsOutgoingIntegrationTest extends TestKitSupport {
     var created = outgoing.expectOneTyped(CustomerPublicEvent.Created.class, ofSeconds(20));
     assertThat(created.getPayload().name()).isEqualTo("Alice");
 
-    var renamed = outgoing.expectOneTyped(CustomerPublicEvent.NameChanged.class, ofSeconds(20));
+    var renamed = outgoing.expectOneTyped(
+      CustomerPublicEvent.NameChanged.class,
+      ofSeconds(20)
+    );
     assertThat(renamed.getPayload().newName()).isEqualTo("Alicia");
   }
 
@@ -86,9 +89,7 @@ public class CustomerEventsOutgoingIntegrationTest extends TestKitSupport {
     componentClient
       .forEventSourcedEntity(id)
       .method(CustomerEntity::create)
-      .invoke(
-        new Customer("bob@example.com", "Bob", new Address("Oxford Street", "London"))
-      );
+      .invoke(new Customer("bob@example.com", "Bob", new Address("Oxford Street", "London")));
     outgoing.expectOneTyped(CustomerPublicEvent.Created.class, ofSeconds(20));
 
     // AddressChanged is filtered by the producer (effects().ignore()) — no public event should be emitted
