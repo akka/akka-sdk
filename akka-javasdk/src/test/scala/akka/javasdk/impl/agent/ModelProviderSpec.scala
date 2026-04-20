@@ -114,6 +114,40 @@ class ModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike w
       m shouldBe ModelProvider.bedrock()
     }
 
+    "load anthropic prompt caching from config" in {
+      val cfg = ConfigFactory
+        .parseString("""
+        cache-system-messages = true
+        cache-tools = true
+        """)
+        .withFallback(defaultConfig.getConfig("akka.javasdk.agent.anthropic"))
+      val m = ModelProvider.Anthropic.fromConfig(cfg)
+      m.cacheSystemMessages() shouldBe true
+      m.cacheTools() shouldBe true
+    }
+
+    "load bedrock prompt caching from config" in {
+      val cfg = ConfigFactory
+        .parseString("""
+        prompt-caching = "after-system"
+        """)
+        .withFallback(defaultConfig.getConfig("akka.javasdk.agent.bedrock"))
+      val m = ModelProvider.Bedrock.fromConfig(cfg)
+      m.promptCaching().get() shouldBe ModelProvider.BedrockPromptCachePlacement.AFTER_SYSTEM
+    }
+
+    "bedrock prompt caching supports all placement values" in {
+      def parse(v: String) = {
+        val cfg = ConfigFactory
+          .parseString(s"""prompt-caching = "$v" """)
+          .withFallback(defaultConfig.getConfig("akka.javasdk.agent.bedrock"))
+        ModelProvider.Bedrock.fromConfig(cfg).promptCaching().get()
+      }
+      parse("after-system") shouldBe ModelProvider.BedrockPromptCachePlacement.AFTER_SYSTEM
+      parse("after-user-message") shouldBe ModelProvider.BedrockPromptCachePlacement.AFTER_USER_MESSAGE
+      parse("after-tools") shouldBe ModelProvider.BedrockPromptCachePlacement.AFTER_TOOLS
+    }
+
     "load defaults from config for vertex-ai" in {
       val m = ModelProvider.VertexAi.fromConfig(defaultConfig.getConfig("akka.javasdk.agent.vertex-ai"))
       m shouldBe ModelProvider.vertexAi()

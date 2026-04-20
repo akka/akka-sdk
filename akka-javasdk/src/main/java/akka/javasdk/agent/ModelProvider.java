@@ -78,7 +78,9 @@ public sealed interface ModelProvider {
         Duration.ofMinutes(1),
         2,
         0,
-        List.of());
+        List.of(),
+        false,
+        false);
   }
 
   /** Settings for the Anthropic Large Language Model provider. */
@@ -120,8 +122,52 @@ public sealed interface ModelProvider {
       /** A maximum number of tokens to spend on thinking, use 0 to disable thinking */
       int thinkingBudgetTokens,
       /** Additional HTTP headers to include in each request to the model API */
-      List<HttpHeader> additionalModelRequestHeaders)
+      List<HttpHeader> additionalModelRequestHeaders,
+      /**
+       * Enable prompt caching of the last system message, reducing cost and latency for repeated
+       * prefixes. Disabled by default.
+       */
+      boolean cacheSystemMessages,
+      /**
+       * Enable prompt caching of the last tool definition, reducing cost and latency for repeated
+       * tool specifications. Disabled by default.
+       */
+      boolean cacheTools)
       implements ModelProvider {
+
+    /**
+     * @deprecated Use constructor with prompt caching settings
+     */
+    @Deprecated
+    public Anthropic(
+        String apiKey,
+        String modelName,
+        String baseUrl,
+        double temperature,
+        double topP,
+        int topK,
+        int maxTokens,
+        Duration connectionTimeout,
+        Duration responseTimeout,
+        int maxRetries,
+        int thinkingBudgetTokens,
+        List<HttpHeader> additionalModelRequestHeaders) {
+      this(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          topK,
+          maxTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          thinkingBudgetTokens,
+          additionalModelRequestHeaders,
+          false,
+          false);
+    }
 
     public static Anthropic fromConfig(Config config) {
       return new Anthropic(
@@ -136,7 +182,9 @@ public sealed interface ModelProvider {
           config.getDuration("response-timeout"),
           config.getInt("max-retries"),
           config.getInt("thinking-budget-tokens"),
-          headersFromConfig(config));
+          headersFromConfig(config),
+          config.getBoolean("cache-system-messages"),
+          config.getBoolean("cache-tools"));
     }
 
     public Anthropic withApiKey(String apiKey) {
@@ -152,7 +200,9 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
     }
 
     public Anthropic withModelName(String modelName) {
@@ -168,7 +218,9 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
     }
 
     public Anthropic withBaseUrl(String baseUrl) {
@@ -184,7 +236,9 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
     }
 
     public Anthropic withTemperature(double temperature) {
@@ -200,7 +254,9 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
     }
 
     public Anthropic withTopP(double topP) {
@@ -216,7 +272,9 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
     }
 
     public Anthropic withTopK(int topK) {
@@ -232,7 +290,9 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
     }
 
     public Anthropic withMaxTokens(int maxTokens) {
@@ -248,7 +308,9 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
     }
 
     public Anthropic withConnectionTimeout(Duration connectionTimeout) {
@@ -264,7 +326,9 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
     }
 
     public Anthropic withResponseTimeout(Duration responseTimeout) {
@@ -280,7 +344,9 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
     }
 
     public Anthropic withMaxRetries(int maxRetries) {
@@ -296,7 +362,9 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
     }
 
     public Anthropic withThinkingBudgetTokens(int thinkingBudgetTokens) {
@@ -312,7 +380,9 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
     }
 
     public Anthropic withAdditionalModelRequestHeaders(
@@ -329,7 +399,45 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
+    }
+
+    public Anthropic withCacheSystemMessages(boolean cacheSystemMessages) {
+      return new Anthropic(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          topK,
+          maxTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          thinkingBudgetTokens,
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
+    }
+
+    public Anthropic withCacheTools(boolean cacheTools) {
+      return new Anthropic(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          topK,
+          maxTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          thinkingBudgetTokens,
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
     }
   }
 
@@ -1709,7 +1817,18 @@ public sealed interface ModelProvider {
         -1,
         Duration.ofMinutes(1),
         2,
-        List.of());
+        List.of(),
+        Optional.empty());
+  }
+
+  /**
+   * Placement of the prompt cache point when using Bedrock with supported Claude or Nova models.
+   * See the AWS Bedrock prompt caching documentation for details.
+   */
+  enum BedrockPromptCachePlacement {
+    AFTER_SYSTEM,
+    AFTER_USER_MESSAGE,
+    AFTER_TOOLS
   }
 
   record Bedrock(
@@ -1727,10 +1846,59 @@ public sealed interface ModelProvider {
       Duration responseTimeout,
       int maxRetries,
       /** Additional HTTP headers to include in each request to the model API */
-      List<HttpHeader> additionalModelRequestHeaders)
+      List<HttpHeader> additionalModelRequestHeaders,
+      /**
+       * Enable prompt caching for Anthropic Claude or Amazon Nova models by specifying where the
+       * cache point should be placed. Empty disables prompt caching (default).
+       */
+      Optional<BedrockPromptCachePlacement> promptCaching)
       implements ModelProvider {
 
+    /**
+     * @deprecated Use constructor with prompt caching settings
+     */
+    @Deprecated
+    public Bedrock(
+        String region,
+        String modelId,
+        boolean returnThinking,
+        boolean sendThinking,
+        int maxOutputTokens,
+        int reasoningTokenBudget,
+        Map<String, Object> additionalModelRequestFields,
+        String accessToken,
+        double temperature,
+        double topP,
+        int maxTokens,
+        Duration responseTimeout,
+        int maxRetries,
+        List<HttpHeader> additionalModelRequestHeaders) {
+      this(
+          region,
+          modelId,
+          returnThinking,
+          sendThinking,
+          maxOutputTokens,
+          reasoningTokenBudget,
+          additionalModelRequestFields,
+          accessToken,
+          temperature,
+          topP,
+          maxTokens,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders,
+          Optional.empty());
+    }
+
     public static Bedrock fromConfig(Config config) {
+      String promptCachingStr = config.getString("prompt-caching");
+      Optional<BedrockPromptCachePlacement> promptCaching =
+          promptCachingStr.isEmpty()
+              ? Optional.empty()
+              : Optional.of(
+                  BedrockPromptCachePlacement.valueOf(
+                      promptCachingStr.trim().toUpperCase().replace('-', '_')));
       return new Bedrock(
           config.getString("region"),
           config.getString("model-id"),
@@ -1745,7 +1913,8 @@ public sealed interface ModelProvider {
           config.getInt("max-tokens"),
           config.getDuration("response-timeout"),
           config.getInt("max-retries"),
-          headersFromConfig(config));
+          headersFromConfig(config),
+          promptCaching);
     }
 
     public Bedrock withRegion(String region) {
@@ -1763,7 +1932,8 @@ public sealed interface ModelProvider {
           this.maxTokens,
           this.responseTimeout,
           this.maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withModelId(String modelId) {
@@ -1781,7 +1951,8 @@ public sealed interface ModelProvider {
           this.maxTokens,
           this.responseTimeout,
           this.maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withReturnThinking(Boolean returnThinking) {
@@ -1799,7 +1970,8 @@ public sealed interface ModelProvider {
           this.maxTokens,
           this.responseTimeout,
           this.maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withSendThinking(Boolean sendThinking) {
@@ -1817,7 +1989,8 @@ public sealed interface ModelProvider {
           this.maxTokens,
           this.responseTimeout,
           this.maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withMaxOutputTokens(int maxOutputTokens) {
@@ -1835,7 +2008,8 @@ public sealed interface ModelProvider {
           this.maxTokens,
           this.responseTimeout,
           this.maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withReasoningTokenBudget(int reasoningTokenBudget) {
@@ -1853,7 +2027,8 @@ public sealed interface ModelProvider {
           this.maxTokens,
           this.responseTimeout,
           this.maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withAdditionalModelRequestFields(
@@ -1872,7 +2047,8 @@ public sealed interface ModelProvider {
           this.maxTokens,
           this.responseTimeout,
           this.maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withAccessToken(String accessToken) {
@@ -1890,7 +2066,8 @@ public sealed interface ModelProvider {
           this.maxTokens,
           this.responseTimeout,
           this.maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withTemperature(double temperature) {
@@ -1908,7 +2085,8 @@ public sealed interface ModelProvider {
           this.maxTokens,
           this.responseTimeout,
           this.maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withTopP(double topP) {
@@ -1926,7 +2104,8 @@ public sealed interface ModelProvider {
           this.maxTokens,
           this.responseTimeout,
           this.maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withMaxTokens(int maxTokens) {
@@ -1944,7 +2123,8 @@ public sealed interface ModelProvider {
           maxTokens,
           this.responseTimeout,
           this.maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withResponseTimeout(Duration responseTimeout) {
@@ -1962,7 +2142,8 @@ public sealed interface ModelProvider {
           this.maxTokens,
           responseTimeout,
           this.maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withMaxRetries(int maxRetries) {
@@ -1980,7 +2161,8 @@ public sealed interface ModelProvider {
           this.maxTokens,
           this.responseTimeout,
           maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withAdditionalModelRequestHeaders(
@@ -1999,7 +2181,27 @@ public sealed interface ModelProvider {
           this.maxTokens,
           this.responseTimeout,
           this.maxRetries,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          this.promptCaching);
+    }
+
+    public Bedrock withPromptCaching(BedrockPromptCachePlacement promptCaching) {
+      return new Bedrock(
+          this.region,
+          this.modelId,
+          this.returnThinking,
+          this.sendThinking,
+          this.maxOutputTokens,
+          this.reasoningTokenBudget,
+          this.additionalModelRequestFields,
+          this.accessToken,
+          this.temperature,
+          this.topP,
+          this.maxTokens,
+          this.responseTimeout,
+          this.maxRetries,
+          this.additionalModelRequestHeaders,
+          Optional.ofNullable(promptCaching));
     }
   }
 }
