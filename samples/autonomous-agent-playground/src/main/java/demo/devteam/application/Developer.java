@@ -12,9 +12,12 @@ public class Developer extends AutonomousAgent {
   public AgentDefinition definition() {
     return define()
       .goal(
-          "Implement features with clean, tested code. "
-              + "Coordinate with teammates when your work depends on or affects "
-              + "their tasks — agree on shared contracts before implementing.")
+        """
+        Implement features with clean, tested code. \
+        Coordinate with teammates when your work depends on or affects \
+        their tasks — agree on shared contracts before implementing. \
+        """
+      )
       .capability(TaskAcceptance.of(DeveloperTasks.IMPLEMENT))
       .tools(new CodeTools());
   }
