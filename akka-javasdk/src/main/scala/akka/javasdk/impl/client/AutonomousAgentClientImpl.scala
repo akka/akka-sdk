@@ -75,6 +75,7 @@ private[javasdk] final class AutonomousAgentClientImpl(
             agentComponentId,
             agentInstanceId,
             taskId,
+            taskName = "",
             stopWhenDone = true,
             callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
           .map { _ =>
@@ -100,6 +101,7 @@ private[javasdk] final class AutonomousAgentClientImpl(
               agentComponentId,
               agentInstanceId,
               taskId,
+              taskName = "",
               stopWhenDone = false,
               callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
         }
@@ -174,8 +176,8 @@ private[javasdk] final class AutonomousAgentClientImpl(
     case f: SpiNotification.IterationFailed => new Notification.IterationFailed(f.reason)
     case _: SpiNotification.Stopped         => new Notification.Stopped
     case t: SpiNotification.TaskStarted     => new Notification.TaskStarted(t.taskKey.id, t.taskKey.name)
-    case t: SpiNotification.TaskCompleted   => new Notification.TaskCompleted(t.taskKey.id)
-    case t: SpiNotification.TaskFailed      => new Notification.TaskFailed(t.taskKey.id, t.reason)
+    case t: SpiNotification.TaskCompleted   => new Notification.TaskCompleted(t.taskKey.id, t.taskKey.name)
+    case t: SpiNotification.TaskFailed      => new Notification.TaskFailed(t.taskKey.id, t.taskKey.name, t.reason)
     // ignore unknown because the runtime should be able to add new notification events without breaking old SDK
   }
 }

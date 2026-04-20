@@ -90,30 +90,44 @@ public sealed interface Notification {
   /** Agent completed a task successfully. */
   final class TaskCompleted implements Notification {
     private final String taskId;
+    private final String taskName;
 
-    public TaskCompleted(String taskId) {
+    public TaskCompleted(String taskId, String taskName) {
       this.taskId = taskId;
+      this.taskName = taskName;
     }
 
     /** The task ID. */
     public String taskId() {
       return taskId;
+    }
+
+    /** The task name. */
+    public String taskName() {
+      return taskName;
     }
   }
 
   /** Agent failed a task. */
   final class TaskFailed implements Notification {
     private final String taskId;
+    private final String taskName;
     private final String reason;
 
-    public TaskFailed(String taskId, String reason) {
+    public TaskFailed(String taskId, String taskName, String reason) {
       this.taskId = taskId;
+      this.taskName = taskName;
       this.reason = reason;
     }
 
     /** The task ID. */
     public String taskId() {
       return taskId;
+    }
+
+    /** The task name. */
+    public String taskName() {
+      return taskName;
     }
 
     /** The failure reason. */
