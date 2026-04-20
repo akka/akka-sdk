@@ -8,7 +8,6 @@ import akka.Done;
 import akka.annotation.DoNotInherit;
 import akka.javasdk.agent.task.Task;
 import akka.javasdk.agent.task.TaskDefinition;
-import akka.javasdk.agent.task.TaskKey;
 import akka.javasdk.agent.task.TaskSnapshot;
 import java.util.concurrent.CompletionStage;
 
@@ -22,13 +21,13 @@ public interface TaskClient {
 
   /**
    * Create a task entity. The task definition provides the type, description, and instructions.
-   * Returns a {@link TaskKey} containing the task ID and name.
+   * Returns the task ID (the same ID this client was created with).
    *
    * @param task the task to create, with instructions and any attachments
    * @param <R> the result type of the task
-   * @return the task key
+   * @return the task ID
    */
-  default <R> TaskKey create(Task<R> task) {
+  default <R> String create(Task<R> task) {
     return createAsync(task).toCompletableFuture().join();
   }
 
@@ -37,9 +36,9 @@ public interface TaskClient {
    *
    * @param task the task to create, with instructions and any attachments
    * @param <R> the result type of the task
-   * @return a CompletionStage with the task key
+   * @return a CompletionStage with the task ID
    */
-  <R> CompletionStage<TaskKey> createAsync(Task<R> task);
+  <R> CompletionStage<String> createAsync(Task<R> task);
 
   /**
    * Assign a task to an owner. A task must be assigned before it can be completed or failed. For

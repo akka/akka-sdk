@@ -79,11 +79,11 @@ public class AgentLifecycleIntegrationTest extends TestKitSupport {
     var state = agentClient.getState();
     assertThat(state.paused()).isTrue();
 
-    var taskKey =
+    var taskId =
         componentClient
             .forTask(UUID.randomUUID().toString())
             .create(TestTasks.TEST_TASK.instructions("Do something."));
-    agentClient.assignTasks(taskKey.id());
+    agentClient.assignTasks(taskId);
 
     agentClient.resume();
 

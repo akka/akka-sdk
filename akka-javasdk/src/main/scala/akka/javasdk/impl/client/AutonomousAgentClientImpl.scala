@@ -50,21 +50,16 @@ private[javasdk] final class AutonomousAgentClientImpl(
   private val log = LoggerFactory.getLogger(classOf[AutonomousAgentClientImpl])
 
   override def runSingleTaskAsync(task: Task[_]): CompletionStage[String] = {
-    val taskKey = new TaskKey(java.util.UUID.randomUUID().toString, task.name())
+    val taskId = java.util.UUID.randomUUID().toString
     log.debug(
       "runSingleTask: agent [{}] instance [{}] task [{}] - [{}]",
       agentComponentId,
       agentInstanceId,
       task.description(),
-      taskKey)
+      taskId)
 
     val taskClient =
-      new TaskClientImpl(
-        taskKey.id(),
-        runtimeComponentClients,
-        serializer,
-        callMetadata,
-        Materializer.matFromSystem(system))
+      new TaskClientImpl(taskId, runtimeComponentClients, serializer, callMetadata, Materializer.matFromSystem(system))
 
     taskClient
       .createAsync(task)
@@ -72,19 +67,19 @@ private[javasdk] final class AutonomousAgentClientImpl(
       .flatMap { _ =>
         log.debug(
           "runSingleTask: task created [{}], sending AssignTask with stopWhenDone to agent instance [{}]",
-          taskKey,
+          taskId,
           agentInstanceId)
 
         runtimeComponentClients.autonomousAgentClient
           .assignTask(
             agentComponentId,
             agentInstanceId,
-            taskKey.id(),
+            taskId,
             stopWhenDone = true,
             callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
           .map { _ =>
-            log.debug("runSingleTask: AssignTask ack for task [{}], returning id [{}]", taskKey, agentInstanceId)
-            taskKey.id()
+            log.debug("runSingleTask: AssignTask ack for task [{}], returning id [{}]", taskId, agentInstanceId)
+            taskId
           }
       }
       .asJava
