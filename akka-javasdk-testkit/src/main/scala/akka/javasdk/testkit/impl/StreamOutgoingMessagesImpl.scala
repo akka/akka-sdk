@@ -7,8 +7,10 @@ package akka.javasdk.testkit.impl
 import akka.Done
 import akka.actor.CoordinatedShutdown
 import akka.actor.typed.ActorSystem
+import akka.annotation.InternalApi
 import akka.grpc.GrpcClientSettings
 import akka.grpc.scaladsl.MetadataBuilder
+import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.serialization.Serializer
 import akka.persistence.Persistence
 import akka.persistence.query.Offset
@@ -36,14 +38,16 @@ import scala.util.Success
 /**
  * Captures events produced by a `@Produce.ServiceStream` publisher by subscribing to the running service's producer
  * stream via Akka Projection gRPC. No runtime mocking is involved — the real transformation path runs.
+ *
+ * INTERNAL API
  */
+@InternalApi
 private[testkit] object StreamOutgoingMessagesImpl {
 
   private val log = LoggerFactory.getLogger("akka.javasdk.testkit.impl.StreamOutgoingMessagesImpl")
 
-  private val GoogleTypeUrlPrefix = "type.googleapis.com/"
-  private val JsonTypeUrlPrefix = "json.akka.io/"
-  private val ProtoAnyTypeUrl = "type.googleapis.com/google.protobuf.Any"
+  private val GoogleTypeUrlPrefix = AnySupport.DefaultTypeUrlPrefix + "/"
+  private val ProtoAnyTypeUrl = GoogleTypeUrlPrefix + com.google.protobuf.Any.getDescriptor.getFullName
 
   def apply(
       system: ActorSystem[_],
@@ -128,19 +132,16 @@ private[testkit] object StreamOutgoingMessagesImpl {
           val tu = any.typeUrl
           val isProto = tu.startsWith(GoogleTypeUrlPrefix)
           val (ceType, contentType) =
-            if (tu.startsWith(JsonTypeUrlPrefix)) (tu.substring(JsonTypeUrlPrefix.length), "application/json")
+            if (tu.startsWith(AnySupport.JsonTypeUrlPrefix))
+              (tu.substring(AnySupport.JsonTypeUrlPrefix.length), "application/json")
             else if (isProto) (tu.substring(GoogleTypeUrlPrefix.length), "application/protobuf")
             else (tu, "application/octet-stream")
 
-          // Non-protobuf payloads are length-delim wrapped as field 1 by the runtime's ProtobufUtils;
-          // unwrap to get the raw (JSON) bytes.
+          // Non-protobuf payloads (e.g. JSON) are length-delim wrapped by the runtime as a primitive-bytes
+          // field when packed into ScalaPbAny; unwrap them via the SDK's primitive-bytes decoder.
           val payloadBytes: ByteString =
             if (isProto || any.value.isEmpty) any.value
-            else {
-              val in = any.value.newCodedInput()
-              in.readTag()
-              in.readBytes()
-            }
+            else AnySupport.decodePrimitiveBytes(any.value)
 
           val metadata = Metadata(entries = Seq(
             MetadataEntry("ce-type", MetadataEntry.Value.StringValue(ceType)),

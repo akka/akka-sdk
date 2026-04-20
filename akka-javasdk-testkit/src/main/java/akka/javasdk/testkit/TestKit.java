@@ -535,8 +535,7 @@ public class TestKit {
 
     /**
      * Capture the outgoing messages produced by a {@code @Produce.ServiceStream} for test
-     * assertions. No runtime mocking is involved — the testkit subscribes to the running producer
-     * stream over gRPC, so the real transformation code path is exercised.
+     * assertions.
      */
     public Settings withStreamOutgoingMessages(String service, String streamId) {
       return new Settings(
@@ -1359,9 +1358,8 @@ public class TestKit {
 
   /**
    * Get outgoing messages produced by a {@code @Produce.ServiceStream} publisher in the service
-   * under test. The testkit subscribes to the running producer stream over gRPC so the real
-   * transformation path is exercised. The {@code service} must match the service name used by
-   * consumers in their {@code @Consume.FromServiceStream} annotation.
+   * under test. The {@code service} must match the service name used by consumers in their
+   * {@code @Consume.FromServiceStream} annotation.
    *
    * <p>Note: the {@code service} value is used by the testkit as a lookup key (and must match what
    * was registered via {@link Settings#withStreamOutgoingMessages(String, String)}); the underlying
