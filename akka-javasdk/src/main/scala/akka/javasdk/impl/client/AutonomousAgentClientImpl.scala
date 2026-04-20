@@ -135,7 +135,7 @@ private[javasdk] final class AutonomousAgentClientImpl(
           spiState.paused,
           spiState.goal,
           new AutonomousAgent.TokenUsage(spiState.totalInputTokens, spiState.totalOutputTokens),
-          spiState.currentTask.map(t => new AgentState.TaskInfo(t.taskId, t.taskName)).toJava,
+          spiState.currentTask.map(t => new TaskKey(t.id, t.name)).toJava,
           spiState.pendingTaskIds.asJava)
       }
       .asJava
@@ -178,9 +178,9 @@ private[javasdk] final class AutonomousAgentClientImpl(
       new Notification.IterationCompleted(new AutonomousAgent.TokenUsage(c.inputTokens, c.outputTokens))
     case f: SpiNotification.IterationFailed => new Notification.IterationFailed(f.reason)
     case _: SpiNotification.Stopped         => new Notification.Stopped
-    case t: SpiNotification.TaskStarted     => new Notification.TaskStarted(t.taskId, t.taskName)
-    case t: SpiNotification.TaskCompleted   => new Notification.TaskCompleted(t.taskId)
-    case t: SpiNotification.TaskFailed      => new Notification.TaskFailed(t.taskId, t.reason)
+    case t: SpiNotification.TaskStarted     => new Notification.TaskStarted(t.taskKey.id, t.taskKey.name)
+    case t: SpiNotification.TaskCompleted   => new Notification.TaskCompleted(t.taskKey.id)
+    case t: SpiNotification.TaskFailed      => new Notification.TaskFailed(t.taskKey.id, t.reason)
     // ignore unknown because the runtime should be able to add new notification events without breaking old SDK
   }
 }

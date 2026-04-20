@@ -420,11 +420,11 @@ state.phase();           // execution phase, e.g. "PHASE_RUNNING", "PHASE_STOPPE
 state.paused();          // whether the agent is paused
 state.goal();            // the agent's current goal
 state.totalTokenUsage(); // cumulative token usage (inputTokens, outputTokens)
-state.currentTask();     // Optional<TaskInfo> — the task currently being worked on
+state.currentTask();     // Optional<TaskKey> — the task currently being worked on
 state.pendingTaskIds();  // List<String> — IDs of tasks queued but not yet started
 ```
 
-The `currentTask()` returns an `Optional<AgentState.TaskInfo>` containing the `taskId` and `taskName` of the task the agent is actively processing. When the agent is idle or between tasks, it is empty.
+The `currentTask()` returns an `Optional<TaskKey>` containing the `id` and `name` of the task the agent is actively processing. When the agent is idle or between tasks, it is empty.
 
 The async variant `getStateAsync()` returns `CompletionStage<AgentState>`.
 
