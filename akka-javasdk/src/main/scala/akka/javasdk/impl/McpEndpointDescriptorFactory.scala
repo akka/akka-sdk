@@ -45,6 +45,7 @@ import akka.runtime.sdk.spi.McpEndpointDescriptor.Resource
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ResourceMethodDescriptor
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ResourceTemplateMethodDescriptor
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ResponseContent
+import akka.runtime.sdk.spi.McpEndpointDescriptor.StructuredToolCallResult
 import akka.runtime.sdk.spi.McpEndpointDescriptor.TextContent
 import akka.runtime.sdk.spi.McpEndpointDescriptor.TextResourceContents
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ToolDescription
@@ -117,9 +118,18 @@ object McpEndpointDescriptorFactory {
     val toolMethods = methodsWithAnnotation[McpTool](mcpEndpointClass)
     val tools = toolMethods
       .map { case (annotation, method) =>
-        if (method.getReturnType != classOf[String])
-          throw new IllegalArgumentException(
-            s"MCP tool method must return String, but [${mcpEndpointClass.getName}.${method.getName}] returns [${method.getReturnType}]")
+        val returnType = method.getReturnType
+        val isStringReturn = returnType == classOf[String]
+        // Non-String, non-primitive object return types are surfaced as MCP 2025-06-18 structured tool output.
+        // Non-object return types (primitives, dates, arrays, collections) are rendered as toString text.
+        val structuredOutputSchema: Option[JsonSchemaObject] =
+          if (isStringReturn) None
+          else
+            JsonSchema.jsonSchemaFor(returnType) match {
+              case obj: JsonSchemaObject => Some(obj)
+              case _                     => None
+            }
+        val isStructuredReturn = structuredOutputSchema.isDefined
 
         val inputSchema: JsonSchemaObject =
           if (annotation.inputSchema().isBlank) {
@@ -135,49 +145,76 @@ object McpEndpointDescriptorFactory {
           else annotation.name()
 
         val toolAnnotations = toolAnnotationsFor(mcpEndpointClass, method.getName, annotation.annotations().toVector)
-        val toolDescription = new ToolDescription(toolName, annotation.description(), inputSchema, toolAnnotations)
+        val toolDescription =
+          new ToolDescription(toolName, annotation.description(), inputSchema, toolAnnotations, structuredOutputSchema)
 
         val requiredParameterNames = inputSchema.required.toSet
-        val callback = (context: McpEndpointConstructionContext, params: Map[String, Any]) =>
-          Future[ResponseContent] {
-            val endpointInstance = instanceFactory.apply(context)
-            val returnValue =
-              try {
-                if (method.getParameterCount == 0) {
-                  method.invoke(endpointInstance)
-                } else {
-                  val parsedParams = method.getParameters.map { param =>
-                    val required = requiredParameterNames(param.getName)
-                    params.get(param.getName) match {
-                      case Some(unparsedValue) =>
-                        val paramValue = objectMapper.convertValue(unparsedValue, param.getType)
-                        if (required) paramValue
-                        else Optional.ofNullable(paramValue)
-                      case None =>
-                        if (required)
-                          throw new IllegalArgumentException(
-                            s"Missing required tool parameter [${param.getName}] for tool [$toolName]")
-                        else Optional.empty()
-                    }
-                  }
-                  method.invoke(endpointInstance, parsedParams: _*)
+        def invoke(context: McpEndpointConstructionContext, params: Map[String, Any]): AnyRef = {
+          val endpointInstance = instanceFactory.apply(context)
+          try {
+            if (method.getParameterCount == 0) {
+              method.invoke(endpointInstance)
+            } else {
+              val parsedParams = method.getParameters.map { param =>
+                val required = requiredParameterNames(param.getName)
+                params.get(param.getName) match {
+                  case Some(unparsedValue) =>
+                    val paramValue = objectMapper.convertValue(unparsedValue, param.getType)
+                    if (required) paramValue
+                    else Optional.ofNullable(paramValue)
+                  case None =>
+                    if (required)
+                      throw new IllegalArgumentException(
+                        s"Missing required tool parameter [${param.getName}] for tool [$toolName]")
+                    else Optional.empty()
                 }
-              } catch unwrapInvocationTargetExceptionCatcher
-
-            returnValue match {
-              case text: String => new TextContent(text)
-              case unknown      =>
-                // FIXME handle/allow audio and image content types, supported by protocol, but how do we fit it in SDK API?
-                throw new RuntimeException(
-                  s"Unsupported tool return value for tool [$toolName] defined in [${mcpEndpointClass.getName}.${method.getName}] (${if (unknown == null) "null"
-                  else unknown.getClass.toString}")
+              }
+              method.invoke(endpointInstance, parsedParams: _*)
             }
-          }
+          } catch unwrapInvocationTargetExceptionCatcher
+        }
 
-        new ToolMethodDescriptor(
-          toolDescription = toolDescription,
-          method = callback,
-          methodOptions = new MethodOptions(None, None))
+        if (!isStructuredReturn) {
+          // FIXME handle/allow audio and image content types, supported by protocol, but how do we fit it in SDK API?
+          val callback = (context: McpEndpointConstructionContext, params: Map[String, Any]) =>
+            Future[ResponseContent] {
+              invoke(context, params) match {
+                case text: String => new TextContent(text)
+                case null         => new TextContent("")
+                case other        => new TextContent(other.toString)
+              }
+            }
+          new ToolMethodDescriptor(
+            toolDescription = toolDescription,
+            method = callback,
+            methodOptions = new MethodOptions(None, None))
+        } else {
+          // Structured output: serialize the returned object into a Map[String, Any] for structuredContent.
+          val mapTypeRef = new com.fasterxml.jackson.core.`type`.TypeReference[java.util.Map[String, AnyRef]] {}
+          val legacyCallback = (context: McpEndpointConstructionContext, params: Map[String, Any]) =>
+            Future.failed[ResponseContent](new IllegalStateException(
+              s"Tool [$toolName] is a structured tool, structuredMethod should have been used instead"))
+          val structuredCallback = (context: McpEndpointConstructionContext, params: Map[String, Any]) =>
+            Future[StructuredToolCallResult] {
+              val returnValue = invoke(context, params)
+              val asJavaMap =
+                try objectMapper.convertValue(returnValue, mapTypeRef)
+                catch {
+                  case NonFatal(ex) =>
+                    throw new RuntimeException(
+                      s"Failed to serialize structured return value of tool [$toolName] defined in [${mcpEndpointClass.getName}.${method.getName}] to a JSON object",
+                      ex)
+                }
+              import scala.jdk.CollectionConverters._
+              val asScalaMap: Map[String, Any] = asJavaMap.asScala.toMap
+              new StructuredToolCallResult(content = Seq.empty, structuredContent = asScalaMap, isError = false)
+            }
+          new ToolMethodDescriptor(
+            toolDescription = toolDescription,
+            method = legacyCallback,
+            methodOptions = new MethodOptions(None, None),
+            structuredMethod = Some(structuredCallback))
+        }
       }
       .sortBy(_.toolDescription.name)
 
