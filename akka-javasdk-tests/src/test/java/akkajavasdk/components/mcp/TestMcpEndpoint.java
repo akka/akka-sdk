@@ -28,6 +28,18 @@ public class TestMcpEndpoint extends AbstractMcpEndpoint {
     throw new IllegalStateException("failed: " + reason);
   }
 
+  public record Weather(String city, int tempC) {}
+
+  @McpTool(description = "Structured weather tool")
+  public Weather weather(@Description("the city") String city) {
+    return new Weather(city, 20);
+  }
+
+  @McpTool(description = "A tool returning a primitive")
+  public int answer() {
+    return 42;
+  }
+
   @McpResource(
       name = "example text",
       uri = "file:///example.txt",
