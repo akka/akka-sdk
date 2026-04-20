@@ -11,8 +11,8 @@ import java.util.Optional;
 /** State of a backlog entity — tracks task references and their claim status. */
 public record BacklogState(String name, Map<String, Entry> tasks, boolean closed) {
 
-  /** An entry in the backlog: task ID, task name, and who has claimed it (if anyone). */
-  public record Entry(String taskId, String taskName, Optional<String> claimedBy) {}
+  /** An entry in the backlog: task ID and who has claimed it (if anyone). */
+  public record Entry(String taskId, Optional<String> claimedBy) {}
 
   public static BacklogState empty() {
     return new BacklogState("", Map.of(), false);
@@ -32,11 +32,6 @@ public record BacklogState(String name, Map<String, Entry> tasks, boolean closed
 
   public boolean isClaimed(String taskId) {
     return tasks.containsKey(taskId) && tasks.get(taskId).claimedBy().isPresent();
-  }
-
-  public String taskName(String taskId) {
-    var entry = tasks.get(taskId);
-    return entry != null ? entry.taskName() : "";
   }
 
   public Optional<String> claimedBy(String taskId) {
@@ -66,25 +61,21 @@ public record BacklogState(String name, Map<String, Entry> tasks, boolean closed
     return new BacklogState(name, tasks, closed);
   }
 
-  public BacklogState withTaskAdded(String taskId, String taskName) {
+  public BacklogState withTaskAdded(String taskId) {
     var updated = new java.util.HashMap<>(tasks);
-    updated.put(taskId, new Entry(taskId, taskName, Optional.empty()));
+    updated.put(taskId, new Entry(taskId, Optional.empty()));
     return new BacklogState(name, Map.copyOf(updated), closed);
   }
 
   public BacklogState withTaskClaimed(String taskId, String claimedBy) {
     var updated = new java.util.HashMap<>(tasks);
-    var existing = updated.get(taskId);
-    var taskName = existing != null ? existing.taskName() : "";
-    updated.put(taskId, new Entry(taskId, taskName, Optional.of(claimedBy)));
+    updated.put(taskId, new Entry(taskId, Optional.of(claimedBy)));
     return new BacklogState(name, Map.copyOf(updated), closed);
   }
 
   public BacklogState withTaskReleased(String taskId) {
     var updated = new java.util.HashMap<>(tasks);
-    var existing = updated.get(taskId);
-    var taskName = existing != null ? existing.taskName() : "";
-    updated.put(taskId, new Entry(taskId, taskName, Optional.empty()));
+    updated.put(taskId, new Entry(taskId, Optional.empty()));
     return new BacklogState(name, Map.copyOf(updated), closed);
   }
 

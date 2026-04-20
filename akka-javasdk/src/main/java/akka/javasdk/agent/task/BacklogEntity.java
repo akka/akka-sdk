@@ -41,16 +41,14 @@ public final class BacklogEntity extends EventSourcedEntity<BacklogState, Backlo
   }
 
   /** Add a task reference to this backlog. The task must already exist in TaskEntity. */
-  public Effect<Done> addTask(TaskKey taskKey) {
+  public Effect<Done> addTask(String taskId) {
     if (currentState().closed()) {
       return closedError();
     }
-    if (currentState().containsTask(taskKey.id())) {
+    if (currentState().containsTask(taskId)) {
       return effects().reply(done()); // idempotent
     }
-    return effects()
-        .persist(new BacklogEvent.TaskAdded(taskKey.id(), taskKey.name()))
-        .thenReply(__ -> done());
+    return effects().persist(new BacklogEvent.TaskAdded(taskId)).thenReply(__ -> done());
   }
 
   /** Atomic first-come-first-served claim. */
@@ -130,7 +128,7 @@ public final class BacklogEntity extends EventSourcedEntity<BacklogState, Backlo
   public BacklogState applyEvent(BacklogEvent event) {
     return switch (event) {
       case BacklogEvent.BacklogCreated e -> currentState().withName(e.name());
-      case BacklogEvent.TaskAdded e -> currentState().withTaskAdded(e.taskId(), e.taskName());
+      case BacklogEvent.TaskAdded e -> currentState().withTaskAdded(e.taskId());
       case BacklogEvent.TaskClaimed e -> currentState().withTaskClaimed(e.taskId(), e.claimedBy());
       case BacklogEvent.TaskReleased e -> currentState().withTaskReleased(e.taskId());
       case BacklogEvent.TaskTransferred e ->

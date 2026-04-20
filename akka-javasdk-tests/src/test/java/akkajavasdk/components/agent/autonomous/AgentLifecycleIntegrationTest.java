@@ -92,7 +92,7 @@ public class AgentLifecycleIntegrationTest extends TestKitSupport {
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () -> {
-              var snapshot = componentClient.forTask(taskKey.id()).get(TestTasks.TEST_TASK);
+              var snapshot = componentClient.forTask(taskId).get(TestTasks.TEST_TASK);
               assertThat(snapshot.result()).isNotNull();
             });
 

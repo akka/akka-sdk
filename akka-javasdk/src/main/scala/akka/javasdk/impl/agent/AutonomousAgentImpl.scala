@@ -30,7 +30,6 @@ import akka.javasdk.agent.task.BacklogEntity
 import akka.javasdk.agent.task.BacklogState
 import akka.javasdk.agent.task.TaskAttachment
 import akka.javasdk.agent.task.TaskEntity
-import akka.javasdk.agent.task.TaskKey
 import akka.javasdk.agent.task.TaskState
 import akka.javasdk.agent.task.TaskStatus
 import akka.javasdk.client.ComponentClient
@@ -134,7 +133,7 @@ private[impl] final class AutonomousAgentImpl(
 
   // Pre-resolve BacklogEntity methods for calling via EntityClientImpl
   private val backlogCreateMethod = classOf[BacklogEntity].getMethod("create", classOf[String])
-  private val backlogAddTaskMethod = classOf[BacklogEntity].getMethod("addTask", classOf[TaskKey])
+  private val backlogAddTaskMethod = classOf[BacklogEntity].getMethod("addTask", classOf[String])
   private val backlogClaimMethod = classOf[BacklogEntity].getMethod("claim", classOf[BacklogEntity.ClaimRequest])
   private val backlogReleaseMethod = classOf[BacklogEntity].getMethod("release", classOf[String])
   private val backlogTransferMethod =
@@ -256,10 +255,10 @@ private[impl] final class AutonomousAgentImpl(
         .invokeAsync(name)
         .asScala
 
-    override def addTask(backlogId: String, taskId: String, taskName: String): Future[Done] =
+    override def addTask(backlogId: String, taskId: String): Future[Done] =
       backlogEntityClient(backlogId)
-        .methodRefOneArg[TaskKey, Done](backlogAddTaskMethod)
-        .invokeAsync(new TaskKey(taskId, taskName))
+        .methodRefOneArg[String, Done](backlogAddTaskMethod)
+        .invokeAsync(taskId)
         .asScala
 
     override def claimTask(backlogId: String, taskId: String, claimedBy: String): Future[Done] = {
@@ -405,7 +404,6 @@ private[impl] final class AutonomousAgentImpl(
     val entries = state.entries().asScala.toSeq.map { entry =>
       new SpiBacklog.SpiBacklogEntry(
         taskId = entry.taskId(),
-        taskName = entry.taskName(),
         claimedBy = if (entry.claimedBy().isPresent) Some(entry.claimedBy().get()) else None)
     }
     new SpiBacklog.SpiBacklogState(state.name(), entries, state.closed())

@@ -11,7 +11,6 @@ import akka.Done;
 import akka.javasdk.agent.task.BacklogEntity;
 import akka.javasdk.agent.task.BacklogEvent;
 import akka.javasdk.agent.task.BacklogState;
-import akka.javasdk.agent.task.TaskKey;
 import akka.javasdk.testkit.EventSourcedResult;
 import akka.javasdk.testkit.EventSourcedTestKit;
 import org.junit.jupiter.api.Test;
@@ -40,8 +39,7 @@ public class BacklogEntityTest {
   @Test
   public void shouldAddTask() {
     var testKit = EventSourcedTestKit.of(BacklogEntity::new);
-    EventSourcedResult<Done> result =
-        testKit.method(BacklogEntity::addTask).invoke(new TaskKey("task-1", "Task One"));
+    EventSourcedResult<Done> result = testKit.method(BacklogEntity::addTask).invoke("task-1");
     assertThat(result.getReply()).isEqualTo(done());
     result.getNextEventOfType(BacklogEvent.TaskAdded.class);
     assertThat(testKit.getState().containsTask("task-1")).isTrue();
@@ -51,9 +49,8 @@ public class BacklogEntityTest {
   @Test
   public void shouldAddTaskIdempotently() {
     var testKit = EventSourcedTestKit.of(BacklogEntity::new);
-    testKit.method(BacklogEntity::addTask).invoke(new TaskKey("task-1", "Task One"));
-    EventSourcedResult<Done> result =
-        testKit.method(BacklogEntity::addTask).invoke(new TaskKey("task-1", "Task One"));
+    testKit.method(BacklogEntity::addTask).invoke("task-1");
+    EventSourcedResult<Done> result = testKit.method(BacklogEntity::addTask).invoke("task-1");
     assertThat(result.getReply()).isEqualTo(done());
     assertThat(result.getAllEvents()).isEmpty();
   }
@@ -61,7 +58,7 @@ public class BacklogEntityTest {
   @Test
   public void shouldClaimTask() {
     var testKit = EventSourcedTestKit.of(BacklogEntity::new);
-    testKit.method(BacklogEntity::addTask).invoke(new TaskKey("task-1", "Task One"));
+    testKit.method(BacklogEntity::addTask).invoke("task-1");
 
     EventSourcedResult<Done> result =
         testKit
@@ -87,7 +84,7 @@ public class BacklogEntityTest {
   @Test
   public void shouldRejectClaimForAlreadyClaimedTask() {
     var testKit = EventSourcedTestKit.of(BacklogEntity::new);
-    testKit.method(BacklogEntity::addTask).invoke(new TaskKey("task-1", "Task One"));
+    testKit.method(BacklogEntity::addTask).invoke("task-1");
     testKit
         .method(BacklogEntity::claim)
         .invoke(new BacklogEntity.ClaimRequest("task-1", "agent-1"));
@@ -102,7 +99,7 @@ public class BacklogEntityTest {
   @Test
   public void shouldReleaseClaimedTask() {
     var testKit = EventSourcedTestKit.of(BacklogEntity::new);
-    testKit.method(BacklogEntity::addTask).invoke(new TaskKey("task-1", "Task One"));
+    testKit.method(BacklogEntity::addTask).invoke("task-1");
     testKit
         .method(BacklogEntity::claim)
         .invoke(new BacklogEntity.ClaimRequest("task-1", "agent-1"));
@@ -116,7 +113,7 @@ public class BacklogEntityTest {
   @Test
   public void shouldReleaseUnclaimedTaskIdempotently() {
     var testKit = EventSourcedTestKit.of(BacklogEntity::new);
-    testKit.method(BacklogEntity::addTask).invoke(new TaskKey("task-1", "Task One"));
+    testKit.method(BacklogEntity::addTask).invoke("task-1");
 
     EventSourcedResult<Done> result = testKit.method(BacklogEntity::release).invoke("task-1");
     assertThat(result.getReply()).isEqualTo(done());
@@ -126,7 +123,7 @@ public class BacklogEntityTest {
   @Test
   public void shouldTransferTask() {
     var testKit = EventSourcedTestKit.of(BacklogEntity::new);
-    testKit.method(BacklogEntity::addTask).invoke(new TaskKey("task-1", "Task One"));
+    testKit.method(BacklogEntity::addTask).invoke("task-1");
     testKit
         .method(BacklogEntity::claim)
         .invoke(new BacklogEntity.ClaimRequest("task-1", "agent-1"));
@@ -144,9 +141,9 @@ public class BacklogEntityTest {
   @Test
   public void shouldCancelUnclaimed() {
     var testKit = EventSourcedTestKit.of(BacklogEntity::new);
-    testKit.method(BacklogEntity::addTask).invoke(new TaskKey("task-1", "Task One"));
-    testKit.method(BacklogEntity::addTask).invoke(new TaskKey("task-2", "Task Two"));
-    testKit.method(BacklogEntity::addTask).invoke(new TaskKey("task-3", "Task Three"));
+    testKit.method(BacklogEntity::addTask).invoke("task-1");
+    testKit.method(BacklogEntity::addTask).invoke("task-2");
+    testKit.method(BacklogEntity::addTask).invoke("task-3");
     testKit
         .method(BacklogEntity::claim)
         .invoke(new BacklogEntity.ClaimRequest("task-2", "agent-1"));
@@ -203,15 +200,14 @@ public class BacklogEntityTest {
     var testKit = EventSourcedTestKit.of(BacklogEntity::new);
     testKit.method(BacklogEntity::close).invoke();
 
-    EventSourcedResult<Done> result =
-        testKit.method(BacklogEntity::addTask).invoke(new TaskKey("task-1", "Task One"));
+    EventSourcedResult<Done> result = testKit.method(BacklogEntity::addTask).invoke("task-1");
     assertThat(result.getError()).isEqualTo("Backlog is closed");
   }
 
   @Test
   public void shouldRejectClaimWhenClosed() {
     var testKit = EventSourcedTestKit.of(BacklogEntity::new);
-    testKit.method(BacklogEntity::addTask).invoke(new TaskKey("task-1", "Task One"));
+    testKit.method(BacklogEntity::addTask).invoke("task-1");
     testKit.method(BacklogEntity::close).invoke();
 
     EventSourcedResult<Done> result =
@@ -224,7 +220,7 @@ public class BacklogEntityTest {
   @Test
   public void shouldRejectReleaseWhenClosed() {
     var testKit = EventSourcedTestKit.of(BacklogEntity::new);
-    testKit.method(BacklogEntity::addTask).invoke(new TaskKey("task-1", "Task One"));
+    testKit.method(BacklogEntity::addTask).invoke("task-1");
     testKit
         .method(BacklogEntity::claim)
         .invoke(new BacklogEntity.ClaimRequest("task-1", "agent-1"));
@@ -237,7 +233,7 @@ public class BacklogEntityTest {
   @Test
   public void shouldRejectTransferWhenClosed() {
     var testKit = EventSourcedTestKit.of(BacklogEntity::new);
-    testKit.method(BacklogEntity::addTask).invoke(new TaskKey("task-1", "Task One"));
+    testKit.method(BacklogEntity::addTask).invoke("task-1");
     testKit
         .method(BacklogEntity::claim)
         .invoke(new BacklogEntity.ClaimRequest("task-1", "agent-1"));
@@ -253,7 +249,7 @@ public class BacklogEntityTest {
   @Test
   public void shouldRejectCancelUnclaimedWhenClosed() {
     var testKit = EventSourcedTestKit.of(BacklogEntity::new);
-    testKit.method(BacklogEntity::addTask).invoke(new TaskKey("task-1", "Task One"));
+    testKit.method(BacklogEntity::addTask).invoke("task-1");
     testKit.method(BacklogEntity::close).invoke();
 
     EventSourcedResult<Done> result = testKit.method(BacklogEntity::cancelUnclaimed).invoke();
@@ -263,7 +259,7 @@ public class BacklogEntityTest {
   @Test
   public void shouldAllowGetStateWhenClosed() {
     var testKit = EventSourcedTestKit.of(BacklogEntity::new);
-    testKit.method(BacklogEntity::addTask).invoke(new TaskKey("task-1", "Task One"));
+    testKit.method(BacklogEntity::addTask).invoke("task-1");
     testKit.method(BacklogEntity::close).invoke();
 
     EventSourcedResult<BacklogState> result = testKit.method(BacklogEntity::getState).invoke();
@@ -274,8 +270,8 @@ public class BacklogEntityTest {
   @Test
   public void shouldGetState() {
     var testKit = EventSourcedTestKit.of(BacklogEntity::new);
-    testKit.method(BacklogEntity::addTask).invoke(new TaskKey("task-1", "Task One"));
-    testKit.method(BacklogEntity::addTask).invoke(new TaskKey("task-2", "Task Two"));
+    testKit.method(BacklogEntity::addTask).invoke("task-1");
+    testKit.method(BacklogEntity::addTask).invoke("task-2");
     testKit
         .method(BacklogEntity::claim)
         .invoke(new BacklogEntity.ClaimRequest("task-1", "agent-1"));
