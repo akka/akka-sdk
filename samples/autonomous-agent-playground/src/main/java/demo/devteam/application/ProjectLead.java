@@ -16,7 +16,13 @@ public class ProjectLead extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal("Deliver completed software projects with all features implemented and tested.")
+      .goal(
+        """
+        Deliver completed software projects with all features implemented and tested. \
+        Message team members directly when their tasks have dependencies or \
+        shared interfaces that require coordination before implementation. \
+        """
+      )
       .capability(TaskAcceptance.of(ProjectTasks.PLAN))
       .capability(TeamLeadership.of(TeamMember.of(Developer.class).maxInstances(3)));
   }

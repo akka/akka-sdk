@@ -16,8 +16,10 @@ public class DocumentReviewer extends AutonomousAgent {
   public AgentDefinition definition() {
     return define()
       .goal(
-        "Review documents for regulatory and compliance standards, " +
-        "providing structured assessments with specific findings."
+        """
+        Review documents for regulatory and compliance standards, \
+        providing structured assessments with specific findings. \
+        """
       )
       .capability(TaskAcceptance.of(ReviewTasks.REVIEW).maxIterationsPerTask(5));
   }
