@@ -36,6 +36,8 @@ public interface EventingTestKit {
 
   IncomingMessages getStreamIncomingMessages(String service, String streamId);
 
+  OutgoingMessages getStreamOutgoingMessages(String service, String streamId);
+
   /** Allows to simulate publishing messages for the purposes of testing incoming message flow. */
   interface IncomingMessages {
     /**

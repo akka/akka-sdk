@@ -79,10 +79,30 @@ object EventingTestKitImpl {
    * The returned testkit can be used to expect and emit events to the proxy as if they came from an actual pub/sub
    * event backend.
    */
-  def start(system: ActorSystem[_], host: String, port: Int, serializer: Serializer): EventingTestKit = {
+  def start(system: ActorSystem[_], host: String, port: Int, serializer: Serializer): EventingTestKit =
+    start(system, host, port, None, None, None, None, serializer)
+
+  def start(
+      system: ActorSystem[_],
+      host: String,
+      port: Int,
+      runtimeHost: Option[String],
+      runtimePort: Option[Int],
+      serviceIdentityHeader: Option[String],
+      serviceIdentityToken: Option[String],
+      serializer: Serializer): EventingTestKit = {
 
     // Create service handlers
-    val service = new EventingTestServiceImpl(system, host, port, serializer)
+    val service =
+      new EventingTestServiceImpl(
+        system,
+        host,
+        port,
+        runtimeHost,
+        runtimePort,
+        serviceIdentityHeader,
+        serviceIdentityToken,
+        serializer)
     val handler: HttpRequest => Future[HttpResponse] =
       EventingTestKitServiceHandler(new service.ServiceImpl)(system)
 
@@ -161,14 +181,26 @@ object EventingTestKitImpl {
  * Implements the EventingTestKit protocol originally defined in proxy
  * protocols/testkit/src/main/protobuf/eventing_test_backend.proto
  */
-final class EventingTestServiceImpl(system: ActorSystem[_], val host: String, var port: Int, serializer: Serializer)
+final class EventingTestServiceImpl(
+    system: ActorSystem[_],
+    val host: String,
+    var port: Int,
+    runtimeHost: Option[String],
+    runtimePort: Option[Int],
+    serviceIdentityHeader: Option[String],
+    serviceIdentityToken: Option[String],
+    serializer: Serializer)
     extends EventingTestKit {
+
+  def this(system: ActorSystem[_], host: String, port: Int, serializer: Serializer) =
+    this(system, host, port, None, None, None, None, serializer)
 
   private val log = LoggerFactory.getLogger(classOf[EventingTestServiceImpl])
   private implicit val sys: akka.actor.ActorSystem = system.classicSystem
   private implicit val ec: ExecutionContextExecutor = system.executionContext
 
   private val topicDestinations = new ConcurrentHashMap[String, OutgoingMessagesImpl]()
+  private val streamDestinations = new ConcurrentHashMap[String, OutgoingMessagesImpl]()
 
   private val veSubscriptions = new ConcurrentHashMap[String, VeIncomingMessagesImpl]()
   private val esSubscriptions = new ConcurrentHashMap[String, IncomingMessagesImpl]()
@@ -220,6 +252,29 @@ final class EventingTestServiceImpl(system: ActorSystem[_], val host: String, va
       service + "/" + streamId,
       _ =>
         new IncomingMessagesImpl(sys.actorOf(Props[SourcesHolder](), s"stream-holder-$service-$streamId"), serializer))
+
+  override def getStreamOutgoingMessages(service: String, streamId: String): OutgoingMessages = {
+    val host = runtimeHost.getOrElse(
+      throw new IllegalStateException(
+        "getStreamOutgoingMessages requires the testkit to know the service runtime host/port; " +
+        "this EventingTestKit was started without them."))
+    val port = runtimePort.getOrElse(
+      throw new IllegalStateException(
+        "getStreamOutgoingMessages requires the testkit to know the service runtime host/port; " +
+        "this EventingTestKit was started without them."))
+
+    streamDestinations.computeIfAbsent(
+      service + "/" + streamId,
+      _ =>
+        StreamOutgoingMessagesImpl(
+          system,
+          host,
+          port,
+          serviceIdentityHeader,
+          serviceIdentityToken,
+          streamId,
+          serializer))
+  }
 
   final class ServiceImpl extends EventingTestKitService {
     override def emitSingle(in: EmitSingleCommand): Future[EmitSingleResult] = {

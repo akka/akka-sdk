@@ -23,9 +23,11 @@ class TestKitSpec extends AnyWordSpec with Matchers {
         .withTopicIncomingMessages("h")
         .withTopicOutgoingMessages("aa")
         .withTopicOutgoingMessages("bb")
+        .withStreamOutgoingMessages("s3", "cc")
+        .withStreamOutgoingMessages("s4", "dd")
 
       config.toIncomingFlowConfig shouldBe "event-sourced-entity,c;event-sourced-entity,d;key-value-entity,a;key-value-entity,b;stream,s1/e;stream,s2/f;topic,g;topic,h"
-      config.toOutgoingFlowConfig shouldBe "topic,aa;topic,bb"
+      config.toOutgoingFlowConfig shouldBe "stream,s3/cc;stream,s4/dd;topic,aa;topic,bb"
     }
 
     "create immutable config" in {

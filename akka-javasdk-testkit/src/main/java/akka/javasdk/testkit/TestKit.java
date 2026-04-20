@@ -142,6 +142,12 @@ public class TestKit {
       return new MockedEventing(new HashMap<>(mockedIncomingEvents), copy);
     }
 
+    public MockedEventing withStreamOutgoingMessages(String service, String streamId) {
+      Map<String, Set<String>> copy = new HashMap<>(mockedOutgoingEvents);
+      copy.compute(STREAM, updateValues(service + "/" + streamId));
+      return new MockedEventing(new HashMap<>(mockedIncomingEvents), copy);
+    }
+
     @NotNull
     private BiFunction<String, Set<String>, Set<String>> updateValues(String componentId) {
       return (key, currentValues) -> {
@@ -220,6 +226,11 @@ public class TestKit {
     boolean hasTopicDestination(String topic) {
       Set<String> values = mockedOutgoingEvents.get(TOPIC);
       return values != null && values.contains(topic);
+    }
+
+    boolean hasStreamDestination(String service, String streamId) {
+      Set<String> values = mockedOutgoingEvents.get(STREAM);
+      return values != null && values.contains(service + "/" + streamId);
     }
 
     private boolean checkExistence(String type, String name) {
@@ -522,6 +533,24 @@ public class TestKit {
           grpcMocks);
     }
 
+    /**
+     * Capture the outgoing messages produced by a {@code @Produce.ServiceStream} for test
+     * assertions. No runtime mocking is involved — the testkit subscribes to the running producer
+     * stream over gRPC, so the real transformation code path is exercised.
+     */
+    public Settings withStreamOutgoingMessages(String service, String streamId) {
+      return new Settings(
+          serviceName,
+          aclEnabled,
+          eventingSupport,
+          mockedEventing.withStreamOutgoingMessages(service, streamId),
+          dependencyProvider,
+          additionalConfig,
+          disabledComponents,
+          overrideDisabledComponents,
+          modelProvidersByAgentId);
+    }
+
     public Settings withEventingSupport(EventingSupport eventingSupport) {
       return new Settings(
           serviceName,
@@ -820,8 +849,15 @@ public class TestKit {
       // actual message codec instance not available until runtime/sdk started, thus this is called
       // after discovery happens
       eventingTestKit =
-          EventingTestKit.start(
-              runtimeActorSystem, "0.0.0.0", eventingTestKitPort, new Serializer());
+          akka.javasdk.testkit.impl.EventingTestKitImpl.start(
+              runtimeActorSystem,
+              "0.0.0.0",
+              eventingTestKitPort,
+              scala.Option.apply(runtimeHost),
+              scala.Option.apply((Integer) runtimePort),
+              scala.Option.apply("impersonate-service"),
+              scala.Option.apply("testkit"),
+              new Serializer());
     }
   }
 
@@ -1319,6 +1355,23 @@ public class TestKit {
       throwMissingConfigurationException("Topic " + topic);
     }
     return eventingTestKit.getTopicOutgoingMessages(topic);
+  }
+
+  /**
+   * Get outgoing messages produced by a {@code @Produce.ServiceStream} publisher in the service
+   * under test. The testkit subscribes to the running producer stream over gRPC so the real
+   * transformation path is exercised. The {@code service} must match the service name used by
+   * consumers in their {@code @Consume.FromServiceStream} annotation.
+   *
+   * @param service service name
+   * @param streamId service stream id
+   */
+  public EventingTestKit.OutgoingMessages getStreamOutgoingMessages(
+      String service, String streamId) {
+    if (!settings.mockedEventing.hasStreamDestination(service, streamId)) {
+      throwMissingConfigurationException("Stream " + service + "/" + streamId);
+    }
+    return eventingTestKit.getStreamOutgoingMessages(service, streamId);
   }
 
   private void throwMissingConfigurationException(String hint) {
