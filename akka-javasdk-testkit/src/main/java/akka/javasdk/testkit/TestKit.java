@@ -36,9 +36,9 @@ import akka.javasdk.impl.serialization.Serializer;
 import akka.javasdk.impl.timer.TimerSchedulerImpl;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
+import akka.javasdk.testkit.impl.MockedGrpcServicesImpl;
+import akka.javasdk.testkit.impl.MockedHttpServicesImpl;
 import akka.javasdk.testkit.impl.SseRouteTesterImpl;
-import akka.javasdk.testkit.impl.StubbedGrpcServicesImpl;
-import akka.javasdk.testkit.impl.StubbedHttpServicesImpl;
 import akka.javasdk.testkit.impl.WebSocketRouteTesterImpl;
 import akka.javasdk.timer.TimerScheduler;
 import akka.javasdk.workflow.Workflow;
@@ -270,16 +270,16 @@ public class TestKit {
     public final Map<String, ModelProvider> modelProvidersByAgentId;
 
     /**
-     * Map from service name to a synchronous HTTP request handler that stubs responses for that
+     * Map from service name to a synchronous HTTP request handler that mocks responses for that
      * service.
      */
-    public final Map<String, Function<HttpRequest, HttpResponse>> httpStubs;
+    public final Map<String, Function<HttpRequest, HttpResponse>> httpMocks;
 
     /**
-     * Map from service name to a map of gRPC service client class -> stub instance, used to stub
+     * Map from service name to a map of gRPC service client class -> mock instance, used to mock
      * gRPC service calls for the given service name.
      */
-    public final Map<String, Map<Class<? extends AkkaGrpcClient>, AkkaGrpcClient>> grpcStubs;
+    public final Map<String, Map<Class<? extends AkkaGrpcClient>, AkkaGrpcClient>> grpcMocks;
 
     public enum EventingSupport {
       /**
@@ -313,8 +313,8 @@ public class TestKit {
         Set<Class<?>> disabledComponents,
         boolean overrideDisabledComponents,
         Map<String, ModelProvider> modelProvidersByAgentId,
-        Map<String, Function<HttpRequest, HttpResponse>> httpStubs,
-        Map<String, Map<Class<? extends AkkaGrpcClient>, AkkaGrpcClient>> grpcStubs) {
+        Map<String, Function<HttpRequest, HttpResponse>> httpMocks,
+        Map<String, Map<Class<? extends AkkaGrpcClient>, AkkaGrpcClient>> grpcMocks) {
       this.serviceName = serviceName;
       this.aclEnabled = aclEnabled;
       this.eventingSupport = eventingSupport;
@@ -324,8 +324,8 @@ public class TestKit {
       this.disabledComponents = disabledComponents;
       this.overrideDisabledComponents = overrideDisabledComponents;
       this.modelProvidersByAgentId = modelProvidersByAgentId;
-      this.httpStubs = httpStubs;
-      this.grpcStubs = grpcStubs;
+      this.httpMocks = httpMocks;
+      this.grpcMocks = grpcMocks;
     }
 
     /**
@@ -348,8 +348,8 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
-          httpStubs,
-          grpcStubs);
+          httpMocks,
+          grpcMocks);
     }
 
     /**
@@ -368,8 +368,8 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
-          httpStubs,
-          grpcStubs);
+          httpMocks,
+          grpcMocks);
     }
 
     /**
@@ -388,8 +388,8 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
-          httpStubs,
-          grpcStubs);
+          httpMocks,
+          grpcMocks);
     }
 
     /**
@@ -409,8 +409,8 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
-          httpStubs,
-          grpcStubs);
+          httpMocks,
+          grpcMocks);
     }
 
     public Settings withKeyValueEntityIncomingMessages(
@@ -436,8 +436,8 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
-          httpStubs,
-          grpcStubs);
+          httpMocks,
+          grpcMocks);
     }
 
     public Settings withEventSourcedEntityIncomingMessages(
@@ -463,8 +463,8 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
-          httpStubs,
-          grpcStubs);
+          httpMocks,
+          grpcMocks);
     }
 
     public Settings withWorkflowIncomingMessages(Class<? extends Workflow<?>> workflowClass) {
@@ -486,8 +486,8 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
-          httpStubs,
-          grpcStubs);
+          httpMocks,
+          grpcMocks);
     }
 
     /** Mock the incoming events flow from a Topic. */
@@ -502,8 +502,8 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
-          httpStubs,
-          grpcStubs);
+          httpMocks,
+          grpcMocks);
     }
 
     /** Mock the outgoing events flow for a Topic. */
@@ -518,8 +518,8 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
-          httpStubs,
-          grpcStubs);
+          httpMocks,
+          grpcMocks);
     }
 
     public Settings withEventingSupport(EventingSupport eventingSupport) {
@@ -533,8 +533,8 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
-          httpStubs,
-          grpcStubs);
+          httpMocks,
+          grpcMocks);
     }
 
     /**
@@ -552,8 +552,8 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
-          httpStubs,
-          grpcStubs);
+          httpMocks,
+          grpcMocks);
     }
 
     /**
@@ -579,8 +579,8 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
-          httpStubs,
-          grpcStubs);
+          httpMocks,
+          grpcMocks);
     }
 
     /**
@@ -598,8 +598,8 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
-          httpStubs,
-          grpcStubs);
+          httpMocks,
+          grpcMocks);
     }
 
     /**
@@ -618,8 +618,8 @@ public class TestKit {
           disabledComponents,
           true,
           modelProvidersByAgentId,
-          httpStubs,
-          grpcStubs);
+          httpMocks,
+          grpcMocks);
     }
 
     /**
@@ -640,8 +640,8 @@ public class TestKit {
           Set.of(),
           true,
           modelProvidersByAgentId,
-          httpStubs,
-          grpcStubs);
+          httpMocks,
+          grpcMocks);
     }
 
     public Settings withModelProvider(
@@ -659,26 +659,26 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           newModelProvidersByAgentId,
-          httpStubs,
-          grpcStubs);
+          httpMocks,
+          grpcMocks);
     }
 
     /**
-     * Stub an HTTP service for calls made through {@link HttpClientProvider#httpClientFor(String)}
+     * Mock an HTTP service for calls made through {@link HttpClientProvider#httpClientFor(String)}
      * with the given service name. The handler runs synchronously on the SDK dispatcher (virtual
-     * threads), so blocking in the handler is safe. Calls for service names that are not stubbed
+     * threads), so blocking in the handler is safe. Calls for service names that are not mocked
      * continue to go through normal resolution.
      *
      * @param serviceName The service name (or full URL) that the service under test will pass to
      *     {@link HttpClientProvider#httpClientFor(String)}.
      * @param handler A function that maps an incoming {@link HttpRequest} to the {@link
-     *     HttpResponse} the stub should return.
+     *     HttpResponse} the mock should return.
      * @return The updated settings.
      */
-    public Settings withStubbedHttpService(
-        String stubServiceName, Function<HttpRequest, HttpResponse> handler) {
-      var newHttpStubs = new HashMap<>(httpStubs);
-      newHttpStubs.put(stubServiceName, handler);
+    public Settings withMockedHttpService(
+        String mockServiceName, Function<HttpRequest, HttpResponse> handler) {
+      var newHttpMocks = new HashMap<>(httpMocks);
+      newHttpMocks.put(mockServiceName, handler);
       return new Settings(
           serviceName,
           aclEnabled,
@@ -689,33 +689,33 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
-          newHttpStubs,
-          grpcStubs);
+          newHttpMocks,
+          grpcMocks);
     }
 
     /**
-     * Stub a gRPC service for calls made through {@link
+     * Mock a gRPC service for calls made through {@link
      * akka.javasdk.grpc.GrpcClientProvider#grpcClientFor(Class, String)} with the given service
-     * name and generated service client interface. The stub is a user-provided instance of the
+     * name and generated service client interface. The mock is a user-provided instance of the
      * generated Akka gRPC client interface. Calls for service-class/name combinations that are not
-     * stubbed continue to go through normal resolution.
+     * mocked continue to go through normal resolution.
      *
      * @param serviceName The service name that the service under test will pass to {@link
      *     akka.javasdk.grpc.GrpcClientProvider#grpcClientFor(Class, String)}.
      * @param serviceClass The Akka gRPC generated client interface.
-     * @param stubInstance A user-provided implementation of the generated client interface.
+     * @param mockInstance A user-provided implementation of the generated client interface.
      * @return The updated settings.
      */
-    public <T extends AkkaGrpcClient> Settings withStubbedGrpcService(
-        String stubServiceName, Class<T> serviceClass, T stubInstance) {
-      var newGrpcStubs =
+    public <T extends AkkaGrpcClient> Settings withMockedGrpcService(
+        String mockServiceName, Class<T> serviceClass, T mockInstance) {
+      var newGrpcMocks =
           new HashMap<String, Map<Class<? extends AkkaGrpcClient>, AkkaGrpcClient>>();
-      grpcStubs.forEach(
+      grpcMocks.forEach(
           (k, v) ->
-              newGrpcStubs.put(k, new HashMap<Class<? extends AkkaGrpcClient>, AkkaGrpcClient>(v)));
-      newGrpcStubs
-          .computeIfAbsent(stubServiceName, k -> new HashMap<>())
-          .put(serviceClass, stubInstance);
+              newGrpcMocks.put(k, new HashMap<Class<? extends AkkaGrpcClient>, AkkaGrpcClient>(v)));
+      newGrpcMocks
+          .computeIfAbsent(mockServiceName, k -> new HashMap<>())
+          .put(serviceClass, mockInstance);
       return new Settings(
           serviceName,
           aclEnabled,
@@ -726,8 +726,8 @@ public class TestKit {
           disabledComponents,
           overrideDisabledComponents,
           modelProvidersByAgentId,
-          httpStubs,
-          newGrpcStubs);
+          httpMocks,
+          newGrpcMocks);
     }
 
     @Override
@@ -761,8 +761,8 @@ public class TestKit {
   private ComponentClient componentClient;
   private HttpClientProvider httpClientProvider;
   private GrpcClientProviderImpl grpcClientProvider;
-  private StubbedHttpServicesImpl stubbedHttpServices;
-  private StubbedGrpcServicesImpl stubbedGrpcServices;
+  private MockedHttpServicesImpl mockedHttpServices;
+  private MockedGrpcServicesImpl mockedGrpcServices;
   private HttpClient selfHttpClient;
   private TimerScheduler timerScheduler;
   private Optional<DependencyProvider> dependencyProvider;
@@ -822,15 +822,15 @@ public class TestKit {
       log.debug("Config from user: {}", config);
       runtimeHost = "localhost";
 
-      stubbedHttpServices = new StubbedHttpServicesImpl(settings.httpStubs);
-      stubbedGrpcServices = new StubbedGrpcServicesImpl(settings.grpcStubs);
+      mockedHttpServices = new MockedHttpServicesImpl(settings.httpMocks);
+      mockedGrpcServices = new MockedGrpcServicesImpl(settings.grpcMocks);
       SdkRunner runner =
           new SdkRunner(
               settings.dependencyProvider,
               settings.disabledComponents,
               settings.overrideDisabledComponents,
-              name -> stubbedHttpServices.lookup(name),
-              key -> stubbedGrpcServices.lookup(key)) {
+              name -> mockedHttpServices.lookup(name),
+              key -> mockedGrpcServices.lookup(key)) {
             @Override
             public Config applicationConfig() {
               var userConfig = config.withFallback(super.applicationConfig());
@@ -1078,23 +1078,23 @@ public class TestKit {
   }
 
   /**
-   * Registry for managing HTTP service stubs on the running testkit. Lets individual tests install
-   * or replace handlers without re-creating the testkit; call {@link StubbedHttpServices#reset()}
-   * in an {@code @AfterEach} to restore the stubs declared via {@link
-   * Settings#withStubbedHttpService(String, java.util.function.Function)}.
+   * Registry for managing HTTP service mocks on the running testkit. Lets individual tests install
+   * or replace handlers without re-creating the testkit; call {@link MockedHttpServices#reset()} in
+   * an {@code @AfterEach} to restore the mocks declared via {@link
+   * Settings#withMockedHttpService(String, java.util.function.Function)}.
    */
-  public StubbedHttpServices getStubbedHttpServices() {
-    return stubbedHttpServices;
+  public MockedHttpServices getMockedHttpServices() {
+    return mockedHttpServices;
   }
 
   /**
-   * Registry for managing gRPC service stubs on the running testkit. Lets individual tests install
-   * or replace stub instances without re-creating the testkit; call {@link
-   * StubbedGrpcServices#reset()} in an {@code @AfterEach} to restore the stubs declared via {@link
-   * Settings#withStubbedGrpcService(String, Class, AkkaGrpcClient)}.
+   * Registry for managing gRPC service mocks on the running testkit. Lets individual tests install
+   * or replace mock instances without re-creating the testkit; call {@link
+   * MockedGrpcServices#reset()} in an {@code @AfterEach} to restore the mocks declared via {@link
+   * Settings#withMockedGrpcService(String, Class, AkkaGrpcClient)}.
    */
-  public StubbedGrpcServices getStubbedGrpcServices() {
-    return stubbedGrpcServices;
+  public MockedGrpcServices getMockedGrpcServices() {
+    return mockedGrpcServices;
   }
 
   /**

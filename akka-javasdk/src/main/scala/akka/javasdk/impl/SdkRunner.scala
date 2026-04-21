@@ -234,41 +234,41 @@ class SdkRunner private (
     dependencyProvider: Option[DependencyProvider],
     disabledComponents: Set[Class[_]],
     overrideDisabledComponents: Boolean,
-    httpStubLookup: String => Option[
+    httpMockLookup: String => Option[
       java.util.function.Function[akka.http.javadsl.model.HttpRequest, akka.http.javadsl.model.HttpResponse]],
-    grpcStubLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient])
+    grpcMockLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient])
     extends akka.runtime.sdk.spi.Runner {
   private val startedPromise = Promise[StartupContext]()
 
   // default constructor for runtime creation
   def this() = this(None, Set.empty[Class[_]], false, _ => None, _ => None)
 
-  // constructor for testkit without stubs
+  // constructor for testkit without mocks
   def this(
       dependencyProvider: java.util.Optional[DependencyProvider],
       disabledComponents: java.util.Set[Class[_]],
       overrideDisabledComponents: Boolean) =
     this(dependencyProvider.toScala, disabledComponents.asScala.toSet, overrideDisabledComponents, _ => None, _ => None)
 
-  // constructor for testkit with stub lookups — only the testkit passes non-empty lookups here;
-  // the default no-arg constructor used in prod/dev passes no-op lookups and stubs cannot fire.
+  // constructor for testkit with mock lookups — only the testkit passes non-empty lookups here;
+  // the default no-arg constructor used in prod/dev passes no-op lookups and mocks cannot fire.
   def this(
       dependencyProvider: java.util.Optional[DependencyProvider],
       disabledComponents: java.util.Set[Class[_]],
       overrideDisabledComponents: Boolean,
-      httpStubLookup: java.util.function.Function[
+      httpMockLookup: java.util.function.Function[
         String,
         java.util.Optional[
           java.util.function.Function[akka.http.javadsl.model.HttpRequest, akka.http.javadsl.model.HttpResponse]]],
-      grpcStubLookup: java.util.function.Function[
+      grpcMockLookup: java.util.function.Function[
         GrpcClientProviderImpl.ClientKey,
         java.util.Optional[AkkaGrpcClient]]) =
     this(
       dependencyProvider.toScala,
       disabledComponents.asScala.toSet,
       overrideDisabledComponents,
-      (name: String) => httpStubLookup.apply(name).toScala,
-      (key: GrpcClientProviderImpl.ClientKey) => grpcStubLookup.apply(key).toScala)
+      (name: String) => httpMockLookup.apply(name).toScala,
+      (key: GrpcClientProviderImpl.ClientKey) => grpcMockLookup.apply(key).toScala)
 
   def applicationConfig: Config =
     ApplicationConfig.loadApplicationConf
@@ -293,8 +293,8 @@ class SdkRunner private (
         startedPromise,
         getSettings,
         startContext.sanitizer,
-        httpStubLookup,
-        grpcStubLookup)
+        httpMockLookup,
+        grpcMockLookup)
       Future.successful(app.spiComponents)
     } catch {
       case NonFatal(ex) =>
@@ -377,9 +377,9 @@ private final class Sdk(
     startedPromise: Promise[StartupContext],
     spiSettings: SpiSettings,
     runtimeSanitizer: SpiSanitizerEngine,
-    httpStubLookup: String => Option[
+    httpMockLookup: String => Option[
       java.util.function.Function[akka.http.javadsl.model.HttpRequest, akka.http.javadsl.model.HttpResponse]],
-    grpcStubLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient]) {
+    grpcMockLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient]) {
 
   import Sdk._
 
@@ -415,7 +415,7 @@ private final class Sdk(
     // We know it is a dispatcher/executor
     sdkExecutionContext.asInstanceOf[Executor],
     None,
-    httpStubLookup)
+    httpMockLookup)
 
   private lazy val userServiceConfig = {
     // hiding these paths from the config provided to user
@@ -431,7 +431,7 @@ private final class Sdk(
     sdkSettings,
     userServiceConfig,
     remoteIdentification.map(ri => GrpcClientProviderImpl.AuthHeaders(ri.headerName, ri.headerValue)),
-    grpcStubLookup)
+    grpcMockLookup)
 
   private lazy val overrideModelProvider = new OverrideModelProvider
 

@@ -32,7 +32,7 @@ import akka.util.ByteString
  * dispatcher (virtual thread backed in the testkit).
  */
 @InternalApi
-private[akka] final class StubHttpClientImpl(
+private[akka] final class MockHttpClientImpl(
     system: ActorSystem[_],
     serviceName: String,
     handler: JFunction[HttpRequest, HttpResponse],
@@ -55,7 +55,7 @@ private[akka] final class StubHttpClientImpl(
         val response = handler.apply(request)
         if (response == null)
           promise.completeExceptionally(
-            new NullPointerException("HTTP stub handler returned null for request " + request.getUri))
+            new NullPointerException("HTTP mock handler returned null for request " + request.getUri))
         else
           promise.complete(response)
       } catch {

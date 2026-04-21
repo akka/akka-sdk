@@ -13,33 +13,33 @@ import scala.jdk.CollectionConverters._
 import akka.annotation.InternalApi
 import akka.http.javadsl.model.HttpRequest
 import akka.http.javadsl.model.HttpResponse
-import akka.javasdk.testkit.StubbedHttpServices
+import akka.javasdk.testkit.MockedHttpServices
 
 /**
  * INTERNAL API
  */
 @InternalApi
-final class StubbedHttpServicesImpl(initial: java.util.Map[String, JFunction[HttpRequest, HttpResponse]])
-    extends StubbedHttpServices {
+final class MockedHttpServicesImpl(initial: java.util.Map[String, JFunction[HttpRequest, HttpResponse]])
+    extends MockedHttpServices {
 
   private val initialEntries: Map[String, JFunction[HttpRequest, HttpResponse]] =
     initial.asScala.toMap
-  private val stubs = new ConcurrentHashMap[String, JFunction[HttpRequest, HttpResponse]]()
-  initialEntries.foreach { case (k, v) => stubs.put(k, v) }
+  private val mocks = new ConcurrentHashMap[String, JFunction[HttpRequest, HttpResponse]]()
+  initialEntries.foreach { case (k, v) => mocks.put(k, v) }
 
   def lookup(serviceName: String): Optional[JFunction[HttpRequest, HttpResponse]] =
-    Optional.ofNullable(stubs.get(serviceName))
+    Optional.ofNullable(mocks.get(serviceName))
 
-  override def stubResponse(serviceName: String, handler: JFunction[HttpRequest, HttpResponse]): Unit =
-    stubs.put(serviceName, handler)
+  override def mockResponse(serviceName: String, handler: JFunction[HttpRequest, HttpResponse]): Unit =
+    mocks.put(serviceName, handler)
 
   override def remove(serviceName: String): Unit = {
-    stubs.remove(serviceName)
+    mocks.remove(serviceName)
     ()
   }
 
   override def reset(): Unit = {
-    stubs.clear()
-    initialEntries.foreach { case (k, v) => stubs.put(k, v) }
+    mocks.clear()
+    initialEntries.foreach { case (k, v) => mocks.put(k, v) }
   }
 }

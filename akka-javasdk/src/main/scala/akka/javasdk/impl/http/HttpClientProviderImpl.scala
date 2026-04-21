@@ -40,7 +40,7 @@ private[akka] final class HttpClientProviderImpl(
     sdkExecutor: Executor,
     connectionPoolSettings: Option[ConnectionPoolSettings] = None,
     // Only populated by the testkit; production and dev-mode runners use the default no-op lookup.
-    httpStubLookup: String => Option[java.util.function.Function[HttpRequest, HttpResponse]] = _ => None)
+    httpMockLookup: String => Option[java.util.function.Function[HttpRequest, HttpResponse]] = _ => None)
     extends HttpClientProvider {
 
   private val log = LoggerFactory.getLogger(classOf[HttpClientProvider])
@@ -65,8 +65,8 @@ private[akka] final class HttpClientProviderImpl(
     !name.contains('.') && !name.contains(':') && name != "localhost"
 
   override def httpClientFor(name: String): HttpClient =
-    httpStubLookup(name) match {
-      case Some(handler) => new StubHttpClientImpl(system, name, handler, sdkExecutor)
+    httpMockLookup(name) match {
+      case Some(handler) => new MockHttpClientImpl(system, name, handler, sdkExecutor)
       case None          => realHttpClientFor(name)
     }
 
@@ -159,6 +159,6 @@ private[akka] final class HttpClientProviderImpl(
       settings,
       sdkExecutor,
       connectionPoolSettings,
-      httpStubLookup)
+      httpMockLookup)
 
 }

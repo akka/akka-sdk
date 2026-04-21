@@ -21,16 +21,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class StubbedServicesTest {
+public class MockedServicesTest {
 
-  static final class StubbedGrpcService extends TestGrpcServiceClient {
+  static final class MockedGrpcService extends TestGrpcServiceClient {
     final ConcurrentLinkedQueue<String> seenData = new ConcurrentLinkedQueue<>();
 
     @Override
     public TestGrpcServiceOuterClass.Out simple(TestGrpcServiceOuterClass.In in) {
       seenData.add(in.getData());
       return TestGrpcServiceOuterClass.Out.newBuilder()
-          .setData("stubbed:" + in.getData())
+          .setData("mocked:" + in.getData())
           .setWasOnVirtualThread(false)
           .build();
     }
@@ -92,7 +92,7 @@ public class StubbedServicesTest {
   }
 
   final ConcurrentLinkedQueue<String> billingRequestUris = new ConcurrentLinkedQueue<>();
-  final StubbedGrpcService grpcStub = new StubbedGrpcService();
+  final MockedGrpcService grpcMock = new MockedGrpcService();
 
   private TestKit testKit;
 
@@ -101,7 +101,7 @@ public class StubbedServicesTest {
     testKit =
         new TestKit(
                 TestKit.Settings.DEFAULT
-                    .withStubbedHttpService(
+                    .withMockedHttpService(
                         "billing",
                         request -> {
                           billingRequestUris.add(request.getUri().toString());
@@ -109,13 +109,13 @@ public class StubbedServicesTest {
                               .withStatus(StatusCodes.OK)
                               .withEntity(ContentTypes.APPLICATION_JSON, "{\"billed\":true}");
                         })
-                    .withStubbedHttpService(
+                    .withMockedHttpService(
                         "accounts",
                         request ->
                             HttpResponse.create()
                                 .withStatus(StatusCodes.OK)
-                                .withEntity(ContentTypes.TEXT_PLAIN_UTF8, "accounts-stub"))
-                    .withStubbedGrpcService("billing-grpc", TestGrpcServiceClient.class, grpcStub))
+                                .withEntity(ContentTypes.TEXT_PLAIN_UTF8, "accounts-mock"))
+                    .withMockedGrpcService("billing-grpc", TestGrpcServiceClient.class, grpcMock))
             .start();
   }
 
@@ -125,13 +125,13 @@ public class StubbedServicesTest {
   }
 
   @AfterEach
-  public void resetStubs() {
-    testKit.getStubbedHttpServices().reset();
-    testKit.getStubbedGrpcServices().reset();
+  public void resetMocks() {
+    testKit.getMockedHttpServices().reset();
+    testKit.getMockedGrpcServices().reset();
   }
 
   @Test
-  public void httpStubReturnsStubbedResponse() {
+  public void httpMockReturnsMockedResponse() {
     var response =
         testKit.getHttpClientProvider().httpClientFor("billing").GET("/invoice/42").invoke();
 
@@ -141,32 +141,32 @@ public class StubbedServicesTest {
   }
 
   @Test
-  public void multipleHttpStubsAreIndependent() {
+  public void multipleHttpMocksAreIndependent() {
     var billingResponse =
         testKit.getHttpClientProvider().httpClientFor("billing").POST("/charge").invoke();
     var accountsResponse =
         testKit.getHttpClientProvider().httpClientFor("accounts").GET("/me").invoke();
 
     assertThat(billingResponse.body().utf8String()).isEqualTo("{\"billed\":true}");
-    assertThat(accountsResponse.body().utf8String()).isEqualTo("accounts-stub");
+    assertThat(accountsResponse.body().utf8String()).isEqualTo("accounts-mock");
   }
 
   @Test
-  public void grpcStubReturnsStubbedResponse() {
+  public void grpcMockReturnsMockedResponse() {
     var client =
         testKit.getGrpcClientProvider().grpcClientFor(TestGrpcServiceClient.class, "billing-grpc");
     var response =
         client.simple(TestGrpcServiceOuterClass.In.newBuilder().setData("invoice-42").build());
 
-    assertThat(response.getData()).isEqualTo("stubbed:invoice-42");
-    assertThat(grpcStub.seenData).contains("invoice-42");
+    assertThat(response.getData()).isEqualTo("mocked:invoice-42");
+    assertThat(grpcMock.seenData).contains("invoice-42");
   }
 
   @Test
-  public void stubResponseCanBeReplacedPerTest() {
+  public void mockResponseCanBeReplacedPerTest() {
     testKit
-        .getStubbedHttpServices()
-        .stubResponse(
+        .getMockedHttpServices()
+        .mockResponse(
             "billing",
             request ->
                 HttpResponse.create()
@@ -182,10 +182,10 @@ public class StubbedServicesTest {
   @Test
   public void resetRestoresSettingsDefaults() {
     testKit
-        .getStubbedHttpServices()
-        .stubResponse(
+        .getMockedHttpServices()
+        .mockResponse(
             "billing", request -> HttpResponse.create().withStatus(StatusCodes.NOT_FOUND));
-    testKit.getStubbedHttpServices().reset();
+    testKit.getMockedHttpServices().reset();
 
     var response =
         testKit.getHttpClientProvider().httpClientFor("billing").GET("/after-reset").invoke();
@@ -193,10 +193,10 @@ public class StubbedServicesTest {
   }
 
   @Test
-  public void stubCanBeRegisteredPerTestWithoutSettings() {
+  public void mockCanBeRegisteredPerTestWithoutSettings() {
     testKit
-        .getStubbedHttpServices()
-        .stubResponse(
+        .getMockedHttpServices()
+        .mockResponse(
             "late-bound",
             request ->
                 HttpResponse.create()
@@ -208,7 +208,7 @@ public class StubbedServicesTest {
   }
 
   @Test
-  public void grpcStubLookedUpRepeatedlyReturnsSameInstance() {
+  public void grpcMockLookedUpRepeatedlyReturnsSameInstance() {
     var c1 =
         testKit.getGrpcClientProvider().grpcClientFor(TestGrpcServiceClient.class, "billing-grpc");
     var c2 =

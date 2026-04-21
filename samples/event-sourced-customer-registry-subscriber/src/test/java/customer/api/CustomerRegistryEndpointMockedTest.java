@@ -27,25 +27,25 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * This test stubs out the upstream "customer-registry" service per test case so the local endpoint
+ * This test mocks out the upstream "customer-registry" service per test case so the local endpoint
  * and delegate can be exercised without a real upstream service running.
  *
  * <p>For a test of the full cross-service subscription flow (which does require the real upstream
  * service running on :9000), see {@link CustomerIntegrationTest}.
  */
-public class CustomerRegistryEndpointStubbedTest extends CustomerRegistryIntegrationTest {
+public class CustomerRegistryEndpointMockedTest extends CustomerRegistryIntegrationTest {
 
   @AfterEach
-  public void resetStubs() {
-    testKit.getStubbedHttpServices().reset();
-    testKit.getStubbedGrpcServices().reset();
+  public void resetMocks() {
+    testKit.getMockedHttpServices().reset();
+    testKit.getMockedGrpcServices().reset();
   }
 
   @Test
   public void httpEndpointReturnsCreatedWhenUpstreamReturnsCreated() {
     testKit
-        .getStubbedHttpServices()
-        .stubResponse(
+        .getMockedHttpServices()
+        .mockResponse(
             "customer-registry",
             request -> HttpResponse.create().withStatus(StatusCodes.CREATED));
 
@@ -64,8 +64,8 @@ public class CustomerRegistryEndpointStubbedTest extends CustomerRegistryIntegra
   @Test
   public void httpEndpointFailsWhenUpstreamReturnsError() {
     testKit
-        .getStubbedHttpServices()
-        .stubResponse(
+        .getMockedHttpServices()
+        .mockResponse(
             "customer-registry",
             request -> HttpResponse.create().withStatus(StatusCodes.INTERNAL_SERVER_ERROR));
 
@@ -84,11 +84,11 @@ public class CustomerRegistryEndpointStubbedTest extends CustomerRegistryIntegra
   @Test
   public void grpcDelegateReturnsResponseFromUpstream() {
     testKit
-        .getStubbedGrpcServices()
-        .stubResponse(
+        .getMockedGrpcServices()
+        .mockResponse(
             "customer-registry",
             CustomerGrpcEndpointClient.class,
-            new CustomerGrpcEndpointStub());
+            new CustomerGrpcEndpointMock());
 
     var delegateClient = getGrpcEndpointClient(DelegateCustomerGrpcEndpointClient.class);
     var request =
@@ -103,10 +103,10 @@ public class CustomerRegistryEndpointStubbedTest extends CustomerRegistryIntegra
   }
 
   /**
-   * Stub implementation — returns a fixed empty response for createCustomer; every other method is
+   * Mock implementation — returns a fixed empty response for createCustomer; every other method is
    * not exercised by this test and throws if called so test breakage is loud.
    */
-  static final class CustomerGrpcEndpointStub extends CustomerGrpcEndpointClient {
+  static final class CustomerGrpcEndpointMock extends CustomerGrpcEndpointClient {
     @Override
     public CreateCustomerResponse createCustomer(
         customer.api.proto.CreateCustomerRequest in) {
