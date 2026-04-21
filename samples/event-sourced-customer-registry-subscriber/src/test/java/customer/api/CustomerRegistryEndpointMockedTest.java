@@ -44,19 +44,22 @@ public class CustomerRegistryEndpointMockedTest extends CustomerRegistryIntegrat
   @Test
   public void httpEndpointReturnsCreatedWhenUpstreamReturnsCreated() {
     testKit
-        .getMockedHttpServices()
-        .mockResponse(
-            "customer-registry",
-            request -> HttpResponse.create().withStatus(StatusCodes.CREATED));
+      .getMockedHttpServices()
+      .mockResponse(
+        "customer-registry",
+        request -> HttpResponse.create().withStatus(StatusCodes.CREATED)
+      );
 
     var request = new CreateCustomerRequest(
-        "foo@example.com", "Johanna", new CustomerRegistryEndpoint.Address("street", "city"));
+      "foo@example.com",
+      "Johanna",
+      new CustomerRegistryEndpoint.Address("street", "city")
+    );
 
-    var response =
-        httpClient
-            .POST("/customer/" + UUID.randomUUID())
-            .withRequestBody(request)
-            .invoke();
+    var response = httpClient
+      .POST("/customer/" + UUID.randomUUID())
+      .withRequestBody(request)
+      .invoke();
 
     assertThat(response.httpResponse().status()).isEqualTo(StatusCodes.CREATED);
   }
@@ -64,38 +67,39 @@ public class CustomerRegistryEndpointMockedTest extends CustomerRegistryIntegrat
   @Test
   public void httpEndpointFailsWhenUpstreamReturnsError() {
     testKit
-        .getMockedHttpServices()
-        .mockResponse(
-            "customer-registry",
-            request -> HttpResponse.create().withStatus(StatusCodes.INTERNAL_SERVER_ERROR));
+      .getMockedHttpServices()
+      .mockResponse(
+        "customer-registry",
+        request -> HttpResponse.create().withStatus(StatusCodes.INTERNAL_SERVER_ERROR)
+      );
 
     var request = new CreateCustomerRequest(
-        "bar@example.com", "Bjorn", new CustomerRegistryEndpoint.Address("street", "city"));
+      "bar@example.com",
+      "Bjorn",
+      new CustomerRegistryEndpoint.Address("street", "city")
+    );
 
     assertThatThrownBy(
-            () ->
-                httpClient
-                    .POST("/customer/" + UUID.randomUUID())
-                    .withRequestBody(request)
-                    .invoke())
-        .hasMessageContaining("500");
+      () ->
+        httpClient.POST("/customer/" + UUID.randomUUID()).withRequestBody(request).invoke()
+    ).hasMessageContaining("500");
   }
 
   @Test
   public void grpcDelegateReturnsResponseFromUpstream() {
     testKit
-        .getMockedGrpcServices()
-        .mockResponse(
-            "customer-registry",
-            CustomerGrpcEndpointClient.class,
-            new CustomerGrpcEndpointMock());
+      .getMockedGrpcServices()
+      .mockResponse(
+        "customer-registry",
+        CustomerGrpcEndpointClient.class,
+        new CustomerGrpcEndpointMock()
+      );
 
     var delegateClient = getGrpcEndpointClient(DelegateCustomerGrpcEndpointClient.class);
-    var request =
-        customer.api.proto.CreateCustomerRequest.newBuilder()
-            .setCustomerId(UUID.randomUUID().toString())
-            .setCustomer(Customer.newBuilder().setName("Carla").build())
-            .build();
+    var request = customer.api.proto.CreateCustomerRequest.newBuilder()
+      .setCustomerId(UUID.randomUUID().toString())
+      .setCustomer(Customer.newBuilder().setName("Carla").build())
+      .build();
 
     var response = delegateClient.createCustomer(request);
 
@@ -107,9 +111,11 @@ public class CustomerRegistryEndpointMockedTest extends CustomerRegistryIntegrat
    * not exercised by this test and throws if called so test breakage is loud.
    */
   static final class CustomerGrpcEndpointMock extends CustomerGrpcEndpointClient {
+
     @Override
     public CreateCustomerResponse createCustomer(
-        customer.api.proto.CreateCustomerRequest in) {
+      customer.api.proto.CreateCustomerRequest in
+    ) {
       return CreateCustomerResponse.newBuilder().build();
     }
 
@@ -140,7 +146,8 @@ public class CustomerRegistryEndpointMockedTest extends CustomerRegistryIntegrat
 
     @Override
     public akka.stream.javadsl.Source<CustomerSummary, akka.NotUsed> customerByEmailStream(
-        CustomerByEmailRequest in) {
+      CustomerByEmailRequest in
+    ) {
       throw new UnsupportedOperationException();
     }
 
