@@ -26,21 +26,24 @@ public class CallExternalGrpcEndpointMockedTest extends TestKitSupport {
   @Test
   public void delegatesToMockedExternalGrpcService() {
     testKit
-        .getMockedGrpcServices()
-        .mockResponse( // <1>
-            "hellogrpc.example.com",
-            ExampleGrpcEndpointClient.class,
-            new ExampleGrpcEndpointMock("Hello from the mock"));
+      .getMockedGrpcServices()
+      .mockResponse( // <1>
+        "hellogrpc.example.com",
+        ExampleGrpcEndpointClient.class,
+        new ExampleGrpcEndpointMock("Hello from the mock")
+      );
 
     var client = getGrpcEndpointClient(CallExternalGrpcEndpointClient.class); // <2>
-    var response =
-        client.callExternalService(HelloRequest.newBuilder().setName("Alice").build());
+    var response = client.callExternalService(
+      HelloRequest.newBuilder().setName("Alice").build()
+    );
 
     assertThat(response.getMessage()).isEqualTo("Hello from the mock");
   }
 
-  /** Mock implementation of the generated Akka gRPC client interface. */ // <3>
+  /** Mock implementation of the generated Akka gRPC client interface. */// <3>
   static final class ExampleGrpcEndpointMock extends ExampleGrpcEndpointClient {
+
     private final String reply;
 
     ExampleGrpcEndpointMock(String reply) {

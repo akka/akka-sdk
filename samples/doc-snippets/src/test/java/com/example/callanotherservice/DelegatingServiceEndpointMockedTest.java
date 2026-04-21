@@ -16,11 +16,12 @@ public class DelegatingServiceEndpointMockedTest extends TestKitSupport {
   @Override
   protected TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT.withMockedHttpService( // <1>
-        "counter",
-        request ->
-            HttpResponse.create()
-                .withStatus(StatusCodes.OK)
-                .withEntity(ContentTypes.APPLICATION_JSON, "{\"value\":42}"));
+      "counter",
+      request ->
+        HttpResponse.create()
+          .withStatus(StatusCodes.OK)
+          .withEntity(ContentTypes.APPLICATION_JSON, "{\"value\":42}")
+    );
   }
 
   @AfterEach
@@ -31,33 +32,29 @@ public class DelegatingServiceEndpointMockedTest extends TestKitSupport {
   @Test
   public void delegatingEndpointReturnsValueFromMockedUpstream() {
     var body = new DelegatingServiceEndpoint.IncreaseRequest(1);
-    var response =
-        httpClient
-            .POST("/delegate/counter/abc/increase")
-            .withRequestBody(body)
-            .responseBodyAs(String.class)
-            .invoke();
+    var response = httpClient
+      .POST("/delegate/counter/abc/increase")
+      .withRequestBody(body)
+      .responseBodyAs(String.class)
+      .invoke();
 
-    assertThat(response.body()).isEqualTo("New counter vaue: 42");
+    assertThat(response.body()).isEqualTo("New counter value: 42");
   }
 
   @Test
   public void delegatingEndpointFailsWhenUpstreamReturnsError() {
     testKit
-        .getMockedHttpServices()
-        .mockResponse( // <3>
-            "counter",
-            request -> HttpResponse.create().withStatus(StatusCodes.INTERNAL_SERVER_ERROR));
+      .getMockedHttpServices()
+      .mockResponse( // <3>
+        "counter",
+        request -> HttpResponse.create().withStatus(StatusCodes.INTERNAL_SERVER_ERROR)
+      );
 
     var body = new DelegatingServiceEndpoint.IncreaseRequest(1);
 
     org.assertj.core.api.Assertions.assertThatThrownBy(
-            () ->
-                httpClient
-                    .POST("/delegate/counter/abc/increase")
-                    .withRequestBody(body)
-                    .invoke())
-        .hasMessageContaining("500");
+      () -> httpClient.POST("/delegate/counter/abc/increase").withRequestBody(body).invoke()
+    ).hasMessageContaining("500");
   }
 }
 // end::http-mock[]

@@ -15,6 +15,10 @@ import akka.grpc.javadsl.AkkaGrpcClient;
  * AkkaGrpcClient)} are used to seed the registry at testkit startup and are restored by {@link
  * #reset()}.
  *
+ * <p>The mock instance is shared across calls and method invocations can overlap when the service
+ * under test issues concurrent requests, so any state shared between the mock and the test class
+ * (captured fields, counters, queues) must be thread-safe.
+ *
  * <p>Not for user extension.
  */
 @DoNotInherit

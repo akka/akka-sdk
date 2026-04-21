@@ -14,7 +14,9 @@ import java.util.function.Function;
  * replace mock handlers without re-creating the testkit.
  *
  * <p>Handlers run synchronously on the SDK dispatcher (virtual threads); blocking in the handler is
- * safe.
+ * safe. Invocations can overlap when the service under test issues concurrent requests, so any
+ * state shared between the handler and the test class (captured fields, counters, queues) must be
+ * thread-safe.
  *
  * <p>Entries declared via {@link TestKit.Settings#withMockedHttpService(String, Function)} are used
  * to seed the registry at testkit startup and are restored by {@link #reset()}.

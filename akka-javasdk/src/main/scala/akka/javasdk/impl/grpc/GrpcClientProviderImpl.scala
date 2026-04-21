@@ -266,10 +266,14 @@ private[akka] final class GrpcClientProviderImpl(
     else
       new GrpcClientProvider {
         override def grpcClientFor[T <: AkkaGrpcClient](serviceClass: Class[T], serviceName: String): T = {
-          otelTraceHeaders.foldLeft(GrpcClientProviderImpl.this.grpcClientFor(serviceClass, serviceName)) {
-            case (client, (key, value)) =>
-              client.addRequestHeader(key, value).asInstanceOf[T]
-          }
+          val client = GrpcClientProviderImpl.this.grpcClientFor(serviceClass, serviceName)
+          // Skip header propagation for mocked clients — user-provided mock subclasses don't
+          // typically implement addRequestHeader and would throw or return a non-mock instance.
+          if (grpcMockLookup(ClientKey(serviceClass, serviceName)).isDefined) client
+          else
+            otelTraceHeaders.foldLeft(client) { case (acc, (key, value)) =>
+              acc.addRequestHeader(key, value).asInstanceOf[T]
+            }
         }
       }
   }

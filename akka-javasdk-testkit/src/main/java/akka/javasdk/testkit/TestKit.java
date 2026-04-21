@@ -669,8 +669,12 @@ public class TestKit {
      * threads), so blocking in the handler is safe. Calls for service names that are not mocked
      * continue to go through normal resolution.
      *
-     * @param serviceName The service name (or full URL) that the service under test will pass to
-     *     {@link HttpClientProvider#httpClientFor(String)}.
+     * <p>Handler invocations can overlap when the service under test issues concurrent requests, so
+     * any state shared between the handler and the test class (captured fields, counters, queues)
+     * must be thread-safe.
+     *
+     * @param mockServiceName The service name (or full URL) that the service under test will pass
+     *     to {@link HttpClientProvider#httpClientFor(String)}.
      * @param handler A function that maps an incoming {@link HttpRequest} to the {@link
      *     HttpResponse} the mock should return.
      * @return The updated settings.
@@ -700,7 +704,11 @@ public class TestKit {
      * generated Akka gRPC client interface. Calls for service-class/name combinations that are not
      * mocked continue to go through normal resolution.
      *
-     * @param serviceName The service name that the service under test will pass to {@link
+     * <p>The mock instance is shared across calls and method invocations can overlap when the
+     * service under test issues concurrent requests, so any state shared between the mock and the
+     * test class (captured fields, counters, queues) must be thread-safe.
+     *
+     * @param mockServiceName The service name that the service under test will pass to {@link
      *     akka.javasdk.grpc.GrpcClientProvider#grpcClientFor(Class, String)}.
      * @param serviceClass The Akka gRPC generated client interface.
      * @param mockInstance A user-provided implementation of the generated client interface.
