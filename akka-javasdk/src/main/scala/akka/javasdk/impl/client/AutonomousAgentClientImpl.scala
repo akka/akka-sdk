@@ -22,6 +22,7 @@ import akka.javasdk.agent.autonomous.AgentState
 import akka.javasdk.agent.autonomous.AutonomousAgent
 import akka.javasdk.agent.autonomous.Notification
 import akka.javasdk.agent.task.Task
+import akka.javasdk.agent.task.TaskKey
 import akka.javasdk.client.AutonomousAgentClient
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.agent.autonomous.AgentSetupImpl
@@ -51,13 +52,15 @@ private[javasdk] final class AutonomousAgentClientImpl(
   override def runSingleTaskAsync(task: Task[_]): CompletionStage[String] = {
     val taskId = java.util.UUID.randomUUID().toString
     log.debug(
-      "runSingleTask: agent [{}] instance [{}] task [{}] taskId [{}]",
+      "runSingleTask: agent [{}] instance [{}] task [{}] - [{}]",
       agentComponentId,
       agentInstanceId,
       task.description(),
       taskId)
+
     val taskClient =
       new TaskClientImpl(taskId, runtimeComponentClients, serializer, callMetadata, Materializer.matFromSystem(system))
+
     taskClient
       .createAsync(task)
       .asScala
@@ -66,6 +69,7 @@ private[javasdk] final class AutonomousAgentClientImpl(
           "runSingleTask: task created [{}], sending AssignTask with stopWhenDone to agent instance [{}]",
           taskId,
           agentInstanceId)
+
         runtimeComponentClients.autonomousAgentClient
           .assignTask(
             agentComponentId,
@@ -74,7 +78,7 @@ private[javasdk] final class AutonomousAgentClientImpl(
             stopWhenDone = true,
             callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
           .map { _ =>
-            log.debug("runSingleTask: AssignTask ack for task [{}], returning taskId [{}]", taskId, agentInstanceId)
+            log.debug("runSingleTask: AssignTask ack for task [{}], returning id [{}]", taskId, agentInstanceId)
             taskId
           }
       }
@@ -87,8 +91,9 @@ private[javasdk] final class AutonomousAgentClientImpl(
       agentComponentId,
       agentInstanceId,
       taskIds.mkString(", "))
+
     taskIds
-      .foldLeft(Future.successful(())) { (prev, taskId) =>
+      .foldLeft(Future.successful(Done.done())) { (prev, taskId) =>
         prev.flatMap { _ =>
           runtimeComponentClients.autonomousAgentClient
             .assignTask(
@@ -97,26 +102,25 @@ private[javasdk] final class AutonomousAgentClientImpl(
               taskId,
               stopWhenDone = false,
               callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
-            .map(_ => ())
         }
       }
-      .map(_ => Done.done())
       .asJava
   }
 
   override def setupAsync(setup: AgentSetup): CompletionStage[Done] = {
     val setupImpl = setup.asInstanceOf[AgentSetupImpl]
     log.debug("setup: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
+
     val converter = agentCapabilityConverter.getOrElse(
       throw new IllegalStateException("Agent capability converter not available in this context"))
+
     val spiCapabilities = converter.toSpiCapabilities(setupImpl.capabilities)
     runtimeComponentClients.autonomousAgentClient
       .applySetup(agentComponentId, agentInstanceId, setupImpl.goal, spiCapabilities)
-      .map(_ => Done.done())
       .asJava
   }
 
-  override def getStateAsync(): CompletionStage[AgentState] = {
+  override def getStateAsync: CompletionStage[AgentState] = {
     log.debug("getState: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
     runtimeComponentClients.autonomousAgentClient
       .getState(agentComponentId, agentInstanceId)
@@ -126,7 +130,7 @@ private[javasdk] final class AutonomousAgentClientImpl(
           spiState.paused,
           spiState.goal,
           new AutonomousAgent.TokenUsage(spiState.totalInputTokens, spiState.totalOutputTokens),
-          spiState.currentTask.map(t => new AgentState.TaskInfo(t.taskId, t.taskName)).toJava,
+          spiState.currentTask.map(t => new TaskKey(t.id, t.name)).toJava,
           spiState.pendingTaskIds.asJava)
       }
       .asJava
@@ -136,7 +140,6 @@ private[javasdk] final class AutonomousAgentClientImpl(
     log.debug("pause: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
     runtimeComponentClients.autonomousAgentClient
       .pause(agentComponentId, agentInstanceId)
-      .map(_ => Done.done())
       .asJava
   }
 
@@ -144,7 +147,6 @@ private[javasdk] final class AutonomousAgentClientImpl(
     log.debug("resume: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
     runtimeComponentClients.autonomousAgentClient
       .resume(agentComponentId, agentInstanceId)
-      .map(_ => Done.done())
       .asJava
   }
 
@@ -152,7 +154,6 @@ private[javasdk] final class AutonomousAgentClientImpl(
     log.debug("stop: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
     runtimeComponentClients.autonomousAgentClient
       .stop(agentComponentId, agentInstanceId)
-      .map(_ => Done.done())
       .asJava
   }
 
@@ -172,9 +173,9 @@ private[javasdk] final class AutonomousAgentClientImpl(
       new Notification.IterationCompleted(new AutonomousAgent.TokenUsage(c.inputTokens, c.outputTokens))
     case f: SpiNotification.IterationFailed => new Notification.IterationFailed(f.reason)
     case _: SpiNotification.Stopped         => new Notification.Stopped
-    case t: SpiNotification.TaskStarted     => new Notification.TaskStarted(t.taskId, t.taskName)
-    case t: SpiNotification.TaskCompleted   => new Notification.TaskCompleted(t.taskId)
-    case t: SpiNotification.TaskFailed      => new Notification.TaskFailed(t.taskId, t.reason)
+    case t: SpiNotification.TaskStarted     => new Notification.TaskStarted(t.taskKey.id, t.taskKey.name)
+    case t: SpiNotification.TaskCompleted   => new Notification.TaskCompleted(t.taskKey.id, t.taskKey.name)
+    case t: SpiNotification.TaskFailed      => new Notification.TaskFailed(t.taskKey.id, t.taskKey.name, t.reason)
     // ignore unknown because the runtime should be able to add new notification events without breaking old SDK
   }
 }

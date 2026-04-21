@@ -40,7 +40,7 @@ public final class BacklogEntity extends EventSourcedEntity<BacklogState, Backlo
     return effects().persist(new BacklogEvent.BacklogCreated(name)).thenReply(__ -> done());
   }
 
-  /** Add a task ID reference to this backlog. The task must already exist in TaskEntity. */
+  /** Add a task reference to this backlog. The task must already exist in TaskEntity. */
   public Effect<Done> addTask(String taskId) {
     if (currentState().closed()) {
       return closedError();

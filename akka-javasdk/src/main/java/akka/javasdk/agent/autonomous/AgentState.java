@@ -5,6 +5,7 @@
 package akka.javasdk.agent.autonomous;
 
 import akka.annotation.DoNotInherit;
+import akka.javasdk.agent.task.TaskKey;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,14 +17,11 @@ import java.util.Optional;
 @DoNotInherit
 public final class AgentState {
 
-  /** Information about a task: its id and name. */
-  public record TaskInfo(String taskId, String taskName) {}
-
   private final String phase;
   private final boolean paused;
   private final String goal;
   private final AutonomousAgent.TokenUsage totalTokenUsage;
-  private final Optional<TaskInfo> currentTask;
+  private final Optional<TaskKey> currentTask;
   private final List<String> pendingTaskIds;
 
   public AgentState(
@@ -31,7 +29,7 @@ public final class AgentState {
       boolean paused,
       String goal,
       AutonomousAgent.TokenUsage totalTokenUsage,
-      Optional<TaskInfo> currentTask,
+      Optional<TaskKey> currentTask,
       List<String> pendingTaskIds) {
     this.phase = phase;
     this.paused = paused;
@@ -62,7 +60,7 @@ public final class AgentState {
   }
 
   /** The task currently being worked on, if any. */
-  public Optional<TaskInfo> currentTask() {
+  public Optional<TaskKey> currentTask() {
     return currentTask;
   }
 

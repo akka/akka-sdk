@@ -64,6 +64,7 @@ public class BacklogEntityTest {
         testKit
             .method(BacklogEntity::claim)
             .invoke(new BacklogEntity.ClaimRequest("task-1", "agent-1"));
+
     assertThat(result.getReply()).isEqualTo(done());
     result.getNextEventOfType(BacklogEvent.TaskClaimed.class);
     assertThat(testKit.getState().isClaimed("task-1")).isTrue();
