@@ -45,7 +45,6 @@ import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
-import akka.javasdk.workflow.Workflow.RunnableStep
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.google.protobuf.Descriptors
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType
@@ -291,25 +290,6 @@ private[impl] object Reflect {
       acc ++ lookupSubClasses(method.getParameterTypes.head)
     }
   }
-
-  @nowarn("msg=deprecated")
-  def workflowKnownInputTypes[S, W <: Workflow[S]](workflow: Workflow[S]): List[Class[_]] =
-    workflow
-      .definition()
-      .getSteps
-      .asScala
-      .flatMap {
-        case asyncCallStep: Workflow.AsyncCallStep[_, _, _] =>
-          if (asyncCallStep.transitionInputClass == null) lookupSubClasses(asyncCallStep.callInputClass)
-          else lookupSubClasses(asyncCallStep.callInputClass) ++ lookupSubClasses(asyncCallStep.transitionInputClass)
-
-        case callStep: Workflow.CallStep[_, _, _] =>
-          if (callStep.transitionInputClass == null) lookupSubClasses(callStep.callInputClass)
-          else lookupSubClasses(callStep.callInputClass) ++ lookupSubClasses(callStep.transitionInputClass)
-
-        case runnable: RunnableStep => List.empty
-      }
-      .toList
 
   /**
    * This method will try to find all know subtypes if the passed class is an interface. Interfaces that are neither
