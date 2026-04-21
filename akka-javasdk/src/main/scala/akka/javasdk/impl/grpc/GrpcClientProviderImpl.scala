@@ -92,7 +92,8 @@ private[akka] final class GrpcClientProviderImpl(
     settings: Settings,
     userServiceConfig: Config,
     remoteIdentificationHeader: Option[AuthHeaders],
-    grpcStubs: Map[GrpcClientProviderImpl.ClientKey, AkkaGrpcClient] = Map.empty)
+    // Only populated by the testkit; production and dev-mode runners use the default no-op lookup.
+    grpcStubLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient] = _ => None)
     extends GrpcClientProvider {
   import GrpcClientProviderImpl._
   import system.executionContext
@@ -110,7 +111,7 @@ private[akka] final class GrpcClientProviderImpl(
 
   override def grpcClientFor[T <: AkkaGrpcClient](serviceClass: Class[T], serviceName: String): T = {
     val clientKey = ClientKey(serviceClass, serviceName)
-    grpcStubs.get(clientKey) match {
+    grpcStubLookup(clientKey) match {
       case Some(stub) => stub.asInstanceOf[T]
       case None =>
         clients

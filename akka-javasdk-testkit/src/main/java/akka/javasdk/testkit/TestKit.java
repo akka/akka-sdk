@@ -37,6 +37,8 @@ import akka.javasdk.impl.timer.TimerSchedulerImpl;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
 import akka.javasdk.testkit.impl.SseRouteTesterImpl;
+import akka.javasdk.testkit.impl.StubbedGrpcServicesImpl;
+import akka.javasdk.testkit.impl.StubbedHttpServicesImpl;
 import akka.javasdk.testkit.impl.WebSocketRouteTesterImpl;
 import akka.javasdk.timer.TimerScheduler;
 import akka.javasdk.workflow.Workflow;
@@ -759,6 +761,8 @@ public class TestKit {
   private ComponentClient componentClient;
   private HttpClientProvider httpClientProvider;
   private GrpcClientProviderImpl grpcClientProvider;
+  private StubbedHttpServicesImpl stubbedHttpServices;
+  private StubbedGrpcServicesImpl stubbedGrpcServices;
   private HttpClient selfHttpClient;
   private TimerScheduler timerScheduler;
   private Optional<DependencyProvider> dependencyProvider;
@@ -818,13 +822,15 @@ public class TestKit {
       log.debug("Config from user: {}", config);
       runtimeHost = "localhost";
 
+      stubbedHttpServices = new StubbedHttpServicesImpl(settings.httpStubs);
+      stubbedGrpcServices = new StubbedGrpcServicesImpl(settings.grpcStubs);
       SdkRunner runner =
           new SdkRunner(
               settings.dependencyProvider,
               settings.disabledComponents,
               settings.overrideDisabledComponents,
-              settings.httpStubs,
-              settings.grpcStubs) {
+              name -> stubbedHttpServices.lookup(name),
+              key -> stubbedGrpcServices.lookup(key)) {
             @Override
             public Config applicationConfig() {
               var userConfig = config.withFallback(super.applicationConfig());
@@ -1069,6 +1075,26 @@ public class TestKit {
    */
   public GrpcClientProvider getGrpcClientProvider() {
     return grpcClientProvider;
+  }
+
+  /**
+   * Registry for managing HTTP service stubs on the running testkit. Lets individual tests install
+   * or replace handlers without re-creating the testkit; call {@link StubbedHttpServices#reset()}
+   * in an {@code @AfterEach} to restore the stubs declared via {@link
+   * Settings#withStubbedHttpService(String, java.util.function.Function)}.
+   */
+  public StubbedHttpServices getStubbedHttpServices() {
+    return stubbedHttpServices;
+  }
+
+  /**
+   * Registry for managing gRPC service stubs on the running testkit. Lets individual tests install
+   * or replace stub instances without re-creating the testkit; call {@link
+   * StubbedGrpcServices#reset()} in an {@code @AfterEach} to restore the stubs declared via {@link
+   * Settings#withStubbedGrpcService(String, Class, AkkaGrpcClient)}.
+   */
+  public StubbedGrpcServices getStubbedGrpcServices() {
+    return stubbedGrpcServices;
   }
 
   /**

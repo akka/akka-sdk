@@ -1,11 +1,11 @@
 package customer.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import akka.Done;
 import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.model.StatusCodes;
-import akka.javasdk.testkit.TestKit;
 import customer.api.CustomerRegistryEndpoint.CreateCustomerRequest;
 import customer.api.proto.ChangeAddressRequest;
 import customer.api.proto.ChangeAddressResponse;
@@ -23,52 +23,79 @@ import customer.api.proto.GetCustomerRequest;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * This test stubs out the upstream "customer-registry" service so the local endpoint and delegate
- * can be exercised without a real upstream service running.
+ * This test stubs out the upstream "customer-registry" service per test case so the local endpoint
+ * and delegate can be exercised without a real upstream service running.
  *
  * <p>For a test of the full cross-service subscription flow (which does require the real upstream
  * service running on :9000), see {@link CustomerIntegrationTest}.
  */
 public class CustomerRegistryEndpointStubbedTest extends CustomerRegistryIntegrationTest {
 
-  @Override
-  protected TestKit.Settings testKitSettings() {
-    return super.testKitSettings()
-      .withStubbedHttpService(
-        "customer-registry",
-        request -> HttpResponse.create().withStatus(StatusCodes.CREATED)
-      )
-      .withStubbedGrpcService(
-        "customer-registry",
-        CustomerGrpcEndpointClient.class,
-        new CustomerGrpcEndpointStub()
-      );
+  @AfterEach
+  public void resetStubs() {
+    testKit.getStubbedHttpServices().reset();
+    testKit.getStubbedGrpcServices().reset();
   }
 
   @Test
   public void httpEndpointReturnsCreatedWhenUpstreamReturnsCreated() {
-    var id = UUID.randomUUID().toString();
-    var request = new CreateCustomerRequest(
-      "foo@example.com",
-      "Johanna",
-      new CustomerRegistryEndpoint.Address("street", "city")
-    );
+    testKit
+        .getStubbedHttpServices()
+        .stubResponse(
+            "customer-registry",
+            request -> HttpResponse.create().withStatus(StatusCodes.CREATED));
 
-    var response = httpClient.POST("/customer/" + id).withRequestBody(request).invoke();
+    var request = new CreateCustomerRequest(
+        "foo@example.com", "Johanna", new CustomerRegistryEndpoint.Address("street", "city"));
+
+    var response =
+        httpClient
+            .POST("/customer/" + UUID.randomUUID())
+            .withRequestBody(request)
+            .invoke();
 
     assertThat(response.httpResponse().status()).isEqualTo(StatusCodes.CREATED);
   }
 
   @Test
+  public void httpEndpointFailsWhenUpstreamReturnsError() {
+    testKit
+        .getStubbedHttpServices()
+        .stubResponse(
+            "customer-registry",
+            request -> HttpResponse.create().withStatus(StatusCodes.INTERNAL_SERVER_ERROR));
+
+    var request = new CreateCustomerRequest(
+        "bar@example.com", "Bjorn", new CustomerRegistryEndpoint.Address("street", "city"));
+
+    assertThatThrownBy(
+            () ->
+                httpClient
+                    .POST("/customer/" + UUID.randomUUID())
+                    .withRequestBody(request)
+                    .invoke())
+        .hasMessageContaining("500");
+  }
+
+  @Test
   public void grpcDelegateReturnsResponseFromUpstream() {
+    testKit
+        .getStubbedGrpcServices()
+        .stubResponse(
+            "customer-registry",
+            CustomerGrpcEndpointClient.class,
+            new CustomerGrpcEndpointStub());
+
     var delegateClient = getGrpcEndpointClient(DelegateCustomerGrpcEndpointClient.class);
-    var request = customer.api.proto.CreateCustomerRequest.newBuilder()
-      .setCustomerId(UUID.randomUUID().toString())
-      .setCustomer(Customer.newBuilder().setName("Carla").build())
-      .build();
+    var request =
+        customer.api.proto.CreateCustomerRequest.newBuilder()
+            .setCustomerId(UUID.randomUUID().toString())
+            .setCustomer(Customer.newBuilder().setName("Carla").build())
+            .build();
 
     var response = delegateClient.createCustomer(request);
 
@@ -80,11 +107,9 @@ public class CustomerRegistryEndpointStubbedTest extends CustomerRegistryIntegra
    * not exercised by this test and throws if called so test breakage is loud.
    */
   static final class CustomerGrpcEndpointStub extends CustomerGrpcEndpointClient {
-
     @Override
     public CreateCustomerResponse createCustomer(
-      customer.api.proto.CreateCustomerRequest in
-    ) {
+        customer.api.proto.CreateCustomerRequest in) {
       return CreateCustomerResponse.newBuilder().build();
     }
 
@@ -115,8 +140,7 @@ public class CustomerRegistryEndpointStubbedTest extends CustomerRegistryIntegra
 
     @Override
     public akka.stream.javadsl.Source<CustomerSummary, akka.NotUsed> customerByEmailStream(
-      CustomerByEmailRequest in
-    ) {
+        CustomerByEmailRequest in) {
       throw new UnsupportedOperationException();
     }
 

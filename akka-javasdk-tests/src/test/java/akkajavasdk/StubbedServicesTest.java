@@ -15,6 +15,7 @@ import akkajavasdk.protocol.TestGrpcServiceOuterClass;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -123,6 +124,12 @@ public class StubbedServicesTest {
     if (testKit != null) testKit.stop();
   }
 
+  @AfterEach
+  public void resetStubs() {
+    testKit.getStubbedHttpServices().reset();
+    testKit.getStubbedGrpcServices().reset();
+  }
+
   @Test
   public void httpStubReturnsStubbedResponse() {
     var response =
@@ -153,6 +160,51 @@ public class StubbedServicesTest {
 
     assertThat(response.getData()).isEqualTo("stubbed:invoice-42");
     assertThat(grpcStub.seenData).contains("invoice-42");
+  }
+
+  @Test
+  public void stubResponseCanBeReplacedPerTest() {
+    testKit
+        .getStubbedHttpServices()
+        .stubResponse(
+            "billing",
+            request ->
+                HttpResponse.create()
+                    .withStatus(StatusCodes.NOT_FOUND)
+                    .withEntity(ContentTypes.TEXT_PLAIN_UTF8, "replaced"));
+
+    var response =
+        testKit.getHttpClientProvider().httpClientFor("billing").GET("/anything").invoke();
+    assertThat(response.httpResponse().status()).isEqualTo(StatusCodes.NOT_FOUND);
+    assertThat(response.body().utf8String()).isEqualTo("replaced");
+  }
+
+  @Test
+  public void resetRestoresSettingsDefaults() {
+    testKit
+        .getStubbedHttpServices()
+        .stubResponse(
+            "billing", request -> HttpResponse.create().withStatus(StatusCodes.NOT_FOUND));
+    testKit.getStubbedHttpServices().reset();
+
+    var response =
+        testKit.getHttpClientProvider().httpClientFor("billing").GET("/after-reset").invoke();
+    assertThat(response.body().utf8String()).isEqualTo("{\"billed\":true}");
+  }
+
+  @Test
+  public void stubCanBeRegisteredPerTestWithoutSettings() {
+    testKit
+        .getStubbedHttpServices()
+        .stubResponse(
+            "late-bound",
+            request ->
+                HttpResponse.create()
+                    .withStatus(StatusCodes.OK)
+                    .withEntity(ContentTypes.TEXT_PLAIN_UTF8, "late"));
+
+    var response = testKit.getHttpClientProvider().httpClientFor("late-bound").GET("/x").invoke();
+    assertThat(response.body().utf8String()).isEqualTo("late");
   }
 
   @Test
