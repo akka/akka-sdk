@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory
 @InternalApi
 private[akka] object GrpcClientProviderImpl {
   final case class AuthHeaders(headerName: String, headerValue: String)
-  private final case class ClientKey(clientClass: Class[_], serviceName: String)
+  final case class ClientKey(clientClass: Class[_], serviceName: String)
 
   private def isAkkaService(serviceName: String): Boolean = !(serviceName.contains('.') || serviceName.contains(':'))
 
@@ -91,7 +91,8 @@ private[akka] final class GrpcClientProviderImpl(
     system: ActorSystem[_],
     settings: Settings,
     userServiceConfig: Config,
-    remoteIdentificationHeader: Option[AuthHeaders])
+    remoteIdentificationHeader: Option[AuthHeaders],
+    grpcStubs: Map[GrpcClientProviderImpl.ClientKey, AkkaGrpcClient] = Map.empty)
     extends GrpcClientProvider {
   import GrpcClientProviderImpl._
   import system.executionContext
@@ -109,18 +110,22 @@ private[akka] final class GrpcClientProviderImpl(
 
   override def grpcClientFor[T <: AkkaGrpcClient](serviceClass: Class[T], serviceName: String): T = {
     val clientKey = ClientKey(serviceClass, serviceName)
-    clients
-      .computeIfAbsent(
-        clientKey,
-        { _ =>
-          val client = createNewClientFor(serviceClass, serviceName)
-          client.closed().asScala.foreach { _ =>
-            // user should not close client, but just to be sure we don't keep it around if they do
-            clients.remove(clientKey, client)
-          }
-          client
-        })
-      .asInstanceOf[T]
+    grpcStubs.get(clientKey) match {
+      case Some(stub) => stub.asInstanceOf[T]
+      case None =>
+        clients
+          .computeIfAbsent(
+            clientKey,
+            { _ =>
+              val client = createNewClientFor(serviceClass, serviceName)
+              client.closed().asScala.foreach { _ =>
+                // user should not close client, but just to be sure we don't keep it around if they do
+                clients.remove(clientKey, client)
+              }
+              client
+            })
+          .asInstanceOf[T]
+    }
   }
 
   private[akka] def createNewClientFor[T <: AkkaGrpcClient](clientClass: Class[T], serviceName: String): T = {

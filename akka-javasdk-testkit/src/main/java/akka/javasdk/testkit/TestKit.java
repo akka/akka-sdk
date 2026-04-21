@@ -10,6 +10,7 @@ import akka.actor.typed.ActorSystem;
 import akka.grpc.javadsl.AkkaGrpcClient;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.model.HttpRequest;
+import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.Metadata;
 import akka.javasdk.Principal;
@@ -22,6 +23,7 @@ import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
+import akka.javasdk.grpc.GrpcClientProvider;
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.http.HttpClientProvider;
 import akka.javasdk.impl.ErrorHandling;
@@ -63,6 +65,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import kalix.runtime.AkkaRuntimeMain;
 import kalix.runtime.telemetry.Telemetry;
@@ -236,6 +239,8 @@ public class TestKit {
             ConfigFactory.empty(),
             Set.of(),
             false,
+            new HashMap<>(),
+            new HashMap<>(),
             new HashMap<>());
 
     /** The name of this service when deployed. */
@@ -261,6 +266,18 @@ public class TestKit {
     public final boolean overrideDisabledComponents;
 
     public final Map<String, ModelProvider> modelProvidersByAgentId;
+
+    /**
+     * Map from service name to a synchronous HTTP request handler that stubs responses for that
+     * service.
+     */
+    public final Map<String, Function<HttpRequest, HttpResponse>> httpStubs;
+
+    /**
+     * Map from service name to a map of gRPC service client class -> stub instance, used to stub
+     * gRPC service calls for the given service name.
+     */
+    public final Map<String, Map<Class<? extends AkkaGrpcClient>, AkkaGrpcClient>> grpcStubs;
 
     public enum EventingSupport {
       /**
@@ -293,7 +310,9 @@ public class TestKit {
         Config additionalConfig,
         Set<Class<?>> disabledComponents,
         boolean overrideDisabledComponents,
-        Map<String, ModelProvider> modelProvidersByAgentId) {
+        Map<String, ModelProvider> modelProvidersByAgentId,
+        Map<String, Function<HttpRequest, HttpResponse>> httpStubs,
+        Map<String, Map<Class<? extends AkkaGrpcClient>, AkkaGrpcClient>> grpcStubs) {
       this.serviceName = serviceName;
       this.aclEnabled = aclEnabled;
       this.eventingSupport = eventingSupport;
@@ -303,6 +322,8 @@ public class TestKit {
       this.disabledComponents = disabledComponents;
       this.overrideDisabledComponents = overrideDisabledComponents;
       this.modelProvidersByAgentId = modelProvidersByAgentId;
+      this.httpStubs = httpStubs;
+      this.grpcStubs = grpcStubs;
     }
 
     /**
@@ -324,7 +345,9 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpStubs,
+          grpcStubs);
     }
 
     /**
@@ -342,7 +365,9 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpStubs,
+          grpcStubs);
     }
 
     /**
@@ -360,7 +385,9 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpStubs,
+          grpcStubs);
     }
 
     /**
@@ -379,7 +406,9 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpStubs,
+          grpcStubs);
     }
 
     public Settings withKeyValueEntityIncomingMessages(
@@ -404,7 +433,9 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpStubs,
+          grpcStubs);
     }
 
     public Settings withEventSourcedEntityIncomingMessages(
@@ -429,7 +460,9 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpStubs,
+          grpcStubs);
     }
 
     public Settings withWorkflowIncomingMessages(Class<? extends Workflow<?>> workflowClass) {
@@ -450,7 +483,9 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpStubs,
+          grpcStubs);
     }
 
     /** Mock the incoming events flow from a Topic. */
@@ -464,7 +499,9 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpStubs,
+          grpcStubs);
     }
 
     /** Mock the outgoing events flow for a Topic. */
@@ -478,7 +515,9 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpStubs,
+          grpcStubs);
     }
 
     public Settings withEventingSupport(EventingSupport eventingSupport) {
@@ -491,7 +530,9 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpStubs,
+          grpcStubs);
     }
 
     /**
@@ -508,7 +549,9 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpStubs,
+          grpcStubs);
     }
 
     /**
@@ -533,7 +576,9 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpStubs,
+          grpcStubs);
     }
 
     /**
@@ -550,7 +595,9 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpStubs,
+          grpcStubs);
     }
 
     /**
@@ -568,7 +615,9 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           true,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpStubs,
+          grpcStubs);
     }
 
     /**
@@ -588,7 +637,9 @@ public class TestKit {
           additionalConfig,
           Set.of(),
           true,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpStubs,
+          grpcStubs);
     }
 
     public Settings withModelProvider(
@@ -605,7 +656,76 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          newModelProvidersByAgentId);
+          newModelProvidersByAgentId,
+          httpStubs,
+          grpcStubs);
+    }
+
+    /**
+     * Stub an HTTP service for calls made through {@link HttpClientProvider#httpClientFor(String)}
+     * with the given service name. The handler runs synchronously on the SDK dispatcher (virtual
+     * threads), so blocking in the handler is safe. Calls for service names that are not stubbed
+     * continue to go through normal resolution.
+     *
+     * @param serviceName The service name (or full URL) that the service under test will pass to
+     *     {@link HttpClientProvider#httpClientFor(String)}.
+     * @param handler A function that maps an incoming {@link HttpRequest} to the {@link
+     *     HttpResponse} the stub should return.
+     * @return The updated settings.
+     */
+    public Settings withStubbedHttpService(
+        String stubServiceName, Function<HttpRequest, HttpResponse> handler) {
+      var newHttpStubs = new HashMap<>(httpStubs);
+      newHttpStubs.put(stubServiceName, handler);
+      return new Settings(
+          serviceName,
+          aclEnabled,
+          eventingSupport,
+          mockedEventing,
+          dependencyProvider,
+          additionalConfig,
+          disabledComponents,
+          overrideDisabledComponents,
+          modelProvidersByAgentId,
+          newHttpStubs,
+          grpcStubs);
+    }
+
+    /**
+     * Stub a gRPC service for calls made through {@link
+     * akka.javasdk.grpc.GrpcClientProvider#grpcClientFor(Class, String)} with the given service
+     * name and generated service client interface. The stub is a user-provided instance of the
+     * generated Akka gRPC client interface. Calls for service-class/name combinations that are not
+     * stubbed continue to go through normal resolution.
+     *
+     * @param serviceName The service name that the service under test will pass to {@link
+     *     akka.javasdk.grpc.GrpcClientProvider#grpcClientFor(Class, String)}.
+     * @param serviceClass The Akka gRPC generated client interface.
+     * @param stubInstance A user-provided implementation of the generated client interface.
+     * @return The updated settings.
+     */
+    public <T extends AkkaGrpcClient> Settings withStubbedGrpcService(
+        String stubServiceName, Class<T> serviceClass, T stubInstance) {
+      var newGrpcStubs =
+          new HashMap<String, Map<Class<? extends AkkaGrpcClient>, AkkaGrpcClient>>();
+      grpcStubs.forEach(
+          (k, v) ->
+              newGrpcStubs.put(k, new HashMap<Class<? extends AkkaGrpcClient>, AkkaGrpcClient>(v)));
+      newGrpcStubs
+          .computeIfAbsent(stubServiceName, k -> new HashMap<>())
+          .put(serviceClass, stubInstance);
+      return new Settings(
+          serviceName,
+          aclEnabled,
+          eventingSupport,
+          mockedEventing,
+          dependencyProvider,
+          additionalConfig,
+          disabledComponents,
+          overrideDisabledComponents,
+          modelProvidersByAgentId,
+          httpStubs,
+          newGrpcStubs);
     }
 
     @Override
@@ -702,7 +822,9 @@ public class TestKit {
           new SdkRunner(
               settings.dependencyProvider,
               settings.disabledComponents,
-              settings.overrideDisabledComponents) {
+              settings.overrideDisabledComponents,
+              settings.httpStubs,
+              settings.grpcStubs) {
             @Override
             public Config applicationConfig() {
               var userConfig = config.withFallback(super.applicationConfig());
@@ -939,6 +1061,14 @@ public class TestKit {
    */
   public HttpClientProvider getHttpClientProvider() {
     return httpClientProvider;
+  }
+
+  /**
+   * Get a {@link GrpcClientProvider} for looking up gRPC clients to interact with services other
+   * than the current. Requests will appear as coming from this service from an ACL perspective.
+   */
+  public GrpcClientProvider getGrpcClientProvider() {
+    return grpcClientProvider;
   }
 
   /**

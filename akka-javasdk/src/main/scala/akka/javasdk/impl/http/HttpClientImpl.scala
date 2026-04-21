@@ -105,7 +105,8 @@ private[akka] final class HttpClientImpl private (
       new StrictResponse[ByteString](_, _),
       None,
       sdkExecutor,
-      connectionPoolSettings)
+      connectionPoolSettings,
+      None)
   }
 }
 
@@ -122,7 +123,8 @@ private[akka] final case class RequestBuilderImpl[R](
     bodyParser: (HttpResponse, ByteString) => StrictResponse[R],
     retrySettings: Option[RetrySettings],
     sdkExecutor: Executor,
-    connectionPoolSettings: Option[ConnectionPoolSettings])
+    connectionPoolSettings: Option[ConnectionPoolSettings],
+    requestSender: Option[HttpRequest => CompletionStage[HttpResponse]])
     extends RequestBuilder[R] {
 
   override def withRequest(request: HttpRequest): RequestBuilder[R] = copy(request = request)
@@ -184,11 +186,16 @@ private[akka] final case class RequestBuilderImpl[R](
     }
 
     def executeRequest(request: HttpRequest): CompletionStage[StrictResponse[R]] = {
-      (connectionPoolSettings match {
-        case Some(poolSettings) =>
-          http.singleRequest(request, http.defaultClientHttpsContext, poolSettings, materializer.system.log)
-        case None => http.singleRequest(request)
-      }).thenComposeAsync(
+      val response: CompletionStage[HttpResponse] = requestSender match {
+        case Some(sender) => sender(request)
+        case None =>
+          connectionPoolSettings match {
+            case Some(poolSettings) =>
+              http.singleRequest(request, http.defaultClientHttpsContext, poolSettings, materializer.system.log)
+            case None => http.singleRequest(request)
+          }
+      }
+      response.thenComposeAsync(
         (response: HttpResponse) =>
           response.entity
             .toStrict(timeout.toMillis, materializer)
@@ -295,6 +302,7 @@ private[akka] final case class RequestBuilderImpl[R](
       parser,
       retrySettings,
       sdkExecutor,
-      connectionPoolSettings)
+      connectionPoolSettings,
+      requestSender)
 
 }

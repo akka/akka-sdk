@@ -28,6 +28,7 @@ import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.grpc.internal.JavaMetadataImpl
+import akka.grpc.javadsl.AkkaGrpcClient
 import akka.grpc.javadsl.Metadata
 import akka.http.javadsl.model.HttpHeader
 import akka.http.scaladsl.model.headers.RawHeader
@@ -232,19 +233,58 @@ object SdkRunner {
 class SdkRunner private (
     dependencyProvider: Option[DependencyProvider],
     disabledComponents: Set[Class[_]],
-    overrideDisabledComponents: Boolean)
+    overrideDisabledComponents: Boolean,
+    httpStubs: Map[
+      String,
+      java.util.function.Function[akka.http.javadsl.model.HttpRequest, akka.http.javadsl.model.HttpResponse]],
+    grpcStubs: Map[GrpcClientProviderImpl.ClientKey, AkkaGrpcClient])
     extends akka.runtime.sdk.spi.Runner {
   private val startedPromise = Promise[StartupContext]()
 
   // default constructor for runtime creation
-  def this() = this(None, Set.empty[Class[_]], false)
+  def this() =
+    this(
+      None,
+      Set.empty[Class[_]],
+      false,
+      Map.empty[
+        String,
+        java.util.function.Function[akka.http.javadsl.model.HttpRequest, akka.http.javadsl.model.HttpResponse]],
+      Map.empty[GrpcClientProviderImpl.ClientKey, AkkaGrpcClient])
 
   // constructor for testkit
   def this(
       dependencyProvider: java.util.Optional[DependencyProvider],
       disabledComponents: java.util.Set[Class[_]],
       overrideDisabledComponents: Boolean) =
-    this(dependencyProvider.toScala, disabledComponents.asScala.toSet, overrideDisabledComponents)
+    this(
+      dependencyProvider.toScala,
+      disabledComponents.asScala.toSet,
+      overrideDisabledComponents,
+      Map.empty[
+        String,
+        java.util.function.Function[akka.http.javadsl.model.HttpRequest, akka.http.javadsl.model.HttpResponse]],
+      Map.empty[GrpcClientProviderImpl.ClientKey, AkkaGrpcClient])
+
+  // constructor for testkit with HTTP/gRPC stubs
+  def this(
+      dependencyProvider: java.util.Optional[DependencyProvider],
+      disabledComponents: java.util.Set[Class[_]],
+      overrideDisabledComponents: Boolean,
+      httpStubs: java.util.Map[
+        String,
+        java.util.function.Function[akka.http.javadsl.model.HttpRequest, akka.http.javadsl.model.HttpResponse]],
+      grpcStubs: java.util.Map[String, java.util.Map[Class[_ <: AkkaGrpcClient], AkkaGrpcClient]]) =
+    this(
+      dependencyProvider.toScala,
+      disabledComponents.asScala.toSet,
+      overrideDisabledComponents,
+      httpStubs.asScala.toMap,
+      grpcStubs.asScala.iterator.flatMap { case (serviceName, byClass) =>
+        byClass.asScala.iterator.map { case (cls, instance) =>
+          GrpcClientProviderImpl.ClientKey(cls, serviceName) -> instance
+        }
+      }.toMap)
 
   def applicationConfig: Config =
     ApplicationConfig.loadApplicationConf
@@ -268,7 +308,9 @@ class SdkRunner private (
         overrideDisabledComponents,
         startedPromise,
         getSettings,
-        startContext.sanitizer)
+        startContext.sanitizer,
+        httpStubs,
+        grpcStubs)
       Future.successful(app.spiComponents)
     } catch {
       case NonFatal(ex) =>
@@ -350,7 +392,11 @@ private final class Sdk(
     overrideDisabledComponents: Boolean,
     startedPromise: Promise[StartupContext],
     spiSettings: SpiSettings,
-    runtimeSanitizer: SpiSanitizerEngine) {
+    runtimeSanitizer: SpiSanitizerEngine,
+    httpStubs: Map[
+      String,
+      java.util.function.Function[akka.http.javadsl.model.HttpRequest, akka.http.javadsl.model.HttpResponse]],
+    grpcStubs: Map[GrpcClientProviderImpl.ClientKey, AkkaGrpcClient]) {
 
   import Sdk._
 
@@ -384,7 +430,9 @@ private final class Sdk(
     remoteIdentification.map(ri => RawHeader(ri.headerName, ri.headerValue)),
     sdkSettings,
     // We know it is a dispatcher/executor
-    sdkExecutionContext.asInstanceOf[Executor])
+    sdkExecutionContext.asInstanceOf[Executor],
+    None,
+    httpStubs)
 
   private lazy val userServiceConfig = {
     // hiding these paths from the config provided to user
@@ -399,7 +447,8 @@ private final class Sdk(
     system,
     sdkSettings,
     userServiceConfig,
-    remoteIdentification.map(ri => GrpcClientProviderImpl.AuthHeaders(ri.headerName, ri.headerValue)))
+    remoteIdentification.map(ri => GrpcClientProviderImpl.AuthHeaders(ri.headerName, ri.headerValue)),
+    grpcStubs)
 
   private lazy val overrideModelProvider = new OverrideModelProvider
 
