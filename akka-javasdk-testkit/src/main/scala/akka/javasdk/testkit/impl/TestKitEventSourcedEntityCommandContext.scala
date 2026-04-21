@@ -12,7 +12,6 @@ import akka.javasdk.impl.InternalContext
 /** INTERNAL API Used by the generated testkit */
 final class TestKitEventSourcedEntityCommandContext(
     override val entityId: String = "stubEntityId",
-    override val commandId: Long = 0L,
     override val commandName: String = "stubCommandName",
     override val sequenceNumber: Long = 0L,
     override val isDeleted: Boolean = false,
