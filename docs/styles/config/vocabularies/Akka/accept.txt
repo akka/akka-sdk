@@ -35,6 +35,7 @@ Cembaluk
 checkpointing
 classname
 clientCertificate
+clientId
 cloudName
 codegen
 [Cc]omposable
@@ -68,6 +69,7 @@ env
 etcd
 eventhubs
 exfiltration
+expirationSeconds
 externalSecret
 facto
 failover
@@ -102,6 +104,7 @@ interconnectivity
 interoperate
 iss
 Javadoc
+jmesPath
 Json
 JUnit
 JVM's
@@ -193,6 +196,7 @@ reshard
 resourceVersion
 [Rr]eusability
 RNGs
+roleArn
 runtimes
 runtime's
 (?i)RPC
@@ -229,6 +233,7 @@ subtree
 Szymanski
 [Tt]elemedicine
 Temurin
+tenantId
 [Tt]estKit
 text_search
 [Tt]imeframe
@@ -257,10 +262,12 @@ url
 userid
 valueFrom
 versionHistory
+versionLabel
 VMs
 volumeMounts
 [Ww]alkthrough
 winget
+workloadIdentity
 Yugabyte
 Zolotko
 [Zz]sh

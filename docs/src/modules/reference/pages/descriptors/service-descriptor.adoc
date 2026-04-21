@@ -21,19 +21,20 @@ The *ServiceSpec* defines the detailed configuration of an Akka service, includi
 
 [cols="1,1,1"]
 |===
-|Field          |Type                      |Description
+|Field              |Type                    |Description
 
-|*image*        |string _required_         |The name of the docker image for the service container
-|*serviceConfig* |string                   |The name of a service config to apply to this service. The service config must exist in the same project. See xref:operations:services/service-config.adoc[].
-|*env*          |[]<<EnvVar>>              |Environment variables to be set in the service's container
-|*labels*       |map[string]string         |Labels to attach to the service. Labels are key-value pairs used to organize and categorize services. Disabled by default.
-|*annotations*  |map[string]string         |Annotations to attach to the service. Annotations are key-value pairs used to attach arbitrary non-identifying metadata to services. Disabled by default.
-|*jwt*          |<<ServiceJwt>>            |JWT configuration for the service
-|*resources*    |<<ServiceResources>>      |Resource configuration for the service, including instance size and autoscaling
-|*volumeMounts* |[]<<VolumeMount>>         |Volume mounts to mount in the service's container
-|*telemetry*    |[]<<ServiceTelemetry>>    |Telemetry configuration for the service
-|*replication*  |<<ServiceReplication>>    |Replication configuration for stateful components in the service
-|*tls*          |<<TLSConfig>>             |TLS configuration for outbound connections from the service
+|*image*            |string _required_       |The name of the docker image for the service container
+|*serviceConfig*    |string                  |The name of a service config to apply to this service. The service config must exist in the same project. See xref:operations:services/service-config.adoc[].
+|*env*              |[]<<EnvVar>>            |Environment variables to be set in the service's container
+|*labels*           |map[string]string       |Labels to attach to the service. Labels are key-value pairs used to organize and categorize services. Disabled by default.
+|*annotations*      |map[string]string       |Annotations to attach to the service. Annotations are key-value pairs used to attach arbitrary non-identifying metadata to services. Disabled by default.
+|*jwt*              |<<ServiceJwt>>          |JWT configuration for the service
+|*resources*        |<<ServiceResources>>    |Resource configuration for the service, including instance size and autoscaling
+|*volumeMounts*     |[]<<VolumeMount>>       |Volume mounts to mount in the service's container
+|*telemetry*        |[]<<ServiceTelemetry>>  |Telemetry configuration for the service
+|*replication*      |<<ServiceReplication>>  |Replication configuration for stateful components in the service
+|*tls*              |<<TLSConfig>>           |TLS configuration for outbound connections from the service
+|*workloadIdentity* |<<WorkloadIdentity>>    |Workload identity configuration for the service
 |===
 
 
@@ -211,11 +212,12 @@ A volume that should be mounted into the service container. Only one source may 
 
 [cols="1,1,1"]
 |===
-|Field                  |Type                           |Description
+|Field                   |Type                                  |Description
 
-|*mountPath* _required_ |string                         |Path within the container at which the volume should be mounted. Must not contain ':'.
-|*secret*               |<<SecretVolumeSource>>         |A secret that should be used to populate this volume.
-|*externalSecret*       |<<ExternalSecretVolumeSource>> | An external secret that should be used to populate this volume.
+|*mountPath*             |string _required_                     |Path within the container at which the volume should be mounted. Must not contain ':'.
+|*secret*                |<<SecretVolumeSource>>                |A secret that should be used to populate this volume.
+|*externalSecret*        |<<ExternalSecretVolumeSource>>        |An external secret that should be used to populate this volume.
+|*workloadIdentityToken* |<<WorkloadIdentityTokenVolumeSource>> |A workload identity token that should be used to populate this volume.
 |===
 
 === SecretVolumeSource
@@ -224,11 +226,11 @@ Adapts a secret into a volume that can be mounted into the service's container.
 
 [cols="1,1,1"]
 |===
-|Field                   |Type    |Description
+|Field         |Type              |Description
 
-|*secretName* _required_ |string  |The name of a secret in the service's project to mount.
-|*defaultMode*           |int     |Mode bits to set the permissions on created files from the secret by default. Must be an octal value between 0000 and 0777, or a decimal value between 0 and 511. Defaults to 0644.
-|*optional*              |boolean |Specifies whether the container should fail to start if the secret doesn't exist.
+|*secretName*  |string _required_ |The name of a secret in the service's project to mount.
+|*defaultMode* |int               |Mode bits to set the permissions on created files from the secret by default. Must be an octal value between 0000 and 0777, or a decimal value between 0 and 511. Defaults to 0644.
+|*optional*    |boolean           |Specifies whether the container should fail to start if the secret doesn't exist.
 |===
 
 
@@ -258,9 +260,22 @@ Adapts an external secret into a volume that can be mounted into the service's c
 
 [cols="1,1,1"]
 |===
-|Field                 |Type    |Description
+|Field      |Type              |Description
 
-|*provider* _required_ |string  |The name of the external secret to mount.
+|*provider* |string _required_ |The name of the external secret to mount.
+|===
+
+=== WorkloadIdentityTokenVolumeSource
+
+Projects a workload identity token that can be mounted into the service's container.
+
+[cols="1,1,1"]
+|===
+|Field               |Type              |Description
+
+|*path*              |string _required_ |The name of the file that the token will be projected into
+|*audience*          |string _required_ |The audience of the token. This will appear in the `aud` claim of the token.
+|*expirationSeconds* |int               |The amount of time that the token will be valid for. The token will be rotated when it is older than 80% of this, or older than 24 hours. Must be at least 10 minutes. Defaults to 1 hour.
 |===
 
 === ServiceTelemetry
@@ -367,3 +382,50 @@ service:
       type: JKS
       passwordKey: truststore-password
 ----
+
+=== WorkloadIdentity
+
+Workload identity configuration for a service.
+
+[cols="1,1,1"]
+|===
+|Field   |Type                      |Description
+
+|*aws*   |<<AwsWorkloadIdentity>>   |AWS workload identity configuration. Only relevant for AWS regions, ignored in other regions.
+|*azure* |<<AzureWorkloadIdentity>> |Azure workload identity configuration. Only relevant for Azure regions, ignored in other regions.
+|*gcp*   |<<GcpWorkloadIdentity>>   |GCP workload identity configuration. Only relevant for GCP regions, ignored in other regions.
+|===
+
+=== AwsWorkloadIdentity
+
+Workload identity configuration for AWS regions to authenticate with the AWS API. Setting this configuration will inject your Akka services with the necessary environment variables and tokens for the AWS SDK to automatically authenticate with AWS APIs using workload identity.
+
+[cols="1,1,1"]
+|===
+|Field     |Type              |Description
+
+|*roleArn* |string _required_ |The ARN of the role that you wish the Akka service to assume
+|===
+
+=== AzureWorkloadIdentity
+
+Workload identity configuration for Azure regions to authenticate with the Azure API. Setting this configuration will inject your Akka services with the necessary environment variables and tokens for the Azure SDK to automatically authenticate with Azure APIs using workload identity.
+
+[cols="1,1,1"]
+|===
+|Field      |Type              |Description
+
+|*clientId* |string _required_ |The client id of the configured federated identity to authenticate as
+|*tenantId* |string            |The tenant id of the Azure account. Defaults to the same tenant ID as the regions Kubernetes cluster runs in.
+|===
+
+=== GcpWorkloadIdentity
+
+Workload identity configuration for GCP regions to authenticate with the GCP API. Note that GCP workload identity is enabled regardless of whether this is configured or not. The GCP SDK will automatically use your Akka service's workload identity.
+
+[cols="1,1,1"]
+|===
+|Field               |Type   |Description
+
+|*gcpServiceAccount* |string |If you wish your service to impersonate a GCP service account, rather than using their own principal directly, the service account that you wish them to assume.
+|===
