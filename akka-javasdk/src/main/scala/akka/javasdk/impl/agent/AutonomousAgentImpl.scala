@@ -27,9 +27,11 @@ import akka.javasdk.agent.SessionMessage.ToolCallResponse
 import akka.javasdk.agent.SessionMessage.UserMessage
 import akka.javasdk.agent._
 import akka.javasdk.agent.task.BacklogEntity
+import akka.javasdk.agent.task.BacklogNotification
 import akka.javasdk.agent.task.BacklogState
 import akka.javasdk.agent.task.TaskAttachment
 import akka.javasdk.agent.task.TaskEntity
+import akka.javasdk.agent.task.TaskNotification
 import akka.javasdk.agent.task.TaskState
 import akka.javasdk.agent.task.TaskStatus
 import akka.javasdk.client.ComponentClient
@@ -39,6 +41,7 @@ import akka.javasdk.impl.agent.autonomous.AgentDefinitionImpl
 import akka.javasdk.impl.client.EntityClientImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.Serializer
+import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAutonomousAgent
@@ -246,6 +249,11 @@ private[impl] final class AutonomousAgentImpl(
         .invokeAsync(reassignReq)
         .asScala
     }
+
+    override val taskEntityType: String = Reflect.readComponentId(classOf[TaskEntity])
+
+    override def decodeNotification(payload: BytesPayload): SpiTask.SpiTaskNotification =
+      toSpiTaskNotification(serializer.fromBytes(payload).asInstanceOf[TaskNotification])
   }
 
   override val backlogOperations: SpiBacklogOperations = new SpiBacklogOperations {
@@ -298,6 +306,11 @@ private[impl] final class AutonomousAgentImpl(
         .invokeAsync()
         .asScala
         .map(toSpiBacklogState)(sdkExecutionContext)
+
+    override val backlogEntityType: String = Reflect.readComponentId(classOf[BacklogEntity])
+
+    override def decodeNotification(payload: BytesPayload): SpiBacklog.SpiBacklogNotification =
+      toSpiBacklogNotification(serializer.fromBytes(payload).asInstanceOf[BacklogNotification])
   }
 
   override def getSessionHistory(
@@ -398,6 +411,48 @@ private[impl] final class AutonomousAgentImpl(
       attachments = attachments,
       reassignmentContext = Option(state.reassignmentContext()).map(_.asScala.toSeq).getOrElse(Seq.empty))
   }
+
+  private def toSpiTaskNotification(notification: TaskNotification): SpiTask.SpiTaskNotification =
+    notification match {
+      case c: TaskNotification.Completed =>
+        new SpiTask.SpiTaskNotification.StatusChanged(c.taskId(), c.taskName(), SpiTask.SpiTaskStatus.Completed, "")
+      case r: TaskNotification.ResultRejected =>
+        new SpiTask.SpiTaskNotification.StatusChanged(
+          r.taskId(),
+          r.taskName(),
+          SpiTask.SpiTaskStatus.ResultRejected,
+          r.reason())
+      case f: TaskNotification.Failed =>
+        new SpiTask.SpiTaskNotification.StatusChanged(
+          f.taskId(),
+          f.taskName(),
+          SpiTask.SpiTaskStatus.Failed,
+          f.reason())
+      case c: TaskNotification.Cancelled =>
+        new SpiTask.SpiTaskNotification.StatusChanged(
+          c.taskId(),
+          c.taskName(),
+          SpiTask.SpiTaskStatus.Cancelled,
+          c.reason())
+    }
+
+  private def toSpiBacklogNotification(notification: BacklogNotification): SpiBacklog.SpiBacklogNotification =
+    notification match {
+      case c: BacklogNotification.BacklogCreated =>
+        new SpiBacklog.SpiBacklogNotification.BacklogCreated(c.name())
+      case a: BacklogNotification.TaskAdded =>
+        new SpiBacklog.SpiBacklogNotification.TaskAdded(a.taskId())
+      case c: BacklogNotification.TaskClaimed =>
+        new SpiBacklog.SpiBacklogNotification.TaskClaimed(c.taskId(), c.claimedBy())
+      case r: BacklogNotification.TaskReleased =>
+        new SpiBacklog.SpiBacklogNotification.TaskReleased(r.taskId())
+      case t: BacklogNotification.TaskTransferred =>
+        new SpiBacklog.SpiBacklogNotification.TaskTransferred(t.taskId(), t.transferredTo())
+      case _: BacklogNotification.UnclaimedCancelled =>
+        SpiBacklog.SpiBacklogNotification.UnclaimedCancelled
+      case _: BacklogNotification.BacklogClosed =>
+        SpiBacklog.SpiBacklogNotification.BacklogClosed
+    }
 
   private def toSpiBacklogState(state: BacklogState): SpiBacklog.SpiBacklogState = {
     import scala.jdk.CollectionConverters._

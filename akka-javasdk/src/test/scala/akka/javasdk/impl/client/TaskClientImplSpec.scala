@@ -338,7 +338,8 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
       future.isCompleted shouldBe false
 
       notificationPromise.success(
-        entityReplyFor(new TaskNotification.Completed("test-task", """{"value":"via notification","score":7}""")))
+        entityReplyFor(
+          new TaskNotification.Completed("test-task", "test-task", """{"value":"via notification","score":7}""")))
 
       val result = future.futureValue
       result.value shouldBe "via notification"
@@ -348,7 +349,8 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
     "throw TaskException.Failed via notification when task fails after subscription" in {
       val (notificationPromise, future) = inProgressClientWithNotification()
 
-      notificationPromise.success(entityReplyFor(new TaskNotification.Failed("test-task", "failed via notification")))
+      notificationPromise.success(
+        entityReplyFor(new TaskNotification.Failed("test-task", "test-task", "failed via notification")))
 
       val ex = failedWith[TaskException.Failed](future)
       ex.reason() shouldBe "failed via notification"
@@ -358,7 +360,7 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
       val (notificationPromise, future) = inProgressClientWithNotification()
 
       notificationPromise.success(
-        entityReplyFor(new TaskNotification.Cancelled("test-task", "cancelled via notification")))
+        entityReplyFor(new TaskNotification.Cancelled("test-task", "test-task", "cancelled via notification")))
 
       val ex = failedWith[TaskException.Cancelled](future)
       ex.reason() shouldBe "cancelled via notification"

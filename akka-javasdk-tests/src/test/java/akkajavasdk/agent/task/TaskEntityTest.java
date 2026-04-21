@@ -213,6 +213,7 @@ public class TaskEntityTest {
     testKit.method(TaskEntity::complete).invoke("{\"summary\":\"done\"}");
 
     var completed = (TaskNotification.Completed) publishedNotifications.poll();
+    assertThat(completed.taskName()).isEqualTo("research");
     assertThat(completed.result()).isEqualTo("{\"summary\":\"done\"}");
     assertThat(publishedNotifications).isEmpty();
   }
@@ -228,6 +229,7 @@ public class TaskEntityTest {
     testKit.method(TaskEntity::fail).invoke("something broke");
 
     var failed = (TaskNotification.Failed) publishedNotifications.poll();
+    assertThat(failed.taskName()).isEqualTo("research");
     assertThat(failed.reason()).isEqualTo("something broke");
     assertThat(publishedNotifications).isEmpty();
   }
@@ -241,6 +243,7 @@ public class TaskEntityTest {
     testKit.method(TaskEntity::cancel).invoke("no longer needed");
 
     var cancelled = (TaskNotification.Cancelled) publishedNotifications.poll();
+    assertThat(cancelled.taskName()).isEqualTo("research");
     assertThat(cancelled.reason()).isEqualTo("no longer needed");
     assertThat(publishedNotifications).isEmpty();
   }
@@ -315,6 +318,7 @@ public class TaskEntityTest {
     assertThat(testKit.getState().failureReason()).isEqualTo("result too short");
 
     var rejected = (TaskNotification.ResultRejected) publishedNotifications.poll();
+    assertThat(rejected.taskName()).isEqualTo("research");
     assertThat(rejected.ruleClassName()).isEqualTo("com.example.MyRule");
     assertThat(rejected.reason()).isEqualTo("result too short");
     assertThat(publishedNotifications).isEmpty();

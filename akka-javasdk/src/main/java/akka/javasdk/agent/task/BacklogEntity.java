@@ -7,6 +7,7 @@ package akka.javasdk.agent.task;
 import static akka.Done.done;
 
 import akka.Done;
+import akka.javasdk.NotificationPublisher;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
@@ -22,7 +23,13 @@ public final class BacklogEntity extends EventSourcedEntity<BacklogState, Backlo
 
   public record TransferRequest(String taskId, String transferredTo) {}
 
-  public BacklogEntity(EventSourcedEntityContext context) {}
+  private final NotificationPublisher<BacklogNotification> notificationPublisher;
+
+  public BacklogEntity(
+      EventSourcedEntityContext context,
+      NotificationPublisher<BacklogNotification> notificationPublisher) {
+    this.notificationPublisher = notificationPublisher;
+  }
 
   @Override
   public BacklogState emptyState() {
@@ -37,7 +44,13 @@ public final class BacklogEntity extends EventSourcedEntity<BacklogState, Backlo
     if (currentState().isCreated()) {
       return effects().reply(done()); // idempotent
     }
-    return effects().persist(new BacklogEvent.BacklogCreated(name)).thenReply(__ -> done());
+    return effects()
+        .persist(new BacklogEvent.BacklogCreated(name))
+        .thenReply(
+            __ -> {
+              notificationPublisher.publish(new BacklogNotification.BacklogCreated(name));
+              return done();
+            });
   }
 
   /** Add a task reference to this backlog. The task must already exist in TaskEntity. */
@@ -48,7 +61,13 @@ public final class BacklogEntity extends EventSourcedEntity<BacklogState, Backlo
     if (currentState().containsTask(taskId)) {
       return effects().reply(done()); // idempotent
     }
-    return effects().persist(new BacklogEvent.TaskAdded(taskId)).thenReply(__ -> done());
+    return effects()
+        .persist(new BacklogEvent.TaskAdded(taskId))
+        .thenReply(
+            __ -> {
+              notificationPublisher.publish(new BacklogNotification.TaskAdded(taskId));
+              return done();
+            });
   }
 
   /** Atomic first-come-first-served claim. */
@@ -66,7 +85,12 @@ public final class BacklogEntity extends EventSourcedEntity<BacklogState, Backlo
     }
     return effects()
         .persist(new BacklogEvent.TaskClaimed(request.taskId(), request.claimedBy()))
-        .thenReply(__ -> done());
+        .thenReply(
+            __ -> {
+              notificationPublisher.publish(
+                  new BacklogNotification.TaskClaimed(request.taskId(), request.claimedBy()));
+              return done();
+            });
   }
 
   /** Release a claimed task back to unclaimed. */
@@ -80,7 +104,13 @@ public final class BacklogEntity extends EventSourcedEntity<BacklogState, Backlo
     if (!currentState().isClaimed(taskId)) {
       return effects().reply(done()); // already unclaimed, idempotent
     }
-    return effects().persist(new BacklogEvent.TaskReleased(taskId)).thenReply(__ -> done());
+    return effects()
+        .persist(new BacklogEvent.TaskReleased(taskId))
+        .thenReply(
+            __ -> {
+              notificationPublisher.publish(new BacklogNotification.TaskReleased(taskId));
+              return done();
+            });
   }
 
   /** Transfer a claimed task directly to a different agent. */
@@ -93,7 +123,13 @@ public final class BacklogEntity extends EventSourcedEntity<BacklogState, Backlo
     }
     return effects()
         .persist(new BacklogEvent.TaskTransferred(request.taskId(), request.transferredTo()))
-        .thenReply(__ -> done());
+        .thenReply(
+            __ -> {
+              notificationPublisher.publish(
+                  new BacklogNotification.TaskTransferred(
+                      request.taskId(), request.transferredTo()));
+              return done();
+            });
   }
 
   /** Remove all unclaimed tasks from the backlog. */
@@ -104,7 +140,13 @@ public final class BacklogEntity extends EventSourcedEntity<BacklogState, Backlo
     if (currentState().unclaimedTaskIds().isEmpty()) {
       return effects().reply(done()); // nothing to cancel
     }
-    return effects().persist(new BacklogEvent.UnclaimedCancelled()).thenReply(__ -> done());
+    return effects()
+        .persist(new BacklogEvent.UnclaimedCancelled())
+        .thenReply(
+            __ -> {
+              notificationPublisher.publish(new BacklogNotification.UnclaimedCancelled());
+              return done();
+            });
   }
 
   /** Close the backlog — no further modifications allowed. */
@@ -112,12 +154,22 @@ public final class BacklogEntity extends EventSourcedEntity<BacklogState, Backlo
     if (currentState().closed()) {
       return effects().reply(done()); // idempotent
     }
-    return effects().persist(new BacklogEvent.BacklogClosed()).thenReply(__ -> done());
+    return effects()
+        .persist(new BacklogEvent.BacklogClosed())
+        .thenReply(
+            __ -> {
+              notificationPublisher.publish(new BacklogNotification.BacklogClosed());
+              return done();
+            });
   }
 
   /** Get the current state of the backlog. */
   public ReadOnlyEffect<BacklogState> getState() {
     return effects().reply(currentState());
+  }
+
+  public NotificationPublisher.NotificationStream<BacklogNotification> notifications() {
+    return notificationPublisher.stream();
   }
 
   private Effect<Done> closedError() {
