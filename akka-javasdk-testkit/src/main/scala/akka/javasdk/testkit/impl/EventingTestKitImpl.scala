@@ -9,7 +9,6 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.{ List => JList }
 
-import scala.annotation.nowarn
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
@@ -115,16 +114,8 @@ object EventingTestKitImpl {
 
     def emit(data: ByteString, metadata: SdkMetadata): Unit = {
 
-      // FIXME maybe we could improve validation for metadata?
       def convertMetadataEntry(sdkMetadataEntry: SdkMetadataEntry): MetadataEntry = {
-        val mde = MetadataEntry(sdkMetadataEntry.getKey)
-        if (sdkMetadataEntry.isText) {
-          mde.withStringValue(sdkMetadataEntry.getValue)
-        } else {
-          @nowarn("msg=deprecated")
-          val binary = sdkMetadataEntry.getBinaryValue;
-          mde.withBytesValue(ByteString.copyFrom(binary))
-        }
+        MetadataEntry(sdkMetadataEntry.getKey).withStringValue(sdkMetadataEntry.getValue)
       }
 
       val testKitMetadata =
