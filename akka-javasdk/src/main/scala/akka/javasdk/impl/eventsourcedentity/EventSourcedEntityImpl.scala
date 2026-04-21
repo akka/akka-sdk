@@ -61,8 +61,6 @@ private[impl] object EventSourcedEntityImpl {
       extends AbstractContext
       with CommandContext {
     override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
-
-    override def commandId(): Long = 0
   }
 
   private class EventSourcedEntityContextImpl(override final val entityId: String, override val selfRegion: String)

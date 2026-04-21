@@ -56,8 +56,6 @@ private[impl] object KeyValueEntityImpl {
       extends AbstractContext
       with CommandContext {
     override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
-
-    override def commandId(): Long = 0
   }
 
   private class KeyValueEntityContextImpl(override final val entityId: String, override val selfRegion: String)
