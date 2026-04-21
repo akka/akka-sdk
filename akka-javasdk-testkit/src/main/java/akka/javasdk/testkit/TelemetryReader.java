@@ -8,7 +8,6 @@ import static java.util.Optional.ofNullable;
 
 import akka.annotation.ApiMayChange;
 import akka.javasdk.annotations.Component;
-import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.workflow.Workflow;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.sdk.trace.data.SpanData;
@@ -132,8 +131,8 @@ public class TelemetryReader {
       return componentAnnotation.id();
     }
 
-    // Fallback to the old ComponentId annotation for backward compatibility
-    return componentClass.getAnnotation(ComponentId.class).value();
+    throw new IllegalArgumentException(
+        "Component [" + componentClass + "] is missing @Component annotation");
   }
 
   private List<SpanData> collectByAttribute(

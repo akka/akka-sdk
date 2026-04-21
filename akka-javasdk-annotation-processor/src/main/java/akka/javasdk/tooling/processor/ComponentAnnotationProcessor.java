@@ -34,7 +34,6 @@ import javax.tools.StandardLocation;
   "akka.javasdk.annotations.mcp.McpEndpoint",
   // all components will have this
   "akka.javasdk.annotations.Component",
-  "akka.javasdk.annotations.ComponentId",
   // central config/lifecycle class
   "akka.javasdk.annotations.Setup"
 })
@@ -208,7 +207,6 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
       case "akka.javasdk.annotations.Setup" -> SERVICE_SETUP_KEY;
       case "akka.javasdk.annotations.mcp.McpEndpoint" -> MCP_ENDPOINT_KEY;
       case "akka.javasdk.annotations.Component" -> componentType(annotatedClass);
-      case "akka.javasdk.annotations.ComponentId" -> componentType(annotatedClass);
       default ->
           throw new IllegalArgumentException(
               "Unknown annotation type: " + annotation.getQualifiedName());
@@ -227,7 +225,7 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
       throw new IllegalArgumentException(
           "Unknown supertype for class ["
               + annotatedClass
-              + "] annotated with @Component or @ComponentId. Reached top of hierarchy without"
+              + "] annotated with @Component. Reached top of hierarchy without"
               + " finding a known component supertype.");
     }
 
@@ -244,7 +242,7 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
       throw new IllegalArgumentException(
           "Unknown supertype for class ["
               + annotatedClass
-              + "] annotated with @Component or @ComponentId. Superclass ["
+              + "] annotated with @Component. Superclass ["
               + superClassTypeMirror
               + "] is not a declared type (kind: "
               + superClassTypeMirror.getKind()
@@ -274,7 +272,7 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
           throw new IllegalArgumentException(
               "Unknown supertype for class ["
                   + annotatedClass
-                  + "] annotated with @Component or @ComponentId: ["
+                  + "] annotated with @Component: ["
                   + superClassName
                   + "]");
       default ->

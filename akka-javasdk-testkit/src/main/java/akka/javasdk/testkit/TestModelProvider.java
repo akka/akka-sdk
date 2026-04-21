@@ -14,7 +14,6 @@ import akka.javasdk.agent.task.Task;
 import akka.javasdk.agent.task.TaskDefinition;
 import akka.javasdk.agent.task.TaskTemplate;
 import akka.javasdk.annotations.Component;
-import akka.javasdk.annotations.ComponentId;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.data.message.AiMessage;
@@ -594,7 +593,7 @@ public final class TestModelProvider implements ModelProvider.Custom {
      * tool name from the target agent's component ID.
      *
      * @param agentClass the autonomous agent class to hand off to (must carry {@code @Component} or
-     *     {@code @ComponentId})
+     *     {@code @Component})
      * @param context context passed to the receiving agent
      */
     public static ToolInvocationRequest handoffTo(
@@ -620,7 +619,7 @@ public final class TestModelProvider implements ModelProvider.Custom {
      *
      * @param task the task being delegated
      * @param agentClass the agent class to delegate to (must carry {@code @Component} or
-     *     {@code @ComponentId})
+     *     {@code @Component})
      * @param instructions instructions passed to the delegated agent
      */
     public static ToolInvocationRequest delegateTo(
@@ -637,7 +636,7 @@ public final class TestModelProvider implements ModelProvider.Custom {
      *
      * @param task the task template being delegated
      * @param agentClass the agent class to delegate to (must carry {@code @Component} or
-     *     {@code @ComponentId})
+     *     {@code @Component})
      * @param templateParams values for the template parameters
      */
     public static ToolInvocationRequest delegateTo(
@@ -663,7 +662,7 @@ public final class TestModelProvider implements ModelProvider.Custom {
      * from the agent's definition (request-based agents have a single effect method).
      *
      * @param agentClass the request-based agent class (must carry {@code @Component} or
-     *     {@code @ComponentId})
+     *     {@code @Component})
      * @param argsJson the JSON arguments to pass (must match the method's parameter type)
      */
     public static ToolInvocationRequest delegateTo(
@@ -1212,10 +1211,8 @@ public final class TestModelProvider implements ModelProvider.Custom {
     private static String componentId(Class<?> agentClass) {
       var component = agentClass.getAnnotation(Component.class);
       if (component != null && !component.id().isEmpty()) return component.id();
-      var componentId = agentClass.getAnnotation(ComponentId.class);
-      if (componentId != null && !componentId.value().isEmpty()) return componentId.value();
       throw new IllegalArgumentException(
-          agentClass.getName() + " is not annotated with @Component(id = ...) or @ComponentId");
+          agentClass.getName() + " is not annotated with @Component(id = ...)");
     }
 
     private static String sanitize(String name) {

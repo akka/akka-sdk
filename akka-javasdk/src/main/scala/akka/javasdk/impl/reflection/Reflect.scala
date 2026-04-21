@@ -25,10 +25,8 @@ import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.EvaluationResult
 import akka.javasdk.agent.autonomous.AutonomousAgent
-import akka.javasdk.annotations.AgentDescription
 import akka.javasdk.annotations.AgentRole
 import akka.javasdk.annotations.Component
-import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.Consume
 import akka.javasdk.annotations.EnableReplicationFilter
 import akka.javasdk.annotations.GrpcEndpoint
@@ -528,14 +526,10 @@ private[impl] object Reflect {
       .head
       .asInstanceOf[Class[_]]
 
-  @nowarn("cat=deprecation")
   def readComponentId(clz: Class[_]): String = {
     val componentAnn = clz.getAnnotation(classOf[akka.javasdk.annotations.Component])
     if (componentAnn != null) componentAnn.id()
-    else {
-      val componentIdAnn = clz.getAnnotation(classOf[ComponentId])
-      if (componentIdAnn != null) componentIdAnn.value() else ""
-    }
+    else ""
   }
 
   def readComponentName(annotated: AnnotatedElement): Option[String] = {
@@ -559,31 +553,16 @@ private[impl] object Reflect {
   }
 
   def readAgentName[A <: Agent](agentClass: Class[A]): Option[String] = {
-    val nameOpt = readComponentName(agentClass)
-    nameOpt.orElse {
-      @nowarn("cat=deprecation")
-      val agentDescAnno = agentClass.annotationOption[AgentDescription]
-      agentDescAnno.map(_.name())
-    }
+    readComponentName(agentClass)
   }
 
   def readAgentDescription[A <: Agent](agentClass: Class[A]): Option[String] = {
-    val descOpt = readComponentDescription(agentClass)
-    descOpt.orElse {
-      @nowarn("cat=deprecation")
-      val agentDescAnno = agentClass.annotationOption[AgentDescription]
-      agentDescAnno.map(_.description())
-    }
+    readComponentDescription(agentClass)
   }
 
   def readAgentRole[A <: Agent](agentClass: Class[A]): Option[String] = {
     val agentRoleAnn = agentClass.annotationOption[AgentRole]
-    @nowarn("cat=deprecation")
-    val agentDescAnno = agentClass.annotationOption[AgentDescription]
-
-    agentRoleAnn
-      .map(_.value())
-      .orElse(agentDescAnno.map(_.role()))
+    agentRoleAnn.map(_.value())
   }
 
 }

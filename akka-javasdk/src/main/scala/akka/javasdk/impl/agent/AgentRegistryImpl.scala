@@ -29,7 +29,6 @@ private[javasdk] object AgentRegistryImpl {
 
   def agentDetailsFor[A <: Agent](agentClass: Class[A]): AgentRegistryImpl.AgentDetails = {
 
-    val agentDescAnno = Reflect.readAgentDescription(agentClass)
     val agentRoleOptValue = Reflect.readAgentRole(agentClass)
 
     val componentId = Reflect.readComponentId(agentClass)
@@ -41,7 +40,6 @@ private[javasdk] object AgentRegistryImpl {
     val agentDescription =
       Reflect
         .readComponentDescription(agentClass)
-        .orElse(agentDescAnno)
         .getOrElse("")
 
     AgentRegistryImpl

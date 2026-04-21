@@ -23,10 +23,6 @@ abstract class AbstractAgentValidationSpec(val validationMode: ValidationMode)
       assertValid("valid/ValidAgent.java")
     }
 
-    "accept valid Agent with @AgentDescription" in {
-      assertValid("valid/ValidAgentWithAgentDescription.java")
-    }
-
     "accept valid Agent with StreamEffect" in {
       assertValid("valid/ValidAgentWithStreamEffect.java")
     }
@@ -78,48 +74,5 @@ abstract class AbstractAgentValidationSpec(val validationMode: ValidationMode)
         "Agent command handler methods cannot be annotated with @FunctionTool.")
     }
 
-    "reject Agent with both @AgentDescription and @Component name/description" in {
-      assertInvalid(
-        "invalid/AgentWithBothDescriptionAnnotations.java",
-        "Both @AgentDescription.description and @Component.description are defined.",
-        "Remove @AgentDescription.description and use only @Component.description",
-        "Both @AgentDescription.name and @Component.name are defined.",
-        "Remove @AgentDescription.name and use only @Component.name.")
-    }
-
-    "reject Agent with both @AgentDescription.role and @AgentRole" in {
-      assertInvalid(
-        "invalid/AgentWithBothRoleAnnotations.java",
-        "Both @AgentDescription.role and @AgentRole are defined.",
-        "Remove @AgentDescription.role and use only @AgentRole.")
-    }
-
-    "reject Agent with empty @AgentDescription.name (no @Component)" in {
-      assertInvalid(
-        "invalid/AgentWithEmptyAgentDescriptionName.java",
-        "@AgentDescription.name is empty",
-        "Remove @AgentDescription annotation and use only @Component.")
-    }
-
-    "reject Agent with empty @AgentDescription.description (no @Component)" in {
-      assertInvalid(
-        "invalid/AgentWithEmptyAgentDescriptionDescription.java",
-        "@AgentDescription.description is empty.",
-        "Remove @AgentDescription annotation and use only @Component.")
-    }
-
-    "reject Agent with blank @AgentDescription.name (no @Component)" in {
-      assertInvalid(
-        "invalid/AgentWithBlankAgentDescriptionName.java",
-        "@AgentDescription.name is empty.",
-        "Remove @AgentDescription annotation and use only @Component.")
-    }
-
-    "reject Agent with blank @AgentDescription.description (no @Component)" in {
-      assertInvalid(
-        "invalid/AgentWithBlankAgentDescriptionDescription.java",
-        "@AgentDescription.description is empty.",
-        "Remove @AgentDescription annotation and use only @Component.")
-    }
   }
 }

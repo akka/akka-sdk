@@ -193,7 +193,7 @@ private[javasdk] final case class AgentClientImpl(
       agentId,
       throw new IllegalArgumentException(
         s"No agent with id [$agentId]. " +
-        "The agent id is defined with the @ComponentId annotation."))
+        "The agent id is defined with the @Component annotation."))
 
     val effectMethod =
       agentClass.getDeclaredMethods

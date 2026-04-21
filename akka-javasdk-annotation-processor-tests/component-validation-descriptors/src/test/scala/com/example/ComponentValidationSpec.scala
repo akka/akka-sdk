@@ -29,10 +29,6 @@ abstract class AbstractComponentValidationSpec(val validationMode: ValidationMod
       assertValid("valid/AnotherValidComponent.java")
     }
 
-    "accept valid component with deprecated @ComponentId" in {
-      assertValid("valid/ValidDeprecatedComponentId.java")
-    }
-
     // Public modifier validation
     "reject non-public component" in {
       assertInvalid(
@@ -58,28 +54,6 @@ abstract class AbstractComponentValidationSpec(val validationMode: ValidationMod
 
     "reject component with pipe character in @Component id" in {
       assertInvalid("invalid/ComponentIdWithPipe.java", "@Component id must not contain the pipe character")
-    }
-
-    // Deprecated @ComponentId validation
-    "reject component with empty deprecated @ComponentId" in {
-      assertInvalid("invalid/EmptyDeprecatedComponentId.java", "@ComponentId is empty, must be a non-empty string")
-    }
-
-    "reject component with blank deprecated @ComponentId" in {
-      assertInvalid("invalid/BlankDeprecatedComponentId.java", "@ComponentId is empty, must be a non-empty string")
-    }
-
-    "reject component with pipe character in deprecated @ComponentId" in {
-      assertInvalid("invalid/DeprecatedComponentIdWithPipe.java", "@ComponentId must not contain the pipe character")
-    }
-
-    // Annotation conflicts
-    "reject component with both @Component and @ComponentId annotations" in {
-      assertInvalid(
-        "invalid/BothComponentAndComponentId.java",
-        "BothComponentAndComponentId",
-        "both @Component and",
-        "deprecated @ComponentId")
     }
 
     // Multiple errors - verify all errors are reported together

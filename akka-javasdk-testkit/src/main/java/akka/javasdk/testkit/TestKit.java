@@ -19,7 +19,6 @@ import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.annotations.Component;
-import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.http.HttpClient;
@@ -1049,28 +1048,20 @@ public class TestKit {
     return getEventSourcedEntityIncomingMessages(componentId);
   }
 
-  @SuppressWarnings("deprecation")
   private static String getComponentId(Class<?> componentClass) {
-    // First check for the new Component annotation
     Component componentAnnotation = componentClass.getAnnotation(Component.class);
     if (componentAnnotation != null) {
       return componentAnnotation.id();
     }
 
-    // Fallback to the old ComponentId annotation for backward compatibility
-    ComponentId componentIdAnnotation = componentClass.getAnnotation(ComponentId.class);
-    if (componentIdAnnotation != null) {
-      return componentIdAnnotation.value();
-    }
-
     throw new IllegalArgumentException(
-        "Component [" + componentClass + "] is missing @Component or @ComponentId annotation");
+        "Component [" + componentClass + "] is missing @Component annotation");
   }
 
   /**
    * Utility method to get the component ID from a component class.
    *
-   * @param componentClass the component class annotated with @Component or @ComponentId
+   * @param componentClass the component class annotated with @Component
    * @return the component ID
    */
   public static String getComponentIdValue(Class<?> componentClass) {
