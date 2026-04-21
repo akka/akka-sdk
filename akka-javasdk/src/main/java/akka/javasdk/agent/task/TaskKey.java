@@ -8,6 +8,6 @@ package akka.javasdk.agent.task;
 public record TaskKey(String id, String name) {
   @Override
   public String toString() {
-    return name + "|" + id;
+    return name.isEmpty() ? id : name + "|" + id;
   }
 }

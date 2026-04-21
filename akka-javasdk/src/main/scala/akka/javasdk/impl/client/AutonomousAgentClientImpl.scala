@@ -75,7 +75,6 @@ private[javasdk] final class AutonomousAgentClientImpl(
             agentComponentId,
             agentInstanceId,
             taskId,
-            taskName = "",
             stopWhenDone = true,
             callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
           .map { _ =>
@@ -101,7 +100,6 @@ private[javasdk] final class AutonomousAgentClientImpl(
               agentComponentId,
               agentInstanceId,
               taskId,
-              taskName = "",
               stopWhenDone = false,
               callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
         }
