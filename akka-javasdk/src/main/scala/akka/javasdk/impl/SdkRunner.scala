@@ -500,9 +500,6 @@ private final class Sdk(
               }
           }
         }
-
-        // need to run this each time because it depends on runtime Workflow.definitions
-        Reflect.workflowKnownInputTypes(workflow).foreach(serializer.registerTypeHints)
         workflow
       })(system)
   }
