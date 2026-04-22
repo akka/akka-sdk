@@ -15,7 +15,6 @@ import java.util
 import java.util.Optional
 import java.util.concurrent.ConcurrentHashMap
 
-import scala.annotation.nowarn
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.reflect.ClassTag
