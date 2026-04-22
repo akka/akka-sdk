@@ -81,24 +81,10 @@ private[javasdk] class MetadataImpl private (val entries: Seq[SpiMetadataEntry])
     MetadataImpl.of(removeKey(key) :+ new SpiMetadataEntry(key, value))
   }
 
-  override def setBinary(key: String, value: ByteBuffer): MetadataImpl = {
-    Objects.requireNonNull(key, "Key must not be null")
-    Objects.requireNonNull(value, "Value must not be null")
-    // binary not supported
-    this
-  }
-
   override def add(key: String, value: String): MetadataImpl = {
     Objects.requireNonNull(key, "Key must not be null")
     Objects.requireNonNull(value, "Value must not be null")
     MetadataImpl.of(entries :+ new SpiMetadataEntry(key, value))
-  }
-
-  override def addBinary(key: String, value: ByteBuffer): MetadataImpl = {
-    Objects.requireNonNull(key, "Key must not be null")
-    Objects.requireNonNull(value, "Value must not be null")
-    // binary not supported
-    this
   }
 
   override def remove(key: String): MetadataImpl = MetadataImpl.of(removeKey(key))
@@ -110,9 +96,7 @@ private[javasdk] class MetadataImpl private (val entries: Seq[SpiMetadataEntry])
       new Metadata.MetadataEntry {
         override def getKey: String = entry.key
         override def getValue: String = entry.value
-        override def getBinaryValue: ByteBuffer = null
         override def isText: Boolean = true
-        override def isBinary: Boolean = false
       }
     }.asJava
   }

@@ -20,10 +20,6 @@ import java.util.Optional;
  * <p>Multiple values are also supported per key, if the underlying transport does not support
  * multiple values per key, which value will be used is undefined.
  *
- * <p>Metadata can either have a string or a binary value. If the underlying transport doesn't
- * support one or the other, how those values are handled is undefined - eg, text values may be
- * UTF-8 encoded in binary, or binary values may be Base64 encoded, it depends on the transport.
- *
  * <p>This API maintains the order of entries, but the underlying transport may not.
  *
  * <p>Implementations of this class should be immutable, all update operations should return a copy
@@ -34,10 +30,8 @@ public interface Metadata extends Iterable<Metadata.MetadataEntry> {
   /**
    * Get the string value for the given key, if found.
    *
-   * <p>If the entry is a binary entry, nothing will be returned.
-   *
    * <p>The key lookup is case insensitive. If multiple entries with the same key are present, the
-   * first string entry will be returned.
+   * first entry will be returned.
    *
    * @param key The key to lookup.
    * @return The value, if found.
@@ -47,10 +41,8 @@ public interface Metadata extends Iterable<Metadata.MetadataEntry> {
   /**
    * Get the last string value for the given key, if found.
    *
-   * <p>If the entry is a binary entry, nothing will be returned.
-   *
    * <p>The key lookup is case insensitive. If multiple entries with the same key are present, the
-   * last string entry will be returned.
+   * last entry will be returned.
    *
    * @param key The key to lookup.
    * @return The value, if found.
@@ -58,36 +50,38 @@ public interface Metadata extends Iterable<Metadata.MetadataEntry> {
   Optional<String> getLast(String key);
 
   /**
-   * Get all the string values for a given key.
+   * Get all the values for a given key.
    *
-   * <p>Binary values will be ignored. The key lookup is case insensitive.
+   * <p>The key lookup is case insensitive.
    *
    * @param key The key to lookup.
-   * @return A list of all the string values for the given key.
+   * @return A list of all the values for the given key.
    */
   List<String> getAll(String key);
 
   /**
    * Get the binary value for the given key, if found.
    *
-   * <p>If the entry is a string entry, nothing will be returned.
-   *
    * <p>The key lookup is case insensitive. If multiple entries with the same key are present, the
    * first binary entry will be returned.
    *
    * @param key The key to lookup.
    * @return The value, if found.
+   * @deprecated binary not supported, always returns empty. Use {@link #get(String)}.
    */
+  @Deprecated
   Optional<ByteBuffer> getBinary(String key);
 
   /**
    * Get all the binary values for a given key.
    *
-   * <p>String values will be ignored. The key lookup is case insensitive.
+   * <p>The key lookup is case insensitive.
    *
    * @param key The key to lookup.
    * @return A list of all the binary values for the given key.
+   * @deprecated binary not supported, always returns empty. Use {@link #getAll(String)}.
    */
+  @Deprecated
   List<ByteBuffer> getBinaryAll(String key);
 
   /**
@@ -126,22 +120,6 @@ public interface Metadata extends Iterable<Metadata.MetadataEntry> {
   Metadata set(String key, String value);
 
   /**
-   * Set the binary value for the given key.
-   *
-   * <p>This will replace any existing entries that case insensitively match the given key.
-   *
-   * <p>This method does not modify this Metadata object, it returns a copy of this Metadata object
-   * with the entry set.
-   *
-   * @param key The key to set.
-   * @param value The value to set.
-   * @return A copy of this Metadata object with the entry set.
-   * @deprecated binary not supported, use {@link #set(String, String)}
-   */
-  @Deprecated
-  Metadata setBinary(String key, ByteBuffer value);
-
-  /**
    * Add the string value for the given key.
    *
    * <p>This will not replace any existing entries, it will simply append the entry to the end of
@@ -155,23 +133,6 @@ public interface Metadata extends Iterable<Metadata.MetadataEntry> {
    * @return A copy of this Metadata object with the entry added.
    */
   Metadata add(String key, String value);
-
-  /**
-   * Add the binary value for the given key.
-   *
-   * <p>This will not replace any existing entries, it will simply append the entry to the end of
-   * the list.
-   *
-   * <p>This method does not modify this Metadata object, it returns a copy of this Metadata object
-   * with the entry added.
-   *
-   * @param key The key to add.
-   * @param value The value to add.
-   * @return A copy of this Metadata object with the entry added.
-   * @deprecated binary not supported, use {@link #add(String, String)}
-   */
-  @Deprecated
-  Metadata addBinary(String key, ByteBuffer value);
 
   /**
    * Remove all metadata entries with the given key.
@@ -263,29 +224,11 @@ public interface Metadata extends Iterable<Metadata.MetadataEntry> {
     String getValue();
 
     /**
-     * The binary value for the metadata entry.
-     *
-     * @return The binary value, or null if this entry is not a string Metadata entry.
-     * @deprecated binary not supported, use {@link #getValue()}
-     */
-    @Deprecated
-    ByteBuffer getBinaryValue();
-
-    /**
      * Whether this entry is a text entry.
      *
      * @return True if this entry is a text entry.
      */
     boolean isText();
-
-    /**
-     * Whether this entry is a binary entry.
-     *
-     * @return True if this entry is a binary entry.
-     * @deprecated binary not supported, use {@link #getValue()}
-     */
-    @Deprecated
-    boolean isBinary();
   }
 
   /** An empty Metadata object. */
