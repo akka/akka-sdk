@@ -46,7 +46,7 @@ docker run -d --name akka-dev \
   -e GOOGLE_AI_GEMINI_API_KEY \
   -e ANTHROPIC_API_KEY \
   -e OPENAI_API_KEY \
-  jaydeeeee/akka-dev:latest
+  registry.akka.io/akka-dev-container:latest
 ----
 +
 This starts the container in the background with two forwarded ports:
