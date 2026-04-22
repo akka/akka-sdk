@@ -32,10 +32,8 @@ import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
-import akka.javasdk.workflow.Workflow.LegacyWorkflowTimeout
 import akka.javasdk.workflow.Workflow.StepHandler.NoArgStepHandler
 import akka.javasdk.workflow.Workflow.StepHandler.OneArgStepHandler
-import akka.javasdk.workflow.Workflow.WorkflowSettings
 import akka.javasdk.workflow.Workflow.{ RecoverStrategy => SdkRecoverStrategy }
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi.BytesPayload
@@ -120,13 +118,8 @@ class WorkflowImpl[S, W <: Workflow[S]](
         (stepSettings.stepName, new SpiWorkflow.StepConfig(stepSettings.stepName, stepTimeout, failoverRecoverStrategy))
       }.toMap
 
-    val (workflowTimeout, workflowRecoverStrategy) =
-      workflowConfig match {
-        case c: LegacyWorkflowTimeout =>
-          (c.workflowTimeout.toScala.map(_.toScala), c.workflowRecoverStrategy().toScala.map(toRecovery))
-        case s: WorkflowSettings =>
-          (s.workflowTimeout.toScala.map(_.toScala), s.workflowRecoverStrategy().toScala.map(toRecovery))
-      }
+    val workflowTimeout = workflowConfig.workflowTimeout.toScala.map(_.toScala)
+    val workflowRecoverStrategy = workflowConfig.workflowRecoverStrategy().toScala.map(toRecovery)
 
     val defaultStepTimeout = workflowConfig.defaultStepTimeout().toScala.map(_.toScala)
     val defaultStepRecoverStrategy = workflowConfig.defaultStepRecoverStrategy.toScala.map(toRecovery)
@@ -236,20 +229,13 @@ class WorkflowImpl[S, W <: Workflow[S]](
   override def transition(
       stepName: String,
       result: Option[BytesPayload],
-      userState: Option[BytesPayload]): Future[SpiWorkflow.TransitionalOnlyEffect] = {
-    val effect =
-      try {
-        val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, None, tracerFactory)
-        router.getNextStep(stepName, result.get, userState, workflowContext)
-      } catch {
-        case NonFatal(ex) =>
-          log.error(s"Workflow [$workflowId], failed to transition from step [$stepName]", ex)
-          throw WorkflowException(
-            s"unexpected exception [${ex.getMessage}] while executing transition for step [$stepName]",
-            Some(ex))
-      }
-    Future.successful(effect)
-  }
+      userState: Option[BytesPayload]): Future[SpiWorkflow.TransitionalOnlyEffect] =
+    Future.failed(
+      WorkflowException(
+        workflowId,
+        stepName,
+        s"transition() SPI is not used by the new Workflow API (step [$stepName])",
+        None))
 
   override def executeStep(
       stepName: String,
@@ -281,8 +267,6 @@ private[akka] final class CommandContextImpl(
 
   override def tracing(): Tracing =
     new SpanTracingImpl(telemetryContext, tracerFactory)
-
-  override def commandId(): Long = 0
 }
 
 /**
