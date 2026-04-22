@@ -225,6 +225,7 @@ subjectMatches
 subpage
 subquery
 substream
+[Ss]ubtasks
 subtree
 Szymanski
 [Tt]elemedicine
