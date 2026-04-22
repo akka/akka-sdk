@@ -24,6 +24,7 @@ import akka.javasdk.http.RequestBuilder
 import akka.javasdk.http.StrictResponse
 import akka.stream.SystemMaterializer
 import akka.util.ByteString
+import org.slf4j.LoggerFactory
 
 /**
  * INTERNAL API
@@ -39,6 +40,8 @@ private[akka] final class MockHttpClientImpl(
     sdkExecutor: Executor)
     extends HttpClient {
 
+  private val log = LoggerFactory.getLogger(classOf[MockHttpClientImpl])
+
   private val baseUrl: String =
     if (serviceName.startsWith("http://") || serviceName.startsWith("https://")) serviceName
     else "http://" + serviceName
@@ -49,6 +52,7 @@ private[akka] final class MockHttpClientImpl(
     system.settings.config.getDuration("akka.http.server.request-timeout").toScala + 10.seconds
 
   private val requestSender: HttpRequest => CompletionStage[HttpResponse] = { request =>
+    log.debug("Mocked HTTP request: {} {}", request.method.value, request.getUri)
     val promise = new CompletableFuture[HttpResponse]()
     sdkExecutor.execute(() =>
       try {
@@ -56,8 +60,10 @@ private[akka] final class MockHttpClientImpl(
         if (response == null)
           promise.completeExceptionally(
             new NullPointerException("HTTP mock handler returned null for request " + request.getUri))
-        else
+        else {
+          log.debug("Mocked HTTP response for {} {}: {}", request.method.value, request.getUri, response.status)
           promise.complete(response)
+        }
       } catch {
         case ex: Throwable => promise.completeExceptionally(ex)
       })

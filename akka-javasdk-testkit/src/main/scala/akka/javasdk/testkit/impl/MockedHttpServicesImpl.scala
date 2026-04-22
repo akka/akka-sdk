@@ -14,6 +14,7 @@ import akka.annotation.InternalApi
 import akka.http.javadsl.model.HttpRequest
 import akka.http.javadsl.model.HttpResponse
 import akka.javasdk.testkit.MockedHttpServices
+import org.slf4j.LoggerFactory
 
 /**
  * INTERNAL API
@@ -22,13 +23,19 @@ import akka.javasdk.testkit.MockedHttpServices
 final class MockedHttpServicesImpl(initial: java.util.Map[String, JFunction[HttpRequest, HttpResponse]])
     extends MockedHttpServices {
 
+  private val log = LoggerFactory.getLogger(classOf[MockedHttpServicesImpl])
+
   private val initialEntries: Map[String, JFunction[HttpRequest, HttpResponse]] =
     initial.asScala.toMap
   private val mocks = new ConcurrentHashMap[String, JFunction[HttpRequest, HttpResponse]]()
   initialEntries.foreach { case (k, v) => mocks.put(k, v) }
 
-  def lookup(serviceName: String): Optional[JFunction[HttpRequest, HttpResponse]] =
-    Optional.ofNullable(mocks.get(serviceName))
+  def lookup(serviceName: String): Optional[JFunction[HttpRequest, HttpResponse]] = {
+    val result = Optional.ofNullable(mocks.get(serviceName))
+    if (result.isPresent)
+      log.debug("Using mocked HTTP service for [{}]", serviceName)
+    result
+  }
 
   override def mockResponse(serviceName: String, handler: JFunction[HttpRequest, HttpResponse]): Unit =
     mocks.put(serviceName, handler)

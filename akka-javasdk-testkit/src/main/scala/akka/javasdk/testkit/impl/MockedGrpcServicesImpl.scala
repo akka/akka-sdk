@@ -13,6 +13,7 @@ import akka.annotation.InternalApi
 import akka.grpc.javadsl.AkkaGrpcClient
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl.ClientKey
 import akka.javasdk.testkit.MockedGrpcServices
+import org.slf4j.LoggerFactory
 
 /**
  * INTERNAL API
@@ -25,6 +26,8 @@ final class MockedGrpcServicesImpl(
     initial: java.util.Map[String, java.util.Map[Class[_ <: AkkaGrpcClient], AkkaGrpcClient]])
     extends MockedGrpcServices {
 
+  private val log = LoggerFactory.getLogger(classOf[MockedGrpcServicesImpl])
+
   private val initialEntries: Map[ClientKey, AkkaGrpcClient] =
     initial.asScala.iterator.flatMap { case (serviceName, byClass) =>
       byClass.asScala.iterator.map { case (cls, instance) =>
@@ -35,8 +38,12 @@ final class MockedGrpcServicesImpl(
   private val mocks = new ConcurrentHashMap[ClientKey, AkkaGrpcClient]()
   initialEntries.foreach { case (k, v) => mocks.put(k, v) }
 
-  def lookup(key: ClientKey): Optional[AkkaGrpcClient] =
-    Optional.ofNullable(mocks.get(key))
+  def lookup(key: ClientKey): Optional[AkkaGrpcClient] = {
+    val result = Optional.ofNullable(mocks.get(key))
+    if (result.isPresent)
+      log.debug("Using mocked gRPC service for [{}]", key)
+    result
+  }
 
   override def mockResponse[T <: AkkaGrpcClient](serviceName: String, serviceClass: Class[T], mockInstance: T): Unit =
     mocks.put(ClientKey(serviceClass, serviceName), mockInstance)
