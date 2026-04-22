@@ -1,6 +1,7 @@
 package customer.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 import akka.Done;
 import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.model.StatusCodes;
