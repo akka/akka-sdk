@@ -337,9 +337,32 @@ Dependencies are specified by task ID, which means tasks must be created (via `c
 
 ### Task notifications
 
-<!-- TODO: Task notification stream API is defined in design notes but not yet implemented. The following describes the planned design. -->
+`TaskEntity` publishes a `TaskNotification` on each terminal transition so the runtime (and `TaskClient.resultAsync`) can observe completion without polling. Every variant carries `taskId` and `taskName`:
 
-Tasks publish a live notification stream for async observation. Notification types include `TaskCreated`, `TaskAssigned`, `TaskStarted`, `TaskCompleted`, `TaskFailed`, `TaskHandedOff`, `DecisionRequested`, and `InputProvided`.
+| Notification | Additional fields |
+| --- | --- |
+| `TaskNotification.Completed` | `result` (JSON string) |
+| `TaskNotification.ResultRejected` | `ruleClassName`, `reason` |
+| `TaskNotification.Failed` | `reason` |
+| `TaskNotification.Cancelled` | `reason` |
+
+Non-terminal transitions (`TaskCreated`, `TaskAssigned`, `TaskStarted`, `TaskReassigned`) do not publish notifications — they are only observable via event-sourced history or by reading state.
+
+### Backlog notifications
+
+`BacklogEntity` publishes a `BacklogNotification` on every state change so backlog-aware agents can react to claims, releases, and transfers without polling:
+
+| Notification | Fields |
+| --- | --- |
+| `BacklogNotification.BacklogCreated` | `name` |
+| `BacklogNotification.TaskAdded` | `taskId` |
+| `BacklogNotification.TaskClaimed` | `taskId`, `claimedBy` |
+| `BacklogNotification.TaskReleased` | `taskId` |
+| `BacklogNotification.TaskTransferred` | `taskId`, `transferredTo` |
+| `BacklogNotification.UnclaimedCancelled` | — |
+| `BacklogNotification.BacklogClosed` | — |
+
+Idempotent no-ops (e.g. re-creating an existing backlog, releasing an already-unclaimed task, closing twice) do not publish a notification.
 
 ## <a href="about:blank#_client_api"></a> Client API
 

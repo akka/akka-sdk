@@ -103,7 +103,8 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
         .persist(new TaskEvent.TaskCompleted(taskId, result))
         .thenReply(
             __ -> {
-              notificationPublisher.publish(new TaskNotification.Completed(taskId, result));
+              notificationPublisher.publish(
+                  new TaskNotification.Completed(taskId, currentState().name(), result));
               return done();
             });
   }
@@ -125,7 +126,7 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
             __ -> {
               notificationPublisher.publish(
                   new TaskNotification.ResultRejected(
-                      taskId, request.ruleClassName(), request.reason()));
+                      taskId, currentState().name(), request.ruleClassName(), request.reason()));
               return done();
             });
   }
@@ -144,7 +145,8 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
         .persist(new TaskEvent.TaskFailed(taskId, reason))
         .thenReply(
             __ -> {
-              notificationPublisher.publish(new TaskNotification.Failed(taskId, reason));
+              notificationPublisher.publish(
+                  new TaskNotification.Failed(taskId, currentState().name(), reason));
               return done();
             });
   }
@@ -161,7 +163,8 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
         .persist(new TaskEvent.TaskCancelled(taskId, reason))
         .thenReply(
             __ -> {
-              notificationPublisher.publish(new TaskNotification.Cancelled(taskId, reason));
+              notificationPublisher.publish(
+                  new TaskNotification.Cancelled(taskId, currentState().name(), reason));
               return done();
             });
   }
