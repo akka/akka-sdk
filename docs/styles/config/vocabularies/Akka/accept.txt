@@ -83,6 +83,7 @@ gzipped
 (?i)gRPCurl
 hakkers
 hakking
+helloworld
 has_more
 hasPrefix
 hasSuffix
@@ -219,12 +220,14 @@ src
 SREs
 stdin
 [Ss]tackdriver
+stigmergy
 [Ss]treamable
 subcommand
 subjectMatches
 subpage
 subquery
 substream
+[Ss]ubtasks?
 subtree
 Szymanski
 [Tt]elemedicine
@@ -238,6 +241,7 @@ tokenid
 tokenization
 [Tt]okenizes
 tokenSecret
+[Tt]oolsets?
 transcoded
 [Tt]ranscoding
 truststore
@@ -266,8 +270,10 @@ Zolotko
 [Zz]sh
 [Aa]nthropic
 biopharma
-decisioning
 Datadog
+decisioning
+[Dd]elegative
+docreview
 Doctolib
 Dynatrace
 [Ee]xplainability
