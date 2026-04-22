@@ -1,8 +1,6 @@
 package customer.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import akka.Done;
 import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.model.StatusCodes;
@@ -79,10 +77,12 @@ public class CustomerRegistryEndpointMockedTest extends CustomerRegistryIntegrat
       new CustomerRegistryEndpoint.Address("street", "city")
     );
 
-    assertThatThrownBy(
-      () ->
-        httpClient.POST("/customer/" + UUID.randomUUID()).withRequestBody(request).invoke()
-    ).hasMessageContaining("500");
+    var response = httpClient
+      .POST("/customer/" + UUID.randomUUID())
+      .withRequestBody(request)
+      .invoke();
+
+    assertThat(response.httpResponse().status()).isEqualTo(StatusCodes.INTERNAL_SERVER_ERROR);
   }
 
   @Test
