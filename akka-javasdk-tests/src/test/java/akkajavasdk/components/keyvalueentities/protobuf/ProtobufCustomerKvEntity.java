@@ -4,7 +4,7 @@
 
 package akkajavasdk.components.keyvalueentities.protobuf;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akkajavasdk.protocol.SerializationTestProtos.CustomerState;
 import akkajavasdk.protocol.SerializationTestProtos.SimpleMessage;
@@ -14,7 +14,7 @@ import akkajavasdk.protocol.SerializationTestProtos.Status;
  * A key-value entity that uses a protobuf message for state. This demonstrates that protobuf
  * serialization works correctly with key-value entities.
  */
-@ComponentId("protobuf-customer-kv")
+@Component(id = "protobuf-customer-kv")
 public class ProtobufCustomerKvEntity extends KeyValueEntity<CustomerState> {
 
   @Override

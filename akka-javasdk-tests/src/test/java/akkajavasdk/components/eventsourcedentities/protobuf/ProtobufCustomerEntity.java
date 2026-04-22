@@ -4,7 +4,7 @@
 
 package akkajavasdk.components.eventsourcedentities.protobuf;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.ProtoEventTypes;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akkajavasdk.protocol.SerializationTestProtos.CustomerCreated;
@@ -19,7 +19,7 @@ import com.google.protobuf.GeneratedMessageV3;
  * An event sourced entity that uses protobuf messages for both state and events. This demonstrates
  * that protobuf serialization works correctly with event sourcing.
  */
-@ComponentId("protobuf-customer")
+@Component(id = "protobuf-customer")
 @ProtoEventTypes({CustomerCreated.class, CustomerNameChanged.class, CustomerEmailChanged.class})
 public class ProtobufCustomerEntity extends EventSourcedEntity<CustomerState, GeneratedMessageV3> {
 

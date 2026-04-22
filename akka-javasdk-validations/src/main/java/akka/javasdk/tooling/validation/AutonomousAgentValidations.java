@@ -26,8 +26,7 @@ public class AutonomousAgentValidations {
       return Validation.Valid.instance();
     }
 
-    return AgentValidations.mustHaveValidAgentDescription(typeDef)
-        .combine(mustNotHaveCommandHandler(typeDef));
+    return mustNotHaveCommandHandler(typeDef);
   }
 
   /** Validates that an AutonomousAgent has no command handlers. */

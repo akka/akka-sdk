@@ -46,7 +46,6 @@ import akka.javasdk.agent.AgentRegistry
 import akka.javasdk.agent.ModelProvider
 import akka.javasdk.agent.autonomous.AutonomousAgent
 import akka.javasdk.annotations.Component
-import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.GrpcEndpoint
 import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
@@ -442,9 +441,8 @@ private final class Sdk(
 
   lazy private val sanitizer = new SanitizerImpl(runtimeSanitizer)
 
-  @nowarn("cat=deprecation")
   private def hasComponentId(clz: Class[_]): Boolean = {
-    if (clz.hasAnnotation[ComponentId] || clz.hasAnnotation[Component]) {
+    if (clz.hasAnnotation[Component]) {
       true
     } else {
       //additional check to skip logging for endpoints
@@ -944,10 +942,10 @@ private final class Sdk(
         viewDescriptors :+= ViewDescriptorFactory(clz, serializer, regionInfo, sdkExecutionContext)
 
       case clz if Reflect.isRestEndpoint(clz) =>
-      // handled separately because ComponentId is not mandatory
+      // handled separately because Component is not mandatory
 
       case clz =>
-        // some other class with @Component or @ComponentId annotation
+        // some other class with @Component annotation
         logger.warn("Unknown component [{}]", clz.getName)
     }
 

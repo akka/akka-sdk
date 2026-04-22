@@ -12,9 +12,6 @@ import java.lang.annotation.Target;
 /**
  * Defines the role of an agent. This annotation should be placed on agent classes to specify their
  * role.
- *
- * <p>This replaces the {@code role} field in {@link AgentDescription}. If both are present,
- * {@code @AgentRole} takes precedence.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)

@@ -788,9 +788,8 @@ public class Validations {
   }
 
   /**
-   * Validates that a component has a valid component ID. Checks for: - Presence of both @Component
-   * and deprecated @ComponentId (error) - Non-empty component ID - No pipe character '|' in
-   * component ID
+   * Validates that a component has a valid component ID. Checks for: - Non-empty component ID - No
+   * pipe character '|' in component ID
    *
    * @param typeDef the component class to validate
    * @return a Validation result indicating success or failure
@@ -798,18 +797,8 @@ public class Validations {
   public static Validation mustHaveValidComponentId(TypeDef typeDef) {
     Optional<AnnotationDef> componentAnn =
         typeDef.findAnnotation("akka.javasdk.annotations.Component");
-    Optional<AnnotationDef> componentIdAnn =
-        typeDef.findAnnotation("akka.javasdk.annotations.ComponentId");
 
-    if (componentAnn.isPresent() && componentIdAnn.isPresent()) {
-      return Validation.of(
-          errorMessage(
-              typeDef,
-              "Component class '"
-                  + typeDef.getQualifiedName()
-                  + "' has both @Component and deprecated @ComponentId annotations. Please remove"
-                  + " @ComponentId and use only @Component."));
-    } else if (componentAnn.isPresent()) {
+    if (componentAnn.isPresent()) {
       Optional<String> componentId = componentAnn.get().getStringValue("id");
       if (componentId.isEmpty() || componentId.get().isBlank()) {
         return Validation.of(
@@ -817,17 +806,6 @@ public class Validations {
       } else if (componentId.get().contains("|")) {
         return Validation.of(
             errorMessage(typeDef, "@Component id must not contain the pipe character '|'."));
-      } else {
-        return Validation.Valid.instance();
-      }
-    } else if (componentIdAnn.isPresent()) {
-      Optional<String> componentId = componentIdAnn.get().getStringValue("value");
-      if (componentId.isEmpty() || componentId.get().isBlank()) {
-        return Validation.of(
-            errorMessage(typeDef, "@ComponentId is empty, must be a non-empty string."));
-      } else if (componentId.get().contains("|")) {
-        return Validation.of(
-            errorMessage(typeDef, "@ComponentId must not contain the pipe character '|'."));
       } else {
         return Validation.Valid.instance();
       }

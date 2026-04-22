@@ -637,9 +637,7 @@ public class MyEndpointIntegrationTest extends TestKitSupport {
 - Create empty command record classes without fields → causes serialization errors; if no fields needed, make the command handler method parameterless
 - Return `null` in the event handler → Only the `emptyState()` method is allowed to return `null`; Add a method to the State record class to model an empty or deleted state instead
 - Perform side effects in `.thenReply()` in Entities → use a Consumer to react to events for side effects
-- Use deprecated `@ComponentId`  -> use `@Component(id = ")`
-- Use deprecated `@AgentDescription`  -> use `@Component(id = ")` and `@AgentRole`
-- Add `@Component` or `@ComponentId` to HTTP/gRPC endpoints
+- Add `@Component` to HTTP/gRPC endpoints
 - Inject `RequestContext` or `GrpcRequestContext` as constructor parameters when extending `AbstractHttpEndpoint` / `AbstractGrpcEndpoint` → use `requestContext()` method instead
 - Use deprecated `testKit.call`  -> use `testKit.method(...).invoke(...)`
 - Create multiple command handlers in Agent
