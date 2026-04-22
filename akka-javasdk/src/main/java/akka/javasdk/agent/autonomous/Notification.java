@@ -108,6 +108,34 @@ public sealed interface Notification {
     }
   }
 
+  /** Agent's task result was rejected by a validation rule. */
+  final class TaskResultRejected implements Notification {
+    private final String taskId;
+    private final String taskName;
+    private final String reason;
+
+    public TaskResultRejected(String taskId, String taskName, String reason) {
+      this.taskId = taskId;
+      this.taskName = taskName;
+      this.reason = reason;
+    }
+
+    /** The task ID. */
+    public String taskId() {
+      return taskId;
+    }
+
+    /** The task name. */
+    public String taskName() {
+      return taskName;
+    }
+
+    /** The rejection reason. */
+    public String reason() {
+      return reason;
+    }
+  }
+
   /** Agent failed a task. */
   final class TaskFailed implements Notification {
     private final String taskId;

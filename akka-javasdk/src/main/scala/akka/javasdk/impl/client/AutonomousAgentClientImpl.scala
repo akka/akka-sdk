@@ -175,7 +175,9 @@ private[javasdk] final class AutonomousAgentClientImpl(
     case _: SpiNotification.Stopped         => new Notification.Stopped
     case t: SpiNotification.TaskStarted     => new Notification.TaskStarted(t.taskKey.id, t.taskKey.name)
     case t: SpiNotification.TaskCompleted   => new Notification.TaskCompleted(t.taskKey.id, t.taskKey.name)
-    case t: SpiNotification.TaskFailed      => new Notification.TaskFailed(t.taskKey.id, t.taskKey.name, t.reason)
+    case t: SpiNotification.TaskResultRejected =>
+      new Notification.TaskResultRejected(t.taskKey.id, t.taskKey.name, t.reason)
+    case t: SpiNotification.TaskFailed => new Notification.TaskFailed(t.taskKey.id, t.taskKey.name, t.reason)
     // ignore unknown because the runtime should be able to add new notification events without breaking old SDK
   }
 }

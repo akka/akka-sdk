@@ -486,6 +486,7 @@ The notification stream emits the following event types:
 | `Notification.IterationFailed` | Iteration failed — includes `reason()` |
 | `Notification.TaskStarted` | Agent started working on a task — includes `taskId()` and `taskName()` |
 | `Notification.TaskCompleted` | Agent completed a task — includes `taskId()` |
+| `Notification.TaskResultRejected` | Agent's task result was rejected by a validation rule — includes `taskId()`, `taskName()`, and `reason()` |
 | `Notification.TaskFailed` | Agent failed a task — includes `taskId()` and `reason()` |
 | `Notification.Stopped` | Agent stopped |
 

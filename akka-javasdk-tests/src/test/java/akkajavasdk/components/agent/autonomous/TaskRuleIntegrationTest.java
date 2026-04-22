@@ -7,10 +7,12 @@ package akkajavasdk.components.agent.autonomous;
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.completeTask;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import akka.javasdk.agent.autonomous.Notification;
 import akka.javasdk.agent.task.TaskStatus;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
+import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
@@ -81,6 +83,50 @@ public class TaskRuleIntegrationTest extends TestKitSupport {
               assertThat(snapshot.status()).isEqualTo(TaskStatus.COMPLETED);
               assertThat(snapshot.result().value()).isEqualTo("improved result");
               assertThat(snapshot.result().score()).isEqualTo(50);
+            });
+  }
+
+  @Test
+  public void shouldReceiveTaskResultRejectedNotification() {
+    // Same setup as shouldRetryAndCompleteAfterRuleRejects: first attempt rejected, retry accepted.
+    agentModel
+        .whenMessage(msg -> msg.contains("Do something"))
+        .reply(completeTask(new TestTasks.TestResult("low quality", 3)));
+
+    agentModel
+        .whenMessage(msg -> msg.contains("Reminder"))
+        .reply(completeTask(new TestTasks.TestResult("improved result", 50)));
+
+    var agentId = UUID.randomUUID().toString();
+    var agentClient = componentClient.forAutonomousAgent(ValidatedTaskAgent.class, agentId);
+
+    var notifications = new ArrayList<Notification>();
+    agentClient.notificationStream().runForeach(notifications::add, testKit.getMaterializer());
+
+    var taskId = agentClient.runSingleTask(TestTasks.VALIDATED_TASK.instructions("Do something."));
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var snapshot = componentClient.forTask(taskId).get(TestTasks.VALIDATED_TASK);
+              assertThat(snapshot.status()).isEqualTo(TaskStatus.COMPLETED);
+            });
+
+    Awaitility.await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var rejected =
+                  notifications.stream()
+                      .filter(n -> n instanceof Notification.TaskResultRejected)
+                      .map(n -> (Notification.TaskResultRejected) n)
+                      .findFirst()
+                      .orElseThrow();
+              assertThat(rejected.taskId()).isEqualTo(taskId);
+              assertThat(rejected.taskName()).isEqualTo(TestTasks.VALIDATED_TASK.name());
+              assertThat(rejected.reason()).contains("score must be >= 10");
             });
   }
 
