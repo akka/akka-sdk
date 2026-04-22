@@ -16,7 +16,6 @@ import akka.javasdk.testkit.MockRegistry
 final class TestKitKeyValueEntityCommandContext(
     override val entityId: String,
     override val commandName: String = "stubCommandName",
-    override val commandId: Long = 0L,
     override val metadata: Metadata = Metadata.EMPTY,
     mockRegistry: MockRegistry = MockRegistry.EMPTY)
     extends AbstractTestKitContext(mockRegistry)

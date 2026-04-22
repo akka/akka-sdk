@@ -33,15 +33,6 @@ public interface CommandContext extends MetadataContext {
   String commandName();
 
   /**
-   * Returns the command id for the current command.
-   *
-   * @return the command id
-   * @deprecated This method is no longer used and will be removed in a future version
-   */
-  @Deprecated
-  long commandId();
-
-  /**
    * Returns the unique identifier of the entity instance that this command is being executed on.
    * This is the same id used when calling the entity through a component client.
    *
