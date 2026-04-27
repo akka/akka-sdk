@@ -1,5 +1,67 @@
 /* Playground UI — additions on top of akka.css. */
 
+/* --- Theme override (US3) ---
+   The base stylesheet uses prefers-color-scheme. To support an explicit user choice that beats
+   the OS preference, we duplicate the same variable values under [data-theme="light"] and
+   [data-theme="dark"]. data-theme="platform" (or no attribute) leaves prefers-color-scheme in
+   charge — that is the "follow OS" mode (FR-015 / FR-017). */
+
+[data-theme="light"] {
+  --bg: #fff;
+  --fg: #1a1a1a;
+  --primary: #f5b60b;
+  --secondary: #02a4a7;
+  --ok: #5aa547;
+  --warn: #e67d05;
+  --err: #d9331a;
+  --surface-1: #fff;
+  --surface-2: #f4f4f5;
+  --surface-3: #e4e4e7;
+  --surface-4: #d4d4d8;
+  --divider: rgba(17, 17, 17, 0.1);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bg: #000;
+  --fg: #fff;
+  --primary: #ffce4a;
+  --secondary: #00d8dd;
+  --ok: #72d35b;
+  --warn: #ff9925;
+  --err: #fa3823;
+  --surface-1: #18181b;
+  --surface-2: #27272a;
+  --surface-3: #3f3f46;
+  --surface-4: #52525b;
+  --divider: rgba(255, 255, 255, 0.15);
+  color-scheme: dark;
+}
+
+/* --- Theme toggle UI --- */
+
+.theme-toggle {
+  display: inline-flex;
+  border: 1px solid var(--divider);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface-1);
+}
+.theme-toggle button {
+  background: transparent;
+  border: 0;
+  padding: .25rem .55rem;
+  font-size: .8rem;
+  color: var(--fg);
+  cursor: pointer;
+}
+.theme-toggle button:hover { background: var(--surface-3); }
+.theme-toggle button[aria-pressed="true"] {
+  background: var(--surface-3);
+  font-weight: 600;
+}
+
+
 /* --- Layout --- */
 
 body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); margin: 0; }

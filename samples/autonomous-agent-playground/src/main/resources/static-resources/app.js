@@ -5,6 +5,7 @@ import { samples } from '/playground/static/samples/_registry.js';
 import { el, escapeHtml, postJson } from '/playground/static/samples/_helpers.js';
 import { AgentDisplay, connectEventStream, renderEventRow } from '/playground/static/event-log.js';
 import { RunSummary } from '/playground/static/run-summary.js';
+import { renderThemeToggle } from '/playground/static/theme.js';
 
 const main = document.getElementById('app-main');
 const header = document.getElementById('app-header');
@@ -65,9 +66,11 @@ function renderHeader() {
   header.innerHTML = `
     <div class="header-bar">
       <a href="/playground" class="brand" data-link>Autonomous Agent Playground</a>
+      <div class="theme-toggle-host"></div>
     </div>
   `;
   attachLinkHandlers(header);
+  renderThemeToggle(header.querySelector('.theme-toggle-host'));
 }
 
 // --- Landing ---

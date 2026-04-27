@@ -165,7 +165,7 @@ Each task creates one module with: `id`, `displayName`, `description`, `inputFor
 ### Manual validation for US2
 
 - [X] T068 [US2] Run `mvn verify` and confirm the new tests (T051, T052, T053) pass.
-- [ ] T069 [US2] Walk `quickstart.md` §2 (US2 acceptance scenarios) and §4a (stop) and §4d (token/iteration summary). **Checkpoint**: User Stories 1 AND 2 work together.
+- [X] T069 [US2] Walk `quickstart.md` §2 (US2 acceptance scenarios) and §4a (stop) and §4d (token/iteration summary). **Checkpoint**: User Stories 1 AND 2 work together.
 
 ---
 
@@ -177,10 +177,10 @@ Each task creates one module with: `id`, `displayName`, `description`, `inputFor
 
 ### Implementation for US3
 
-- [ ] T070 [P] [US3] Add theme override CSS to `src/main/resources/static-resources/playground/static/styles/playground.css`:  `[data-theme="light"]` and `[data-theme="dark"]` selectors that re-apply the same CSS custom-property values the akka stylesheet defines under each `prefers-color-scheme` branch. `[data-theme="platform"]` is a no-op (lets the stylesheet's existing `prefers-color-scheme` rule win). FR-015, FR-017.
-- [ ] T071 [P] [US3] Create `src/main/resources/static-resources/playground/static/theme.js`: read `localStorage.getItem('playground-theme')` (default `"platform"`), apply `document.documentElement.dataset.theme = mode`, expose `setTheme(mode)` that persists and re-applies. Exports `currentTheme()`.
-- [ ] T072 [P] [US3] Add a 3-way theme toggle UI control in the header. Implement in `src/main/resources/static-resources/playground/static/app.js` `renderHeader()` (or extend the existing landing renderer). Use the Akka stylesheet's `[data-badge]` or button primitives. Three buttons (or a segmented control) for Light / Dark / Platform; clicking each calls `setTheme(...)` from `theme.js` and visibly marks the active one. Available on every panel (header is global).
-- [ ] T073 [US3] Replace the placeholder theme bootstrap in `src/main/resources/static-resources/playground/index.html` `<head>` with an inline synchronous `<script>` that reads `localStorage.getItem('playground-theme') || 'platform'` and writes it to `document.documentElement.dataset.theme` *before* any external stylesheet loads — preventing the flash of wrong theme on reload. SC-008.
+- [X] T070 [P] [US3] Add theme override CSS to `src/main/resources/static-resources/playground/static/styles/playground.css`:  `[data-theme="light"]` and `[data-theme="dark"]` selectors that re-apply the same CSS custom-property values the akka stylesheet defines under each `prefers-color-scheme` branch. `[data-theme="platform"]` is a no-op (lets the stylesheet's existing `prefers-color-scheme` rule win). FR-015, FR-017.
+- [X] T071 [P] [US3] Create `src/main/resources/static-resources/playground/static/theme.js`: read `localStorage.getItem('playground-theme')` (default `"platform"`), apply `document.documentElement.dataset.theme = mode`, expose `setTheme(mode)` that persists and re-applies. Exports `currentTheme()`.
+- [X] T072 [P] [US3] Add a 3-way theme toggle UI control in the header. Implement in `src/main/resources/static-resources/playground/static/app.js` `renderHeader()` (or extend the existing landing renderer). Use the Akka stylesheet's `[data-badge]` or button primitives. Three buttons (or a segmented control) for Light / Dark / Platform; clicking each calls `setTheme(...)` from `theme.js` and visibly marks the active one. Available on every panel (header is global).
+- [X] T073 [US3] Replace the placeholder theme bootstrap in `src/main/resources/static-resources/playground/index.html` `<head>` with an inline synchronous `<script>` that reads `localStorage.getItem('playground-theme') || 'platform'` and writes it to `document.documentElement.dataset.theme` *before* any external stylesheet loads — preventing the flash of wrong theme on reload. SC-008.
 
 ### Manual validation for US3
 
