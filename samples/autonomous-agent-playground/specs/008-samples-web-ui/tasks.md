@@ -27,9 +27,9 @@ Single Akka project. Backend Java under `src/main/java/demo/...`, browser assets
 
 **Purpose**: Lay the on-disk skeleton so subsequent tasks have unambiguous paths.
 
-- [ ] T001 Create the static-asset directory tree at `src/main/resources/static-resources/playground/`, with `index.html` placeholder, and subdirectories `static/`, `static/styles/`, and `static/samples/`
-- [ ] T002 [P] Copy `akka-context/ui/default-akka-style.css` verbatim to `src/main/resources/static-resources/playground/static/styles/akka.css` (no edits — vendoring decision per research R-5)
-- [ ] T003 [P] Create empty `src/main/resources/static-resources/playground/static/styles/playground.css` (will receive theme overrides in US3 and event-tier styling in US2)
+- [X] T001 Create the static-asset directory tree at `src/main/resources/static-resources/playground/`, with `index.html` placeholder, and subdirectories `static/`, `static/styles/`, and `static/samples/`
+- [X] T002 [P] Copy `akka-context/ui/default-akka-style.css` verbatim to `src/main/resources/static-resources/playground/static/styles/akka.css` (no edits — vendoring decision per research R-5)
+- [X] T003 [P] Create empty `src/main/resources/static-resources/playground/static/styles/playground.css` (will receive theme overrides in US3 and event-tier styling in US2)
 
 ---
 
