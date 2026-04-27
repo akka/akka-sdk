@@ -60,5 +60,6 @@ sdk-version.txt
 .qodo
 akka-context/
 .claude/
-specs
-.specify
+.akka
+/samples/autonomous-agent-playground/AGENTS.md
+/samples/autonomous-agent-playground/CLAUDE.md
