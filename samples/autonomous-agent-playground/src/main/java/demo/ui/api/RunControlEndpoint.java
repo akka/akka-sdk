@@ -6,9 +6,11 @@ import akka.javasdk.agent.task.TaskStatus;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
+import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.AbstractHttpEndpoint;
 import akka.javasdk.http.HttpException;
+import java.time.Instant;
 import demo.consulting.application.ConsultingTasks;
 import demo.debate.application.DebateTasks;
 import demo.devteam.application.ProjectTasks;
@@ -38,6 +40,8 @@ public class RunControlEndpoint extends AbstractHttpEndpoint {
    * combined with the agent's phase. {@code AWAITING_INPUT} is detected client-side by per-sample
    * descriptors that know each sample's full task graph (currently only publishing).
    */
+  public record StopResponse(String runState, Instant stoppedAt) {}
+
   public record RunStatus(
     String runId,
     String sampleId,
@@ -92,6 +96,19 @@ public class RunControlEndpoint extends AbstractHttpEndpoint {
       snapshot.result(),
       snapshot.failureReason()
     );
+  }
+
+  /**
+   * Operator-driven stop. Idempotent — a second call on an already-stopped agent simply returns
+   * the same shape. The actual state transition is observed via the Stopped notification on the
+   * SSE stream; this endpoint just kicks the SDK and returns immediately.
+   */
+  @Post("/runs/{runId}/stop")
+  public StopResponse stop(String runId) {
+    var component = requiredQueryParam("component");
+    var agentClass = AgentRegistry.classFor(component);
+    componentClient.forAutonomousAgent(agentClass, runId).stop();
+    return new StopResponse("CANCELLED", Instant.now());
   }
 
   private String requiredQueryParam(String name) {
