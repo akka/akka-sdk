@@ -1357,7 +1357,7 @@ public class TestKit {
   }
 
   /**
-   * Get outgoing messages produced by a {@code @Produce.ServiceStream} publisher in the service
+   * Get outgoing messages produced by a {@code @Produce.ServiceStream} producer in the service
    * under test. The {@code service} must match the service name used by consumers in their
    * {@code @Consume.FromServiceStream} annotation.
    *

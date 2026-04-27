@@ -37,7 +37,7 @@ import kalix.testkit.protocol.eventing_test_backend.{ Message => TestkitMessage 
 import org.slf4j.LoggerFactory
 
 /**
- * Captures events produced by a `@Produce.ServiceStream` publisher by subscribing to the running service's producer
+ * Captures events emitted by a `@Produce.ServiceStream` producer by consuming the running service's producer
  * stream via Akka Projection gRPC. No runtime mocking is involved — the real transformation path runs.
  *
  * INTERNAL API

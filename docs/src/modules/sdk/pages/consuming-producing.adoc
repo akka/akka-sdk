@@ -349,11 +349,11 @@ include::example$event-sourced-counter-brokers/src/test/java/counter/application
 
 === Service-to-Service Streams
 
-The TestKit also supports xref:#s2s-eventing[] in both directions — mocking the upstream stream a subscribing service consumes from, and capturing the public events a producing service emits for downstream subscribers.
+The TestKit also supports xref:#s2s-eventing[] in both directions — mocking the upstream stream a consuming service reads from, and capturing the public events a producing service emits for downstream consumers.
 
-==== Testing a Subscriber
+==== Testing a Consumer
 
-In a service that consumes another service's stream via `@Consume.FromServiceStream`, the TestKit can stand in for the upstream producer. Messages published to the mocked stream flow through the subscriber's real consumer or view logic.
+In a service that consumes another service's stream via `@Consume.FromServiceStream`, the TestKit can stand in for the upstream producer. Messages published to the mocked stream flow through the consumer's or view's real logic.
 
 The https://github.com/akka/akka-sdk/tree/main/samples/event-sourced-customer-registry-subscriber[`event-sourced-customer-registry-subscriber`, window="new"] sample consumes the `customer_events` stream produced by `customer-registry` (see xref:#s2s-eventing[]). Its integration test mocks that upstream stream:
 
@@ -362,7 +362,7 @@ The https://github.com/akka/akka-sdk/tree/main/samples/event-sourced-customer-re
 ----
 include::example$event-sourced-customer-registry-subscriber/src/test/java/customer/api/CustomersByNameViewIntegrationTest.java[tags=eventing-config]
 ----
-<1> Mock the upstream stream by service and stream id — matches the values in the subscriber's `@Consume.FromServiceStream` annotation.
+<1> Mock the upstream stream by service and stream id — matches the values in the consumer's `@Consume.FromServiceStream` annotation.
 
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-customer-registry-subscriber/src/test/java/customer/api/CustomersByNameViewIntegrationTest.java[CustomersByNameViewIntegrationTest.java]
@@ -375,16 +375,16 @@ include::example$event-sourced-customer-registry-subscriber/src/test/java/custom
 
 ==== Testing a Producer
 
-For a service that publishes a stream via `@Produce.ServiceStream` — typically with a transformation from internal events to a narrower public event type — the TestKit can capture what is emitted so the transformation can be asserted. Unlike the subscriber case, nothing is mocked: the real transformation path runs and the TestKit observes the emitted public events.
+For a service that produces a stream via `@Produce.ServiceStream` — typically with a transformation from internal events to a narrower public event type — the TestKit can capture what is emitted so the transformation can be asserted. Unlike the consumer case, nothing is mocked: the real transformation path runs and the TestKit observes the emitted public events.
 
-The https://github.com/akka/akka-sdk/tree/main/samples/event-sourced-customer-registry[`event-sourced-customer-registry`, window="new"] sample has a `CustomerEvents` consumer that transforms internal `CustomerEvent` values into `CustomerPublicEvent` values for downstream services. Its integration test verifies that transformation:
+The https://github.com/akka/akka-sdk/tree/main/samples/event-sourced-customer-registry[`event-sourced-customer-registry`, window="new"] sample has a `CustomerEvents` producer that transforms internal `CustomerEvent` values into `CustomerPublicEvent` values for downstream services. Its integration test verifies that transformation:
 
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-customer-registry/src/test/java/customer/api/CustomerEventsOutgoingIntegrationTest.java[CustomerEventsOutgoingIntegrationTest.java]
 ----
 include::example$event-sourced-customer-registry/src/test/java/customer/api/CustomerEventsOutgoingIntegrationTest.java[tags=eventing-config]
 ----
-<1> Register the outgoing stream to capture. The values must match the producer's `@Produce.ServiceStream` id and the service name that downstream subscribers use.
+<1> Register the outgoing stream to capture. The values must match the producer's `@Produce.ServiceStream` id and the service name that downstream consumers use.
 
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-customer-registry/src/test/java/customer/api/CustomerEventsOutgoingIntegrationTest.java[CustomerEventsOutgoingIntegrationTest.java]
