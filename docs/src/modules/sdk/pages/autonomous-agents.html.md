@@ -464,9 +464,9 @@ if (snapshot.status() == TaskStatus.COMPLETED) {
 }
 ```
 
-### Agent lifecycle notifications
+### Agent notifications
 
-Subscribe to lifecycle notifications for an agent instance to observe its execution progress in real time. Notifications are published by the runtime — not by user code — as the agent moves through its execution loop.
+Subscribe to notifications for an agent instance to observe its execution progress in real time. Notifications are published by the runtime — not by user code — as the agent moves through its execution loop and participates in coordination patterns.
 
 ```java
 componentClient
@@ -475,22 +475,130 @@ componentClient
   .runForeach(System.out::println, materializer);
 ```
 
-The notification stream emits the following event types:
+Subscribe before triggering the agent to avoid missing early events. The stream stays open as long as the agent instance exists — use it for dashboards, logging, cost tracking, or coordinating external processes with agent progress.
+
+Every notification implements the `Notification` sealed interface and exactly one capability-grouped marker sub-interface. Pattern-match on a marker to handle a whole family generically:
+
+```java
+agentClient.notificationStream().runForeach(n -> {
+  switch (n) {
+    case Notification.LifecycleNotification lifecycle -> renderLifecycle(lifecycle);
+    case Notification.TaskNotification task -> renderTask(task);
+    case Notification.TeamNotification team -> renderTeam(team);
+    default -> { /* ignore */ }
+  }
+}, materializer);
+```
+
+Where references to other agents would otherwise carry an `AgentRef`, the SDK exposes them as flat `*ComponentId` / `*InstanceId` field pairs (the same pattern used for `TaskKey`, which is exposed as separate `taskId` / `taskName` fields).
+
+#### Lifecycle notifications
+
+`Notification.LifecycleNotification` — agent activation, iteration boundaries, pause/resume/stop.
 
 | Notification | Description |
 | --- | --- |
 | `Notification.Activated` | Agent transitioned from idle to processing |
 | `Notification.Deactivated` | No more work, back to idle |
 | `Notification.IterationStarted` | LLM call beginning |
-| `Notification.IterationCompleted` | Iteration completed — includes `inputTokens()` and `outputTokens()` |
-| `Notification.IterationFailed` | Iteration failed — includes `reason()` |
-| `Notification.TaskStarted` | Agent started working on a task — includes `taskId()` and `taskName()` |
-| `Notification.TaskCompleted` | Agent completed a task — includes `taskId()` |
-| `Notification.TaskResultRejected` | Agent's task result was rejected by a validation rule — includes `taskId()`, `taskName()`, and `reason()` |
-| `Notification.TaskFailed` | Agent failed a task — includes `taskId()` and `reason()` |
-| `Notification.Stopped` | Agent stopped |
+| `Notification.IterationCompleted` | Iteration completed — includes `tokenUsage()` |
+| `Notification.IterationFailed` | Iteration failed — includes `reason()`, plus `taskId()` and `iterationNumber()` (both `Optional`) when the failure happened during a task iteration |
+| `Notification.Paused` | Agent paused — `reason()` identifies the source (e.g. `"operator"`) |
+| `Notification.Resumed` | Agent resumed — `reason()` identifies the source |
+| `Notification.Stopped` | Agent stopped — `reason()` distinguishes `"operator"` (explicit stop) from `"auto-stopped"` (queue drained) |
 
-Subscribe before triggering the agent to avoid missing early events. The stream stays open as long as the agent instance exists — use it for dashboards, logging, cost tracking, or coordinating external processes with agent progress.
+#### Task notifications
+
+`Notification.TaskNotification` — assignment, start, completion, failure, cancellation, dependencies.
+
+| Notification | Description |
+| --- | --- |
+| `Notification.TaskAssigned` | A task was accepted/queued — fires before `TaskStarted`. Includes `taskId()` |
+| `Notification.TaskStarted` | Agent started working on a task — `taskId()`, `taskName()` |
+| `Notification.TaskResultRejected` | Result rejected by a validation rule — `taskId()`, `taskName()`, `reason()` |
+| `Notification.TaskCompleted` | Task completed successfully — `taskId()`, `taskName()` |
+| `Notification.TaskFailed` | Task failed via explicit `fail_task` — `taskId()`, `taskName()`, `reason()` |
+| `Notification.TaskCancelled` | Framework-driven cancellation (dependency failure, max iterations, orphan cleanup) — distinct from `TaskFailed`. `taskId()`, `taskName()`, `reason()` |
+| `Notification.TaskDependencyWait` | Task is blocked waiting for dependencies — `taskId()`, `pendingDependencyTaskIds()` |
+| `Notification.DependencyResolved` | A specific dependency resolved — `taskId()`, `dependencyTaskId()`, `success()`, `reason()` |
+
+#### Handoff notifications
+
+`Notification.HandoffNotification` — source-side and target-side of cross-agent handoffs.
+
+| Notification | Description |
+| --- | --- |
+| `Notification.HandoffStarted` | Source side: this agent handed off a task — `taskId()`, `taskName()`, `targetComponentId()`, `targetInstanceId()` |
+| `Notification.HandoffReceived` | Target side: this agent received a handed-off task — `taskId()`, `sourceComponentId()`, `sourceInstanceId()` (the task name is loaded later, so it is not yet known here) |
+
+#### Delegation notifications
+
+`Notification.DelegationNotification` — orchestrator-side and worker-side of subtask delegation.
+
+| Notification | Description |
+| --- | --- |
+| `Notification.DelegationStarted` | Orchestrator side: a batch of subtasks was dispatched — `workerComponentIds()`, `delegationCount()`, `subtaskIds()`, `workerInstanceIds()`. For request-based delegations the per-subtask id lists are empty; `delegationCount()` remains authoritative |
+| `Notification.DelegationResolved` | Orchestrator side: aggregate resolution — `succeeded()`, `failed()`, `succeededSubtaskIds()`, `failedSubtaskIds()` |
+| `Notification.WorkerTaskReceived` | Worker side: this agent accepted a delegated subtask — `subtaskId()`, `orchestratorComponentId()`, `orchestratorInstanceId()` |
+| `Notification.WorkerTaskCompleted` | Worker side: delegated subtask finished — `subtaskId()` |
+
+#### Team notifications
+
+`Notification.TeamNotification` — team formation, member lifecycle, disbanding.
+
+| Notification | Description |
+| --- | --- |
+| `Notification.TeamCreated` | Lead side: a new team was formed — `teamId()`, parallel `memberComponentIds()` and `memberInstanceIds()` lists |
+| `Notification.TeamMemberReady` | Lead side: a member's setup chain completed — `teamId()`, `memberComponentId()`, `memberInstanceId()` |
+| `Notification.TeamMemberSetupFailed` | Lead side: a member's setup chain failed — `teamId()`, `memberComponentId()`, `memberInstanceId()`, `reason()` |
+| `Notification.TeamMemberStopped` | Lead side: a member has stopped — `teamId()`, `memberComponentId()`, `memberInstanceId()` |
+| `Notification.TeamDisbanded` | Lead side: team disbanded — `teamId()` |
+| `Notification.TeamJoined` | Member side: this agent joined a team — `leadComponentId()`, `leadInstanceId()` |
+
+#### Backlog notifications
+
+`Notification.BacklogNotification` — backlog assignment/access and task claims.
+
+| Notification | Description |
+| --- | --- |
+| `Notification.BacklogAssigned` | Management side: a backlog was assigned — `backlogId()`, `backlogName()` |
+| `Notification.BacklogClosed` | Management side: a backlog was closed — `backlogId()`, `backlogName()` |
+| `Notification.BacklogAccessGranted` | Access side: this agent was granted access — `backlogId()`, `backlogName()` |
+| `Notification.BacklogTaskClaimed` | Access side: this agent claimed a task — `backlogId()`, `backlogName()`, `taskId()` |
+
+#### Conversation notifications
+
+`Notification.ConversationNotification` — conversation creation, turns, participation.
+
+| Notification | Description |
+| --- | --- |
+| `Notification.ConversationCreated` | Moderator side: new conversation — `conversationId()`, `pattern()`, `topic()`, parallel `participantComponentIds()` and `participantInstanceIds()` |
+| `Notification.ConversationParticipantReady` | Moderator side: participant setup completed — `conversationId()`, `participantComponentId()`, `participantInstanceId()` |
+| `Notification.ConversationParticipantSetupFailed` | Moderator side: participant setup failed — `conversationId()`, `participantComponentId()`, `participantInstanceId()`, `reason()` |
+| `Notification.ConversationEnded` | Moderator side: conversation ended — `conversationId()` |
+| `Notification.ConversationTurnReceived` | Moderator side: a turn was received — `conversationId()`, `participantComponentId()`, `participantInstanceId()` |
+| `Notification.ConversationJoined` | Participant side: this agent joined a conversation — `conversationId()`, `moderatorComponentId()`, `moderatorInstanceId()` |
+| `Notification.ParticipantTurnSubmitted` | Participant side: this agent submitted its turn — `conversationId()`, `iterationsUsed()` |
+
+#### Messaging notifications
+
+`Notification.MessagingNotification` — contact introductions and message delivery.
+
+| Notification | Description |
+| --- | --- |
+| `Notification.MessageReceived` | A message was received from another agent — `fromComponentId()`, `fromInstanceId()`, `text()` |
+| `Notification.ContactAdded` | A new contact was introduced — `contactComponentId()`, `contactInstanceId()` |
+
+#### Struggle notifications
+
+`Notification.StruggleNotification` — derived signals for repeated failures, stuck dependencies, and approaching limits. The runtime tracks counters and emits these once per detection (deduplicated until the underlying counter resets, e.g. on task termination or successful recovery). Thresholds are configurable in `reference.conf` under `akka.runtime.autonomous-agent.struggle`.
+
+| Notification | Description |
+| --- | --- |
+| `Notification.TaskStruggleDetected` | N consecutive iteration failures or M consecutive result rejections on the same task — `taskId()`, `taskName()`, `reason()`, `iteration()`, `maxIterations()` |
+| `Notification.TaskDependencyStuck` | A task has been waiting on dependencies longer than the configured threshold; re-fires periodically until resolved — `taskId()`, `pendingDependencyTaskIds()`, `waitDurationSeconds()` |
+| `Notification.TaskApproachingMaxIterations` | A task has reached the configured fraction (default 80%) of its max iterations — useful as a heads-up before `TaskCancelled(reason="max iterations")`. `taskId()`, `taskName()`, `iteration()`, `maxIterations()` |
+| `Notification.RepeatedIterationFailure` | N consecutive iteration failures in flows not tied to a specific task (pre-task setup, request-based delegation) — `iterationsFailed()`, `lastReason()` |
 
 ## <a href="about:blank#_coordination_patterns"></a> Coordination patterns
 

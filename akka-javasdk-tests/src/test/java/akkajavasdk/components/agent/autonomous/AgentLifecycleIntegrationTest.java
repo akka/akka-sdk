@@ -198,6 +198,14 @@ public class AgentLifecycleIntegrationTest extends TestKitSupport {
               assertThat(iterationCompleted.tokenUsage().inputTokens()).isEqualTo(150);
               assertThat(iterationCompleted.tokenUsage().outputTokens()).isEqualTo(42);
 
+              var taskAssigned =
+                  notifications.stream()
+                      .filter(n -> n instanceof Notification.TaskAssigned)
+                      .map(n -> (Notification.TaskAssigned) n)
+                      .findFirst()
+                      .orElseThrow();
+              assertThat(taskAssigned.taskId()).isEqualTo(taskId);
+
               var taskStarted =
                   notifications.stream()
                       .filter(n -> n instanceof Notification.TaskStarted)
@@ -214,6 +222,66 @@ public class AgentLifecycleIntegrationTest extends TestKitSupport {
                       .findFirst()
                       .orElseThrow();
               assertThat(taskCompleted.taskId()).isEqualTo(taskId);
+
+              var stopped =
+                  notifications.stream()
+                      .filter(n -> n instanceof Notification.Stopped)
+                      .map(n -> (Notification.Stopped) n)
+                      .findFirst()
+                      .orElseThrow();
+              assertThat(stopped.reason()).isNotBlank();
+
+              // TaskAssigned should fire before TaskStarted
+              assertThat(notifications.indexOf(taskAssigned))
+                  .isLessThan(notifications.indexOf(taskStarted));
+            });
+  }
+
+  @Test
+  public void shouldReceivePauseAndResumeNotifications() {
+    testAgentModel.fixedResponse(completeTask(new TestTasks.TestResult("done after resume", 1)));
+
+    var agentId = UUID.randomUUID().toString();
+    var agentClient = componentClient.forAutonomousAgent(TestAutonomousAgent.class, agentId);
+
+    var notifications = new ArrayList<Notification>();
+    agentClient.notificationStream().runForeach(notifications::add, testKit.getMaterializer());
+
+    agentClient.pause();
+
+    Awaitility.await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var paused =
+                  notifications.stream()
+                      .filter(n -> n instanceof Notification.Paused)
+                      .map(n -> (Notification.Paused) n)
+                      .findFirst()
+                      .orElseThrow();
+              assertThat(paused.reason()).isNotBlank();
+            });
+
+    // Assign a task while paused, then resume so the agent processes it.
+    var taskId =
+        componentClient
+            .forTask(UUID.randomUUID().toString())
+            .create(TestTasks.TEST_TASK.instructions("Do something."));
+    agentClient.assignTasks(taskId);
+
+    agentClient.resume();
+
+    Awaitility.await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var resumed =
+                  notifications.stream()
+                      .filter(n -> n instanceof Notification.Resumed)
+                      .map(n -> (Notification.Resumed) n)
+                      .findFirst()
+                      .orElseThrow();
+              assertThat(resumed.reason()).isNotBlank();
             });
   }
 }

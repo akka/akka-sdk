@@ -31,11 +31,13 @@ import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.sendMe
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.transferTask;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import akka.javasdk.agent.autonomous.Notification;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import akka.javasdk.testkit.TestModelProvider.AiResponse;
 import akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.TeamMemberSpec;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -111,10 +113,14 @@ public class TeamBacklogIntegrationTest extends TestKitSupport {
 
     workerModel.fixedResponse("Ready for work.");
 
+    var leadId = UUID.randomUUID().toString();
+    var leadClient = componentClient.forAutonomousAgent(TeamLeadAgent.class, leadId);
+
+    var leadNotifications = new ArrayList<Notification>();
+    leadClient.notificationStream().runForeach(leadNotifications::add, testKit.getMaterializer());
+
     var taskId =
-        componentClient
-            .forAutonomousAgent(TeamLeadAgent.class, UUID.randomUUID().toString())
-            .runSingleTask(TestTasks.PLAN.instructions("Create and disband a team."));
+        leadClient.runSingleTask(TestTasks.PLAN.instructions("Create and disband a team."));
 
     Awaitility.await()
         .ignoreExceptions()
@@ -124,6 +130,32 @@ public class TeamBacklogIntegrationTest extends TestKitSupport {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.PLAN);
               assertThat(snapshot.result()).isNotNull();
               assertThat(snapshot.result().summary()).contains("Team created and disbanded");
+            });
+
+    Awaitility.await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var teamCreated =
+                  leadNotifications.stream()
+                      .filter(n -> n instanceof Notification.TeamCreated)
+                      .map(n -> (Notification.TeamCreated) n)
+                      .findFirst()
+                      .orElseThrow();
+              assertThat(teamCreated.teamId()).isNotBlank();
+              assertThat(teamCreated.memberComponentIds()).containsExactly("team-worker-agent");
+              assertThat(teamCreated.memberInstanceIds()).hasSize(1);
+
+              assertThat(leadNotifications)
+                  .anySatisfy(n -> assertThat(n).isInstanceOf(Notification.TeamMemberReady.class));
+
+              var teamDisbanded =
+                  leadNotifications.stream()
+                      .filter(n -> n instanceof Notification.TeamDisbanded)
+                      .map(n -> (Notification.TeamDisbanded) n)
+                      .findFirst()
+                      .orElseThrow();
+              assertThat(teamDisbanded.teamId()).isEqualTo(teamCreated.teamId());
             });
   }
 
