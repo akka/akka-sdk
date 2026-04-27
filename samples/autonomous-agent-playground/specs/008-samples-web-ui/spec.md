@@ -5,6 +5,16 @@
 **Status**: Draft
 **Input**: User description: "We have several samples for autonomous agents in this playground project. I want to add a web UI with a tailored panel/page for each sample. 1) It should be possible to enter the goal/task input, and see the final result text when the agent(s) have finished. 2) Live progress of the agents should be displayed, including history of the progress notification events. Struggle or failure should also be clearly visible. 3) The UI should use the Akka default style, and have toggle for light/dark/platform colors."
 
+## Clarifications
+
+### Session 2026-04-27
+
+- Q: For per-sample description content (FR-002a), what is shown and where does it come from? → A: Description content is curated and shipped with the UI itself (not fetched from the README at runtime). It mirrors the README sample-section structure — short overview followed by agents, tasks, flow, and what the sample demonstrates — adapted for web display rather than copied verbatim.
+- Q: When the live progress-event stream disconnects mid-run, what does the UI do? → A: Auto-reconnect for future events and re-poll the run's GET status endpoint on reconnect so terminal status / final result is never missed; intermediate events that occur during the disconnect may be lost. No server-side per-run event log is required.
+- Q: How does a sample panel behave when the user submits a second run? → A: Submitting starts a new run and the panel navigates to the new run's URL, replacing the current view. Prior runs are reachable only via their own URLs (browser back, bookmark, or shared link). The panel does not keep a session-scoped run-history widget.
+- Q: How are agents identified in the event log? → A: Show the agent's role/component id. When the panel observes more than one instance of the same role in the current run, append a short instance suffix (e.g., the first ~6 characters of the instance id) so the instances are distinguishable. Single-instance roles stay clean (no suffix). Full UUIDs are not displayed inline.
+- Q: How long does the panel wait before flagging a run with no recent events as inactive? → A: 60 seconds. After 60 seconds of silence while the run is still `IN_PROGRESS`, the panel surfaces a non-alarming "no recent activity" notice. The notice is informational; the run is not declared failed and continues to run.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Run a sample and read the final result (Priority: P1)
@@ -64,7 +74,7 @@ The UI looks like it belongs to the Akka product family — the existing Akka de
 ### Edge Cases
 
 - A sample's POST endpoint accepts the submission but the run never produces a final result (e.g. agent stuck in iteration loop, downstream LLM unavailable). The panel must show this state rather than appear stuck on "loading" indefinitely.
-- The user submits a second run for the same sample while a previous run is still in progress. Both should be addressable; the UI must not silently overwrite or interleave state from the older run into the newer.
+- The user submits a second run for the same sample while a previous run is still in progress. The panel navigates to the new run's URL; the previous run remains reachable via browser back or its own URL and continues to make progress in the background. The UI must not interleave state from the older run into the newer.
 - The user navigates away from a sample panel mid-run. Returning to the same run (via URL or history) must show its current state, not a fresh empty panel.
 - A sample whose final output is large (long article from *publishing*, full debate synthesis from *debate*) must still render readably, with whatever wrapping/scroll affordance is appropriate.
 - A sample whose final result is structured (e.g. an answer with a confidence score, a research brief with title, summary and key findings) renders each meaningful field, not a raw JSON dump.
@@ -78,16 +88,21 @@ The UI looks like it belongs to the Akka product family — the existing Akka de
 
 - **FR-001**: The system MUST present a landing surface that lists every autonomous agent sample currently shipped with the playground project and lets the user open the panel for any of them.
 - **FR-002**: The system MUST provide a dedicated panel/page for each sample, tailored to that sample's input shape, coordination pattern, and result shape — not a generic catch-all form.
-- **FR-002a**: Each sample panel MUST display a short description of what that sample does and what it demonstrates (a few sentences at most), positioned so a first-time viewer can read it before submitting input. The description text MUST come from the project's existing per-sample documentation (README) so it cannot drift from the canonical description.
+- **FR-002a**: Each sample panel MUST display a structured description of what that sample does, positioned so a first-time viewer can read it before submitting input. The description MUST follow the same structure used in the README sample sections — a short overview, the participating agents and their roles, the tasks involved, the flow, and what the sample demonstrates — adapted for web display (concise, well-spaced) rather than rendered verbatim from the README. The description content MUST be curated and shipped together with the UI; it does NOT need to be fetched from the README at runtime.
 - **FR-003**: Each sample panel MUST expose an input form whose fields match what that sample expects as goal/task input (e.g. a single question for *helloworld*; a document body and reviewer instructions for *docreview*; a research topic for *research*; an editorial topic for *publishing*).
 - **FR-004**: Submitting the input form MUST start a run on that sample using the existing backend behavior, with no requirement for the user to construct request bodies by hand.
 - **FR-005**: After submission, the panel MUST show the run's status (e.g. running, awaiting input, completed, failed, cancelled) without requiring the user to manually refresh.
 - **FR-006**: When a run completes successfully, the panel MUST render the final result in a layout shaped to that sample's result type — meaningful fields surfaced, not a raw payload dump.
 - **FR-007**: When a run fails, the panel MUST render a failure indicator and surface the failure reason text in a place the user can read it.
 - **FR-008**: Each run MUST be addressable by URL so a user can share, bookmark, or reopen a specific run and see its current state.
+- **FR-008a**: When the user submits a new run from a sample panel, the panel MUST navigate to the new run's URL and replace its current view. Prior runs MUST remain reachable via their URLs (browser back, bookmark, or shared link); the panel is NOT required to expose a session-scoped run-history widget.
 - **FR-009**: While a run is in progress, the panel MUST display progress events emitted by the agent runtime (lifecycle, task, delegation, handoff, team, backlog, dependency wait, etc.) in near real time as they are emitted.
+- **FR-009a**: If the live progress-event stream disconnects mid-run, the UI MUST automatically attempt to reconnect for future events and MUST re-fetch the run's status (and final result, if available) so terminal outcomes — completed, failed, or cancelled — are never missed by the user. Intermediate events that occur during the disconnect window MAY be lost; the system is not required to maintain a server-side per-run event log to replay them.
+- **FR-009b**: While the live stream is disconnected and reconnect attempts are ongoing, the panel MUST visibly indicate that live updates are temporarily unavailable so the user does not interpret the absence of new events as an idle agent.
 - **FR-010**: The panel MUST keep a scrollable history of all progress events it has observed for the current run, ordered by time, each carrying at minimum a timestamp, an indication of which agent/task it relates to, and a human-readable summary.
+- **FR-010a**: When an event row references an agent, the panel MUST display the agent's role/component id. If the panel has observed more than one instance of the same role within the current run, it MUST also append a short instance suffix (e.g. the first few characters of the instance id) to disambiguate instances. The full instance UUID MUST NOT be shown inline in event rows; if the user needs the full id (for log correlation), it MAY be exposed on demand (e.g. tooltip or expanded view).
 - **FR-011**: Events that represent a struggle or failure (iteration failed, task failed, task cancelled, result rejected, dependency wait that is blocking progress) MUST be visually distinguishable from healthy progress events at a glance.
+- **FR-011a**: When a run is in progress and no progress events have been received for 60 seconds, the panel MUST surface a non-alarming "no recent activity" notice so the user can distinguish silence from healthy iteration. The notice is informational only — the run is NOT to be declared failed by the UI on this basis, and the notice MUST clear automatically as soon as new events arrive or the run reaches a terminal state.
 - **FR-012**: Events for which the UI does not have a specific renderer MUST still appear in the history with a default rendering rather than being dropped or causing the panel to error.
 - **FR-013**: For samples that include operator actions during a run (e.g. approve/reject in *publishing*), the panel MUST surface those actions inline at the appropriate point in the run and allow the operator to invoke them from the UI.
 - **FR-014**: The visual style of the UI MUST be based on the Akka default style already present in the project's documentation context, including its palette, typography, status colors, and component primitives (buttons, inputs, badges, progress indicators, dialogs).
@@ -100,7 +115,7 @@ The UI looks like it belongs to the Akka product family — the existing Akka de
 
 ### Key Entities
 
-- **Sample panel**: A per-sample surface in the UI. Knows the sample's display name, a short description of what it does and demonstrates (sourced from the README), the shape of its input form, the shape of its final result, and any operator actions it can expose mid-run.
+- **Sample panel**: A per-sample surface in the UI. Knows the sample's display name, a structured description (overview · agents · tasks · flow · demonstrates) curated for the UI and shipped with it, the shape of its input form, the shape of its final result, and any operator actions it can expose mid-run.
 - **Run**: One execution of a sample, identified so it can be reopened by URL. Has a current status (pending/running/awaiting input/completed/failed/cancelled), a final result when applicable, and an associated stream of progress events.
 - **Progress event**: A single notification emitted by the runtime during a run. Carries a category (lifecycle / task / delegation / handoff / team / backlog / dependency / other), a timestamp, identifying references to the agent and task it relates to, and any category-specific details (e.g. failure reason, token usage, dependency id).
 - **Final result**: The outcome of a successful run, rendered in a sample-specific layout.
