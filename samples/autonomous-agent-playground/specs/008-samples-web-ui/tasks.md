@@ -194,7 +194,7 @@ Each task creates one module with: `id`, `displayName`, `description`, `inputFor
 
 - [ ] T075 [P] Cross-browser smoke test: load the playground in current Chromium-family, Firefox, and Safari. Run a helloworld submission end-to-end in each. Verify SSE works, theme toggle works, no console errors. SC-009.
 - [ ] T076 [P] Keyboard-only walkthrough: navigate from the landing page to a sample, fill the input form, submit, watch the event log, switch themes — all using only `Tab`, `Shift+Tab`, `Enter`, and `Esc`. SC-010.
-- [ ] T077 [P] Update `README.md` with a single paragraph and a link describing how to run the playground locally and open the new UI; reference `specs/008-samples-web-ui/quickstart.md`. (Skip if the reviewer says the existing README is sufficient.)
+- [X] T077 [P] Update `README.md` with a single paragraph and a link describing how to run the playground locally and open the new UI; reference `specs/008-samples-web-ui/quickstart.md`. (Skip if the reviewer says the existing README is sufficient.)
 - [ ] T078 Run the full `quickstart.md` end-to-end once more on a fresh checkout to confirm "done criteria" at the bottom of `quickstart.md`.
 
 ---
