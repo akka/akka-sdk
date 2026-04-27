@@ -11,16 +11,19 @@ Each sample focuses on a specific capability or coordination pattern. They progr
 | **helloworld** | None | Simplest usage — single agent, single task, no coordination |
 | **pipeline** | None (task dependencies) | 3-phase dependency chain: collect, analyze, report |
 | **docreview** | None (attachments) | Document review with text content attachments |
+| **dynamic** | None (runtime configuration) | One generic agent class configured per request with different goals and capabilities |
 | **research** | Delegation | Coordinator delegates to researcher and analyst, synthesises findings |
 | **consulting** | Delegation + handoff | Delegate to specialists, hand off complex cases |
 | **support** | Handoff | Triage classifies request, hands off to billing or technical specialist |
-| **publishing** | Delegation + external input | Delegate writing and editing, request editorial approval |
-| **compliance** | Handoff + external input | Triage risk level, hand off high-risk, human approval |
-| **debate** | Team | Moderator with debaters, collaborative argumentation |
+| **publishing** | Task dependencies + external input | Draft → human approval gate → publish, wired via task dependencies |
+| **compliance** *(not yet implemented)* | Handoff + external input | Triage risk level, hand off high-risk, human approval |
+| **debate** | Moderation | Moderator runs structured rounds between advocate and critic, synthesises a conclusion |
+| **negotiation** | Moderation | Facilitator runs multi-round offers and counteroffers between buyer and seller |
+| **peerreview** | Moderation | Moderator coordinates a panel of technical, style, and compliance reviewers |
 | **devteam** | Team | Team lead decomposes project into tasks, developers self-coordinate |
-| **brainstorm** | Team (emergent) | Team generates ideas on shared board, lead curates |
-| **editorial** | Team + external input | Team lead with writers, human approval of final publication |
-| **deepdive** | All capabilities | Comprehensive demo: handoff, delegation, teams, emergent, task deps, external input, nested orchestration |
+| **brainstorm** *(not yet implemented)* | Team (emergent) | Team generates ideas on shared board, lead curates |
+| **editorial** *(not yet implemented)* | Team + external input | Team lead with writers, human approval of final publication |
+| **deepdive** *(not yet implemented)* | All capabilities | Comprehensive demo: handoff, delegation, teams, emergent, task deps, external input, nested orchestration |
 
 ---
 
@@ -66,6 +69,22 @@ A single agent reviews a document for compliance, receiving the document content
 **Flow:** A user submits a document and review instructions via HTTP. The endpoint creates a REVIEW task with the review instructions as task instructions and the document text attached as `TextMessageContent`. The agent reviews the attached document against the instructions and produces a structured compliance assessment with specific findings and an overall compliance verdict.
 
 **Demonstrates:** Task attachments for passing large content to agents without embedding it in instruction text. Structured result types with multiple fields. Single-agent, single-task pattern with richer input than helloworld.
+
+---
+
+## dynamic
+
+A single generic agent class is configured per request with different goals and task capabilities. The same `DynamicAgent` code runs both the summarize and translate flows.
+
+**Agents:** DynamicAgent — declared with no static goal or capabilities; configured at runtime via `AgentSetup` before each task is assigned
+
+**Tasks:**
+- SUMMARIZE → `String` — produces a concise summary of the input content
+- TRANSLATE → `String` — translates the input content to French
+
+**Flow:** Two HTTP routes (`POST /dynamic/summarize`, `POST /dynamic/translate`) each create a fresh DynamicAgent instance, configure its goal and accepted capability dynamically, then assign a single task. The summarize route sets a summarization goal and accepts only the SUMMARIZE task; the translate route sets a translation goal and accepts only the TRANSLATE task — same agent class, two different runtime specialisations.
+
+**Demonstrates:** Runtime agent configuration. The same `AutonomousAgent` subclass with no static goal or capabilities can be specialised per request via `AgentSetup`. Useful when many task variants share the same execution shape and the differences are best expressed as data rather than as separate agent classes.
 
 ---
 
@@ -127,11 +146,20 @@ A triage agent classifies customer support requests and hands off to the appropr
 
 ## publishing
 
-A coordinator delegates writing and editing to specialist agents, then requests editorial approval before publishing. Combines delegation with external (human) input.
+A 3-task pipeline drafts a blog post, gates on human approval, and publishes — wired together with task dependencies and an unassigned task that a human completes through the API. There is no orchestrator agent; the dependency graph plus the human-completion endpoints provide the gating.
 
-**Agents:** Publishing coordinator, writer, editor
+**Agents:**
+- ContentAgent — drafts a blog post on the requested topic
+- PublishingAgent — publishes an approved post (assigns URL and timestamp)
 
-**Demonstrates:** Delegation with external input. Human-in-the-loop approval gating the final output. Task guard rules that evaluate results and determine whether external approval is required.
+**Tasks:**
+- DRAFT → `DraftPost` — produced by ContentAgent
+- APPROVAL → `ApprovalDecision` — unassigned; depends on DRAFT; completed (or failed) by a human via the API
+- PUBLISH → `PublishedPost` — depends on APPROVAL; produced by PublishingAgent
+
+**Flow:** A user submits a topic. The endpoint creates all three tasks up front. DRAFT is assigned to a fresh ContentAgent. APPROVAL is created unassigned and depends on DRAFT — once the draft is ready, a human reads it via `GET /publishing/draft/{id}` and either approves it via `POST /publishing/approve/{id}` or rejects it via `POST /publishing/reject/{id}`; the endpoint assigns the approval task to the human and then completes or fails it. PUBLISH depends on APPROVAL and is assigned to a fresh PublishingAgent — it only runs if approval succeeds. If approval is rejected, the dependency chain causes PUBLISH to be cancelled.
+
+**Demonstrates:** Task dependencies as the orchestration mechanism (same as `pipeline`), combined with an *unassigned task that a human completes through the API*. Shows that human-in-the-loop gating doesn't need a coordinator agent — the dependency graph plus an HTTP endpoint that assigns and completes the task is enough.
 
 ---
 
@@ -149,13 +177,53 @@ A triage agent assesses risk level and routes accordingly — low-risk requests 
 
 ## debate
 
-*Not yet implemented.*
+A moderator orchestrates a structured debate between an advocate and a critic across multiple rounds, then synthesises a balanced conclusion.
 
-A moderator agent leads a structured debate between debater agents. Debaters argue positions, challenge each other, and refine arguments through multiple rounds of exchange.
+**Agents:**
+- DebateModerator — orchestrates rounds, synthesises the final conclusion
+- Advocate — argues in favor of the position
+- Critic — argues against / surfaces weaknesses
 
-**Agents:** Moderator (team lead), debater agents (team members)
+**Tasks:** DEBATE → `DebateResult(topic, synthesis, keyArguments)`
 
-**Demonstrates:** Team capability with collaborative argumentation. Peer-to-peer messaging where agents directly influence each other's reasoning. The moderator structures the debate, manages turns, and synthesises conclusions. Context is exchanged — agents build on and challenge each other's contributions.
+**Flow:** A user submits a debate topic. The DebateModerator receives the DEBATE task and runs up to 5 moderated rounds, alternating turns between Advocate and Critic. Each participant sees the running argument history. Once the rounds complete (or the moderator decides to stop early), the moderator returns a synthesis of the topic plus the key arguments raised on each side.
+
+**Demonstrates:** Moderation capability — a built-in pattern where a moderator agent shepherds a fixed set of participants through structured rounds of exchange. The participants don't coordinate freely; the moderator drives the cadence and assembles the synthesis. Distinct from team self-coordination (`devteam`) and from delegation (`research`) — moderation gives the moderator full structural control over turns.
+
+---
+
+## negotiation
+
+A facilitator coordinates a multi-round negotiation between a buyer and a seller until they converge on terms.
+
+**Agents:**
+- Facilitator — directs the negotiation, decides when to stop, declares the final outcome
+- Buyer — negotiates from the buyer's perspective
+- Seller — negotiates from the seller's perspective
+
+**Tasks:** NEGOTIATE → `NegotiationResult(topic, outcome, finalOffer)`
+
+**Flow:** A user submits a negotiation topic. The Facilitator runs up to 10 moderated rounds of offers and counteroffers between Buyer and Seller. Each party reads the prior offers and responds with their own move. The Facilitator stops when terms converge or the round limit hits, and returns the outcome plus the final offer.
+
+**Demonstrates:** Moderation capability with two adversarial participants. The same structural pattern as `debate`, applied to converging negotiation rather than divergent argument. Shows that round-limited moderation generalises across different turn-taking domains.
+
+---
+
+## peerreview
+
+A moderator coordinates a panel of specialist reviewers — technical, style, and compliance — to assess a document across multiple dimensions.
+
+**Agents:**
+- ReviewModerator — orchestrates the panel, synthesises findings
+- TechnicalReviewer — assesses technical correctness
+- StyleReviewer — assesses clarity and style
+- ComplianceReviewer — assesses regulatory / policy compliance
+
+**Tasks:** REVIEW → `ReviewResult(document, assessment, reviewerFindings)`
+
+**Flow:** A user submits a document. The ReviewModerator coordinates the three specialists to review the document, gathers their findings, and synthesises an overall assessment with the per-reviewer findings called out separately.
+
+**Demonstrates:** Moderation capability with a heterogeneous panel of three specialists. Where `debate` and `negotiation` use moderation for two adversarial parties, `peerreview` uses it for a multi-axis review. Compares against `research`'s delegation pattern: in delegation the coordinator decides what each specialist gets; here the moderator drives the protocol and aggregates a structured review.
 
 ---
 
@@ -194,6 +262,8 @@ A team lead coordinates writers who collaborate on a publication. Writers work o
 ---
 
 ## deepdive
+
+*Not yet implemented.*
 
 A comprehensive demo application that exercises all coordination capabilities in a single coherent system. A user submits a technology topic and the system produces a thoroughly researched, debated, and reviewed deep-dive article — with every orchestration decision driven by LLMs, not code.
 
