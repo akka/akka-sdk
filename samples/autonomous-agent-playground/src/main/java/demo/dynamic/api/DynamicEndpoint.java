@@ -20,7 +20,7 @@ public class DynamicEndpoint {
 
   public record TaskRequest(String content) {}
 
-  public record TaskResponse(String taskId) {}
+  public record TaskResponse(String taskId, String runId, String agentComponentId) {}
 
   private final ComponentClient componentClient;
 
@@ -40,7 +40,7 @@ public class DynamicEndpoint {
     );
 
     var taskId = agent.runSingleTask(DynamicTasks.SUMMARIZE.instructions(request.content()));
-    return new TaskResponse(taskId);
+    return new TaskResponse(taskId, agentId, "dynamic-agent");
   }
 
   @Post("/translate")
@@ -55,6 +55,6 @@ public class DynamicEndpoint {
     );
 
     var taskId = agent.runSingleTask(DynamicTasks.TRANSLATE.instructions(request.content()));
-    return new TaskResponse(taskId);
+    return new TaskResponse(taskId, agentId, "dynamic-agent");
   }
 }

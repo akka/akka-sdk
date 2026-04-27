@@ -24,7 +24,9 @@ public class PipelineEndpoint {
     String pipelineId,
     String collectTaskId,
     String analyzeTaskId,
-    String reportTaskId
+    String reportTaskId,
+    String runId,
+    String agentComponentId
   ) {}
 
   public record PhaseStatus(String status, ReportResult result) {}
@@ -66,7 +68,14 @@ public class PipelineEndpoint {
       .forAutonomousAgent(ReportAgent.class, agentInstanceId)
       .assignTasks(collectTaskId, analyzeTaskId, reportTaskId);
 
-    return new PipelineResponse(agentInstanceId, collectTaskId, analyzeTaskId, reportTaskId);
+    return new PipelineResponse(
+      agentInstanceId,
+      collectTaskId,
+      analyzeTaskId,
+      reportTaskId,
+      agentInstanceId,
+      "report-agent"
+    );
   }
 
   @Get("/{taskId}")

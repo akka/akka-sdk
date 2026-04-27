@@ -43,6 +43,8 @@ public class QuestionAnswererIntegrationTest extends TestKitSupport {
 
     var taskId = response.id();
     assertThat(taskId).isNotBlank();
+    assertThat(response.runId()).isNotBlank();
+    assertThat(response.agentComponentId()).isEqualTo("question-answerer");
 
     Awaitility.await()
       .ignoreExceptions()

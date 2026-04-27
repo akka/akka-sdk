@@ -16,7 +16,7 @@ public class DebateEndpoint {
 
   public record DebateRequest(String topic) {}
 
-  public record DebateResponse(String taskId) {}
+  public record DebateResponse(String taskId, String runId, String agentComponentId) {}
 
   private final ComponentClient componentClient;
 
@@ -26,10 +26,11 @@ public class DebateEndpoint {
 
   @Post
   public DebateResponse create(DebateRequest request) {
+    var agentInstanceId = UUID.randomUUID().toString();
     var taskId = componentClient
-      .forAutonomousAgent(DebateModerator.class, UUID.randomUUID().toString())
+      .forAutonomousAgent(DebateModerator.class, agentInstanceId)
       .runSingleTask(DebateTasks.DEBATE.instructions(request.topic()));
-    return new DebateResponse(taskId);
+    return new DebateResponse(taskId, agentInstanceId, "debate-moderator");
   }
 
   @Get("/{taskId}")

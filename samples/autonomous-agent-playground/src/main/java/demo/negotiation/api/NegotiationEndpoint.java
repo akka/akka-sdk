@@ -16,7 +16,7 @@ public class NegotiationEndpoint {
 
   public record NegotiationRequest(String topic) {}
 
-  public record NegotiationResponse(String taskId) {}
+  public record NegotiationResponse(String taskId, String runId, String agentComponentId) {}
 
   private final ComponentClient componentClient;
 
@@ -26,10 +26,11 @@ public class NegotiationEndpoint {
 
   @Post
   public NegotiationResponse create(NegotiationRequest request) {
+    var agentInstanceId = UUID.randomUUID().toString();
     var taskId = componentClient
-      .forAutonomousAgent(Facilitator.class, UUID.randomUUID().toString())
+      .forAutonomousAgent(Facilitator.class, agentInstanceId)
       .runSingleTask(NegotiationTasks.NEGOTIATE.instructions(request.topic()));
-    return new NegotiationResponse(taskId);
+    return new NegotiationResponse(taskId, agentInstanceId, "facilitator");
   }
 
   @Get("/{taskId}")

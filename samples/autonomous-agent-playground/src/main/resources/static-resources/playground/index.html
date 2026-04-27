@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en" data-theme="platform">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Autonomous Agent Playground</title>
+    <script>
+      // Synchronous theme bootstrap — runs before stylesheets load to prevent flash of wrong theme.
+      // US3 will fill this in to read localStorage; for now default to "platform".
+      try {
+        const stored = localStorage.getItem('playground-theme') || 'platform';
+        document.documentElement.dataset.theme = stored;
+      } catch (e) {
+        document.documentElement.dataset.theme = 'platform';
+      }
+    </script>
+    <link rel="stylesheet" href="/playground/static/styles/akka.css" />
+    <link rel="stylesheet" href="/playground/static/styles/playground.css" />
+  </head>
+  <body>
+    <header id="app-header"></header>
+    <main id="app-main"></main>
+    <script type="module" src="/playground/static/app.js"></script>
+  </body>
+</html>

@@ -15,7 +15,7 @@ public class ConsultingEndpoint {
 
   public record ConsultingRequest(String problem) {}
 
-  public record ConsultingResponse(String id) {}
+  public record ConsultingResponse(String id, String runId, String agentComponentId) {}
 
   public record ConsultingStatus(String status, ConsultingTasks.ConsultingResult result) {}
 
@@ -27,10 +27,11 @@ public class ConsultingEndpoint {
 
   @Post
   public ConsultingResponse create(ConsultingRequest request) {
+    var agentInstanceId = UUID.randomUUID().toString();
     var taskId = componentClient
-      .forAutonomousAgent(ConsultingCoordinator.class, UUID.randomUUID().toString())
+      .forAutonomousAgent(ConsultingCoordinator.class, agentInstanceId)
       .runSingleTask(ConsultingTasks.ENGAGEMENT.instructions(request.problem()));
-    return new ConsultingResponse(taskId);
+    return new ConsultingResponse(taskId, agentInstanceId, "consulting-coordinator");
   }
 
   @Get("/{taskId}")

@@ -41,43 +41,43 @@ Single Akka project. Backend Java under `src/main/java/demo/...`, browser assets
 
 ### Backend: registry + control endpoint scaffold + UI endpoint
 
-- [ ] T004 [P] Create `src/main/java/demo/ui/api/AgentRegistry.java` — a final class with a static `Map<String, Class<? extends AutonomousAgent>>` mapping each owning agent's component id to its class. Populate per the table in `contracts/run-control.md` (`question-answerer`, `report-agent`, `document-reviewer`, `dynamic-agent`, `research-coordinator`, `consulting-coordinator`, `triage-agent`, `content-agent`, `debate-moderator`, `facilitator`, `review-moderator`, `project-lead`). Expose `static Class<? extends AutonomousAgent> classFor(String componentId)` that throws `HttpException.notFound` on unknown ids.
-- [ ] T005 [P] Create `src/main/java/demo/ui/api/PlaygroundUiEndpoint.java` with `@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))` and three routes per `contracts/ui-endpoints.md`: `@Get("/")` returning a 302 to `/playground`, `@Get("/playground/static/**")` calling `HttpResponses.staticResource(request, "/playground/static/")`, and `@Get("/playground/**")` returning `HttpResponses.staticResource("playground/index.html")` (the SPA fallback).
-- [ ] T006 [P] Create `src/main/java/demo/ui/api/RunControlEndpoint.java` with `@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))` and a single working route `@Get("/playground/api/samples")` returning a JSON list of `{id, displayName, agentComponentId}` derived from `AgentRegistry`. Other routes (`/runs/{runId}/status`, `/runs/{runId}/stop`) get added in later phases as stubs returning 501 for now.
+- [X] T004 [P] Create `src/main/java/demo/ui/api/AgentRegistry.java` — a final class with a static `Map<String, Class<? extends AutonomousAgent>>` mapping each owning agent's component id to its class. Populate per the table in `contracts/run-control.md` (`question-answerer`, `report-agent`, `document-reviewer`, `dynamic-agent`, `research-coordinator`, `consulting-coordinator`, `triage-agent`, `content-agent`, `debate-moderator`, `facilitator`, `review-moderator`, `project-lead`). Expose `static Class<? extends AutonomousAgent> classFor(String componentId)` that throws `HttpException.notFound` on unknown ids.
+- [X] T005 [P] Create `src/main/java/demo/ui/api/PlaygroundUiEndpoint.java` with `@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))` and three routes per `contracts/ui-endpoints.md`: `@Get("/")` returning a 302 to `/playground`, `@Get("/playground/static/**")` calling `HttpResponses.staticResource(request, "/playground/static/")`, and `@Get("/playground/**")` returning `HttpResponses.staticResource("playground/index.html")` (the SPA fallback).
+- [X] T006 [P] Create `src/main/java/demo/ui/api/RunControlEndpoint.java` with `@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))` and a single working route `@Get("/playground/api/samples")` returning a JSON list of `{id, displayName, agentComponentId}` derived from `AgentRegistry`. Other routes (`/runs/{runId}/status`, `/runs/{runId}/stop`) get added in later phases as stubs returning 501 for now.
 
 ### Frontend shell
 
-- [ ] T007 [P] Create `src/main/resources/static-resources/playground/index.html` with `<html data-theme>` root, `<head>` linking `static/styles/akka.css` then `static/styles/playground.css`, an inline synchronous theme-bootstrap script placeholder (filled in US3 — for now just sets `document.documentElement.dataset.theme = "platform"`), `<title>Autonomous Agent Playground</title>`, mount points `<header id="app-header">` and `<main id="app-main">`, and a `<script type="module" src="/playground/static/app.js">` reference at the bottom.
-- [ ] T008 [P] Create `src/main/resources/static-resources/playground/static/app.js` skeleton with: a router that inspects `location.pathname` and dispatches `/playground` → renderLanding, `/playground/<sample>` → renderPanel(sample, null), `/playground/<sample>/run/<runId>` → renderPanel(sample, runId); a panel mount/unmount lifecycle; an empty `renderLanding()` and `renderPanel()` to be filled in US1; a `renderNotFound()` placeholder. Imports the registry from `./samples/_registry.js`.
-- [ ] T009 [P] Create `src/main/resources/static-resources/playground/static/samples/_registry.js` exporting an empty object `export const samples = {};` — populated as each per-sample descriptor is added in US1.
+- [X] T007 [P] Create `src/main/resources/static-resources/playground/index.html` with `<html data-theme>` root, `<head>` linking `static/styles/akka.css` then `static/styles/playground.css`, an inline synchronous theme-bootstrap script placeholder (filled in US3 — for now just sets `document.documentElement.dataset.theme = "platform"`), `<title>Autonomous Agent Playground</title>`, mount points `<header id="app-header">` and `<main id="app-main">`, and a `<script type="module" src="/playground/static/app.js">` reference at the bottom.
+- [X] T008 [P] Create `src/main/resources/static-resources/playground/static/app.js` skeleton with: a router that inspects `location.pathname` and dispatches `/playground` → renderLanding, `/playground/<sample>` → renderPanel(sample, null), `/playground/<sample>/run/<runId>` → renderPanel(sample, runId); a panel mount/unmount lifecycle; an empty `renderLanding()` and `renderPanel()` to be filled in US1; a `renderNotFound()` placeholder. Imports the registry from `./samples/_registry.js`.
+- [X] T009 [P] Create `src/main/resources/static-resources/playground/static/samples/_registry.js` exporting an empty object `export const samples = {};` — populated as each per-sample descriptor is added in US1.
 
 ### Per-sample POST response shape change (additive — see `contracts/run-control.md`)
 
 Each task adds two fields (`runId`, `agentComponentId`) to the existing per-sample POST response record. The local `var agentInstanceId = UUID.randomUUID().toString()` already exists in each endpoint; surface it as `runId` in the response and add a constant `agentComponentId` that matches the owning agent's `@Component(id = …)`.
 
-- [ ] T010 [P] Modify `QuestionResponse` in `src/main/java/demo/helloworld/api/QuestionEndpoint.java`: add `runId` and `agentComponentId` (constant `"question-answerer"`); update the `request` handler to populate them.
-- [ ] T011 [P] Modify `PipelineResponse` in `src/main/java/demo/pipeline/api/PipelineEndpoint.java`: add `runId` (the ReportAgent's instance id) and `agentComponentId = "report-agent"`; the existing `pipelineId` and three task ids stay.
-- [ ] T012 [P] Modify `ReviewResponse` in `src/main/java/demo/docreview/api/DocReviewEndpoint.java`: add `runId` + `agentComponentId = "document-reviewer"`.
-- [ ] T013 [P] Modify `TaskResponse` in `src/main/java/demo/dynamic/api/DynamicEndpoint.java`: add `runId` + `agentComponentId = "dynamic-agent"`. Apply to both `/summarize` and `/translate` handlers.
-- [ ] T014 [P] Modify `ResearchResponse` in `src/main/java/demo/research/api/ResearchEndpoint.java`: add `runId` + `agentComponentId = "research-coordinator"`.
-- [ ] T015 [P] Modify `ConsultingResponse` in `src/main/java/demo/consulting/api/ConsultingEndpoint.java`: add `runId` + `agentComponentId = "consulting-coordinator"`.
-- [ ] T016 [P] Modify `SupportResponse` in `src/main/java/demo/support/api/SupportEndpoint.java`: add `runId` + `agentComponentId = "triage-agent"`.
-- [ ] T017 [P] Modify `PublishingPipeline` in `src/main/java/demo/publishing/api/PublishingEndpoint.java`: add `runId` (the ContentAgent's instance id — the run's owning agent for the *draft* phase) and `agentComponentId = "content-agent"`. Existing fields `draftTaskId`, `approvalTaskId`, `publishTaskId` remain.
-- [ ] T018 [P] Modify `DebateResponse` in `src/main/java/demo/debate/api/DebateEndpoint.java`: add `runId` + `agentComponentId = "debate-moderator"`.
-- [ ] T019 [P] Modify `NegotiationResponse` in `src/main/java/demo/negotiation/api/NegotiationEndpoint.java`: add `runId` + `agentComponentId = "facilitator"`.
-- [ ] T020 [P] Modify `ReviewResponse` in `src/main/java/demo/peerreview/api/PeerReviewEndpoint.java`: add `runId` + `agentComponentId = "review-moderator"`.
-- [ ] T021 [P] Modify `ProjectResponse` in `src/main/java/demo/devteam/api/DevTeamEndpoint.java`: add `runId` + `agentComponentId = "project-lead"`.
+- [X] T010 [P] Modify `QuestionResponse` in `src/main/java/demo/helloworld/api/QuestionEndpoint.java`: add `runId` and `agentComponentId` (constant `"question-answerer"`); update the `request` handler to populate them.
+- [X] T011 [P] Modify `PipelineResponse` in `src/main/java/demo/pipeline/api/PipelineEndpoint.java`: add `runId` (the ReportAgent's instance id) and `agentComponentId = "report-agent"`; the existing `pipelineId` and three task ids stay.
+- [X] T012 [P] Modify `ReviewResponse` in `src/main/java/demo/docreview/api/DocReviewEndpoint.java`: add `runId` + `agentComponentId = "document-reviewer"`.
+- [X] T013 [P] Modify `TaskResponse` in `src/main/java/demo/dynamic/api/DynamicEndpoint.java`: add `runId` + `agentComponentId = "dynamic-agent"`. Apply to both `/summarize` and `/translate` handlers.
+- [X] T014 [P] Modify `ResearchResponse` in `src/main/java/demo/research/api/ResearchEndpoint.java`: add `runId` + `agentComponentId = "research-coordinator"`.
+- [X] T015 [P] Modify `ConsultingResponse` in `src/main/java/demo/consulting/api/ConsultingEndpoint.java`: add `runId` + `agentComponentId = "consulting-coordinator"`.
+- [X] T016 [P] Modify `SupportResponse` in `src/main/java/demo/support/api/SupportEndpoint.java`: add `runId` + `agentComponentId = "triage-agent"`.
+- [X] T017 [P] Modify `PublishingPipeline` in `src/main/java/demo/publishing/api/PublishingEndpoint.java`: add `runId` (the ContentAgent's instance id — the run's owning agent for the *draft* phase) and `agentComponentId = "content-agent"`. Existing fields `draftTaskId`, `approvalTaskId`, `publishTaskId` remain.
+- [X] T018 [P] Modify `DebateResponse` in `src/main/java/demo/debate/api/DebateEndpoint.java`: add `runId` + `agentComponentId = "debate-moderator"`.
+- [X] T019 [P] Modify `NegotiationResponse` in `src/main/java/demo/negotiation/api/NegotiationEndpoint.java`: add `runId` + `agentComponentId = "facilitator"`.
+- [X] T020 [P] Modify `ReviewResponse` in `src/main/java/demo/peerreview/api/PeerReviewEndpoint.java`: add `runId` + `agentComponentId = "review-moderator"`.
+- [X] T021 [P] Modify `ProjectResponse` in `src/main/java/demo/devteam/api/DevTeamEndpoint.java`: add `runId` + `agentComponentId = "project-lead"`.
 
 ### Backend tests for the foundational pieces
 
-- [ ] T022 [P] Create `src/test/java/demo/ui/PlaygroundUiEndpointIntegrationTest.java` extending `TestKitSupport`. Cover the seven test items in `contracts/ui-endpoints.md` "Test contract" (root redirect, asset content types, 404 for missing asset, SPA fallback for `/playground/research`, SPA fallback for `/playground/research/run/abc-123`).
-- [ ] T023 [P] Create `src/test/java/demo/ui/RunControlEndpointSamplesTest.java` extending `TestKitSupport`. Verify `GET /playground/api/samples` returns a JSON list with at least the 12 expected sample ids.
-- [ ] T024 [P] Add a regression test for each existing per-sample POST response in the existing per-sample integration tests (where they exist), asserting the response now includes non-null `runId` and `agentComponentId`. If a sample has no existing test, add a minimal one in `src/test/java/demo/<sample>/`.
+- [X] T022 [P] Create `src/test/java/demo/ui/PlaygroundUiEndpointIntegrationTest.java` extending `TestKitSupport`. Cover the seven test items in `contracts/ui-endpoints.md` "Test contract" (root redirect, asset content types, 404 for missing asset, SPA fallback for `/playground/research`, SPA fallback for `/playground/research/run/abc-123`).
+- [X] T023 [P] Create `src/test/java/demo/ui/RunControlEndpointSamplesTest.java` extending `TestKitSupport`. Verify `GET /playground/api/samples` returns a JSON list with at least the 12 expected sample ids.
+- [X] T024 [P] Add a regression test for each existing per-sample POST response in the existing per-sample integration tests (where they exist), asserting the response now includes non-null `runId` and `agentComponentId`. If a sample has no existing test, add a minimal one in `src/test/java/demo/<sample>/`.
 
 ### Foundation gate
 
-- [ ] T025 Run `mvn compile` and confirm clean compile of the whole project.
-- [ ] T026 Run `mvn verify` and confirm only the new tests for the new endpoints exist, plus the augmented per-sample POST regressions (T024) pass. **Checkpoint**: Foundation ready — user story implementation can now begin.
+- [X] T025 Run `mvn compile` and confirm clean compile of the whole project.
+- [X] T026 Run `mvn verify` and confirm only the new tests for the new endpoints exist, plus the augmented per-sample POST regressions (T024) pass. **Checkpoint**: Foundation ready — user story implementation can now begin.
 
 ---
 

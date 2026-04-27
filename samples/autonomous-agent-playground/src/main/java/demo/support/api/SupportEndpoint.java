@@ -15,7 +15,7 @@ public class SupportEndpoint {
 
   public record SupportRequest(String issue) {}
 
-  public record SupportResponse(String id) {}
+  public record SupportResponse(String id, String runId, String agentComponentId) {}
 
   public record SupportStatus(String status, SupportTasks.SupportResolution result) {}
 
@@ -27,10 +27,11 @@ public class SupportEndpoint {
 
   @Post
   public SupportResponse create(SupportRequest request) {
+    var agentInstanceId = UUID.randomUUID().toString();
     var taskId = componentClient
-      .forAutonomousAgent(TriageAgent.class, UUID.randomUUID().toString())
+      .forAutonomousAgent(TriageAgent.class, agentInstanceId)
       .runSingleTask(SupportTasks.RESOLVE.instructions(request.issue()));
-    return new SupportResponse(taskId);
+    return new SupportResponse(taskId, agentInstanceId, "triage-agent");
   }
 
   @Get("/{taskId}")

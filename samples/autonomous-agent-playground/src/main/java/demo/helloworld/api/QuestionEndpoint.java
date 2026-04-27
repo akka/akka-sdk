@@ -16,7 +16,7 @@ public class QuestionEndpoint {
 
   public record AskQuestion(String question) {}
 
-  public record QuestionResponse(String id) {}
+  public record QuestionResponse(String id, String runId, String agentComponentId) {}
 
   private final ComponentClient componentClient;
 
@@ -26,10 +26,11 @@ public class QuestionEndpoint {
 
   @Post
   public QuestionResponse ask(AskQuestion request) {
+    var agentInstanceId = UUID.randomUUID().toString();
     var taskId = componentClient
-      .forAutonomousAgent(QuestionAnswerer.class, UUID.randomUUID().toString())
+      .forAutonomousAgent(QuestionAnswerer.class, agentInstanceId)
       .runSingleTask(QuestionTasks.ANSWER.instructions(request.question()));
-    return new QuestionResponse(taskId);
+    return new QuestionResponse(taskId, agentInstanceId, "question-answerer");
   }
 
   @Get("/{taskId}")

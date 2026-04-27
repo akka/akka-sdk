@@ -21,7 +21,7 @@ public class DocReviewEndpoint {
 
   public record CreateReview(String document, String reviewInstructions) {}
 
-  public record ReviewResponse(String id) {}
+  public record ReviewResponse(String id, String runId, String agentComponentId) {}
 
   private final ComponentClient componentClient;
 
@@ -36,11 +36,12 @@ public class DocReviewEndpoint {
       .instructions(request.reviewInstructions())
       .attach(TextMessageContent.from(request.document()));
 
+    var agentInstanceId = UUID.randomUUID().toString();
     var taskId = componentClient
-      .forAutonomousAgent(DocumentReviewer.class, UUID.randomUUID().toString())
+      .forAutonomousAgent(DocumentReviewer.class, agentInstanceId)
       .runSingleTask(task);
 
-    return new ReviewResponse(taskId);
+    return new ReviewResponse(taskId, agentInstanceId, "document-reviewer");
   }
 
   @Get("/{taskId}")

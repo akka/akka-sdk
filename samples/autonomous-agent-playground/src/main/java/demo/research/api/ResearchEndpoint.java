@@ -16,7 +16,7 @@ public class ResearchEndpoint {
 
   public record ResearchRequest(String topic) {}
 
-  public record ResearchResponse(String id) {}
+  public record ResearchResponse(String id, String runId, String agentComponentId) {}
 
   public record ResearchStatus(String status, ResearchBrief result) {}
 
@@ -28,10 +28,11 @@ public class ResearchEndpoint {
 
   @Post
   public ResearchResponse create(ResearchRequest request) {
+    var agentInstanceId = UUID.randomUUID().toString();
     var taskId = componentClient
-      .forAutonomousAgent(ResearchCoordinator.class, UUID.randomUUID().toString())
+      .forAutonomousAgent(ResearchCoordinator.class, agentInstanceId)
       .runSingleTask(ResearchTasks.BRIEF.instructions(request.topic()));
-    return new ResearchResponse(taskId);
+    return new ResearchResponse(taskId, agentInstanceId, "research-coordinator");
   }
 
   @Get("/{taskId}")

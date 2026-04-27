@@ -16,7 +16,7 @@ public class DevTeamEndpoint {
 
   public record ProjectRequest(String description) {}
 
-  public record ProjectResponse(String taskId) {}
+  public record ProjectResponse(String taskId, String runId, String agentComponentId) {}
 
   private final ComponentClient componentClient;
 
@@ -26,10 +26,11 @@ public class DevTeamEndpoint {
 
   @Post
   public ProjectResponse create(ProjectRequest request) {
+    var agentInstanceId = UUID.randomUUID().toString();
     var taskId = componentClient
-      .forAutonomousAgent(ProjectLead.class, UUID.randomUUID().toString())
+      .forAutonomousAgent(ProjectLead.class, agentInstanceId)
       .runSingleTask(ProjectTasks.PLAN.instructions(request.description()));
-    return new ProjectResponse(taskId);
+    return new ProjectResponse(taskId, agentInstanceId, "project-lead");
   }
 
   @Get("/{taskId}")

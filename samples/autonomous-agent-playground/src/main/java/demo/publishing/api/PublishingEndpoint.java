@@ -22,7 +22,9 @@ public class PublishingEndpoint {
   public record PublishingPipeline(
     String draftTaskId,
     String approvalTaskId,
-    String publishTaskId
+    String publishTaskId,
+    String runId,
+    String agentComponentId
   ) {}
 
   public record ApproveRequest(String approvedBy, String comment) {}
@@ -47,8 +49,9 @@ public class PublishingEndpoint {
   @Post
   public PublishingPipeline request(PublishRequest request) {
     // 1. Create draft task and assign to content agent
+    var contentAgentId = UUID.randomUUID().toString();
     var draftTaskId = componentClient
-      .forAutonomousAgent(ContentAgent.class, UUID.randomUUID().toString())
+      .forAutonomousAgent(ContentAgent.class, contentAgentId)
       .runSingleTask(
         PublishingTasks.DRAFT.instructions("Write a blog post about: " + request.topic())
       );
@@ -102,7 +105,13 @@ public class PublishingEndpoint {
         return null;
       });
 
-    return new PublishingPipeline(draftTaskId, approvalTaskId, publishTaskId);
+    return new PublishingPipeline(
+      draftTaskId,
+      approvalTaskId,
+      publishTaskId,
+      contentAgentId,
+      "content-agent"
+    );
   }
 
   /** Get the current status of the draft task, so a human can review before approving. */

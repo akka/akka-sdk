@@ -16,7 +16,7 @@ public class PeerReviewEndpoint {
 
   public record ReviewRequest(String document) {}
 
-  public record ReviewResponse(String taskId) {}
+  public record ReviewResponse(String taskId, String runId, String agentComponentId) {}
 
   private final ComponentClient componentClient;
 
@@ -26,10 +26,11 @@ public class PeerReviewEndpoint {
 
   @Post
   public ReviewResponse create(ReviewRequest request) {
+    var agentInstanceId = UUID.randomUUID().toString();
     var taskId = componentClient
-      .forAutonomousAgent(ReviewModerator.class, UUID.randomUUID().toString())
+      .forAutonomousAgent(ReviewModerator.class, agentInstanceId)
       .runSingleTask(ReviewTasks.REVIEW.instructions(request.document()));
-    return new ReviewResponse(taskId);
+    return new ReviewResponse(taskId, agentInstanceId, "review-moderator");
   }
 
   @Get("/{taskId}")
