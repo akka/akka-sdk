@@ -6,6 +6,7 @@ Adoptium
 Agrona
 Aiven
 [Aa]kka
+allowedAlgorithms
 allowMethods
 allowOrigins
 [Aa]ntora
@@ -114,6 +115,8 @@ JVM's
 [Kk]alix
 Keycloak
 keyId
+keySets
+keysets?
 Kolesnikov
 Lagom
 [Ll]angchain4j
@@ -186,6 +189,7 @@ rebalancing
 recoverability
 recurse
 redeliveries
+refreshInterval
 remoting
 Remoting
 regionalization
