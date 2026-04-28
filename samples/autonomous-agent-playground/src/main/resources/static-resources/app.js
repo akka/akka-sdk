@@ -240,7 +240,11 @@ function renderRunView(descriptor, runId, runCache) {
     }
     if (descriptor.renderActions) {
       actions.innerHTML = '';
-      const node = descriptor.renderActions(state, currentStatusJson, runId, runCache);
+      const node = descriptor.renderActions(state, currentStatusJson, runId, runCache, {
+        // Operator-action handlers can call this after the POST returns to flip the panel
+        // immediately (otherwise the user waits up to STATUS_REFRESH_MS for the next poll).
+        refreshNow: () => refreshStatus().catch(() => {}),
+      });
       if (node) actions.appendChild(node);
     }
     renderControl(state);
@@ -354,6 +358,11 @@ function renderRunView(descriptor, runId, runCache) {
           runCache.pendingValues = null;
           cacheRun(runId, runCache);
           refreshStatus().catch(() => {});
+          // Start the status backstop poll. Essential for samples whose owning agent stops
+          // mid-pipeline (e.g. publishing's ContentAgent stops after DRAFT, but the PUBLISH
+          // task runs on PublishingAgent — a different instance whose SSE we don't subscribe
+          // to). The poll is what flips the panel to COMPLETED in those cases.
+          startStatusBackstop();
         } catch (err) {
           failureBlock.hidden = false;
           failureBlock.innerHTML = `<h3>Submission failed</h3><p>${escapeHtml(err?.message ?? String(err))}</p>`;
@@ -370,10 +379,17 @@ function renderRunView(descriptor, runId, runCache) {
       eventLog.appendChild(row);
       summary.ingest(envelope);
 
-      // Some events imply state transitions even before the next status poll catches up.
+      // Operator stop is observed only on the SSE stream (the SDK doesn't expose the stop
+      // reason via getState()); reflect it locally without waiting for the next status fetch.
       if (envelope.kind === 'Stopped' && envelope.raw?.reason === 'operator') {
-        refreshStatus().catch(() => {});
+        setState('CANCELLED', {
+          ...currentStatusJson,
+          runState: 'CANCELLED',
+          failureReason: 'Stopped by operator',
+        });
+        return;
       }
+      // Other terminal task transitions reconcile via a status fetch.
       if (envelope.kind === 'TaskCompleted' || envelope.kind === 'TaskFailed' || envelope.kind === 'TaskCancelled') {
         refreshStatus().catch(() => {});
       }

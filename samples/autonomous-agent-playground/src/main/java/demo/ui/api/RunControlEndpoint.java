@@ -141,10 +141,15 @@ public class RunControlEndpoint extends AbstractHttpEndpoint {
   }
 
   private static String computeRunState(String agentPhase, TaskStatus taskStatus) {
+    // Driven by the task's terminal state. The agent phase is intentionally NOT consulted: in
+    // multi-agent pipelines (e.g. publishing) the owning agent legitimately stops after its
+    // share of the work even though the run continues on another agent. Operator-stop is
+    // surfaced via the Stopped(reason="operator") notification on the SSE stream, which the
+    // client treats as a hard CANCELLED locally; the SDK does not expose the stop reason via
+    // getState(), so we cannot distinguish operator-stop from auto-stop server-side here.
     if (taskStatus == TaskStatus.COMPLETED) return "COMPLETED";
     if (taskStatus == TaskStatus.FAILED) return "FAILED";
     if (taskStatus == TaskStatus.CANCELLED) return "CANCELLED";
-    if (agentPhase != null && agentPhase.toLowerCase().contains("stopped")) return "CANCELLED";
     if (taskStatus == TaskStatus.PENDING) return "PENDING";
     // ASSIGNED, IN_PROGRESS, RESULT_REJECTED — work continues.
     return "RUNNING";

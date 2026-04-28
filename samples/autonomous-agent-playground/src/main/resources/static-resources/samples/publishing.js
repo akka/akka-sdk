@@ -36,9 +36,12 @@ export const publishing = {
     };
   },
   // Overlay AWAITING_INPUT detection: poll the DRAFT task; if completed and PUBLISH still PENDING/RUNNING,
-  // we are waiting for the operator to approve/reject.
+  // we are waiting for the operator to approve/reject. Once the operator has acted (approvalAcked
+  // flag set by the action button below), stop overriding so the server's runState (RUNNING →
+  // COMPLETED once the publish task finishes) takes over.
   async overrideRunState(serverState, _statusJson, runCache) {
     if (serverState === 'COMPLETED' || serverState === 'FAILED' || serverState === 'CANCELLED') return null;
+    if (runCache.extras?.approvalAcked) return null;
     try {
       const draft = await getJson(`/publishing/draft/${runCache.extras.draftTaskId}`);
       if (draft.status === 'COMPLETED') return 'AWAITING_INPUT';
@@ -56,7 +59,7 @@ export const publishing = {
       ]),
     ]);
   },
-  renderActions(state, _statusJson, _runId, runCache) {
+  renderActions(state, _statusJson, _runId, runCache, options = {}) {
     if (state !== 'AWAITING_INPUT') return null;
     const wrap = el('div', { className: 'awaiting-input' });
     const draftBlock = el('div', { className: 'draft-preview' }, [el('p', { className: 'muted' }, 'Loading draft…')]);
@@ -72,6 +75,16 @@ export const publishing = {
       draftBlock.appendChild(el('div', { className: 'draft-body' }, [el('pre', {}, draft.body ?? draft.content ?? '')]));
     }).catch(() => {});
 
+    const buttons = el('div', { className: 'action-buttons' });
+
+    function markActed(label) {
+      runCache.extras.approvalAcked = true;
+      buttons.replaceChildren(el('p', { className: 'muted' }, label));
+      // Trigger a status refresh immediately so the AWAITING_INPUT block (header + draft preview)
+      // is replaced by the live RUNNING / COMPLETED view without waiting for the next 5s poll.
+      options.refreshNow?.();
+    }
+
     const approveBtn = el('button', {
       type: 'button',
       onClick: async () => {
@@ -82,6 +95,7 @@ export const publishing = {
             approvedBy: 'operator',
             comment: 'Approved via UI',
           });
+          markActed('Approved — waiting for publish to complete…');
         } catch (err) {
           approveBtn.disabled = false;
           rejectBtn.disabled = false;
@@ -101,6 +115,7 @@ export const publishing = {
             rejectedBy: 'operator',
             reason,
           });
+          markActed('Rejected — pipeline cancelled.');
         } catch (err) {
           approveBtn.disabled = false;
           rejectBtn.disabled = false;
@@ -108,7 +123,8 @@ export const publishing = {
       },
     }, 'Reject');
 
-    const buttons = el('div', { className: 'action-buttons' }, [approveBtn, rejectBtn]);
+    buttons.appendChild(approveBtn);
+    buttons.appendChild(rejectBtn);
     wrap.appendChild(buttons);
     return wrap;
   },
