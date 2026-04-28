@@ -63,7 +63,7 @@ public class RunControlEndpoint extends AbstractHttpEndpoint {
 
   @Get("/samples")
   public SampleList samples() {
-    var entries = AgentRegistry.samples().stream()
+    var entries = SampleRegistry.samples().stream()
       .map(e -> new SampleSummary(e.id(), e.displayName(), e.agentComponentId()))
       .toList();
     return new SampleList(entries);
@@ -75,7 +75,7 @@ public class RunControlEndpoint extends AbstractHttpEndpoint {
     var task = requiredQueryParam("task");
     var sample = requiredQueryParam("sample");
 
-    var agentClass = AgentRegistry.classFor(component);
+    var agentClass = SampleRegistry.classFor(component);
     var taskDef = taskDefFor(sample);
 
     var agentState = componentClient.forAutonomousAgent(agentClass, runId).getState();
@@ -106,7 +106,7 @@ public class RunControlEndpoint extends AbstractHttpEndpoint {
   @Post("/runs/{runId}/stop")
   public StopResponse stop(String runId) {
     var component = requiredQueryParam("component");
-    var agentClass = AgentRegistry.classFor(component);
+    var agentClass = SampleRegistry.classFor(component);
     componentClient.forAutonomousAgent(agentClass, runId).stop();
     return new StopResponse("CANCELLED", Instant.now());
   }

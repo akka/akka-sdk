@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
  *       DelegationStarted / TeamCreated / HandoffStarted / ConversationCreated event.</li>
  * </ul>
  */
-public final class AgentRegistry {
+public final class SampleRegistry {
 
   public record SampleEntry(
     String id,
@@ -105,7 +105,7 @@ public final class AgentRegistry {
     ALL_AGENTS = Map.copyOf(map);
   }
 
-  private AgentRegistry() {}
+  private SampleRegistry() {}
 
   public static List<SampleEntry> samples() {
     return ENTRIES;

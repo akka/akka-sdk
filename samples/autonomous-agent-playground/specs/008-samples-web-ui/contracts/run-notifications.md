@@ -15,7 +15,7 @@ Subscribes to the notification stream of the agent identified by `(agentComponen
 
 - **Request**:
   - `runId` path parameter — the owning agent's UUID instance id.
-  - `component` query parameter — the owning agent's component id (e.g. `research-coordinator`). Required because the SDK's `forAutonomousAgent` needs the `Class` corresponding to that component id; the endpoint resolves the class via `AgentRegistry.classFor(component)`. Putting it in the URL keeps the bookmark / share design self-contained: the run's URL plus the component id is enough to re-subscribe on reload.
+  - `component` query parameter — the owning agent's component id (e.g. `research-coordinator`). Required because the SDK's `forAutonomousAgent` needs the `Class` corresponding to that component id; the endpoint resolves the class via `SampleRegistry.classFor(component)`. Putting it in the URL keeps the bookmark / share design self-contained: the run's URL plus the component id is enough to re-subscribe on reload.
   - Optional `Last-Event-ID` header — set automatically by the browser's `EventSource` on reconnect, used by the SDK's `serverSentEvents(source, extractEventId)` to pick up after the last delivered event.
 
 - **Response**: `200 OK`, `Content-Type: text/event-stream`. Each SSE frame:
@@ -47,7 +47,7 @@ Subscribes to the notification stream of the agent identified by `(agentComponen
   The bridge emits a 5-second keep-alive frame (`: keep-alive\n\n`) when idle (provided by the SDK's `serverSentEvents` builder).
 
 - **Errors**:
-  - `404 Not Found` if `AgentRegistry.classFor(component)` does not know the component id.
+  - `404 Not Found` if `SampleRegistry.classFor(component)` does not know the component id.
   - The SSE stream simply ends if the agent instance does not exist or the agent has stopped; the browser's `EventSource` will attempt reconnect, and on reconnect the UI fetches `/runs/{runId}/status` to recover the terminal state (FR-009a).
 
 - **Cancellation**: the browser closes the `EventSource`; the bridge's source is cancelled and the underlying notification subscription is released.

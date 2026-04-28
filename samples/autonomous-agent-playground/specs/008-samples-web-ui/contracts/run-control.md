@@ -15,7 +15,7 @@ Returns the consolidated `RunStatus` DTO (see `data-model.md`). The UI calls thi
 
 - **Path**: `runId` is the owning agent's instance id.
 - **Query**:
-  - `component` — owning agent's component id, used to resolve the agent class via `AgentRegistry`.
+  - `component` — owning agent's component id, used to resolve the agent class via `SampleRegistry`.
   - `task` — primary task id (the one whose typed result becomes the run's `finalResult`).
   - `sample` — sample id; lets the endpoint pick the right `Task<T>` definition for `forTask(taskId).get(taskDef)`.
 
@@ -51,7 +51,7 @@ Sends operator-driven stop to the owning agent. The UI invokes this only after a
 - **Request**: empty body. `runId` and `component` identify the agent. `Content-Length: 0`.
 - **Implementation**:
   ```java
-  componentClient.forAutonomousAgent(AgentRegistry.classFor(component), runId).stop();
+  componentClient.forAutonomousAgent(SampleRegistry.classFor(component), runId).stop();
   ```
 - **Response**: `200 OK`, `application/json`:
   ```json
@@ -64,7 +64,7 @@ Sends operator-driven stop to the owning agent. The UI invokes this only after a
 
 ### `GET /playground/api/samples`
 
-Returns the list of samples the UI should show on its landing page. Implementation reads the same `AgentRegistry` keys.
+Returns the list of samples the UI should show on its landing page. Implementation reads the same `SampleRegistry` keys.
 
 - **Response**: `200 OK`, `application/json`:
   ```json

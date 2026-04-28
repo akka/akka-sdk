@@ -77,7 +77,7 @@ public class RunNotificationEndpoint extends AbstractHttpEndpoint {
         )
       );
 
-    var agentClass = AgentRegistry.classFor(component);
+    var agentClass = SampleRegistry.classFor(component);
     var counter = new AtomicLong(0);
     var rootAgent = new AgentRef(component, runId);
 
@@ -130,9 +130,9 @@ public class RunNotificationEndpoint extends AbstractHttpEndpoint {
     Source<TaggedNotification, NotUsed> childMerged = Source.from(children)
       // Filter out unknown component ids (e.g. request-based Agents that have no
       // notificationStream, or future child agents not yet registered) — we just skip them.
-      .filter(c -> AgentRegistry.classForOrNull(c.componentId()) != null)
+      .filter(c -> SampleRegistry.classForOrNull(c.componentId()) != null)
       .flatMapMerge(MERGE_PARALLELISM, c -> {
-        var clazz = AgentRegistry.classForOrNull(c.componentId());
+        var clazz = SampleRegistry.classForOrNull(c.componentId());
         return taggedStream(c, clazz)
           .flatMapMerge(MERGE_PARALLELISM, this::expand); // recurse for grandchildren
       });

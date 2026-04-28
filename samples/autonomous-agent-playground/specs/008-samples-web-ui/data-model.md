@@ -19,7 +19,7 @@ Returned by every per-sample POST endpoint after this feature lands. Replaces th
 RunRef {
   String runId            // == agentInstanceId of the owning agent (UUID, globally unique)
   String sampleId         // == "helloworld" | "research" | … — the sample's short name (FR-001)
-  String agentComponentId // e.g. "research-coordinator" — for AgentRegistry lookup
+  String agentComponentId // e.g. "research-coordinator" — for SampleRegistry lookup
   String taskId           // primary task; pipeline returns multiple, see RunRef.tasks
   List<String> tasks      // all task ids created by this submit, in submission order;
                           //   used by samples like pipeline that pre-create several
@@ -108,12 +108,12 @@ StopResponse { String runState; Instant stoppedAt; }
 
 `StopResponse.runState` will be `CANCELLED` after the SDK's `Notification.Stopped` arrives. The endpoint returns immediately after invoking `.stop()`; the UI will see the actual `Stopped` event over SSE shortly after.
 
-### `AgentRegistry`
+### `SampleRegistry`
 
-A static lookup table the new endpoints use to translate a `componentId` (e.g. `"research-coordinator"`, `"debate-moderator"`) back into the concrete `Class<? extends AutonomousAgent>` needed by `componentClient.forAutonomousAgent(<class>, instanceId)`. Implemented as a final `Map<String, Class<? extends AutonomousAgent>>` in `demo.ui.api.AgentRegistry`, populated in the file alongside the agent classes — one line per sample's owning agent.
+A static lookup table the new endpoints use to translate a `componentId` (e.g. `"research-coordinator"`, `"debate-moderator"`) back into the concrete `Class<? extends AutonomousAgent>` needed by `componentClient.forAutonomousAgent(<class>, instanceId)`. Implemented as a final `Map<String, Class<? extends AutonomousAgent>>` in `demo.ui.api.SampleRegistry`, populated in the file alongside the agent classes — one line per sample's owning agent.
 
 ```text
-AgentRegistry {
+SampleRegistry {
   static Class<? extends AutonomousAgent> classFor(String componentId)
       throws HttpException.notFound  // when the id is unknown
 }
@@ -257,7 +257,7 @@ connected ──disconnect──► reconnecting ──recover──► connecte
 
 | Spec ref | Where in the model |
 |---|---|
-| FR-001 (sample list) | `AgentRegistry` exposes the canonical sample list; landing page reads from `_registry.js` |
+| FR-001 (sample list) | `SampleRegistry` exposes the canonical sample list; landing page reads from `_registry.js` |
 | FR-002 (per-sample panel) | `SamplePanelDescriptor` |
 | FR-002a (description structure) | `SamplePanelDescriptor.description` (overview / agents / tasks / flow / demonstrates) |
 | FR-003 (input shape) | `SamplePanelDescriptor.inputForm` |
