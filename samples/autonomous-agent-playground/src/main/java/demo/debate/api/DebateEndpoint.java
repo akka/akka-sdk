@@ -5,6 +5,7 @@ import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.http.AbstractHttpEndpoint;
 import demo.debate.application.DebateModerator;
 import demo.debate.application.DebateTasks;
 import demo.debate.application.DebateTasks.DebateResult;
@@ -12,7 +13,7 @@ import java.util.UUID;
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/debate")
-public class DebateEndpoint {
+public class DebateEndpoint extends AbstractHttpEndpoint {
 
   public record DebateRequest(String topic) {}
 
@@ -26,7 +27,9 @@ public class DebateEndpoint {
 
   @Post
   public DebateResponse create(DebateRequest request) {
-    var agentInstanceId = UUID.randomUUID().toString();
+    var agentInstanceId = requestContext().queryParams().getString("runId")
+      .filter(s -> !s.isBlank())
+      .orElseGet(() -> UUID.randomUUID().toString());
     var taskId = componentClient
       .forAutonomousAgent(DebateModerator.class, agentInstanceId)
       .runSingleTask(DebateTasks.DEBATE.instructions(request.topic()));

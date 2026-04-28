@@ -10,6 +10,7 @@ import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.http.AbstractHttpEndpoint;
 import demo.docreview.application.DocumentReviewer;
 import demo.docreview.application.ReviewResult;
 import demo.docreview.application.ReviewTasks;
@@ -17,7 +18,7 @@ import java.util.UUID;
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/docreview")
-public class DocReviewEndpoint {
+public class DocReviewEndpoint extends AbstractHttpEndpoint {
 
   public record CreateReview(String document, String reviewInstructions) {}
 
@@ -36,7 +37,9 @@ public class DocReviewEndpoint {
       .instructions(request.reviewInstructions())
       .attach(TextMessageContent.from(request.document()));
 
-    var agentInstanceId = UUID.randomUUID().toString();
+    var agentInstanceId = requestContext().queryParams().getString("runId")
+      .filter(s -> !s.isBlank())
+      .orElseGet(() -> UUID.randomUUID().toString());
     var taskId = componentClient
       .forAutonomousAgent(DocumentReviewer.class, agentInstanceId)
       .runSingleTask(task);

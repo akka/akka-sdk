@@ -9,6 +9,7 @@ import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.http.AbstractHttpEndpoint;
 import demo.pipeline.application.PipelineTasks;
 import demo.pipeline.application.ReportAgent;
 import demo.pipeline.application.ReportResult;
@@ -16,7 +17,7 @@ import java.util.UUID;
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/pipeline")
-public class PipelineEndpoint {
+public class PipelineEndpoint extends AbstractHttpEndpoint {
 
   public record CreatePipeline(String topic) {}
 
@@ -62,8 +63,11 @@ public class PipelineEndpoint {
         )
       );
 
-    // Assign all tasks to a single agent instance
-    var agentInstanceId = UUID.randomUUID().toString();
+    // Assign all tasks to a single agent instance — accept an optional pre-generated runId so the
+    // UI can subscribe to the notification stream before the agent activates.
+    var agentInstanceId = requestContext().queryParams().getString("runId")
+      .filter(s -> !s.isBlank())
+      .orElseGet(() -> UUID.randomUUID().toString());
     componentClient
       .forAutonomousAgent(ReportAgent.class, agentInstanceId)
       .assignTasks(collectTaskId, analyzeTaskId, reportTaskId);

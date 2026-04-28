@@ -5,6 +5,7 @@ import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.http.AbstractHttpEndpoint;
 import demo.publishing.application.ApprovalDecision;
 import demo.publishing.application.ContentAgent;
 import demo.publishing.application.PublishingAgent;
@@ -15,7 +16,7 @@ import org.slf4j.LoggerFactory;
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/publishing")
-public class PublishingEndpoint {
+public class PublishingEndpoint extends AbstractHttpEndpoint {
 
   public record PublishRequest(String topic) {}
 
@@ -48,8 +49,11 @@ public class PublishingEndpoint {
    */
   @Post
   public PublishingPipeline request(PublishRequest request) {
-    // 1. Create draft task and assign to content agent
-    var contentAgentId = UUID.randomUUID().toString();
+    // 1. Create draft task and assign to content agent. Accept an optional pre-generated runId
+    //    so the UI can subscribe to the notification stream before the agent activates.
+    var contentAgentId = requestContext().queryParams().getString("runId")
+      .filter(s -> !s.isBlank())
+      .orElseGet(() -> UUID.randomUUID().toString());
     var draftTaskId = componentClient
       .forAutonomousAgent(ContentAgent.class, contentAgentId)
       .runSingleTask(

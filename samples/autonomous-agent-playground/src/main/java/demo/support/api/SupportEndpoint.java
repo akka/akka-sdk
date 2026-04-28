@@ -5,13 +5,14 @@ import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.http.AbstractHttpEndpoint;
 import demo.support.application.SupportTasks;
 import demo.support.application.TriageAgent;
 import java.util.UUID;
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/support")
-public class SupportEndpoint {
+public class SupportEndpoint extends AbstractHttpEndpoint {
 
   public record SupportRequest(String issue) {}
 
@@ -27,7 +28,9 @@ public class SupportEndpoint {
 
   @Post
   public SupportResponse create(SupportRequest request) {
-    var agentInstanceId = UUID.randomUUID().toString();
+    var agentInstanceId = requestContext().queryParams().getString("runId")
+      .filter(s -> !s.isBlank())
+      .orElseGet(() -> UUID.randomUUID().toString());
     var taskId = componentClient
       .forAutonomousAgent(TriageAgent.class, agentInstanceId)
       .runSingleTask(SupportTasks.RESOLVE.instructions(request.issue()));

@@ -6,6 +6,7 @@ import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.http.AbstractHttpEndpoint;
 import demo.dynamic.application.DynamicAgent;
 import demo.dynamic.application.DynamicTasks;
 import java.util.UUID;
@@ -16,7 +17,7 @@ import java.util.UUID;
  */
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/dynamic")
-public class DynamicEndpoint {
+public class DynamicEndpoint extends AbstractHttpEndpoint {
 
   public record TaskRequest(String content) {}
 
@@ -30,7 +31,9 @@ public class DynamicEndpoint {
 
   @Post("/summarize")
   public TaskResponse summarize(TaskRequest request) {
-    var agentId = UUID.randomUUID().toString();
+    var agentId = requestContext().queryParams().getString("runId")
+      .filter(s -> !s.isBlank())
+      .orElseGet(() -> UUID.randomUUID().toString());
     var agent = componentClient.forAutonomousAgent(DynamicAgent.class, agentId);
 
     agent.setup(
@@ -45,7 +48,9 @@ public class DynamicEndpoint {
 
   @Post("/translate")
   public TaskResponse translate(TaskRequest request) {
-    var agentId = UUID.randomUUID().toString();
+    var agentId = requestContext().queryParams().getString("runId")
+      .filter(s -> !s.isBlank())
+      .orElseGet(() -> UUID.randomUUID().toString());
     var agent = componentClient.forAutonomousAgent(DynamicAgent.class, agentId);
 
     agent.setup(
