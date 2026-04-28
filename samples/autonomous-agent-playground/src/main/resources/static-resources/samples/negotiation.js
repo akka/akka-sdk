@@ -1,4 +1,4 @@
-import { el, renderFields, postJson } from '/playground/static/samples/_helpers.js';
+import { el, renderFields, renderMarkdown, postJson } from '/playground/static/samples/_helpers.js';
 
 export const negotiation = {
   id: 'negotiation',
@@ -26,10 +26,9 @@ export const negotiation = {
   renderResult(result) {
     return el('div', { className: 'result' }, [
       el('h3', {}, result?.topic ?? 'Negotiation'),
-      renderFields([
-        ['Outcome', result?.outcome],
-        ['Final offer', result?.finalOffer],
-      ]),
+      renderFields([['Final offer', result?.finalOffer]]),
+      el('h4', {}, 'Outcome'),
+      renderMarkdown(result?.outcome ?? ''),
     ]);
   },
 };

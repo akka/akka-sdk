@@ -63,3 +63,39 @@ export function renderList(items) {
   for (const item of items || []) ul.appendChild(el('li', {}, String(item)));
   return ul;
 }
+
+/**
+ * Render a string of (potentially) Markdown as an HTMLElement. LLM-generated content typically
+ * arrives with `#` headings, `*` lists, fenced code blocks, etc. — rendering it as plain text
+ * leaves the markup visible. Uses the {@code marked} library loaded from CDN in index.html.
+ * Falls back to a plain {@code <pre>} block if {@code marked} isn't available (e.g. CDN
+ * blocked or offline).
+ */
+export function renderMarkdown(text) {
+  const wrap = document.createElement('div');
+  wrap.className = 'markdown';
+  if (text == null || text === '') return wrap;
+  if (window.marked && typeof window.marked.parse === 'function') {
+    wrap.innerHTML = window.marked.parse(String(text));
+  } else {
+    const pre = document.createElement('pre');
+    pre.textContent = String(text);
+    wrap.appendChild(pre);
+  }
+  return wrap;
+}
+
+/**
+ * For lists of bullet-phrase strings (e.g. keyFindings). Renders each item with
+ * {@link renderMarkdown} so inline formatting (bold, code, links) works inside the bullets,
+ * while the bullets themselves are normal {@code <ul><li>…</li></ul>} markup.
+ */
+export function renderMarkdownList(items) {
+  const ul = el('ul', { className: 'markdown-list' });
+  for (const item of items || []) {
+    const li = el('li');
+    li.appendChild(renderMarkdown(item));
+    ul.appendChild(li);
+  }
+  return ul;
+}

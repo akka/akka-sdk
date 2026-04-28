@@ -1,4 +1,4 @@
-import { el, renderFields, postJson, getJson } from '/playground/static/samples/_helpers.js';
+import { el, renderFields, renderMarkdown, postJson, getJson } from '/playground/static/samples/_helpers.js';
 
 export const publishing = {
   id: 'publishing',
@@ -66,13 +66,16 @@ export const publishing = {
     wrap.appendChild(el('h3', {}, 'Awaiting your approval'));
     wrap.appendChild(draftBlock);
 
-    // Fetch and render the draft body inline (FR-013 artifact display).
+    // Fetch and render the draft body inline (FR-013 artifact display). The body is almost
+    // always Markdown — render it as HTML so the operator can read it as intended.
     getJson(`/publishing/draft/${runCache.extras.draftTaskId}`).then((d) => {
       const draft = d?.result;
       if (!draft) return;
       draftBlock.innerHTML = '';
       draftBlock.appendChild(el('h4', {}, draft.title ?? 'Draft'));
-      draftBlock.appendChild(el('div', { className: 'draft-body' }, [el('pre', {}, draft.body ?? draft.content ?? '')]));
+      const bodyWrap = el('div', { className: 'draft-body' });
+      bodyWrap.appendChild(renderMarkdown(draft.body ?? draft.content ?? ''));
+      draftBlock.appendChild(bodyWrap);
     }).catch(() => {});
 
     const buttons = el('div', { className: 'action-buttons' });

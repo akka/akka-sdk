@@ -1,4 +1,4 @@
-import { el, renderFields, postJson } from '/playground/static/samples/_helpers.js';
+import { el, renderFields, renderMarkdown, postJson } from '/playground/static/samples/_helpers.js';
 
 export const support = {
   id: 'support',
@@ -28,9 +28,10 @@ export const support = {
       el('h3', {}, 'Resolution'),
       renderFields([
         ['Category', result?.category],
-        ['Resolution', result?.resolution],
         ['Resolved', String(result?.resolved ?? '')],
       ]),
+      el('h4', {}, 'Details'),
+      renderMarkdown(result?.resolution ?? ''),
     ]);
   },
 };

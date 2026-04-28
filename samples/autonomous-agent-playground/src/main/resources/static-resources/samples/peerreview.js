@@ -1,4 +1,4 @@
-import { el, renderFields, renderList, postJson } from '/playground/static/samples/_helpers.js';
+import { el, renderMarkdown, renderMarkdownList, postJson } from '/playground/static/samples/_helpers.js';
 
 export const peerreview = {
   id: 'peerreview',
@@ -27,9 +27,10 @@ export const peerreview = {
   renderResult(result) {
     return el('div', { className: 'result' }, [
       el('h3', {}, 'Review'),
-      renderFields([['Assessment', result?.assessment]]),
+      el('h4', {}, 'Assessment'),
+      renderMarkdown(result?.assessment ?? ''),
       el('h4', {}, 'Reviewer findings'),
-      renderList(result?.reviewerFindings || []),
+      renderMarkdownList(result?.reviewerFindings || []),
     ]);
   },
 };

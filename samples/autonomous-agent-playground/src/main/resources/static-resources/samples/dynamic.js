@@ -1,4 +1,4 @@
-import { el, postJson } from '/playground/static/samples/_helpers.js';
+import { el, renderMarkdown, postJson } from '/playground/static/samples/_helpers.js';
 
 export const dynamic = {
   id: 'dynamic',
@@ -35,7 +35,7 @@ export const dynamic = {
   renderResult(result) {
     return el('div', { className: 'result' }, [
       el('h3', {}, 'Output'),
-      el('pre', {}, String(result ?? '')),
+      renderMarkdown(String(result ?? '')),
     ]);
   },
 };

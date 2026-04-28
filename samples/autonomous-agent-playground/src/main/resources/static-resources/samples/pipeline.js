@@ -1,4 +1,4 @@
-import { el, renderFields, postJson } from '/playground/static/samples/_helpers.js';
+import { el, renderMarkdown, postJson } from '/playground/static/samples/_helpers.js';
 
 export const pipeline = {
   id: 'pipeline',
@@ -36,7 +36,7 @@ export const pipeline = {
   renderResult(result) {
     return el('div', { className: 'result' }, [
       el('h3', {}, `Phase: ${result.phase ?? ''}`),
-      renderFields([['Content', result.content]]),
+      renderMarkdown(result?.content ?? ''),
     ]);
   },
 };

@@ -1,4 +1,4 @@
-import { el, renderFields, postJson } from '/playground/static/samples/_helpers.js';
+import { el, renderMarkdown, postJson } from '/playground/static/samples/_helpers.js';
 
 export const devteam = {
   id: 'devteam',
@@ -23,13 +23,19 @@ export const devteam = {
     return { runId: resp.runId, agentComponentId: resp.agentComponentId, taskId: resp.taskId };
   },
   renderResult(result) {
-    // ProjectResult is a record — render its fields generically. Inspect on first run for shape.
+    // ProjectResult is a record — render scalar fields as a fields block, long-form fields as
+    // markdown so multi-paragraph LLM output stays readable.
     if (typeof result === 'string') {
-      return el('div', { className: 'result' }, [el('h3', {}, 'Result'), el('pre', {}, result)]);
+      return el('div', { className: 'result' }, [el('h3', {}, 'Result'), renderMarkdown(result)]);
     }
     if (result && typeof result === 'object') {
-      const pairs = Object.entries(result).map(([k, v]) => [k, typeof v === 'string' ? v : JSON.stringify(v)]);
-      return el('div', { className: 'result' }, [el('h3', {}, 'Project result'), renderFields(pairs)]);
+      const wrap = el('div', { className: 'result' }, [el('h3', {}, 'Project result')]);
+      for (const [k, v] of Object.entries(result)) {
+        const valueStr = typeof v === 'string' ? v : JSON.stringify(v, null, 2);
+        wrap.appendChild(el('h4', {}, k));
+        wrap.appendChild(renderMarkdown(valueStr));
+      }
+      return wrap;
     }
     return el('div', { className: 'result' }, [el('p', {}, 'No result.')]);
   },

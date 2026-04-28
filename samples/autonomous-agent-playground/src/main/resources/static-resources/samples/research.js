@@ -1,4 +1,4 @@
-import { el, renderFields, renderList, postJson } from '/playground/static/samples/_helpers.js';
+import { el, renderMarkdown, renderMarkdownList, postJson } from '/playground/static/samples/_helpers.js';
 
 export const research = {
   id: 'research',
@@ -30,9 +30,10 @@ export const research = {
   renderResult(result) {
     return el('div', { className: 'result' }, [
       el('h3', {}, result?.title ?? 'Research brief'),
-      renderFields([['Summary', result?.summary]]),
+      el('h4', {}, 'Summary'),
+      renderMarkdown(result?.summary ?? ''),
       el('h4', {}, 'Key findings'),
-      renderList(result?.keyFindings || []),
+      renderMarkdownList(result?.keyFindings || []),
     ]);
   },
 };
