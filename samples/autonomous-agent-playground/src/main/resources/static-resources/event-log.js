@@ -103,6 +103,14 @@ function summaryFor(envelope) {
   }
 }
 
+// Format a Date as 24-hour HH:mm:ss in the local timezone (locale-independent — avoids AM/PM).
+function formatHms(d) {
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  return `${hh}:${mm}:${ss}`;
+}
+
 const TIER_LABEL = {
   healthy: 'OK',
   struggle: 'Struggle',
@@ -120,7 +128,7 @@ export function renderEventRow(envelope, agentDisplay) {
   if (componentId) agentDisplay.observe(componentId, instanceId);
   const label = agentDisplay.labelFor(componentId, instanceId);
 
-  const time = new Date(envelope.timestamp).toLocaleTimeString();
+  const time = formatHms(new Date(envelope.timestamp));
   const tier = envelope.tier ?? 'healthy';
 
   const row = el('li', {
@@ -164,20 +172,14 @@ export function renderEventRow(envelope, agentDisplay) {
 export function connectEventStream(runId, agentComponentId, callbacks) {
   const url = `/playground/api/runs/${encodeURIComponent(runId)}/events?component=${encodeURIComponent(agentComponentId)}`;
   const es = new EventSource(url);
-  es.addEventListener('notification', (e) => {
-    try {
-      const envelope = JSON.parse(e.data);
-      callbacks.onEnvelope?.(envelope);
-    } catch (err) {
-      // ignore malformed frame
-    }
-  });
-  // Some SDK paths may emit unnamed messages too; handle the default.
   es.onmessage = (e) => {
     try {
       const envelope = JSON.parse(e.data);
       callbacks.onEnvelope?.(envelope);
-    } catch (err) {}
+    } catch (err) {
+      // Parse failures indicate a real problem on the wire; surface to the console.
+      console.warn('[playground] SSE parse failed', err, e.data);
+    }
   };
   es.onopen = () => callbacks.onOpen?.();
   es.onerror = () => callbacks.onError?.();

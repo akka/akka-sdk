@@ -13,11 +13,13 @@ export const devteam = {
     flow: 'The ProjectLead receives a PLAN task and decomposes it into developer tasks on a shared list. Developers autonomously claim and complete work, messaging peers for coordination on shared interfaces. The lead disbands the team when done.',
     demonstrates: 'Team capability with self-coordination. Shared task list where members autonomously claim and complete work. Peer messaging for coordination on shared dependencies.',
   },
+  agentComponentId: 'project-lead',
   inputForm: {
     fields: [{ name: 'description', label: 'Project description', type: 'textarea', rows: 6, placeholder: 'Build a CLI to convert CSV to JSON, with tests.' }],
   },
-  async submit({ description }) {
-    const resp = await postJson('/devteam', { description });
+  async submit({ description }, { runId } = {}) {
+    const url = runId ? `/devteam?runId=${encodeURIComponent(runId)}` : '/devteam';
+    const resp = await postJson(url, { description });
     return { runId: resp.runId, agentComponentId: resp.agentComponentId, taskId: resp.taskId };
   },
   renderResult(result) {

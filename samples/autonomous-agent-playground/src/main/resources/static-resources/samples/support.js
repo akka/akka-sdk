@@ -14,11 +14,13 @@ export const support = {
     flow: 'The TriageAgent receives a RESOLVE task, analyzes the request, and hands off to the appropriate specialist. The specialist takes ownership of the same RESOLVE task, resolves the issue, and completes it.',
     demonstrates: 'Handoff capability (canHandoffTo). Sequential/relay pattern where control transfers between agents. All agents share the same task type — the task moves between agents.',
   },
+  agentComponentId: 'triage-agent',
   inputForm: {
     fields: [{ name: 'issue', label: 'Issue', type: 'textarea', rows: 6, placeholder: 'My invoice for last month is wrong.' }],
   },
-  async submit({ issue }) {
-    const resp = await postJson('/support', { issue });
+  async submit({ issue }, { runId } = {}) {
+    const url = runId ? `/support?runId=${encodeURIComponent(runId)}` : '/support';
+    const resp = await postJson(url, { issue });
     return { runId: resp.runId, agentComponentId: resp.agentComponentId, taskId: resp.id };
   },
   renderResult(result) {

@@ -17,11 +17,13 @@ export const consulting = {
     flow: 'The coordinator assesses complexity. For standard problems, it delegates a RESEARCH task and synthesises a recommendation. For complex problems (regulatory, M&A), it hands off the entire engagement to the SeniorConsultant.',
     demonstrates: 'Composing delegation and handoff in a single agent. Delegation creates a child task; handoff transfers ownership of the current task.',
   },
+  agentComponentId: 'consulting-coordinator',
   inputForm: {
     fields: [{ name: 'problem', label: 'Client problem', type: 'textarea', rows: 6, placeholder: 'We are considering an M&A; assess regulatory risk.' }],
   },
-  async submit({ problem }) {
-    const resp = await postJson('/consulting', { problem });
+  async submit({ problem }, { runId } = {}) {
+    const url = runId ? `/consulting?runId=${encodeURIComponent(runId)}` : '/consulting';
+    const resp = await postJson(url, { problem });
     return { runId: resp.runId, agentComponentId: resp.agentComponentId, taskId: resp.id };
   },
   renderResult(result) {

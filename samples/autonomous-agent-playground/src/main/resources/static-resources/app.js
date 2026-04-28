@@ -115,7 +115,7 @@ function renderDescription(d) {
   const agents = (d.agents || []).map((a) => `<li>${escapeHtml(a)}</li>`).join('');
   const tasks = (d.tasks || []).map((t) => `<li>${escapeHtml(t)}</li>`).join('');
   return `
-    <details class="sample-description" open>
+    <details class="sample-description">
       <summary><strong>About this sample</strong></summary>
       <p>${escapeHtml(d.overview ?? '')}</p>
       ${agents ? `<h4>Agents</h4><ul>${agents}</ul>` : ''}
@@ -145,29 +145,23 @@ function renderInputForm(descriptor, container) {
 
   container.innerHTML = `<form class="run-form">${fieldsHtml}<button type="submit">Run</button></form>`;
   const form = container.querySelector('form');
-  form.addEventListener('submit', async (e) => {
+  form.addEventListener('submit', (e) => {
     e.preventDefault();
-    const submitButton = form.querySelector('button');
-    submitButton.disabled = true;
-    submitButton.setAttribute('aria-busy', 'true');
     const data = Object.fromEntries(new FormData(form).entries());
-    try {
-      const submitted = await descriptor.submit(data);
-      cacheRun(submitted.runId, {
-        sampleId: descriptor.id,
-        agentComponentId: submitted.agentComponentId,
-        taskId: submitted.taskId,
-        extras: submitted.extras ?? {},
-      });
-      navigate(`/playground/${descriptor.id}/run/${submitted.runId}`);
-    } catch (err) {
-      submitButton.disabled = false;
-      submitButton.removeAttribute('aria-busy');
-      const error = document.createElement('p');
-      error.setAttribute('role', 'alert');
-      error.textContent = `Submission failed: ${err.message ?? err}`;
-      form.appendChild(error);
-    }
+    // Pre-generate the runId client-side so the SSE stream can subscribe before the agent
+    // activates (otherwise early lifecycle events are lost — notificationStream is live-only).
+    const runId = crypto.randomUUID
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+    // Cache a placeholder; the run view will fill in taskId once submit returns.
+    cacheRun(runId, {
+      sampleId: descriptor.id,
+      agentComponentId: descriptor.agentComponentId,
+      taskId: null,
+      extras: {},
+      pendingValues: data,
+    });
+    navigate(`/playground/${descriptor.id}/run/${runId}`);
   });
 }
 
@@ -313,6 +307,7 @@ function renderRunView(descriptor, runId, runCache) {
 
   // Backstop status fetch — covers the run-state for terminal outcomes regardless of SSE health.
   async function refreshStatus() {
+    if (!runCache.taskId) return; // submit hasn't returned yet
     const url = `/playground/api/runs/${encodeURIComponent(runId)}/status?component=${encodeURIComponent(runCache.agentComponentId)}&task=${encodeURIComponent(runCache.taskId)}&sample=${encodeURIComponent(descriptor.id)}`;
     const resp = await fetch(url);
     if (resp.status === 404) {
@@ -344,11 +339,29 @@ function renderRunView(descriptor, runId, runCache) {
 
   // Connect SSE.
   setConnection('connecting');
+  let pendingSubmitDone = !runCache.pendingValues; // true means status already exists
   const closeStream = connectEventStream(runId, runCache.agentComponentId, {
-    onOpen: () => {
+    onOpen: async () => {
       setConnection('connected');
-      // On any (re)connect, re-fetch status so terminal outcomes can't be missed (FR-009a).
-      refreshStatus().catch(() => {});
+      // First open: if a pending submit was queued by the form, fire the actual POST now —
+      // SSE is live so we won't lose the early lifecycle events (FR-009 timing).
+      if (!pendingSubmitDone && runCache.pendingValues) {
+        pendingSubmitDone = true;
+        try {
+          const submitted = await descriptor.submit(runCache.pendingValues, { runId });
+          runCache.taskId = submitted.taskId;
+          runCache.extras = submitted.extras ?? runCache.extras;
+          runCache.pendingValues = null;
+          cacheRun(runId, runCache);
+          refreshStatus().catch(() => {});
+        } catch (err) {
+          failureBlock.hidden = false;
+          failureBlock.innerHTML = `<h3>Submission failed</h3><p>${escapeHtml(err?.message ?? String(err))}</p>`;
+        }
+      } else if (runCache.taskId) {
+        // Reconnect on an existing run — recover any terminal outcome we may have missed.
+        refreshStatus().catch(() => {});
+      }
     },
     onError: () => setConnection('reconnecting'),
     onEnvelope: (envelope) => {
@@ -367,9 +380,11 @@ function renderRunView(descriptor, runId, runCache) {
     },
   });
 
-  // Initial status fetch + start backstop.
-  refreshStatus().catch(() => {});
-  startStatusBackstop();
+  // If the run is already submitted (e.g. user opens a shared run URL), fetch status now.
+  if (runCache.taskId) {
+    refreshStatus().catch(() => {});
+    startStatusBackstop();
+  }
 
   function cancel() {
     closeStream();

@@ -14,11 +14,13 @@ export const negotiation = {
     flow: 'The Facilitator runs up to 10 moderated rounds of offers and counteroffers. Each party reads prior offers and responds. The Facilitator stops when terms converge or the round limit hits.',
     demonstrates: 'Moderation capability with two adversarial participants. Same structural pattern as debate, applied to converging negotiation.',
   },
+  agentComponentId: 'facilitator',
   inputForm: {
     fields: [{ name: 'topic', label: 'Negotiation topic', type: 'text', placeholder: 'Acquiring a 5-year-old SaaS startup at $20M' }],
   },
-  async submit({ topic }) {
-    const resp = await postJson('/negotiation', { topic });
+  async submit({ topic }, { runId } = {}) {
+    const url = runId ? `/negotiation?runId=${encodeURIComponent(runId)}` : '/negotiation';
+    const resp = await postJson(url, { topic });
     return { runId: resp.runId, agentComponentId: resp.agentComponentId, taskId: resp.taskId };
   },
   renderResult(result) {

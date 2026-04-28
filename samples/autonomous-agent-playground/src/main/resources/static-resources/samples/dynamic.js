@@ -10,6 +10,7 @@ export const dynamic = {
     flow: 'Two HTTP routes (/dynamic/summarize, /dynamic/translate) each create a fresh DynamicAgent instance, configure its goal and accepted capability dynamically, then assign a single task. Same agent class, two different runtime specialisations.',
     demonstrates: 'Runtime agent configuration via AgentSetup. Useful when many task variants share the same execution shape and the differences are best expressed as data.',
   },
+  agentComponentId: 'dynamic-agent',
   inputForm: {
     fields: [
       {
@@ -24,8 +25,11 @@ export const dynamic = {
       { name: 'content', label: 'Content', type: 'textarea', rows: 10, placeholder: 'Paste content to process…' },
     ],
   },
-  async submit({ mode, content }) {
-    const resp = await postJson(`/dynamic/${mode}`, { content });
+  async submit({ mode, content }, { runId } = {}) {
+    const url = runId
+      ? `/dynamic/${mode}?runId=${encodeURIComponent(runId)}`
+      : `/dynamic/${mode}`;
+    const resp = await postJson(url, { content });
     return { runId: resp.runId, agentComponentId: resp.agentComponentId, taskId: resp.taskId };
   },
   renderResult(result) {

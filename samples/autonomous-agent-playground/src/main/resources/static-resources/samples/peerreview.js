@@ -15,11 +15,13 @@ export const peerreview = {
     flow: 'The ReviewModerator coordinates the three specialists, gathers their findings, and synthesises an overall assessment with per-reviewer findings called out.',
     demonstrates: 'Moderation capability with a heterogeneous panel of three specialists. Compares against research\'s delegation pattern: in delegation the coordinator decides what each specialist gets; here the moderator drives the protocol.',
   },
+  agentComponentId: 'review-moderator',
   inputForm: {
     fields: [{ name: 'document', label: 'Document', type: 'textarea', rows: 10, placeholder: 'Paste the document to review…' }],
   },
-  async submit({ document }) {
-    const resp = await postJson('/peerreview', { document });
+  async submit({ document }, { runId } = {}) {
+    const url = runId ? `/peerreview?runId=${encodeURIComponent(runId)}` : '/peerreview';
+    const resp = await postJson(url, { document });
     return { runId: resp.runId, agentComponentId: resp.agentComponentId, taskId: resp.taskId };
   },
   renderResult(result) {

@@ -14,11 +14,13 @@ export const debate = {
     flow: 'The moderator runs up to 5 moderated rounds, alternating turns between Advocate and Critic. Once rounds complete, the moderator synthesises the topic and key arguments raised by each side.',
     demonstrates: 'Moderation capability — a moderator agent shepherds a fixed pool of participants through structured rounds. Distinct from team self-coordination and from delegation.',
   },
+  agentComponentId: 'debate-moderator',
   inputForm: {
     fields: [{ name: 'topic', label: 'Debate topic', type: 'text', placeholder: 'Is microservices architecture obsolete?' }],
   },
-  async submit({ topic }) {
-    const resp = await postJson('/debate', { topic });
+  async submit({ topic }, { runId } = {}) {
+    const url = runId ? `/debate?runId=${encodeURIComponent(runId)}` : '/debate';
+    const resp = await postJson(url, { topic });
     return { runId: resp.runId, agentComponentId: resp.agentComponentId, taskId: resp.taskId };
   },
   renderResult(result) {

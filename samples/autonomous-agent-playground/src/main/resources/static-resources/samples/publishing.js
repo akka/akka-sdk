@@ -17,11 +17,13 @@ export const publishing = {
     flow: 'POST creates all three tasks up front. Once DRAFT is ready, you read it inline and either approve or reject. Approval drives PUBLISH; rejection cancels the chain.',
     demonstrates: 'Task dependencies as orchestration. Human-in-the-loop gating without a coordinator agent. Unassigned tasks completed via HTTP.',
   },
+  agentComponentId: 'content-agent',
   inputForm: {
     fields: [{ name: 'topic', label: 'Topic', type: 'text', placeholder: 'The future of edge AI' }],
   },
-  async submit({ topic }) {
-    const resp = await postJson('/publishing', { topic });
+  async submit({ topic }, { runId } = {}) {
+    const url = runId ? `/publishing?runId=${encodeURIComponent(runId)}` : '/publishing';
+    const resp = await postJson(url, { topic });
     return {
       runId: resp.runId,
       agentComponentId: resp.agentComponentId,
