@@ -9,10 +9,12 @@ import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.delega
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.handoffTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import akka.javasdk.agent.autonomous.Notification;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import akkajavasdk.components.agent.SomeAgent;
+import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
@@ -74,10 +76,18 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
                 new TestTasks.ResearchResult(
                     "Quantum Computing Summary", "Qubits enable parallel computation.")));
 
+    var coordinatorId = UUID.randomUUID().toString();
+    var coordinatorClient =
+        componentClient.forAutonomousAgent(CoordinatorAgent.class, coordinatorId);
+
+    var coordinatorNotifications = new ArrayList<Notification>();
+    coordinatorClient
+        .notificationStream()
+        .runForeach(coordinatorNotifications::add, testKit.getMaterializer());
+
     var taskId =
-        componentClient
-            .forAutonomousAgent(CoordinatorAgent.class, UUID.randomUUID().toString())
-            .runSingleTask(TestTasks.RESEARCH.instructions("Research quantum computing"));
+        coordinatorClient.runSingleTask(
+            TestTasks.RESEARCH.instructions("Research quantum computing"));
 
     Awaitility.await()
         .ignoreExceptions()
@@ -89,6 +99,32 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
               assertThat(snapshot.result().title()).isEqualTo("Quantum Computing Summary");
               assertThat(snapshot.result().summary()).contains("parallel computation");
             });
+
+    Awaitility.await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var delegationStarted =
+                  coordinatorNotifications.stream()
+                      .filter(n -> n instanceof Notification.DelegationStarted)
+                      .map(n -> (Notification.DelegationStarted) n)
+                      .findFirst()
+                      .orElseThrow();
+              assertThat(delegationStarted.delegationCount()).isEqualTo(1);
+              assertThat(delegationStarted.workerComponentIds()).containsExactly("worker-agent");
+              assertThat(delegationStarted.subtaskIds()).hasSize(1);
+
+              var delegationResolved =
+                  coordinatorNotifications.stream()
+                      .filter(n -> n instanceof Notification.DelegationResolved)
+                      .map(n -> (Notification.DelegationResolved) n)
+                      .findFirst()
+                      .orElseThrow();
+              assertThat(delegationResolved.succeeded()).isEqualTo(1);
+              assertThat(delegationResolved.failed()).isZero();
+              assertThat(delegationResolved.succeededSubtaskIds())
+                  .containsExactlyElementsOf(delegationStarted.subtaskIds());
+            });
   }
 
   @Test
@@ -99,10 +135,15 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
     specialistModel.fixedResponse(
         completeTask(new TestTasks.SupportResolution("billing", "Refund issued.", true)));
 
-    var taskId =
-        componentClient
-            .forAutonomousAgent(TriageTestAgent.class, UUID.randomUUID().toString())
-            .runSingleTask(TestTasks.RESOLVE.instructions("I was charged twice."));
+    var triageId = UUID.randomUUID().toString();
+    var triageClient = componentClient.forAutonomousAgent(TriageTestAgent.class, triageId);
+
+    var triageNotifications = new ArrayList<Notification>();
+    triageClient
+        .notificationStream()
+        .runForeach(triageNotifications::add, testKit.getMaterializer());
+
+    var taskId = triageClient.runSingleTask(TestTasks.RESOLVE.instructions("I was charged twice."));
 
     Awaitility.await()
         .ignoreExceptions()
@@ -113,6 +154,21 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
               assertThat(snapshot.result()).isNotNull();
               assertThat(snapshot.result().category()).isEqualTo("billing");
               assertThat(snapshot.result().resolved()).isTrue();
+            });
+
+    Awaitility.await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var handoffStarted =
+                  triageNotifications.stream()
+                      .filter(n -> n instanceof Notification.HandoffStarted)
+                      .map(n -> (Notification.HandoffStarted) n)
+                      .findFirst()
+                      .orElseThrow();
+              assertThat(handoffStarted.taskId()).isEqualTo(taskId);
+              assertThat(handoffStarted.targetComponentId()).isEqualTo("specialist-agent");
+              assertThat(handoffStarted.targetInstanceId()).isNotBlank();
             });
   }
 
