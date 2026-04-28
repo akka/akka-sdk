@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory
 @InternalApi
 private[akka] object GrpcClientProviderImpl {
   final case class AuthHeaders(headerName: String, headerValue: String)
-  private final case class ClientKey(clientClass: Class[_], serviceName: String)
+  final case class ClientKey(clientClass: Class[_], serviceName: String)
 
   private def isAkkaService(serviceName: String): Boolean = !(serviceName.contains('.') || serviceName.contains(':'))
 
@@ -91,7 +91,9 @@ private[akka] final class GrpcClientProviderImpl(
     system: ActorSystem[_],
     settings: Settings,
     userServiceConfig: Config,
-    remoteIdentificationHeader: Option[AuthHeaders])
+    remoteIdentificationHeader: Option[AuthHeaders],
+    // Only populated by the testkit; production and dev-mode runners use the default no-op lookup.
+    grpcMockLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient] = _ => None)
     extends GrpcClientProvider {
   import GrpcClientProviderImpl._
   import system.executionContext
@@ -109,18 +111,22 @@ private[akka] final class GrpcClientProviderImpl(
 
   override def grpcClientFor[T <: AkkaGrpcClient](serviceClass: Class[T], serviceName: String): T = {
     val clientKey = ClientKey(serviceClass, serviceName)
-    clients
-      .computeIfAbsent(
-        clientKey,
-        { _ =>
-          val client = createNewClientFor(serviceClass, serviceName)
-          client.closed().asScala.foreach { _ =>
-            // user should not close client, but just to be sure we don't keep it around if they do
-            clients.remove(clientKey, client)
-          }
-          client
-        })
-      .asInstanceOf[T]
+    grpcMockLookup(clientKey) match {
+      case Some(mock) => mock.asInstanceOf[T]
+      case None =>
+        clients
+          .computeIfAbsent(
+            clientKey,
+            { _ =>
+              val client = createNewClientFor(serviceClass, serviceName)
+              client.closed().asScala.foreach { _ =>
+                // user should not close client, but just to be sure we don't keep it around if they do
+                clients.remove(clientKey, client)
+              }
+              client
+            })
+          .asInstanceOf[T]
+    }
   }
 
   private[akka] def createNewClientFor[T <: AkkaGrpcClient](clientClass: Class[T], serviceName: String): T = {
@@ -260,10 +266,14 @@ private[akka] final class GrpcClientProviderImpl(
     else
       new GrpcClientProvider {
         override def grpcClientFor[T <: AkkaGrpcClient](serviceClass: Class[T], serviceName: String): T = {
-          otelTraceHeaders.foldLeft(GrpcClientProviderImpl.this.grpcClientFor(serviceClass, serviceName)) {
-            case (client, (key, value)) =>
-              client.addRequestHeader(key, value).asInstanceOf[T]
-          }
+          val client = GrpcClientProviderImpl.this.grpcClientFor(serviceClass, serviceName)
+          // Skip header propagation for mocked clients — user-provided mock subclasses don't
+          // typically implement addRequestHeader and would throw or return a non-mock instance.
+          if (grpcMockLookup(ClientKey(serviceClass, serviceName)).isDefined) client
+          else
+            otelTraceHeaders.foldLeft(client) { case (acc, (key, value)) =>
+              acc.addRequestHeader(key, value).asInstanceOf[T]
+            }
         }
       }
   }
