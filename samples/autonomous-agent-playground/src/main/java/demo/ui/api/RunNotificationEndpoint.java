@@ -11,6 +11,8 @@ import akka.javasdk.http.AbstractHttpEndpoint;
 import akka.javasdk.http.HttpResponses;
 import akka.stream.javadsl.Source;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -28,6 +30,8 @@ public class RunNotificationEndpoint extends AbstractHttpEndpoint {
    * differentiation in the UI (healthy / struggle / terminal_failure). {@code category} groups by
    * notification family. {@code kind} is the simple class name. {@code raw} is the SDK record
    * itself, JSON-serialised by Jackson — clients only read fields they recognise.
+   * {@code agentComponentId} / {@code agentInstanceId} identify the agent whose stream emitted
+   * this event — set by the merger so child-agent events can be attributed correctly in the UI.
    */
   public record EventEnvelope(
     long eventId,
@@ -40,7 +44,9 @@ public class RunNotificationEndpoint extends AbstractHttpEndpoint {
      * (e.g. {@code Activated}) have no fields and would trip Jackson's
      * {@code FAIL_ON_EMPTY_BEANS}; for those we emit an empty map instead.
      */
-    Object raw
+    Object raw,
+    String agentComponentId,
+    String agentInstanceId
   ) {}
 
   private final ComponentClient componentClient;
@@ -48,6 +54,18 @@ public class RunNotificationEndpoint extends AbstractHttpEndpoint {
   public RunNotificationEndpoint(ComponentClient componentClient) {
     this.componentClient = componentClient;
   }
+
+  /** Maximum number of concurrent inner sources flatMapMerge will run. Must be > the deepest
+   *  fan-out we expect; for our samples that's well under a dozen. */
+  private static final int MERGE_PARALLELISM = 32;
+
+  /** A reference to a (potentially child) agent extracted from a parent's notification. */
+  private record AgentRef(String componentId, String instanceId) {}
+
+  /** A notification carried alongside the (componentId, instanceId) of the agent whose stream
+   *  emitted it. This is the merger's internal currency — the EventEnvelope wire shape is
+   *  produced from it at the very end. */
+  private record TaggedNotification(AgentRef emitter, Notification notification) {}
 
   @Get("/runs/{runId}/events")
   public HttpResponse events(String runId) {
@@ -61,23 +79,94 @@ public class RunNotificationEndpoint extends AbstractHttpEndpoint {
 
     var agentClass = AgentRegistry.classFor(component);
     var counter = new AtomicLong(0);
+    var rootAgent = new AgentRef(component, runId);
 
-    Source<Notification, NotUsed> source = componentClient
-      .forAutonomousAgent(agentClass, runId)
-      .notificationStream();
+    // Recursively splice in child agent streams: when an agent emits a spawn notification
+    // (DelegationStarted / TeamCreated / HandoffStarted / ConversationCreated) we extract the
+    // child component+instance ids and merge each child's notificationStream into the same
+    // outgoing stream. Each notification is tagged with the emitter's (componentId, instanceId)
+    // so the UI can attribute it correctly. The expansion is recursive — children's own spawn
+    // events also expand — so multi-level nesting is supported.
+    Source<TaggedNotification, NotUsed> mergedSource = taggedStream(rootAgent, agentClass)
+      .flatMapMerge(MERGE_PARALLELISM, this::expand);
 
-    Source<EventEnvelope, NotUsed> envelopes = source.map(n ->
+    Source<EventEnvelope, NotUsed> envelopes = mergedSource.map(t ->
       new EventEnvelope(
         counter.incrementAndGet(),
         Instant.now(),
-        tierFor(n),
-        categoryFor(n),
-        n.getClass().getSimpleName(),
-        rawFor(n)
+        tierFor(t.notification()),
+        categoryFor(t.notification()),
+        t.notification().getClass().getSimpleName(),
+        rawFor(t.notification()),
+        t.emitter().componentId(),
+        t.emitter().instanceId()
       )
     );
 
     return HttpResponses.serverSentEvents(envelopes, env -> String.valueOf(env.eventId()));
+  }
+
+  /** Subscribe to one agent's notificationStream and tag every emission with that agent's id. */
+  private Source<TaggedNotification, NotUsed> taggedStream(
+    AgentRef agent,
+    Class<? extends akka.javasdk.agent.autonomous.AutonomousAgent> clazz
+  ) {
+    return componentClient
+      .forAutonomousAgent(clazz, agent.instanceId())
+      .notificationStream()
+      .map(n -> new TaggedNotification(agent, n));
+  }
+
+  /**
+   * For a single tagged notification, return a Source that emits the notification itself plus
+   * any child-agent notifications discovered from it. Calls itself recursively on each child
+   * stream so deeply-nested coordination patterns are flattened into a single merged stream
+   * with correct emitter attribution preserved end to end.
+   */
+  private Source<TaggedNotification, NotUsed> expand(TaggedNotification tagged) {
+    var children = childAgentsOf(tagged.notification());
+    if (children.isEmpty()) return Source.single(tagged);
+
+    Source<TaggedNotification, NotUsed> childMerged = Source.from(children)
+      // Filter out unknown component ids (e.g. request-based Agents that have no
+      // notificationStream, or future child agents not yet registered) — we just skip them.
+      .filter(c -> AgentRegistry.classForOrNull(c.componentId()) != null)
+      .flatMapMerge(MERGE_PARALLELISM, c -> {
+        var clazz = AgentRegistry.classForOrNull(c.componentId());
+        return taggedStream(c, clazz)
+          .flatMapMerge(MERGE_PARALLELISM, this::expand); // recurse for grandchildren
+      });
+
+    return Source.single(tagged).concat(childMerged);
+  }
+
+  /**
+   * Extract the (componentId, instanceId) pairs of child agents named in a spawn notification.
+   * Returns an empty list for notifications that aren't spawn events.
+   */
+  private static List<AgentRef> childAgentsOf(Notification n) {
+    if (n instanceof Notification.DelegationStarted ds) {
+      return zip(ds.workerComponentIds(), ds.workerInstanceIds());
+    }
+    if (n instanceof Notification.TeamCreated tc) {
+      return zip(tc.memberComponentIds(), tc.memberInstanceIds());
+    }
+    if (n instanceof Notification.HandoffStarted hs) {
+      return List.of(new AgentRef(hs.targetComponentId(), hs.targetInstanceId()));
+    }
+    if (n instanceof Notification.ConversationCreated cc) {
+      return zip(cc.participantComponentIds(), cc.participantInstanceIds());
+    }
+    return List.of();
+  }
+
+  private static List<AgentRef> zip(List<String> componentIds, List<String> instanceIds) {
+    var size = Math.min(componentIds.size(), instanceIds.size());
+    var refs = new ArrayList<AgentRef>(size);
+    for (int i = 0; i < size; i++) {
+      refs.add(new AgentRef(componentIds.get(i), instanceIds.get(i)));
+    }
+    return refs;
   }
 
   /**

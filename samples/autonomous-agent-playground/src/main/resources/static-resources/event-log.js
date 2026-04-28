@@ -33,33 +33,14 @@ export class AgentDisplay {
 }
 
 /**
- * Pulls the most useful agent identifying fields out of the raw notification payload. Different
- * Notification subtypes use different field names; this is best-effort.
+ * Returns the (componentId, instanceId) of the agent whose stream emitted this event. The
+ * server-side merger tags every envelope with its emitter, so this is now a direct read.
  */
 function extractAgent(envelope) {
-  const r = envelope.raw ?? {};
-  // Worker-side / member-side accessors in Notification — most relevant ids per subtype.
-  const componentId =
-    r.componentId ??
-    r.targetComponentId ??
-    r.sourceComponentId ??
-    r.workerComponentId ??
-    r.memberComponentId ??
-    r.leadComponentId ??
-    r.orchestratorComponentId ??
-    r.participantComponentId ??
-    null;
-  const instanceId =
-    r.instanceId ??
-    r.targetInstanceId ??
-    r.sourceInstanceId ??
-    r.workerInstanceId ??
-    r.memberInstanceId ??
-    r.leadInstanceId ??
-    r.orchestratorInstanceId ??
-    r.participantInstanceId ??
-    null;
-  return { componentId, instanceId };
+  return {
+    componentId: envelope.agentComponentId ?? null,
+    instanceId: envelope.agentInstanceId ?? null,
+  };
 }
 
 function summaryFor(envelope) {
