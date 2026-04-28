@@ -375,8 +375,14 @@ function renderRunView(descriptor, runId, runCache) {
     onError: () => setConnection('reconnecting'),
     onEnvelope: (envelope) => {
       lastEventReceivedAt = Date.now();
+      // Auto-scroll to follow new events, but only if the user is already at the bottom.
+      // If they've scrolled up to read older rows, don't yank them back.
+      const slack = 8; // pixels of tolerance
+      const wasAtBottom =
+        eventLog.scrollHeight - eventLog.scrollTop - eventLog.clientHeight <= slack;
       const row = renderEventRow(envelope, agentDisplay);
       eventLog.appendChild(row);
+      if (wasAtBottom) eventLog.scrollTop = eventLog.scrollHeight;
       summary.ingest(envelope);
 
       // Operator stop is observed only on the SSE stream (the SDK doesn't expose the stop
