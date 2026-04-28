@@ -6,6 +6,7 @@ import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.http.AbstractHttpEndpoint;
 import demo.dynamic.application.DynamicAgent;
 import demo.dynamic.application.DynamicTasks;
 import java.util.UUID;
@@ -16,11 +17,11 @@ import java.util.UUID;
  */
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/dynamic")
-public class DynamicEndpoint {
+public class DynamicEndpoint extends AbstractHttpEndpoint {
 
   public record TaskRequest(String content) {}
 
-  public record TaskResponse(String taskId) {}
+  public record TaskResponse(String taskId, String runId, String agentComponentId) {}
 
   private final ComponentClient componentClient;
 
@@ -30,7 +31,9 @@ public class DynamicEndpoint {
 
   @Post("/summarize")
   public TaskResponse summarize(TaskRequest request) {
-    var agentId = UUID.randomUUID().toString();
+    var agentId = requestContext().queryParams().getString("runId")
+      .filter(s -> !s.isBlank())
+      .orElseGet(() -> UUID.randomUUID().toString());
     var agent = componentClient.forAutonomousAgent(DynamicAgent.class, agentId);
 
     agent.setup(
@@ -40,12 +43,14 @@ public class DynamicEndpoint {
     );
 
     var taskId = agent.runSingleTask(DynamicTasks.SUMMARIZE.instructions(request.content()));
-    return new TaskResponse(taskId);
+    return new TaskResponse(taskId, agentId, "dynamic-agent");
   }
 
   @Post("/translate")
   public TaskResponse translate(TaskRequest request) {
-    var agentId = UUID.randomUUID().toString();
+    var agentId = requestContext().queryParams().getString("runId")
+      .filter(s -> !s.isBlank())
+      .orElseGet(() -> UUID.randomUUID().toString());
     var agent = componentClient.forAutonomousAgent(DynamicAgent.class, agentId);
 
     agent.setup(
@@ -55,6 +60,6 @@ public class DynamicEndpoint {
     );
 
     var taskId = agent.runSingleTask(DynamicTasks.TRANSLATE.instructions(request.content()));
-    return new TaskResponse(taskId);
+    return new TaskResponse(taskId, agentId, "dynamic-agent");
   }
 }

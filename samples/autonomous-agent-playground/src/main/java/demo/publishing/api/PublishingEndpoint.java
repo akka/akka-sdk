@@ -5,6 +5,7 @@ import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.http.AbstractHttpEndpoint;
 import demo.publishing.application.ApprovalDecision;
 import demo.publishing.application.ContentAgent;
 import demo.publishing.application.PublishingAgent;
@@ -15,14 +16,16 @@ import org.slf4j.LoggerFactory;
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/publishing")
-public class PublishingEndpoint {
+public class PublishingEndpoint extends AbstractHttpEndpoint {
 
   public record PublishRequest(String topic) {}
 
   public record PublishingPipeline(
     String draftTaskId,
     String approvalTaskId,
-    String publishTaskId
+    String publishTaskId,
+    String runId,
+    String agentComponentId
   ) {}
 
   public record ApproveRequest(String approvedBy, String comment) {}
@@ -46,9 +49,13 @@ public class PublishingEndpoint {
    */
   @Post
   public PublishingPipeline request(PublishRequest request) {
-    // 1. Create draft task and assign to content agent
+    // 1. Create draft task and assign to content agent. Accept an optional pre-generated runId
+    //    so the UI can subscribe to the notification stream before the agent activates.
+    var contentAgentId = requestContext().queryParams().getString("runId")
+      .filter(s -> !s.isBlank())
+      .orElseGet(() -> UUID.randomUUID().toString());
     var draftTaskId = componentClient
-      .forAutonomousAgent(ContentAgent.class, UUID.randomUUID().toString())
+      .forAutonomousAgent(ContentAgent.class, contentAgentId)
       .runSingleTask(
         PublishingTasks.DRAFT.instructions("Write a blog post about: " + request.topic())
       );
@@ -102,7 +109,13 @@ public class PublishingEndpoint {
         return null;
       });
 
-    return new PublishingPipeline(draftTaskId, approvalTaskId, publishTaskId);
+    return new PublishingPipeline(
+      draftTaskId,
+      approvalTaskId,
+      publishTaskId,
+      contentAgentId,
+      "content-agent"
+    );
   }
 
   /** Get the current status of the draft task, so a human can review before approving. */

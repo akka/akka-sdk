@@ -5,6 +5,7 @@ import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.http.AbstractHttpEndpoint;
 import demo.negotiation.application.Facilitator;
 import demo.negotiation.application.NegotiationTasks;
 import demo.negotiation.application.NegotiationTasks.NegotiationResult;
@@ -12,11 +13,11 @@ import java.util.UUID;
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/negotiation")
-public class NegotiationEndpoint {
+public class NegotiationEndpoint extends AbstractHttpEndpoint {
 
   public record NegotiationRequest(String topic) {}
 
-  public record NegotiationResponse(String taskId) {}
+  public record NegotiationResponse(String taskId, String runId, String agentComponentId) {}
 
   private final ComponentClient componentClient;
 
@@ -26,10 +27,13 @@ public class NegotiationEndpoint {
 
   @Post
   public NegotiationResponse create(NegotiationRequest request) {
+    var agentInstanceId = requestContext().queryParams().getString("runId")
+      .filter(s -> !s.isBlank())
+      .orElseGet(() -> UUID.randomUUID().toString());
     var taskId = componentClient
-      .forAutonomousAgent(Facilitator.class, UUID.randomUUID().toString())
+      .forAutonomousAgent(Facilitator.class, agentInstanceId)
       .runSingleTask(NegotiationTasks.NEGOTIATE.instructions(request.topic()));
-    return new NegotiationResponse(taskId);
+    return new NegotiationResponse(taskId, agentInstanceId, "facilitator");
   }
 
   @Get("/{taskId}")

@@ -5,6 +5,7 @@ import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.http.AbstractHttpEndpoint;
 import demo.research.application.ResearchBrief;
 import demo.research.application.ResearchCoordinator;
 import demo.research.application.ResearchTasks;
@@ -12,11 +13,11 @@ import java.util.UUID;
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/research")
-public class ResearchEndpoint {
+public class ResearchEndpoint extends AbstractHttpEndpoint {
 
   public record ResearchRequest(String topic) {}
 
-  public record ResearchResponse(String id) {}
+  public record ResearchResponse(String id, String runId, String agentComponentId) {}
 
   public record ResearchStatus(String status, ResearchBrief result) {}
 
@@ -28,10 +29,13 @@ public class ResearchEndpoint {
 
   @Post
   public ResearchResponse create(ResearchRequest request) {
+    var agentInstanceId = requestContext().queryParams().getString("runId")
+      .filter(s -> !s.isBlank())
+      .orElseGet(() -> UUID.randomUUID().toString());
     var taskId = componentClient
-      .forAutonomousAgent(ResearchCoordinator.class, UUID.randomUUID().toString())
+      .forAutonomousAgent(ResearchCoordinator.class, agentInstanceId)
       .runSingleTask(ResearchTasks.BRIEF.instructions(request.topic()));
-    return new ResearchResponse(taskId);
+    return new ResearchResponse(taskId, agentInstanceId, "research-coordinator");
   }
 
   @Get("/{taskId}")
