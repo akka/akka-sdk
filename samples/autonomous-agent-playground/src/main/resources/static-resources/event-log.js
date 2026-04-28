@@ -154,11 +154,14 @@ export function connectEventStream(runId, agentComponentId, callbacks) {
   const url = `/playground/api/runs/${encodeURIComponent(runId)}/events?component=${encodeURIComponent(agentComponentId)}`;
   const es = new EventSource(url);
   es.onmessage = (e) => {
+    // Empty data frames are SSE keep-alives — the SDK sends `data:` lines as heartbeats every
+    // ~10s while the stream is idle. Silently ignore; only a non-empty payload is news.
+    if (!e.data) return;
     try {
       const envelope = JSON.parse(e.data);
       callbacks.onEnvelope?.(envelope);
     } catch (err) {
-      // Parse failures indicate a real problem on the wire; surface to the console.
+      // Genuine parse failure (malformed payload) — surface to the console for debugging.
       console.warn('[playground] SSE parse failed', err, e.data);
     }
   };

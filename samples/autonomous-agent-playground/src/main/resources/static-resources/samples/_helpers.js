@@ -33,7 +33,12 @@ export async function postJson(path, body) {
     body: JSON.stringify(body),
   });
   if (!resp.ok) throw new Error(`POST ${path} failed: ${resp.status}`);
-  return resp.json();
+  // Some endpoints (e.g. publishing's /approve, /reject) return plain text rather than JSON.
+  // Don't blindly call resp.json() — sniff the content-type so callers that don't need a
+  // typed body still see a successful return.
+  const ct = resp.headers.get('content-type') ?? '';
+  if (ct.includes('application/json')) return resp.json();
+  return resp.text();
 }
 
 export async function getJson(path) {

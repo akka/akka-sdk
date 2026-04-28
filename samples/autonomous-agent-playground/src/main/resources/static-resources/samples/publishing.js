@@ -77,28 +77,35 @@ export const publishing = {
 
     const buttons = el('div', { className: 'action-buttons' });
 
-    function markActed(label) {
+    // Optimistic collapse: hide the AWAITING block instantly on click, before the network
+    // round-trip. This is critical because the 5s backstop poll can fire during the await,
+    // re-render a fresh AWAITING wrap (detaching the one our closure has), and leave the user
+    // staring at a full AWAITING UI until the post-POST status fetch finally clears actions.
+    // Setting approvalAcked first short-circuits overrideRunState during the race window.
+    function collapse(label) {
       runCache.extras.approvalAcked = true;
-      buttons.replaceChildren(el('p', { className: 'muted' }, label));
-      // Trigger a status refresh immediately so the AWAITING_INPUT block (header + draft preview)
-      // is replaced by the live RUNNING / COMPLETED view without waiting for the next 5s poll.
-      options.refreshNow?.();
+      wrap.replaceChildren(el('p', { className: 'muted' }, label));
+    }
+
+    function showError(message) {
+      // POST failed — undo the optimistic ack so the next poll re-renders AWAITING_INPUT,
+      // and surface the error inline. The user can retry by waiting for the next poll.
+      runCache.extras.approvalAcked = false;
+      wrap.replaceChildren(el('p', { role: 'alert' }, message));
     }
 
     const approveBtn = el('button', {
       type: 'button',
       onClick: async () => {
-        approveBtn.disabled = true;
-        rejectBtn.disabled = true;
+        collapse('Approved — waiting for publish to complete…');
         try {
           await postJson(`/publishing/approve/${runCache.extras.approvalTaskId}`, {
             approvedBy: 'operator',
             comment: 'Approved via UI',
           });
-          markActed('Approved — waiting for publish to complete…');
+          options.refreshNow?.();
         } catch (err) {
-          approveBtn.disabled = false;
-          rejectBtn.disabled = false;
+          showError(`Approve failed: ${err.message ?? err}`);
         }
       },
     }, 'Approve');
@@ -108,17 +115,15 @@ export const publishing = {
       onClick: async () => {
         const reason = prompt('Reason for rejection?', 'Not ready');
         if (reason == null) return;
-        approveBtn.disabled = true;
-        rejectBtn.disabled = true;
+        collapse('Rejected — pipeline cancelled.');
         try {
           await postJson(`/publishing/reject/${runCache.extras.approvalTaskId}`, {
             rejectedBy: 'operator',
             reason,
           });
-          markActed('Rejected — pipeline cancelled.');
+          options.refreshNow?.();
         } catch (err) {
-          approveBtn.disabled = false;
-          rejectBtn.disabled = false;
+          showError(`Reject failed: ${err.message ?? err}`);
         }
       },
     }, 'Reject');
