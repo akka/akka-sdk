@@ -6,7 +6,7 @@ Each sample focuses on a specific capability or coordination pattern. They progr
 
 ## Web UI
 
-A browser UI is bundled with the service. Boot the service (`mvn compile exec:java`) and open <http://localhost:9000/> — the root redirects to `/playground`, which lists every sample with a tailored panel: input form, live event log with three-tier visual differentiation (healthy / struggle / terminal failure), per-run token + iteration summary, operator approve/reject for `publishing`, confirmation-gated stop control on any in-progress run, and a light/dark/platform theme toggle. See [`specs/008-samples-web-ui/quickstart.md`](specs/008-samples-web-ui/quickstart.md) for an end-to-end manual walkthrough.
+A browser UI is bundled with the service. Boot the service (`mvn compile exec:java`) and open <http://localhost:9000/>.
 
 ## Overview
 
