@@ -11,6 +11,7 @@ import akka.javasdk.http.AbstractHttpEndpoint;
 import akka.javasdk.http.HttpResponses;
 import akka.stream.javadsl.Source;
 import java.time.Instant;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -34,7 +35,12 @@ public class RunNotificationEndpoint extends AbstractHttpEndpoint {
     String tier,
     String category,
     String kind,
-    Notification raw
+    /**
+     * Serialised body of the notification. Typed as Object because empty-marker notifications
+     * (e.g. {@code Activated}) have no fields and would trip Jackson's
+     * {@code FAIL_ON_EMPTY_BEANS}; for those we emit an empty map instead.
+     */
+    Object raw
   ) {}
 
   private final ComponentClient componentClient;
@@ -67,11 +73,25 @@ public class RunNotificationEndpoint extends AbstractHttpEndpoint {
         tierFor(n),
         categoryFor(n),
         n.getClass().getSimpleName(),
-        n
+        rawFor(n)
       )
     );
 
     return HttpResponses.serverSentEvents(envelopes, env -> String.valueOf(env.eventId()));
+  }
+
+  /**
+   * Pick the serialisation body for a notification. Empty-marker notifications (Activated,
+   * Deactivated, IterationStarted) have no fields and would fail Jackson's bean-detection;
+   * for those we substitute an empty map so the SSE frame still renders cleanly.
+   */
+  static Object rawFor(Notification n) {
+    if (n instanceof Notification.Activated
+        || n instanceof Notification.Deactivated
+        || n instanceof Notification.IterationStarted) {
+      return Map.of();
+    }
+    return n;
   }
 
   /**
