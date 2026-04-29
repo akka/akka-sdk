@@ -18,4 +18,5 @@
 ** xref:getting-started:shopping-cart/index.adoc[Shopping cart]
 *** xref:getting-started:shopping-cart/build-and-deploy-shopping-cart.adoc[]
 *** xref:getting-started:shopping-cart/addview.adoc[]
+** xref:getting-started:dev-container.adoc[Containerized dev environment]
 ** xref:getting-started:samples.adoc[]
