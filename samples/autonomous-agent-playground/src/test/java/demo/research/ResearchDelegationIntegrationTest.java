@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
+// tag::setup[]
 public class ResearchDelegationIntegrationTest extends TestKitSupport {
 
   private final TestModelProvider coordinatorModel = new TestModelProvider();
@@ -34,7 +35,9 @@ public class ResearchDelegationIntegrationTest extends TestKitSupport {
       .withModelProvider(Researcher.class, researcherModel)
       .withModelProvider(Analyst.class, analystModel);
   }
+  // end::setup[]
 
+  // tag::delegation-test[]
   @Test
   public void shouldDelegateToWorkersAndSynthesizeResult() {
     // Coordinator delegates to both workers
@@ -119,6 +122,7 @@ public class ResearchDelegationIntegrationTest extends TestKitSupport {
         assertThat(snapshot.result().keyFindings()).hasSize(4);
       });
   }
+  // end::delegation-test[]
 
   @Test
   public void shouldRetryFindingsAfterSourcesRejection() {

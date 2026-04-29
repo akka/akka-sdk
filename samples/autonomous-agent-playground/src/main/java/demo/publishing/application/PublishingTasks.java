@@ -3,6 +3,7 @@ package demo.publishing.application;
 import akka.javasdk.agent.task.Task;
 
 /** Task definitions for the publishing approval pipeline: draft → approval → publish. */
+// tag::class[]
 public class PublishingTasks {
 
   // prettier-ignore
@@ -23,3 +24,4 @@ public class PublishingTasks {
     .description("Publish an approved post")
     .resultConformsTo(PublishedPost.class);
 }
+// end::class[]

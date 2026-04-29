@@ -6,6 +6,7 @@ import akka.javasdk.agent.autonomous.capability.Moderation;
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 
+// tag::class[]
 @Component(
   id = "review-moderator",
   description = "Coordinates peer review of documents through specialist reviewers"
@@ -22,3 +23,4 @@ public class ReviewModerator extends AutonomousAgent {
       );
   }
 }
+// end::class[]

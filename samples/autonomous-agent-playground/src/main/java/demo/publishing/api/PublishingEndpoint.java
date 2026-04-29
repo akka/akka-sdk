@@ -54,6 +54,7 @@ public class PublishingEndpoint extends AbstractHttpEndpoint {
     var contentAgentId = requestContext().queryParams().getString("runId")
       .filter(s -> !s.isBlank())
       .orElseGet(() -> UUID.randomUUID().toString());
+    // tag::pipeline[]
     var draftTaskId = componentClient
       .forAutonomousAgent(ContentAgent.class, contentAgentId)
       .runSingleTask(
@@ -78,6 +79,7 @@ public class PublishingEndpoint extends AbstractHttpEndpoint {
           approvalTaskId
         )
       );
+    // end::pipeline[]
 
     // Watch pipeline progress via task result subscriptions
     componentClient
@@ -129,26 +131,30 @@ public class PublishingEndpoint extends AbstractHttpEndpoint {
     );
   }
 
+  // tag::approve[]
   /** Human approves the draft — assigns and completes the approval task. */
   @Post("/approve/{approvalTaskId}")
   public String approve(String approvalTaskId, ApproveRequest request) {
-    var taskClient = componentClient.forTask(approvalTaskId);
-    taskClient.assign(request.approvedBy());
-    taskClient.complete(
-      PublishingTasks.APPROVAL,
-      new ApprovalDecision(request.approvedBy(), request.comment())
-    );
+    componentClient.forTask(approvalTaskId).assign(request.approvedBy());
+    componentClient
+      .forTask(approvalTaskId)
+      .complete(
+        PublishingTasks.APPROVAL,
+        new ApprovalDecision(request.approvedBy(), request.comment())
+      );
     return "Approved";
   }
+  // end::approve[]
 
+  // tag::reject[]
   /** Human rejects the draft — assigns and fails the approval task. */
   @Post("/reject/{approvalTaskId}")
   public String reject(String approvalTaskId, RejectRequest request) {
-    var taskClient = componentClient.forTask(approvalTaskId);
-    taskClient.assign(request.rejectedBy());
-    taskClient.fail(request.reason());
+    componentClient.forTask(approvalTaskId).assign(request.rejectedBy());
+    componentClient.forTask(approvalTaskId).fail(request.reason());
     return "Rejected";
   }
+  // end::reject[]
 
   /** Check the status of the final publish task. */
   @Get("/status/{taskId}")

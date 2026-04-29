@@ -40,6 +40,7 @@ public class PipelineEndpoint extends AbstractHttpEndpoint {
 
   @Post
   public PipelineResponse create(CreatePipeline request) {
+    // tag::create-with-deps[]
     // Create collect task (no dependencies)
     var collectTaskId = componentClient
       .forTask(UUID.randomUUID().toString())
@@ -62,15 +63,18 @@ public class PipelineEndpoint extends AbstractHttpEndpoint {
           analyzeTaskId
         )
       );
+    // end::create-with-deps[]
 
     // Assign all tasks to a single agent instance — accept an optional pre-generated runId so the
     // UI can subscribe to the notification stream before the agent activates.
     var agentInstanceId = requestContext().queryParams().getString("runId")
       .filter(s -> !s.isBlank())
       .orElseGet(() -> UUID.randomUUID().toString());
+    // tag::assign-tasks[]
     componentClient
       .forAutonomousAgent(ReportAgent.class, agentInstanceId)
       .assignTasks(collectTaskId, analyzeTaskId, reportTaskId);
+    // end::assign-tasks[]
 
     return new PipelineResponse(
       agentInstanceId,

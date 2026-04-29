@@ -2,6 +2,7 @@ package demo.research.application;
 
 import akka.javasdk.agent.task.TaskRule;
 
+// tag::class[]
 /** Validates that research findings include at least one cited source. */
 public class ResearchFindingsRule implements TaskRule<ResearchFindings> {
 
@@ -15,3 +16,4 @@ public class ResearchFindingsRule implements TaskRule<ResearchFindings> {
     return new Result.Accepted();
   }
 }
+// end::class[]

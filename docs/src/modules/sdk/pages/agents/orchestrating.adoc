@@ -6,6 +6,11 @@ A single agent performs one well-defined task. Several agents can collaborate to
 
 This orchestration approach is often called the *supervisor pattern*: a central workflow acts as the supervisor, coordinating multiple worker agents. Agents don't communicate directly with each other—instead, the supervisor decides which agents to call, in what order, and how to handle their outputs. This separation keeps agents simple and reusable while centralizing reliability concerns like durable execution steps, retries and failure handling in the workflow.
 
+[NOTE]
+====
+This page covers workflow-based orchestration of request-based xref:sdk:agents.adoc[Agents]. For model-driven coordination (delegation, handoff, teams, moderation) without writing a workflow, see xref:sdk:autonomous-agents.adoc[Autonomous Agents] and the xref:sdk:autonomous-agents/coordination.adoc[coordination patterns]. The two approaches address different needs: choose workflow orchestration when you want explicit, deterministic step ordering, and Autonomous Agents when you want the model to decide what happens next.
+====
+
 == Using a predefined workflow
 
 Let's first look at how to define a workflow that orchestrates several agents in a predefined steps. This is similar to the xref:sdk:agents/calling.adoc[`ActivityAgentManager`] that was illustrated above, but it uses both the `WeatherAgent` and the `ActivityAgent`. First it retrieves the weather forecast and then it finds suitable activities.

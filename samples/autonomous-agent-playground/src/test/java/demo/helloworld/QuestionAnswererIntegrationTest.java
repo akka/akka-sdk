@@ -12,20 +12,21 @@ import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
+// tag::class[]
 public class QuestionAnswererIntegrationTest extends TestKitSupport {
 
-  private final TestModelProvider model = new TestModelProvider();
+  private final TestModelProvider model = new TestModelProvider(); // <1>
 
   @Override
   protected TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT.withAdditionalConfig(
       "akka.javasdk.agent.openai.api-key = n/a"
-    ).withModelProvider(QuestionAnswerer.class, model);
+    ).withModelProvider(QuestionAnswerer.class, model); // <2>
   }
 
   @Test
   public void shouldAnswerQuestionWithTypedResult() {
-    model.fixedResponse(
+    model.fixedResponse( // <3>
       new TestModelProvider.AiResponse(
         new TestModelProvider.ToolInvocationRequest(
           "complete_task",
@@ -34,7 +35,7 @@ public class QuestionAnswererIntegrationTest extends TestKitSupport {
       )
     );
 
-    var response = httpClient
+    var response = httpClient // <4>
       .POST("/questions")
       .withRequestBody(new QuestionEndpoint.AskQuestion("What is 2 + 2?"))
       .responseBodyAs(QuestionEndpoint.QuestionResponse.class)
@@ -46,7 +47,7 @@ public class QuestionAnswererIntegrationTest extends TestKitSupport {
     assertThat(response.runId()).isNotBlank();
     assertThat(response.agentComponentId()).isEqualTo("question-answerer");
 
-    Awaitility.await()
+    Awaitility.await() // <5>
       .ignoreExceptions()
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(() -> {
@@ -56,6 +57,7 @@ public class QuestionAnswererIntegrationTest extends TestKitSupport {
         assertThat(snapshot.result().confidence()).isEqualTo(100);
       });
   }
+  // end::class[]
 
   @Test
   public void shouldFailTaskWhenModelCallsFailTask() {

@@ -35,6 +35,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 
 - [Components overview](https://doc.akka.io/sdk/components/index.html.md): Introduction to Akka's core building blocks and their usage
 - [Agents](https://doc.akka.io/sdk/agents.html.md): AI model-backed components with session memory and multi-agent collaboration
+- [Autonomous Agents](https://doc.akka.io/sdk/autonomous-agents.html.md): Durable model-driven processes with typed tasks and multi-agent coordination
 - [Workflows](https://doc.akka.io/sdk/workflows.html.md): Long-running, multi-step business processes with compensation
 - [Event Sourced Entities](https://doc.akka.io/sdk/event-sourced-entities.html.md): State persistence via immutable event log
 - [Key Value Entities](https://doc.akka.io/sdk/key-value-entities.html.md): State persistence via full-state snapshots
@@ -116,6 +117,13 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Orchestrating multiple agents](https://doc.akka.io/sdk/agents/orchestrating.html.md): Orchestrating and supervising multiple agents
 - [Evaluating model responses](https://doc.akka.io/sdk/agents/llm_eval.html.md): Evaluating and judging the responses from LLMs via agents
 - [Testing agents](https://doc.akka.io/sdk/agents/testing.html.md): Testing agents and agentic behavior
+- [Defining an autonomous agent](https://doc.akka.io/sdk/autonomous-agents/defining.html.md): Building an AgentDefinition with goal, accepted task types, tools, guardrails, iteration limit, and model
+- [Autonomous agent tasks](https://doc.akka.io/sdk/autonomous-agents/tasks.html.md): Task definitions, instances, lifecycle, snapshots, dependencies, and notifications
+- [Autonomous agent coordination patterns](https://doc.akka.io/sdk/autonomous-agents/coordination.html.md): Sequential, delegative, collaborative, and emergent patterns for multi-agent systems
+- [Autonomous agent coordination capabilities](https://doc.akka.io/sdk/autonomous-agents/capabilities.html.md): Delegation, handoff, teams, moderation, external input, and capability composition
+- [Autonomous agent client API](https://doc.akka.io/sdk/autonomous-agents/client.html.md): runSingleTask, assignTasks, pause/resume, agent state, notification stream
+- [Autonomous agent notifications](https://doc.akka.io/sdk/autonomous-agents/notifications.html.md): Lifecycle, task, handoff, delegation, team, backlog, conversation, messaging, and struggle notifications
+- [Testing autonomous agents](https://doc.akka.io/sdk/autonomous-agents/testing.html.md): Mocking with TestModelProvider and AutonomousAgentTools helpers
 - [Views reference](https://doc.akka.io/reference/views/index.html.md): Detailed reference for views
 - [View Query Syntax](https://doc.akka.io/reference/views/syntax/query.html.md): View query language syntax
 - [View Query Result Mapping](https://doc.akka.io/reference/views/concepts/result-mapping.html.md): How view query results are mapped into Java classes

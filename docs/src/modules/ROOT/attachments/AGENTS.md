@@ -15,30 +15,45 @@ Generate components with correct:
 You find the reference documentation of Akka in the akka-context directory and sub-directories.
 
 Access these documentation files for detailed patterns:
-- `akka-context/sdk/agents.html.md` - AI agents with LLMs
-- `akka-context/sdk/agents/prompt.html.md` - Choosing the prompts for agents.
+
+**Agents (request-based, single request-response with tools and session memory):**
+- `akka-context/sdk/agents.html.md` - AI agents with models
+- `akka-context/sdk/agents/prompt.html.md` - Choosing the prompts for agents
 - `akka-context/sdk/agents/calling.html.md` - Calling agents from Akka components
 - `akka-context/sdk/agents/memory.html.md` - Managing agent session memory
-- `akka-context/sdk/agents/structured.html.md` - Structured LLM responses
+- `akka-context/sdk/agents/structured.html.md` - Structured model responses
 - `akka-context/sdk/agents/failures.html.md` - Handling agent failures
 - `akka-context/sdk/agents/extending.html.md` - Extending agents with function tools
 - `akka-context/sdk/agents/streaming.html.md` - Streaming model responses with agents
-- `akka-context/sdk/agents/orchestrating.html.md` - Orchestrating multiple agents
+- `akka-context/sdk/agents/orchestrating.html.md` - Orchestrating multiple agents through Workflows
 - `akka-context/sdk/agents/guardrails.html.md` - Constraining and controlling agent behavior with guardrails
-- `akka-context/sdk/agents/llm_eval.html.md` - Evaluating and judging the responses from LLMs via agents
-- `akka-context/sdk/agents/testing.html.md` - Testing agents
-- `akka-context/sdk/autonomous-agents.html.md` - Autonomous agents with durable execution and multi-agent coordination
-- `akka-context/getting-started/planner-agent/dynamic-team.html.md` - Dynamic agent planning and orchestration
+- `akka-context/sdk/agents/llm_eval.html.md` - Evaluating and judging the responses from models
+- `akka-context/sdk/agents/testing.html.md` - Testing request-based agents
+
+**Autonomous Agents (durable model-driven processes with typed tasks and multi-agent coordination):**
+- `akka-context/sdk/autonomous-agents.html.md` - Hub: when to use, comparison with request-based Agent, basic structure, sample matrix
+- `akka-context/sdk/autonomous-agents/defining.html.md` - Building AgentDefinition: goal, accepted task types, tools, MCP, guardrails, iteration limit, model
+- `akka-context/sdk/autonomous-agents/tasks.html.md` - Tasks: definitions, instances, lifecycle, rules, snapshots, dependencies
+- `akka-context/sdk/autonomous-agents/coordination.html.md` - Coordination patterns: sequential, delegative, collaborative, emergent
+- `akka-context/sdk/autonomous-agents/capabilities.html.md` - Coordination capabilities: Delegation, Handoff, TeamLeadership, Moderation, external input
+- `akka-context/sdk/autonomous-agents/client.html.md` - ComponentClient API: runSingleTask, assignTasks, pause/resume, state, notifications, async variants
+- `akka-context/sdk/autonomous-agents/notifications.html.md` - Notifications reference: every Notification type plus task and backlog entity notifications
+- `akka-context/sdk/autonomous-agents/testing.html.md` - Testing with TestModelProvider and AutonomousAgentTools
+
+**Other components:**
 - `akka-context/sdk/event-sourced-entities.html.md` - Event sourced entity
 - `akka-context/sdk/key-value-entities.html.md` - Key value entity, simple state management
 - `akka-context/sdk/views.html.md` - Query models and projections
-- `akka-context/reference/views/**` - Detailed reference docs of views
 - `akka-context/sdk/workflows.html.md` - Saga patterns and orchestration
 - `akka-context/sdk/consuming-producing.html.md` - Event consumption and topics
 - `akka-context/sdk/http-endpoints.html.md` - RESTful APIs
 - `akka-context/sdk/grpc-endpoints.html.md` - Protocol buffer APIs
 - `akka-context/sdk/timed-actions.html.md` - Scheduling and timers
 - `akka-context/sdk/setup-and-dependency-injection.html.md` - Service bootstrap and dependency injection
+
+**Guides and reference:**
+- `akka-context/getting-started/planner-agent/dynamic-team.html.md` - Dynamic agent planning and orchestration
+- `akka-context/reference/views/**` - Detailed reference docs of views
 - `akka-context/reference/config/reference.html.md` - Full configuration reference
 - `ai-coding-assistant-guidelines.html.md` - Best practices
 
@@ -309,6 +324,76 @@ public class ActivityAgent extends Agent {
   @FunctionTool(description = "Return current date in yyyy-MM-dd format")
   private String getCurrentDate() {
     return LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
+  }
+}
+```
+
+### Autonomous Agent (basic)
+
+```java
+@Component(id = "question-answerer")
+public class QuestionAnswerer extends AutonomousAgent {
+
+  @Override
+  public AgentDefinition definition() {
+    return define()
+        .goal("Answer questions clearly and concisely.")
+        .capability(TaskAcceptance.of(QuestionTasks.ANSWER).maxIterationsPerTask(3));
+  }
+
+  @FunctionTool(description = "Look up an authoritative source for a topic")
+  public String lookupSource(String topic) {
+    return "Source for " + topic;
+  }
+}
+```
+
+### Autonomous Agent with Combined Capabilities
+
+```java
+@Component(id = "research-coordinator")
+public class ResearchCoordinator extends AutonomousAgent {
+
+  @Override
+  public AgentDefinition definition() {
+    return define()
+        .goal("Produce research briefs by synthesizing specialist findings.")
+        .tools(new ResearchTools())
+        .capability(
+            TaskAcceptance.of(ResearchTasks.BRIEF)
+                .maxIterationsPerTask(10)
+                .canHandoffTo(SeniorAnalyst.class))
+        .capability(Delegation.to(Researcher.class, Analyst.class).maxParallelWorkers(3));
+  }
+}
+```
+
+### Autonomous Agent Task Definition
+
+```java
+public class ResearchTasks {
+  public static final Task<ResearchBrief> BRIEF = Task
+      .define("Brief")
+      .description("Produce a research brief on a given topic")
+      .resultConformsTo(ResearchBrief.class);
+
+  public static final Task<ResearchFindings> FINDINGS = Task
+      .define("Findings")
+      .description("Research a topic and produce factual findings")
+      .resultConformsTo(ResearchFindings.class)
+      .rules(ResearchFindingsRule.class); // optional validation rule
+}
+
+public record ResearchBrief(String title, String summary, List<String> keyFindings) {}
+public record ResearchFindings(String topic, List<String> facts, List<String> sources) {}
+
+public class ResearchFindingsRule implements TaskRule<ResearchFindings> {
+  @Override
+  public Result onComplete(ResearchFindings findings) {
+    if (findings.sources() == null || findings.sources().isEmpty()) {
+      return new Result.Rejected("research findings must cite sources");
+    }
+    return new Result.Accepted();
   }
 }
 ```

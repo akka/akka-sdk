@@ -32,10 +32,12 @@ public class DocReviewEndpoint extends AbstractHttpEndpoint {
 
   @Post
   public ReviewResponse create(CreateReview request) {
+    // tag::create-with-attachment[]
     // prettier-ignore
     var task = ReviewTasks.REVIEW
       .instructions(request.reviewInstructions())
       .attach(TextMessageContent.from(request.document()));
+    // end::create-with-attachment[]
 
     var agentInstanceId = requestContext().queryParams().getString("runId")
       .filter(s -> !s.isBlank())

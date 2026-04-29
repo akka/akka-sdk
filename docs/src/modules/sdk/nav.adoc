@@ -14,6 +14,15 @@
 **** xref:sdk:agents/llm_eval.adoc[LLM evaluation]
 **** xref:sdk:agents/testing.adoc[Testing]
 
+*** xref:sdk:autonomous-agents.adoc[Autonomous Agents]
+**** xref:sdk:autonomous-agents/defining.adoc[Defining an autonomous agent]
+**** xref:sdk:autonomous-agents/tasks.adoc[Tasks]
+**** xref:sdk:autonomous-agents/coordination.adoc[Coordination patterns]
+**** xref:sdk:autonomous-agents/capabilities.adoc[Coordination capabilities]
+**** xref:sdk:autonomous-agents/client.adoc[Client API]
+**** xref:sdk:autonomous-agents/notifications.adoc[Notifications]
+**** xref:sdk:autonomous-agents/testing.adoc[Testing]
+
 *** xref:sdk:event-sourced-entities.adoc[Event Sourced Entities]
 *** xref:sdk:key-value-entities.adoc[Key Value Entities]
 *** xref:sdk:http-endpoints.adoc[HTTP Endpoints]

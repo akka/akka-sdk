@@ -8,6 +8,7 @@ import akka.javasdk.annotations.Component;
  * A generic agent with no static goal or capabilities. Configured dynamically at runtime via
  * AgentSetup before assigning tasks.
  */
+// tag::class[]
 @Component(id = "dynamic-agent")
 public class DynamicAgent extends AutonomousAgent {
 
@@ -16,3 +17,4 @@ public class DynamicAgent extends AutonomousAgent {
     return define();
   }
 }
+// end::class[]

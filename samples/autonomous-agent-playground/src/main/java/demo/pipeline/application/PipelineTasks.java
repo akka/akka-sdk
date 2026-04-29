@@ -7,6 +7,7 @@ package demo.pipeline.application;
 import akka.javasdk.agent.task.Task;
 
 /** Task definitions for the 3-phase report pipeline: collect → analyze → report. */
+// tag::class[]
 public class PipelineTasks {
 
   // prettier-ignore
@@ -27,3 +28,4 @@ public class PipelineTasks {
     .description("Write final report")
     .resultConformsTo(ReportResult.class);
 }
+// end::class[]

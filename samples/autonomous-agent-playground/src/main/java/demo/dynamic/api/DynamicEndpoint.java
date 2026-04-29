@@ -29,37 +29,45 @@ public class DynamicEndpoint extends AbstractHttpEndpoint {
     this.componentClient = componentClient;
   }
 
+  // tag::summarize[]
   @Post("/summarize")
   public TaskResponse summarize(TaskRequest request) {
     var agentId = requestContext().queryParams().getString("runId")
       .filter(s -> !s.isBlank())
       .orElseGet(() -> UUID.randomUUID().toString());
-    var agent = componentClient.forAutonomousAgent(DynamicAgent.class, agentId);
 
-    agent.setup(
-      AgentSetup.create()
-        .goal("Produce a concise summary of the given content, highlighting key points.")
-        .capability(TaskAcceptance.of(DynamicTasks.SUMMARIZE))
-    );
+    componentClient
+      .forAutonomousAgent(DynamicAgent.class, agentId)
+      .setup(
+        AgentSetup.create()
+          .goal("Produce a concise summary of the given content, highlighting key points.")
+          .capability(TaskAcceptance.of(DynamicTasks.SUMMARIZE))
+      );
 
-    var taskId = agent.runSingleTask(DynamicTasks.SUMMARIZE.instructions(request.content()));
+    var taskId = componentClient
+      .forAutonomousAgent(DynamicAgent.class, agentId)
+      .runSingleTask(DynamicTasks.SUMMARIZE.instructions(request.content()));
     return new TaskResponse(taskId, agentId, "dynamic-agent");
   }
+  // end::summarize[]
 
   @Post("/translate")
   public TaskResponse translate(TaskRequest request) {
     var agentId = requestContext().queryParams().getString("runId")
       .filter(s -> !s.isBlank())
       .orElseGet(() -> UUID.randomUUID().toString());
-    var agent = componentClient.forAutonomousAgent(DynamicAgent.class, agentId);
 
-    agent.setup(
-      AgentSetup.create()
-        .goal("Translate the given content to French, preserving tone and meaning.")
-        .capability(TaskAcceptance.of(DynamicTasks.TRANSLATE))
-    );
+    componentClient
+      .forAutonomousAgent(DynamicAgent.class, agentId)
+      .setup(
+        AgentSetup.create()
+          .goal("Translate the given content to French, preserving tone and meaning.")
+          .capability(TaskAcceptance.of(DynamicTasks.TRANSLATE))
+      );
 
-    var taskId = agent.runSingleTask(DynamicTasks.TRANSLATE.instructions(request.content()));
+    var taskId = componentClient
+      .forAutonomousAgent(DynamicAgent.class, agentId)
+      .runSingleTask(DynamicTasks.TRANSLATE.instructions(request.content()));
     return new TaskResponse(taskId, agentId, "dynamic-agent");
   }
 }

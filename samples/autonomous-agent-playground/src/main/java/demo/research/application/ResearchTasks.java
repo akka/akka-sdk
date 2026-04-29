@@ -2,6 +2,7 @@ package demo.research.application;
 
 import akka.javasdk.agent.task.Task;
 
+// tag::class[]
 public class ResearchTasks {
 
   // prettier-ignore
@@ -10,12 +11,14 @@ public class ResearchTasks {
     .description("Produce a research brief on a given topic")
     .resultConformsTo(ResearchBrief.class);
 
+  // tag::with-rule[]
   // prettier-ignore
   public static final Task<ResearchFindings> FINDINGS = Task
     .define("Findings")
     .description("Research a topic and produce factual findings")
     .resultConformsTo(ResearchFindings.class)
     .rules(ResearchFindingsRule.class);
+  // end::with-rule[]
 
   // prettier-ignore
   public static final Task<AnalysisReport> ANALYSIS = Task
@@ -23,3 +26,4 @@ public class ResearchTasks {
     .description("Analyse a topic and produce a trend analysis report")
     .resultConformsTo(AnalysisReport.class);
 }
+// end::class[]

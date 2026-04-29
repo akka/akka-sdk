@@ -5,6 +5,7 @@ import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 
+// tag::class[]
 @Component(
   id = "technical-specialist",
   description = "Diagnoses and resolves technical problems, bugs, and service outages"
@@ -18,3 +19,4 @@ public class TechnicalSpecialist extends AutonomousAgent {
       .capability(TaskAcceptance.of(SupportTasks.RESOLVE).maxIterationsPerTask(5));
   }
 }
+// end::class[]

@@ -31,6 +31,7 @@ Use an Agent when you need to:
 === How Agents relate to other components
 
 * **Workflows** orchestrate multi-step processes and can invoke Agents as one of those steps.
+* **Autonomous Agents** are the model-driven alternative for multi-step work and multi-agent coordination, with built-in task lifecycle and coordination capabilities. See xref:sdk:autonomous-agents.adoc[].
 * **Entities** hold durable state that Agents can read or write via the `ComponentClient`.
 * **Endpoints** expose Agents over HTTP so external clients can reach them.
 

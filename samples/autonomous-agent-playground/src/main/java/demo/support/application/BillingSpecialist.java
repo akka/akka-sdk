@@ -5,6 +5,7 @@ import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 
+// tag::class[]
 @Component(
   id = "billing-specialist",
   description = "Resolves billing disputes, payment issues, and invoice queries"
@@ -18,3 +19,4 @@ public class BillingSpecialist extends AutonomousAgent {
       .capability(TaskAcceptance.of(SupportTasks.RESOLVE).maxIterationsPerTask(5));
   }
 }
+// end::class[]

@@ -1,0 +1,194 @@
+= Notifications
+
+include::ROOT:partial$include.adoc[]
+
+The runtime publishes notifications on every meaningful transition: agent lifecycle, task progress, coordination events, and derived signals like repeated failures or approaching iteration limits. Subscribe to the stream to observe agent execution from outside.
+
+See xref:sdk:autonomous-agents/client.adoc#agent-notifications[Agent notifications] for how to subscribe.
+
+This page is a catalog of all notification types. Two distinct families exist:
+
+* *Autonomous agent notifications*: the link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.html[`Notification`] sealed interface and its records, emitted by an agent instance and observed by subscribing to its notification stream.
+* *Task and backlog entity notifications*: the link:{attachmentsdir}/api/akka/javasdk/agent/task/TaskNotification.html[`TaskNotification`] and link:{attachmentsdir}/api/akka/javasdk/agent/task/BacklogNotification.html[`BacklogNotification`] sealed interfaces in `akka.javasdk.agent.task`, published by the task and backlog entities themselves.
+
+Each link below points at the JavaDoc for the exact field set. The descriptions here are deliberately brief.
+
+== Autonomous agent notifications
+
+Every autonomous agent notification implements the link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.html[`Notification`] sealed interface and exactly one capability-grouped marker sub-interface. Pattern-match on a marker to handle a whole family generically.
+
+=== Lifecycle
+
+link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.LifecycleNotification.html[`Notification.LifecycleNotification`]: agent activation, iteration boundaries, and pause/resume/stop transitions.
+
+[options="header", cols="1,3"]
+|===
+| Notification | Description
+
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.Activated.html[`Notification.Activated`] | Agent transitioned from idle to processing.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.Deactivated.html[`Notification.Deactivated`] | No more work, back to idle.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.IterationStarted.html[`Notification.IterationStarted`] | Model call beginning.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.IterationCompleted.html[`Notification.IterationCompleted`] | Iteration completed successfully, with token usage.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.IterationFailed.html[`Notification.IterationFailed`] | Iteration failed, optionally tied to a task and iteration number.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.Paused.html[`Notification.Paused`] | Agent paused, with the source of the pause.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.Resumed.html[`Notification.Resumed`] | Agent resumed, with the source of the resume.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.Stopped.html[`Notification.Stopped`] | Agent stopped, distinguishing operator stop from auto-stop on queue drain.
+|===
+
+=== Task
+
+link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TaskNotification.html[`Notification.TaskNotification`]: assignment, start, completion, failure, cancellation, and dependency events.
+
+[options="header", cols="1,3"]
+|===
+| Notification | Description
+
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TaskAssigned.html[`Notification.TaskAssigned`] | A task was accepted or queued, fires before the agent starts working on it.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TaskStarted.html[`Notification.TaskStarted`] | Agent started working on a task.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TaskResultRejected.html[`Notification.TaskResultRejected`] | Result rejected by a xref:sdk:autonomous-agents/tasks.adoc#task-rules[task rule].
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TaskCompleted.html[`Notification.TaskCompleted`] | Task completed successfully.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TaskFailed.html[`Notification.TaskFailed`] | Task failed via explicit `fail_task`.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TaskCancelled.html[`Notification.TaskCancelled`] | Framework-driven cancellation (dependency failure, max iterations, orphan cleanup), distinct from `TaskFailed`.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TaskDependencyWait.html[`Notification.TaskDependencyWait`] | Task is blocked waiting for dependencies.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.DependencyResolved.html[`Notification.DependencyResolved`] | A specific dependency resolved, with success or failure.
+|===
+
+=== Handoff
+
+link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.HandoffNotification.html[`Notification.HandoffNotification`]: source-side and target-side of cross-agent handoffs.
+
+[options="header", cols="1,3"]
+|===
+| Notification | Description
+
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.HandoffStarted.html[`Notification.HandoffStarted`] | Source side. This agent handed off a task to a target.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.HandoffReceived.html[`Notification.HandoffReceived`] | Target side. This agent received a handed-off task from a source.
+|===
+
+=== Delegation
+
+link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.DelegationNotification.html[`Notification.DelegationNotification`]: orchestrator-side and worker-side of subtask delegation.
+
+[options="header", cols="1,3"]
+|===
+| Notification | Description
+
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.DelegationStarted.html[`Notification.DelegationStarted`] | Orchestrator side. A batch of subtasks was dispatched to one or more workers.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.DelegationResolved.html[`Notification.DelegationResolved`] | Orchestrator side. Aggregate resolution of a delegation batch.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.WorkerTaskReceived.html[`Notification.WorkerTaskReceived`] | Worker side. This agent accepted a delegated subtask.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.WorkerTaskCompleted.html[`Notification.WorkerTaskCompleted`] | Worker side. Delegated subtask finished.
+|===
+
+=== Team
+
+link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TeamNotification.html[`Notification.TeamNotification`]: team formation, member lifecycle, and disbanding.
+
+[options="header", cols="1,3"]
+|===
+| Notification | Description
+
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TeamCreated.html[`Notification.TeamCreated`] | Lead side. A new team was formed.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TeamMemberReady.html[`Notification.TeamMemberReady`] | Lead side. A member's setup chain completed.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TeamMemberSetupFailed.html[`Notification.TeamMemberSetupFailed`] | Lead side. A member's setup chain failed.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TeamMemberStopped.html[`Notification.TeamMemberStopped`] | Lead side. A member has stopped.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TeamDisbanded.html[`Notification.TeamDisbanded`] | Lead side. Team disbanded.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TeamJoined.html[`Notification.TeamJoined`] | Member side. This agent joined a team.
+|===
+
+=== Backlog
+
+link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.BacklogNotification.html[`Notification.BacklogNotification`]: backlog assignment, access, and task claims observed by an agent.
+
+[options="header", cols="1,3"]
+|===
+| Notification | Description
+
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.BacklogAssigned.html[`Notification.BacklogAssigned`] | Management side. A backlog was assigned.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.BacklogClosed.html[`Notification.BacklogClosed`] | Management side. A backlog was closed.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.BacklogAccessGranted.html[`Notification.BacklogAccessGranted`] | Access side. This agent was granted access.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.BacklogTaskClaimed.html[`Notification.BacklogTaskClaimed`] | Access side. This agent claimed a task.
+|===
+
+=== Conversation
+
+link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.ConversationNotification.html[`Notification.ConversationNotification`]: conversation creation, turns, and participation lifecycle.
+
+[options="header", cols="1,3"]
+|===
+| Notification | Description
+
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.ConversationCreated.html[`Notification.ConversationCreated`] | Moderator side. A new conversation was created with a set of participants.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.ConversationParticipantReady.html[`Notification.ConversationParticipantReady`] | Moderator side. A participant's setup completed.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.ConversationParticipantSetupFailed.html[`Notification.ConversationParticipantSetupFailed`] | Moderator side. A participant's setup failed.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.ConversationEnded.html[`Notification.ConversationEnded`] | Moderator side. The conversation ended.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.ConversationTurnReceived.html[`Notification.ConversationTurnReceived`] | Moderator side. A turn was received from a participant.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.ConversationJoined.html[`Notification.ConversationJoined`] | Participant side. This agent joined a conversation.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.ParticipantTurnSubmitted.html[`Notification.ParticipantTurnSubmitted`] | Participant side. This agent submitted its turn.
+|===
+
+=== Messaging
+
+link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.MessagingNotification.html[`Notification.MessagingNotification`]: contact introductions and message delivery.
+
+[options="header", cols="1,3"]
+|===
+| Notification | Description
+
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.MessageReceived.html[`Notification.MessageReceived`] | A message was received from another agent.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.ContactAdded.html[`Notification.ContactAdded`] | A new contact was introduced.
+|===
+
+=== Struggle
+
+link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.StruggleNotification.html[`Notification.StruggleNotification`]: derived signals for repeated failures, stuck dependencies, and approaching limits. The runtime tracks counters and emits these once per detection. Notifications are deduplicated until the underlying counter resets, for example on task termination or successful recovery. Thresholds are configurable in `reference.conf` under `akka.runtime.autonomous-agent.struggle`.
+
+[options="header", cols="1,3"]
+|===
+| Notification | Description
+
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TaskStruggleDetected.html[`Notification.TaskStruggleDetected`] | Repeated iteration failures or repeated rule rejections on the same task.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TaskDependencyStuck.html[`Notification.TaskDependencyStuck`] | A task has been waiting on dependencies past the configured threshold; re-fires periodically.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TaskApproachingMaxIterations.html[`Notification.TaskApproachingMaxIterations`] | A task has reached the configured fraction (default 80%) of its max iterations.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.RepeatedIterationFailure.html[`Notification.RepeatedIterationFailure`] | Repeated iteration failures in flows not tied to a specific task (pre-task setup, request-based delegation).
+|===
+
+[#task-entity-notifications]
+== Task entity notifications
+
+link:{attachmentsdir}/api/akka/javasdk/agent/task/TaskNotification.html[`akka.javasdk.agent.task.TaskNotification`] is published by the task entity itself on every terminal transition. This is the persistent, entity-level event used by the runtime for `TaskClient.resultAsync` and similar deliver-on-completion APIs.
+
+Non-terminal transitions (created, assigned, started, reassigned) do not publish a notification. They are observable through event-sourced history or by reading the task snapshot.
+
+[options="header", cols="1,3"]
+|===
+| Notification | Description
+
+| link:{attachmentsdir}/api/akka/javasdk/agent/task/TaskNotification.Completed.html[`TaskNotification.Completed`] | Task completed successfully, carrying the JSON-encoded result.
+| link:{attachmentsdir}/api/akka/javasdk/agent/task/TaskNotification.ResultRejected.html[`TaskNotification.ResultRejected`] | A xref:sdk:autonomous-agents/tasks.adoc#task-rules[task rule] rejected the result.
+| link:{attachmentsdir}/api/akka/javasdk/agent/task/TaskNotification.Failed.html[`TaskNotification.Failed`] | Task failed.
+| link:{attachmentsdir}/api/akka/javasdk/agent/task/TaskNotification.Cancelled.html[`TaskNotification.Cancelled`] | Task was cancelled.
+|===
+
+[#backlog-entity-notifications]
+== Backlog entity notifications
+
+link:{attachmentsdir}/api/akka/javasdk/agent/task/BacklogNotification.html[`akka.javasdk.agent.task.BacklogNotification`] is published by the backlog entity on every state change so backlog-aware agents can react to claims, releases, and transfers without polling. Backlogs back the shared task list used by xref:sdk:autonomous-agents/capabilities.adoc#teams[teams].
+
+[options="header", cols="1,3"]
+|===
+| Notification | Description
+
+| link:{attachmentsdir}/api/akka/javasdk/agent/task/BacklogNotification.BacklogCreated.html[`BacklogNotification.BacklogCreated`] | A new backlog was created.
+| link:{attachmentsdir}/api/akka/javasdk/agent/task/BacklogNotification.TaskAdded.html[`BacklogNotification.TaskAdded`] | A task was added to the backlog.
+| link:{attachmentsdir}/api/akka/javasdk/agent/task/BacklogNotification.TaskClaimed.html[`BacklogNotification.TaskClaimed`] | A task was claimed by an agent.
+| link:{attachmentsdir}/api/akka/javasdk/agent/task/BacklogNotification.TaskReleased.html[`BacklogNotification.TaskReleased`] | A claimed task was released back to the backlog.
+| link:{attachmentsdir}/api/akka/javasdk/agent/task/BacklogNotification.TaskTransferred.html[`BacklogNotification.TaskTransferred`] | A task was transferred to a different claimant.
+| link:{attachmentsdir}/api/akka/javasdk/agent/task/BacklogNotification.UnclaimedCancelled.html[`BacklogNotification.UnclaimedCancelled`] | All unclaimed tasks were cancelled.
+| link:{attachmentsdir}/api/akka/javasdk/agent/task/BacklogNotification.BacklogClosed.html[`BacklogNotification.BacklogClosed`] | The backlog was closed.
+|===
+
+== See Also
+
+* xref:sdk:autonomous-agents/client.adoc#agent-notifications[Subscribing to the notification stream]
+* xref:sdk:autonomous-agents/tasks.adoc[Tasks]
+* xref:sdk:autonomous-agents/capabilities.adoc[Coordination capabilities]

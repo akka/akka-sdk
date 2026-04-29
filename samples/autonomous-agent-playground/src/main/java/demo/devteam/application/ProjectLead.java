@@ -7,6 +7,7 @@ import akka.javasdk.agent.autonomous.capability.TeamLeadership;
 import akka.javasdk.agent.autonomous.capability.TeamLeadership.TeamMember;
 import akka.javasdk.annotations.Component;
 
+// tag::class[]
 @Component(
   id = "project-lead",
   description = "Leads software projects by coordinating a team"
@@ -27,3 +28,4 @@ public class ProjectLead extends AutonomousAgent {
       .capability(TeamLeadership.of(TeamMember.of(Developer.class).maxInstances(3)));
   }
 }
+// end::class[]

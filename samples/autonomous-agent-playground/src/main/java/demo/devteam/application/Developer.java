@@ -5,6 +5,7 @@ import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 
+// tag::class[]
 @Component(id = "developer", description = "Implements features with clean, tested code")
 public class Developer extends AutonomousAgent {
 
@@ -22,3 +23,4 @@ public class Developer extends AutonomousAgent {
       .tools(new CodeTools());
   }
 }
+// end::class[]
