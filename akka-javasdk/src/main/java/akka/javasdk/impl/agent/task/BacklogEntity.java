@@ -2,20 +2,22 @@
  * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.agent.task;
+package akka.javasdk.impl.agent.task;
 
 import static akka.Done.done;
 
 import akka.Done;
+import akka.annotation.InternalApi;
 import akka.javasdk.NotificationPublisher;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 
 /**
- * Manages a shared backlog of task references with atomic claiming semantics. Multiple agents can
- * browse, claim, release, and transfer tasks concurrently.
+ * INTERNAL API Manages a shared backlog of task references with atomic claiming semantics. Multiple
+ * agents can browse, claim, release, and transfer tasks concurrently.
  */
+@InternalApi
 @Component(id = "akka-backlog")
 public final class BacklogEntity extends EventSourcedEntity<BacklogState, BacklogEvent> {
 

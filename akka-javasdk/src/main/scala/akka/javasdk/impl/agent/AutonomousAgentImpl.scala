@@ -26,9 +26,6 @@ import akka.javasdk.agent.SessionMessage.ToolCallRequest
 import akka.javasdk.agent.SessionMessage.ToolCallResponse
 import akka.javasdk.agent.SessionMessage.UserMessage
 import akka.javasdk.agent._
-import akka.javasdk.agent.task.BacklogEntity
-import akka.javasdk.agent.task.BacklogNotification
-import akka.javasdk.agent.task.BacklogState
 import akka.javasdk.agent.task.TaskAttachment
 import akka.javasdk.agent.task.TaskEntity
 import akka.javasdk.agent.task.TaskNotification
@@ -38,6 +35,9 @@ import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.JsonSchema
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.agent.autonomous.AgentDefinitionImpl
+import akka.javasdk.impl.agent.task.BacklogEntity
+import akka.javasdk.impl.agent.task.BacklogNotification
+import akka.javasdk.impl.agent.task.BacklogState
 import akka.javasdk.impl.client.EntityClientImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.Serializer

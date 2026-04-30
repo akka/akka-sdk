@@ -2,10 +2,13 @@
  * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.agent.task;
+package akka.javasdk.impl.agent.task;
 
+import akka.annotation.InternalApi;
 import akka.javasdk.annotations.TypeName;
 
+/** INTERNAL API */
+@InternalApi
 public sealed interface BacklogEvent {
 
   @TypeName("akka-backlog-created")

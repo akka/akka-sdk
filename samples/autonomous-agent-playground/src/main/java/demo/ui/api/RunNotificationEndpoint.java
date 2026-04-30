@@ -191,7 +191,6 @@ public class RunNotificationEndpoint extends AbstractHttpEndpoint {
     if (n instanceof Notification.HandoffNotification) return "handoff";
     if (n instanceof Notification.DelegationNotification) return "delegation";
     if (n instanceof Notification.TeamNotification) return "team";
-    if (n instanceof Notification.BacklogNotification) return "backlog";
     if (n instanceof Notification.ConversationNotification) return "conversation";
     if (n instanceof Notification.MessagingNotification) return "messaging";
     if (n instanceof Notification.StruggleNotification) return "struggle";

@@ -2,13 +2,15 @@
  * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.agent.task;
+package akka.javasdk.impl.agent.task;
 
+import akka.annotation.InternalApi;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/** State of a backlog entity — tracks task references and their claim status. */
+/** INTERNAL API State of a backlog entity — tracks task references and their claim status. */
+@InternalApi
 public record BacklogState(String name, Map<String, Entry> tasks, boolean closed) {
 
   /** An entry in the backlog: task ID and who has claimed it (if anyone). */

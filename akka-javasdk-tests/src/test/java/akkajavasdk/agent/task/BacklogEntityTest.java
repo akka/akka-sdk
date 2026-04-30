@@ -9,10 +9,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.Done;
 import akka.javasdk.NotificationPublisher;
-import akka.javasdk.agent.task.BacklogEntity;
-import akka.javasdk.agent.task.BacklogEvent;
-import akka.javasdk.agent.task.BacklogNotification;
-import akka.javasdk.agent.task.BacklogState;
+import akka.javasdk.impl.agent.task.BacklogEntity;
+import akka.javasdk.impl.agent.task.BacklogEvent;
+import akka.javasdk.impl.agent.task.BacklogNotification;
+import akka.javasdk.impl.agent.task.BacklogState;
 import akka.javasdk.testkit.EventSourcedResult;
 import akka.javasdk.testkit.EventSourcedTestKit;
 import java.util.concurrent.ConcurrentLinkedQueue;
