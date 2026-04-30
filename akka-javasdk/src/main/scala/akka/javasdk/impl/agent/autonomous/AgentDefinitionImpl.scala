@@ -7,6 +7,7 @@ package akka.javasdk.impl.agent.autonomous
 import java.util
 
 import akka.annotation.InternalApi
+import akka.javasdk.agent.ContentLoader
 import akka.javasdk.agent.Guardrail
 import akka.javasdk.agent.ModelProvider
 import akka.javasdk.agent.RemoteMcpTools
@@ -24,7 +25,8 @@ final case class AgentDefinitionImpl(
     mcpTools: util.List[RemoteMcpTools],
     requestGuardrailClassNames: util.List[String],
     responseGuardrailClassNames: util.List[String],
-    capabilities: util.List[AgentCapability])
+    capabilities: util.List[AgentCapability],
+    contentLoader: Option[ContentLoader])
     extends AgentDefinition {
 
   override def goal(goal: String): AgentDefinition =
@@ -48,6 +50,9 @@ final case class AgentDefinitionImpl(
   override def responseGuardrails(guardrails: Class[_ <: Guardrail]*): AgentDefinition =
     copy(responseGuardrailClassNames = concat(responseGuardrailClassNames, guardrails.map(_.getName)))
 
+  override def contentLoader(contentLoader: ContentLoader): AgentDefinition =
+    copy(contentLoader = Some(contentLoader))
+
   private def concat[T](existing: util.List[T], additions: Seq[T]): util.List[T] = {
     val result = new util.ArrayList[T](existing)
     additions.foreach(result.add)
@@ -68,5 +73,6 @@ object AgentDefinitionImpl {
       mcpTools = util.List.of(),
       requestGuardrailClassNames = util.List.of(),
       responseGuardrailClassNames = util.List.of(),
-      capabilities = util.List.of())
+      capabilities = util.List.of(),
+      contentLoader = None)
 }
