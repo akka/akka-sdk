@@ -164,7 +164,16 @@ If a dependency fails or is cancelled, dependents are cancelled automatically.
 
 The task entity publishes a `TaskNotification` on every terminal transition so the runtime can observe completion without polling. See xref:sdk:autonomous-agents/notifications.adoc#task-entity-notifications[Task entity notifications] for the full catalog.
 
-// TODO: how to subscribe to the task notification stream from user code. The current `componentClient.forTask(...)` does not expose a stream; access goes through `TaskEntity` directly. This API will be revisited.
+Subscribe to the notification stream of a task from application code via `componentClient.forTask(taskId).notificationStream()`. The returned `Source` emits `TaskNotification` events as the task reaches its terminal state. A common pattern is to bridge the stream to the browser as Server-Sent Events from an HTTP endpoint, so a UI can react to task completion without polling:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/TaskNotificationEndpoint.java[TaskNotificationEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/TaskNotificationEndpoint.java[tag=task-notification]
+----
+<1> Subscribe to the task's notification stream.
+<2> Map each `TaskNotification` to a public representation so the wire shape is decoupled from the SDK record.
+<3> A small wire shape with a `kind` discriminator lets clients handle the four terminal cases without depending on SDK types.
 
 == See Also
 
