@@ -9,12 +9,14 @@ import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.delega
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.handoffTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.agent.autonomous.Notification;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import akkajavasdk.components.agent.SomeAgent;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
@@ -170,6 +172,39 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
               assertThat(handoffStarted.targetComponentId()).isEqualTo("specialist-agent");
               assertThat(handoffStarted.targetInstanceId()).isNotBlank();
             });
+  }
+
+  @Test
+  public void shouldIncludeAutonomousAgentsInRegistry() {
+    assertThat(
+            testKit.getAgentRegistry().allAgents().stream()
+                .map(AgentRegistry.AgentInfo::id)
+                .toList())
+        .contains(
+            "coordinator-agent",
+            "worker-agent",
+            "triage-test-agent",
+            "specialist-agent",
+            "request-delegating-agent");
+
+    assertThat(
+            testKit.getAgentRegistry().agentsWithRole("billing-specialist").stream()
+                .map(AgentRegistry.AgentInfo::id)
+                .toList())
+        .isEqualTo(List.of("specialist-agent"));
+
+    var specialistInfo = testKit.getAgentRegistry().agentInfo("specialist-agent");
+    assertThat(specialistInfo.id()).isEqualTo("specialist-agent");
+    assertThat(specialistInfo.name()).isEqualTo("Specialist");
+    assertThat(specialistInfo.description()).isEqualTo("Resolves billing disputes.");
+    assertThat(specialistInfo.role()).isEqualTo("billing-specialist");
+
+    // CoordinatorAgent doesn't define name, description, or role — defaults apply
+    var coordinatorInfo = testKit.getAgentRegistry().agentInfo("coordinator-agent");
+    assertThat(coordinatorInfo.id()).isEqualTo("coordinator-agent");
+    assertThat(coordinatorInfo.name()).isEqualTo("coordinator-agent");
+    assertThat(coordinatorInfo.description()).isEqualTo("");
+    assertThat(coordinatorInfo.role()).isEqualTo("");
   }
 
   @Test

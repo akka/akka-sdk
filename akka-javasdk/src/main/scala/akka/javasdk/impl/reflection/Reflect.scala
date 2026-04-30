@@ -531,15 +531,24 @@ private[impl] object Reflect {
     }
   }
 
-  def readAgentName[A <: Agent](agentClass: Class[A]): Option[String] = {
+  def readAgentName(agentClass: Class[_]): Option[String] = {
+    require(
+      isAgent(agentClass) || isAutonomousAgent(agentClass),
+      s"Expected an Agent or AutonomousAgent class, but was [${agentClass.getName}]")
     readComponentName(agentClass)
   }
 
-  def readAgentDescription[A <: Agent](agentClass: Class[A]): Option[String] = {
+  def readAgentDescription(agentClass: Class[_]): Option[String] = {
+    require(
+      isAgent(agentClass) || isAutonomousAgent(agentClass),
+      s"Expected an Agent or AutonomousAgent class, but was [${agentClass.getName}]")
     readComponentDescription(agentClass)
   }
 
-  def readAgentRole[A <: Agent](agentClass: Class[A]): Option[String] = {
+  def readAgentRole(agentClass: Class[_]): Option[String] = {
+    require(
+      isAgent(agentClass) || isAutonomousAgent(agentClass),
+      s"Expected an Agent or AutonomousAgent class, but was [${agentClass.getName}]")
     val agentRoleAnn = agentClass.annotationOption[AgentRole]
     agentRoleAnn.map(_.value())
   }
