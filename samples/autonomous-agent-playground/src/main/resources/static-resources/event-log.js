@@ -4,15 +4,20 @@ import { el, escapeHtml } from '/playground/static/samples/_helpers.js';
 
 /**
  * Tracks observed agent instances per role within a run; once a role has > 1 instance, all rows
- * for that role are re-labelled with a short suffix so they can be told apart (FR-010a).
+ * for that role are re-labelled with a short suffix so they can be told apart (FR-010a). Also
+ * tracks first-seen order so {@link #hueFor} can assign each agent a well-spaced color.
  */
 export class AgentDisplay {
   constructor() {
     this.instancesByComponentId = new Map(); // componentId -> Set<instanceId>
+    this.orderByComponentId = new Map(); // componentId -> insertion index
   }
 
   observe(componentId, instanceId) {
     if (!componentId) return false;
+    if (!this.orderByComponentId.has(componentId)) {
+      this.orderByComponentId.set(componentId, this.orderByComponentId.size);
+    }
     let bucket = this.instancesByComponentId.get(componentId);
     if (!bucket) {
       bucket = new Set();
@@ -30,6 +35,13 @@ export class AgentDisplay {
     if (!bucket || bucket.size <= 1 || !instanceId) return componentId;
     return `${componentId} ${instanceId.slice(0, 6)}`;
   }
+
+  hueFor(componentId) {
+    if (!componentId) return null;
+    const idx = this.orderByComponentId.get(componentId);
+    if (idx == null) return null;
+    return AGENT_HUES[idx % AGENT_HUES.length];
+  }
 }
 
 /**
@@ -42,6 +54,11 @@ function extractAgent(envelope) {
     instanceId: envelope.agentInstanceId ?? null,
   };
 }
+
+// Hue palette for agent component-id pills, ordered so adjacent slots are far apart on the color
+// wheel. Agents are assigned hues by first-seen order (see AgentDisplay.hueFor), so the first few
+// agents in a run always get the best-separated colors regardless of their names.
+const AGENT_HUES = [210, 330, 90, 270, 30, 180, 60, 150];
 
 function summaryFor(envelope) {
   const r = envelope.raw ?? {};
@@ -121,9 +138,10 @@ export function renderEventRow(envelope, agentDisplay) {
   header.appendChild(el('span', { className: 'event-tier', 'aria-label': TIER_LABEL[tier] }, TIER_GLYPH[tier] ?? '·'));
   header.appendChild(el('time', { className: 'event-time' }, time));
   if (label) {
-    header.appendChild(
-      el('span', { className: 'event-agent', title: instanceId ?? '' }, label)
-    );
+    const attrs = { className: 'event-agent', title: instanceId ?? '' };
+    const hue = agentDisplay.hueFor(componentId);
+    if (hue != null) attrs.style = `--agent-hue: ${hue}`;
+    header.appendChild(el('span', attrs, label));
   }
   header.appendChild(el('span', { className: 'event-kind' }, envelope.kind));
   row.appendChild(header);
