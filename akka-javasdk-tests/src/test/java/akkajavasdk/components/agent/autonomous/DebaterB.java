@@ -13,6 +13,6 @@ public class DebaterB extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
-    return define().goal("Argue against the assigned position.");
+    return define().purpose("Argue against the assigned position.");
   }
 }

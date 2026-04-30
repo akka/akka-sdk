@@ -15,7 +15,7 @@ public class SeniorConsultant extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal(
+      .purpose(
         """
         Resolve complex, high-stakes consulting problems — regulatory issues, \
         M&A integration, enterprise transformation. Deliver a comprehensive \

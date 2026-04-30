@@ -115,8 +115,14 @@ private[javasdk] final class AutonomousAgentClientImpl(
       throw new IllegalStateException("Agent capability converter not available in this context"))
 
     val spiCapabilities = converter.toSpiCapabilities(setupImpl.capabilities)
+    val composedGoal: Option[String] = (setupImpl.purpose, setupImpl.guidance) match {
+      case (None, None)       => None
+      case (Some(p), None)    => Some(p)
+      case (None, Some(g))    => Some(g)
+      case (Some(p), Some(g)) => Some(s"$p\n\n$g")
+    }
     runtimeComponentClients.autonomousAgentClient
-      .applySetup(agentComponentId, agentInstanceId, setupImpl.goal, spiCapabilities)
+      .applySetup(agentComponentId, agentInstanceId, composedGoal, spiCapabilities)
       .asJava
   }
 

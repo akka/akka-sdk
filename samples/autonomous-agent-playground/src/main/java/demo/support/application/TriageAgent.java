@@ -11,7 +11,7 @@ public class TriageAgent extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal(
+      .purpose(
         """
         Classify customer support requests and ensure they are resolved \
         by the appropriate specialist. \

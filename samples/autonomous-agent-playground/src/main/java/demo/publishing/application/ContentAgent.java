@@ -11,7 +11,8 @@ public class ContentAgent extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal("Draft blog posts. Write clear, engaging content on the given topic.")
+      .purpose("Draft blog posts.")
+      .guidance("Write clear, engaging content on the given topic.")
       .capability(TaskAcceptance.of(PublishingTasks.DRAFT).maxIterationsPerTask(3));
   }
 }

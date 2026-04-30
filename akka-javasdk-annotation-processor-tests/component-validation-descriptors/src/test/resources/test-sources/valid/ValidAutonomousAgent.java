@@ -9,6 +9,6 @@ public class ValidAutonomousAgent extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
-    return define().goal("Test goal");
+    return define().purpose("Test purpose");
   }
 }

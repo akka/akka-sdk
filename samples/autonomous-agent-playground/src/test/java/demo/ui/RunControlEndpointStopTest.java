@@ -26,9 +26,7 @@ public class RunControlEndpointStopTest extends TestKitSupport {
   @Test
   public void stopReturns404ForUnknownComponent() {
     var response = httpClient
-      .POST(
-        "/playground/api/runs/" + UUID.randomUUID() + "/stop?component=does-not-exist"
-      )
+      .POST("/playground/api/runs/" + UUID.randomUUID() + "/stop?component=does-not-exist")
       .invoke();
     assertThat(response.status()).isEqualTo(StatusCodes.NOT_FOUND);
   }
@@ -80,7 +78,8 @@ public class RunControlEndpointStopTest extends TestKitSupport {
       .invoke()
       .body();
 
-    var url = "/playground/api/runs/" + post.runId() + "/stop?component=" + post.agentComponentId();
+    var url =
+      "/playground/api/runs/" + post.runId() + "/stop?component=" + post.agentComponentId();
     var first = httpClient.POST(url).invoke();
     var second = httpClient.POST(url).invoke();
 

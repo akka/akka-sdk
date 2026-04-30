@@ -10,8 +10,8 @@ import akka.javasdk.agent.RemoteMcpTools;
 import akka.javasdk.agent.autonomous.capability.AgentCapability;
 
 /**
- * Defines an autonomous agent's configuration: goal, tools, model provider, guardrails, and
- * capabilities. Built via {@link AutonomousAgent#define()} and returned from {@link
+ * Defines an autonomous agent's configuration: purpose, guidance, tools, model provider,
+ * guardrails, and capabilities. Built via {@link AutonomousAgent#define()} and returned from {@link
  * AutonomousAgent#definition()}.
  *
  * <p>Each fluent method returns a new immutable instance.
@@ -19,11 +19,18 @@ import akka.javasdk.agent.autonomous.capability.AgentCapability;
 public interface AgentDefinition {
 
   /**
-   * The agent's high-level purpose. Goal text should describe what the agent achieves, not how it
-   * coordinates. The runtime combines the goal with capability-specific context and tool
+   * The agent's high-level purpose. Describes what the agent is for — not how it operates. The
+   * runtime combines the purpose with optional guidance, capability-specific context, and tool
    * descriptions to build the system message.
    */
-  AgentDefinition goal(String goal);
+  AgentDefinition purpose(String purpose);
+
+  /**
+   * Optional guidance on how the agent should operate — style, conventions, behavioral preferences.
+   * Distinct from {@link #purpose}, which describes what the agent is for, and from task-level
+   * instructions, which apply only to a specific task.
+   */
+  AgentDefinition guidance(String guidance);
 
   /** Add a capability to this agent: task acceptance, delegation, etc. */
   AgentDefinition capability(AgentCapability capability);

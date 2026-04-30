@@ -51,7 +51,9 @@ public class PublishingEndpoint extends AbstractHttpEndpoint {
   public PublishingPipeline request(PublishRequest request) {
     // 1. Create draft task and assign to content agent. Accept an optional pre-generated runId
     //    so the UI can subscribe to the notification stream before the agent activates.
-    var contentAgentId = requestContext().queryParams().getString("runId")
+    var contentAgentId = requestContext()
+      .queryParams()
+      .getString("runId")
       .filter(s -> !s.isBlank())
       .orElseGet(() -> UUID.randomUUID().toString());
     var draftTaskId = componentClient

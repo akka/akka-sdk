@@ -9,6 +9,7 @@ public class ComplianceReviewer extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
-    return define().goal("Review documents for regulatory compliance and policy adherence.");
+    return define()
+      .purpose("Review documents for regulatory compliance and policy adherence.");
   }
 }

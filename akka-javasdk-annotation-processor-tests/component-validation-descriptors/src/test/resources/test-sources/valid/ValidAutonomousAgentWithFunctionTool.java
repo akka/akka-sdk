@@ -10,7 +10,7 @@ public class ValidAutonomousAgentWithFunctionTool extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
-    return define().goal("Test goal");
+    return define().purpose("Test purpose");
   }
 
   @FunctionTool(description = "A helper tool")

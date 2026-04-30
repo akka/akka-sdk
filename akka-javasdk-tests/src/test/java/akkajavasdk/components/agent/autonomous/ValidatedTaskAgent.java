@@ -15,7 +15,7 @@ public class ValidatedTaskAgent extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-        .goal("Complete tasks with rule validation")
+        .purpose("Complete tasks with rule validation")
         .capability(TaskAcceptance.of(TestTasks.VALIDATED_TASK));
   }
 }

@@ -16,7 +16,7 @@ public class TemplateDelegatingAgent extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-        .goal("Coordinate research by delegating work items using task templates.")
+        .purpose("Coordinate research by delegating work items using task templates.")
         .capability(TaskAcceptance.of(TestTasks.RESEARCH).maxIterationsPerTask(5))
         .capability(Delegation.to(TeamWorkerAgent.class));
   }

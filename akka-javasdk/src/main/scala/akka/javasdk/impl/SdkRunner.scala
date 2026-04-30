@@ -812,9 +812,9 @@ private final class Sdk(
           }
           tempAgent.definition() match {
             case impl: AgentDefinitionImpl =>
-              if (impl.goal.isEmpty)
+              if (impl.purpose.isEmpty)
                 logger.warn(
-                  "AutonomousAgent [{}] has no goal configured. Set a goal via define().goal(...)",
+                  "AutonomousAgent [{}] has no purpose configured. Set a purpose via define().purpose(...)",
                   clz.getName)
               impl
             case other =>
@@ -870,7 +870,8 @@ private final class Sdk(
             applicationConfig,
             system,
             agentDefinition,
-            goal = agentDefinition.goal,
+            // TODO: replace SPI goal with purpose and guidance
+            goal = AgentDefinitionImpl.composeSystemPrompt(agentDefinition.purpose, agentDefinition.guidance),
             modelProvider = spiModelProvider,
             toolDescriptors = spiToolDescriptors,
             mcpClientDescriptors = spiMcpDescriptors,

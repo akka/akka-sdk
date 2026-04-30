@@ -15,7 +15,7 @@ public class TeamWorkerAgent extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-        .goal("Implement work items.")
+        .purpose("Implement work items.")
         .capability(TaskAcceptance.of(TestTasks.WORK_ITEM));
   }
 }

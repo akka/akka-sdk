@@ -11,7 +11,7 @@ public class PublishingAgent extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal(
+      .purpose(
         "Publish approved blog posts. Generate a URL and timestamp for the published post."
       )
       .capability(TaskAcceptance.of(PublishingTasks.PUBLISH).maxIterationsPerTask(3));

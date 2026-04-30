@@ -13,7 +13,7 @@ import java.util.UUID;
 
 /**
  * Demonstrates dynamic agent setup — the same generic agent class is configured with different
- * goals and capabilities per request.
+ * purposes and capabilities per request.
  */
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/dynamic")
@@ -31,14 +31,16 @@ public class DynamicEndpoint extends AbstractHttpEndpoint {
 
   @Post("/summarize")
   public TaskResponse summarize(TaskRequest request) {
-    var agentId = requestContext().queryParams().getString("runId")
+    var agentId = requestContext()
+      .queryParams()
+      .getString("runId")
       .filter(s -> !s.isBlank())
       .orElseGet(() -> UUID.randomUUID().toString());
     var agent = componentClient.forAutonomousAgent(DynamicAgent.class, agentId);
 
     agent.setup(
       AgentSetup.create()
-        .goal("Produce a concise summary of the given content, highlighting key points.")
+        .purpose("Produce a concise summary of the given content, highlighting key points.")
         .capability(TaskAcceptance.of(DynamicTasks.SUMMARIZE))
     );
 
@@ -48,14 +50,16 @@ public class DynamicEndpoint extends AbstractHttpEndpoint {
 
   @Post("/translate")
   public TaskResponse translate(TaskRequest request) {
-    var agentId = requestContext().queryParams().getString("runId")
+    var agentId = requestContext()
+      .queryParams()
+      .getString("runId")
       .filter(s -> !s.isBlank())
       .orElseGet(() -> UUID.randomUUID().toString());
     var agent = componentClient.forAutonomousAgent(DynamicAgent.class, agentId);
 
     agent.setup(
       AgentSetup.create()
-        .goal("Translate the given content to French, preserving tone and meaning.")
+        .purpose("Translate the given content to French, preserving tone and meaning.")
         .capability(TaskAcceptance.of(DynamicTasks.TRANSLATE))
     );
 

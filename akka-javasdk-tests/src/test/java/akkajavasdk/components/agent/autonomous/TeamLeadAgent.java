@@ -17,7 +17,7 @@ public class TeamLeadAgent extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-        .goal("Plan and coordinate work by leading a team.")
+        .purpose("Plan and coordinate work by leading a team.")
         .capability(TaskAcceptance.of(TestTasks.PLAN))
         .capability(TeamLeadership.of(TeamMember.of(TeamWorkerAgent.class).maxInstances(2)));
   }

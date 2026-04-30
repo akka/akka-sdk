@@ -12,7 +12,7 @@ public class ResearchCoordinator extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal(
+      .purpose(
         """
         Produce comprehensive research briefs by synthesising findings \
         from multiple specialist perspectives. \

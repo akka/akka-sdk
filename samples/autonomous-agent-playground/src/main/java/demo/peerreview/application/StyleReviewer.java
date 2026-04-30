@@ -9,6 +9,7 @@ public class StyleReviewer extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
-    return define().goal("Review documents for clarity, readability, and consistent style.");
+    return define()
+      .purpose("Review documents for clarity, readability, and consistent style.");
   }
 }

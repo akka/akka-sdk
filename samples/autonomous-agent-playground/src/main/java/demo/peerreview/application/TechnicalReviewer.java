@@ -13,6 +13,6 @@ public class TechnicalReviewer extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal("Review documents for technical accuracy, correctness, and completeness.");
+      .purpose("Review documents for technical accuracy, correctness, and completeness.");
   }
 }

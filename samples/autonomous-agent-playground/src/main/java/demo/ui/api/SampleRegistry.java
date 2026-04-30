@@ -61,10 +61,25 @@ public final class SampleRegistry {
   private static final List<SampleEntry> ENTRIES = List.of(
     new SampleEntry("helloworld", "Hello world", "question-answerer", QuestionAnswerer.class),
     new SampleEntry("pipeline", "Pipeline", "report-agent", ReportAgent.class),
-    new SampleEntry("docreview", "Document review", "document-reviewer", DocumentReviewer.class),
+    new SampleEntry(
+      "docreview",
+      "Document review",
+      "document-reviewer",
+      DocumentReviewer.class
+    ),
     new SampleEntry("dynamic", "Dynamic", "dynamic-agent", DynamicAgent.class),
-    new SampleEntry("research", "Research", "research-coordinator", ResearchCoordinator.class),
-    new SampleEntry("consulting", "Consulting", "consulting-coordinator", ConsultingCoordinator.class),
+    new SampleEntry(
+      "research",
+      "Research",
+      "research-coordinator",
+      ResearchCoordinator.class
+    ),
+    new SampleEntry(
+      "consulting",
+      "Consulting",
+      "consulting-coordinator",
+      ConsultingCoordinator.class
+    ),
     new SampleEntry("support", "Support", "triage-agent", TriageAgent.class),
     new SampleEntry("publishing", "Publishing", "content-agent", ContentAgent.class),
     new SampleEntry("debate", "Debate", "debate-moderator", DebateModerator.class),
@@ -85,23 +100,23 @@ public final class SampleRegistry {
     // Owning agents — every entry in ENTRIES contributes here.
     for (var e : ENTRIES) map.put(e.agentComponentId(), e.agentClass());
     // Child agents reached via delegation / handoff / team / moderation.
-    map.put("researcher", Researcher.class);                    // research → delegation
+    map.put("researcher", Researcher.class); // research → delegation
     map.put("analyst", Analyst.class);
     map.put("consulting-researcher", ConsultingResearcher.class); // consulting → delegation
-    map.put("senior-consultant", SeniorConsultant.class);         // consulting → handoff
+    map.put("senior-consultant", SeniorConsultant.class); // consulting → handoff
     // FactCheckAgent is intentionally omitted — it's a request-based Agent (not AutonomousAgent)
     // and therefore doesn't have a notificationStream() to subscribe to.
-    map.put("billing-specialist", BillingSpecialist.class);      // support → handoff
+    map.put("billing-specialist", BillingSpecialist.class); // support → handoff
     map.put("technical-specialist", TechnicalSpecialist.class);
-    map.put("publishing-agent", PublishingAgent.class);          // publishing → publish task
-    map.put("advocate", Advocate.class);                          // debate → moderation
+    map.put("publishing-agent", PublishingAgent.class); // publishing → publish task
+    map.put("advocate", Advocate.class); // debate → moderation
     map.put("critic", Critic.class);
-    map.put("buyer", Buyer.class);                                // negotiation → moderation
+    map.put("buyer", Buyer.class); // negotiation → moderation
     map.put("seller", Seller.class);
-    map.put("technical-reviewer", TechnicalReviewer.class);      // peerreview → moderation
+    map.put("technical-reviewer", TechnicalReviewer.class); // peerreview → moderation
     map.put("style-reviewer", StyleReviewer.class);
     map.put("compliance-reviewer", ComplianceReviewer.class);
-    map.put("developer", Developer.class);                        // devteam → team
+    map.put("developer", Developer.class); // devteam → team
     ALL_AGENTS = Map.copyOf(map);
   }
 

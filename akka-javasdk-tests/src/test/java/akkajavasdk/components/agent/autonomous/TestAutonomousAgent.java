@@ -26,7 +26,7 @@ public class TestAutonomousAgent extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-        .goal("Test agent")
+        .purpose("Test agent")
         .capability(
             TaskAcceptance.of(
                 TestTasks.TEST_TASK,

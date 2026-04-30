@@ -18,7 +18,8 @@ import akka.javasdk.agent.autonomous.capability.AgentCapability
  */
 @InternalApi
 final case class AgentDefinitionImpl(
-    goal: String,
+    purpose: String,
+    guidance: Option[String],
     modelProvider: ModelProvider,
     toolInstancesOrClasses: util.List[AnyRef],
     mcpTools: util.List[RemoteMcpTools],
@@ -27,8 +28,11 @@ final case class AgentDefinitionImpl(
     capabilities: util.List[AgentCapability])
     extends AgentDefinition {
 
-  override def goal(goal: String): AgentDefinition =
-    copy(goal = goal)
+  override def purpose(purpose: String): AgentDefinition =
+    copy(purpose = purpose)
+
+  override def guidance(guidance: String): AgentDefinition =
+    copy(guidance = Some(guidance))
 
   override def capability(capability: AgentCapability): AgentDefinition =
     copy(capabilities = concat(this.capabilities, Seq(capability)))
@@ -62,11 +66,19 @@ final case class AgentDefinitionImpl(
 object AgentDefinitionImpl {
   def empty(): AgentDefinitionImpl =
     AgentDefinitionImpl(
-      goal = "",
+      purpose = "",
+      guidance = None,
       modelProvider = null,
       toolInstancesOrClasses = util.List.of(),
       mcpTools = util.List.of(),
       requestGuardrailClassNames = util.List.of(),
       responseGuardrailClassNames = util.List.of(),
       capabilities = util.List.of())
+
+  /**
+   * Combine purpose and optional guidance into a single system prompt string. Used internally until the runtime SPI has
+   * separate fields for purpose and guidance.
+   */
+  def composeSystemPrompt(purpose: String, guidance: Option[String]): String =
+    guidance.filter(_.nonEmpty).fold(purpose)(g => s"$purpose\n\n$g")
 }

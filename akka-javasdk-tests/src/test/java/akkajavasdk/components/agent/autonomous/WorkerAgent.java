@@ -15,7 +15,7 @@ public class WorkerAgent extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-        .goal("Research a topic and produce factual findings.")
+        .purpose("Research a topic and produce factual findings.")
         .capability(TaskAcceptance.of(TestTasks.FINDINGS).maxIterationsPerTask(3));
   }
 }

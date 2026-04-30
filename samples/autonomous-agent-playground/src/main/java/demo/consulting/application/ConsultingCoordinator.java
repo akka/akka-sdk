@@ -18,7 +18,7 @@ public class ConsultingCoordinator extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal(
+      .purpose(
         """
         Deliver actionable consulting recommendations. Assess each client \
         problem, determine its complexity, and ensure it reaches the right \

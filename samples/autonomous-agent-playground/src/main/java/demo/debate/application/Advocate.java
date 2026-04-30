@@ -9,6 +9,7 @@ public class Advocate extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
-    return define().goal("Present compelling arguments in favor of the assigned position.");
+    return define()
+      .purpose("Present compelling arguments in favor of the assigned position.");
   }
 }

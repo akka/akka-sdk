@@ -10,7 +10,7 @@ public class AutonomousAgentWithCommandHandler extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
-    return define().goal("Test goal");
+    return define().purpose("Test purpose");
   }
 
   // This should be rejected — AutonomousAgent must not have command handlers

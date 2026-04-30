@@ -4,10 +4,10 @@ export const dynamic = {
   id: 'dynamic',
   displayName: 'Dynamic',
   description: {
-    overview: 'A single generic agent class is configured per request with different goals and task capabilities. The same DynamicAgent code runs both the summarize and translate flows.',
-    agents: ['DynamicAgent — declared with no static goal or capabilities; configured at runtime via AgentSetup'],
+    overview: 'A single generic agent class is configured per request with different purposes and task capabilities. The same DynamicAgent code runs both the summarize and translate flows.',
+    agents: ['DynamicAgent — declared with no static purpose or capabilities; configured at runtime via AgentSetup'],
     tasks: ['SUMMARIZE → String', 'TRANSLATE → String'],
-    flow: 'Two HTTP routes (/dynamic/summarize, /dynamic/translate) each create a fresh DynamicAgent instance, configure its goal and accepted capability dynamically, then assign a single task. Same agent class, two different runtime specialisations.',
+    flow: 'Two HTTP routes (/dynamic/summarize, /dynamic/translate) each create a fresh DynamicAgent instance, configure its purpose and accepted capability dynamically, then assign a single task. Same agent class, two different runtime specialisations.',
     demonstrates: 'Runtime agent configuration via AgentSetup. Useful when many task variants share the same execution shape and the differences are best expressed as data.',
   },
   agentComponentId: 'dynamic-agent',

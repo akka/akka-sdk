@@ -65,7 +65,9 @@ public class PipelineEndpoint extends AbstractHttpEndpoint {
 
     // Assign all tasks to a single agent instance — accept an optional pre-generated runId so the
     // UI can subscribe to the notification stream before the agent activates.
-    var agentInstanceId = requestContext().queryParams().getString("runId")
+    var agentInstanceId = requestContext()
+      .queryParams()
+      .getString("runId")
       .filter(s -> !s.isBlank())
       .orElseGet(() -> UUID.randomUUID().toString());
     componentClient

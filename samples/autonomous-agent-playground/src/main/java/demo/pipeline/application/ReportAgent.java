@@ -16,7 +16,7 @@ public class ReportAgent extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal(
+      .purpose(
         "Process report phases: collect data, analyze findings, produce comprehensive reports."
       )
       .capability(

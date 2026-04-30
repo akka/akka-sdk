@@ -9,6 +9,6 @@ public class Buyer extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
-    return define().goal("Negotiate the best possible deal from the buyer's perspective.");
+    return define().purpose("Negotiate the best possible deal from the buyer's perspective.");
   }
 }

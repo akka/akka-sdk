@@ -14,7 +14,7 @@ public class ConsultingResearcher extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal(
+      .purpose(
         """
         Research the given topic thoroughly and produce a clear, \
         factual summary of your findings. \

@@ -59,7 +59,8 @@ public class QuestionAnswerer extends AutonomousAgent { // <1>
   @Override
   public AgentDefinition definition() { // <3>
     return define()
-      .goal("Answer questions clearly and concisely, showing reasoning step by step.")
+      .purpose("Answer questions.")
+      .guidance("Be clear and concise. Show reasoning step by step.")
       .capability(TaskAcceptance.of(QuestionTasks.ANSWER).maxIterationsPerTask(3));
   }
 }
@@ -75,13 +76,21 @@ There are no command handlers. The agent is a process — it runs, works on assi
 
 The `definition()` method returns an `AgentDefinition` built with a fluent builder API. `define()` starts the builder.
 
-### Goal
+### Purpose and guidance
 
-The goal is the agent's high-level purpose — what it achieves, not how it coordinates. The runtime combines the goal with capability-specific context and tool descriptions to build the system message sent to the LLM.
+The **purpose** is the agent's high-level reason for existing — what it is for, not how it operates. The runtime combines the purpose with optional guidance, capability-specific context, and tool descriptions to build the system message sent to the LLM.
 
 ```java
 define()
-  .goal("Answer questions clearly and concisely, showing reasoning step by step.")
+  .purpose("Answer questions.")
+```
+
+Optional **guidance** describes how the agent should operate — style, conventions, behavioral preferences. This is distinct from the purpose (what the agent is for) and from task-level instructions (which apply only to a specific task).
+
+```java
+define()
+  .purpose("Answer questions.")
+  .guidance("Be clear and concise. Show reasoning step by step.")
 ```
 
 ### Accepted task types
@@ -137,7 +146,7 @@ public class ReportAgent extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal("Process report phases: collect data, analyze findings, produce comprehensive reports.")
+      .purpose("Process report phases: collect data, analyze findings, produce comprehensive reports.")
       .capability(
         TaskAcceptance.of(PipelineTasks.COLLECT, PipelineTasks.ANALYZE, PipelineTasks.REPORT)
           .maxIterationsPerTask(5));
@@ -212,7 +221,7 @@ public class ConsultingCoordinator extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal("""
+      .purpose("""
         Deliver actionable consulting recommendations. Assess each client \
         problem, determine its complexity, and ensure it reaches the right \
         level of expertise for resolution. \
@@ -441,7 +450,7 @@ var state = componentClient
 
 state.phase();           // execution phase, e.g. "PHASE_RUNNING", "PHASE_STOPPED"
 state.paused();          // whether the agent is paused
-state.goal();            // the agent's current goal
+state.purpose();         // the agent's current purpose
 state.totalTokenUsage(); // cumulative token usage (inputTokens, outputTokens)
 state.currentTask();     // Optional<TaskKey> — the task currently being worked on
 state.pendingTaskIds();  // List<String> — IDs of tasks queued but not yet started
@@ -718,7 +727,7 @@ public class ResearchCoordinator extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal("""
+      .purpose("""
         Produce comprehensive research briefs by synthesising findings \
         from multiple specialist perspectives. \
         """)
@@ -738,7 +747,7 @@ public class Researcher extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal("""
+      .purpose("""
         You are a thorough researcher. When given a topic, find key facts, \
         important details, and relevant context. \
         """)
@@ -755,7 +764,7 @@ public class Analyst extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal("""
+      .purpose("""
         You are an insightful analyst. When given a topic, analyse its implications, \
         identify trends and patterns, and produce actionable insights. \
         """)
@@ -793,7 +802,7 @@ public class TriageAgent extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal("""
+      .purpose("""
         Classify customer support requests and ensure they are resolved \
         by the appropriate specialist. \
         """)
@@ -815,7 +824,7 @@ public class BillingSpecialist extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal("Resolve billing and payment issues for customers.")
+      .purpose("Resolve billing and payment issues for customers.")
       .capability(TaskAcceptance.of(SupportTasks.RESOLVE).maxIterationsPerTask(5));
   }
 }
@@ -829,7 +838,7 @@ public class TechnicalSpecialist extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal("Diagnose and resolve technical issues for customers.")
+      .purpose("Diagnose and resolve technical issues for customers.")
       .capability(TaskAcceptance.of(SupportTasks.RESOLVE).maxIterationsPerTask(5));
   }
 }
@@ -866,7 +875,7 @@ define()
 
 ### Moderation
 
-A moderator agent orchestrates turn-taking conversations between participant agents. The moderator declares which agent types can participate, and the framework manages conversation setup, turn-taking, and transcript collection. Participant agents are simple — they define a goal and the framework handles the conversation mechanics automatically.
+A moderator agent orchestrates turn-taking conversations between participant agents. The moderator declares which agent types can participate, and the framework manages conversation setup, turn-taking, and transcript collection. Participant agents are simple — they define a purpose and the framework handles the conversation mechanics automatically.
 
 ```java
 import akka.javasdk.agent.autonomous.capability.Moderation;
@@ -905,7 +914,7 @@ public class ReviewModerator extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal("Coordinate document peer review and synthesize reviewer findings.")
+      .purpose("Coordinate document peer review and synthesize reviewer findings.")
       .capability(TaskAcceptance.of(ReviewTasks.REVIEW))
       .capability(
         Moderation.of(TechnicalReviewer.class, StyleReviewer.class, ComplianceReviewer.class));
@@ -913,7 +922,7 @@ public class ReviewModerator extends AutonomousAgent {
 }
 ```
 
-Participant agents need only a goal — the framework provides the conversation tools:
+Participant agents need only a purpose — the framework provides the conversation tools:
 
 ```java
 @Component(id = "technical-reviewer", description = "Reviews documents for technical accuracy")
@@ -921,7 +930,7 @@ public class TechnicalReviewer extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
-    return define().goal("Review documents for technical accuracy, correctness, and completeness.");
+    return define().purpose("Review documents for technical accuracy, correctness, and completeness.");
   }
 }
 ```
@@ -941,7 +950,7 @@ public class Facilitator extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal("Facilitate negotiations and help parties reach agreement.")
+      .purpose("Facilitate negotiations and help parties reach agreement.")
       .capability(TaskAcceptance.of(NegotiationTasks.NEGOTIATE))
       .capability(Moderation.of(Buyer.class, Seller.class).maxRounds(5));
   }
@@ -958,7 +967,7 @@ public class Critic extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
-    return define().goal("Provide critical analysis from the assigned perspective.");
+    return define().purpose("Provide critical analysis from the assigned perspective.");
   }
 }
 ```
@@ -991,7 +1000,7 @@ public class ConsultingCoordinator extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal("""
+      .purpose("""
         Deliver actionable consulting recommendations. Assess each client \
         problem, determine its complexity, and ensure it reaches the right \
         level of expertise for resolution. \

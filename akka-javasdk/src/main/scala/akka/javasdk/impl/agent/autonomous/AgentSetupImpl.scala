@@ -14,10 +14,17 @@ import akka.javasdk.agent.autonomous.capability.AgentCapability
  * INTERNAL API
  */
 @InternalApi
-final case class AgentSetupImpl(goal: Option[String], capabilities: util.List[AgentCapability]) extends AgentSetup {
+final case class AgentSetupImpl(
+    purpose: Option[String],
+    guidance: Option[String],
+    capabilities: util.List[AgentCapability])
+    extends AgentSetup {
 
-  override def goal(goal: String): AgentSetup =
-    copy(goal = Some(goal))
+  override def purpose(purpose: String): AgentSetup =
+    copy(purpose = Some(purpose))
+
+  override def guidance(guidance: String): AgentSetup =
+    copy(guidance = Some(guidance))
 
   override def capability(capability: AgentCapability): AgentSetup = {
     val result = new util.ArrayList[AgentCapability](this.capabilities)
@@ -32,5 +39,5 @@ final case class AgentSetupImpl(goal: Option[String], capabilities: util.List[Ag
 @InternalApi
 object AgentSetupImpl {
   def empty(): AgentSetupImpl =
-    AgentSetupImpl(goal = None, capabilities = util.List.of())
+    AgentSetupImpl(purpose = None, guidance = None, capabilities = util.List.of())
 }

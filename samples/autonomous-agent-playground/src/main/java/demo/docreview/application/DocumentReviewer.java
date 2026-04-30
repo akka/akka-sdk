@@ -15,7 +15,7 @@ public class DocumentReviewer extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal(
+      .purpose(
         """
         Review documents for regulatory and compliance standards, \
         providing structured assessments with specific findings. \

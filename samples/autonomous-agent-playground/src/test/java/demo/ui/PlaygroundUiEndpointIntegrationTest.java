@@ -13,8 +13,9 @@ public class PlaygroundUiEndpointIntegrationTest extends TestKitSupport {
     var response = httpClient.GET("/").invoke();
 
     assertThat(response.status()).isEqualTo(StatusCodes.FOUND);
-    assertThat(response.httpResponse().getHeader("Location"))
-      .hasValueSatisfying(h -> assertThat(h.value()).isEqualTo("/playground"));
+    assertThat(response.httpResponse().getHeader("Location")).hasValueSatisfying(
+      h -> assertThat(h.value()).isEqualTo("/playground")
+    );
   }
 
   @Test
@@ -49,7 +50,9 @@ public class PlaygroundUiEndpointIntegrationTest extends TestKitSupport {
     var response = httpClient.GET("/playground/research").invoke();
 
     assertThat(response.status()).isEqualTo(StatusCodes.OK);
-    assertThat(response.body().utf8String()).contains("<title>Autonomous Agent Playground</title>");
+    assertThat(response.body().utf8String()).contains(
+      "<title>Autonomous Agent Playground</title>"
+    );
   }
 
   @Test
@@ -57,6 +60,8 @@ public class PlaygroundUiEndpointIntegrationTest extends TestKitSupport {
     var response = httpClient.GET("/playground/research/run/abc-123").invoke();
 
     assertThat(response.status()).isEqualTo(StatusCodes.OK);
-    assertThat(response.body().utf8String()).contains("<title>Autonomous Agent Playground</title>");
+    assertThat(response.body().utf8String()).contains(
+      "<title>Autonomous Agent Playground</title>"
+    );
   }
 }

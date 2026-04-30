@@ -16,7 +16,7 @@ public class DirectedModerator extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-        .goal("Moderate directed conversations between participants.")
+        .purpose("Moderate directed conversations between participants.")
         .capability(TaskAcceptance.of(TestTasks.MODERATE))
         .capability(Moderation.of(DebaterA.class, DebaterB.class).maxRounds(5));
   }

@@ -15,7 +15,7 @@ public class ReviewModerator extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal("Coordinate document peer review and synthesize reviewer findings.")
+      .purpose("Coordinate document peer review and synthesize reviewer findings.")
       .capability(TaskAcceptance.of(ReviewTasks.REVIEW))
       .capability(
         Moderation.of(TechnicalReviewer.class, StyleReviewer.class, ComplianceReviewer.class)

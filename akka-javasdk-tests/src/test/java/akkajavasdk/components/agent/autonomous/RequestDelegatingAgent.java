@@ -18,7 +18,7 @@ public class RequestDelegatingAgent extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-        .goal("Coordinate work by delegating fact-checking to a request-based agent.")
+        .purpose("Coordinate work by delegating fact-checking to a request-based agent.")
         .capability(TaskAcceptance.of(TestTasks.TEST_TASK).maxIterationsPerTask(5))
         .capability(Delegation.to(SomeAgent.class, FactCheckAgent.class));
   }

@@ -11,9 +11,9 @@ public class Developer extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal(
+      .purpose("Implement features with clean, tested code.")
+      .guidance(
         """
-        Implement features with clean, tested code. \
         Coordinate with teammates when your work depends on or affects \
         their tasks — agree on shared contracts before implementing. \
         """

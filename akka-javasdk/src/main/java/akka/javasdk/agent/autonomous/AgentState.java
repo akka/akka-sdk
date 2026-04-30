@@ -19,7 +19,7 @@ public final class AgentState {
 
   private final String phase;
   private final boolean paused;
-  private final String goal;
+  private final String purpose;
   private final AutonomousAgent.TokenUsage totalTokenUsage;
   private final Optional<TaskKey> currentTask;
   private final List<String> pendingTaskIds;
@@ -27,13 +27,13 @@ public final class AgentState {
   public AgentState(
       String phase,
       boolean paused,
-      String goal,
+      String purpose,
       AutonomousAgent.TokenUsage totalTokenUsage,
       Optional<TaskKey> currentTask,
       List<String> pendingTaskIds) {
     this.phase = phase;
     this.paused = paused;
-    this.goal = goal;
+    this.purpose = purpose;
     this.totalTokenUsage = totalTokenUsage;
     this.currentTask = currentTask;
     this.pendingTaskIds = pendingTaskIds;
@@ -49,9 +49,11 @@ public final class AgentState {
     return paused;
   }
 
-  /** The agent's current goal. */
-  public String goal() {
-    return goal;
+  // FIXME: Currently the returned string contains the purpose and guidance combined as a single
+  // system prompt. SPI update will split these into separate accessors.
+  /** The agent's current purpose. */
+  public String purpose() {
+    return purpose;
   }
 
   /** Total token usage for this agent instance. */

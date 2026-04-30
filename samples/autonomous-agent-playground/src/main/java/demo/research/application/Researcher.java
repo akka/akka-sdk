@@ -14,7 +14,7 @@ public class Researcher extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal(
+      .purpose(
         """
         You are a thorough researcher. When given a topic, find key facts, \
         important details, and relevant context. \

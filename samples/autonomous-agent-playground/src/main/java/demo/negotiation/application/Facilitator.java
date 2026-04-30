@@ -12,7 +12,7 @@ public class Facilitator extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal(
+      .purpose(
         """
         Facilitate negotiations by directing each psarty through structured rounds \
         of offers and counteroffers to reach agreement.

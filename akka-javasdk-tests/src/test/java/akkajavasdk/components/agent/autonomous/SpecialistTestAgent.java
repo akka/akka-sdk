@@ -15,7 +15,7 @@ public class SpecialistTestAgent extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-        .goal("Resolve billing support requests.")
+        .purpose("Resolve billing support requests.")
         .capability(TaskAcceptance.of(TestTasks.RESOLVE).maxIterationsPerTask(3));
   }
 }
