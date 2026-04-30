@@ -37,7 +37,7 @@ Access these documentation files for detailed patterns:
 - `akka-context/sdk/autonomous-agents/coordination.html.md` - Coordination patterns: sequential, delegative, collaborative, emergent
 - `akka-context/sdk/autonomous-agents/capabilities.html.md` - Coordination capabilities: Delegation, Handoff, TeamLeadership, Moderation, external input
 - `akka-context/sdk/autonomous-agents/client.html.md` - ComponentClient API: `runSingleTask`, `assignTasks`, `pause`/`resume`, state, notifications, async variants
-- `akka-context/sdk/autonomous-agents/notifications.html.md` - Notifications reference: every Notification type plus task and backlog entity notifications
+- `akka-context/sdk/autonomous-agents/notifications.html.md` - Notifications reference: every notification type
 - `akka-context/sdk/autonomous-agents/testing.html.md` - Testing with TestModelProvider and AutonomousAgentTools
 
 **Other components:**

@@ -141,7 +141,7 @@ xref:sdk:autonomous-agents/capabilities.adoc[Coordination capabilities]:: Implem
 
 xref:sdk:autonomous-agents/client.adoc[Client API]:: Starting and stopping agents, assigning tasks, pausing and resuming, querying agent state and task results.
 
-xref:sdk:autonomous-agents/notifications.adoc[Notifications]:: The notification stream emitted by the runtime: lifecycle, task, handoff, delegation, team, backlog, conversation, messaging, and struggle events.
+xref:sdk:autonomous-agents/notifications.adoc[Notifications]:: The notification stream emitted by the runtime: lifecycle, task, handoff, delegation, team, conversation, messaging, and struggle events.
 
 xref:sdk:autonomous-agents/testing.adoc[Testing]:: Mocking model responses with `TestModelProvider` and the `AutonomousAgentTools` factory methods for the built-in coordination tools.
 

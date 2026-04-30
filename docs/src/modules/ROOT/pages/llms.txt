@@ -122,7 +122,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Autonomous agent coordination patterns](https://doc.akka.io/sdk/autonomous-agents/coordination.html.md): Sequential, delegative, collaborative, and emergent patterns for multi-agent systems
 - [Autonomous agent coordination capabilities](https://doc.akka.io/sdk/autonomous-agents/capabilities.html.md): Delegation, handoff, teams, moderation, external input, and capability composition
 - [Autonomous agent client API](https://doc.akka.io/sdk/autonomous-agents/client.html.md): runSingleTask, assignTasks, pause/resume, agent state, notification stream
-- [Autonomous agent notifications](https://doc.akka.io/sdk/autonomous-agents/notifications.html.md): Lifecycle, task, handoff, delegation, team, backlog, conversation, messaging, and struggle notifications
+- [Autonomous agent notifications](https://doc.akka.io/sdk/autonomous-agents/notifications.html.md): Lifecycle, task, handoff, delegation, team, conversation, messaging, and struggle notifications
 - [Testing autonomous agents](https://doc.akka.io/sdk/autonomous-agents/testing.html.md): Mocking with TestModelProvider and AutonomousAgentTools helpers
 - [Views reference](https://doc.akka.io/reference/views/index.html.md): Detailed reference for views
 - [View Query Syntax](https://doc.akka.io/reference/views/syntax/query.html.md): View query language syntax
