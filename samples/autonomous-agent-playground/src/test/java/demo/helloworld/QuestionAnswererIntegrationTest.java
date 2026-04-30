@@ -1,11 +1,14 @@
 package demo.helloworld;
 
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.completeTask;
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.failTask;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import demo.helloworld.api.QuestionEndpoint;
+import demo.helloworld.application.Answer;
 import demo.helloworld.application.QuestionAnswerer;
 import demo.helloworld.application.QuestionTasks;
 import java.util.concurrent.TimeUnit;
@@ -27,12 +30,7 @@ public class QuestionAnswererIntegrationTest extends TestKitSupport {
   @Test
   public void shouldAnswerQuestionWithTypedResult() {
     model.fixedResponse( // <3>
-      new TestModelProvider.AiResponse(
-        new TestModelProvider.ToolInvocationRequest(
-          "complete_task",
-          "{\"answer\":\"2 plus 2 equals 4.\",\"confidence\":100}"
-        )
-      )
+      new TestModelProvider.AiResponse(completeTask(new Answer("2 plus 2 equals 4.", 100)))
     );
 
     var response = httpClient // <4>
@@ -59,15 +57,11 @@ public class QuestionAnswererIntegrationTest extends TestKitSupport {
   }
   // end::class[]
 
+  // tag::failure[]
   @Test
   public void shouldFailTaskWhenModelCallsFailTask() {
     model.fixedResponse(
-      new TestModelProvider.AiResponse(
-        new TestModelProvider.ToolInvocationRequest(
-          "fail_task",
-          "{\"reason\":\"I cannot answer this question.\"}"
-        )
-      )
+      new TestModelProvider.AiResponse(failTask("I cannot answer this question."))
     );
 
     var response = httpClient
@@ -88,4 +82,5 @@ public class QuestionAnswererIntegrationTest extends TestKitSupport {
         assertThat(snapshot.failureReason()).isEqualTo("I cannot answer this question.");
       });
   }
+  // end::failure[]
 }

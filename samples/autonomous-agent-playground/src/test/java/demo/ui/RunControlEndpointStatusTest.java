@@ -1,5 +1,7 @@
 package demo.ui;
 
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.completeTask;
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.failTask;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.http.javadsl.model.StatusCodes;
@@ -7,6 +9,7 @@ import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import demo.helloworld.api.QuestionEndpoint;
+import demo.helloworld.application.Answer;
 import demo.helloworld.application.QuestionAnswerer;
 import demo.ui.api.RunControlEndpoint;
 import java.util.UUID;
@@ -68,12 +71,7 @@ public class RunControlEndpointStatusTest extends TestKitSupport {
   @Test
   public void runStateBecomesCompletedAfterTaskFinishes() {
     model.fixedResponse(
-      new TestModelProvider.AiResponse(
-        new TestModelProvider.ToolInvocationRequest(
-          "complete_task",
-          "{\"answer\":\"Paris.\",\"confidence\":99}"
-        )
-      )
+      new TestModelProvider.AiResponse(completeTask(new Answer("Paris.", 99)))
     );
 
     var post = httpClient
@@ -113,14 +111,7 @@ public class RunControlEndpointStatusTest extends TestKitSupport {
 
   @Test
   public void runStateBecomesFailedWhenAgentFailsTask() {
-    model.fixedResponse(
-      new TestModelProvider.AiResponse(
-        new TestModelProvider.ToolInvocationRequest(
-          "fail_task",
-          "{\"reason\":\"cannot answer\"}"
-        )
-      )
-    );
+    model.fixedResponse(new TestModelProvider.AiResponse(failTask("cannot answer")));
 
     var post = httpClient
       .POST("/questions")

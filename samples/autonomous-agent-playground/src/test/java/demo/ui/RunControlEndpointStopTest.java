@@ -1,5 +1,6 @@
 package demo.ui;
 
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.completeTask;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.http.javadsl.model.StatusCodes;
@@ -7,6 +8,7 @@ import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import demo.helloworld.api.QuestionEndpoint;
+import demo.helloworld.application.Answer;
 import demo.helloworld.application.QuestionAnswerer;
 import demo.ui.api.RunControlEndpoint;
 import java.util.UUID;
@@ -36,14 +38,7 @@ public class RunControlEndpointStopTest extends TestKitSupport {
   @Test
   public void stopAcceptsAndReportsCancelled() {
     // Submit a real run so the agent instance exists.
-    model.fixedResponse(
-      new TestModelProvider.AiResponse(
-        new TestModelProvider.ToolInvocationRequest(
-          "complete_task",
-          "{\"answer\":\"42\",\"confidence\":50}"
-        )
-      )
-    );
+    model.fixedResponse(new TestModelProvider.AiResponse(completeTask(new Answer("42", 50))));
     var post = httpClient
       .POST("/questions")
       .withRequestBody(new QuestionEndpoint.AskQuestion("anything"))
@@ -65,14 +60,7 @@ public class RunControlEndpointStopTest extends TestKitSupport {
 
   @Test
   public void stopIsIdempotent() {
-    model.fixedResponse(
-      new TestModelProvider.AiResponse(
-        new TestModelProvider.ToolInvocationRequest(
-          "complete_task",
-          "{\"answer\":\"42\",\"confidence\":50}"
-        )
-      )
-    );
+    model.fixedResponse(new TestModelProvider.AiResponse(completeTask(new Answer("42", 50))));
     var post = httpClient
       .POST("/questions")
       .withRequestBody(new QuestionEndpoint.AskQuestion("anything"))

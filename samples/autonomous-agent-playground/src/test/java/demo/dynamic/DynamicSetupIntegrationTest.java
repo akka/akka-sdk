@@ -1,5 +1,6 @@
 package demo.dynamic;
 
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.completeTask;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.javasdk.testkit.TestKit;
@@ -26,12 +27,7 @@ public class DynamicSetupIntegrationTest extends TestKitSupport {
   @Test
   public void shouldSummarizeWithDynamicSetup() {
     model.fixedResponse(
-      new TestModelProvider.AiResponse(
-        new TestModelProvider.ToolInvocationRequest(
-          "complete_task",
-          "{\"result\":\"This is a summary of the content.\"}"
-        )
-      )
+      new TestModelProvider.AiResponse(completeTask("This is a summary of the content."))
     );
 
     var response = httpClient
@@ -56,12 +52,7 @@ public class DynamicSetupIntegrationTest extends TestKitSupport {
   @Test
   public void shouldTranslateWithDynamicSetup() {
     model.fixedResponse(
-      new TestModelProvider.AiResponse(
-        new TestModelProvider.ToolInvocationRequest(
-          "complete_task",
-          "{\"result\":\"Ceci est le contenu traduit.\"}"
-        )
-      )
+      new TestModelProvider.AiResponse(completeTask("Ceci est le contenu traduit."))
     );
 
     var response = httpClient

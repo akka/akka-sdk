@@ -4,6 +4,7 @@
 
 package demo.pipeline;
 
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.completeTask;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.javasdk.testkit.TestKit;
@@ -12,6 +13,7 @@ import akka.javasdk.testkit.TestModelProvider;
 import demo.pipeline.api.PipelineEndpoint;
 import demo.pipeline.application.PipelineTasks;
 import demo.pipeline.application.ReportAgent;
+import demo.pipeline.application.ReportResult;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
@@ -33,12 +35,7 @@ public class PipelineIntegrationTest extends TestKitSupport {
     // orchestration (dependency ordering, task completion) works correctly.
     // The session accumulates across tasks, so we use a universal response.
     model.fixedResponse(
-      new TestModelProvider.AiResponse(
-        new TestModelProvider.ToolInvocationRequest(
-          "complete_task",
-          "{\"phase\":\"done\",\"content\":\"task completed\"}"
-        )
-      )
+      new TestModelProvider.AiResponse(completeTask(new ReportResult("done", "task completed")))
     );
 
     var response = httpClient
