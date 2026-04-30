@@ -888,6 +888,8 @@ private final class Sdk(
             instanceFactory = instanceFactory,
             provided = isProvided(clz))
 
+        agentRegistryInfo :+= AgentRegistryImpl.agentDetailsForAutonomous(autonomousAgentClass)
+
       case clz if Reflect.isAgent(clz) =>
         val componentId = Reflect.readComponentId(clz)
         val agentClass = clz.asInstanceOf[Class[Agent]]

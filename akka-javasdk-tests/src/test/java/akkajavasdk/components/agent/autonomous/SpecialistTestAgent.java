@@ -7,9 +7,11 @@ package akkajavasdk.components.agent.autonomous;
 import akka.javasdk.agent.autonomous.AgentDefinition;
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
+import akka.javasdk.annotations.AgentRole;
 import akka.javasdk.annotations.Component;
 
-@Component(id = "specialist-agent")
+@Component(id = "specialist-agent", name = "Specialist", description = "Resolves billing disputes.")
+@AgentRole("billing-specialist")
 public class SpecialistTestAgent extends AutonomousAgent {
 
   @Override
