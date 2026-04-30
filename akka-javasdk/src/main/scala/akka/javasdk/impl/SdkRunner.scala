@@ -43,6 +43,8 @@ import akka.javasdk.Retries
 import akka.javasdk.Sanitizer
 import akka.javasdk.ServiceSetup
 import akka.javasdk.Tracing
+import akka.javasdk.UnhandledExceptionContext
+import akka.javasdk.UnhandledExceptionHandler
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
 import akka.javasdk.agent.AgentRegistry
@@ -147,6 +149,7 @@ import akka.runtime.sdk.spi.SpiServiceInfo
 import akka.runtime.sdk.spi.SpiSettings
 import akka.runtime.sdk.spi.SpiTask
 import akka.runtime.sdk.spi.SpiTestSettings
+import akka.runtime.sdk.spi.SpiUnhandledException
 import akka.runtime.sdk.spi.SpiWorkflow
 import akka.runtime.sdk.spi.StartContext
 import akka.runtime.sdk.spi.TimedActionDescriptor
@@ -1217,6 +1220,27 @@ private final class Sdk(
       SdkRunner.FutureDone
     }
 
+    val onUnhandledException: Option[SpiUnhandledException => Future[Done]] =
+      serviceSetup.collect { case handler: UnhandledExceptionHandler =>
+        (spiCtx: SpiUnhandledException) =>
+          Future {
+            val context = new UnhandledExceptionContext {
+              override def throwable(): Throwable = spiCtx.throwable
+              override def correlationId(): String = spiCtx.correlationId
+              override def subjectId(): Optional[String] = spiCtx.subjectId.toJava
+              override def componentId(): String = spiCtx.componentId
+              override def componentClassName(): String = spiCtx.componentClassName
+            }
+            try handler.onUnhandledException(context)
+            catch {
+              case NonFatal(ex) =>
+                SdkRunner.userServiceLog
+                  .error(s"${handler.getClass.getName}.onUnhandledException threw an exception", ex)
+            }
+            Done
+          }(sdkExecutionContext)
+      }
+
     val guardrailSetup = new SpiGuardrailSetup(guardrailProvider.configuredGuardrails.map { g =>
       new SpiConfiguredGuardrail(
         name = g.name,
@@ -1242,7 +1266,7 @@ private final class Sdk(
       onStart = onStart,
       reportError = reportError,
       healthCheck = () => SdkRunner.FutureDone,
-      onUnhandledException = None // FIXME implement
+      onUnhandledException = onUnhandledException
     )
   }
 
