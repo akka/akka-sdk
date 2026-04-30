@@ -1,0 +1,62 @@
+= akka services jwks generate
+
+Generate a JWKS key and add it as a keyset to a service.
+
+== Synopsis
+
+The `akka service jwks generate` command generates a key set with a key in it, stores it as a JWKS Akka secret, and configures the service to validate JWTs using that keyset.
+
+The generated JWKS secret contains the full key pair.
+The service uses the public key for validation.
+If you need to issue tokens signed by the generated private key, you can reference the same secret from your signing service.
+
+----
+akka services jwks generate [SERVICE] [flags]
+----
+
+== Examples
+
+----
+> akka service jwks generate my-service --algorithm RS256 --key-id my-key --issuer https://example.com
+> akka service jwks generate my-service --algorithm ES256 --key-id signing-key --secret my-jwks
+----
+
+== Options
+
+----
+      --algorithm string                 The algorithm for the generated key (HMD5, HS224, HS256, HS384, HS512, RS256, RS384, RS512, ES256, ES384, ES512, EdDSA).
+      --allowed-algorithms stringArray   List of algorithms to allow for this keyset.
+      --force-global                     force an existing regional resource to be configured as a global resource
+      --force-regional                   force an existing global resource to be configured as a regional resource
+  -h, --help                             help for generate
+      --issuer string                    Issuer of tokens validated by this keyset.
+      --key-id string                    The key ID (kid) to embed in the generated JWK. Defaults to a random UUID.
+      --owner string                     the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string                   project to use if not using the default configured project
+      --refresh-interval string          How often to refresh the keyset (e.g. 1h, 30m).
+      --region string                    region to use if project has more than one region
+      --secret string                    Name of the Akka secret to create (defaults to the key ID).
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_services_jwks.html[akka services jwks]	 - Manage JWT keysets of a service.
+
+[discrete]
+

@@ -1,11 +1,11 @@
-= akka projects config unset
+= akka services jwks
 
-Unset project resources.
+Manage JWT keysets of a service.
 
 == Options
 
 ----
-  -h, --help   help for unset
+  -h, --help   help for jwks
 ----
 
 == Options inherited from parent commands
@@ -26,9 +26,13 @@ Unset project resources.
 
 == SEE ALSO
 
-* link:akka_projects_config.html[akka projects config]	 - Manage project configs.
-* link:akka_projects_config_unset_broker.html[akka projects config unset broker]	 - Unset the broker.
-* link:akka_projects_config_unset_object-storage.html[akka projects config unset object-storage]	 - Unset the object-storage configuration.
+* link:akka_services.html[akka services]	 - Manage and deploy services on Akka.
+* link:akka_services_jwks_add.html[akka services jwks add]	 - Add a JWT keyset to a service.
+* link:akka_services_jwks_generate.html[akka services jwks generate]	 - Generate a JWKS key and add it as a keyset to a service.
+* link:akka_services_jwks_list.html[akka services jwks list]	 - List all JWT keysets for a service.
+* link:akka_services_jwks_migrate.html[akka services jwks migrate]	 - Migrate JWT keys to JWKS keysets.
+* link:akka_services_jwks_remove.html[akka services jwks remove]	 - Remove a JWT keyset from a service.
+* link:akka_services_jwks_update.html[akka services jwks update]	 - Update a JWT keyset on a service.
 
 [discrete]
 

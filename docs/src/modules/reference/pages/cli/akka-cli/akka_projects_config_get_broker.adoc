@@ -9,9 +9,11 @@ akka projects config get broker [flags]
 == Options
 
 ----
+      --all-regions      run the command on all regions
   -h, --help             help for broker
       --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
       --project string   project to use if not using the default configured project
+      --region string    region to use if project has more than one region
 ----
 
 == Options inherited from parent commands

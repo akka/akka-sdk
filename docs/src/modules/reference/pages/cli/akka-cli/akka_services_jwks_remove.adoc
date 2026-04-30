@@ -1,11 +1,33 @@
-= akka projects config unset
+= akka services jwks remove
 
-Unset project resources.
+Remove a JWT keyset from a service.
+
+== Synopsis
+
+The `akka service jwks remove` command removes a JWT keyset from a service.
+
+----
+akka services jwks remove [SERVICE] [flags]
+----
+
+== Examples
+
+----
+> akka service jwks remove my-service --issuer https://accounts.google.com
+> akka service jwks remove my-service --index 2
+----
 
 == Options
 
 ----
-  -h, --help   help for unset
+      --force-global     force an existing regional resource to be configured as a global resource
+      --force-regional   force an existing global resource to be configured as a regional resource
+  -h, --help             help for remove
+      --index int        1-based index of the keyset to select (as shown by the list command).
+      --issuer string    Issuer of the keyset to select.
+      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string   project to use if not using the default configured project
+      --region string    region to use if project has more than one region
 ----
 
 == Options inherited from parent commands
@@ -26,9 +48,7 @@ Unset project resources.
 
 == SEE ALSO
 
-* link:akka_projects_config.html[akka projects config]	 - Manage project configs.
-* link:akka_projects_config_unset_broker.html[akka projects config unset broker]	 - Unset the broker.
-* link:akka_projects_config_unset_object-storage.html[akka projects config unset object-storage]	 - Unset the object-storage configuration.
+* link:akka_services_jwks.html[akka services jwks]	 - Manage JWT keysets of a service.
 
 [discrete]
 
