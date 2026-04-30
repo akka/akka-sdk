@@ -12,6 +12,10 @@ Current versions
 
 == April 2026
 
+* Akka CLI 3.0.60
+- Fixed an issue with multi-regional project descriptors
+- JWKS configuraiton support
+
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.18[Akka SDK 3.5.18]
 - Automatic expiry for entities
 - Key Value Entity notifications
