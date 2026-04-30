@@ -254,7 +254,7 @@ External input is not a separate capability. It is built directly on xref:sdk:au
 
 *When to use:* Any decision that has to be made outside the agent loop. Human approval, manual data entry, callbacks from third-party systems, or pauses while external state catches up.
 
-=== Walkthrough: human approval gate
+=== Human approval gate
 
 The `publishing` sample wires this together as a three-task chain. An agent drafts a post, a human approves or rejects, an agent publishes the approved post. The human's decision is encoded as a task with a typed result, the same as the agent-driven tasks around it.
 
