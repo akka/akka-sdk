@@ -440,6 +440,30 @@ private[impl] object AgentImpl {
       MessageContent.PdfMessageContent.fromUrl(pdf.uri.toString)
   }
 
+  private[agent] def toSpiContentLoader(
+      javaContentLoader: ContentLoader,
+      ec: ExecutionContext): SpiAgent.SpiContentLoader =
+    new SpiAgent.SpiContentLoader {
+      override def implementationClassName: String = javaContentLoader.getClass.getName
+
+      override def load(messageContent: LoadableMessageContent): Future[SpiAgent.SpiLoadedContent] =
+        Future {
+          val loaded = javaContentLoader.load(fromSpiLoadable(messageContent))
+          new SpiAgent.SpiLoadedContent(loaded.data(), loaded.mimeType().toScala)
+        }(ec)
+
+      private def fromSpiLoadable(messageContent: LoadableMessageContent): MessageContent.LoadableMessageContent =
+        messageContent match {
+          case content: SpiAgent.ImageUriMessageContent =>
+            val detailLevel = fromSpiDetailLevel(content.detailLevel)
+            val mimeType =
+              content.mimeType.map(java.util.Optional.of[String]).getOrElse(java.util.Optional.empty[String]())
+            new MessageContent.ImageUrlMessageContent(content.uri, detailLevel, mimeType)
+          case content: SpiAgent.PdfUriMessageContent =>
+            new PdfUrlMessageContent(content.uri)
+        }
+    }
+
   private[agent] def toSpiContextMessages(sessionHistory: SessionHistory): Vector[SpiAgent.ContextMessage] =
     sessionHistory
       .messages()
@@ -666,26 +690,7 @@ private[impl] final class AgentImpl(
     AgentImpl.toSpiMessageContent(messageContent)
 
   private def toSpiContentLoader(javaImageLoader: ContentLoader): SpiAgent.SpiContentLoader =
-    new SpiAgent.SpiContentLoader {
-      override def implementationClassName: String = javaImageLoader.getClass.getName
-
-      override def load(messageContent: LoadableMessageContent): Future[SpiAgent.SpiLoadedContent] =
-        Future {
-          val loaded = javaImageLoader.load(fromSpiLoadable(messageContent))
-          new SpiAgent.SpiLoadedContent(loaded.data(), loaded.mimeType().toScala)
-        }(sdkExecutionContext)
-
-      private def fromSpiLoadable(messageContent: LoadableMessageContent): MessageContent.LoadableMessageContent =
-        messageContent match {
-          case content: SpiAgent.ImageUriMessageContent =>
-            val detailLevel = fromSpiDetailLevel(content.detailLevel)
-            val mimeType =
-              content.mimeType.map(java.util.Optional.of[String]).getOrElse(java.util.Optional.empty[String]())
-            new MessageContent.ImageUrlMessageContent(content.uri, detailLevel, mimeType)
-          case content: SpiAgent.PdfUriMessageContent =>
-            new PdfUrlMessageContent(content.uri)
-        }
-    }
+    AgentImpl.toSpiContentLoader(javaImageLoader, sdkExecutionContext)
 
   private def toSpiMcpEndpoints(remoteMcpTools: Seq[RemoteMcpTools]): Seq[SpiAgent.McpToolEndpointDescriptor] =
     AgentImpl.toSpiMcpEndpoints(remoteMcpTools, guardrails, sdkExecutionContext)
