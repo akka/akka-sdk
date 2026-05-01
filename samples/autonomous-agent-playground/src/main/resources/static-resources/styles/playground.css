@@ -285,7 +285,18 @@ body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); m
 .event-row-head { display: flex; align-items: baseline; gap: .5rem; font-size: .85rem; }
 .event-tier { width: 1rem; text-align: center; }
 .event-time { color: color-mix(in oklab, var(--fg) 55%, transparent); font-family: var(--font-mono); }
-.event-agent { font-family: var(--font-mono); color: color-mix(in oklab, var(--fg) 80%, transparent); }
+.event-agent {
+  font-family: var(--font-mono);
+  color: hsl(var(--agent-hue, 220) 65% var(--agent-lightness, 40%));
+  background: hsl(var(--agent-hue, 220) 65% var(--agent-lightness, 40%) / 0.12);
+  border-radius: 3px;
+  padding: 0 .35rem;
+}
+[data-theme="light"] { --agent-lightness: 38%; }
+[data-theme="dark"] { --agent-lightness: 72%; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --agent-lightness: 72%; }
+}
 .event-kind { color: color-mix(in oklab, var(--fg) 65%, transparent); margin-left: auto; font-size: .75rem; }
 .event-summary { margin: .25rem 0 0; font-size: .9rem; }
 .event-tokens { margin: .15rem 0 0; font-size: .75rem; font-family: var(--font-mono); }
