@@ -78,14 +78,14 @@ A reference to a particular key in a particular secret, used by environment vari
 
 === ServiceJwt
 
-The JWT configuration allows a service to manage token signing and validation. Keys are prioritized for matching tokens.
+The JWT configuration allows a service to manage token signing and validation.
 
 [cols="1,1,1"]
 |===
-|Field      |Type              |Description
+|Field      |Type            |Description
 
-|*keys*     |[]<<JwtKey>>
-a| List of JWT keys for signing and validation. Order matters.
+|*keys*     |[]<<JwtKey>>    | Deprecated: use *keySets* instead. List of JWT keys for signing and validation. Order matters.
+|*keySets*  |[]<<JwtKeySet>> | List of JWKS keysets for JWT validation.
 
 |===
 
@@ -144,7 +144,7 @@ Valid values are:
 * `ES256` - Elliptic Curve DSA with SHA256
 * `ES384` - Elliptic Curve DSA with SHA384
 * `ES512` - Elliptic Curve DSA with SHA512
-* `Ed25519` - Edward's Curve DSA
+* `EdDSA` - Edward's Curve DSA
 |*secret*    |<<ObjectRef>> _required_
 a|The configured secret to use for signing or validating.
 
@@ -152,6 +152,45 @@ This must be a reference to a secret. The secret must have the following keys de
 
 * HMAC algorithms - a key named `secret.key`, containing the bytes of the secret.
 * Asymmetric algorithms - One or both of `private.key` and `public.key`. If only a `private.key` is supplied, the key will only be used for signing, if only a public key is supplied, the key will only be used for validating. The public key must be formatted as an X.509 PEM public key (with a header, `BEGIN PUBLIC KEY`). The private key must be a PEM PKCS-8 key encoded (with a header, `BEGIN PRIVATE KEY`) according to the algorithm the secret is used for. Alternatively, for RSA algorithms, RSA private keys may be PEM PKCS-1 encoded (with a header, `BEGIN RSA PRIVATE KEY`). The keys must not be encrypted. For ECDSA keys, EC key encoding (`BEGIN EC PRIVATE KEY`) is not supported, and PKCS-8 must be used instead.
+|===
+
+=== JwtKeySet
+
+A JWKS keyset used for JWT validation. Exactly one of *useOidcDiscovery*, *jwksUrl*, *secret*, or *externalSecret* must be specified.
+
+[cols="1,1,1"]
+|===
+|Field                |Type              |Description
+
+|*issuer*             |string
+a|The issuer of tokens that use this keyset.
+
+If a token being validated contains an issuer (iss) claim, this will be matched against it. This allows multiple keysets for different issuers to be provisioned without conflicting.
+
+Setting this parameter is also important if you have keysets from multiple issuers, but you don't trust that one of them won't try and spoof the other. Since it pins a particular set of keys to only be used to validate that issuer's token, if the other tries to spoof it, validation will fail.
+
+Required when *useOidcDiscovery* is true.
+
+|*refreshInterval*    |duration
+a|How often the keyset is refreshed. This acts as an upper bound; if the source returns a cache TTL (e.g., via `Cache-Control: max-age`), the shorter of the two is used. Defaults to 1 hour.
+
+|*allowedAlgorithms*  |[]string
+a|The set of algorithms allowed for this keyset. If the keyset source doesn't specify an algorithm, this restricts which algorithms may be used with it.
+
+Valid values are the same as for <<JwtKey>> *algorithm*.
+
+|*useOidcDiscovery*   |boolean
+a|If true, the keyset is loaded using OpenID Connect Discovery based on the *issuer*. Requires *issuer* to be set. Incompatible with *jwksUrl*, *secret*, and *externalSecret*.
+
+|*jwksUrl*            |string
+a|An HTTPS URL from which to load the keyset. Incompatible with *useOidcDiscovery*, *secret*, and *externalSecret*.
+
+|*secret*             |<<SecretKeyRef>>
+a|A reference to a secret containing the JWKS keyset. The referenced key within the secret should contain a JSON JWKS document. Incompatible with *useOidcDiscovery*, *jwksUrl*, and *externalSecret*.
+
+|*externalSecret*     |<<SecretKeyRef>>
+a|A reference to an external secret containing the JWKS keyset. The referenced key within the external secret should contain a JSON JWKS document. Incompatible with *useOidcDiscovery*, *jwksUrl*, and *secret*.
+
 |===
 
 === ObjectRef
