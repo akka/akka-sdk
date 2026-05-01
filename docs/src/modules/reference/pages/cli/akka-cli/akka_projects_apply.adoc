@@ -27,7 +27,6 @@ akka project apply -f project.yaml
       --owner string              the owner of the project to use, needed if you have two projects with the same name from different owners
       --project string            project to use if not using the default configured project
       --project-regions strings   Regions for project creation, comma-separated (overrides descriptor spec.regions)
-      --region string             region to use if project has more than one region
 ----
 
 == Options inherited from parent commands

@@ -1,11 +1,24 @@
-= akka projects config unset
+= akka projects regions workload-identity-info
 
-Unset project resources.
+List information for how to configure workload identity for each Akka project region.
+
+== Synopsis
+
+The `akka projects regions workload-identity-info` command displays information for how to configure workload identity in each region.
+
+----
+akka projects regions workload-identity-info [flags]
+----
 
 == Options
 
 ----
-  -h, --help   help for unset
+      --aws-account-id string   The AWS account id substitute into helper scripts if needed
+  -h, --help                    help for workload-identity-info
+      --owner string            the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string          project to use if not using the default configured project
+      --region string           The region to show workload identity info for. Only needed in multi-region projects
+      --service-name string     The name of the service to substitute into helper scripts
 ----
 
 == Options inherited from parent commands
@@ -26,9 +39,7 @@ Unset project resources.
 
 == SEE ALSO
 
-* link:akka_projects_config.html[akka projects config]	 - Manage project configs.
-* link:akka_projects_config_unset_broker.html[akka projects config unset broker]	 - Unset the broker.
-* link:akka_projects_config_unset_object-storage.html[akka projects config unset object-storage]	 - Unset the object-storage configuration.
+* link:akka_projects_regions.html[akka projects regions]	 - Manage the regions assigned to your Akka project.
 
 [discrete]
 

@@ -1,0 +1,54 @@
+= akka projects config set object-storage
+
+Set the object-storage configuration.
+
+== Synopsis
+
+The `akka projects config set object-storage` command configures object storage for a project.
+Use subcommands for per-bucket edits, or pass `--from-file FILE` to replace the whole configuration from a YAML document with resource: ObjectStorage and a spec.buckets list.
+
+Examples:
+
+akka projects config set object-storage bucket photos +     --provider s3 --bucket acme-photos --bucket-region us-east-1 +     --credentials-type static +     --access-key-id-secret aws-creds/access-key-id +     --secret-access-key-secret aws-creds/secret-access-key
+
+akka projects config set object-storage --from-file project-os.yaml
+
+----
+akka projects config set object-storage [flags]
+----
+
+== Options
+
+----
+      --force-global       force an existing regional resource to be configured as a global resource
+      --force-regional     force an existing global resource to be configured as a regional resource
+      --from-file string   path to a YAML descriptor containing an ObjectStorage document
+  -h, --help               help for object-storage
+      --owner string       the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string     project to use if not using the default configured project
+      --region string      region to use if project has more than one region
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_projects_config_set.html[akka projects config set]	 - Set project resources.
+* link:akka_projects_config_set_object-storage_bucket.html[akka projects config set object-storage bucket]	 - Add or replace a single bucket in the object-storage configuration.
+
+[discrete]
+

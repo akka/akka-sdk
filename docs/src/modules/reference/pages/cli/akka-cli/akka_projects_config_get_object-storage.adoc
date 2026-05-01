@@ -1,11 +1,19 @@
-= akka projects config unset
+= akka projects config get object-storage
 
-Unset project resources.
+Display object-storage configuration.
+
+----
+akka projects config get object-storage [flags]
+----
 
 == Options
 
 ----
-  -h, --help   help for unset
+      --all-regions      run the command on all regions
+  -h, --help             help for object-storage
+      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string   project to use if not using the default configured project
+      --region string    region to use if project has more than one region
 ----
 
 == Options inherited from parent commands
@@ -26,9 +34,7 @@ Unset project resources.
 
 == SEE ALSO
 
-* link:akka_projects_config.html[akka projects config]	 - Manage project configs.
-* link:akka_projects_config_unset_broker.html[akka projects config unset broker]	 - Unset the broker.
-* link:akka_projects_config_unset_object-storage.html[akka projects config unset object-storage]	 - Unset the object-storage configuration.
+* link:akka_projects_config_get.html[akka projects config get]	 - Display project config information.
 
 [discrete]
 

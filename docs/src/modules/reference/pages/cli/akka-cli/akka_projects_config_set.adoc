@@ -45,6 +45,7 @@ Either this or --gcp-key is required if [google-pubsub] is the service.
 
 * link:akka_projects_config.html[akka projects config]	 - Manage project configs.
 * link:akka_projects_config_set_broker.html[akka projects config set broker]	 - Set the broker.
+* link:akka_projects_config_set_object-storage.html[akka projects config set object-storage]	 - Set the object-storage configuration.
 
 [discrete]
 
