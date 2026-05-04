@@ -231,6 +231,16 @@ private[javasdk] final class AutonomousAgentClientImpl(
     case t: SpiNotification.TeamJoined =>
       new Notification.TeamJoined(t.lead.componentId, t.lead.instanceId)
 
+    // Backlog
+    case b: SpiNotification.BacklogAssigned =>
+      new Notification.BacklogAssigned(b.backlogId, b.backlogName)
+    case b: SpiNotification.BacklogClosed =>
+      new Notification.BacklogClosed(b.backlogId, b.backlogName)
+    case b: SpiNotification.BacklogAccessGranted =>
+      new Notification.BacklogAccessGranted(b.backlogId, b.backlogName)
+    case b: SpiNotification.BacklogTaskClaimed =>
+      new Notification.BacklogTaskClaimed(b.backlogId, b.backlogName, b.taskId)
+
     // Conversation
     case c: SpiNotification.ConversationCreated =>
       new Notification.ConversationCreated(
@@ -274,9 +284,6 @@ private[javasdk] final class AutonomousAgentClientImpl(
       new Notification.TaskApproachingMaxIterations(s.taskKey.id, s.taskKey.name, s.iteration, s.maxIterations)
     case s: SpiNotification.RepeatedIterationFailure =>
       new Notification.RepeatedIterationFailure(s.iterationsFailed, s.lastReason)
-
-    // Backlog is internal, ignoring: SpiNotification.BacklogAssigned, SpiNotification.BacklogClosed,
-    //   SpiNotification.BacklogAccessGranted, SpiNotification.BacklogTaskClaimed
 
     // ignore unknown because the runtime should be able to add new notification events without breaking old SDK
   }

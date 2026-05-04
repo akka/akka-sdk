@@ -41,6 +41,9 @@ public sealed interface Notification {
   /** Team notifications: team formation, member lifecycle, disbanding. */
   sealed interface TeamNotification extends Notification {}
 
+  /** Backlog notifications: backlog assignment/access and task claims. */
+  sealed interface BacklogNotification extends Notification {}
+
   /** Conversation notifications: conversation creation, turns, participation. */
   sealed interface ConversationNotification extends Notification {}
 
@@ -184,6 +187,22 @@ public sealed interface Notification {
 
   /** Team member: this agent joined a team led by the given agent. */
   record TeamJoined(String leadComponentId, String leadInstanceId) implements TeamNotification {}
+
+  // -- Backlog ---------------------------------------------------------------
+
+  /** Backlog management: a backlog has been assigned to this agent. */
+  record BacklogAssigned(String backlogId, String backlogName) implements BacklogNotification {}
+
+  /** Backlog management: a backlog has been closed. */
+  record BacklogClosed(String backlogId, String backlogName) implements BacklogNotification {}
+
+  /** Backlog access: this agent has been granted access to a backlog. */
+  record BacklogAccessGranted(String backlogId, String backlogName)
+      implements BacklogNotification {}
+
+  /** Backlog access: this agent claimed a task from a backlog. */
+  record BacklogTaskClaimed(String backlogId, String backlogName, String taskId)
+      implements BacklogNotification {}
 
   // -- Conversation ----------------------------------------------------------
 
