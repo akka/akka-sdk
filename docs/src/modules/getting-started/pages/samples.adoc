@@ -15,6 +15,7 @@ It is also possible to deploy a pre-built sample project in https://console.akka
 | <<Hello World>>                               |    | ✅ | ✅ |
 | <<Hello World (Kotlin)>>                      |    | ✅ | ✅ |
 | <<Multi-agent planning and execution>>        | ✅ | ✅ | ✅ | ✅
+| <<Autonomous agents playground>>.             | ✅ | ✅ | ✅ | ✅
 | <<Chat agent with RAG>>                       |    | ✅ | ✅ | ✅
 | <<Travel planning agent>>                     |    | ✅ |    |
 | <<Agentic haiku>>                             | ✅ | ✅ |    |
@@ -56,13 +57,25 @@ link:https://github.com/akka-samples/helloworld-agent-kotlin[GitHub Repository, 
 
 == Multi-agent planning and execution
 
-This sample models an outdoor activities planner. It demonstrates how to build a multi-agent system using Akka and an LLM model. A workflow manages the user query process, handling the sequential steps of agent selection, plan creation, execution, and summarization.
+This sample models an outdoor activities planner.It demonstrates how to build a multi-agent system using Akka and an LLM model.A workflow manages the user query process, handling the sequential steps of agent selection, plan creation, execution, and summarization.
 
 [%hardbreaks]
 **Concepts**: _Agent_, _Workflow_, _Multi-agent_, _LLM_
 **Level**: _Intermediate_
 xref:getting-started:planner-agent/index.adoc[Step-by-step guide]
-link:https://github.com/akka-samples/multi-agent[GitHub Repository, window="new"]
+link:https://github.com/akka-samples/multi-agent[GitHub Repository,window="new"]
+
+[#autonomous_agents_playground]
+== Autonomous agents playground
+
+Samples demonstrating the autonomous agents — an LLM-driven component with built-in durable execution and multi-agent coordination. An Autonomous Agent runs as a process: iterating through an LLM decision loop until its assigned tasks are complete.
+
+Each sample focuses on a specific capability or coordination pattern.They progress from minimal usage to sophisticated multi-agent systems.
+
+[%hardbreaks]
+**Concepts**: _AutonomousAgent_, _Multi-agent_, _LLM_
+**Level**: _Advanced_
+link:https://github.com/akka-samples/autonomous-agent-playground[GitHub Repository,window="new"]
 
 == Chat agent with RAG
 
