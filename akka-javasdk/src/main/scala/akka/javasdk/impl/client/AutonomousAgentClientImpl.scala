@@ -139,21 +139,21 @@ private[javasdk] final class AutonomousAgentClientImpl(
   override def pauseAsync(): CompletionStage[Done] = {
     log.debug("pause: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
     runtimeComponentClients.autonomousAgentClient
-      .pause(agentComponentId, agentInstanceId)
+      .pause(agentComponentId, agentInstanceId, callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
       .asJava
   }
 
   override def resumeAsync(): CompletionStage[Done] = {
     log.debug("resume: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
     runtimeComponentClients.autonomousAgentClient
-      .resume(agentComponentId, agentInstanceId)
+      .resume(agentComponentId, agentInstanceId, callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
       .asJava
   }
 
   override def stopAsync(): CompletionStage[Done] = {
     log.debug("stop: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
     runtimeComponentClients.autonomousAgentClient
-      .stop(agentComponentId, agentInstanceId)
+      .stop(agentComponentId, agentInstanceId, callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
       .asJava
   }
 
