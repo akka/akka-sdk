@@ -21,10 +21,10 @@ import akka.javasdk.agent.autonomous.AutonomousAgent
 import akka.javasdk.agent.evaluator.HallucinationEvaluator
 import akka.javasdk.agent.evaluator.SummarizationEvaluator
 import akka.javasdk.agent.evaluator.ToxicityEvaluator
-import akka.javasdk.agent.task.BacklogEntity
 import akka.javasdk.agent.task.TaskEntity
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
+import akka.javasdk.impl.agent.task.BacklogEntity
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.workflow.Workflow

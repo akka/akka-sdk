@@ -2,11 +2,13 @@
  * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.agent.task;
+package akka.javasdk.impl.agent.task;
 
+import akka.annotation.InternalApi;
 import akka.javasdk.annotations.TypeName;
 
-/** Notifications published by a BacklogEntity when its state changes. */
+/** INTERNAL API Notifications published by a BacklogEntity when its state changes. */
+@InternalApi
 public sealed interface BacklogNotification {
 
   @TypeName("akka-backlog-notification-created")
