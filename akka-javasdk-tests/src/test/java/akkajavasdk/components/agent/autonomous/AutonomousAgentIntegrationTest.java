@@ -97,9 +97,9 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.RESEARCH);
-              assertThat(snapshot.result()).isNotNull();
-              assertThat(snapshot.result().title()).isEqualTo("Quantum Computing Summary");
-              assertThat(snapshot.result().summary()).contains("parallel computation");
+              var result = snapshot.result().orElseThrow();
+              assertThat(result.title()).isEqualTo("Quantum Computing Summary");
+              assertThat(result.summary()).contains("parallel computation");
             });
 
     Awaitility.await()
@@ -153,9 +153,9 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.RESOLVE);
-              assertThat(snapshot.result()).isNotNull();
-              assertThat(snapshot.result().category()).isEqualTo("billing");
-              assertThat(snapshot.result().resolved()).isTrue();
+              var result = snapshot.result().orElseThrow();
+              assertThat(result.category()).isEqualTo("billing");
+              assertThat(result.resolved()).isTrue();
             });
 
     Awaitility.await()
@@ -230,9 +230,9 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.TEST_TASK);
-              assertThat(snapshot.result()).isNotNull();
-              assertThat(snapshot.result().value()).isEqualTo("Claim verified.");
-              assertThat(snapshot.result().score()).isEqualTo(90);
+              var result = snapshot.result().orElseThrow();
+              assertThat(result.value()).isEqualTo("Claim verified.");
+              assertThat(result.score()).isEqualTo(90);
             });
   }
 }

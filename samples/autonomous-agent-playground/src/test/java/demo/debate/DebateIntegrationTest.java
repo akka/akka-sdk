@@ -155,10 +155,10 @@ public class DebateIntegrationTest extends TestKitSupport {
       .atMost(30, TimeUnit.SECONDS)
       .untilAsserted(() -> {
         var snapshot = componentClient.forTask(taskId).get(DebateTasks.DEBATE);
-        assertThat(snapshot.result()).isNotNull();
-        assertThat(snapshot.result().topic()).isEqualTo("AI in education");
-        assertThat(snapshot.result().synthesis()).contains("Both sides");
-        assertThat(snapshot.result().keyArguments()).hasSize(2);
+        var result = snapshot.result().orElseThrow();
+        assertThat(result.topic()).isEqualTo("AI in education");
+        assertThat(result.synthesis()).contains("Both sides");
+        assertThat(result.keyArguments()).hasSize(2);
       });
   }
 }

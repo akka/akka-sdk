@@ -65,10 +65,10 @@ public class DocReviewIntegrationTest extends TestKitSupport {
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(() -> {
         var snapshot = componentClient.forTask(taskId).get(ReviewTasks.REVIEW);
-        assertThat(snapshot.result()).isNotNull();
-        assertThat(snapshot.result().compliant()).isTrue();
-        assertThat(snapshot.result().assessment()).isEqualTo("Compliant");
-        assertThat(snapshot.result().findings()).contains(
+        var result = snapshot.result().orElseThrow();
+        assertThat(result.compliant()).isTrue();
+        assertThat(result.assessment()).isEqualTo("Compliant");
+        assertThat(result.findings()).contains(
           "All sections present",
           "Proper signatures"
         );

@@ -151,9 +151,9 @@ public class DevTeamIntegrationTest extends TestKitSupport {
       .atMost(30, TimeUnit.SECONDS)
       .untilAsserted(() -> {
         var snapshot = componentClient.forTask(taskId).get(ProjectTasks.PLAN);
-        assertThat(snapshot.result()).isNotNull();
-        assertThat(snapshot.result().summary()).contains("Project delivered");
-        assertThat(snapshot.result().deliverables()).contains("auth module");
+        var result = snapshot.result().orElseThrow();
+        assertThat(result.summary()).contains("Project delivered");
+        assertThat(result.deliverables()).contains("auth module");
       });
   }
 
@@ -226,9 +226,9 @@ public class DevTeamIntegrationTest extends TestKitSupport {
       .atMost(60, TimeUnit.SECONDS)
       .untilAsserted(() -> {
         var snapshot = componentClient.forTask(taskId).get(ProjectTasks.PLAN);
-        assertThat(snapshot.result()).isNotNull();
-        assertThat(snapshot.result().summary()).contains("two phases");
-        assertThat(snapshot.result().deliverables()).contains("API layer", "test suite");
+        var result = snapshot.result().orElseThrow();
+        assertThat(result.summary()).contains("two phases");
+        assertThat(result.deliverables()).contains("API layer", "test suite");
       });
   }
 }

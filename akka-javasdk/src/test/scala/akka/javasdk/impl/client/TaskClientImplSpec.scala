@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.client
 
+import java.util.Optional
+
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -95,10 +97,10 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
       "instructions",
       status,
       classOf[TestResult].getName,
-      result,
-      failureReason,
+      Optional.ofNullable(result),
+      Optional.ofNullable(failureReason),
       Seq.empty[String].asJava,
-      null,
+      Optional.empty(),
       Seq.empty[TaskAttachment].asJava,
       Seq.empty[String].asJava,
       ruleClassNames)
@@ -249,17 +251,18 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
 
       val snapshot = client.getAsync(TEST_TASK).asScala.futureValue
       snapshot.status() shouldBe TaskStatus.COMPLETED
-      snapshot.result().value shouldBe "done"
-      snapshot.result().score shouldBe 42
+      val result = snapshot.result().orElseThrow()
+      result.value shouldBe "done"
+      result.score shouldBe 42
     }
 
-    "return task snapshot with null result when pending" in {
+    "return task snapshot with empty result when pending" in {
       val mock = mockEntityClient(taskState(TaskStatus.PENDING))
       val client = createClient(mock)
 
       val snapshot = client.getAsync(TEST_TASK).asScala.futureValue
       snapshot.status() shouldBe TaskStatus.PENDING
-      snapshot.result() shouldBe null
+      snapshot.result().isEmpty shouldBe true
     }
 
     "return task snapshot with failure reason" in {
@@ -268,7 +271,7 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
 
       val snapshot = client.getAsync(TEST_TASK).asScala.futureValue
       snapshot.status() shouldBe TaskStatus.FAILED
-      snapshot.failureReason() shouldBe "something broke"
+      snapshot.failureReason().orElseThrow() shouldBe "something broke"
     }
 
     "throw TypeMismatch when task definition name does not match" in {

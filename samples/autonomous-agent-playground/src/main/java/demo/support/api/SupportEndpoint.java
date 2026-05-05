@@ -1,11 +1,13 @@
 package demo.support.api;
 
+import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.AbstractHttpEndpoint;
+import akka.javasdk.http.HttpResponses;
 import demo.support.application.SupportTasks;
 import demo.support.application.TriageAgent;
 import java.util.UUID;
@@ -40,8 +42,11 @@ public class SupportEndpoint extends AbstractHttpEndpoint {
   }
 
   @Get("/{taskId}")
-  public SupportStatus get(String taskId) {
+  public HttpResponse get(String taskId) {
     var snapshot = componentClient.forTask(taskId).get(SupportTasks.RESOLVE);
-    return new SupportStatus(snapshot.status().name(), snapshot.result());
+    return snapshot
+      .result()
+      .<HttpResponse>map(result -> HttpResponses.ok(new SupportStatus(snapshot.status().name(), result)))
+      .orElseGet(() -> HttpResponses.accepted(snapshot.status().name()));
   }
 }

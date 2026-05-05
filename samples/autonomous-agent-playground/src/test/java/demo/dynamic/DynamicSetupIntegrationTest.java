@@ -45,7 +45,7 @@ public class DynamicSetupIntegrationTest extends TestKitSupport {
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(() -> {
         var snapshot = componentClient.forTask(taskId).get(DynamicTasks.SUMMARIZE);
-        assertThat(snapshot.result()).isEqualTo("This is a summary of the content.");
+        assertThat(snapshot.result()).contains("This is a summary of the content.");
       });
   }
 
@@ -70,7 +70,7 @@ public class DynamicSetupIntegrationTest extends TestKitSupport {
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(() -> {
         var snapshot = componentClient.forTask(taskId).get(DynamicTasks.TRANSLATE);
-        assertThat(snapshot.result()).isEqualTo("Ceci est le contenu traduit.");
+        assertThat(snapshot.result()).contains("Ceci est le contenu traduit.");
       });
   }
 }

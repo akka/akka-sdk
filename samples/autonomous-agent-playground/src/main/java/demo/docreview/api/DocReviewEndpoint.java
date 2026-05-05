@@ -4,6 +4,7 @@
 
 package demo.docreview.api;
 
+import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.agent.MessageContent.TextMessageContent;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
@@ -11,8 +12,8 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.AbstractHttpEndpoint;
+import akka.javasdk.http.HttpResponses;
 import demo.docreview.application.DocumentReviewer;
-import demo.docreview.application.ReviewResult;
 import demo.docreview.application.ReviewTasks;
 import java.util.UUID;
 
@@ -52,7 +53,11 @@ public class DocReviewEndpoint extends AbstractHttpEndpoint {
   }
 
   @Get("/{taskId}")
-  public ReviewResult getReview(String taskId) {
-    return componentClient.forTask(taskId).get(ReviewTasks.REVIEW).result();
+  public HttpResponse getReview(String taskId) {
+    var snapshot = componentClient.forTask(taskId).get(ReviewTasks.REVIEW);
+    return snapshot
+      .result()
+      .<HttpResponse>map(HttpResponses::ok)
+      .orElseGet(() -> HttpResponses.accepted(snapshot.status().name()));
   }
 }

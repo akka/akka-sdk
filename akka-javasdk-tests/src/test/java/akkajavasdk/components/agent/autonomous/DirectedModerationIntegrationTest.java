@@ -139,9 +139,9 @@ public class DirectedModerationIntegrationTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.MODERATE);
-              assertThat(snapshot.result()).isNotNull();
-              assertThat(snapshot.result().topic()).isEqualTo("Directed debate");
-              assertThat(snapshot.result().conclusion()).contains("Agreement reached");
+              var result = snapshot.result().orElseThrow();
+              assertThat(result.topic()).isEqualTo("Directed debate");
+              assertThat(result.conclusion()).contains("Agreement reached");
             });
   }
 }

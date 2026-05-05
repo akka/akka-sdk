@@ -117,9 +117,9 @@ public class ConsultingIntegrationTest extends TestKitSupport {
       .atMost(30, TimeUnit.SECONDS)
       .untilAsserted(() -> {
         var snapshot = componentClient.forTask(taskId).get(ConsultingTasks.ENGAGEMENT);
-        assertThat(snapshot.result()).isNotNull();
-        assertThat(snapshot.result().escalated()).isFalse();
-        assertThat(snapshot.result().recommendation()).contains("demand forecasting");
+        var result = snapshot.result().orElseThrow();
+        assertThat(result.escalated()).isFalse();
+        assertThat(result.recommendation()).contains("demand forecasting");
       });
   }
 
@@ -184,9 +184,9 @@ public class ConsultingIntegrationTest extends TestKitSupport {
       .atMost(30, TimeUnit.SECONDS)
       .untilAsserted(() -> {
         var snapshot = componentClient.forTask(taskId).get(ConsultingTasks.ENGAGEMENT);
-        assertThat(snapshot.result()).isNotNull();
-        assertThat(snapshot.result().escalated()).isFalse();
-        assertThat(snapshot.result().recommendation()).contains("broadly supported");
+        var result = snapshot.result().orElseThrow();
+        assertThat(result.escalated()).isFalse();
+        assertThat(result.recommendation()).contains("broadly supported");
       });
   }
 
@@ -254,9 +254,9 @@ public class ConsultingIntegrationTest extends TestKitSupport {
       .atMost(30, TimeUnit.SECONDS)
       .untilAsserted(() -> {
         var snapshot = componentClient.forTask(taskId).get(ConsultingTasks.ENGAGEMENT);
-        assertThat(snapshot.result()).isNotNull();
-        assertThat(snapshot.result().escalated()).isTrue();
-        assertThat(snapshot.result().recommendation()).contains("regulatory counsel");
+        var result = snapshot.result().orElseThrow();
+        assertThat(result.escalated()).isTrue();
+        assertThat(result.recommendation()).contains("regulatory counsel");
       });
   }
 }

@@ -141,9 +141,9 @@ public class ScriptedModerationIntegrationTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.MODERATE);
-              assertThat(snapshot.result()).isNotNull();
-              assertThat(snapshot.result().topic()).isEqualTo("Test topic");
-              assertThat(snapshot.result().conclusion()).contains("Balanced conclusion");
+              var result = snapshot.result().orElseThrow();
+              assertThat(result.topic()).isEqualTo("Test topic");
+              assertThat(result.conclusion()).contains("Balanced conclusion");
             });
   }
 }

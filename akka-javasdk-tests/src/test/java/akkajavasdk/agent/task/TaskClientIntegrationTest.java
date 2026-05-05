@@ -45,7 +45,7 @@ public class TaskClientIntegrationTest extends TestKitSupport {
 
     var snapshot = componentClient.forTask(taskId).get(TEST_TASK);
     assertThat(snapshot.status()).isEqualTo(TaskStatus.PENDING);
-    assertThat(snapshot.result()).isNull();
+    assertThat(snapshot.result()).isEmpty();
   }
 
   // --- assign ---
@@ -71,9 +71,9 @@ public class TaskClientIntegrationTest extends TestKitSupport {
 
     var snapshot = componentClient.forTask(taskId).get(TEST_TASK);
     assertThat(snapshot.status()).isEqualTo(TaskStatus.COMPLETED);
-    assertThat(snapshot.result()).isNotNull();
-    assertThat(snapshot.result().value()).isEqualTo("done");
-    assertThat(snapshot.result().score()).isEqualTo(100);
+    var result = snapshot.result().orElseThrow();
+    assertThat(result.value()).isEqualTo("done");
+    assertThat(result.score()).isEqualTo(100);
   }
 
   @Test
@@ -85,7 +85,7 @@ public class TaskClientIntegrationTest extends TestKitSupport {
 
     var snapshot = componentClient.forTask(taskId).get(STRING_TASK);
     assertThat(snapshot.status()).isEqualTo(TaskStatus.COMPLETED);
-    assertThat(snapshot.result()).isEqualTo("the summary");
+    assertThat(snapshot.result()).contains("the summary");
   }
 
   @Test
@@ -110,7 +110,7 @@ public class TaskClientIntegrationTest extends TestKitSupport {
 
     var snapshot = componentClient.forTask(taskId).get(TEST_TASK);
     assertThat(snapshot.status()).isEqualTo(TaskStatus.FAILED);
-    assertThat(snapshot.failureReason()).isEqualTo("rejected");
+    assertThat(snapshot.failureReason()).contains("rejected");
   }
 
   @Test

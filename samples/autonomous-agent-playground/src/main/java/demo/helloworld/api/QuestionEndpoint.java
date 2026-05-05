@@ -1,12 +1,13 @@
 package demo.helloworld.api;
 
+import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.AbstractHttpEndpoint;
-import demo.helloworld.application.Answer;
+import akka.javasdk.http.HttpResponses;
 import demo.helloworld.application.QuestionAnswerer;
 import demo.helloworld.application.QuestionTasks;
 import java.util.UUID;
@@ -41,7 +42,11 @@ public class QuestionEndpoint extends AbstractHttpEndpoint {
   }
 
   @Get("/{taskId}")
-  public Answer getAnswer(String taskId) {
-    return componentClient.forTask(taskId).get(QuestionTasks.ANSWER).result();
+  public HttpResponse getAnswer(String taskId) {
+    var snapshot = componentClient.forTask(taskId).get(QuestionTasks.ANSWER);
+    return snapshot
+      .result()
+      .<HttpResponse>map(HttpResponses::ok)
+      .orElseGet(() -> HttpResponses.accepted(snapshot.status().name()));
   }
 }

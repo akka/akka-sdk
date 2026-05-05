@@ -118,9 +118,9 @@ public class ResearchDelegationIntegrationTest extends TestKitSupport {
       .atMost(30, TimeUnit.SECONDS)
       .untilAsserted(() -> {
         var snapshot = componentClient.forTask(taskId).get(ResearchTasks.BRIEF);
-        assertThat(snapshot.result()).isNotNull();
-        assertThat(snapshot.result().title()).isEqualTo("Quantum Computing Brief");
-        assertThat(snapshot.result().keyFindings()).hasSize(4);
+        var result = snapshot.result().orElseThrow();
+        assertThat(result.title()).isEqualTo("Quantum Computing Brief");
+        assertThat(result.keyFindings()).hasSize(4);
       });
   }
 
@@ -218,9 +218,9 @@ public class ResearchDelegationIntegrationTest extends TestKitSupport {
       .atMost(30, TimeUnit.SECONDS)
       .untilAsserted(() -> {
         var snapshot = componentClient.forTask(taskId).get(ResearchTasks.BRIEF);
-        assertThat(snapshot.result()).isNotNull();
-        assertThat(snapshot.result().title()).isEqualTo("Quantum Computing Brief");
-        assertThat(snapshot.result().keyFindings()).hasSize(4);
+        var result = snapshot.result().orElseThrow();
+        assertThat(result.title()).isEqualTo("Quantum Computing Brief");
+        assertThat(result.keyFindings()).hasSize(4);
       });
   }
 }

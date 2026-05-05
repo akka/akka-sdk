@@ -66,7 +66,7 @@ public class TaskEntityTest {
     assertThat(result.getReply()).isEqualTo(done());
     result.getNextEventOfType(TaskEvent.TaskAssigned.class);
     assertThat(testKit.getState().status()).isEqualTo(TaskStatus.ASSIGNED);
-    assertThat(testKit.getState().assignee()).isEqualTo("agent-1");
+    assertThat(testKit.getState().assignee()).contains("agent-1");
   }
 
   @Test
@@ -103,7 +103,7 @@ public class TaskEntityTest {
     assertThat(result.getReply()).isEqualTo(done());
     result.getNextEventOfType(TaskEvent.TaskCompleted.class);
     assertThat(testKit.getState().status()).isEqualTo(TaskStatus.COMPLETED);
-    assertThat(testKit.getState().result()).isEqualTo("{\"summary\":\"done\"}");
+    assertThat(testKit.getState().result()).contains("{\"summary\":\"done\"}");
   }
 
   @Test
@@ -131,7 +131,7 @@ public class TaskEntityTest {
     assertThat(result.getReply()).isEqualTo(done());
     result.getNextEventOfType(TaskEvent.TaskFailed.class);
     assertThat(testKit.getState().status()).isEqualTo(TaskStatus.FAILED);
-    assertThat(testKit.getState().failureReason()).isEqualTo("something broke");
+    assertThat(testKit.getState().failureReason()).contains("something broke");
   }
 
   @Test
@@ -180,7 +180,7 @@ public class TaskEntityTest {
             .invoke(new TaskEntity.ReassignRequest("agent-2", "needs different expertise"));
     assertThat(result.getReply()).isEqualTo(done());
     result.getNextEventOfType(TaskEvent.TaskReassigned.class);
-    assertThat(testKit.getState().assignee()).isEqualTo("agent-2");
+    assertThat(testKit.getState().assignee()).contains("agent-2");
     assertThat(testKit.getState().reassignmentContext())
         .containsExactly("needs different expertise");
   }
@@ -260,7 +260,7 @@ public class TaskEntityTest {
     assertThat(result.getReply()).isEqualTo(done());
     result.getNextEventOfType(TaskEvent.TaskCompleted.class);
     assertThat(testKit.getState().status()).isEqualTo(TaskStatus.COMPLETED);
-    assertThat(testKit.getState().result()).isEqualTo("{\"approvedBy\":\"editor\"}");
+    assertThat(testKit.getState().result()).contains("{\"approvedBy\":\"editor\"}");
     assertThat(publishedNotifications.poll()).isInstanceOf(TaskNotification.Completed.class);
     assertThat(publishedNotifications).isEmpty();
   }
@@ -276,7 +276,7 @@ public class TaskEntityTest {
     assertThat(result.getReply()).isEqualTo(done());
     result.getNextEventOfType(TaskEvent.TaskFailed.class);
     assertThat(testKit.getState().status()).isEqualTo(TaskStatus.FAILED);
-    assertThat(testKit.getState().failureReason()).isEqualTo("rejected by editor");
+    assertThat(testKit.getState().failureReason()).contains("rejected by editor");
     assertThat(publishedNotifications.poll()).isInstanceOf(TaskNotification.Failed.class);
     assertThat(publishedNotifications).isEmpty();
   }
@@ -315,7 +315,7 @@ public class TaskEntityTest {
     assertThat(result.getReply()).isEqualTo(done());
     result.getNextEventOfType(TaskEvent.TaskResultRejected.class);
     assertThat(testKit.getState().status()).isEqualTo(TaskStatus.RESULT_REJECTED);
-    assertThat(testKit.getState().failureReason()).isEqualTo("result too short");
+    assertThat(testKit.getState().failureReason()).contains("result too short");
 
     var rejected = (TaskNotification.ResultRejected) publishedNotifications.poll();
     assertThat(rejected.taskName()).isEqualTo("research");

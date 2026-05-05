@@ -50,9 +50,9 @@ public class QuestionAnswererIntegrationTest extends TestKitSupport {
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(() -> {
         var snapshot = componentClient.forTask(taskId).get(QuestionTasks.ANSWER);
-        assertThat(snapshot.result()).isNotNull();
-        assertThat(snapshot.result().answer()).isEqualTo("2 plus 2 equals 4.");
-        assertThat(snapshot.result().confidence()).isEqualTo(100);
+        var result = snapshot.result().orElseThrow();
+        assertThat(result.answer()).isEqualTo("2 plus 2 equals 4.");
+        assertThat(result.confidence()).isEqualTo(100);
       });
   }
 
@@ -80,7 +80,7 @@ public class QuestionAnswererIntegrationTest extends TestKitSupport {
       .untilAsserted(() -> {
         var snapshot = componentClient.forTask(taskId).get(QuestionTasks.ANSWER);
         assertThat(snapshot.status().name()).isEqualTo("FAILED");
-        assertThat(snapshot.failureReason()).isEqualTo("I cannot answer this question.");
+        assertThat(snapshot.failureReason()).contains("I cannot answer this question.");
       });
   }
   // end::failure[]

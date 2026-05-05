@@ -78,9 +78,9 @@ public class TaskIntegrationTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.TEST_TASK);
-              assertThat(snapshot.result()).isNotNull();
-              assertThat(snapshot.result().value()).isEqualTo("42 is the answer.");
-              assertThat(snapshot.result().score()).isEqualTo(95);
+              var result = snapshot.result().orElseThrow();
+              assertThat(result.value()).isEqualTo("42 is the answer.");
+              assertThat(result.score()).isEqualTo(95);
             });
   }
 
@@ -99,7 +99,7 @@ public class TaskIntegrationTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.STRING_TASK);
-              assertThat(snapshot.result()).isEqualTo("The capital of France is Paris.");
+              assertThat(snapshot.result()).contains("The capital of France is Paris.");
             });
   }
 
@@ -119,7 +119,7 @@ public class TaskIntegrationTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.STRING_TASK);
-              assertThat(snapshot.result()).isEqualTo("The capital of France is Paris.");
+              assertThat(snapshot.result()).contains("The capital of France is Paris.");
             });
   }
 
@@ -138,7 +138,7 @@ public class TaskIntegrationTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.INTEGER_TASK);
-              assertThat(snapshot.result()).isEqualTo(42);
+              assertThat(snapshot.result()).contains(42);
             });
   }
 
@@ -157,7 +157,7 @@ public class TaskIntegrationTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.BOOLEAN_TASK);
-              assertThat(snapshot.result()).isTrue();
+              assertThat(snapshot.result()).contains(true);
             });
   }
 
@@ -177,7 +177,7 @@ public class TaskIntegrationTest extends TestKitSupport {
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.TEST_TASK);
               assertThat(snapshot.status().name()).isEqualTo("FAILED");
-              assertThat(snapshot.failureReason()).isEqualTo("Cannot answer this question.");
+              assertThat(snapshot.failureReason()).contains("Cannot answer this question.");
             });
   }
 
@@ -205,9 +205,9 @@ public class TaskIntegrationTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.TEST_TASK);
-              assertThat(snapshot.result()).isNotNull();
-              assertThat(snapshot.result().value()).isEqualTo("Today is 2025-01-15.");
-              assertThat(snapshot.result().score()).isEqualTo(100);
+              var result = snapshot.result().orElseThrow();
+              assertThat(result.value()).isEqualTo("Today is 2025-01-15.");
+              assertThat(result.score()).isEqualTo(100);
             });
   }
 
@@ -245,9 +245,9 @@ public class TaskIntegrationTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.TEST_TASK);
-              assertThat(snapshot.result()).isNotNull();
-              assertThat(snapshot.result().value()).isEqualTo("Claim verified.");
-              assertThat(snapshot.result().score()).isEqualTo(90);
+              var result = snapshot.result().orElseThrow();
+              assertThat(result.value()).isEqualTo("Claim verified.");
+              assertThat(result.score()).isEqualTo(90);
             });
   }
 
@@ -288,9 +288,9 @@ public class TaskIntegrationTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.TEST_TASK);
-              assertThat(snapshot.result()).isNotNull();
-              assertThat(snapshot.result().value()).isEqualTo("Fact confirmed.");
-              assertThat(snapshot.result().score()).isEqualTo(95);
+              var result = snapshot.result().orElseThrow();
+              assertThat(result.value()).isEqualTo("Fact confirmed.");
+              assertThat(result.score()).isEqualTo(95);
             });
   }
 
@@ -327,9 +327,9 @@ public class TaskIntegrationTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.RESEARCH);
-              assertThat(snapshot.result()).isNotNull();
-              assertThat(snapshot.result().title()).isEqualTo("Login Feature");
-              assertThat(snapshot.result().summary()).contains("OAuth");
+              var result = snapshot.result().orElseThrow();
+              assertThat(result.title()).isEqualTo("Login Feature");
+              assertThat(result.summary()).contains("OAuth");
             });
   }
 }
