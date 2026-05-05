@@ -6,6 +6,7 @@ import akka.javasdk.agent.autonomous.capability.Moderation;
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 
+// tag::class[]
 @Component(id = "facilitator", description = "Facilitates negotiations between parties")
 public class Facilitator extends AutonomousAgent {
 
@@ -22,3 +23,4 @@ public class Facilitator extends AutonomousAgent {
       .capability(Moderation.of(Buyer.class, Seller.class).maxRounds(10));
   }
 }
+// end::class[]

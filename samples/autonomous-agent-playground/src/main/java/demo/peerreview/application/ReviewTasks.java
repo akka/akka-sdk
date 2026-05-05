@@ -3,6 +3,7 @@ package demo.peerreview.application;
 import akka.javasdk.agent.task.Task;
 import java.util.List;
 
+// tag::class[]
 public class ReviewTasks {
 
   public record ReviewResult(
@@ -17,3 +18,4 @@ public class ReviewTasks {
     )
     .resultConformsTo(ReviewResult.class);
 }
+// end::class[]

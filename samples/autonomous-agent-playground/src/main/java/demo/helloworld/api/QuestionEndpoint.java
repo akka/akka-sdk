@@ -30,9 +30,11 @@ public class QuestionEndpoint extends AbstractHttpEndpoint {
     var agentInstanceId = requestContext().queryParams().getString("runId")
       .filter(s -> !s.isBlank())
       .orElseGet(() -> UUID.randomUUID().toString());
+    // tag::run-single-task[]
     var taskId = componentClient
       .forAutonomousAgent(QuestionAnswerer.class, agentInstanceId)
       .runSingleTask(QuestionTasks.ANSWER.instructions(request.question()));
+    // end::run-single-task[]
     return new QuestionResponse(taskId, agentInstanceId, "question-answerer");
   }
 

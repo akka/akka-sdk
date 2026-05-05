@@ -7,6 +7,7 @@ package demo.docreview.application;
 import akka.javasdk.agent.task.Task;
 
 /** Task definitions for document review. */
+// tag::class[]
 public class ReviewTasks {
 
   // prettier-ignore
@@ -15,3 +16,4 @@ public class ReviewTasks {
     .description("Review a document for compliance")
     .resultConformsTo(ReviewResult.class);
 }
+// end::class[]

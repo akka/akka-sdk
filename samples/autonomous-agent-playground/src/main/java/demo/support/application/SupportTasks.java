@@ -2,6 +2,7 @@ package demo.support.application;
 
 import akka.javasdk.agent.task.Task;
 
+// tag::class[]
 public class SupportTasks {
 
   public record SupportResolution(String category, String resolution, boolean resolved) {}
@@ -12,3 +13,4 @@ public class SupportTasks {
     .description("Resolve a customer support request")
     .resultConformsTo(SupportResolution.class);
 }
+// end::class[]

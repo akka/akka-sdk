@@ -10,6 +10,7 @@ import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.FunctionTool;
 
+// tag::class[]
 @Component(id = "report-agent")
 public class ReportAgent extends AutonomousAgent {
 
@@ -38,3 +39,4 @@ public class ReportAgent extends AutonomousAgent {
     return "Analysis of: " + data;
   }
 }
+// end::class[]

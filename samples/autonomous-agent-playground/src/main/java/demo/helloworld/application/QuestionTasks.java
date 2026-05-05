@@ -2,6 +2,7 @@ package demo.helloworld.application;
 
 import akka.javasdk.agent.task.Task;
 
+// tag::class[]
 public class QuestionTasks {
 
   // prettier-ignore
@@ -10,3 +11,4 @@ public class QuestionTasks {
     .description("Answer a question")
     .resultConformsTo(Answer.class);
 }
+// end::class[]

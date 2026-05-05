@@ -5,6 +5,7 @@ import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 
+// tag::class[]
 @Component(id = "triage-agent")
 public class TriageAgent extends AutonomousAgent {
 
@@ -24,3 +25,4 @@ public class TriageAgent extends AutonomousAgent {
       );
   }
 }
+// end::class[]

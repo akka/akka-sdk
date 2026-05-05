@@ -2,6 +2,7 @@ package demo.consulting.application;
 
 import akka.javasdk.annotations.FunctionTool;
 
+// tag::class[]
 public class ConsultingTools {
 
   @FunctionTool(description = "Perform a preliminary assessment of a client problem.")
@@ -35,3 +36,4 @@ public class ConsultingTools {
     );
   }
 }
+// end::class[]

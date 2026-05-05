@@ -1,33 +1,62 @@
 = Multi-agent systems
-:page-summary: Orchestrate multiple agents collaborating on shared goals with tool planning and handoffs.
+:page-summary: Coordinate multiple agents on a shared goal through delegation, handoff, teams, or moderated conversations.
 :page-persona: builder-developer, builder-ai-ml
 
 include::ROOT:partial$include.adoc[]
 
-Orchestrate multiple agents that collaborate on shared goals, hand off tasks to specialized peers, and coordinate through structured workflows. Multi-agent systems decompose complex problems into sub-tasks handled by purpose-built agents, using tool planning and inter-agent communication to produce coherent outcomes.
+Compose specialized agents into systems that decompose complex problems, isolate context, and coordinate naturally. The xref:sdk:autonomous-agents.adoc[Autonomous Agent] component provides four built-in coordination capabilities: each agent declares which patterns it participates in, and the framework wires the corresponding tools into the agent's tool loop automatically.
 
 == Overview
 
 === When to Use This Pattern
 
-* Your problem requires multiple specialized agents collaborating toward a shared goal
-* You need structured handoffs between agents with different capabilities or tool sets
-* Your system requires a supervisor or planner agent that delegates work to sub-agents
-* You want to build agentic pipelines where one agent's output feeds into another
+* Your problem benefits from specialist agents with focused contexts rather than one generalist with a diluted context.
+* Subtasks are independent enough to run in parallel.
+* You need triage or routing where a classifier hands off to the right specialist.
+* You want peer agents that collaborate, debate, or review each other's work.
+* You want moderated turn-taking conversations such as panel reviews or negotiations.
+
+=== Coordination patterns
+
+Four coordination patterns cover the design space, each implemented by a capability:
+
+* *Sequential / handoff.* Control transfers between agents. Use `canHandoffTo(...)` on a `TaskAcceptance` capability. Examples: triage routing, escalation chains.
+* *Delegative / fan-out and fan-in.* A coordinator dispatches subtasks to isolated workers. Use the `Delegation` capability. Examples: research with multiple specialists, parallel analysis.
+* *Collaborative / team.* Peer agents share a task list and message each other. Use the `TeamLeadership` capability. Examples: dev teams that self-coordinate, brainstorm groups.
+* *Moderated conversation.* A moderator orchestrates turn-taking participants in scripted or directed mode. Use the `Moderation` capability. Examples: peer reviews, negotiations, debates.
+
+See xref:sdk:autonomous-agents/coordination.adoc[] for the conceptual background and xref:sdk:autonomous-agents/capabilities.adoc[] for the API details.
 
 === Akka Components Involved
 
-* *Agents* -- individual specialized agents with distinct roles and tool sets
-* *Workflows* -- orchestrate agent-to-agent handoffs and coordination logic
-* *Session Memory* -- share context and state across collaborating agents
+* *xref:sdk:autonomous-agents.adoc[Autonomous Agents]* declare coordination capabilities that the framework wires into the agent's tool loop.
+* *xref:sdk:http-endpoints.adoc[HTTP Endpoints]* trigger top-level agents and surface task results.
+* *xref:sdk:event-sourced-entities.adoc[Entities]* and *xref:sdk:views.adoc[Views]* can be exposed as function tools or queried through `ComponentClient`.
 
 == Sample Projects
 
-The following sample projects demonstrate this pattern:
+The xref:sdk:autonomous-agents.adoc#samples[autonomous-agent-playground] includes one sample per coordination pattern:
 
-* https://github.com/akka-samples/multi-agent[multi-agent,window="new"] -- multiple agents coordinating on a shared task with structured handoffs
+* `research`: delegation. Coordinator delegates to a researcher and an analyst, then synthesizes a brief.
+* `support`: handoff. Triage classifies a request and hands off to a billing or technical specialist.
+* `consulting`: composed delegation and handoff in one coordinator.
+* `peerreview`: moderation in scripted mode (panel of specialist reviewers).
+* `negotiation`: moderation in directed mode (multi-round buyer/seller).
+* `debate`: moderation with two adversarial participants.
+* `devteam`: team. A team lead decomposes a project; developer agents claim tasks from a shared list and message peers.
+
+== Workflow-supervised alternative
+
+For request-based xref:sdk:agents.adoc[Agents] coordinated through a xref:sdk:workflows.adoc[Workflow] supervisor, see xref:sdk:agents/orchestrating.adoc[Orchestrating multiple agents]. The supervisor pattern keeps coordination logic outside the model in deterministic workflow steps, which suits cases where you want explicit step ordering, retry policies per step, and external compensation.
+
+A sample showing this approach: https://github.com/akka-samples/multi-agent[multi-agent,window="new"], multiple agents coordinating on a shared task with structured handoffs through a workflow.
+
+Choose the workflow approach when you want explicit, deterministic ordering. Choose Autonomous Agent capabilities when you want the model to decide what happens next based on the work in flight.
 
 == See Also
 
-* xref:sdk:agents/orchestrating.adoc[]
+* xref:sdk:autonomous-agents.adoc[Autonomous Agents]
+* xref:sdk:autonomous-agents/coordination.adoc[Coordination patterns]
+* xref:sdk:autonomous-agents/capabilities.adoc[Coordination capabilities]
+* xref:sdk:agents/orchestrating.adoc[Orchestrating multiple agents (workflow-based)]
 * xref:concepts:inter-agent-comms.adoc[]

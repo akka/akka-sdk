@@ -5,6 +5,7 @@ import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 
+// tag::class[]
 @Component(
   id = "analyst",
   description = "Analyses topics to identify trends and produce actionable insights"
@@ -23,3 +24,4 @@ public class Analyst extends AutonomousAgent {
       .capability(TaskAcceptance.of(ResearchTasks.ANALYSIS).maxIterationsPerTask(3));
   }
 }
+// end::class[]

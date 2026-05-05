@@ -4,6 +4,7 @@ import akka.javasdk.agent.autonomous.AgentDefinition;
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.annotations.Component;
 
+// tag::class[]
 @Component(
   id = "technical-reviewer",
   description = "Reviews documents for technical accuracy"
@@ -16,3 +17,4 @@ public class TechnicalReviewer extends AutonomousAgent {
       .goal("Review documents for technical accuracy, correctness, and completeness.");
   }
 }
+// end::class[]

@@ -12,6 +12,7 @@ import akka.javasdk.annotations.Component;
  * <p>Can delegate research subtasks to a researcher (delegation), escalate complex problems to a
  * senior consultant (handoff), and delegate fact-checking to a request-based agent.
  */
+// tag::class[]
 @Component(id = "consulting-coordinator")
 public class ConsultingCoordinator extends AutonomousAgent {
 
@@ -33,3 +34,4 @@ public class ConsultingCoordinator extends AutonomousAgent {
       .capability(Delegation.to(FactCheckAgent.class));
   }
 }
+// end::class[]

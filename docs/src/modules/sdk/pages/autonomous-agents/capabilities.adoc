@@ -1,0 +1,378 @@
+= Coordination capabilities
+
+include::ROOT:partial$include.adoc[]
+
+An xref:sdk:autonomous-agents.adoc[Autonomous Agent] participates in the coordination patterns described in xref:sdk:autonomous-agents/coordination.adoc[] by declaring capabilities on its `AgentDefinition`. Each capability adds tools to the agent's tool loop. The model sees these coordination tools alongside the agent's own domain tools and decides which to call as the work unfolds.
+
+Each capability maps to one or more patterns:
+
+* `Delegation` enables delegative patterns.
+* `canHandoffTo` enables sequential patterns.
+* `TeamLeadership` enables collaborative and emergent patterns.
+* `Moderation` enables structured turn-taking conversations.
+
+[#delegation]
+== Delegation
+
+A coordinator declares delegation targets by adding a `Delegation` capability. The framework provides delegation tools for each combination of accepted task type and target, and the model picks one of these tools when it decides to delegate. When called, the tool creates the subtask, spawns the worker agent, assigns the task, awaits the result, and returns it to the coordinator's tool loop.
+
+[source,java,indent=0]
+----
+import akka.javasdk.agent.autonomous.capability.Delegation;
+
+define()
+  .capability(Delegation.to(Researcher.class, Analyst.class))
+----
+
+The coordinator pauses while workers execute, then resumes with their results. Delegated agents shut down after their task completes. The coordinator maintains full context and is responsible for synthesizing the results.
+
+*Context flow:* Partitioned. Each worker sees only its assigned task. Workers are isolated from each other. The coordinator sees the original task and the results that come back.
+
+*When to use:* Tasks that decompose into distinct subtasks benefiting from isolated, focused contexts. Good for parallel execution and when independent perspectives are needed.
+
+=== Parallel workers
+
+`maxParallelWorkers` caps how many delegated tasks within a single `Delegation` capability can run at the same time. The default is configured by `akka.javasdk.agent.autonomous.delegation.max-parallel-workers` (default 3). Lower it to 1 to force sequential execution, or raise it when subtasks are genuinely independent and you want more fan-out for latency or thoroughness:
+
+[source,java,indent=0]
+----
+define()
+  .capability(Delegation.to(Researcher.class, Analyst.class).maxParallelWorkers(4));
+----
+
+To group workers so each group has its own concurrency limit, declare several `Delegation` capabilities. Workers from different capabilities run independently, each with its own `maxParallelWorkers` budget. This is useful when one set of workers, for example fast research agents, can fan out widely while another set, such as an expensive review agent, should remain serialized:
+
+[source,java,indent=0]
+----
+define()
+  .capability(Delegation.to(Researcher.class).maxParallelWorkers(5))
+  .capability(Delegation.to(Reviewer.class).maxParallelWorkers(1));    // run sequentially
+----
+
+The coordinator delegates to specialist agents that each accept their own task type:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/research/application/ResearchCoordinator.java[ResearchCoordinator.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/research/application/ResearchCoordinator.java[tag=class]
+----
+
+Each delegation target is a standalone agent with its own definition and accepted task types:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/research/application/Researcher.java[Researcher.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/research/application/Researcher.java[tag=class]
+----
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/research/application/Analyst.java[Analyst.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/research/application/Analyst.java[tag=class]
+----
+
+The task types referenced above are declared with their typed result schemas. `BRIEF` is the top-level task assigned to the coordinator, `FINDINGS` and `ANALYSIS` are the subtasks the specialists accept:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/research/application/ResearchTasks.java[ResearchTasks.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/research/application/ResearchTasks.java[tag=class]
+----
+
+IMPORTANT: The `description` in the `@Component` annotation is included in the delegation tool description so the coordinator's model knows when to delegate to each specialist. Without a meaningful description, the model has nothing to disambiguate between specialists.
+
+[#handoff]
+== Handoff
+
+An agent declares handoff targets on its `TaskAcceptance` capability. The framework provides a tool that transfers the current task to another agent. Unlike delegation, handoff transfers ownership: the current agent is done and the target agent takes over.
+
+[source,java,indent=0]
+----
+define()
+  .capability(
+    TaskAcceptance.of(SupportTasks.RESOLVE)
+      .canHandoffTo(BillingSpecialist.class, TechnicalSpecialist.class));
+----
+
+Handoff is peer-to-peer. The handing-off agent reassigns the task directly to the target agent and stops. The task entity updates its assignee and records the handoff context. The new agent picks up the same task with the accumulated context from the handoff.
+
+*Context flow:* Forward. Context accumulates or transforms as it moves through the chain.
+
+*When to use:* Routing and triage patterns where a classifier determines which specialist should handle a request. Clear stages with specialization at each stage.
+
+The triage agent classifies requests and hands off to the appropriate specialist:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/support/application/TriageAgent.java[TriageAgent.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/support/application/TriageAgent.java[tag=class]
+----
+
+Handoff targets accept the same task type. The task moves between agents:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/support/application/BillingSpecialist.java[BillingSpecialist.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/support/application/BillingSpecialist.java[tag=class]
+----
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/support/application/TechnicalSpecialist.java[TechnicalSpecialist.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/support/application/TechnicalSpecialist.java[tag=class]
+----
+
+All three agents share the same task type. The result schema captures the resolution category and outcome:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/support/application/SupportTasks.java[SupportTasks.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/support/application/SupportTasks.java[tag=class]
+----
+
+[#moderation]
+== Moderation
+
+A moderator agent orchestrates turn-taking conversations between participant agents. The moderator declares which agent types can participate, and the framework manages conversation setup, turn-taking, and transcript collection. Participant agents are simple: they define a goal and the framework handles the conversation mechanics automatically.
+
+[source,java,indent=0]
+----
+import akka.javasdk.agent.autonomous.capability.Moderation;
+
+define()
+  .capability(Moderation.of(
+      TechnicalReviewer.class,
+      StyleReviewer.class,
+      ComplianceReviewer.class))
+----
+
+Configuration options:
+
+[source,java,indent=0]
+----
+Moderation.of(Buyer.class, Seller.class)
+  .maxRounds(5)                    // safety limit for directed mode (default 5)
+  .maxIterationsPerTurn(10)        // max model iterations per participant turn (default 10)
+  .maxConcurrentConversations(1)   // max simultaneous conversations (default 1)
+----
+
+*Context flow:* Structured turn-taking. The moderator sees the full conversation history and generates contextual prompts for each participant. Participants see the moderator's prompt along with new entries from the conversation since their last turn, so they can respond to what others have said.
+
+*When to use:* Multi-perspective analysis where different specialists contribute sequentially (peer review, compliance checks), or adaptive discussions where the moderator reads responses and decides the next step (negotiations, interviews).
+
+Two conversation modes shape how the moderator controls the flow.
+
+=== Scripted conversations
+
+In scripted mode, the moderator's model defines a turn sequence upfront: who speaks, in what order, and what each turn should cover. The framework then drives execution step by step. At each participant step, the moderator generates a prompt based on the conversation so far. At moderator steps, the moderator contributes its own message, for example a synthesis or summary. After all steps complete, the conversation finishes and the moderator receives the full transcript.
+
+This mode suits structured processes with a known sequence: peer reviews where each specialist reviews in order, multi-stage assessments, or any workflow where the moderator knows the steps ahead of time but wants to generate contextual prompts as the conversation unfolds.
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/peerreview/application/ReviewModerator.java[ReviewModerator.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/peerreview/application/ReviewModerator.java[tag=class]
+----
+
+Participant agents need only a goal. The framework provides the conversation tools:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/peerreview/application/TechnicalReviewer.java[TechnicalReviewer.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/peerreview/application/TechnicalReviewer.java[tag=class]
+----
+
+IMPORTANT: The `description` in the `@Component` annotation is shown to the moderator's model so it understands each participant's expertise when generating prompts. Without a meaningful description, the moderator has nothing to disambiguate between participants.
+
+The moderator accepts a single review task that aggregates the per-reviewer findings:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/peerreview/application/ReviewTasks.java[ReviewTasks.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/peerreview/application/ReviewTasks.java[tag=class]
+----
+
+=== Directed conversations
+
+In directed mode, the moderator's model has full dynamic control over the conversation. It decides who speaks next, what direction to give them, and when to end the conversation, all based on the responses received so far. This enables adaptive flows where the conversation shape depends on its content.
+
+`maxRounds` acts as a safety limit in directed mode. The conversation ends automatically if the round limit is reached, preventing runaway conversations.
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/negotiation/application/Facilitator.java[Facilitator.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/negotiation/application/Facilitator.java[tag=class]
+----
+
+The facilitator's task captures the negotiated outcome and the final offer:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/negotiation/application/NegotiationTasks.java[NegotiationTasks.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/negotiation/application/NegotiationTasks.java[tag=class]
+----
+
+=== Multiple participants of the same type
+
+The moderator's model can use multiple instances of the same participant type with different reference names. For example, two critics with different review focuses. The reference name distinguishes them in the conversation:
+
+[source,java,indent=0]
+----
+@Component(id = "critic", description = "Reviews and critiques from a specific perspective")
+public class Critic extends AutonomousAgent {
+
+  @Override
+  public AgentDefinition definition() {
+    return define().goal("Provide critical analysis from the assigned perspective.");
+  }
+}
+----
+
+The moderator declares `Critic.class` once in its `Moderation.of(...)` capability. At runtime, the moderator's model can create multiple participant references, for example a "technical-reviewer" and a "financial-reviewer". Both are backed by the same `Critic` agent type but operate with different context, shaped by the prompts the moderator generates for each.
+
+[#teams]
+== Teams
+
+Teams are the freer counterpart to moderation. A team lead forms a team with a shared task list. Members run autonomously: claiming tasks, working on them, talking to each other, and completing work independently. The lead monitors progress and disbands the team when done. Where moderation gives the moderator full control over who speaks when, a team gives members the autonomy to coordinate among themselves.
+
+The `TeamLeadership` capability provides tools for the lead to create teams, add members, create tasks in the shared list, check team status, send messages, and disband the team. Team members get task-list and messaging tools injected automatically. Members iterate in a loop: discover tasks, claim, work, complete, check for more. They stop when the team is disbanded.
+
+Team members can message each other directly without coordinating through the lead. Once a team is formed, every member knows about every other member, and a member can send a message to any peer to ask a question, share a result, or signal a dependency. The lead is in every member's contact list and can be messaged like any peer, but does not automatically see messages members send to each other. The lead does observe one thing across the whole team: the shared backlog, with tasks being claimed, released, and completed.
+
+[source,java,indent=0]
+----
+import akka.javasdk.agent.autonomous.capability.TeamLeadership;
+import akka.javasdk.agent.autonomous.capability.TeamLeadership.TeamMember;
+
+define()
+  .capability(TeamLeadership.of(TeamMember.of(Developer.class).maxInstances(3)));
+----
+
+By default, the lead can only run one team at a time. Use `maxConcurrentTeams` to allow the lead to manage multiple teams simultaneously, for example, when the task requires separate teams working on independent concerns in parallel:
+
+[source,java,indent=0]
+----
+define()
+  .capability(
+    TeamLeadership.of(TeamMember.of(Developer.class).maxInstances(3))
+      .maxConcurrentTeams(2));
+----
+
+*Context flow:* Exchanged. Agents communicate as they work, sending messages that shape each other's reasoning. Each agent has its own context, influenced by the messages it receives.
+
+*When to use:* Interdependent work where agents need to see each other's contributions, or when quality benefits from peer review. Good for collaborative problem-solving where different expertise needs to be actively integrated.
+
+The team lead decomposes a project and waits while developers self-coordinate:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/devteam/application/ProjectLead.java[ProjectLead.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/devteam/application/ProjectLead.java[tag=class]
+----
+
+Members claim tasks from the shared list and message peers directly when their work depends on or affects others:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/devteam/application/Developer.java[Developer.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/devteam/application/Developer.java[tag=class]
+----
+
+The lead and the members work on different task types. `PLAN` is the top-level task assigned to the lead, and `IMPLEMENT` is a `TaskTemplate` that the lead instantiates per work item for the developers to claim:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/devteam/application/ProjectTasks.java[ProjectTasks.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/devteam/application/ProjectTasks.java[tag=class]
+----
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/devteam/application/DeveloperTasks.java[DeveloperTasks.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/devteam/application/DeveloperTasks.java[tag=class]
+----
+
+=== Emergent patterns
+
+The xref:sdk:autonomous-agents/coordination.adoc[emergent (swarm) pattern] has no dedicated capability. It is typically built on top of `TeamLeadership` as a *blackboard system*: direct peer messaging is replaced with a shared data space that members read from and write to. The "blackboard" can be the backlog itself, or an entity or view exposed as a tool. Members react primarily to what other members leave behind in that shared space, rather than messaging each other.
+
+[#external-input]
+== External input
+
+External input is not a separate capability. It is built directly on xref:sdk:autonomous-agents/tasks.adoc[task dependencies] using a task that no agent is assigned to. The framework treats that task like any other: it sits between upstream and downstream tasks, and the rest of the pipeline waits on it. An external caller (a human via an HTTP endpoint, another service via a webhook, anything outside the agent loop) completes or fails that task to release or stop the rest of the work.
+
+*When to use:* Any decision that has to be made outside the agent loop. Human approval, manual data entry, callbacks from third-party systems, or pauses while external state catches up.
+
+=== Human approval gate
+
+The `publishing` sample wires this together as a three-task chain. An agent drafts a post, a human approves or rejects, an agent publishes the approved post. The human's decision is encoded as a task with a typed result, the same as the agent-driven tasks around it.
+
+Define the three tasks. The middle one (`APPROVAL`) carries an `ApprovalDecision` result that the human will produce:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/publishing/application/PublishingTasks.java[PublishingTasks.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/publishing/application/PublishingTasks.java[tag=class]
+----
+
+When a request arrives, create all three tasks at once. The draft and publish tasks are assigned to autonomous agents in the same call. The approval task is created without an agent assignment and depends on the draft. The publish task depends on the approval. The dependency graph holds the pipeline together:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/publishing/api/PublishingEndpoint.java[PublishingEndpoint.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/publishing/api/PublishingEndpoint.java[tag=pipeline]
+----
+
+The content agent drafts the post and completes the draft task. The approval task is now runnable, but no agent is assigned to it, so it stays at `PENDING`. A human reviews the draft (a separate `GET /publishing/draft/\{id}` endpoint reads the snapshot) and either approves or rejects through dedicated endpoints.
+
+Approving assigns the task to the human (the assignee is just a label identifying who approved, not an agent reassignment) and completes it with an `ApprovalDecision`. The downstream publish task can now run, because its dependency completed successfully:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/publishing/api/PublishingEndpoint.java[PublishingEndpoint.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/publishing/api/PublishingEndpoint.java[tag=approve]
+----
+
+Rejecting assigns the task to the human and fails it. Failing a task that has dependents causes the framework to cancel the dependents (the publish task transitions to `CANCELLED`):
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/publishing/api/PublishingEndpoint.java[PublishingEndpoint.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/publishing/api/PublishingEndpoint.java[tag=reject]
+----
+
+From the agent's perspective there is no special waiting state to handle. The runtime simply does not start a task whose dependencies are not yet complete. The same lifecycle, snapshot, and notification machinery covers human-completed tasks as covers agent-completed ones, so an external client can poll the snapshot or react to terminal notifications regardless of who finished the task.
+
+== Composing capabilities
+
+Capabilities compose freely. An agent can combine:
+
+* *Handoff with external input.* Triage low-risk directly, hand off high-risk to a specialist that requests human approval.
+* *Delegation with handoff.* Delegate to specialists for most work, hand off edge cases to a different agent type.
+* *Delegation with external input.* Delegate writing and editing to specialists, request editorial approval for the final output.
+* *Teams with external input.* Team members collaborate, with human approval required for final publication.
+* *Moderation with delegation.* Moderate a conversation between specialists, then delegate follow-up work based on the outcome.
+
+For example, a consulting coordinator that delegates routine research and hands off complex problems to a senior specialist:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/consulting/application/ConsultingCoordinator.java[ConsultingCoordinator.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/consulting/application/ConsultingCoordinator.java[tag=class]
+----
+
+`ENGAGEMENT` is the top-level task that the coordinator accepts and that the senior consultant takes over on handoff. `RESEARCH` is the subtask the coordinator delegates for routine investigation:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/consulting/application/ConsultingTasks.java[ConsultingTasks.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/consulting/application/ConsultingTasks.java[tag=class]
+----
+
+The model decides at runtime whether to delegate a subtask (retaining ownership) or hand off the entire task (transferring ownership). Domain tools like `assessProblem` and `checkComplexity` give the model the information it needs to make this decision.
+
+== See Also
+
+* xref:sdk:autonomous-agents/coordination.adoc[Coordination patterns] for the conceptual background
+* xref:sdk:autonomous-agents/notifications.adoc[Notifications] for events emitted during coordination
+* xref:sdk:autonomous-agents/defining.adoc[Defining an autonomous agent]

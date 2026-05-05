@@ -6,6 +6,7 @@ import akka.javasdk.agent.autonomous.capability.Delegation;
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 
+// tag::class[]
 @Component(id = "research-coordinator")
 public class ResearchCoordinator extends AutonomousAgent {
 
@@ -22,3 +23,4 @@ public class ResearchCoordinator extends AutonomousAgent {
       .capability(Delegation.to(Researcher.class, Analyst.class).maxParallelWorkers(3));
   }
 }
+// end::class[]
