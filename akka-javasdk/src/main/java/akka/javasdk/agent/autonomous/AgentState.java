@@ -18,7 +18,7 @@ import java.util.Optional;
 public final class AgentState {
 
   private final String phase;
-  private final boolean paused;
+  private final boolean suspended;
   private final String goal;
   private final AutonomousAgent.TokenUsage totalTokenUsage;
   private final Optional<TaskKey> currentTask;
@@ -26,13 +26,13 @@ public final class AgentState {
 
   public AgentState(
       String phase,
-      boolean paused,
+      boolean suspended,
       String goal,
       AutonomousAgent.TokenUsage totalTokenUsage,
       Optional<TaskKey> currentTask,
       List<String> pendingTaskIds) {
     this.phase = phase;
-    this.paused = paused;
+    this.suspended = suspended;
     this.goal = goal;
     this.totalTokenUsage = totalTokenUsage;
     this.currentTask = currentTask;
@@ -44,9 +44,9 @@ public final class AgentState {
     return phase;
   }
 
-  /** Whether the agent is currently paused. */
-  public boolean paused() {
-    return paused;
+  /** Whether the agent is currently suspended. */
+  public boolean suspended() {
+    return suspended;
   }
 
   /** The agent's current goal. */

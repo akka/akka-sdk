@@ -19,7 +19,7 @@ Every autonomous agent notification implements the link:{attachmentsdir}/api/akk
 
 === Lifecycle
 
-link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.LifecycleNotification.html[`Notification.LifecycleNotification`]: agent activation, iteration boundaries, and pause/resume/stop transitions.
+link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.LifecycleNotification.html[`Notification.LifecycleNotification`]: agent activation, iteration boundaries, and suspend/resume/stop transitions.
 
 [options="header", cols="1,3"]
 |===
@@ -30,9 +30,9 @@ link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.LifecycleNo
 | link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.IterationStarted.html[`Notification.IterationStarted`] | Model call beginning.
 | link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.IterationCompleted.html[`Notification.IterationCompleted`] | Iteration completed successfully, with token usage.
 | link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.IterationFailed.html[`Notification.IterationFailed`] | Iteration failed, optionally tied to a task and iteration number.
-| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.Paused.html[`Notification.Paused`] | Agent paused, with the source of the pause.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.Suspended.html[`Notification.Suspended`] | Agent suspended, with the source of the suspend.
 | link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.Resumed.html[`Notification.Resumed`] | Agent resumed, with the source of the resume.
-| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.Stopped.html[`Notification.Stopped`] | Agent stopped, distinguishing operator stop from auto-stop on queue drain.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.Stopped.html[`Notification.Stopped`] | Agent stopped, distinguishing operator terminate from auto-stop on queue drain.
 |===
 
 === Task

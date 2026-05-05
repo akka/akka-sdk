@@ -23,7 +23,7 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-/** Integration tests for agent state management, pause/resume, and failure notifications. */
+/** Integration tests for agent state management, suspend/resume, and failure notifications. */
 public class AgentLifecycleIntegrationTest extends TestKitSupport {
 
   private final TestModelProvider testAgentModel = new TestModelProvider();
@@ -61,23 +61,23 @@ public class AgentLifecycleIntegrationTest extends TestKitSupport {
 
     var state = agentClient.getState();
     assertThat(state.phase()).isEqualTo("PHASE_STOPPED");
-    assertThat(state.paused()).isFalse();
+    assertThat(state.suspended()).isFalse();
     assertThat(state.totalTokenUsage()).isNotNull();
     assertThat(state.currentTask()).isEmpty();
     assertThat(state.pendingTaskIds()).isEmpty();
   }
 
   @Test
-  public void shouldPauseAndResumeAgent() {
+  public void shouldSuspendAndResumeAgent() {
     testAgentModel.fixedResponse(completeTask(new TestTasks.TestResult("done after resume", 1)));
 
     var agentId = UUID.randomUUID().toString();
     var agentClient = componentClient.forAutonomousAgent(TestAutonomousAgent.class, agentId);
 
-    agentClient.pause();
+    agentClient.suspend();
 
     var state = agentClient.getState();
-    assertThat(state.paused()).isTrue();
+    assertThat(state.suspended()).isTrue();
 
     var taskId =
         componentClient
@@ -97,7 +97,7 @@ public class AgentLifecycleIntegrationTest extends TestKitSupport {
             });
 
     var stateAfterResume = agentClient.getState();
-    assertThat(stateAfterResume.paused()).isFalse();
+    assertThat(stateAfterResume.suspended()).isFalse();
   }
 
   @Test
@@ -238,7 +238,7 @@ public class AgentLifecycleIntegrationTest extends TestKitSupport {
   }
 
   @Test
-  public void shouldReceivePauseAndResumeNotifications() {
+  public void shouldReceiveSuspendAndResumeNotifications() {
     testAgentModel.fixedResponse(completeTask(new TestTasks.TestResult("done after resume", 1)));
 
     var agentId = UUID.randomUUID().toString();
@@ -247,22 +247,22 @@ public class AgentLifecycleIntegrationTest extends TestKitSupport {
     var notifications = new ArrayList<Notification>();
     agentClient.notificationStream().runForeach(notifications::add, testKit.getMaterializer());
 
-    agentClient.pause();
+    agentClient.suspend();
 
     Awaitility.await()
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () -> {
-              var paused =
+              var suspended =
                   notifications.stream()
-                      .filter(n -> n instanceof Notification.Paused)
-                      .map(n -> (Notification.Paused) n)
+                      .filter(n -> n instanceof Notification.Suspended)
+                      .map(n -> (Notification.Suspended) n)
                       .findFirst()
                       .orElseThrow();
-              assertThat(paused.reason()).isNotBlank();
+              assertThat(suspended.reason()).isNotBlank();
             });
 
-    // Assign a task while paused, then resume so the agent processes it.
+    // Assign a task while suspended, then resume so the agent processes it.
     var taskId =
         componentClient
             .forTask(UUID.randomUUID().toString())
