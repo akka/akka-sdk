@@ -15,6 +15,8 @@ image:ROOT:agent.png[Autonomous Agent,width=100,float=left]An Autonomous Agent i
 
 A task exists independently of any agent. It can be created up front with dependencies, queried by external clients while running, or handed between agents. Its typed result outlives the agent that produced it. The agent itself is stateless from the developer's perspective, while task and agent state are recovered automatically after crashes or restarts.
 
+Models perform best with focused context. A single agent loaded with too many concerns, competing objectives, and unrelated information loses clarity. Autonomous Agents are designed around this constraint: each agent has its own goal, its own accepted task types, and its own iteration loop, so context stays scoped to what one agent needs. Coordination then composes focused agents rather than overloading one.
+
 Coordination is part of the component model. An agent can declare that it delegates subtasks to specialist workers, hands off work to peers, leads a team that shares a task list, or moderates a turn-taking conversation. The runtime exposes these patterns to the model as tools, so the agent invokes them like any other tool. Multi-agent systems can be assembled from focused, single-purpose agents without writing orchestration code.
 
 === When to use an Autonomous Agent
