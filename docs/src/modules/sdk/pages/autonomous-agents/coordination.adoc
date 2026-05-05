@@ -140,7 +140,7 @@ As tasks grow more complex, a single agent's context becomes diluted. Multi-agen
 
 Each agent maintains its own private session: the full iteration history, tool calls, and intermediate reasoning. None of this is automatically shared. What crosses an agent boundary is narrower and pattern-specific.
 
-Handoff:: The source agent writes a free-form summary into the handoff tool's `context` argument. That summary, along with any from earlier handoffs, is appended into the next agent's context. There is no automatic summarization of session history.
+Handoff:: The source agent writes a free-form summary into the handoff tool's `context` argument. That summary, along with any summary from earlier handoffs, is appended into the next agent's context.
 
 Delegation:: The worker starts fresh with the subtask's instructions and attachments only. The coordinator receives the typed task result back, nothing else. Worker iterations and tool results stay in the worker.
 

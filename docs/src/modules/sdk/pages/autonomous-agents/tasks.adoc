@@ -118,10 +118,10 @@ A task progresses through these statuses:
 
 A task transitions to `FAILED` when the agent decides it cannot complete the work, or when the framework terminates it after the iteration limit. In both cases:
 
-* *Dependents* waiting on the failed task transition to `CANCELLED` automatically.
-* *Sibling tasks queued on the same agent* are unaffected and continue in order.
-* *The agent itself* keeps running; it does not stop because of a task failure. Agents started with `runSingleTask` still auto-stop once their queue drains, as that is their normal completion behavior.
-* The task is *terminal*: there is no automatic retry. If the work needs to be reattempted, application code creates a new task.
+* Sibling tasks queued on the same agent are unaffected and continue in order.
+* The agent itself keeps running; it does not stop because of a task failure. Agents started with `runSingleTask` still auto-stop once their queue drains, as that is their normal completion behavior.
+* The task is terminal, there is no automatic retry. If the work needs to be reattempted, application code creates a new task.
+* Tasks depending on the failed task transition to `CANCELLED` automatically.
 
 The notification stream distinguishes the two failure modes. An agent's explicit decision to fail emits `Notification.TaskFailed`. Framework termination, for example after max iterations or a dependency failure, emits `Notification.TaskCancelled`. The task snapshot reports the resulting status. See xref:sdk:autonomous-agents/notifications.adoc[Notifications] for the full event catalog.
 
@@ -132,7 +132,8 @@ Query a task's current state with the `ComponentClient`. The snapshot includes t
 [source,java,indent=0]
 ----
 var snapshot = componentClient.forTask(taskId).get(ReviewTasks.REVIEW);
-var status = snapshot.status();        // PENDING, ASSIGNED, IN_PROGRESS, RESULT_REJECTED, COMPLETED, FAILED, or CANCELLED
+var status = snapshot.status();        // PENDING, ASSIGNED, IN_PROGRESS, RESULT_REJECTED,
+                                       // COMPLETED, FAILED, or CANCELLED
 var result = snapshot.result();        // typed ReviewResult (null if not completed)
 var reason = snapshot.failureReason(); // failure reason (null if not failed)
 ----

@@ -140,7 +140,10 @@ A moderator agent orchestrates turn-taking conversations between participant age
 import akka.javasdk.agent.autonomous.capability.Moderation;
 
 define()
-  .capability(Moderation.of(TechnicalReviewer.class, StyleReviewer.class, ComplianceReviewer.class))
+  .capability(Moderation.of(
+      TechnicalReviewer.class,
+      StyleReviewer.class,
+      ComplianceReviewer.class))
 ----
 
 Configuration options:
