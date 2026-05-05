@@ -1,5 +1,6 @@
 package demo.publishing;
 
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.completeTask;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.javasdk.testkit.TestKit;
@@ -7,6 +8,8 @@ import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import demo.publishing.api.PublishingEndpoint;
 import demo.publishing.application.ContentAgent;
+import demo.publishing.application.DraftPost;
+import demo.publishing.application.PublishedPost;
 import demo.publishing.application.PublishingAgent;
 import demo.publishing.application.PublishingTasks;
 import java.util.concurrent.TimeUnit;
@@ -32,19 +35,15 @@ public class PublishingApprovalIntegrationTest extends TestKitSupport {
     // Script content agent to produce a draft
     contentModel.fixedResponse(
       new TestModelProvider.AiResponse(
-        new TestModelProvider.ToolInvocationRequest(
-          "complete_task",
-          "{\"title\":\"AI in 2026\",\"content\":\"AI is transforming everything.\"}"
-        )
+        completeTask(new DraftPost("AI in 2026", "AI is transforming everything."))
       )
     );
 
     // Script publishing agent to produce a published post
     publishingModel.fixedResponse(
       new TestModelProvider.AiResponse(
-        new TestModelProvider.ToolInvocationRequest(
-          "complete_task",
-          "{\"url\":\"https://blog.example.com/ai-2026\",\"publishedAt\":\"2026-03-26T12:00:00Z\"}"
+        completeTask(
+          new PublishedPost("https://blog.example.com/ai-2026", "2026-03-26T12:00:00Z")
         )
       )
     );
@@ -102,10 +101,7 @@ public class PublishingApprovalIntegrationTest extends TestKitSupport {
     // Script content agent to produce a draft
     contentModel.fixedResponse(
       new TestModelProvider.AiResponse(
-        new TestModelProvider.ToolInvocationRequest(
-          "complete_task",
-          "{\"title\":\"Bad Post\",\"content\":\"This is not good enough.\"}"
-        )
+        completeTask(new DraftPost("Bad Post", "This is not good enough."))
       )
     );
 

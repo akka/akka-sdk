@@ -4,6 +4,7 @@
 
 package demo.docreview;
 
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.completeTask;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.javasdk.testkit.TestKit;
@@ -11,7 +12,9 @@ import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import demo.docreview.api.DocReviewEndpoint;
 import demo.docreview.application.DocumentReviewer;
+import demo.docreview.application.ReviewResult;
 import demo.docreview.application.ReviewTasks;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
@@ -31,11 +34,12 @@ public class DocReviewIntegrationTest extends TestKitSupport {
   public void shouldReviewAttachedDocument() {
     model.fixedResponse(
       new TestModelProvider.AiResponse(
-        new TestModelProvider.ToolInvocationRequest(
-          "complete_task",
-          "{\"assessment\":\"Compliant\"," +
-          "\"findings\":[\"All sections present\",\"Proper signatures\"]," +
-          "\"compliant\":true}"
+        completeTask(
+          new ReviewResult(
+            "Compliant",
+            List.of("All sections present", "Proper signatures"),
+            true
+          )
         )
       )
     );

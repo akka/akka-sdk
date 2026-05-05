@@ -1,5 +1,8 @@
 package demo.consulting;
 
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.completeTask;
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.delegateTo;
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.handoffTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.javasdk.testkit.TestKit;
@@ -9,6 +12,8 @@ import demo.consulting.api.ConsultingEndpoint;
 import demo.consulting.application.ConsultingCoordinator;
 import demo.consulting.application.ConsultingResearcher;
 import demo.consulting.application.ConsultingTasks;
+import demo.consulting.application.ConsultingTasks.ConsultingResult;
+import demo.consulting.application.ConsultingTasks.ResearchSummary;
 import demo.consulting.application.FactCheckAgent;
 import demo.consulting.application.SeniorConsultant;
 import java.util.List;
@@ -36,6 +41,7 @@ public class ConsultingIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldDelegateResearchForStandardProblem() {
+    // tag::tool-use[]
     // Coordinator: assess → check complexity → delegate research → synthesise
     coordinatorModel
       .whenMessage(msg -> msg.contains("supply chain"))
@@ -60,20 +66,23 @@ public class ConsultingIntegrationTest extends TestKitSupport {
     coordinatorModel
       .whenToolResult(tr -> tr.name().equals("ConsultingTools_checkComplexity"))
       .reply(
-        new TestModelProvider.ToolInvocationRequest(
-          "delegate_Research_to_consulting_researcher",
-          "{\"instructions\":\"Research supply chain optimization best practices\"}"
+        delegateTo(
+          ConsultingTasks.RESEARCH,
+          ConsultingResearcher.class,
+          "Research supply chain optimization best practices"
         )
       );
+    // end::tool-use[]
 
     // Researcher completes
     researcherModel.fixedResponse(
       new TestModelProvider.AiResponse(
-        new TestModelProvider.ToolInvocationRequest(
-          "complete_task",
-          "{\"topic\":\"Supply chain optimization\"," +
-          "\"findings\":\"Key practices: demand forecasting, supplier diversification, " +
-          "inventory automation.\"}"
+        completeTask(
+          new ResearchSummary(
+            "Supply chain optimization",
+            "Key practices: demand forecasting, supplier diversification, " +
+            "inventory automation."
+          )
         )
       )
     );
@@ -82,11 +91,12 @@ public class ConsultingIntegrationTest extends TestKitSupport {
     coordinatorModel
       .whenMessage(msg -> msg.contains("Continue working"))
       .reply(
-        new TestModelProvider.ToolInvocationRequest(
-          "complete_task",
-          "{\"assessment\":\"Standard supply chain problem\"," +
-          "\"recommendation\":\"Implement demand forecasting and supplier diversification.\"," +
-          "\"escalated\":false}"
+        completeTask(
+          new ConsultingResult(
+            "Standard supply chain problem",
+            "Implement demand forecasting and supplier diversification.",
+            false
+          )
         )
       );
 
@@ -130,8 +140,8 @@ public class ConsultingIntegrationTest extends TestKitSupport {
     coordinatorModel
       .whenToolResult(tr -> tr.name().equals("ConsultingTools_assessProblem"))
       .reply(
-        new TestModelProvider.ToolInvocationRequest(
-          "send_CheckFacts_to_fact_check_agent",
+        delegateTo(
+          FactCheckAgent.class,
           "{\"claim\":\"The proposed changes will reduce carbon emissions by 40%\"}"
         )
       );
@@ -146,11 +156,12 @@ public class ConsultingIntegrationTest extends TestKitSupport {
     coordinatorModel
       .whenMessage(msg -> msg.contains("Continue working"))
       .reply(
-        new TestModelProvider.ToolInvocationRequest(
-          "complete_task",
-          "{\"assessment\":\"Climate impact claim verified with moderate confidence\"," +
-          "\"recommendation\":\"Proceed with changes; claims are broadly supported by data.\"," +
-          "\"escalated\":false}"
+        completeTask(
+          new ConsultingResult(
+            "Climate impact claim verified with moderate confidence",
+            "Proceed with changes; claims are broadly supported by data.",
+            false
+          )
         )
       );
 
@@ -203,22 +214,23 @@ public class ConsultingIntegrationTest extends TestKitSupport {
     coordinatorModel
       .whenToolResult(tr -> tr.name().equals("ConsultingTools_checkComplexity"))
       .reply(
-        new TestModelProvider.ToolInvocationRequest(
-          "handoff_to_senior_consultant",
-          "{\"context\":\"Complex problem involving regulatory compliance for merger. " +
-          "Preliminary assessment indicates M&A and regulatory scope.\"}"
+        handoffTo(
+          SeniorConsultant.class,
+          "Complex problem involving regulatory compliance for merger. " +
+          "Preliminary assessment indicates M&A and regulatory scope."
         )
       );
 
     // Senior consultant resolves
     seniorModel.fixedResponse(
       new TestModelProvider.AiResponse(
-        new TestModelProvider.ToolInvocationRequest(
-          "complete_task",
-          "{\"assessment\":\"Complex regulatory merger problem\"," +
-          "\"recommendation\":\"Engage regulatory counsel, conduct due diligence, " +
-          "establish compliance framework before proceeding.\"," +
-          "\"escalated\":true}"
+        completeTask(
+          new ConsultingResult(
+            "Complex regulatory merger problem",
+            "Engage regulatory counsel, conduct due diligence, " +
+            "establish compliance framework before proceeding.",
+            true
+          )
         )
       )
     );

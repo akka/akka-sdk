@@ -10,7 +10,7 @@ Autonomous agents are tested using `TestModelProvider` to mock model responses, 
 
 == Single-agent test
 
-The simplest case is one agent, one task, one mocked response. The mocked response invokes the built-in `complete_task` tool with a JSON-encoded result that matches the task's result type.
+The simplest case is one agent, one task, one mocked response. The mocked response invokes the built-in `complete_task` tool with a result that matches the task's result type. Use `AutonomousAgentTools.completeTask(...)` to construct the call without referencing the internal tool name.
 
 [source,java,indent=0]
 .{sample-base-url}/autonomous-agent-playground/src/test/java/demo/helloworld/QuestionAnswererIntegrationTest.java[QuestionAnswererIntegrationTest.java]
@@ -19,13 +19,13 @@ include::example$autonomous-agent-playground/src/test/java/demo/helloworld/Quest
 ----
 <1> Create a `TestModelProvider` instance as a field of the test class.
 <2> Register it in `testKitSettings()` with `.withModelProvider(AgentClass.class, model)`.
-<3> Use `.fixedResponse()` to control what the model returns. The response wraps a `ToolInvocationRequest` for the `complete_task` tool. The JSON payload must match the task's result type.
+<3> Use `.fixedResponse()` to control what the model returns. `completeTask(...)` builds a tool invocation for the built-in `complete_task` tool, serializing the result object to match the task's result type.
 <4> Trigger the agent through your endpoint.
 <5> Poll for the typed result with `Awaitility.await()` because execution is asynchronous.
 
 == AutonomousAgentTools helpers
 
-The `TestModelProvider.AutonomousAgentTools` class provides factory methods for the built-in coordination tools that the runtime exposes to the model. Use these instead of constructing raw `ToolInvocationRequest` instances with string tool names.
+The `TestModelProvider.AutonomousAgentTools` class provides factory methods for the built-in coordination tools that the runtime exposes to the model. Always prefer these over raw `ToolInvocationRequest` instances with string tool names: the helpers serialize result objects to JSON, derive the right tool name from the agent's component id and the task definition, and stay correct if the runtime renames a tool.
 
 *Task lifecycle tools:*
 
@@ -34,10 +34,10 @@ The `TestModelProvider.AutonomousAgentTools` class provides factory methods for 
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.*;
 
 // Complete a task: pass a result object matching the task's result type
-completeTask(new ReportTasks.Report("Report", "Done."));
+completeTask(new Answer("2 plus 2 equals 4.", 100));
 
 // Complete a task with raw JSON (must be a valid JSON object)
-completeTaskJson("{\"title\":\"Report\",\"summary\":\"Done.\"}");
+completeTaskJson("{\"answer\":\"2 plus 2 equals 4.\",\"confidence\":100}");
 
 // Fail a task with a reason
 failTask("Not enough information to proceed.");
@@ -54,8 +54,10 @@ handoffTo(BillingSpecialist.class, "Customer has billing dispute");
 delegateTo(ResearchTasks.FINDINGS, Researcher.class, "Research quantum computing");
 
 // Delegate to a request-based agent
-delegateTo(SomeAgent.class, "{\"input\":\"value\"}");
+delegateTo(FactCheckAgent.class, "{\"claim\":\"Carbon emissions reduced by 40%\"}");
 ----
+
+`AutonomousAgentTools` also exposes helpers for the team, backlog, messaging, and moderation capabilities (`createTeam`, `claimTask`, `sendMessage`, `startScriptedConversation`, `submitTurn`, …). For full coverage, see the playground samples that exercise those patterns: `devteam` for teams and shared backlogs, and `debate`, `negotiation`, `peerreview` for moderation.
 
 == Multi-agent delegation test
 
@@ -84,59 +86,33 @@ Notice how `whenMessage(...).reply(...)` lets you condition on the prompt conten
 For a handoff, the triage agent's mocked response calls `handoffTo`, and the specialist's mocked response calls `completeTask`:
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/support/HandoffIntegrationTest.java[HandoffIntegrationTest.java]
 ----
-// Triage agent classifies request and hands off
-triageModel
-  .whenMessage(msg -> msg.contains("billing"))
-  .reply(handoffTo(BillingSpecialist.class, "Customer has a billing question"));
-
-// Specialist completes the task
-specialistModel.fixedResponse(completeTask(new SupportTasks.Resolution(true, "Refund issued.")));
+include::example$autonomous-agent-playground/src/test/java/demo/support/HandoffIntegrationTest.java[tag=handoff]
 ----
 
-== Testing tool use before completion
+== Scripting tool use
 
-When the model should call a domain tool first, then complete the task with the tool's result, use `whenMessage` to script the first call and `whenToolResult` for the follow-up:
+When the model should call a domain tool, use `whenMessage` to script the first call and `whenToolResult` to react after the tool returns. The follow-up reaction can be another tool call, a delegation, a handoff, or a `completeTask`:
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/consulting/ConsultingIntegrationTest.java[ConsultingIntegrationTest.java]
 ----
-// First model call: agent invokes a domain tool
-model
-  .whenMessage(msg -> msg.contains("today"))
-  .reply(new TestModelProvider.ToolInvocationRequest("DateService_getToday", ""));
+include::example$autonomous-agent-playground/src/test/java/demo/consulting/ConsultingIntegrationTest.java[tag=tool-use]
+----
 
-// After tool result, complete the task
-model
-  .whenToolResult(result -> result.content().equals("2025-01-15"))
-  .thenReply(result -> new AiResponse(
-      completeTask(new TestTasks.TestResult("Today is 2025-01-15.", 100))));
-----
+The domain tool name passed to `ToolInvocationRequest` (for example `ConsultingTools_assessProblem`) is the tool name exposed to the model by the agent's `@FunctionTool` methods, not a built-in runtime tool. Built-in tools are constructed with the `AutonomousAgentTools` helpers instead.
 
 Call `model.reset()` in `@AfterEach` to clear all configured responses between tests when you have multiple test methods sharing the same providers.
 
 == Testing failure paths
 
-The runtime treats `fail_task` as a terminal failure for the task. Mock it to test the failure handling in your endpoints:
+The runtime treats `fail_task` as a terminal failure for the task. Use `failTask` to mock it and test the failure handling in your endpoints:
 
 [source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/helloworld/QuestionAnswererIntegrationTest.java[QuestionAnswererIntegrationTest.java]
 ----
-model.fixedResponse(
-  new TestModelProvider.AiResponse(
-    new TestModelProvider.ToolInvocationRequest(
-      "fail_task",
-      "{\"reason\":\"I cannot answer this question.\"}"
-    )
-  )
-);
-
-// ...trigger the agent...
-
-Awaitility.await()
-  .untilAsserted(() -> {
-    var snapshot = componentClient.forTask(taskId).get(QuestionTasks.ANSWER);
-    assertThat(snapshot.status().name()).isEqualTo("FAILED");
-    assertThat(snapshot.failureReason()).isEqualTo("I cannot answer this question.");
-  });
+include::example$autonomous-agent-playground/src/test/java/demo/helloworld/QuestionAnswererIntegrationTest.java[tag=failure]
 ----
 
 == See Also
