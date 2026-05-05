@@ -10,11 +10,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import akka.javasdk.agent.task.TaskException;
+import akka.javasdk.agent.task.TaskNotification;
 import akka.javasdk.agent.task.TaskStatus;
 import akka.javasdk.testkit.TestKitSupport;
 import akkajavasdk.components.agent.autonomous.TestTasks.TestResult;
+import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeUnit;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 public class TaskClientIntegrationTest extends TestKitSupport {
@@ -148,6 +152,64 @@ public class TaskClientIntegrationTest extends TestKitSupport {
               var cause = (TaskException.Failed) ex.getCause();
               assertThat(cause.taskId()).isEqualTo(taskId);
               assertThat(cause.reason()).isEqualTo("not good enough");
+            });
+  }
+
+  // --- notificationStream ---
+
+  @Test
+  public void shouldStreamCompletedNotification() {
+    var taskId = newTaskId();
+    var notifications = new ArrayList<TaskNotification>();
+    componentClient
+        .forTask(taskId)
+        .notificationStream()
+        .runForeach(notifications::add, testKit.getMaterializer());
+
+    componentClient.forTask(taskId).create(TEST_TASK.instructions("do something"));
+    componentClient.forTask(taskId).assign("reviewer@example.com");
+    componentClient.forTask(taskId).complete(TEST_TASK, new TestResult("done", 100));
+
+    Awaitility.await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var completed =
+                  notifications.stream()
+                      .filter(n -> n instanceof TaskNotification.Completed)
+                      .map(n -> (TaskNotification.Completed) n)
+                      .findFirst()
+                      .orElseThrow();
+              assertThat(completed.taskId()).isEqualTo(taskId);
+              assertThat(completed.result()).contains("done");
+            });
+  }
+
+  @Test
+  public void shouldStreamFailedNotification() {
+    var taskId = newTaskId();
+    var notifications = new ArrayList<TaskNotification>();
+    componentClient
+        .forTask(taskId)
+        .notificationStream()
+        .runForeach(notifications::add, testKit.getMaterializer());
+
+    componentClient.forTask(taskId).create(TEST_TASK.instructions("do something"));
+    componentClient.forTask(taskId).assign("reviewer@example.com");
+    componentClient.forTask(taskId).fail("not good enough");
+
+    Awaitility.await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var failed =
+                  notifications.stream()
+                      .filter(n -> n instanceof TaskNotification.Failed)
+                      .map(n -> (TaskNotification.Failed) n)
+                      .findFirst()
+                      .orElseThrow();
+              assertThat(failed.taskId()).isEqualTo(taskId);
+              assertThat(failed.reason()).isEqualTo("not good enough");
             });
   }
 }

@@ -5,10 +5,13 @@
 package akka.javasdk.client;
 
 import akka.Done;
+import akka.NotUsed;
 import akka.annotation.DoNotInherit;
 import akka.javasdk.agent.task.Task;
 import akka.javasdk.agent.task.TaskDefinition;
+import akka.javasdk.agent.task.TaskNotification;
 import akka.javasdk.agent.task.TaskSnapshot;
+import akka.stream.javadsl.Source;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -146,4 +149,12 @@ public interface TaskClient {
    * @return a CompletionStage with the typed task result
    */
   <R> CompletionStage<R> resultAsync(TaskDefinition<R> taskDefinition);
+
+  /**
+   * Subscribe to notifications published by the task entity. See {@link TaskNotification} for the
+   * event catalog.
+   *
+   * @return a source of task notification events
+   */
+  Source<TaskNotification, NotUsed> notificationStream();
 }

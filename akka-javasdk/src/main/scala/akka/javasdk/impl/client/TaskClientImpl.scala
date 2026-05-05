@@ -13,6 +13,7 @@ import scala.jdk.CollectionConverters._
 import scala.jdk.FutureConverters._
 
 import akka.Done
+import akka.NotUsed
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.agent.task.Task
@@ -33,6 +34,7 @@ import akka.runtime.sdk.spi.EntityRequest
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
 import akka.stream.Materializer
+import akka.stream.javadsl.Source
 import akka.stream.scaladsl.Sink
 import org.slf4j.LoggerFactory
 
@@ -216,6 +218,16 @@ private[javasdk] final class TaskClientImpl(
   override def failAsync(reason: String): CompletionStage[Done] = {
     log.debug("failTask: id=[{}] reason=[{}]", taskId, reason)
     sendCommand("Fail", serializer.toBytes(reason))
+  }
+
+  override def notificationStream(): Source[TaskNotification, NotUsed] = {
+    log.debug("notificationStream: id=[{}]", taskId)
+    val req = new EntityRequest(TaskEntityComponentId, taskId, "", BytesPayload.empty, spiMetadata)
+    runtimeComponentClients.eventSourcedEntityClient
+      .notificationStream(req)
+      .map(reply => serializer.fromBytes(reply.payload).asInstanceOf[TaskNotification])
+      .mapMaterializedValue(_ => NotUsed.notUsed())
+      .asJava
   }
 
   private def sendCommand(methodName: String, payload: BytesPayload): CompletionStage[Done] = {
