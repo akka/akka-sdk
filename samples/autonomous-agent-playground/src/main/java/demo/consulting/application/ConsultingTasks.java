@@ -2,6 +2,7 @@ package demo.consulting.application;
 
 import akka.javasdk.agent.task.Task;
 
+// tag::class[]
 public class ConsultingTasks {
 
   public record ConsultingResult(
@@ -24,3 +25,4 @@ public class ConsultingTasks {
     .description("Research a specific aspect of a client problem")
     .resultConformsTo(ResearchSummary.class);
 }
+// end::class[]

@@ -2,6 +2,7 @@ package demo.devteam.application;
 
 import akka.javasdk.agent.task.TaskTemplate;
 
+// tag::class[]
 public class DeveloperTasks {
 
   // prettier-ignore
@@ -11,3 +12,4 @@ public class DeveloperTasks {
     .resultConformsTo(CodeDeliverable.class)
     .instructionTemplate("Implement: {feature}. Requirements: {requirements}.");
 }
+// end::class[]

@@ -71,6 +71,14 @@ include::example$autonomous-agent-playground/src/main/java/demo/research/applica
 include::example$autonomous-agent-playground/src/main/java/demo/research/application/Analyst.java[tag=class]
 ----
 
+The task types referenced above are declared with their typed result schemas. `BRIEF` is the top-level task assigned to the coordinator, `FINDINGS` and `ANALYSIS` are the subtasks the specialists accept:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/research/application/ResearchTasks.java[ResearchTasks.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/research/application/ResearchTasks.java[tag=class]
+----
+
 IMPORTANT: The `description` in the `@Component` annotation is included in the delegation tool description so the coordinator's model knows when to delegate to each specialist. Without a meaningful description, the model has nothing to disambiguate between specialists.
 
 [#handoff]
@@ -112,6 +120,14 @@ include::example$autonomous-agent-playground/src/main/java/demo/support/applicat
 .{sample-base-url}/autonomous-agent-playground/src/main/java/demo/support/application/TechnicalSpecialist.java[TechnicalSpecialist.java]
 ----
 include::example$autonomous-agent-playground/src/main/java/demo/support/application/TechnicalSpecialist.java[tag=class]
+----
+
+All three agents share the same task type. The result schema captures the resolution category and outcome:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/support/application/SupportTasks.java[SupportTasks.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/support/application/SupportTasks.java[tag=class]
 ----
 
 [#moderation]
@@ -165,6 +181,14 @@ include::example$autonomous-agent-playground/src/main/java/demo/peerreview/appli
 
 IMPORTANT: The `description` in the `@Component` annotation is shown to the moderator's model so it understands each participant's expertise when generating prompts. Without a meaningful description, the moderator has nothing to disambiguate between participants.
 
+The moderator accepts a single review task that aggregates the per-reviewer findings:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/peerreview/application/ReviewTasks.java[ReviewTasks.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/peerreview/application/ReviewTasks.java[tag=class]
+----
+
 === Directed conversations
 
 In directed mode, the moderator's model has full dynamic control over the conversation. It decides who speaks next, what direction to give them, and when to end the conversation, all based on the responses received so far. This enables adaptive flows where the conversation shape depends on its content.
@@ -175,6 +199,14 @@ In directed mode, the moderator's model has full dynamic control over the conver
 .{sample-base-url}/autonomous-agent-playground/src/main/java/demo/negotiation/application/Facilitator.java[Facilitator.java]
 ----
 include::example$autonomous-agent-playground/src/main/java/demo/negotiation/application/Facilitator.java[tag=class]
+----
+
+The facilitator's task captures the negotiated outcome and the final offer:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/negotiation/application/NegotiationTasks.java[NegotiationTasks.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/negotiation/application/NegotiationTasks.java[tag=class]
 ----
 
 === Multiple participants of the same type
@@ -241,6 +273,20 @@ Members claim tasks from the shared list and message peers directly when their w
 .{sample-base-url}/autonomous-agent-playground/src/main/java/demo/devteam/application/Developer.java[Developer.java]
 ----
 include::example$autonomous-agent-playground/src/main/java/demo/devteam/application/Developer.java[tag=class]
+----
+
+The lead and the members work on different task types. `PLAN` is the top-level task assigned to the lead, and `IMPLEMENT` is a `TaskTemplate` that the lead instantiates per work item for the developers to claim:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/devteam/application/ProjectTasks.java[ProjectTasks.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/devteam/application/ProjectTasks.java[tag=class]
+----
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/devteam/application/DeveloperTasks.java[DeveloperTasks.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/devteam/application/DeveloperTasks.java[tag=class]
 ----
 
 === Emergent patterns
@@ -310,6 +356,14 @@ For example, a consulting coordinator that delegates routine research and hands 
 .{sample-base-url}/autonomous-agent-playground/src/main/java/demo/consulting/application/ConsultingCoordinator.java[ConsultingCoordinator.java]
 ----
 include::example$autonomous-agent-playground/src/main/java/demo/consulting/application/ConsultingCoordinator.java[tag=class]
+----
+
+`ENGAGEMENT` is the top-level task that the coordinator accepts and that the senior consultant takes over on handoff. `RESEARCH` is the subtask the coordinator delegates for routine investigation:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/consulting/application/ConsultingTasks.java[ConsultingTasks.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/consulting/application/ConsultingTasks.java[tag=class]
 ----
 
 The model decides at runtime whether to delegate a subtask (retaining ownership) or hand off the entire task (transferring ownership). Domain tools like `assessProblem` and `checkComplexity` give the model the information it needs to make this decision.
