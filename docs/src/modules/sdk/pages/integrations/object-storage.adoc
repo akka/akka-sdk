@@ -55,7 +55,7 @@ For large objects that may not fit comfortably in JVM heap, use the streaming va
 
 |===
 
-=== Example: upload, list, and delete
+=== Example: Upload, list, and delete
 
 The following endpoint stores an uploaded image, invokes an AI agent to describe it, and exposes list and delete operations:
 
