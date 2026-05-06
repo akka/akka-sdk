@@ -35,6 +35,7 @@ public class ResearchDelegationIntegrationTest extends TestKitSupport {
       .withModelProvider(Researcher.class, researcherModel)
       .withModelProvider(Analyst.class, analystModel);
   }
+
   // end::setup[]
 
   // tag::delegation-test[]
@@ -122,6 +123,7 @@ public class ResearchDelegationIntegrationTest extends TestKitSupport {
         assertThat(snapshot.result().keyFindings()).hasSize(4);
       });
   }
+
   // end::delegation-test[]
 
   @Test

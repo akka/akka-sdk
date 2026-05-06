@@ -32,7 +32,9 @@ public class DynamicEndpoint extends AbstractHttpEndpoint {
   // tag::summarize[]
   @Post("/summarize")
   public TaskResponse summarize(TaskRequest request) {
-    var agentId = requestContext().queryParams().getString("runId")
+    var agentId = requestContext()
+      .queryParams()
+      .getString("runId")
       .filter(s -> !s.isBlank())
       .orElseGet(() -> UUID.randomUUID().toString());
 
@@ -49,11 +51,14 @@ public class DynamicEndpoint extends AbstractHttpEndpoint {
       .runSingleTask(DynamicTasks.SUMMARIZE.instructions(request.content()));
     return new TaskResponse(taskId, agentId, "dynamic-agent");
   }
+
   // end::summarize[]
 
   @Post("/translate")
   public TaskResponse translate(TaskRequest request) {
-    var agentId = requestContext().queryParams().getString("runId")
+    var agentId = requestContext()
+      .queryParams()
+      .getString("runId")
       .filter(s -> !s.isBlank())
       .orElseGet(() -> UUID.randomUUID().toString());
 

@@ -55,6 +55,7 @@ public class QuestionAnswererIntegrationTest extends TestKitSupport {
         assertThat(snapshot.result().confidence()).isEqualTo(100);
       });
   }
+
   // end::class[]
 
   // tag::failure[]

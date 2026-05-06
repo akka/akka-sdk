@@ -51,7 +51,9 @@ public class PublishingEndpoint extends AbstractHttpEndpoint {
   public PublishingPipeline request(PublishRequest request) {
     // 1. Create draft task and assign to content agent. Accept an optional pre-generated runId
     //    so the UI can subscribe to the notification stream before the agent activates.
-    var contentAgentId = requestContext().queryParams().getString("runId")
+    var contentAgentId = requestContext()
+      .queryParams()
+      .getString("runId")
       .filter(s -> !s.isBlank())
       .orElseGet(() -> UUID.randomUUID().toString());
     // tag::pipeline[]
@@ -144,6 +146,7 @@ public class PublishingEndpoint extends AbstractHttpEndpoint {
       );
     return "Approved";
   }
+
   // end::approve[]
 
   // tag::reject[]
@@ -154,6 +157,7 @@ public class PublishingEndpoint extends AbstractHttpEndpoint {
     componentClient.forTask(approvalTaskId).fail(request.reason());
     return "Rejected";
   }
+
   // end::reject[]
 
   /** Check the status of the final publish task. */

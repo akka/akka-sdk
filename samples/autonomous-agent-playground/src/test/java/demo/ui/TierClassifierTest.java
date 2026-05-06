@@ -15,29 +15,46 @@ public class TierClassifierTest {
 
   @Test
   public void healthyEvents() {
-    assertThat(RunNotificationEndpoint.tierFor(new Notification.Activated())).isEqualTo("healthy");
-    assertThat(RunNotificationEndpoint.tierFor(new Notification.Deactivated())).isEqualTo("healthy");
-    assertThat(RunNotificationEndpoint.tierFor(new Notification.IterationStarted())).isEqualTo("healthy");
-    assertThat(RunNotificationEndpoint.tierFor(new Notification.TaskAssigned("t1")))
-      .isEqualTo("healthy");
-    assertThat(RunNotificationEndpoint.tierFor(new Notification.TaskStarted("t1", "name")))
-      .isEqualTo("healthy");
-    assertThat(RunNotificationEndpoint.tierFor(new Notification.TaskCompleted("t1", "name")))
-      .isEqualTo("healthy");
+    assertThat(RunNotificationEndpoint.tierFor(new Notification.Activated())).isEqualTo(
+      "healthy"
+    );
+    assertThat(RunNotificationEndpoint.tierFor(new Notification.Deactivated())).isEqualTo(
+      "healthy"
+    );
+    assertThat(
+      RunNotificationEndpoint.tierFor(new Notification.IterationStarted())
+    ).isEqualTo("healthy");
+    assertThat(
+      RunNotificationEndpoint.tierFor(new Notification.TaskAssigned("t1"))
+    ).isEqualTo("healthy");
+    assertThat(
+      RunNotificationEndpoint.tierFor(new Notification.TaskStarted("t1", "name"))
+    ).isEqualTo("healthy");
+    assertThat(
+      RunNotificationEndpoint.tierFor(new Notification.TaskCompleted("t1", "name"))
+    ).isEqualTo("healthy");
   }
 
   @Test
   public void struggleEvents() {
     assertThat(
       RunNotificationEndpoint.tierFor(
-        new Notification.IterationFailed("llm timeout", java.util.Optional.empty(), java.util.Optional.empty())
+        new Notification.IterationFailed(
+          "llm timeout",
+          java.util.Optional.empty(),
+          java.util.Optional.empty()
+        )
       )
     ).isEqualTo("struggle");
     assertThat(
-      RunNotificationEndpoint.tierFor(new Notification.TaskResultRejected("t1", "name", "rule-x"))
+      RunNotificationEndpoint.tierFor(
+        new Notification.TaskResultRejected("t1", "name", "rule-x")
+      )
     ).isEqualTo("struggle");
     assertThat(
-      RunNotificationEndpoint.tierFor(new Notification.TaskDependencyWait("t1", java.util.List.of("dep1")))
+      RunNotificationEndpoint.tierFor(
+        new Notification.TaskDependencyWait("t1", java.util.List.of("dep1"))
+      )
     ).isEqualTo("struggle");
   }
 
@@ -47,15 +64,19 @@ public class TierClassifierTest {
       RunNotificationEndpoint.tierFor(new Notification.TaskFailed("t1", "name", "boom"))
     ).isEqualTo("terminal_failure");
     assertThat(
-      RunNotificationEndpoint.tierFor(new Notification.TaskCancelled("t1", "name", "max iterations"))
+      RunNotificationEndpoint.tierFor(
+        new Notification.TaskCancelled("t1", "name", "max iterations")
+      )
     ).isEqualTo("terminal_failure");
-    assertThat(RunNotificationEndpoint.tierFor(new Notification.Stopped("operator")))
-      .isEqualTo("terminal_failure");
+    assertThat(
+      RunNotificationEndpoint.tierFor(new Notification.Stopped("operator"))
+    ).isEqualTo("terminal_failure");
   }
 
   @Test
   public void autoStoppedIsHealthy() {
-    assertThat(RunNotificationEndpoint.tierFor(new Notification.Stopped("auto-stopped")))
-      .isEqualTo("healthy");
+    assertThat(
+      RunNotificationEndpoint.tierFor(new Notification.Stopped("auto-stopped"))
+    ).isEqualTo("healthy");
   }
 }
