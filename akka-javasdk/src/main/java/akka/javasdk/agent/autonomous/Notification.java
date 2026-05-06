@@ -77,8 +77,8 @@ public sealed interface Notification {
   record IterationFailed(String reason, Optional<String> taskId, Optional<Integer> iterationNumber)
       implements LifecycleNotification {}
 
-  /** Agent paused. The reason identifies the source (e.g. "operator"). */
-  record Paused(String reason) implements LifecycleNotification {}
+  /** Agent suspended. The reason identifies the source (e.g. "operator"). */
+  record Suspended(String reason) implements LifecycleNotification {}
 
   /** Agent resumed. The reason identifies the source (e.g. "operator"). */
   record Resumed(String reason) implements LifecycleNotification {}

@@ -89,15 +89,15 @@ public interface AutonomousAgentClient {
   /** Async variant of {@link #getState}. */
   CompletionStage<AgentState> getStateAsync();
 
-  /** Pause the agent. A paused agent stops iterating until resumed. */
-  default void pause() {
-    pauseAsync().toCompletableFuture().join();
+  /** Suspende the agent. A suspended agent stops iterating until resumed. */
+  default void suspend() {
+    suspendAsync().toCompletableFuture().join();
   }
 
-  /** Async variant of {@link #pause}. */
-  CompletionStage<Done> pauseAsync();
+  /** Async variant of {@link #suspend}. */
+  CompletionStage<Done> suspendAsync();
 
-  /** Resume a previously paused agent. */
+  /** Resume a previously suspended agent. */
   default void resume() {
     resumeAsync().toCompletableFuture().join();
   }
@@ -105,13 +105,13 @@ public interface AutonomousAgentClient {
   /** Async variant of {@link #resume}. */
   CompletionStage<Done> resumeAsync();
 
-  /** Stop the agent. */
-  default void stop() {
-    stopAsync().toCompletableFuture().join();
+  /** Terminate the agent. */
+  default void terminate() {
+    terminateAsync().toCompletableFuture().join();
   }
 
-  /** Async variant of {@link #stop}. */
-  CompletionStage<Done> stopAsync();
+  /** Async variant of {@link #terminate}. */
+  CompletionStage<Done> terminateAsync();
 
   /**
    * Subscribe to lifecycle notifications for this agent instance. Notifications are published by

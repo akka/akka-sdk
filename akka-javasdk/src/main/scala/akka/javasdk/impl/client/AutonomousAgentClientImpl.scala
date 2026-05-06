@@ -127,7 +127,7 @@ private[javasdk] final class AutonomousAgentClientImpl(
       .map { spiState =>
         new AgentState(
           spiState.phase,
-          spiState.paused,
+          spiState.suspended,
           spiState.goal,
           new AutonomousAgent.TokenUsage(spiState.totalInputTokens, spiState.totalOutputTokens),
           spiState.currentTask.map(t => new TaskKey(t.id, t.name)).toJava,
@@ -136,24 +136,24 @@ private[javasdk] final class AutonomousAgentClientImpl(
       .asJava
   }
 
-  override def pauseAsync(): CompletionStage[Done] = {
+  override def suspendAsync(): CompletionStage[Done] = {
     log.debug("pause: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
     runtimeComponentClients.autonomousAgentClient
-      .pause(agentComponentId, agentInstanceId)
+      .suspend(agentComponentId, agentInstanceId, callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
       .asJava
   }
 
   override def resumeAsync(): CompletionStage[Done] = {
     log.debug("resume: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
     runtimeComponentClients.autonomousAgentClient
-      .resume(agentComponentId, agentInstanceId)
+      .resume(agentComponentId, agentInstanceId, callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
       .asJava
   }
 
-  override def stopAsync(): CompletionStage[Done] = {
+  override def terminateAsync(): CompletionStage[Done] = {
     log.debug("stop: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
     runtimeComponentClients.autonomousAgentClient
-      .stop(agentComponentId, agentInstanceId)
+      .terminate(agentComponentId, agentInstanceId, callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
       .asJava
   }
 
@@ -174,9 +174,9 @@ private[javasdk] final class AutonomousAgentClientImpl(
       new Notification.IterationCompleted(new AutonomousAgent.TokenUsage(c.inputTokens, c.outputTokens))
     case f: SpiNotification.IterationFailed =>
       new Notification.IterationFailed(f.reason, f.taskId.toJava, f.iterationNumber.map(Integer.valueOf).toJava)
-    case p: SpiNotification.Paused  => new Notification.Paused(p.reason)
-    case r: SpiNotification.Resumed => new Notification.Resumed(r.reason)
-    case s: SpiNotification.Stopped => new Notification.Stopped(s.reason)
+    case p: SpiNotification.Suspended => new Notification.Suspended(p.reason)
+    case r: SpiNotification.Resumed   => new Notification.Resumed(r.reason)
+    case s: SpiNotification.Stopped   => new Notification.Stopped(s.reason)
 
     // Task
     case t: SpiNotification.TaskAssigned  => new Notification.TaskAssigned(t.taskId)

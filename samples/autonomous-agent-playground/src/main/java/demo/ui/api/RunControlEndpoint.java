@@ -90,7 +90,7 @@ public class RunControlEndpoint extends AbstractHttpEndpoint {
       component,
       task,
       agentState.phase(),
-      agentState.paused(),
+      agentState.suspended(),
       taskStatus.name(),
       runState,
       snapshot.result(),
@@ -107,7 +107,7 @@ public class RunControlEndpoint extends AbstractHttpEndpoint {
   public StopResponse stop(String runId) {
     var component = requiredQueryParam("component");
     var agentClass = SampleRegistry.classFor(component);
-    componentClient.forAutonomousAgent(agentClass, runId).stop();
+    componentClient.forAutonomousAgent(agentClass, runId).terminate();
     return new StopResponse("CANCELLED", Instant.now());
   }
 

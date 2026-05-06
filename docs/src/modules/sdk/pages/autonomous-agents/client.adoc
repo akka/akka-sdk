@@ -46,16 +46,16 @@ The `maxParallelWorkers` option on a `Delegation` capability (see xref:sdk:auton
 
 If the agent uses xref:sdk:autonomous-agents/defining.adoc#dynamic-configuration[dynamic configuration], call `setup(...)` on the same `forAutonomousAgent(...)` chain before `runSingleTask` or `assignTasks` so the runtime applies the per-instance goal and capabilities before iteration begins.
 
-*Stop an agent:*
+*Terminate an agent:*
 
 [source,java,indent=0]
 ----
 componentClient
   .forAutonomousAgent(ReportAgent.class, agentInstanceId)
-  .stop();
+  .terminate();
 ----
 
-IMPORTANT: When you manage tasks and agents separately, you are responsible for stopping the agent. Autonomous agents do not auto-passivate when their queue drains. An agent that is not stopped holds its in-memory state until you call `stop()`, even though it is idle and making no model calls. The `runSingleTask` shortcut handles this automatically. The explicit `assignTasks` flow does not. Pause is another way to release the actor: a paused agent passivates after a short delay, and resume rehydrates it.
+IMPORTANT: When you manage tasks and agents separately, you are responsible for stopping the agent. Autonomous agents do not auto-passivate when their queue drains. An agent that is not stopped holds its in-memory state until you call `terminate()`, even though it is idle and making no model calls. The `runSingleTask` shortcut handles this automatically. The explicit `assignTasks` flow does not. Suspend is another way to release the actor: a paused agent passivates after a short delay, and resume rehydrates it.
 
 == Task lifecycle operations
 
@@ -90,16 +90,16 @@ componentClient.forTask(taskId).fail("Approval rejected: tone is too informal");
 
 The task transitions to `FAILED`. Any dependents are cancelled automatically.
 
-== Pause and resume
+== Suspend and resume
 
-A running agent can be paused and later resumed. While paused, the agent stops iterating: it will not start new model calls or process queued tasks. Tasks already assigned remain in the queue and are processed when the agent resumes.
+A running agent can be suspended and later resumed. While suspended, the agent stops iterating: it will not start new model calls or process queued tasks. Tasks already assigned remain in the queue and are processed when the agent resumes.
 
 [source,java,indent=0]
 ----
-// Pause the agent
+// Suspend the agent
 componentClient
   .forAutonomousAgent(ReportAgent.class, agentInstanceId)
-  .pause();
+  .suspend();
 
 // Resume the agent
 componentClient
@@ -118,7 +118,7 @@ var state = componentClient
   .getState();
 
 state.phase();           // execution phase, e.g. "PHASE_MODEL", "PHASE_TOOLS", "PHASE_STOPPED"
-state.paused();          // whether the agent is paused
+state.suspended();       // whether the agent is suspended
 state.goal();            // the agent's current goal
 state.totalTokenUsage(); // cumulative token usage (inputTokens, outputTokens)
 state.currentTask();     // Optional<TaskKey> with the task currently being worked on
@@ -201,7 +201,7 @@ var stateF = componentClient
 stateF.thenAccept(state -> log.info("Phase: {}", state.phase()));
 ----
 
-The same shape applies to `pauseAsync()`, `resumeAsync()`, `stopAsync()`, `assignTasksAsync(...)`, `runSingleTaskAsync(...)`, and the `forTask` operations. Each returns a `CompletionStage` that completes once the runtime acknowledges the operation. Mixing styles is fine: use synchronous calls where they read more clearly, async ones where the call needs to compose with other futures.
+The same shape applies to `suspendAsync()`, `resumeAsync()`, `terminateAsync()`, `assignTasksAsync(...)`, `runSingleTaskAsync(...)`, and the `forTask` operations. Each returns a `CompletionStage` that completes once the runtime acknowledges the operation. Mixing styles is fine: use synchronous calls where they read more clearly, async ones where the call needs to compose with other futures.
 
 == See Also
 
