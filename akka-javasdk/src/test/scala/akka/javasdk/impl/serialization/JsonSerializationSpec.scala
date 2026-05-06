@@ -19,8 +19,8 @@ import akka.javasdk.DummyClassRenamed
 import akka.javasdk.JsonMigration
 import akka.javasdk.agent.EvaluationResult
 import akka.javasdk.agent.MessageContent.ImageMessageContent.DetailLevel
-import akka.javasdk.agent.MessageContent.ImageUriMessageContent
-import akka.javasdk.agent.MessageContent.PdfUriMessageContent
+import akka.javasdk.agent.MessageContent.ImageUrlMessageContent
+import akka.javasdk.agent.MessageContent.PdfUrlMessageContent
 import akka.javasdk.annotations.Migration
 import akka.javasdk.annotations.TypeName
 import akka.javasdk.eventsourcedentity.OldTestESEvent
@@ -532,65 +532,81 @@ class JsonSerializationSpec extends AnyWordSpec with Matchers {
       deserializedResult.explanation shouldBe result.explanation
     }
 
-    "serialize ImageUriMessageContent with URI as string" in {
-      val content = new ImageUriMessageContent(URI.create("https://example.com/image.jpg"), DetailLevel.AUTO)
+    "serialize ImageUrlMessageContent with URI as string" in {
+      val content = new ImageUrlMessageContent(URI.create("https://example.com/image.jpg"), DetailLevel.AUTO)
       val json = serializer.objectMapper.writeValueAsString(content)
-      json should include(""""uri":"https://example.com/image.jpg"""")
+      json should include(""""url":"https://example.com/image.jpg"""")
       json should include(""""detailLevel":"AUTO"""")
     }
 
-    "round-trip serialize and deserialize ImageUriMessageContent without mimeType" in {
-      val content = new ImageUriMessageContent(URI.create("https://example.com/image.png"), DetailLevel.HIGH)
+    "round-trip serialize and deserialize ImageUrlMessageContent without mimeType" in {
+      val content = new ImageUrlMessageContent(URI.create("https://example.com/image.png"), DetailLevel.HIGH)
       val json = serializer.objectMapper.writeValueAsString(content)
-      val decoded = serializer.objectMapper.readValue(json, classOf[ImageUriMessageContent])
+      val decoded = serializer.objectMapper.readValue(json, classOf[ImageUrlMessageContent])
       decoded.uri() shouldBe content.uri()
       decoded.detailLevel() shouldBe content.detailLevel()
       decoded.mimeType() shouldBe Optional.empty()
     }
 
-    "round-trip serialize and deserialize ImageUriMessageContent with mimeType" in {
-      val content = new ImageUriMessageContent(
+    "round-trip serialize and deserialize ImageUrlMessageContent with mimeType" in {
+      val content = new ImageUrlMessageContent(
         URI.create("https://example.com/image.jpg"),
         DetailLevel.LOW,
         Optional.of("image/jpeg"))
       val json = serializer.objectMapper.writeValueAsString(content)
-      val decoded = serializer.objectMapper.readValue(json, classOf[ImageUriMessageContent])
+      val decoded = serializer.objectMapper.readValue(json, classOf[ImageUrlMessageContent])
       decoded.uri() shouldBe content.uri()
       decoded.detailLevel() shouldBe content.detailLevel()
       decoded.mimeType() shouldBe Optional.of("image/jpeg")
     }
 
-    "round-trip serialize and deserialize ImageUriMessageContent with object:// URI" in {
-      val content = new ImageUriMessageContent(
+    "round-trip serialize and deserialize ImageUrlMessageContent with object:// URI" in {
+      val content = new ImageUrlMessageContent(
         URI.create("object://my-bucket/path/to/image.png"),
         DetailLevel.AUTO,
         Optional.of("image/png"))
       val json = serializer.objectMapper.writeValueAsString(content)
-      json should include(""""uri":"object://my-bucket/path/to/image.png"""")
-      val decoded = serializer.objectMapper.readValue(json, classOf[ImageUriMessageContent])
+      json should include(""""url":"object://my-bucket/path/to/image.png"""")
+      val decoded = serializer.objectMapper.readValue(json, classOf[ImageUrlMessageContent])
       decoded.uri() shouldBe content.uri()
       decoded.mimeType() shouldBe Optional.of("image/png")
     }
 
-    "serialize PdfUriMessageContent with URI as string" in {
-      val content = new PdfUriMessageContent(URI.create("https://example.com/doc.pdf"))
+    "serialize PdfUrlMessageContent with URI as string" in {
+      val content = new PdfUrlMessageContent(URI.create("https://example.com/doc.pdf"))
       val json = serializer.objectMapper.writeValueAsString(content)
-      json should include(""""uri":"https://example.com/doc.pdf"""")
+      json should include(""""url":"https://example.com/doc.pdf"""")
     }
 
-    "round-trip serialize and deserialize PdfUriMessageContent" in {
-      val content = new PdfUriMessageContent(URI.create("https://example.com/doc.pdf"))
+    "round-trip serialize and deserialize PdfUrlMessageContent" in {
+      val content = new PdfUrlMessageContent(URI.create("https://example.com/doc.pdf"))
       val json = serializer.objectMapper.writeValueAsString(content)
-      val decoded = serializer.objectMapper.readValue(json, classOf[PdfUriMessageContent])
+      val decoded = serializer.objectMapper.readValue(json, classOf[PdfUrlMessageContent])
       decoded.uri() shouldBe content.uri()
     }
 
-    "round-trip serialize and deserialize PdfUriMessageContent with object:// URI" in {
-      val content = new PdfUriMessageContent(URI.create("object://my-bucket/documents/report.pdf"))
+    "round-trip serialize and deserialize PdfUrlMessageContent with object:// URI" in {
+      val content = new PdfUrlMessageContent(URI.create("object://my-bucket/documents/report.pdf"))
       val json = serializer.objectMapper.writeValueAsString(content)
-      json should include(""""uri":"object://my-bucket/documents/report.pdf"""")
-      val decoded = serializer.objectMapper.readValue(json, classOf[PdfUriMessageContent])
+      json should include(""""url":"object://my-bucket/documents/report.pdf"""")
+      val decoded = serializer.objectMapper.readValue(json, classOf[PdfUrlMessageContent])
       decoded.uri() shouldBe content.uri()
+    }
+
+    // The fields were once URL typed and named "url" — verify legacy persisted JSON
+    // (e.g. session memory written by older SDK versions) still deserializes.
+    "deserialize legacy ImageUrlMessageContent JSON written when the field was URL url" in {
+      val legacyJson =
+        """{"url":"https://example.com/legacy.jpg","detailLevel":"AUTO","mimeType":null}"""
+      val decoded = serializer.objectMapper.readValue(legacyJson, classOf[ImageUrlMessageContent])
+      decoded.uri() shouldBe URI.create("https://example.com/legacy.jpg")
+      decoded.detailLevel() shouldBe DetailLevel.AUTO
+    }
+
+    "deserialize legacy PdfUrlMessageContent JSON written when the field was URL url" in {
+      val legacyJson = """{"url":"https://example.com/legacy.pdf"}"""
+      val decoded = serializer.objectMapper.readValue(legacyJson, classOf[PdfUrlMessageContent])
+      decoded.uri() shouldBe URI.create("https://example.com/legacy.pdf")
     }
 
   }

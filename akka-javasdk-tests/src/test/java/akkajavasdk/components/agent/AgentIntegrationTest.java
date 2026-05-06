@@ -111,7 +111,7 @@ public class AgentIntegrationTest extends TestKitSupport {
                 ((MessageContent.TextMessageContent) userMessage.contents().get(0))
                         .text()
                         .equals("testing")
-                    && ((MessageContent.ImageUriMessageContent) userMessage.contents().get(1))
+                    && ((MessageContent.ImageUrlMessageContent) userMessage.contents().get(1))
                         .uri()
                         .toString()
                         .equals("https://example.com"))

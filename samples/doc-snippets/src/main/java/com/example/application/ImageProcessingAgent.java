@@ -5,7 +5,6 @@ import akka.javasdk.agent.MessageContent.ImageMessageContent;
 import akka.javasdk.agent.MessageContent.TextMessageContent;
 import akka.javasdk.agent.UserMessage;
 import akka.javasdk.annotations.Component;
-import java.net.URI;
 
 @Component(id = "image-processing-agent")
 public class ImageProcessingAgent extends Agent {
@@ -17,7 +16,7 @@ public class ImageProcessingAgent extends Agent {
       .userMessage(
         UserMessage.from( // <1>
           TextMessageContent.from("What do you see?"), // <2>
-          ImageMessageContent.fromUri(URI.create("https://example/image.png")) // <3>
+          ImageMessageContent.fromUrl("https://example/image.png") // <3>
         )
       )
       .thenReply();

@@ -12,7 +12,6 @@ import akka.javasdk.annotations.Component;
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.http.StrictResponse;
 import akka.util.ByteString;
-import java.net.URI;
 import java.util.Optional;
 
 // tag::custom-content-loader[]
@@ -36,7 +35,7 @@ public class CustomContentLoadingAgent extends Agent {
     @Override
     public LoadedContent load(MessageContent.LoadableMessageContent content) {
       return switch (content) {
-        case MessageContent.ImageUriMessageContent image -> {
+        case MessageContent.ImageUrlMessageContent image -> {
           StrictResponse<ByteString> response = httpClient // <2>
             .GET(image.uri().toString())
             .addCredentials(HttpCredentials.createOAuth2BearerToken(userToken))
@@ -52,10 +51,9 @@ public class CustomContentLoadingAgent extends Agent {
 
           yield new LoadedContent(data, Optional.of(actualMimeType)); // <4>
         }
-        case MessageContent.PdfUriMessageContent pdf -> throw new RuntimeException(
+        case MessageContent.PdfUrlMessageContent pdf -> throw new RuntimeException(
           "Not implemented"
         );
-        default -> throw new IllegalStateException("Unsupported content " + content);
       };
     }
   }
@@ -72,8 +70,8 @@ public class CustomContentLoadingAgent extends Agent {
       .userMessage(
         UserMessage.from(
           TextMessageContent.from("Describe this image and summarize the PDF"),
-          ImageMessageContent.fromUri(URI.create(request.imageUri)), // <2>
-          PdfMessageContent.fromUri(URI.create(request.pdfUri)) // <3>
+          ImageMessageContent.fromUrl(request.imageUri), // <2>
+          PdfMessageContent.fromUrl(request.pdfUri) // <3>
         )
       )
       .thenReply();

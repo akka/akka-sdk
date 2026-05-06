@@ -11,8 +11,8 @@ import java.util.concurrent.CompletionStage
 import akka.Done
 import akka.NotUsed
 import akka.http.javadsl.model.ContentType
-import akka.javasdk.agent.MessageContent.ImageMessageContent
-import akka.javasdk.agent.MessageContent.PdfMessageContent
+import akka.javasdk.agent.MessageContent.ImageUrlMessageContent
+import akka.javasdk.agent.MessageContent.PdfUrlMessageContent
 import akka.javasdk.objectstorage.ObjectMetadata
 import akka.javasdk.objectstorage.ObjectStorage
 import akka.javasdk.objectstorage.StorageObject
@@ -62,18 +62,18 @@ class MessageContentSpec extends AnyWordSpec with Matchers {
     override def getMetadataAsync(key: String): CompletionStage[Optional[ObjectMetadata]] = ???
   }
 
-  "MessageContent.ImageMessageContent.create" should {
+  "MessageContent.ImageUrlMessageContent.create" should {
 
     "build an object:// URI from a ObjectStorage and key" in {
-      val content = ImageMessageContent.create(bucket, "images/photo.jpg")
+      val content = ImageUrlMessageContent.create(bucket, "images/photo.jpg")
       content.uri().toString shouldBe "object://my-bucket/images/photo.jpg"
     }
   }
 
-  "MessageContent.PdfMessageContent.create" should {
+  "MessageContent.PdfUrlMessageContent.create" should {
 
     "build an object:// URI from a ObjectStorage and key" in {
-      val content = PdfMessageContent.create(bucket, "docs/report.pdf")
+      val content = PdfUrlMessageContent.create(bucket, "docs/report.pdf")
       content.uri().toString shouldBe "object://my-bucket/docs/report.pdf"
     }
   }
