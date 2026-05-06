@@ -128,8 +128,8 @@ public class TeamBacklogIntegrationTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.PLAN);
-              assertThat(snapshot.result()).isNotNull();
-              assertThat(snapshot.result().summary()).contains("Team created and disbanded");
+              assertThat(snapshot.result().orElseThrow().summary())
+                  .contains("Team created and disbanded");
             });
 
     Awaitility.await()
@@ -199,8 +199,7 @@ public class TeamBacklogIntegrationTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.PLAN);
-              assertThat(snapshot.result()).isNotNull();
-              assertThat(snapshot.result().summary()).contains("Backlog managed");
+              assertThat(snapshot.result().orElseThrow().summary()).contains("Backlog managed");
             });
   }
 
@@ -245,8 +244,8 @@ public class TeamBacklogIntegrationTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.PLAN);
-              assertThat(snapshot.result()).isNotNull();
-              assertThat(snapshot.result().summary()).contains("Template task created");
+              assertThat(snapshot.result().orElseThrow().summary())
+                  .contains("Template task created");
             });
   }
 
@@ -315,8 +314,7 @@ public class TeamBacklogIntegrationTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.PLAN);
-              assertThat(snapshot.result()).isNotNull();
-              assertThat(snapshot.result().tasksCompleted()).isEqualTo(1);
+              assertThat(snapshot.result().orElseThrow().tasksCompleted()).isEqualTo(1);
             });
   }
 
@@ -396,8 +394,7 @@ public class TeamBacklogIntegrationTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.PLAN);
-              assertThat(snapshot.result()).isNotNull();
-              assertThat(snapshot.result().summary()).contains("Release tested");
+              assertThat(snapshot.result().orElseThrow().summary()).contains("Release tested");
             });
   }
 
@@ -478,8 +475,7 @@ public class TeamBacklogIntegrationTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.PLAN);
-              assertThat(snapshot.result()).isNotNull();
-              assertThat(snapshot.result().summary()).contains("Transfer tested");
+              assertThat(snapshot.result().orElseThrow().summary()).contains("Transfer tested");
             });
   }
 
@@ -526,8 +522,7 @@ public class TeamBacklogIntegrationTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.PLAN);
-              assertThat(snapshot.result()).isNotNull();
-              assertThat(snapshot.result().summary()).contains("Message sent");
+              assertThat(snapshot.result().orElseThrow().summary()).contains("Message sent");
             });
   }
 }

@@ -132,10 +132,10 @@ public class NegotiationIntegrationTest extends TestKitSupport {
       .atMost(30, TimeUnit.SECONDS)
       .untilAsserted(() -> {
         var snapshot = componentClient.forTask(taskId).get(NegotiationTasks.NEGOTIATE);
-        assertThat(snapshot.result()).isNotNull();
-        assertThat(snapshot.result().topic()).isEqualTo("Software licensing deal");
-        assertThat(snapshot.result().outcome()).contains("Agreement reached");
-        assertThat(snapshot.result().finalOffer()).isEqualTo("$50,000 annual license");
+        var result = snapshot.result().orElseThrow();
+        assertThat(result.topic()).isEqualTo("Software licensing deal");
+        assertThat(result.outcome()).contains("Agreement reached");
+        assertThat(result.finalOffer()).isEqualTo("$50,000 annual license");
       });
   }
 }

@@ -128,8 +128,8 @@ public class PublishingEndpoint extends AbstractHttpEndpoint {
     var snapshot = componentClient.forTask(taskId).get(PublishingTasks.DRAFT);
     return new TaskStatus(
       snapshot.status().name(),
-      snapshot.result(),
-      snapshot.failureReason()
+      snapshot.result().orElse(null),
+      snapshot.failureReason().orElse(null)
     );
   }
 
@@ -166,8 +166,8 @@ public class PublishingEndpoint extends AbstractHttpEndpoint {
     var snapshot = componentClient.forTask(taskId).get(PublishingTasks.PUBLISH);
     return new TaskStatus(
       snapshot.status().name(),
-      snapshot.result(),
-      snapshot.failureReason()
+      snapshot.result().orElse(null),
+      snapshot.failureReason().orElse(null)
     );
   }
 }

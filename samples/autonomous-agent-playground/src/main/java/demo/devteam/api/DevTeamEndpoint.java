@@ -1,14 +1,15 @@
 package demo.devteam.api;
 
+import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.AbstractHttpEndpoint;
+import akka.javasdk.http.HttpResponses;
 import demo.devteam.application.ProjectLead;
 import demo.devteam.application.ProjectTasks;
-import demo.devteam.application.ProjectTasks.ProjectResult;
 import java.util.UUID;
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
@@ -39,7 +40,11 @@ public class DevTeamEndpoint extends AbstractHttpEndpoint {
   }
 
   @Get("/{taskId}")
-  public ProjectResult get(String taskId) {
-    return componentClient.forTask(taskId).get(ProjectTasks.PLAN).result();
+  public HttpResponse get(String taskId) {
+    var snapshot = componentClient.forTask(taskId).get(ProjectTasks.PLAN);
+    return snapshot
+      .result()
+      .<HttpResponse>map(HttpResponses::ok)
+      .orElseGet(() -> HttpResponses.accepted(snapshot.status().name()));
   }
 }

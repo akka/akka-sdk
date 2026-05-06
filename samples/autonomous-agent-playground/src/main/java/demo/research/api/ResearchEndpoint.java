@@ -1,11 +1,13 @@
 package demo.research.api;
 
+import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.AbstractHttpEndpoint;
+import akka.javasdk.http.HttpResponses;
 import demo.research.application.ResearchBrief;
 import demo.research.application.ResearchCoordinator;
 import demo.research.application.ResearchTasks;
@@ -41,8 +43,13 @@ public class ResearchEndpoint extends AbstractHttpEndpoint {
   }
 
   @Get("/{taskId}")
-  public ResearchStatus get(String taskId) {
+  public HttpResponse get(String taskId) {
     var snapshot = componentClient.forTask(taskId).get(ResearchTasks.BRIEF);
-    return new ResearchStatus(snapshot.status().name(), snapshot.result());
+    return snapshot
+      .result()
+      .<HttpResponse>map(
+        result -> HttpResponses.ok(new ResearchStatus(snapshot.status().name(), result))
+      )
+      .orElseGet(() -> HttpResponses.accepted(snapshot.status().name()));
   }
 }

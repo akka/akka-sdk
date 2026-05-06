@@ -4,12 +4,14 @@
 
 package demo.pipeline.api;
 
+import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.AbstractHttpEndpoint;
+import akka.javasdk.http.HttpResponses;
 import demo.pipeline.application.PipelineTasks;
 import demo.pipeline.application.ReportAgent;
 import demo.pipeline.application.ReportResult;
@@ -89,8 +91,13 @@ public class PipelineEndpoint extends AbstractHttpEndpoint {
   }
 
   @Get("/{taskId}")
-  public PhaseStatus getPhaseStatus(String taskId) {
+  public HttpResponse getPhaseStatus(String taskId) {
     var snapshot = componentClient.forTask(taskId).get(PipelineTasks.COLLECT);
-    return new PhaseStatus(snapshot.status().name(), snapshot.result());
+    return snapshot
+      .result()
+      .<HttpResponse>map(
+        result -> HttpResponses.ok(new PhaseStatus(snapshot.status().name(), result))
+      )
+      .orElseGet(() -> HttpResponses.accepted(snapshot.status().name()));
   }
 }

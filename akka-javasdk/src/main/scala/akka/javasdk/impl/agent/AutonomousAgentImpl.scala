@@ -12,6 +12,7 @@ import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 import scala.jdk.FutureConverters._
 import scala.jdk.OptionConverters.RichOption
+import scala.jdk.OptionConverters.RichOptional
 
 import akka.Done
 import akka.actor.typed.ActorSystem
@@ -405,8 +406,8 @@ private[impl] final class AutonomousAgentImpl(
       status = spiStatus,
       resultTypeName = resultTypeName,
       resultSchema = resultSchema,
-      resultJson = Option(state.result()),
-      failureReason = Option(state.failureReason()),
+      resultJson = state.result().toScala,
+      failureReason = state.failureReason().toScala,
       dependencyTaskIds = state.dependencyTaskIds().asScala.toSeq,
       attachments = attachments,
       reassignmentContext = Option(state.reassignmentContext()).map(_.asScala.toSeq).getOrElse(Seq.empty))

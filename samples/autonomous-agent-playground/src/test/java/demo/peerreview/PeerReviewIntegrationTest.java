@@ -164,10 +164,10 @@ public class PeerReviewIntegrationTest extends TestKitSupport {
       .atMost(30, TimeUnit.SECONDS)
       .untilAsserted(() -> {
         var snapshot = componentClient.forTask(taskId).get(ReviewTasks.REVIEW);
-        assertThat(snapshot.result()).isNotNull();
-        assertThat(snapshot.result().document()).isEqualTo("API design document");
-        assertThat(snapshot.result().assessment()).contains("Approved");
-        assertThat(snapshot.result().reviewerFindings()).hasSize(3);
+        var result = snapshot.result().orElseThrow();
+        assertThat(result.document()).isEqualTo("API design document");
+        assertThat(result.assessment()).contains("Approved");
+        assertThat(result.reviewerFindings()).hasSize(3);
       });
   }
 }

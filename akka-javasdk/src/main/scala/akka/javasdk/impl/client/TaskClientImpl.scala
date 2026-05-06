@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl.client
 
+import java.util.Optional
 import java.util.concurrent.CompletionStage
 
 import scala.concurrent.ExecutionContext
@@ -159,13 +160,27 @@ private[javasdk] final class TaskClientImpl(
         snapshot.status() match {
           case TaskStatus.COMPLETED =>
             log.debug("resultAsync: task [{}] already completed", taskId)
-            Future.successful(snapshot.result())
+            Future.successful(
+              snapshot
+                .result()
+                .orElseThrow(() => new IllegalStateException(s"Task [$taskId] is COMPLETED but has no result")))
           case TaskStatus.FAILED =>
             log.debug("resultAsync: task [{}] already failed", taskId)
-            Future.failed(new TaskException.Failed(taskId, snapshot.failureReason()))
+            Future.failed(
+              new TaskException.Failed(
+                taskId,
+                snapshot
+                  .failureReason()
+                  .orElseThrow(() => new IllegalStateException(s"Task [$taskId] is FAILED but has no failure reason"))))
           case TaskStatus.CANCELLED =>
             log.debug("resultAsync: task [{}] already cancelled", taskId)
-            Future.failed(new TaskException.Cancelled(taskId, snapshot.failureReason()))
+            Future.failed(
+              new TaskException.Cancelled(
+                taskId,
+                snapshot
+                  .failureReason()
+                  .orElseThrow(() =>
+                    new IllegalStateException(s"Task [$taskId] is CANCELLED but has no failure reason"))))
           case _ =>
             log.debug(
               "resultAsync: task [{}] not yet terminal ({}), waiting for notification",
@@ -242,9 +257,12 @@ private[javasdk] final class TaskClientImpl(
       .asJava
   }
 
-  private def deserializeResult[R](taskState: TaskState, taskDefinition: TaskDefinition[R]): R = {
+  private def deserializeResult[R](taskState: TaskState, taskDefinition: TaskDefinition[R]): Optional[R] = {
     validateTaskDefinition(taskState, taskDefinition)
-    deserializeResultFromString(taskState.result(), taskDefinition)
+    if (taskState.result().isPresent)
+      Optional.of(deserializeResultFromString(taskState.result().get(), taskDefinition))
+    else
+      Optional.empty()
   }
 
   private def validateTaskDefinition[R](taskState: TaskState, taskDefinition: TaskDefinition[R]): Unit = {
@@ -260,16 +278,12 @@ private[javasdk] final class TaskClientImpl(
   }
 
   private def deserializeResultFromString[R](resultString: String, taskDefinition: TaskDefinition[R]): R = {
-    if (resultString == null) {
-      null.asInstanceOf[R]
+    val resultType = taskDefinition.resultType()
+    if (resultType == classOf[String]) {
+      // String results are stored as raw text by the runtime (not JSON-encoded)
+      resultString.asInstanceOf[R]
     } else {
-      val resultType = taskDefinition.resultType()
-      if (resultType == classOf[String]) {
-        // String results are stored as raw text by the runtime (not JSON-encoded)
-        resultString.asInstanceOf[R]
-      } else {
-        serializer.json.fromJsonString(resultString, resultType)
-      }
+      serializer.json.fromJsonString(resultString, resultType)
     }
   }
 }

@@ -94,8 +94,8 @@ public class RunControlEndpoint extends AbstractHttpEndpoint {
       agentState.suspended(),
       taskStatus.name(),
       runState,
-      snapshot.result(),
-      snapshot.failureReason()
+      snapshot.result().orElse(null),
+      snapshot.failureReason().orElse(null)
     );
   }
 

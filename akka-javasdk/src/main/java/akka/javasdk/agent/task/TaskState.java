@@ -6,6 +6,7 @@ package akka.javasdk.agent.task;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /** State of a task entity. */
 public record TaskState(
@@ -15,10 +16,10 @@ public record TaskState(
     String instructions,
     TaskStatus status,
     String resultTypeName,
-    String result,
-    String failureReason,
+    Optional<String> result,
+    Optional<String> failureReason,
     List<String> dependencyTaskIds,
-    String assignee,
+    Optional<String> assignee,
     List<TaskAttachment> attachments,
     List<String> reassignmentContext,
     List<String> ruleClassNames) {
@@ -31,10 +32,10 @@ public record TaskState(
         null,
         TaskStatus.PENDING,
         null,
-        null,
-        null,
+        Optional.empty(),
+        Optional.empty(),
         List.of(),
-        null,
+        Optional.empty(),
         List.of(),
         List.of(),
         List.of());
@@ -68,7 +69,7 @@ public record TaskState(
         result,
         failureReason,
         dependencyTaskIds,
-        assignee,
+        Optional.of(assignee),
         attachments,
         reassignmentContext,
         ruleClassNames);
@@ -82,7 +83,7 @@ public record TaskState(
         instructions,
         TaskStatus.COMPLETED,
         resultTypeName,
-        result,
+        Optional.of(result),
         failureReason,
         dependencyTaskIds,
         assignee,
@@ -100,7 +101,7 @@ public record TaskState(
         TaskStatus.RESULT_REJECTED,
         resultTypeName,
         result,
-        reason,
+        Optional.of(reason),
         dependencyTaskIds,
         assignee,
         attachments,
@@ -117,7 +118,7 @@ public record TaskState(
         TaskStatus.FAILED,
         resultTypeName,
         result,
-        reason,
+        Optional.of(reason),
         dependencyTaskIds,
         assignee,
         attachments,
@@ -134,7 +135,7 @@ public record TaskState(
         TaskStatus.CANCELLED,
         resultTypeName,
         result,
-        reason,
+        Optional.of(reason),
         dependencyTaskIds,
         assignee,
         attachments,
@@ -155,7 +156,7 @@ public record TaskState(
         result,
         failureReason,
         dependencyTaskIds,
-        newAssignee,
+        Optional.of(newAssignee),
         attachments,
         List.copyOf(updated),
         ruleClassNames);

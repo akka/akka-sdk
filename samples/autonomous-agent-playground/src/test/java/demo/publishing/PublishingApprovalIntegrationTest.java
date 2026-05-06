@@ -69,8 +69,7 @@ public class PublishingApprovalIntegrationTest extends TestKitSupport {
           .forTask(pipeline.draftTaskId())
           .get(PublishingTasks.DRAFT);
         assertThat(draft.status().name()).isEqualTo("COMPLETED");
-        assertThat(draft.result()).isNotNull();
-        assertThat(draft.result().title()).isEqualTo("AI in 2026");
+        assertThat(draft.result().orElseThrow().title()).isEqualTo("AI in 2026");
       });
 
     // Human approves the draft
@@ -91,8 +90,9 @@ public class PublishingApprovalIntegrationTest extends TestKitSupport {
           .forTask(pipeline.publishTaskId())
           .get(PublishingTasks.PUBLISH);
         assertThat(published.status().name()).isEqualTo("COMPLETED");
-        assertThat(published.result()).isNotNull();
-        assertThat(published.result().url()).isEqualTo("https://blog.example.com/ai-2026");
+        assertThat(published.result().orElseThrow().url()).isEqualTo(
+          "https://blog.example.com/ai-2026"
+        );
       });
   }
 
@@ -142,7 +142,7 @@ public class PublishingApprovalIntegrationTest extends TestKitSupport {
           .forTask(pipeline.approvalTaskId())
           .get(PublishingTasks.APPROVAL);
         assertThat(approval.status().name()).isEqualTo("FAILED");
-        assertThat(approval.failureReason()).isEqualTo("Content quality too low");
+        assertThat(approval.failureReason()).contains("Content quality too low");
       });
 
     // Verify publish task never started (still PENDING — its dependency failed)

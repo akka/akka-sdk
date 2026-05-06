@@ -1,14 +1,15 @@
 package demo.peerreview.api;
 
+import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.AbstractHttpEndpoint;
+import akka.javasdk.http.HttpResponses;
 import demo.peerreview.application.ReviewModerator;
 import demo.peerreview.application.ReviewTasks;
-import demo.peerreview.application.ReviewTasks.ReviewResult;
 import java.util.UUID;
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
@@ -39,7 +40,11 @@ public class PeerReviewEndpoint extends AbstractHttpEndpoint {
   }
 
   @Get("/{taskId}")
-  public ReviewResult get(String taskId) {
-    return componentClient.forTask(taskId).get(ReviewTasks.REVIEW).result();
+  public HttpResponse get(String taskId) {
+    var snapshot = componentClient.forTask(taskId).get(ReviewTasks.REVIEW);
+    return snapshot
+      .result()
+      .<HttpResponse>map(HttpResponses::ok)
+      .orElseGet(() -> HttpResponses.accepted(snapshot.status().name()));
   }
 }

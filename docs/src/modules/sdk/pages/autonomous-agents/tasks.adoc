@@ -134,8 +134,8 @@ Query a task's current state with the `ComponentClient`. The snapshot includes t
 var snapshot = componentClient.forTask(taskId).get(ReviewTasks.REVIEW);
 var status = snapshot.status();        // PENDING, ASSIGNED, IN_PROGRESS, RESULT_REJECTED,
                                        // COMPLETED, FAILED, or CANCELLED
-var result = snapshot.result();        // typed ReviewResult (null if not completed)
-var reason = snapshot.failureReason(); // failure reason (null if not failed)
+var result = snapshot.result();        // Optional<ReviewResult>, present if completed
+var reason = snapshot.failureReason(); // Optional<String>, present if failed
 ----
 
 == Task dependencies

@@ -12,6 +12,7 @@ import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import java.util.List;
+import java.util.Optional;
 
 @Component(id = "akka-task")
 public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
@@ -73,8 +74,8 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
     if (currentState().status() != TaskStatus.PENDING) {
       return effects().error("Task can only be assigned when PENDING");
     }
-    if (currentState().assignee() != null) {
-      return effects().error("Task is already assigned to " + currentState().assignee());
+    if (currentState().assignee().isPresent()) {
+      return effects().error("Task is already assigned to " + currentState().assignee().get());
     }
     return effects().persist(new TaskEvent.TaskAssigned(taskId, assignee)).thenReply(__ -> done());
   }
@@ -209,10 +210,10 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
               e.instructions(),
               TaskStatus.PENDING,
               e.resultTypeName(),
-              null,
-              null,
+              Optional.empty(),
+              Optional.empty(),
               e.dependencyTaskIds() != null ? e.dependencyTaskIds() : List.of(),
-              null,
+              Optional.empty(),
               e.attachments() != null ? e.attachments() : List.of(),
               List.of(),
               e.ruleClassNames() != null ? e.ruleClassNames() : List.of());

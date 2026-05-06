@@ -56,7 +56,7 @@ public class AgentLifecycleIntegrationTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.TEST_TASK);
-              assertThat(snapshot.result()).isNotNull();
+              assertThat(snapshot.result()).isPresent();
             });
 
     var state = agentClient.getState();
@@ -93,7 +93,7 @@ public class AgentLifecycleIntegrationTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.TEST_TASK);
-              assertThat(snapshot.result()).isNotNull();
+              assertThat(snapshot.result()).isPresent();
             });
 
     var stateAfterResume = agentClient.getState();
@@ -172,7 +172,7 @@ public class AgentLifecycleIntegrationTest extends TestKitSupport {
         .untilAsserted(
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.TEST_TASK);
-              assertThat(snapshot.result()).isNotNull();
+              assertThat(snapshot.result()).isPresent();
             });
 
     Awaitility.await()

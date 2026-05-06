@@ -1,14 +1,15 @@
 package demo.debate.api;
 
+import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.AbstractHttpEndpoint;
+import akka.javasdk.http.HttpResponses;
 import demo.debate.application.DebateModerator;
 import demo.debate.application.DebateTasks;
-import demo.debate.application.DebateTasks.DebateResult;
 import java.util.UUID;
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
@@ -39,7 +40,11 @@ public class DebateEndpoint extends AbstractHttpEndpoint {
   }
 
   @Get("/{taskId}")
-  public DebateResult get(String taskId) {
-    return componentClient.forTask(taskId).get(DebateTasks.DEBATE).result();
+  public HttpResponse get(String taskId) {
+    var snapshot = componentClient.forTask(taskId).get(DebateTasks.DEBATE);
+    return snapshot
+      .result()
+      .<HttpResponse>map(HttpResponses::ok)
+      .orElseGet(() -> HttpResponses.accepted(snapshot.status().name()));
   }
 }

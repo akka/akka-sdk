@@ -52,9 +52,9 @@ public class TaskRuleIntegrationTest extends TestKitSupport {
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.VALIDATED_TASK);
               assertThat(snapshot.status()).isEqualTo(TaskStatus.COMPLETED);
-              assertThat(snapshot.result()).isNotNull();
-              assertThat(snapshot.result().value()).isEqualTo("good result");
-              assertThat(snapshot.result().score()).isEqualTo(50);
+              var result = snapshot.result().orElseThrow();
+              assertThat(result.value()).isEqualTo("good result");
+              assertThat(result.score()).isEqualTo(50);
             });
   }
 
@@ -81,8 +81,9 @@ public class TaskRuleIntegrationTest extends TestKitSupport {
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.VALIDATED_TASK);
               assertThat(snapshot.status()).isEqualTo(TaskStatus.COMPLETED);
-              assertThat(snapshot.result().value()).isEqualTo("improved result");
-              assertThat(snapshot.result().score()).isEqualTo(50);
+              var result = snapshot.result().orElseThrow();
+              assertThat(result.value()).isEqualTo("improved result");
+              assertThat(result.score()).isEqualTo(50);
             });
   }
 
@@ -148,7 +149,7 @@ public class TaskRuleIntegrationTest extends TestKitSupport {
             () -> {
               var snapshot = componentClient.forTask(taskId).get(TestTasks.VALIDATED_TASK);
               assertThat(snapshot.status()).isEqualTo(TaskStatus.FAILED);
-              assertThat(snapshot.failureReason()).contains("Max iterations");
+              assertThat(snapshot.failureReason().orElseThrow()).contains("Max iterations");
             });
   }
 }

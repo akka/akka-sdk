@@ -137,7 +137,7 @@ Task results are typed based on the task definition's `resultConformsTo` type. T
 ----
 var snapshot = componentClient.forTask(taskId).get(ResearchTasks.BRIEF);
 if (snapshot.status() == TaskStatus.COMPLETED) {
-  ResearchBrief brief = snapshot.result();
+  ResearchBrief brief = snapshot.result().orElseThrow();
   var title = brief.title();
   var findings = brief.keyFindings();
 }
