@@ -31,14 +31,30 @@ public class TaskNotificationEndpoint {
   public record Note(String kind, String taskId, String taskName, String detail) { // <3>
     static Note from(TaskNotification n) {
       return switch (n) {
-        case TaskNotification.Completed c ->
-          new Note("completed", c.taskId(), c.taskName(), c.result());
-        case TaskNotification.ResultRejected r ->
-          new Note("result-rejected", r.taskId(), r.taskName(), r.reason());
-        case TaskNotification.Failed f ->
-          new Note("failed", f.taskId(), f.taskName(), f.reason());
-        case TaskNotification.Cancelled c ->
-          new Note("cancelled", c.taskId(), c.taskName(), c.reason());
+        case TaskNotification.Completed c -> new Note(
+          "completed",
+          c.taskId(),
+          c.taskName(),
+          c.result()
+        );
+        case TaskNotification.ResultRejected r -> new Note(
+          "result-rejected",
+          r.taskId(),
+          r.taskName(),
+          r.reason()
+        );
+        case TaskNotification.Failed f -> new Note(
+          "failed",
+          f.taskId(),
+          f.taskName(),
+          f.reason()
+        );
+        case TaskNotification.Cancelled c -> new Note(
+          "cancelled",
+          c.taskId(),
+          c.taskName(),
+          c.reason()
+        );
       };
     }
   }
