@@ -456,6 +456,9 @@ private[impl] final class AgentImpl[A <: Agent](
       case p: MemoryProvider.CustomMemoryProvider =>
         p.sessionMemory()
 
+      case p: MemoryProvider.CompositeMemoryProvider =>
+        p.wrapFunc().apply(deriveMemoryClient(p.memoryProvider(), telemetryContext));
+
       case p: MemoryProvider.FromConfig =>
         val actualPath =
           if (p.configPath() == "")

@@ -6,6 +6,7 @@ package akka.javasdk.agent;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * Interface for configuring memory management in agent systems.
@@ -274,4 +275,17 @@ public sealed interface MemoryProvider {
       return sessionMemory;
     }
   }
+
+  static CompositeMemoryProvider composite(Function<SessionMemory, SessionMemory> wrapFunc) {
+    return composite(MemoryProvider.fromConfig(), wrapFunc);
+  }
+
+  static CompositeMemoryProvider composite(
+      MemoryProvider memoryProvider, Function<SessionMemory, SessionMemory> wrapFunc) {
+    return new CompositeMemoryProvider(memoryProvider, wrapFunc);
+  }
+
+  record CompositeMemoryProvider(
+      MemoryProvider memoryProvider, Function<SessionMemory, SessionMemory> wrapFunc)
+      implements MemoryProvider {}
 }

@@ -1,7 +1,14 @@
 package com.example.application;
 
 import akka.javasdk.agent.Agent;
+import akka.javasdk.agent.MemoryProvider;
+import akka.javasdk.agent.SessionHistory;
+import akka.javasdk.agent.SessionMemory;
+import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.annotations.Component;
+import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 // tag::class[]
 @Component(id = "hello-world-agent")
@@ -24,9 +31,12 @@ public class HelloWorldAgent extends Agent {
     - At the end, append a list of previous greetings
     """.stripIndent();
 
+  private static final Logger logger = LoggerFactory.getLogger(HelloWorldAgent.class);
+
   public Effect<String> greet(String userGreeting) {
     // prettier-ignore
     return effects()
+      .memory(CustomSessionMemoryProvider.memoryProvider())
       .systemMessage(SYSTEM_MESSAGE)
       .userMessage(userGreeting)
       .thenReply();
