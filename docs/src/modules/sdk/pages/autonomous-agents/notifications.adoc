@@ -47,8 +47,8 @@ link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TaskNotific
 | link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TaskStarted.html[`Notification.TaskStarted`] | Agent started working on a task.
 | link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TaskResultRejected.html[`Notification.TaskResultRejected`] | Result rejected by a xref:sdk:autonomous-agents/tasks.adoc#task-rules[task rule].
 | link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TaskCompleted.html[`Notification.TaskCompleted`] | Task completed successfully.
-| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TaskFailed.html[`Notification.TaskFailed`] | Task failed via explicit `fail_task`.
-| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TaskCancelled.html[`Notification.TaskCancelled`] | Framework-driven cancellation (dependency failure, max iterations, orphan cleanup), distinct from `TaskFailed`.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TaskFailed.html[`Notification.TaskFailed`] | Task failed during execution, either by the model's decision or because the iteration limit was reached.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TaskCancelled.html[`Notification.TaskCancelled`] | Task terminated before execution began, for example by a dependency failure or orphan cleanup.
 | link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TaskDependencyWait.html[`Notification.TaskDependencyWait`] | Task is blocked waiting for dependencies.
 | link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.DependencyResolved.html[`Notification.DependencyResolved`] | A specific dependency resolved, with success or failure.
 |===

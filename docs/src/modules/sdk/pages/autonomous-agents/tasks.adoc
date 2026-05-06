@@ -99,7 +99,7 @@ A `TaskTemplate` is a `TaskDefinition` and can be passed wherever a `Task` defin
 
 == Task lifecycle
 
-A task reaches a terminal state in one of three ways. The model decides the work is done and produces a result that conforms to the task's declared result schema, and the task transitions to `COMPLETED`. The model decides it cannot make progress and reports a reason, and the task transitions to `FAILED`. Or the iteration limit is reached without either decision, in which case the runtime terminates the task as `CANCELLED`. The status field on the task entity records which path was taken.
+A task reaches a terminal state in one of three ways during execution. The model decides the work is done and produces a result that conforms to the task's declared result schema, and the task transitions to `COMPLETED`. The model decides it cannot make progress and reports a reason, and the task transitions to `FAILED`. Or the iteration limit is reached without either decision, in which case the runtime terminates the task as `FAILED`. A separate `CANCELLED` state covers tasks terminated before execution begins, such as a dependency failure. The status field on the task entity records which path was taken.
 
 A task progresses through these statuses:
 
@@ -112,8 +112,8 @@ A task progresses through these statuses:
 | `IN_PROGRESS` | An agent is actively working on it
 | `RESULT_REJECTED` | A xref:#task-rules[task rule] rejected the result. The agent retries on the next iteration.
 | `COMPLETED` | Finished successfully with a typed result
-| `FAILED` | Failed (iteration limit exceeded, unrecoverable error)
-| `CANCELLED` | Task was cancelled
+| `FAILED` | Failed during execution (model decision or iteration limit)
+| `CANCELLED` | Terminated before execution began (for example, by a dependency failure)
 |===
 
 === Task failure
@@ -125,7 +125,7 @@ A task transitions to `FAILED` when the agent decides it cannot complete the wor
 * The task is terminal, there is no automatic retry. If the work needs to be reattempted, application code creates a new task.
 * Tasks depending on the failed task transition to `CANCELLED` automatically.
 
-The notification stream distinguishes the two failure modes. An agent's explicit decision to fail emits `Notification.TaskFailed`. Framework termination, for example after max iterations or a dependency failure, emits `Notification.TaskCancelled`. The task snapshot reports the resulting status. See xref:sdk:autonomous-agents/notifications.adoc[Notifications] for the full event catalog.
+Both failure paths (model decision and iteration-limit termination) emit `Notification.TaskFailed`; the recorded failure reason distinguishes them. `Notification.TaskCancelled` is emitted only for the separate `CANCELLED` state, when a task is terminated before it begins, for example by a dependency failure. The task snapshot reports the resulting status. See xref:sdk:autonomous-agents/notifications.adoc[Notifications] for the full event catalog.
 
 == Task snapshots
 
