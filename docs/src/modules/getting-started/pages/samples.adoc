@@ -57,7 +57,7 @@ link:https://github.com/akka-samples/helloworld-agent-kotlin[GitHub Repository, 
 
 == Multi-agent planning and execution
 
-This sample models an outdoor activities planner.It demonstrates how to build a multi-agent system using Akka and an LLM model. A workflow manages the user query process, handling the sequential steps of agent selection, plan creation, execution, and summarization.
+This sample models an outdoor activities planner. It demonstrates how to build a multi-agent system using Akka and an LLM model. A workflow manages the user query process, handling the sequential steps of agent selection, plan creation, execution, and summarization.
 
 [%hardbreaks]
 **Concepts**: _Agent_, _Workflow_, _Multi-agent_, _LLM_
