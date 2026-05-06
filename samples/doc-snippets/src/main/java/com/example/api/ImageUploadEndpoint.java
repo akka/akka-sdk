@@ -77,7 +77,7 @@ public class ImageUploadEndpoint {
   @Get("")
   public List<ObjectMetadata> list() {
     var imageBucket = objectStorageProvider.forBucket("images");
-    return imageBucket.list();
+    return imageBucket.listObjects();
   }
 
   @Delete("/{key}")

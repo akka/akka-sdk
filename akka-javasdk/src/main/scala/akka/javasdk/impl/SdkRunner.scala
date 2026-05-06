@@ -126,12 +126,10 @@ import akka.runtime.sdk.spi.SpiDevObjectStorageFilesystemBucketConfig
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsBucketConfig
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsNativeCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageGcsServiceAccountKeyCredentials
-import akka.runtime.sdk.spi.SpiDevObjectStorageGcsNativeCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3BucketConfig
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3NativeCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3ProfileCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3StaticCredentials
-import akka.runtime.sdk.spi.SpiDevObjectStorageS3NativeCredentials
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
 import akka.runtime.sdk.spi.SpiGuardrailSetup

@@ -26,19 +26,19 @@ class MessageContentSpec extends AnyWordSpec with Matchers {
   private val bucket = new ObjectStorage {
     override def bucketName(): String = "my-bucket"
     override def get(key: String): Optional[StorageObject] = ???
-    override def put(key: String, data: ByteString): Done = ???
-    override def put(key: String, data: ByteString, contentType: ContentType): Done = ???
+    override def put(key: String, data: ByteString): Unit = ???
+    override def put(key: String, data: ByteString, contentType: ContentType): Unit = ???
     override def put(
         key: String,
         data: ByteString,
         contentType: ContentType,
-        metadata: util.Map[String, String]): Done = ???
-    override def delete(key: String): Done = ???
-    override def list(prefix: String): util.List[ObjectMetadata] = ???
-    override def list(): util.List[ObjectMetadata] = ???
+        metadata: util.Map[String, String]): Unit = ???
+    override def delete(key: String): Unit = ???
+    override def listObjects(prefix: String): util.List[ObjectMetadata] = ???
+    override def listObjects(): util.List[ObjectMetadata] = ???
     override def getMetadata(key: String): Optional[ObjectMetadata] = ???
-    override def streamList(prefix: String): Source[ObjectMetadata, NotUsed] = ???
-    override def streamList(): Source[ObjectMetadata, NotUsed] = ???
+    override def listObjectsStream(prefix: String): Source[ObjectMetadata, NotUsed] = ???
+    override def listObjectsStream(): Source[ObjectMetadata, NotUsed] = ???
     override def getStreamAsync(key: String): CompletionStage[Optional[Source[ByteString, NotUsed]]] = ???
     override def putStreamAsync(key: String, data: Source[ByteString, _]): CompletionStage[Done] = ???
     override def putStreamAsync(

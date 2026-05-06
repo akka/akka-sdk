@@ -46,7 +46,7 @@ public interface ObjectStorage {
    * @param key object key within the bucket
    * @param data content to store
    */
-  Done put(String key, ByteString data);
+  void put(String key, ByteString data);
 
   /**
    * Store an object with an explicit content type.
@@ -58,7 +58,7 @@ public interface ObjectStorage {
    * @param data content to store
    * @param contentType MIME type of the content
    */
-  Done put(String key, ByteString data, ContentType contentType);
+  void put(String key, ByteString data, ContentType contentType);
 
   /**
    * Store an object with an explicit content type.
@@ -71,14 +71,14 @@ public interface ObjectStorage {
    * @param contentType MIME type of the content
    * @param metadata Additional metadata to store with the data
    */
-  Done put(String key, ByteString data, ContentType contentType, Map<String, String> metadata);
+  void put(String key, ByteString data, ContentType contentType, Map<String, String> metadata);
 
   /**
    * Delete the object with the given key. Succeeds silently if the key does not exist.
    *
    * <p>Blocks the calling thread until the operation completes.
    */
-  Done delete(String key);
+  void delete(String key);
 
   /**
    * List all objects whose keys start with {@code prefix}. Pass an empty string to list all objects
@@ -87,7 +87,7 @@ public interface ObjectStorage {
    * <p>Be careful listing buckets with large numbers of entries, all will be collected into memory
    * of the service.
    */
-  List<ObjectMetadata> list(String prefix);
+  List<ObjectMetadata> listObjects(String prefix);
 
   /**
    * List all objects in the bucket.
@@ -95,7 +95,7 @@ public interface ObjectStorage {
    * <p>Be careful listing buckets with large numbers of entries, all will be collected into memory
    * of the service.
    */
-  List<ObjectMetadata> list();
+  List<ObjectMetadata> listObjects();
 
   /**
    * Retrieve only the metadata for an object without downloading its content, or {@link
@@ -109,10 +109,10 @@ public interface ObjectStorage {
    * List all objects whose keys start with {@code prefix}. Pass an empty string to list all objects
    * in the bucket.
    */
-  Source<ObjectMetadata, NotUsed> streamList(String prefix);
+  Source<ObjectMetadata, NotUsed> listObjectsStream(String prefix);
 
   /** List all objects in the bucket. */
-  Source<ObjectMetadata, NotUsed> streamList();
+  Source<ObjectMetadata, NotUsed> listObjectsStream();
 
   /**
    * Retrieve an object as a streaming source, or {@link Optional#empty()} if no object exists for
@@ -155,8 +155,6 @@ public interface ObjectStorage {
       Source<ByteString, ?> data,
       ContentType contentType,
       Map<String, String> metadata);
-
-  // ── Async variants ───────────────────────────────────────────────────────
 
   /**
    * Async variant of {@link #get(String)}. Returns a {@link CompletionStage} that completes with

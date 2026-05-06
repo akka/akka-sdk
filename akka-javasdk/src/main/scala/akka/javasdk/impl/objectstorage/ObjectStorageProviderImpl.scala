@@ -7,10 +7,12 @@ package akka.javasdk.impl.objectstorage
 import java.util
 import java.util.Optional
 import java.util.concurrent.CompletionStage
+
 import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters.MapHasAsScala
 import scala.jdk.javaapi.FutureConverters
 import scala.jdk.javaapi.OptionConverters
+
 import akka.Done
 import akka.NotUsed
 import akka.actor.typed.ActorSystem
@@ -116,16 +118,15 @@ private[impl] final class ObjectStorageImpl(bucket: String, spiClient: SpiObject
   override def getMetadata(key: String): Optional[ObjectMetadata] =
     getMetadataAsync(key).toCompletableFuture.get()
 
-  override def list(prefix: String): util.List[ObjectMetadata] =
-    streamList(prefix).runWith(Sink.seq[ObjectMetadata], system).toCompletableFuture.get()
+  override def listObjects(prefix: String): util.List[ObjectMetadata] =
+    listObjectsStream(prefix).runWith(Sink.seq[ObjectMetadata], system).toCompletableFuture.get()
 
-  override def list(): util.List[ObjectMetadata] = list("")
-  // ── Streaming ────────────────────────────────────────────────────────────
+  override def listObjects(): util.List[ObjectMetadata] = listObjects("")
 
-  override def streamList(prefix: String): JSource[ObjectMetadata, NotUsed] =
+  override def listObjectsStream(prefix: String): JSource[ObjectMetadata, NotUsed] =
     spiClient.list(prefix).map(toPublicMetadata).asJava
 
-  override def streamList(): JSource[ObjectMetadata, NotUsed] = streamList("")
+  override def listObjectsStream(): JSource[ObjectMetadata, NotUsed] = listObjectsStream("")
 
   override def getStreamAsync(key: String): CompletionStage[Optional[JSource[ByteString, NotUsed]]] =
     FutureConverters.asJava(
