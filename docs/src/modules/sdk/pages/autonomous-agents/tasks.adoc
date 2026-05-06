@@ -99,6 +99,8 @@ A `TaskTemplate` is a `TaskDefinition` and can be passed wherever a `Task` defin
 
 == Task lifecycle
 
+A task reaches a terminal state in one of three ways. The model decides the work is done and produces a result that conforms to the task's declared result schema, and the task transitions to `COMPLETED`. The model decides it cannot make progress and reports a reason, and the task transitions to `FAILED`. Or the iteration limit is reached without either decision, in which case the runtime terminates the task as `CANCELLED`. The status field on the task entity records which path was taken.
+
 A task progresses through these statuses:
 
 [options="header", cols="1,3"]
