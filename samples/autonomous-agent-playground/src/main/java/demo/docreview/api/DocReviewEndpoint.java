@@ -39,7 +39,9 @@ public class DocReviewEndpoint extends AbstractHttpEndpoint {
       .attach(TextMessageContent.from(request.document()));
     // end::create-with-attachment[]
 
-    var agentInstanceId = requestContext().queryParams().getString("runId")
+    var agentInstanceId = requestContext()
+      .queryParams()
+      .getString("runId")
       .filter(s -> !s.isBlank())
       .orElseGet(() -> UUID.randomUUID().toString());
     var taskId = componentClient

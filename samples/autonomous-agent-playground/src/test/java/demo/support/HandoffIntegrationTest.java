@@ -83,6 +83,7 @@ public class HandoffIntegrationTest extends TestKitSupport {
         assertThat(snapshot.result().resolved()).isTrue();
       });
   }
+
   // end::handoff[]
 
   @Test

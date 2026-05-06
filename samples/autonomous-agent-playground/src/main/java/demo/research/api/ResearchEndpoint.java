@@ -29,7 +29,9 @@ public class ResearchEndpoint extends AbstractHttpEndpoint {
 
   @Post
   public ResearchResponse create(ResearchRequest request) {
-    var agentInstanceId = requestContext().queryParams().getString("runId")
+    var agentInstanceId = requestContext()
+      .queryParams()
+      .getString("runId")
       .filter(s -> !s.isBlank())
       .orElseGet(() -> UUID.randomUUID().toString());
     var taskId = componentClient

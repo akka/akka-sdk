@@ -35,7 +35,9 @@ public class PipelineIntegrationTest extends TestKitSupport {
     // orchestration (dependency ordering, task completion) works correctly.
     // The session accumulates across tasks, so we use a universal response.
     model.fixedResponse(
-      new TestModelProvider.AiResponse(completeTask(new ReportResult("done", "task completed")))
+      new TestModelProvider.AiResponse(
+        completeTask(new ReportResult("done", "task completed"))
+      )
     );
 
     var response = httpClient

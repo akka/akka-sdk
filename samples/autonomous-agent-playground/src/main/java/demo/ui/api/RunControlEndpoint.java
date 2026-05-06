@@ -10,7 +10,6 @@ import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.AbstractHttpEndpoint;
 import akka.javasdk.http.HttpException;
-import java.time.Instant;
 import demo.consulting.application.ConsultingTasks;
 import demo.debate.application.DebateTasks;
 import demo.devteam.application.ProjectTasks;
@@ -21,6 +20,7 @@ import demo.pipeline.application.PipelineTasks;
 import demo.publishing.application.PublishingTasks;
 import demo.research.application.ResearchTasks;
 import demo.support.application.SupportTasks;
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -63,7 +63,8 @@ public class RunControlEndpoint extends AbstractHttpEndpoint {
 
   @Get("/samples")
   public SampleList samples() {
-    var entries = SampleRegistry.samples().stream()
+    var entries = SampleRegistry.samples()
+      .stream()
       .map(e -> new SampleSummary(e.id(), e.displayName(), e.agentComponentId()))
       .toList();
     return new SampleList(entries);
@@ -136,7 +137,10 @@ public class RunControlEndpoint extends AbstractHttpEndpoint {
       case "negotiation" -> NegotiationTasks.NEGOTIATE;
       case "peerreview" -> demo.peerreview.application.ReviewTasks.REVIEW;
       case "devteam" -> ProjectTasks.PLAN;
-      default -> throw HttpException.error(StatusCodes.NOT_FOUND, "Unknown sample id: " + sampleId);
+      default -> throw HttpException.error(
+        StatusCodes.NOT_FOUND,
+        "Unknown sample id: " + sampleId
+      );
     };
   }
 

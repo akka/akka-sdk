@@ -27,7 +27,9 @@ public class DebateEndpoint extends AbstractHttpEndpoint {
 
   @Post
   public DebateResponse create(DebateRequest request) {
-    var agentInstanceId = requestContext().queryParams().getString("runId")
+    var agentInstanceId = requestContext()
+      .queryParams()
+      .getString("runId")
       .filter(s -> !s.isBlank())
       .orElseGet(() -> UUID.randomUUID().toString());
     var taskId = componentClient

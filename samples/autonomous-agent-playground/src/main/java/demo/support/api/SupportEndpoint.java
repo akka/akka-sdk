@@ -28,7 +28,9 @@ public class SupportEndpoint extends AbstractHttpEndpoint {
 
   @Post
   public SupportResponse create(SupportRequest request) {
-    var agentInstanceId = requestContext().queryParams().getString("runId")
+    var agentInstanceId = requestContext()
+      .queryParams()
+      .getString("runId")
       .filter(s -> !s.isBlank())
       .orElseGet(() -> UUID.randomUUID().toString());
     var taskId = componentClient

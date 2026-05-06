@@ -65,12 +65,15 @@ public class RunNotificationEndpoint extends AbstractHttpEndpoint {
 
   @Get("/runs/{runId}/events")
   public HttpResponse events(String runId) {
-    var component = requestContext().queryParams().getString("component")
-      .orElseThrow(() ->
-        akka.javasdk.http.HttpException.error(
-          akka.http.javadsl.model.StatusCodes.BAD_REQUEST,
-          "Missing required query parameter: component"
-        )
+    var component = requestContext()
+      .queryParams()
+      .getString("component")
+      .orElseThrow(
+        () ->
+          akka.javasdk.http.HttpException.error(
+            akka.http.javadsl.model.StatusCodes.BAD_REQUEST,
+            "Missing required query parameter: component"
+          )
       );
 
     var agentClass = SampleRegistry.classFor(component);
@@ -83,20 +86,23 @@ public class RunNotificationEndpoint extends AbstractHttpEndpoint {
     // outgoing stream. Each notification is tagged with the emitter's (componentId, instanceId)
     // so the UI can attribute it correctly. The expansion is recursive — children's own spawn
     // events also expand — so multi-level nesting is supported.
-    Source<TaggedNotification, NotUsed> mergedSource = taggedStream(rootAgent, agentClass)
-      .flatMapMerge(MERGE_PARALLELISM, this::expand);
+    Source<TaggedNotification, NotUsed> mergedSource = taggedStream(
+      rootAgent,
+      agentClass
+    ).flatMapMerge(MERGE_PARALLELISM, this::expand);
 
-    Source<EventEnvelope, NotUsed> envelopes = mergedSource.map(t ->
-      new EventEnvelope(
-        counter.incrementAndGet(),
-        Instant.now(),
-        tierFor(t.notification()),
-        categoryFor(t.notification()),
-        t.notification().getClass().getSimpleName(),
-        t.notification(),
-        t.emitter().componentId(),
-        t.emitter().instanceId()
-      )
+    Source<EventEnvelope, NotUsed> envelopes = mergedSource.map(
+      t ->
+        new EventEnvelope(
+          counter.incrementAndGet(),
+          Instant.now(),
+          tierFor(t.notification()),
+          categoryFor(t.notification()),
+          t.notification().getClass().getSimpleName(),
+          t.notification(),
+          t.emitter().componentId(),
+          t.emitter().instanceId()
+        )
     );
 
     return HttpResponses.serverSentEvents(envelopes, env -> String.valueOf(env.eventId()));
@@ -129,8 +135,7 @@ public class RunNotificationEndpoint extends AbstractHttpEndpoint {
       .filter(c -> SampleRegistry.classForOrNull(c.componentId()) != null)
       .flatMapMerge(MERGE_PARALLELISM, c -> {
         var clazz = SampleRegistry.classForOrNull(c.componentId());
-        return taggedStream(c, clazz)
-          .flatMapMerge(MERGE_PARALLELISM, this::expand); // recurse for grandchildren
+        return taggedStream(c, clazz).flatMapMerge(MERGE_PARALLELISM, this::expand); // recurse for grandchildren
       });
 
     return Source.single(tagged).concat(childMerged);
