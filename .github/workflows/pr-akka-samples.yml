@@ -41,6 +41,7 @@ jobs:
           - { sample: "transfer-workflow-orchestration", sampleRepo: "akka-samples/transfer-workflow-orchestration" }
           - { sample: "ask-akka-agent", sampleRepo: "akka-samples/ask-akka-agent" }
           - { sample: "multi-agent", sampleRepo: "akka-samples/multi-agent" }
+          - { sample: "autonomous-agent-playground", sampleRepo: "akka-samples/autonomous-agent-playground" }
 
     steps:
       - name: Checkout Global Scripts

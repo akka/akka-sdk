@@ -147,66 +147,10 @@ xref:sdk:autonomous-agents/notifications.adoc[Notifications]:: The notification 
 
 xref:sdk:autonomous-agents/testing.adoc[Testing]:: Mocking model responses with `TestModelProvider` and the `AutonomousAgentTools` factory methods for the built-in coordination tools.
 
-== Samples
-
-The `autonomous-agent-playground` sample project demonstrates each capability. The progression goes from minimal usage to sophisticated multi-agent systems.
-
-[options="header", cols="1,2,3"]
-|===
-| Sample | Capabilities | Description
-
-| helloworld
-| None
-| Single agent, single task, no coordination. The minimum viable Autonomous Agent.
-
-| pipeline
-| Task dependencies
-| Three-phase chain (collect, analyze, report) on a single agent, ordered via `dependsOn`.
-
-| docreview
-| Attachments
-| Document review where the document is passed as `TextMessageContent` rather than inline in instructions.
-
-| dynamic
-| Runtime configuration
-| One agent class configured per request with different goals and accepted tasks.
-
-| research
-| Delegation
-| Coordinator delegates to a researcher and an analyst, then synthesizes a unified brief.
-
-| consulting
-| Delegation + handoff
-| Coordinator delegates routine work and hands off complex cases to a senior specialist.
-
-| support
-| Handoff
-| Triage classifies a request and hands off to a billing or technical specialist.
-
-| publishing
-| Task dependencies + external input
-| Draft, human approval gate, then publish, wired through task dependencies.
-
-| debate
-| Moderation
-| Moderator runs structured rounds between an advocate and a critic, then synthesizes a conclusion.
-
-| negotiation
-| Moderation
-| Facilitator runs multi-round offers and counteroffers between buyer and seller.
-
-| peerreview
-| Moderation
-| Moderator coordinates a panel of technical, style, and compliance reviewers.
-
-| devteam
-| Team
-| Team lead decomposes a project; developer agents claim tasks and message peers.
-|===
-
 == See Also
 
 * xref:sdk:agents.adoc[Request-based Agents]
 * xref:sdk:autonomous-agents/coordination.adoc[Coordination patterns]
 * xref:sdk:autonomous-agents/capabilities.adoc[Coordination capabilities]
 * xref:concepts:ai-agents.adoc[AI Agents concepts]
+* xref:getting-started:samples.adoc#autonomous_agents_playground[Autonomous agents samples]

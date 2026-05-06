@@ -57,7 +57,7 @@ delegateTo(ResearchTasks.FINDINGS, Researcher.class, "Research quantum computing
 delegateTo(FactCheckAgent.class, "{\"claim\":\"Carbon emissions reduced by 40%\"}");
 ----
 
-`AutonomousAgentTools` also exposes helpers for the team, backlog, messaging, and moderation capabilities (`createTeam`, `claimTask`, `sendMessage`, `startScriptedConversation`, `submitTurn`, …). For full coverage, see the playground samples that exercise those patterns: `devteam` for teams and shared backlogs, and `debate`, `negotiation`, `peerreview` for moderation.
+`AutonomousAgentTools` also exposes helpers for the team, backlog, messaging, and moderation capabilities (`createTeam`, `claimTask`, `sendMessage`, `startScriptedConversation`, `submitTurn`, …). For full coverage, see the xref:getting-started:samples.adoc#autonomous_agents_playground[autonomous agents samples] that exercise those patterns: `devteam` for teams and shared backlogs, and `debate`, `negotiation`, `peerreview` for moderation.
 
 == Multi-agent delegation test
 
