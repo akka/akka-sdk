@@ -46,7 +46,9 @@ public class SupportEndpoint extends AbstractHttpEndpoint {
     var snapshot = componentClient.forTask(taskId).get(SupportTasks.RESOLVE);
     return snapshot
       .result()
-      .<HttpResponse>map(result -> HttpResponses.ok(new SupportStatus(snapshot.status().name(), result)))
+      .<HttpResponse>map(
+        result -> HttpResponses.ok(new SupportStatus(snapshot.status().name(), result))
+      )
       .orElseGet(() -> HttpResponses.accepted(snapshot.status().name()));
   }
 }

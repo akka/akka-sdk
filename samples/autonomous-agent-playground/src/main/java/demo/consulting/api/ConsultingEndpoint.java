@@ -46,7 +46,9 @@ public class ConsultingEndpoint extends AbstractHttpEndpoint {
     var snapshot = componentClient.forTask(taskId).get(ConsultingTasks.ENGAGEMENT);
     return snapshot
       .result()
-      .<HttpResponse>map(result -> HttpResponses.ok(new ConsultingStatus(snapshot.status().name(), result)))
+      .<HttpResponse>map(
+        result -> HttpResponses.ok(new ConsultingStatus(snapshot.status().name(), result))
+      )
       .orElseGet(() -> HttpResponses.accepted(snapshot.status().name()));
   }
 }

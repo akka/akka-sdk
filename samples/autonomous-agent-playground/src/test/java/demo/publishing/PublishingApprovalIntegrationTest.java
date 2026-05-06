@@ -90,7 +90,9 @@ public class PublishingApprovalIntegrationTest extends TestKitSupport {
           .forTask(pipeline.publishTaskId())
           .get(PublishingTasks.PUBLISH);
         assertThat(published.status().name()).isEqualTo("COMPLETED");
-        assertThat(published.result().orElseThrow().url()).isEqualTo("https://blog.example.com/ai-2026");
+        assertThat(published.result().orElseThrow().url()).isEqualTo(
+          "https://blog.example.com/ai-2026"
+        );
       });
   }
 

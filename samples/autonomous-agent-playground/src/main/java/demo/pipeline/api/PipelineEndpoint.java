@@ -95,7 +95,9 @@ public class PipelineEndpoint extends AbstractHttpEndpoint {
     var snapshot = componentClient.forTask(taskId).get(PipelineTasks.COLLECT);
     return snapshot
       .result()
-      .<HttpResponse>map(result -> HttpResponses.ok(new PhaseStatus(snapshot.status().name(), result)))
+      .<HttpResponse>map(
+        result -> HttpResponses.ok(new PhaseStatus(snapshot.status().name(), result))
+      )
       .orElseGet(() -> HttpResponses.accepted(snapshot.status().name()));
   }
 }

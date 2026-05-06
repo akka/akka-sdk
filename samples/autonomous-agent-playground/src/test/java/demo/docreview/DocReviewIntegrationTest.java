@@ -68,10 +68,7 @@ public class DocReviewIntegrationTest extends TestKitSupport {
         var result = snapshot.result().orElseThrow();
         assertThat(result.compliant()).isTrue();
         assertThat(result.assessment()).isEqualTo("Compliant");
-        assertThat(result.findings()).contains(
-          "All sections present",
-          "Proper signatures"
-        );
+        assertThat(result.findings()).contains("All sections present", "Proper signatures");
       });
   }
 }
