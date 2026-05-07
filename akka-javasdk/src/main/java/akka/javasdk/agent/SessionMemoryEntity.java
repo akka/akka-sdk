@@ -21,6 +21,7 @@ import akka.javasdk.client.ComponentClient;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import akka.javasdk.eventsourcedentity.ReplicationFilter;
+import akka.javasdk.impl.agent.MemoryHistoryUtils;
 import com.typesafe.config.Config;
 import java.time.Instant;
 import java.util.*;
@@ -61,7 +62,7 @@ import org.slf4j.LoggerFactory;
  * filter will be expanded to include the other region too.
  */
 @Component(
-    id = "akka-session-memory",
+    id = SessionMemoryEntity.SESSION_MEMORY_COMPONENT_ID,
     name = "Agent Session Memory",
     description =
 """
@@ -71,7 +72,7 @@ Use this component to view or inspect the memory that the agents uses for contex
 @EnableReplicationFilter
 public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> {
 
-  private static final Logger log = LoggerFactory.getLogger(SessionMemoryEntity.class);
+  public static final String SESSION_MEMORY_COMPONENT_ID = "akka-session-memory";
 
   private final Config config;
   private final String sessionId;
@@ -91,14 +92,16 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
       long maxSizeInBytes,
       long currentSizeInBytes,
       List<SessionMessage> messages,
-      TokenUsage tokenUsage) {
+      TokenUsage tokenUsage,
+      boolean truncated,
+      long compactionSeqNr) {
 
     public State(
         String sessionId,
         long maxSizeInBytes,
         long currentSizeInBytes,
         List<SessionMessage> messages) {
-      this(sessionId, maxSizeInBytes, currentSizeInBytes, messages, TokenUsage.EMPTY);
+      this(sessionId, maxSizeInBytes, currentSizeInBytes, messages, TokenUsage.EMPTY, false, 0L);
     }
 
     private static final Logger logger = LoggerFactory.getLogger(State.class);
@@ -107,8 +110,10 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
       if (maxSizeInBytes <= 0)
         throw new IllegalArgumentException("Maximum size must be greater than 0");
       messages = messages != null ? messages : new LinkedList<>();
+      int sizeBefore = messages.size();
       currentSizeInBytes =
           enforceMaxCapacity(sessionId, messages, currentSizeInBytes, maxSizeInBytes);
+      truncated = truncated || messages.size() < sizeBefore;
     }
 
     public boolean isEmpty() {
@@ -116,7 +121,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     }
 
     public State withMaxSize(int newMaxSize) {
-      return new State(sessionId, newMaxSize, currentSizeInBytes, messages);
+      return new State(
+          sessionId, newMaxSize, currentSizeInBytes, messages, tokenUsage, truncated, compactionSeqNr);
     }
 
     public State addMessage(SessionMessage message) {
@@ -131,11 +137,33 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
         tokenUsage = tokenUsage.add(aiMessage.tokenUsage());
       }
 
-      return new State(sessionId, maxSizeInBytes, updatedSize, messages, tokenUsage);
+      return new State(
+          sessionId, maxSizeInBytes, updatedSize, messages, tokenUsage, truncated, compactionSeqNr);
     }
 
+    /**
+     * Reset the in-memory history on deletion.
+     *
+     * <p>{@link EventSourcedEntity#deleteEntity} is a soft delete: the entity is kept around for
+     * some time before being purged, can still serve reads, and rejects any further persists.
+     * After this reset {@code getHistory} returns an empty session, so the agent sees no context
+     * and never falls back to a chunked journal read. We therefore have nothing to anchor with a
+     * journal sequence number here: the {@code compactionSeqNr} carried by any prior compaction
+     * is no longer relevant on a deleted entity, and is reset to {@code 0} along with the rest
+     * of the state.
+     */
     public State clear() {
-      return new State(sessionId, maxSizeInBytes, 0, new LinkedList<>(), tokenUsage);
+      return new State(sessionId, maxSizeInBytes, 0, new LinkedList<>(), tokenUsage, false, 0L);
+    }
+
+    /**
+     * Reset the in-memory history but record the journal sequence number where compaction took
+     * place, so a subsequent chunked read from the journal can skip the events that were
+     * superseded by the compaction summary.
+     */
+    public State compact(long compactedAtSeqNr) {
+      return new State(
+          sessionId, maxSizeInBytes, 0, new LinkedList<>(), tokenUsage, false, compactedAtSeqNr);
     }
 
     private static long enforceMaxCapacity(
@@ -283,7 +311,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
       List<SessionMessage> messages, String componentId, Event userMessageEvent) {
     if (messages.stream()
         .filter(msg -> msg instanceof AiMessage)
-        .map(msg -> ((AiMessage) msg).componentId())
+        .map(SessionMessage::componentId)
         .anyMatch(aiComponentId -> !componentId.equals(aiComponentId))) {
       return effects().error("componentId in userMessage must be the same as in all aiMessages");
     }
@@ -291,34 +319,33 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     var modelAndToolEvents =
         messages.stream()
             .map(
-                msg -> {
-                  return (Event)
-                      switch (msg) {
-                        case AiMessage aiMessage ->
-                            new Event.AiMessageAdded(
-                                aiMessage.timestamp(),
-                                aiMessage.componentId(),
-                                aiMessage.text(),
-                                aiMessage.size(),
-                                0L, // filled in later
-                                aiMessage.toolCallRequests(),
-                                aiMessage.thinking(),
-                                Optional.of(aiMessage.tokenUsage()),
-                                aiMessage.attributes());
+                msg ->
+                    (Event)
+                        switch (msg) {
+                          case AiMessage aiMessage ->
+                              new Event.AiMessageAdded(
+                                  aiMessage.timestamp(),
+                                  aiMessage.componentId(),
+                                  aiMessage.text(),
+                                  aiMessage.size(),
+                                  0L, // filled in later
+                                  aiMessage.toolCallRequests(),
+                                  aiMessage.thinking(),
+                                  Optional.of(aiMessage.tokenUsage()),
+                                  aiMessage.attributes());
 
-                        case ToolCallResponse toolCallResponse ->
-                            new Event.ToolResponseMessageAdded(
-                                toolCallResponse.timestamp(),
-                                toolCallResponse.componentId(),
-                                toolCallResponse.id(),
-                                toolCallResponse.name(),
-                                toolCallResponse.text(),
-                                toolCallResponse.size());
+                          case ToolCallResponse toolCallResponse ->
+                              new Event.ToolResponseMessageAdded(
+                                  toolCallResponse.timestamp(),
+                                  toolCallResponse.componentId(),
+                                  toolCallResponse.id(),
+                                  toolCallResponse.name(),
+                                  toolCallResponse.text(),
+                                  toolCallResponse.size());
 
-                        default ->
-                            throw new IllegalArgumentException("Unsupported message: " + msg);
-                      };
-                })
+                          default ->
+                              throw new IllegalArgumentException("Unsupported message: " + msg);
+                        })
             .toList();
 
     List<Event> allEvents = new ArrayList<>();
@@ -348,39 +375,9 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     }
   }
 
-  private Optional<String> lookUpAgentRole(String componentId) {
-    return agentRegistry
-        .agentInfoOption(componentId)
-        .flatMap(agentInfo -> Optional.ofNullable(agentInfo.role()).filter(r -> !r.isBlank()));
-  }
-
-  private List<SessionMessage> applyFilter(List<SessionMessage> messages, MemoryFilter filter) {
-    return switch (filter) {
-      case MemoryFilter.Include(Set<String> ids, Set<String> roles) ->
-          messages.stream()
-              .filter(
-                  message -> {
-                    return ids.contains(message.componentId())
-                        || lookUpAgentRole(message.componentId())
-                            .filter(roles::contains)
-                            .isPresent();
-                  })
-              .toList();
-
-      case MemoryFilter.Exclude(Set<String> ids, Set<String> roles) ->
-          messages.stream()
-              .filter(
-                  message -> {
-                    return !ids.contains(message.componentId())
-                        && lookUpAgentRole(message.componentId()).filter(roles::contains).isEmpty();
-                  })
-              .toList();
-    };
-  }
-
   private List<SessionMessage> filteredMessages(List<MemoryFilter> memoryFilters) {
-    List<SessionMessage> messages = currentState().messages();
-    return memoryFilters.stream().reduce(messages, this::applyFilter, (acc, filter) -> acc);
+    return MemoryHistoryUtils.applyFilters(
+        currentState().messages(), memoryFilters, MemoryHistoryUtils.roleLookup(agentRegistry));
   }
 
   /**
@@ -398,28 +395,20 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
    * also for reads.
    */
   public Effect<SessionHistory> getHistory(GetHistoryCmd cmd) {
-    List<SessionMessage> messages = filteredMessages(cmd.memoryFilters);
+    var filtered = filteredMessages(cmd.memoryFilters);
+    var trimmed =
+        MemoryHistoryUtils.trimToLastN(
+            filtered, cmd.lastNMessages == null ? Optional.empty() : cmd.lastNMessages);
 
-    if (cmd.lastNMessages != null
-        && cmd.lastNMessages.isPresent()
-        && messages.size() > cmd.lastNMessages.get()) {
-      var lastN = messages.subList(messages.size() - cmd.lastNMessages.get(), messages.size());
-      // make sure this returns a copy of the list and not the list itself
-      return effects()
-          .reply(
-              new SessionHistory(
-                  new LinkedList<>(lastN),
-                  commandContext().sequenceNumber(),
-                  currentState().tokenUsage));
-    } else {
-      // make sure this returns a copy of the list and not the list itself
-      return effects()
-          .reply(
-              new SessionHistory(
-                  new LinkedList<>(messages),
-                  commandContext().sequenceNumber(),
-                  currentState().tokenUsage));
-    }
+    // make sure this returns a copy of the list and not the list itself
+    return effects()
+        .reply(
+            new SessionHistory(
+                new LinkedList<>(trimmed),
+                commandContext().sequenceNumber(),
+                currentState().tokenUsage,
+                currentState().truncated,
+                currentState().compactionSeqNr));
   }
 
   // keeping UserMessage instead of MultimodalUserMessage for compaction
@@ -460,47 +449,44 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
           .forEach(
               msg -> {
                 switch (msg) {
-                  case UserMessage userMessage -> {
-                    events.add(
-                        new Event.UserMessageAdded(
-                            userMessage.timestamp(),
-                            userMessage.componentId(),
-                            userMessage.text(),
-                            userMessage.size()));
-                  }
+                  case UserMessage userMessage ->
+                      events.add(
+                          new Event.UserMessageAdded(
+                              userMessage.timestamp(),
+                              userMessage.componentId(),
+                              userMessage.text(),
+                              userMessage.size()));
 
-                  case ToolCallResponse toolCallResponse -> {
-                    events.add(
-                        new Event.ToolResponseMessageAdded(
-                            toolCallResponse.timestamp(),
-                            toolCallResponse.componentId(),
-                            toolCallResponse.id(),
-                            toolCallResponse.name(),
-                            toolCallResponse.text(),
-                            toolCallResponse.size()));
-                  }
+                  case ToolCallResponse toolCallResponse ->
+                      events.add(
+                          new Event.ToolResponseMessageAdded(
+                              toolCallResponse.timestamp(),
+                              toolCallResponse.componentId(),
+                              toolCallResponse.id(),
+                              toolCallResponse.name(),
+                              toolCallResponse.text(),
+                              toolCallResponse.size()));
 
-                  case AiMessage aiMessage -> {
-                    events.add(
-                        new Event.AiMessageAdded(
-                            aiMessage.timestamp(),
-                            aiMessage.componentId(),
-                            aiMessage.text(),
-                            aiMessage.size(),
-                            0L, // filled in later
-                            aiMessage.toolCallRequests(),
-                            aiMessage.thinking(),
-                            Optional.empty(),
-                            aiMessage.attributes()));
-                  }
-                  case MultimodalUserMessage multimodalUserMessage -> {
-                    events.add(
-                        new Event.MultimodalUserMessageAdded(
-                            multimodalUserMessage.timestamp(),
-                            multimodalUserMessage.componentId(),
-                            multimodalUserMessage.contents(),
-                            multimodalUserMessage.size()));
-                  }
+                  case AiMessage aiMessage ->
+                      events.add(
+                          new Event.AiMessageAdded(
+                              aiMessage.timestamp(),
+                              aiMessage.componentId(),
+                              aiMessage.text(),
+                              aiMessage.size(),
+                              0L, // filled in later
+                              aiMessage.toolCallRequests(),
+                              aiMessage.thinking(),
+                              Optional.empty(),
+                              aiMessage.attributes()));
+
+                  case MultimodalUserMessage multimodalUserMessage ->
+                      events.add(
+                          new Event.MultimodalUserMessageAdded(
+                              multimodalUserMessage.timestamp(),
+                              multimodalUserMessage.componentId(),
+                              multimodalUserMessage.contents(),
+                              multimodalUserMessage.size()));
                 }
               });
     }
@@ -598,7 +584,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                       toolMsg.name,
                       toolMsg.content));
 
-      case Event.HistoryCleared __ -> currentState().clear();
+      case Event.HistoryCleared __ -> currentState().compact(eventContext().sequenceNumber());
 
       case Event.Deleted __ -> currentState().clear();
     };

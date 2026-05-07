@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit
 import scala.annotation.nowarn
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration.FiniteDuration
@@ -195,6 +196,7 @@ private[impl] final class AgentImpl[A <: Agent](
     dependencyProvider: Option[DependencyProvider],
     guardrails: AgentGuardrails,
     config: Config,
+    agentRegistry: AgentRegistry,
     _system: ActorSystem[_])
     extends SpiAgent {
   import AgentImpl._
@@ -205,9 +207,75 @@ private[impl] final class AgentImpl[A <: Agent](
     new ReflectiveAgentRouter[A](factory, componentDescriptor.methodInvokers, serializer)
   }
 
-  override def handleCommand(command: SpiAgent.Command): Future[SpiAgent.Effect] =
-    Future {
+  /**
+   * Read-side memory configuration for a single command: the [[SessionMemory]] client to query,
+   * plus the filters and last-N limit that should be applied to whatever the entity (or the
+   * journal-fallback path) returns. Both fields default to "no constraint", which is the right
+   * behaviour for memory providers that do not expose them (e.g. custom providers, or the
+   * `FromConfig` provider that only flips read/write).
+   */
+  private case class MemoryReadConfig(
+      client: SessionMemory,
+      filters: Seq[MemoryFilter],
+      lastN: Option[Int])
 
+  /**
+   * Wraps the effect produced for a command together with the memory configuration that was
+   * derived for it (when applicable), so [[handleCommand]] can decide how to source the additional
+   * context and how to filter/trim it.
+   */
+  private case class CommandResult(effect: SpiAgent.Effect, memory: Option[MemoryReadConfig])
+
+  override def handleCommand(command: SpiAgent.Command): Future[SpiAgent.Effect] = {
+
+    implicit val ec: ExecutionContextExecutor = system.executionContext
+
+    // Enrich the effect with additional context (the conversation history) for the model.
+    //
+    // Two sources are available, with different trade-offs:
+    //
+    //   1. SessionMemoryClient -> SessionMemoryEntity. Hits an entity that may live on a different
+    //      node and returns the whole history in a single response, so the payload is bounded by
+    //      the cross-node message-size limit. That is why the entity itself caps the history at
+    //      `akka.javasdk.agent.memory.limited-window.max-size`: when the cap is reached it drops
+    //      the oldest messages and flags the returned SessionHistory as `truncated`. Cheap when
+    //      the history fits, but cannot deliver more than the cap allows.
+    //
+    //   2. memoryContextCallback. The runtime reads the journal locally (same node) and streams
+    //      the events back chunked, so it is not bound by the cross-node message-size limit and
+    //      never has to hold the full history in memory at once. More expensive than a single
+    //      entity read, so we only pay for it when needed.
+    //
+    // Strategy: try the entity first; if its `truncated` flag is set we know it could not deliver
+    // the full history within the message-size limit, so we switch to the chunked callback to
+    // avoid sending the model an incomplete context.
+    commandToEffect(command).flatMap {
+      case CommandResult(eff: SpiAgent.RequestModelEffect, Some(memory)) =>
+        val history = memory.client.getHistory(sessionId)
+        if (!history.truncated()) {
+          // The entity already applied the configured filters and lastN limit before replying,
+          // so its messages can be passed straight to the model.
+          val ctx = toSpiContextMessages(history.messages().asScala.toVector)
+          Future.successful(eff.withAdditionalContext(ctx))
+        } else {
+          // PersistenceId is not on the classpath, so hardcoding it
+          val id = s"${SessionMemoryEntity.SESSION_MEMORY_COMPONENT_ID}|$sessionId"
+          // Start the chunked read at the most recent compaction point so we don't replay events
+          // that have already been superseded by the compaction summary now sitting in the entity.
+          // When no compaction has happened yet, compactionSeqNr is 0 and we read from the start.
+          val fromSeqNr = history.compactionSeqNr()
+          command.memoryContextCallback(new SpiAgent.MemoryContextRequest(id, fromSeqNr)).map { res =>
+            eff.withAdditionalContext(
+              journalToSpiContextMessages(res.messages, memory.filters, memory.lastN))
+          }
+        }
+      case CommandResult(other, _) => Future.successful(other)
+    }
+  }
+
+  /* effectively handles the command */
+  private def commandToEffect(command: SpiAgent.Command): Future[CommandResult] =
+    Future {
       val telemetryContext = Option(command.telemetryContext)
       val traceId = telemetryContext.flatMap { context =>
         Option(Span.fromContextOrNull(context)).map(_.getSpanContext.getTraceId)
@@ -261,8 +329,8 @@ private[impl] final class AgentImpl[A <: Agent](
             val modelProvider = overrideModelProvider.getModelProviderForAgent(componentId).getOrElse(req.modelProvider)
             val spiModelProvider = toSpiModelProvider(modelProvider)
             val metadata = MetadataImpl.toSpi(req.replyMetadata)
-            val sessionMemoryClient = deriveMemoryClient(req.memoryProvider, telemetryContext)
-            val additionalContext = toSpiContextMessages(sessionMemoryClient.getHistory(sessionId))
+            val memoryReadConfig = deriveMemoryReadConfig(req.memoryProvider, telemetryContext)
+            val sessionMemoryClient = memoryReadConfig.client
             val mcpToolEndpoints = toSpiMcpEndpoints(req.mcpTools)
 
             val allToolClasses =
@@ -299,11 +367,11 @@ private[impl] final class AgentImpl[A <: Agent](
 
             val agentRole = Reflect.readAgentRole(agent.getClass)
             val spiContentLoader = req.contentLoader.map(toSpiContentLoader)
-            new SpiAgent.RequestModelEffect(
+            val effect = new SpiAgent.RequestModelEffect(
               modelProvider = spiModelProvider,
               systemMessage = systemMessage,
               userMessage = toSpiUserMessage(req.userMessage),
-              additionalContext = additionalContext,
+              additionalContext = Vector.empty[ContextMessage],
               toolDescriptors = toolDescriptors,
               callToolFunction = request => Future(toolExecutor.execute(request))(sdkExecutionContext),
               mcpClientDescriptors = mcpToolEndpoints,
@@ -316,24 +384,28 @@ private[impl] final class AgentImpl[A <: Agent](
               requestGuardrails = guardrails.modelRequestGuardrails,
               responseGuardrails = guardrails.modelResponseGuardrails,
               contentLoader = spiContentLoader)
+            CommandResult(effect, Some(memoryReadConfig))
 
           case NoPrimaryEffect =>
-            errorOrReply match {
+            val effect = errorOrReply match {
               case Left(err) =>
                 new SpiAgent.ErrorEffect(err)
               case Right((reply, metadata)) =>
                 new SpiAgent.ReplyEffect(reply, metadata)
             }
+            CommandResult(effect, None)
         }
 
       } catch {
         case e: CommandException =>
           val serializedException = serializer.toBytes(e)
-          new SpiAgent.ErrorEffect(error = new SpiAgent.Error(e.getMessage, Some(serializedException)))
+          CommandResult(
+            new SpiAgent.ErrorEffect(error = new SpiAgent.Error(e.getMessage, Some(serializedException))),
+            None)
         case e: HandlerNotFoundException =>
           throw AgentException(command.name, e.getMessage, Some(e))
         case BadRequestException(msg) =>
-          new SpiAgent.ErrorEffect(error = new SpiAgent.Error(msg, None))
+          CommandResult(new SpiAgent.ErrorEffect(error = new SpiAgent.Error(msg, None)), None)
         case e: AgentException => throw e
         case NonFatal(error) =>
           throw AgentException(command.name, s"Unexpected failure: $error", Some(error))
@@ -441,20 +513,27 @@ private[impl] final class AgentImpl[A <: Agent](
       case other => throw new IllegalArgumentException(s"Unsupported remote mcp tools impl $other")
     }
 
-  private def deriveMemoryClient(
+  private def deriveMemoryReadConfig(
       memoryProvider: MemoryProvider,
-      telemetryContext: Option[OtelContext]): SessionMemory = {
+      telemetryContext: Option[OtelContext]): MemoryReadConfig = {
     memoryProvider match {
       case _: MemoryProvider.Disabled =>
-        new SessionMemoryClient(componentClient(telemetryContext), MemorySettings.disabled())
+        MemoryReadConfig(
+          new SessionMemoryClient(componentClient(telemetryContext), MemorySettings.disabled()),
+          Seq.empty,
+          None)
 
       case p: MemoryProvider.LimitedWindowMemoryProvider =>
-        new SessionMemoryClient(
-          componentClient(telemetryContext),
-          new MemorySettings(p.read(), p.write(), p.readLastN(), p.filters()))
+        MemoryReadConfig(
+          new SessionMemoryClient(
+            componentClient(telemetryContext),
+            new MemorySettings(p.read(), p.write(), p.readLastN(), p.filters())),
+          p.filters().asScala.toSeq,
+          p.readLastN().toScala.map(_.intValue()))
 
       case p: MemoryProvider.CustomMemoryProvider =>
-        p.sessionMemory()
+        // Custom providers own their own filtering/limit semantics; we don't reapply at this layer.
+        MemoryReadConfig(p.sessionMemory(), Seq.empty, None)
 
       case p: MemoryProvider.FromConfig =>
         val actualPath =
@@ -462,7 +541,10 @@ private[impl] final class AgentImpl[A <: Agent](
             "akka.javasdk.agent.memory"
           else
             p.configPath()
-        new SessionMemoryClient(componentClient(telemetryContext), config.getConfig(actualPath))
+        MemoryReadConfig(
+          new SessionMemoryClient(componentClient(telemetryContext), config.getConfig(actualPath)),
+          Seq.empty,
+          None)
     }
   }
 
@@ -526,52 +608,70 @@ private[impl] final class AgentImpl[A <: Agent](
     }
   }
 
-  private def toSpiContextMessages(sessionHistory: SessionHistory): Vector[SpiAgent.ContextMessage] = {
-    import scala.jdk.CollectionConverters._
-
-    sessionHistory
-      .messages()
-      .asScala
-      .map {
-        case m: AiMessage =>
-          val toolRequests = m
-            .toolCallRequests()
-            .asScala
-            .map { req =>
-              new SpiAgent.ToolCallRequest(req.id(), req.name(), req.arguments())
-            }
-            .toSeq
-          new SpiAgent.ContextMessage.AiMessage(
-            m.text(),
-            toolRequests,
-            m.thinking().toScala,
-            m.attributes().asScala.toMap)
-        case m: UserMessage =>
-          new SpiAgent.ContextMessage.UserMessage(m.text())
-
-        case m: MultimodalUserMessage =>
-          val contents = m
-            .contents()
-            .asScala
-            .map {
-              case content: SessionMessage.MessageContent.TextMessageContent =>
-                new SpiAgent.TextMessageContent(content.text())
-              case content: SessionMessage.MessageContent.ImageUriMessageContent =>
-                new SpiAgent.ImageUriMessageContent(
-                  URI.create(content.uri()),
-                  toSpiDetailLevel(content.detailLevel()),
-                  content.mimeType().toScala)
-              case content: SessionMessage.MessageContent.PdfUriMessageContent =>
-                new SpiAgent.PdfUriMessageContent(URI.create(content.uri()))
-            }
-            .toSeq
-          new SpiAgent.ContextMessage.UserMessage(contents)
-        case m: ToolCallResponse =>
-          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), m.text())
-        case m =>
-          throw new IllegalStateException("Unsupported message type " + m.getClass.getName)
+  private def journalToSpiContextMessages(
+      events: Vector[BytesPayload],
+      filters: Seq[MemoryFilter],
+      lastN: Option[Int]): Vector[SpiAgent.ContextMessage] = {
+    val messages = events
+      .map(serializer.fromBytes)
+      .collect { case event: SessionMemoryEntity.Event =>
+        SessionMemoryEventConverter.convert(event).toScala
       }
-      .toVector
+      .flatten
+
+    // Apply the same filter + lastN logic the entity uses, so the model sees an equivalent slice
+    // of history regardless of whether we read it from the entity or fell back to the journal.
+    val filtered =
+      MemoryHistoryUtils.applyFilters(
+        messages.asJava,
+        filters.asJava,
+        MemoryHistoryUtils.roleLookup(agentRegistry))
+    val trimmed =
+      MemoryHistoryUtils.trimToLastN(filtered, lastN.map(Integer.valueOf).toJava)
+
+    toSpiContextMessages(trimmed.asScala.toVector)
+  }
+
+  private def toSpiContextMessages(messages: Vector[SessionMessage]): Vector[SpiAgent.ContextMessage] = {
+    messages.map {
+      case m: AiMessage =>
+        val toolRequests = m
+          .toolCallRequests()
+          .asScala
+          .map { req =>
+            new SpiAgent.ToolCallRequest(req.id(), req.name(), req.arguments())
+          }
+          .toSeq
+        new SpiAgent.ContextMessage.AiMessage(
+          m.text(),
+          toolRequests,
+          m.thinking().toScala,
+          m.attributes().asScala.toMap)
+      case m: UserMessage =>
+        new SpiAgent.ContextMessage.UserMessage(m.text())
+
+      case m: MultimodalUserMessage =>
+        val contents = m
+          .contents()
+          .asScala
+          .map {
+            case content: SessionMessage.MessageContent.TextMessageContent =>
+              new SpiAgent.TextMessageContent(content.text())
+            case content: SessionMessage.MessageContent.ImageUriMessageContent =>
+              new SpiAgent.ImageUriMessageContent(
+                URI.create(content.uri()),
+                toSpiDetailLevel(content.detailLevel()),
+                content.mimeType().toScala)
+            case content: SessionMessage.MessageContent.PdfUriMessageContent =>
+              new SpiAgent.PdfUriMessageContent(URI.create(content.uri()))
+          }
+          .toSeq
+        new SpiAgent.ContextMessage.UserMessage(contents)
+      case m: ToolCallResponse =>
+        new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), m.text())
+      case m =>
+        throw new IllegalStateException("Unsupported message type " + m.getClass.getName)
+    }
   }
 
   @nowarn("msg=deprecated")

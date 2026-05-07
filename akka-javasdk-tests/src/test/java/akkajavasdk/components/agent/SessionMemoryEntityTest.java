@@ -530,6 +530,130 @@ public class SessionMemoryEntityTest {
   }
 
   @Test
+  public void shouldNotMarkAsTruncatedWhenWithinLimit() {
+    // given
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
+    var timestamp = Instant.now();
+
+    var userMessage = new UserMessage(timestamp, "Hello", COMPONENT_ID);
+    var aiMessage = new AiMessage(timestamp, "Hi there!", COMPONENT_ID);
+
+    // when
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage, aiMessage));
+
+    EventSourcedResult<SessionHistory> historyResult =
+        testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
+
+    // then
+    assertThat(historyResult.getReply().truncated()).isFalse();
+  }
+
+  @Test
+  public void shouldMarkAsTruncatedAfterEvictionAndKeepFlagSticky() {
+    // given
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
+    var timestamp = Instant.now();
+
+    String userMsg1 = "First message"; // 13 bytes
+    String aiMsg1 = "First response"; // 14 bytes
+    String userMsg2 = "Second message"; // 14 bytes
+    String aiMsg2 = "Second response"; // 15 bytes
+    String userMsg3 = "Third message"; // 13 bytes
+    String aiMsg3 = "Third response"; // 14 bytes
+
+    var userMessage1 = new UserMessage(timestamp, userMsg1, COMPONENT_ID);
+    var aiMessage1 = new AiMessage(timestamp, aiMsg1, COMPONENT_ID);
+    var userMessage2 = new UserMessage(timestamp.plusMillis(1), userMsg2, COMPONENT_ID);
+    var aiMessage2 = new AiMessage(timestamp.plusMillis(1), aiMsg2, COMPONENT_ID);
+    var userMessage3 = new UserMessage(timestamp.plusMillis(2), userMsg3, COMPONENT_ID);
+    var aiMessage3 = new AiMessage(timestamp.plusMillis(2), aiMsg3, COMPONENT_ID);
+
+    // tight buffer that fits one and a half interactions, so adding the second forces eviction
+    var limitedBuffer = new SessionMemoryEntity.LimitedWindow(45);
+    testKit.method(SessionMemoryEntity::setLimitedWindow).invoke(limitedBuffer);
+
+    // when - first interaction fits within the limit
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage1, aiMessage1));
+    SessionHistory afterFirst =
+        testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory).getReply();
+
+    // then
+    assertThat(afterFirst.truncated()).isFalse();
+
+    // when - second interaction triggers eviction of the first one
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage2, aiMessage2));
+    SessionHistory afterSecond =
+        testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory).getReply();
+
+    // then
+    assertThat(afterSecond.truncated()).isTrue();
+
+    // when - subsequent interaction (no further eviction needed) keeps the flag sticky
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage3, aiMessage3));
+    SessionHistory afterThird =
+        testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory).getReply();
+
+    // then
+    assertThat(afterThird.truncated()).isTrue();
+  }
+
+  @Test
+  public void shouldResetTruncatedFlagAfterCompaction() {
+    // given
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
+    var timestamp = Instant.now();
+
+    var userMessage1 = new UserMessage(timestamp, "First message", COMPONENT_ID);
+    var aiMessage1 = new AiMessage(timestamp, "First response", COMPONENT_ID);
+    var userMessage2 = new UserMessage(timestamp.plusMillis(1), "Second message", COMPONENT_ID);
+    var aiMessage2 = new AiMessage(timestamp.plusMillis(1), "Second response", COMPONENT_ID);
+
+    // tight buffer that forces eviction on the second interaction
+    var limitedBuffer = new SessionMemoryEntity.LimitedWindow(45);
+    testKit.method(SessionMemoryEntity::setLimitedWindow).invoke(limitedBuffer);
+
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage1, aiMessage1));
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage2, aiMessage2));
+
+    SessionHistory beforeCompaction =
+        testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory).getReply();
+    assertThat(beforeCompaction.truncated()).isTrue();
+
+    // when - compact replaces history with a summary
+    var summaryUser = new UserMessage(timestamp.plusMillis(2), "Summary?", COMPONENT_ID);
+    var summaryAi = new AiMessage(timestamp.plusMillis(2), "Summary.", COMPONENT_ID);
+    var compactCmd =
+        new SessionMemoryEntity.CompactionCmd(
+            summaryUser, summaryAi, beforeCompaction.sequenceNumber());
+    testKit.method(SessionMemoryEntity::compactHistory).invoke(compactCmd);
+
+    SessionHistory afterCompaction =
+        testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory).getReply();
+
+    // then - HistoryCleared resets the truncated flag for the new (summarised) history
+    assertThat(afterCompaction.truncated()).isFalse();
+    assertThat(afterCompaction.messages()).containsExactly(summaryUser, summaryAi);
+  }
+
+  @Test
   public void shouldRejectInvalidBufferSize() {
     // given
     var testKit =

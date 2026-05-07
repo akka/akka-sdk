@@ -815,6 +815,7 @@ private final class Sdk(
             dependencyProviderOpt,
             agentGuardrails,
             applicationConfig,
+            agentRegistry,
             system)
 
         }
