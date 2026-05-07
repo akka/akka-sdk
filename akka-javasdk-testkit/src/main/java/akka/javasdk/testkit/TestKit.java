@@ -142,6 +142,12 @@ public class TestKit {
       return new MockedEventing(new HashMap<>(mockedIncomingEvents), copy);
     }
 
+    public MockedEventing withStreamOutgoingMessages(String service, String streamId) {
+      Map<String, Set<String>> copy = new HashMap<>(mockedOutgoingEvents);
+      copy.compute(STREAM, updateValues(service + "/" + streamId));
+      return new MockedEventing(new HashMap<>(mockedIncomingEvents), copy);
+    }
+
     @NotNull
     private BiFunction<String, Set<String>, Set<String>> updateValues(String componentId) {
       return (key, currentValues) -> {
@@ -220,6 +226,11 @@ public class TestKit {
     boolean hasTopicDestination(String topic) {
       Set<String> values = mockedOutgoingEvents.get(TOPIC);
       return values != null && values.contains(topic);
+    }
+
+    boolean hasStreamDestination(String service, String streamId) {
+      Set<String> values = mockedOutgoingEvents.get(STREAM);
+      return values != null && values.contains(service + "/" + streamId);
     }
 
     private boolean checkExistence(String type, String name) {
@@ -513,6 +524,25 @@ public class TestKit {
           aclEnabled,
           eventingSupport,
           mockedEventing.withTopicOutgoingMessages(topic),
+          dependencyProvider,
+          additionalConfig,
+          disabledComponents,
+          overrideDisabledComponents,
+          modelProvidersByAgentId,
+          httpMocks,
+          grpcMocks);
+    }
+
+    /**
+     * Capture the outgoing messages produced by a {@code @Produce.ServiceStream} for test
+     * assertions.
+     */
+    public Settings withStreamOutgoingMessages(String service, String streamId) {
+      return new Settings(
+          serviceName,
+          aclEnabled,
+          eventingSupport,
+          mockedEventing.withStreamOutgoingMessages(service, streamId),
           dependencyProvider,
           additionalConfig,
           disabledComponents,
@@ -820,8 +850,15 @@ public class TestKit {
       // actual message codec instance not available until runtime/sdk started, thus this is called
       // after discovery happens
       eventingTestKit =
-          EventingTestKit.start(
-              runtimeActorSystem, "0.0.0.0", eventingTestKitPort, new Serializer());
+          akka.javasdk.testkit.impl.EventingTestKitImpl.start(
+              runtimeActorSystem,
+              "0.0.0.0",
+              eventingTestKitPort,
+              scala.Option.apply(runtimeHost),
+              scala.Option.apply((Integer) runtimePort),
+              scala.Option.apply("impersonate-service"),
+              scala.Option.apply("testkit"),
+              new Serializer());
     }
   }
 
@@ -1319,6 +1356,31 @@ public class TestKit {
       throwMissingConfigurationException("Topic " + topic);
     }
     return eventingTestKit.getTopicOutgoingMessages(topic);
+  }
+
+  /**
+   * Get outgoing messages produced by a {@code @Produce.ServiceStream} producer in the service
+   * under test. The {@code service} must match the service name used by consumers in their
+   * {@code @Consume.FromServiceStream} annotation.
+   *
+   * <p>Note: the {@code service} value is used by the testkit as a lookup key (and must match what
+   * was registered via {@link Settings#withStreamOutgoingMessages(String, String)}); the underlying
+   * subscription itself is resolved against the service-under-test by {@code streamId}.
+   *
+   * <p>Each call returns a handle whose subscription replays events from the beginning of the
+   * stream. In a suite that shares a single {@code TestKit} across multiple tests, call {@link
+   * EventingTestKit.OutgoingMessages#clear()} at the start of each test to drop events produced by
+   * prior tests.
+   *
+   * @param service service name
+   * @param streamId service stream id
+   */
+  public EventingTestKit.OutgoingMessages getStreamOutgoingMessages(
+      String service, String streamId) {
+    if (!settings.mockedEventing.hasStreamDestination(service, streamId)) {
+      throwMissingConfigurationException("Stream " + service + "/" + streamId);
+    }
+    return eventingTestKit.getStreamOutgoingMessages(service, streamId);
   }
 
   private void throwMissingConfigurationException(String hint) {
