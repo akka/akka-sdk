@@ -273,7 +273,7 @@ class SdkRunner private (
   def applicationConfig: Config =
     ApplicationConfig.loadApplicationConf
 
-  override lazy val expectedRuntimeVersion: Option[String] = Some(BuildInfo.runtimeVersion)
+  override def expectedRuntimeVersion: Option[String] = Some(BuildInfo.runtimeVersion)
 
   override lazy val getSettings: SpiSettings =
     extractSpiSettings(applicationConfig)
