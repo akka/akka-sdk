@@ -66,7 +66,7 @@ private[javasdk] final case class ComponentClientImpl(
   override def forWorkflow(workflowId: String): WorkflowClient =
     if (workflowId eq null) throw new NullPointerException("Workflow id is null")
     else if (workflowId.isEmpty) throw new IllegalArgumentException("Empty workflow id now allowed")
-    else WorkflowClientImpl(runtimeComponentClients.workFlowClient, serializer, callMetadata, workflowId)
+    else WorkflowClientImpl(runtimeComponentClients.workflowClient, serializer, callMetadata, workflowId)
 
   override def forView(): ViewClient = ViewClientImpl(runtimeComponentClients.viewClient, serializer, callMetadata)
 
