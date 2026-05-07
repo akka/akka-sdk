@@ -259,6 +259,7 @@ public abstract class Agent {
        * @deprecated use contentLoader
        */
       @Deprecated
+      @SuppressWarnings("removal")
       Builder imageLoader(ImageLoader imageLoader);
 
       /**
@@ -561,6 +562,17 @@ public abstract class Agent {
       OnSuccessBuilder userMessage(String message);
 
       /**
+       * The user message to the AI model, supporting multimodal content.
+       *
+       * <p>This overload accepts a {@link UserMessage} which can contain multiple content types,
+       * currently text and images.
+       *
+       * @param message The user message containing multimodal content (text, images, etc.)
+       * @return The next builder stage for configuring the effect
+       */
+      OnSuccessBuilder userMessage(UserMessage message);
+
+      /**
        * Adds one or more tool instances or classes that the AI model can use.
        *
        * <p>Each argument can be either an object instance or a {@link Class} object. If a {@link
@@ -626,8 +638,10 @@ public abstract class Agent {
        *
        * @param imageLoader The image loader implementation
        * @return this builder for method chaining
-       * @see ImageLoader
+       * @deprecated use contentLoader
        */
+      @Deprecated
+      @SuppressWarnings("removal")
       Builder imageLoader(ImageLoader imageLoader);
 
       /**

@@ -154,7 +154,8 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
                   metadata,
                   deleteEntity = false,
                   stateMetadata,
-                  replicationFilter = commandEffect.replFilter.toSpi))
+                  replicationFilter = commandEffect.replFilter.toSpi,
+                  ttl = commandEffect.ttl))
           }
 
         case DeleteEntity =>
@@ -165,12 +166,13 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
               Future.successful(
                 new SpiEventSourcedEntity.PersistEffect(
                   events = Vector.empty,
-                  null,
+                  emptyState,
                   reply,
                   metadata,
                   deleteEntity = true,
                   Vector.empty,
-                  replicationFilter = commandEffect.replFilter.toSpi))
+                  replicationFilter = commandEffect.replFilter.toSpi,
+                  ttl = None))
           }
 
         case NoPrimaryEffect =>

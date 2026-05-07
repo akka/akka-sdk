@@ -54,6 +54,25 @@ public class CounterKeyValueEntityTest {
   }
 
   @Test
+  public void testInitialState() {
+    KeyValueEntityTestKit<Integer, CounterValueEntity> testKit =
+        KeyValueEntityTestKit.ofEntityWithState(ctx -> new CounterValueEntity(), 42);
+    assertEquals(42, testKit.getState());
+    KeyValueEntityResult<String> result = testKit.method(CounterValueEntity::increaseBy).invoke(8);
+    assertTrue(result.isReply());
+    assertEquals(50, testKit.getState());
+  }
+
+  @Test
+  public void testInitialStateResetOnDelete() {
+    KeyValueEntityTestKit<Integer, CounterValueEntity> testKit =
+        KeyValueEntityTestKit.ofEntityWithState(ctx -> new CounterValueEntity(), 42);
+    testKit.method(CounterValueEntity::delete).invoke();
+    assertTrue(testKit.isDeleted());
+    assertEquals(0, testKit.getState());
+  }
+
+  @Test
   public void testDeleteValueEntity() {
     KeyValueEntityTestKit<Integer, CounterValueEntity> testKit =
         KeyValueEntityTestKit.of(ctx -> new CounterValueEntity());

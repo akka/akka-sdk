@@ -1,10 +1,10 @@
 = akka specify
 
-Initialize and manage AI-assisted Akka development projects.
+[Incubating] Initialize and manage AI-assisted Akka development projects.
 
 == Synopsis
 
-The 'akka specify' commands set up Akka projects for AI-assisted development.
+[Incubating] The 'akka specify' commands set up Akka projects for AI-assisted development.
 Use 'akka specify init' to create a new project with all the resources needed for AI coding agents, including slash commands, templates, and MCP configuration.
 
 == Options
@@ -26,7 +26,7 @@ Use 'akka specify init' to create a new project with all the resources needed fo
   -q, --quiet               set quiet output (helpful when used as part of a script)
       --timeout duration    client command timeout (default 10s)
       --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
-  -v, --verbose             set verbose output
+      --verbose             set verbose output
 ----
 
 == SEE ALSO

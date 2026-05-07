@@ -1,0 +1,23 @@
+= /akka.tasks
+
+Generate an actionable, dependency-ordered task list.
+
+== Usage
+
+[source]
+----
+/akka:tasks
+----
+
+== Description
+
+Converts the clarified specification and implementation plan into a formal set of work items in `tasks.md`. The agent identifies task dependencies and which tasks can be executed in parallel.
+
+Review and discuss the generated tasks with your agent before proceeding to implementation.
+
+== See also
+
+* xref:sdk:spec-driven-development.adoc[]
+* xref:reference:specify/index.adoc[]
+* xref:reference:specify/plan.adoc[]
+* xref:reference:specify/implement.adoc[]

@@ -35,7 +35,7 @@ public class DelegatingServiceEndpoint {
       .invoke(); // <4>
 
     if (response.status().isSuccess()) { // <5>
-      return "New counter vaue: " + response.body().value;
+      return "New counter value: " + response.body().value;
     } else {
       throw new RuntimeException("Counter returned unexpected status: " + response.status());
     }

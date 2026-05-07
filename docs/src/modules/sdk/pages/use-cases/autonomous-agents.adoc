@@ -25,9 +25,9 @@ Build agents that operate independently to process data, make decisions, and tak
 
 The following sample projects demonstrate this pattern:
 
-* https://github.com/akka-samples/changelog-agent[release-note-summarizer] -- agent that autonomously summarizes release notes from upstream sources
-* https://github.com/akka-samples/medical-tagging-agent[medical-discharge-tagging] -- agent that classifies and tags medical discharge records
-* https://github.com/akka-samples/temperature-monitoring-agent[temperature-monitoring] -- agent that monitors IoT sensor data and triggers alerts
+* https://github.com/akka-samples/changelog-agent[release-note-summarizer,window="new"] -- agent that autonomously summarizes release notes from upstream sources
+* https://github.com/akka-samples/medical-tagging-agent[medical-discharge-tagging,window="new"] -- agent that classifies and tags medical discharge records
+* https://github.com/akka-samples/temperature-monitoring-agent[temperature-monitoring,window="new"] -- agent that monitors IoT sensor data and triggers alerts
 
 == See Also
 

@@ -7,6 +7,7 @@ import akka.javasdk.annotations.Component;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.keyvalueentity.KeyValueEntityContext;
 import com.example.domain.Counter;
+import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,6 +63,17 @@ public class CounterEntity extends KeyValueEntity<Counter> { // <2>
   }
 
   // end::delete[]
+
+  // tag::expire[]
+  public Effect<Done> setWithExpiry(int number) {
+    Counter newCounter = new Counter(number);
+    return effects()
+      .updateState(newCounter)
+      .expireAfter(Duration.ofDays(30)) // <1>
+      .thenReply(done());
+  }
+
+  // end::expire[]
 
   // tag::query[]
   public ReadOnlyEffect<Counter> get() {

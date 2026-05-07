@@ -10,6 +10,7 @@ import static java.time.Duration.ofSeconds;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
+import akka.javasdk.workflow.Workflow.RecoverStrategy;
 import akkajavasdk.components.actions.echo.Message;
 import akkajavasdk.components.workflowentities.FailingCounterEntity;
 import akkajavasdk.components.workflowentities.FailingCounterState;
@@ -59,8 +60,8 @@ public class WorkflowWithTimeout extends Workflow<FailingCounterState> {
     return workflow()
         .timeout(ofSeconds(1))
         .defaultStepTimeout(ofMillis(999))
-        .failoverTo(counterFailoverStepName, 3, maxRetries(1))
-        .addStep(counterInc, maxRetries(1).failoverTo(counterStepName))
+        .failoverTo(counterFailoverStepName, 3, RecoverStrategy.maxRetries(1))
+        .addStep(counterInc, RecoverStrategy.maxRetries(1).failoverTo(counterStepName))
         .addStep(counterIncFailover);
   }
 

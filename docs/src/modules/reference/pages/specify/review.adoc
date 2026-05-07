@@ -1,0 +1,20 @@
+= /akka.review
+
+Review implemented code against the spec, plan, and constitution.
+
+== Usage
+
+[source]
+----
+/akka:review
+----
+
+== Description
+
+Reviews the generated code to verify it conforms to the feature specification, implementation plan, and project constitution. Use this after implementation to catch deviations before they compound.
+
+== See also
+
+* xref:sdk:spec-driven-development.adoc[]
+* xref:reference:specify/index.adoc[]
+* xref:reference:specify/implement.adoc[]

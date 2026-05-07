@@ -6,6 +6,7 @@ Adoptium
 Agrona
 Aiven
 [Aa]kka
+allowedAlgorithms
 allowMethods
 allowOrigins
 [Aa]ntora
@@ -35,6 +36,7 @@ Cembaluk
 checkpointing
 classname
 clientCertificate
+clientId
 cloudName
 codegen
 [Cc]omposable
@@ -65,12 +67,15 @@ evolvability
 effectful
 enum
 env
+etcd
 eventhubs
 exfiltration
+expirationSeconds
 externalSecret
 facto
 failover
 fanout
+gcp
 gcpKey
 getOptional
 [Gg]itHub
@@ -100,6 +105,7 @@ interconnectivity
 interoperate
 iss
 Javadoc
+jmesPath
 Json
 JUnit
 JVM's
@@ -109,6 +115,8 @@ JVM's
 [Kk]alix
 Keycloak
 keyId
+keySets
+keysets?
 Kolesnikov
 Lagom
 [Ll]angchain4j
@@ -142,6 +150,7 @@ Okta
 onboarding
 operationalized
 (?i)OpenID
+OpenTelemetry
 (?i)OSGi
 (?i)OTLP
 parseable
@@ -158,10 +167,12 @@ Podman
 Postgres
 PostgreSQL
 precalculated
+principalSet
 preconfigured
 prefetching
 prepended
 prepending
+projectId
 [Pp]rometheus
 [Pp]ropagations
 proto
@@ -178,6 +189,7 @@ rebalancing
 recoverability
 recurse
 redeliveries
+refreshInterval
 remoting
 Remoting
 regionalization
@@ -188,6 +200,7 @@ reshard
 resourceVersion
 [Rr]eusability
 RNGs
+roleArn
 runtimes
 runtime's
 (?i)RPC
@@ -224,6 +237,7 @@ subtree
 Szymanski
 [Tt]elemedicine
 Temurin
+tenantId
 [Tt]estKit
 text_search
 [Tt]imeframe
@@ -252,10 +266,12 @@ url
 userid
 valueFrom
 versionHistory
+versionLabel
 VMs
 volumeMounts
 [Ww]alkthrough
 winget
+workloadIdentity
 Yugabyte
 Zolotko
 [Zz]sh
@@ -284,6 +300,7 @@ pgvector
 Linode
 classpath
 kubectl
+kubelet
 dns
 DNS
 Fitbit

@@ -28,6 +28,7 @@ import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.grpc.internal.JavaMetadataImpl
+import akka.grpc.javadsl.AkkaGrpcClient
 import akka.grpc.javadsl.Metadata
 import akka.http.javadsl.model.HttpHeader
 import akka.http.scaladsl.model.headers.RawHeader
@@ -180,7 +181,8 @@ object SdkRunner {
             mockedEventing = SpiMockedEventingSettings.empty,
             testSetting = new SpiTestSettings(testMode = false, debugTracing = false),
             selfServiceName = None,
-            backoffice = backofficeSettings))
+            backoffice = backofficeSettings,
+            objectStorageBuckets = Seq.empty))
       } else None
 
     val agentInteractionLogEnabled =
@@ -219,7 +221,9 @@ object SdkRunner {
         case "manual"                 => SpiDeployedEventingSettings.Manual
       }
 
-    new SpiDeployedEventingSettings(Seq(new SpiDeployedEventingSettings.GooglePubSubOverrides(Some(googlePubSubMode))))
+    new SpiDeployedEventingSettings(
+      overrides = Seq(new SpiDeployedEventingSettings.GooglePubSubOverrides(Some(googlePubSubMode))),
+      startEventingFrom = None)
   }
 }
 
@@ -230,19 +234,42 @@ object SdkRunner {
 class SdkRunner private (
     dependencyProvider: Option[DependencyProvider],
     disabledComponents: Set[Class[_]],
-    overrideDisabledComponents: Boolean)
+    overrideDisabledComponents: Boolean,
+    httpMockLookup: String => Option[
+      java.util.function.Function[akka.http.javadsl.model.HttpRequest, akka.http.javadsl.model.HttpResponse]],
+    grpcMockLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient])
     extends akka.runtime.sdk.spi.Runner {
   private val startedPromise = Promise[StartupContext]()
 
   // default constructor for runtime creation
-  def this() = this(None, Set.empty[Class[_]], false)
+  def this() = this(None, Set.empty[Class[_]], false, _ => None, _ => None)
 
-  // constructor for testkit
+  // constructor for testkit without mocks
   def this(
       dependencyProvider: java.util.Optional[DependencyProvider],
       disabledComponents: java.util.Set[Class[_]],
       overrideDisabledComponents: Boolean) =
-    this(dependencyProvider.toScala, disabledComponents.asScala.toSet, overrideDisabledComponents)
+    this(dependencyProvider.toScala, disabledComponents.asScala.toSet, overrideDisabledComponents, _ => None, _ => None)
+
+  // constructor for testkit with mock lookups — only the testkit passes non-empty lookups here;
+  // the default no-arg constructor used in prod/dev passes no-op lookups and mocks cannot fire.
+  def this(
+      dependencyProvider: java.util.Optional[DependencyProvider],
+      disabledComponents: java.util.Set[Class[_]],
+      overrideDisabledComponents: Boolean,
+      httpMockLookup: java.util.function.Function[
+        String,
+        java.util.Optional[
+          java.util.function.Function[akka.http.javadsl.model.HttpRequest, akka.http.javadsl.model.HttpResponse]]],
+      grpcMockLookup: java.util.function.Function[
+        GrpcClientProviderImpl.ClientKey,
+        java.util.Optional[AkkaGrpcClient]]) =
+    this(
+      dependencyProvider.toScala,
+      disabledComponents.asScala.toSet,
+      overrideDisabledComponents,
+      (name: String) => httpMockLookup.apply(name).toScala,
+      (key: GrpcClientProviderImpl.ClientKey) => grpcMockLookup.apply(key).toScala)
 
   def applicationConfig: Config =
     ApplicationConfig.loadApplicationConf
@@ -267,7 +294,9 @@ class SdkRunner private (
         overrideDisabledComponents,
         startedPromise,
         getSettings,
-        startContext.sanitizer)
+        startContext.sanitizer,
+        httpMockLookup,
+        grpcMockLookup)
       Future.successful(app.spiComponents)
     } catch {
       case NonFatal(ex) =>
@@ -350,7 +379,10 @@ private final class Sdk(
     overrideDisabledComponents: Boolean,
     startedPromise: Promise[StartupContext],
     spiSettings: SpiSettings,
-    runtimeSanitizer: SpiSanitizerEngine) {
+    runtimeSanitizer: SpiSanitizerEngine,
+    httpMockLookup: String => Option[
+      java.util.function.Function[akka.http.javadsl.model.HttpRequest, akka.http.javadsl.model.HttpResponse]],
+    grpcMockLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient]) {
 
   import Sdk._
 
@@ -384,7 +416,9 @@ private final class Sdk(
     remoteIdentification.map(ri => RawHeader(ri.headerName, ri.headerValue)),
     sdkSettings,
     // We know it is a dispatcher/executor
-    sdkExecutionContext.asInstanceOf[Executor])
+    sdkExecutionContext.asInstanceOf[Executor],
+    None,
+    httpMockLookup)
 
   private lazy val userServiceConfig = {
     // hiding these paths from the config provided to user
@@ -399,7 +433,8 @@ private final class Sdk(
     system,
     sdkSettings,
     userServiceConfig,
-    remoteIdentification.map(ri => GrpcClientProviderImpl.AuthHeaders(ri.headerName, ri.headerValue)))
+    remoteIdentification.map(ri => GrpcClientProviderImpl.AuthHeaders(ri.headerName, ri.headerValue)),
+    grpcMockLookup)
 
   private lazy val overrideModelProvider = new OverrideModelProvider
 
@@ -632,6 +667,12 @@ private final class Sdk(
                 case p if p == classOf[KeyValueEntityContext] => context
                 case s if s == classOf[Sanitizer]             => sanitizer
                 case r if r == classOf[AgentRegistry]         => agentRegistry
+                case p if p == classOf[NotificationPublisher[_]] =>
+                  new NotificationPublisher[Any] {
+                    override def publish(msg: Any): Unit = {
+                      factoryContext.publishToTopic.apply(serializer.toBytes(msg))
+                    }
+                  }
               })
         }
         keyValueEntityDescriptors :+=

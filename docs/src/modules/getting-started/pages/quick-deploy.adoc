@@ -90,7 +90,7 @@ Make an HTTP request to the service:
 
 [source, command line]
 ----
-curl -i -XPOST --location "https://spring-tooth-3406.gcp-us-east1.akka.services[http://localhost:9000]/hello" \
+curl -i -XPOST --location "https://spring-tooth-3406.gcp-us-east1.akka.services/hello" \
     --header "Content-Type: application/json" \
     --data '{"user": "alice", "text": "Hello, I am Alice"}'
 ----
