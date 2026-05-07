@@ -15,7 +15,7 @@ The OpenTelemetry `Meter` interface can be xref:setup-and-dependency-injection.a
 include::example$key-value-shopping-cart/src/main/java/com/example/application/ShoppingCartMetrics.java[tag=metrics]
 ----
 <1> Injects the OpenTelemetry `Meter` provided by the Akka runtime.
-<2> Creates a custom counter metric. Please follow Open Telemetry
+<2> Creates a custom counter metric. Please follow Open Telemetry semantic conventions. 
 <3> Exposes a convenient accessor method.
 
 Use it in your components.
