@@ -7,11 +7,13 @@ package akka.javasdk.impl
 import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
+import java.time.Instant
 import java.util
 import java.util.Locale
 import java.util.Optional
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.Executor
+
 import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -22,6 +24,7 @@ import scala.jdk.OptionConverters.RichOption
 import scala.jdk.OptionConverters.RichOptional
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
+
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -139,8 +142,6 @@ import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
-
-import java.time.Instant
 
 /**
  * INTERNAL API
