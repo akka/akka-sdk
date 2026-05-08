@@ -10,7 +10,7 @@ In addition to the built-in metrics, you can define custom application-level met
 The OpenTelemetry `Meter` interface can be xref:setup-and-dependency-injection.adoc#_dependency_injection[injected] directly into any Akka component, but we recommend encapsulating your metrics definitions in a dedicated class. This keeps metric names, descriptions, and units in one place and provides a convenient API for the rest of your application. It's recommended to follow Open Telemetry https://opentelemetry.io/docs/specs/semconv/general/metrics/[Semantic conventions].
 
 [source,java,indent=0]
-.{sample-base-url}/src/main/java/com/example/application/ShoppingCartMetrics.java[ShoppingCartMetrics.java]
+.{sample-base-url}key-value-shopping-cart/src/main/java/com/example/application/ShoppingCartMetrics.java[ShoppingCartMetrics.java]
 ----
 include::example$key-value-shopping-cart/src/main/java/com/example/application/ShoppingCartMetrics.java[tag=metrics]
 ----
@@ -21,7 +21,7 @@ include::example$key-value-shopping-cart/src/main/java/com/example/application/S
 Use it in your components.
 
 [source,java,indent=0]
-.{sample-base-url}/src/main/java/com/example/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
+.{sample-base-url}key-value-shopping-cart/src/main/java/com/example/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
 ----
 include::example$key-value-shopping-cart/src/main/java/com/example/api/ShoppingCartEndpoint.java[tag=metrics]
 ----
@@ -31,7 +31,7 @@ include::example$key-value-shopping-cart/src/main/java/com/example/api/ShoppingC
 Wire the metrics class in your `Bootstrap` so it is available for xref:setup-and-dependency-injection.adoc#_dependency_injection[dependency injection].
 
 [source,java,indent=0]
-.{sample-base-url}/src/main/java/com/example/Bootstrap.java[Bootstrap.java]
+.{sample-base-url}key-value-shopping-cart/src/main/java/com/example/Bootstrap.java[Bootstrap.java]
 ----
 include::example$key-value-shopping-cart/src/main/java/com/example/Bootstrap.java[tag=metrics]
 ----
