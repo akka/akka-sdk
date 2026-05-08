@@ -70,7 +70,7 @@ public final class JsonSupport {
    * @see {{encodeJson(T, String}}
    * @deprecated Protobuf Any with JSON is not supported
    */
-  @Deprecated
+  @Deprecated(since = "3.1.0")
   public static <T> Any encodeJson(T value) {
     return encodeJson(value, value.getClass().getName());
   }
@@ -87,7 +87,7 @@ public final class JsonSupport {
    * @throws IllegalArgumentException if the given value cannot be turned into JSON
    * @deprecated Protobuf Any with JSON is not supported
    */
-  @Deprecated
+  @Deprecated(since = "3.1.0")
   public static <T> Any encodeJson(T value, String jsonType) {
     try {
       ByteString bytes = encodeToBytes(value);
@@ -105,7 +105,7 @@ public final class JsonSupport {
   /**
    * @deprecated Use encodeToAkkaByteString
    */
-  @Deprecated
+  @Deprecated(since = "3.1.0")
   public static <T> ByteString encodeToBytes(T value) throws JsonProcessingException {
     return UnsafeByteOperations.unsafeWrap(
         objectMapper.writerFor(value.getClass()).writeValueAsBytes(value));
@@ -147,7 +147,7 @@ public final class JsonSupport {
   /**
    * @deprecated was only intended for internal use
    */
-  @Deprecated
+  @Deprecated(since = "3.1.0")
   public static akka.util.ByteString encodeDynamicToAkkaByteString(String key, String value) {
     try {
       ObjectNode dynamicJson = objectMapper.createObjectNode().put(key, value);
@@ -160,7 +160,7 @@ public final class JsonSupport {
   /**
    * @deprecated was only intended for internal use
    */
-  @Deprecated
+  @Deprecated(since = "3.1.0")
   public static akka.util.ByteString encodeDynamicCollectionToAkkaByteString(
       String key, Collection<?> values) {
     try {
@@ -213,7 +213,7 @@ public final class JsonSupport {
    * @throws IllegalArgumentException if the given value cannot be decoded to a T
    * @deprecated Protobuf Any with JSON is not supported
    */
-  @Deprecated
+  @Deprecated(since = "3.1.0")
   public static <T> T decodeJson(Class<T> valueClass, Any any) {
     if (!AnySupport.isJsonTypeUrl(any.getTypeUrl())) {
       throw new IllegalArgumentException(
@@ -266,7 +266,7 @@ public final class JsonSupport {
   /**
    * @deprecated Use decodeJson
    */
-  @Deprecated
+  @Deprecated(since = "3.1.0")
   public static <T> T parseBytes(byte[] bytes, Class<T> valueClass) throws IOException {
     return objectMapper.readValue(bytes, valueClass);
   }
@@ -315,7 +315,7 @@ public final class JsonSupport {
   /**
    * @deprecated Protobuf Any with JSON is not supported
    */
-  @Deprecated
+  @Deprecated(since = "3.1.0")
   public static <T, C extends Collection<T>> C decodeJsonCollection(
       Class<T> valueClass, Class<C> collectionType, Any any) {
     if (!AnySupport.isJsonTypeUrl(any.getTypeUrl())) {
@@ -342,7 +342,7 @@ public final class JsonSupport {
   /**
    * @deprecated was only intended for internal use
    */
-  @Deprecated
+  @Deprecated(since = "3.2.2")
   public static <T, C extends Collection<T>> C decodeJsonCollection(
       Class<T> valueClass, Class<C> collectionType, akka.util.ByteString bytes) {
     return jsonSerializer.fromBytes(
@@ -354,7 +354,7 @@ public final class JsonSupport {
   /**
    * @deprecated was only intended for internal use
    */
-  @Deprecated
+  @Deprecated(since = "3.2.2")
   public static <T, C extends Collection<T>> C decodeJsonCollection(
       Class<T> valueClass, Class<C> collectionType, byte[] bytes) {
     return decodeJsonCollection(
@@ -370,7 +370,7 @@ public final class JsonSupport {
    * @throws IllegalArgumentException if the suffix matches but the Any cannot be parsed into a T
    * @deprecated Protobuf Any with JSON is not supported
    */
-  @Deprecated
+  @Deprecated(since = "3.1.0")
   public static <T> Optional<T> decodeJson(Class<T> valueClass, String jsonType, Any any) {
     if (any.getTypeUrl().endsWith(jsonType)) {
       return Optional.of(decodeJson(valueClass, any));
@@ -383,7 +383,7 @@ public final class JsonSupport {
 /**
  * @deprecated Not indented for public use and no longer used internally
  */
-@Deprecated
+@Deprecated(since = "3.2.2")
 class DoneSerializer extends JsonSerializer<Done> {
 
   @Override
@@ -408,7 +408,7 @@ class DoneSerializer extends JsonSerializer<Done> {
 /**
  * @deprecated Not indented for public use and no longer used internally
  */
-@Deprecated
+@Deprecated(since = "3.2.2")
 class DoneDeserializer extends JsonDeserializer<Done> {
 
   @Override

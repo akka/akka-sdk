@@ -44,7 +44,7 @@ public interface EventingTestKit {
      * @param message raw protobuf bytestring to be published
      * @deprecated Use publish with byte array parameter
      */
-    @Deprecated
+    @Deprecated(since = "3.1.0")
     void publish(ByteString message);
 
     /**
@@ -54,7 +54,7 @@ public interface EventingTestKit {
      * @param metadata associated with the message
      * @deprecated Use publish with byte array parameter
      */
-    @Deprecated
+    @Deprecated(since = "3.1.0")
     void publish(ByteString message, Metadata metadata);
 
     /**

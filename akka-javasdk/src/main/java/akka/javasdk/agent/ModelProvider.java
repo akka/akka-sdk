@@ -375,7 +375,7 @@ public sealed interface ModelProvider {
      * @deprecated Use constructor with baseUrl parameter, or the static factory method and {@code
      *     with} methods.
      */
-    @Deprecated
+    @Deprecated(since = "3.5.11")
     public GoogleAIGemini(
         String apiKey,
         String modelName,
