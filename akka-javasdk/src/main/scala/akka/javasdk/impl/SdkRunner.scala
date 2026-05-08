@@ -813,8 +813,8 @@ private final class Sdk(
           tempAgent.definition() match {
             case impl: AgentDefinitionImpl =>
               if (impl.goal.isEmpty)
-                logger.warn(
-                  "AutonomousAgent [{}] has no goal configured. Set a goal via define().goal(...)",
+                logger.debug(
+                  "AutonomousAgent [{}] has no goal configured at startup. The goal must be set per-instance via AgentSetup before assigning tasks.",
                   clz.getName)
               impl
             case other =>
