@@ -112,6 +112,7 @@ import akka.runtime.sdk.spi.EventSourcedEntityDescriptor
 import akka.runtime.sdk.spi.GrpcEndpointRequestConstructionContext
 import akka.runtime.sdk.spi.HttpEndpointConstructionContext
 import akka.runtime.sdk.spi.McpEndpointConstructionContext
+import akka.runtime.sdk.spi.MemoryClient
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.RemoteIdentification
 import akka.runtime.sdk.spi.SpiAgent
@@ -294,6 +295,7 @@ class SdkRunner private (
         startContext.executionContext,
         startContext.materializer,
         startContext.componentClients,
+        startContext.memoryClient,
         startContext.remoteIdentification,
         startContext.tracerFactory,
         startContext.sdkMeter,
@@ -379,6 +381,7 @@ private final class Sdk(
     sdkExecutionContext: ExecutionContext,
     sdkMaterializer: Materializer,
     runtimeComponentClients: ComponentClients,
+    memoryClient: MemoryClient,
     remoteIdentification: Option[RemoteIdentification],
     tracerFactory: String => Tracer,
     sdkMeter: Meter,
@@ -825,6 +828,8 @@ private final class Sdk(
             dependencyProviderOpt,
             agentGuardrails,
             applicationConfig,
+            memoryClient,
+            agentRegistry,
             system)
 
         }
