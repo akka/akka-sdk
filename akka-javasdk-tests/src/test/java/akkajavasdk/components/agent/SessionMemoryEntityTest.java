@@ -12,6 +12,7 @@ import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.agent.MemoryFilter;
 import akka.javasdk.agent.MessageContent;
 import akka.javasdk.agent.SessionHistory;
+import akka.javasdk.agent.SessionHistoryResult;
 import akka.javasdk.agent.SessionMemoryEntity;
 import akka.javasdk.agent.SessionMemoryEntity.AddInteractionCmd;
 import akka.javasdk.agent.SessionMemoryEntity.AddMultimodalInteractionCmd;
@@ -527,6 +528,139 @@ public class SessionMemoryEntityTest {
             new UserMessage(timestamp.plusMillis(2), userMsg3, COMPONENT_ID),
             new AiMessage(timestamp.plusMillis(2), aiMsg3, COMPONENT_ID));
     assertThat(result3.getReply().messages().size()).isEqualTo(4);
+  }
+
+  @Test
+  public void shouldNotMarkAsTruncatedWhenWithinLimit() {
+    // given
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
+    var timestamp = Instant.now();
+
+    var userMessage = new UserMessage(timestamp, "Hello", COMPONENT_ID);
+    var aiMessage = new AiMessage(timestamp, "Hi there!", COMPONENT_ID);
+
+    // when
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage, aiMessage));
+
+    SessionHistoryResult result =
+        testKit.method(SessionMemoryEntity::fetchHistory).invoke(emptyGetHistory).getReply();
+
+    // then
+    assertThat(result).isInstanceOf(SessionHistoryResult.Loaded.class);
+  }
+
+  @Test
+  public void shouldMarkAsTruncatedAfterEvictionAndKeepFlagSticky() {
+    // given
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
+    var timestamp = Instant.now();
+
+    String userMsg1 = "First message"; // 13 bytes
+    String aiMsg1 = "First response"; // 14 bytes
+    String userMsg2 = "Second message"; // 14 bytes
+    String aiMsg2 = "Second response"; // 15 bytes
+    String userMsg3 = "Third message"; // 13 bytes
+    String aiMsg3 = "Third response"; // 14 bytes
+
+    var userMessage1 = new UserMessage(timestamp, userMsg1, COMPONENT_ID);
+    var aiMessage1 = new AiMessage(timestamp, aiMsg1, COMPONENT_ID);
+    var userMessage2 = new UserMessage(timestamp.plusMillis(1), userMsg2, COMPONENT_ID);
+    var aiMessage2 = new AiMessage(timestamp.plusMillis(1), aiMsg2, COMPONENT_ID);
+    var userMessage3 = new UserMessage(timestamp.plusMillis(2), userMsg3, COMPONENT_ID);
+    var aiMessage3 = new AiMessage(timestamp.plusMillis(2), aiMsg3, COMPONENT_ID);
+
+    // tight buffer that fits one and a half interactions, so adding the second forces eviction
+    var limitedBuffer = new SessionMemoryEntity.LimitedWindow(45);
+    testKit.method(SessionMemoryEntity::setLimitedWindow).invoke(limitedBuffer);
+
+    // when - first interaction fits within the limit
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage1, aiMessage1));
+    SessionHistoryResult afterFirst =
+        testKit.method(SessionMemoryEntity::fetchHistory).invoke(emptyGetHistory).getReply();
+
+    // then
+    assertThat(afterFirst).isInstanceOf(SessionHistoryResult.Loaded.class);
+
+    // when - second interaction triggers eviction of the first one
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage2, aiMessage2));
+    SessionHistoryResult afterSecond =
+        testKit.method(SessionMemoryEntity::fetchHistory).invoke(emptyGetHistory).getReply();
+
+    // then
+    assertThat(afterSecond).isInstanceOf(SessionHistoryResult.Truncated.class);
+
+    // when - subsequent interaction (no further eviction needed) keeps the marker sticky
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage3, aiMessage3));
+    SessionHistoryResult afterThird =
+        testKit.method(SessionMemoryEntity::fetchHistory).invoke(emptyGetHistory).getReply();
+
+    // then
+    assertThat(afterThird).isInstanceOf(SessionHistoryResult.Truncated.class);
+  }
+
+  @Test
+  public void shouldResetTruncatedFlagAfterCompaction() {
+    // given
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
+    var timestamp = Instant.now();
+
+    var userMessage1 = new UserMessage(timestamp, "First message", COMPONENT_ID);
+    var aiMessage1 = new AiMessage(timestamp, "First response", COMPONENT_ID);
+    var userMessage2 = new UserMessage(timestamp.plusMillis(1), "Second message", COMPONENT_ID);
+    var aiMessage2 = new AiMessage(timestamp.plusMillis(1), "Second response", COMPONENT_ID);
+
+    // tight buffer that forces eviction on the second interaction
+    var limitedBuffer = new SessionMemoryEntity.LimitedWindow(45);
+    testKit.method(SessionMemoryEntity::setLimitedWindow).invoke(limitedBuffer);
+
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage1, aiMessage1));
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage2, aiMessage2));
+
+    SessionHistoryResult beforeCompaction =
+        testKit.method(SessionMemoryEntity::fetchHistory).invoke(emptyGetHistory).getReply();
+    assertThat(beforeCompaction).isInstanceOf(SessionHistoryResult.Truncated.class);
+
+    // CompactionCmd needs the entity's current sequence number for concurrency control; getHistory
+    // always returns it regardless of truncation.
+    long sequenceNumber =
+        testKit
+            .method(SessionMemoryEntity::getHistory)
+            .invoke(emptyGetHistory)
+            .getReply()
+            .sequenceNumber();
+
+    // when - compact replaces history with a summary
+    var summaryUser = new UserMessage(timestamp.plusMillis(2), "Summary?", COMPONENT_ID);
+    var summaryAi = new AiMessage(timestamp.plusMillis(2), "Summary.", COMPONENT_ID);
+    var compactCmd = new SessionMemoryEntity.CompactionCmd(summaryUser, summaryAi, sequenceNumber);
+    testKit.method(SessionMemoryEntity::compactHistory).invoke(compactCmd);
+
+    SessionHistoryResult afterCompaction =
+        testKit.method(SessionMemoryEntity::fetchHistory).invoke(emptyGetHistory).getReply();
+
+    // then - HistoryCleared resets the truncated flag, so the new (summarised) history is
+    // delivered as Loaded instead of Truncated.
+    assertThat(afterCompaction).isInstanceOf(SessionHistoryResult.Loaded.class);
+    assertThat(((SessionHistoryResult.Loaded) afterCompaction).history().messages())
+        .containsExactly(summaryUser, summaryAi);
   }
 
   @Test
