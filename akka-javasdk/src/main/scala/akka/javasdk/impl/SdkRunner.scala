@@ -25,6 +25,7 @@ import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
 import akka.Done
+import akka.actor.CoordinatedShutdown
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.grpc.internal.JavaMetadataImpl
@@ -901,7 +902,7 @@ private final class Sdk(
         mcpEndpoints)
         .filterNot(isDisabled(combinedDisabledComponents))
 
-    val preStart = { (_: ActorSystem[_]) =>
+    val preStart = { (system: ActorSystem[_]) =>
       serviceSetup match {
         case None =>
           startedPromise.trySuccess(
@@ -921,6 +922,25 @@ private final class Sdk(
           } else {
             dependencyProviderOpt = Option(setup.createDependencyProvider())
             dependencyProviderOpt.foreach(_ => logger.info("Service configured with DependencyProvider"))
+          }
+          // Only register the shutdown task if the user actually overrode onShutdown,
+          // otherwise we'd add a no-op task to coordinated shutdown for every service.
+          val onShutdownOverridden =
+            setup.getClass.getMethod("onShutdown").getDeclaringClass != classOf[ServiceSetup]
+          if (onShutdownOverridden) {
+            CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseServiceStop, "user-service-on-shutdown") {
+              () =>
+                SdkRunner.userServiceLog.info("Running onShutdown lifecycle hook")
+                try {
+                  setup.onShutdown()
+                } catch {
+                  case NonFatal(ex) =>
+                    // Make sure it reaches the user, but do not fail the shutdown phase.
+                    SdkRunner.userServiceLog
+                      .error(s"${setup.getClass.getName}.onShutdown() threw an exception", ex)
+                }
+                SdkRunner.FutureDone
+            }
           }
           startedPromise.trySuccess(
             StartupContext(
