@@ -241,7 +241,13 @@ public class WorkflowTest extends TestKitSupport {
   public void shouldIgnoreResumeOnNonSuspendedWorkflow() {
     var workflowId = randomId();
 
-    componentClient.forWorkflow(workflowId).method(DummyWorkflow::update).invoke();
+    // update() schedules the pause step but returns before it has run, so the workflow
+    // may still be Executing when invoke() returns. Wait for the runtime's pause log to
+    // confirm the status is actually Paused before exercising resume.
+    LoggingTestKit.debug("paused, cancelling ticker and passivating")
+        .expect(
+            testKit.getActorSystem(),
+            () -> componentClient.forWorkflow(workflowId).method(DummyWorkflow::update).invoke());
 
     // Workflow is Paused, not Suspended — resume is a successful no-op.
     LoggingTestKit.debug("not suspended (status [Paused]), ignoring resume")
