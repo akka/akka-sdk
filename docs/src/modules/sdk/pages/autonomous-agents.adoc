@@ -25,8 +25,9 @@ Coordination is part of the component model. An agent can declare that it delega
 
 Use an `AutonomousAgent` when:
 
+* The work is investigative or open-ended: the model decides what to consult, ask, or do next based on what previous steps revealed, rather than following a predefined sequence of steps.
+* You need coordination between multiple agents (delegation, handoff, teams, moderation) without writing the orchestration yourself as workflow steps.
 * You need durable multi-step execution that survives crashes and restarts.
-* You want coordination between multiple agents (delegation, handoff, teams, moderation) without writing workflow steps.
 * The work produces typed task results that have their own lifecycle: they can outlive a single request, be queried later, or move between agents.
 * You want each agent to focus on a narrow context, with isolation between agents and shared context only where it helps.
 
@@ -34,9 +35,9 @@ Use a request-based xref:sdk:agents.adoc[Agent] when:
 
 * The interaction is request-response, possibly over multiple turns in a session.
 * You need fine-grained control over the prompt and effect chain for each call.
-* The orchestration is handled externally by a xref:sdk:workflows.adoc[Workflow].
+* The orchestration is a fixed sequence of explicit steps, handled by a xref:sdk:workflows.adoc[Workflow]. Each step is at most one model round-trip, and the model does not decide what step to take next.
 
-NOTE: An Autonomous Agent is a heavier process than a request-based Agent. Each instance carries durable orchestration state, a task queue, and lifecycle bookkeeping. For simple request-response interactions a request-based Agent is the lighter and clearer choice. Combine it with a Workflow on top when explicit step ordering is needed.
+NOTE: An Autonomous Agent is a heavier process than a request-based Agent. Each instance carries durable orchestration state, a task queue, and lifecycle bookkeeping. For simple request-response interactions a request-based Agent is the lighter and clearer choice. However, a request-based agent must often be combined with a Workflow for orchestration, and then the choice isn't about weight.
 
 === Comparison with request-based Agents
 
@@ -84,7 +85,7 @@ The two share much of the underlying machinery. Model provider configuration, fu
 * *Entities* hold durable business state that an Autonomous Agent can expose to the model as function tools (read or write).
 * *Views* are read models that an agent can query through function tools to bring relevant data into its context.
 * *Endpoints* expose Autonomous Agents over HTTP or gRPC, both to start tasks and retrieve results, and to stream notification events to the client over Server-Sent Events or WebSocket.
-* *Workflows* are the alternative for deterministic step ordering. When the next step is a fixed decision rather than a model judgment, prefer a Workflow.
+* *Workflows* are the alternative for deterministic step ordering. Prefer a Workflow when the _sequence of steps_ is fixed and the model is consulted at most once inside each step. Prefer an Autonomous Agent when the _sequence itself_ is a model judgment: the agent decides what to consult, which specialist to ask, or whether to iterate, based on what previous steps returned.
 
 == Identify the autonomous agent
 
