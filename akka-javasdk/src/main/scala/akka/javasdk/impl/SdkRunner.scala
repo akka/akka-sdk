@@ -7,6 +7,7 @@ package akka.javasdk.impl
 import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
+import java.time.Instant
 import java.util
 import java.util.Locale
 import java.util.Optional
@@ -220,9 +221,14 @@ object SdkRunner {
         case "manual"                 => SpiDeployedEventingSettings.Manual
       }
 
+    val startFromTimestamp = applicationConf.getString("akka.javasdk.eventing.start-from-timestamp").trim match {
+      case ""       => None
+      case nonEmpty => Some(Instant.parse(nonEmpty))
+    }
+
     new SpiDeployedEventingSettings(
-      overrides = Seq(new SpiDeployedEventingSettings.GooglePubSubOverrides(Some(googlePubSubMode))),
-      startEventingFrom = None)
+      Seq(new SpiDeployedEventingSettings.GooglePubSubOverrides(Some(googlePubSubMode))),
+      startEventingFrom = startFromTimestamp)
   }
 }
 
