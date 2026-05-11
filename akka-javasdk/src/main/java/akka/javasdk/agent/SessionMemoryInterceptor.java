@@ -20,12 +20,11 @@ package akka.javasdk.agent;
  * <p>Read-side behavior (history limit, filters, read/write toggles) is configured through {@link
  * MemoryProvider} and is not exposed here.
  *
-
  * <p><b>Thread-safety:</b> an interceptor instance is shared across every session and concurrent
  * request that uses it. The SDK does not synchronize, copy, or pool it. Keep interceptors
  * stateless, or rely only on immutable / thread-safe state (for example, a precompiled {@link
- * java.util.regex.Pattern} or a final configuration object). Mutable fields on the interceptor
- * will be hit concurrently and must be avoided unless you guard the access yourself.
+ * java.util.regex.Pattern} or a final configuration object). Mutable fields on the interceptor will
+ * be hit concurrently and must be avoided unless you guard the access yourself.
  *
  * <p>Attach an interceptor to a memory provider with {@code withInterceptor}:
  *
