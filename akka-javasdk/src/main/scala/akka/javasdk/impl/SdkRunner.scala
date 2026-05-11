@@ -221,7 +221,7 @@ object SdkRunner {
         case "manual"                 => SpiDeployedEventingSettings.Manual
       }
 
-    val startFromTimestamp = applicationConf.getString("akka.javasdk.eventing.start-from-timestamp") match {
+    val startFromTimestamp = applicationConf.getString("akka.javasdk.eventing.start-from-timestamp").trim match {
       case ""       => None
       case nonEmpty => Some(Instant.parse(nonEmpty))
     }
