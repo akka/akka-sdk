@@ -57,6 +57,7 @@ public class TransferEndpoint {
     componentClient.forWorkflow(id).terminate(TransferWorkflow.class, "terminated by user"); // <1>
     return HttpResponses.accepted();
   }
+
   // end::terminate[]
 
   // tag::suspend[]
@@ -66,6 +67,7 @@ public class TransferEndpoint {
     componentClient.forWorkflow(id).suspend(TransferWorkflow.class, "suspended by user"); // <1>
     return HttpResponses.accepted();
   }
+
   // end::suspend[]
 
   // tag::resume[]
