@@ -177,7 +177,10 @@ public final class SessionMemoryClient implements SessionMemory {
    */
   SessionHistory fetchHistoryFromJournal(String sessionId, long fromSequenceNr) {
     var persistenceId = SessionMemoryEntity.SESSION_MEMORY_COMPONENT_ID + "|" + sessionId;
-    var request = new MemoryContextRequest(persistenceId, fromSequenceNr);
+    // fromSequenceNr is the seq number AT which compaction occurred (the HistoryCleared event);
+    // start the journal replay strictly AFTER it so the marker and any earlier events that the
+    // summary supersedes don't leak into the recovered history.
+    var request = new MemoryContextRequest(persistenceId, fromSequenceNr + 1);
 
     // The stream is materialized on Akka's dispatcher; join() parks the calling virtual thread,
     // unmounting it from its carrier until the CompletionStage completes.
