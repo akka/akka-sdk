@@ -50,6 +50,7 @@
 *** xref:sdk:access-control.adoc[]
 *** xref:sdk:auth-with-jwts.adoc[]
 *** xref:sdk:running-locally.adoc[]
+*** xref:sdk:running-with-broker.adoc[]
 *** xref:sdk:model-provider-details.adoc[]
 *** xref:sdk:sanitization.adoc[Data sanitization]
 ** xref:sdk:dev-best-practices.adoc[]
