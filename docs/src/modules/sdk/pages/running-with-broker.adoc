@@ -140,11 +140,11 @@ Defaults match the docker-compose snippet above: host `localhost`, port `8085`, 
 
 Topic and subscription creation is controlled by `akka.javasdk.eventing.google-pubsub.mode`:
 
-* `automatic-subscription` (default) — the runtime creates the subscription if it does not exist; topics must already exist.
-* `automatic` — the runtime creates both the topic and the subscription if they do not exist.
-* `manual` — both must be created out-of-band, using `gcloud pubsub` or the emulator's REST API.
+* `automatic-subscription` (default) — the runtime creates subscriptions if they do not exist; against the emulator, topics typically get created as well, so no out-of-band setup is needed for local runs.
+* `automatic` — the runtime creates both topics and subscriptions explicitly.
+* `manual` — neither is created by the runtime; create them with `gcloud pubsub` or the emulator's REST API.
 
-`automatic` is convenient for the emulator. For consistency with production, where topics are typically managed by another team, `automatic-subscription` is a reasonable default and matches what a real Pub/Sub deployment looks like.
+The default mode is enough for most local runs against the emulator. In production against real Pub/Sub, topics must exist before the service starts under `automatic-subscription`.
 
 [#_event_hubs]
 == Azure Event Hubs

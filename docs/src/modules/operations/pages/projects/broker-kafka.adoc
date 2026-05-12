@@ -109,7 +109,7 @@ akka projects config get broker
 
 Create the topics used by your service ahead of time, using the Kafka tooling that ships with your cluster (for example `kafka-topics.sh`, the Strimzi `KafkaTopic` custom resource, or the management UI of your provider). Akka does not create topics automatically.
 
-When partitioning, follow the guidance in <<_delivery_characteristics>> below: use the cloud event `ce-subject` (typically the entity id) as the partition key, so messages for the same subject are processed in order.
+When partitioning, follow the guidance in <<_delivery_characteristics,Delivery characteristics>> below: use the cloud event `ce-subject` (typically the entity id) as the partition key, so messages for the same subject are processed in order.
 
 include::partial$broker-kafka-setup-common.adoc[]
 
