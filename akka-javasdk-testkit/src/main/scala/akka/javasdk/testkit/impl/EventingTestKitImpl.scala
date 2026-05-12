@@ -296,10 +296,7 @@ private[testkit] class IncomingMessagesImpl(val sourcesHolder: ActorRef, val ser
     Await.result(addSource, 10.seconds)
   }
 
-  override def publish(message: ByteString): Unit =
-    publish(message, SdkMetadata.EMPTY)
-
-  override def publish(message: ByteString, metadata: SdkMetadata): Unit = {
+  protected def publish(message: ByteString, metadata: SdkMetadata): Unit = {
     val addSource = sourcesHolder.ask(SourcesHolder.Publish(message, metadata))(5.seconds)
     Await.result(addSource, 5.seconds)
   }
@@ -307,10 +304,8 @@ private[testkit] class IncomingMessagesImpl(val sourcesHolder: ActorRef, val ser
   override def publish(message: Array[Byte]): Unit =
     publish(message, SdkMetadata.EMPTY)
 
-  override def publish(message: Array[Byte], metadata: SdkMetadata): Unit = {
-    val addSource = sourcesHolder.ask(SourcesHolder.Publish(ByteString.copyFrom(message), metadata))(5.seconds)
-    Await.result(addSource, 5.seconds)
-  }
+  override def publish(message: Array[Byte], metadata: SdkMetadata): Unit =
+    publish(ByteString.copyFrom(message), metadata)
 
   override def publish(message: TestKitMessage[_]): Unit = message.getPayload match {
     case javaPb: GeneratedMessageV3 => publish(javaPb.toByteString, message.getMetadata)

@@ -28,7 +28,7 @@ import java.util.function.Supplier;
  * <p>The {@link TestNotificationPublisher} can be used when entity constructor requires {@link
  * akka.javasdk.NotificationPublisher}.
  *
- * <p>Use the {@code call} methods to interact with the testkit.
+ * <p>Use the {@code method} methods to interact with the testkit.
  */
 public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
     extends EventSourcedEntityEffectsRunner<S, E> {
@@ -252,40 +252,7 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
     return new MethodRef1<>(func, Metadata.EMPTY);
   }
 
-  /**
-   * The call method can be used to simulate a call to the EventSourcedEntity. The passed java
-   * lambda should return an EventSourcedEntity.Effect. The Effect is interpreted into an
-   * EventSourcedResult that can be used in test assertions.
-   *
-   * @param func A function from EventSourcedEntity to EventSourcedEntity.Effect.
-   * @return a EventSourcedResult
-   * @param <R> The type of reply that is expected from invoking a command handler
-   * @deprecated Use "method(MyEntity::myCommandHandler).invoke()" instead
-   */
-  @Deprecated(since = "3.2.1", forRemoval = true)
-  public <R> EventSourcedResult<R> call(
-      akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func) {
-    return call(func, Metadata.EMPTY);
-  }
-
-  /**
-   * The call method can be used to simulate a call to the EventSourcedEntity. The passed java
-   * lambda should return an EventSourcedEntity.Effect. The Effect is interpreted into an
-   * EventSourcedResult that can be used in test assertions.
-   *
-   * @param func A function from EventSourcedEntity to EventSourcedEntity.Effect.
-   * @param metadata A metadata passed as a call context.
-   * @param <R> The type of reply that is expected from invoking a command handler
-   * @return a EventSourcedResult
-   * @deprecated Use "method(MyEntity::myCommandHandler).withMetadata(metadata).invoke()" instead
-   */
   @SuppressWarnings("unchecked") // entity() returns the entity we were constructed with
-  @Deprecated(since = "3.2.1", forRemoval = true)
-  public <R> EventSourcedResult<R> call(
-      akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func, Metadata metadata) {
-    return call(func, metadata, Optional.empty());
-  }
-
   private <R> EventSourcedResult<R> call(
       akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func,
       Metadata metadata,
