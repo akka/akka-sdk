@@ -43,6 +43,7 @@ codegen
 [Cc]omposability
 config
 configs
+concurrentUploads
 connectionString
 corsPolicy
 Couchbase
@@ -89,6 +90,7 @@ hakking
 has_more
 hasPrefix
 hasSuffix
+heapDump
 hyperscaler
 hyperscalers
 hoc
@@ -124,6 +126,7 @@ Lagom
 LLM
 LLMs
 lmdbjava
+logLevel
 lookups
 Mastercard
 matchers
@@ -160,7 +163,9 @@ passivation
 passwordHashes
 passwordKey
 passwordSecret
+pathPrefix
 plaintext
+platformManaged
 plist
 [pP]luggable
 Podman
@@ -247,6 +252,7 @@ tokenid
 tokenization
 [Tt]okenizes
 tokenSecret
+traceSampling
 transcoded
 [Tt]ranscoding
 truststore
