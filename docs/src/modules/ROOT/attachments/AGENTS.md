@@ -93,6 +93,7 @@ Access these documentation files for detailed patterns:
 
 **Autonomous Agent**
 - Extends `AutonomousAgent`, has `@Component(id = "...")`
+  - Delegation/handoff/team/moderation targets: also set `description = "..."` so the calling model picks the right one.
 - Implements single `definition()` method returning `AgentDefinition` — NO command handlers
 - Agent is a process: runs, works on assigned tasks, stops
 - Tasks are separate persistent entities with typed results — the coordination primitive
@@ -109,6 +110,13 @@ Access these documentation files for detailed patterns:
 - `@FunctionTool` methods can also be defined directly on the agent class
 - Components (Entities, Views, Workflows) can be used as tools by passing their `Class`
 - Task dependencies: `task.dependsOn(otherTaskId)` — agent respects ordering
+- `runSingleTask` is normal usage of Autonomous Agent: one task per instance is fine.
+- `runSingleTask` is non-blocking: it returns the task id immediately. The task itself is the durable record of status and typed result, queryable any time via `componentClient.forTask(taskId).get(taskDef)`. No wrapping Workflow is needed for durability or to await completion.
+
+**Choosing between Agent and Autonomous Agent**
+- See `akka-context/sdk/autonomous-agents.html.md` ("When to use an Autonomous Agent") for the decision rubric.
+- Bottom line: `AutonomousAgent` for investigative work (the model decides what to consult or do next) or multi-agent coordination (delegation, handoff, team, moderation). `Agent` (optionally inside a Workflow) for a fixed sequence of steps with one model call per step.
+- When a coordinating `AutonomousAgent` delegates to other agents, both alternatives are valid. A request-based `Agent` exposed as the coordinator's `@FunctionTool` is the lighter default when that agent takes a question and produces a response in a single model call. Promote it to its own `AutonomousAgent` (delegation target) when it benefits from its own iteration loop, parallel workers, handoff, or a separately observable task lifecycle.
 
 **Event Sourced Entity**
 - Extends `EventSourcedEntity<State, Event>`, has `@Component(id = "...")`
@@ -199,18 +207,20 @@ src/main/proto/
 
 Component base classes follow `akka.javasdk.<component-package>.<ClassName>`:
 
-| Class | Import |
-|-------|--------|
-| `Agent` | `akka.javasdk.agent.Agent` |
-| `Consumer` | `akka.javasdk.consumer.Consumer` |
-| `EventSourcedEntity` | `akka.javasdk.eventsourcedentity.EventSourcedEntity` |
-| `KeyValueEntity` | `akka.javasdk.keyvalueentity.KeyValueEntity` |
-| `TimedAction` | `akka.javasdk.timedaction.TimedAction` |
-| `View` | `akka.javasdk.view.View` |
-| `Workflow` | `akka.javasdk.workflow.Workflow` |
-| `ComponentClient` | `akka.javasdk.client.ComponentClient` |
-| `AbstractHttpEndpoint` | `akka.javasdk.http.AbstractHttpEndpoint` |
-| `AbstractGrpcEndpoint` | `akka.javasdk.grpc.AbstractGrpcEndpoint` |
+| Class                  | Import                                               |
+|------------------------|------------------------------------------------------|
+| `Agent`                | `akka.javasdk.agent.Agent`                           |
+| `AutonomousAgent`      | `akka.javasdk.agent.autonomous.AutonomousAgent`      |
+| `Task`                 | `akka.javasdk.agent.task.Task`                       |
+| `Consumer`             | `akka.javasdk.consumer.Consumer`                     |
+| `EventSourcedEntity`   | `akka.javasdk.eventsourcedentity.EventSourcedEntity` |
+| `KeyValueEntity`       | `akka.javasdk.keyvalueentity.KeyValueEntity`         |
+| `TimedAction`          | `akka.javasdk.timedaction.TimedAction`               |
+| `View`                 | `akka.javasdk.view.View`                             |
+| `Workflow`             | `akka.javasdk.workflow.Workflow`                     |
+| `ComponentClient`      | `akka.javasdk.client.ComponentClient`                |
+| `AbstractHttpEndpoint` | `akka.javasdk.http.AbstractHttpEndpoint`             |
+| `AbstractGrpcEndpoint` | `akka.javasdk.grpc.AbstractGrpcEndpoint`             |
 
 Annotations are in `akka.javasdk.annotations.*`:
 
@@ -730,6 +740,7 @@ public class MyEndpointIntegrationTest extends TestKitSupport {
 - Use `Agent` base class for autonomous agents → use `AutonomousAgent`
 - Use `componentClient.forAgent()` for autonomous agents → use `componentClient.forAutonomousAgent()`
 - Create task instances without instructions → always add `.instructions()` for per-request context
+- Wrap `runSingleTask` in a Workflow for durability or to "wait" for the result → the task is already durable and queryable via `componentClient.forTask(taskId).get(taskDef)`
 - Use `definition()` in request-based Agent → use `effects()` chain; `definition()` is for AutonomousAgent only
 - Return protobuf types from domain layer
 - Import `WorkflowSettings` -> WorkflowSettings is an inner class of Workflow, so no additional import is needed
