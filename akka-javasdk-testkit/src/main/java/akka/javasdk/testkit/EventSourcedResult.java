@@ -51,13 +51,6 @@ public interface EventSourcedResult<R> {
 
   /**
    * @return Whether the command handler persist events or not.
-   * @deprecated Use {@link #didPersistEvents()} instead.
-   */
-  @Deprecated(since = "3.0.2", forRemoval = true)
-  boolean didEmitEvents();
-
-  /**
-   * @return Whether the command handler persist events or not.
    */
   boolean didPersistEvents();
 

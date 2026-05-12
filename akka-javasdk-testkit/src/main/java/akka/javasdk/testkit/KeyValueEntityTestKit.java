@@ -26,7 +26,7 @@ import java.util.function.Supplier;
  * KeyValueEntityTestKit.of} methods. The returned testkit is stateful, and it holds internally the
  * state of the entity.
  *
- * <p>Use the {@code call} methods to interact with the testkit.
+ * <p>Use the {@code method} methods to interact with the testkit.
  */
 public class KeyValueEntityTestKit<S, E extends KeyValueEntity<S>> {
 
@@ -187,39 +187,6 @@ public class KeyValueEntityTestKit<S, E extends KeyValueEntity<S>> {
       returnType.ifPresent(rt -> verifySerDerWithExpectedType(rt, result.getReply(), entity));
     }
     return result;
-  }
-
-  /**
-   * The call method can be used to simulate a call to the KeyValueEntity. The passed java lambda
-   * should return a KeyValueEntity.Effect. The Effect is interpreted into a KeyValueEntityResult
-   * that can be used in test assertions.
-   *
-   * @param func A function from KeyValueEntity to KeyValueEntity.Effect.
-   * @param <R> The type of reply that is expected from invoking a command handler
-   * @return a KeyValueEntityResult
-   * @deprecated Use "method(MyEntity::myCommandHandler).invoke()" instead
-   */
-  @Deprecated(since = "3.2.1", forRemoval = true)
-  public <R> KeyValueEntityResult<R> call(
-      akka.japi.function.Function<E, KeyValueEntity.Effect<R>> func) {
-    return call(func, Metadata.EMPTY);
-  }
-
-  /**
-   * The call method can be used to simulate a call to the KeyValueEntity. The passed java lambda
-   * should return a KeyValueEntity.Effect. The Effect is interpreted into a KeyValueEntityResult
-   * that can be used in test assertions.
-   *
-   * @param func A function from KeyValueEntity to KeyValueEntity.Effect.
-   * @param metadata A metadata passed as a call context.
-   * @param <R> The type of reply that is expected from invoking a command handler
-   * @return a KeyValueEntityResult
-   * @deprecated Use "method(MyEntity::myCommandHandler).withMetadata(metadata).invoke()" instead
-   */
-  @Deprecated(since = "3.2.1", forRemoval = true)
-  public <R> KeyValueEntityResult<R> call(
-      akka.japi.function.Function<E, KeyValueEntity.Effect<R>> func, Metadata metadata) {
-    return call(func, metadata, Optional.empty());
   }
 
   private <R> KeyValueEntityResult<R> call(
