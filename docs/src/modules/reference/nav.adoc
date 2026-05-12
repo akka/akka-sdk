@@ -388,3 +388,5 @@
 *** xref:cli/akka-cli/akka.adoc[]
 ** xref:telemetry/index.adoc[]
 *** xref:telemetry/metrics.adoc[]
+*** xref:telemetry/deprecated-metrics.adoc[]
+*** xref:telemetry/tracing.adoc[]
