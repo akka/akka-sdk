@@ -12,29 +12,16 @@ Supported providers and credential types:
 
 s3          native, static, profile   gcs         native, service-account-key   azure-blob  shared-key, sas
 
+Examples:
+
+# s3 with static credentials   akka projects config set object-storage bucket photos +     --provider s3 --bucket acme-photos --bucket-region us-east-1 +     --credentials-type static +     --access-key-id-secret aws-creds/access-key-id +     --secret-access-key-secret aws-creds/secret-access-key
+
+# gcs using the runtime's native credential chain   akka projects config set object-storage bucket logs +     --provider gcs --bucket acme-logs --credentials-type native
+
+# azure-blob with shared key   akka projects config set object-storage bucket archive +     --provider azure-blob --bucket acme-archive +     --credentials-type shared-key --account-name acmestorage +     --account-key-secret azure-creds/account-key
+
 ----
 akka projects config set object-storage bucket NAME [flags]
-----
-
-== Examples
-
-----
-# s3 with static credentials
-akka projects config set object-storage bucket photos \
-  --provider s3 --bucket acme-photos --bucket-region us-east-1 \
-  --credentials-type static \
-  --access-key-id-secret aws-creds/access-key-id \
-  --secret-access-key-secret aws-creds/secret-access-key
-
-# gcs using the runtime's native credential chain
-akka projects config set object-storage bucket logs \
-  --provider gcs --bucket acme-logs --credentials-type native
-
-# azure-blob with shared key
-akka projects config set object-storage bucket archive \
-  --provider azure-blob --bucket acme-archive \
-  --credentials-type shared-key --account-name acmestorage \
-  --account-key-secret azure-creds/account-key
 ----
 
 == Options
