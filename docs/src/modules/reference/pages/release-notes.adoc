@@ -12,7 +12,7 @@ Current versions
 
 == May 2026
 * Akka CLI 3.0.61
-- Maintence release
+- Maintenance release
 
 == April 2026
 * Akka CLI 3.0.60
