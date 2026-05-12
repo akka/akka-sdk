@@ -69,19 +69,4 @@ private[akka] final class TimerSchedulerImpl(val timerClient: akka.runtime.sdk.s
   override def deleteAsync(name: String): CompletionStage[Done] =
     timerClient.removeTimer(name).asJava
 
-  override def startSingleTimer[I, O](
-      name: String,
-      delay: Duration,
-      deferredCall: DeferredCall[I, O]): CompletionStage[Done] =
-    createSingleTimerAsync(name, delay, deferredCall)
-
-  override def startSingleTimer[I, O](
-      name: String,
-      delay: Duration,
-      maxRetries: Int,
-      deferredCall: DeferredCall[I, O]): CompletionStage[Done] =
-    createSingleTimerAsync(name, delay, maxRetries, deferredCall)
-
-  override def cancel(name: String): CompletionStage[Done] =
-    deleteAsync(name)
 }
