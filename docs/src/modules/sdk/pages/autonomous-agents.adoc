@@ -37,7 +37,9 @@ Use a request-based xref:sdk:agents.adoc[Agent] when:
 * You need fine-grained control over the prompt and effect chain for each call.
 * The orchestration is a fixed sequence of explicit steps, handled by a xref:sdk:workflows.adoc[Workflow]. Each step is at most one model round-trip, and the model does not decide what step to take next.
 
-NOTE: An Autonomous Agent is a heavier process than a request-based Agent. Each instance carries durable orchestration state, a task queue, and lifecycle bookkeeping. For simple request-response interactions a request-based Agent is the lighter and clearer choice. However, a request-based agent must often be combined with a Workflow for orchestration, and then the choice isn't about weight.
+Each Autonomous Agent instance carries durable orchestration state, a task queue, and lifecycle bookkeeping. A standalone request-based Agent is the lighter choice for simple request-response interactions. Once a request-based Agent is combined with a Workflow for orchestration, the two are equally heavy and the choice rests on the criteria above, not on weight.
+
+When a coordinating `AutonomousAgent` delegates to other agents, both alternatives are valid. A request-based `Agent` invoked through the coordinator's delegation capability is the lighter choice when that agent takes a question and produces a response in a single model call. Promote it to its own `AutonomousAgent` when it benefits from its own iteration loop, parallel workers, handoff, or a separately observable task lifecycle.
 
 === Comparison with request-based Agents
 
@@ -132,7 +134,7 @@ To run a task, ask the `ComponentClient` to spin up an instance and run a single
 include::example$autonomous-agent-playground/src/main/java/demo/helloworld/api/QuestionEndpoint.java[tag=run-single-task]
 ----
 
-`runSingleTask` returns the task id. Query the typed result later with `componentClient.forTask(taskId).get(QuestionTasks.ANSWER)`. See xref:sdk:autonomous-agents/client.adoc[] for details.
+`runSingleTask` returns the task id immediately, without waiting for the task to complete. The task runs asynchronously and is itself the durable record of the work: its status and typed result are recovered after restarts and queryable at any time with `componentClient.forTask(taskId).get(QuestionTasks.ANSWER)`. There is no need to wrap the call in a Workflow for durability or to await the result. See xref:sdk:autonomous-agents/client.adoc[] for details.
 
 == Topics
 
