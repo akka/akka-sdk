@@ -9,7 +9,7 @@ public class SupportTasks {
 
   // prettier-ignore
   public static final Task<SupportResolution> RESOLVE = Task
-    .define("Resolve")
+    .name("Resolve")
     .description("Resolve a customer support request")
     .resultConformsTo(SupportResolution.class);
 }

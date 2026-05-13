@@ -8,19 +8,19 @@ public class PublishingTasks {
 
   // prettier-ignore
   public static final Task<DraftPost> DRAFT = Task
-    .define("Draft post")
+    .name("Draft post")
     .description("Draft a blog post on a given topic")
     .resultConformsTo(DraftPost.class);
 
   // prettier-ignore
   public static final Task<ApprovalDecision> APPROVAL = Task
-    .define("Approval")
+    .name("Approval")
     .description("Human approval gate for publishing")
     .resultConformsTo(ApprovalDecision.class);
 
   // prettier-ignore
   public static final Task<PublishedPost> PUBLISH = Task
-    .define("Publish post")
+    .name("Publish post")
     .description("Publish an approved post")
     .resultConformsTo(PublishedPost.class);
 }

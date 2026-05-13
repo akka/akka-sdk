@@ -77,12 +77,12 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
   }
 
   private val TEST_TASK: Task[TestResult] = Task
-    .define("Test task")
+    .name("Test task")
     .description("A test task")
     .resultConformsTo(classOf[TestResult])
 
   private val STRING_TASK: Task[String] = Task
-    .define("String task")
+    .name("String task")
     .description("A string task")
 
   private def taskState(
@@ -277,7 +277,7 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
 
     "throw TypeMismatch when task definition name does not match" in {
       val otherTask: Task[TestResult] = Task
-        .define("Other task")
+        .name("Other task")
         .description("A different task")
         .resultConformsTo(classOf[TestResult])
 
@@ -293,7 +293,7 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
 
     "throw TypeMismatch when result type does not match" in {
       val otherTask: Task[OtherResult] = Task
-        .define("Test task") // same name, different result type
+        .name("Test task") // same name, different result type
         .description("A different task")
         .resultConformsTo(classOf[OtherResult])
 
@@ -372,7 +372,7 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
 
     "throw TypeMismatch when task definition name does not match for already completed task" in {
       val otherTask: Task[TestResult] = Task
-        .define("Other task")
+        .name("Other task")
         .description("A different task")
         .resultConformsTo(classOf[TestResult])
 
@@ -387,7 +387,7 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
 
     "throw TypeMismatch when result type does not match for already completed task" in {
       val otherTask: Task[OtherResult] = Task
-        .define("Test task")
+        .name("Test task")
         .description("A different task")
         .resultConformsTo(classOf[OtherResult])
 
@@ -402,7 +402,7 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
 
     "throw TypeMismatch when task definition name does not match for in-progress task" in {
       val otherTask: Task[TestResult] = Task
-        .define("Other task")
+        .name("Other task")
         .description("A different task")
         .resultConformsTo(classOf[TestResult])
 

@@ -9,7 +9,7 @@ public class DebateTasks {
 
   // prettier-ignore
   public static final Task<DebateResult> DEBATE = Task
-    .define("Debate")
+    .name("Debate")
     .description("Moderate a structured debate between advocates and critics, then synthesize a balanced conclusion.")
     .resultConformsTo(DebateResult.class);
 }

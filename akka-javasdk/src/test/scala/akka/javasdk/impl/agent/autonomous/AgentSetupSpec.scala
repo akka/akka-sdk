@@ -16,7 +16,7 @@ import org.scalatest.wordspec.AnyWordSpec
 class AgentSetupSpec extends AnyWordSpec with Matchers with AutonomousAgentImplSupport {
 
   private val testTask = Task
-    .define("TestTask")
+    .name("TestTask")
     .description("A test task")
     .resultConformsTo(classOf[String])
 

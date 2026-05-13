@@ -7,7 +7,7 @@ public class QuestionTasks {
 
   // prettier-ignore
   public static final Task<Answer> ANSWER = Task
-    .define("Answer")
+    .name("Answer")
     .description("Answer a question")
     .resultConformsTo(Answer.class);
 }

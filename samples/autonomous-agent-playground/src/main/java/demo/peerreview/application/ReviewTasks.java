@@ -12,7 +12,7 @@ public class ReviewTasks {
     List<String> reviewerFindings
   ) {}
 
-  public static final Task<ReviewResult> REVIEW = Task.define("Review")
+  public static final Task<ReviewResult> REVIEW = Task.name("Review")
     .description(
       "Coordinate peer review of a document by technical, style, and compliance reviewers."
     )

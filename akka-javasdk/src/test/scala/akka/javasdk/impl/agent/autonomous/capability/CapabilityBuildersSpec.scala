@@ -19,12 +19,12 @@ import org.scalatest.wordspec.AnyWordSpec
 class CapabilityBuildersSpec extends AnyWordSpec with Matchers with AutonomousAgentImplSupport {
 
   private val task1 = Task
-    .define("Task1")
+    .name("Task1")
     .description("First task")
     .resultConformsTo(classOf[String])
 
   private val task2 = Task
-    .define("Task2")
+    .name("Task2")
     .description("Second task")
     .resultConformsTo(classOf[String])
 
