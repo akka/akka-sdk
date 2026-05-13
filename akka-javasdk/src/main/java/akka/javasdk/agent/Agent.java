@@ -258,7 +258,7 @@ public abstract class Agent implements AgentDelegationWorker {
        * @see ImageLoader
        * @deprecated use contentLoader
        */
-      @Deprecated(since = "3.5.15")
+      @Deprecated(since = "3.5.15", forRemoval = true)
       @SuppressWarnings("removal")
       Builder imageLoader(ImageLoader imageLoader);
 
@@ -629,7 +629,7 @@ public abstract class Agent implements AgentDelegationWorker {
        * @return this builder for method chaining
        * @deprecated use contentLoader
        */
-      @Deprecated(since = "3.5.18")
+      @Deprecated(since = "3.5.18", forRemoval = true)
       @SuppressWarnings("removal")
       Builder imageLoader(ImageLoader imageLoader);
 

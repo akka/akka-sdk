@@ -69,7 +69,7 @@ public interface Metadata extends Iterable<Metadata.MetadataEntry> {
    * @return The value, if found.
    * @deprecated binary not supported, always returns empty. Use {@link #get(String)}.
    */
-  @Deprecated(since = "3.6.0")
+  @Deprecated(since = "3.6.0", forRemoval = true)
   Optional<ByteBuffer> getBinary(String key);
 
   /**
@@ -81,7 +81,7 @@ public interface Metadata extends Iterable<Metadata.MetadataEntry> {
    * @return A list of all the binary values for the given key.
    * @deprecated binary not supported, always returns empty. Use {@link #getAll(String)}.
    */
-  @Deprecated(since = "3.6.0")
+  @Deprecated(since = "3.6.0", forRemoval = true)
   List<ByteBuffer> getBinaryAll(String key);
 
   /**
