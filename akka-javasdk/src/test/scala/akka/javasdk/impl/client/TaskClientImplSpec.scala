@@ -139,6 +139,7 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
       override def eventSourcedEntityClient: EntityClient = entityClient
       override def keyValueEntityClient: EntityClient = null
       override def workFlowClient: EntityClient = null
+      override def workflowClient: WorkflowClient = null
       override def viewClient: ViewClient = null
       override def timedActionClient: TimedActionClient = null
       override def timerClient: TimerClient = null

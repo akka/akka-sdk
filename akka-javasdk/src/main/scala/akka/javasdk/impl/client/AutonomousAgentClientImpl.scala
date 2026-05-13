@@ -136,10 +136,14 @@ private[javasdk] final class AutonomousAgentClientImpl(
       .asJava
   }
 
-  override def suspendAsync(): CompletionStage[Done] = {
-    log.debug("pause: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
+  override def suspendAsync(reason: String): CompletionStage[Done] = {
+    log.debug("suspend: agent [{}] instance [{}] reason [{}]", agentComponentId, agentInstanceId, reason)
     runtimeComponentClients.autonomousAgentClient
-      .suspend(agentComponentId, agentInstanceId, callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
+      .suspend(
+        agentComponentId,
+        agentInstanceId,
+        Option(reason),
+        callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
       .asJava
   }
 
@@ -150,10 +154,14 @@ private[javasdk] final class AutonomousAgentClientImpl(
       .asJava
   }
 
-  override def terminateAsync(): CompletionStage[Done] = {
-    log.debug("stop: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
+  override def terminateAsync(reason: String): CompletionStage[Done] = {
+    log.debug("terminate: agent [{}] instance [{}] reason [{}]", agentComponentId, agentInstanceId, reason)
     runtimeComponentClients.autonomousAgentClient
-      .terminate(agentComponentId, agentInstanceId, callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
+      .terminate(
+        agentComponentId,
+        agentInstanceId,
+        Option(reason),
+        callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
       .asJava
   }
 
