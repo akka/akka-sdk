@@ -31,7 +31,7 @@ public class SessionMessageConverter {
         event.timestamp(), event.componentId(), event.id(), event.name(), event.content());
   }
 
-  public static SessionMessage apply(SessionMemoryEntity.Event.MessageEvent event) {
+  public static SessionMessage apply(SessionMemoryEntity.Event.Message event) {
     return switch (event) {
       case SessionMemoryEntity.Event.UserMessageAdded userMsg -> apply(userMsg);
 

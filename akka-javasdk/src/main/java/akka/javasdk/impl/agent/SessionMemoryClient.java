@@ -5,6 +5,7 @@
 package akka.javasdk.impl.agent;
 
 import akka.annotation.InternalApi;
+import akka.japi.pf.PFBuilder;
 import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.agent.MemoryFilter;
 import akka.javasdk.agent.SessionHistory;
@@ -15,7 +16,6 @@ import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.agent.SessionMessageConverter;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.impl.serialization.Serializer;
-import akka.runtime.sdk.spi.BytesPayload;
 import akka.runtime.sdk.spi.MemoryClient;
 import akka.runtime.sdk.spi.MemoryContextRequest;
 import akka.stream.Materializer;
@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.PartialFunction;
 
 /** INTERNAL USE Not for user extension or instantiation */
 @InternalApi
@@ -53,6 +54,7 @@ public final class SessionMemoryClient implements SessionMemory {
   private final AgentRegistry agentRegistry;
   private final Materializer materializer;
   private final MemorySettings memorySettings;
+  private final PartialFunction<Object, SessionMessage> sessionMessageCollectPF;
 
   public SessionMemoryClient(
       ComponentClient componentClient,
@@ -83,6 +85,11 @@ public final class SessionMemoryClient implements SessionMemory {
     this.agentRegistry = agentRegistry;
     this.materializer = materializer;
     this.memorySettings = memorySettings;
+
+    this.sessionMessageCollectPF =
+        new PFBuilder<Object, SessionMessage>()
+            .match(SessionMemoryEntity.Event.Message.class, SessionMessageConverter::apply)
+            .build();
   }
 
   @Override
@@ -176,31 +183,22 @@ public final class SessionMemoryClient implements SessionMemory {
    * stand up a full {@link ComponentClient}.
    */
   SessionHistory fetchHistoryFromJournal(String sessionId, long fromSequenceNr) {
-    var persistenceId = SessionMemoryEntity.SESSION_MEMORY_COMPONENT_ID + "|" + sessionId;
-    // fromSequenceNr is the seq number AT which compaction occurred (the HistoryCleared event);
-    // start the journal replay strictly AFTER it so the marker and any earlier events that the
-    // summary supersedes don't leak into the recovered history.
-    var request = new MemoryContextRequest(persistenceId, fromSequenceNr + 1);
+    var request =
+        new MemoryContextRequest(
+            SessionMemoryEntity.SESSION_MEMORY_COMPONENT_ID, sessionId, fromSequenceNr);
 
     // The stream is materialized on Akka's dispatcher; join() parks the calling virtual thread,
     // unmounting it from its carrier until the CompletionStage completes.
     // Safe because callers (AgentImpl) invoke this from SdkExecutionContext (virtual threads).
-    List<BytesPayload> payloads =
+    List<SessionMessage> messages =
         memoryClient
             .fetchStream(request)
             .asJava()
+            .map(serializer::fromBytes)
+            .collect(sessionMessageCollectPF)
             .runWith(Sink.seq(), materializer)
             .toCompletableFuture()
             .join();
-
-    var messages =
-        payloads.stream()
-            .map(serializer::fromBytes)
-            // filter out events that are not MessageEvent
-            .filter(SessionMemoryEntity.Event.MessageEvent.class::isInstance)
-            .map(SessionMemoryEntity.Event.MessageEvent.class::cast)
-            .map(SessionMessageConverter::apply)
-            .toList();
 
     var filtered =
         MemoryHistoryUtils.applyFilters(

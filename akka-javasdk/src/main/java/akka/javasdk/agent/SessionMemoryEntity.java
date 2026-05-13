@@ -220,11 +220,11 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     record Deleted(Instant timestamp) implements Event {}
 
     /* marker interface to distinguish message events as opposed to lifecycle events */
-    sealed interface MessageEvent extends Event {}
+    sealed interface Message {}
 
     @TypeName("akka-memory-user-message-added")
     record UserMessageAdded(Instant timestamp, String componentId, String message, int sizeInBytes)
-        implements MessageEvent {}
+        implements Event, Message {}
 
     @TypeName("akka-memory-multimodal-user-message-added")
     record MultimodalUserMessageAdded(
@@ -232,7 +232,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
         String componentId,
         List<SessionMessage.MessageContent> contents,
         int sizeInBytes)
-        implements MessageEvent {}
+        implements Event, Message {}
 
     @TypeName("akka-memory-ai-message-added")
     record AiMessageAdded(
@@ -245,7 +245,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
         Optional<String> thinking,
         Optional<TokenUsage> tokenUsage,
         Map<String, Object> attributes)
-        implements MessageEvent {
+        implements Event, Message {
 
       AiMessageAdded withHistorySizeInBytes(long newSize) {
         return new AiMessageAdded(
@@ -269,7 +269,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
         String name,
         String content,
         int sizeInBytes)
-        implements MessageEvent {}
+        implements Event, Message {}
   }
 
   // Request commands
