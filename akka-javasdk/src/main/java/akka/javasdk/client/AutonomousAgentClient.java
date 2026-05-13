@@ -89,13 +89,27 @@ public interface AutonomousAgentClient {
   /** Async variant of {@link #getState}. */
   CompletionStage<AgentState> getStateAsync();
 
-  /** Suspende the agent. A suspended agent stops iterating until resumed. */
+  /** Suspend the agent. A suspended agent stops iterating until resumed. */
   default void suspend() {
-    suspendAsync().toCompletableFuture().join();
+    suspend(null);
   }
 
-  /** Async variant of {@link #suspend}. */
-  CompletionStage<Done> suspendAsync();
+  /**
+   * Suspend the agent with a reason. A suspended agent stops iterating until resumed.
+   *
+   * @param reason a description of why the agent is being suspended
+   */
+  default void suspend(String reason) {
+    suspendAsync(reason).toCompletableFuture().join();
+  }
+
+  /** Async variant of {@link #suspend()}. */
+  default CompletionStage<Done> suspendAsync() {
+    return suspendAsync(null);
+  }
+
+  /** Async variant of {@link #suspend(String)}. */
+  CompletionStage<Done> suspendAsync(String reason);
 
   /** Resume a previously suspended agent. */
   default void resume() {
@@ -107,11 +121,25 @@ public interface AutonomousAgentClient {
 
   /** Terminate the agent. */
   default void terminate() {
-    terminateAsync().toCompletableFuture().join();
+    terminate(null);
   }
 
-  /** Async variant of {@link #terminate}. */
-  CompletionStage<Done> terminateAsync();
+  /**
+   * Terminate the agent with a reason.
+   *
+   * @param reason a description of why the agent is being terminated
+   */
+  default void terminate(String reason) {
+    terminateAsync(reason).toCompletableFuture().join();
+  }
+
+  /** Async variant of {@link #terminate()}. */
+  default CompletionStage<Done> terminateAsync() {
+    return terminateAsync(null);
+  }
+
+  /** Async variant of {@link #terminate(String)}. */
+  CompletionStage<Done> terminateAsync(String reason);
 
   /**
    * Subscribe to lifecycle notifications for this agent instance. Notifications are published by

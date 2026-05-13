@@ -41,7 +41,6 @@ class ComponentClientTest {
     // FIXME what are we actually testing here?
     var dummyComponentClients =
         new ComponentClients() {
-
           @Override
           public EntityClient eventSourcedEntityClient() {
             return null;
@@ -54,6 +53,11 @@ class ComponentClientTest {
 
           @Override
           public EntityClient workFlowClient() {
+            return null;
+          }
+
+          @Override
+          public akka.runtime.sdk.spi.WorkflowClient workflowClient() {
             return null;
           }
 
@@ -171,6 +175,5 @@ class ComponentClientTest {
         componentClient.forView().method(UserByEmailWithGet::getUser);
 
     // not much to assert here
-
   }
 }
