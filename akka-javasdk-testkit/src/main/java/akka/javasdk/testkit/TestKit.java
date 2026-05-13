@@ -44,7 +44,7 @@ import akka.javasdk.timer.TimerScheduler;
 import akka.javasdk.workflow.Workflow;
 import akka.pattern.Patterns;
 import akka.runtime.sdk.spi.ComponentClients;
-import akka.runtime.sdk.spi.MemoryClient;
+import akka.runtime.sdk.spi.EventLogClient;
 import akka.runtime.sdk.spi.SpiDevModeSettings;
 import akka.runtime.sdk.spi.SpiEventingSupportSettings;
 import akka.runtime.sdk.spi.SpiMockedEventingSettings;
@@ -800,7 +800,7 @@ public class TestKit {
   private ComponentClient componentClient;
 
   /** Package-private on purpose: only test-internal helpers in this package may read this. */
-  MemoryClient memoryClient;
+  EventLogClient eventLogClient;
 
   /** Package-private on purpose: only test-internal helpers in this package may read this. */
   Serializer serializer;
@@ -1041,7 +1041,7 @@ public class TestKit {
               runtimeActorSystem.executionContext(),
               runtimeActorSystem);
       agentRegistry = startupContext.agentRegistry();
-      memoryClient = startupContext.memoryClient();
+      eventLogClient = startupContext.eventLogClient();
       selfHttpClient =
           new HttpClientImpl(
               runtimeActorSystem,

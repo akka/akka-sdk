@@ -108,11 +108,11 @@ import akka.runtime.sdk.spi
 import akka.runtime.sdk.spi.AgentDescriptor
 import akka.runtime.sdk.spi.ComponentClients
 import akka.runtime.sdk.spi.ConsumerDescriptor
+import akka.runtime.sdk.spi.EventLogClient
 import akka.runtime.sdk.spi.EventSourcedEntityDescriptor
 import akka.runtime.sdk.spi.GrpcEndpointRequestConstructionContext
 import akka.runtime.sdk.spi.HttpEndpointConstructionContext
 import akka.runtime.sdk.spi.McpEndpointConstructionContext
-import akka.runtime.sdk.spi.MemoryClient
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.RemoteIdentification
 import akka.runtime.sdk.spi.SpiAgent
@@ -295,7 +295,7 @@ class SdkRunner private (
         startContext.executionContext,
         startContext.materializer,
         startContext.componentClients,
-        startContext.memoryClient,
+        startContext.eventLogClient,
         startContext.remoteIdentification,
         startContext.tracerFactory,
         startContext.sdkMeter,
@@ -348,7 +348,7 @@ private object ComponentType {
 private[javasdk] object Sdk {
   final case class StartupContext(
       componentClients: ComponentClients,
-      memoryClient: MemoryClient,
+      eventLogClient: EventLogClient,
       dependencyProvider: Option[DependencyProvider],
       httpClientProvider: HttpClientProvider,
       grpcClientProvider: GrpcClientProviderImpl,
@@ -382,7 +382,7 @@ private final class Sdk(
     sdkExecutionContext: ExecutionContext,
     sdkMaterializer: Materializer,
     runtimeComponentClients: ComponentClients,
-    memoryClient: MemoryClient,
+    eventLogClient: EventLogClient,
     remoteIdentification: Option[RemoteIdentification],
     tracerFactory: String => Tracer,
     sdkMeter: Meter,
@@ -829,7 +829,7 @@ private final class Sdk(
             dependencyProviderOpt,
             agentGuardrails,
             applicationConfig,
-            memoryClient,
+            eventLogClient,
             agentRegistry,
             system)
 
@@ -924,7 +924,7 @@ private final class Sdk(
           startedPromise.trySuccess(
             StartupContext(
               runtimeComponentClients,
-              memoryClient,
+              eventLogClient,
               None,
               httpClientProvider,
               grpcClientProvider,
@@ -962,7 +962,7 @@ private final class Sdk(
           startedPromise.trySuccess(
             StartupContext(
               runtimeComponentClients,
-              memoryClient,
+              eventLogClient,
               dependencyProviderOpt,
               httpClientProvider,
               grpcClientProvider,

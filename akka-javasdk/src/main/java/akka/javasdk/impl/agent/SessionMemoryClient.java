@@ -16,8 +16,7 @@ import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.agent.SessionMessageConverter;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.impl.serialization.Serializer;
-import akka.runtime.sdk.spi.MemoryClient;
-import akka.runtime.sdk.spi.MemoryContextRequest;
+import akka.runtime.sdk.spi.EventLogClient;
 import akka.stream.Materializer;
 import akka.stream.javadsl.Sink;
 import com.typesafe.config.Config;
@@ -49,7 +48,7 @@ public final class SessionMemoryClient implements SessionMemory {
 
   private final Logger logger = LoggerFactory.getLogger(SessionMemoryClient.class);
   private final ComponentClient componentClient;
-  private final MemoryClient memoryClient;
+  private final EventLogClient eventLogClient;
   private final Serializer serializer;
   private final AgentRegistry agentRegistry;
   private final Materializer materializer;
@@ -58,14 +57,14 @@ public final class SessionMemoryClient implements SessionMemory {
 
   public SessionMemoryClient(
       ComponentClient componentClient,
-      MemoryClient memoryClient,
+      EventLogClient eventLogClient,
       Serializer serializer,
       AgentRegistry agentRegistry,
       Materializer materializer,
       Config memoryConfig) {
     this(
         componentClient,
-        memoryClient,
+        eventLogClient,
         serializer,
         agentRegistry,
         materializer,
@@ -74,13 +73,13 @@ public final class SessionMemoryClient implements SessionMemory {
 
   public SessionMemoryClient(
       ComponentClient componentClient,
-      MemoryClient memoryClient,
+      EventLogClient eventLogClient,
       Serializer serializer,
       AgentRegistry agentRegistry,
       Materializer materializer,
       MemorySettings memorySettings) {
     this.componentClient = componentClient;
-    this.memoryClient = memoryClient;
+    this.eventLogClient = eventLogClient;
     this.serializer = serializer;
     this.agentRegistry = agentRegistry;
     this.materializer = materializer;
@@ -136,10 +135,10 @@ public final class SessionMemoryClient implements SessionMemory {
    *       akka.javasdk.agent.memory.limited-window.max-size}: when the cap is reached it drops the
    *       oldest messages and signals via a {@link SessionHistoryResult.Truncated} reply. Cheap
    *       when the history fits, but cannot deliver more than the cap allows.
-   *   <li>{@link MemoryClient#fetchStream}. The runtime reads the journal locally (same node) and
-   *       streams the events back chunked, so it is not bound by the cross-node message-size limit
-   *       and never has to hold the full history in memory at once. More expensive than a single
-   *       entity read, so we only pay for it when needed.
+   *   <li>{@link EventLogClient#currentEventsForEntity(EventLogClient.Query)}. The runtime reads
+   *       the journal locally (same node) and streams the events back chunked, so it is not bound
+   *       by the cross-node message-size limit and never has to hold the full history in memory at
+   *       once. More expensive than a single entity read, so we only pay for it when needed.
    * </ol>
    *
    * <p>Strategy: ask the entity first; if it replies {@code Truncated}, switch to the chunked
@@ -183,18 +182,18 @@ public final class SessionMemoryClient implements SessionMemory {
    * stand up a full {@link ComponentClient}.
    */
   SessionHistory fetchHistoryFromJournal(String sessionId, long fromSequenceNr) {
-    var request =
-        new MemoryContextRequest(
+    var query =
+        new EventLogClient.Query(
             SessionMemoryEntity.SESSION_MEMORY_COMPONENT_ID, sessionId, fromSequenceNr);
 
     // The stream is materialized on Akka's dispatcher; join() parks the calling virtual thread,
     // unmounting it from its carrier until the CompletionStage completes.
     // Safe because callers (AgentImpl) invoke this from SdkExecutionContext (virtual threads).
     List<SessionMessage> messages =
-        memoryClient
-            .fetchStream(request)
+        eventLogClient
+            .currentEventsForEntity(query)
             .asJava()
-            .map(serializer::fromBytes)
+            .map(envelope -> serializer.fromBytes(envelope.payload()))
             .collect(sessionMessageCollectPF)
             .runWith(Sink.seq(), materializer)
             .toCompletableFuture()

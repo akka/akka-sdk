@@ -60,7 +60,7 @@ import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.runtime.sdk.spi.BytesPayload
-import akka.runtime.sdk.spi.MemoryClient
+import akka.runtime.sdk.spi.EventLogClient
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAgent.ContentLoadingFailure
@@ -198,7 +198,7 @@ private[impl] final class AgentImpl[A <: Agent](
     dependencyProvider: Option[DependencyProvider],
     guardrails: AgentGuardrails,
     config: Config,
-    memoryClient: MemoryClient,
+    eventLogClient: EventLogClient,
     agentRegistry: AgentRegistry,
     _system: ActorSystem[_])
     extends SpiAgent {
@@ -454,7 +454,7 @@ private[impl] final class AgentImpl[A <: Agent](
       case _: MemoryProvider.Disabled =>
         new SessionMemoryClient(
           componentClient(telemetryContext),
-          memoryClient,
+          eventLogClient,
           serializer,
           agentRegistry,
           materializer,
@@ -463,7 +463,7 @@ private[impl] final class AgentImpl[A <: Agent](
       case p: MemoryProvider.LimitedWindowMemoryProvider =>
         new SessionMemoryClient(
           componentClient(telemetryContext),
-          memoryClient,
+          eventLogClient,
           serializer,
           agentRegistry,
           materializer,
@@ -482,7 +482,7 @@ private[impl] final class AgentImpl[A <: Agent](
             p.configPath()
         new SessionMemoryClient(
           componentClient(telemetryContext),
-          memoryClient,
+          eventLogClient,
           serializer,
           agentRegistry,
           materializer,

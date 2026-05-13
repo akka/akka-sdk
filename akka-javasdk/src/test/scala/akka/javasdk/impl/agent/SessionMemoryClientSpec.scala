@@ -20,9 +20,10 @@ import akka.javasdk.agent.SessionMessage.TokenUsage
 import akka.javasdk.agent.SessionMessage.UserMessage
 import akka.javasdk.impl.agent.SessionMemoryClient.MemorySettings
 import akka.javasdk.impl.serialization.Serializer
-import akka.runtime.sdk.spi.BytesPayload
-import akka.runtime.sdk.spi.MemoryClient
-import akka.runtime.sdk.spi.MemoryContextRequest
+import akka.runtime.sdk.spi.EventLogClient
+import akka.runtime.sdk.spi.EventLogClient.Query
+import akka.runtime.sdk.spi.SpiEventSourcedEntity
+import akka.runtime.sdk.spi.SpiMetadata
 import akka.stream.SystemMaterializer
 import akka.stream.scaladsl.Source
 import org.scalatest.matchers.should.Matchers
@@ -30,13 +31,20 @@ import org.scalatest.wordspec.AnyWordSpecLike
 
 object SessionMemoryClientSpec {
 
-  /** Captures the request the client passed to the runtime, and returns a canned event stream. */
-  final class FakeMemoryClient(events: Vector[SessionMemoryEntity.Event], serializer: Serializer) extends MemoryClient {
-    @volatile var lastRequest: Option[MemoryContextRequest] = None
+  /** Captures the query the client passed to the runtime, and returns a canned event stream. */
+  final class FakeEventLogClient(events: Vector[SessionMemoryEntity.Event], serializer: Serializer)
+      extends EventLogClient {
+    @volatile var lastQuery: Option[Query] = None
 
-    override def fetchStream(request: MemoryContextRequest): Source[BytesPayload, NotUsed] = {
-      lastRequest = Some(request)
-      Source(events.map(serializer.toBytesAsJson))
+    override def currentEventsForEntity(query: Query): Source[SpiEventSourcedEntity.EventEnvelope, NotUsed] = {
+      lastQuery = Some(query)
+      var counter = 0
+      val envelopes =
+        events.map { e =>
+          counter += 1
+          new SpiEventSourcedEntity.EventEnvelope(counter, serializer.toBytesAsJson(e), SpiMetadata.empty)
+        }
+      Source(envelopes)
     }
   }
 
@@ -65,12 +73,12 @@ class SessionMemoryClientSpec extends ScalaTestWithActorTestKit with AnyWordSpec
   private val emptyRegistry: AgentRegistry = AgentRegistryImpl.fromJavaSet(java.util.Set.of())
 
   private def newClient(
-      fakeMemoryClient: FakeMemoryClient,
+      fakeEventLogClient: FakeEventLogClient,
       settings: MemorySettings = new MemorySettings(true, true, Optional.empty(), util.List.of()),
       registry: AgentRegistry = emptyRegistry): SessionMemoryClient =
     new SessionMemoryClient(
       /* componentClient = */ null, // not exercised on the fallback path
-      fakeMemoryClient,
+      fakeEventLogClient,
       serializer,
       registry,
       SystemMaterializer(system).materializer,
@@ -78,9 +86,9 @@ class SessionMemoryClientSpec extends ScalaTestWithActorTestKit with AnyWordSpec
 
   "SessionMemoryClient.fetchHistoryFromJournal" should {
 
-    "stream from MemoryClient and decode entity events into SessionMessages" in {
+    "stream from EventLogClient and decode entity events into SessionMessages" in {
       val events = Vector(userEvent("agent-1", "Hello"), aiEvent("agent-1", "Hi there!"))
-      val fake = new FakeMemoryClient(events, serializer)
+      val fake = new FakeEventLogClient(events, serializer)
       val client = newClient(fake)
 
       val result = client.fetchHistoryFromJournal("session-42", 0L)
@@ -94,15 +102,15 @@ class SessionMemoryClientSpec extends ScalaTestWithActorTestKit with AnyWordSpec
     }
 
     "build the persistence id from SESSION_MEMORY_COMPONENT_ID and the session id, and pass fromSequenceNr through unchanged" in {
-      val fake = new FakeMemoryClient(Vector.empty, serializer)
+      val fake = new FakeEventLogClient(Vector.empty, serializer)
       val client = newClient(fake)
 
       client.fetchHistoryFromJournal("session-42", 11L)
 
-      val req = fake.lastRequest.getOrElse(fail("MemoryClient.fetchStream was never called"))
-      req.componentId shouldBe SessionMemoryEntity.SESSION_MEMORY_COMPONENT_ID
-      req.sessionId shouldBe "session-42"
-      req.fromSequenceNr shouldBe 11L
+      val query = fake.lastQuery.getOrElse(fail("EventLogClient.fetchStream was never called"))
+      query.componentId shouldBe SessionMemoryEntity.SESSION_MEMORY_COMPONENT_ID
+      query.entityId shouldBe "session-42"
+      query.fromSequenceNr shouldBe 11L
     }
 
     "apply the configured filters to the streamed messages" in {
@@ -111,7 +119,7 @@ class SessionMemoryClientSpec extends ScalaTestWithActorTestKit with AnyWordSpec
         aiEvent("agent-1", "Hi from 1"),
         userEvent("agent-2", "Hello again"),
         aiEvent("agent-2", "Hi from 2"))
-      val fake = new FakeMemoryClient(events, serializer)
+      val fake = new FakeEventLogClient(events, serializer)
       val excludeAgent2: util.List[MemoryFilter] = MemoryFilter.excludeFromAgentId("agent-2").get()
       val settings = new MemorySettings(true, true, Optional.empty(), excludeAgent2)
       val client = newClient(fake, settings)
@@ -125,7 +133,7 @@ class SessionMemoryClientSpec extends ScalaTestWithActorTestKit with AnyWordSpec
 
     "trim to the configured lastN messages after filtering" in {
       val events = Vector(userEvent("a", "u1"), aiEvent("a", "a1"), userEvent("a", "u2"), aiEvent("a", "a2"))
-      val fake = new FakeMemoryClient(events, serializer)
+      val fake = new FakeEventLogClient(events, serializer)
       val settings = new MemorySettings(true, true, Optional.of(2), util.List.of())
       val client = newClient(fake, settings)
 
