@@ -24,6 +24,7 @@ import akka.javasdk.impl.reflection.Reflect
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaArray
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaBoolean
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaDataType
+import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaEnum
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaInteger
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaNumber
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
@@ -164,6 +165,10 @@ private[impl] object JsonSchema {
               val descriptor = Reflect.protoDescriptorFor(clazz.asSubclass(classOf[GeneratedMessageV3]))
               (protobufJsonSchemaFromDescriptor(descriptor, description), true)
 
+            case _ if clazz.isEnum =>
+              val values = clazz.getEnumConstants.toIndexedSeq.map(_.asInstanceOf[Enum[_]].name)
+              (new JsonSchemaEnum(values, description), true)
+
             case _ =>
               // Note: for now the top level can only be a class
               val properties = clazz.getDeclaredFields.toVector.map { field: Field =>
@@ -201,8 +206,11 @@ private[impl] object JsonSchema {
       case JavaType.FLOAT       => new JsonSchemaNumber(None)
       case JavaType.BOOLEAN     => new JsonSchemaBoolean(None)
       case JavaType.BYTE_STRING => new JsonSchemaString(None) // base64-encoded in JSON
-      case JavaType.ENUM        => new JsonSchemaString(None) // protobuf JSON uses string enum names
-      case JavaType.MESSAGE     => protobufJsonSchemaFromDescriptor(field.getMessageType, None)
+      case JavaType.ENUM        =>
+        // protobuf JSON uses string enum names
+        val values = field.getEnumType.getValues.asScala.map(_.getName).toSeq
+        new JsonSchemaEnum(values, None)
+      case JavaType.MESSAGE => protobufJsonSchemaFromDescriptor(field.getMessageType, None)
     }
     if (field.isRepeated) new JsonSchemaArray(baseType, None)
     else baseType
