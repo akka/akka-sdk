@@ -116,7 +116,7 @@ private[javasdk] final class AutonomousAgentClientImpl(
 
     val spiCapabilities = converter.toSpiCapabilities(setupImpl.capabilities)
     runtimeComponentClients.autonomousAgentClient
-      .applySetup(agentComponentId, agentInstanceId, setupImpl.goal, spiCapabilities)
+      .applySetup(agentComponentId, agentInstanceId, setupImpl.instructions, spiCapabilities)
       .asJava
   }
 
@@ -128,7 +128,7 @@ private[javasdk] final class AutonomousAgentClientImpl(
         new AgentState(
           spiState.phase,
           spiState.suspended,
-          spiState.goal,
+          spiState.instructions,
           new AutonomousAgent.TokenUsage(spiState.totalInputTokens, spiState.totalOutputTokens),
           spiState.currentTask.map(t => new TaskKey(t.id, t.name)).toJava,
           spiState.pendingTaskIds.asJava)

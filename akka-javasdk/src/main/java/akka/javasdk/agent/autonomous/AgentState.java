@@ -19,7 +19,7 @@ public final class AgentState {
 
   private final String phase;
   private final boolean suspended;
-  private final String goal;
+  private final String instructions;
   private final AutonomousAgent.TokenUsage totalTokenUsage;
   private final Optional<TaskKey> currentTask;
   private final List<String> pendingTaskIds;
@@ -27,13 +27,13 @@ public final class AgentState {
   public AgentState(
       String phase,
       boolean suspended,
-      String goal,
+      String instructions,
       AutonomousAgent.TokenUsage totalTokenUsage,
       Optional<TaskKey> currentTask,
       List<String> pendingTaskIds) {
     this.phase = phase;
     this.suspended = suspended;
-    this.goal = goal;
+    this.instructions = instructions;
     this.totalTokenUsage = totalTokenUsage;
     this.currentTask = currentTask;
     this.pendingTaskIds = pendingTaskIds;
@@ -49,9 +49,9 @@ public final class AgentState {
     return suspended;
   }
 
-  /** The agent's current goal. */
-  public String goal() {
-    return goal;
+  /** The agent's current instructions. */
+  public String instructions() {
+    return instructions;
   }
 
   /** Total token usage for this agent instance. */

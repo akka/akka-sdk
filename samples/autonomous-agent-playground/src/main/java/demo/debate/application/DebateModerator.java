@@ -15,9 +15,6 @@ public class DebateModerator extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal(
-        "Moderate structured debates between participants and synthesize balanced conclusions."
-      )
       .capability(TaskAcceptance.of(DebateTasks.DEBATE))
       .capability(Moderation.of(Advocate.class, Critic.class).maxRounds(5));
   }

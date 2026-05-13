@@ -18,7 +18,7 @@ import akka.javasdk.agent.autonomous.capability.AgentCapability
  */
 @InternalApi
 final case class AgentDefinitionImpl(
-    goal: String,
+    instructions: String,
     modelProvider: ModelProvider,
     toolInstancesOrClasses: util.List[AnyRef],
     mcpTools: util.List[RemoteMcpTools],
@@ -27,8 +27,8 @@ final case class AgentDefinitionImpl(
     capabilities: util.List[AgentCapability])
     extends AgentDefinition {
 
-  override def goal(goal: String): AgentDefinition =
-    copy(goal = goal)
+  override def instructions(instructions: String): AgentDefinition =
+    copy(instructions = instructions)
 
   override def capability(capability: AgentCapability): AgentDefinition =
     copy(capabilities = concat(this.capabilities, Seq(capability)))
@@ -62,7 +62,7 @@ final case class AgentDefinitionImpl(
 object AgentDefinitionImpl {
   def empty(): AgentDefinitionImpl =
     AgentDefinitionImpl(
-      goal = "",
+      instructions = "",
       modelProvider = null,
       toolInstancesOrClasses = util.List.of(),
       mcpTools = util.List.of(),

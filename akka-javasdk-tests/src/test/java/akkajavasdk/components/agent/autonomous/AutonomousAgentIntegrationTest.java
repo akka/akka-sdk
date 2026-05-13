@@ -199,11 +199,13 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
     assertThat(specialistInfo.description()).isEqualTo("Resolves billing disputes.");
     assertThat(specialistInfo.role()).isEqualTo("billing-specialist");
 
-    // CoordinatorAgent doesn't define name, description, or role — defaults apply
+    // CoordinatorAgent doesn't define name or role — defaults apply.
+    // @Component.description is mandatory for AutonomousAgent.
     var coordinatorInfo = testKit.getAgentRegistry().agentInfo("coordinator-agent");
     assertThat(coordinatorInfo.id()).isEqualTo("coordinator-agent");
     assertThat(coordinatorInfo.name()).isEqualTo("coordinator-agent");
-    assertThat(coordinatorInfo.description()).isEqualTo("");
+    assertThat(coordinatorInfo.description())
+        .isEqualTo("Coordinates research by delegating to workers and synthesizing results.");
     assertThat(coordinatorInfo.role()).isEqualTo("");
   }
 

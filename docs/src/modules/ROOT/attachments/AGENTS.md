@@ -341,13 +341,14 @@ public class ActivityAgent extends Agent {
 ### Autonomous Agent (basic)
 
 ```java
-@Component(id = "question-answerer")
+@Component(
+    id = "question-answerer",
+    description = "Answers questions clearly and concisely")
 public class QuestionAnswerer extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
     return define()
-        .goal("Answer questions clearly and concisely.")
         .capability(TaskAcceptance.of(QuestionTasks.ANSWER).maxIterationsPerTask(3));
   }
 
@@ -361,13 +362,14 @@ public class QuestionAnswerer extends AutonomousAgent {
 ### Autonomous Agent with Combined Capabilities
 
 ```java
-@Component(id = "research-coordinator")
+@Component(
+    id = "research-coordinator",
+    description = "Produces research briefs by synthesizing specialist findings")
 public class ResearchCoordinator extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
     return define()
-        .goal("Produce research briefs by synthesizing specialist findings.")
         .tools(new ResearchTools())
         .capability(
             TaskAcceptance.of(ResearchTasks.BRIEF)
@@ -780,9 +782,10 @@ Before presenting code, verify:
 **Autonomous Agent**
 - [ ] **STOP: Did you read `autonomous-agents.html.md` BEFORE writing any code?** (Required for first autonomous agent in session)
 - [ ] Extends `AutonomousAgent`, NOT `Agent`
-- [ ] Has `@Component(id = "...")` annotation
+- [ ] Has `@Component(id = "...", description = "...")` annotation with a non-empty description (mandatory)
+- [ ] `@Component` description captures the agent's purpose and expected outcome: used by coordinators, injected into the system message
 - [ ] Implements `definition()` method, NO command handlers
-- [ ] Goal describes purpose, not coordination mechanics
+- [ ] Optional `.instructions(...)` for tone, persona, domain rules, or procedural guidance to the model; not multi-agent orchestration mechanics (those belong in capabilities)
 - [ ] Declares accepted task types with `.capability(TaskAcceptance.of(...))`
 - [ ] Task definitions are `static final` constants with `.resultConformsTo()`
 - [ ] Result types are Java records

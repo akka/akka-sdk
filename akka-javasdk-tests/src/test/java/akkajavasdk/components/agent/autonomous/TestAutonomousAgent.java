@@ -10,7 +10,9 @@ import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 
-@Component(id = "test-autonomous-agent")
+@Component(
+    id = "test-autonomous-agent",
+    description = "Test agent used by autonomous agent integration tests.")
 public class TestAutonomousAgent extends AutonomousAgent {
 
   // Injected to exercise the SdkRunner scan-time wiring path: a ComponentClient
@@ -26,7 +28,6 @@ public class TestAutonomousAgent extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-        .goal("Test agent")
         .capability(
             TaskAcceptance.of(
                 TestTasks.TEST_TASK,

@@ -15,7 +15,7 @@ A browser UI is bundled with the service. Boot the service (`mvn compile exec:ja
 | **helloworld** | None | Simplest usage — single agent, single task, no coordination |
 | **pipeline** | None (task dependencies) | 3-phase dependency chain: collect, analyze, report |
 | **docreview** | None (attachments) | Document review with text content attachments |
-| **dynamic** | None (runtime configuration) | One generic agent class configured per request with different goals and capabilities |
+| **dynamic** | None (runtime configuration) | One generic agent class configured per request with different instructions and capabilities |
 | **research** | Delegation | Coordinator delegates to researcher and analyst, synthesises findings |
 | **consulting** | Delegation + handoff | Delegate to specialists, hand off complex cases |
 | **support** | Handoff | Triage classifies request, hands off to billing or technical specialist |
@@ -78,17 +78,17 @@ A single agent reviews a document for compliance, receiving the document content
 
 ## dynamic
 
-A single generic agent class is configured per request with different goals and task capabilities. The same `DynamicAgent` code runs both the summarize and translate flows.
+A single generic agent class is configured per request with different instructions and task capabilities. The same `DynamicAgent` code runs both the summarize and translate flows.
 
-**Agents:** DynamicAgent — declared with no static goal or capabilities; configured at runtime via `AgentSetup` before each task is assigned
+**Agents:** DynamicAgent — declared with no static instructions or capabilities; configured at runtime via `AgentSetup` before each task is assigned
 
 **Tasks:**
 - SUMMARIZE → `String` — produces a concise summary of the input content
 - TRANSLATE → `String` — translates the input content to French
 
-**Flow:** Two HTTP routes (`POST /dynamic/summarize`, `POST /dynamic/translate`) each create a fresh DynamicAgent instance, configure its goal and accepted capability dynamically, then assign a single task. The summarize route sets a summarization goal and accepts only the SUMMARIZE task; the translate route sets a translation goal and accepts only the TRANSLATE task — same agent class, two different runtime specialisations.
+**Flow:** Two HTTP routes (`POST /dynamic/summarize`, `POST /dynamic/translate`) each create a fresh DynamicAgent instance, configure its instructions and accepted capability dynamically, then assign a single task. The summarize route sets summarization instructions and accepts only the SUMMARIZE task; the translate route sets translation instructions and accepts only the TRANSLATE task — same agent class, two different runtime specialisations.
 
-**Demonstrates:** Runtime agent configuration. The same `AutonomousAgent` subclass with no static goal or capabilities can be specialised per request via `AgentSetup`. Useful when many task variants share the same execution shape and the differences are best expressed as data rather than as separate agent classes.
+**Demonstrates:** Runtime agent configuration. The same `AutonomousAgent` subclass with no static instructions or capabilities can be specialised per request via `AgentSetup`. Useful when many task variants share the same execution shape and the differences are best expressed as data rather than as separate agent classes.
 
 ---
 

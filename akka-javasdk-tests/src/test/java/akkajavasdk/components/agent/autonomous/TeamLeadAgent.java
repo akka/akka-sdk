@@ -11,13 +11,12 @@ import akka.javasdk.agent.autonomous.capability.TeamLeadership;
 import akka.javasdk.agent.autonomous.capability.TeamLeadership.TeamMember;
 import akka.javasdk.annotations.Component;
 
-@Component(id = "team-lead-agent")
+@Component(id = "team-lead-agent", description = "Plans and coordinates work by leading a team.")
 public class TeamLeadAgent extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
     return define()
-        .goal("Plan and coordinate work by leading a team.")
         .capability(TaskAcceptance.of(TestTasks.PLAN))
         .capability(TeamLeadership.of(TeamMember.of(TeamWorkerAgent.class).maxInstances(2)));
   }

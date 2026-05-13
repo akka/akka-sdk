@@ -10,13 +10,14 @@ import akka.javasdk.agent.autonomous.capability.Delegation;
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 
-@Component(id = "coordinator-agent")
+@Component(
+    id = "coordinator-agent",
+    description = "Coordinates research by delegating to workers and synthesizing results.")
 public class CoordinatorAgent extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
     return define()
-        .goal("Coordinate research by delegating to workers and synthesising results.")
         .capability(TaskAcceptance.of(TestTasks.RESEARCH).maxIterationsPerTask(5))
         .capability(Delegation.to(WorkerAgent.class).maxParallelWorkers(2));
   }

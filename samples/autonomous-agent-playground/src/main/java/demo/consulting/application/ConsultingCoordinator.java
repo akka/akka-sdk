@@ -13,19 +13,18 @@ import akka.javasdk.annotations.Component;
  * senior consultant (handoff), and delegate fact-checking to a request-based agent.
  */
 // tag::class[]
-@Component(id = "consulting-coordinator")
+@Component(
+  id = "consulting-coordinator",
+  description = """
+    Delivers actionable consulting recommendations by assessing \
+    problem complexity and routing to the right expertise level\
+    """
+)
 public class ConsultingCoordinator extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal(
-        """
-        Deliver actionable consulting recommendations. Assess each client \
-        problem, determine its complexity, and ensure it reaches the right \
-        level of expertise for resolution. \
-        """
-      )
       .tools(new ConsultingTools())
       .capability(
         TaskAcceptance.of(ConsultingTasks.ENGAGEMENT).canHandoffTo(SeniorConsultant.class)

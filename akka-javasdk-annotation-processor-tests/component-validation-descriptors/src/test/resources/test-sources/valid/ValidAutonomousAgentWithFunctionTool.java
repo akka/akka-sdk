@@ -5,12 +5,12 @@ import akka.javasdk.agent.autonomous.AgentDefinition;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.FunctionTool;
 
-@Component(id = "autonomous-agent-with-tool")
+@Component(id = "autonomous-agent-with-tool", description = "Autonomous agent used to test function tools")
 public class ValidAutonomousAgentWithFunctionTool extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
-    return define().goal("Test goal");
+    return define().instructions("Test instructions");
   }
 
   @FunctionTool(description = "A helper tool")

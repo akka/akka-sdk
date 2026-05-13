@@ -33,5 +33,11 @@ abstract class AbstractAutonomousAgentValidationSpec(val validationMode: Validat
         "invalid/AutonomousAgentWithCommandHandler.java",
         "AutonomousAgent must not define command handler methods")
     }
+
+    "reject AutonomousAgent without @Component description" in {
+      assertInvalid(
+        "invalid/AutonomousAgentWithoutDescription.java",
+        "@Component description is mandatory for AutonomousAgent")
+    }
   }
 }

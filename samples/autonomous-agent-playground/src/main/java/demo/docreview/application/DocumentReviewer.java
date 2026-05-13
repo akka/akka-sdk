@@ -9,18 +9,17 @@ import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 
-@Component(id = "document-reviewer")
+@Component(
+  id = "document-reviewer",
+  description = """
+    Reviews documents for regulatory and compliance standards, \
+    producing structured assessments with specific findings\
+    """
+)
 public class DocumentReviewer extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
-    return define()
-      .goal(
-        """
-        Review documents for regulatory and compliance standards, \
-        providing structured assessments with specific findings. \
-        """
-      )
-      .capability(TaskAcceptance.of(ReviewTasks.REVIEW).maxIterationsPerTask(5));
+    return define().capability(TaskAcceptance.of(ReviewTasks.REVIEW).maxIterationsPerTask(5));
   }
 }

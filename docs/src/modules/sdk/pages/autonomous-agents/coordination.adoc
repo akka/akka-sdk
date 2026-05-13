@@ -8,19 +8,17 @@ The coordination pattern shapes system behavior in several ways: efficiency, coh
 
 Four patterns cover the design space. Each has a distinct view of how context is scoped and flows between agents, a corresponding single-agent approach, and an analogy to established concurrency models. In practice these patterns are conceptual tools for understanding the design space. Real systems often blend them.
 
-Before you can apply a pattern, you need to decide what each piece of work is. The next section walks through the four primitives, goal, task, tool, and agent, and how to choose between them.
+Before you can apply a pattern, you need to decide what each piece of work is. The next section walks through the three primitives, task, tool, and agent, and how to choose between them.
 
 == Choosing the unit of decomposition
 
 Designing an autonomous agent system means deciding which unit of decomposition fits each piece of work. The same operation, "check the weather", can reasonably be modeled as a tool, a task, or its own agent, and the choice has real consequences for context, persistence, and reuse. This section explains what each abstraction is for, then offers a rule of thumb for choosing between them.
 
-Goal:: A goal is an agent's high-level purpose: what it achieves. It is not a step or a procedure. The runtime puts the goal in the system message, so it shapes every iteration. Keep goals focused on outcomes, such as "Produce research briefs by synthesizing specialist findings", rather than mechanics like "Call the researcher, then call the analyst, then synthesize".
-
 Tool:: A tool is a function the model can request to fetch information, perform a computation, or trigger an action. The agent runs the tool on the model's behalf and feeds the return value back into the model's context, then the iteration continues. Tools are the right fit for quick lookups, deterministic computations, or for letting the model interact with entities and views. They have no lifecycle of their own and are not visible from outside the iteration.
 
 Task:: A task is a typed unit of work with its own identity, result schema, and lifecycle. Tasks persist independently of the agent that handles them. They can be queried by external clients, depend on other tasks, hand off between agents, and produce results that survive the agent. Use a task when the work has a meaningful structured result, when it might succeed or fail independently, when other tasks should depend on it, or when an external actor such as a human or another service needs to observe or complete it.
 
-Agent:: An autonomous agent is a process with its own goal, accepted task types, and tools. Use a separate agent when the work benefits from a focused context, a different goal phrasing, or a different model. The most common reasons are coordination, when you want to delegate, hand off, or moderate, and isolation, when you don't want the parent agent's context contaminated by the details of the sub-work.
+Agent:: An autonomous agent is a process with a `@Component` description, accepted task types, and tools. The description captures the agent's purpose and expected outcome: it tells coordinators when to delegate to it and is injected into its own system message. Use a separate agent when the work benefits from a focused context, a distinct purpose, or a different model. The most common reasons are coordination, when you want to delegate, hand off, or moderate, and isolation, when you don't want the parent agent's context contaminated by the details of the sub-work. Optional `instructions(...)` on the definition can add tone, persona, domain rules, or procedural guidance for the model; multi-agent orchestration mechanics belong in capabilities, not in instructions.
 
 === Choosing between them
 
@@ -28,7 +26,7 @@ Pick the smallest abstraction that still captures what you need. The escalation 
 
 * If the work is a fetch or a calculation that informs the model's decision in the same iteration, make it a *tool*. Example: `getWeather(location, date)` returns a forecast string the model can read and react to.
 * If the work has a typed result that should be tracked, depended on, or completed by an actor other than the agent, make it a *task*. The same agent can accept several task types, and tasks can declare dependencies between each other. Example: a `WeatherForecast` task whose result feeds into a downstream `TripPlan` task.
-* If the work needs its own goal, its own context, or specialized handling, make it a *separate agent*. Reach for it through a `Delegation` capability when you want a result back, a handoff when you want to transfer ownership, or `TeamLeadership` / `Moderation` when you want richer coordination.
+* If the work needs its own purpose, its own context, or specialized handling, make it a *separate agent*. Reach for it through a `Delegation` capability when you want a result back, a handoff when you want to transfer ownership, or `TeamLeadership` / `Moderation` when you want richer coordination.
 +
 The delegation target can be either an autonomous agent or a request-based xref:sdk:agents.adoc[Agent]:
 +

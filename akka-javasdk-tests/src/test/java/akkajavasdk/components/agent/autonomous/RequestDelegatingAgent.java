@@ -12,13 +12,14 @@ import akka.javasdk.annotations.Component;
 import akkajavasdk.components.agent.FactCheckAgent;
 import akkajavasdk.components.agent.SomeAgent;
 
-@Component(id = "request-delegating-agent")
+@Component(
+    id = "request-delegating-agent",
+    description = "Coordinates work by delegating fact-checking to a request-based agent.")
 public class RequestDelegatingAgent extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
     return define()
-        .goal("Coordinate work by delegating fact-checking to a request-based agent.")
         .capability(TaskAcceptance.of(TestTasks.TEST_TASK).maxIterationsPerTask(5))
         .capability(Delegation.to(SomeAgent.class, FactCheckAgent.class));
   }

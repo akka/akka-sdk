@@ -26,6 +26,15 @@ public @interface Component {
   /** A human-readable name for this component (optional). */
   String name() default "";
 
-  /** A description of what this component does (optional). */
+  /**
+   * A description of what this component does.
+   *
+   * <p>Optional in general, but <strong>mandatory and non-empty</strong> for classes extending
+   * {@code AutonomousAgent}. For agents (both request-based and autonomous), the description
+   * captures the agent's purpose and expected outcome: it is injected into the model's system
+   * message and is used by other agents to decide whether to delegate or hand off to this agent.
+   * Write it as a short statement of what the agent does, when to use it, and what it produces,
+   * rather than as a procedure.
+   */
   String description() default "";
 }

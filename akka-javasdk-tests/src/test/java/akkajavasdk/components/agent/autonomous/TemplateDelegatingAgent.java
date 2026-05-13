@@ -10,13 +10,14 @@ import akka.javasdk.agent.autonomous.capability.Delegation;
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 
-@Component(id = "template-delegating-agent")
+@Component(
+    id = "template-delegating-agent",
+    description = "Coordinates research by delegating work items using task templates.")
 public class TemplateDelegatingAgent extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
     return define()
-        .goal("Coordinate research by delegating work items using task templates.")
         .capability(TaskAcceptance.of(TestTasks.RESEARCH).maxIterationsPerTask(5))
         .capability(Delegation.to(TeamWorkerAgent.class));
   }

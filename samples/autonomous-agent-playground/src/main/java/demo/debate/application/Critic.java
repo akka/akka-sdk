@@ -9,9 +9,6 @@ public class Critic extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
-    return define()
-      .goal(
-        "Present compelling counterarguments and identify weaknesses in the opposing position."
-      );
+    return define();
   }
 }

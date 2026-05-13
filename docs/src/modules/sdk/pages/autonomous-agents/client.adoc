@@ -44,7 +44,7 @@ Tasks are queued if the agent is busy. A single agent instance processes one tas
 
 The `maxParallelWorkers` option on a `Delegation` capability (see xref:sdk:autonomous-agents/capabilities.adoc#delegation[Delegation]) caps how many worker instances a coordinator can run in parallel. It does not change the single-task-at-a-time behavior of any one instance.
 
-If the agent uses xref:sdk:autonomous-agents/defining.adoc#dynamic-configuration[dynamic configuration], call `setup(...)` on the same `forAutonomousAgent(...)` chain before `runSingleTask` or `assignTasks` so the runtime applies the per-instance goal and capabilities before iteration begins.
+If the agent uses xref:sdk:autonomous-agents/defining.adoc#dynamic-configuration[dynamic configuration], call `setup(...)` on the same `forAutonomousAgent(...)` chain before `runSingleTask` or `assignTasks` so the runtime applies the per-instance instructions and capabilities before iteration begins.
 
 *Terminate an agent:*
 
@@ -119,7 +119,7 @@ var state = componentClient
 
 state.phase();           // execution phase, e.g. "PHASE_MODEL", "PHASE_TOOLS", "PHASE_STOPPED"
 state.suspended();       // whether the agent is suspended
-state.goal();            // the agent's current goal
+state.instructions();    // the agent's current instructions
 state.totalTokenUsage(); // cumulative token usage (inputTokens, outputTokens)
 state.currentTask();     // Optional<TaskKey> with the task currently being worked on
 state.pendingTaskIds();  // List<String> with ids of tasks queued but not yet started
