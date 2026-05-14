@@ -15,7 +15,7 @@ In addition to the Akka-specific metrics listed below, standard JVM runtime metr
 Number of active HTTP server requests.
 Metric:: `http.server.active_requests`
 Type:: up-down counter
-Unit:: `{request}`
+Unit:: `\{request}`
 
 
 
@@ -76,7 +76,7 @@ OpenTelemetry semantic convention attributes::
 | `http.route`
 | string
 | Conditionally required: If and only if it's available
-| The matched route template, e.g. `/pets/{id}`.
+| The matched route template, e.g. `/pets/\{id}`.
 
 | `server.address`
 | string
@@ -152,7 +152,7 @@ OpenTelemetry semantic convention attributes::
 | `http.route`
 | string
 | Conditionally required: If and only if it's available
-| The matched route template, e.g. `/pets/{id}`.
+| The matched route template, e.g. `/pets/\{id}`.
 
 | `server.address`
 | string
@@ -238,7 +238,7 @@ OpenTelemetry semantic convention attributes::
 | `http.route`
 | string
 | Conditionally required: If and only if it's available
-| The matched route template, e.g. `/pets/{id}`.
+| The matched route template, e.g. `/pets/\{id}`.
 
 | `server.address`
 | string
@@ -324,7 +324,7 @@ OpenTelemetry semantic convention attributes::
 | `http.route`
 | string
 | Conditionally required: If and only if it's available
-| The matched route template, e.g. `/pets/{id}`.
+| The matched route template, e.g. `/pets/\{id}`.
 
 | `server.address`
 | string
@@ -803,7 +803,7 @@ Component attributes::
 Number of agent evaluation results.
 Metric:: `akka.agent.evaluation.result`
 Type:: counter
-Unit:: `{result}`
+Unit:: `\{result}`
 
 
 
@@ -995,7 +995,7 @@ OpenTelemetry semantic convention attributes::
 Number of input and output tokens used in GenAI operations.
 Metric:: `gen_ai.client.token.usage`
 Type:: histogram
-Unit:: `{token}`
+Unit:: `\{token}`
 
 
 
@@ -1067,7 +1067,7 @@ OpenTelemetry semantic convention attributes::
 Number of currently active workflow instances.
 Metric:: `akka.workflow.active`
 Type:: up-down counter
-Unit:: `{workflow}`
+Unit:: `\{workflow}`
 
 
 
@@ -1295,7 +1295,7 @@ OpenTelemetry semantic convention attributes::
 Number of workflow replication conflicts detected.
 Metric:: `akka.workflow.conflicts_detected`
 Type:: counter
-Unit:: `{conflict}`
+Unit:: `\{conflict}`
 
 
 
@@ -1337,7 +1337,7 @@ Component attributes::
 Number of workflow replication conflicts resolved.
 Metric:: `akka.workflow.conflicts_resolved`
 Type:: counter
-Unit:: `{conflict}`
+Unit:: `\{conflict}`
 
 
 
@@ -1583,7 +1583,7 @@ OpenTelemetry semantic convention attributes::
 Number of workflow recoveries that loaded from events (not snapshot-only).
 Metric:: `akka.workflow.recovery.events_loaded`
 Type:: counter
-Unit:: `{recovery}`
+Unit:: `\{recovery}`
 
 
 
@@ -1625,7 +1625,7 @@ Component attributes::
 Number of workflows registered for deletion.
 Metric:: `akka.workflow.registered_for_deletion`
 Type:: counter
-Unit:: `{workflow}`
+Unit:: `\{workflow}`
 
 
 
@@ -1986,7 +1986,7 @@ OpenTelemetry semantic convention attributes::
 Number of view conflict resolutions completed.
 Metric:: `akka.view.conflict_resolutions`
 Type:: counter
-Unit:: `{resolution}`
+Unit:: `\{resolution}`
 
 
 
@@ -2040,7 +2040,7 @@ View Update attributes::
 Number of rows loaded from the view store.
 Metric:: `akka.view.load.rows`
 Type:: counter
-Unit:: `{row}`
+Unit:: `\{row}`
 
 
 
@@ -2148,7 +2148,7 @@ View Update attributes::
 Number of view queries that exceeded the byte limit for loading from the view store.
 Metric:: `akka.view.query.byte_limit_exceeded`
 Type:: counter
-Unit:: `{error}`
+Unit:: `\{error}`
 
 
 
@@ -2244,7 +2244,7 @@ OpenTelemetry semantic convention attributes::
 Number of rows returned per view query.
 Metric:: `akka.view.query.result.rows`
 Type:: histogram
-Unit:: `{row}`
+Unit:: `\{row}`
 
 
 
@@ -2328,7 +2328,7 @@ Component attributes::
 Number of view queries that exceeded the row limit for loading from the view store.
 Metric:: `akka.view.query.row_limit_exceeded`
 Type:: counter
-Unit:: `{error}`
+Unit:: `\{error}`
 
 
 
@@ -2514,7 +2514,7 @@ OpenTelemetry semantic convention attributes::
 Number of sequence gaps detected in view updates.
 Metric:: `akka.view.update.sequence_gaps`
 Type:: counter
-Unit:: `{gap}`
+Unit:: `\{gap}`
 
 
 
@@ -2700,7 +2700,7 @@ OpenTelemetry semantic convention attributes::
 Number of view upsert operations that exceeded the byte size limit.
 Metric:: `akka.view.upsert.byte_limit_exceeded`
 Type:: counter
-Unit:: `{error}`
+Unit:: `\{error}`
 
 
 
@@ -2742,7 +2742,7 @@ Component attributes::
 Number of rows upserted to the view store.
 Metric:: `akka.view.upsert.rows`
 Type:: counter
-Unit:: `{row}`
+Unit:: `\{row}`
 
 
 
@@ -2988,7 +2988,7 @@ Unit:: `By`
 Number of currently registered timer calls per worker.
 Metric:: `akka.timer.registered`
 Type:: gauge
-Unit:: `{timer}`
+Unit:: `\{timer}`
 
 
 
