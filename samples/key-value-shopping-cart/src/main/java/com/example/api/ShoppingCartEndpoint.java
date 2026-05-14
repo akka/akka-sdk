@@ -12,7 +12,6 @@ import com.example.api.ShoppingCartDTO.LineItemDTO;
 import com.example.application.ShoppingCartEntity;
 import com.example.application.ShoppingCartMetrics;
 import com.example.domain.ShoppingCart;
-
 import java.util.UUID;
 
 // Opened up for access from the public internet to make the sample service easy to try out.
@@ -25,7 +24,10 @@ public class ShoppingCartEndpoint {
   private final ShoppingCartMetrics shoppingCartMetrics;
 
   // tag::metrics[]
-  public ShoppingCartEndpoint(ComponentClient componentClient, ShoppingCartMetrics shoppingCartMetrics) {
+  public ShoppingCartEndpoint(
+    ComponentClient componentClient,
+    ShoppingCartMetrics shoppingCartMetrics
+  ) {
     this.componentClient = componentClient;
     this.shoppingCartMetrics = shoppingCartMetrics; // <1>
   }
@@ -41,6 +43,7 @@ public class ShoppingCartEndpoint {
       throw new RuntimeException("Failed to create cart, please retry", e);
     }
   }
+
   // end::metrics[]
 
   @Post("/{cartId}/items")

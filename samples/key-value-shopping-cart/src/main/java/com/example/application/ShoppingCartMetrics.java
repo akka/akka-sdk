@@ -11,7 +11,8 @@ public class ShoppingCartMetrics {
 
   public ShoppingCartMetrics(Meter meter) { // <1>
     this.meter = meter;
-    this.shoppingCartCreated = meter.counterBuilder("shopping.cart.created") // <2>
+    this.shoppingCartCreated = meter
+      .counterBuilder("shopping.cart.created") // <2>
       .setDescription("How many shopping carts have been created")
       .setUnit("{created}")
       .build();
