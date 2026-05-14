@@ -74,7 +74,7 @@ private[impl] final class AutonomousAgentImpl(
     config: Config,
     _system: ActorSystem[_],
     agentDefinition: AgentDefinitionImpl,
-    override val goal: String,
+    override val instructions: String,
     override val modelProvider: SpiAgent.ModelProvider,
     override val toolDescriptors: Seq[SpiAgent.ToolDescriptor],
     override val mcpClientDescriptors: Seq[SpiAgent.McpToolEndpointDescriptor],

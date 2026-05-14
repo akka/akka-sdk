@@ -4,7 +4,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Build agents that operate as durable processes, iterating a model decision loop over typed tasks until the work is done. The xref:sdk:autonomous-agents.adoc[Autonomous Agent] component is purpose-built for this. The developer declares the agent's goal, accepted task types, tools, and coordination capabilities, and the runtime takes care of execution, persistence, and recovery.
+Build agents that operate as durable processes, iterating a model decision loop over typed tasks until the work is done. The xref:sdk:autonomous-agents.adoc[Autonomous Agent] component is purpose-built for this. The developer declares the agent's description, accepted task types, tools, and coordination capabilities, and the runtime takes care of execution, persistence, and recovery.
 
 == Overview
 

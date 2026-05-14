@@ -11,13 +11,13 @@ include::ROOT:partial$include.adoc[]
 
 == Overview
 
-image:ROOT:agent.png[Autonomous Agent,width=100,float=left]An Autonomous Agent is a model-driven component that runs as a durable process. It works on typed tasks, each with its own identity, instructions, and result schema. The developer declares the agent's goal, the task types it accepts, the tools it can use, and any coordination capabilities. The runtime drives the model through a decision loop until each task is complete. Agent and task state is persisted along the way, so work survives crashes and restarts.
+image:ROOT:agent.png[Autonomous Agent,width=100,float=left]An Autonomous Agent is a model-driven component that runs as a durable process. It works on typed tasks, each with its own identity, instructions, and result schema. The developer declares the agent's description (via `@Component`), the task types it accepts, the tools it can use, and any coordination capabilities. The runtime drives the model through a decision loop until each task is complete. Agent and task state is persisted along the way, so work survives crashes and restarts.
 
-A task ends when the model decides its work on it is done. Success means the model produces a result that conforms to the task's declared result schema. Failure means the model reports it cannot make progress, and the runtime records a failure reason. As a safety net, an iteration limit terminates a task that reaches neither outcome. The agent's goal and the task's result schema together shape what "done" means for each task type.
+A task ends when the model decides its work on it is done. Success means the model produces a result that conforms to the task's declared result schema. Failure means the model reports it cannot make progress, and the runtime records a failure reason. As a safety net, an iteration limit terminates a task that reaches neither outcome. The agent's description, together with the task's result schema and any optional definition-level instructions, shape what "done" means for each task type.
 
 A task exists independently of any agent. It can be created up front with dependencies, queried by external clients while running, or handed between agents. Its typed result outlives the agent that produced it. The agent itself is stateless from the developer's perspective, while task and agent state are recovered automatically after crashes or restarts.
 
-Models perform best with focused context. A single agent loaded with too many concerns, competing objectives, and unrelated information loses clarity. Autonomous Agents are designed around this constraint: each agent has its own goal, its own accepted task types, and its own iteration loop, so context stays scoped to what one agent needs. Coordination then composes focused agents rather than overloading one.
+Models perform best with focused context. A single agent loaded with too many concerns, competing objectives, and unrelated information loses clarity. Autonomous Agents are designed around this constraint: each agent has its own description, its own accepted task types, and its own iteration loop, so context stays scoped to what one agent needs. Coordination then composes focused agents rather than overloading one.
 
 Coordination is part of the component model. An agent can declare that it delegates subtasks to specialist workers, hands off work to peers, leads a team that shares a task list, or moderates a turn-taking conversation. The runtime exposes these patterns to the model as tools, so the agent invokes them like any other tool. Multi-agent systems can be assembled from focused, single-purpose agents without writing orchestration code.
 
@@ -138,7 +138,7 @@ include::example$autonomous-agent-playground/src/main/java/demo/helloworld/api/Q
 
 == Topics
 
-xref:sdk:autonomous-agents/defining.adoc[Defining an autonomous agent]:: Building an `AgentDefinition`: goal, accepted task types, tools, MCP endpoints, guardrails, iteration limit, and model selection.
+xref:sdk:autonomous-agents/defining.adoc[Defining an autonomous agent]:: Building an `AgentDefinition`: accepted task types, tools, MCP endpoints, guardrails, iteration limit, model selection, and optional instructions. Covers how the `@Component` description captures the agent's purpose and expected outcome.
 
 xref:sdk:autonomous-agents/tasks.adoc[Tasks]:: Defining task types, creating instances with instructions and attachments, the task lifecycle, querying typed results, declaring dependencies between tasks.
 

@@ -8,11 +8,11 @@ import akka.javasdk.agent.autonomous.AgentDefinition;
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.annotations.Component;
 
-@Component(id = "debater-a")
+@Component(id = "debater-a", description = "Argues in favor of the assigned position.")
 public class DebaterA extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
-    return define().goal("Argue in favor of the assigned position.");
+    return define();
   }
 }

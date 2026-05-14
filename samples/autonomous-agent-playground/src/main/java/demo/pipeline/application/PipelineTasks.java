@@ -12,19 +12,19 @@ public class PipelineTasks {
 
   // prettier-ignore
   public static final Task<ReportResult> COLLECT = Task
-    .define("Collect")
+    .name("Collect")
     .description("Collect data on a topic")
     .resultConformsTo(ReportResult.class);
 
   // prettier-ignore
   public static final Task<ReportResult> ANALYZE = Task
-    .define("Analyze")
+    .name("Analyze")
     .description("Analyze collected data")
     .resultConformsTo(ReportResult.class);
 
   // prettier-ignore
   public static final Task<ReportResult> REPORT = Task
-    .define("Report")
+    .name("Report")
     .description("Write final report")
     .resultConformsTo(ReportResult.class);
 }

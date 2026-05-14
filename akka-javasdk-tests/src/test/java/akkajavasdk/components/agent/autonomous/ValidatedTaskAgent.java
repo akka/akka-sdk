@@ -9,13 +9,11 @@ import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 
-@Component(id = "validated-task-agent")
+@Component(id = "validated-task-agent", description = "Completes tasks subject to rule validation.")
 public class ValidatedTaskAgent extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
-    return define()
-        .goal("Complete tasks with rule validation")
-        .capability(TaskAcceptance.of(TestTasks.VALIDATED_TASK));
+    return define().capability(TaskAcceptance.of(TestTasks.VALIDATED_TASK));
   }
 }

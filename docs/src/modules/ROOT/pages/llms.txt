@@ -117,7 +117,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Orchestrating multiple agents](https://doc.akka.io/sdk/agents/orchestrating.html.md): Orchestrating and supervising multiple agents
 - [Evaluating model responses](https://doc.akka.io/sdk/agents/llm_eval.html.md): Evaluating and judging the responses from LLMs via agents
 - [Testing agents](https://doc.akka.io/sdk/agents/testing.html.md): Testing agents and agentic behavior
-- [Defining an autonomous agent](https://doc.akka.io/sdk/autonomous-agents/defining.html.md): Building an AgentDefinition with goal, accepted task types, tools, guardrails, iteration limit, and model
+- [Defining an autonomous agent](https://doc.akka.io/sdk/autonomous-agents/defining.html.md): Building an AgentDefinition with accepted task types, tools, guardrails, iteration limit, model, and optional instructions
 - [Autonomous agent tasks](https://doc.akka.io/sdk/autonomous-agents/tasks.html.md): Task definitions, instances, lifecycle, snapshots, dependencies, and notifications
 - [Autonomous agent coordination patterns](https://doc.akka.io/sdk/autonomous-agents/coordination.html.md): Sequential, delegative, collaborative, and emergent patterns for multi-agent systems
 - [Autonomous agent coordination capabilities](https://doc.akka.io/sdk/autonomous-agents/capabilities.html.md): Delegation, handoff, teams, moderation, external input, and capability composition

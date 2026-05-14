@@ -2,21 +2,52 @@
 
 include::ROOT:partial$include.adoc[]
 
-An xref:sdk:autonomous-agents.adoc[Autonomous Agent] subclass implements a single `definition()` method that returns an `AgentDefinition`. The definition is the agent's contract: it tells the runtime what work the agent does, what tasks it accepts, which tools the model can call, and how the agent participates in multi-agent coordination.
+An xref:sdk:autonomous-agents.adoc[Autonomous Agent] subclass implements a single `definition()` method that returns an `AgentDefinition`. The definition is the agent's contract: it tells the runtime what tasks it accepts, which tools the model can call, and how the agent participates in multi-agent coordination.
 
-`AgentDefinition` is built with a fluent builder API. Call `define()` to start the builder, then chain configuration methods to declare the agent's goal, the task types it accepts, the tools it uses, guardrails, iteration limit, and model.
+`AgentDefinition` is built with a fluent builder API. Call `define()` to start the builder, then chain configuration methods to declare the task types the agent accepts, the tools it uses, guardrails, iteration limit, model, and optional instructions.
 
-== Goal
+== Purpose and instructions
 
-The goal is the agent's high-level purpose: what it achieves, not how it coordinates with other agents. The runtime combines the goal with capability-specific context and tool descriptions to build the system message sent to the model.
+The `@Component` description captures the agent's purpose and expected outcome: a short statement of what the agent does, when to use it, and what it produces. The description is *mandatory* for an autonomous agent and is enforced at compile time. It serves three audiences from a single source of truth:
+
+* Other agents use it to choose this agent as a delegation or handoff target.
+* The runtime injects it into the model's system message, so the agent's own LLM understands its purpose.
+* Documentation, observability, and other tooling pick it up to describe the agent.
+
+[source,java,indent=0]
+----
+@Component(
+  id = "question-answerer",
+  description = "Answers questions clearly and concisely, showing reasoning step by step"
+)
+public class QuestionAnswerer extends AutonomousAgent {
+  @Override
+  public AgentDefinition definition() {
+    return define().capability(TaskAcceptance.of(QuestionTasks.ANSWER));
+  }
+}
+----
+
+Because the description has to be understandable to a coordinator deciding whether to pick this agent, writing it well naturally produces outcome-oriented prose. Avoid procedure ("first call X, then call Y") — describe *what the agent is for*.
+
+The agent's behavior is then driven by its capabilities and the task types it accepts. Most autonomous agents need nothing else; their purpose comes from the description and their behavior emerges from the tasks, tools, and coordination structure.
+
+=== Optional instructions
+
+When you need to shape *how* the model speaks or judges, beyond the outcome statement in the description, add `instructions(...)` on the definition. Use this for tone, persona, role, or domain rules:
 
 [source,java,indent=0]
 ----
 define()
-  .goal("Answer questions clearly and concisely, showing reasoning step by step.")
+  .instructions("Respond in formal English. Always cite sources for factual claims.")
+  .capability(TaskAcceptance.of(QuestionTasks.ANSWER));
 ----
 
-Keep the goal focused on outcomes. Coordination mechanics (when to delegate, when to hand off, who to message) are derived automatically from the capabilities and from the descriptions on the participating agents.
+The runtime appends instructions to the system message alongside the description.
+
+Procedural guidance on how the LLM should approach a task is fine here — "read the input carefully, identify key claims, then check them against the supporting evidence" is the kind of prompt engineering instructions are for.
+
+What does *not* belong in instructions is multi-agent orchestration: when to delegate, when to hand off, who to message. Those mechanics are derived automatically from the capabilities and from the `@Component` descriptions of the participating agents. If you find yourself writing "delegate to Researcher first, then to Analyst, then synthesize" as instructions, the work belongs in capabilities and task definitions instead. See xref:sdk:autonomous-agents/coordination.adoc[] for how to decompose multi-agent work.
 
 == Accepted task types
 
@@ -125,7 +156,7 @@ define()
 
 == Complete definition example
 
-A coordinator that combines a goal, domain tools, an accepted task type with handoff to a senior consultant, and delegation to two specialist agents:
+A coordinator that combines a description, domain tools, an accepted task type with handoff to a senior consultant, and delegation to two specialist agents:
 
 [source,java,indent=0]
 .{sample-base-url}/autonomous-agent-playground/src/main/java/demo/consulting/application/ConsultingCoordinator.java[ConsultingCoordinator.java]
@@ -140,9 +171,9 @@ The combined definition declares everything the runtime needs to build the syste
 
 `AgentSetup` overrides parts of the definition for a single instance. The agent class declares whatever defaults make sense in `definition()`, and the call site supplements or overrides specific fields through `AgentSetup` before assigning work. Anything supplied through `AgentSetup` takes precedence over the corresponding field from `definition()`. Everything else falls back to the static definition.
 
-`AgentSetup.create()` supports `goal(...)` and `capability(...)`. These are the two pieces of the definition that are most useful to vary per instance. Tools, model provider, and guardrails are declared statically in `definition()` and cannot be overridden through `AgentSetup`. Call `setup(...)` once per instance, before `runSingleTask`, `assignTasks`, or any other client operation that triggers iteration.
+`AgentSetup.create()` supports `instructions(...)` and `capability(...)`. These are the two pieces of the definition that are most useful to vary per instance. The `@Component` description is bound to the component class and cannot be overridden per instance. Tools, model provider, and guardrails are declared statically in `definition()` and also cannot be overridden through `AgentSetup`. Call `setup(...)` once per instance, before `runSingleTask`, `assignTasks`, or any other client operation that triggers iteration.
 
-A typical use is to keep the static defaults in `definition()` (guardrails, model provider, the standard tool set) and override only the parts that change per instance. For example, a goal tailored to the user's request, or an extra accepted task type for that particular call.
+A typical use is to keep the static defaults in `definition()` (guardrails, model provider, the standard tool set) and override only the parts that change per instance. For example, instructions tailored to the user's request, or an extra accepted task type for that particular call.
 
 At the extreme, the definition can be a near-empty shell and everything comes from the client:
 
@@ -160,7 +191,7 @@ The endpoint then configures each instance just before assigning a task. The sam
 include::example$autonomous-agent-playground/src/main/java/demo/dynamic/api/DynamicEndpoint.java[tag=summarize]
 ----
 
-This pattern fits when many task variants share the same execution shape and the differences are best expressed as data rather than as separate agent classes: different goals over the same task types, runtime-supplied capability sets, or tool sets that depend on the user's permissions.
+This pattern fits when many task variants share the same execution shape and the differences are best expressed as data rather than as separate agent classes: different instructions over the same task types, runtime-supplied capability sets, or tool sets that depend on the user's permissions.
 
 == See Also
 

@@ -15,13 +15,13 @@ public class ConsultingTasks {
 
   // prettier-ignore
   public static final Task<ConsultingResult> ENGAGEMENT = Task
-    .define("Engagement")
+    .name("Engagement")
     .description("Consulting engagement — assess a client problem and deliver a recommendation")
     .resultConformsTo(ConsultingResult.class);
 
   // prettier-ignore
   public static final Task<ResearchSummary> RESEARCH = Task
-    .define("Research")
+    .name("Research")
     .description("Research a specific aspect of a client problem")
     .resultConformsTo(ResearchSummary.class);
 }

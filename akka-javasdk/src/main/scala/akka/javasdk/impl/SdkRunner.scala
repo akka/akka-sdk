@@ -811,12 +811,7 @@ private final class Sdk(
             scanTimeAutonomousAgentInjects
           }
           tempAgent.definition() match {
-            case impl: AgentDefinitionImpl =>
-              if (impl.goal.isEmpty)
-                logger.debug(
-                  "AutonomousAgent [{}] has no goal configured at startup. The goal must be set per-instance via AgentSetup before assigning tasks.",
-                  clz.getName)
-              impl
+            case impl: AgentDefinitionImpl => impl
             case other =>
               throw new IllegalStateException(
                 s"AutonomousAgent ${clz.getName} definition() must return a definition created via define(), got: $other")
@@ -870,7 +865,7 @@ private final class Sdk(
             applicationConfig,
             system,
             agentDefinition,
-            goal = agentDefinition.goal,
+            instructions = agentDefinition.instructions,
             modelProvider = spiModelProvider,
             toolDescriptors = spiToolDescriptors,
             mcpClientDescriptors = spiMcpDescriptors,

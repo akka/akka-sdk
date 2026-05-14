@@ -61,8 +61,8 @@ public interface AutonomousAgentClient {
   CompletionStage<Done> assignTasksAsync(String... taskIds);
 
   /**
-   * Apply per-instance configuration to this agent. The goal overrides the static goal from the
-   * agent's definition, and capabilities extend the static capabilities.
+   * Apply per-instance configuration to this agent. The instructions override the static
+   * instructions from the agent's definition, and capabilities extend the static capabilities.
    *
    * @param setup the per-instance configuration
    */

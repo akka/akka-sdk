@@ -10,13 +10,14 @@ import akka.javasdk.agent.autonomous.capability.Moderation;
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 
-@Component(id = "directed-moderator")
+@Component(
+    id = "directed-moderator",
+    description = "Moderates directed conversations between participants.")
 public class DirectedModerator extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
     return define()
-        .goal("Moderate directed conversations between participants.")
         .capability(TaskAcceptance.of(TestTasks.MODERATE))
         .capability(Moderation.of(DebaterA.class, DebaterB.class).maxRounds(5));
   }

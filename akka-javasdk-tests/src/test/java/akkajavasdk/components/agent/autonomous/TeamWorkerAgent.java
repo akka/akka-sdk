@@ -9,13 +9,11 @@ import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 
-@Component(id = "team-worker-agent")
+@Component(id = "team-worker-agent", description = "Implements assigned work items.")
 public class TeamWorkerAgent extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
-    return define()
-        .goal("Implement work items.")
-        .capability(TaskAcceptance.of(TestTasks.WORK_ITEM));
+    return define().capability(TaskAcceptance.of(TestTasks.WORK_ITEM));
   }
 }

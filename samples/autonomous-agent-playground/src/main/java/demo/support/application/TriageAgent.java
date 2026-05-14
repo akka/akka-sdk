@@ -6,18 +6,18 @@ import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 
 // tag::class[]
-@Component(id = "triage-agent")
+@Component(
+  id = "triage-agent",
+  description = """
+    Classifies customer support requests and routes them to the appropriate \
+    specialist via handoff\
+    """
+)
 public class TriageAgent extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal(
-        """
-        Classify customer support requests and ensure they are resolved \
-        by the appropriate specialist. \
-        """
-      )
       .capability(
         TaskAcceptance.of(SupportTasks.RESOLVE)
           .maxIterationsPerTask(3)

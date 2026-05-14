@@ -13,7 +13,7 @@ import java.util.UUID;
 
 /**
  * Demonstrates dynamic agent setup — the same generic agent class is configured with different
- * goals and capabilities per request.
+ * instructions and capabilities per request.
  */
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/dynamic")
@@ -42,7 +42,7 @@ public class DynamicEndpoint extends AbstractHttpEndpoint {
       .forAutonomousAgent(DynamicAgent.class, agentId)
       .setup(
         AgentSetup.create()
-          .goal("Produce a concise summary of the given content, highlighting key points.")
+          .instructions("Produce a concise summary of the given content, highlighting key points.")
           .capability(TaskAcceptance.of(DynamicTasks.SUMMARIZE))
       );
 
@@ -66,7 +66,7 @@ public class DynamicEndpoint extends AbstractHttpEndpoint {
       .forAutonomousAgent(DynamicAgent.class, agentId)
       .setup(
         AgentSetup.create()
-          .goal("Translate the given content to French, preserving tone and meaning.")
+          .instructions("Translate the given content to French, preserving tone and meaning.")
           .capability(TaskAcceptance.of(DynamicTasks.TRANSLATE))
       );
 

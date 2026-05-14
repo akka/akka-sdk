@@ -10,7 +10,7 @@ public class ProjectTasks {
 
   // prettier-ignore
   public static final Task<ProjectResult> PLAN = Task
-    .define("Plan")
+    .name("Plan")
     .description("Plan project: break work into tasks, coordinate a team, and deliver results.")
     .resultConformsTo(ProjectResult.class);
 }

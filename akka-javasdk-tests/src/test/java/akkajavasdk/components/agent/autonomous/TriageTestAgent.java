@@ -9,13 +9,14 @@ import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 
-@Component(id = "triage-test-agent")
+@Component(
+    id = "triage-test-agent",
+    description = "Classifies support requests and hands off to the appropriate specialist.")
 public class TriageTestAgent extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
     return define()
-        .goal("Classify support requests and hand off to the appropriate specialist.")
         .capability(
             TaskAcceptance.of(TestTasks.RESOLVE)
                 .maxIterationsPerTask(3)

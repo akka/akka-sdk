@@ -15,7 +15,6 @@ public class BillingSpecialist extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal("Resolve billing and payment issues for customers.")
       .capability(TaskAcceptance.of(SupportTasks.RESOLVE).maxIterationsPerTask(5));
   }
 }

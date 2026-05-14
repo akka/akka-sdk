@@ -10,16 +10,15 @@ import akka.javasdk.annotations.Component;
 // tag::class[]
 @Component(
   id = "project-lead",
-  description = "Leads software projects by coordinating a team"
+  description = "Delivers completed software projects by leading a team of developers"
 )
 public class ProjectLead extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal(
+      .instructions(
         """
-        Deliver completed software projects with all features implemented and tested. \
         Message team members directly when their tasks have dependencies or \
         shared interfaces that require coordination before implementation. \
         """

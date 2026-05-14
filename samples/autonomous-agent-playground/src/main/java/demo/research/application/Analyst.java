@@ -14,14 +14,7 @@ public class Analyst extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
-    return define()
-      .goal(
-        """
-        You are an insightful analyst. When given a topic, analyse its implications, \
-        identify trends and patterns, and produce actionable insights. \
-        """
-      )
-      .capability(TaskAcceptance.of(ResearchTasks.ANALYSIS).maxIterationsPerTask(3));
+    return define().capability(TaskAcceptance.of(ResearchTasks.ANALYSIS).maxIterationsPerTask(3));
   }
 }
 // end::class[]

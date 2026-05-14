@@ -24,40 +24,38 @@ public class TestTasks {
   public record ModerationResult(String topic, String conclusion) {}
 
   public static final Task<TestResult> TEST_TASK =
-      Task.define("Test task").description("A test task").resultConformsTo(TestResult.class);
+      Task.name("Test task").description("A test task").resultConformsTo(TestResult.class);
 
   public static final Task<String> STRING_TASK =
-      Task.define("String task").description("A task with string result");
+      Task.name("String task").description("A task with string result");
 
   public static final Task<Integer> INTEGER_TASK =
-      Task.define("Integer task")
+      Task.name("Integer task")
           .description("A task with integer result")
           .resultConformsTo(Integer.class);
 
   public static final Task<Boolean> BOOLEAN_TASK =
-      Task.define("Boolean task")
+      Task.name("Boolean task")
           .description("A task with boolean result")
           .resultConformsTo(Boolean.class);
 
   public static final Task<ResearchResult> RESEARCH =
-      Task.define("Research")
+      Task.name("Research")
           .description("Produce a research summary")
           .resultConformsTo(ResearchResult.class);
 
   public static final Task<FindingsResult> FINDINGS =
-      Task.define("Findings")
+      Task.name("Findings")
           .description("Research a topic and produce findings")
           .resultConformsTo(FindingsResult.class);
 
   public static final Task<SupportResolution> RESOLVE =
-      Task.define("Resolve")
+      Task.name("Resolve")
           .description("Resolve a support request")
           .resultConformsTo(SupportResolution.class);
 
   public static final Task<PlanResult> PLAN =
-      Task.define("Plan")
-          .description("Plan and coordinate work")
-          .resultConformsTo(PlanResult.class);
+      Task.name("Plan").description("Plan and coordinate work").resultConformsTo(PlanResult.class);
 
   public static final TaskTemplate<WorkItemResult> WORK_ITEM =
       TaskTemplate.define("Work item")
@@ -66,12 +64,12 @@ public class TestTasks {
           .instructionTemplate("Implement: {item}. Requirements: {requirements}.");
 
   public static final Task<ModerationResult> MODERATE =
-      Task.define("Moderate")
+      Task.name("Moderate")
           .description("Moderate a conversation")
           .resultConformsTo(ModerationResult.class);
 
   public static final Task<TestResult> VALIDATED_TASK =
-      Task.define("Validated task")
+      Task.name("Validated task")
           .description("A task with rule validation")
           .resultConformsTo(TestResult.class)
           .rules(TestResultRule.class);

@@ -14,12 +14,6 @@ public class ConsultingResearcher extends AutonomousAgent {
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal(
-        """
-        Research the given topic thoroughly and produce a clear, \
-        factual summary of your findings. \
-        """
-      )
       .tools(new ConsultingTools())
       .capability(TaskAcceptance.of(ConsultingTasks.RESEARCH).maxIterationsPerTask(5));
   }

@@ -11,15 +11,18 @@ import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.FunctionTool;
 
 // tag::class[]
-@Component(id = "report-agent")
+@Component(
+  id = "report-agent",
+  description = """
+    Processes report phases: collects data, analyzes findings, \
+    produces comprehensive reports\
+    """
+)
 public class ReportAgent extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
     return define()
-      .goal(
-        "Process report phases: collect data, analyze findings, produce comprehensive reports."
-      )
       .capability(
         TaskAcceptance.of(
           PipelineTasks.COLLECT,

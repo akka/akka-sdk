@@ -22,12 +22,12 @@ class CapabilityConverterSpec extends AnyWordSpec with Matchers {
   case class TypedResult(value: String, score: Int)
 
   private val stringTask = Task
-    .define("StringTask")
+    .name("StringTask")
     .description("A task with String result")
     .resultConformsTo(classOf[String])
 
   private val typedTask = Task
-    .define("TypedTask")
+    .name("TypedTask")
     .description("A task with typed result")
     .resultConformsTo(classOf[TypedResult])
 

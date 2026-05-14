@@ -10,20 +10,40 @@ import akka.javasdk.agent.RemoteMcpTools;
 import akka.javasdk.agent.autonomous.capability.AgentCapability;
 
 /**
- * Defines an autonomous agent's configuration: goal, tools, model provider, guardrails, and
- * capabilities. Built via {@link AutonomousAgent#define()} and returned from {@link
+ * Defines an autonomous agent's configuration: tools, model provider, guardrails, capabilities, and
+ * optional instructions. Built via {@link AutonomousAgent#define()} and returned from {@link
  * AutonomousAgent#definition()}.
+ *
+ * <p>The {@link akka.javasdk.annotations.Component#description() @Component description} captures
+ * the agent's purpose and expected outcome: a short statement of what the agent does, when to use
+ * it, and what it produces. The runtime injects the description into the model's system message and
+ * uses it when other agents need to choose a delegation or handoff target. The description is
+ * mandatory for autonomous agents.
+ *
+ * <p>{@link #instructions(String) Instructions} are optional supplementary text for tone, persona,
+ * domain rules, or procedural guidance to the model, also appended to the system message.
+ * Multi-agent orchestration mechanics (when to delegate, when to hand off, who to message) do not
+ * belong in instructions — they are derived automatically from the capabilities and from the
+ * descriptions of the participating agents.
  *
  * <p>Each fluent method returns a new immutable instance.
  */
 public interface AgentDefinition {
 
   /**
-   * The agent's high-level purpose. Goal text should describe what the agent achieves, not how it
-   * coordinates. The runtime combines the goal with capability-specific context and tool
-   * descriptions to build the system message.
+   * Optional internal, LLM-facing instructions appended to the system message. Use this for tone,
+   * persona, role, domain rules (for example "Always cite sources" or "Never quote prices in
+   * non-USD currencies"), or procedural guidance on how the model should approach a task. The
+   * agent's purpose and expected outcome belong in {@link
+   * akka.javasdk.annotations.Component#description() @Component description}, not here.
+   *
+   * <p>Multi-agent orchestration mechanics do not belong here. Coordination details such as when to
+   * delegate, when to hand off, or who to message are derived automatically from the capabilities
+   * and from the descriptions of the participating agents. If you find yourself writing "delegate
+   * to X first, then to Y, then synthesize," the work belongs in capabilities and task definitions
+   * instead.
    */
-  AgentDefinition goal(String goal);
+  AgentDefinition instructions(String instructions);
 
   /** Add a capability to this agent: task acceptance, delegation, etc. */
   AgentDefinition capability(AgentCapability capability);

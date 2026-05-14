@@ -133,7 +133,7 @@ include::example$autonomous-agent-playground/src/main/java/demo/support/applicat
 [#moderation]
 == Moderation
 
-A moderator agent orchestrates turn-taking conversations between participant agents. The moderator declares which agent types can participate, and the framework manages conversation setup, turn-taking, and transcript collection. Participant agents are simple: they define a goal and the framework handles the conversation mechanics automatically.
+A moderator agent orchestrates turn-taking conversations between participant agents. The moderator declares which agent types can participate, and the framework manages conversation setup, turn-taking, and transcript collection. Participant agents are simple: their `@Component` description identifies them to the moderator and the framework handles the conversation mechanics automatically.
 
 [source,java,indent=0]
 ----
@@ -174,7 +174,7 @@ This mode suits structured processes with a known sequence: peer reviews where e
 include::example$autonomous-agent-playground/src/main/java/demo/peerreview/application/ReviewModerator.java[tag=class]
 ----
 
-Participant agents need only a goal. The framework provides the conversation tools:
+Participant agents need only a `@Component` description. The framework provides the conversation tools:
 
 [source,java,indent=0]
 .{sample-base-url}/autonomous-agent-playground/src/main/java/demo/peerreview/application/TechnicalReviewer.java[TechnicalReviewer.java]
@@ -218,12 +218,15 @@ The moderator's model can use multiple instances of the same participant type wi
 
 [source,java,indent=0]
 ----
-@Component(id = "critic", description = "Reviews and critiques from a specific perspective")
+@Component(
+  id = "critic",
+  description = "Provides critical analysis and critiques from a specific perspective"
+)
 public class Critic extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
-    return define().goal("Provide critical analysis from the assigned perspective.");
+    return define();
   }
 }
 ----

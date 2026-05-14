@@ -11,9 +11,9 @@ import java.util.List;
 /**
  * A typed task definition — describes a kind of work and the expected result type.
  *
- * <p>Use {@link #define(String)} to create a definition, then {@link #resultConformsTo(Class)} to
- * set the result type. Task definitions are immutable and typically declared as {@code static
- * final} constants. The default result type is {@code String}.
+ * <p>Use {@link #name(String)} to create a definition, then {@link #resultConformsTo(Class)} to set
+ * the result type. Task definitions are immutable and typically declared as {@code static final}
+ * constants. The default result type is {@code String}.
  *
  * <p>Per-request methods like {@link #instructions(String)}, {@link #attach(MessageContent...)},
  * and {@link #dependsOn(String...)} return a new instance, leaving the original definition
@@ -54,7 +54,7 @@ public final class Task<R> implements TaskDefinition<R> {
    *
    * @param name a stable identifier for this task type
    */
-  public static Task<String> define(String name) {
+  public static Task<String> name(String name) {
     return new Task<>(name, "", String.class, "", List.of(), List.of(), List.of());
   }
 

@@ -9,13 +9,11 @@ import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
 import akka.javasdk.annotations.Component;
 
-@Component(id = "worker-agent")
+@Component(id = "worker-agent", description = "Researches a topic and produces factual findings.")
 public class WorkerAgent extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
-    return define()
-        .goal("Research a topic and produce factual findings.")
-        .capability(TaskAcceptance.of(TestTasks.FINDINGS).maxIterationsPerTask(3));
+    return define().capability(TaskAcceptance.of(TestTasks.FINDINGS).maxIterationsPerTask(3));
   }
 }
