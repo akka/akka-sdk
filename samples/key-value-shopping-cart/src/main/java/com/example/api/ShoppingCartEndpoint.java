@@ -10,6 +10,7 @@ import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpException;
 import com.example.api.ShoppingCartDTO.LineItemDTO;
 import com.example.application.ShoppingCartEntity;
+import com.example.application.ShoppingCartMetrics;
 import com.example.domain.ShoppingCart;
 import java.util.UUID;
 
@@ -20,9 +21,15 @@ import java.util.UUID;
 public class ShoppingCartEndpoint {
 
   private final ComponentClient componentClient;
+  private final ShoppingCartMetrics shoppingCartMetrics;
 
-  public ShoppingCartEndpoint(ComponentClient componentClient) {
-    this.componentClient = componentClient; // <1>
+  // tag::metrics[]
+  public ShoppingCartEndpoint(
+    ComponentClient componentClient,
+    ShoppingCartMetrics shoppingCartMetrics
+  ) {
+    this.componentClient = componentClient;
+    this.shoppingCartMetrics = shoppingCartMetrics; // <1>
   }
 
   @Post("/create")
@@ -30,11 +37,14 @@ public class ShoppingCartEndpoint {
     final String cartId = UUID.randomUUID().toString();
     try {
       componentClient.forKeyValueEntity(cartId).method(ShoppingCartEntity::create).invoke();
+      shoppingCartMetrics.shoppingCartCreated(); // <2>
       return cartId;
     } catch (Exception e) {
       throw new RuntimeException("Failed to create cart, please retry", e);
     }
   }
+
+  // end::metrics[]
 
   @Post("/{cartId}/items")
   public ShoppingCartDTO verifiedAddItem(String cartId, LineItemDTO addLineItem) {
