@@ -15,7 +15,7 @@ The export format can either be protobuf or line separated JSON.
 
 == Prepare
 
-Before you can perform an export or import, you will need to setup your Akka project to be able to access an object store in your cloud provider.
+Before you can perform an export or import, you will need access to an object store. In regions where Akka has configured a platform-managed object store for your organization, no setup is required — you can pass the `--platform-managed` flag directly to export and import commands. Otherwise, you will need to set up your own object store as described in the sections below.
 
 === Preparing on AWS
 
@@ -244,6 +244,24 @@ To control what gets exported, the `--include-event-sourced-entities` and `--inc
 
 By default, the export will be run synchronously, displaying the progress of the export as it runs. Cancelling the export command will not stop the export, it will continue to run in the background. The export command can be run asynchronously by passing the `--async` flag.
 
+=== Exporting to the platform-managed store
+
+If Akka has provisioned a platform-managed object store for your organization in your region, you can export to it without any bucket or credential setup:
+
+[source,bash]
+----
+akka service data export assets --platform-managed --include-event-sourced-entities
+----
+
+An optional prefix can be prepended to the exported object names using the `--platform-managed-object-prefix` argument, which is useful for organizing multiple exports:
+
+[source,bash]
+----
+akka service data export assets --platform-managed \
+  --platform-managed-object-prefix my-export/ \
+  --include-event-sourced-entities
+----
+
 === Exporting to AWS S3
 
 To export to S3, you must supply the S3 credentials secret via the `--s3-secret` argument. You also need to supply the bucket name using the `--s3-bucket` argument, and if that bucket doesn't live in the same region as your service is running, you must supply the region name with the `--s3-region` argument.
@@ -258,7 +276,7 @@ An optional prefix can be prepended to the names of the files that get exported,
 
 == Running imports
 
-The `akka service data import` command can be used to run an export. For example:
+The `akka service data import` command can be used to run an import. For example:
 
 [source,bash]
 ----
@@ -269,6 +287,26 @@ akka service data import assets --s3-secret my-credentials \
 When importing to a service, the first thing Akka will do is pause that service. If the service is running while the import is happening, the services data may be corrupted. If the import succeeds, Akka will resume the service.
 
 If you wish to clear the services database before importing, use the `--truncate` flag. This will delete all existing data in the service.
+
+=== Importing from the platform-managed store
+
+If Akka has provisioned a platform-managed object store for your organization in your region, you can import from it without any bucket or credential setup:
+
+[source,bash]
+----
+akka service data import assets --platform-managed --include-event-sourced-entities
+----
+
+If the export was created with a `--platform-managed-object-prefix`, supply the same prefix when importing:
+
+[source,bash]
+----
+akka service data import assets --platform-managed \
+  --platform-managed-object-prefix my-export/ \
+  --include-event-sourced-entities
+----
+
+=== Importing from S3 or GCS
 
 The names of the files to import can either be specified explicitly, by passing `--event-sourced-entity-object`, `--event-sourced-entity-snapshot-object` and/or `--value-entity-object` flags, or Akka can use the default filenames that it selects when creating an export. In the latter case, `--s3-object-prefix` and `--gcs-object-prefix` can be used, and `--include-event-sourced-entities` and `--include-value-entities` can be used to control which export types Akka will look for.
 

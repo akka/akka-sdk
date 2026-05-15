@@ -1,9 +1,9 @@
 # Releasing Akka SDK
 
-Create a release issue (using the [GitHub CLI](https://cli.github.com/))
+Create a release issue:
 
 ```shell
-gh issue create --title 'Release Akka SDK' --label akka-javasdk --body-file docs/release-issue-template.md -w
+bin/create-release-issue.sh 3.1.0
 ````
 
 and follow the instructions.

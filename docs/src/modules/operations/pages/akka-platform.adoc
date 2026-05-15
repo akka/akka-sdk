@@ -38,6 +38,7 @@ Operating xref:operations:services/index.adoc[] provides an overview of what ser
 * xref:operations:services/invoke-service.adoc[]
 * xref:operations:services/view-data.adoc[]
 * xref:operations:services/data-management.adoc[]
+* xref:operations:services/workload-identity.adoc[]
 * xref:operations:integrating-cicd/index.adoc[]
 
 == Observability and Monitoring

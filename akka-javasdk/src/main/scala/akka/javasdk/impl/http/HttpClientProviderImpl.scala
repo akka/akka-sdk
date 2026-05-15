@@ -14,6 +14,8 @@ import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.discovery.Discovery
 import akka.http.javadsl.model.HttpHeader
+import akka.http.javadsl.model.HttpRequest
+import akka.http.javadsl.model.HttpResponse
 import akka.http.javadsl.model.headers.RawHeader
 import akka.http.scaladsl.ClientTransport
 import akka.http.scaladsl.settings.ClientConnectionSettings
@@ -36,7 +38,9 @@ private[akka] final class HttpClientProviderImpl(
     remoteIdentificationHeader: Option[RawHeader],
     settings: Settings,
     sdkExecutor: Executor,
-    connectionPoolSettings: Option[ConnectionPoolSettings] = None)
+    connectionPoolSettings: Option[ConnectionPoolSettings] = None,
+    // Only populated by the testkit; production and dev-mode runners use the default no-op lookup.
+    httpMockLookup: String => Option[java.util.function.Function[HttpRequest, HttpResponse]] = _ => None)
     extends HttpClientProvider {
 
   private val log = LoggerFactory.getLogger(classOf[HttpClientProvider])
@@ -60,7 +64,13 @@ private[akka] final class HttpClientProviderImpl(
   private def isServiceName(name: String): Boolean =
     !name.contains('.') && !name.contains(':') && name != "localhost"
 
-  override def httpClientFor(name: String): HttpClient = {
+  override def httpClientFor(name: String): HttpClient =
+    httpMockLookup(name) match {
+      case Some(handler) => new MockHttpClientImpl(system, name, handler, sdkExecutor)
+      case None          => realHttpClientFor(name)
+    }
+
+  private def realHttpClientFor(name: String): HttpClient = {
     val nameIsService = isServiceName(name)
     val (baseUrl, connectionPoolSettings) =
       if (nameIsService) {
@@ -148,6 +158,7 @@ private[akka] final class HttpClientProviderImpl(
       remoteIdentificationHeader,
       settings,
       sdkExecutor,
-      connectionPoolSettings)
+      connectionPoolSettings,
+      httpMockLookup)
 
 }
