@@ -10,9 +10,9 @@ import akka.javasdk.annotations.Component;
 @Component(
   id = "research-coordinator",
   description = """
-    Produces comprehensive research briefs by synthesizing findings \
-    from multiple specialist perspectives\
-    """
+  Produces comprehensive research briefs by synthesizing findings \
+  from multiple specialist perspectives\
+  """
 )
 public class ResearchCoordinator extends AutonomousAgent {
 

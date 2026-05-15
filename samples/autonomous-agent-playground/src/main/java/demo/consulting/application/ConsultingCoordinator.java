@@ -16,9 +16,9 @@ import akka.javasdk.annotations.Component;
 @Component(
   id = "consulting-coordinator",
   description = """
-    Delivers actionable consulting recommendations by assessing \
-    problem complexity and routing to the right expertise level\
-    """
+  Delivers actionable consulting recommendations by assessing \
+  problem complexity and routing to the right expertise level\
+  """
 )
 public class ConsultingCoordinator extends AutonomousAgent {
 

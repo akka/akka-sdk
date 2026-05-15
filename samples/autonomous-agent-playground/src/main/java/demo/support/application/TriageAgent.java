@@ -9,9 +9,9 @@ import akka.javasdk.annotations.Component;
 @Component(
   id = "triage-agent",
   description = """
-    Classifies customer support requests and routes them to the appropriate \
-    specialist via handoff\
-    """
+  Classifies customer support requests and routes them to the appropriate \
+  specialist via handoff\
+  """
 )
 public class TriageAgent extends AutonomousAgent {
 

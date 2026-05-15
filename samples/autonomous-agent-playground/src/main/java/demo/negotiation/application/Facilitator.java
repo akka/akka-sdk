@@ -10,9 +10,9 @@ import akka.javasdk.annotations.Component;
 @Component(
   id = "facilitator",
   description = """
-    Facilitates negotiations by directing parties through structured rounds \
-    of offers and counteroffers to reach agreement\
-    """
+  Facilitates negotiations by directing parties through structured rounds \
+  of offers and counteroffers to reach agreement\
+  """
 )
 public class Facilitator extends AutonomousAgent {
 

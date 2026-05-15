@@ -13,6 +13,7 @@ public class ContentAgent extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
-    return define().capability(TaskAcceptance.of(PublishingTasks.DRAFT).maxIterationsPerTask(3));
+    return define()
+      .capability(TaskAcceptance.of(PublishingTasks.DRAFT).maxIterationsPerTask(3));
   }
 }
