@@ -95,6 +95,11 @@ private[javasdk] final class AgentStreamEffectImpl
     this
   }
 
+  override def userMessage(message: UserMessage): StreamEffect.OnSuccessBuilder = {
+    updateRequestModel(_.copy(userMessage = message))
+    this
+  }
+
   override def memory(provider: MemoryProvider): StreamEffect.Builder = {
     updateRequestModel(_.withMemory(provider))
     this

@@ -13,6 +13,7 @@ public class PublishingAgent extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
-    return define().capability(TaskAcceptance.of(PublishingTasks.PUBLISH).maxIterationsPerTask(3));
+    return define()
+      .capability(TaskAcceptance.of(PublishingTasks.PUBLISH).maxIterationsPerTask(3));
   }
 }

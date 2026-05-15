@@ -42,7 +42,9 @@ public class DynamicEndpoint extends AbstractHttpEndpoint {
       .forAutonomousAgent(DynamicAgent.class, agentId)
       .setup(
         AgentSetup.create()
-          .instructions("Produce a concise summary of the given content, highlighting key points.")
+          .instructions(
+            "Produce a concise summary of the given content, highlighting key points."
+          )
           .capability(TaskAcceptance.of(DynamicTasks.SUMMARIZE))
       );
 

@@ -28,6 +28,7 @@ Unset project resources.
 
 * link:akka_projects_config.html[akka projects config]	 - Manage project configs.
 * link:akka_projects_config_unset_broker.html[akka projects config unset broker]	 - Unset the broker.
+* link:akka_projects_config_unset_object-storage.html[akka projects config unset object-storage]	 - Unset the object-storage configuration.
 
 [discrete]
 

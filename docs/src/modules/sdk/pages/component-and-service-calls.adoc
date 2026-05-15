@@ -166,3 +166,59 @@ specifically for tests):
 ----
 include::sdk:example$doc-snippets/src/main/resources/application.conf[tags=customize-grpc-client]
 ----
+
+== Mocking HTTP and gRPC services in tests
+
+When integration testing a service that calls other services, the testkit can intercept lookups
+via `HttpClientProvider.httpClientFor(...)` and `GrpcClientProvider.grpcClientFor(...)` and route
+them to a user-provided mock instead of making real network calls.
+
+The mock lookups are only populated when the runtime is started by the testkit; the default runner
+used in dev mode and production cannot see any mocks, so there is no risk of a mock leaking outside
+of tests.
+
+Mocks are registered either on `TestKit.Settings` (as defaults for all tests in the class) or on
+the live registries returned by `testKit.getMockedHttpServices()` and `testKit.getMockedGrpcServices()`
+(for per-test overrides). Calling `reset()` on a registry restores it to the defaults declared on
+the settings.
+
+=== Mocking HTTP services
+
+Given a service that looks up an HTTP client by service name:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/callanotherservice/DelegatingServiceEndpoint.java[DelegatingServiceEndpoint.java]
+----
+include::sdk:example$doc-snippets/src/main/java/com/example/callanotherservice/DelegatingServiceEndpoint.java[tag=delegating-endpoint]
+----
+
+A test can declare the mocked response(s) either on `TestKit.Settings` (applied to every test in
+the class) or on `testKit.getMockedHttpServices()` inside an individual test:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/callanotherservice/DelegatingServiceEndpointMockedTest.java[DelegatingServiceEndpointMockedTest.java]
+----
+include::sdk:example$doc-snippets/src/test/java/com/example/callanotherservice/DelegatingServiceEndpointMockedTest.java[tag=http-mock]
+----
+<1> A class-wide default: every call `httpClientFor("counter")` receives this mocked response.
+<2> Reset between tests so per-test overrides do not leak.
+<3> A per-test override: replace the mock for this test only; reverts on the next `reset()`.
+
+The mock handler is a plain `Function<HttpRequest, HttpResponse>`. The testkit runs it on the SDK
+dispatcher (virtual thread backed), so blocking inside the handler is safe.
+
+=== Mocking gRPC services
+
+For gRPC, the mock is an instance of the generated Akka gRPC client interface. The test implements
+the methods it expects to be called and lets the others throw:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/callanotherservice/CallExternalGrpcEndpointMockedTest.java[CallExternalGrpcEndpointMockedTest.java]
+----
+include::sdk:example$doc-snippets/src/test/java/com/example/callanotherservice/CallExternalGrpcEndpointMockedTest.java[tag=grpc-mock]
+----
+<1> Register the mock for the service name (or external host, as here) the service under test passes to `grpcClientFor`.
+<2> Drive the local endpoint via `getGrpcEndpointClient`; when it internally looks up a gRPC client for `hellogrpc.example.com`, it receives the mock.
+<3> The mock extends the generated client interface, implements the methods the test exercises, and throws for the rest.
+
+A class-wide default can also be declared via `TestKit.Settings.withMockedGrpcService(name, clientClass, mockInstance)`, paralleling the HTTP API.

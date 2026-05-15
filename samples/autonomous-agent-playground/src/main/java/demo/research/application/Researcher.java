@@ -14,7 +14,8 @@ public class Researcher extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
-    return define().capability(TaskAcceptance.of(ResearchTasks.FINDINGS).maxIterationsPerTask(3));
+    return define()
+      .capability(TaskAcceptance.of(ResearchTasks.FINDINGS).maxIterationsPerTask(3));
   }
 }
 // end::class[]

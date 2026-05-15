@@ -36,6 +36,7 @@ The available regions are the regions assigned to the organization that the proj
 * link:akka_projects_regions_list.html[akka projects regions list]	 - List the regions for the project
 * link:akka_projects_regions_remove.html[akka projects regions remove]	 - Remove a region from a project
 * link:akka_projects_regions_set-primary.html[akka projects regions set-primary]	 - Set the primary region for the project
+* link:akka_projects_regions_workload-identity-info.html[akka projects regions workload-identity-info]	 - List information for how to configure workload identity for each Akka project region.
 
 [discrete]
 

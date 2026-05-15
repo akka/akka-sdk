@@ -1,0 +1,65 @@
+= akka services jwks update
+
+Update a JWT keyset on a service.
+
+== Synopsis
+
+The `akka service jwks update` command updates the configuration of a JWT keyset.
+
+Identify the keyset to update using --issuer (matches by issuer field) or --index (1-based position from the list command).
+To change the source type, remove the existing keyset and add a new one.
+
+----
+akka services jwks update [SERVICE] [flags]
+----
+
+== Examples
+
+----
+> akka service jwks update my-service --issuer https://accounts.google.com --refresh-interval 30m
+> akka service jwks update my-service --index 2 --allowed-algorithms RS256,ES256
+> akka service jwks update my-service --index 1 --jwks-url https://example.com/new-jwks.json
+----
+
+== Options
+
+----
+      --allowed-algorithms stringArray   List of algorithms to allow (replaces existing list).
+      --clear-allowed-algorithms         Remove all algorithm restrictions from the keyset.
+      --clear-refresh-interval           Reset the refresh interval to the default (1h).
+      --force-global                     force an existing regional resource to be configured as a global resource
+      --force-regional                   force an existing global resource to be configured as a regional resource
+  -h, --help                             help for update
+      --index int                        1-based index of the keyset to select (as shown by the list command).
+      --issuer string                    Issuer of the keyset to select.
+      --jwks-url string                  New JWKS URL (only valid for URL-backed keysets).
+      --new-issuer string                New issuer value for the keyset.
+      --owner string                     the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string                   project to use if not using the default configured project
+      --refresh-interval string          New refresh interval (e.g. 1h, 30m).
+      --region string                    region to use if project has more than one region
+      --skip-validation                  Skip validation of the new JWKS URL.
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_services_jwks.html[akka services jwks]	 - Manage JWT keysets of a service.
+
+[discrete]
+

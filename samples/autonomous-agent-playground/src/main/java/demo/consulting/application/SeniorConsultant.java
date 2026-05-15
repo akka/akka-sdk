@@ -8,9 +8,9 @@ import akka.javasdk.annotations.Component;
 @Component(
   id = "senior-consultant",
   description = """
-    Senior consultant for complex problems involving regulatory, M&A, \
-    or enterprise transformation\
-    """
+  Senior consultant for complex problems involving regulatory, M&A, \
+  or enterprise transformation\
+  """
 )
 public class SeniorConsultant extends AutonomousAgent {
 

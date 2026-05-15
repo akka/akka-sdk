@@ -14,9 +14,9 @@ import akka.javasdk.annotations.FunctionTool;
 @Component(
   id = "report-agent",
   description = """
-    Processes report phases: collects data, analyzes findings, \
-    produces comprehensive reports\
-    """
+  Processes report phases: collects data, analyzes findings, \
+  produces comprehensive reports\
+  """
 )
 public class ReportAgent extends AutonomousAgent {
 

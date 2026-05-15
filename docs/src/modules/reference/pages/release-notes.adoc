@@ -10,7 +10,20 @@ Current versions
 * Akka CLI {akka-cli-version}
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
 
+== May 2026
+* Akka CLI 3.0.61
+- Maintenance release
+
 == April 2026
+* Akka CLI 3.0.60
+- Fixed an issue with multi-regional project descriptors
+- JWKS configuraiton support
+
+* https://github.com/akka/akka-sdk/releases/tag/v3.5.18[Akka SDK 3.5.18]
+- Automatic expiry for entities
+- Key Value Entity notifications
+- Consumer testkit improvements
+- Agent read timeout bug fix
 
 * Akka CLI 3.0.59
 - `akka local console` bugs fixed
@@ -21,7 +34,7 @@ Current versions
 * Akka CLI 3.0.58
 - New MCP commands for local cluster management.
 
-* Akka SDK 3.5.17
+* https://github.com/akka/akka-sdk/releases/tag/v3.5.17[Akka SDK 3.5.17]
 - Compile time validation of dependency conflicts with runtime
 - Multiple view improvements
 - Metrics migrated to OpenTelemetry

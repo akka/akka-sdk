@@ -14,7 +14,8 @@ public class QuestionAnswerer extends AutonomousAgent { // <1>
 
   @Override
   public AgentDefinition definition() { // <3>
-    return define().capability(TaskAcceptance.of(QuestionTasks.ANSWER).maxIterationsPerTask(3));
+    return define()
+      .capability(TaskAcceptance.of(QuestionTasks.ANSWER).maxIterationsPerTask(3));
   }
 }
 // end::class[]

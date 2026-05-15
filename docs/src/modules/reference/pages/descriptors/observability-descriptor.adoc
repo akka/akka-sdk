@@ -8,12 +8,15 @@ An Akka observability descriptor describes how metrics, logs, and traces are exp
 
 [cols="1,1,1"]
 |===
-|Field        |Type                           |Description
+|Field            |Type                           |Description
 
-|*exporter*   |<<ObservabilityDefault>> |The default exporter used for metrics, logs, and traces. Will be used for each unless a respective exporter in `logs` or `metrics` is defined.
-|*metrics*    |<<ObservabilityMetrics>>  |The exporter to use for metrics. Overrides the exporter defined in `exporter`, but just for metrics.
-|*logs*       |<<ObservabilityLogs>>     |The exporter to use for logs. Overrides the exporter defined in `exporter`, but just for logs.
-|*traces*     |<<ObservabilityTraces>>   |The exporter to use for traces. Overrides the exporter defined in `exporter`, but just for traces.
+|*exporters*      |[]<<ObservabilityDefault>> |The default exporters used for metrics, logs, and traces. Will be used for each unless a respective exporter in `logs` or `metrics` is defined.
+|*metrics*        |[]<<ObservabilityMetrics>> |The exporters to use for metrics. Overrides the exporters defined in `exporters`, but just for metrics.
+|*logs*           |[]<<ObservabilityLogs>>    |The exporters to use for logs. Overrides the exporters defined in `exporters`, but just for logs.
+|*traces*         |[]<<ObservabilityTraces>>  |The exporters to use for traces. Overrides the exporters defined in `exporters`, but just for traces.
+|*heapDump*       |<<HeapDump>>               |Heap dump export configuration.
+|*traceSampling*  |<<TraceSampling>>          |Trace sampling configuration. Applies to all trace exporters.
+|*logLevel*       |string                     |Log level for the OpenTelemetry collector. Valid values are `debug`, `info`, `warn`, and `error`.
 |===
 
 === ObservabilityDefault
@@ -22,13 +25,13 @@ The default exporter configuration for metrics, logs, and traces. At most one de
 
 [cols="1,1,1"]
 |===
-|Field          |Type                              |Description
+|Field          |Type                          |Description
 
-|*kalixConsole* |object                            |If defined, metrics will be exported to the Akka Console. There are no configuration parameters for the console exporter, it should be declared as an empty object.
-|*otlp*         |<<ObservabilityOtlp>>        |If defined, will export metrics, logs, and traces to an OpenTelemetry collector using the OTLP gRPC protocol.
-|*otlpHttp*     |<<ObservabilityOtlpHttp>>    |If defined, will export metrics, logs, and traces to an OpenTelemetry collector using the OTLP HTTP protocol.
-|*splunkHec*    |<<ObservabilitySplunkHec>>   |If defined, will export metrics and logs to a Splunk platform instance, using the Splunk HTTP Event Collector.
-|*googleCloud*  |<<ObservabilityGoogleCloud>> |If defined, will export metrics, logs, and traces to Google Cloud.
+|*kalixConsole* |object                        |If defined, metrics will be exported to the Akka Console. There are no configuration parameters for the console exporter, it should be declared as an empty object.
+|*otlp*         |<<ObservabilityOtlp>>         |If defined, will export metrics, logs, and traces to an OpenTelemetry collector using the OTLP gRPC protocol.
+|*otlpHttp*     |<<ObservabilityOtlpHttp>>     |If defined, will export metrics, logs, and traces to an OpenTelemetry collector using the OTLP HTTP protocol.
+|*splunkHec*    |<<ObservabilitySplunkHec>>    |If defined, will export metrics and logs to a Splunk platform instance, using the Splunk HTTP Event Collector.
+|*googleCloud*  |<<ObservabilityGoogleCloud>>  |If defined, will export metrics, logs, and traces to Google Cloud.
 |*azureMonitor* |<<ObservabilityAzureMonitor>> |If defined, will export metrics, logs, and traces to Azure Monitor.
 |===
 
@@ -200,4 +203,112 @@ The source for a header value.
 |Field          |Type                             |Description
 
 |*secretKeyRef* |<<SecretKeyRef>> _required_ |A reference to a secret.
+|===
+
+=== HeapDump
+
+Configuration for exporting heap dumps. Exactly one of `aws` or `platformManaged` must be configured.
+
+[cols="1,1,1"]
+|===
+|Field              |Type                        |Description
+
+|*aws*              |<<HeapDumpAws>>             |If defined, heap dumps will be exported to an AWS S3 bucket.
+|*platformManaged*  |<<HeapDumpPlatformManaged>> |If defined, heap dumps will be stored using platform-managed storage. Not available in all regions.
+|===
+
+=== HeapDumpAws
+
+Configuration for exporting heap dumps to an AWS S3 bucket.
+
+[cols="1,1,1"]
+|===
+|Field                  |Type                                  |Description
+
+|*bucket*               |string _required_                     |The S3 bucket to store heap dumps in.
+|*region*               |string _required_                     |The AWS region of the bucket.
+|*pathPrefix*           |string                                |An optional prefix to prepend to the name of the stored object.
+|*concurrentUploads*    |integer                               |The maximum number of concurrent uploads. Defaults to `10`.
+|*credentialsSecretRef* |<<HeapDumpCredentialSecretReference>> |If set, will use the configured credentials to access AWS. Either this or `workloadIdentity` may be set, but not both.
+|*workloadIdentity*     |<<HeapDumpAwsWorkloadIdentity>>       |If set, will use workload identity to access AWS. Either this or `credentialsSecretRef` may be set, but not both.
+|===
+
+=== HeapDumpPlatformManaged
+
+Configuration for platform-managed heap dump storage. Not available in all regions.
+
+[cols="1,1,1"]
+|===
+|Field        |Type   |Description
+
+|*pathPrefix* |string |An optional prefix to prepend to the name of the stored object.
+|===
+
+=== HeapDumpAwsWorkloadIdentity
+
+Configuration for using AWS workload identity for heap dump uploads.
+
+[cols="1,1,1"]
+|===
+|Field             |Type   |Description
+
+|*roleArnOverride* |string |If set, overrides the Role ARN configured on the service.
+|===
+
+=== HeapDumpCredentialSecretReference
+
+References to secrets containing AWS credentials for heap dump uploads.
+
+[cols="1,1,1"]
+|===
+|Field                |Type             |Description
+
+|*awsAccessKeyId*     |<<SecretKeyRef>> |A reference to the secret and key containing the AWS access key ID.
+|*awsSecretAccessKey* |<<SecretKeyRef>> |A reference to the secret and key containing the AWS secret access key.
+|===
+
+=== TraceSampling
+
+Trace sampling configuration. Applies to all trace exporters.
+
+[cols="1,1,1"]
+|===
+|Field            |Type                       |Description
+
+|*probabilistic*  |<<ProbabilisticSampling>>  |If defined, enables probabilistic (percentage-based) sampling of traces.
+|===
+
+=== ProbabilisticSampling
+
+Configuration for probabilistic trace sampling.
+
+[cols="1,1,1"]
+|===
+|Field        |Type   |Description
+
+|*percentage* |string |The percentage of traces to sample. For example, `10` means 10% of traces are sampled (90% are dropped).
+|===
+
+=== SecretKeyRef
+
+A reference to a key within a Kubernetes secret.
+
+[cols="1,1,1"]
+|===
+|Field      |Type              |Description
+
+|*name*     |string _required_ |The name of the secret.
+|*key*      |string _required_ |The key within the secret to select.
+|*optional* |boolean           |If true, the secret or its key is allowed to not exist.
+|===
+
+=== ObjectRef
+
+A reference to a Kubernetes secret or other object by name.
+
+[cols="1,1,1"]
+|===
+|Field  |Type              |Description
+
+|*name* |string _required_ |The name of the object.
 |===

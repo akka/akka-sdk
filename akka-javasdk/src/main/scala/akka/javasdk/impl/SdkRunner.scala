@@ -7,6 +7,7 @@ package akka.javasdk.impl
 import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
+import java.time.Instant
 import java.util
 import java.util.Locale
 import java.util.Optional
@@ -28,6 +29,7 @@ import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.grpc.internal.JavaMetadataImpl
+import akka.grpc.javadsl.AkkaGrpcClient
 import akka.grpc.javadsl.Metadata
 import akka.http.javadsl.model.HttpHeader
 import akka.http.scaladsl.model.headers.RawHeader
@@ -143,6 +145,7 @@ import akka.stream.Materializer
 import akka.stream.SystemMaterializer
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import io.opentelemetry.api.metrics.Meter
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
@@ -189,8 +192,7 @@ object SdkRunner {
             testSetting = new SpiTestSettings(testMode = false, debugTracing = false),
             selfServiceName = None,
             backoffice = backofficeSettings,
-            objectStorageBuckets = Nil // FIXME
-          ))
+            objectStorageBuckets = Seq.empty))
       } else None
 
     val agentInteractionLogEnabled =
@@ -229,10 +231,14 @@ object SdkRunner {
         case "manual"                 => SpiDeployedEventingSettings.Manual
       }
 
+    val startFromTimestamp = applicationConf.getString("akka.javasdk.eventing.start-from-timestamp").trim match {
+      case ""       => None
+      case nonEmpty => Some(Instant.parse(nonEmpty))
+    }
+
     new SpiDeployedEventingSettings(
-      overrides = Seq(new SpiDeployedEventingSettings.GooglePubSubOverrides(Some(googlePubSubMode))),
-      startEventingFrom = None // FIXME
-    )
+      Seq(new SpiDeployedEventingSettings.GooglePubSubOverrides(Some(googlePubSubMode))),
+      startEventingFrom = startFromTimestamp)
   }
 }
 
@@ -243,22 +249,47 @@ object SdkRunner {
 class SdkRunner private (
     dependencyProvider: Option[DependencyProvider],
     disabledComponents: Set[Class[_]],
-    overrideDisabledComponents: Boolean)
+    overrideDisabledComponents: Boolean,
+    httpMockLookup: String => Option[
+      java.util.function.Function[akka.http.javadsl.model.HttpRequest, akka.http.javadsl.model.HttpResponse]],
+    grpcMockLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient])
     extends akka.runtime.sdk.spi.Runner {
   private val startedPromise = Promise[StartupContext]()
 
   // default constructor for runtime creation
-  def this() = this(None, Set.empty[Class[_]], false)
+  def this() = this(None, Set.empty[Class[_]], false, _ => None, _ => None)
 
-  // constructor for testkit
+  // constructor for testkit without mocks
   def this(
       dependencyProvider: java.util.Optional[DependencyProvider],
       disabledComponents: java.util.Set[Class[_]],
       overrideDisabledComponents: Boolean) =
-    this(dependencyProvider.toScala, disabledComponents.asScala.toSet, overrideDisabledComponents)
+    this(dependencyProvider.toScala, disabledComponents.asScala.toSet, overrideDisabledComponents, _ => None, _ => None)
+
+  // constructor for testkit with mock lookups — only the testkit passes non-empty lookups here;
+  // the default no-arg constructor used in prod/dev passes no-op lookups and mocks cannot fire.
+  def this(
+      dependencyProvider: java.util.Optional[DependencyProvider],
+      disabledComponents: java.util.Set[Class[_]],
+      overrideDisabledComponents: Boolean,
+      httpMockLookup: java.util.function.Function[
+        String,
+        java.util.Optional[
+          java.util.function.Function[akka.http.javadsl.model.HttpRequest, akka.http.javadsl.model.HttpResponse]]],
+      grpcMockLookup: java.util.function.Function[
+        GrpcClientProviderImpl.ClientKey,
+        java.util.Optional[AkkaGrpcClient]]) =
+    this(
+      dependencyProvider.toScala,
+      disabledComponents.asScala.toSet,
+      overrideDisabledComponents,
+      (name: String) => httpMockLookup.apply(name).toScala,
+      (key: GrpcClientProviderImpl.ClientKey) => grpcMockLookup.apply(key).toScala)
 
   def applicationConfig: Config =
     ApplicationConfig.loadApplicationConf
+
+  override def expectedRuntimeVersion: Option[String] = Some(BuildInfo.runtimeVersion)
 
   override lazy val getSettings: SpiSettings =
     extractSpiSettings(applicationConfig)
@@ -273,13 +304,16 @@ class SdkRunner private (
         startContext.componentClients,
         startContext.remoteIdentification,
         startContext.tracerFactory,
+        startContext.sdkMeter,
         startContext.regionInfo,
         dependencyProvider,
         disabledComponents,
         overrideDisabledComponents,
         startedPromise,
         getSettings,
-        startContext.sanitizer)
+        startContext.sanitizer,
+        httpMockLookup,
+        grpcMockLookup)
       Future.successful(app.spiComponents)
     } catch {
       case NonFatal(ex) =>
@@ -356,13 +390,17 @@ private final class Sdk(
     runtimeComponentClients: ComponentClients,
     remoteIdentification: Option[RemoteIdentification],
     tracerFactory: String => Tracer,
+    sdkMeter: Meter,
     regionInfo: RegionInfo,
     dependencyProviderOverride: Option[DependencyProvider],
     disabledComponents: Set[Class[_]],
     overrideDisabledComponents: Boolean,
     startedPromise: Promise[StartupContext],
     spiSettings: SpiSettings,
-    runtimeSanitizer: SpiSanitizerEngine) {
+    runtimeSanitizer: SpiSanitizerEngine,
+    httpMockLookup: String => Option[
+      java.util.function.Function[akka.http.javadsl.model.HttpRequest, akka.http.javadsl.model.HttpResponse]],
+    grpcMockLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient]) {
 
   import Sdk._
 
@@ -396,7 +434,9 @@ private final class Sdk(
     remoteIdentification.map(ri => RawHeader(ri.headerName, ri.headerValue)),
     sdkSettings,
     // We know it is a dispatcher/executor
-    sdkExecutionContext.asInstanceOf[Executor])
+    sdkExecutionContext.asInstanceOf[Executor],
+    None,
+    httpMockLookup)
 
   private lazy val userServiceConfig = {
     // hiding these paths from the config provided to user
@@ -411,7 +451,8 @@ private final class Sdk(
     system,
     sdkSettings,
     userServiceConfig,
-    remoteIdentification.map(ri => GrpcClientProviderImpl.AuthHeaders(ri.headerName, ri.headerValue)))
+    remoteIdentification.map(ri => GrpcClientProviderImpl.AuthHeaders(ri.headerName, ri.headerValue)),
+    grpcMockLookup)
 
   private lazy val overrideModelProvider = new OverrideModelProvider
 
@@ -962,6 +1003,7 @@ private final class Sdk(
       // The type does not guarantee this is a Java concurrent Executor, but we know it is, since supplied from runtime
       sdkExecutionContext.asInstanceOf[Executor]
     case s if s == classOf[Sanitizer] => sanitizer
+    case s if s == classOf[Meter]     => sdkMeter
   }
 
   val spiComponents: SpiComponents = {

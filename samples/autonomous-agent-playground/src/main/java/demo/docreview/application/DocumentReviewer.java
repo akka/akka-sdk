@@ -12,9 +12,9 @@ import akka.javasdk.annotations.Component;
 @Component(
   id = "document-reviewer",
   description = """
-    Reviews documents for regulatory and compliance standards, \
-    producing structured assessments with specific findings\
-    """
+  Reviews documents for regulatory and compliance standards, \
+  producing structured assessments with specific findings\
+  """
 )
 public class DocumentReviewer extends AutonomousAgent {
 

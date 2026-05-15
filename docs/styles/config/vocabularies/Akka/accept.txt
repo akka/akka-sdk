@@ -1,3 +1,4 @@
+accessor
 Ack
 ACLs
 ACRs
@@ -6,6 +7,7 @@ Adoptium
 Agrona
 Aiven
 [Aa]kka
+allowedAlgorithms
 allowMethods
 allowOrigins
 [Aa]ntora
@@ -35,12 +37,14 @@ Cembaluk
 checkpointing
 classname
 clientCertificate
+clientId
 cloudName
 codegen
 [Cc]omposable
 [Cc]omposability
 config
 configs
+concurrentUploads
 connectionString
 corsPolicy
 Couchbase
@@ -68,6 +72,7 @@ env
 etcd
 eventhubs
 exfiltration
+expirationSeconds
 externalSecret
 facto
 failover
@@ -87,6 +92,7 @@ helloworld
 has_more
 hasPrefix
 hasSuffix
+heapDump
 hyperscaler
 hyperscalers
 hoc
@@ -103,6 +109,7 @@ interconnectivity
 interoperate
 iss
 Javadoc
+jmesPath
 Json
 JUnit
 JVM's
@@ -112,6 +119,8 @@ JVM's
 [Kk]alix
 Keycloak
 keyId
+keySets
+keysets?
 Kolesnikov
 Lagom
 [Ll]angchain4j
@@ -119,6 +128,7 @@ Lagom
 LLM
 LLMs
 lmdbjava
+logLevel
 lookups
 Mastercard
 matchers
@@ -155,7 +165,9 @@ passivation
 passwordHashes
 passwordKey
 passwordSecret
+pathPrefix
 plaintext
+platformManaged
 plist
 [pP]luggable
 Podman
@@ -184,6 +196,7 @@ rebalancing
 recoverability
 recurse
 redeliveries
+refreshInterval
 remoting
 Remoting
 regionalization
@@ -194,6 +207,7 @@ reshard
 resourceVersion
 [Rr]eusability
 RNGs
+roleArn
 runtimes
 runtime's
 (?i)RPC
@@ -232,6 +246,7 @@ subtree
 Szymanski
 [Tt]elemedicine
 Temurin
+tenantId
 [Tt]estKit
 text_search
 [Tt]imeframe
@@ -242,6 +257,7 @@ tokenization
 [Tt]okenizes
 tokenSecret
 [Tt]oolsets?
+traceSampling
 transcoded
 [Tt]ranscoding
 truststore
@@ -261,10 +277,12 @@ url
 userid
 valueFrom
 versionHistory
+versionLabel
 VMs
 volumeMounts
 [Ww]alkthrough
 winget
+workloadIdentity
 Yugabyte
 Zolotko
 [Zz]sh

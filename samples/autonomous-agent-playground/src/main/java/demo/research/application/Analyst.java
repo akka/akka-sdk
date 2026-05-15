@@ -14,7 +14,8 @@ public class Analyst extends AutonomousAgent {
 
   @Override
   public AgentDefinition definition() {
-    return define().capability(TaskAcceptance.of(ResearchTasks.ANALYSIS).maxIterationsPerTask(3));
+    return define()
+      .capability(TaskAcceptance.of(ResearchTasks.ANALYSIS).maxIterationsPerTask(3));
   }
 }
 // end::class[]

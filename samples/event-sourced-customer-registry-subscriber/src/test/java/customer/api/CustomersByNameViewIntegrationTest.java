@@ -12,17 +12,21 @@ import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
+// tag::class[]
 public class CustomersByNameViewIntegrationTest extends CustomerRegistryIntegrationTest {
 
+  // tag::eventing-config[]
   @Override
   protected TestKit.Settings testKitSettings() {
     return super.testKitSettings()
-      .withStreamIncomingMessages("customer-registry", "customer_events");
+      .withStreamIncomingMessages("customer-registry", "customer_events"); // <1>
   }
+
+  // end::eventing-config[]
 
   @Test
   public void shouldReturnCustomersFromViews() {
-    IncomingMessages customerEvents = testKit.getStreamIncomingMessages(
+    IncomingMessages customerEvents = testKit.getStreamIncomingMessages( // <2>
       "customer-registry",
       "customer_events"
     );
@@ -31,7 +35,7 @@ public class CustomersByNameViewIntegrationTest extends CustomerRegistryIntegrat
     Created created1 = new Created("bob@gmail.com", bob);
     Created created2 = new Created("alice@gmail.com", "alice");
 
-    customerEvents.publish(created1, "b");
+    customerEvents.publish(created1, "b"); // <3>
     customerEvents.publish(created2, "a");
 
     Awaitility.await()
@@ -67,3 +71,4 @@ public class CustomersByNameViewIntegrationTest extends CustomerRegistryIntegrat
       });
   }
 }
+// end::class[]
