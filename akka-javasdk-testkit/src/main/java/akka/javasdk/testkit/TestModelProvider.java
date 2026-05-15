@@ -575,7 +575,21 @@ public final class TestModelProvider implements ModelProvider.Custom {
      * @param reason the failure reason
      */
     public static ToolInvocationRequest failTask(String reason) {
-      return new ToolInvocationRequest("fail_task", "{\"reason\":" + toJsonString(reason) + "}");
+      return new ToolInvocationRequest(FAIL_TASK, "{\"reason\":" + toJsonString(reason) + "}");
+    }
+
+    // --- Task access ---
+
+    /** Tool name for looking up a task by ID. */
+    public static final String GET_TASK = "get_task";
+
+    /**
+     * Creates a {@link ToolInvocationRequest} for the {@code get_task} tool.
+     *
+     * @param taskId the ID of the task to look up
+     */
+    public static ToolInvocationRequest getTask(String taskId) {
+      return new ToolInvocationRequest(GET_TASK, "{\"task_id\":" + toJsonString(taskId) + "}");
     }
 
     // --- Handoff ---
