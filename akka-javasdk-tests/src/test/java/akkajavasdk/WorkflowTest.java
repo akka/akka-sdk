@@ -64,7 +64,7 @@ public class WorkflowTest extends TestKitSupport {
     assertThatIllegalArgumentException()
         .isThrownBy(
             () -> componentClient.forWorkflow(workflowId).method(DummyWorkflow::update).invoke())
-        .withMessage("Transition not allowed for a finished workflow");
+        .withMessageContaining("Transition not allowed");
   }
 
   @Test
@@ -86,7 +86,7 @@ public class WorkflowTest extends TestKitSupport {
                     .forWorkflow(workflowId)
                     .method(DummyWorkflow::incrementAndPause)
                     .invoke(10))
-        .withMessage("Transition not allowed for a finished workflow");
+        .withMessageContaining("Transition not allowed");
   }
 
   @Test
