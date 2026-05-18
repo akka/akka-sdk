@@ -13,6 +13,15 @@ import demo.devteam.application.Developer;
 import demo.devteam.application.ProjectLead;
 import demo.docreview.application.DocumentReviewer;
 import demo.dynamic.application.DynamicAgent;
+import demo.editorial.application.AccuracyReviewer;
+import demo.editorial.application.CopyEditor;
+import demo.editorial.application.EditorInChief;
+import demo.editorial.application.ReadabilityReviewer;
+import demo.editorial.application.Reporter;
+import demo.editorial.application.ResearchEditor;
+import demo.editorial.application.ReviewEditor;
+import demo.editorial.application.SectionWriter;
+import demo.editorial.application.WritingLead;
 import demo.helloworld.application.QuestionAnswerer;
 import demo.negotiation.application.Buyer;
 import demo.negotiation.application.Facilitator;
@@ -85,7 +94,8 @@ public final class SampleRegistry {
     new SampleEntry("debate", "Debate", "debate-moderator", DebateModerator.class),
     new SampleEntry("negotiation", "Negotiation", "facilitator", Facilitator.class),
     new SampleEntry("peerreview", "Peer review", "review-moderator", ReviewModerator.class),
-    new SampleEntry("devteam", "Devteam", "project-lead", ProjectLead.class)
+    new SampleEntry("devteam", "Devteam", "project-lead", ProjectLead.class),
+    new SampleEntry("editorial", "Editorial", "editor-in-chief", EditorInChief.class)
   );
 
   private static final Map<String, SampleEntry> BY_SAMPLE_ID = ENTRIES.stream()
@@ -117,6 +127,14 @@ public final class SampleRegistry {
     map.put("style-reviewer", StyleReviewer.class);
     map.put("compliance-reviewer", ComplianceReviewer.class);
     map.put("developer", Developer.class); // devteam → team
+    map.put("research-editor", ResearchEditor.class);
+    map.put("reporter", Reporter.class);
+    map.put("writing-lead", WritingLead.class);
+    map.put("section-writer", SectionWriter.class);
+    map.put("copy-editor", CopyEditor.class);
+    map.put("review-editor", ReviewEditor.class);
+    map.put("accuracy-reviewer", AccuracyReviewer.class);
+    map.put("readability-reviewer", ReadabilityReviewer.class);
     ALL_AGENTS = Map.copyOf(map);
   }
 
