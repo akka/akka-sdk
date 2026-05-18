@@ -63,11 +63,23 @@ public interface WorkflowClient {
   CompletionStage<Done> terminateAsync(Class<? extends Workflow<?>> workflowClass, String reason);
 
   /**
-   * Suspend the workflow identified by this client's workflow id. Suspension halts the workflow at
-   * its current step boundary: any in-flight step is allowed to complete, pending pause/step timers
-   * are cancelled, and the workflow moves into a {@code Suspended} state from which it can later be
-   * brought back with {@link #resume(Class)}. The call is idempotent — suspending an
-   * already-suspended workflow is a no-op.
+   * Suspend the workflow identified by this client's workflow id. Suspension behaves like
+   * termination in that the workflow does not wait for an in-flight step to complete: any result it
+   * produces after the suspend takes effect is ignored. On {@link #resume(Class)}, execution
+   * restarts at the step that was in flight, giving it a fresh chance to run. The call is
+   * idempotent — suspending an already-suspended workflow is a no-op.
+   *
+   * <p>Timeouts remain active while a workflow is suspended:
+   *
+   * <ul>
+   *   <li>If a workflow timeout fires while suspended, the workflow fails with a timeout.
+   *   <li>If a workflow timeout with a failover step fires while suspended, the failover step is
+   *       executed on resume.
+   *   <li>If a pause timer fires while suspended, the configured timeout handler is called on
+   *       resume.
+   * </ul>
+   *
+   * <p>While suspended, the workflow is passivated and does not consume any runtime resources.
    *
    * @param workflowClass the Workflow class, used to resolve the component id the runtime needs to
    *     route the suspend command.
@@ -98,8 +110,10 @@ public interface WorkflowClient {
 
   /**
    * Resume the workflow identified by this client's workflow id. Resumption is only meaningful
-   * against a workflow currently in the {@code Suspended} state — it transitions the workflow back
-   * to the step that was pending at suspend time and lets execution continue. The call is
+   * against a workflow currently in the {@code Suspended} state — execution restarts at the step
+   * that was in flight at suspend time, giving it a fresh chance to run. If a workflow timeout with
+   * a failover step fired while suspended, the failover step is executed on resume; if a pause
+   * timer fired while suspended, the configured timeout handler is called on resume. The call is
    * idempotent on a non-suspended workflow: it is a successful no-op.
    *
    * @param workflowClass the Workflow class, used to resolve the component id the runtime needs to
