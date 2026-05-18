@@ -150,10 +150,9 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     /**
      * Reset the in-memory history on deletion.
      *
-     * <p>{@link EventSourcedEntity#deleteEntity} is a soft delete: the entity is kept around for
-     * some time before being purged, can still serve reads, and rejects any further persists. After
-     * this reset {@code getHistory} returns an empty session, so the agent sees no context and
-     * never falls back to a chunked journal read. We therefore have nothing to anchor with a
+     * <p>On entity deletion, the entity is kept around for some time before being purged, can still serve reads, and
+     * rejects any further persists. After this reset {@code getHistory} returns an empty session, so the agent sees
+     * no context and never falls back to a chunked journal read. We therefore have nothing to anchor with a
      * journal sequence number here: the {@code compactionSeqNr} carried by any prior compaction is
      * no longer relevant on a deleted entity, and is reset to {@code 0} along with the rest of the
      * state.
@@ -166,6 +165,11 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
      * Reset the in-memory history but record the journal sequence number where compaction took
      * place, so a subsequent chunked read from the journal can skip the events that were superseded
      * by the compaction summary.
+     *
+     * <p>Clears the {@code truncated} flag: the compaction summary plus a chunked read from {@code
+     * compactedAtSeqNr} can rebuild the full history losslessly, so the entity is no longer in a
+     * lossy state from the caller's perspective. If the post-compaction history later overflows
+     * again, {@link State#State} will set {@code truncated} back to {@code true}.
      */
     public State compact(long compactedAtSeqNr) {
       return new State(
@@ -413,10 +417,12 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
    * Truncated} marker should stream the journal from the returned sequence number to reconstruct
    * the full history.
    *
-   * <p>Internal SDK use: the agent runtime calls this so it can transparently fall back to a
-   * chunked journal read instead of sending the model an incomplete context.
+   * <p>Internal SDK use: {@link akka.javasdk.impl.agent.SessionMemoryClient} calls this and, on a
+   * {@code Truncated} reply, transparently falls back to a chunked journal read from {@code
+   * fromSequenceNr} so the caller never sees an incomplete history.
+   *
+   * @see SessionHistoryResult.Truncated for the meaning of the returned sequence number.
    */
-  @akka.annotation.InternalApi
   public Effect<SessionHistoryResult> fetchHistory(GetHistoryCmd cmd) {
     if (currentState().truncated) {
       return effects().reply(new SessionHistoryResult.Truncated(currentState().compactionSeqNr));
