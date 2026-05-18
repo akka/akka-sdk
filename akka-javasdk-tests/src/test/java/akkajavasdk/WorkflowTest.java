@@ -4,6 +4,7 @@
 
 package akkajavasdk;
 
+import static akka.Done.done;
 import static akkajavasdk.components.workflowentities.TransferConsumer.TRANSFER_CONSUMER_STORE;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,7 +59,7 @@ public class WorkflowTest extends TestKitSupport {
     var workflowId = randomId();
 
     Done done = componentClient.forWorkflow(workflowId).terminate(DummyWorkflow.class);
-    assertThat(done).isEqualTo(Done.getInstance());
+    assertThat(done).isEqualTo(done());
 
     assertThatIllegalArgumentException()
         .isThrownBy(
@@ -77,7 +78,7 @@ public class WorkflowTest extends TestKitSupport {
             .terminateAsync(DummyWorkflow.class)
             .toCompletableFuture()
             .get(10, TimeUnit.SECONDS);
-    assertThat(done).isEqualTo(Done.getInstance());
+    assertThat(done).isEqualTo(done());
     assertThatIllegalArgumentException()
         .isThrownBy(
             () ->
@@ -97,10 +98,10 @@ public class WorkflowTest extends TestKitSupport {
     assertThat(started).isEqualTo("ok");
 
     assertThat(componentClient.forWorkflow(workflowId).terminate(DummyWorkflow.class))
-        .isEqualTo(Done.getInstance());
+        .isEqualTo(done());
     // Idempotent — a second terminate is a no-op that still replies OK.
     assertThat(componentClient.forWorkflow(workflowId).terminate(DummyWorkflow.class))
-        .isEqualTo(Done.getInstance());
+        .isEqualTo(done());
   }
 
   @Test
@@ -115,7 +116,7 @@ public class WorkflowTest extends TestKitSupport {
                     componentClient
                         .forWorkflow(workflowId)
                         .terminate(DummyWorkflow.class, "because"));
-    assertThat(done).isEqualTo(Done.getInstance());
+    assertThat(done).isEqualTo(done());
   }
 
   @Test
@@ -127,7 +128,7 @@ public class WorkflowTest extends TestKitSupport {
             .expect(
                 testKit.getActorSystem(),
                 () -> componentClient.forWorkflow(workflowId).terminate(DummyWorkflow.class));
-    assertThat(done).isEqualTo(Done.getInstance());
+    assertThat(done).isEqualTo(done());
   }
 
   @Test
@@ -158,10 +159,10 @@ public class WorkflowTest extends TestKitSupport {
     componentClient.forWorkflow(workflowId).method(DummyWorkflow::update).invoke();
 
     Done suspended = componentClient.forWorkflow(workflowId).suspend(DummyWorkflow.class);
-    assertThat(suspended).isEqualTo(Done.getInstance());
+    assertThat(suspended).isEqualTo(done());
 
     Done resumed = componentClient.forWorkflow(workflowId).resume(DummyWorkflow.class);
-    assertThat(resumed).isEqualTo(Done.getInstance());
+    assertThat(resumed).isEqualTo(done());
 
     // Workflow is back to its paused state and still accepts further commands.
     Integer state = componentClient.forWorkflow(workflowId).method(DummyWorkflow::get).invoke();
@@ -180,7 +181,7 @@ public class WorkflowTest extends TestKitSupport {
             .suspendAsync(DummyWorkflow.class)
             .toCompletableFuture()
             .get(10, TimeUnit.SECONDS);
-    assertThat(suspended).isEqualTo(Done.getInstance());
+    assertThat(suspended).isEqualTo(done());
 
     Done resumed =
         componentClient
@@ -188,7 +189,7 @@ public class WorkflowTest extends TestKitSupport {
             .resumeAsync(DummyWorkflow.class)
             .toCompletableFuture()
             .get(10, TimeUnit.SECONDS);
-    assertThat(resumed).isEqualTo(Done.getInstance());
+    assertThat(resumed).isEqualTo(done());
   }
 
   @Test
@@ -198,7 +199,7 @@ public class WorkflowTest extends TestKitSupport {
     componentClient.forWorkflow(workflowId).method(DummyWorkflow::update).invoke();
 
     assertThat(componentClient.forWorkflow(workflowId).suspend(DummyWorkflow.class))
-        .isEqualTo(Done.getInstance());
+        .isEqualTo(done());
     // Second suspend is a no-op against an already-suspended workflow.
     LoggingTestKit.debug("already suspended, ignoring suspend")
         .expect(
@@ -220,7 +221,7 @@ public class WorkflowTest extends TestKitSupport {
                     componentClient
                         .forWorkflow(workflowId)
                         .suspend(DummyWorkflow.class, "maintenance"));
-    assertThat(done).isEqualTo(Done.getInstance());
+    assertThat(done).isEqualTo(done());
   }
 
   @Test
@@ -234,7 +235,7 @@ public class WorkflowTest extends TestKitSupport {
             .expect(
                 testKit.getActorSystem(),
                 () -> componentClient.forWorkflow(workflowId).suspend(DummyWorkflow.class));
-    assertThat(done).isEqualTo(Done.getInstance());
+    assertThat(done).isEqualTo(done());
   }
 
   @Test
@@ -255,7 +256,7 @@ public class WorkflowTest extends TestKitSupport {
             testKit.getActorSystem(),
             () ->
                 assertThat(componentClient.forWorkflow(workflowId).resume(DummyWorkflow.class))
-                    .isEqualTo(Done.getInstance()));
+                    .isEqualTo(done()));
   }
 
   @Test
