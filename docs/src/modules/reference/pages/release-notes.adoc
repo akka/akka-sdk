@@ -11,6 +11,16 @@ Current versions
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
 
 == May 2026
+* Akka Runtime 1.5.48 - 1.5.52
+- TTL-based deletion for entities
+- Object storage support (S3, GCS, Azure)
+- Azure and MistralAI model providers
+- Prompt caching for Anthropic and Bedrock
+- Workflow termination, suspend and resume
+- JWT keys configuration from JWKS
+- OpenTelemetry performance improvements
+- SDK expected runtime version validation
+
 * Akka CLI 3.0.61
 - Maintenance release
 
