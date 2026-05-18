@@ -7,14 +7,21 @@ Set the object-storage configuration.
 The `akka projects config set object-storage` command configures object storage for a project.
 Use subcommands for per-bucket edits, or pass `--from-file FILE` to replace the whole configuration from a YAML document with resource: ObjectStorage and a spec.buckets list.
 
-Examples:
-
-akka projects config set object-storage bucket photos +     --provider s3 --bucket acme-photos --bucket-region us-east-1 +     --credentials-type static +     --access-key-id-secret aws-creds/access-key-id +     --secret-access-key-secret aws-creds/secret-access-key
-
-akka projects config set object-storage --from-file project-os.yaml
-
 ----
 akka projects config set object-storage [flags]
+----
+
+== Examples
+
+----
+
+akka projects config set object-storage bucket photos \
+  --provider s3 --bucket acme-photos --bucket-region us-east-1 \
+  --credentials-type static \
+  --access-key-id-secret aws-creds/access-key-id \
+  --secret-access-key-secret aws-creds/secret-access-key
+
+akka projects config set object-storage --from-file project-os.yaml
 ----
 
 == Options
