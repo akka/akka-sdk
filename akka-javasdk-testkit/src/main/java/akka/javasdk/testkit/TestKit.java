@@ -578,7 +578,8 @@ public class TestKit {
           overrideDisabledComponents,
           modelProvidersByAgentId,
           httpMocks,
-          grpcMocks);
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     public Settings withEventingSupport(EventingSupport eventingSupport) {
