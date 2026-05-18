@@ -26,8 +26,7 @@ A browser UI is bundled with the service. Boot the service (`mvn compile exec:ja
 | **peerreview** | Moderation | Moderator coordinates a panel of technical, style, and compliance reviewers |
 | **devteam** | Team | Team lead decomposes project into tasks, developers self-coordinate |
 | **brainstorm** *(not yet implemented)* | Team (emergent) | Team generates ideas on shared board, lead curates |
-| **editorial** *(not yet implemented)* | Team + external input | Team lead with writers, human approval of final publication |
-| **deepdive** *(not yet implemented)* | All capabilities | Comprehensive demo: handoff, delegation, teams, emergent, task deps, external input, nested orchestration |
+| **editorial** | Delegation + team + moderation | Editor-in-chief delegates stage tasks to section leads; each lead uses a different coordination capability internally |
 
 ---
 
@@ -255,23 +254,35 @@ A team generates ideas on a shared board. Each agent contributes independently, 
 
 ## editorial
 
-*Not yet implemented.*
+An editor-in-chief coordinates three section leads by delegating a stage task to each. Each lead is itself a coordinator that uses a different capability internally — delegation, team leadership, and moderation — so the sample exercises capability mixing across a small hierarchy.
 
-A team lead coordinates writers who collaborate on a publication. Writers work on assigned sections, review each other's work, and refine through peer feedback. The final publication requires human editorial approval before completion.
+**Agents:**
+- EditorInChief — top-level coordinator; delegates the research, writing, and review stages and synthesises the final article
+- ResearchEditor — accepts a RESEARCH stage task; internally delegates to two Reporter instances on different angles, returns a digest
+- Reporter — accepts a FINDINGS task; saves findings to the shared workspace
+- WritingLead — accepts a DRAFT stage task; internally leads a writing team
+- SectionWriter, CopyEditor — team members; accept SECTION tasks; share the workspace
+- ReviewEditor — accepts a REVIEW stage task; internally runs a nested moderation over reviewers
+- AccuracyReviewer, ReadabilityReviewer — review-panel participants
 
-**Agents:** Editorial lead (team lead), writer agents (team members)
+**Tasks:**
+- ARTICLE → `Article(title, body, keyPoints)` — top-level, accepted by EditorInChief
+- RESEARCH → `ResearchDigest(summary, documentIds)` — delegated to ResearchEditor
+- FINDINGS → `ResearchFindings(angle, summary, documentId)` — delegated to Reporter
+- DRAFT → `ArticleDraft(title, body, documentIds)` — delegated to WritingLead
+- SECTION → `SectionDraft(sectionTitle, summary, documentId)` — claimed by writing-team members
+- REVIEW → `ReviewReport(assessment, notes)` — delegated to ReviewEditor
 
-**Demonstrates:** Team capability with external input. Collaborative writing with peer review. Human-in-the-loop approval for the final publication. Combines the team coordination pattern with external gating — the team produces the work, but a human makes the final call.
+**Flow:** A topic arrives at `POST /editorial`. The EditorInChief receives the ARTICLE task and delegates a stage task to each section lead — research, then writing, then review — feeding each result into the next stage's instructions. Each lead does its own inner coordination (delegate to researchers, lead a writing team, or moderate a review panel) to fulfil its stage task, then returns a typed result. The EditorInChief synthesises the final `Article` from the returned results. The model decides the order and whether to revisit a stage; nothing scripts the pipeline. Bulky artifacts (research notes, section drafts) live in a shared workspace via `DocumentTools` and are passed by document ID, while typed task results carry the structure between agent and worker.
 
----
+**Demonstrates:** Coordination capabilities composed across a hierarchy, each in its natural role:
 
-## deepdive
+- Delegation at the top to drive the stages (each stage runs as its own held task)
+- Delegation inside the research stage for parallel investigation
+- Team leadership inside the writing stage for member self-coordination
+- Moderation inside the review stage for structured turn-taking
+- A shared workspace tool (`DocumentTools` over a Key-Value entity)
 
-*Not yet implemented.*
-
-A comprehensive demo application that exercises all coordination capabilities in a single coherent system. A user submits a technology topic and the system produces a thoroughly researched, debated, and reviewed deep-dive article — with every orchestration decision driven by LLMs, not code.
-
-15 agent types across 4 levels of nesting cover delegation, handoff, collaborative teams, emergent coordination, task dependencies, external input, and LLM-driven looping.
 
 ### Agent hierarchy
 

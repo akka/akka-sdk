@@ -32,7 +32,8 @@ public class RunControlEndpointSamplesTest extends TestKitSupport {
         "debate",
         "negotiation",
         "peerreview",
-        "devteam"
+        "devteam",
+        "editorial"
       )
     );
 
@@ -43,5 +44,6 @@ public class RunControlEndpointSamplesTest extends TestKitSupport {
     assertThat(byId.get("helloworld").agentComponentId()).isEqualTo("question-answerer");
     assertThat(byId.get("debate").agentComponentId()).isEqualTo("debate-moderator");
     assertThat(byId.get("publishing").agentComponentId()).isEqualTo("content-agent");
+    assertThat(byId.get("editorial").agentComponentId()).isEqualTo("editor-in-chief");
   }
 }
