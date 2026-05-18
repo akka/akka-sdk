@@ -45,8 +45,7 @@ public interface WorkflowClient {
 
   /**
    * Terminate the workflow identified by this client's workflow id, recording a free-form reason.
-   * An empty {@code reason} is equivalent to {@link #terminate(Class)} (the runtime normalizes an
-   * empty reason to "no reason").
+   * An empty {@code reason} is equivalent to {@link #terminate(Class)}.
    *
    * <p>The reason is short, human-readable text — same guidance as the paused-workflow reason. It
    * is persisted in the workflow's event journal and written to runtime logs at termination time,
@@ -80,8 +79,7 @@ public interface WorkflowClient {
 
   /**
    * Suspend the workflow identified by this client's workflow id, recording a free-form reason. An
-   * empty {@code reason} is equivalent to {@link #suspend(Class)} (the runtime normalizes an empty
-   * reason to "no reason").
+   * empty {@code reason} is equivalent to {@link #suspend(Class)}.
    *
    * <p>The reason is short, human-readable text — same guidance as the paused-workflow reason. It
    * is persisted in the workflow's event journal and written to runtime logs at suspend time, so it
