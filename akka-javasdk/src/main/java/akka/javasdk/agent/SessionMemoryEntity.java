@@ -150,12 +150,12 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     /**
      * Reset the in-memory history on deletion.
      *
-     * <p>On entity deletion, the entity is kept around for some time before being purged, can still serve reads, and
-     * rejects any further persists. After this reset {@code getHistory} returns an empty session, so the agent sees
-     * no context and never falls back to a chunked journal read. We therefore have nothing to anchor with a
-     * journal sequence number here: the {@code compactionSeqNr} carried by any prior compaction is
-     * no longer relevant on a deleted entity, and is reset to {@code 0} along with the rest of the
-     * state.
+     * <p>On entity deletion, the entity is kept around for some time before being purged, can still
+     * serve reads, and rejects any further persists. After this reset {@code getHistory} returns an
+     * empty session, so the agent sees no context and never falls back to a chunked journal read.
+     * We therefore have nothing to anchor with a journal sequence number here: the {@code
+     * compactionSeqNr} carried by any prior compaction is no longer relevant on a deleted entity,
+     * and is reset to {@code 0} along with the rest of the state.
      */
     public State clear() {
       return new State(sessionId, maxSizeInBytes, 0, new LinkedList<>(), tokenUsage, false, 0L);
