@@ -128,6 +128,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 ## Optional
 
 - [Run a service locally](https://doc.akka.io/sdk/running-locally.html.md): Steps to run and test Akka services in a local development environment
+- [Running locally with a message broker](https://doc.akka.io/sdk/running-with-broker.html.md): Running an Akka service locally against a real Kafka broker or the Google Pub/Sub emulator
 - [AI coding assistant](https://doc.akka.io/sdk/ai-coding-assistant.html.md): How to set up AI coding assistant tools with Akka
 - [Access Control List concepts](https://doc.akka.io/concepts/acls.html.md): Core concepts behind Access Control Lists and how they secure Akka services
 - [Developing Access Control Lists (ACLs)](https://doc.akka.io/sdk/access-control.html.md): Implementing ACLs to control access to your Akka service endpoints
@@ -145,6 +146,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Using Aiven for Apache Kafka](https://doc.akka.io/operations/projects/broker-aiven.html.md): Integrating Aiven-hosted Kafka with Akka services
 - [Using Confluent Cloud as Kafka service](https://doc.akka.io/operations/projects/broker-confluent.html.md): Setting up Confluent Cloud Kafka for use with Akka services
 - [Using AWS MSK as Kafka service](https://doc.akka.io/operations/projects/broker-aws-msk.html.md): Configuring AWS Managed Streaming for Kafka with Akka services
+- [Using a self-hosted or arbitrary Kafka cluster](https://doc.akka.io/operations/projects/broker-kafka.html.md): Connecting Akka to any Kafka cluster that meets the supported authentication and TLS requirements
 - [Using Google Cloud Pub/Sub as message broker](https://doc.akka.io/operations/projects/broker-google-pubsub.html.md): Integrating Google Cloud Pub/Sub with Akka services
 - [Projects](https://doc.akka.io/operations/projects/index.html.md): Managing projects in the Akka Platform
 - [Create a new project](https://doc.akka.io/operations/projects/create-project.html.md): Steps to create and configure a new project in the Akka Platform

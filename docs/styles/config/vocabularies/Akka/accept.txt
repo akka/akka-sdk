@@ -116,6 +116,7 @@ JVM's
 (?i)JWTs
 [Kk]afka
 [Kk]alix
+Kerberos
 Keycloak
 keyId
 keySets
@@ -189,12 +190,14 @@ Qodo
 Quatrini
 queryable
 [Qq]uickstarts
+reachability
 rebalance
 rebalances
 rebalancing
 recoverability
 recurse
 redeliveries
+Redpanda
 refreshInterval
 remoting
 Remoting
@@ -234,6 +237,7 @@ SREs
 stdin
 [Ss]tackdriver
 [Ss]treamable
+Strimzi
 subcommand
 subjectMatches
 subpage
