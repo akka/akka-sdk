@@ -5,6 +5,7 @@
 package akka.javasdk.agent;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -14,8 +15,11 @@ import java.util.Optional;
  * It offers several implementation strategies:
  *
  * <ul>
+ *   <li>Configuration-based memory management via {@link FromConfig}
+ *   <li>Disabled memory (no history) via {@link Disabled}
  *   <li>Limited window memory management via {@link LimitedWindowMemoryProvider}
  *   <li>Custom memory implementation via {@link CustomMemoryProvider}
+ *   <li>Interceptor-wrapped memory via {@link InterceptedMemoryProvider}
  * </ul>
  */
 public sealed interface MemoryProvider {
@@ -40,10 +44,34 @@ public sealed interface MemoryProvider {
     return new MemoryProvider.FromConfig(configPath);
   }
 
+  /**
+   * Wraps this provider with a {@link SessionMemoryInterceptor} that intercepts {@code
+   * addInteraction} calls. The underlying read/write behavior of this provider is preserved on the
+   * delegate exposed to the interceptor.
+   *
+   * <p>Calling {@code withInterceptor} on a provider that already has an interceptor replaces the
+   * existing interceptor; interceptors are not chained.
+   *
+   * @param interceptor The interceptor to apply
+   * @return A memory provider that invokes the interceptor on writes
+   */
+  default MemoryProvider withInterceptor(SessionMemoryInterceptor interceptor) {
+    Objects.requireNonNull(interceptor);
+    MemoryProvider target =
+        (this instanceof InterceptedMemoryProvider wrapped) ? wrapped.delegate : this;
+    return new InterceptedMemoryProvider(target, interceptor);
+  }
+
   /** Configuration-based memory provider that reads settings from the specified path. */
   record FromConfig(String configPath) implements MemoryProvider {}
 
-  /** Disabled memory provider, which does not store or retrieve contextual history. */
+  /**
+   * Disabled memory provider, which does not store or retrieve contextual history.
+   *
+   * <p>This provider may still be combined with a {@link SessionMemoryInterceptor} via {@link
+   * #withInterceptor(SessionMemoryInterceptor)} to observe interactions as they happen, but no
+   * history will be persisted or made available to subsequent interactions.
+   */
   record Disabled() implements MemoryProvider {}
 
   /**
@@ -272,6 +300,26 @@ public sealed interface MemoryProvider {
      */
     public SessionMemory sessionMemory() {
       return sessionMemory;
+    }
+  }
+
+  /**
+   * Memory provider that wraps another {@link MemoryProvider} with a {@link
+   * SessionMemoryInterceptor}. Created by calling {@link MemoryProvider#withInterceptor} on any
+   * {@link MemoryProvider}.
+   *
+   * <p>Note: unlike the sibling permitted types, this is a `final class` with a private constructor
+   * (rather than a `record`) so that it cannot be constructed directly by end users
+   */
+  final class InterceptedMemoryProvider implements MemoryProvider {
+
+    public final MemoryProvider delegate;
+    public final SessionMemoryInterceptor interceptor;
+
+    private InterceptedMemoryProvider(
+        MemoryProvider delegate, SessionMemoryInterceptor interceptor) {
+      this.delegate = delegate;
+      this.interceptor = interceptor;
     }
   }
 }
