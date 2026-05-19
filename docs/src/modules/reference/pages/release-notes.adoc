@@ -11,6 +11,10 @@ Current versions
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
 
 == May 2026
+
+* Akka CLI 3.0.62
+- Project descriptor can now include docker registry config 
+
 * Akka Runtime 1.5.48 - 1.5.52
 - TTL-based deletion for entities
 - Object storage support (S3, GCS, Azure)
