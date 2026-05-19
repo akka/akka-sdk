@@ -152,6 +152,14 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  @Consume.FromServiceStream(service = "some_service", id = "circular_events", ignoreUnknown = true)
+  public static class CircularProtoConsumer extends Consumer {
+
+    public Effect handle(EventsForConsumer.CircularParent event) {
+      return effects().done();
+    }
+  }
+
   @Component(id = "employee_view")
   public static class EventStreamSubscriptionView extends View {
 

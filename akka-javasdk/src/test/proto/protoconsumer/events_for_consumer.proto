@@ -17,3 +17,13 @@ message EventForConsumer1 {
 message EventForConsumer2 {
   string text = 1;
 }
+
+message CircularParent {
+  string id = 1;
+  CircularChild child = 2;
+}
+
+message CircularChild {
+  string name = 1;
+  CircularParent parent = 2;
+}
