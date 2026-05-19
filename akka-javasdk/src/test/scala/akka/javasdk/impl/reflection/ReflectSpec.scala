@@ -8,9 +8,9 @@ import scala.concurrent.ExecutionContext
 
 import akka.Done
 import akka.javasdk.client.ComponentClient
+import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.client.ComponentClientImpl
 import akka.javasdk.impl.serialization.Serializer
-import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.InvalidProtoEventSourcedEntityWrongEventType
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.ProtoConsumerAutoResolve
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.ProtoConsumerEntityWithoutAnnotation
