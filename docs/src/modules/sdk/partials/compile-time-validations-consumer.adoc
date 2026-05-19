@@ -1,0 +1,87 @@
+== Compile-time validations
+
+The Akka Java SDK validates Consumer components at compile time to catch configuration errors early.
+
+include::compile-time-validations-common.adoc[tag=intro]
+
+=== Consumer-specific validations
+
+In addition to the xref:compile-time-validations-common.adoc[common validations], Consumers have the following specific requirements:
+
+==== Must have @Consume annotation
+
+A Consumer must be annotated with one of the `@Consume` subscription annotations to specify its data source.
+
+==== Single type-level subscription
+
+A Consumer can only have one type-level `@Consume` annotation. You cannot combine multiple subscription sources.
+
+Available type-level subscription annotations:
+
+* `@Consume.FromKeyValueEntity`
+* `@Consume.FromWorkflow`
+* `@Consume.FromEventSourcedEntity`
+* `@Consume.FromServiceStream`
+* `@Consume.FromTopic`
+
+==== Topic publishing requires source
+
+If you use `@Produce.ToTopic` to publish to a topic, the Consumer must also have a `@Consume` source annotation.
+
+==== Service stream ID required
+
+When producing to a service stream, the stream ID cannot be empty.
+
+==== Subscription method parameter count
+
+Subscription methods (methods that handle incoming data) must have exactly one parameter, unless they are marked with `@DeleteHandler`.
+
+==== No ACL on subscription methods
+
+Consumer subscription methods are for internal use only and cannot have ACL annotations like `@Acl.Allow` or `@Acl.Deny`.
+
+==== State subscription validations
+
+When consuming from KeyValueEntity or Workflow state changes, special rules apply:
+
+===== Delete handlers must have zero parameters
+
+Methods annotated with `@DeleteHandler` must not have parameters.
+
+===== Only one update method allowed
+
+You cannot have multiple methods handling the same state type for state subscriptions.
+
+===== Only one delete handler allowed
+
+Only one method can be annotated with `@DeleteHandler` per Consumer.
+
+==== Ambiguous handler validation
+
+When subscribing to event sources, you cannot have multiple handlers that accept the same parameter type.
+
+==== Missing handler validation
+
+When subscribing to event sources with sealed event types, you must provide handlers for all event types.
+
+You can satisfy this requirement in one of three ways:
+
+1. **Provide specific handlers** for each permitted subclass of the sealed interface
+2. **Provide a handler** for the sealed interface itself (handles all events)
+3. **Provide a raw `byte[]` handler** (handles all events as raw bytes)
+
+For KeyValueEntity and Workflow subscriptions, you must have a handler for the state type and/or a delete handler.
+
+==== @FunctionTool restrictions
+
+Consumer methods cannot have `@FunctionTool` on private methods. Only public methods returning `Consumer.Effect` can be annotated with `@FunctionTool`, if applicable to the use case.
+
+=== Why these validations matter
+
+These validations ensure:
+
+* **Correct subscription setup**: Every Consumer has a valid data source
+* **Complete event handling**: All event types are handled, preventing runtime errors
+* **Type safety**: Handler signatures match the expected data types
+* **Security**: Internal subscription methods cannot be exposed via ACLs
+* **Unambiguous routing**: Each event type maps to exactly one handler
