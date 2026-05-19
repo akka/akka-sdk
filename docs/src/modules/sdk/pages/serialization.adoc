@@ -19,7 +19,7 @@ include::example$event-sourced-customer-registry/src/main/java/customer/Bootstra
 
 == Type name
 
-It’s *highly recommended* to add a `@TypeName` annotation to sealed interfaces, such as events. Information about the type, persisted together with the JSON payload, is used to deserialize the payload and to route it to an appropriate `Consumer` or `View` handler. By default, a FQCN is used, which requires extra attention in case of renaming or repacking. Therefore, we recommend using a logical type name to simplify refactoring tasks. Migration from the old name is also possible, see xref:serialization.adoc#_renaming_class[renaming class].
+It’s *highly recommended* to add a `@TypeName` annotation to sealed interfaces, such as events. Information about the type, persisted together with the JSON payload, is used to deserialize the payload and to route it to an appropriate `Consumer` or `TableUpdater` (from the `View`) handler. By default, a FQCN is used, which requires extra attention in case of renaming or repacking. Therefore, we recommend using a logical type name to simplify refactoring tasks. Migration from the old name is also possible, see xref:serialization.adoc#_renaming_class[renaming class].
 
 == Schema evolution
 
