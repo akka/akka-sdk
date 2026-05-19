@@ -1,11 +1,10 @@
-package demo.multiagent.application;
+package agent_guide.dynamic_planner;
 
 // tag::all[]
 import akka.javasdk.JsonSupport;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.annotations.Component;
-import demo.multiagent.domain.AgentSelection;
 
 // tag::class[]
 @Component(

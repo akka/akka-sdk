@@ -1,7 +1,7 @@
 package demo.multiagent.application;
 
+// tag::all[]
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.AgentRole;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import demo.multiagent.domain.AgentRequest;
@@ -17,11 +17,9 @@ import java.util.stream.Collectors;
     board games, a city trip, etc.
   """
 )
-@AgentRole("worker")
 public class ActivityAgent extends Agent {
 
   // end::description[]
-
   // tag::system_message[]
   private static final String SYSTEM_MESSAGE =
     """
@@ -60,3 +58,4 @@ public class ActivityAgent extends Agent {
     return effects().systemMessage(SYSTEM_MESSAGE).userMessage(userMessage).thenReply();
   }
 }
+// end::all[]

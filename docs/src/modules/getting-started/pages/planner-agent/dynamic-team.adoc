@@ -6,157 +6,71 @@ include::ROOT:partial$new-to-akka-start-here.adoc[]
 
 == Overview
 
-We have used a workflow with predefined steps to call the `WeatherAgent` followed by the `ActivityAgent`. In a larger system there can be many agents, and it would be cumbersome to define a single workflow that would handle all types of requests. A more flexible approach is to let the AI model come up with a plan of which agents to use and in which order to achieve the goal of the request.
+We have used a workflow with predefined steps to call the `WeatherAgent` followed by the `ActivityAgent`. In a larger system there can be many agents, and it would be cumbersome to define a single workflow for every kind of request. A more flexible approach is to let the AI model decide which agents to consult and in what order, based on the request.
+
+Akka offers an xref:sdk:autonomous-agents.adoc[Autonomous Agent] for exactly this case. Instead of writing the orchestration sequence as workflow steps, you declare a coordinator agent and list the worker agents it may delegate to. The runtime exposes the workers to the coordinator's model as tools, drives the iteration loop, persists task state, and retries failed steps. The model picks which worker runs next based on what previous steps returned.
 
 In this part of the guide you will:
 
-* Add agents to create a dynamic plan
-* Use a workflow that executes the plan
+* Add a coordinator `AutonomousAgent` with a `Delegation` capability that lists `WeatherAgent` and `ActivityAgent` as workers.
+* Define a `SUGGEST_ACTIVITIES` task type with a typed result.
+* Replace the workflow in the endpoint with a direct call to the coordinator's task.
 
 == Prerequisites
 
 include::ROOT:partial$local-dev-prerequisites.adoc[]
 * https://platform.openai.com/api-keys[OpenAI API key, window="new"]
 
-== Planner agents
+== Define the task
 
-We split the planning into two steps and use two separate agents for these tasks. It's not always necessary to use several steps for the planning. You have to experiment with what works best for your problem domain.
-
-. Select agents that are useful for a certain problem.
-. Decide in which order to use the agents and give each agent precise instructions for its task.
-
-The `SelectorAgent` decides which agents to use. Add a new file `SelectorAgent.java` to `src/main/java/com/example/application/`
+The coordinator works on typed tasks. The task definition is a stable static constant. Add a new file `ActivityTasks.java` to `src/main/java/com/example/application/`
 
 [source,java,indent=0]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/SelectorAgent.java[SelectorAgent.java]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/ActivityTasks.java[ActivityTasks.java]
 ----
-include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/SelectorAgent.java[tag=all]
-----
-<1> The `AgentRegistry` contains information about all agents.
-<2> Select the agents with the role `"worker"`.
-<3> Detailed instructions and include descriptions (as json) of the agents.
-
-The result from the `SelectorAgent` is a list of agent ids. Add a new file `AgentSelection.java` to `src/main/java/com/example/domain/`
-[source,java,indent=0]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/domain/AgentSelection.java[AgentSelection.java]
-----
-include::sdk:example$multi-agent/src/main/java/demo/multiagent/domain/AgentSelection.java[tag=all]
+include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/ActivityTasks.java[tag=all]
 ----
 
-The information about the agents in the `AgentRegistry` comes from the `@Component` and `@AgentRole` annotations. When
-using it for planning like this, it is important that the agents define those descriptions that the LLM can use to come up with a good plan.
+The default result type for a task is `String`, which is what we use here. Replace `String` with a record and define `resultConformsTo(MyRecord.class)` if you need a structured result.
 
-Add the `@Component` and `@AgentRole` to the `WeatherAgent`:
-[source,java,indent=0]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/WeatherAgent.java[WeatherAgent.java]
-----
-include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/WeatherAgent.java[tag=description]
-----
+== The coordinator agent
 
-Add the `@Component` and `@AgentRole` to the `ActivityAgent`:
-[source,java,indent=0]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/ActivityAgent.java[ActivityAgent.java]
-----
-include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/ActivityAgent.java[tag=description]
-----
+The coordinator extends `AutonomousAgent`. It declares which task types it accepts and which worker agents it may delegate to. There is no command handler, the runtime drives the agent through its decision loop until the task completes.
 
-Note that in image:concepts:steps-2.svg[width=20] of the `SelectorAgent` we retrieve a subset of the agents with a certain role. This role is also defined in the `@AgentRole` annotation.
-
-After selecting agents, we use a `PlannerAgent` to decide in which order to use the agents and the precise request each agent should receive to perform its single task. Add a new file `PlannerAgent.java` to `src/main/java/com/example/application/`
+Add a new file `ActivityCoordinator.java` to `src/main/java/com/example/application/`
 
 [source,java,indent=0]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/PlannerAgent.java[PlannerAgent.java]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/ActivityCoordinator.java[ActivityCoordinator.java]
 ----
-include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/PlannerAgent.java[tag=all]
+include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/ActivityCoordinator.java[tag=all]
 ----
-<1> Lookup the agent information for the selected agents from the `AgentRegistry`.
-<2> Detailed instructions and include descriptions (as json) of the agents.
+<1> Extend `AutonomousAgent`. The `@Component` description tells the model what kind of work this agent does.
+<2> Optional definition-level instructions. Use these for guidance that is specific to the coordinator's runtime behaviour, here, lifting the userId from the task header into the `ActivityAgent` delegation request.
+<3> Declare which task types this agent accepts. `maxIterationsPerTask` bounds the model loop as a safety net.
+<4> List the worker agents the coordinator may delegate to. `Delegation.to` accepts both request-based agents and other autonomous agents.
 
-The result from the `PlannerAgent` is a `Plan` with a list of `PlanStep`.
+The task definition itself spells out the expected shape of the instructions string (the `User: <userId>` header followed by the user's question), so the structural fact lives next to the task and the behavioural instruction lives next to the coordinator. The model in the coordinator sees the descriptions on `WeatherAgent` and `ActivityAgent` (from their `@Component` annotations) as part of its tool catalogue, and decides per request which workers to call based on the task instructions and worker descriptions.
 
-Add a new file `Plan.java` to `src/main/java/com/example/domain/`
-[source,java,indent=0]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/domain/Plan.java[Plan.java]
-----
-include::sdk:example$multi-agent/src/main/java/demo/multiagent/domain/Plan.java[tag=all]
-----
+== Worker agents stay request-based
 
-and a new file `PlanStep.java` to `src/main/java/com/example/domain/`
-[source,java,indent=0]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/domain/PlanStep.java[PlanStep.java]
-----
-include::sdk:example$multi-agent/src/main/java/demo/multiagent/domain/PlanStep.java[tag=all]
-----
+`WeatherAgent` and `ActivityAgent` remain the plain `Agent` subclasses from earlier parts of this guide, no signature changes are needed. The runtime introspects each worker's command handler, generates a JSON schema from its parameter type, and exposes a delegate tool to the coordinator's model. When the model invokes the tool, the runtime deserialises the arguments and calls the worker's command handler.
 
-== Common signature of worker agents
+In this guide the two workers have different parameter shapes, and the runtime handles both. `WeatherAgent.query` takes a `String`, so the model passes a plain string. `ActivityAgent.query` takes an `AgentRequest` record so the agent can fetch the user's preferences itself, so the model passes a `{userId, message}` object.
 
-We will call the selected agents according to the plan, and we want to do that without explicitly knowing which agent it is. For this, the worker agents (`WeatherAgent` and `ActivityAgent`) must have the same shape. Adjust the `ActivityAgent` to have this method signature:
+== Replace the workflow in the endpoint
+
+With the coordinator in place we no longer need the `AgentTeamWorkflow`. The endpoint can drive the coordinator directly: call `runSingleTask` on a fresh coordinator instance with the user message prefixed by a `User: <userId>` header as the task instructions, and let the runtime run the model loop until the task completes. The `ActivityAgent` will fetch the user's preferences itself using the userId. The `GET` route reads the typed result through the task client.
+
+Update `ActivityEndpoint`:
 
 [source,java,indent=0]
-.ActivityAgent.java
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/api/ActivityEndpoint.java[ActivityEndpoint.java]
 ----
-  public Effect<String> query(AgentRequest request) {
+include::sdk:example$multi-agent/src/main/java/demo/multiagent/api/ActivityEndpoint.java[tag=all]
 ----
-
-Where `AgentRequest` is a new record. Add a new file `AgentRequest.java` to `src/main/java/com/example/domain/`
-
-[source,java,indent=0]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/domain/AgentRequest.java[AgentRequest.java]
-----
-include::sdk:example$multi-agent/src/main/java/demo/multiagent/domain/AgentRequest.java[tag=all]
-----
-
-Remove the previous `ActivityAgent.Request`, and update all references to use the new `AgentRequest` instead.
-
-Make the same changes to the `WeatherAgent`. Use the same method signature and use the `AgentRequest` record.
-
-== Execute the plan
-
-`SelectorAgent` and `PlannerAgent` are the two agents that perform the planning, but we also need to connect them and execute the plan. This orchestration is the job of the workflow.
-
-Update the `AgentTeamWorkflow` to this:
-
-[source,java,indent=0]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[AgentTeamWorkflow.java]
-----
-include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[tag=all]
-----
-<1> It's a workflow, with reliable and durable execution and the xref:sdk:agents/streaming.adoc#_streaming_from_the_workflow[notification system].
-<2> The steps are select - plan - execute - summarize.
-<3> The workflow starts by selecting agents
-<4> which is performed by the `SelectorAgent`.
-<5> Continue with making the actual plan
-<6> which is performed by the `PlannerAgent`, using the selection from the previous step.
-<7> Continue with executing the plan.
-<8> Take the next task in the plan.
-<9> Call the agent for the task.
-<10> Continue executing the plan until no tasks are remaining.
-
-You can add the imports:
-[source,java,indent=0]
-----
-import static com.example.application.AgentTeamWorkflow.Status.*;
-import com.example.domain.*;
-----
-
-When executing the plan and calling the agents we know the id of the agent to call, but not the agent class. It can be the `WeatherAgent` or `ActivityAgent`. Therefore, we can't use the ordinary `method` of the `ComponentClient. Instead, we use the `dynamicCall` with the id of the agent. This is the reason why we had to align the method signatures of the worker agents.
-
-This also ends the workflow by creating a summary of the results from the involved agent. Add a new file `SummarizerAgent.java` to `src/main/java/com/example/application/`
-
-[source,java,indent=0]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/SummarizerAgent.java[SummarizerAgent.java]
-----
-include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/SummarizerAgent.java[tag=all]
-----
-
-Fix any compilation errors, such as missing imports.
-
-[source,command line]
-----
-mvn compile
-----
-
-We still only have the two worker agents `WeatherAgent` and `ActivityAgent`, but you can add more agents to this structure of dynamic planning and execution, and it will be able to solve other types of problems without changing the orchestration engine.
+<1> Prepend a `User: <userId>` header to the user's message. This becomes the task instructions the coordinator's model sees, so it can lift the userId into the `ActivityAgent` delegation.
+<2> `runSingleTask` creates the task, assigns it to a fresh coordinator instance, and returns the task id. The runtime starts the agent and drives its decision loop until the task completes.
+<3> Read the typed result through the task client. Returns the answer if the task has completed, or `404` while it is still running.
 
 == Running the service
 
@@ -176,20 +90,17 @@ curl -i -XPOST --location "http://localhost:9000/activities/alice" \
   --data '{"message": "I am in Madrid. What should I do? Beware of the weather."}'
 ----
 
-Retrieve the suggested activities with the `sessionId` from the previous response:
+The response body and `Location` header carry the task id. Retrieve the suggestion:
 
 [source, command line]
 ----
-curl -i -XGET --location "http://localhost:9000/activities/alice/{sessionId}"
+curl -i -XGET --location "http://localhost:9000/activities/alice/{taskId}"
 ----
 
-Inspect the logs and notice the difference if you include "Beware of the weather" in the request or not.
-
-If you'd rather use the visual request builder in the console, you can create this request and see all of the components involved in handling the request:
-
-image:multi-agent-flowview.png[Flow view for the Multi agent]
+Inspect the logs and notice how the coordinator decides for itself which workers to call. If you change the request, the coordinator may consult only the activity agent (for purely indoor suggestions), only the weather agent (for a forecast question), or both.
 
 == Next steps
 
-* Finally, let's use another agent to evaluate the previous suggestions when the user preferences are changed or if new suggestions should be created. Continue with xref:planner-agent/eval.adoc[] that will illustrate the Consumer component and "LLM as judge" pattern.
-* A more advanced sample illustrates link:https://github.com/akka-samples/adaptive-multi-agent[adaptive multi-agent orchestration, window="new"]. It re-evaluates progress after each agent response and dynamically adjusts its strategy.
+* The coordinator currently uses the `Delegation` capability. xref:sdk:autonomous-agents/capabilities.adoc[Coordination capabilities] also covers handoff, teams, and moderation. The xref:sdk:autonomous-agents/coordination.adoc[coordination patterns] page explains when each pattern is the right fit.
+* Continue with xref:planner-agent/eval.adoc[] to add an evaluation Consumer that judges each task's result on completion, illustrating the Consumer component and "LLM as judge" pattern.
+

@@ -8,7 +8,14 @@ This orchestration approach is often called the *supervisor pattern*: a central 
 
 [NOTE]
 ====
-This page covers workflow-based orchestration of request-based xref:sdk:agents.adoc[Agents]. For model-driven coordination (delegation, handoff, teams, moderation) without writing a workflow, see xref:sdk:autonomous-agents.adoc[Autonomous Agents] and the xref:sdk:autonomous-agents/coordination.adoc[coordination patterns]. The two approaches address different needs: choose workflow orchestration when you want explicit, deterministic step ordering, and Autonomous Agents when you want the model to decide what happens next.
+This page covers workflow-based orchestration of request-based xref:sdk:agents.adoc[Agents]. For model-driven coordination (delegation, handoff, teams, moderation) without writing a workflow, see xref:sdk:autonomous-agents.adoc[Autonomous Agents] and the xref:sdk:autonomous-agents/coordination.adoc[coordination patterns].
+
+When to pick which:
+
+* Pick *workflow orchestration* when the sequence of steps is fixed in code, when each step is at most one model round-trip, when you want explicit per-step retry policies or external compensation, or when the orchestration crosses service boundaries via A2A, ACP, or MCP.
+* Pick an *Autonomous Agent* when the orchestration sequence itself is a model judgment: the model decides what to consult, which specialist to ask, or whether to iterate, based on what previous steps returned.
+
+Both approaches give the same durable-execution, retry, and audit guarantees. The choice rests on whether the sequence is fixed in code or decided by the model.
 ====
 
 == Using a predefined workflow
@@ -35,7 +42,12 @@ To create a more flexible and autonomous agentic system you want to analyze the 
 
 There are several approaches for the planning, such as using deterministic algorithms or using AI also for the planning. We will look at how we can use AI for analyzing a request, selecting agents and in which order to use them.
 
-In this dynamic variant of the supervisor pattern, an AI model creates the plan, decides the next step, evaluates results, and determines when the goal has been achieved. The workflow still provides durable execution with built-in retry mechanisms—the AI influences *what* happens, but the workflow ensures it happens *reliably*.
+In this dynamic variant of the supervisor pattern, an AI model creates the plan, decides the next step, evaluates results, and determines when the goal has been achieved. The workflow still provides durable execution with built-in retry mechanisms, the AI influences *what* happens, but the workflow ensures it happens *reliably*.
+
+[TIP]
+====
+The same outcome, letting the model decide which agents to invoke and in what order, can often be expressed more directly with an xref:sdk:autonomous-agents.adoc[Autonomous Agent] coordinator that declares a xref:sdk:autonomous-agents/capabilities.adoc#_delegation_capability[`Delegation`] capability. The runtime drives the iteration loop, exposes the worker agents as tools to the model, persists task state, and retries failed steps. Stay with the planner-workflow approach below when you need explicit workflow-step boundaries, per-step retry policies, or external compensation between agent calls. The xref:getting-started:planner-agent/dynamic-team.adoc[planner-agent tutorial] walks through the autonomous-agent variant end-to-end.
+====
 
 In the following example we split the planning into two steps and use two separate agents for these tasks. It's not always necessary to use several steps for the planning. You have to experiment with what works best for your problem domain.
 
@@ -45,9 +57,9 @@ In the following example we split the planning into two steps and use two separa
 The `SelectorAgent` decides which agents to use:
 
 [source,java,indent=0]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/SelectorAgent.java[SelectorAgent.java]
+.SelectorAgent.java
 ----
-include::example$multi-agent/src/main/java/demo/multiagent/application/SelectorAgent.java[tag=class]
+include::example$doc-snippets/src/main/java/agent_guide/dynamic_planner/SelectorAgent.java[tag=class]
 ----
 <1> The `AgentRegistry` contains information about all agents.
 <2> Select the agents with the role `"worker"`.
@@ -71,33 +83,33 @@ include::example$multi-agent/src/main/java/demo/multiagent/application/ActivityA
 ----
 
 Note that in image:concepts:steps-2.svg[width=20] of the `Selector` we retrieve a subset of the agents with a certain
- role. This role is also defined in the `@AgentRole` annotation.
+ role. This role is also defined in the `@AgentRole` annotation. Tag the workers with `@AgentRole("worker")` so the `SelectorAgent` can discover them through the registry.
 
 The result from the `Selector` is a list of agent ids:
 [source,java,indent=0]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/domain/AgentSelection.java[AgentSelection.java]
+.AgentSelection.java
 ----
-include::example$multi-agent/src/main/java/demo/multiagent/domain/AgentSelection.java[tag=all]
+include::example$doc-snippets/src/main/java/agent_guide/dynamic_planner/AgentSelection.java[tag=all]
 ----
 
 After selecting agents, we use a `PlannerAgent` to decide in which order to use the agents and what precise request that each agent should receive to perform its single task.
 
 [source,java,indent=0]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/PlannerAgent.java[PlannerAgent.java]
+.PlannerAgent.java
 ----
-include::example$multi-agent/src/main/java/demo/multiagent/application/PlannerAgent.java[tag=class]
+include::example$doc-snippets/src/main/java/agent_guide/dynamic_planner/PlannerAgent.java[tag=class]
 ----
-<1> Lookup the agent information for the selected agents from the `AgentRegistry.
+<1> Lookup the agent information for the selected agents from the `AgentRegistry`.
 <2> Detailed instructions and include descriptions (as json) of the agents.
 
 That's the two agents that perform the planning, but we also need to connect them and execute the plan. This orchestration is the job of a workflow, called `AgentTeamWorkflow`.
 
 [source,java,indent=0]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[AgentTeamWorkflow.java]
+.AgentTeamWorkflow.java
 ----
-include::example$multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[tag=plan]
+include::example$doc-snippets/src/main/java/agent_guide/dynamic_planner/AgentTeamWorkflow.java[tag=plan]
 ----
-<1> It's a workflow, with reliable and durable execution. Some steps use the xref:sdk:agents/streaming.adoc#_streaming_from_the_workflow[notification system] to inform subscribers about the progress.
+<1> It's a workflow, with reliable and durable execution.
 <2> The steps are select - plan - execute - summarize.
 <3> The workflow starts by selecting agents.
 <4> which is performed by the `SelectorAgent`.
@@ -108,13 +120,11 @@ include::example$multi-agent/src/main/java/demo/multiagent/application/AgentTeam
 <9> Call the agent for the task.
 <10> Continue executing the plan until no tasks are remaining.
 
-When executing the plan and calling the agents we know the id of the agent to call, but not the agent class. It can be the `WeatherAgent` or `ActivityAgent`. Therefore, we can't use the ordinary `method` of the `ComponentClient. Instead, we use the `dynamicCall` with the id of the agent. We don't have compile time safety for those dynamic calls, but we know that these agents take a String parameter and return AgentResponse. If we used it with the wrong types, it would be a runtime exception.
+When executing the plan and calling the agents we know the id of the agent to call, but not the agent class. It can be the `WeatherAgent` or `ActivityAgent`. Therefore, we can't use the ordinary `method` of the `ComponentClient`. Instead, we use the `dynamicCall` with the id of the agent. We don't have compile time safety for those dynamic calls, but we know that these agents take an `AgentRequest` parameter and return `String`. If we used it with the wrong types, it would be a runtime exception.
 
 [source,java,indent=0]
 ----
-include::example$multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[tag=dynamicCall]
+include::example$doc-snippets/src/main/java/agent_guide/dynamic_planner/AgentTeamWorkflow.java[tag=dynamicCall]
 ----
 
-You find the full source code for this multi-agent sample in the link:https://github.com/akka-samples/multi-agent[akka-samples/multi-agent GitHub Repository, window="new"].
-
-A more advanced sample illustrates link:https://github.com/akka-samples/adaptive-multi-agent[adaptive multi-agent orchestration, window="new"]. It re-evaluates progress after each agent response and dynamically adjusts its strategy.
+For an autonomous-agent variant of the same multi-agent problem, see the xref:getting-started:planner-agent/dynamic-team.adoc[planner-agent tutorial] and the link:https://github.com/akka-samples/multi-agent[akka-samples/multi-agent, window="new"] repository.

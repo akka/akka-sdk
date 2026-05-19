@@ -1,4 +1,4 @@
-package demo.multiagent.domain;
+package agent_guide.dynamic_planner;
 
 // tag::all[]
 /**

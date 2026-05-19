@@ -57,10 +57,10 @@ link:https://github.com/akka-samples/helloworld-agent-kotlin[GitHub Repository, 
 
 == Multi-agent planning and execution
 
-This sample models an outdoor activities planner. It demonstrates how to build a multi-agent system using Akka and an LLM model. A workflow manages the user query process, handling the sequential steps of agent selection, plan creation, execution, and summarization.
+This sample models an outdoor activities planner. It demonstrates how to build a multi-agent system using Akka and an AI model. An Autonomous Agent coordinator delegates to a weather agent and an activity agent through the built-in delegation capability; the model decides which workers to consult for each request and synthesises the final suggestion.
 
 [%hardbreaks]
-**Concepts**: _Agent_, _Workflow_, _Multi-agent_, _LLM_
+**Concepts**: _Agent_, _Autonomous Agent_, _Delegation_, _Multi-agent_
 **Level**: _Intermediate_
 xref:getting-started:planner-agent/index.adoc[Step-by-step guide]
 link:https://github.com/akka-samples/multi-agent[GitHub Repository,window="new"]
@@ -128,15 +128,6 @@ This sample is designed to run every time there is a release from configured Git
 **Concepts**: _Agent_, _Entity_, _Timed Action_, _Anthropic Claude_, _Tools_, _Summarization_
 **Level**: _Intermediate_
 link:https://github.com/akka-samples/changelog-agent[GitHub Repository, window="new"]
-
-== Adaptive multi-agent orchestration
-
-This sample models an outdoor activities planner. It demonstrates how to build a multi-agent system using Akka and an LLM model. It illustrates adaptive agent orchestration by implementing the MagenticOne pattern. It re-evaluates progress after each agent response and dynamically adjusts its strategy.
-
-[%hardbreaks]
-**Concepts**: _Agent_, _Workflow_, _Multi-agent_, _LLM_
-**Level**: _Advanced_
-link:https://github.com/akka-samples/adaptive-multi-agent[GitHub Repository, window="new"]
 
 == Customer service chat workflow
 The real-estate customer service agent demonstrates how to combine Akka features with an LLM model. It illustrates an agentic workflow for customer service. It processes incoming real-estate inquiries, analyzes the content to extract details, provides follow-up when needed and saves the collected information for future reference.

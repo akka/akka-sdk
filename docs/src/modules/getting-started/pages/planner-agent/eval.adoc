@@ -1,4 +1,4 @@
-= Evaluation on changes
+= Evaluating task results
 
 include::ROOT:partial$include.adoc[]
 
@@ -6,12 +6,14 @@ include::ROOT:partial$new-to-akka-start-here.adoc[]
 
 == Overview
 
-We added xref:getting-started:planner-agent/preferences.adoc[] and those are taken into account when creating the activity suggestions. Now we will use another agent to evaluate if the previous suggestions are still acceptable when the preferences are changed or if new suggestions should be created.
+When a coordinator task completes, we want to know how well the answer holds up. We will use a Consumer that listens for task-completion events from the runtime and runs two evaluators on each result: a custom LLM-as-judge that checks the answer against the original request (including any user preferences carried in it), and the built-in toxicity evaluator.
+
+The verdict from each evaluator is recorded in logs, metrics, and traces. The flow stays read-only — no automated re-runs.
 
 In this part of the guide you will:
 
-* Add an agent that evaluates the quality of the AI answer given the original request and the updated preferences
-* Use a Consumer to trigger evaluation when the preferences are changed
+* Add a custom evaluator agent.
+* Add a Consumer that subscribes to task-entity events and runs both evaluators when a task completes.
 
 == Prerequisites
 
@@ -20,7 +22,7 @@ include::ROOT:partial$local-dev-prerequisites.adoc[]
 
 == Evaluator agent
 
-We will use a pattern called "LLM as judge", which will use an agent (AI model) to evaluate the result of other agents.
+We will use a pattern called "LLM as judge", which uses an agent (AI model) to evaluate the result produced by other agents. The evaluator looks at the original request together with the produced answer and returns a typed verdict.
 
 Add a new file `EvaluatorAgent.java` to `src/main/java/com/example/application/`
 
@@ -29,36 +31,32 @@ Add a new file `EvaluatorAgent.java` to `src/main/java/com/example/application/`
 ----
 include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/EvaluatorAgent.java[tag=all]
 ----
-<1> Detailed instructions of how to evaluate and especially pay attention to the user preferences.
-<2> Retrieve user preferences.
-<3> Structured response.
 
-== Consumer of preference events
+The evaluator is a request-based xref:sdk:agents.adoc[Agent], not an `AutonomousAgent`: it does a single model call per evaluation and returns a typed result. There is no iteration loop and no multi-agent coordination, so an ordinary agent is the lighter choice.
 
-The `PreferencesEntity` emits events when the preferences are changed, and we can listen to these events and trigger the `EvaluatorAgent`.
+== Consumer of task events
 
-Add a new file `PreferencesConsumer.java` to `src/main/java/com/example/application/`
+The runtime stores every coordinator task in a built-in event-sourced task entity (`akka.javasdk.agent.task.TaskEntity`). Subscribing to that entity's events gives a hook to run on every task transition. We react to `TaskEvent.TaskCompleted`, fetch the task snapshot to get both the original instructions and the produced answer, then run the evaluators.
 
-[source,java,indent=0]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/PreferencesConsumer.java[PreferencesConsumer.java]
-----
-include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/PreferencesConsumer.java[tag=all]
-----
-<1> Consume events from the `PreferencesEntity`.
-<2> Extend `Consumer`.
-<3> Retrieve previous activity suggestions for the user from the `ActivityView`.
-<4> Call the `EvaluatorAgent` for each previous suggestion.
-<5> Run the workflow again, using the new preferences when the suggested activities are evaluated to be incorrect.
-
-This would probably be improved in a real application by not evaluating all previous suggestions, but only the ones that are still relevant, e.g. last 3 sorted by timestamp. The evaluations could also be made in parallel by using `invokeAsync` and compose the `CompletionStage` results.
-
-Add the new method to the `AgentTeamWorkflow`:
+Add a new file `EvaluationConsumer.java` to `src/main/java/com/example/application/`
 
 [source,java,indent=0]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[AgentTeamWorkflow.java]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/EvaluationConsumer.java[EvaluationConsumer.java]
 ----
-include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/AgentTeamWorkflow.java[tag=runAgain]
+include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/EvaluationConsumer.java[tag=all]
 ----
+<1> Consume events from the runtime's built-in task entity.
+<2> React only when a task completes (the runtime also emits events for create, assign, fail, and cancel).
+<3> Fetch a typed snapshot of the task, which exposes the instructions sent to the coordinator and the typed result.
+<4> Run the custom LLM-as-judge against the original (preference-aware) request and the produced answer.
+<5> Run the built-in toxicity evaluator on the final answer.
+
+Both verdicts are logged. They also flow into the metrics and traces produced by the runtime, so dashboards and alerting can pick them up without any further wiring.
+
+[NOTE]
+====
+A single Consumer subscribes to every task in the service. The sample only has one kind of task, so we evaluate every completion. In a service with multiple task types, branch on the task name available from the `TaskCreated` event, or look up the task snapshot and inspect its instructions before deciding whether to evaluate.
+====
 
 == Running the service
 
@@ -78,28 +76,14 @@ curl -i -XPOST --location "http://localhost:9000/activities/alice" \
   --data '{"message": "I am in Madrid. What should I do? Beware of the weather."}'
 ----
 
-[source, command line]
-----
-curl -i -XPOST --location "http://localhost:9000/activities/alice" \
-  --header "Content-Type: application/json" \
-  --data '{"message": "I am in Stockholm tomorrow. What should I do?"}'
-----
-
-Retrieve the suggested activities:
+Retrieve the suggestion (use the task id from the response):
 
 [source, command line]
 ----
-curl http://localhost:9000/activities/alice | jq
+curl http://localhost:9000/activities/alice/{taskId}
 ----
 
-If you have don't `jq` installed you can skip the formatting of the json response with:
-
-[source, command line]
-----
-curl http://localhost:9000/activities/alice
-----
-
-Add some preferences:
+Add a preference that creates a tension with the suggestion:
 
 [source, command line]
 ----
@@ -107,25 +91,18 @@ curl -i localhost:9000/preferences/alice \
   --header "Content-Type: application/json" \
   -XPOST \
   --data '{
-    "preference": "I dislike museums."
+    "preference": "I dislike outdoor activities."
   }'
 ----
 
-Inspect the log output from the service and see if the preferences triggered the evaluation and suggesting new activities.
-
-Retrieve the updated activities:
-
-[source, command line]
-----
-curl http://localhost:9000/activities/alice | jq
-----
+Submit the same kind of request again (with a fresh session id). Because the endpoint includes the user's preferences in the task instructions, the coordinator now has the context it needs to produce a different answer. The evaluator's verdict on the new task shows up in the service logs.
 
 == Next steps
 
 Congratulations, you have completed the tour of building a multi-agent system. Now you can take your Akka skills to the next level:
 
 * Learn more about the xref:sdk:consuming-producing.adoc[`Consumer` component].
+* Explore the other xref:sdk:autonomous-agents/capabilities.adoc[coordination capabilities] (handoff, teams, moderation) and the xref:sdk:autonomous-agents/coordination.adoc[patterns] they implement.
 * xref:quick-deploy.adoc[]
 * *Expand on your own*: Learn more details of the xref:sdk:components/index.adoc[Akka components] to enhance your application with additional features.
 * *Explore other Akka samples*: Discover more about Akka by exploring xref:samples.adoc[different use cases] for inspiration.
-

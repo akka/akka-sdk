@@ -1,32 +1,22 @@
-package demo.multiagent.application;
+package agent_guide.dynamic_planner;
 
-import static demo.multiagent.application.AgentTeamWorkflow.Status.COMPLETED;
-import static demo.multiagent.application.AgentTeamWorkflow.Status.FAILED;
-import static demo.multiagent.application.AgentTeamWorkflow.Status.STARTED;
-import static java.time.Duration.ofMillis;
+import static agent_guide.dynamic_planner.AgentTeamWorkflow.Status.COMPLETED;
+import static agent_guide.dynamic_planner.AgentTeamWorkflow.Status.FAILED;
+import static agent_guide.dynamic_planner.AgentTeamWorkflow.Status.STARTED;
 import static java.time.Duration.ofSeconds;
 
 import akka.Done;
-import akka.javasdk.NotificationPublisher;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.StepName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.client.DynamicMethodRef;
 import akka.javasdk.workflow.Workflow;
 import akka.javasdk.workflow.Workflow.RecoverStrategy;
-import akka.stream.Materializer;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import demo.multiagent.domain.AgentRequest;
-import demo.multiagent.domain.AgentSelection;
-import demo.multiagent.domain.Plan;
-import demo.multiagent.domain.PlanStep;
 import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// tag::all[]
 // tag::plan[]
 @Component(id = "agent-team")
 public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1>
@@ -88,41 +78,12 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
   private static final Logger logger = LoggerFactory.getLogger(AgentTeamWorkflow.class);
 
   private final ComponentClient componentClient;
-  private final NotificationPublisher<AgentTeamNotification> notificationPublisher;
-  private final Materializer materializer;
 
-  public AgentTeamWorkflow(
-    ComponentClient componentClient,
-    NotificationPublisher<AgentTeamNotification> notificationPublisher,
-    Materializer materializer
-  ) {
+  public AgentTeamWorkflow(ComponentClient componentClient) {
     this.componentClient = componentClient;
-    this.notificationPublisher = notificationPublisher;
-    this.materializer = materializer;
   }
 
-  // end::all[]
-  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
-  @JsonSubTypes(
-    {
-      @JsonSubTypes.Type(value = AgentTeamNotification.StatusUpdate.class, name = "S"),
-      @JsonSubTypes.Type(value = AgentTeamNotification.LlmResponseStart.class, name = "LS"),
-      @JsonSubTypes.Type(value = AgentTeamNotification.LlmResponseDelta.class, name = "LD"),
-      @JsonSubTypes.Type(value = AgentTeamNotification.LlmResponseEnd.class, name = "LE"),
-    }
-  )
-  // tag::all[]
   // tag::plan[]
-  public sealed interface AgentTeamNotification {
-    record StatusUpdate(String msg) implements AgentTeamNotification {}
-
-    record LlmResponseStart() implements AgentTeamNotification {}
-
-    record LlmResponseDelta(String response) implements AgentTeamNotification {}
-
-    record LlmResponseEnd() implements AgentTeamNotification {}
-  }
-
   @Override
   public WorkflowSettings settings() {
     return WorkflowSettings.builder()
@@ -151,21 +112,6 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
 
   // end::plan[]
 
-  // tag::runAgain[]
-  public Effect<Done> runAgain() {
-    if (currentState() != null) {
-      return effects()
-        .updateState(State.init(currentState().userId(), currentState().userQuery()))
-        .transitionTo(AgentTeamWorkflow::selectAgentsStep) // <3>
-        .thenReply(Done.getInstance());
-    } else {
-      return effects()
-        .error("Workflow '" + commandContext().workflowId() + "' has not been started");
-    }
-  }
-
-  // end::runAgain[]
-
   public ReadOnlyEffect<String> getAnswer() {
     if (currentState() == null) {
       return effects().error("Workflow '" + commandContext().workflowId() + "' not started");
@@ -184,9 +130,6 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
       .invoke(currentState().userQuery); // <4>
 
     logger.info("Selected agents: {}", selection.agents());
-    notificationPublisher.publish(
-      new AgentTeamNotification.StatusUpdate("Agents selected: " + selection.agents())
-    );
     if (selection.agents().isEmpty()) {
       var newState = currentState()
         .withFinalAnswer("Couldn't find any agent(s) able to respond to the original query.")
@@ -214,11 +157,6 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
       .invoke(new PlannerAgent.Request(currentState().userQuery, agentSelection)); // <6>
 
     logger.info("Execution plan: {}", plan);
-    notificationPublisher.publish(
-      new AgentTeamNotification.StatusUpdate(
-        "Execution plan formed. Number of steps: " + plan.steps().size()
-      )
-    );
     return stepEffects()
       .updateState(currentState().withPlan(plan))
       .thenTransitionTo(AgentTeamWorkflow::executePlanStep); // <7>
@@ -231,9 +169,6 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
       "Executing plan step (agent:{}), asking {}",
       stepPlan.agentId(),
       stepPlan.query()
-    );
-    notificationPublisher.publish(
-      new AgentTeamNotification.StatusUpdate("Calling: " + stepPlan.agentId())
     );
     var agentResponse = callAgent(stepPlan.agentId(), stepPlan.query()); // <9>
     if (agentResponse.startsWith("ERROR")) {
@@ -261,7 +196,6 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
   // tag::dynamicCall[]
   private String callAgent(String agentId, String query) {
     // We know the id of the agent to call, but not the agent class.
-    // Could be WeatherAgent or ActivityAgent.
     // We can still invoke the agent based on its id, given that we know that it
     // takes an AgentRequest parameter and returns String.
     var request = new AgentRequest(currentState().userId(), query);
@@ -278,29 +212,15 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
   private StepEffect summarizeStep() { // <2>
     var agentsAnswers = currentState().agentResponses.values();
 
-    var tokenSource = componentClient
+    var finalAnswer = componentClient
       .forAgent()
       .inSession(sessionId())
-      .tokenStream(SummarizerAgent::summarize)
-      .source(new SummarizerAgent.Request(currentState().userQuery, agentsAnswers));
-
-    notificationPublisher.publish(new AgentTeamNotification.LlmResponseStart());
-    var finalAnswer = notificationPublisher.publishTokenStream(
-      tokenSource,
-      10,
-      ofMillis(200),
-      AgentTeamNotification.LlmResponseDelta::new,
-      materializer
-    );
-
-    notificationPublisher.publish(new AgentTeamNotification.LlmResponseEnd());
-    notificationPublisher.publish(
-      new AgentTeamNotification.StatusUpdate("All steps completed!")
-    );
+      .method(SummarizerAgent::summarize)
+      .invoke(new SummarizerAgent.Request(currentState().userQuery, agentsAnswers));
 
     return stepEffects()
       .updateState(currentState().withFinalAnswer(finalAnswer).complete())
-      .thenPause();
+      .thenEnd();
   }
 
   // end::plan[]
@@ -308,18 +228,10 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> { // <1
   @StepName("interrupt")
   private StepEffect interruptStep() {
     logger.info("Interrupting workflow");
-
     return stepEffects().updateState(currentState().failed()).thenEnd();
-  }
-
-  public NotificationPublisher.NotificationStream<AgentTeamNotification> updates() {
-    return notificationPublisher.stream();
   }
 
   private String sessionId() {
     return commandContext().workflowId();
   }
-  // tag::plan[]
 }
-// end::plan[]
-// end::all[]
