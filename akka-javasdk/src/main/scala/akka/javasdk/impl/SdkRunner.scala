@@ -108,6 +108,7 @@ import akka.runtime.sdk.spi
 import akka.runtime.sdk.spi.AgentDescriptor
 import akka.runtime.sdk.spi.ComponentClients
 import akka.runtime.sdk.spi.ConsumerDescriptor
+import akka.runtime.sdk.spi.EventLogClient
 import akka.runtime.sdk.spi.EventSourcedEntityDescriptor
 import akka.runtime.sdk.spi.GrpcEndpointRequestConstructionContext
 import akka.runtime.sdk.spi.HttpEndpointConstructionContext
@@ -294,6 +295,7 @@ class SdkRunner private (
         startContext.executionContext,
         startContext.materializer,
         startContext.componentClients,
+        startContext.eventLogClient,
         startContext.remoteIdentification,
         startContext.tracerFactory,
         startContext.sdkMeter,
@@ -346,6 +348,7 @@ private object ComponentType {
 private[javasdk] object Sdk {
   final case class StartupContext(
       componentClients: ComponentClients,
+      eventLogClient: EventLogClient,
       dependencyProvider: Option[DependencyProvider],
       httpClientProvider: HttpClientProvider,
       grpcClientProvider: GrpcClientProviderImpl,
@@ -379,6 +382,7 @@ private final class Sdk(
     sdkExecutionContext: ExecutionContext,
     sdkMaterializer: Materializer,
     runtimeComponentClients: ComponentClients,
+    eventLogClient: EventLogClient,
     remoteIdentification: Option[RemoteIdentification],
     tracerFactory: String => Tracer,
     sdkMeter: Meter,
@@ -825,6 +829,8 @@ private final class Sdk(
             dependencyProviderOpt,
             agentGuardrails,
             applicationConfig,
+            eventLogClient,
+            agentRegistry,
             system)
 
         }
@@ -918,6 +924,7 @@ private final class Sdk(
           startedPromise.trySuccess(
             StartupContext(
               runtimeComponentClients,
+              eventLogClient,
               None,
               httpClientProvider,
               grpcClientProvider,
@@ -955,6 +962,7 @@ private final class Sdk(
           startedPromise.trySuccess(
             StartupContext(
               runtimeComponentClients,
+              eventLogClient,
               dependencyProviderOpt,
               httpClientProvider,
               grpcClientProvider,
