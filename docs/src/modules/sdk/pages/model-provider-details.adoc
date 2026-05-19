@@ -113,6 +113,88 @@ The following is a list of all natively supported model configurations. Remember
 
 See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Anthropic.html[`ModelProvider.Anthropic`] for programmatic settings.
 
+=== Azure OpenAI
+
+[cols="1m,1,4"]
+|===
+| Property | Type | Description
+
+| provider
+| "azure-openai"
+| Name of the provider. Must always be `azure-openai`
+
+| endpoint
+| Url
+| The endpoint of the Azure OpenAI resource, e.g. `https://my-resource.openai.azure.com`. See the link:https://learn.microsoft.com/azure/ai-services/openai/[Azure OpenAI documentation,window="new"] for details
+
+| deployment-name
+| String
+| The name of the Azure OpenAI deployment to use
+
+| api-key
+| String
+| The API key. Defaults to the value of the `AZURE_OPENAI_API_KEY` environment variable
+
+| temperature
+| Float
+| Model randomness. The default is not supplied so check with the model documentation for default behavior
+
+| top-p
+| Float
+| Nucleus sampling parameter
+
+| max-tokens
+| Integer
+| Max token quota. Leave as –1 for model default
+
+| max-completion-tokens
+| Integer
+| Max token quota. Leave as –1 for model default
+
+| frequency-penalty
+| Float
+| Penalizes repeated tokens based on their frequency in the text so far (-2.0 to 2.0)
+
+| presence-penalty
+| Float
+| Penalizes tokens that have already appeared in the text (-2.0 to 2.0)
+
+| seed
+| Long
+| Seed for deterministic sampling, for reproducible outputs. Leave as –1 for unset
+
+| stop
+| List of String
+| Sequences where the model will stop generating further tokens
+
+| reasoning-effort
+| String
+| Reasoning effort level for o-series models. One of `low`, `medium`, `high`
+
+| service-version
+| String
+| Azure OpenAI API service version override, e.g. `2024-02-15-preview`
+
+| connection-timeout
+| Duration
+| Fail the request if connecting to the model API takes longer than this
+
+| response-timeout
+| Duration
+| Fail the request if getting a response from the model API takes longer than this
+
+| max-retries
+| Integer
+| Retry this many times if the request to the model fails
+
+| additional-model-request-headers
+| List of String
+| List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. Can also be set via `ADDITIONAL_AZURE_OPENAI_REQUEST_HEADERS_N` environment variables.
+
+|===
+
+See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.AzureOpenAi.html[`ModelProvider.AzureOpenAi`] for programmatic settings.
+
 === Bedrock
 
 [cols="1m,1,4"]
@@ -594,6 +676,7 @@ You can also set headers for a specific model provider using provider-specific e
 | Provider | Environment variable prefix
 
 | Anthropic | `ADDITIONAL_ANTHROPIC_REQUEST_HEADERS_N`
+| Azure OpenAI | `ADDITIONAL_AZURE_OPENAI_REQUEST_HEADERS_N`
 | OpenAI | `ADDITIONAL_OPENAI_REQUEST_HEADERS_N`
 | Google AI Gemini | `ADDITIONAL_GOOGLE_AI_GEMINI_REQUEST_HEADERS_N`
 | Google Cloud Vertex AI | `ADDITIONAL_VERTEX_AI_REQUEST_HEADERS_N`
@@ -651,6 +734,12 @@ gpt-o3 {
 [source,hocon,indent=0]
 ----
 include::example$akka-javasdk/src/main/resources/reference.conf[tag=anthropic]
+----
+
+=== Azure OpenAI
+[source,hocon,indent=0]
+----
+include::example$akka-javasdk/src/main/resources/reference.conf[tag=azure-openai]
 ----
 
 === Bedrock

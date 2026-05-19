@@ -1224,6 +1224,446 @@ public sealed interface ModelProvider {
     }
   }
 
+  /** Settings for the Azure OpenAI Large Language Model provider. */
+  static AzureOpenAi azureOpenAi() {
+    return new AzureOpenAi(
+        "",
+        "",
+        "",
+        Double.NaN,
+        Double.NaN,
+        -1,
+        -1,
+        Double.NaN,
+        Double.NaN,
+        -1,
+        List.of(),
+        "",
+        "",
+        Duration.ofSeconds(15),
+        Duration.ofMinutes(1),
+        2,
+        List.of());
+  }
+
+  /** Settings for the Azure OpenAI Large Language Model provider. */
+  record AzureOpenAi(
+      /** Endpoint URL of the Azure OpenAI resource, e.g. "https://my-resource.openai.azure.com" */
+      String endpoint,
+      /** Name of the Azure OpenAI deployment to use */
+      String deploymentName,
+      /** API key for authentication with the Azure OpenAI resource */
+      String apiKey,
+      /** Controls randomness in the model's output (0.0-1.0, higher = more random) */
+      double temperature,
+      /**
+       * Nucleus sampling parameter (0.0 to 1.0). Controls text generation by only considering the
+       * most likely tokens whose cumulative probability exceeds the threshold value.
+       */
+      double topP,
+      /** Maximum number of tokens to generate in the response. */
+      int maxTokens,
+      /** Maximum number of completion tokens to generate. */
+      int maxCompletionTokens,
+      /** Penalizes repeated tokens based on their frequency in the text so far (-2.0 to 2.0). */
+      double frequencyPenalty,
+      /** Penalizes tokens that have already appeared in the text (-2.0 to 2.0). */
+      double presencePenalty,
+      /** Seed for deterministic sampling, for reproducible outputs. */
+      long seed,
+      /** Sequences where the model will stop generating further tokens. */
+      List<String> stop,
+      /** Reasoning effort level for o-series models ("low", "medium", "high"). */
+      String reasoningEffort,
+      /** Azure OpenAI API service version, e.g. "2024-02-15-preview". */
+      String serviceVersion,
+      Duration connectionTimeout,
+      Duration responseTimeout,
+      int maxRetries,
+      /** Additional HTTP headers to include in each request to the model API */
+      List<HttpHeader> additionalModelRequestHeaders)
+      implements ModelProvider {
+
+    public static AzureOpenAi fromConfig(Config config) {
+      return new AzureOpenAi(
+          config.getString("endpoint"),
+          config.getString("deployment-name"),
+          config.getString("api-key"),
+          config.getDouble("temperature"),
+          config.getDouble("top-p"),
+          config.getInt("max-tokens"),
+          config.getInt("max-completion-tokens"),
+          config.getDouble("frequency-penalty"),
+          config.getDouble("presence-penalty"),
+          config.getLong("seed"),
+          config.getStringList("stop"),
+          config.getString("reasoning-effort"),
+          config.getString("service-version"),
+          config.getDuration("connection-timeout"),
+          config.getDuration("response-timeout"),
+          config.getInt("max-retries"),
+          headersFromConfig(config));
+    }
+
+    public AzureOpenAi withEndpoint(String endpoint) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withDeploymentName(String deploymentName) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withApiKey(String apiKey) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withTemperature(double temperature) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withTopP(double topP) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withMaxTokens(int maxTokens) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withMaxCompletionTokens(int maxCompletionTokens) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withFrequencyPenalty(double frequencyPenalty) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withPresencePenalty(double presencePenalty) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withSeed(long seed) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withStop(List<String> stop) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withReasoningEffort(String reasoningEffort) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withServiceVersion(String serviceVersion) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withConnectionTimeout(Duration connectionTimeout) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withResponseTimeout(Duration responseTimeout) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withMaxRetries(int maxRetries) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withAdditionalModelRequestHeaders(
+        List<HttpHeader> additionalModelRequestHeaders) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+  }
+
   /** Settings for the HuggingFace Large Language Model provider. */
   static HuggingFace huggingFace() {
     return new HuggingFace(
