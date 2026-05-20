@@ -1,24 +1,15 @@
-= akka local services components list-ids
+= akka docker
 
-List recently active IDs for the given stateful component served by this service within specified time window (24h by default).
+Manage credentials for projects using private Docker registries.
 
 == Synopsis
 
-The `akka local service components list-ids` command lists ids for the given stateful component in this service.
-
-----
-akka local services components list-ids SERVICE_NAME COMPONENT_ID [flags]
-----
+The family of `akka docker` commands manage Docker credentials so that services can pull images from Docker repositories that require download credentials.
 
 == Options
 
 ----
-  -h, --help                   help for list-ids
-      --limit int32            Maximum number of ids to return. (default 100)
-      --owner string           the owner of the project to use, needed if you have two projects with the same name from different owners
-      --project string         project to use if not using the default configured project
-      --region string          region to use if project has more than one region
-      --time-window duration   How far back to look for ids, e.g. 1h, 24h. (default 24h0m0s)
+  -h, --help   help for docker
 ----
 
 == Options inherited from parent commands
@@ -39,7 +30,10 @@ akka local services components list-ids SERVICE_NAME COMPONENT_ID [flags]
 
 == SEE ALSO
 
-* link:akka_local_services_components.html[akka local services components]	 - Inspect components of a service.
+* link:akka.html[akka]	 - Akka control
+* link:akka_docker_add-credentials.html[akka docker add-credentials]	 - Add Docker credentials to an Akka project.
+* link:akka_docker_list-credentials.html[akka docker list-credentials]	 - List all Docker credentials.
+* link:akka_docker_remove-credentials.html[akka docker remove-credentials]	 - Remove Docker credentials
 
 [discrete]
 
