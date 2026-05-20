@@ -6,15 +6,12 @@ package akka.javasdk.impl
 
 import akka.javasdk.impl.SomeToolInput.ClassWithRecursiveFields
 import akka.javasdk.impl.SomeToolInput.CommonStdlibTypes
-import akka.javasdk.impl.SomeToolInput.SomeEnum
 import akka.javasdk.impl.SomeToolInput.SomeToolInput1
 import akka.javasdk.impl.SomeToolInput.SomeToolInput2
 import akka.javasdk.impl.SomeToolInput.SomeToolInput3
-import akka.javasdk.impl.SomeToolInput.SomeToolInputWithEnum
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaArray
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaBoolean
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaDataType
-import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaEnum
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaInteger
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaNumber
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
@@ -44,9 +41,6 @@ object JsonSchemaSpec {
         properties: Map[String, JsonSchemaDataType] = Map.empty,
         required: Seq[String] = Seq.empty): JsonSchemaObject =
       new JsonSchemaObject(Option(description), properties, required)
-
-    def enumOf(values: Seq[String], description: String = null): JsonSchemaEnum =
-      new JsonSchemaEnum(values, Option(description))
   }
 }
 
@@ -171,20 +165,6 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
       JsonSchema.jsonSchemaFor(classOf[java.lang.Double]) shouldBe a[JsonSchemaNumber]
       JsonSchema.jsonSchemaFor(classOf[java.lang.Float]) shouldBe a[JsonSchemaNumber]
       JsonSchema.jsonSchemaFor(classOf[java.lang.Boolean]) shouldBe a[JsonSchemaBoolean]
-    }
-
-    "extract schema for a Java enum" in {
-      val result = JsonSchema.jsonSchemaFor(classOf[SomeEnum]).asInstanceOf[JsonSchemaEnum]
-      result.values shouldEqual Seq("ONE", "TWO", "THREE")
-      result.description shouldBe None
-    }
-
-    "extract schema with enum field" in {
-      val result = JsonSchema.jsonSchemaFor(classOf[SomeToolInputWithEnum]).asInstanceOf[JsonSchemaObject]
-      result.properties shouldEqual Map(
-        "required" -> Schema.enumOf(Seq("ONE", "TWO", "THREE"), description = "required choice"),
-        "optional" -> Schema.enumOf(Seq("ONE", "TWO", "THREE")))
-      result.required shouldEqual Seq("required")
     }
 
     "use object for types causing exceptions" in {

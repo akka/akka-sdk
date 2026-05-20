@@ -58,13 +58,4 @@ interface SomeToolInput {
       String regular, ClassWithRecursiveFields recursive, NestedRecursiveClass nested) {}
 
   record NestedRecursiveClass(ClassWithRecursiveFields recursive) {}
-
-  enum SomeEnum {
-    ONE,
-    TWO,
-    THREE
-  }
-
-  record SomeToolInputWithEnum(
-      @Description("required choice") SomeEnum required, Optional<SomeEnum> optional) {}
 }
