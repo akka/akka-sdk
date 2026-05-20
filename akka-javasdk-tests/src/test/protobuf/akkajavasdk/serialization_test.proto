@@ -6,6 +6,8 @@ syntax = "proto3";
 
 package akkajavasdk.serialization;
 
+import "google/protobuf/timestamp.proto";
+
 option java_package = "akkajavasdk.protocol";
 option java_outer_classname = "SerializationTestProtos";
 
@@ -110,6 +112,7 @@ message CustomerCreated {
   string customer_id = 1;
   string name = 2;
   string email = 3;
+  google.protobuf.Timestamp created_at = 4;
 }
 
 message CustomerNameChanged {
@@ -129,6 +132,17 @@ message CustomerState {
   string email = 3;
   Status status = 4;
   repeated string tags = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+// Query parameter message exercising google.protobuf.Timestamp as a view query input
+message CustomersByCreationTimeQuery {
+  google.protobuf.Timestamp created_after = 1;
+}
+
+// List wrapper used as the return type of a view query
+message CustomerStateList {
+  repeated CustomerState customers = 1;
 }
 
 // ======================================

@@ -112,9 +112,12 @@ private[view] object ViewSchema {
     loop(rootType, Set.empty)
   }
 
-  private def protobufSchema(clazz: Class[_ <: GeneratedMessageV3]): SpiClass = {
+  private val ProtobufTimestampFullName = "google.protobuf.Timestamp"
+
+  private def protobufSchema(clazz: Class[_ <: GeneratedMessageV3]): SpiType = {
     val descriptor = Reflect.protoDescriptorFor(clazz)
-    protobufSchemaFromDescriptor(descriptor)
+    if (descriptor.getFullName == ProtobufTimestampFullName) SpiTimestamp
+    else protobufSchemaFromDescriptor(descriptor)
   }
 
   private def protobufFieldToSpiType(field: Descriptors.FieldDescriptor): SpiType = {
@@ -128,7 +131,10 @@ private[view] object ViewSchema {
       case JavaType.BOOLEAN     => SpiBoolean
       case JavaType.BYTE_STRING => SpiByteString
       case JavaType.ENUM        => new SpiEnum(field.getEnumType.getFullName)
-      case JavaType.MESSAGE     => protobufSchemaFromDescriptor(field.getMessageType)
+      case JavaType.MESSAGE =>
+        val msgType = field.getMessageType
+        if (msgType.getFullName == ProtobufTimestampFullName) SpiTimestamp
+        else protobufSchemaFromDescriptor(msgType)
     }
   }
 
