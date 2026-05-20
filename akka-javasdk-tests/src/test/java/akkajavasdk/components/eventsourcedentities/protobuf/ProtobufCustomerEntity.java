@@ -14,6 +14,7 @@ import akkajavasdk.protocol.SerializationTestProtos.CustomerState;
 import akkajavasdk.protocol.SerializationTestProtos.SimpleMessage;
 import akkajavasdk.protocol.SerializationTestProtos.Status;
 import com.google.protobuf.GeneratedMessageV3;
+import com.google.protobuf.util.Timestamps;
 
 /**
  * An event sourced entity that uses protobuf messages for both state and events. This demonstrates
@@ -37,6 +38,7 @@ public class ProtobufCustomerEntity extends EventSourcedEntity<CustomerState, Ge
               .setName(created.getName())
               .setEmail(created.getEmail())
               .setStatus(Status.ACTIVE)
+              .setCreatedAt(created.getCreatedAt())
               .build();
 
       case CustomerNameChanged nameChanged ->
@@ -59,6 +61,7 @@ public class ProtobufCustomerEntity extends EventSourcedEntity<CustomerState, Ge
               .setCustomerId(commandContext().entityId())
               .setName(command.name())
               .setEmail(command.email())
+              .setCreatedAt(Timestamps.now())
               .build();
       return effects().persist(event).thenReply(__ -> "Customer created");
     } else {
