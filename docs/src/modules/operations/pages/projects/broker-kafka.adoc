@@ -1,0 +1,120 @@
+= Using a self-hosted or arbitrary Kafka cluster
+include::ROOT:partial$include.adoc[]
+
+In addition to the managed Kafka services with dedicated guides (xref:operations:projects/broker-confluent.adoc[Confluent Cloud], xref:operations:projects/broker-aws-msk.adoc[Amazon MSK], xref:operations:projects/broker-aiven.adoc[Aiven for Apache Kafka]), Akka can connect to any Kafka cluster that is reachable from the Akka platform and offers a supported authentication mechanism — including self-hosted Kafka, Strimzi/Kafka on Kubernetes, Redpanda, or another managed provider.
+
+This page describes the general configuration steps and lists the connectivity and authentication requirements your cluster must meet.
+
+[#_requirements]
+== Requirements
+
+The Kafka cluster must satisfy the following:
+
+* *Network reachability* — The cluster's bootstrap servers must be reachable from Akka. For clusters running in a private network, this typically means exposing public endpoints with a firewall allow-list, or arranging a peering/VPN solution.
+* *Broker port* — Akka restricts outbound traffic to a fixed allow-list of ports. The standard Kafka port `9092` is open by default, as are the ports used by the managed providers covered by the dedicated guides (for example `9093` for Azure Event Hubs, `9096` and `9196` for AWS MSK, `12976` for Aiven). If your cluster listens on a port that is not on this list, contact mailto:support@akka.io[] to have it added before configuring the broker.
+* *TLS* — All authenticated connections from Akka use TLS. The broker must present a certificate trusted by either a public CA or a CA certificate that you provide as an Akka secret.
+* *SASL authentication* — Akka authenticates using one of the supported SASL mechanisms (see <<_supported_authentication>>). Anonymous/plaintext access is not supported for production brokers.
+
+[#_supported_authentication]
+== Supported authentication
+
+Akka supports the following Kafka authentication mechanisms when configured via `akka projects config set broker`:
+
+[cols="1,3", options="header"]
+|===
+| Mechanism | Notes
+
+| `plain`
+| SASL/PLAIN over TLS. Username and password are sent in plaintext inside the TLS-protected channel.
+
+| `scram-sha-256`
+| SASL/SCRAM with SHA-256. Username and password are negotiated through a challenge–response handshake.
+
+| `scram-sha-512`
+| SASL/SCRAM with SHA-512. Same as above with a stronger hash.
+|===
+
+The following mechanisms are *not* supported:
+
+* mTLS / SSL client-certificate authentication
+* Kerberos (GSSAPI)
+* OAUTHBEARER (token-based SASL)
+* Plaintext connections without TLS (except in xref:sdk:running-with-broker.adoc#_kafka[local development])
+
+If your cluster only supports an unsupported mechanism, enable SASL/SCRAM or SASL/PLAIN for the Akka service user before continuing.
+
+[#_steps]
+== Steps to connect
+
+. Prepare the broker
++
+On your Kafka cluster, create a user dedicated to your Akka service and grant it the ACLs required for the topics your service consumes from and produces to. Make sure the broker listener used by Akka is configured for `SASL_SSL` with the chosen mechanism.
+
+. Ensure you are on the correct Akka project
++
+[source, command window]
+----
+akka config get-project
+----
+
+. (Optional) Create an Akka TLS CA secret
++
+If the broker's TLS certificate is *not* signed by a public CA already trusted by the Akka platform, store the CA certificate as a secret.
++
+[source, command window]
+----
+akka secret create tls-ca kafka-ca-cert --cert ./ca.pem
+----
++
+Skip this step if the broker certificate is signed by a public CA.
+
+. Store the user's password in an Akka secret
++
+[source, command window]
+----
+akka secret create generic kafka-secret --literal pwd=<the password>
+----
+
+. Configure the broker for the project
++
+[source, command window]
+----
+akka projects config set broker \
+  --broker-service kafka \
+  --broker-auth scram-sha-512 \
+  --broker-user <username> \
+  --broker-password-secret kafka-secret/pwd \
+  --broker-bootstrap-servers <host1:port1,host2:port2> \
+  --broker-ca-cert-secret kafka-ca-cert
+----
++
+Use the auth mechanism matching your broker setup: `plain`, `scram-sha-256` or `scram-sha-512`. Omit `--broker-ca-cert-secret` if the broker uses a publicly trusted CA. Multiple bootstrap servers can be provided as a comma-separated list.
++
+The `--broker-password-secret` and `--broker-ca-cert-secret` flags refer to the *names* of the Akka secrets created earlier rather than the actual secret values.
++
+An optional description can be added with the parameter `--description` to provide additional notes about the broker.
+
+. Open the network path
++
+If the broker port is not in the Akka outbound allow-list (see <<_requirements>>), contact mailto:support@akka.io[] to have it added. Clusters that are not reachable on a public, generally-routable endpoint also need a peering or VPN solution arranged with support.
+
+The broker config can be inspected using:
+
+[source, command window]
+----
+akka projects config get broker
+----
+
+== Create topics
+
+Create the topics used by your service ahead of time, using the Kafka tooling that ships with your cluster (for example `kafka-topics.sh`, the Strimzi `KafkaTopic` custom resource, or the management UI of your provider). Akka does not create topics automatically.
+
+When partitioning, follow the guidance in <<_delivery_characteristics,Delivery characteristics>> below: use the cloud event `ce-subject` (typically the entity id) as the partition key, so messages for the same subject are processed in order.
+
+include::partial$broker-kafka-setup-common.adoc[]
+
+== See also
+
+* xref:operations:projects/message-brokers.adoc[Configure message brokers]
+* xref:sdk:running-with-broker.adoc[Running locally with a message broker]
+* xref:reference:cli/akka-cli/akka_projects_config.adoc#_see_also[`akka projects config` commands]
