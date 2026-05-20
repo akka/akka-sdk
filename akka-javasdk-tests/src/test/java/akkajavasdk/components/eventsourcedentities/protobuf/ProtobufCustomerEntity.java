@@ -14,8 +14,7 @@ import akkajavasdk.protocol.SerializationTestProtos.CustomerState;
 import akkajavasdk.protocol.SerializationTestProtos.SimpleMessage;
 import akkajavasdk.protocol.SerializationTestProtos.Status;
 import com.google.protobuf.GeneratedMessageV3;
-import com.google.protobuf.Timestamp;
-import java.time.Instant;
+import com.google.protobuf.util.Timestamps;
 
 /**
  * An event sourced entity that uses protobuf messages for both state and events. This demonstrates
@@ -62,19 +61,12 @@ public class ProtobufCustomerEntity extends EventSourcedEntity<CustomerState, Ge
               .setCustomerId(commandContext().entityId())
               .setName(command.name())
               .setEmail(command.email())
-              .setCreatedAt(toTimestamp(Instant.now()))
+              .setCreatedAt(Timestamps.now())
               .build();
       return effects().persist(event).thenReply(__ -> "Customer created");
     } else {
       return effects().error("Customer already exists");
     }
-  }
-
-  private static Timestamp toTimestamp(Instant instant) {
-    return Timestamp.newBuilder()
-        .setSeconds(instant.getEpochSecond())
-        .setNanos(instant.getNano())
-        .build();
   }
 
   public Effect<String> changeName(ChangeNameCommand command) {

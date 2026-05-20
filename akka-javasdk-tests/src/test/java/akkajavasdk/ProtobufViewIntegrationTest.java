@@ -17,8 +17,7 @@ import akkajavasdk.components.views.protobuf.ProtobufCustomersByNameView;
 import akkajavasdk.protocol.SerializationTestProtos.CustomersByCreationTimeQuery;
 import akkajavasdk.protocol.SerializationTestProtos.SimpleMessage;
 import akkajavasdk.protocol.SerializationTestProtos.Status;
-import com.google.protobuf.Timestamp;
-import java.time.Instant;
+import com.google.protobuf.util.Timestamps;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
@@ -136,7 +135,7 @@ public class ProtobufViewIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldQueryViewWithTimestampParameter() {
-    var beforeAll = toTimestamp(Instant.now().minusSeconds(1));
+    var beforeAll = Timestamps.fromMillis(System.currentTimeMillis() - 1000);
 
     // Create two customers via the KV entity, with the timestamp set on each state
     componentClient
@@ -169,7 +168,7 @@ public class ProtobufViewIntegrationTest extends TestKitSupport {
             });
 
     // A query with a timestamp in the future should return no matches
-    var future = toTimestamp(Instant.now().plusSeconds(3600));
+    var future = Timestamps.fromMillis(System.currentTimeMillis() + 3600_000);
     var futureQuery = CustomersByCreationTimeQuery.newBuilder().setCreatedAfter(future).build();
     var emptyResult =
         componentClient
@@ -179,12 +178,5 @@ public class ProtobufViewIntegrationTest extends TestKitSupport {
     assertThat(emptyResult.getCustomersList())
         .extracting(c -> c.getName())
         .doesNotContain("TS Alice", "TS Bob");
-  }
-
-  private static Timestamp toTimestamp(Instant instant) {
-    return Timestamp.newBuilder()
-        .setSeconds(instant.getEpochSecond())
-        .setNanos(instant.getNano())
-        .build();
   }
 }

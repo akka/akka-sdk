@@ -9,8 +9,7 @@ import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akkajavasdk.protocol.SerializationTestProtos.CustomerState;
 import akkajavasdk.protocol.SerializationTestProtos.SimpleMessage;
 import akkajavasdk.protocol.SerializationTestProtos.Status;
-import com.google.protobuf.Timestamp;
-import java.time.Instant;
+import com.google.protobuf.util.Timestamps;
 
 /**
  * A key-value entity that uses a protobuf message for state. This demonstrates that protobuf
@@ -36,16 +35,9 @@ public class ProtobufCustomerKvEntity extends KeyValueEntity<CustomerState> {
             .setName(command.name())
             .setEmail(command.email())
             .setStatus(Status.ACTIVE)
-            .setCreatedAt(toTimestamp(Instant.now()))
+            .setCreatedAt(Timestamps.now())
             .build();
     return effects().updateState(newState).thenReply("Customer created");
-  }
-
-  private static Timestamp toTimestamp(Instant instant) {
-    return Timestamp.newBuilder()
-        .setSeconds(instant.getEpochSecond())
-        .setNanos(instant.getNano())
-        .build();
   }
 
   public Effect<String> changeName(ChangeNameCommand command) {
