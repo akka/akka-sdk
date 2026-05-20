@@ -22,7 +22,6 @@ import akka.javasdk.testmodels.view.ViewTestModels;
 import akka.javasdk.testmodels.view.ViewTestModels.UserByEmailWithGet;
 import akka.runtime.sdk.spi.*;
 import akka.runtime.sdk.spi.AgentClient;
-import akka.runtime.sdk.spi.AutonomousAgentClient;
 import akka.runtime.sdk.spi.TimedActionClient;
 import akka.runtime.sdk.spi.ViewClient;
 import akka.runtime.sdk.spi.WorkflowClient;
@@ -80,11 +79,6 @@ class ComponentClientTest {
 
           @Override
           public TimedActionClient timedActionClient() {
-            return null;
-          }
-
-          @Override
-          public AutonomousAgentClient autonomousAgentClient() {
             return null;
           }
 
