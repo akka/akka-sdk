@@ -5,8 +5,6 @@
 package akka.javasdk.agent;
 
 import akka.javasdk.objectstorage.ObjectStorage;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -49,22 +47,8 @@ public sealed interface MessageContent {
    * @param mimeType The mimeType of the image, e.g. 'image/jpeg', 'image/png'
    */
   record ImageUrlMessageContent(
-      // Field is a URI but kept under the JSON name "url" to stay wire-compatible with
-      // session memory persisted by older SDK versions where the component was URL url.
-      @JsonProperty("url") URI uri,
-      ImageMessageContent.DetailLevel detailLevel,
-      Optional<String> mimeType)
+      URI uri, ImageMessageContent.DetailLevel detailLevel, Optional<String> mimeType)
       implements LoadableMessageContent {
-
-    @JsonCreator
-    public ImageUrlMessageContent(
-        @JsonProperty("url") URI uri,
-        ImageMessageContent.DetailLevel detailLevel,
-        Optional<String> mimeType) {
-      this.uri = uri;
-      this.detailLevel = detailLevel;
-      this.mimeType = mimeType;
-    }
 
     /**
      * Creates image content referencing an object in a bucket via the {@code object://} URI scheme.
@@ -201,15 +185,7 @@ public sealed interface MessageContent {
    *
    * @param uri The URI pointing to the PDF
    */
-  record PdfUrlMessageContent(
-      // Field is a URI but kept under the JSON name "url" to stay wire-compatible with
-      // session memory persisted by older SDK versions where the component was URL url.
-      @JsonProperty("url") URI uri) implements LoadableMessageContent {
-
-    @JsonCreator
-    public PdfUrlMessageContent(@JsonProperty("url") URI uri) {
-      this.uri = uri;
-    }
+  record PdfUrlMessageContent(URI uri) implements LoadableMessageContent {
 
     /**
      * Creates PDF content referencing an object in a bucket via the {@code object://} URI scheme.
