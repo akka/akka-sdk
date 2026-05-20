@@ -11,9 +11,9 @@ import java.util.Locale;
   id = "evaluator-agent",
   name = "Evaluator Agent",
   description = """
-  An agent that acts as an LLM judge to evaluate the quality of AI responses.
-  It assesses whether the final answer appropriately addresses the original request
-  and respects any user preferences carried in the request.
+  An agent that acts as an LLM judge to evaluate the quality of AI responses. \
+  It assesses whether the final answer appropriately addresses the original request \
+  and respects any user preferences carried in the request.\
   """
 )
 public class EvaluatorAgent extends Agent {

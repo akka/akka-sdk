@@ -14,9 +14,9 @@ import org.slf4j.LoggerFactory;
   id = "activity-agent",
   name = "Activity Agent",
   description = """
-    An agent that suggests activities in the real world. Like for example,
-    a team building activity, sports, an indoor or outdoor game,
-    board games, a city trip, etc.
+  An agent that suggests activities in the real world. Like for example, \
+  a team building activity, sports, an indoor or outdoor game, \
+  board games, a city trip, etc.\
   """
 )
 public class ActivityAgent extends Agent {

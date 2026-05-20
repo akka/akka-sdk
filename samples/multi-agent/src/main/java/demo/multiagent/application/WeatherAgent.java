@@ -14,8 +14,8 @@ import org.slf4j.LoggerFactory;
   id = "weather-agent",
   name = "Weather Agent",
   description = """
-    An agent that provides weather information. It can provide current weather,
-    forecasts, and other related information.
+  An agent that provides weather information. It can provide current weather, \
+  forecasts, and other related information.\
   """
 )
 // tag::function-tool[]

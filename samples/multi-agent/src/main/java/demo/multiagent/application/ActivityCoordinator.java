@@ -10,9 +10,9 @@ import akka.javasdk.annotations.Component;
 @Component(
   id = "activity-coordinator",
   description = """
-    Coordinates worker agents to suggest real-world activities for a user.
-    Decides whether to consult the weather agent, the activity agent, or both,
-    and synthesizes their results into a single suggestion.
+  Coordinates worker agents to suggest real-world activities for a user. \
+  Decides whether to consult the weather agent, the activity agent, or both, \
+  and synthesizes their results into a single suggestion.\
   """
 )
 public class ActivityCoordinator extends AutonomousAgent { // <1>
@@ -22,9 +22,9 @@ public class ActivityCoordinator extends AutonomousAgent { // <1>
     return define()
       .instructions(
         """
-        When delegating to the activity agent, include the userId from the task header
-        (the "User: <userId>" line) in the request so the agent can fetch the user's
-        preferences.
+        When delegating to the activity agent, include the userId from the task header \
+        (the "User: <userId>" line) in the request so the agent can fetch the user's \
+        preferences.\
         """
       ) // <2>
       .capability(TaskAcceptance.of(ActivityTasks.SUGGEST_ACTIVITIES).maxIterationsPerTask(5)) // <3>
