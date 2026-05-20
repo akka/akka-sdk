@@ -165,6 +165,7 @@ passwordHashes
 passwordKey
 passwordSecret
 pathPrefix
+PDFs
 plaintext
 platformManaged
 plist
@@ -271,6 +272,8 @@ upsert
 upserting
 url
 userid
+URIs
+URLs
 valueFrom
 versionHistory
 versionLabel
