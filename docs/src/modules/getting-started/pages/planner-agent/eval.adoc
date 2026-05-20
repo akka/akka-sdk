@@ -95,7 +95,7 @@ curl -i localhost:9000/preferences/alice \
   }'
 ----
 
-Submit the same kind of request again (with a fresh session id). Because the endpoint includes the user's preferences in the task instructions, the coordinator now has the context it needs to produce a different answer. The evaluator's verdict on the new task shows up in the service logs.
+Submit the same kind of request again (with a fresh session id). Because the endpoint includes the user's preferences in the task instructions, the coordinator now has the context it needs to produce a different answer. The verdict of the evaluator on the task result shows up in the service logs.
 
 == Next steps
 
