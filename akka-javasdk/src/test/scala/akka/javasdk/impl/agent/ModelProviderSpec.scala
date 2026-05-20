@@ -71,6 +71,10 @@ class ModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike w
       val m = ModelProvider.OpenAi.fromConfig(defaultConfig.getConfig("akka.javasdk.agent.openai"))
       m shouldBe ModelProvider.openAi()
     }
+    "load defaults from config for azure-openai" in {
+      val m = ModelProvider.AzureOpenAi.fromConfig(defaultConfig.getConfig("akka.javasdk.agent.azure-openai"))
+      m shouldBe ModelProvider.azureOpenAi()
+    }
 
     "load from model-provider in config" in {
       val m = AgentImpl.modelProviderFromConfig(config, "", "myagent")
