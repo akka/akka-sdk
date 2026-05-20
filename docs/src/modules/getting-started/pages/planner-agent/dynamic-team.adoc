@@ -45,15 +45,15 @@ Add a new file `ActivityCoordinator.java` to `src/main/java/com/example/applicat
 include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/ActivityCoordinator.java[tag=all]
 ----
 <1> Extend `AutonomousAgent`. The `@Component` description tells the model what kind of work this agent does.
-<2> Optional definition-level instructions. Use these for guidance that is specific to the coordinator's runtime behaviour, here, lifting the userId from the task header into the `ActivityAgent` delegation request.
+<2> Optional definition-level instructions. Use these for guidance that is specific to the coordinator's runtime behavior, here, lifting the userId from the task header into the `ActivityAgent` delegation request.
 <3> Declare which task types this agent accepts. `maxIterationsPerTask` bounds the model loop as a safety net.
 <4> List the worker agents the coordinator may delegate to. `Delegation.to` accepts both request-based agents and other autonomous agents.
 
-The task definition itself spells out the expected shape of the instructions string (the `User: <userId>` header followed by the user's question), so the structural fact lives next to the task and the behavioural instruction lives next to the coordinator. The model in the coordinator sees the descriptions on `WeatherAgent` and `ActivityAgent` (from their `@Component` annotations) as part of its tool catalogue, and decides per request which workers to call based on the task instructions and worker descriptions.
+The task definition itself spells out the expected shape of the instructions string (the `User: <userId>` header followed by the user's question), so the structural fact lives next to the task and the behavioral instruction lives next to the coordinator. The model in the coordinator sees the descriptions on `WeatherAgent` and `ActivityAgent` (from their `@Component` annotations) as part of its tool catalog, and decides per request which workers to call based on the task instructions and worker descriptions.
 
 == Worker agents stay request-based
 
-`WeatherAgent` and `ActivityAgent` remain the plain `Agent` subclasses from earlier parts of this guide, no signature changes are needed. The runtime introspects each worker's command handler, generates a JSON schema from its parameter type, and exposes a delegate tool to the coordinator's model. When the model invokes the tool, the runtime deserialises the arguments and calls the worker's command handler.
+`WeatherAgent` and `ActivityAgent` remain the plain `Agent` subclasses from earlier parts of this guide, no signature changes are needed. The runtime introspects each worker's command handler, generates a JSON schema from its parameter type, and exposes a delegate tool to the coordinator's model. When the model invokes the tool, the runtime deserializes the arguments and calls the worker's command handler.
 
 In this guide the two workers have different parameter shapes, and the runtime handles both. `WeatherAgent.query` takes a `String`, so the model passes a plain string. `ActivityAgent.query` takes an `AgentRequest` record so the agent can fetch the user's preferences itself, so the model passes a `{userId, message}` object.
 
@@ -97,7 +97,16 @@ The response body and `Location` header carry the task id. Retrieve the suggesti
 curl -i -XGET --location "http://localhost:9000/activities/alice/{taskId}"
 ----
 
-Inspect the logs and notice how the coordinator decides for itself which workers to call. If you change the request, the coordinator may consult only the activity agent (for purely indoor suggestions), only the weather agent (for a forecast question), or both.
+Each worker logs when it is invoked, so the service logs reveal which agents the coordinator chose to consult. For this request the coordinator should call both the `WeatherAgent` and the `ActivityAgent`. Try a request where weather isn't relevant, for example:
+
+[source, command line]
+----
+curl -i -XPOST --location "http://localhost:9000/activities/alice" \
+  --header "Content-Type: application/json" \
+  --data '{"message": "What is the best Italian restaurant in London?"}'
+----
+
+Inspect the logs again. The coordinator should now skip the `WeatherAgent` and go straight to the `ActivityAgent`, because the request gives the model no reason to consult the weather.
 
 == Next steps
 

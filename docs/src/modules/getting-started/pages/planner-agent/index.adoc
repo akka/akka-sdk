@@ -11,4 +11,4 @@ This guide starts with creating an agent that suggests real-world activities. We
 . xref:planner-agent/weather.adoc[] — A weather forecasting Agent that uses an external service as an agent tool.
 . xref:planner-agent/team.adoc[] — A Workflow that coordinates long-running calls across the agents.
 . xref:planner-agent/dynamic-team.adoc[] — An Autonomous Agent coordinator that delegates dynamically to the worker agents using the built-in Delegation capability.
-. xref:planner-agent/eval.adoc[] — A Consumer that streams user preference changes to trigger an Agent.
+. xref:planner-agent/eval.adoc[] — A Consumer subscribed to task-completion events runs LLM-as-judge and toxicity evaluators.

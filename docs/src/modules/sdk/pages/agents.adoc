@@ -33,8 +33,8 @@ If the work runs as a durable multi-step model-driven loop, or if multiple agent
 
 === How Agents relate to other components
 
-* **Workflows** orchestrate multi-step processes and can invoke Agents as one of those steps. This is the request-based alternative to Autonomous Agent coordination capabilities: pick a Workflow when the orchestration sequence is fixed in code, pick xref:sdk:autonomous-agents.adoc[Autonomous Agents] when the model should decide what runs next.
-* **Autonomous Agents** are the model-driven alternative for multi-step work and multi-agent coordination, with built-in task lifecycle and coordination capabilities. A request-based Agent is a single request-response interaction; an Autonomous Agent runs a durable process loop until each task completes. See xref:sdk:autonomous-agents.adoc[].
+* **Workflows** orchestrate multi-step processes and can invoke Agents as one of those steps. Use a Workflow when the orchestration sequence is fixed in code.
+* **Autonomous Agents** drive their own model loop and coordinate other agents through declared capabilities (delegation, handoff, teams, moderation). Use an Autonomous Agent when the orchestration sequence is itself a model judgment. See xref:sdk:autonomous-agents.adoc[].
 * **Entities** hold durable state that Agents can read or write via the `ComponentClient`.
 * **Endpoints** expose Agents over HTTP so external clients can reach them.
 

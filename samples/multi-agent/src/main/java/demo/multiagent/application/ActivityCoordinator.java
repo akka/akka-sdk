@@ -12,7 +12,7 @@ import akka.javasdk.annotations.Component;
   description = """
     Coordinates worker agents to suggest real-world activities for a user.
     Decides whether to consult the weather agent, the activity agent, or both,
-    and synthesises their results into a single suggestion.
+    and synthesizes their results into a single suggestion.
   """
 )
 public class ActivityCoordinator extends AutonomousAgent { // <1>

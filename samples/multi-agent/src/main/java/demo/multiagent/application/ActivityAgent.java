@@ -6,6 +6,8 @@ import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import demo.multiagent.domain.AgentRequest;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 // tag::description[]
 @Component(
@@ -34,6 +36,8 @@ public class ActivityAgent extends Agent {
     """.stripIndent();
   // end::system_message[]
 
+  private static final Logger logger = LoggerFactory.getLogger(ActivityAgent.class);
+
   private final ComponentClient componentClient;
 
   public ActivityAgent(ComponentClient componentClient) {
@@ -41,6 +45,7 @@ public class ActivityAgent extends Agent {
   }
 
   public Effect<String> query(AgentRequest request) {
+    logger.info("Invoked for user [{}] with: {}", request.userId(), request.message());
     var allPreferences = componentClient
       .forEventSourcedEntity(request.userId())
       .method(PreferencesEntity::getPreferences)

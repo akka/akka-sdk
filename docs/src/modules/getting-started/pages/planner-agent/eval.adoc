@@ -8,7 +8,7 @@ include::ROOT:partial$new-to-akka-start-here.adoc[]
 
 When a coordinator task completes, we want to know how well the answer holds up. We will use a Consumer that listens for task-completion events from the runtime and runs two evaluators on each result: a custom LLM-as-judge that checks the answer against the original request (including any user preferences carried in it), and the built-in toxicity evaluator.
 
-The verdict from each evaluator is recorded in logs, metrics, and traces. The flow stays read-only — no automated re-runs.
+The verdict from each evaluator is recorded in logs, metrics, and traces.
 
 In this part of the guide you will:
 

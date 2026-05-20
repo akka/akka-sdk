@@ -1,13 +1,13 @@
 # Multi-Agent System
 
-A sample application demonstrating how to build a multi-agent system using Akka and an AI model. An Autonomous Agent coordinator delegates dynamically to specialised worker agents, with the model deciding which workers to consult for each request.
+A sample application demonstrating how to build a multi-agent system using Akka and an AI model. An Autonomous Agent coordinator delegates dynamically to specialized worker agents, with the model deciding which workers to consult for each request.
 
 ## Overview
 
 This project illustrates a multi-agent system built around the Autonomous Agent component. The system:
 
 - Receives an activity-suggestion request for a user
-- Personalises the request with any stored user preferences
+- Personalizes the request with any stored user preferences
 - Hands the request to an Autonomous Agent coordinator that delegates dynamically to a weather agent and an activity agent
 - Returns a typed answer once the coordinator's task completes
 - Evaluates each completed task with a custom LLM-as-judge and the built-in toxicity evaluator; verdicts are logged and surfaced through metrics and traces
@@ -17,7 +17,7 @@ This project illustrates a multi-agent system built around the Autonomous Agent 
 This sample leverages specific Akka components:
 
 - **Autonomous Agent (`ActivityCoordinator`)**: Accepts a `SuggestActivities` task and declares `Delegation` to the worker agents. The runtime drives its decision loop until the task completes.
-- **Agent (`WeatherAgent`, `ActivityAgent`)**: Plain request-based agents that the coordinator delegates to. Each has a single `query(String)` method whose parameter shape the runtime exposes to the coordinator's model.
+- **Agent (`WeatherAgent`, `ActivityAgent`)**: Plain request-based agents that the coordinator delegates to. Each exposes a `query` method whose parameter type is serialized into a tool schema for the coordinator's model. `WeatherAgent.query` takes a `String`; `ActivityAgent.query` takes an `AgentRequest` record so it can look up the user's preferences with the userId.
 - **Agent (`EvaluatorAgent`)**: An LLM-as-judge agent that evaluates the coordinator's answer against the original (preference-aware) request.
 - **EventSourced Entity (`PreferencesEntity`)**: Holds the user's preferences.
 - **Consumer (`EvaluationConsumer`)**: Subscribes to the runtime's task entity events. On task completion it runs `EvaluatorAgent` and the built-in `ToxicityEvaluator`, logging the verdicts.
@@ -25,7 +25,7 @@ This sample leverages specific Akka components:
 
 ### Other
 
-- **AI model**: The coordinator uses an AI model to choose which workers to consult, what to ask them, and how to synthesise the final answer. The evaluator uses a model to judge each answer.
+- **AI model**: The coordinator uses an AI model to choose which workers to consult, what to ask them, and how to synthesize the final answer. The evaluator uses a model to judge each answer.
 
 ## Example flow
 
@@ -52,7 +52,7 @@ sequenceDiagram
     Coordinator->>ActivityAgent: delegate "Suggest activities for a rainy day in Madrid"
     ActivityAgent-->>Coordinator: "Visit the Prado Museum or enjoy local cafes"
 
-    Note over Coordinator: Synthesise final answer
+    Note over Coordinator: Synthesize final answer
     Coordinator->>Task: complete with result
 
     Task-->>EvalConsumer: TaskCompleted event
@@ -124,7 +124,7 @@ curl -i -XPOST --location "http://localhost:9000/activities/alice" \
   --data '{"message": "I do not work tomorrow. I am in Madrid. What should I do? Beware of the weather"}'
 ```
 
-The endpoint personalises the request with any stored preferences and calls `runSingleTask` on the coordinator. The response body and `Location` header carry the task id.
+The endpoint personalizes the request with any stored preferences and calls `runSingleTask` on the coordinator. The response body and `Location` header carry the task id.
 
 * Retrieve the response for a specific task:
 ```shell

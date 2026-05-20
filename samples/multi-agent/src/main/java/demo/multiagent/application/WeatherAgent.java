@@ -6,6 +6,8 @@ import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.FunctionTool;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 // tag::description[]
 @Component(
@@ -38,6 +40,8 @@ public class WeatherAgent extends Agent {
       Start the error response with ERROR.
     """.stripIndent();
 
+  private static final Logger logger = LoggerFactory.getLogger(WeatherAgent.class);
+
   // tag::function-tool[]
   private final WeatherService weatherService;
 
@@ -46,6 +50,7 @@ public class WeatherAgent extends Agent {
   }
 
   public Effect<String> query(String request) {
+    logger.info("Invoked with: {}", request);
     return effects()
       .systemMessage(SYSTEM_MESSAGE)
       .tools(weatherService) // <2>

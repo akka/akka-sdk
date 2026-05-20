@@ -57,7 +57,7 @@ link:https://github.com/akka-samples/helloworld-agent-kotlin[GitHub Repository, 
 
 == Multi-agent planning and execution
 
-This sample models an outdoor activities planner. It demonstrates how to build a multi-agent system using Akka and an AI model. An Autonomous Agent coordinator delegates to a weather agent and an activity agent through the built-in delegation capability; the model decides which workers to consult for each request and synthesises the final suggestion.
+This sample models an outdoor activities planner. It demonstrates how to build a multi-agent system using Akka and an AI model. An Autonomous Agent coordinator delegates to a weather agent and an activity agent through the built-in delegation capability; the model decides which workers to consult for each request and synthesizes the final suggestion.
 
 [%hardbreaks]
 **Concepts**: _Agent_, _Autonomous Agent_, _Delegation_, _Multi-agent_

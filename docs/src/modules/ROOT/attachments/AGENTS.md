@@ -410,6 +410,39 @@ public class ResearchFindingsRule implements TaskRule<ResearchFindings> {
 }
 ```
 
+### Endpoint Driving an Autonomous Agent
+
+```java
+@HttpEndpoint
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
+public class ResearchEndpoint {
+
+  public record Request(String topic) {}
+
+  private final ComponentClient componentClient;
+
+  public ResearchEndpoint(ComponentClient componentClient) {
+    this.componentClient = componentClient;
+  }
+
+  @Post("/research")
+  public HttpResponse start(Request request) {
+    var taskId = componentClient
+        .forAutonomousAgent(ResearchCoordinator.class, UUID.randomUUID().toString())
+        .runSingleTask(ResearchTasks.BRIEF.instructions(request.topic())); // returns task id immediately
+    return HttpResponses.created(taskId, "/research/" + taskId);
+  }
+
+  @Get("/research/{taskId}")
+  public HttpResponse get(String taskId) {
+    var snapshot = componentClient.forTask(taskId).get(ResearchTasks.BRIEF); // typed result
+    return snapshot.result()
+        .<HttpResponse>map(HttpResponses::ok)
+        .orElseGet(() -> HttpResponses.notFound("Not ready"));
+  }
+}
+```
+
 ### Workflow Orchestrating Multiple Agents (Static)
 
 ```java
@@ -486,107 +519,26 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
 }
 ```
 
-### Workflow with Dynamic Agent Planning
+### Autonomous Agent Orchestrating Multiple Agents (Dynamic)
 
 ```java
-@Component(id = "dynamic-agent-team")
-public class DynamicAgentWorkflow extends Workflow<DynamicAgentWorkflow.State> {
+public class ActivityTasks {
+  public static final Task<String> SUGGEST_ACTIVITIES = Task.name("SuggestActivities")
+      .description("Suggest activities, taking weather and preferences into account.");
+}
 
-  public record State(String query, Plan plan, Map<String, String> agentResponses, String answer) {
-    State withPlan(Plan p) { return new State(query, p, agentResponses, answer); }
-    State addResponse(String agentId, String response) {
-      var updated = new HashMap<>(agentResponses);
-      updated.put(agentId, response);
-      return new State(query, plan, updated, answer);
-    }
-    State withAnswer(String a) { return new State(query, plan, agentResponses, a); }
-    PlanStep nextStep() { return plan.steps().get(agentResponses.size()); }
-    boolean hasMoreSteps() { return agentResponses.size() < plan.steps().size(); }
-  }
-
-  public record Plan(List<PlanStep> steps) {}
-  public record PlanStep(String agentId, String query) {}
-
-  private final ComponentClient componentClient;
-
-  public DynamicAgentWorkflow(ComponentClient componentClient) {
-    this.componentClient = componentClient;
-  }
+// Model decides which workers to call. WeatherAgent and ActivityAgent are
+// unchanged request-based Agents.
+@Component(
+    id = "activity-coordinator",
+    description = "Suggests activities by consulting the weather and/or activity agents.")
+public class ActivityCoordinator extends AutonomousAgent {
 
   @Override
-  public WorkflowSettings settings() {
-    return WorkflowSettings.builder()
-      .defaultStepTimeout(ofSeconds(60))
-      .defaultStepRecovery(RecoverStrategy.maxRetries(1).failoverTo(DynamicAgentWorkflow::summarizeStep))
-      .build();
-  }
-
-  public Effect<Done> start(String query) {
-    return effects()
-      .updateState(new State(query, null, Map.of(), ""))
-      .transitionTo(DynamicAgentWorkflow::createPlanStep)
-      .thenReply(Done.getInstance());
-  }
-
-  @StepName("create-plan")
-  private StepEffect createPlanStep() {
-    // PlannerAgent selects agents and creates execution plan
-    var plan = componentClient
-      .forAgent()
-      .inSession(sessionId())
-      .method(PlannerAgent::createPlan)
-      .invoke(currentState().query);
-
-    if (plan.steps().isEmpty()) {
-      return stepEffects()
-        .updateState(currentState().withAnswer("No suitable agents found"))
-        .thenEnd();
-    }
-
-    return stepEffects()
-      .updateState(currentState().withPlan(plan))
-      .thenTransitionTo(DynamicAgentWorkflow::executePlanStep);
-  }
-
-  @StepName("execute-plan")
-  private StepEffect executePlanStep() {
-    var step = currentState().nextStep();
-
-    // Dynamic agent invocation - don't know agent class at compile time
-    var response = componentClient
-      .forAgent()
-      .inSession(sessionId())
-      .dynamicCall(step.agentId()) // Call by agent ID
-      .invoke(step.query());
-
-    var newState = currentState().addResponse(step.agentId(), response);
-
-    if (newState.hasMoreSteps()) {
-      return stepEffects()
-        .updateState(newState)
-        .thenTransitionTo(DynamicAgentWorkflow::executePlanStep); // Loop
-    } else {
-      return stepEffects()
-        .updateState(newState)
-        .thenTransitionTo(DynamicAgentWorkflow::summarizeStep);
-    }
-  }
-
-  @StepName("summarize")
-  private StepEffect summarizeStep() {
-    var finalAnswer = componentClient
-      .forAgent()
-      .inSession(sessionId())
-      .method(SummarizerAgent::summarize)
-      .invoke(new SummarizerAgent.Request(currentState().query, currentState().agentResponses.values()));
-
-    return stepEffects()
-      .updateState(currentState().withAnswer(finalAnswer))
-      .thenEnd();
-  }
-
-  private String sessionId() {
-    return commandContext().workflowId();
+  public AgentDefinition definition() {
+    return define()
+        .capability(TaskAcceptance.of(ActivityTasks.SUGGEST_ACTIVITIES).maxIterationsPerTask(5))
+        .capability(Delegation.to(WeatherAgent.class, ActivityAgent.class));
   }
 }
 ```
