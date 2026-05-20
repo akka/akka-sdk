@@ -26,7 +26,7 @@ Reliability is a first-class dimension across every AAO tier. The platform is de
 
 * *99.9999% availability target* — six nines, measured across regions.
 * *Sub-one-minute RTO* — your service resumes serving traffic in under 60 seconds after a region-level failure.
-* *Zero-byte RPO* — event-sourced state is replicated synchronously across regions; no data is lost.
+* *Zero-byte RPO* — event-sourced state is replicated across regions.
 
 These guarantees are not aspirational — they are architectural. AAO continuously monitors region health, redistributes traffic on anomaly detection, and brings replacement capacity online without human intervention.
 
