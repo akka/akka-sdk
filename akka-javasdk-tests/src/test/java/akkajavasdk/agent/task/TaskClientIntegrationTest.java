@@ -16,7 +16,6 @@ import akka.javasdk.testkit.TestKitSupport;
 import akkajavasdk.components.agent.autonomous.TestTasks.TestResult;
 import java.util.ArrayList;
 import java.util.UUID;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
@@ -44,6 +43,7 @@ public class TaskClientIntegrationTest extends TestKitSupport {
     componentClient.forTask(taskId).create(TEST_TASK.instructions("do something"));
 
     var snapshot = componentClient.forTask(taskId).get(TEST_TASK);
+    assertThat(snapshot.name()).isEqualTo("Test task");
     assertThat(snapshot.status()).isEqualTo(TaskStatus.PENDING);
     assertThat(snapshot.result()).isEmpty();
   }
@@ -145,14 +145,55 @@ public class TaskClientIntegrationTest extends TestKitSupport {
     componentClient.forTask(taskId).fail("not good enough");
 
     assertThatThrownBy(() -> componentClient.forTask(taskId).result(TEST_TASK))
-        .isInstanceOf(CompletionException.class)
-        .hasCauseInstanceOf(TaskException.Failed.class)
+        .isInstanceOf(TaskException.Failed.class)
         .satisfies(
             ex -> {
-              var cause = (TaskException.Failed) ex.getCause();
-              assertThat(cause.taskId()).isEqualTo(taskId);
-              assertThat(cause.reason()).isEqualTo("not good enough");
+              var failed = (TaskException.Failed) ex;
+              assertThat(failed.taskId()).isEqualTo(taskId);
+              assertThat(failed.reason()).isEqualTo("not good enough");
             });
+  }
+
+  @Test
+  public void shouldFailWithUnwrappedFailedExceptionFromAsyncResult() {
+    var taskId = newTaskId();
+    componentClient.forTask(taskId).create(TEST_TASK.instructions("do something"));
+    componentClient.forTask(taskId).assign("reviewer@example.com");
+    componentClient.forTask(taskId).fail("not good enough");
+
+    // resultAsync returns a CompletionStage that completes exceptionally with the original
+    // TaskException — not wrapped in CompletionException at the stage level.
+    var caught =
+        componentClient
+            .forTask(taskId)
+            .resultAsync(TEST_TASK)
+            .handle((r, ex) -> ex)
+            .toCompletableFuture()
+            .join();
+    assertThat(caught).isInstanceOf(TaskException.Failed.class);
+    assertThat(((TaskException.Failed) caught).reason()).isEqualTo("not good enough");
+  }
+
+  @Test
+  public void shouldThrowTypeMismatchWhenResultRequestedWithWrongDefinition() {
+    var taskId = newTaskId();
+    componentClient.forTask(taskId).create(TEST_TASK.instructions("do something"));
+    componentClient.forTask(taskId).assign("reviewer@example.com");
+    componentClient.forTask(taskId).complete(TEST_TASK, new TestResult("done", 100));
+
+    assertThatThrownBy(() -> componentClient.forTask(taskId).result(STRING_TASK))
+        .isInstanceOf(TaskException.TypeMismatch.class)
+        .satisfies(ex -> assertThat(((TaskException.TypeMismatch) ex).taskId()).isEqualTo(taskId));
+  }
+
+  @Test
+  public void shouldThrowTypeMismatchWhenSnapshotRequestedWithWrongDefinition() {
+    var taskId = newTaskId();
+    componentClient.forTask(taskId).create(TEST_TASK.instructions("do something"));
+
+    assertThatThrownBy(() -> componentClient.forTask(taskId).get(STRING_TASK))
+        .isInstanceOf(TaskException.TypeMismatch.class)
+        .satisfies(ex -> assertThat(((TaskException.TypeMismatch) ex).taskId()).isEqualTo(taskId));
   }
 
   // --- notificationStream ---

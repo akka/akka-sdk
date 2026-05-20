@@ -12,7 +12,9 @@ import akka.javasdk.agent.autonomous.AgentState;
 import akka.javasdk.agent.autonomous.AutonomousAgent;
 import akka.javasdk.agent.autonomous.Notification;
 import akka.javasdk.agent.task.Task;
+import akka.javasdk.impl.ErrorHandling;
 import akka.stream.javadsl.Source;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -32,7 +34,11 @@ public interface AutonomousAgentClient {
    * @return the task ID
    */
   default String runSingleTask(Task<?> task) {
-    return runSingleTaskAsync(task).toCompletableFuture().join();
+    try {
+      return runSingleTaskAsync(task).toCompletableFuture().join();
+    } catch (CompletionException e) {
+      throw ErrorHandling.unwrapCompletionException(e);
+    }
   }
 
   /**
@@ -50,7 +56,11 @@ public interface AutonomousAgentClient {
    * @param taskIds IDs of previously created tasks
    */
   default void assignTasks(String... taskIds) {
-    assignTasksAsync(taskIds).toCompletableFuture().join();
+    try {
+      assignTasksAsync(taskIds).toCompletableFuture().join();
+    } catch (CompletionException e) {
+      throw ErrorHandling.unwrapCompletionException(e);
+    }
   }
 
   /**
@@ -67,7 +77,11 @@ public interface AutonomousAgentClient {
    * @param setup the per-instance configuration
    */
   default void setup(AgentSetup setup) {
-    setupAsync(setup).toCompletableFuture().join();
+    try {
+      setupAsync(setup).toCompletableFuture().join();
+    } catch (CompletionException e) {
+      throw ErrorHandling.unwrapCompletionException(e);
+    }
   }
 
   /**
@@ -83,7 +97,11 @@ public interface AutonomousAgentClient {
    * @return a summary of the agent's current state
    */
   default AgentState getState() {
-    return getStateAsync().toCompletableFuture().join();
+    try {
+      return getStateAsync().toCompletableFuture().join();
+    } catch (CompletionException e) {
+      throw ErrorHandling.unwrapCompletionException(e);
+    }
   }
 
   /** Async variant of {@link #getState}. */
@@ -100,7 +118,11 @@ public interface AutonomousAgentClient {
    * @param reason a description of why the agent is being suspended
    */
   default void suspend(String reason) {
-    suspendAsync(reason).toCompletableFuture().join();
+    try {
+      suspendAsync(reason).toCompletableFuture().join();
+    } catch (CompletionException e) {
+      throw ErrorHandling.unwrapCompletionException(e);
+    }
   }
 
   /** Async variant of {@link #suspend()}. */
@@ -113,7 +135,11 @@ public interface AutonomousAgentClient {
 
   /** Resume a previously suspended agent. */
   default void resume() {
-    resumeAsync().toCompletableFuture().join();
+    try {
+      resumeAsync().toCompletableFuture().join();
+    } catch (CompletionException e) {
+      throw ErrorHandling.unwrapCompletionException(e);
+    }
   }
 
   /** Async variant of {@link #resume}. */
@@ -130,7 +156,11 @@ public interface AutonomousAgentClient {
    * @param reason a description of why the agent is being terminated
    */
   default void terminate(String reason) {
-    terminateAsync(reason).toCompletableFuture().join();
+    try {
+      terminateAsync(reason).toCompletableFuture().join();
+    } catch (CompletionException e) {
+      throw ErrorHandling.unwrapCompletionException(e);
+    }
   }
 
   /** Async variant of {@link #terminate()}. */

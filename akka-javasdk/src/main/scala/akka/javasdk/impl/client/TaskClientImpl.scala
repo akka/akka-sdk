@@ -98,9 +98,10 @@ private[javasdk] final class TaskClientImpl(
             val taskState = serializer.fromBytes[TaskState](classOf[TaskState], reply.payload)
             log.debug("getTask: id=[{}] status=[{}]", taskId, taskState.status())
             new TaskSnapshot[R](
-              taskState.status(),
+              taskState.name(),
               taskState.description(),
               taskState.instructions(),
+              taskState.status(),
               deserializeResult(taskState, taskDefinition),
               taskState.failureReason())
         }

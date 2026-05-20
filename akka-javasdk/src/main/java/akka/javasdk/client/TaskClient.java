@@ -11,7 +11,9 @@ import akka.javasdk.agent.task.Task;
 import akka.javasdk.agent.task.TaskDefinition;
 import akka.javasdk.agent.task.TaskNotification;
 import akka.javasdk.agent.task.TaskSnapshot;
+import akka.javasdk.impl.ErrorHandling;
 import akka.stream.javadsl.Source;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -31,7 +33,11 @@ public interface TaskClient {
    * @return the task ID
    */
   default <R> String create(Task<R> task) {
-    return createAsync(task).toCompletableFuture().join();
+    try {
+      return createAsync(task).toCompletableFuture().join();
+    } catch (CompletionException e) {
+      throw ErrorHandling.unwrapCompletionException(e);
+    }
   }
 
   /**
@@ -51,7 +57,11 @@ public interface TaskClient {
    * @param assignee identifier of the owner (e.g., a user ID, team name, or process identifier)
    */
   default void assign(String assignee) {
-    assignAsync(assignee).toCompletableFuture().join();
+    try {
+      assignAsync(assignee).toCompletableFuture().join();
+    } catch (CompletionException e) {
+      throw ErrorHandling.unwrapCompletionException(e);
+    }
   }
 
   /**
@@ -72,7 +82,11 @@ public interface TaskClient {
    * @param <R> the result type of the task
    */
   default <R> void complete(TaskDefinition<R> taskDefinition, R result) {
-    completeAsync(taskDefinition, result).toCompletableFuture().join();
+    try {
+      completeAsync(taskDefinition, result).toCompletableFuture().join();
+    } catch (CompletionException e) {
+      throw ErrorHandling.unwrapCompletionException(e);
+    }
   }
 
   /**
@@ -92,7 +106,11 @@ public interface TaskClient {
    * @param reason the failure reason
    */
   default void fail(String reason) {
-    failAsync(reason).toCompletableFuture().join();
+    try {
+      failAsync(reason).toCompletableFuture().join();
+    } catch (CompletionException e) {
+      throw ErrorHandling.unwrapCompletionException(e);
+    }
   }
 
   /**
@@ -108,16 +126,33 @@ public interface TaskClient {
   /**
    * Get a point-in-time snapshot of the task's current state.
    *
+   * <p>The supplied {@link TaskDefinition} is validated against the task entity: if its name or
+   * result type does not match the definition the task was created with, {@link
+   * akka.javasdk.agent.task.TaskException.TypeMismatch} is thrown. This guards against accidentally
+   * reading a task with the wrong definition (for example, calling {@code
+   * forTask(taskId).get(OtherTasks.SOMETHING_ELSE)} on an id that was created with a different
+   * task) and ensures the returned result can be safely deserialized as {@code R}.
+   *
    * @param taskDefinition the task definition, used for typed result deserialization
    * @param <R> the result type of the task
    * @return the task snapshot containing status and typed result
+   * @throws akka.javasdk.agent.task.TaskException.TypeMismatch if the task's name or result type
+   *     does not match {@code taskDefinition}
    */
   default <R> TaskSnapshot<R> get(TaskDefinition<R> taskDefinition) {
-    return getAsync(taskDefinition).toCompletableFuture().join();
+    try {
+      return getAsync(taskDefinition).toCompletableFuture().join();
+    } catch (CompletionException e) {
+      throw ErrorHandling.unwrapCompletionException(e);
+    }
   }
 
   /**
    * Async variant of {@link #get}.
+   *
+   * <p>The returned CompletionStage fails with {@link
+   * akka.javasdk.agent.task.TaskException.TypeMismatch} if the task's name or result type does not
+   * match {@code taskDefinition}.
    *
    * @param taskDefinition the task definition, used for typed result deserialization
    * @param <R> the result type of the task
@@ -126,23 +161,34 @@ public interface TaskClient {
   <R> CompletionStage<TaskSnapshot<R>> getAsync(TaskDefinition<R> taskDefinition);
 
   /**
-   * Blocks until the task reaches a terminal state and returns the typed result. Throws {@link
-   * akka.javasdk.agent.task.TaskException.Failed} if the task failed, or {@link
-   * akka.javasdk.agent.task.TaskException.Cancelled} if the task was cancelled.
+   * Blocks until the task reaches a terminal state and returns the typed result.
+   *
+   * <p>As with {@link #get}, the supplied {@link TaskDefinition} is validated against the task
+   * entity.
    *
    * @param taskDefinition the task definition, used for typed result deserialization
    * @param <R> the result type of the task
    * @return the typed task result
-   * @throws java.util.concurrent.CompletionException wrapping {@link
-   *     akka.javasdk.agent.task.TaskException.Failed} or {@link
-   *     akka.javasdk.agent.task.TaskException.Cancelled}
+   * @throws akka.javasdk.agent.task.TaskException.Failed if the task failed
+   * @throws akka.javasdk.agent.task.TaskException.Cancelled if the task was cancelled
+   * @throws akka.javasdk.agent.task.TaskException.TypeMismatch if the task's name or result type
+   *     does not match {@code taskDefinition}
    */
   default <R> R result(TaskDefinition<R> taskDefinition) {
-    return resultAsync(taskDefinition).toCompletableFuture().join();
+    try {
+      return resultAsync(taskDefinition).toCompletableFuture().join();
+    } catch (CompletionException e) {
+      throw ErrorHandling.unwrapCompletionException(e);
+    }
   }
 
   /**
    * Async variant of {@link #result}.
+   *
+   * <p>The returned CompletionStage fails with {@link akka.javasdk.agent.task.TaskException.Failed}
+   * if the task failed, {@link akka.javasdk.agent.task.TaskException.Cancelled} if it was
+   * cancelled, or {@link akka.javasdk.agent.task.TaskException.TypeMismatch} if the task's name or
+   * result type does not match {@code taskDefinition}.
    *
    * @param taskDefinition the task definition, used for typed result deserialization
    * @param <R> the result type of the task
