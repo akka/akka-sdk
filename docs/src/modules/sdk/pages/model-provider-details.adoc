@@ -428,6 +428,84 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.HuggingFace.html[
 
 See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.LocalAI.html[`ModelProvider.LocalAI`] for programmatic settings.
 
+=== Mistral AI
+
+[cols="1m,1,4"]
+|===
+| Property | Type | Description
+
+| provider
+| "mistral-ai"
+| Name of the provider. Must always be `mistral-ai`
+
+| api-key
+| String
+| The API key. Defaults to the value of the `MISTRAL_AI_API_KEY` environment variable
+
+| model-name
+| String
+| The name of the model to use, e.g. "mistral-large-latest". See vendor documentation for a list of available models
+
+| base-url
+| Url
+| Optional override to the base URL of the API
+
+| temperature
+| Float
+| Model randomness. The default is not supplied so check with the model documentation for default behavior
+
+| top-p
+| Float
+| Nucleus sampling parameter
+
+| max-tokens
+| Integer
+| Maximum number of tokens to generate. Leave as –1 for model default
+
+| safe-prompt
+| Boolean
+| When enabled, a safety prompt is injected in front of all conversations
+
+| random-seed
+| Integer
+| Random seed for deterministic sampling. Leave as –1 to disable
+
+| frequency-penalty
+| Float
+| Penalty for frequent tokens. Leave as `NaN` for model default
+
+| presence-penalty
+| Float
+| Penalty for repeated topics. Leave as `NaN` for model default
+
+| stop-sequences
+| List of String
+| Stop sequences at which the model stops generating
+
+| thinking
+| Boolean
+| Enable thinking, only supported for some models. Make sure the chosen model supports thinking before enabling.
+
+| connection-timeout
+| Duration
+| Fail the request if connecting to the model API takes longer than this
+
+| response-timeout
+| Duration
+| Fail the request if getting a response from the model API takes longer than this
+
+| max-retries
+| Integer
+| Retry this many times if the request to the model fails
+
+| additional-model-request-headers
+| List of String
+| List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. Can also be set via `ADDITIONAL_MISTRAL_AI_REQUEST_HEADERS_N` environment variables.
+
+|===
+
+See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.MistralAi.html[`ModelProvider.MistralAi`] for programmatic settings.
+
 === Ollama
 
 [cols="1m,1,4"]
@@ -684,6 +762,7 @@ You can also set headers for a specific model provider using provider-specific e
 | Local AI | `ADDITIONAL_LOCAL_AI_REQUEST_HEADERS_N`
 | Hugging Face | `ADDITIONAL_HUGGING_FACE_REQUEST_HEADERS_N`
 | Bedrock | `ADDITIONAL_BEDROCK_REQUEST_HEADERS_N`
+| Mistral AI | `ADDITIONAL_MISTRAL_AI_REQUEST_HEADERS_N`
 
 |===
 
@@ -764,6 +843,12 @@ include::example$akka-javasdk/src/main/resources/reference.conf[tag=hugging-face
 [source,hocon,indent=0]
 ----
 include::example$akka-javasdk/src/main/resources/reference.conf[tag=local-ai]
+----
+
+=== Mistral AI
+[source,hocon,indent=0]
+----
+include::example$akka-javasdk/src/main/resources/reference.conf[tag=mistral-ai]
 ----
 
 === Ollama
