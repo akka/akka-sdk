@@ -307,9 +307,6 @@ public sealed interface MemoryProvider {
    * Memory provider that wraps another {@link MemoryProvider} with a {@link
    * SessionMemoryInterceptor}. Created by calling {@link MemoryProvider#withInterceptor} on any
    * {@link MemoryProvider}.
-   *
-   * <p>Note: unlike the sibling permitted types, this is a `final class` with a private constructor
-   * (rather than a `record`) so that it cannot be constructed directly by end users
    */
   final class InterceptedMemoryProvider implements MemoryProvider {
 
