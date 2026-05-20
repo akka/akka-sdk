@@ -176,6 +176,7 @@ Postgres
 PostgreSQL
 precalculated
 principalSet
+[Pp]recompile
 preconfigured
 prefetching
 prepended

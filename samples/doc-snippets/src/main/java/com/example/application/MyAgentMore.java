@@ -4,7 +4,10 @@ import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.MemoryFilter;
 import akka.javasdk.agent.MemoryProvider;
 import akka.javasdk.agent.ModelProvider;
+import akka.javasdk.agent.SessionMemoryInterceptor;
+import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.annotations.Component;
+import java.util.regex.Pattern;
 
 public interface MyAgentMore {
   @Component(id = "my-agent")
@@ -125,5 +128,37 @@ public interface MyAgentMore {
         .thenReply();
     }
     // end::filter-multiple[]
+  }
+
+  @Component(id = "my-agent-interceptor")
+  public class MyAgentWithInterceptor extends Agent {
+
+    // tag::interceptor[]
+    private static final Pattern CARD_NUMBER = Pattern.compile(
+      "\\b\\d{4}[ -]?\\d{4}[ -]?\\d{4}[ -]?\\d{4}\\b"
+    ); // <1>
+
+    private static final SessionMemoryInterceptor REDACTOR = new SessionMemoryInterceptor() { // <2>
+      @Override
+      public SessionMessage.UserMessage beforeWrite( // <3>
+        String sessionId,
+        SessionMessage.UserMessage userMessage
+      ) {
+        return new SessionMessage.UserMessage( // <4>
+          userMessage.timestamp(),
+          CARD_NUMBER.matcher(userMessage.text()).replaceAll("[REDACTED-CARD]"),
+          userMessage.componentId()
+        );
+      }
+    };
+
+    public Effect<String> ask(String question) {
+      return effects()
+        .memory(MemoryProvider.fromConfig().withInterceptor(REDACTOR)) // <5>
+        .systemMessage("You are a helpful...")
+        .userMessage(question)
+        .thenReply();
+    }
+    // end::interceptor[]
   }
 }

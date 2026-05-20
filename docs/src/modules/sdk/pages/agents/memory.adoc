@@ -150,6 +150,27 @@ var filter = MemoryFilter.excludeFromAgentId("debug-agent")
 
 This creates a single Exclude filter that will exclude messages from "debug-agent" OR messages with the "internal" role. Only messages that don't match either criterion will be included.
 
+== Intercepting interaction writes
+
+For cases where you want to transform the memory messages before they are persisted — for example, to redact secrets,
+normalize whitespace, or truncate overly long input — without replacing the entire `SessionMemory` implementation, you can attach a link:{attachmentsdir}/api/akka/javasdk/agent/SessionMemoryInterceptor.html[`SessionMemoryInterceptor`] to any memory provider with `withInterceptor(...)`.
+
+`SessionMemoryInterceptor` is an interface with default identity implementations for `beforeWrite` overloads covering each top-level `SessionMessage` variant: user messages (text and multimodal), AI replies, and tool call responses. Each method receives the message about to be persisted and returns the (possibly transformed) message that will actually be written. You only need to override the overload(s) you care about; the others continue to pass the message through unchanged.
+
+[source,java,indent=0]
+----
+include::example$doc-snippets/src/main/java/com/example/application/MyAgentMore.java[tag=interceptor]
+----
+<1> Precompile any heavy state (here, the regex pattern) into a constant so it is reused across calls.
+<2> Hold the interceptor in a `private static final` field. The same instance is invoked by every session that goes through this agent, so it must not hold mutable state of its own — `Pattern` matchers are thread-safe.
+<3> Override only the overload(s) you want to transform; the multimodal overload is left as the default identity.
+<4> Return the message to persist. Returning the input unchanged is equivalent to the default no-op.
+<5> `withInterceptor` wraps the configured memory provider with your interceptor.
+
+The configured read/write/filter behavior of the underlying provider is preserved. Read-side concerns (history limit, filters, read-only/write-only) are configured through `MemoryProvider` itself. Tool call requests are not exposed as a dedicated hook — they are nested inside `AiMessage.toolCallRequests`, so override the AI message hook to rewrite them.
+
+NOTE: A `SessionMemoryInterceptor` is shared across every session and concurrent request that uses it; the SDK does not synchronize, copy, or pool it. Keep interceptors stateless, or rely only on immutable / thread-safe state (a precompiled `Pattern`, a final config object). Mutable fields on the interceptor will be hit concurrently — avoid them unless you guard the access yourself.
+
 == Accessing session memory
 
 The default implementation of Session Memory is backed by a regular xref:sdk:event-sourced-entities.adoc[Event Sourced Entity] called `SessionMemoryEntity`, which allows you to interact directly with it as you would do with any other entities in your application. This includes the possibility to directly modify or access it through the `ComponentClient` but also the ability to subscribe to changes in the session memory, as shown below:

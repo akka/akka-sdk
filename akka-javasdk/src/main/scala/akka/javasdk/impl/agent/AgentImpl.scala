@@ -465,6 +465,10 @@ private[impl] final class AgentImpl[A <: Agent](
           else
             p.configPath()
         new SessionMemoryClient(componentClient(telemetryContext), config.getConfig(actualPath))
+
+      case p: MemoryProvider.InterceptedMemoryProvider =>
+        val inner = deriveMemoryClient(p.delegate, telemetryContext)
+        new InterceptingSessionMemory(inner, p.interceptor)
     }
   }
 
