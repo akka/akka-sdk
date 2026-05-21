@@ -5,7 +5,6 @@
 package akka.javasdk.agent;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Optional;
 
 /**
@@ -89,12 +88,8 @@ public interface ImageLoader extends ContentLoader {
   default LoadedContent load(MessageContent.LoadableMessageContent content) {
     switch (content) {
       case MessageContent.ImageUrlMessageContent image -> {
-        try {
-          var loadedImage = load(image.url().toURI(), image.detailLevel(), image.mimeType());
-          return new LoadedContent(loadedImage.data, loadedImage.mimeType);
-        } catch (URISyntaxException e) {
-          throw new RuntimeException(e);
-        }
+        var loadedImage = load(image.uri(), image.detailLevel(), image.mimeType());
+        return new LoadedContent(loadedImage.data, loadedImage.mimeType);
       }
       default -> throw new IllegalStateException("Loading unsupported content " + content);
     }

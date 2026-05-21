@@ -1,0 +1,405 @@
+= Workload Identity
+include::ROOT:partial$include.adoc[]
+
+Akka services can authenticate with cloud provider APIs and third-party services using workload identity. Rather than managing long-lived credentials, Akka issues short-lived OpenID Connect (OIDC) tokens that prove the identity of your service. The target service verifies these tokens against Akka's OIDC issuer for your services region and grants access based on its own identity and access policies.
+
+This approach works with the local cloud provider where your Akka service is running (AWS, Azure, or GCP), as well as with any other cloud provider or third-party service that supports OIDC-based workload identity authentication.
+
+== OIDC issuer information
+
+Each Akka region has its own OIDC issuer. To find the issuer and other workload identity information for your region, run:
+
+[source, command line]
+----
+akka projects regions workload-identity-info
+----
+
+If you have more than one region configured for your project, specify the region using the `--region` flag. The command outputs the OIDC issuer URL and any cloud-provider-specific information relevant to configuring workload identity on the provider side.
+
+== Token subject claim
+
+Workload identity tokens issued by Akka contain a `sub` claim that uniquely identifies the Akka service. The format of the subject is:
+
+[source]
+----
+system:serviceaccount:<project-id>:klx-<service-name>
+----
+
+Where `<project-id>` is the UUID of your Akka project (obtainable via `akka project get`) and `<service-name>` is the name of the Akka service. Note the `klx-` prefix before the service name.
+
+For example, a service named `my-service` in project `bc16cf0c-909f-402d-bbb0-88ea1d582854` has the subject:
+
+[source]
+----
+system:serviceaccount:bc16cf0c-909f-402d-bbb0-88ea1d582854:klx-my-service
+----
+
+When configuring trust policies on a cloud provider or third-party service, use this format to restrict access to the specific Akka service.
+
+== Mounting a workload identity token
+
+For third-party services and non-local cloud providers, you need to mount an OIDC token into your service container. You configure this in the xref:reference:descriptors/service-descriptor.adoc[service descriptor] using a `workloadIdentityToken` volume mount:
+
+[source, yaml]
+----
+resource: Service
+resourceVersion: v1
+metadata:
+  name: my-service
+spec:
+  image: my-container-registry/my-image:latest
+  volumeMounts:
+  - mountPath: /var/run/secrets/tokens <1>
+    workloadIdentityToken:
+      path: my-service-token <2>
+      audience: https://target-service.example.com <3>
+      expirationSeconds: 3600 <4>
+----
+<1> The directory path inside the container where the token file will be projected
+<2> The filename of the token file within the mounted directory
+<3> The audience (`aud` claim) that the target service expects. Set this to whatever the target service requires.
+<4> Token validity in seconds. Defaults to 3600 (1 hour). Must be at least 600 (10 minutes). The token is rotated automatically when it reaches 80% of its lifetime.
+
+The token file at `/var/run/secrets/tokens/my-service-token` contains a signed JWT. Your application reads this file and presents it when authenticating with the target service. Because the token is rotated automatically, your application should re-read the file before each use rather than caching it, or should only cache it for a limited amount of time.
+
+For the full configuration reference, see xref:reference:descriptors/service-descriptor.adoc#WorkloadIdentityTokenVolumeSource[WorkloadIdentityTokenVolumeSource] in the service descriptor reference.
+
+Apply the descriptor using:
+
+[source, command line]
+----
+akka project apply --file service.yaml
+----
+
+== Authenticating with the local cloud provider
+
+When your Akka service runs on AWS, Azure, or GCP, Akka can automatically inject the environment variables and tokens that the corresponding cloud SDK needs to authenticate using workload identity. You do not need to manually mount a token or handle token exchange — the SDK handles it automatically when the workload identity configuration is present in the service descriptor.
+
+=== AWS
+
+Akka services running on AWS can authenticate with any AWS API by assuming an IAM role via workload identity.
+
+==== Prerequisites
+
+You will need the following information:
+
+* Your AWS account ID — set as `AWS_ACCOUNT_ID`
+* Your AWS region — set as `AWS_REGION`
+* Your Akka project ID (UUID from `akka project get`) — set as `AKKA_PROJECT_ID`
+* The Akka service name — set as `AKKA_SERVICE_NAME`
+
+[source, command window]
+----
+export AWS_ACCOUNT_ID=123456789012
+export AWS_REGION=us-east-2
+export AKKA_PROJECT_ID=bc16cf0c-909f-402d-bbb0-88ea1d582854
+export AKKA_SERVICE_NAME=my-service
+----
+
+==== Register the Akka OIDC provider with AWS
+
+First, retrieve the OIDC issuer for your Akka region:
+
+[source, command window]
+----
+export AKKA_OIDC_ISSUER=$(akka projects regions workload-identity-info -o go-template='{{(index .Items 0).WorkloadIdentity.Aws.OidcIssuer}}')
+----
+
+If you have multiple regions, copy the issuer for the appropriate region from `akka projects regions workload-identity-info` and set it manually.
+
+Register the issuer as an OIDC identity provider in your AWS account (only required once per AWS account per Akka region):
+
+[source, command window]
+----
+aws iam create-open-id-connect-provider --url $AKKA_OIDC_ISSUER \
+  --thumbprint-list 06b25927c42a721631c1efd9431e648fa62e1e39 \
+  --client-id-list sts.amazonaws.com \
+  --tags Key=akka-region,Value=akka-region-name
+----
+
+For convenience, strip the `https://` prefix from the issuer — AWS refers to OIDC providers this way:
+
+[source, command window]
+----
+export AKKA_OIDC_PROVIDER=$(echo $AKKA_OIDC_ISSUER | sed -e "s/^https:\/\///")
+----
+
+==== Create an IAM role for the Akka service
+
+Create a trust policy that allows the specific Akka service to assume an IAM role:
+
+[source, command window]
+----
+TRUST_POLICY_JSON=$(cat <<EOF
+{
+  "Version":"2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::${AWS_ACCOUNT_ID}:oidc-provider/$AKKA_OIDC_PROVIDER"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "${AKKA_OIDC_PROVIDER}:aud": "sts.amazonaws.com",
+          "${AKKA_OIDC_PROVIDER}:sub": "system:serviceaccount:${AKKA_PROJECT_ID}:klx-$AKKA_SERVICE_NAME"
+        }
+      }
+    }
+  ]
+}
+EOF
+)
+
+aws iam create-role --role-name akka-service-role \
+  --assume-role-policy-document "$TRUST_POLICY_JSON" \
+  --description "Role for Akka service $AKKA_SERVICE_NAME"
+----
+
+The `sub` condition in the trust policy pins the role to a single Akka service. To allow all services in a project to assume the role, replace the `sub` condition with a `StringLike` condition using a wildcard:
+
+[source, json]
+----
+"StringLike": {
+  "${AKKA_OIDC_PROVIDER}:sub": "system:serviceaccount:${AKKA_PROJECT_ID}:klx-*"
+}
+----
+
+Attach the permissions your service needs to the role. For example, to grant access to an AWS Secrets Manager secret:
+
+[source, command window]
+----
+POLICY_ARN=$(aws --region "$AWS_REGION" --query Policy.Arn --output text iam create-policy \
+  --policy-name akka-service-policy --policy-document '{
+    "Version": "2012-10-17",
+    "Statement": [ {
+        "Effect": "Allow",
+        "Action": ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"],
+        "Resource": ["arn:*:secretsmanager:*:*:secret:my-secret-??????"]
+    } ]
+}')
+
+aws iam attach-role-policy --role-name akka-service-role \
+  --policy-arn "$POLICY_ARN"
+----
+
+==== Configure the Akka service to assume the role
+
+Tell Akka to configure your service with the IAM role ARN. This can be done via the CLI or a service descriptor.
+
+[.tabset]
+--
+CLI::
++
+[source, command line]
+----
+akka service deploy $AKKA_SERVICE_NAME \
+  --aws-workload-identity-role-arn arn:aws:iam::$AWS_ACCOUNT_ID:role/akka-service-role
+----
++
+Service descriptor::
++
+[source, yaml]
+----
+resource: Service
+resourceVersion: v1
+metadata:
+  name: my-service
+spec:
+  image: my-container-registry/my-image:latest
+  workloadIdentity:
+    aws:
+      roleArn: arn:aws:iam::123456789012:role/akka-service-role
+----
+--
+
+Once configured, the AWS SDK in your service automatically authenticates using the injected credentials — no additional code is needed.
+
+=== Azure
+
+Akka services running on Azure can authenticate with any Azure API using federated workload identity.
+
+==== Prerequisites
+
+You will need:
+
+* An Azure account with the Azure CLI (`az`) installed and authenticated
+* The name of the KeyVault or other Azure resource you wish to access
+* Your Akka project ID (UUID from `akka project get`) — set as `AKKA_PROJECT_ID`
+* The Akka service name — set as `AKKA_SERVICE_NAME`
+
+[source, command window]
+----
+export AKKA_PROJECT_ID=bc16cf0c-909f-402d-bbb0-88ea1d582854
+export AKKA_SERVICE_NAME=my-service
+----
+
+==== Retrieve the OIDC issuer
+
+[source, command window]
+----
+export AKKA_OIDC_ISSUER=`akka projects regions workload-identity-info \
+  -o go-template='{{(index .Items 0).WorkloadIdentity.Azure.OidcIssuer}}'`
+----
+
+If you have multiple regions, copy the issuer for the appropriate region from `akka projects regions workload-identity-info` and set it manually.
+
+==== Create an Azure application and federate credentials
+
+Create an Azure service principal for your Akka service:
+
+[source, command window]
+----
+export APPLICATION_NAME="my-akka-service-application"
+az ad sp create-for-rbac --name "${APPLICATION_NAME}"
+export APPLICATION_CLIENT_ID=$(az ad sp list --display-name ${APPLICATION_NAME} --query '[0].appId' -otsv)
+----
+
+Get the application object ID (needed for federating the credential):
+
+[source, command window]
+----
+export APPLICATION_OBJECT_ID="$(az ad app show --id ${APPLICATION_CLIENT_ID} --query id -otsv)"
+----
+
+Create the federated credential that trusts tokens issued by Akka for the specific service:
+
+[source, command window]
+----
+cat <<EOF > params.json
+{
+  "name": "akka-service-federated-credential",
+  "issuer": "${AKKA_OIDC_ISSUER}",
+  "subject": "system:serviceaccount:${AKKA_PROJECT_ID}:klx-${AKKA_SERVICE_NAME}",
+  "description": "Akka service federated credential",
+  "audiences": [
+    "api://AzureADTokenExchange"
+  ]
+}
+EOF
+
+az ad app federated-credential create --id "${APPLICATION_OBJECT_ID}" --parameters @params.json
+----
+
+Grant the application the permissions it needs on the target Azure resource. For example, to grant access to a KeyVault:
+
+[source, command window]
+----
+az keyvault set-policy -n $KEYVAULT_NAME --key-permissions get --spn ${APPLICATION_CLIENT_ID}
+az keyvault set-policy -n $KEYVAULT_NAME --secret-permissions get --spn ${APPLICATION_CLIENT_ID}
+az keyvault set-policy -n $KEYVAULT_NAME --certificate-permissions get --spn ${APPLICATION_CLIENT_ID}
+----
+
+==== Configure the Akka service to use the federated identity
+
+[.tabset]
+--
+Service descriptor::
++
+[source, yaml]
+----
+resource: Service
+resourceVersion: v1
+metadata:
+  name: my-service
+spec:
+  image: my-container-registry/my-image:latest
+  workloadIdentity:
+    azure:
+      clientId: <APPLICATION_CLIENT_ID>
+      tenantId: <AZURE_TENANT_ID> <1>
+----
+<1> The tenant ID is optional if your Akka region runs in the same Azure tenant.
+--
+
+Once configured, the Azure SDK in your service automatically authenticates using the injected credentials — no additional code is needed.
+
+=== GCP
+
+Akka services running on GCP authenticate through GCP Workload Identity Federation. Unlike AWS and Azure, GCP workload identity is enabled automatically for all Akka services — no per-service role ARN or client ID configuration is required unless you want your service to impersonate a specific GCP service account.
+
+==== Grant Akka services access to GCP resources
+
+Retrieve the workload identity information for your Akka region:
+
+[source, command window]
+----
+akka projects regions workload-identity-info
+----
+
+The output includes:
+
+* A workload identity pool path
+* A `principal` value for a specific Akka service
+* A `principalSet` value for all services in the project
+
+To grant a specific Akka service access to a GCP resource, use the `principal` value from the command output. For example, to grant access to a Secret Manager secret:
+
+[source, command window]
+----
+gcloud secrets add-iam-policy-binding my-secret \
+    --project=$GCP_PROJECT_ID \
+    --role="roles/secretmanager.secretAccessor" \
+    --member="principal://iam.googleapis.com/projects/GCP_PROJECT_NUMBER/locations/global/workloadIdentityPools/POOL_ID/subject/ns/NAMESPACE_ID/sa/klx-SERVICE_NAME" <1>
+----
+<1> Copy the exact `principal` value from the `akka projects regions workload-identity-info` output rather than constructing it manually.
+
+To grant access to all services in the Akka project, use the `principalSet` value instead:
+
+[source, command window]
+----
+gcloud secrets add-iam-policy-binding my-secret \
+    --project=$GCP_PROJECT_ID \
+    --role="roles/secretmanager.secretAccessor" \
+    --member="principalSet://iam.googleapis.com/projects/GCP_PROJECT_NUMBER/locations/global/workloadIdentityPools/POOL_ID/namespace/NAMESPACE_ID" <1>
+----
+<1> Copy the exact `principalSet` value from the `akka projects regions workload-identity-info` output.
+
+==== Impersonating a GCP service account (optional)
+
+If you need your Akka service to impersonate a specific GCP service account rather than using its own principal directly, configure this in the service descriptor:
+
+[source, yaml]
+----
+resource: Service
+resourceVersion: v1
+metadata:
+  name: my-service
+spec:
+  image: my-container-registry/my-image:latest
+  workloadIdentity:
+    gcp:
+      gcpServiceAccount: my-service-account@my-project.iam.gserviceaccount.com
+----
+
+The GCP SDK in your service automatically authenticates using the workload identity — no additional code is needed.
+
+== Authenticating with third-party and non-local cloud providers
+
+For any service that supports OIDC-based workload identity — whether it is a different cloud provider, a SaaS platform, or a self-hosted service — you configure trust by registering Akka's OIDC issuer and granting access based on the token's `sub` claim.
+
+The general steps are:
+
+. Retrieve the URL of the OIDC issuer for your Akka region:
++
+[source, command line]
+----
+akka projects regions workload-identity-info
+----
+
+. Register Akka's issuer as a trusted OIDC provider in the target service. The OIDC discovery document is available at `<issuer>/.well-known/openid-configuration`, which includes the JWKS endpoint for verifying token signatures.
+
+. Configure a trust policy or role binding that maps the token `sub` claim to a permission. The sub claim for a service is `system:serviceaccount:<project-id>:klx-<service-name>`.
+
+. Mount a workload identity token into your Akka service, setting the `audience` to whatever value the target service expects (see <<Mounting a workload identity token,above>>).
+
+. In your application, read the token from the mounted file and pass it to the target service in whichever way it expects (typically as a Bearer token in an `Authorization` header, or via an SDK token exchange flow).
+
+[source, java]
+----
+String token = Files.readString(Path.of("/var/run/secrets/tokens/my-service-token")).trim();
+// Use token as a Bearer token or pass to an SDK token exchange flow
+----
+
+Because the token is rotated automatically by Akka, always read it fresh from the file before each use rather than caching it in memory.

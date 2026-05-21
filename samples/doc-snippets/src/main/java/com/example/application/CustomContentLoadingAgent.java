@@ -37,7 +37,7 @@ public class CustomContentLoadingAgent extends Agent {
       return switch (content) {
         case MessageContent.ImageUrlMessageContent image -> {
           StrictResponse<ByteString> response = httpClient // <2>
-            .GET(image.url().toString())
+            .GET(image.uri().toString())
             .addCredentials(HttpCredentials.createOAuth2BearerToken(userToken))
             .invoke();
 

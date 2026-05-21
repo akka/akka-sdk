@@ -1,3 +1,4 @@
+accessor
 Ack
 ACLs
 ACRs
@@ -6,6 +7,7 @@ Adoptium
 Agrona
 Aiven
 [Aa]kka
+allowedAlgorithms
 allowMethods
 allowOrigins
 [Aa]ntora
@@ -35,12 +37,14 @@ Cembaluk
 checkpointing
 classname
 clientCertificate
+clientId
 cloudName
 codegen
 [Cc]omposable
 [Cc]omposability
 config
 configs
+concurrentUploads
 connectionString
 corsPolicy
 Couchbase
@@ -68,6 +72,7 @@ env
 etcd
 eventhubs
 exfiltration
+expirationSeconds
 externalSecret
 facto
 failover
@@ -86,6 +91,7 @@ hakking
 has_more
 hasPrefix
 hasSuffix
+heapDump
 hyperscaler
 hyperscalers
 hoc
@@ -102,6 +108,7 @@ interconnectivity
 interoperate
 iss
 Javadoc
+jmesPath
 Json
 JUnit
 JVM's
@@ -109,8 +116,11 @@ JVM's
 (?i)JWTs
 [Kk]afka
 [Kk]alix
+Kerberos
 Keycloak
 keyId
+keySets
+keysets?
 Kolesnikov
 Lagom
 [Ll]angchain4j
@@ -118,6 +128,7 @@ Lagom
 LLM
 LLMs
 lmdbjava
+logLevel
 lookups
 Mastercard
 matchers
@@ -154,7 +165,10 @@ passivation
 passwordHashes
 passwordKey
 passwordSecret
+pathPrefix
+PDFs
 plaintext
+platformManaged
 plist
 [pP]luggable
 Podman
@@ -162,6 +176,7 @@ Postgres
 PostgreSQL
 precalculated
 principalSet
+[Pp]recompile
 preconfigured
 prefetching
 prepended
@@ -177,12 +192,15 @@ Qodo
 Quatrini
 queryable
 [Qq]uickstarts
+reachability
 rebalance
 rebalances
 rebalancing
 recoverability
 recurse
 redeliveries
+Redpanda
+refreshInterval
 remoting
 Remoting
 regionalization
@@ -193,6 +211,7 @@ reshard
 resourceVersion
 [Rr]eusability
 RNGs
+roleArn
 runtimes
 runtime's
 (?i)RPC
@@ -220,6 +239,7 @@ SREs
 stdin
 [Ss]tackdriver
 [Ss]treamable
+Strimzi
 subcommand
 subjectMatches
 subpage
@@ -229,6 +249,7 @@ subtree
 Szymanski
 [Tt]elemedicine
 Temurin
+tenantId
 [Tt]estKit
 text_search
 [Tt]imeframe
@@ -238,6 +259,7 @@ tokenid
 tokenization
 [Tt]okenizes
 tokenSecret
+traceSampling
 transcoded
 [Tt]ranscoding
 truststore
@@ -255,12 +277,16 @@ upsert
 upserting
 url
 userid
+URIs
+URLs
 valueFrom
 versionHistory
+versionLabel
 VMs
 volumeMounts
 [Ww]alkthrough
 winget
+workloadIdentity
 Yugabyte
 Zolotko
 [Zz]sh

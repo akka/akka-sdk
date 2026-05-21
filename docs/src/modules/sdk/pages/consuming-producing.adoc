@@ -347,6 +347,57 @@ To run an integration test against a real instance of Google PubSub (or its Emul
 include::example$event-sourced-counter-brokers/src/test/java/counter/application/CounterWithRealKafkaIntegrationTest.java[tags=kafka]
 ----
 
+=== Service-to-Service Streams
+
+The TestKit also supports xref:#s2s-eventing[] in both directions — mocking the upstream stream a consuming service reads from, and capturing the public events a producing service emits for downstream consumers.
+
+==== Testing a Consumer
+
+In a service that consumes another service's stream via `@Consume.FromServiceStream`, the TestKit can stand in for the upstream producer. Messages published to the mocked stream flow through the consumer's or view's real logic.
+
+The https://github.com/akka/akka-sdk/tree/main/samples/event-sourced-customer-registry-subscriber[`event-sourced-customer-registry-subscriber`, window="new"] sample consumes the `customer_events` stream produced by `customer-registry` (see xref:#s2s-eventing[]). Its integration test mocks that upstream stream:
+
+[source,java,indent=0]
+.{sample-base-url}/event-sourced-customer-registry-subscriber/src/test/java/customer/api/CustomersByNameViewIntegrationTest.java[CustomersByNameViewIntegrationTest.java]
+----
+include::example$event-sourced-customer-registry-subscriber/src/test/java/customer/api/CustomersByNameViewIntegrationTest.java[tags=eventing-config]
+----
+<1> Mock the upstream stream by service and stream id — matches the values in the consumer's `@Consume.FromServiceStream` annotation.
+
+[source,java,indent=0]
+.{sample-base-url}/event-sourced-customer-registry-subscriber/src/test/java/customer/api/CustomersByNameViewIntegrationTest.java[CustomersByNameViewIntegrationTest.java]
+----
+include::example$event-sourced-customer-registry-subscriber/src/test/java/customer/api/CustomersByNameViewIntegrationTest.java[tags=class]
+----
+<1> Register the mocked stream in the `TestKit` settings.
+<2> Retrieve an `IncomingMessages` handle for that stream.
+<3> Publish messages of the public event type the producing service would emit. The second argument is the subject id (for example, an entity id).
+
+==== Testing a Producer
+
+For a service that produces a stream via `@Produce.ServiceStream` — typically with a transformation from internal events to a narrower public event type — the TestKit can capture what is emitted so the transformation can be asserted. Unlike the consumer case, nothing is mocked: the real transformation path runs and the TestKit observes the emitted public events.
+
+The https://github.com/akka/akka-sdk/tree/main/samples/event-sourced-customer-registry[`event-sourced-customer-registry`, window="new"] sample has a `CustomerEvents` producer that transforms internal `CustomerEvent` values into `CustomerPublicEvent` values for downstream services. Its integration test verifies that transformation:
+
+[source,java,indent=0]
+.{sample-base-url}/event-sourced-customer-registry/src/test/java/customer/api/CustomerEventsOutgoingIntegrationTest.java[CustomerEventsOutgoingIntegrationTest.java]
+----
+include::example$event-sourced-customer-registry/src/test/java/customer/api/CustomerEventsOutgoingIntegrationTest.java[tags=eventing-config]
+----
+<1> Register the outgoing stream to capture. The values must match the producer's `@Produce.ServiceStream` id and the service name that downstream consumers use.
+
+[source,java,indent=0]
+.{sample-base-url}/event-sourced-customer-registry/src/test/java/customer/api/CustomerEventsOutgoingIntegrationTest.java[CustomerEventsOutgoingIntegrationTest.java]
+----
+include::example$event-sourced-customer-registry/src/test/java/customer/api/CustomerEventsOutgoingIntegrationTest.java[tags=class]
+----
+<1> Register the outgoing stream in the `TestKit` settings.
+<2> Retrieve an `OutgoingMessages` handle for the stream.
+<3> Drive the service as usual — invoking the entity here triggers the internal event that the producer transforms.
+<4> Assert against the transformed public event type.
+
+`OutgoingMessages` exposes the same assertions used for topic outgoing messages, such as `expectN(...)` to read several messages or `expectNone(...)` to verify that a given internal event produces no public event (for example, when the transformation uses `effects().ignore()`).
+
 == Multi-region replication
 
 Consumers are not replicated directly in the same way as for example xref:event-sourced-entities.adoc#_replication[Event Sourced Entity replication]. A Consumer receives events from entities in the same service, or another service, in the same region. The entities will replicate all events across regions and identical processing can occur in the consumers of each region.

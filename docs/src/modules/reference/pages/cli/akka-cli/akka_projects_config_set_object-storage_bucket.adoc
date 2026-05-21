@@ -1,0 +1,85 @@
+= akka projects config set object-storage bucket
+
+Add or replace a single bucket in the object-storage configuration.
+
+== Synopsis
+
+The `akka projects config set object-storage bucket NAME` command adds a named bucket to the project's object-storage configuration.
+If a bucket with the same name already exists, it is replaced in place.
+Secret references use the "secret-name/key" format and must point at existing secrets.
+
+Supported providers and credential types:
+
+s3          native, static, profile   gcs         native, service-account-key   azure-blob  shared-key, sas
+
+----
+akka projects config set object-storage bucket NAME [flags]
+----
+
+== Examples
+
+----
+
+# s3 with static credentials
+akka projects config set object-storage bucket photos \
+  --provider s3 --bucket acme-photos --bucket-region us-east-1 \
+  --credentials-type static \
+  --access-key-id-secret aws-creds/access-key-id \
+  --secret-access-key-secret aws-creds/secret-access-key
+
+# gcs using the runtime's native credential chain
+akka projects config set object-storage bucket logs \
+  --provider gcs --bucket acme-logs --credentials-type native
+
+# azure-blob with shared key
+akka projects config set object-storage bucket archive \
+  --provider azure-blob --bucket acme-archive \
+  --credentials-type shared-key --account-name acmestorage \
+  --account-key-secret azure-creds/account-key
+----
+
+== Options
+
+----
+      --access-key-id-secret string         'secret-name/key' reference for S3 access key ID (for --credentials-type static)
+      --account-key-secret string           'secret-name/key' reference for an Azure account key (for --credentials-type shared-key)
+      --account-name string                 Azure storage account name (for --credentials-type shared-key or sas)
+      --bucket string                       physical bucket name at the provider (required)
+      --bucket-region string                provider region for the bucket (required for s3; distinct from the platform --region flag)
+      --credentials-type string             authentication mode: native, static, profile, service-account-key, shared-key, or sas
+      --endpoint string                     optional endpoint URL override
+      --force-global                        force an existing regional resource to be configured as a global resource
+      --force-regional                      force an existing global resource to be configured as a regional resource
+  -h, --help                                help for bucket
+      --owner string                        the owner of the project to use, needed if you have two projects with the same name from different owners
+      --profile-name string                 AWS profile name (for --credentials-type profile)
+      --project string                      project to use if not using the default configured project
+      --provider string                     provider of the bucket: s3, gcs, or azure-blob (required)
+      --region string                       region to use if project has more than one region
+      --sas-token-secret string             'secret-name/key' reference for an Azure SAS token (for --credentials-type sas)
+      --secret-access-key-secret string     'secret-name/key' reference for S3 secret access key (for --credentials-type static)
+      --service-account-key-secret string   'secret-name/key' reference for a GCS service-account JSON key (for --credentials-type service-account-key)
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_projects_config_set_object-storage.html[akka projects config set object-storage]	 - Set the object-storage configuration.
+
+[discrete]
+

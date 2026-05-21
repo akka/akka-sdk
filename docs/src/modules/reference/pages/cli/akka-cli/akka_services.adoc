@@ -41,6 +41,7 @@ The `akka services` commands are used to manage and modify the services in your 
 * link:akka_services_export.html[akka services export]	 - Export a service as its service descriptor.
 * link:akka_services_expose.html[akka services expose]	 - Expose a service.
 * link:akka_services_get.html[akka services get]	 - Describe a specific service.
+* link:akka_services_jwks.html[akka services jwks]	 - Manage JWT keysets of a service.
 * link:akka_services_jwts.html[akka services jwts]	 - Manage JWT keys of a service.
 * link:akka_services_list.html[akka services list]	 - List all services.
 * link:akka_services_logging.html[akka services logging]	 - Change the log level configuration of a service.

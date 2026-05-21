@@ -78,7 +78,9 @@ public sealed interface ModelProvider {
         Duration.ofMinutes(1),
         2,
         0,
-        List.of());
+        List.of(),
+        false,
+        false);
   }
 
   /** Settings for the Anthropic Large Language Model provider. */
@@ -120,8 +122,52 @@ public sealed interface ModelProvider {
       /** A maximum number of tokens to spend on thinking, use 0 to disable thinking */
       int thinkingBudgetTokens,
       /** Additional HTTP headers to include in each request to the model API */
-      List<HttpHeader> additionalModelRequestHeaders)
+      List<HttpHeader> additionalModelRequestHeaders,
+      /**
+       * Enable prompt caching of the last system message, reducing cost and latency for repeated
+       * prefixes. Disabled by default.
+       */
+      boolean cacheSystemMessages,
+      /**
+       * Enable prompt caching of the last tool definition, reducing cost and latency for repeated
+       * tool specifications. Disabled by default.
+       */
+      boolean cacheTools)
       implements ModelProvider {
+
+    /**
+     * @deprecated Use constructor with prompt caching settings
+     */
+    @Deprecated
+    public Anthropic(
+        String apiKey,
+        String modelName,
+        String baseUrl,
+        double temperature,
+        double topP,
+        int topK,
+        int maxTokens,
+        Duration connectionTimeout,
+        Duration responseTimeout,
+        int maxRetries,
+        int thinkingBudgetTokens,
+        List<HttpHeader> additionalModelRequestHeaders) {
+      this(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          topK,
+          maxTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          thinkingBudgetTokens,
+          additionalModelRequestHeaders,
+          false,
+          false);
+    }
 
     public static Anthropic fromConfig(Config config) {
       return new Anthropic(
@@ -136,7 +182,9 @@ public sealed interface ModelProvider {
           config.getDuration("response-timeout"),
           config.getInt("max-retries"),
           config.getInt("thinking-budget-tokens"),
-          headersFromConfig(config));
+          headersFromConfig(config),
+          config.getBoolean("cache-system-messages"),
+          config.getBoolean("cache-tools"));
     }
 
     public Anthropic withApiKey(String apiKey) {
@@ -152,7 +200,9 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
     }
 
     public Anthropic withModelName(String modelName) {
@@ -168,7 +218,9 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
     }
 
     public Anthropic withBaseUrl(String baseUrl) {
@@ -184,7 +236,9 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
     }
 
     public Anthropic withTemperature(double temperature) {
@@ -200,7 +254,9 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
     }
 
     public Anthropic withTopP(double topP) {
@@ -216,7 +272,9 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
     }
 
     public Anthropic withTopK(int topK) {
@@ -232,7 +290,9 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
     }
 
     public Anthropic withMaxTokens(int maxTokens) {
@@ -248,7 +308,9 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
     }
 
     public Anthropic withConnectionTimeout(Duration connectionTimeout) {
@@ -264,7 +326,9 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
     }
 
     public Anthropic withResponseTimeout(Duration responseTimeout) {
@@ -280,7 +344,9 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
     }
 
     public Anthropic withMaxRetries(int maxRetries) {
@@ -296,7 +362,9 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
     }
 
     public Anthropic withThinkingBudgetTokens(int thinkingBudgetTokens) {
@@ -312,7 +380,9 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
     }
 
     public Anthropic withAdditionalModelRequestHeaders(
@@ -329,7 +399,45 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
+    }
+
+    public Anthropic withCacheSystemMessages(boolean cacheSystemMessages) {
+      return new Anthropic(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          topK,
+          maxTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          thinkingBudgetTokens,
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
+    }
+
+    public Anthropic withCacheTools(boolean cacheTools) {
+      return new Anthropic(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          topK,
+          maxTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          thinkingBudgetTokens,
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
     }
   }
 
@@ -1116,6 +1224,446 @@ public sealed interface ModelProvider {
     }
   }
 
+  /** Settings for the Azure OpenAI Large Language Model provider. */
+  static AzureOpenAi azureOpenAi() {
+    return new AzureOpenAi(
+        "",
+        "",
+        "",
+        Double.NaN,
+        Double.NaN,
+        -1,
+        -1,
+        Double.NaN,
+        Double.NaN,
+        -1,
+        List.of(),
+        "",
+        "",
+        Duration.ofSeconds(15),
+        Duration.ofMinutes(1),
+        2,
+        List.of());
+  }
+
+  /** Settings for the Azure OpenAI Large Language Model provider. */
+  record AzureOpenAi(
+      /** Endpoint URL of the Azure OpenAI resource, e.g. "https://my-resource.openai.azure.com" */
+      String endpoint,
+      /** Name of the Azure OpenAI deployment to use */
+      String deploymentName,
+      /** API key for authentication with the Azure OpenAI resource */
+      String apiKey,
+      /** Controls randomness in the model's output (0.0-1.0, higher = more random) */
+      double temperature,
+      /**
+       * Nucleus sampling parameter (0.0 to 1.0). Controls text generation by only considering the
+       * most likely tokens whose cumulative probability exceeds the threshold value.
+       */
+      double topP,
+      /** Maximum number of tokens to generate in the response. */
+      int maxTokens,
+      /** Maximum number of completion tokens to generate. */
+      int maxCompletionTokens,
+      /** Penalizes repeated tokens based on their frequency in the text so far (-2.0 to 2.0). */
+      double frequencyPenalty,
+      /** Penalizes tokens that have already appeared in the text (-2.0 to 2.0). */
+      double presencePenalty,
+      /** Seed for deterministic sampling, for reproducible outputs. */
+      long seed,
+      /** Sequences where the model will stop generating further tokens. */
+      List<String> stop,
+      /** Reasoning effort level for o-series models ("low", "medium", "high"). */
+      String reasoningEffort,
+      /** Azure OpenAI API service version, e.g. "2024-02-15-preview". */
+      String serviceVersion,
+      Duration connectionTimeout,
+      Duration responseTimeout,
+      int maxRetries,
+      /** Additional HTTP headers to include in each request to the model API */
+      List<HttpHeader> additionalModelRequestHeaders)
+      implements ModelProvider {
+
+    public static AzureOpenAi fromConfig(Config config) {
+      return new AzureOpenAi(
+          config.getString("endpoint"),
+          config.getString("deployment-name"),
+          config.getString("api-key"),
+          config.getDouble("temperature"),
+          config.getDouble("top-p"),
+          config.getInt("max-tokens"),
+          config.getInt("max-completion-tokens"),
+          config.getDouble("frequency-penalty"),
+          config.getDouble("presence-penalty"),
+          config.getLong("seed"),
+          config.getStringList("stop"),
+          config.getString("reasoning-effort"),
+          config.getString("service-version"),
+          config.getDuration("connection-timeout"),
+          config.getDuration("response-timeout"),
+          config.getInt("max-retries"),
+          headersFromConfig(config));
+    }
+
+    public AzureOpenAi withEndpoint(String endpoint) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withDeploymentName(String deploymentName) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withApiKey(String apiKey) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withTemperature(double temperature) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withTopP(double topP) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withMaxTokens(int maxTokens) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withMaxCompletionTokens(int maxCompletionTokens) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withFrequencyPenalty(double frequencyPenalty) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withPresencePenalty(double presencePenalty) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withSeed(long seed) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withStop(List<String> stop) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withReasoningEffort(String reasoningEffort) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withServiceVersion(String serviceVersion) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withConnectionTimeout(Duration connectionTimeout) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withResponseTimeout(Duration responseTimeout) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withMaxRetries(int maxRetries) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public AzureOpenAi withAdditionalModelRequestHeaders(
+        List<HttpHeader> additionalModelRequestHeaders) {
+      return new AzureOpenAi(
+          endpoint,
+          deploymentName,
+          apiKey,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          frequencyPenalty,
+          presencePenalty,
+          seed,
+          stop,
+          reasoningEffort,
+          serviceVersion,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+  }
+
   /** Settings for the HuggingFace Large Language Model provider. */
   static HuggingFace huggingFace() {
     return new HuggingFace(
@@ -1658,6 +2206,414 @@ public sealed interface ModelProvider {
     }
   }
 
+  /** Settings for the Mistral AI Large Language Model provider. */
+  static MistralAi mistralAi() {
+    return new MistralAi(
+        "",
+        "",
+        "",
+        Double.NaN,
+        Double.NaN,
+        -1,
+        false,
+        -1,
+        Double.NaN,
+        Double.NaN,
+        List.of(),
+        false,
+        Duration.ofSeconds(15),
+        Duration.ofMinutes(1),
+        2,
+        List.of());
+  }
+
+  /** Settings for the Mistral AI Large Language Model provider. */
+  record MistralAi(
+      /** API key for authentication with Mistral AI's API */
+      String apiKey,
+      /** Name of the Mistral model to use (e.g. "mistral-large-latest") */
+      String modelName,
+      /** Base URL for Mistral AI's API endpoints */
+      String baseUrl,
+      /** Controls randomness in the model's output (0.0-1.0, higher = more random) */
+      double temperature,
+      /**
+       * Nucleus sampling parameter (0.0 to 1.0). Controls text generation by only considering the
+       * most likely tokens whose cumulative probability exceeds the threshold value. It helps
+       * balance between diversity and quality of outputs—lower values (like 0.3) produce more
+       * focused, predictable text while higher values (like 0.9) allow more creativity and
+       * variation.
+       */
+      double topP,
+      /** Maximum number of tokens to generate in the response (-1 for model default) */
+      int maxTokens,
+      /** Whether to inject a safety prompt in front of all conversations */
+      boolean safePrompt,
+      /** Random seed for deterministic sampling (-1 for none) */
+      int randomSeed,
+      /** Penalty for frequent tokens ({@code NaN} for model default) */
+      double frequencyPenalty,
+      /** Penalty for repeated topics ({@code NaN} for model default) */
+      double presencePenalty,
+      /** Stop sequences at which the model stops generating */
+      List<String> stopSequences,
+      /** Enable thinking, only supported for some models. */
+      boolean thinking,
+      /** Fail the request if connecting to the model API takes longer than this */
+      Duration connectionTimeout,
+      /**
+       * Fail the request if getting a response from the model API takes longer than this, does not
+       * apply to streaming agents
+       */
+      Duration responseTimeout,
+      /** If the request fails, retry this many times. */
+      int maxRetries,
+      /** Additional HTTP headers to include in each request to the model API */
+      List<HttpHeader> additionalModelRequestHeaders)
+      implements ModelProvider {
+
+    public static MistralAi fromConfig(Config config) {
+      return new MistralAi(
+          config.getString("api-key"),
+          config.getString("model-name"),
+          config.getString("base-url"),
+          config.getDouble("temperature"),
+          config.getDouble("top-p"),
+          config.getInt("max-tokens"),
+          config.getBoolean("safe-prompt"),
+          config.getInt("random-seed"),
+          config.getDouble("frequency-penalty"),
+          config.getDouble("presence-penalty"),
+          config.getStringList("stop-sequences"),
+          config.getBoolean("thinking"),
+          config.getDuration("connection-timeout"),
+          config.getDuration("response-timeout"),
+          config.getInt("max-retries"),
+          headersFromConfig(config));
+    }
+
+    public MistralAi withApiKey(String apiKey) {
+      return new MistralAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          safePrompt,
+          randomSeed,
+          frequencyPenalty,
+          presencePenalty,
+          stopSequences,
+          thinking,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public MistralAi withModelName(String modelName) {
+      return new MistralAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          safePrompt,
+          randomSeed,
+          frequencyPenalty,
+          presencePenalty,
+          stopSequences,
+          thinking,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public MistralAi withBaseUrl(String baseUrl) {
+      return new MistralAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          safePrompt,
+          randomSeed,
+          frequencyPenalty,
+          presencePenalty,
+          stopSequences,
+          thinking,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public MistralAi withTemperature(double temperature) {
+      return new MistralAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          safePrompt,
+          randomSeed,
+          frequencyPenalty,
+          presencePenalty,
+          stopSequences,
+          thinking,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public MistralAi withTopP(double topP) {
+      return new MistralAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          safePrompt,
+          randomSeed,
+          frequencyPenalty,
+          presencePenalty,
+          stopSequences,
+          thinking,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public MistralAi withMaxTokens(int maxTokens) {
+      return new MistralAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          safePrompt,
+          randomSeed,
+          frequencyPenalty,
+          presencePenalty,
+          stopSequences,
+          thinking,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public MistralAi withSafePrompt(boolean safePrompt) {
+      return new MistralAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          safePrompt,
+          randomSeed,
+          frequencyPenalty,
+          presencePenalty,
+          stopSequences,
+          thinking,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public MistralAi withRandomSeed(int randomSeed) {
+      return new MistralAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          safePrompt,
+          randomSeed,
+          frequencyPenalty,
+          presencePenalty,
+          stopSequences,
+          thinking,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public MistralAi withFrequencyPenalty(double frequencyPenalty) {
+      return new MistralAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          safePrompt,
+          randomSeed,
+          frequencyPenalty,
+          presencePenalty,
+          stopSequences,
+          thinking,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public MistralAi withPresencePenalty(double presencePenalty) {
+      return new MistralAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          safePrompt,
+          randomSeed,
+          frequencyPenalty,
+          presencePenalty,
+          stopSequences,
+          thinking,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public MistralAi withStopSequences(List<String> stopSequences) {
+      return new MistralAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          safePrompt,
+          randomSeed,
+          frequencyPenalty,
+          presencePenalty,
+          stopSequences,
+          thinking,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public MistralAi withThinking(boolean thinking) {
+      return new MistralAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          safePrompt,
+          randomSeed,
+          frequencyPenalty,
+          presencePenalty,
+          stopSequences,
+          thinking,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public MistralAi withConnectionTimeout(Duration connectionTimeout) {
+      return new MistralAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          safePrompt,
+          randomSeed,
+          frequencyPenalty,
+          presencePenalty,
+          stopSequences,
+          thinking,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public MistralAi withResponseTimeout(Duration responseTimeout) {
+      return new MistralAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          safePrompt,
+          randomSeed,
+          frequencyPenalty,
+          presencePenalty,
+          stopSequences,
+          thinking,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public MistralAi withMaxRetries(int maxRetries) {
+      return new MistralAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          safePrompt,
+          randomSeed,
+          frequencyPenalty,
+          presencePenalty,
+          stopSequences,
+          thinking,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public MistralAi withAdditionalModelRequestHeaders(
+        List<HttpHeader> additionalModelRequestHeaders) {
+      return new MistralAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          maxTokens,
+          safePrompt,
+          randomSeed,
+          frequencyPenalty,
+          presencePenalty,
+          stopSequences,
+          thinking,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+  }
+
   static Custom custom(Custom provider) {
     return provider;
   }
@@ -1709,7 +2665,18 @@ public sealed interface ModelProvider {
         -1,
         Duration.ofMinutes(1),
         2,
-        List.of());
+        List.of(),
+        Optional.empty());
+  }
+
+  /**
+   * Placement of the prompt cache point when using Bedrock with supported Claude or Nova models.
+   * See the AWS Bedrock prompt caching documentation for details.
+   */
+  enum BedrockPromptCachePlacement {
+    AFTER_SYSTEM,
+    AFTER_USER_MESSAGE,
+    AFTER_TOOLS
   }
 
   record Bedrock(
@@ -1727,10 +2694,59 @@ public sealed interface ModelProvider {
       Duration responseTimeout,
       int maxRetries,
       /** Additional HTTP headers to include in each request to the model API */
-      List<HttpHeader> additionalModelRequestHeaders)
+      List<HttpHeader> additionalModelRequestHeaders,
+      /**
+       * Enable prompt caching for Anthropic Claude or Amazon Nova models by specifying where the
+       * cache point should be placed. Empty disables prompt caching (default).
+       */
+      Optional<BedrockPromptCachePlacement> promptCaching)
       implements ModelProvider {
 
+    /**
+     * @deprecated Use constructor with prompt caching settings
+     */
+    @Deprecated
+    public Bedrock(
+        String region,
+        String modelId,
+        boolean returnThinking,
+        boolean sendThinking,
+        int maxOutputTokens,
+        int reasoningTokenBudget,
+        Map<String, Object> additionalModelRequestFields,
+        String accessToken,
+        double temperature,
+        double topP,
+        int maxTokens,
+        Duration responseTimeout,
+        int maxRetries,
+        List<HttpHeader> additionalModelRequestHeaders) {
+      this(
+          region,
+          modelId,
+          returnThinking,
+          sendThinking,
+          maxOutputTokens,
+          reasoningTokenBudget,
+          additionalModelRequestFields,
+          accessToken,
+          temperature,
+          topP,
+          maxTokens,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders,
+          Optional.empty());
+    }
+
     public static Bedrock fromConfig(Config config) {
+      String promptCachingStr = config.getString("prompt-caching");
+      Optional<BedrockPromptCachePlacement> promptCaching =
+          promptCachingStr.isEmpty()
+              ? Optional.empty()
+              : Optional.of(
+                  BedrockPromptCachePlacement.valueOf(
+                      promptCachingStr.trim().toUpperCase().replace('-', '_')));
       return new Bedrock(
           config.getString("region"),
           config.getString("model-id"),
@@ -1745,7 +2761,8 @@ public sealed interface ModelProvider {
           config.getInt("max-tokens"),
           config.getDuration("response-timeout"),
           config.getInt("max-retries"),
-          headersFromConfig(config));
+          headersFromConfig(config),
+          promptCaching);
     }
 
     public Bedrock withRegion(String region) {
@@ -1763,7 +2780,8 @@ public sealed interface ModelProvider {
           this.maxTokens,
           this.responseTimeout,
           this.maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withModelId(String modelId) {
@@ -1781,7 +2799,8 @@ public sealed interface ModelProvider {
           this.maxTokens,
           this.responseTimeout,
           this.maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withReturnThinking(Boolean returnThinking) {
@@ -1799,7 +2818,8 @@ public sealed interface ModelProvider {
           this.maxTokens,
           this.responseTimeout,
           this.maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withSendThinking(Boolean sendThinking) {
@@ -1817,7 +2837,8 @@ public sealed interface ModelProvider {
           this.maxTokens,
           this.responseTimeout,
           this.maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withMaxOutputTokens(int maxOutputTokens) {
@@ -1835,7 +2856,8 @@ public sealed interface ModelProvider {
           this.maxTokens,
           this.responseTimeout,
           this.maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withReasoningTokenBudget(int reasoningTokenBudget) {
@@ -1853,7 +2875,8 @@ public sealed interface ModelProvider {
           this.maxTokens,
           this.responseTimeout,
           this.maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withAdditionalModelRequestFields(
@@ -1872,7 +2895,8 @@ public sealed interface ModelProvider {
           this.maxTokens,
           this.responseTimeout,
           this.maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withAccessToken(String accessToken) {
@@ -1890,7 +2914,8 @@ public sealed interface ModelProvider {
           this.maxTokens,
           this.responseTimeout,
           this.maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withTemperature(double temperature) {
@@ -1908,7 +2933,8 @@ public sealed interface ModelProvider {
           this.maxTokens,
           this.responseTimeout,
           this.maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withTopP(double topP) {
@@ -1926,7 +2952,8 @@ public sealed interface ModelProvider {
           this.maxTokens,
           this.responseTimeout,
           this.maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withMaxTokens(int maxTokens) {
@@ -1944,7 +2971,8 @@ public sealed interface ModelProvider {
           maxTokens,
           this.responseTimeout,
           this.maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withResponseTimeout(Duration responseTimeout) {
@@ -1962,7 +2990,8 @@ public sealed interface ModelProvider {
           this.maxTokens,
           responseTimeout,
           this.maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withMaxRetries(int maxRetries) {
@@ -1980,7 +3009,8 @@ public sealed interface ModelProvider {
           this.maxTokens,
           this.responseTimeout,
           maxRetries,
-          this.additionalModelRequestHeaders);
+          this.additionalModelRequestHeaders,
+          this.promptCaching);
     }
 
     public Bedrock withAdditionalModelRequestHeaders(
@@ -1999,7 +3029,27 @@ public sealed interface ModelProvider {
           this.maxTokens,
           this.responseTimeout,
           this.maxRetries,
-          additionalModelRequestHeaders);
+          additionalModelRequestHeaders,
+          this.promptCaching);
+    }
+
+    public Bedrock withPromptCaching(BedrockPromptCachePlacement promptCaching) {
+      return new Bedrock(
+          this.region,
+          this.modelId,
+          this.returnThinking,
+          this.sendThinking,
+          this.maxOutputTokens,
+          this.reasoningTokenBudget,
+          this.additionalModelRequestFields,
+          this.accessToken,
+          this.temperature,
+          this.topP,
+          this.maxTokens,
+          this.responseTimeout,
+          this.maxRetries,
+          this.additionalModelRequestHeaders,
+          Optional.ofNullable(promptCaching));
     }
   }
 }

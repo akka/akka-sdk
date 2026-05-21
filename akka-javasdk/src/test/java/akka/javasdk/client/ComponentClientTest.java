@@ -24,6 +24,7 @@ import akka.runtime.sdk.spi.*;
 import akka.runtime.sdk.spi.AgentClient;
 import akka.runtime.sdk.spi.TimedActionClient;
 import akka.runtime.sdk.spi.ViewClient;
+import akka.runtime.sdk.spi.WorkflowClient;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,6 +58,11 @@ class ComponentClientTest {
           }
 
           @Override
+          public WorkflowClient workflowClient() {
+            return null;
+          }
+
+          @Override
           public TimerClient timerClient() {
             return null;
           }
@@ -73,6 +79,11 @@ class ComponentClientTest {
 
           @Override
           public TimedActionClient timedActionClient() {
+            return null;
+          }
+
+          @Override
+          public SpiObjectStorage objectStorage() {
             return null;
           }
         };

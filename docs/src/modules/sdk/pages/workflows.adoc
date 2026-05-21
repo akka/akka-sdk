@@ -173,6 +173,57 @@ You can still handle read requests to the workflow until it has been completely 
 
 It is best to not reuse the same workflow id after deletion, but if that happens after the workflow has been completely removed it will be instantiated as a completely new workflow without any knowledge of previous state.
 
+== Terminating workflow
+
+A running workflow can be terminated from the outside by calling `terminate` directly on the component client. Once
+terminated, the workflow cannot be resumed, and calling `terminate` again is safe — it's a no-op on an already-finished workflow.
+
+If a step is in flight, the workflow does not wait for it to complete, and any result is ignored.
+
+After termination, the workflow is passivated and does not consume any runtime resources.
+
+[source,java,indent=0]
+.{sample-base-url}/transfer-workflow/src/main/java/com/example/transfer/api/TransferEndpoint.java[TransferEndpoint.java]
+----
+include::example$transfer-workflow/src/main/java/com/example/transfer/api/TransferEndpoint.java[tag=terminate]
+----
+<1> Terminate the workflow with a short, human-readable reason. The reason is persisted in the workflow's event journal and written to the runtime logs at termination time, so it must not contain secrets or PII.
+
+The reason is optional — there is also an overload that takes only the workflow class. An async variant `terminateAsync` is available, returning a `CompletionStage<Done>`.
+
+NOTE: Termination preserves the workflow state — it only prevents further execution. If you also want to remove the state, use `delete` from within a command handler (see xref:#_deleting_state[Deleting state]).
+
+
+== Suspending and resuming workflow
+
+In addition to terminating a workflow, you can pause execution from the outside with `suspend` and bring it back with `resume`. This is useful when you need to halt a workflow temporarily — for example, during maintenance or while investigating an in-flight execution — without giving up the option to continue later.
+
+Suspension behaves like termination: if a step is in flight, the workflow does not wait for it to complete, and any result it produces after the suspend takes effect is ignored. On `resume`, execution restarts at the step in flight, giving it a fresh chance to run. Both calls are idempotent — suspending an already-suspended workflow, or resuming a workflow that is not suspended, is a successful no-op.
+
+Timeouts remain active while a workflow is suspended:
+
+* If a workflow timeout fires while suspended, the workflow fails with a timeout.
+* If a workflow timeout with a failover step fires while suspended, the failover step is executed on resume.
+* If a pause timer fires while suspended, the configured timeout handler is called on resume.
+
+While suspended, the workflow is passivated and does not consume any runtime resources.
+
+[source,java,indent=0]
+.{sample-base-url}/transfer-workflow/src/main/java/com/example/transfer/api/TransferEndpoint.java[TransferEndpoint.java]
+----
+include::example$transfer-workflow/src/main/java/com/example/transfer/api/TransferEndpoint.java[tag=suspend]
+----
+<1> Suspend the workflow with a short, human-readable reason. As with `terminate`, the reason is persisted and logged, so it must not contain secrets or PII.
+
+[source,java,indent=0]
+.{sample-base-url}/transfer-workflow/src/main/java/com/example/transfer/api/TransferEndpoint.java[TransferEndpoint.java]
+----
+include::example$transfer-workflow/src/main/java/com/example/transfer/api/TransferEndpoint.java[tag=resume]
+----
+<1> Resume a previously suspended workflow.
+
+The reason on `suspend` is optional — there is also an overload that takes only the workflow class. Async variants `suspendAsync` and `resumeAsync` are available, returning `CompletionStage<Done>`.
+
 == Calling external services
 
 The Workflow can be used not only to orchestrate Akka components, but also to call external services. The step implementation can invoke xref:component-and-service-calls.adoc#_external_http_services[HTTP endpoint], a xref:component-and-service-calls.adoc#_external_grpc_services[gRPC service], or any other service that can be called from the Java code.

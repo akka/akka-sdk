@@ -1,0 +1,72 @@
+= akka services jwks add
+
+Add a JWT keyset to a service.
+
+== Synopsis
+
+The `akka service jwks add` command adds a JWT keyset to a service.
+
+Exactly one source must be provided:   --oidc-discovery       Discover the JWKS URL from the issuer's OpenID Connect discovery document.
+Requires --issuer.
+--jwks-url URL         Load keys from an HTTPS JWKS endpoint directly.
+--secret NAME          Load keys from an Akka secret containing a JWKS document (key: jwks.json).
+--external-secret NAME Load keys from an external secret containing a JWKS document.
+
+By default, the JWKS endpoint or OIDC discovery URL is fetched and validated.
+Use --skip-validation to skip this check, for example when the endpoint is not yet publicly reachable.
+
+----
+akka services jwks add [SERVICE] [flags]
+----
+
+== Examples
+
+----
+> akka service jwks add my-service --oidc-discovery --issuer https://accounts.google.com
+> akka service jwks add my-service --jwks-url https://example.com/.well-known/jwks.json --issuer https://example.com
+> akka service jwks add my-service --secret my-jwks-secret --issuer my-issuer
+> akka service jwks add my-service --external-secret my-ext-secret --secret-key keys.json
+----
+
+== Options
+
+----
+      --allowed-algorithms stringArray   List of algorithms allowed for this keyset (e.g. RS256,ES256).
+      --external-secret string           Name of an external secret containing a JWKS document.
+      --force-global                     force an existing regional resource to be configured as a global resource
+      --force-regional                   force an existing global resource to be configured as a regional resource
+  -h, --help                             help for add
+      --issuer string                    Issuer of tokens validated by this keyset.
+      --jwks-url string                  HTTPS URL of a JWKS endpoint to load keys from.
+      --oidc-discovery                   Use OpenID Connect discovery to obtain the JWKS URL from the issuer.
+      --owner string                     the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string                   project to use if not using the default configured project
+      --refresh-interval string          How often to refresh the keyset (e.g. 1h, 30m). Defaults to 1h.
+      --region string                    region to use if project has more than one region
+      --secret string                    Name of an Akka secret containing a JWKS document.
+      --secret-key string                Key within the secret that contains the JWKS document. (default "jwks.json")
+      --skip-validation                  Skip validation of the JWKS endpoint or OIDC discovery URL.
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_services_jwks.html[akka services jwks]	 - Manage JWT keysets of a service.
+
+[discrete]
+

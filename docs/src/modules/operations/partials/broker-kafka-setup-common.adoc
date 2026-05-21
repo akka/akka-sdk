@@ -6,7 +6,12 @@ Kafka partitions are consumed independently. When passing messages to a certain 
 
 WARNING: Correct partitioning is especially important for topics that stream directly into views and transform the updates: when messages for the same subject id are spread over different transactions, they may read stale data and lose updates.
 
-To achieve at-least-once delivery, messages that are not acknowledged will be redelivered. This means redeliveries of 'older' messages may arrive behind fresh deliveries of 'newer' messages. The _first_ delivery of each message is always in-order, though.
+At-least-once delivery means a message may be delivered more than once. Within a single partition, redeliveries preserve the original order — there is no scenario where a newer message lands at the consumer before an older message's redelivery completes. Two cases lead to redelivery:
+
+* A message whose handler failed is replayed from the last committed offset, followed by the messages after it.
+* A message that was processed successfully but whose offset commit did not make it before a restart or partition rebalance is replayed on the next read. Offset commits are batched, so this gap is normal rather than exceptional.
+
+Consumer handlers must therefore be idempotent or deduplicate explicitly. See xref:sdk:dev-best-practices.adoc#message-deduplication[Message deduplication] for guidance.
 
 When publishing messages to Kafka from Akka, the `ce-subject` attribute, if present, is used as the Kafka partition key for the message.
 

@@ -10,7 +10,39 @@ Current versions
 * Akka CLI {akka-cli-version}
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
 
+== May 2026
+
+* https://github.com/akka/akka-sdk/releases/tag/v3.5.19[Akka SDK 3.5.19]
+- Object store support (S3, GCS, Azure)
+- Azure OpenAI and MistralAI model providers
+- Prompt caching for Anthropic and Bedrock
+- Workflow termination
+- Session memory interceptor
+- Start eventing from a timestamp (when migrating)
+- Custom OpenTelemetry metrics
+- Service instance shutdown hook
+- TestKit mocking of HTTP and gRPC services
+
+* Akka CLI 3.0.62
+- Project descriptor can now include docker registry config
+
+* Akka Runtime 1.5.48 - 1.5.52
+- TTL-based deletion for entities
+- Object storage support (S3, GCS, Azure)
+- Azure and MistralAI model providers
+- Prompt caching for Anthropic and Bedrock
+- Workflow termination, suspend and resume
+- JWT keys configuration from JWKS
+- OpenTelemetry performance improvements
+- SDK expected runtime version validation
+
+* Akka CLI 3.0.61
+- Maintenance release
+
 == April 2026
+* Akka CLI 3.0.60
+- Fixed an issue with multi-regional project descriptors
+- JWKS configuraiton support
 
 * https://github.com/akka/akka-sdk/releases/tag/v3.5.18[Akka SDK 3.5.18]
 - Automatic expiry for entities

@@ -12,6 +12,7 @@ import akka.javasdk.http.HttpClientProvider;
 import akkajavasdk.components.keyvalueentities.user.ProdCounterEntity;
 import akkajavasdk.protocol.TestGrpcServiceClient;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +21,10 @@ import org.slf4j.LoggerFactory;
 public class Bootstrap implements ServiceSetup {
 
   private static final Logger logger = LoggerFactory.getLogger(Bootstrap.class);
+
+  // Test hook: set by onShutdown so tests can assert the lifecycle callback fired.
+  public static final AtomicBoolean onShutdownCalled = new AtomicBoolean(false);
+
   private final TestGrpcServiceClient eagerlyCreatedGrpcClient;
 
   public Bootstrap(HttpClientProvider httpClientProvider, GrpcClientProvider grpcClientProvider) {
@@ -35,6 +40,12 @@ public class Bootstrap implements ServiceSetup {
   @Override
   public void onStartup() {
     logger.info("Starting Application");
+  }
+
+  @Override
+  public void onShutdown() {
+    logger.info("Stopping Application");
+    onShutdownCalled.set(true);
   }
 
   @Override

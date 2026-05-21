@@ -4,7 +4,7 @@ include::ROOT:partial$include.adoc[]
 
 == Service lifecycle
 
-It is possible to define logic that runs on service instance start up.
+It is possible to define logic that runs on service instance start up and shut down.
 
 This is done by creating a class implementing `akka.javasdk.ServiceSetup` and annotating it with `akka.javasdk.annotations.Setup`.
 Only one such class may exist in the same service.
@@ -17,11 +17,18 @@ include::example$spring-dependency-injection/src/main/java/com/example/Bootstrap
 <1> One annotated implementation of `ServiceSetup`
 <2> A few different objects can be dependency injected, see below
 <3> `onStartup` is invoked at service start, but before the service is completely started up
+<4> `onShutdown` is invoked when the service instance is shutting down, after it has stopped handling requests
 
 
 It is important to remember that an Akka service consists of one to many distributed instances that can be restarted
 individually and independently, for example during a rolling upgrade. Each such instance starting up will invoke
-`onStartup` when starting up, even if other instances run it before.
+`onStartup` when starting up, even if other instances run it before. The same applies to `onShutdown`: it runs on each
+instance as it shuts down, not once for the service as a whole.
+
+`onShutdown` runs after the instance has stopped accepting requests and any in-flight requests have completed,
+which makes it a good place to release resources allocated in the `ServiceSetup` constructor or in `onStartup` —
+for example, closing a connection pool. Exceptions thrown from `onShutdown` are logged but do not block subsequent
+shutdown steps.
 
 == Disabling components
 
@@ -56,6 +63,8 @@ The following types can be injected in all component types:
 | Access the user defined configuration picked up from `application.conf`
 | `akka.javasdk.Sanitizer`
 | Allows for applying sanitization, see xref:sdk:sanitization.adoc[]
+| `io.opentelemetry.api.metrics.Meter`
+| Allows creating custom Open Telemetry metrics, see xref:sdk:metric.adoc[]
 |===
 
 The following types can be injected in Service Setup, HTTP Endpoints, gRPC Endpoints, Agents, Consumers, Timed Actions, and Workflows:
@@ -67,6 +76,8 @@ The following types can be injected in Service Setup, HTTP Endpoints, gRPC Endpo
 
 |`akka.javasdk.client.ComponentClient`
 | For interaction between components, see xref:component-and-service-calls.adoc[]
+| `akka.javasdk.objectstorage.ObjectStorageProvider`
+| For storing and retrieving binary objects in named buckets, see xref:integrations/object-storage.adoc[]
 | `akka.javasdk.http.HttpClientProvider`
 | For creating clients to make calls between Akka services and also to other HTTP servers, see xref:component-and-service-calls.adoc[]
 | `akka.javasdk.grpc.GrpcClientProvider`

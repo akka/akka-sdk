@@ -32,6 +32,7 @@ The `akka projects config get _resource_` command displays the configuration for
 
 * link:akka_projects_config.html[akka projects config]	 - Manage project configs.
 * link:akka_projects_config_get_broker.html[akka projects config get broker]	 - Display broker configuration.
+* link:akka_projects_config_get_object-storage.html[akka projects config get object-storage]	 - Display object-storage configuration.
 
 [discrete]
 

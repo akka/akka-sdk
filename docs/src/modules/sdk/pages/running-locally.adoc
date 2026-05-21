@@ -91,6 +91,15 @@ mvn compile exec:java -Dakka.javasdk.dev-mode.persistence.enabled=true
 
 To clean the local database look for `db.mv.db` file in the root of your project and delete it.
 
+The path of the database file can be changed by passing the `akka.persistence.r2dbc.connection-factory.database` system property when starting the service. H2 appends `.mv.db` to the configured value, so the following produces `./target/my-service-db.mv.db`:
+
+[source, command line]
+----
+mvn compile exec:java -Dakka.javasdk.dev-mode.persistence.enabled=true -Dakka.persistence.r2dbc.connection-factory.database=./target/my-service-db
+----
+
+NOTE: This must be set as a system property — the runtime does not read it from your service's `application.conf`.
+
 [#_local_broker_support]
 == Running a service with broker support
 
@@ -104,6 +113,8 @@ mvn compile exec:java -Dakka.javasdk.dev-mode.eventing.support=kafka
 For Google PubSub Emulator, use `akka.javasdk.dev-mode.eventing.support=google-pubsub-emulator`.
 
 NOTE: For Kafka, the local Kafka broker is expected to be available on `localhost:9092`. For Google PubSub, the emulator is expected to be available on `localhost:8085`.
+
+For a deeper walkthrough — `docker-compose.yml` snippets, alternate hosts, authentication for Kafka, and Pub/Sub emulator setup — see xref:sdk:running-with-broker.adoc[Running locally with a message broker].
 
 [#multiple_services]
 == Running multiple services locally

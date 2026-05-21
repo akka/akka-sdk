@@ -5,6 +5,7 @@
 package akka.javasdk.impl.client
 
 import java.lang.reflect.Method
+import java.util.concurrent.CompletionStage
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -13,6 +14,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
+import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.japi.function
@@ -29,6 +31,7 @@ import akka.javasdk.client.TimedActionClient
 import akka.javasdk.client.WorkflowClient
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.ComponentDescriptorFactory
+import akka.javasdk.impl.ErrorHandling.unwrapExecutionExceptionCatcher
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.Serializer
@@ -46,6 +49,7 @@ import akka.runtime.sdk.spi.TimedActionType
 import akka.runtime.sdk.spi.WorkflowType
 import akka.runtime.sdk.spi.{ EntityClient => RuntimeEntityClient }
 import akka.runtime.sdk.spi.{ TimedActionClient => RuntimeTimedActionClient }
+import akka.runtime.sdk.spi.{ WorkflowClient => RuntimeWorkflowClient }
 
 /**
  * INTERNAL API
@@ -228,11 +232,11 @@ private[javasdk] final case class EventSourcedEntityClientImpl(
  */
 @InternalApi
 private[javasdk] final case class WorkflowClientImpl(
-    entityClient: RuntimeEntityClient,
+    workflowClient: RuntimeWorkflowClient,
     serializer: Serializer,
     callMetadata: Option[Metadata],
     entityId: String)(implicit val executionContext: ExecutionContext, system: ActorSystem[_])
-    extends EntityClientImpl(classOf[Workflow[_]], WorkflowType, entityClient, serializer, callMetadata, entityId)
+    extends EntityClientImpl(classOf[Workflow[_]], WorkflowType, workflowClient, serializer, callMetadata, entityId)
     with WorkflowClient {
 
   override def method[T, R](methodRef: function.Function[T, Workflow.Effect[R]]): ComponentMethodRef[R] =
@@ -253,10 +257,69 @@ private[javasdk] final case class WorkflowClientImpl(
     val returnType = Reflect.getReturnType(declaringClass, method)
     val req = new EntityRequest(componentId, entityId, "", BytesPayload.empty, SpiMetadata.empty)
     () =>
-      entityClient
+      workflowClient
         .notificationStream(req)
         .map(reply => serializer.fromBytes[R](returnType, reply.payload))
         .asJava
+  }
+
+  override def terminate(workflowClass: Class[_ <: Workflow[_]]): Done =
+    terminate(workflowClass, None)
+
+  override def terminate(workflowClass: Class[_ <: Workflow[_]], reason: String): Done =
+    terminate(workflowClass, Option(reason))
+
+  private def terminate(workflowClass: Class[_ <: Workflow[_]], reasonOpt: Option[String]): Done =
+    try {
+      terminateAsync(workflowClass, reasonOpt).toCompletableFuture.get()
+    } catch unwrapExecutionExceptionCatcher
+
+  override def terminateAsync(workflowClass: Class[_ <: Workflow[_]]): CompletionStage[Done] =
+    terminateAsync(workflowClass, None)
+
+  override def terminateAsync(workflowClass: Class[_ <: Workflow[_]], reason: String): CompletionStage[Done] =
+    terminateAsync(workflowClass, Option(reason))
+
+  private def terminateAsync(
+      workflowClass: Class[_ <: Workflow[_]],
+      reasonOpt: Option[String]): CompletionStage[Done] = {
+    if (workflowClass eq null) throw new NullPointerException("workflowClass is null")
+    val componentId = ComponentDescriptorFactory.readComponentIdValue(workflowClass)
+    workflowClient.terminate(componentId, entityId, reasonOpt).asJava
+  }
+
+  override def suspend(workflowClass: Class[_ <: Workflow[_]]): Done =
+    suspend(workflowClass, None)
+
+  override def suspend(workflowClass: Class[_ <: Workflow[_]], reason: String): Done =
+    suspend(workflowClass, Option(reason))
+
+  def suspend(workflowClass: Class[_ <: Workflow[_]], reasonOpt: Option[String]): Done =
+    try {
+      suspendAsync(workflowClass, reasonOpt).toCompletableFuture.get()
+    } catch unwrapExecutionExceptionCatcher
+
+  override def suspendAsync(workflowClass: Class[_ <: Workflow[_]]): CompletionStage[Done] =
+    suspendAsync(workflowClass, None)
+
+  override def suspendAsync(workflowClass: Class[_ <: Workflow[_]], reason: String): CompletionStage[Done] =
+    suspendAsync(workflowClass, Option(reason))
+
+  private def suspendAsync(workflowClass: Class[_ <: Workflow[_]], reasonOpt: Option[String]): CompletionStage[Done] = {
+    if (workflowClass eq null) throw new NullPointerException("workflowClass is null")
+    val componentId = ComponentDescriptorFactory.readComponentIdValue(workflowClass)
+    workflowClient.suspend(componentId, entityId, reasonOpt).asJava
+  }
+
+  override def resume(workflowClass: Class[_ <: Workflow[_]]): Done =
+    try {
+      resumeAsync(workflowClass).toCompletableFuture.get()
+    } catch unwrapExecutionExceptionCatcher
+
+  override def resumeAsync(workflowClass: Class[_ <: Workflow[_]]): CompletionStage[Done] = {
+    if (workflowClass eq null) throw new NullPointerException("workflowClass is null")
+    val componentId = ComponentDescriptorFactory.readComponentIdValue(workflowClass)
+    workflowClient.resume(componentId, entityId).asJava
   }
 }
 

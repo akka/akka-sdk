@@ -64,6 +64,10 @@ class ViewSchemaSpec extends AnyWordSpec with Matchers {
       }
     }
 
+    "map google.protobuf.Timestamp to SpiTimestamp" in {
+      ViewSchema(classOf[com.google.protobuf.Timestamp]) shouldBe SpiTimestamp
+    }
+
     "handle self referencing type trees" in {
       val result = ViewSchema(classOf[ViewTestModels.Recursive])
       result shouldBe a[SpiClass]

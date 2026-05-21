@@ -10,6 +10,7 @@ import akka.actor.typed.ActorSystem;
 import akka.grpc.javadsl.AkkaGrpcClient;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.model.HttpRequest;
+import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.Metadata;
 import akka.javasdk.Principal;
@@ -22,6 +23,7 @@ import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
+import akka.javasdk.grpc.GrpcClientProvider;
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.http.HttpClientProvider;
 import akka.javasdk.impl.ErrorHandling;
@@ -34,13 +36,27 @@ import akka.javasdk.impl.serialization.Serializer;
 import akka.javasdk.impl.timer.TimerSchedulerImpl;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
+import akka.javasdk.testkit.impl.MockedGrpcServicesImpl;
+import akka.javasdk.testkit.impl.MockedHttpServicesImpl;
 import akka.javasdk.testkit.impl.SseRouteTesterImpl;
 import akka.javasdk.testkit.impl.WebSocketRouteTesterImpl;
 import akka.javasdk.timer.TimerScheduler;
 import akka.javasdk.workflow.Workflow;
 import akka.pattern.Patterns;
 import akka.runtime.sdk.spi.ComponentClients;
+import akka.runtime.sdk.spi.SpiBackofficeSettings$;
 import akka.runtime.sdk.spi.SpiDevModeSettings;
+import akka.runtime.sdk.spi.SpiDevObjectStorageBucketConfig;
+import akka.runtime.sdk.spi.SpiDevObjectStorageFilesystemBucketConfig;
+import akka.runtime.sdk.spi.SpiDevObjectStorageGcsBucketConfig;
+import akka.runtime.sdk.spi.SpiDevObjectStorageGcsCredentials;
+import akka.runtime.sdk.spi.SpiDevObjectStorageGcsNativeCredentials$;
+import akka.runtime.sdk.spi.SpiDevObjectStorageGcsServiceAccountKeyCredentials;
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3BucketConfig;
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3Credentials;
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3NativeCredentials$;
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3ProfileCredentials;
+import akka.runtime.sdk.spi.SpiDevObjectStorageS3StaticCredentials;
 import akka.runtime.sdk.spi.SpiEventingSupportSettings;
 import akka.runtime.sdk.spi.SpiMockedEventingSettings;
 import akka.runtime.sdk.spi.SpiSettings;
@@ -52,8 +68,11 @@ import com.typesafe.config.ConfigFactory;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -63,6 +82,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import kalix.runtime.AkkaRuntimeMain;
 import kalix.runtime.telemetry.Telemetry;
@@ -134,6 +154,12 @@ public class TestKit {
     public MockedEventing withTopicOutgoingMessages(String topic) {
       Map<String, Set<String>> copy = new HashMap<>(mockedOutgoingEvents);
       copy.compute(TOPIC, updateValues(topic));
+      return new MockedEventing(new HashMap<>(mockedIncomingEvents), copy);
+    }
+
+    public MockedEventing withStreamOutgoingMessages(String service, String streamId) {
+      Map<String, Set<String>> copy = new HashMap<>(mockedOutgoingEvents);
+      copy.compute(STREAM, updateValues(service + "/" + streamId));
       return new MockedEventing(new HashMap<>(mockedIncomingEvents), copy);
     }
 
@@ -217,6 +243,11 @@ public class TestKit {
       return values != null && values.contains(topic);
     }
 
+    boolean hasStreamDestination(String service, String streamId) {
+      Set<String> values = mockedOutgoingEvents.get(STREAM);
+      return values != null && values.contains(service + "/" + streamId);
+    }
+
     private boolean checkExistence(String type, String name) {
       Set<String> values = mockedIncomingEvents.get(type);
       return values != null && values.contains(name);
@@ -236,7 +267,10 @@ public class TestKit {
             ConfigFactory.empty(),
             Set.of(),
             false,
-            new HashMap<>());
+            new HashMap<>(),
+            new HashMap<>(),
+            new HashMap<>(),
+            Collections.emptyList());
 
     /** The name of this service when deployed. */
     public final String serviceName;
@@ -261,6 +295,20 @@ public class TestKit {
     public final boolean overrideDisabledComponents;
 
     public final Map<String, ModelProvider> modelProvidersByAgentId;
+
+    /**
+     * Map from service name to a synchronous HTTP request handler that mocks responses for that
+     * service.
+     */
+    public final Map<String, Function<HttpRequest, HttpResponse>> httpMocks;
+
+    /**
+     * Map from service name to a map of gRPC service client class -> mock instance, used to mock
+     * gRPC service calls for the given service name.
+     */
+    public final Map<String, Map<Class<? extends AkkaGrpcClient>, AkkaGrpcClient>> grpcMocks;
+
+    public final List<ObjectStorageBucketConfig> objectStorageBuckets;
 
     public enum EventingSupport {
       /**
@@ -293,7 +341,10 @@ public class TestKit {
         Config additionalConfig,
         Set<Class<?>> disabledComponents,
         boolean overrideDisabledComponents,
-        Map<String, ModelProvider> modelProvidersByAgentId) {
+        Map<String, ModelProvider> modelProvidersByAgentId,
+        Map<String, Function<HttpRequest, HttpResponse>> httpMocks,
+        Map<String, Map<Class<? extends AkkaGrpcClient>, AkkaGrpcClient>> grpcMocks,
+        List<ObjectStorageBucketConfig> objectStorageBuckets) {
       this.serviceName = serviceName;
       this.aclEnabled = aclEnabled;
       this.eventingSupport = eventingSupport;
@@ -303,6 +354,9 @@ public class TestKit {
       this.disabledComponents = disabledComponents;
       this.overrideDisabledComponents = overrideDisabledComponents;
       this.modelProvidersByAgentId = modelProvidersByAgentId;
+      this.httpMocks = httpMocks;
+      this.grpcMocks = grpcMocks;
+      this.objectStorageBuckets = objectStorageBuckets;
     }
 
     /**
@@ -324,7 +378,10 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpMocks,
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     /**
@@ -342,7 +399,10 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpMocks,
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     /**
@@ -360,7 +420,10 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpMocks,
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     /**
@@ -379,7 +442,10 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpMocks,
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     public Settings withKeyValueEntityIncomingMessages(
@@ -404,7 +470,10 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpMocks,
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     public Settings withEventSourcedEntityIncomingMessages(
@@ -429,7 +498,10 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpMocks,
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     public Settings withWorkflowIncomingMessages(Class<? extends Workflow<?>> workflowClass) {
@@ -450,7 +522,10 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpMocks,
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     /** Mock the incoming events flow from a Topic. */
@@ -464,7 +539,10 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpMocks,
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     /** Mock the outgoing events flow for a Topic. */
@@ -478,7 +556,30 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpMocks,
+          grpcMocks,
+          objectStorageBuckets);
+    }
+
+    /**
+     * Capture the outgoing messages produced by a {@code @Produce.ServiceStream} for test
+     * assertions.
+     */
+    public Settings withStreamOutgoingMessages(String service, String streamId) {
+      return new Settings(
+          serviceName,
+          aclEnabled,
+          eventingSupport,
+          mockedEventing.withStreamOutgoingMessages(service, streamId),
+          dependencyProvider,
+          additionalConfig,
+          disabledComponents,
+          overrideDisabledComponents,
+          modelProvidersByAgentId,
+          httpMocks,
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     public Settings withEventingSupport(EventingSupport eventingSupport) {
@@ -491,7 +592,10 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpMocks,
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     /**
@@ -508,7 +612,10 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpMocks,
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     /**
@@ -533,7 +640,10 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpMocks,
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     /**
@@ -550,7 +660,10 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpMocks,
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     /**
@@ -568,7 +681,10 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           true,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpMocks,
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     /**
@@ -588,7 +704,10 @@ public class TestKit {
           additionalConfig,
           Set.of(),
           true,
-          modelProvidersByAgentId);
+          modelProvidersByAgentId,
+          httpMocks,
+          grpcMocks,
+          objectStorageBuckets);
     }
 
     public Settings withModelProvider(
@@ -605,7 +724,112 @@ public class TestKit {
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
-          newModelProvidersByAgentId);
+          newModelProvidersByAgentId,
+          httpMocks,
+          grpcMocks,
+          objectStorageBuckets);
+    }
+
+    /**
+     * Mock an HTTP service for calls made through {@link HttpClientProvider#httpClientFor(String)}
+     * with the given service name. The handler runs synchronously on the SDK dispatcher (virtual
+     * threads), so blocking in the handler is safe. Calls for service names that are not mocked
+     * continue to go through normal resolution.
+     *
+     * <p>Handler invocations can overlap when the service under test issues concurrent requests, so
+     * any state shared between the handler and the test class (captured fields, counters, queues)
+     * must be thread-safe.
+     *
+     * @param mockServiceName The service name (or full URL) that the service under test will pass
+     *     to {@link HttpClientProvider#httpClientFor(String)}.
+     * @param handler A function that maps an incoming {@link HttpRequest} to the {@link
+     *     HttpResponse} the mock should return.
+     * @return The updated settings.
+     */
+    public Settings withMockedHttpService(
+        String mockServiceName, Function<HttpRequest, HttpResponse> handler) {
+      var newHttpMocks = new HashMap<>(httpMocks);
+      newHttpMocks.put(mockServiceName, handler);
+      return new Settings(
+          serviceName,
+          aclEnabled,
+          eventingSupport,
+          mockedEventing,
+          dependencyProvider,
+          additionalConfig,
+          disabledComponents,
+          overrideDisabledComponents,
+          modelProvidersByAgentId,
+          newHttpMocks,
+          grpcMocks,
+          objectStorageBuckets);
+    }
+
+    /**
+     * Add a named object-storage bucket for use in dev mode / integration tests. When any bucket is
+     * configured, only the named buckets are accessible (same as production).
+     *
+     * @param bucket the bucket configuration
+     * @return The updated settings.
+     */
+    public Settings withObjectStorageBucket(ObjectStorageBucketConfig bucket) {
+      var newBuckets = new ArrayList<>(objectStorageBuckets);
+      newBuckets.add(bucket);
+      return new Settings(
+          serviceName,
+          aclEnabled,
+          eventingSupport,
+          mockedEventing,
+          dependencyProvider,
+          additionalConfig,
+          disabledComponents,
+          overrideDisabledComponents,
+          modelProvidersByAgentId,
+          httpMocks,
+          grpcMocks,
+          newBuckets);
+    }
+
+    /**
+     * Mock a gRPC service for calls made through {@link
+     * akka.javasdk.grpc.GrpcClientProvider#grpcClientFor(Class, String)} with the given service
+     * name and generated service client interface. The mock is a user-provided instance of the
+     * generated Akka gRPC client interface. Calls for service-class/name combinations that are not
+     * mocked continue to go through normal resolution.
+     *
+     * <p>The mock instance is shared across calls and method invocations can overlap when the
+     * service under test issues concurrent requests, so any state shared between the mock and the
+     * test class (captured fields, counters, queues) must be thread-safe.
+     *
+     * @param mockServiceName The service name that the service under test will pass to {@link
+     *     akka.javasdk.grpc.GrpcClientProvider#grpcClientFor(Class, String)}.
+     * @param serviceClass The Akka gRPC generated client interface.
+     * @param mockInstance A user-provided implementation of the generated client interface.
+     * @return The updated settings.
+     */
+    public <T extends AkkaGrpcClient> Settings withMockedGrpcService(
+        String mockServiceName, Class<T> serviceClass, T mockInstance) {
+      var newGrpcMocks =
+          new HashMap<String, Map<Class<? extends AkkaGrpcClient>, AkkaGrpcClient>>();
+      grpcMocks.forEach(
+          (k, v) ->
+              newGrpcMocks.put(k, new HashMap<Class<? extends AkkaGrpcClient>, AkkaGrpcClient>(v)));
+      newGrpcMocks
+          .computeIfAbsent(mockServiceName, k -> new HashMap<>())
+          .put(serviceClass, mockInstance);
+      return new Settings(
+          serviceName,
+          aclEnabled,
+          eventingSupport,
+          mockedEventing,
+          dependencyProvider,
+          additionalConfig,
+          disabledComponents,
+          overrideDisabledComponents,
+          modelProvidersByAgentId,
+          httpMocks,
+          newGrpcMocks,
+          objectStorageBuckets);
     }
 
     @Override
@@ -639,6 +863,8 @@ public class TestKit {
   private ComponentClient componentClient;
   private HttpClientProvider httpClientProvider;
   private GrpcClientProviderImpl grpcClientProvider;
+  private MockedHttpServicesImpl mockedHttpServices;
+  private MockedGrpcServicesImpl mockedGrpcServices;
   private HttpClient selfHttpClient;
   private TimerScheduler timerScheduler;
   private Optional<DependencyProvider> dependencyProvider;
@@ -688,8 +914,15 @@ public class TestKit {
       // actual message codec instance not available until runtime/sdk started, thus this is called
       // after discovery happens
       eventingTestKit =
-          EventingTestKit.start(
-              runtimeActorSystem, "0.0.0.0", eventingTestKitPort, new Serializer());
+          akka.javasdk.testkit.impl.EventingTestKitImpl.start(
+              runtimeActorSystem,
+              "0.0.0.0",
+              eventingTestKitPort,
+              scala.Option.apply(runtimeHost),
+              scala.Option.apply((Integer) runtimePort),
+              scala.Option.apply("impersonate-service"),
+              scala.Option.apply("testkit"),
+              new Serializer());
     }
   }
 
@@ -698,11 +931,15 @@ public class TestKit {
       log.debug("Config from user: {}", config);
       runtimeHost = "localhost";
 
+      mockedHttpServices = new MockedHttpServicesImpl(settings.httpMocks);
+      mockedGrpcServices = new MockedGrpcServicesImpl(settings.grpcMocks);
       SdkRunner runner =
           new SdkRunner(
               settings.dependencyProvider,
               settings.disabledComponents,
-              settings.overrideDisabledComponents) {
+              settings.overrideDisabledComponents,
+              name -> mockedHttpServices.lookup(name),
+              key -> mockedGrpcServices.lookup(key)) {
             @Override
             public Config applicationConfig() {
               var userConfig = config.withFallback(super.applicationConfig());
@@ -750,6 +987,12 @@ public class TestKit {
                     "dev-mode must be enabled"); // it's set from overridden applicationConfig
               // method
 
+              scala.collection.immutable.List<SpiDevObjectStorageBucketConfig>
+                  spiObjectStorageBuckets =
+                      scala.jdk.javaapi.CollectionConverters.asScala(
+                              toSpiObjectStorageBuckets(settings.objectStorageBuckets))
+                          .toList();
+
               SpiDevModeSettings devModeSettings =
                   new SpiDevModeSettings(
                       runtimePort,
@@ -759,7 +1002,9 @@ public class TestKit {
                       eventingSettings,
                       mockedEventingSettings,
                       new SpiTestSettings(true, true),
-                      Some.apply(serviceName));
+                      Some.apply(serviceName),
+                      SpiBackofficeSettings$.MODULE$.empty(),
+                      spiObjectStorageBuckets);
 
               return s.withDevMode(devModeSettings);
             }
@@ -942,6 +1187,34 @@ public class TestKit {
   }
 
   /**
+   * Get a {@link GrpcClientProvider} for looking up gRPC clients to interact with services other
+   * than the current. Requests will appear as coming from this service from an ACL perspective.
+   */
+  public GrpcClientProvider getGrpcClientProvider() {
+    return grpcClientProvider;
+  }
+
+  /**
+   * Registry for managing HTTP service mocks on the running testkit. Lets individual tests install
+   * or replace handlers without re-creating the testkit; call {@link MockedHttpServices#reset()} in
+   * an {@code @AfterEach} to restore the mocks declared via {@link
+   * Settings#withMockedHttpService(String, java.util.function.Function)}.
+   */
+  public MockedHttpServices getMockedHttpServices() {
+    return mockedHttpServices;
+  }
+
+  /**
+   * Registry for managing gRPC service mocks on the running testkit. Lets individual tests install
+   * or replace mock instances without re-creating the testkit; call {@link
+   * MockedGrpcServices#reset()} in an {@code @AfterEach} to restore the mocks declared via {@link
+   * Settings#withMockedGrpcService(String, Class, AkkaGrpcClient)}.
+   */
+  public MockedGrpcServices getMockedGrpcServices() {
+    return mockedGrpcServices;
+  }
+
+  /**
    * Get a gRPC client for an endpoint provided by this service. Requests will appear as coming from
    * this service itself from an ACL perspective.
    *
@@ -1043,6 +1316,49 @@ public class TestKit {
       Class<? extends EventSourcedEntity<?, ?>> eventSourcedEntityClass) {
     String componentId = getComponentId(eventSourcedEntityClass);
     return getEventSourcedEntityIncomingMessages(componentId);
+  }
+
+  private static List<SpiDevObjectStorageBucketConfig> toSpiObjectStorageBuckets(
+      List<ObjectStorageBucketConfig> buckets) {
+    List<SpiDevObjectStorageBucketConfig> result = new ArrayList<>(buckets.size());
+    for (ObjectStorageBucketConfig bucket : buckets) {
+      if (bucket instanceof ObjectStorageBucketConfig.Impl.Filesystem) {
+        ObjectStorageBucketConfig.Impl.Filesystem fs =
+            (ObjectStorageBucketConfig.Impl.Filesystem) bucket;
+        scala.Option<String> scalaDir = scala.Option.apply(fs.directory.orElse(null));
+        result.add(new SpiDevObjectStorageFilesystemBucketConfig(fs.name, scalaDir));
+      } else if (bucket instanceof ObjectStorageBucketConfig.Impl.S3) {
+        ObjectStorageBucketConfig.Impl.S3 s3 = (ObjectStorageBucketConfig.Impl.S3) bucket;
+        SpiDevObjectStorageS3Credentials creds;
+        if (s3.credentials instanceof ObjectStorageBucketConfig.S3StaticCredentials) {
+          ObjectStorageBucketConfig.S3StaticCredentials sc =
+              (ObjectStorageBucketConfig.S3StaticCredentials) s3.credentials;
+          creds = new SpiDevObjectStorageS3StaticCredentials(sc.accessKeyId, sc.secretAccessKey);
+        } else if (s3.credentials instanceof ObjectStorageBucketConfig.S3ProfileCredentials) {
+          ObjectStorageBucketConfig.S3ProfileCredentials pc =
+              (ObjectStorageBucketConfig.S3ProfileCredentials) s3.credentials;
+          creds = new SpiDevObjectStorageS3ProfileCredentials(pc.profileName);
+        } else {
+          creds = SpiDevObjectStorageS3NativeCredentials$.MODULE$;
+        }
+        result.add(new SpiDevObjectStorageS3BucketConfig(s3.name, s3.bucket, s3.region, creds));
+      } else if (bucket instanceof ObjectStorageBucketConfig.Impl.Gcs) {
+        ObjectStorageBucketConfig.Impl.Gcs gcs = (ObjectStorageBucketConfig.Impl.Gcs) bucket;
+        SpiDevObjectStorageGcsCredentials creds;
+        if (gcs.credentials instanceof ObjectStorageBucketConfig.GcsServiceAccountKeyCredentials) {
+          ObjectStorageBucketConfig.GcsServiceAccountKeyCredentials sak =
+              (ObjectStorageBucketConfig.GcsServiceAccountKeyCredentials) gcs.credentials;
+          creds = new SpiDevObjectStorageGcsServiceAccountKeyCredentials(sak.path);
+        } else {
+          creds = SpiDevObjectStorageGcsNativeCredentials$.MODULE$;
+        }
+        result.add(new SpiDevObjectStorageGcsBucketConfig(gcs.name, gcs.bucket, creds));
+      } else {
+        throw new IllegalArgumentException(
+            "Unknown ObjectStorageBucketConfig type: " + bucket.getClass());
+      }
+    }
+    return result;
   }
 
   @SuppressWarnings("deprecation")
@@ -1155,6 +1471,31 @@ public class TestKit {
       throwMissingConfigurationException("Topic " + topic);
     }
     return eventingTestKit.getTopicOutgoingMessages(topic);
+  }
+
+  /**
+   * Get outgoing messages produced by a {@code @Produce.ServiceStream} producer in the service
+   * under test. The {@code service} must match the service name used by consumers in their
+   * {@code @Consume.FromServiceStream} annotation.
+   *
+   * <p>Note: the {@code service} value is used by the testkit as a lookup key (and must match what
+   * was registered via {@link Settings#withStreamOutgoingMessages(String, String)}); the underlying
+   * subscription itself is resolved against the service-under-test by {@code streamId}.
+   *
+   * <p>Each call returns a handle whose subscription replays events from the beginning of the
+   * stream. In a suite that shares a single {@code TestKit} across multiple tests, call {@link
+   * EventingTestKit.OutgoingMessages#clear()} at the start of each test to drop events produced by
+   * prior tests.
+   *
+   * @param service service name
+   * @param streamId service stream id
+   */
+  public EventingTestKit.OutgoingMessages getStreamOutgoingMessages(
+      String service, String streamId) {
+    if (!settings.mockedEventing.hasStreamDestination(service, streamId)) {
+      throwMissingConfigurationException("Stream " + service + "/" + streamId);
+    }
+    return eventingTestKit.getStreamOutgoingMessages(service, streamId);
   }
 
   private void throwMissingConfigurationException(String hint) {
