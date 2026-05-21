@@ -11,7 +11,6 @@ import java.util.Optional
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.jdk.CollectionConverters._
 import scala.jdk.OptionConverters.RichOption
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
@@ -53,7 +52,6 @@ import akka.runtime.sdk.spi.MethodOptions
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaArray
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaBoolean
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaDataType
-import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaEnum
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaInteger
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaNumber
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
@@ -82,23 +80,15 @@ object McpEndpointDescriptorFactory {
       { (parser, _) =>
         val node = parser.readValueAsTree[JsonNode]()
         if (node.has("type")) {
-          val typeText = node.get("type").asText()
-          val hasEnumArray = node.has("enum") && node.get("enum").isArray
-          if (typeText == "string" && hasEnumArray) {
-            val desc = Option(node.get("description")).map(_.asText())
-            val values = node.get("enum").elements().asScala.toSeq.map(_.asText())
-            new JsonSchemaEnum(values, desc)
-          } else {
-            val nodeType = typeText match {
-              case "string"  => classOf[JsonSchemaString]
-              case "boolean" => classOf[JsonSchemaBoolean]
-              case "integer" => classOf[JsonSchemaInteger]
-              case "number"  => classOf[JsonSchemaNumber]
-              case "array"   => classOf[JsonSchemaArray]
-              case "object"  => classOf[JsonSchemaObject]
-            }
-            parser.getCodec.treeToValue(node, nodeType)
+          val nodeType = node.get("type").asText() match {
+            case "string"  => classOf[JsonSchemaString]
+            case "boolean" => classOf[JsonSchemaBoolean]
+            case "integer" => classOf[JsonSchemaInteger]
+            case "number"  => classOf[JsonSchemaNumber]
+            case "array"   => classOf[JsonSchemaArray]
+            case "object"  => classOf[JsonSchemaObject]
           }
+          parser.getCodec.treeToValue(node, nodeType)
         } else {
           throw new JsonMappingException(parser, s"Schema is missing a type [${node.toPrettyString}]")
         }
