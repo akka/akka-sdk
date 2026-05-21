@@ -134,9 +134,11 @@ private[impl] object AgentImpl {
         case "hugging-face"    => ModelProvider.HuggingFace.fromConfig(providerConfig)
         case "ollama"          => ModelProvider.Ollama.fromConfig(providerConfig)
         case "openai"          => ModelProvider.OpenAi.fromConfig(providerConfig)
+        case "azure-openai"    => ModelProvider.AzureOpenAi.fromConfig(providerConfig)
         case "local-ai"        => ModelProvider.LocalAI.fromConfig(providerConfig)
         case "bedrock"         => ModelProvider.Bedrock.fromConfig(providerConfig)
         case "vertex-ai"       => ModelProvider.VertexAi.fromConfig(providerConfig)
+        case "mistral-ai"      => ModelProvider.MistralAi.fromConfig(providerConfig)
         case fqcn if isFqcn(fqcn) =>
           instantiateCustomProvider(fqcn, providerConfig, resolvedConfigPath)
         case other =>
@@ -258,6 +260,26 @@ private[impl] object AgentImpl {
             p.maxRetries(),
             p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq),
           thinking = p.thinking)
+      case p: ModelProvider.AzureOpenAi =>
+        new SpiAgent.ModelProvider.AzureOpenAi(
+          endpoint = p.endpoint,
+          deploymentName = p.deploymentName,
+          apiKey = p.apiKey,
+          temperature = p.temperature,
+          topP = p.topP,
+          maxTokens = p.maxTokens,
+          maxCompletionTokens = p.maxCompletionTokens,
+          frequencyPenalty = p.frequencyPenalty,
+          presencePenalty = p.presencePenalty,
+          seed = p.seed,
+          stop = p.stop.asScala.toList,
+          reasoningEffort = p.reasoningEffort,
+          serviceVersion = p.serviceVersion,
+          new SpiAgent.ModelSettings(
+            p.connectionTimeout().toScala,
+            p.responseTimeout().toScala,
+            p.maxRetries(),
+            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq))
       case p: ModelProvider.VertexAi =>
         new SpiAgent.ModelProvider.VertexAi(
           modelName = p.modelName,
@@ -305,6 +327,25 @@ private[impl] object AgentImpl {
             case ModelProvider.BedrockPromptCachePlacement.AFTER_TOOLS =>
               SpiAgent.ModelProvider.BedrockPromptCachePlacement.AfterTools
           })
+      case p: ModelProvider.MistralAi =>
+        new SpiAgent.ModelProvider.MistralAi(
+          apiKey = p.apiKey,
+          modelName = p.modelName,
+          baseUrl = p.baseUrl,
+          temperature = p.temperature,
+          topP = p.topP,
+          maxTokens = p.maxTokens,
+          safePrompt = p.safePrompt,
+          randomSeed = p.randomSeed,
+          frequencyPenalty = p.frequencyPenalty,
+          presencePenalty = p.presencePenalty,
+          stopSequences = p.stopSequences.asScala.toList,
+          thinking = p.thinking,
+          modelSettings = new SpiAgent.ModelSettings(
+            p.connectionTimeout().toScala,
+            p.responseTimeout().toScala,
+            p.maxRetries(),
+            p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq))
     }
   }
 
@@ -372,11 +413,11 @@ private[impl] object AgentImpl {
         new SpiAgent.TextMessageContent(content.text())
       case content: MessageContent.ImageUrlMessageContent =>
         new SpiAgent.ImageUriMessageContent(
-          content.url().toURI,
+          content.uri,
           toSpiDetailLevel(content.detailLevel()),
           content.mimeType().toScala)
       case content: MessageContent.PdfUrlMessageContent =>
-        new SpiAgent.PdfUriMessageContent(content.url().toURI)
+        new SpiAgent.PdfUriMessageContent(content.uri)
     }
 
   private[agent] def fromSpiMessageContent(mc: SpiAgent.MessageContent): MessageContent = mc match {
@@ -640,9 +681,9 @@ private[impl] final class AgentImpl(
             val detailLevel = fromSpiDetailLevel(content.detailLevel)
             val mimeType =
               content.mimeType.map(java.util.Optional.of[String]).getOrElse(java.util.Optional.empty[String]())
-            new MessageContent.ImageUrlMessageContent(content.uri.toURL, detailLevel, mimeType)
+            new MessageContent.ImageUrlMessageContent(content.uri, detailLevel, mimeType)
           case content: SpiAgent.PdfUriMessageContent =>
-            new PdfUrlMessageContent(content.uri.toURL)
+            new PdfUrlMessageContent(content.uri)
         }
     }
 
@@ -671,6 +712,10 @@ private[impl] final class AgentImpl(
           else
             p.configPath()
         new SessionMemoryClient(componentClient(telemetryContext), config.getConfig(actualPath))
+
+      case p: MemoryProvider.InterceptedMemoryProvider =>
+        val inner = deriveMemoryClient(p.delegate, telemetryContext)
+        new InterceptingSessionMemory(inner, p.interceptor)
     }
   }
 
@@ -726,11 +771,11 @@ private[impl] final class AgentImpl(
         new SessionMessage.MessageContent.TextMessageContent(content.text)
       case content: ImageUrlMessageContent =>
         new SessionMessage.MessageContent.ImageUriMessageContent(
-          content.url().toString,
+          content.uri().toString,
           content.detailLevel(),
           content.mimeType())
       case content: PdfUrlMessageContent =>
-        new SessionMessage.MessageContent.PdfUriMessageContent(content.url().toString)
+        new SessionMessage.MessageContent.PdfUriMessageContent(content.uri().toString)
     }
   }
 

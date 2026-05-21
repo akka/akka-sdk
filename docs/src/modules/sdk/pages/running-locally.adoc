@@ -114,6 +114,8 @@ For Google PubSub Emulator, use `akka.javasdk.dev-mode.eventing.support=google-p
 
 NOTE: For Kafka, the local Kafka broker is expected to be available on `localhost:9092`. For Google PubSub, the emulator is expected to be available on `localhost:8085`.
 
+For a deeper walkthrough — `docker-compose.yml` snippets, alternate hosts, authentication for Kafka, and Pub/Sub emulator setup — see xref:sdk:running-with-broker.adoc[Running locally with a message broker].
+
 [#multiple_services]
 == Running multiple services locally
 

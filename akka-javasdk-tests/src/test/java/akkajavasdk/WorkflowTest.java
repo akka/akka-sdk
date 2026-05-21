@@ -4,10 +4,13 @@
 
 package akkajavasdk;
 
+import static akka.Done.done;
 import static akkajavasdk.components.workflowentities.TransferConsumer.TRANSFER_CONSUMER_STORE;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
+import akka.Done;
 import akka.actor.testkit.typed.javadsl.LoggingTestKit;
 import akka.javasdk.CommandException;
 import akka.javasdk.testkit.TestKitSupport;
@@ -48,6 +51,211 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith(Junit5LogCapturing.class)
 public class WorkflowTest extends TestKitSupport {
+
+  @Test
+  public void shouldTerminateNotStartedWorkflow() {
+    var workflowId = randomId();
+
+    Done done = componentClient.forWorkflow(workflowId).terminate(DummyWorkflow.class);
+    assertThat(done).isEqualTo(done());
+
+    assertThatIllegalArgumentException()
+        .isThrownBy(
+            () -> componentClient.forWorkflow(workflowId).method(DummyWorkflow::update).invoke())
+        .withMessageContaining("Transition not allowed");
+  }
+
+  @Test
+  public void shouldTerminateAsync() throws Exception {
+    var workflowId = randomId();
+
+    componentClient.forWorkflow(workflowId).method(DummyWorkflow::update).invoke();
+    Done done =
+        componentClient
+            .forWorkflow(workflowId)
+            .terminateAsync(DummyWorkflow.class)
+            .toCompletableFuture()
+            .get(10, TimeUnit.SECONDS);
+    assertThat(done).isEqualTo(done());
+    assertThatIllegalArgumentException()
+        .isThrownBy(
+            () ->
+                componentClient
+                    .forWorkflow(workflowId)
+                    .method(DummyWorkflow::incrementAndPause)
+                    .invoke(10))
+        .withMessageContaining("Transition not allowed");
+  }
+
+  @Test
+  public void shouldTerminateCompletedWorkflowIdempotently() {
+    var workflowId = randomId();
+
+    String started =
+        componentClient.forWorkflow(workflowId).method(DummyWorkflow::startAndFinish).invoke();
+    assertThat(started).isEqualTo("ok");
+
+    assertThat(componentClient.forWorkflow(workflowId).terminate(DummyWorkflow.class))
+        .isEqualTo(done());
+    // Idempotent — a second terminate is a no-op that still replies OK.
+    assertThat(componentClient.forWorkflow(workflowId).terminate(DummyWorkflow.class))
+        .isEqualTo(done());
+  }
+
+  @Test
+  public void shouldRecordTerminationReason() {
+    var workflowId = randomId();
+
+    Done done =
+        LoggingTestKit.info("workflow terminated, reason [because]")
+            .expect(
+                testKit.getActorSystem(),
+                () ->
+                    componentClient
+                        .forWorkflow(workflowId)
+                        .terminate(DummyWorkflow.class, "because"));
+    assertThat(done).isEqualTo(done());
+  }
+
+  @Test
+  public void shouldTreatEmptyReasonAsNone() {
+    var workflowId = randomId();
+
+    Done done =
+        LoggingTestKit.info("workflow terminated, reason [<none>]")
+            .expect(
+                testKit.getActorSystem(),
+                () -> componentClient.forWorkflow(workflowId).terminate(DummyWorkflow.class));
+    assertThat(done).isEqualTo(done());
+  }
+
+  @Test
+  public void shouldPreserveFirstReasonOnIdempotentReterminate() {
+    var workflowId = randomId();
+
+    // First terminate records "first".
+    LoggingTestKit.info("workflow terminated, reason [first]")
+        .expect(
+            testKit.getActorSystem(),
+            () -> componentClient.forWorkflow(workflowId).terminate(DummyWorkflow.class, "first"));
+
+    // Second terminate is a no-op against an already-terminated workflow:
+    // the runtime emits "already finished [Terminated], ignoring terminate" at DEBUG and
+    // does NOT emit another "workflow terminated, reason [...]" line. We assert the
+    // ignoring-log appears (i.e. the second reason was discarded by the runtime).
+    LoggingTestKit.debug("already finished [Terminated], ignoring terminate")
+        .expect(
+            testKit.getActorSystem(),
+            () -> componentClient.forWorkflow(workflowId).terminate(DummyWorkflow.class, "second"));
+  }
+
+  @Test
+  public void shouldSuspendAndResumePausedWorkflow() {
+    var workflowId = randomId();
+
+    // Move workflow into Paused via the pause step.
+    componentClient.forWorkflow(workflowId).method(DummyWorkflow::update).invoke();
+
+    Done suspended = componentClient.forWorkflow(workflowId).suspend(DummyWorkflow.class);
+    assertThat(suspended).isEqualTo(done());
+
+    Done resumed = componentClient.forWorkflow(workflowId).resume(DummyWorkflow.class);
+    assertThat(resumed).isEqualTo(done());
+
+    // Workflow is back to its paused state and still accepts further commands.
+    Integer state = componentClient.forWorkflow(workflowId).method(DummyWorkflow::get).invoke();
+    assertThat(state).isEqualTo(20);
+  }
+
+  @Test
+  public void shouldSuspendAndResumeAsync() throws Exception {
+    var workflowId = randomId();
+
+    componentClient.forWorkflow(workflowId).method(DummyWorkflow::update).invoke();
+
+    Done suspended =
+        componentClient
+            .forWorkflow(workflowId)
+            .suspendAsync(DummyWorkflow.class)
+            .toCompletableFuture()
+            .get(10, TimeUnit.SECONDS);
+    assertThat(suspended).isEqualTo(done());
+
+    Done resumed =
+        componentClient
+            .forWorkflow(workflowId)
+            .resumeAsync(DummyWorkflow.class)
+            .toCompletableFuture()
+            .get(10, TimeUnit.SECONDS);
+    assertThat(resumed).isEqualTo(done());
+  }
+
+  @Test
+  public void shouldSuspendIdempotently() {
+    var workflowId = randomId();
+
+    componentClient.forWorkflow(workflowId).method(DummyWorkflow::update).invoke();
+
+    assertThat(componentClient.forWorkflow(workflowId).suspend(DummyWorkflow.class))
+        .isEqualTo(done());
+    // Second suspend is a no-op against an already-suspended workflow.
+    LoggingTestKit.debug("already suspended, ignoring suspend")
+        .expect(
+            testKit.getActorSystem(),
+            () -> componentClient.forWorkflow(workflowId).suspend(DummyWorkflow.class));
+  }
+
+  @Test
+  public void shouldRecordSuspendReason() {
+    var workflowId = randomId();
+
+    componentClient.forWorkflow(workflowId).method(DummyWorkflow::update).invoke();
+
+    Done done =
+        LoggingTestKit.info("workflow suspended, reason [maintenance]")
+            .expect(
+                testKit.getActorSystem(),
+                () ->
+                    componentClient
+                        .forWorkflow(workflowId)
+                        .suspend(DummyWorkflow.class, "maintenance"));
+    assertThat(done).isEqualTo(done());
+  }
+
+  @Test
+  public void shouldTreatEmptySuspendReasonAsNone() {
+    var workflowId = randomId();
+
+    componentClient.forWorkflow(workflowId).method(DummyWorkflow::update).invoke();
+
+    Done done =
+        LoggingTestKit.info("workflow suspended, reason [<none>]")
+            .expect(
+                testKit.getActorSystem(),
+                () -> componentClient.forWorkflow(workflowId).suspend(DummyWorkflow.class));
+    assertThat(done).isEqualTo(done());
+  }
+
+  @Test
+  public void shouldIgnoreResumeOnNonSuspendedWorkflow() {
+    var workflowId = randomId();
+
+    // update() schedules the pause step but returns before it has run, so the workflow
+    // may still be Executing when invoke() returns. Wait for the runtime's pause log to
+    // confirm the status is actually Paused before exercising resume.
+    LoggingTestKit.debug("paused, cancelling ticker and passivating")
+        .expect(
+            testKit.getActorSystem(),
+            () -> componentClient.forWorkflow(workflowId).method(DummyWorkflow::update).invoke());
+
+    // Workflow is Paused, not Suspended — resume is a successful no-op.
+    LoggingTestKit.debug("not suspended (status [Paused]), ignoring resume")
+        .expect(
+            testKit.getActorSystem(),
+            () ->
+                assertThat(componentClient.forWorkflow(workflowId).resume(DummyWorkflow.class))
+                    .isEqualTo(done()));
+  }
 
   @Test
   public void shouldNotStartTransferForWithNegativeAmount() {
@@ -616,7 +824,6 @@ public class WorkflowTest extends TestKitSupport {
 
     // when
     try {
-
       componentClient.forWorkflow(workflowId).method(DummyWorkflow::update).invoke();
     } catch (RuntimeException exception) {
       // ignore "500 Internal Server Error" exception from the proxy

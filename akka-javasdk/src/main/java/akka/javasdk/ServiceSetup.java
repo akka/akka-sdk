@@ -40,6 +40,21 @@ public interface ServiceSetup {
   default void onStartup() {}
 
   /**
+   * The on shutdown hook runs on each service instance when it shuts down — not on the service as a
+   * whole. Just like {@link #onStartup()}, it can be triggered for many reasons (rolling restarts,
+   * redeploys, scaling down, runtime upgrades, infrastructure events, etc.), so consider carefully
+   * how to use it.
+   *
+   * <p>It is called after the instance has stopped handling requests and any in-flight requests
+   * have completed, which makes it a good place to release resources allocated by the service setup
+   * or in {@link #onStartup()} — for example, closing a connection pool or releasing a file handle.
+   *
+   * <p>Runs in the {@code service-stop} phase of Akka Coordinated Shutdown. Exceptions thrown from
+   * this method are logged but do not block subsequent shutdown phases.
+   */
+  default void onShutdown() {}
+
+  /**
    * Invoked once before the service is started, to create a dependency provider. It is not possible
    * to interact with components in this method.
    *

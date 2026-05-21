@@ -1,10 +1,10 @@
 = AI & models
-:page-summary: 9 LLM providers built into the SDK plus custom provider support via standard Java APIs.
+:page-summary: 10 LLM providers built into the SDK plus custom provider support via standard Java APIs.
 :page-persona: builder-developer, builder-ai-ml
 
 include::ROOT:partial$include.adoc[]
 
-Akka provides native integration with 9 LLM providers. You configure a model in `application.conf` and your Agents use it automatically. No additional libraries or adapters are required.
+Akka provides native integration with 10 LLM providers. You configure a model in `application.conf` and your Agents use it automatically. No additional libraries or adapters are required.
 
 == Built-in providers
 
@@ -16,6 +16,7 @@ Akka provides native integration with 9 LLM providers. You configure a model in 
 | Google AI Gemini | https://gemini.google.com/[gemini.google.com, window="new"]
 | Google Cloud Vertex AI | https://cloud.google.com/vertex-ai[cloud.google.com/vertex-ai, window="new"]
 | AWS Bedrock | https://aws.amazon.com/bedrock/[aws.amazon.com/bedrock, window="new"]
+| Mistral AI | https://mistral.ai/[mistral.ai, window="new"]
 | Hugging Face | https://huggingface.co[huggingface.co, window="new"]
 | Ollama (local) | https://ollama.com/[ollama.com, window="new"]
 | LocalAI (local) | https://localai.io/[localai.io, window="new"]

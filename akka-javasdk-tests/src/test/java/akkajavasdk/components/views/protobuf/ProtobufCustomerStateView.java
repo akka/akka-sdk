@@ -11,6 +11,8 @@ import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
 import akkajavasdk.components.keyvalueentities.protobuf.ProtobufCustomerKvEntity;
 import akkajavasdk.protocol.SerializationTestProtos.CustomerState;
+import akkajavasdk.protocol.SerializationTestProtos.CustomerStateList;
+import akkajavasdk.protocol.SerializationTestProtos.CustomersByCreationTimeQuery;
 import akkajavasdk.protocol.SerializationTestProtos.SimpleMessage;
 
 /**
@@ -25,6 +27,12 @@ public class ProtobufCustomerStateView extends View {
 
   @Query("SELECT * FROM customers WHERE name = :text")
   public QueryEffect<CustomerState> getCustomerByName(SimpleMessage params) {
+    return queryResult();
+  }
+
+  @Query("SELECT * as customers FROM customers WHERE created_at >= :created_after")
+  public QueryEffect<CustomerStateList> getCustomersCreatedAfter(
+      CustomersByCreationTimeQuery params) {
     return queryResult();
   }
 }

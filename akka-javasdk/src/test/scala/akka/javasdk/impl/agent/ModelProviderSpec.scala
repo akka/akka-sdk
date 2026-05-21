@@ -71,6 +71,10 @@ class ModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike w
       val m = ModelProvider.OpenAi.fromConfig(defaultConfig.getConfig("akka.javasdk.agent.openai"))
       m shouldBe ModelProvider.openAi()
     }
+    "load defaults from config for azure-openai" in {
+      val m = ModelProvider.AzureOpenAi.fromConfig(defaultConfig.getConfig("akka.javasdk.agent.azure-openai"))
+      m shouldBe ModelProvider.azureOpenAi()
+    }
 
     "load from model-provider in config" in {
       val m = AgentImpl.modelProviderFromConfig(config, "", "myagent")
@@ -151,6 +155,11 @@ class ModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike w
     "load defaults from config for vertex-ai" in {
       val m = ModelProvider.VertexAi.fromConfig(defaultConfig.getConfig("akka.javasdk.agent.vertex-ai"))
       m shouldBe ModelProvider.vertexAi()
+    }
+
+    "load defaults from config for mistral-ai" in {
+      val m = ModelProvider.MistralAi.fromConfig(defaultConfig.getConfig("akka.javasdk.agent.mistral-ai"))
+      m shouldBe ModelProvider.mistralAi()
     }
 
     "fail when custom model provider class not found" in {

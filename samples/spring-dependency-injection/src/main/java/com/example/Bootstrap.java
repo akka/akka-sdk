@@ -32,6 +32,11 @@ public class Bootstrap implements ServiceSetup {
     logger.info("Initial value for entity 123 is [{}]", result);
   }
 
+  @Override
+  public void onShutdown() { // <4>
+    logger.info("Service shutting down");
+  }
+
   // end::lifecycle[]
 
   // tag::spring[]

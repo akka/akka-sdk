@@ -117,6 +117,7 @@ JVM's
 (?i)JWTs
 [Kk]afka
 [Kk]alix
+Kerberos
 Keycloak
 keyId
 keySets
@@ -166,6 +167,7 @@ passwordHashes
 passwordKey
 passwordSecret
 pathPrefix
+PDFs
 plaintext
 platformManaged
 plist
@@ -175,6 +177,7 @@ Postgres
 PostgreSQL
 precalculated
 principalSet
+[Pp]recompile
 preconfigured
 prefetching
 prepended
@@ -190,12 +193,14 @@ Qodo
 Quatrini
 queryable
 [Qq]uickstarts
+reachability
 rebalance
 rebalances
 rebalancing
 recoverability
 recurse
 redeliveries
+Redpanda
 refreshInterval
 remoting
 Remoting
@@ -236,6 +241,7 @@ stdin
 [Ss]tackdriver
 stigmergy
 [Ss]treamable
+Strimzi
 subcommand
 subjectMatches
 subpage
@@ -275,6 +281,8 @@ upsert
 upserting
 url
 userid
+URIs
+URLs
 valueFrom
 versionHistory
 versionLabel

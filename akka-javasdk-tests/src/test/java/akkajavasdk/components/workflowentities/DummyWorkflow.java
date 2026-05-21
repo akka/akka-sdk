@@ -15,11 +15,15 @@ public class DummyWorkflow extends Workflow<Integer> {
   }
 
   public Effect<String> update() {
-    return effects().updateState(20).transitionTo(DummyWorkflow::dummyStep).thenReply("ok");
+    return effects().updateState(20).transitionTo(DummyWorkflow::pause).thenReply("ok");
   }
 
-  public StepEffect dummyStep() {
-    return stepEffects().thenEnd();
+  public StepEffect pause() {
+    return stepEffects().thenPause();
+  }
+
+  public Effect<String> incrementAndPause(int amount) {
+    return effects().updateState(currentState() + amount).pause().thenReply("ok");
   }
 
   public Effect<Integer> get() {

@@ -116,11 +116,20 @@ private[impl] object Reflect {
   }
 
   private def flattenDependencies(descriptor: Descriptors.Descriptor): Set[Descriptors.Descriptor] =
-    Set(descriptor) ++ descriptor.getFields.asScala.toSet.flatMap((field: Descriptors.FieldDescriptor) =>
-      if (field.getJavaType == JavaType.MESSAGE) {
-        val fieldDescriptor = field.getMessageType
-        Set(fieldDescriptor) ++ flattenDependencies(fieldDescriptor)
-      } else Set.empty)
+    flattenDependencies(descriptor, Set.empty)
+
+  private def flattenDependencies(
+      descriptor: Descriptors.Descriptor,
+      visited: Set[Descriptors.Descriptor]): Set[Descriptors.Descriptor] = {
+    if (visited.contains(descriptor)) Set.empty
+    else {
+      val nowVisited = visited + descriptor
+      Set(descriptor) ++ descriptor.getFields.asScala.toSet.flatMap { (field: Descriptors.FieldDescriptor) =>
+        if (field.getJavaType == JavaType.MESSAGE) flattenDependencies(field.getMessageType, nowVisited)
+        else Set.empty[Descriptors.Descriptor]
+      }
+    }
+  }
 
   def isRestEndpoint(cls: Class[_]): Boolean =
     cls.getAnnotation(classOf[HttpEndpoint]) != null

@@ -1,6 +1,6 @@
 = akka local services components list-ids
 
-List the IDs for the given stateful component served by this service.
+List recently active IDs for the given stateful component served by this service within specified time window (24h by default).
 
 == Synopsis
 
@@ -13,10 +13,12 @@ akka local services components list-ids SERVICE_NAME COMPONENT_ID [flags]
 == Options
 
 ----
-  -h, --help             help for list-ids
-      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
-      --project string   project to use if not using the default configured project
-      --region string    region to use if project has more than one region
+  -h, --help                   help for list-ids
+      --limit int32            Maximum number of ids to return. (default 100)
+      --owner string           the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string         project to use if not using the default configured project
+      --region string          region to use if project has more than one region
+      --time-window duration   How far back to look for ids, e.g. 1h, 24h. (default 24h0m0s)
 ----
 
 == Options inherited from parent commands

@@ -49,4 +49,33 @@ public class TransferEndpoint {
     componentClient.forWorkflow(id).method(TransferWorkflow::startTransfer).invoke(transfer);
     return HttpResponses.accepted();
   }
+
+  // tag::terminate[]
+  @Post("/transfer/{id}/terminate")
+  public HttpResponse terminate(String id) {
+    log.info("Terminating transfer [{}].", id);
+    componentClient.forWorkflow(id).terminate(TransferWorkflow.class, "terminated by user"); // <1>
+    return HttpResponses.accepted();
+  }
+
+  // end::terminate[]
+
+  // tag::suspend[]
+  @Post("/transfer/{id}/suspend")
+  public HttpResponse suspend(String id) {
+    log.info("Suspending transfer [{}].", id);
+    componentClient.forWorkflow(id).suspend(TransferWorkflow.class, "suspended by user"); // <1>
+    return HttpResponses.accepted();
+  }
+
+  // end::suspend[]
+
+  // tag::resume[]
+  @Post("/transfer/{id}/resume")
+  public HttpResponse resume(String id) {
+    log.info("Resuming transfer [{}].", id);
+    componentClient.forWorkflow(id).resume(TransferWorkflow.class); // <1>
+    return HttpResponses.accepted();
+  }
+  // end::resume[]
 }

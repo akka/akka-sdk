@@ -7,6 +7,7 @@ package akka.javasdk.impl.reflection
 import scala.concurrent.ExecutionContext
 
 import akka.javasdk.client.ComponentClient
+import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.client.ComponentClientImpl
 import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.InvalidProtoEventSourcedEntityWrongEventType
@@ -15,6 +16,7 @@ import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.ProtoConsumerNoTypes
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.ProtoConsumerWithAnnotation
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.ValidProtoEventSourcedEntity
+import akka.javasdk.testmodels.subscriptions.PubSubTestModels.CircularProtoConsumer
 import akka.javasdk.testmodels.workflow.WorkflowState
 import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflow
 import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflowAnnotatedAbstractClass
@@ -187,6 +189,12 @@ class ReflectSpec extends AnyWordSpec with Matchers {
     "return empty when source ES entity has no @ProtoEventTypes" in {
       val types = Reflect.resolveProtoEventTypes(classOf[ProtoConsumerEntityWithoutAnnotation])
       types shouldBe empty
+    }
+
+    "handle circular proto message references in protoCommandHandlerInputOutput without infinite recursion" in {
+      val desc = ComponentDescriptor.descriptorFor(classOf[CircularProtoConsumer], serializer)
+      val result = Reflect.protoCommandHandlerInputOutput(desc)
+      result.map(_.getName) should contain allOf ("CircularParent", "CircularChild")
     }
   }
 }
