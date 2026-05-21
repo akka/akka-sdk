@@ -424,20 +424,15 @@ private[impl] object AgentImpl {
     case t: SpiAgent.TextMessageContent =>
       MessageContent.TextMessageContent.from(t.text)
     case img: SpiAgent.ImageUriMessageContent =>
-      try {
-        val url = img.uri.toURL
-        img.mimeType match {
-          case Some(mime) =>
-            ImageMessageContent.fromUrl(url, fromSpiDetailLevel(img.detailLevel), mime)
-          case None =>
-            ImageMessageContent.fromUrl(url, fromSpiDetailLevel(img.detailLevel))
-        }
-      } catch {
-        case e: java.net.MalformedURLException =>
-          throw new RuntimeException("Can't transform " + img.uri + " to URL", e)
+      val detail = fromSpiDetailLevel(img.detailLevel)
+      img.mimeType match {
+        case Some(mime) =>
+          new ImageUrlMessageContent(img.uri, detail, java.util.Optional.of(mime))
+        case None =>
+          new ImageUrlMessageContent(img.uri, detail)
       }
     case pdf: SpiAgent.PdfUriMessageContent =>
-      MessageContent.PdfMessageContent.fromUrl(pdf.uri.toString)
+      new PdfUrlMessageContent(pdf.uri)
   }
 
   private[agent] def toSpiContentLoader(

@@ -84,10 +84,10 @@ public interface AgentDefinition {
   /**
    * Sets a custom content loader.
    *
-   * <p>When multimodal messages contain image or PDF references, they are normally automatically
-   * fetched, this however requires that they are public and can be fetched by any HTTP client.
-   * Defining a custom loader makes it possible to load content from custom sources such as cloud
-   * storage, databases, or authenticated endpoints.
+   * <p>When multimodal messages contain image or PDF references, the runtime resolves them
+   * automatically for built-in URI schemes: {@code http(s)://} (public HTTP fetch) and {@code
+   * object://bucket/key} (resolved against a configured object-storage bucket). Defining a custom
+   * loader is for other cases, such as authenticated endpoints, databases, or custom URI schemes.
    *
    * @param contentLoader The content loader implementation
    * @see ContentLoader

@@ -16,8 +16,8 @@ import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import akkajavasdk.components.agent.SomeAgent;
-import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -247,24 +247,22 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
   @Test
   public void shouldInvokeContentLoaderForTaskAttachment() {
     var receivedMessages =
-        java.util.Collections.synchronizedList(
-            new java.util.ArrayList<TestModelProvider.InputMessage>());
+        Collections.synchronizedList(new ArrayList<TestModelProvider.InputMessage>());
     contentLoaderTestModel.fixedResponse(
         msg -> {
           receivedMessages.add(msg);
           return new TestModelProvider.AiResponse(completeTask("Done"));
         });
 
-    // Custom URI scheme — the runtime delegates to the user's ContentLoader for
-    // unknown schemes; known schemes like https:// are passed through unchanged.
-    var imageUri = URI.create("myscheme://test-image.png");
+    // Custom URI scheme: the runtime delegates to the user's ContentLoader.
+    var imageUri = "myscheme://test-image.png";
 
     componentClient
         .forAutonomousAgent(ContentLoaderTestAgent.class, UUID.randomUUID().toString())
         .runSingleTask(
             TestTasks.STRING_TASK
                 .instructions("Describe this image")
-                .attach(MessageContent.ImageMessageContent.fromUrl(imageUri.toString())));
+                .attach(MessageContent.ImageMessageContent.fromUrl(imageUri)));
 
     Awaitility.await()
         .atMost(30, TimeUnit.SECONDS)
@@ -274,7 +272,7 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
               assertThat(ContentLoaderTestAgent.loaderCalls.get())
                   .as("content loader was invoked; model received messages: %s", receivedMessages)
                   .isPositive();
-              assertThat(ContentLoaderTestAgent.loadedUris).contains(imageUri.toString());
+              assertThat(ContentLoaderTestAgent.loadedUris).contains(imageUri);
             });
   }
 }
