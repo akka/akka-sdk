@@ -274,7 +274,7 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
               assertThat(ContentLoaderTestAgent.loaderCalls.get())
                   .as("content loader was invoked; model received messages: %s", receivedMessages)
                   .isPositive();
-              assertThat(ContentLoaderTestAgent.loadedUrls).contains(imageUri.toString());
+              assertThat(ContentLoaderTestAgent.loadedUris).contains(imageUri.toString());
             });
   }
 }

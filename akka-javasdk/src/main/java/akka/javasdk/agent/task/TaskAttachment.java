@@ -9,14 +9,16 @@ import akka.javasdk.agent.MessageContent.ImageMessageContent;
 import akka.javasdk.agent.MessageContent.ImageUrlMessageContent;
 import akka.javasdk.agent.MessageContent.PdfUrlMessageContent;
 import akka.javasdk.agent.MessageContent.TextMessageContent;
+import java.net.URI;
+import java.util.Optional;
 
 /**
- * A serializable reference to content attached to a task. Stores type metadata and either a URL or
+ * A serializable reference to content attached to a task. Stores type metadata and either a URI or
  * inline text so that content references survive event sourcing. Reconstructed to {@link
  * MessageContent} at execution time.
  */
 public record TaskAttachment(
-    String type, String url, String text, String detailLevel, String mimeType) {
+    String type, URI uri, String text, String detailLevel, String mimeType) {
 
   /** Convert a {@link MessageContent} to a serializable {@code TaskAttachment}. */
   public static TaskAttachment fromMessageContent(MessageContent content) {
@@ -24,13 +26,8 @@ public record TaskAttachment(
       case TextMessageContent t -> new TaskAttachment("text", null, t.text(), null, null);
       case ImageUrlMessageContent img ->
           new TaskAttachment(
-              "image",
-              img.url().toString(),
-              null,
-              img.detailLevel().name(),
-              img.mimeType().orElse(null));
-      case PdfUrlMessageContent pdf ->
-          new TaskAttachment("pdf", pdf.url().toString(), null, null, null);
+              "image", img.uri(), null, img.detailLevel().name(), img.mimeType().orElse(null));
+      case PdfUrlMessageContent pdf -> new TaskAttachment("pdf", pdf.uri(), null, null, null);
       default ->
           throw new IllegalArgumentException("Unsupported content type: " + content.getClass());
     };
@@ -45,18 +42,11 @@ public record TaskAttachment(
             detailLevel != null
                 ? ImageMessageContent.DetailLevel.valueOf(detailLevel)
                 : ImageMessageContent.DetailLevel.AUTO;
-        try {
-          var imageUrl = java.net.URI.create(url).toURL();
-          if (mimeType != null) {
-            yield ImageMessageContent.fromUrl(imageUrl, detail, mimeType);
-          } else {
-            yield ImageMessageContent.fromUrl(imageUrl, detail);
-          }
-        } catch (java.net.MalformedURLException e) {
-          throw new RuntimeException("Can't transform " + url + " to URL", e);
-        }
+        yield mimeType != null
+            ? new ImageUrlMessageContent(uri, detail, Optional.of(mimeType))
+            : new ImageUrlMessageContent(uri, detail);
       }
-      case "pdf" -> MessageContent.PdfMessageContent.fromUrl(url);
+      case "pdf" -> new PdfUrlMessageContent(uri);
       default -> throw new IllegalArgumentException("Unknown content type: " + type);
     };
   }

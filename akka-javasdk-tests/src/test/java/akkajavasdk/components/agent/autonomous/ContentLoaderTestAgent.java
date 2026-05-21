@@ -19,12 +19,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ContentLoaderTestAgent extends AutonomousAgent {
 
   public static final AtomicInteger loaderCalls = new AtomicInteger(0);
-  public static final List<String> loadedUrls =
+  public static final List<String> loadedUris =
       Collections.synchronizedList(new java.util.ArrayList<>());
 
   public static void reset() {
     loaderCalls.set(0);
-    loadedUrls.clear();
+    loadedUris.clear();
   }
 
   @Override
@@ -39,9 +39,9 @@ public class ContentLoaderTestAgent extends AutonomousAgent {
     public LoadedContent load(MessageContent.LoadableMessageContent content) {
       loaderCalls.incrementAndGet();
       if (content instanceof MessageContent.ImageUrlMessageContent img) {
-        loadedUrls.add(img.url().toString());
+        loadedUris.add(img.uri().toString());
       } else if (content instanceof MessageContent.PdfUrlMessageContent pdf) {
-        loadedUrls.add(pdf.url().toString());
+        loadedUris.add(pdf.uri().toString());
       }
       return new LoadedContent(
           new byte[] {(byte) 0x89, 0x50, 0x4E, 0x47}, Optional.of("image/png"));
