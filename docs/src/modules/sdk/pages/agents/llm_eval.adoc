@@ -29,17 +29,18 @@ include::example$doc-snippets/src/main/java/com/example/evaluator/HumanVsAiEvalu
 
 In this example, we use one result representation from the model, and a slightly different as the response type. These could be the same, but the model might be more accurate when using text labels instead of boolean values. It's also good to include validation in that transformation.
 
-Since the evaluator is an ordinary `Agent` you can call it with the component client in the same way as any other agent. For example, from a consumer of workflow state changes:
+Since the evaluator is an ordinary `Agent` you can call it with the component client in the same way as any other agent. For example, from a Consumer that listens for task completions from an xref:sdk:autonomous-agents.adoc[Autonomous Agent]:
 
 [source,java,indent=0]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/AgentTeamEvaluatorConsumer.java[AgentTeamEvaluatorConsumer.java]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/EvaluationConsumer.java[EvaluationConsumer.java]
 ----
-include::example$multi-agent/src/main/java/demo/multiagent/application/AgentTeamEvaluatorConsumer.java[tag=class]
+include::example$multi-agent/src/main/java/demo/multiagent/application/EvaluationConsumer.java[tag=all]
 ----
-<1> Consumer of workflow state changes
-<2> When there is a state change that is worth evaluating
-<3> Call the evaluator agent with relevant parameters
-<4> Additional logging, but metrics and traces are updated automatically from the evaluation result
+<1> Consume events from the runtime's built-in task entity (`akka.javasdk.agent.task.TaskEntity`).
+<2> React only when a task completes (the runtime also emits events for create, assign, fail, and cancel).
+<3> Fetch a typed snapshot of the task, which exposes the instructions sent to the agent and the typed result.
+<4> Call the custom evaluator agent. Additional logging is included here, but metrics and traces are updated automatically from the evaluation result.
+<5> Call the built-in `ToxicityEvaluator` on the final answer.
 
 This illustrates that evaluation happens asynchronously, in the background, to capture the results for analytics and later development improvements of prompts. However, the evaluators can also be part of the core agent workflow and thereby have a more immediate impact on the workflow. For example, if the outcome of some step in the workflow doesn't pass the evaluation it can refine the plan and iterate. In this case it's still good to capture the results in metrics and traces by using the `EvaluationResult`. The concrete, application specific, result may include more things than `EvaluationResult`, which can be used for adjusting the execution plan in the workflow.
 
@@ -51,7 +52,7 @@ External evaluation products can be integrated with Akka by operating on the tra
 
 == Built-in evaluators
 
-As shown above, it's easy to implement your own evaluator agents, but for convenience Akka provides a few built-in evaluators that you can use by calling them with the `ComponentClient`. The `AgentTeamEvaluatorConsumer` example above shows how to call the evaluator agents.
+As shown above, it's easy to implement your own evaluator agents, but for convenience Akka provides a few built-in evaluators that you can use by calling them with the `ComponentClient`. The `EvaluationConsumer` example above also shows how to call the built-in `ToxicityEvaluator`.
 
 The model provider for these agents can be defined in a specific configuration for each agent, which by default is the same as the default model provider.
 

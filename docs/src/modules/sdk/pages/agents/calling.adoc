@@ -64,3 +64,23 @@ More details in xref:workflows.adoc#_error_handling[Workflow timeouts and recove
 You often need a human-in-the-loop to integrate human oversight into the AI's decision-making process. A workflow can be paused, waiting for user input. When the approval command is received, the workflow can continue from where it left off and transition to the next step in the agentic process.
 
 See xref:workflows.adoc#_pausing_workflow[how to pause a workflow].
+
+== Calling agents by id
+
+In most cases you call an agent by passing its class to the `ComponentClient`, which gives you compile-time type safety on the method, parameters, and return type. When the agent to call is only known at runtime, for example when a planner agent has selected which specialist to invoke, use `dynamicCall(agentId)` instead:
+
+[source,java,indent=0]
+----
+include::example$doc-snippets/src/main/java/com/example/application/DynamicAgentCall.java[tag=dynamic-call]
+----
+
+The call targets the agent whose component id matches `agentId`. There is no compile-time check that the agent's command handler accepts `request` or returns the expected type; a mismatch surfaces as a runtime exception.
+
+To discover which agents are available, inject the `AgentRegistry`. The registry exposes each agent's id, name, description, and role (sourced from `@Component` and `@AgentRole`), and supports lookups by id or by role. This is useful when a planner agent decides which specialists to invoke based on the request and then dispatches to them by id:
+
+[source,java,indent=0]
+----
+include::example$doc-snippets/src/main/java/com/example/application/DynamicAgentCall.java[tag=planner]
+----
+
+Dynamic dispatch and the registry are building blocks for planner-driven multi-agent systems. For most multi-agent problems an xref:sdk:autonomous-agents.adoc[Autonomous Agent] coordinator with a `Delegation` capability is simpler and recommended; see xref:sdk:agents/orchestrating.adoc#_model_driven_orchestration[Model-driven orchestration]. Reach for `AgentRegistry` and `dynamicCall` when you need a custom planner that selects targets at runtime from an open-ended set of agents.

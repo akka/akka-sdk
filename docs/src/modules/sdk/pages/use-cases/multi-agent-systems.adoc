@@ -49,8 +49,6 @@ The xref:sdk:autonomous-agents.adoc#samples[autonomous-agent-playground] include
 
 For request-based xref:sdk:agents.adoc[Agents] coordinated through a xref:sdk:workflows.adoc[Workflow] supervisor, see xref:sdk:agents/orchestrating.adoc[Orchestrating multiple agents]. The supervisor pattern keeps coordination logic outside the model in deterministic workflow steps, which suits cases where you want explicit step ordering, retry policies per step, and external compensation.
 
-A sample showing this approach: https://github.com/akka-samples/multi-agent[multi-agent,window="new"], multiple agents coordinating on a shared task with structured handoffs through a workflow.
-
 Choose the workflow approach when you want explicit, deterministic ordering. Choose Autonomous Agent capabilities when you want the model to decide what happens next based on the work in flight.
 
 == See Also

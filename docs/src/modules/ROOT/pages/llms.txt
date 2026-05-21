@@ -178,9 +178,8 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 ### Examples
 
 - [helloworld-agent](https://raw.githubusercontent.com/akka-samples/helloworld-agent/refs/heads/main/README.md): Agent with LLM greetings and session memory
-- [multi-agent](https://raw.githubusercontent.com/akka-samples/multi-agent/refs/heads/main/README.md): Multi-agent system with workflow orchestration
+- [multi-agent](https://raw.githubusercontent.com/akka-samples/multi-agent/refs/heads/main/README.md): Multi-agent system with an Autonomous Agent coordinator delegating to worker agents
 - [autonomous-agent-playground](https://raw.githubusercontent.com/akka-samples/autonomous-agent-playground/refs/heads/main/README.md): Autonomous agents with LLM driven multi-agent orchestration
-- [adaptive-multi-agent](https://raw.githubusercontent.com/akka-samples/adaptive-multi-agent/refs/heads/main/README.md): Adaptive multi-agent orchestration (MagenticOne pattern)
 - [ask-akka-agent](https://raw.githubusercontent.com/akka-samples/ask-akka-agent/refs/heads/main/README.md): RAG agent with vector search and streaming
 - [travel-agent](https://raw.githubusercontent.com/akka-samples/travel-agent/refs/heads/main/README.md): AI travel planner with durable state
 - [temperature-monitoring-agent](https://raw.githubusercontent.com/akka-samples/temperature-monitoring-agent/refs/heads/main/README.md): IoT sensor monitoring with AI analysis

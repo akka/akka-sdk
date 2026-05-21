@@ -95,9 +95,8 @@ Add Agents and other components step-by-step. The final application consists of 
 | xref:planner-agent/preferences.adoc[Part 2: User preferences] — An Entity (long-term memory) to personalize the suggestions. | Beginner
 | xref:planner-agent/weather.adoc[Part 3: Weather Agent] — A weather forecasting Agent that uses an external service as an Agent tool. | Beginner
 | xref:planner-agent/team.adoc[Part 4: Orchestrate the Agents] — A Workflow that coordinates long-running calls across the Agents. | Intermediate
-| xref:planner-agent/list.adoc[Part 5: List by user] — A View that creates a read-only projection (i.e. a query) of all activity suggestions for a user. | Beginner
-| xref:planner-agent/dynamic-team.adoc[Part 6: Dynamic orchestration] — An Agent that creates a dynamic plan using an LLM, and a Workflow that executes the plan. | Advanced
-| xref:planner-agent/eval.adoc[Part 7: Evaluation on changes] — A Consumer that streams user preference changes to trigger an Agent. | Intermediate
+| xref:planner-agent/dynamic-team.adoc[Part 5: Dynamic orchestration] — An Autonomous Agent coordinator that delegates dynamically to the worker agents using the built-in Delegation capability. | Advanced
+| xref:planner-agent/eval.adoc[Part 6: Evaluating task results] — A Consumer subscribed to task-completion events runs LLM-as-judge and toxicity evaluators. | Intermediate
 |=======================
 
 === Build an AI RAG Agent
