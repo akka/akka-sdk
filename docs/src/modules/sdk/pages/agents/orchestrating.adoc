@@ -63,3 +63,7 @@ include::example$multi-agent/src/main/java/demo/multiagent/application/WeatherAg
 The `ActivityAgent` advertises its own purpose the same way, and the coordinator's model chooses between them per request.
 
 See xref:sdk:autonomous-agents.adoc[] for more details and the other coordination capabilities (handoff, teams, moderation). The xref:getting-started:planner-agent/dynamic-team.adoc[planner-agent tutorial] walks through this coordinator end-to-end.
+
+== Combining the two approaches
+
+The two approaches are not mutually exclusive. A workflow can invoke an xref:sdk:autonomous-agents.adoc[Autonomous Agent] from any of its steps, the same way it invokes a request-based Agent. This fits scenarios where the overall sequence is fixed but a particular stage benefits from model-driven coordination. For example, a research stage where a coordinator delegates to several specialists, or a review stage that runs as a team or a moderated conversation. The workflow keeps the durable state machine across stages, while the Autonomous Agent handles the elaboration within a stage.
