@@ -46,7 +46,7 @@ Add a new file `EvaluationConsumer.java` to `src/main/java/com/example/applicati
 include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/EvaluationConsumer.java[tag=all]
 ----
 <1> Consume events from the runtime's built-in task entity.
-<2> React only when a task completes (the runtime also emits events for create, assign, fail, and cancel).
+<2> React only when a `SUGGEST_ACTIVITIES` task completes (the runtime also emits events for create, assign, fail, and cancel).
 <3> Fetch a typed snapshot of the task, which exposes the instructions sent to the coordinator and the typed result.
 <4> Run the custom LLM-as-judge against the original (preference-aware) request and the produced answer.
 <5> Run the built-in toxicity evaluator on the final answer.
@@ -55,7 +55,7 @@ Both verdicts are logged. They also flow into the metrics and traces produced by
 
 [NOTE]
 ====
-A single Consumer subscribes to every task in the service. The sample only has one kind of task, so we evaluate every completion. In a service with multiple task types, branch on the task name available from the `TaskCreated` event, or look up the task snapshot and inspect its instructions before deciding whether to evaluate.
+A single Consumer subscribes to every task in the service. The task `name` can be used to distinguish which kind of task that was changed.
 ====
 
 == Running the service
