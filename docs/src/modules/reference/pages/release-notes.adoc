@@ -12,8 +12,19 @@ Current versions
 
 == May 2026
 
+* https://github.com/akka/akka-sdk/releases/tag/v3.15.19[Akka SDK 3.15.19]
+- Object store support (S3, GCS, Azure)
+- Azure OpenAI and MistralAI model providers
+- Prompt caching for Anthropic and Bedrock
+- Workflow termination
+- Session memory interceptor
+- Start eventing from a timestamp (when migrating)
+- Custom OpenTelemetry metrics
+- Service instance shutdown hook
+- TestKit mocking of HTTP and gRPC services
+
 * Akka CLI 3.0.62
-- Project descriptor can now include docker registry config 
+- Project descriptor can now include docker registry config
 
 * Akka Runtime 1.5.48 - 1.5.52
 - TTL-based deletion for entities
