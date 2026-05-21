@@ -77,7 +77,9 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
     if (currentState().assignee().isPresent()) {
       return effects().error("Task is already assigned to " + currentState().assignee().get());
     }
-    return effects().persist(new TaskEvent.TaskAssigned(taskId, assignee)).thenReply(__ -> done());
+    return effects()
+        .persist(new TaskEvent.TaskAssigned(taskId, currentState().name(), assignee))
+        .thenReply(__ -> done());
   }
 
   public Effect<Done> start() {
@@ -87,7 +89,9 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
     if (currentState().status() != TaskStatus.ASSIGNED) {
       return effects().error("Task can only be started when ASSIGNED");
     }
-    return effects().persist(new TaskEvent.TaskStarted(taskId)).thenReply(__ -> done());
+    return effects()
+        .persist(new TaskEvent.TaskStarted(taskId, currentState().name()))
+        .thenReply(__ -> done());
   }
 
   public Effect<Done> complete(String result) {
@@ -101,7 +105,7 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
           .error("Task can only be completed when ASSIGNED, IN_PROGRESS, or RESULT_REJECTED");
     }
     return effects()
-        .persist(new TaskEvent.TaskCompleted(taskId, result))
+        .persist(new TaskEvent.TaskCompleted(taskId, currentState().name(), result))
         .thenReply(
             __ -> {
               notificationPublisher.publish(
@@ -122,7 +126,8 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
     }
     return effects()
         .persist(
-            new TaskEvent.TaskResultRejected(taskId, request.ruleClassName(), request.reason()))
+            new TaskEvent.TaskResultRejected(
+                taskId, currentState().name(), request.ruleClassName(), request.reason()))
         .thenReply(
             __ -> {
               notificationPublisher.publish(
@@ -143,7 +148,7 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
           .error("Task can only be failed when ASSIGNED, IN_PROGRESS, or RESULT_REJECTED");
     }
     return effects()
-        .persist(new TaskEvent.TaskFailed(taskId, reason))
+        .persist(new TaskEvent.TaskFailed(taskId, currentState().name(), reason))
         .thenReply(
             __ -> {
               notificationPublisher.publish(
@@ -161,7 +166,7 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
       return effects().error("Task can only be cancelled when PENDING or ASSIGNED");
     }
     return effects()
-        .persist(new TaskEvent.TaskCancelled(taskId, reason))
+        .persist(new TaskEvent.TaskCancelled(taskId, currentState().name(), reason))
         .thenReply(
             __ -> {
               notificationPublisher.publish(
@@ -178,7 +183,9 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
       return effects().error("Task can only be reassigned when IN_PROGRESS");
     }
     return effects()
-        .persist(new TaskEvent.TaskReassigned(taskId, request.newAssignee(), request.context()))
+        .persist(
+            new TaskEvent.TaskReassigned(
+                taskId, currentState().name(), request.newAssignee(), request.context()))
         .thenReply(__ -> done());
   }
 

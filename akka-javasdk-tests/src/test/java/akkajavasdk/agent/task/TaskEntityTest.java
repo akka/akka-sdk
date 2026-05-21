@@ -101,7 +101,8 @@ public class TaskEntityTest {
     EventSourcedResult<Done> result =
         testKit.method(TaskEntity::complete).invoke("{\"summary\":\"done\"}");
     assertThat(result.getReply()).isEqualTo(done());
-    result.getNextEventOfType(TaskEvent.TaskCompleted.class);
+    var completedEvent = result.getNextEventOfType(TaskEvent.TaskCompleted.class);
+    assertThat(completedEvent.name()).isEqualTo("research");
     assertThat(testKit.getState().status()).isEqualTo(TaskStatus.COMPLETED);
     assertThat(testKit.getState().result()).contains("{\"summary\":\"done\"}");
   }

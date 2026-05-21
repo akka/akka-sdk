@@ -22,24 +22,25 @@ public sealed interface TaskEvent {
       implements TaskEvent {}
 
   @TypeName("akka-task-assigned")
-  record TaskAssigned(String taskId, String assignee) implements TaskEvent {}
+  record TaskAssigned(String taskId, String name, String assignee) implements TaskEvent {}
 
   @TypeName("akka-task-started")
-  record TaskStarted(String taskId) implements TaskEvent {}
+  record TaskStarted(String taskId, String name) implements TaskEvent {}
 
   @TypeName("akka-task-result-rejected")
-  record TaskResultRejected(String taskId, String ruleClassName, String reason)
+  record TaskResultRejected(String taskId, String name, String ruleClassName, String reason)
       implements TaskEvent {}
 
   @TypeName("akka-task-completed")
-  record TaskCompleted(String taskId, String result) implements TaskEvent {}
+  record TaskCompleted(String taskId, String name, String result) implements TaskEvent {}
 
   @TypeName("akka-task-failed")
-  record TaskFailed(String taskId, String reason) implements TaskEvent {}
+  record TaskFailed(String taskId, String name, String reason) implements TaskEvent {}
 
   @TypeName("akka-task-cancelled")
-  record TaskCancelled(String taskId, String reason) implements TaskEvent {}
+  record TaskCancelled(String taskId, String name, String reason) implements TaskEvent {}
 
   @TypeName("akka-task-reassigned")
-  record TaskReassigned(String taskId, String newAssignee, String context) implements TaskEvent {}
+  record TaskReassigned(String taskId, String name, String newAssignee, String context)
+      implements TaskEvent {}
 }

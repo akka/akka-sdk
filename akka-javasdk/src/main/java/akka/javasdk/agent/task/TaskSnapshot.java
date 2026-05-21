@@ -12,8 +12,9 @@ import java.util.Optional;
  * @param <R> The result type of the task.
  */
 public record TaskSnapshot<R>(
-    TaskStatus status,
+    String name,
     String description,
     String instructions,
+    TaskStatus status,
     Optional<R> result,
     Optional<String> failureReason) {}
