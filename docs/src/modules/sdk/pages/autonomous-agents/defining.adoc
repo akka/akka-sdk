@@ -1,0 +1,201 @@
+= Defining an autonomous agent
+
+include::ROOT:partial$include.adoc[]
+
+An xref:sdk:autonomous-agents.adoc[Autonomous Agent] subclass implements a single `definition()` method that returns an `AgentDefinition`. The definition is the agent's contract: it tells the runtime what tasks it accepts, which tools the model can call, and how the agent participates in multi-agent coordination.
+
+`AgentDefinition` is built with a fluent builder API. Call `define()` to start the builder, then chain configuration methods to declare the task types the agent accepts, the tools it uses, guardrails, iteration limit, model, and optional instructions.
+
+== Purpose and instructions
+
+The `@Component` description captures the agent's purpose and expected outcome: a short statement of what the agent does, when to use it, and what it produces. The description is *mandatory* for an autonomous agent and is enforced at compile time. It serves three audiences from a single source of truth:
+
+* Other agents use it to choose this agent as a delegation or handoff target.
+* The runtime injects it into the model's system message, so the agent's own LLM understands its purpose.
+* Documentation, observability, and other tooling pick it up to describe the agent.
+
+[source,java,indent=0]
+----
+@Component(
+  id = "question-answerer",
+  description = "Answers questions clearly and concisely, showing reasoning step by step"
+)
+public class QuestionAnswerer extends AutonomousAgent {
+  @Override
+  public AgentDefinition definition() {
+    return define().capability(TaskAcceptance.of(QuestionTasks.ANSWER));
+  }
+}
+----
+
+Because the description has to be understandable to a coordinator deciding whether to pick this agent, writing it well naturally produces outcome-oriented prose. Avoid procedure ("first call X, then call Y") — describe *what the agent is for*.
+
+The agent's behavior is then driven by its capabilities and the task types it accepts. Most autonomous agents need nothing else; their purpose comes from the description and their behavior emerges from the tasks, tools, and coordination structure.
+
+=== Optional instructions
+
+When you need to shape *how* the model speaks or judges, beyond the outcome statement in the description, add `instructions(...)` on the definition. Use this for tone, persona, role, or domain rules:
+
+[source,java,indent=0]
+----
+define()
+  .instructions("Respond in formal English. Always cite sources for factual claims.")
+  .capability(TaskAcceptance.of(QuestionTasks.ANSWER));
+----
+
+The runtime appends instructions to the system message alongside the description.
+
+Procedural guidance on how the LLM should approach a task is fine here — "read the input carefully, identify key claims, then check them against the supporting evidence" is the kind of prompt engineering instructions are for.
+
+What does *not* belong in instructions is multi-agent orchestration: when to delegate, when to hand off, who to message. Those mechanics are derived automatically from the capabilities and from the `@Component` descriptions of the participating agents. If you find yourself writing "delegate to Researcher first, then to Analyst, then synthesize" as instructions, the work belongs in capabilities and task definitions instead. See xref:sdk:autonomous-agents/coordination.adoc[] for how to decompose multi-agent work.
+
+== Accepted task types
+
+An agent declares which task types it can work on by adding a `TaskAcceptance` capability. The agent will only process tasks whose definition matches one of the accepted types.
+
+[source,java,indent=0]
+----
+import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
+
+define()
+  .capability(
+    TaskAcceptance.of(PipelineTasks.COLLECT, PipelineTasks.ANALYZE, PipelineTasks.REPORT));
+----
+
+See xref:sdk:autonomous-agents/tasks.adoc[] for how task types are defined.
+
+== Tools
+
+An agent can expose tools to the model in three ways:
+
+* *Methods on a separate tool class*, registered with `tools(...)`. The class can be supplied as an object instance, or as a `Class` that the runtime instantiates via the configured `DependencyProvider`.
+* *`@FunctionTool` methods on the agent class itself.* These are discovered automatically; no `tools(...)` call is needed.
+* *Akka components as tools.* Pass the component `Class` (not an instance) to `tools(...)` to let the model invoke command handlers on Entities, Workflows, or Views.
+
+=== Tool class
+
+Domain tools are added with `tools()`. Each element can be an object instance or a `Class`. Pass a `Class` if you want the runtime to instantiate it via the configured `DependencyProvider`. The class can then receive injected dependencies like `ComponentClient`.
+
+Methods on tool objects must be annotated with `@FunctionTool`. The description is included in the model's context to guide tool selection.
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/consulting/application/ConsultingTools.java[ConsultingTools.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/consulting/application/ConsultingTools.java[tag=class]
+----
+
+Register the tool object in the definition:
+
+[source,java,indent=0]
+----
+define()
+  .tools(new ConsultingTools())
+----
+
+=== Tools on the agent class
+
+Tools can also be defined directly on the agent class as `@FunctionTool` methods. These are discovered automatically and do not need to be registered via `tools()` in the definition.
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/pipeline/application/ReportAgent.java[ReportAgent.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/pipeline/application/ReportAgent.java[tag=class]
+----
+
+=== Akka components as tools
+
+Components, including Workflows, Event Sourced Entities, Key Value Entities, and Views, can also be used as tools. Pass the component `Class` (not an instance) to `tools()`. See xref:sdk:agents/extending.adoc#component_tools[Using Akka components as function tools] for details, and xref:sdk:agents/extending.adoc[Extending agents with function tools] for the broader reference on tool annotations, parameter descriptions, and return types.
+
+== MCP tools
+
+Remote MCP (Model Context Protocol) tool endpoints are added with `mcpTools()`.
+
+[source,java,indent=0]
+----
+define()
+  .mcpTools(RemoteMcpTools.create("https://mcp.example.com/tools"))
+----
+
+See xref:sdk:agents/extending.adoc#mcp_tools[Using tools from remote MCP servers] for details on configuring MCP tool endpoints.
+
+== Guardrails
+
+Request and response guardrails constrain the model interaction at each iteration. Request guardrails evaluate prompts before they are sent to the model. Response guardrails evaluate responses received from the model.
+
+[source,java,indent=0]
+----
+define()
+  .requestGuardrails(MyRequestGuardrail.class)
+  .responseGuardrails(MyResponseGuardrail.class)
+----
+
+See xref:sdk:agents/guardrails.adoc[Guardrails] for details on implementing guardrail classes.
+
+== Iteration limit
+
+`maxIterationsPerTask()` on the `TaskAcceptance` capability sets the maximum number of model iterations before the agent fails the current task. The default is configured via `akka.javasdk.agent.autonomous.max-iterations-per-task`. Set this based on the expected complexity of the work. Simple tasks may need only 3 iterations, while complex coordination may need more.
+
+[source,java,indent=0]
+----
+TaskAcceptance.of(MyTasks.TASK).maxIterationsPerTask(5)
+----
+
+Right-size the budget to the agent's role. A triage or classifier agent that only needs to read the input and pick a target can run on a low budget (around 3). A resolver or synthesizer that calls tools, reasons over results, and produces a structured output usually needs more (5 or higher). The `support` sample illustrates this split: the triage agent uses `maxIterationsPerTask(3)` while the billing and technical specialists use `maxIterationsPerTask(5)`.
+
+As the iteration budget approaches its limit, the runtime injects a reminder into the model's context. The reminder reads along the lines of "you have used N of M iterations, complete or fail the current task soon". It is also surfaced as a `Notification.TaskApproachingMaxIterations` event on the agent's notification stream.
+
+== Model
+
+By default, the agent uses the model configured in `application.conf` (see xref:sdk:agents.adoc#model[Configuring the model]). Override with `modelProvider()` to use a different model for this agent.
+
+[source,java,indent=0]
+----
+define()
+  .modelProvider(ModelProvider.openAi().withModel("gpt-4o"))
+----
+
+== Complete definition example
+
+A coordinator that combines a description, domain tools, an accepted task type with handoff to a senior consultant, and delegation to two specialist agents:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/consulting/application/ConsultingCoordinator.java[ConsultingCoordinator.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/consulting/application/ConsultingCoordinator.java[tag=class]
+----
+
+The combined definition declares everything the runtime needs to build the system message, expose tools to the model, and enforce iteration and coordination limits. See xref:sdk:autonomous-agents/capabilities.adoc[] for the coordination capabilities used here.
+
+[#dynamic-configuration]
+== Dynamic configuration
+
+`AgentSetup` overrides parts of the definition for a single instance. The agent class declares whatever defaults make sense in `definition()`, and the call site supplements or overrides specific fields through `AgentSetup` before assigning work. Anything supplied through `AgentSetup` takes precedence over the corresponding field from `definition()`. Everything else falls back to the static definition.
+
+`AgentSetup.create()` supports `instructions(...)` and `capability(...)`. These are the two pieces of the definition that are most useful to vary per instance. The `@Component` description is bound to the component class and cannot be overridden per instance. Tools, model provider, and guardrails are declared statically in `definition()` and also cannot be overridden through `AgentSetup`. Call `setup(...)` once per instance, before `runSingleTask`, `assignTasks`, or any other client operation that triggers iteration.
+
+A typical use is to keep the static defaults in `definition()` (guardrails, model provider, the standard tool set) and override only the parts that change per instance. For example, instructions tailored to the user's request, or an extra accepted task type for that particular call.
+
+At the extreme, the definition can be a near-empty shell and everything comes from the client:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/dynamic/application/DynamicAgent.java[DynamicAgent.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/dynamic/application/DynamicAgent.java[tag=class]
+----
+
+The endpoint then configures each instance just before assigning a task. The same `DynamicAgent` class is reused for both the summarization and translation flows; only the `AgentSetup` differs:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/dynamic/api/DynamicEndpoint.java[DynamicEndpoint.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/dynamic/api/DynamicEndpoint.java[tag=summarize]
+----
+
+This pattern fits when many task variants share the same execution shape and the differences are best expressed as data rather than as separate agent classes: different instructions over the same task types, runtime-supplied capability sets, or tool sets that depend on the user's permissions.
+
+== See Also
+
+* xref:sdk:autonomous-agents/tasks.adoc[Tasks]
+* xref:sdk:autonomous-agents/capabilities.adoc[Coordination capabilities]
+* xref:sdk:agents/extending.adoc[Extending agents with function tools]
+* xref:sdk:agents/guardrails.adoc[Guardrails]

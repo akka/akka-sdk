@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en" data-theme="platform">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Autonomous Agent Playground</title>
+    <script>
+      // Synchronous theme bootstrap — runs before stylesheets load to prevent flash of wrong
+      // theme on reload (SC-008). The full controller lives in /playground/static/theme.js.
+      (function () {
+        try {
+          var stored = localStorage.getItem('playground-theme');
+          if (stored !== 'light' && stored !== 'dark' && stored !== 'platform') stored = 'platform';
+          document.documentElement.dataset.theme = stored;
+        } catch (e) {
+          document.documentElement.dataset.theme = 'platform';
+        }
+      })();
+    </script>
+    <link rel="stylesheet" href="/playground/static/styles/akka.css" />
+    <link rel="stylesheet" href="/playground/static/styles/playground.css" />
+    <!-- Markdown renderer for long-form text in result panels (LLMs often emit markdown). -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.2/marked.min.js"></script>
+  </head>
+  <body>
+    <header id="app-header"></header>
+    <main id="app-main"></main>
+    <script type="module" src="/playground/static/app.js"></script>
+  </body>
+</html>

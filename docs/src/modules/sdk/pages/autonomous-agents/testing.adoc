@@ -1,0 +1,122 @@
+= Testing
+
+include::ROOT:partial$include.adoc[]
+
+Autonomous agents are tested using `TestModelProvider` to mock model responses, following the same pattern as request-based agents (see xref:sdk:agents/testing.adoc[]). The integration test:
+
+* extends `TestKitSupport`,
+* registers a `TestModelProvider` per agent class,
+* uses `Awaitility` to poll for asynchronous task completion.
+
+== Single-agent test
+
+The simplest case is one agent, one task, one mocked response. The mocked response invokes the built-in `complete_task` tool with a result that matches the task's result type. Use `AutonomousAgentTools.completeTask(...)` to construct the call without referencing the internal tool name.
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/helloworld/QuestionAnswererIntegrationTest.java[QuestionAnswererIntegrationTest.java]
+----
+include::example$autonomous-agent-playground/src/test/java/demo/helloworld/QuestionAnswererIntegrationTest.java[tag=class]
+----
+<1> Create a `TestModelProvider` instance as a field of the test class.
+<2> Register it in `testKitSettings()` with `.withModelProvider(AgentClass.class, model)`.
+<3> Use `.fixedResponse()` to control what the model returns. `completeTask(...)` builds a tool invocation for the built-in `complete_task` tool, serializing the result object to match the task's result type.
+<4> Trigger the agent through your endpoint.
+<5> Poll for the typed result with `Awaitility.await()` because execution is asynchronous.
+
+== AutonomousAgentTools helpers
+
+The `TestModelProvider.AutonomousAgentTools` class provides factory methods for the built-in coordination tools that the runtime exposes to the model. Always prefer these over raw `ToolInvocationRequest` instances with string tool names: the helpers serialize result objects to JSON, derive the right tool name from the agent's component id and the task definition, and stay correct if the runtime renames a tool.
+
+*Task lifecycle tools:*
+
+[source,java,indent=0]
+----
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.*;
+
+// Complete a task: pass a result object matching the task's result type
+completeTask(new Answer("2 plus 2 equals 4.", 100));
+
+// Complete a task with raw JSON (must be a valid JSON object)
+completeTaskJson("{\"answer\":\"2 plus 2 equals 4.\",\"confidence\":100}");
+
+// Fail a task with a reason
+failTask("Not enough information to proceed.");
+----
+
+*Handoff and delegation tools:*
+
+[source,java,indent=0]
+----
+// Hand off the current task to another agent
+handoffTo(BillingSpecialist.class, "Customer has billing dispute");
+
+// Delegate a subtask to a worker agent
+delegateTo(ResearchTasks.FINDINGS, Researcher.class, "Research quantum computing");
+
+// Delegate to a request-based agent
+delegateTo(FactCheckAgent.class, "{\"claim\":\"Carbon emissions reduced by 40%\"}");
+----
+
+`AutonomousAgentTools` also exposes helpers for the team, backlog, messaging, and moderation capabilities (`createTeam`, `claimTask`, `sendMessage`, `startScriptedConversation`, `submitTurn`, …). For full coverage, see the xref:getting-started:samples.adoc#autonomous_agents_playground[autonomous agents samples] that exercise those patterns: `devteam` for teams and shared backlogs, and `debate`, `negotiation`, `peerreview` for moderation.
+
+== Multi-agent delegation test
+
+When multiple agents collaborate, register a `TestModelProvider` for each. The example below mocks a coordinator that delegates to two workers and then synthesizes their results.
+
+The setup registers one provider per participating agent class:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/research/ResearchDelegationIntegrationTest.java[ResearchDelegationIntegrationTest.java]
+----
+include::example$autonomous-agent-playground/src/test/java/demo/research/ResearchDelegationIntegrationTest.java[tag=setup]
+----
+
+The test mocks the coordinator's delegation, the two workers' completions, and the coordinator's final synthesis:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/research/ResearchDelegationIntegrationTest.java[ResearchDelegationIntegrationTest.java]
+----
+include::example$autonomous-agent-playground/src/test/java/demo/research/ResearchDelegationIntegrationTest.java[tag=delegation-test]
+----
+
+Notice how `whenMessage(...).reply(...)` lets you condition on the prompt content. The coordinator gets a different reply for the initial topic prompt and the post-delegation `Continue working` prompt.
+
+== Testing a handoff flow
+
+For a handoff, the triage agent's mocked response calls `handoffTo`, and the specialist's mocked response calls `completeTask`:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/support/HandoffIntegrationTest.java[HandoffIntegrationTest.java]
+----
+include::example$autonomous-agent-playground/src/test/java/demo/support/HandoffIntegrationTest.java[tag=handoff]
+----
+
+== Scripting tool use
+
+When the model should call a domain tool, use `whenMessage` to script the first call and `whenToolResult` to react after the tool returns. The follow-up reaction can be another tool call, a delegation, a handoff, or a `completeTask`:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/consulting/ConsultingIntegrationTest.java[ConsultingIntegrationTest.java]
+----
+include::example$autonomous-agent-playground/src/test/java/demo/consulting/ConsultingIntegrationTest.java[tag=tool-use]
+----
+
+The domain tool name passed to `ToolInvocationRequest` (for example `ConsultingTools_assessProblem`) is the tool name exposed to the model by the agent's `@FunctionTool` methods, not a built-in runtime tool. Built-in tools are constructed with the `AutonomousAgentTools` helpers instead.
+
+Call `model.reset()` in `@AfterEach` to clear all configured responses between tests when you have multiple test methods sharing the same providers.
+
+== Testing failure paths
+
+The runtime treats `fail_task` as a terminal failure for the task. Use `failTask` to mock it and test the failure handling in your endpoints:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/helloworld/QuestionAnswererIntegrationTest.java[QuestionAnswererIntegrationTest.java]
+----
+include::example$autonomous-agent-playground/src/test/java/demo/helloworld/QuestionAnswererIntegrationTest.java[tag=failure]
+----
+
+== See Also
+
+* xref:sdk:agents/testing.adoc[Testing request-based agents]
+* xref:sdk:autonomous-agents/client.adoc[Client API]
+* xref:sdk:autonomous-agents/notifications.adoc[Notifications] (subscribe to the notification stream in tests to assert on intermediate transitions)

@@ -1,0 +1,23 @@
+/*
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
+ */
+
+package akkajavasdk.components.agent.autonomous;
+
+import akka.javasdk.agent.autonomous.AgentDefinition;
+import akka.javasdk.agent.autonomous.AutonomousAgent;
+import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
+import akka.javasdk.agent.autonomous.capability.TeamLeadership;
+import akka.javasdk.agent.autonomous.capability.TeamLeadership.TeamMember;
+import akka.javasdk.annotations.Component;
+
+@Component(id = "team-lead-agent", description = "Plans and coordinates work by leading a team.")
+public class TeamLeadAgent extends AutonomousAgent {
+
+  @Override
+  public AgentDefinition definition() {
+    return define()
+        .capability(TaskAcceptance.of(TestTasks.PLAN))
+        .capability(TeamLeadership.of(TeamMember.of(TeamWorkerAgent.class).maxInstances(2)));
+  }
+}

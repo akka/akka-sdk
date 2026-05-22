@@ -15,6 +15,7 @@ import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentRegistry
 import akka.javasdk.agent.AgentRegistry.AgentInfo
+import akka.javasdk.agent.autonomous.AutonomousAgent
 import akka.javasdk.impl.reflection.Reflect
 
 /**
@@ -27,31 +28,24 @@ private[javasdk] object AgentRegistryImpl {
       new AgentInfo(id, name, description, role)
   }
 
-  def agentDetailsFor[A <: Agent](agentClass: Class[A]): AgentRegistryImpl.AgentDetails = {
+  def agentDetailsFor[A <: Agent](agentClass: Class[A]): AgentRegistryImpl.AgentDetails =
+    detailsFor(agentClass, agentClass.asInstanceOf[Class[Agent]])
 
-    val agentDescAnno = Reflect.readAgentDescription(agentClass)
-    val agentRoleOptValue = Reflect.readAgentRole(agentClass)
+  def agentDetailsForAutonomous[A <: AutonomousAgent](autonomousAgentClass: Class[A]): AgentRegistryImpl.AgentDetails =
+    detailsFor(autonomousAgentClass, null)
 
-    val componentId = Reflect.readComponentId(agentClass)
-    val agentName =
-      Reflect
-        .readAgentName(agentClass)
-        .getOrElse(componentId)
+  private def detailsFor(clz: Class[_], agentClass: Class[Agent]): AgentRegistryImpl.AgentDetails = {
+    val agentRoleOptValue = Reflect.readAgentRole(clz)
+    val componentId = Reflect.readComponentId(clz)
+    val agentName = Reflect.readAgentName(clz).getOrElse(componentId)
+    val agentDescription = Reflect.readComponentDescription(clz).getOrElse("")
 
-    val agentDescription =
-      Reflect
-        .readComponentDescription(agentClass)
-        .orElse(agentDescAnno)
-        .getOrElse("")
-
-    AgentRegistryImpl
-      .AgentDetails(
-        componentId,
-        agentName,
-        agentDescription,
-        agentRoleOptValue.getOrElse(""),
-        agentClass.asInstanceOf[Class[Agent]])
-
+    AgentRegistryImpl.AgentDetails(
+      componentId,
+      agentName,
+      agentDescription,
+      agentRoleOptValue.getOrElse(""),
+      agentClass)
   }
 
   // convenience method for SessionMemoryEntityTest
@@ -66,7 +60,8 @@ private[javasdk] object AgentRegistryImpl {
     extends AgentRegistry {
   private val agentInfoById = agents.map(a => a.id -> a.toAgentInfo).toMap
 
-  val agentClassById: Map[String, Class[Agent]] = agents.iterator.map(a => a.id -> a.agentClass).toMap
+  val agentClassById: Map[String, Class[Agent]] =
+    agents.iterator.collect { case a if a.agentClass != null => a.id -> a.agentClass }.toMap
 
   override def allAgents(): JSet[AgentInfo] =
     agentInfoById.values.toSet.asJava

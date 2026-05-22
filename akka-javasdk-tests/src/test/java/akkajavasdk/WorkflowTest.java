@@ -38,8 +38,6 @@ import akkajavasdk.components.workflowentities.WorkflowWithTimeout;
 import akkajavasdk.components.workflowentities.WorkflowWithTimer;
 import akkajavasdk.components.workflowentities.WorkflowWithoutInitialState;
 import akkajavasdk.components.workflowentities.hierarchy.TextWorkflow;
-import akkajavasdk.components.workflowentities.legacy.TransferWorkflowWithoutInputs;
-import akkajavasdk.components.workflowentities.legacy.WorkflowWithRecoverStrategyAndAsyncCall;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -455,66 +453,6 @@ public class WorkflowTest extends TestKitSupport {
   }
 
   @Test
-  public void shouldTransferMoneyWithoutStepInputs() {
-    var walletId1 = randomId();
-    var walletId2 = randomId();
-    createWallet(walletId1, 100);
-    createWallet(walletId2, 100);
-    var transferId = randomTransferId();
-    var transfer = new Transfer(walletId1, walletId2, 10);
-
-    Message response =
-        componentClient
-            .forWorkflow(transferId)
-            .method(TransferWorkflowWithoutInputs::startTransfer)
-            .invoke(transfer);
-
-    assertThat(response.text()).contains("transfer started");
-
-    Awaitility.await()
-        .ignoreExceptions()
-        .atMost(20, TimeUnit.of(SECONDS))
-        .untilAsserted(
-            () -> {
-              var balance1 = getWalletBalance(walletId1);
-              var balance2 = getWalletBalance(walletId2);
-
-              assertThat(balance1).isEqualTo(90);
-              assertThat(balance2).isEqualTo(110);
-            });
-  }
-
-  @Test
-  public void shouldTransferAsyncMoneyWithoutStepInputs() {
-    var walletId1 = randomId();
-    var walletId2 = randomId();
-    createWallet(walletId1, 100);
-    createWallet(walletId2, 100);
-    var transferId = randomTransferId();
-    var transfer = new Transfer(walletId1, walletId2, 10);
-
-    Message response =
-        componentClient
-            .forWorkflow(transferId)
-            .method(TransferWorkflowWithoutInputs::startTransferAsync)
-            .invoke(transfer);
-
-    assertThat(response.text()).contains("transfer started");
-
-    Awaitility.await()
-        .ignoreExceptions()
-        .atMost(20, TimeUnit.of(SECONDS))
-        .untilAsserted(
-            () -> {
-              var balance1 = getWalletBalance(walletId1);
-              var balance2 = getWalletBalance(walletId2);
-
-              assertThat(balance1).isEqualTo(90);
-              assertThat(balance2).isEqualTo(110);
-            });
-  }
-
-  @Test
   public void shouldTransferMoneyWithFraudDetection() {
     var walletId1 = randomId();
     var walletId2 = randomId();
@@ -742,46 +680,6 @@ public class WorkflowTest extends TestKitSupport {
                       .method(WorkflowWithRecoverStrategy::get)
                       .invoke();
 
-              assertThat(state.finished()).isTrue();
-            });
-  }
-
-  @Test
-  public void shouldRecoverFailingCounterWorkflowWithRecoverStrategyAndAsyncCall() {
-    // given
-    var counterId = randomId();
-    var workflowId = randomId();
-
-    // when
-    Message response =
-        componentClient
-            .forWorkflow(workflowId)
-            .method(WorkflowWithRecoverStrategyAndAsyncCall::startFailingCounter)
-            .invoke(counterId);
-
-    assertThat(response.text()).isEqualTo("workflow started");
-
-    // then
-    Awaitility.await()
-        .ignoreExceptions()
-        .atMost(20, TimeUnit.of(SECONDS))
-        .untilAsserted(
-            () -> {
-              Integer counterValue = getFailingCounterValue(counterId);
-              assertThat(counterValue).isEqualTo(3);
-            });
-
-    Awaitility.await()
-        .ignoreExceptions()
-        .atMost(20, TimeUnit.of(SECONDS))
-        .untilAsserted(
-            () -> {
-              var state =
-                  await(
-                      componentClient
-                          .forWorkflow(workflowId)
-                          .method(WorkflowWithRecoverStrategyAndAsyncCall::get)
-                          .invokeAsync());
               assertThat(state.finished()).isTrue();
             });
   }

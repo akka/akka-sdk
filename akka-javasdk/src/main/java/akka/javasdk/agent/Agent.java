@@ -61,7 +61,7 @@ import java.util.function.Function;
  * <p>For reliable execution with error handling and retries, consider calling agents from a {@link
  * akka.javasdk.workflow.Workflow}.
  */
-public abstract class Agent {
+public abstract class Agent implements AgentDelegationWorker {
 
   public record TokenUsage(int inputTokens, int outputTokens) {}
 
@@ -258,7 +258,7 @@ public abstract class Agent {
        * @see ImageLoader
        * @deprecated use contentLoader
        */
-      @Deprecated
+      @Deprecated(since = "3.5.15", forRemoval = true)
       @SuppressWarnings("removal")
       Builder imageLoader(ImageLoader imageLoader);
 
@@ -640,7 +640,7 @@ public abstract class Agent {
        * @return this builder for method chaining
        * @deprecated use contentLoader
        */
-      @Deprecated
+      @Deprecated(since = "3.5.18", forRemoval = true)
       @SuppressWarnings("removal")
       Builder imageLoader(ImageLoader imageLoader);
 

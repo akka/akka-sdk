@@ -1,0 +1,25 @@
+/*
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
+ */
+
+package demo.docreview.application;
+
+import akka.javasdk.agent.autonomous.AgentDefinition;
+import akka.javasdk.agent.autonomous.AutonomousAgent;
+import akka.javasdk.agent.autonomous.capability.TaskAcceptance;
+import akka.javasdk.annotations.Component;
+
+@Component(
+  id = "document-reviewer",
+  description = """
+  Reviews documents for regulatory and compliance standards, \
+  producing structured assessments with specific findings\
+  """
+)
+public class DocumentReviewer extends AutonomousAgent {
+
+  @Override
+  public AgentDefinition definition() {
+    return define().capability(TaskAcceptance.of(ReviewTasks.REVIEW).maxIterationsPerTask(5));
+  }
+}

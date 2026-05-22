@@ -53,7 +53,7 @@ import java.util.Optional;
  * @see Agent.Effect.Builder#imageLoader(ImageLoader)
  * @deprecated use {@link ContentLoader}
  */
-@Deprecated(forRemoval = true)
+@Deprecated(since = "3.5.15", forRemoval = true)
 public interface ImageLoader extends ContentLoader {
 
   /**

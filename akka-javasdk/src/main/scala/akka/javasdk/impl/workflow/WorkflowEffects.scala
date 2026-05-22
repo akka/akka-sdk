@@ -150,12 +150,6 @@ object WorkflowEffects {
         TransitionalEffectImpl(persistence, DeleteTransition.withReason(reason))
       }
 
-      override def transitionTo[I](stepName: String, input: I): Transitional =
-        TransitionalEffectImpl(persistence, StepTransition(stepName, Some(input), None))
-
-      override def transitionTo(stepName: String): Transitional =
-        TransitionalEffectImpl(persistence, StepTransition(stepName, None, None))
-
     }
 
     final case class TransitionalEffectImpl[S](persistence: Persistence[S], transition: Transition)
@@ -211,12 +205,6 @@ object WorkflowEffects {
             WorkflowEffects
               .PauseSettings(pauseSettings.timeout().toScala, toTimeoutHandler(pauseSettings.timeoutHandler())))))
     }
-
-    override def transitionTo[I](stepName: String, input: I): Transitional =
-      TransitionalEffectImpl(NoPersistence, StepTransition(stepName, Some(input), None))
-
-    override def transitionTo(stepName: String): Transitional =
-      TransitionalEffectImpl(NoPersistence, StepTransition(stepName, None, None))
 
     override def end(): Transitional =
       TransitionalEffectImpl(NoPersistence, EndTransition.noReason)

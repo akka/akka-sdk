@@ -20,7 +20,6 @@ import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.annotations.Component;
-import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.grpc.GrpcClientProvider;
@@ -426,13 +425,10 @@ public class TestKit {
           objectStorageBuckets);
     }
 
-    /**
-     * Mock the incoming messages flow from a KeyValueEntity.
-     *
-     * @deprecated use {@link #withKeyValueEntityIncomingMessages(Class)} instead.
-     */
-    @Deprecated(since = "3.4.2", forRemoval = true)
-    public Settings withKeyValueEntityIncomingMessages(String componentId) {
+    /** Mock the incoming messages flow from a KeyValueEntity. */
+    public Settings withKeyValueEntityIncomingMessages(
+        Class<? extends KeyValueEntity<?>> keyValueEntityClass) {
+      String componentId = getComponentId(keyValueEntityClass);
       return new Settings(
           serviceName,
           aclEnabled,
@@ -448,19 +444,10 @@ public class TestKit {
           objectStorageBuckets);
     }
 
-    public Settings withKeyValueEntityIncomingMessages(
-        Class<? extends KeyValueEntity<?>> keyValueEntityClass) {
-      String componentId = getComponentId(keyValueEntityClass);
-      return withKeyValueEntityIncomingMessages(componentId);
-    }
-
-    /**
-     * Mock the incoming events flow from an EventSourcedEntity.
-     *
-     * @deprecated use {@link #withEventSourcedEntityIncomingMessages(Class)} instead.
-     */
-    @Deprecated(since = "3.4.2", forRemoval = true)
-    public Settings withEventSourcedEntityIncomingMessages(String componentId) {
+    /** Mock the incoming events flow from an EventSourcedEntity. */
+    public Settings withEventSourcedEntityIncomingMessages(
+        Class<? extends EventSourcedEntity<?, ?>> eventSourcedEntityClass) {
+      String componentId = getComponentId(eventSourcedEntityClass);
       return new Settings(
           serviceName,
           aclEnabled,
@@ -476,19 +463,9 @@ public class TestKit {
           objectStorageBuckets);
     }
 
-    public Settings withEventSourcedEntityIncomingMessages(
-        Class<? extends EventSourcedEntity<?, ?>> eventSourcedEntityClass) {
-      String componentId = getComponentId(eventSourcedEntityClass);
-      return withEventSourcedEntityIncomingMessages(componentId);
-    }
-
-    /**
-     * Mock the incoming state updates flow from a Workflow.
-     *
-     * @deprecated use {@link #withWorkflowIncomingMessages(Class)} instead.
-     */
-    @Deprecated(since = "3.4.2", forRemoval = true)
-    public Settings withWorkflowIncomingMessages(String componentId) {
+    /** Mock the incoming state updates flow from a Workflow. */
+    public Settings withWorkflowIncomingMessages(Class<? extends Workflow<?>> workflowClass) {
+      String componentId = getComponentId(workflowClass);
       return new Settings(
           serviceName,
           aclEnabled,
@@ -502,11 +479,6 @@ public class TestKit {
           httpMocks,
           grpcMocks,
           objectStorageBuckets);
-    }
-
-    public Settings withWorkflowIncomingMessages(Class<? extends Workflow<?>> workflowClass) {
-      String componentId = getComponentId(workflowClass);
-      return withWorkflowIncomingMessages(componentId);
     }
 
     /**
@@ -710,8 +682,11 @@ public class TestKit {
           objectStorageBuckets);
     }
 
-    public Settings withModelProvider(
-        Class<? extends Agent> agentClass, ModelProvider modelProvider) {
+    /**
+     * Override the model provider for an {@link Agent} or {@link AutonomousAgent} component. The
+     * class must be annotated with {@code @Component(id = "...")} or {@code @ComponentId}.
+     */
+    public Settings withModelProvider(Class<?> agentClass, ModelProvider modelProvider) {
       var componentId = getComponentId(agentClass);
       var newModelProvidersByAgentId = new HashMap<>(modelProvidersByAgentId);
       newModelProvidersByAgentId.put(componentId, modelProvider);
@@ -1102,6 +1077,7 @@ public class TestKit {
               serializer,
               startupContext.agentRegistry().agentClassById(),
               Option.empty(),
+              Option.empty(),
               runtimeActorSystem.executionContext(),
               runtimeActorSystem);
       agentRegistry = startupContext.agentRegistry();
@@ -1278,44 +1254,24 @@ public class TestKit {
                 "No in-memory span exporter configured. Tracing may not be enabled."));
   }
 
-  /**
-   * Get incoming messages for KeyValueEntity.
-   *
-   * @param componentId As annotated with @Component on the KeyValueEntity
-   * @deprecated use {@link #getKeyValueEntityIncomingMessages(Class)} instead.
-   */
-  @Deprecated(since = "3.4.2", forRemoval = true)
-  public IncomingMessages getKeyValueEntityIncomingMessages(String componentId) {
+  /** Get incoming messages for KeyValueEntity. */
+  public IncomingMessages getKeyValueEntityIncomingMessages(
+      Class<? extends KeyValueEntity<?>> keyValueEntityClass) {
+    String componentId = getComponentId(keyValueEntityClass);
     if (!settings.mockedEventing.hasKeyValueEntitySubscription(componentId)) {
       throwMissingConfigurationException("KeyValueEntity " + componentId);
     }
     return eventingTestKit.getKeyValueEntityIncomingMessages(componentId);
   }
 
-  public IncomingMessages getKeyValueEntityIncomingMessages(
-      Class<? extends KeyValueEntity<?>> keyValueEntityClass) {
-    String componentId = getComponentId(keyValueEntityClass);
-    return getKeyValueEntityIncomingMessages(componentId);
-  }
-
-  /**
-   * Get incoming messages for EventSourcedEntity.
-   *
-   * @param componentId As annotated with @Component on the EventSourcedEntity
-   * @deprecated use {@link #getEventSourcedEntityIncomingMessages(Class)} instead.
-   */
-  @Deprecated(since = "3.4.2", forRemoval = true)
-  public IncomingMessages getEventSourcedEntityIncomingMessages(String componentId) {
+  /** Get incoming messages for EventSourcedEntity. */
+  public IncomingMessages getEventSourcedEntityIncomingMessages(
+      Class<? extends EventSourcedEntity<?, ?>> eventSourcedEntityClass) {
+    String componentId = getComponentId(eventSourcedEntityClass);
     if (!settings.mockedEventing.hasEventSourcedEntitySubscription(componentId)) {
       throwMissingConfigurationException("EventSourcedEntity " + componentId);
     }
     return eventingTestKit.getEventSourcedEntityIncomingMessages(componentId);
-  }
-
-  public IncomingMessages getEventSourcedEntityIncomingMessages(
-      Class<? extends EventSourcedEntity<?, ?>> eventSourcedEntityClass) {
-    String componentId = getComponentId(eventSourcedEntityClass);
-    return getEventSourcedEntityIncomingMessages(componentId);
   }
 
   private static List<SpiDevObjectStorageBucketConfig> toSpiObjectStorageBuckets(
@@ -1363,26 +1319,19 @@ public class TestKit {
 
   @SuppressWarnings("deprecation")
   private static String getComponentId(Class<?> componentClass) {
-    // First check for the new Component annotation
     Component componentAnnotation = componentClass.getAnnotation(Component.class);
     if (componentAnnotation != null) {
       return componentAnnotation.id();
     }
 
-    // Fallback to the old ComponentId annotation for backward compatibility
-    ComponentId componentIdAnnotation = componentClass.getAnnotation(ComponentId.class);
-    if (componentIdAnnotation != null) {
-      return componentIdAnnotation.value();
-    }
-
     throw new IllegalArgumentException(
-        "Component [" + componentClass + "] is missing @Component or @ComponentId annotation");
+        "Component [" + componentClass + "] is missing @Component annotation");
   }
 
   /**
    * Utility method to get the component ID from a component class.
    *
-   * @param componentClass the component class annotated with @Component or @ComponentId
+   * @param componentClass the component class annotated with @Component
    * @return the component ID
    */
   public static String getComponentIdValue(Class<?> componentClass) {
@@ -1417,23 +1366,13 @@ public class TestKit {
     return null;
   }
 
-  /**
-   * Get incoming messages for Workflow.
-   *
-   * @param componentId As annotated with @Component on the EventSourcedEntity
-   * @deprecated use {@link #getWorkflowIncomingMessages(Class)} instead.
-   */
-  @Deprecated(since = "3.4.2", forRemoval = true)
-  public IncomingMessages getWorkflowIncomingMessages(String componentId) {
+  /** Get incoming messages for Workflow. */
+  public IncomingMessages getWorkflowIncomingMessages(Class<? extends Workflow<?>> workflowClass) {
+    String componentId = getComponentId(workflowClass);
     if (!settings.mockedEventing.hasWorkflowSubscription(componentId)) {
       throwMissingConfigurationException("Workflow " + componentId);
     }
     return eventingTestKit.getWorkflowIncomingMessages(componentId);
-  }
-
-  public IncomingMessages getWorkflowIncomingMessages(Class<? extends Workflow<?>> workflowClass) {
-    String componentId = getComponentId(workflowClass);
-    return getWorkflowIncomingMessages(componentId);
   }
 
   /**

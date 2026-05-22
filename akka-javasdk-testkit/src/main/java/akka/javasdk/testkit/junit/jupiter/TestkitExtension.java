@@ -48,35 +48,11 @@ public final class TestkitExtension implements BeforeAllCallback, AfterAllCallba
   /**
    * Get incoming messages for ValueEntity.
    *
-   * @param typeId @TypeId or entity_type of the ValueEntity (depending on the used SDK)
-   * @deprecated Use {@link #getValueEntityIncomingMessages(Class)} instead.
-   */
-  @Deprecated(since = "3.4.2", forRemoval = true)
-  @SuppressWarnings("removal")
-  public IncomingMessages getValueEntityIncomingMessages(String typeId) {
-    return testKit.getKeyValueEntityIncomingMessages(typeId);
-  }
-
-  /**
-   * Get incoming messages for ValueEntity.
-   *
    * @param keyValueEntityClass class of the KeyValueEntity
    */
   public IncomingMessages getValueEntityIncomingMessages(
       Class<? extends KeyValueEntity<?>> keyValueEntityClass) {
     return testKit.getKeyValueEntityIncomingMessages(keyValueEntityClass);
-  }
-
-  /**
-   * Get incoming messages for EventSourcedEntity.
-   *
-   * @param typeId @TypeId or entity_type of the EventSourcedEntity (depending on the used SDK)
-   * @deprecated Use {@link #getEventSourcedEntityIncomingMessages(Class)} instead.
-   */
-  @Deprecated(since = "3.4.2", forRemoval = true)
-  @SuppressWarnings("removal")
-  public IncomingMessages getEventSourcedEntityIncomingMessages(String typeId) {
-    return testKit.getEventSourcedEntityIncomingMessages(typeId);
   }
 
   /**

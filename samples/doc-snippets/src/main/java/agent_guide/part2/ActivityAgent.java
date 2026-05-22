@@ -5,11 +5,15 @@ import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component(id = "activity-agent")
 public class ActivityAgent extends Agent {
 
   public record Request(String userId, String message) {}
+
+  private static final Logger logger = LoggerFactory.getLogger(ActivityAgent.class);
 
   private static final String SYSTEM_MESSAGE =
     """
@@ -25,6 +29,7 @@ public class ActivityAgent extends Agent {
   }
 
   public Effect<String> query(Request request) { // <2>
+    logger.info("Invoked for user [{}] with: {}", request.userId(), request.message());
     var allPreferences = componentClient
       .forEventSourcedEntity(request.userId())
       .method(PreferencesEntity::getPreferences)

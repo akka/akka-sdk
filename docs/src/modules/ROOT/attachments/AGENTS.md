@@ -15,29 +15,45 @@ Generate components with correct:
 You find the reference documentation of Akka in the akka-context directory and sub-directories.
 
 Access these documentation files for detailed patterns:
-- `akka-context/sdk/agents.html.md` - AI agents with LLMs
-- `akka-context/sdk/agents/prompt.html.md` - Choosing the prompts for agents.
+
+**Agents (request-based, single request-response with tools and session memory):**
+- `akka-context/sdk/agents.html.md` - AI agents with models
+- `akka-context/sdk/agents/prompt.html.md` - Choosing the prompts for agents
 - `akka-context/sdk/agents/calling.html.md` - Calling agents from Akka components
 - `akka-context/sdk/agents/memory.html.md` - Managing agent session memory
-- `akka-context/sdk/agents/structured.html.md` - Structured LLM responses
+- `akka-context/sdk/agents/structured.html.md` - Structured model responses
 - `akka-context/sdk/agents/failures.html.md` - Handling agent failures
 - `akka-context/sdk/agents/extending.html.md` - Extending agents with function tools
 - `akka-context/sdk/agents/streaming.html.md` - Streaming model responses with agents
-- `akka-context/sdk/agents/orchestrating.html.md` - Orchestrating multiple agents
+- `akka-context/sdk/agents/orchestrating.html.md` - Orchestrating multiple agents through Workflows
 - `akka-context/sdk/agents/guardrails.html.md` - Constraining and controlling agent behavior with guardrails
-- `akka-context/sdk/agents/llm_eval.html.md` - Evaluating and judging the responses from LLMs via agents
-- `akka-context/sdk/agents/testing.html.md` - Testing agents
-- `akka-context/getting-started/planner-agent/dynamic-team.html.md` - Dynamic agent planning and orchestration
+- `akka-context/sdk/agents/llm_eval.html.md` - Evaluating and judging the responses from models
+- `akka-context/sdk/agents/testing.html.md` - Testing request-based agents
+
+**Autonomous Agents (durable model-driven processes with typed tasks and multi-agent coordination):**
+- `akka-context/sdk/autonomous-agents.html.md` - Hub: when to use, comparison with request-based Agent, basic structure, sample matrix
+- `akka-context/sdk/autonomous-agents/defining.html.md` - Building AgentDefinition: goal, accepted task types, tools, MCP, guardrails, iteration limit, model
+- `akka-context/sdk/autonomous-agents/tasks.html.md` - Tasks: definitions, instances, lifecycle, rules, snapshots, dependencies
+- `akka-context/sdk/autonomous-agents/coordination.html.md` - Coordination patterns: sequential, delegative, collaborative, emergent
+- `akka-context/sdk/autonomous-agents/capabilities.html.md` - Coordination capabilities: Delegation, Handoff, TeamLeadership, Moderation, external input
+- `akka-context/sdk/autonomous-agents/client.html.md` - ComponentClient API: `runSingleTask`, `assignTasks`, `pause`/`resume`, state, notifications, async variants
+- `akka-context/sdk/autonomous-agents/notifications.html.md` - Notifications reference: every notification type
+- `akka-context/sdk/autonomous-agents/testing.html.md` - Testing with TestModelProvider and AutonomousAgentTools
+
+**Other components:**
 - `akka-context/sdk/event-sourced-entities.html.md` - Event sourced entity
 - `akka-context/sdk/key-value-entities.html.md` - Key value entity, simple state management
 - `akka-context/sdk/views.html.md` - Query models and projections
-- `akka-context/reference/views/**` - Detailed reference docs of views
 - `akka-context/sdk/workflows.html.md` - Saga patterns and orchestration
 - `akka-context/sdk/consuming-producing.html.md` - Event consumption and topics
 - `akka-context/sdk/http-endpoints.html.md` - RESTful APIs
 - `akka-context/sdk/grpc-endpoints.html.md` - Protocol buffer APIs
 - `akka-context/sdk/timed-actions.html.md` - Scheduling and timers
 - `akka-context/sdk/setup-and-dependency-injection.html.md` - Service bootstrap and dependency injection
+
+**Guides and reference:**
+- `akka-context/getting-started/planner-agent/dynamic-team.html.md` - Dynamic agent planning and orchestration
+- `akka-context/reference/views/**` - Detailed reference docs of views
 - `akka-context/reference/config/reference.html.md` - Full configuration reference
 - `ai-coding-assistant-guidelines.html.md` - Best practices
 
@@ -46,6 +62,7 @@ Access these documentation files for detailed patterns:
 **MANDATORY - Always read documentation BEFORE coding for:**
 - **Workflows** - ALWAYS read `workflows.html.md` first time in session (complex patterns, compensation, recovery)
 - **Agents** - ALWAYS read `agents.html.md` first time in session (LLM integration, tools, streaming)
+- **Autonomous Agents** - ALWAYS read `autonomous-agents.html.md` first time in session (durable execution, tasks, multi-agent coordination)
 - **First-time component generation** - Read relevant doc for ANY component type not yet created in this session
 - **User-specified features you're uncertain about**
 - **API mismatches or errors**
@@ -73,6 +90,33 @@ Access these documentation files for detailed patterns:
 - Model config: prefer default in config, override with `.model(ModelProvider.openAi()...)` if needed
 - Error handling with `.onFailure(throwable -> fallbackValue)`
 - When calling from workflow: use long timeouts (60s), limited retries (RecoverStrategy.maxRetries(2))
+
+**Autonomous Agent**
+- Extends `AutonomousAgent`, has `@Component(id = "...")`
+  - Delegation/handoff/team/moderation targets: also set `description = "..."` so the calling model picks the right one.
+- Implements single `definition()` method returning `AgentDefinition` — NO command handlers
+- Agent is a process: runs, works on assigned tasks, stops
+- Tasks are separate persistent entities with typed results — the coordination primitive
+- Task definitions: `Task.define("name").description("...").resultConformsTo(ResultRecord.class)`
+- Task instances: add per-request `.instructions(String)` and `.attach(MessageContent...)` to a definition
+- Task lifecycle: `PENDING → ASSIGNED → IN_PROGRESS → COMPLETED` (or `FAILED`)
+- Client API via `ComponentClient`:
+  - `componentClient.forAutonomousAgent(AgentClass.class, instanceId).runSingleTask(task)` — one-shot
+  - `componentClient.forTask(taskId).create(task)` — pre-create tasks
+  - `componentClient.forAutonomousAgent(AgentClass.class, instanceId).assignTasks(taskIds...)` — assign multiple
+  - `componentClient.forTask(taskId).get(taskDef)` — query typed result via `TaskSnapshot<R>`
+- Instance ID typically `UUID.randomUUID().toString()` for one-off work
+- Stateless design (no mutable state in agent class) — tasks carry state
+- `@FunctionTool` methods can also be defined directly on the agent class
+- Components (Entities, Views, Workflows) can be used as tools by passing their `Class`
+- Task dependencies: `task.dependsOn(otherTaskId)` — agent respects ordering
+- `runSingleTask` is normal usage of Autonomous Agent: one task per instance is fine.
+- `runSingleTask` is non-blocking: it returns the task id immediately. The task itself is the durable record of status and typed result, queryable any time via `componentClient.forTask(taskId).get(taskDef)`. No wrapping Workflow is needed for durability or to await completion.
+
+**Choosing between Agent and Autonomous Agent**
+- See `akka-context/sdk/autonomous-agents.html.md` ("When to use an Autonomous Agent") for the decision rubric.
+- Bottom line: `AutonomousAgent` for investigative work (the model decides what to consult or do next) or multi-agent coordination (delegation, handoff, team, moderation). `Agent` (optionally inside a Workflow) for a fixed sequence of steps with one model call per step.
+- When a coordinating `AutonomousAgent` delegates to other agents, both alternatives are valid. A request-based `Agent` exposed as the coordinator's `@FunctionTool` is the lighter default when that agent takes a question and produces a response in a single model call. Promote it to its own `AutonomousAgent` (delegation target) when it benefits from its own iteration loop, parallel workers, handoff, or a separately observable task lifecycle.
 
 **Event Sourced Entity**
 - Extends `EventSourcedEntity<State, Event>`, has `@Component(id = "...")`
@@ -132,8 +176,9 @@ com.{org}.{app-name}.domain/
   - NO Akka dependencies
 
 com.{org}.{app-name}.application/
-  - Entities, Views, Workflows, Agents
+  - Entities, Views, Workflows, Agents, Autonomous Agents
   - Consumers, Timed Actions
+  - Task definition classes (e.g., ResearchTasks)
 
 com.{org}.{app-name}.api/
   - HTTP/gRPC Endpoints
@@ -145,7 +190,9 @@ src/main/proto/
 
 ### Naming Conventions
 
-- Agent: `{Purpose}Agent` (e.g., `ActivityAgent`)
+- Agent (request-based): `{Purpose}Agent` (e.g., `ActivityAgent`)
+- Autonomous Agent: `{Purpose}Agent` or `{Role}Agent` (e.g., `ResearchCoordinator`, `TriageAgent`)
+- Task definitions: `{Domain}Tasks` (e.g., `ResearchTasks`, `SupportTasks`)
 - Entity: `{DomainName}Entity` (e.g., `CreditCardEntity`)
 - View: `{DomainName}{ByQueryField}View` (e.g., `CreditCardsByCardholderView`)
 - Workflow: `{ProcessName}Workflow` (e.g., `BankTransferWorkflow`)
@@ -160,18 +207,20 @@ src/main/proto/
 
 Component base classes follow `akka.javasdk.<component-package>.<ClassName>`:
 
-| Class | Import |
-|-------|--------|
-| `Agent` | `akka.javasdk.agent.Agent` |
-| `Consumer` | `akka.javasdk.consumer.Consumer` |
-| `EventSourcedEntity` | `akka.javasdk.eventsourcedentity.EventSourcedEntity` |
-| `KeyValueEntity` | `akka.javasdk.keyvalueentity.KeyValueEntity` |
-| `TimedAction` | `akka.javasdk.timedaction.TimedAction` |
-| `View` | `akka.javasdk.view.View` |
-| `Workflow` | `akka.javasdk.workflow.Workflow` |
-| `ComponentClient` | `akka.javasdk.client.ComponentClient` |
-| `AbstractHttpEndpoint` | `akka.javasdk.http.AbstractHttpEndpoint` |
-| `AbstractGrpcEndpoint` | `akka.javasdk.grpc.AbstractGrpcEndpoint` |
+| Class                  | Import                                               |
+|------------------------|------------------------------------------------------|
+| `Agent`                | `akka.javasdk.agent.Agent`                           |
+| `AutonomousAgent`      | `akka.javasdk.agent.autonomous.AutonomousAgent`      |
+| `Task`                 | `akka.javasdk.agent.task.Task`                       |
+| `Consumer`             | `akka.javasdk.consumer.Consumer`                     |
+| `EventSourcedEntity`   | `akka.javasdk.eventsourcedentity.EventSourcedEntity` |
+| `KeyValueEntity`       | `akka.javasdk.keyvalueentity.KeyValueEntity`         |
+| `TimedAction`          | `akka.javasdk.timedaction.TimedAction`               |
+| `View`                 | `akka.javasdk.view.View`                             |
+| `Workflow`             | `akka.javasdk.workflow.Workflow`                     |
+| `ComponentClient`      | `akka.javasdk.client.ComponentClient`                |
+| `AbstractHttpEndpoint` | `akka.javasdk.http.AbstractHttpEndpoint`             |
+| `AbstractGrpcEndpoint` | `akka.javasdk.grpc.AbstractGrpcEndpoint`             |
 
 Annotations are in `akka.javasdk.annotations.*`:
 
@@ -289,6 +338,111 @@ public class ActivityAgent extends Agent {
 }
 ```
 
+### Autonomous Agent (basic)
+
+```java
+@Component(
+    id = "question-answerer",
+    description = "Answers questions clearly and concisely")
+public class QuestionAnswerer extends AutonomousAgent {
+
+  @Override
+  public AgentDefinition definition() {
+    return define()
+        .capability(TaskAcceptance.of(QuestionTasks.ANSWER).maxIterationsPerTask(3));
+  }
+
+  @FunctionTool(description = "Look up an authoritative source for a topic")
+  public String lookupSource(String topic) {
+    return "Source for " + topic;
+  }
+}
+```
+
+### Autonomous Agent with Combined Capabilities
+
+```java
+@Component(
+    id = "research-coordinator",
+    description = "Produces research briefs by synthesizing specialist findings")
+public class ResearchCoordinator extends AutonomousAgent {
+
+  @Override
+  public AgentDefinition definition() {
+    return define()
+        .tools(new ResearchTools())
+        .capability(
+            TaskAcceptance.of(ResearchTasks.BRIEF)
+                .maxIterationsPerTask(10)
+                .canHandoffTo(SeniorAnalyst.class))
+        .capability(Delegation.to(Researcher.class, Analyst.class).maxParallelWorkers(3));
+  }
+}
+```
+
+### Autonomous Agent Task Definition
+
+```java
+public class ResearchTasks {
+  public static final Task<ResearchBrief> BRIEF = Task
+      .define("Brief")
+      .description("Produce a research brief on a given topic")
+      .resultConformsTo(ResearchBrief.class);
+
+  public static final Task<ResearchFindings> FINDINGS = Task
+      .define("Findings")
+      .description("Research a topic and produce factual findings")
+      .resultConformsTo(ResearchFindings.class)
+      .rules(ResearchFindingsRule.class); // optional validation rule
+}
+
+public record ResearchBrief(String title, String summary, List<String> keyFindings) {}
+public record ResearchFindings(String topic, List<String> facts, List<String> sources) {}
+
+public class ResearchFindingsRule implements TaskRule<ResearchFindings> {
+  @Override
+  public Result onComplete(ResearchFindings findings) {
+    if (findings.sources() == null || findings.sources().isEmpty()) {
+      return new Result.Rejected("research findings must cite sources");
+    }
+    return new Result.Accepted();
+  }
+}
+```
+
+### Endpoint Driving an Autonomous Agent
+
+```java
+@HttpEndpoint
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
+public class ResearchEndpoint {
+
+  public record Request(String topic) {}
+
+  private final ComponentClient componentClient;
+
+  public ResearchEndpoint(ComponentClient componentClient) {
+    this.componentClient = componentClient;
+  }
+
+  @Post("/research")
+  public HttpResponse start(Request request) {
+    var taskId = componentClient
+        .forAutonomousAgent(ResearchCoordinator.class, UUID.randomUUID().toString())
+        .runSingleTask(ResearchTasks.BRIEF.instructions(request.topic())); // returns task id immediately
+    return HttpResponses.created(taskId, "/research/" + taskId);
+  }
+
+  @Get("/research/{taskId}")
+  public HttpResponse get(String taskId) {
+    var snapshot = componentClient.forTask(taskId).get(ResearchTasks.BRIEF); // typed result
+    return snapshot.result()
+        .<HttpResponse>map(HttpResponses::ok)
+        .orElseGet(() -> HttpResponses.notFound("Not ready"));
+  }
+}
+```
+
 ### Workflow Orchestrating Multiple Agents (Static)
 
 ```java
@@ -365,107 +519,26 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
 }
 ```
 
-### Workflow with Dynamic Agent Planning
+### Autonomous Agent Orchestrating Multiple Agents (Dynamic)
 
 ```java
-@Component(id = "dynamic-agent-team")
-public class DynamicAgentWorkflow extends Workflow<DynamicAgentWorkflow.State> {
+public class ActivityTasks {
+  public static final Task<String> SUGGEST_ACTIVITIES = Task.name("SuggestActivities")
+      .description("Suggest activities, taking weather and preferences into account.");
+}
 
-  public record State(String query, Plan plan, Map<String, String> agentResponses, String answer) {
-    State withPlan(Plan p) { return new State(query, p, agentResponses, answer); }
-    State addResponse(String agentId, String response) {
-      var updated = new HashMap<>(agentResponses);
-      updated.put(agentId, response);
-      return new State(query, plan, updated, answer);
-    }
-    State withAnswer(String a) { return new State(query, plan, agentResponses, a); }
-    PlanStep nextStep() { return plan.steps().get(agentResponses.size()); }
-    boolean hasMoreSteps() { return agentResponses.size() < plan.steps().size(); }
-  }
-
-  public record Plan(List<PlanStep> steps) {}
-  public record PlanStep(String agentId, String query) {}
-
-  private final ComponentClient componentClient;
-
-  public DynamicAgentWorkflow(ComponentClient componentClient) {
-    this.componentClient = componentClient;
-  }
+// Model decides which workers to call. WeatherAgent and ActivityAgent are
+// unchanged request-based Agents.
+@Component(
+    id = "activity-coordinator",
+    description = "Suggests activities by consulting the weather and/or activity agents.")
+public class ActivityCoordinator extends AutonomousAgent {
 
   @Override
-  public WorkflowSettings settings() {
-    return WorkflowSettings.builder()
-      .defaultStepTimeout(ofSeconds(60))
-      .defaultStepRecovery(RecoverStrategy.maxRetries(1).failoverTo(DynamicAgentWorkflow::summarizeStep))
-      .build();
-  }
-
-  public Effect<Done> start(String query) {
-    return effects()
-      .updateState(new State(query, null, Map.of(), ""))
-      .transitionTo(DynamicAgentWorkflow::createPlanStep)
-      .thenReply(Done.getInstance());
-  }
-
-  @StepName("create-plan")
-  private StepEffect createPlanStep() {
-    // PlannerAgent selects agents and creates execution plan
-    var plan = componentClient
-      .forAgent()
-      .inSession(sessionId())
-      .method(PlannerAgent::createPlan)
-      .invoke(currentState().query);
-
-    if (plan.steps().isEmpty()) {
-      return stepEffects()
-        .updateState(currentState().withAnswer("No suitable agents found"))
-        .thenEnd();
-    }
-
-    return stepEffects()
-      .updateState(currentState().withPlan(plan))
-      .thenTransitionTo(DynamicAgentWorkflow::executePlanStep);
-  }
-
-  @StepName("execute-plan")
-  private StepEffect executePlanStep() {
-    var step = currentState().nextStep();
-
-    // Dynamic agent invocation - don't know agent class at compile time
-    var response = componentClient
-      .forAgent()
-      .inSession(sessionId())
-      .dynamicCall(step.agentId()) // Call by agent ID
-      .invoke(step.query());
-
-    var newState = currentState().addResponse(step.agentId(), response);
-
-    if (newState.hasMoreSteps()) {
-      return stepEffects()
-        .updateState(newState)
-        .thenTransitionTo(DynamicAgentWorkflow::executePlanStep); // Loop
-    } else {
-      return stepEffects()
-        .updateState(newState)
-        .thenTransitionTo(DynamicAgentWorkflow::summarizeStep);
-    }
-  }
-
-  @StepName("summarize")
-  private StepEffect summarizeStep() {
-    var finalAnswer = componentClient
-      .forAgent()
-      .inSession(sessionId())
-      .method(SummarizerAgent::summarize)
-      .invoke(new SummarizerAgent.Request(currentState().query, currentState().agentResponses.values()));
-
-    return stepEffects()
-      .updateState(currentState().withAnswer(finalAnswer))
-      .thenEnd();
-  }
-
-  private String sessionId() {
-    return commandContext().workflowId();
+  public AgentDefinition definition() {
+    return define()
+        .capability(TaskAcceptance.of(ActivityTasks.SUGGEST_ACTIVITIES).maxIterationsPerTask(5))
+        .capability(Delegation.to(WeatherAgent.class, ActivityAgent.class));
   }
 }
 ```
@@ -613,12 +686,16 @@ public class MyEndpointIntegrationTest extends TestKitSupport {
 - Create empty command record classes without fields → causes serialization errors; if no fields needed, make the command handler method parameterless
 - Return `null` in the event handler → Only the `emptyState()` method is allowed to return `null`; Add a method to the State record class to model an empty or deleted state instead
 - Perform side effects in `.thenReply()` in Entities → use a Consumer to react to events for side effects
-- Use deprecated `@ComponentId`  -> use `@Component(id = ")`
-- Use deprecated `@AgentDescription`  -> use `@Component(id = ")` and `@AgentRole`
-- Add `@Component` or `@ComponentId` to HTTP/gRPC endpoints
+- Add `@Component` to HTTP/gRPC endpoints
 - Inject `RequestContext` or `GrpcRequestContext` as constructor parameters when extending `AbstractHttpEndpoint` / `AbstractGrpcEndpoint` → use `requestContext()` method instead
 - Use deprecated `testKit.call`  -> use `testKit.method(...).invoke(...)`
 - Create multiple command handlers in Agent
+- Add command handlers to AutonomousAgent → it only has `definition()`
+- Use `Agent` base class for autonomous agents → use `AutonomousAgent`
+- Use `componentClient.forAgent()` for autonomous agents → use `componentClient.forAutonomousAgent()`
+- Create task instances without instructions → always add `.instructions()` for per-request context
+- Wrap `runSingleTask` in a Workflow for durability or to "wait" for the result → the task is already durable and queryable via `componentClient.forTask(taskId).get(taskDef)`
+- Use `definition()` in request-based Agent → use `effects()` chain; `definition()` is for AutonomousAgent only
 - Return protobuf types from domain layer
 - Import `WorkflowSettings` -> WorkflowSettings is an inner class of Workflow, so no additional import is needed
 - Static import `maxRetries` -> use `RecoverStrategy.maxRetries()` (import `Workflow.RecoverStrategy`)
@@ -631,7 +708,9 @@ public class MyEndpointIntegrationTest extends TestKitSupport {
 - Inject `EventSourcedEntityContext` if accessing entity ID in `emptyState()`
 - Use `Awaitility.await()` for view tests
 - Follow package structure strictly
-- Use `TestModelProvider` to mock AI in agent tests
+- Use `TestModelProvider` to mock AI in agent and autonomous agent tests
+- Define task types as `static final` constants in a `{Domain}Tasks` class
+- Use `UUID.randomUUID().toString()` for one-off autonomous agent instance IDs
 - Add `ce-subject` metadata when producing to topics
 - Handle errors in Timed Actions to avoid infinite rescheduling
 - Define `.proto` files in `src/main/proto` for gRPC
@@ -651,6 +730,21 @@ Before presenting code, verify:
 - [ ] Use `responseConformsTo()` for structured responses (not `responseAs()`)
 - [ ] Handle errors from JSON parsing, tool calls, or model with `.onFailure()`
 - [ ] Session ID strategy defined (UUID, workflow ID, etc.)
+
+**Autonomous Agent**
+- [ ] **STOP: Did you read `autonomous-agents.html.md` BEFORE writing any code?** (Required for first autonomous agent in session)
+- [ ] Extends `AutonomousAgent`, NOT `Agent`
+- [ ] Has `@Component(id = "...", description = "...")` annotation with a non-empty description (mandatory)
+- [ ] `@Component` description captures the agent's purpose and expected outcome: used by coordinators, injected into the system message
+- [ ] Implements `definition()` method, NO command handlers
+- [ ] Optional `.instructions(...)` for tone, persona, domain rules, or procedural guidance to the model; not multi-agent orchestration mechanics (those belong in capabilities)
+- [ ] Declares accepted task types with `.capability(TaskAcceptance.of(...))`
+- [ ] Task definitions are `static final` constants with `.resultConformsTo()`
+- [ ] Result types are Java records
+- [ ] `maxIterationsPerTask()` set appropriately for task complexity
+- [ ] Rich descriptions in `@FunctionTool` methods
+- [ ] Coordination capabilities match the pattern needed (delegation vs handoff vs both)
+- [ ] Agent class is stateless (no mutable fields)
 
 **Events & State**
 - [ ] Events have `@TypeName` annotations

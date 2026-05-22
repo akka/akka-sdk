@@ -111,26 +111,4 @@ public interface TimerScheduler {
    * name.
    */
   CompletionStage<Done> deleteAsync(String name);
-
-  /**
-   * @deprecated Use {@link TimerScheduler#createSingleTimerAsync(String, Duration, DeferredCall)}
-   *     instead.
-   */
-  @Deprecated(since = "3.3.0", forRemoval = true)
-  <I, O> CompletionStage<Done> startSingleTimer(
-      String name, Duration delay, DeferredCall<I, O> deferredCall);
-
-  /**
-   * @deprecated Use {@link TimerScheduler#createSingleTimerAsync(String, Duration, int,
-   *     DeferredCall)} instead.
-   */
-  @Deprecated(since = "3.3.0", forRemoval = true)
-  <I, O> CompletionStage<Done> startSingleTimer(
-      String name, Duration delay, int maxRetries, DeferredCall<I, O> deferredCall);
-
-  /**
-   * @deprecated User {@link TimerScheduler#deleteAsync(String)} instead.
-   */
-  @Deprecated(since = "3.3.0", forRemoval = true)
-  CompletionStage<Done> cancel(String name);
 }

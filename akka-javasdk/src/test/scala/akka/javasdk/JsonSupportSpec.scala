@@ -4,150 +4,56 @@
 
 package akka.javasdk
 
-import java.util
 import java.util.Optional
 
-import scala.beans.BeanProperty
-
-import akka.Done
-import akka.javasdk.impl.AnySupport
-import akka.javasdk.impl.ByteStringEncoding
-import com.google.protobuf.Any
-import com.google.protobuf.UnsafeByteOperations
+import akka.util.ByteString
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class MyJsonable {
-  @BeanProperty var field: String = _
-}
-
-@Deprecated
 class JsonSupportSpec extends AnyWordSpec with Matchers {
 
-  val myJsonable = new MyJsonable
-  myJsonable.field = "foo"
+  private val dummy = new DummyClass("123", 321, Optional.of("test"))
+  private val expectedJson = """{"stringValue":"123","intValue":321,"optionalStringValue":"test"}"""
 
   "JsonSupport" must {
 
-    "serialize and deserialize JSON" in {
-      val any = JsonSupport.encodeJson(myJsonable)
-      any.getTypeUrl should ===(AnySupport.JsonTypeUrlPrefix + classOf[MyJsonable].getName)
-      JsonSupport.decodeJson(classOf[MyJsonable], any).field should ===("foo")
+    "expose a stable ObjectMapper instance" in {
+      val mapper = JsonSupport.getObjectMapper
+      mapper should not be null
+      (JsonSupport.getObjectMapper should be).theSameInstanceAs(mapper)
     }
 
-    "serialize and deserialize DummyClass" in {
-      val dummyClass = new DummyClass("123", 321, Optional.of("test"))
-      val any = JsonSupport.encodeJson(dummyClass)
-      any.getTypeUrl should ===(AnySupport.JsonTypeUrlPrefix + classOf[DummyClass].getName)
-      val decoded = JsonSupport.decodeJson(classOf[DummyClass], any)
-      decoded shouldBe dummyClass
+    "encode a value to a JSON String" in {
+      JsonSupport.encodeToString(dummy) shouldBe expectedJson
     }
 
-    "deserialize missing field as optional none" in {
-      val bytes = UnsafeByteOperations.unsafeWrap("""{"stringValue":"123","intValue":321}""".getBytes)
-      val encodedBytes = ByteStringEncoding.encodePrimitiveBytes(bytes)
-      val any =
-        Any.newBuilder
-          .setTypeUrl(AnySupport.JsonTypeUrlPrefix + classOf[DummyClass].getName)
-          .setValue(encodedBytes)
-          .build
-
-      val decoded = JsonSupport.decodeJson(classOf[DummyClass], any)
-      decoded shouldBe new DummyClass("123", 321, Optional.empty())
+    "encode a value to an Akka ByteString" in {
+      JsonSupport.encodeToAkkaByteString(dummy).utf8String shouldBe expectedJson
     }
 
-    "deserialize null field as optional none" in {
-      val bytes =
-        UnsafeByteOperations.unsafeWrap("""{"stringValue":"123","intValue":321,"optionalStringValue":null}""".getBytes)
-      val encodedBytes = ByteStringEncoding.encodePrimitiveBytes(bytes)
-      val any =
-        Any.newBuilder
-          .setTypeUrl(AnySupport.JsonTypeUrlPrefix + classOf[DummyClass].getName)
-          .setValue(encodedBytes)
-          .build
-
-      val decoded = JsonSupport.decodeJson(classOf[DummyClass], any)
-      decoded shouldBe new DummyClass("123", 321, Optional.empty())
+    "round-trip a value via Akka ByteString" in {
+      val bytes = JsonSupport.encodeToAkkaByteString(dummy)
+      JsonSupport.decodeJson(classOf[DummyClass], bytes) shouldBe dummy
     }
 
-    "deserialize mandatory field with migration" in {
-      val bytes = UnsafeByteOperations.unsafeWrap("""{"stringValue":"123","intValue":321}""".getBytes)
-      val encodedBytes = ByteStringEncoding.encodePrimitiveBytes(bytes)
-      val any =
-        Any.newBuilder
-          .setTypeUrl(AnySupport.JsonTypeUrlPrefix + classOf[DummyClass2].getName)
-          .setValue(encodedBytes)
-          .build
-
-      val decoded = JsonSupport.decodeJson(classOf[DummyClass2], any)
-      decoded shouldBe new DummyClass2("123", 321, "mandatory-value")
+    "round-trip a value via byte array" in {
+      val bytes = JsonSupport.encodeToAkkaByteString(dummy).toArray
+      JsonSupport.decodeJson(classOf[DummyClass], bytes) shouldBe dummy
     }
 
-    "deserialize renamed class" in {
-      val bytes = UnsafeByteOperations.unsafeWrap("""{"stringValue":"123","intValue":321}""".getBytes)
-      val encodedBytes = ByteStringEncoding.encodePrimitiveBytes(bytes)
-      val any =
-        Any.newBuilder
-          .setTypeUrl(AnySupport.JsonTypeUrlPrefix + classOf[DummyClass].getName)
-          .setValue(encodedBytes)
-          .build
-
-      val decoded = JsonSupport.decodeJson(classOf[DummyClassRenamed], any)
-      decoded shouldBe new DummyClassRenamed("123", 321, Optional.empty())
+    "decode raw JSON bytes produced outside of encodeTo*" in {
+      val raw = ByteString.fromString(expectedJson)
+      JsonSupport.decodeJson(classOf[DummyClass], raw) shouldBe dummy
     }
 
-    "deserialize forward from DummyClass2 to DummyClass" in {
-      val bytes = UnsafeByteOperations.unsafeWrap(
-        """{"stringValue":"123","intValue":321,"mandatoryStringValue":"value"}""".getBytes)
-      val encodedBytes = ByteStringEncoding.encodePrimitiveBytes(bytes)
-      val any =
-        Any.newBuilder
-          .setTypeUrl(AnySupport.JsonTypeUrlPrefix + classOf[DummyClass2].getName + "#1")
-          .setValue(encodedBytes)
-          .build
-
-      val decoded = JsonSupport.decodeJson(classOf[DummyClass], any)
-      decoded shouldBe new DummyClass("123", 321, Optional.of("value"))
+    "deserialize an absent optional field as Optional.empty" in {
+      val raw = ByteString.fromString("""{"stringValue":"123","intValue":321}""")
+      JsonSupport.decodeJson(classOf[DummyClass], raw) shouldBe new DummyClass("123", 321, Optional.empty())
     }
 
-    "serialize and deserialize Akka Done class" in {
-      val done = Done.getInstance()
-      val any = JsonSupport.encodeJson(done)
-      any.getTypeUrl should ===(AnySupport.JsonTypeUrlPrefix + Done.getClass.getName)
-      JsonSupport.decodeJson(classOf[Done], any) shouldBe Done.getInstance()
-    }
-
-    "serialize and deserialize a List of objects" in {
-
-      val customers: java.util.List[MyJsonable] = new util.ArrayList[MyJsonable]()
-      val foo = new MyJsonable
-      foo.field = "foo"
-      customers.add(foo)
-
-      val bar = new MyJsonable
-      bar.field = "bar"
-      customers.add(bar)
-      val any = JsonSupport.encodeJson(customers)
-
-      val decodedCustomers =
-        JsonSupport.decodeJsonCollection(classOf[MyJsonable], classOf[java.util.List[MyJsonable]], any)
-      decodedCustomers.get(0).field shouldBe "foo"
-      decodedCustomers.get(1).field shouldBe "bar"
-    }
-
-    "serialize JSON with an explicit type url suffix" in {
-      val any = JsonSupport.encodeJson(myJsonable, "bar")
-      any.getTypeUrl should ===(AnySupport.JsonTypeUrlPrefix + "bar")
-    }
-
-    "conditionally decode JSON depending on suffix" in {
-      val any = JsonSupport.encodeJson(myJsonable, "bar")
-      any.getTypeUrl should ===(AnySupport.JsonTypeUrlPrefix + "bar")
-      JsonSupport.decodeJson(classOf[MyJsonable], "other", any).isPresent() should ===(false)
-      val decoded = JsonSupport.decodeJson(classOf[MyJsonable], "bar", any)
-      decoded.isPresent() should ===(true)
-      decoded.get().field should ===("foo")
+    "fail to decode malformed JSON with an IllegalArgumentException" in {
+      val raw = ByteString.fromString("not json")
+      an[IllegalArgumentException] should be thrownBy JsonSupport.decodeJson(classOf[DummyClass], raw)
     }
   }
-
 }

@@ -6,6 +6,7 @@ package akka.javasdk.impl
 
 import java.lang.reflect.InvocationTargetException
 import java.util.UUID
+import java.util.concurrent.CompletionException
 import java.util.concurrent.ExecutionException
 
 import scala.util.control.Exception.Catcher
@@ -48,6 +49,19 @@ private[javasdk] object ErrorHandling {
    * For Java
    */
   def unwrapInvocationTargetException(exc: InvocationTargetException): RuntimeException = {
+    exc.getCause match {
+      case null                => new RuntimeException(exc.getMessage)
+      case e: RuntimeException => e
+      case other               => new RuntimeException(other)
+    }
+  }
+
+  /**
+   * For Java. Unwraps the cause of a [[CompletionException]] (as thrown by
+   * [[java.util.concurrent.CompletableFuture#join]]) so that callers see the original exception rather than the
+   * wrapper.
+   */
+  def unwrapCompletionException(exc: CompletionException): RuntimeException = {
     exc.getCause match {
       case null                => new RuntimeException(exc.getMessage)
       case e: RuntimeException => e

@@ -1,0 +1,161 @@
+= Autonomous Agents
+
+include::ROOT:partial$include.adoc[]
+
+:page-component-type: autonomous-agent
+:page-summary: Build model-driven processes with durable execution, typed task results, and built-in multi-agent coordination.
+:page-when-to-use: Use when work runs as a durable process over typed tasks, when several agents need to coordinate, or when each agent's context must stay focused on its part of the work.
+:page-related: xref:sdk:agents.adoc[], xref:sdk:autonomous-agents/coordination.adoc[], xref:sdk:autonomous-agents/capabilities.adoc[], xref:sdk:workflows.adoc[]
+:page-prerequisites: A configured model provider. Familiarity with Akka components.
+:page-persona: developer
+
+== Overview
+
+image:ROOT:agent.png[Autonomous Agent,width=100,float=left]An Autonomous Agent is a model-driven component that runs as a durable process. It works on typed tasks, each with its own identity, instructions, and result schema. The developer declares the agent's description (via `@Component`), the task types it accepts, the tools it can use, and any coordination capabilities. The runtime drives the model through a decision loop until each task is complete. Agent and task state is persisted along the way, so work survives crashes and restarts.
+
+A task ends when the model decides its work on it is done. Success means the model produces a result that conforms to the task's declared result schema. Failure means the model reports it cannot make progress, and the runtime records a failure reason. As a safety net, an iteration limit terminates a task that reaches neither outcome. The agent's description, together with the task's result schema and any optional definition-level instructions, shape what "done" means for each task type.
+
+A task exists independently of any agent. It can be created up front with dependencies, queried by external clients while running, or handed between agents. Its typed result outlives the agent that produced it. The agent itself is stateless from the developer's perspective, while task and agent state are recovered automatically after crashes or restarts.
+
+Models perform best with focused context. A single agent loaded with too many concerns, competing objectives, and unrelated information loses clarity. Autonomous Agents are designed around this constraint: each agent has its own description, its own accepted task types, and its own iteration loop, so context stays scoped to what one agent needs. Coordination then composes focused agents rather than overloading one.
+
+Coordination is part of the component model. An agent can declare that it delegates subtasks to specialist workers, hands off work to peers, leads a team that shares a task list, or moderates a turn-taking conversation. The runtime exposes these patterns to the model as tools, so the agent invokes them like any other tool. Multi-agent systems can be assembled from focused, single-purpose agents without writing orchestration code.
+
+=== When to use an Autonomous Agent
+
+Use an `AutonomousAgent` when:
+
+* The work is investigative or open-ended: the model decides what to consult, ask, or do next based on what previous steps revealed, rather than following a predefined sequence of steps.
+* You need coordination between multiple agents (delegation, handoff, teams, moderation) without writing the orchestration yourself as workflow steps.
+* You need durable multi-step execution that survives crashes and restarts.
+* The work produces typed task results that have their own lifecycle: they can outlive a single request, be queried later, or move between agents.
+* You want each agent to focus on a narrow context, with isolation between agents and shared context only where it helps.
+
+Use a request-based xref:sdk:agents.adoc[Agent] when:
+
+* The interaction is request-response, possibly over multiple turns in a session.
+* You need fine-grained control over the prompt and effect chain for each call.
+* The orchestration is a fixed sequence of explicit steps, handled by a xref:sdk:workflows.adoc[Workflow]. Each step is at most one model round-trip, and the model does not decide what step to take next.
+
+Each Autonomous Agent instance carries durable orchestration state, a task queue, and lifecycle bookkeeping. A standalone request-based Agent is the lighter choice for simple request-response interactions. Once a request-based Agent is combined with a Workflow for orchestration, the two are equally heavy and the choice rests on the criteria above, not on weight.
+
+When a coordinating `AutonomousAgent` delegates to other agents, both alternatives are valid. A request-based `Agent` invoked through the coordinator's delegation capability is the lighter choice when that agent takes a question and produces a response in a single model call. Promote it to its own `AutonomousAgent` when it benefits from its own iteration loop, parallel workers, handoff, or a separately observable task lifecycle.
+
+=== Comparison with request-based Agents
+
+A xref:sdk:agents.adoc[request-based Agent] handles a single request and returns a single response. It has session memory for context and can call tools within that one request. To run multiple steps or anything that outlives a single request, you compose it with a xref:sdk:workflows.adoc[Workflow].
+
+An Autonomous Agent runs the multi-step loop itself. It owns the iteration and the typed result, and drives the coordination with peer agents according to the declared capabilities. There is no command handler. The agent is described declaratively by its `definition()` and started through the `ComponentClient`.
+
+The two share much of the underlying machinery. Model provider configuration, function tools, MCP integration, and guardrails all work the same way as for a request-based xref:sdk:agents.adoc[Agent]. The comparison below focuses on the execution model, not on what either component can do.
+
+[options="header", cols="1,2,2"]
+|===
+| | Agent | Autonomous Agent
+
+| Execution model
+| Request-response
+| Durable process loop
+
+| Model interaction
+| Single round-trip (with tool calls)
+| Multiple iterations until task complete
+
+| Orchestration
+| External (Workflow)
+| Built-in (model-driven)
+
+| Unit of work
+| Command handler return value
+| Task entity with typed result
+
+| Multi-agent
+| Via Workflow steps
+| Via coordination capabilities
+
+| Persistent state
+| Session memory for conversation context
+| Durable agent process and persistent task entities
+
+| Streaming
+| Token stream
+| Notification stream
+|===
+
+=== How Autonomous Agents relate to other components
+
+* *Entities* hold durable business state that an Autonomous Agent can expose to the model as function tools (read or write).
+* *Views* are read models that an agent can query through function tools to bring relevant data into its context.
+* *Endpoints* expose Autonomous Agents over HTTP or gRPC, both to start tasks and retrieve results, and to stream notification events to the client over Server-Sent Events or WebSocket.
+* *Workflows* are the alternative for deterministic step ordering. Prefer a Workflow when the _sequence of steps_ is fixed and the model is consulted at most once inside each step. Prefer an Autonomous Agent when the _sequence itself_ is a model judgment: the agent decides what to consult, which specialist to ask, or whether to iterate, based on what previous steps returned.
+
+== Identify the autonomous agent
+
+Like all components, an Autonomous Agent needs a *component id*: a stable identifier for the component class, supplied via the `@Component` annotation.
+
+Unlike a request-based Agent, which is bound to a session id, an Autonomous Agent uses an *instance id* supplied when the agent is started via `ComponentClient`. Each instance runs independently with its own task queue and execution loop. A common pattern is to use a `UUID` for the instance id.
+
+== Basic structure
+
+An Autonomous Agent extends `AutonomousAgent` and implements a single `definition()` method that returns the agent's configuration.
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/helloworld/application/QuestionAnswerer.java[QuestionAnswerer.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/helloworld/application/QuestionAnswerer.java[tag=class]
+----
+<1> Create a class that extends `AutonomousAgent`.
+<2> Annotate the class with `@Component` and pass a unique identifier for this agent type.
+<3> Implement the `definition()` method to define the agent's behavior.
+
+There are no command handlers. The agent is a process: it runs, works on assigned tasks, and stops.
+
+The accepted task types are declared as constants and reference a typed result:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/helloworld/application/QuestionTasks.java[QuestionTasks.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/helloworld/application/QuestionTasks.java[tag=class]
+----
+
+The result type is a Java record:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/helloworld/application/Answer.java[Answer.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/helloworld/application/Answer.java[tag=class]
+----
+
+To run a task, ask the `ComponentClient` to spin up an instance and run a single task:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/main/java/demo/helloworld/api/QuestionEndpoint.java[QuestionEndpoint.java]
+----
+include::example$autonomous-agent-playground/src/main/java/demo/helloworld/api/QuestionEndpoint.java[tag=run-single-task]
+----
+
+`runSingleTask` returns the task id immediately, without waiting for the task to complete. The task runs asynchronously and is itself the durable record of the work: its status and typed result are recovered after restarts and queryable at any time with `componentClient.forTask(taskId).get(QuestionTasks.ANSWER)`. There is no need to wrap the call in a Workflow for durability or to await the result. See xref:sdk:autonomous-agents/client.adoc[] for details.
+
+== Topics
+
+xref:sdk:autonomous-agents/defining.adoc[Defining an autonomous agent]:: Building an `AgentDefinition`: accepted task types, tools, MCP endpoints, guardrails, iteration limit, model selection, and optional instructions. Covers how the `@Component` description captures the agent's purpose and expected outcome.
+
+xref:sdk:autonomous-agents/tasks.adoc[Tasks]:: Defining task types, creating instances with instructions and attachments, the task lifecycle, querying typed results, declaring dependencies between tasks.
+
+xref:sdk:autonomous-agents/coordination.adoc[Coordination patterns]:: The four design patterns for multi-agent systems (sequential, delegative, collaborative, emergent), and when each is appropriate.
+
+xref:sdk:autonomous-agents/capabilities.adoc[Coordination capabilities]:: Implementing the patterns: `Delegation`, handoff, `TeamLeadership`, `Moderation`. How capabilities compose with each other.
+
+xref:sdk:autonomous-agents/client.adoc[Client API]:: Starting and stopping agents, assigning tasks, pausing and resuming, querying agent state and task results.
+
+xref:sdk:autonomous-agents/notifications.adoc[Notifications]:: The notification stream emitted by the runtime: lifecycle, task, handoff, delegation, team, conversation, messaging, and struggle events.
+
+xref:sdk:autonomous-agents/testing.adoc[Testing]:: Mocking model responses with `TestModelProvider` and the `AutonomousAgentTools` factory methods for the built-in coordination tools.
+
+== See Also
+
+* xref:sdk:agents.adoc[Request-based Agents]
+* xref:sdk:autonomous-agents/coordination.adoc[Coordination patterns]
+* xref:sdk:autonomous-agents/capabilities.adoc[Coordination capabilities]
+* xref:concepts:ai-agents.adoc[AI Agents concepts]
+* xref:getting-started:samples.adoc#autonomous_agents_playground[Autonomous agents samples]

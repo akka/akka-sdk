@@ -6,13 +6,9 @@ package akka.javasdk.impl.workflow
 
 import java.lang.reflect.Method
 
-import scala.annotation.nowarn
-import scala.jdk.CollectionConverters.ListHasAsScala
-
 import akka.javasdk.annotations.StepName
 import akka.javasdk.impl.workflow.WorkflowDescriptor.stepMethodName
 import akka.javasdk.workflow.Workflow
-import akka.javasdk.workflow.Workflow.Step
 import akka.javasdk.workflow.Workflow.StepEffect
 import akka.javasdk.workflow.Workflow.StepMethod
 
@@ -45,10 +41,6 @@ class WorkflowDescriptor(workflow: Workflow[_]) {
       }
       .toList
   }
-
-  @nowarn("msg=deprecated")
-  def findStepByName(name: String): Option[Step] =
-    workflow.definition().getSteps.asScala.find(_.name() == name)
 
   def findStepMethodByName(name: String): Option[StepMethod] =
     stepMethods.find(_.methodName() == name)

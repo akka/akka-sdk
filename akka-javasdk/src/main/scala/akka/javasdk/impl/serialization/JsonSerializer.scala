@@ -160,6 +160,9 @@ final class JsonSerializer(val objectMapper: ObjectMapper) {
     objectMapper.writerFor(value.getClass).writeValueAsString(value)
   }
 
+  def fromJsonString[T](jsonString: String, expectedType: Class[T]): T =
+    parseBytes(expectedType, ByteString.fromString(jsonString))
+
   def fromBytes[T](expectedType: Type, bytesPayload: BytesPayload): T = {
     val clazz = expectedType match {
       case parameterizedType: ParameterizedType =>

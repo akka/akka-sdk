@@ -10,6 +10,7 @@ import java.lang.reflect.Type
 import akka.annotation.InternalApi
 import akka.javasdk.DependencyProvider
 import akka.javasdk.agent.Agent
+import akka.javasdk.agent.autonomous.AutonomousAgent
 import akka.javasdk.annotations.FunctionTool
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.ErrorHandling.unwrapExecutionExceptionCatcher
@@ -143,7 +144,7 @@ object FunctionTools {
   }
 
   private def isAgent(cls: Class[_]): Boolean =
-    classOf[Agent].isAssignableFrom(cls)
+    classOf[Agent].isAssignableFrom(cls) || classOf[AutonomousAgent].isAssignableFrom(cls)
 
   def descriptorsFor(cls: Class[_]): Seq[SpiAgent.ToolDescriptor] = {
 

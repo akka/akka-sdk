@@ -2,7 +2,7 @@
 :page-aliases: concepts:ai-concepts-video.adoc
 :page-summary: Foundational concepts for building AI Agents in Akka — tokens, prompts, session memory, orchestration, and evaluation.
 :page-when-to-use: When you need to build AI agents that are production-grade, resilient, cost-controlled, and composable across teams and workflows.
-:page-related: xref:concepts:ms-agent-patterns.adoc[], xref:concepts:inter-agent-comms.adoc[], xref:concepts:distributed-systems.adoc[]
+:page-related: xref:concepts:ms-agent-patterns.adoc[], xref:concepts:inter-agent-comms.adoc[], xref:concepts:distributed-systems.adoc[], xref:sdk:autonomous-agents.adoc[]
 :page-prerequisites: Familiarity with LLMs, prompts, and basic distributed systems concepts.
 :page-persona: Architect, Tech Lead, AI/ML Engineer
 
@@ -16,12 +16,12 @@ In Akka, an AI Agent is a lightweight, single-purpose component that interacts w
 
 Use AI Agents in Akka when you need to:
 
-* Interact with LLMs or other AI models as part of a larger application.
-* Compose multiple Agents into collaborative Workflows with supervisory control.
+* Interact with models as part of a larger application.
+* Compose multiple Agents under platform-mediated coordination: a Workflow supervisor when the orchestration steps are fixed in code, or an xref:sdk:autonomous-agents.adoc[Autonomous Agent] when the model should decide which agent runs next through delegation, handoff, teams, or moderation.
 * Maintain session memory, context, and audit trails across Agent interactions.
 * Enforce cost controls, governance policies, and risk boundaries on model usage.
 
-Agents relate to other Akka components in a direct way: xref:concepts:ms-agent-patterns.adoc[Workflows] orchestrate Agents, xref:concepts:state-model.adoc[Entities] store the durable state Agents depend on, and xref:concepts:inter-agent-comms.adoc[inter-agent communication] connects Agents to each other and to external systems via protocols like MCP, A2A, and ACP.
+Agents relate to other Akka components in a direct way: xref:concepts:ms-agent-patterns.adoc[Workflows or Autonomous Agent coordination capabilities] orchestrate Agents, xref:concepts:state-model.adoc[Entities] store the durable state Agents depend on, and xref:concepts:inter-agent-comms.adoc[inter-agent communication] connects Agents to each other and to external systems via protocols like MCP, A2A, and ACP.
 
 
 == The three barriers to production AI
@@ -102,6 +102,8 @@ Each agent should do _one thing_. Agents should have a single goal and they can 
 There are protocols and standards rapidly evolving for ways agents can communicate with each other directly, but agents also benefit from indirect communication.
 
 Whether you have 1 agent or 50, you still need to handle things like recovery from network failure, timeouts, failure responses, broken streams, and much more. Even for individual agents you need an orchestrator if you want that agent to be resilient at scale. With dozens of agents working together with shared and isolated sessions, they need to be managed by supervisors.
+
+Akka offers two forms of supervision, both running on the Akka runtime with the same durable-execution, retry, and audit guarantees. A xref:sdk:workflows.adoc[Workflow] supervises agents from outside, with explicit steps written by the developer; this is the right choice when the orchestration sequence is fixed in code. An xref:sdk:autonomous-agents.adoc[Autonomous Agent] supervises through declared coordination capabilities (delegation, handoff, teams, moderation), with the framework driving the loop and the model deciding which agent runs next; this is the right choice when the orchestration sequence itself is a model judgment.
 
 For more detail on orchestration, check out the xref:concepts:ms-agent-patterns.adoc[agentic orchestration patterns] section.
 

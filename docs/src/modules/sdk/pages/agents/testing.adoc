@@ -11,16 +11,20 @@ For predictable and repeatable tests of your agent's business logic and componen
 Use the `TestKitSupport` and the `ComponentClient` to call the components from the test. The `ModelProvider` of the agents can be replaced with link:{attachmentsdir}/testkit/akka/javasdk/testkit/TestModelProvider.html[TestModelProvider], which provides ways to mock the responses without using the real AI model.
 
 [source,java,indent=0]
-.{sample-base-url}/multi-agent/src/test/java/demo/multiagent/application/AgentTeamWorkflowTest.java[AgentTeamWorkflowTest.java]
+.{sample-base-url}/multi-agent/src/test/java/demo/multiagent/application/WeatherAgentIntegrationTest.java[WeatherAgentIntegrationTest.java]
 ----
-include::example$multi-agent/src/test/java/demo/multiagent/application/AgentTeamWorkflowTest.java[tag=class]
+include::example$multi-agent/src/test/java/demo/multiagent/application/WeatherAgentIntegrationTest.java[tag=class]
 ----
 <1> Extend `TestKitSupport` to gain access to testing utilities for Akka components.
-<2> Create one or more `TestModelProvider`. Using one per agent allows for distinct mock behaviors, while sharing one is useful for testing general responses.
-<3> Use the settings of the `TestKit` to replace the agent's real `ModelProvider` with your test instance.
-<4> For simple tests, define a single, fixed response that the mock model will always return.
-<5> For more complex scenarios, define a response that is only returned if the user message matches a specific condition. This is useful for testing different logic paths within your agent.
-<6> Call the components with the `componentClient`.
+<2> Create a `TestModelProvider`. Use a separate instance per agent for distinct mock behavior.
+<3> Register the test model provider in `testKitSettings()` to replace the agent's real `ModelProvider`.
+<4> The simplest case: `fixedResponse` always returns the same string. The agent never calls its tools because the model produces a direct answer.
+<5> When the model should drive a tool call, reply with a `ToolInvocationRequest`. The runtime invokes the actual tool method and feeds the result back into the model loop.
+<6> `whenToolResult(...).thenReply(...)` runs when the model receives a tool result. Inspect `tr.name()` and `tr.content()` to build the next response.
+
+The example mocks the `WeatherAgent` from the multi-agent sample. The bootstrap wires a `FakeWeatherService` whenever the `WEATHER_API_KEY` environment variable is unset, so the tool runs deterministically against a fake. The tool name the model sees is prefixed with the simple class name of the registered tool, here `FakeWeatherService_getWeather`. For agent-local tools annotated with `@FunctionTool` directly on the agent class, the prefix is the agent's simple class name.
+
+You can also use `whenMessage(predicate).reply(response)` for conditional text responses that vary based on the user message. Invoke the agent through the `componentClient` and assert on the result as in any other integration test.
 
 == Mocked model in a deployed service
 

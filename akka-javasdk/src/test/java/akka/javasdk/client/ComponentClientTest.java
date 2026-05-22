@@ -42,7 +42,6 @@ class ComponentClientTest {
     // FIXME what are we actually testing here?
     var dummyComponentClients =
         new ComponentClients() {
-
           @Override
           public EntityClient eventSourcedEntityClient() {
             return null;
@@ -98,6 +97,7 @@ class ComponentClientTest {
             dummyComponentClients,
             serializer,
             null,
+            Option.empty(),
             Option.empty(),
             ExecutionContext.global(),
             null);
@@ -176,6 +176,5 @@ class ComponentClientTest {
         componentClient.forView().method(UserByEmailWithGet::getUser);
 
     // not much to assert here
-
   }
 }

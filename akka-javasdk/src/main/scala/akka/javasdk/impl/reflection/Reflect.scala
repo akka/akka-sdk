@@ -15,7 +15,6 @@ import java.util
 import java.util.Optional
 import java.util.concurrent.ConcurrentHashMap
 
-import scala.annotation.nowarn
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.reflect.ClassTag
@@ -24,10 +23,9 @@ import akka.Done
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.EvaluationResult
-import akka.javasdk.annotations.AgentDescription
+import akka.javasdk.agent.autonomous.AutonomousAgent
 import akka.javasdk.annotations.AgentRole
 import akka.javasdk.annotations.Component
-import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.Consume
 import akka.javasdk.annotations.EnableReplicationFilter
 import akka.javasdk.annotations.GrpcEndpoint
@@ -45,7 +43,6 @@ import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
-import akka.javasdk.workflow.Workflow.RunnableStep
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.google.protobuf.Descriptors
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType
@@ -166,6 +163,9 @@ private[impl] object Reflect {
 
   def isAgent(cls: Class[_]): Boolean =
     classOf[Agent].isAssignableFrom(cls)
+
+  def isAutonomousAgent(cls: Class[_]): Boolean =
+    classOf[AutonomousAgent].isAssignableFrom(cls)
 
   def isToolCandidate(cls: Class[_]): Boolean =
     isEventSourcedEntity(cls) ||
@@ -300,25 +300,6 @@ private[impl] object Reflect {
       acc ++ lookupSubClasses(method.getParameterTypes.head)
     }
   }
-
-  @nowarn("msg=deprecated")
-  def workflowKnownInputTypes[S, W <: Workflow[S]](workflow: Workflow[S]): List[Class[_]] =
-    workflow
-      .definition()
-      .getSteps
-      .asScala
-      .flatMap {
-        case asyncCallStep: Workflow.AsyncCallStep[_, _, _] =>
-          if (asyncCallStep.transitionInputClass == null) lookupSubClasses(asyncCallStep.callInputClass)
-          else lookupSubClasses(asyncCallStep.callInputClass) ++ lookupSubClasses(asyncCallStep.transitionInputClass)
-
-        case callStep: Workflow.CallStep[_, _, _] =>
-          if (callStep.transitionInputClass == null) lookupSubClasses(callStep.callInputClass)
-          else lookupSubClasses(callStep.callInputClass) ++ lookupSubClasses(callStep.transitionInputClass)
-
-        case runnable: RunnableStep => List.empty
-      }
-      .toList
 
   /**
    * This method will try to find all know subtypes if the passed class is an interface. Interfaces that are neither
@@ -533,14 +514,10 @@ private[impl] object Reflect {
       .head
       .asInstanceOf[Class[_]]
 
-  @nowarn("cat=deprecation")
   def readComponentId(clz: Class[_]): String = {
     val componentAnn = clz.getAnnotation(classOf[akka.javasdk.annotations.Component])
     if (componentAnn != null) componentAnn.id()
-    else {
-      val componentIdAnn = clz.getAnnotation(classOf[ComponentId])
-      if (componentIdAnn != null) componentIdAnn.value() else ""
-    }
+    else ""
   }
 
   def readComponentName(annotated: AnnotatedElement): Option[String] = {
@@ -563,32 +540,26 @@ private[impl] object Reflect {
     }
   }
 
-  def readAgentName[A <: Agent](agentClass: Class[A]): Option[String] = {
-    val nameOpt = readComponentName(agentClass)
-    nameOpt.orElse {
-      @nowarn("cat=deprecation")
-      val agentDescAnno = agentClass.annotationOption[AgentDescription]
-      agentDescAnno.map(_.name())
-    }
+  def readAgentName(agentClass: Class[_]): Option[String] = {
+    require(
+      isAgent(agentClass) || isAutonomousAgent(agentClass),
+      s"Expected an Agent or AutonomousAgent class, but was [${agentClass.getName}]")
+    readComponentName(agentClass)
   }
 
-  def readAgentDescription[A <: Agent](agentClass: Class[A]): Option[String] = {
-    val descOpt = readComponentDescription(agentClass)
-    descOpt.orElse {
-      @nowarn("cat=deprecation")
-      val agentDescAnno = agentClass.annotationOption[AgentDescription]
-      agentDescAnno.map(_.description())
-    }
+  def readAgentDescription(agentClass: Class[_]): Option[String] = {
+    require(
+      isAgent(agentClass) || isAutonomousAgent(agentClass),
+      s"Expected an Agent or AutonomousAgent class, but was [${agentClass.getName}]")
+    readComponentDescription(agentClass)
   }
 
-  def readAgentRole[A <: Agent](agentClass: Class[A]): Option[String] = {
+  def readAgentRole(agentClass: Class[_]): Option[String] = {
+    require(
+      isAgent(agentClass) || isAutonomousAgent(agentClass),
+      s"Expected an Agent or AutonomousAgent class, but was [${agentClass.getName}]")
     val agentRoleAnn = agentClass.annotationOption[AgentRole]
-    @nowarn("cat=deprecation")
-    val agentDescAnno = agentClass.annotationOption[AgentDescription]
-
-    agentRoleAnn
-      .map(_.value())
-      .orElse(agentDescAnno.map(_.role()))
+    agentRoleAnn.map(_.value())
   }
 
 }
