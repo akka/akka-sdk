@@ -1266,8 +1266,7 @@ private final class Sdk(
       onStart = onStart,
       reportError = reportError,
       healthCheck = () => SdkRunner.FutureDone,
-      onUnhandledException = onUnhandledException
-    )
+      onUnhandledException = onUnhandledException)
   }
 
   private lazy val agentRegistry =

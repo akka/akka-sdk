@@ -4,7 +4,7 @@
 
 package akka.javasdk;
 
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import java.util.Optional;
 
 /**
@@ -32,7 +32,7 @@ public interface UnhandledExceptionContext {
 
   /**
    * Identifier for the component the exception originated in. For components declaring a {@link
-   * ComponentId}, this is the annotation value. For endpoints (HTTP, gRPC, MCP) which have no
+   * Component#id}, this is the annotation value. For endpoints (HTTP, gRPC, MCP) which have no
    * {@code @ComponentId}, this falls back to the simple class name.
    */
   String componentId();
