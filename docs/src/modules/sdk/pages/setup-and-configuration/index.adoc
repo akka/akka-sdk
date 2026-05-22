@@ -9,5 +9,6 @@ Akka provides several built-in features for dependency injection, data serializa
 * xref:sdk:access-control.adoc[Access Control]
 * xref:sdk:auth-with-jwts.adoc[Authentication with JWTs]
 * xref:sdk:running-locally.adoc[Running Locally]
+* xref:sdk:running-with-broker.adoc[Running locally with a message broker]
 * xref:sdk:model-provider-details.adoc[Configuring AI Agent Model Providers]
 * xref:sdk:sanitization.adoc[Sanitization of sensitive data]

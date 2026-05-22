@@ -35,15 +35,15 @@ For more advanced streaming needs, you can use Akka Streams directly. See the ht
 
 When you need to integrate with systems outside Akka, use external message brokers. Akka offers built-in integrations for:
 
-* **Kafka** — via hosted services (Confluent Cloud, AWS MSK, Aiven)
-* **Google Cloud Pub/Sub**
-* **Azure Event Hubs**
+* **Kafka** — xref:operations:projects/broker-confluent.adoc[Confluent Cloud], xref:operations:projects/broker-aws-msk.adoc[AWS MSK], xref:operations:projects/broker-aiven.adoc[Aiven for Apache Kafka], or xref:operations:projects/broker-kafka.adoc[a self-hosted or other Kafka cluster]
+* xref:operations:projects/broker-google-pubsub.adoc[Google Cloud Pub/Sub]
+* xref:operations:projects/broker-azure-eventhubs.adoc[Azure Event Hubs]
 
 For these built-in technologies, Akka decouples the broker configuration from the implementation of the Consumer or Producer. The topic name is referenced independently of the broker technology, as demonstrated in xref:consuming-producing.adoc#consume_topic[Consume from a message broker Topic] and xref:consuming-producing.adoc#topic_producing[Producing to a message broker Topic]. All connection details are managed at the Akka project level. For configuration instructions, refer to xref:operations:projects/message-brokers.adoc[Configure message brokers].
 
 === Testing with message brokers
 
-The Akka SDK testkit has built-in support for simulating message brokers. See xref:sdk:consuming-producing.adoc#testing[Testing the integration] for details. For running locally with a broker, refer to xref:sdk:running-locally.adoc#_local_broker_support[running a service with broker support].
+The Akka SDK testkit has built-in support for simulating message brokers. See xref:sdk:consuming-producing.adoc#testing[Testing the integration] for details. For running locally against a real broker (Kafka or the Google Pub/Sub emulator), see xref:sdk:running-with-broker.adoc[Running locally with a message broker].
 
 === Other broker technologies
 

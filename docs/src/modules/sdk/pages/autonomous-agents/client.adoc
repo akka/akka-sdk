@@ -117,7 +117,7 @@ var state = componentClient
   .forAutonomousAgent(ReportAgent.class, agentInstanceId)
   .getState();
 
-state.phase();           // execution phase, e.g. "PHASE_MODEL", "PHASE_TOOLS", "PHASE_STOPPED"
+state.phase();           // execution phase, e.g. "model", "tools", "stopped"
 state.suspended();       // whether the agent is suspended
 state.instructions();    // the agent's current instructions
 state.totalTokenUsage(); // cumulative token usage (inputTokens, outputTokens)

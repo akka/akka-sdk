@@ -113,6 +113,88 @@ The following is a list of all natively supported model configurations. Remember
 
 See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Anthropic.html[`ModelProvider.Anthropic`] for programmatic settings.
 
+=== Azure OpenAI
+
+[cols="1m,1,4"]
+|===
+| Property | Type | Description
+
+| provider
+| "azure-openai"
+| Name of the provider. Must always be `azure-openai`
+
+| endpoint
+| Url
+| The endpoint of the Azure OpenAI resource, e.g. `https://my-resource.openai.azure.com`. See the link:https://learn.microsoft.com/azure/ai-services/openai/[Azure OpenAI documentation,window="new"] for details
+
+| deployment-name
+| String
+| The name of the Azure OpenAI deployment to use
+
+| api-key
+| String
+| The API key. Defaults to the value of the `AZURE_OPENAI_API_KEY` environment variable
+
+| temperature
+| Float
+| Model randomness. The default is not supplied so check with the model documentation for default behavior
+
+| top-p
+| Float
+| Nucleus sampling parameter
+
+| max-tokens
+| Integer
+| Max token quota. Leave as –1 for model default
+
+| max-completion-tokens
+| Integer
+| Max token quota. Leave as –1 for model default
+
+| frequency-penalty
+| Float
+| Penalizes repeated tokens based on their frequency in the text so far (-2.0 to 2.0)
+
+| presence-penalty
+| Float
+| Penalizes tokens that have already appeared in the text (-2.0 to 2.0)
+
+| seed
+| Long
+| Seed for deterministic sampling, for reproducible outputs. Leave as –1 for unset
+
+| stop
+| List of String
+| Sequences where the model will stop generating further tokens
+
+| reasoning-effort
+| String
+| Reasoning effort level for o-series models. One of `low`, `medium`, `high`
+
+| service-version
+| String
+| Azure OpenAI API service version override, e.g. `2024-02-15-preview`
+
+| connection-timeout
+| Duration
+| Fail the request if connecting to the model API takes longer than this
+
+| response-timeout
+| Duration
+| Fail the request if getting a response from the model API takes longer than this
+
+| max-retries
+| Integer
+| Retry this many times if the request to the model fails
+
+| additional-model-request-headers
+| List of String
+| List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. Can also be set via `ADDITIONAL_AZURE_OPENAI_REQUEST_HEADERS_N` environment variables.
+
+|===
+
+See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.AzureOpenAi.html[`ModelProvider.AzureOpenAi`] for programmatic settings.
+
 === Bedrock
 
 [cols="1m,1,4"]
@@ -345,6 +427,84 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.HuggingFace.html[
 |===
 
 See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.LocalAI.html[`ModelProvider.LocalAI`] for programmatic settings.
+
+=== Mistral AI
+
+[cols="1m,1,4"]
+|===
+| Property | Type | Description
+
+| provider
+| "mistral-ai"
+| Name of the provider. Must always be `mistral-ai`
+
+| api-key
+| String
+| The API key. Defaults to the value of the `MISTRAL_AI_API_KEY` environment variable
+
+| model-name
+| String
+| The name of the model to use, e.g. "mistral-large-latest". See vendor documentation for a list of available models
+
+| base-url
+| Url
+| Optional override to the base URL of the API
+
+| temperature
+| Float
+| Model randomness. The default is not supplied so check with the model documentation for default behavior
+
+| top-p
+| Float
+| Nucleus sampling parameter
+
+| max-tokens
+| Integer
+| Maximum number of tokens to generate. Leave as –1 for model default
+
+| safe-prompt
+| Boolean
+| When enabled, a safety prompt is injected in front of all conversations
+
+| random-seed
+| Integer
+| Random seed for deterministic sampling. Leave as –1 to disable
+
+| frequency-penalty
+| Float
+| Penalty for frequent tokens. Leave as `NaN` for model default
+
+| presence-penalty
+| Float
+| Penalty for repeated topics. Leave as `NaN` for model default
+
+| stop-sequences
+| List of String
+| Stop sequences at which the model stops generating
+
+| thinking
+| Boolean
+| Enable thinking, only supported for some models. Make sure the chosen model supports thinking before enabling.
+
+| connection-timeout
+| Duration
+| Fail the request if connecting to the model API takes longer than this
+
+| response-timeout
+| Duration
+| Fail the request if getting a response from the model API takes longer than this
+
+| max-retries
+| Integer
+| Retry this many times if the request to the model fails
+
+| additional-model-request-headers
+| List of String
+| List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. Can also be set via `ADDITIONAL_MISTRAL_AI_REQUEST_HEADERS_N` environment variables.
+
+|===
+
+See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.MistralAi.html[`ModelProvider.MistralAi`] for programmatic settings.
 
 === Ollama
 
@@ -594,6 +754,7 @@ You can also set headers for a specific model provider using provider-specific e
 | Provider | Environment variable prefix
 
 | Anthropic | `ADDITIONAL_ANTHROPIC_REQUEST_HEADERS_N`
+| Azure OpenAI | `ADDITIONAL_AZURE_OPENAI_REQUEST_HEADERS_N`
 | OpenAI | `ADDITIONAL_OPENAI_REQUEST_HEADERS_N`
 | Google AI Gemini | `ADDITIONAL_GOOGLE_AI_GEMINI_REQUEST_HEADERS_N`
 | Google Cloud Vertex AI | `ADDITIONAL_VERTEX_AI_REQUEST_HEADERS_N`
@@ -601,6 +762,7 @@ You can also set headers for a specific model provider using provider-specific e
 | Local AI | `ADDITIONAL_LOCAL_AI_REQUEST_HEADERS_N`
 | Hugging Face | `ADDITIONAL_HUGGING_FACE_REQUEST_HEADERS_N`
 | Bedrock | `ADDITIONAL_BEDROCK_REQUEST_HEADERS_N`
+| Mistral AI | `ADDITIONAL_MISTRAL_AI_REQUEST_HEADERS_N`
 
 |===
 
@@ -653,6 +815,12 @@ gpt-o3 {
 include::example$akka-javasdk/src/main/resources/reference.conf[tag=anthropic]
 ----
 
+=== Azure OpenAI
+[source,hocon,indent=0]
+----
+include::example$akka-javasdk/src/main/resources/reference.conf[tag=azure-openai]
+----
+
 === Bedrock
 [source,hocon,indent=0]
 ----
@@ -675,6 +843,12 @@ include::example$akka-javasdk/src/main/resources/reference.conf[tag=hugging-face
 [source,hocon,indent=0]
 ----
 include::example$akka-javasdk/src/main/resources/reference.conf[tag=local-ai]
+----
+
+=== Mistral AI
+[source,hocon,indent=0]
+----
+include::example$akka-javasdk/src/main/resources/reference.conf[tag=mistral-ai]
 ----
 
 === Ollama

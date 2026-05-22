@@ -19,6 +19,7 @@ akka projects config set object-storage bucket NAME [flags]
 == Examples
 
 ----
+
 # s3 with static credentials
 akka projects config set object-storage bucket photos \
   --provider s3 --bucket acme-photos --bucket-region us-east-1 \
