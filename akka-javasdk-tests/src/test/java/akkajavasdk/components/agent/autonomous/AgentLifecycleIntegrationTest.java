@@ -60,7 +60,7 @@ public class AgentLifecycleIntegrationTest extends TestKitSupport {
             });
 
     var state = agentClient.getState();
-    assertThat(state.phase()).isEqualTo("PHASE_STOPPED");
+    assertThat(state.phase()).isEqualTo("stopped");
     assertThat(state.suspended()).isFalse();
     assertThat(state.totalTokenUsage()).isNotNull();
     assertThat(state.currentTask()).isEmpty();
