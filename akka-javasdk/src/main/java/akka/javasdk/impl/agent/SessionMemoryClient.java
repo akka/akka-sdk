@@ -183,8 +183,7 @@ public final class SessionMemoryClient implements SessionMemory {
    */
   SessionHistory fetchHistoryFromJournal(String sessionId, long fromSequenceNr) {
     var query =
-        new EventLogClient.Query(
-            SessionMemoryEntity.COMPONENT_ID, sessionId, fromSequenceNr);
+        new EventLogClient.Query(SessionMemoryEntity.COMPONENT_ID, sessionId, fromSequenceNr);
 
     // The stream is materialized on Akka's dispatcher; join() parks the calling virtual thread,
     // unmounting it from its carrier until the CompletionStage completes.

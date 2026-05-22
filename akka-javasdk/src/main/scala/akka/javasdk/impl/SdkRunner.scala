@@ -984,6 +984,8 @@ private final class Sdk(
             telemetryContext => componentClient(telemetryContext),
             dependencyProviderOpt,
             applicationConfig,
+            eventLogClient,
+            agentRegistry,
             system,
             agentDefinition,
             instructions = agentDefinition.instructions,
