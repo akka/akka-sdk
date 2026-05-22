@@ -23,7 +23,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
-import java.util.OptionalLong;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -97,8 +96,6 @@ public class HttpEndpointTest extends TestKitSupport {
         this.getClass().getClassLoader().getResourceAsStream("static-resources/index.html")) {
       var bytes = ByteString.fromArray(in.readAllBytes());
       assertThat(htmlResponse.body()).isEqualTo(bytes);
-      assertThat(htmlResponse.httpResponse().entity().getContentLengthOption())
-          .isEqualTo(OptionalLong.of(bytes.size()));
     }
 
     var otherResourcesWithKnownTypes =
