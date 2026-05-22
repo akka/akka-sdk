@@ -168,8 +168,8 @@ public final class SessionMemoryClient implements SessionMemory {
             history.messages().size());
         yield history;
       }
-      case SessionHistoryResult.Truncated(var fromSequenceNr) ->
-          fetchHistoryFromJournal(sessionId, fromSequenceNr);
+      case SessionHistoryResult.Truncated(var fromSequenceNr, var toSequenceNr) ->
+          fetchHistoryFromJournal(sessionId, fromSequenceNr, toSequenceNr);
     };
   }
 
@@ -181,9 +181,10 @@ public final class SessionMemoryClient implements SessionMemory {
    * <p>Package-private so the fallback can be exercised in isolation by tests without having to
    * stand up a full {@link ComponentClient}.
    */
-  SessionHistory fetchHistoryFromJournal(String sessionId, long fromSequenceNr) {
+  SessionHistory fetchHistoryFromJournal(String sessionId, long fromSequenceNr, long toSequenceNr) {
     var query =
-        new EventLogClient.Query(SessionMemoryEntity.COMPONENT_ID, sessionId, fromSequenceNr);
+        new EventLogClient.Query(
+            SessionMemoryEntity.COMPONENT_ID, sessionId, fromSequenceNr, toSequenceNr);
 
     // The stream is materialized on Akka's dispatcher; join() parks the calling virtual thread,
     // unmounting it from its carrier until the CompletionStage completes.

@@ -14,6 +14,7 @@ import akka.javasdk.agent.SessionMessage.UserMessage;
 import akka.javasdk.testkit.SessionMemoryClientTestAccess;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
+import akka.runtime.sdk.spi.EventLogClient.Query;
 import akkajavasdk.Junit5LogCapturing;
 import com.typesafe.config.ConfigFactory;
 import java.time.Instant;
@@ -21,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -30,6 +32,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * <ul>
  *   <li>journal fallback when the entity reports {@code Truncated},
  *   <li>journal replay starts at the compaction point so superseded messages are not surfaced,
+ *   <li>the journal query is bounded by the entity's in-memory high-water mark so events persisted
+ *       after the entity reply cannot leak in,
  *   <li>and the journal is left alone entirely when the entity reports {@code Loaded}.
  * </ul>
  */
@@ -138,6 +142,40 @@ public class SessionMemoryClientIntegrationTest extends TestKitSupport {
         .as("journal replay must start at the compaction point")
         .doesNotContain("first-user", "first-ai")
         .containsExactlyElementsOf(expectedClientTexts);
+  }
+
+  @Test
+  public void shouldBoundJournalQueryByEntityInMemoryHighWaterMark() {
+    var sessionId = UUID.randomUUID().toString();
+    var componentId = "test-agent";
+
+    // 6 interactions x ~18B = ~108B → entity truncates its in-memory window.
+    int interactions = 6;
+    for (int i = 0; i < interactions; i++) {
+      addInteraction(sessionId, componentId, "user-msg-" + i, "ai-msg-" + i);
+    }
+
+    // The high-water mark the journal query must honor.
+    var truncated = (SessionHistoryResult.Truncated) fetchHistory(sessionId);
+
+    // Spy the EventLogClient: capture the query, then delegate to the real one so the read still
+    // returns a real history.
+    var queryRef = new AtomicReference<Query>();
+    var spy = SessionMemoryClientTestAccess.capturingMemoryClient(testKit, queryRef);
+    var client = SessionMemoryClientTestAccess.sessionMemoryClient(testKit, spy);
+
+    client.getHistory(sessionId);
+
+    var capturedQuery = queryRef.get();
+    assertThat(capturedQuery)
+        .as("SessionMemoryClient must call the journal when entity is Truncated")
+        .isNotNull();
+    assertThat(capturedQuery.fromSequenceNr())
+        .as("journal query fromSequenceNr must equal the entity's reported compaction point")
+        .isEqualTo(truncated.fromSequenceNr());
+    assertThat(capturedQuery.toSequenceNr())
+        .as("journal query toSequenceNr must equal the entity's reported high-water mark")
+        .isEqualTo(truncated.toSequenceNr());
   }
 
   @Test

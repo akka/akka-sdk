@@ -852,6 +852,55 @@ public class SessionMemoryEntityTest {
     assertThat(result).isInstanceOf(SessionHistoryResult.Truncated.class);
   }
 
+  /**
+   * The {@code toSequenceNr} carried by {@link SessionHistoryResult.Truncated} must equal the
+   * entity's current sequence number at reply time, so the caller can bound the journal read to the
+   * in-memory high-water mark and avoid picking up events (e.g. a concurrent compaction summary)
+   * persisted after the reply.
+   */
+  @Test
+  public void shouldCarryInMemorySeqNrInTruncated() {
+    // given - force truncation with two interactions
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
+    var timestamp = Instant.now();
+
+    var userMessage1 = new UserMessage(timestamp, "First message", COMPONENT_ID);
+    var aiMessage1 = new AiMessage(timestamp, "First response", COMPONENT_ID);
+    var userMessage2 = new UserMessage(timestamp.plusMillis(1), "Second message", COMPONENT_ID);
+    var aiMessage2 = new AiMessage(timestamp.plusMillis(1), "Second response", COMPONENT_ID);
+
+    var limitedBuffer = new SessionMemoryEntity.LimitedWindow(45);
+    testKit.method(SessionMemoryEntity::setLimitedWindow).invoke(limitedBuffer);
+
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage1, aiMessage1));
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage2, aiMessage2));
+
+    // getHistory exposes the entity's current sequence number, which is what fetchHistory
+    // should put into the Truncated reply's toSequenceNr.
+    long expectedSeqNr =
+        testKit
+            .method(SessionMemoryEntity::getHistory)
+            .invoke(emptyGetHistory)
+            .getReply()
+            .sequenceNumber();
+
+    // when
+    SessionHistoryResult result =
+        testKit.method(SessionMemoryEntity::fetchHistory).invoke(emptyGetHistory).getReply();
+
+    // then
+    assertThat(result).isInstanceOf(SessionHistoryResult.Truncated.class);
+
+    var truncated = (SessionHistoryResult.Truncated) result;
+    assertThat(truncated.toSequenceNr()).isEqualTo(expectedSeqNr);
+  }
+
   @Test
   public void shouldRejectInvalidBufferSize() {
     // given

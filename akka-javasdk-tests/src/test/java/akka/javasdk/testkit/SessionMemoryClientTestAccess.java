@@ -13,6 +13,7 @@ import akka.runtime.sdk.spi.SpiEventSourcedEntity;
 import akka.stream.scaladsl.Source;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Test-only bridge that constructs a real {@link SessionMemoryClient} backed by a running {@link
@@ -42,6 +43,24 @@ public final class SessionMemoryClientTestAccess {
         testKit.getAgentRegistry(),
         testKit.getMaterializer(),
         new MemorySettings(true, true, Optional.empty(), List.of()));
+  }
+
+  /**
+   * A {@link EventLogClient} that records every query it sees into {@code capturedQuery} and then
+   * delegates to the runtime's real client, so the read still produces a real history. Use to
+   * assert that {@link SessionMemoryClient} builds the journal query with the right bounds.
+   */
+  public static EventLogClient capturingMemoryClient(
+      TestKit testKit, AtomicReference<Query> capturedQuery) {
+    EventLogClient delegate = testKit.eventLogClient;
+    return new EventLogClient() {
+      @Override
+      public Source<SpiEventSourcedEntity.EventEnvelope, NotUsed> currentEventsForEntity(
+          Query query) {
+        capturedQuery.set(query);
+        return delegate.currentEventsForEntity(query);
+      }
+    };
   }
 
   /**

@@ -437,14 +437,14 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
   /**
    * Like {@link #getHistory} but signals via a {@link SessionHistoryResult.Truncated} reply when
    * the entity has dropped older messages because of its size limit. Callers that receive a {@code
-   * Truncated} marker should stream the journal from the returned sequence number to reconstruct
-   * the full history.
+   * Truncated} marker should stream the journal in {@code [fromSequenceNr, toSequenceNr]} to
+   * reconstruct the full history.
    *
    * <p>Internal SDK use: {@link akka.javasdk.impl.agent.SessionMemoryClient} calls this and, on a
-   * {@code Truncated} reply, transparently falls back to a chunked journal read from {@code
-   * fromSequenceNr} so the caller never sees an incomplete history.
+   * {@code Truncated} reply, transparently falls back to a chunked journal read bounded by the
+   * sequence numbers in the reply so the caller never sees an incomplete history.
    *
-   * @see SessionHistoryResult.Truncated for the meaning of the returned sequence number.
+   * @see SessionHistoryResult.Truncated for the meaning of the returned sequence numbers.
    */
   public Effect<SessionHistoryResult> fetchHistory(GetHistoryCmd cmd) {
     var sanitizedCmd = sanitizeCmd(cmd);
@@ -463,7 +463,10 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
       }
     }
 
-    return effects().reply(new SessionHistoryResult.Truncated(currentState().compactionSeqNr));
+    return effects()
+        .reply(
+            new SessionHistoryResult.Truncated(
+                currentState().compactionSeqNr, commandContext().sequenceNumber()));
   }
 
   private SessionHistory buildSessionHistory(GetHistoryCmd cmd) {

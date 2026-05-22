@@ -91,7 +91,7 @@ class SessionMemoryClientSpec extends ScalaTestWithActorTestKit with AnyWordSpec
       val fake = new FakeEventLogClient(events, serializer)
       val client = newClient(fake)
 
-      val result = client.fetchHistoryFromJournal("session-42", 0L)
+      val result = client.fetchHistoryFromJournal("session-42", 0L, Long.MaxValue)
 
       val msgs = result.messages().asScala.toVector
       msgs should have size 2
@@ -105,7 +105,7 @@ class SessionMemoryClientSpec extends ScalaTestWithActorTestKit with AnyWordSpec
       val fake = new FakeEventLogClient(Vector.empty, serializer)
       val client = newClient(fake)
 
-      client.fetchHistoryFromJournal("session-42", 11L)
+      client.fetchHistoryFromJournal("session-42", 11L, Long.MaxValue)
 
       val query = fake.lastQuery.getOrElse(fail("EventLogClient.currentEventsForEntity was never called"))
       query.componentId shouldBe SessionMemoryEntity.COMPONENT_ID
@@ -124,7 +124,7 @@ class SessionMemoryClientSpec extends ScalaTestWithActorTestKit with AnyWordSpec
       val settings = new MemorySettings(true, true, Optional.empty(), excludeAgent2)
       val client = newClient(fake, settings)
 
-      val result = client.fetchHistoryFromJournal("s", 0L)
+      val result = client.fetchHistoryFromJournal("s", 0L, Long.MaxValue)
 
       val msgs = result.messages().asScala.toVector
       msgs should have size 2
@@ -137,12 +137,13 @@ class SessionMemoryClientSpec extends ScalaTestWithActorTestKit with AnyWordSpec
       val settings = new MemorySettings(true, true, Optional.of(2), util.List.of())
       val client = newClient(fake, settings)
 
-      val result = client.fetchHistoryFromJournal("s", 0L)
+      val result = client.fetchHistoryFromJournal("s", 0L, Long.MaxValue)
 
       val msgs = result.messages().asScala.toVector
       msgs should have size 2
       msgs.head.asInstanceOf[UserMessage].text() shouldBe "u2"
       msgs(1).asInstanceOf[AiMessage].text() shouldBe "a2"
     }
+
   }
 }
