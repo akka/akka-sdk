@@ -45,8 +45,9 @@ public final class SessionMemoryClientTestAccess {
   }
 
   /**
-   * A {@link EventLogClient} that fails any call to {@code fetchStream}. Use to prove that the
-   * journal fallback path was not exercised — for example when the entity returns {@code Loaded}.
+   * A {@link EventLogClient} that fails any call to {@code currentEventsForEntity}. Use to prove
+   * that the journal fallback path was not exercised — for example when the entity returns {@code
+   * Loaded}.
    */
   public static EventLogClient explodingMemoryClient() {
     return new EventLogClient() {
