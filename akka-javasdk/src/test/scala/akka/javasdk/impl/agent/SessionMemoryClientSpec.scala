@@ -108,7 +108,7 @@ class SessionMemoryClientSpec extends ScalaTestWithActorTestKit with AnyWordSpec
       client.fetchHistoryFromJournal("session-42", 11L)
 
       val query = fake.lastQuery.getOrElse(fail("EventLogClient.fetchStream was never called"))
-      query.componentId shouldBe SessionMemoryEntity.SESSION_MEMORY_COMPONENT_ID
+      query.componentId shouldBe SessionMemoryEntity.COMPONENT_ID
       query.entityId shouldBe "session-42"
       query.fromSequenceNr shouldBe 11L
     }

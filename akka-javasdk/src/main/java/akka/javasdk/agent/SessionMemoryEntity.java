@@ -62,7 +62,7 @@ import org.slf4j.LoggerFactory;
  * filter will be expanded to include the other region too.
  */
 @Component(
-    id = SessionMemoryEntity.SESSION_MEMORY_COMPONENT_ID,
+    id = SessionMemoryEntity.COMPONENT_ID,
     name = "Agent Session Memory",
     description =
 """
@@ -72,7 +72,7 @@ Use this component to view or inspect the memory that the agents uses for contex
 @EnableReplicationFilter
 public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> {
 
-  public static final String SESSION_MEMORY_COMPONENT_ID = "akka-session-memory";
+  public static final String COMPONENT_ID = "akka-session-memory";
 
   private final Config config;
   private final String sessionId;
