@@ -264,7 +264,7 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
         .runSingleTask(
             TestTasks.STRING_TASK
                 .instructions("Describe this image")
-                .attach(MessageContent.ImageMessageContent.fromUrl(imageUri)));
+                .attach(MessageContent.ImageMessageContent.fromUri(imageUri)));
 
     Awaitility.await()
         .atMost(30, TimeUnit.SECONDS)

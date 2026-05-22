@@ -41,7 +41,7 @@ import java.util.Optional;
  *     .contentLoader(new MyContentLoader())
  *     .userMessage(UserMessage.from(
  *         MessageContent.TextMessageContent.from("Describe this image"),
- *         MessageContent.ImageMessageContent.fromUrl(imageUrl)))
+ *         MessageContent.ImageMessageContent.fromUri(imageUri)))
  *     .thenReply();
  * }</pre>
  *
