@@ -547,7 +547,7 @@ private final class Sdk(
       invalid.throwFailureSummary()
   }
 
-  val guardrailProvider = new GuardrailProvider(system, applicationConfig)
+  private val guardrailProvider = new GuardrailProvider(system, applicationConfig)
   try {
     guardrailProvider.validate()
   } catch {
@@ -556,7 +556,7 @@ private final class Sdk(
       throw exc
   }
 
-  lazy private val sanitizer = new SanitizerImpl(runtimeSanitizer)
+  lazy private val sanitizer = SanitizerImpl(runtimeSanitizer)
 
   private def hasComponentId(clz: Class[_]): Boolean = {
     if (clz.hasAnnotation[Component]) {
@@ -1021,7 +1021,7 @@ private final class Sdk(
             factoryContext.sessionId,
             context =>
               wiredInstance("Agent", agentClass) {
-                (sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext)).orElse {
+                sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext).orElse {
                   // remember to update component type API doc and docs if changing the set of injectables
                   case p if p == classOf[AgentContext] => context
                 }
@@ -1241,7 +1241,9 @@ private final class Sdk(
       preStart = preStart,
       onStart = onStart,
       reportError = reportError,
-      healthCheck = () => SdkRunner.FutureDone)
+      healthCheck = () => SdkRunner.FutureDone,
+      onUnhandledException = None // FIXME implement
+    )
   }
 
   private lazy val agentRegistry =

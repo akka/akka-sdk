@@ -484,4 +484,7 @@ private[impl] final class AutonomousAgentImpl(
       case m: SpiAgent.ContextMessage.ToolCallResponseMessage =>
         new ToolCallResponse(now, componentId, m.id, m.name, m.content)
     }
+
+  override def contentLoader: Option[SpiAgent.SpiContentLoader] =
+    None // FIXME implement
 }
