@@ -14,10 +14,12 @@ import akka.javasdk.agent.task.Task;
 import akka.javasdk.agent.task.TaskDefinition;
 import akka.javasdk.agent.task.TaskTemplate;
 import akka.javasdk.annotations.Component;
+import akka.javasdk.impl.agent.DataMessageContentImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ImageContent;
+import dev.langchain4j.data.message.PdfFileContent;
 import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.model.chat.ChatModel;
@@ -26,7 +28,6 @@ import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.model.output.FinishReason;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -296,23 +297,30 @@ public final class TestModelProvider implements ModelProvider.Custom {
                             MessageContent.TextMessageContent.from(textContent.text());
                         case ImageContent imageContent -> {
                           var image = imageContent.image();
-                          URI uri;
+                          var detail = toDetailLevel(imageContent.detailLevel());
                           if (image.url() != null) {
-                            uri = image.url();
+                            yield new MessageContent.ImageUrlMessageContent(image.url(), detail);
                           } else if (image.base64Data() != null) {
-                            // Content was loaded inline (via ContentLoader or object storage);
-                            // wrap as an RFC 2397 data: URI so the bytes survive round-trip.
-                            var mime =
-                                image.mimeType() != null
-                                    ? image.mimeType()
-                                    : "application/octet-stream";
-                            uri = URI.create("data:" + mime + ";base64," + image.base64Data());
+                            var data = java.util.Base64.getDecoder().decode(image.base64Data());
+                            yield new DataMessageContentImpl.Image(
+                                data, Optional.ofNullable(image.mimeType()), detail);
                           } else {
                             throw new IllegalStateException(
                                 "Image content has neither url nor base64 data");
                           }
-                          yield new MessageContent.ImageUrlMessageContent(
-                              uri, toDetailLevel(imageContent.detailLevel()));
+                        }
+                        case PdfFileContent pdfContent -> {
+                          var pdf = pdfContent.pdfFile();
+                          if (pdf.url() != null) {
+                            yield new MessageContent.PdfUrlMessageContent(pdf.url());
+                          } else if (pdf.base64Data() != null) {
+                            var data = java.util.Base64.getDecoder().decode(pdf.base64Data());
+                            yield new DataMessageContentImpl.Pdf(
+                                data, Optional.ofNullable(pdf.mimeType()));
+                          } else {
+                            throw new IllegalStateException(
+                                "PDF content has neither url nor base64 data");
+                          }
                         }
                         default ->
                             throw new IllegalStateException(

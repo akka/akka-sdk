@@ -418,6 +418,14 @@ private[impl] object AgentImpl {
           content.mimeType().toScala)
       case content: MessageContent.PdfUrlMessageContent =>
         new SpiAgent.PdfUriMessageContent(content.uri)
+      case _: MessageContent.ImageDataMessageContent =>
+        throw new UnsupportedOperationException(
+          "Inline image data message content cannot be sent as input. Upload to object storage and " +
+          "reference it via an object:// URI, or use a URI-referenced content type.")
+      case _: MessageContent.PdfDataMessageContent =>
+        throw new UnsupportedOperationException(
+          "Inline PDF data message content cannot be sent as input. Upload to object storage and " +
+          "reference it via an object:// URI, or use a URI-referenced content type.")
     }
 
   private[agent] def fromSpiMessageContent(mc: SpiAgent.MessageContent): MessageContent = mc match {
@@ -776,6 +784,14 @@ private[impl] final class AgentImpl(
           content.mimeType())
       case content: PdfUrlMessageContent =>
         new SessionMessage.MessageContent.PdfUriMessageContent(content.uri().toString)
+      case _: MessageContent.ImageDataMessageContent =>
+        throw new UnsupportedOperationException(
+          "Inline image data message content cannot be persisted to session memory. Upload to " +
+          "object storage and reference it via an object:// URI, or use a URI-referenced content type.")
+      case _: MessageContent.PdfDataMessageContent =>
+        throw new UnsupportedOperationException(
+          "Inline PDF data message content cannot be persisted to session memory. Upload to " +
+          "object storage and reference it via an object:// URI, or use a URI-referenced content type.")
     }
   }
 

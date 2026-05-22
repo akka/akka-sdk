@@ -34,7 +34,10 @@ public class ContentLoaderTestAgent extends AutonomousAgent {
         .contentLoader(new RecordingContentLoader());
   }
 
-  static class RecordingContentLoader implements ContentLoader {
+  public static class RecordingContentLoader implements ContentLoader {
+    public static final byte[] LOADED_BYTES = {(byte) 0x89, 0x50, 0x4E, 0x47};
+    public static final String LOADED_MIME_TYPE = "image/png";
+
     @Override
     public LoadedContent load(MessageContent.LoadableMessageContent content) {
       loaderCalls.incrementAndGet();
@@ -43,8 +46,7 @@ public class ContentLoaderTestAgent extends AutonomousAgent {
       } else if (content instanceof MessageContent.PdfUrlMessageContent pdf) {
         loadedUris.add(pdf.uri().toString());
       }
-      return new LoadedContent(
-          new byte[] {(byte) 0x89, 0x50, 0x4E, 0x47}, Optional.of("image/png"));
+      return new LoadedContent(LOADED_BYTES, Optional.of(LOADED_MIME_TYPE));
     }
   }
 }

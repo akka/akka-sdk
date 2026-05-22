@@ -22,6 +22,31 @@ public sealed interface MessageContent {
   sealed interface LoadableMessageContent extends MessageContent {}
 
   /**
+   * Inline content already loaded as bytes.
+   *
+   * <p>Counterpart to {@link LoadableMessageContent}: where loadable content references its bytes
+   * by URI and is resolved by the runtime, {@code DataMessageContent} carries the bytes directly,
+   * typically after a {@link ContentLoader} or object-storage resolution has happened.
+   *
+   * <p>Application code is not expected to construct these directly; reference content by URI (e.g.
+   * {@code object://bucket/key}) and let the runtime load it. Concrete implementations are provided
+   * internally and produced by the testkit so tests can inspect what the model received.
+   */
+  sealed interface DataMessageContent extends MessageContent {
+    byte[] data();
+
+    Optional<String> mimeType();
+  }
+
+  /** Image content carried as inline bytes. See {@link DataMessageContent}. */
+  non-sealed interface ImageDataMessageContent extends DataMessageContent {
+    ImageMessageContent.DetailLevel detailLevel();
+  }
+
+  /** PDF content carried as inline bytes. See {@link DataMessageContent}. */
+  non-sealed interface PdfDataMessageContent extends DataMessageContent {}
+
+  /**
    * Text content within a user message.
    *
    * @param text The text content

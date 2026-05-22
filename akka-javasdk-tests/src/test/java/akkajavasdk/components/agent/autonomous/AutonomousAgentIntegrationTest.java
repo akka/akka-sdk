@@ -247,12 +247,14 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
   @Test
   public void shouldInvokeContentLoaderForTaskAttachment() {
     var receivedMessages =
-        Collections.synchronizedList(new ArrayList<TestModelProvider.InputMessage>());
-    contentLoaderTestModel.fixedResponse(
-        msg -> {
-          receivedMessages.add(msg);
-          return new TestModelProvider.AiResponse(completeTask("Done"));
-        });
+        Collections.synchronizedList(new ArrayList<TestModelProvider.UserMessage>());
+    contentLoaderTestModel
+        .whenUserMessage(
+            msg -> {
+              receivedMessages.add(msg);
+              return true;
+            })
+        .reply(new TestModelProvider.AiResponse(completeTask("Done")));
 
     // Custom URI scheme: the runtime delegates to the user's ContentLoader.
     var imageUri = "myscheme://test-image.png";
@@ -273,6 +275,24 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
                   .as("content loader was invoked; model received messages: %s", receivedMessages)
                   .isPositive();
               assertThat(ContentLoaderTestAgent.loadedUris).contains(imageUri);
+
+              // The loaded bytes from ContentLoader reached the model as inline image data,
+              // not as the original URI.
+              var imageData =
+                  receivedMessages.stream()
+                      .flatMap(m -> m.contents().stream())
+                      .filter(c -> c instanceof MessageContent.ImageDataMessageContent)
+                      .map(c -> (MessageContent.ImageDataMessageContent) c)
+                      .findFirst()
+                      .orElseThrow(
+                          () ->
+                              new AssertionError(
+                                  "expected an ImageDataMessageContent in received messages: "
+                                      + receivedMessages));
+              assertThat(imageData.data())
+                  .containsExactly(ContentLoaderTestAgent.RecordingContentLoader.LOADED_BYTES);
+              assertThat(imageData.mimeType())
+                  .contains(ContentLoaderTestAgent.RecordingContentLoader.LOADED_MIME_TYPE);
             });
   }
 }
