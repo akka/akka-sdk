@@ -663,6 +663,195 @@ public class SessionMemoryEntityTest {
         .containsExactly(summaryUser, summaryAi);
   }
 
+  /**
+   * Truncated entity, {@code lastN} fits inside the in-memory window: the tail in memory is
+   * authoritative since truncation only drops older messages, so the reply is {@code Loaded}.
+   */
+  @Test
+  public void shouldLoadLastNWhenTruncated() {
+    // given - a buffer that holds two interactions in full, so adding a third evicts the first
+    // interaction (truncated=true) but leaves the two most-recent interactions in memory.
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
+    var timestamp = Instant.now();
+
+    var userMessage1 = new UserMessage(timestamp, "First message", COMPONENT_ID);
+    var aiMessage1 = new AiMessage(timestamp, "First response", COMPONENT_ID);
+    var userMessage2 = new UserMessage(timestamp.plusMillis(1), "Second message", COMPONENT_ID);
+    var aiMessage2 = new AiMessage(timestamp.plusMillis(1), "Second response", COMPONENT_ID);
+    var userMessage3 = new UserMessage(timestamp.plusMillis(2), "Third message", COMPONENT_ID);
+    var aiMessage3 = new AiMessage(timestamp.plusMillis(2), "Third response", COMPONENT_ID);
+
+    var limitedBuffer = new SessionMemoryEntity.LimitedWindow(75);
+    testKit.method(SessionMemoryEntity::setLimitedWindow).invoke(limitedBuffer);
+
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage1, aiMessage1));
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage2, aiMessage2));
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage3, aiMessage3));
+
+    // sanity check: entity is truncated (the first interaction was evicted)
+    SessionHistoryResult fullRequest =
+        testKit.method(SessionMemoryEntity::fetchHistory).invoke(emptyGetHistory).getReply();
+    assertThat(fullRequest).isInstanceOf(SessionHistoryResult.Truncated.class);
+
+    // when - asking for last 2, which the in-memory window can satisfy
+    var cmd = new SessionMemoryEntity.GetHistoryCmd(Optional.of(2));
+    SessionHistoryResult result =
+        testKit.method(SessionMemoryEntity::fetchHistory).invoke(cmd).getReply();
+
+    // then - the in-memory tail is authoritative for "last N" even when truncated, because
+    // truncation only drops older messages.
+    assertThat(result).isInstanceOf(SessionHistoryResult.Loaded.class);
+
+    var loadedResult = (SessionHistoryResult.Loaded) result;
+    assertThat(loadedResult.history().messages()).containsExactly(userMessage3, aiMessage3);
+  }
+
+  /**
+   * Truncated entity, {@code lastN} larger than the in-memory window: the entity cannot tell
+   * whether older matches were dropped, so the caller must fall back to the journal.
+   */
+  @Test
+  public void shouldRemainTruncatedWhenLastNTooLarge() {
+    // given - truncated state with only the most-recent interaction left in memory (2 messages)
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
+    var timestamp = Instant.now();
+
+    var userMessage1 = new UserMessage(timestamp, "First message", COMPONENT_ID);
+    var aiMessage1 = new AiMessage(timestamp, "First response", COMPONENT_ID);
+    var userMessage2 = new UserMessage(timestamp.plusMillis(1), "Second message", COMPONENT_ID);
+    var aiMessage2 = new AiMessage(timestamp.plusMillis(1), "Second response", COMPONENT_ID);
+
+    var limitedBuffer = new SessionMemoryEntity.LimitedWindow(45);
+    testKit.method(SessionMemoryEntity::setLimitedWindow).invoke(limitedBuffer);
+
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage1, aiMessage1));
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(userMessage2, aiMessage2));
+
+    // when - asking for last 5 with only 2 messages in memory and the entity truncated, we
+    // cannot decide from memory alone whether those 2 are the true "last 5"; the caller must
+    // fall back to the journal.
+    var cmd = new SessionMemoryEntity.GetHistoryCmd(Optional.of(5));
+    SessionHistoryResult result =
+        testKit.method(SessionMemoryEntity::fetchHistory).invoke(cmd).getReply();
+
+    // then
+    assertThat(result).isInstanceOf(SessionHistoryResult.Truncated.class);
+  }
+
+  /**
+   * Truncated entity with a filter: when the in-memory window has at least {@code lastN}
+   * filter-matching messages, those are the true last N and the reply is {@code Loaded}.
+   */
+  @Test
+  public void shouldLoadFilteredLastNWhenTruncated() {
+    // given - two agents, buffer sized so eviction leaves two agent-1 + two agent-2 messages
+    // in memory, with the entity truncated.
+    String agent1 = "agent-1";
+    String agent2 = "agent-2";
+    var agentDetails = Set.of(agentDetails(agent1), agentDetails(agent2));
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) ->
+                new SessionMemoryEntity(
+                    config, context, AgentRegistryImpl.fromJavaSet(agentDetails)));
+    var timestamp = Instant.now();
+
+    var u1a = new UserMessage(timestamp, "Hi from 1", agent1);
+    var ai1a = new AiMessage(timestamp, "Hello from 1", agent1);
+    var u2a = new UserMessage(timestamp.plusMillis(1), "Hi from 2", agent2);
+    var ai2a = new AiMessage(timestamp.plusMillis(1), "Hello from 2", agent2);
+    var u1b = new UserMessage(timestamp.plusMillis(2), "Bye from 1", agent1);
+    var ai1b = new AiMessage(timestamp.plusMillis(2), "Bye back 1", agent1);
+    var u2b = new UserMessage(timestamp.plusMillis(3), "Bye from 2", agent2);
+    var ai2b = new AiMessage(timestamp.plusMillis(3), "Bye back 2", agent2);
+
+    var limitedBuffer = new SessionMemoryEntity.LimitedWindow(50);
+    testKit.method(SessionMemoryEntity::setLimitedWindow).invoke(limitedBuffer);
+
+    testKit.method(SessionMemoryEntity::addInteraction).invoke(new AddInteractionCmd(u1a, ai1a));
+    testKit.method(SessionMemoryEntity::addInteraction).invoke(new AddInteractionCmd(u2a, ai2a));
+    testKit.method(SessionMemoryEntity::addInteraction).invoke(new AddInteractionCmd(u1b, ai1b));
+    testKit.method(SessionMemoryEntity::addInteraction).invoke(new AddInteractionCmd(u2b, ai2b));
+
+    // sanity check: entity is truncated
+    SessionHistoryResult fullRequest =
+        testKit.method(SessionMemoryEntity::fetchHistory).invoke(emptyGetHistory).getReply();
+    assertThat(fullRequest).isInstanceOf(SessionHistoryResult.Truncated.class);
+
+    // when - asking for the last 2 agent-1 messages; the in-memory window has exactly two
+    // agent-1 messages so the filtered+trimmed result satisfies the request.
+    var filters = MemoryFilter.includeFromAgentId(agent1).get();
+    var cmd = new SessionMemoryEntity.GetHistoryCmd(Optional.of(2), filters);
+    SessionHistoryResult result =
+        testKit.method(SessionMemoryEntity::fetchHistory).invoke(cmd).getReply();
+
+    // then - delivered as Loaded with the two most-recent agent-1 messages.
+    assertThat(result).isInstanceOf(SessionHistoryResult.Loaded.class);
+
+    var loadedResult = (SessionHistoryResult.Loaded) result;
+    assertThat(loadedResult.history().messages()).containsExactly(u1b, ai1b);
+  }
+
+  /**
+   * Truncated entity with a filter and fewer matches in memory than {@code lastN}: older matches
+   * may have been dropped, so the entity returns {@code Truncated} and the caller hits the journal.
+   */
+  @Test
+  public void shouldRemainTruncatedWhenFilteredLastNTooLarge() {
+    // given - truncated state where the in-memory window holds fewer filter-matching messages
+    // than the requested lastN.
+    String agent1 = "agent-1";
+    String agent2 = "agent-2";
+    var agentDetails = Set.of(agentDetails(agent1), agentDetails(agent2));
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) ->
+                new SessionMemoryEntity(
+                    config, context, AgentRegistryImpl.fromJavaSet(agentDetails)));
+    var timestamp = Instant.now();
+
+    var u1a = new UserMessage(timestamp, "Hi from 1", agent1);
+    var ai1a = new AiMessage(timestamp, "Hello from 1", agent1);
+    var u2a = new UserMessage(timestamp.plusMillis(1), "Hi from 2", agent2);
+    var ai2a = new AiMessage(timestamp.plusMillis(1), "Hello from 2", agent2);
+    var u1b = new UserMessage(timestamp.plusMillis(2), "Bye from 1", agent1);
+    var ai1b = new AiMessage(timestamp.plusMillis(2), "Bye back 1", agent1);
+    var u2b = new UserMessage(timestamp.plusMillis(3), "Bye from 2", agent2);
+    var ai2b = new AiMessage(timestamp.plusMillis(3), "Bye back 2", agent2);
+
+    var limitedBuffer = new SessionMemoryEntity.LimitedWindow(50);
+    testKit.method(SessionMemoryEntity::setLimitedWindow).invoke(limitedBuffer);
+
+    testKit.method(SessionMemoryEntity::addInteraction).invoke(new AddInteractionCmd(u1a, ai1a));
+    testKit.method(SessionMemoryEntity::addInteraction).invoke(new AddInteractionCmd(u2a, ai2a));
+    testKit.method(SessionMemoryEntity::addInteraction).invoke(new AddInteractionCmd(u1b, ai1b));
+    testKit.method(SessionMemoryEntity::addInteraction).invoke(new AddInteractionCmd(u2b, ai2b));
+
+    // when - asking for last 5 agent-1 messages; in-memory only has 2 agent-1 messages, so we
+    // cannot tell whether older agent-1 messages were dropped — the caller must go to the journal.
+    var filters = MemoryFilter.includeFromAgentId(agent1).get();
+    var cmd = new SessionMemoryEntity.GetHistoryCmd(Optional.of(5), filters);
+    SessionHistoryResult result =
+        testKit.method(SessionMemoryEntity::fetchHistory).invoke(cmd).getReply();
+
+    // then
+    assertThat(result).isInstanceOf(SessionHistoryResult.Truncated.class);
+  }
+
   @Test
   public void shouldRejectInvalidBufferSize() {
     // given

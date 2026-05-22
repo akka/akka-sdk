@@ -425,6 +425,15 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     return effects().reply(buildSessionHistory(cmd));
   }
 
+  /* In case cmd.lastNMessages is null, we want to move on with an Optional.empty and not keep checking this. */
+  private GetHistoryCmd sanitizeCmd(GetHistoryCmd cmd) {
+    if (cmd.lastNMessages == null) {
+      return new GetHistoryCmd(cmd.memoryFilters);
+    } else {
+      return cmd;
+    }
+  }
+
   /**
    * Like {@link #getHistory} but signals via a {@link SessionHistoryResult.Truncated} reply when
    * the entity has dropped older messages because of its size limit. Callers that receive a {@code
@@ -438,17 +447,28 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
    * @see SessionHistoryResult.Truncated for the meaning of the returned sequence number.
    */
   public Effect<SessionHistoryResult> fetchHistory(GetHistoryCmd cmd) {
-    if (currentState().truncated) {
-      return effects().reply(new SessionHistoryResult.Truncated(currentState().compactionSeqNr));
+    var sanitizedCmd = sanitizeCmd(cmd);
+    if (!currentState().truncated) {
+      return effects().reply(new SessionHistoryResult.Loaded(buildSessionHistory(cmd)));
     }
-    return effects().reply(new SessionHistoryResult.Loaded(buildSessionHistory(cmd)));
+
+    // Truncated: we can still satisfy a "last N" request when the in-memory state (after
+    // filtering) already contains at least N matches, because truncation only drops the oldest
+    // messages — anything newer is guaranteed to still be in memory.
+    if (sanitizedCmd.lastNMessages.isPresent()) {
+      var results = buildSessionHistory(sanitizedCmd);
+      var filtered = filteredMessages(cmd.memoryFilters);
+      if (results.messages().size() >= sanitizedCmd.lastNMessages.get()) {
+        return effects().reply(new SessionHistoryResult.Loaded(results));
+      }
+    }
+
+    return effects().reply(new SessionHistoryResult.Truncated(currentState().compactionSeqNr));
   }
 
   private SessionHistory buildSessionHistory(GetHistoryCmd cmd) {
     var filtered = filteredMessages(cmd.memoryFilters);
-    var trimmed =
-        MemoryHistoryUtils.trimToLastN(
-            filtered, cmd.lastNMessages == null ? Optional.empty() : cmd.lastNMessages);
+    var trimmed = MemoryHistoryUtils.trimToLastN(filtered, cmd.lastNMessages);
     // make sure this returns a copy of the list and not the list itself
     return new SessionHistory(
         new LinkedList<>(trimmed), commandContext().sequenceNumber(), currentState().tokenUsage);
