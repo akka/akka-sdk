@@ -26,6 +26,7 @@ import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.model.output.FinishReason;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -294,14 +295,24 @@ public final class TestModelProvider implements ModelProvider.Custom {
                         case TextContent textContent ->
                             MessageContent.TextMessageContent.from(textContent.text());
                         case ImageContent imageContent -> {
-                          if (imageContent.image().url() != null) {
-                            yield new MessageContent.ImageUrlMessageContent(
-                                imageContent.image().url(),
-                                toDetailLevel(imageContent.detailLevel()));
+                          var image = imageContent.image();
+                          URI uri;
+                          if (image.url() != null) {
+                            uri = image.url();
+                          } else if (image.base64Data() != null) {
+                            // Content was loaded inline (via ContentLoader or object storage);
+                            // wrap as an RFC 2397 data: URI so the bytes survive round-trip.
+                            var mime =
+                                image.mimeType() != null
+                                    ? image.mimeType()
+                                    : "application/octet-stream";
+                            uri = URI.create("data:" + mime + ";base64," + image.base64Data());
                           } else {
                             throw new IllegalStateException(
-                                "Not supported image content without url.");
+                                "Image content has neither url nor base64 data");
                           }
+                          yield new MessageContent.ImageUrlMessageContent(
+                              uri, toDetailLevel(imageContent.detailLevel()));
                         }
                         default ->
                             throw new IllegalStateException(
