@@ -9,6 +9,7 @@ import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigRenderOptions;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.NoSuchFileException;
@@ -299,8 +300,11 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
         }
       }
       existingDescriptorResource.delete();
-    } catch (NoSuchFileException ex) {
-      // no existing file
+    } catch (NoSuchFileException | FileNotFoundException ex) {
+      // No existing descriptor — expected on a clean build or first compile in IntelliJ.
+      // Standard javac (Maven/Gradle) throws NoSuchFileException via PathFileObject.openReader(),
+      // while IntelliJ's JPS build system uses JpsFileObject/OutputFileObject backed by
+      // FileInputStream, which throws FileNotFoundException instead.
       debug("No existing Akka component descriptor found");
       existingConfig = ConfigFactory.empty();
     }
