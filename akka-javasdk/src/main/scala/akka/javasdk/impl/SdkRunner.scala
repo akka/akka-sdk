@@ -157,6 +157,7 @@ import akka.runtime.sdk.spi.TimedActionDescriptor
 import akka.runtime.sdk.spi.UserFunctionError
 import akka.runtime.sdk.spi.ViewDescriptor
 import akka.runtime.sdk.spi.WorkflowDescriptor
+import akka.runtime.sdk.spi.tracing.InMemorySpanExporter
 import akka.stream.Materializer
 import akka.stream.SystemMaterializer
 import com.typesafe.config.Config
@@ -393,7 +394,8 @@ class SdkRunner private (
         getSettings,
         startContext.sanitizer,
         httpMockLookup,
-        grpcMockLookup)
+        grpcMockLookup,
+        startContext.inMemorySpanExporter)
       Future.successful(app.spiComponents)
     } catch {
       case NonFatal(ex) =>
@@ -443,7 +445,8 @@ private[javasdk] object Sdk {
       agentCapabilityConverter: CapabilityConverter,
       overrideModelProvider: OverrideModelProvider,
       serializer: Serializer,
-      sanitizer: Sanitizer)
+      sanitizer: Sanitizer,
+      inMemorySpanExporter: Option[InMemorySpanExporter])
 
   private val platformManagedDependency = Set[Class[_]](
     classOf[ComponentClient],
@@ -495,7 +498,8 @@ private final class Sdk(
     runtimeSanitizer: SpiSanitizerEngine,
     httpMockLookup: String => Option[
       java.util.function.Function[akka.http.javadsl.model.HttpRequest, akka.http.javadsl.model.HttpResponse]],
-    grpcMockLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient]) {
+    grpcMockLookup: GrpcClientProviderImpl.ClientKey => Option[AkkaGrpcClient],
+    inMemorySpanExporter: Option[InMemorySpanExporter]) {
 
   import Sdk._
 
@@ -1171,7 +1175,8 @@ private final class Sdk(
               agentCapabilityConverter,
               overrideModelProvider,
               serializer,
-              sanitizer))
+              sanitizer,
+              inMemorySpanExporter))
           Future.successful(Done)
         case Some(setup) =>
           if (dependencyProviderOpt.nonEmpty) {
@@ -1208,7 +1213,8 @@ private final class Sdk(
               agentCapabilityConverter,
               overrideModelProvider,
               serializer,
-              sanitizer))
+              sanitizer,
+              inMemorySpanExporter))
           Future.successful(Done)
       }
     }

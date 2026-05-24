@@ -9,12 +9,12 @@ import static java.util.Optional.ofNullable;
 import akka.annotation.ApiMayChange;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.workflow.Workflow;
+import akka.runtime.sdk.spi.tracing.InMemorySpanExporter;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import kalix.runtime.telemetry.tracing.TracingSetup;
 
 /**
  * A test utility for reading and inspecting telemetry data captured during test execution.
@@ -26,9 +26,9 @@ import kalix.runtime.telemetry.tracing.TracingSetup;
 @ApiMayChange
 public class TelemetryReader {
 
-  private final TracingSetup.AkkaInMemorySpanExporter inMemorySpanExporter;
+  private final InMemorySpanExporter inMemorySpanExporter;
 
-  public TelemetryReader(TracingSetup.AkkaInMemorySpanExporter inMemorySpanExporter) {
+  public TelemetryReader(InMemorySpanExporter inMemorySpanExporter) {
     this.inMemorySpanExporter = inMemorySpanExporter;
   }
 
