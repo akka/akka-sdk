@@ -4,6 +4,7 @@
 
 package akka.javasdk.agent.autonomous;
 
+import akka.javasdk.agent.ContentLoader;
 import akka.javasdk.agent.Guardrail;
 import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.agent.RemoteMcpTools;
@@ -79,4 +80,17 @@ public interface AgentDefinition {
   /** Guardrails evaluated on responses received from the LLM. */
   @SuppressWarnings("unchecked")
   AgentDefinition responseGuardrails(Class<? extends Guardrail>... guardrails);
+
+  /**
+   * Sets a custom content loader.
+   *
+   * <p>When multimodal messages contain image or PDF references, the runtime resolves them
+   * automatically for built-in URI schemes: {@code http(s)://} (public HTTP fetch) and {@code
+   * object://bucket/key} (resolved against a configured object-storage bucket). Defining a custom
+   * loader is for other cases, such as authenticated endpoints, databases, or custom URI schemes.
+   *
+   * @param contentLoader The content loader implementation
+   * @see ContentLoader
+   */
+  AgentDefinition contentLoader(ContentLoader contentLoader);
 }

@@ -21,12 +21,12 @@ import java.util.Optional;
  *   public LoadedContent load(MessageContent.LoadableMessageContent content) {
  *     return switch (content) {
  *       case MessageContent.ImageUrlMessageContent image -> {
- *         byte[] data = fetchFromStorage(image.url());
+ *         byte[] data = fetchFromStorage(image.uri());
  *         String mimeType = image.mimeType().orElse("image/jpeg");
  *         yield new LoadedContent(data, Optional.of(mimeType));
  *       }
  *       case MessageContent.PdfUrlMessageContent pdf -> {
- *         byte[] data = fetchFromStorage(pdf.url());
+ *         byte[] data = fetchFromStorage(pdf.uri());
  *         yield new LoadedContent(data);
  *       }
  *     };
@@ -41,7 +41,7 @@ import java.util.Optional;
  *     .contentLoader(new MyContentLoader())
  *     .userMessage(UserMessage.from(
  *         MessageContent.TextMessageContent.from("Describe this image"),
- *         MessageContent.ImageMessageContent.fromUrl(imageUrl)))
+ *         MessageContent.ImageMessageContent.fromUri(imageUri)))
  *     .thenReply();
  * }</pre>
  *
@@ -74,20 +74,20 @@ public interface ContentLoader {
    * Loads content from the given loadable message content.
    *
    * <p>This method is called by the runtime when processing multimodal messages that contain
-   * URL-referenced content. The implementation should fetch the content data and return it along
+   * URI-referenced content. The implementation should fetch the content data and return it along
    * with the appropriate MIME type.
    *
    * <p>Use pattern matching on the content parameter to handle different content types:
    *
    * <ul>
-   *   <li>{@link MessageContent.ImageUrlMessageContent} — provides the URL, detail level, and
+   *   <li>{@link MessageContent.ImageUrlMessageContent} provides the URI, detail level, and
    *       optional MIME type hint
-   *   <li>{@link MessageContent.PdfUrlMessageContent} — provides the URL of the PDF
+   *   <li>{@link MessageContent.PdfUrlMessageContent} provides the URI of the PDF
    * </ul>
    *
    * <p>If the method throws, the entire agent request is failed.
    *
-   * @param content The loadable message content containing the URL and metadata
+   * @param content The loadable message content containing the URI and metadata
    * @return The loaded content data and MIME type
    */
   LoadedContent load(MessageContent.LoadableMessageContent content);

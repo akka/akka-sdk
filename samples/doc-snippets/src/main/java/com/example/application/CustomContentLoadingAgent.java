@@ -70,8 +70,8 @@ public class CustomContentLoadingAgent extends Agent {
       .userMessage(
         UserMessage.from(
           TextMessageContent.from("Describe this image and summarize the PDF"),
-          ImageMessageContent.fromUrl(request.imageUri), // <2>
-          PdfMessageContent.fromUrl(request.pdfUri) // <3>
+          ImageMessageContent.fromUri(request.imageUri), // <2>
+          PdfMessageContent.fromUri(request.pdfUri) // <3>
         )
       )
       .thenReply();

@@ -22,6 +22,31 @@ public sealed interface MessageContent {
   sealed interface LoadableMessageContent extends MessageContent {}
 
   /**
+   * Inline content already loaded as bytes.
+   *
+   * <p>Counterpart to {@link LoadableMessageContent}: where loadable content references its bytes
+   * by URI and is resolved by the runtime, {@code DataMessageContent} carries the bytes directly,
+   * typically after a {@link ContentLoader} or object-storage resolution has happened.
+   *
+   * <p>Application code is not expected to construct these directly; reference content by URI (e.g.
+   * {@code object://bucket/key}) and let the runtime load it. Concrete implementations are provided
+   * internally and produced by the testkit so tests can inspect what the model received.
+   */
+  sealed interface DataMessageContent extends MessageContent {
+    byte[] data();
+
+    Optional<String> mimeType();
+  }
+
+  /** Image content carried as inline bytes. See {@link DataMessageContent}. */
+  non-sealed interface ImageDataMessageContent extends DataMessageContent {
+    ImageMessageContent.DetailLevel detailLevel();
+  }
+
+  /** PDF content carried as inline bytes. See {@link DataMessageContent}. */
+  non-sealed interface PdfDataMessageContent extends DataMessageContent {}
+
+  /**
    * Text content within a user message.
    *
    * @param text The text content
@@ -112,48 +137,82 @@ public sealed interface MessageContent {
   record ImageMessageContent() {
 
     /**
-     * Creates image content from a URL string with automatic detail level.
+     * Creates image content from a URI string with automatic detail level.
      *
-     * @param url The URL string pointing to the image
+     * @param uri The URI string pointing to the image. Supports {@code http(s)://} as well as
+     *     custom schemes resolved by a {@link ContentLoader} and {@code object://bucket/key} backed
+     *     by object storage.
      * @return A new ImageUrlMessageContent instance with AUTO detail level
      */
-    public static ImageUrlMessageContent fromUrl(String url) {
-      return new ImageUrlMessageContent(URI.create(url), DetailLevel.AUTO);
+    public static ImageUrlMessageContent fromUri(String uri) {
+      return new ImageUrlMessageContent(URI.create(uri), DetailLevel.AUTO);
     }
 
     /**
-     * Creates image content from a URL with automatic detail level.
+     * Creates image content from a URI with automatic detail level.
      *
-     * @param url The URL pointing to the image
+     * @param uri The URI pointing to the image
      * @return A new ImageUrlMessageContent instance with AUTO detail level
      */
-    public static ImageUrlMessageContent fromUrl(URL url) {
-      return new ImageUrlMessageContent(URI.create(url.toString()), DetailLevel.AUTO);
+    public static ImageUrlMessageContent fromUri(URI uri) {
+      return new ImageUrlMessageContent(uri, DetailLevel.AUTO);
     }
 
     /**
-     * Creates image content from a URL with a specific detail level.
+     * Creates image content from a URI with a specific detail level.
      *
-     * @param url The URL pointing to the image
+     * @param uri The URI pointing to the image
      * @param detailLevel The level of detail for image processing
      * @return A new ImageUrlMessageContent instance
      */
-    public static ImageUrlMessageContent fromUrl(URL url, DetailLevel detailLevel) {
-      return new ImageUrlMessageContent(URI.create(url.toString()), detailLevel);
+    public static ImageUrlMessageContent fromUri(URI uri, DetailLevel detailLevel) {
+      return new ImageUrlMessageContent(uri, detailLevel);
     }
 
     /**
-     * Creates image content from a URL with a specific detail level.
+     * Creates image content from a URI with a specific detail level and explicit mime type.
      *
-     * @param url The URL pointing to the image
+     * @param uri The URI pointing to the image
      * @param detailLevel The level of detail for image processing
      * @param mimeType The mimeType of the image, e.g. 'image/jpeg', 'image/png'
      * @return A new ImageUrlMessageContent instance
      */
+    public static ImageUrlMessageContent fromUri(
+        URI uri, DetailLevel detailLevel, String mimeType) {
+      return new ImageUrlMessageContent(uri, detailLevel, Optional.of(mimeType));
+    }
+
+    /**
+     * @deprecated Use {@link #fromUri(String)} instead.
+     */
+    @Deprecated(forRemoval = true)
+    public static ImageUrlMessageContent fromUrl(String url) {
+      return fromUri(url);
+    }
+
+    /**
+     * @deprecated Use {@link #fromUri(URI)} instead.
+     */
+    @Deprecated(forRemoval = true)
+    public static ImageUrlMessageContent fromUrl(URL url) {
+      return fromUri(URI.create(url.toString()));
+    }
+
+    /**
+     * @deprecated Use {@link #fromUri(URI, DetailLevel)} instead.
+     */
+    @Deprecated(forRemoval = true)
+    public static ImageUrlMessageContent fromUrl(URL url, DetailLevel detailLevel) {
+      return fromUri(URI.create(url.toString()), detailLevel);
+    }
+
+    /**
+     * @deprecated Use {@link #fromUri(URI, DetailLevel, String)} instead.
+     */
+    @Deprecated(forRemoval = true)
     public static ImageUrlMessageContent fromUrl(
         URL url, DetailLevel detailLevel, String mimeType) {
-      return new ImageUrlMessageContent(
-          URI.create(url.toString()), detailLevel, Optional.of(mimeType));
+      return fromUri(URI.create(url.toString()), detailLevel, mimeType);
     }
 
     /**
@@ -226,23 +285,41 @@ public sealed interface MessageContent {
   record PdfMessageContent() {
 
     /**
-     * Creates PDF content from a URL string.
+     * Creates PDF content from a URI string.
      *
-     * @param url The URL string pointing to the PDF
+     * @param uri The URI string pointing to the PDF. Supports {@code http(s)://} as well as custom
+     *     schemes resolved by a {@link ContentLoader} and {@code object://bucket/key} backed by
+     *     object storage.
      * @return A new PdfUrlMessageContent instance
      */
-    public static PdfUrlMessageContent fromUrl(String url) {
-      return new PdfUrlMessageContent(URI.create(url));
+    public static PdfUrlMessageContent fromUri(String uri) {
+      return new PdfUrlMessageContent(URI.create(uri));
     }
 
     /**
-     * Creates PDF content from a URL.
+     * Creates PDF content from a URI.
      *
-     * @param url The URL pointing to the PDF
+     * @param uri The URI pointing to the PDF
      * @return A new PdfUrlMessageContent instance
      */
+    public static PdfUrlMessageContent fromUri(URI uri) {
+      return new PdfUrlMessageContent(uri);
+    }
+
+    /**
+     * @deprecated Use {@link #fromUri(String)} instead.
+     */
+    @Deprecated(forRemoval = true)
+    public static PdfUrlMessageContent fromUrl(String url) {
+      return fromUri(url);
+    }
+
+    /**
+     * @deprecated Use {@link #fromUri(URI)} instead.
+     */
+    @Deprecated(forRemoval = true)
     public static PdfUrlMessageContent fromUrl(URL url) {
-      return new PdfUrlMessageContent(URI.create(url.toString()));
+      return fromUri(URI.create(url.toString()));
     }
   }
 }

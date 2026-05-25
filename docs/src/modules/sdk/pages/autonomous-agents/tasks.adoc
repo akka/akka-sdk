@@ -73,6 +73,8 @@ include::example$autonomous-agent-playground/src/main/java/demo/docreview/api/Do
 
 Attachments carry large content, such as a document, a transcript, or a JSON payload, without inflating the instruction text. The runtime delivers attachments to the model's context alongside the instructions. Attachments travel with the task across agent boundaries: a handoff target sees the original task's attachments, and a delegated worker sees the subtask's attachments.
 
+Attachments can also be images or PDFs, referenced by URI rather than inlined. The runtime resolves `http(s)://` and `object://` references automatically, and a custom `ContentLoader` handles other sources. See xref:sdk:autonomous-agents/defining.adoc#attachment-content[Loading attachment content] for details.
+
 == Task templates
 
 A `TaskTemplate` is a task definition with a parameterized instruction string. Placeholders use `\{paramName}` syntax and are filled in when the template is turned into a submittable `Task`. Templates fit cases where the structure of the instructions is fixed and only a few values change per invocation. They are particularly useful when the model itself supplies the values at delegation or task-claim time.

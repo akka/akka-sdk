@@ -249,7 +249,7 @@ public abstract class Agent implements AgentDelegationWorker {
        *     .imageLoader(new MyImageLoader())
        *     .userMessage(UserMessage.from(
        *         MessageContent.TextMessageContent.from("Describe this image"),
-       *         MessageContent.ImageMessageContent.fromUrl(imageUrl)))
+       *         MessageContent.ImageMessageContent.fromUri(imageUri)))
        *     .thenReply();
        * }</pre>
        *
@@ -277,7 +277,7 @@ public abstract class Agent implements AgentDelegationWorker {
        *     .contentLoader(new MyContentLoader())
        *     .userMessage(UserMessage.from(
        *         MessageContent.TextMessageContent.from("Describe this image"),
-       *         MessageContent.ImageMessageContent.fromUrl(imageUrl)))
+       *         MessageContent.ImageMessageContent.fromUri(imageUri)))
        *     .thenReply();
        * }</pre>
        *
@@ -632,7 +632,7 @@ public abstract class Agent implements AgentDelegationWorker {
        *     .imageLoader(new MyImageLoader())
        *     .userMessage(UserMessage.from(
        *         MessageContent.TextMessageContent.from("Describe this image"),
-       *         MessageContent.ImageMessageContent.fromUrl(imageUrl)))
+       *         MessageContent.ImageMessageContent.fromUri(imageUri)))
        *     .thenReply();
        * }</pre>
        *
@@ -659,7 +659,7 @@ public abstract class Agent implements AgentDelegationWorker {
        *     .contentLoader(new MyContentLoader())
        *     .userMessage(UserMessage.from(
        *         MessageContent.TextMessageContent.from("Describe this image"),
-       *         MessageContent.ImageMessageContent.fromUrl(imageUrl)))
+       *         MessageContent.ImageMessageContent.fromUri(imageUri)))
        *     .thenReply();
        * }</pre>
        *

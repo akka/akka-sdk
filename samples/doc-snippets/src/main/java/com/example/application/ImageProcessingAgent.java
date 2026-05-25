@@ -16,7 +16,7 @@ public class ImageProcessingAgent extends Agent {
       .userMessage(
         UserMessage.from( // <1>
           TextMessageContent.from("What do you see?"), // <2>
-          ImageMessageContent.fromUrl("https://example/image.png") // <3>
+          ImageMessageContent.fromUri("https://example/image.png") // <3>
         )
       )
       .thenReply();

@@ -372,6 +372,9 @@ private[impl] final class AutonomousAgentImpl(
   override def callToolFunction(request: SpiAgent.ToolCallCommand): Future[String] =
     Future(toolExecutor.execute(request))(sdkExecutionContext)
 
+  override val contentLoader: Option[SpiAgent.SpiContentLoader] =
+    agentDefinition.contentLoader.map(AgentImpl.toSpiContentLoader(_, sdkExecutionContext))
+
   // --- Helpers ---
 
   private def toSpiTaskState(state: akka.javasdk.agent.task.TaskState): SpiTask.SpiTaskState = {
@@ -485,6 +488,4 @@ private[impl] final class AutonomousAgentImpl(
         new ToolCallResponse(now, componentId, m.id, m.name, m.content)
     }
 
-  override def contentLoader: Option[SpiAgent.SpiContentLoader] =
-    None // FIXME implement
 }

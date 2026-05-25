@@ -10,12 +10,14 @@ import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.handof
 import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.javasdk.agent.AgentRegistry;
+import akka.javasdk.agent.MessageContent;
 import akka.javasdk.agent.autonomous.Notification;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import akkajavasdk.components.agent.SomeAgent;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +37,7 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
   private final TestModelProvider specialistModel = new TestModelProvider();
   private final TestModelProvider requestDelegatingModel = new TestModelProvider();
   private final TestModelProvider someAgentModel = new TestModelProvider();
+  private final TestModelProvider contentLoaderTestModel = new TestModelProvider();
 
   @Override
   protected TestKit.Settings testKitSettings() {
@@ -45,7 +48,8 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
         .withModelProvider(TriageTestAgent.class, triageModel)
         .withModelProvider(SpecialistTestAgent.class, specialistModel)
         .withModelProvider(RequestDelegatingAgent.class, requestDelegatingModel)
-        .withModelProvider(SomeAgent.class, someAgentModel);
+        .withModelProvider(SomeAgent.class, someAgentModel)
+        .withModelProvider(ContentLoaderTestAgent.class, contentLoaderTestModel);
   }
 
   @AfterEach
@@ -56,6 +60,8 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
     specialistModel.reset();
     requestDelegatingModel.reset();
     someAgentModel.reset();
+    contentLoaderTestModel.reset();
+    ContentLoaderTestAgent.reset();
   }
 
   @Test
@@ -235,6 +241,58 @@ public class AutonomousAgentIntegrationTest extends TestKitSupport {
               var result = snapshot.result().orElseThrow();
               assertThat(result.value()).isEqualTo("Claim verified.");
               assertThat(result.score()).isEqualTo(90);
+            });
+  }
+
+  @Test
+  public void shouldInvokeContentLoaderForTaskAttachment() {
+    var receivedMessages =
+        Collections.synchronizedList(new ArrayList<TestModelProvider.UserMessage>());
+    contentLoaderTestModel
+        .whenUserMessage(
+            msg -> {
+              receivedMessages.add(msg);
+              return true;
+            })
+        .reply(new TestModelProvider.AiResponse(completeTask("Done")));
+
+    // Custom URI scheme: the runtime delegates to the user's ContentLoader.
+    var imageUri = "myscheme://test-image.png";
+
+    componentClient
+        .forAutonomousAgent(ContentLoaderTestAgent.class, UUID.randomUUID().toString())
+        .runSingleTask(
+            TestTasks.STRING_TASK
+                .instructions("Describe this image")
+                .attach(MessageContent.ImageMessageContent.fromUri(imageUri)));
+
+    Awaitility.await()
+        .atMost(30, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              assertThat(receivedMessages).as("model received messages").isNotEmpty();
+              assertThat(ContentLoaderTestAgent.loaderCalls.get())
+                  .as("content loader was invoked; model received messages: %s", receivedMessages)
+                  .isPositive();
+              assertThat(ContentLoaderTestAgent.loadedUris).contains(imageUri);
+
+              // The loaded bytes from ContentLoader reached the model as inline image data,
+              // not as the original URI.
+              var imageData =
+                  receivedMessages.stream()
+                      .flatMap(m -> m.contents().stream())
+                      .filter(c -> c instanceof MessageContent.ImageDataMessageContent)
+                      .map(c -> (MessageContent.ImageDataMessageContent) c)
+                      .findFirst()
+                      .orElseThrow(
+                          () ->
+                              new AssertionError(
+                                  "expected an ImageDataMessageContent in received messages: "
+                                      + receivedMessages));
+              assertThat(imageData.data())
+                  .containsExactly(ContentLoaderTestAgent.RecordingContentLoader.LOADED_BYTES);
+              assertThat(imageData.mimeType())
+                  .contains(ContentLoaderTestAgent.RecordingContentLoader.LOADED_MIME_TYPE);
             });
   }
 }

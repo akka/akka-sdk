@@ -19,7 +19,7 @@ public class SomeMultiModalUserMessageAgent extends Agent {
         .userMessage(
             UserMessage.from(
                 MessageContent.TextMessageContent.from("testing"),
-                MessageContent.ImageMessageContent.fromUrl("https://example.com")))
+                MessageContent.ImageMessageContent.fromUri("https://example.com")))
         .thenReply();
   }
 }

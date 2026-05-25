@@ -418,27 +418,54 @@ private[impl] object AgentImpl {
           content.mimeType().toScala)
       case content: MessageContent.PdfUrlMessageContent =>
         new SpiAgent.PdfUriMessageContent(content.uri)
+      case _: MessageContent.ImageDataMessageContent =>
+        throw new UnsupportedOperationException(
+          "Inline image data message content cannot be sent as input. Upload to object storage and " +
+          "reference it via an object:// URI, or use a URI-referenced content type.")
+      case _: MessageContent.PdfDataMessageContent =>
+        throw new UnsupportedOperationException(
+          "Inline PDF data message content cannot be sent as input. Upload to object storage and " +
+          "reference it via an object:// URI, or use a URI-referenced content type.")
     }
 
   private[agent] def fromSpiMessageContent(mc: SpiAgent.MessageContent): MessageContent = mc match {
     case t: SpiAgent.TextMessageContent =>
       MessageContent.TextMessageContent.from(t.text)
     case img: SpiAgent.ImageUriMessageContent =>
-      try {
-        val url = img.uri.toURL
-        img.mimeType match {
-          case Some(mime) =>
-            ImageMessageContent.fromUrl(url, fromSpiDetailLevel(img.detailLevel), mime)
-          case None =>
-            ImageMessageContent.fromUrl(url, fromSpiDetailLevel(img.detailLevel))
-        }
-      } catch {
-        case e: java.net.MalformedURLException =>
-          throw new RuntimeException("Can't transform " + img.uri + " to URL", e)
+      val detail = fromSpiDetailLevel(img.detailLevel)
+      img.mimeType match {
+        case Some(mime) =>
+          new ImageUrlMessageContent(img.uri, detail, java.util.Optional.of(mime))
+        case None =>
+          new ImageUrlMessageContent(img.uri, detail)
       }
     case pdf: SpiAgent.PdfUriMessageContent =>
-      MessageContent.PdfMessageContent.fromUrl(pdf.uri.toString)
+      new PdfUrlMessageContent(pdf.uri)
   }
+
+  private[agent] def toSpiContentLoader(
+      javaContentLoader: ContentLoader,
+      ec: ExecutionContext): SpiAgent.SpiContentLoader =
+    new SpiAgent.SpiContentLoader {
+      override def implementationClassName: String = javaContentLoader.getClass.getName
+
+      override def load(messageContent: LoadableMessageContent): Future[SpiAgent.SpiLoadedContent] =
+        Future {
+          val loaded = javaContentLoader.load(fromSpiLoadable(messageContent))
+          new SpiAgent.SpiLoadedContent(loaded.data(), loaded.mimeType().toScala)
+        }(ec)
+
+      private def fromSpiLoadable(messageContent: LoadableMessageContent): MessageContent.LoadableMessageContent =
+        messageContent match {
+          case content: SpiAgent.ImageUriMessageContent =>
+            val detailLevel = fromSpiDetailLevel(content.detailLevel)
+            val mimeType =
+              content.mimeType.map(java.util.Optional.of[String]).getOrElse(java.util.Optional.empty[String]())
+            new MessageContent.ImageUrlMessageContent(content.uri, detailLevel, mimeType)
+          case content: SpiAgent.PdfUriMessageContent =>
+            new PdfUrlMessageContent(content.uri)
+        }
+    }
 
   private[agent] def toSpiContextMessages(sessionHistory: SessionHistory): Vector[SpiAgent.ContextMessage] =
     sessionHistory
@@ -666,26 +693,7 @@ private[impl] final class AgentImpl(
     AgentImpl.toSpiMessageContent(messageContent)
 
   private def toSpiContentLoader(javaImageLoader: ContentLoader): SpiAgent.SpiContentLoader =
-    new SpiAgent.SpiContentLoader {
-      override def implementationClassName: String = javaImageLoader.getClass.getName
-
-      override def load(messageContent: LoadableMessageContent): Future[SpiAgent.SpiLoadedContent] =
-        Future {
-          val loaded = javaImageLoader.load(fromSpiLoadable(messageContent))
-          new SpiAgent.SpiLoadedContent(loaded.data(), loaded.mimeType().toScala)
-        }(sdkExecutionContext)
-
-      private def fromSpiLoadable(messageContent: LoadableMessageContent): MessageContent.LoadableMessageContent =
-        messageContent match {
-          case content: SpiAgent.ImageUriMessageContent =>
-            val detailLevel = fromSpiDetailLevel(content.detailLevel)
-            val mimeType =
-              content.mimeType.map(java.util.Optional.of[String]).getOrElse(java.util.Optional.empty[String]())
-            new MessageContent.ImageUrlMessageContent(content.uri, detailLevel, mimeType)
-          case content: SpiAgent.PdfUriMessageContent =>
-            new PdfUrlMessageContent(content.uri)
-        }
-    }
+    AgentImpl.toSpiContentLoader(javaImageLoader, sdkExecutionContext)
 
   private def toSpiMcpEndpoints(remoteMcpTools: Seq[RemoteMcpTools]): Seq[SpiAgent.McpToolEndpointDescriptor] =
     AgentImpl.toSpiMcpEndpoints(remoteMcpTools, guardrails, sdkExecutionContext)
@@ -776,6 +784,14 @@ private[impl] final class AgentImpl(
           content.mimeType())
       case content: PdfUrlMessageContent =>
         new SessionMessage.MessageContent.PdfUriMessageContent(content.uri().toString)
+      case _: MessageContent.ImageDataMessageContent =>
+        throw new UnsupportedOperationException(
+          "Inline image data message content cannot be persisted to session memory. Upload to " +
+          "object storage and reference it via an object:// URI, or use a URI-referenced content type.")
+      case _: MessageContent.PdfDataMessageContent =>
+        throw new UnsupportedOperationException(
+          "Inline PDF data message content cannot be persisted to session memory. Upload to " +
+          "object storage and reference it via an object:// URI, or use a URI-referenced content type.")
     }
   }
 

@@ -14,10 +14,12 @@ import akka.javasdk.agent.task.Task;
 import akka.javasdk.agent.task.TaskDefinition;
 import akka.javasdk.agent.task.TaskTemplate;
 import akka.javasdk.annotations.Component;
+import akka.javasdk.impl.agent.DataMessageContentImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ImageContent;
+import dev.langchain4j.data.message.PdfFileContent;
 import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.model.chat.ChatModel;
@@ -26,7 +28,6 @@ import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.model.output.FinishReason;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -295,18 +296,30 @@ public final class TestModelProvider implements ModelProvider.Custom {
                         case TextContent textContent ->
                             MessageContent.TextMessageContent.from(textContent.text());
                         case ImageContent imageContent -> {
-                          if (imageContent.image().url() != null) {
-                            try {
-                              yield MessageContent.ImageMessageContent.fromUrl(
-                                  imageContent.image().url().toURL(),
-                                  toDetailLevel(imageContent.detailLevel()));
-                            } catch (MalformedURLException e) {
-                              throw new RuntimeException(
-                                  "Can't transform " + imageContent.image().url() + " to URL", e);
-                            }
+                          var image = imageContent.image();
+                          var detail = toDetailLevel(imageContent.detailLevel());
+                          if (image.url() != null) {
+                            yield new MessageContent.ImageUrlMessageContent(image.url(), detail);
+                          } else if (image.base64Data() != null) {
+                            var data = java.util.Base64.getDecoder().decode(image.base64Data());
+                            yield new DataMessageContentImpl.Image(
+                                data, Optional.ofNullable(image.mimeType()), detail);
                           } else {
                             throw new IllegalStateException(
-                                "Not supported image content without url.");
+                                "Image content has neither url nor base64 data");
+                          }
+                        }
+                        case PdfFileContent pdfContent -> {
+                          var pdf = pdfContent.pdfFile();
+                          if (pdf.url() != null) {
+                            yield new MessageContent.PdfUrlMessageContent(pdf.url());
+                          } else if (pdf.base64Data() != null) {
+                            var data = java.util.Base64.getDecoder().decode(pdf.base64Data());
+                            yield new DataMessageContentImpl.Pdf(
+                                data, Optional.ofNullable(pdf.mimeType()));
+                          } else {
+                            throw new IllegalStateException(
+                                "PDF content has neither url nor base64 data");
                           }
                         }
                         default ->
