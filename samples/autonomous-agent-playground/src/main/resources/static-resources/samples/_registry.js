@@ -12,6 +12,7 @@ import { debate } from '/playground/static/samples/debate.js';
 import { negotiation } from '/playground/static/samples/negotiation.js';
 import { peerreview } from '/playground/static/samples/peerreview.js';
 import { devteam } from '/playground/static/samples/devteam.js';
+import { editorial } from '/playground/static/samples/editorial.js';
 
 export const samples = {
   helloworld,
@@ -26,4 +27,5 @@ export const samples = {
   negotiation,
   peerreview,
   devteam,
+  editorial,
 };
