@@ -15,6 +15,7 @@ import akka.javasdk.agent.SessionMemoryEntity;
 import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.agent.SessionMessageConverter;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.impl.ErrorHandling;
 import akka.javasdk.impl.serialization.Serializer;
 import akka.runtime.sdk.spi.EventLogClient;
 import akka.stream.Materializer;
@@ -23,6 +24,7 @@ import com.typesafe.config.Config;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.PartialFunction;
@@ -189,15 +191,20 @@ public final class SessionMemoryClient implements SessionMemory {
     // The stream is materialized on Akka's dispatcher; join() parks the calling virtual thread,
     // unmounting it from its carrier until the CompletionStage completes.
     // Safe because callers (AgentImpl) invoke this from SdkExecutionContext (virtual threads).
-    List<SessionMessage> messages =
-        eventLogClient
-            .currentEventsForEntity(query)
-            .asJava()
-            .map(envelope -> serializer.fromBytes(envelope.payload()))
-            .collect(sessionMessageCollectPF)
-            .runWith(Sink.seq(), materializer)
-            .toCompletableFuture()
-            .join();
+    List<SessionMessage> messages;
+    try {
+      messages =
+          eventLogClient
+              .currentEventsForEntity(query)
+              .asJava()
+              .map(envelope -> serializer.fromBytes(envelope.payload()))
+              .collect(sessionMessageCollectPF)
+              .runWith(Sink.seq(), materializer)
+              .toCompletableFuture()
+              .join();
+    } catch (CompletionException e) {
+      throw ErrorHandling.unwrapCompletionException(e);
+    }
 
     var filtered =
         MemoryHistoryUtils.applyFilters(
