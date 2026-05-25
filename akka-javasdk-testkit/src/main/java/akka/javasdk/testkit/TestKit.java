@@ -1076,7 +1076,7 @@ public class TestKit {
               componentClients,
               serializer,
               startupContext.agentRegistry().agentClassById(),
-              Option.empty(),
+              Option.apply(startupContext.agentCapabilityConverter()),
               Option.empty(),
               runtimeActorSystem.executionContext(),
               runtimeActorSystem);
