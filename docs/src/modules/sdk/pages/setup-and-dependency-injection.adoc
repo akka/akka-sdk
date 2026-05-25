@@ -55,7 +55,7 @@ The `UnhandledExceptionContext` passed to the callback exposes:
 * `componentId()` — the value of `@ComponentId` for components that declare one, or the simple class name for endpoints.
 * `componentClassName()` — the fully-qualified class name of the user component the exception originated in.
 
-The callback runs on the SDK dispatcher. It must not throw — any exception it throws is logged and swallowed. It is invoked once per caught exception on the instance that handled the failing request, so in a service running multiple distributed instances each instance reports its own failures.
+The callback is invoked once per caught exception on the service instance that handled the failing request, so in a service running multiple distributed instances each instance reports its own failures.
 
 == Disabling components
 

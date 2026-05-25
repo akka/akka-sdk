@@ -1163,8 +1163,9 @@ private final class Sdk(
                 } catch {
                   case NonFatal(ex) =>
                     // Make sure it reaches the user, but do not fail the shutdown phase.
-                    SdkRunner.userServiceLog
-                      .error(s"${setup.getClass.getName}.onShutdown() threw an exception", ex)
+                    LoggerFactory
+                      .getLogger(setup.getClass)
+                      .error("onShutdown() threw an exception", ex)
                 }
                 SdkRunner.FutureDone
             }
@@ -1193,7 +1194,7 @@ private final class Sdk(
           } catch {
             case NonFatal(ex) =>
               // Make sure it reaches the user
-              SdkRunner.userServiceLog.error(s"${setup.getClass.getName}.onStart() thew an exception", ex)
+              LoggerFactory.getLogger(setup.getClass).error("onStartup() threw an exception", ex)
               throw ex
           }
           Future.successful(Done)
@@ -1234,8 +1235,9 @@ private final class Sdk(
             try handler.onUnhandledException(context)
             catch {
               case NonFatal(ex) =>
-                SdkRunner.userServiceLog
-                  .error(s"${handler.getClass.getName}.onUnhandledException threw an exception", ex)
+                LoggerFactory
+                  .getLogger(handler.getClass)
+                  .error("onUnhandledException() threw an exception", ex)
             }
             Done
           }(sdkExecutionContext)
