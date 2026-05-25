@@ -457,7 +457,6 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     // messages — anything newer is guaranteed to still be in memory.
     if (sanitizedCmd.lastNMessages.isPresent()) {
       var results = buildSessionHistory(sanitizedCmd);
-      var filtered = filteredMessages(cmd.memoryFilters);
       if (results.messages().size() >= sanitizedCmd.lastNMessages.get()) {
         return effects().reply(new SessionHistoryResult.Loaded(results));
       }
