@@ -27,6 +27,7 @@ import akka.javasdk.agent.task.TaskStatus
 import akka.javasdk.agent.task.TaskTemplate
 import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi._
+import akka.stream.SystemMaterializer
 import akka.stream.scaladsl.Source
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
@@ -66,7 +67,7 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = 5.seconds, interval = 100.millis)
 
   private implicit val ec: ExecutionContext = system.executionContext
-  private val materializer = akka.stream.Materializer(system)
+  private val materializer = SystemMaterializer(system).materializer
 
   private implicit val serializer: Serializer = {
     val s = new Serializer()
