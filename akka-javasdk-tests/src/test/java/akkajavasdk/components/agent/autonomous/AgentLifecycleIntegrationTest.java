@@ -9,6 +9,7 @@ import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.failTa
 import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.javasdk.agent.Agent;
+import akka.javasdk.agent.autonomous.AgentSetup;
 import akka.javasdk.agent.autonomous.Notification;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
@@ -21,7 +22,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /** Integration tests for agent state management, suspend/resume, and failure notifications. */
@@ -68,16 +68,15 @@ public class AgentLifecycleIntegrationTest extends TestKitSupport {
     assertThat(state.pendingTaskIds()).isEmpty();
   }
 
-  // FIXME runtime 1.6.2 throws InstanceNotFoundException when suspending an agent before it has
-  // been started. Pending team decision on whether suspend/terminate before first task should be
-  // supported.
-  @Disabled
   @Test
   public void shouldSuspendAndResumeAgent() {
     testAgentModel.fixedResponse(completeTask(new TestTasks.TestResult("done after resume", 1)));
 
     var agentId = UUID.randomUUID().toString();
     var agentClient = componentClient.forAutonomousAgent(TestAutonomousAgent.class, agentId);
+
+    // Activate an idle agent instance so it can be suspended before any task is assigned.
+    agentClient.setup(AgentSetup.create());
 
     agentClient.suspend();
 
@@ -242,10 +241,6 @@ public class AgentLifecycleIntegrationTest extends TestKitSupport {
             });
   }
 
-  // FIXME runtime 1.6.2 throws InstanceNotFoundException when suspending an agent before it has
-  // been started. Pending team decision on whether suspend/terminate before first task should be
-  // supported.
-  @Disabled
   @Test
   public void shouldReceiveSuspendAndResumeNotifications() {
     testAgentModel.fixedResponse(completeTask(new TestTasks.TestResult("done after resume", 1)));
@@ -255,6 +250,9 @@ public class AgentLifecycleIntegrationTest extends TestKitSupport {
 
     var notifications = new ArrayList<Notification>();
     agentClient.notificationStream().runForeach(notifications::add, testKit.getMaterializer());
+
+    // Activate an idle agent instance so it can be suspended before any task is assigned.
+    agentClient.setup(AgentSetup.create());
 
     agentClient.suspend();
 

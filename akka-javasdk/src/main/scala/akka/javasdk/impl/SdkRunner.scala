@@ -434,6 +434,7 @@ private[javasdk] object Sdk {
       httpClientProvider: HttpClientProvider,
       grpcClientProvider: GrpcClientProviderImpl,
       agentRegistry: AgentRegistryImpl,
+      agentCapabilityConverter: CapabilityConverter,
       overrideModelProvider: OverrideModelProvider,
       serializer: Serializer,
       sanitizer: Sanitizer)
@@ -1136,6 +1137,7 @@ private final class Sdk(
               httpClientProvider,
               grpcClientProvider,
               agentRegistry,
+              agentCapabilityConverter,
               overrideModelProvider,
               serializer,
               sanitizer))
@@ -1173,6 +1175,7 @@ private final class Sdk(
               httpClientProvider,
               grpcClientProvider,
               agentRegistry,
+              agentCapabilityConverter,
               overrideModelProvider,
               serializer,
               sanitizer))
