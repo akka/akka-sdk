@@ -43,6 +43,7 @@ import akka.javasdk.timer.TimerScheduler;
 import akka.javasdk.workflow.Workflow;
 import akka.pattern.Patterns;
 import akka.runtime.sdk.spi.ComponentClients;
+import akka.runtime.sdk.spi.EventLogClient;
 import akka.runtime.sdk.spi.SpiBackofficeSettings$;
 import akka.runtime.sdk.spi.SpiDevModeSettings;
 import akka.runtime.sdk.spi.SpiDevObjectStorageBucketConfig;
@@ -836,6 +837,13 @@ public class TestKit {
   private EventingTestKit eventingTestKit;
   private ActorSystem<?> runtimeActorSystem;
   private ComponentClient componentClient;
+
+  /** Package-private on purpose: only test-internal helpers in this package may read this. */
+  EventLogClient eventLogClient;
+
+  /** Package-private on purpose: only test-internal helpers in this package may read this. */
+  Serializer serializer;
+
   private HttpClientProvider httpClientProvider;
   private GrpcClientProviderImpl grpcClientProvider;
   private MockedHttpServicesImpl mockedHttpServices;
@@ -994,7 +1002,7 @@ public class TestKit {
       final Sdk.StartupContext startupContext =
           runner.started().toCompletableFuture().get(20, TimeUnit.SECONDS);
       final ComponentClients componentClients = startupContext.componentClients();
-      final Serializer serializer = startupContext.serializer();
+      serializer = startupContext.serializer();
       dependencyProvider =
           Optional.ofNullable(startupContext.dependencyProvider().getOrElse(() -> null));
       sanitizer = startupContext.sanitizer();
@@ -1081,6 +1089,7 @@ public class TestKit {
               runtimeActorSystem.executionContext(),
               runtimeActorSystem);
       agentRegistry = startupContext.agentRegistry();
+      eventLogClient = startupContext.eventLogClient();
       selfHttpClient =
           new HttpClientImpl(
               runtimeActorSystem,

@@ -43,6 +43,7 @@ import akka.javasdk.impl.client.EntityClientImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.BytesPayload
+import akka.runtime.sdk.spi.EventLogClient
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAutonomousAgent
@@ -50,6 +51,8 @@ import akka.runtime.sdk.spi.SpiBacklog
 import akka.runtime.sdk.spi.SpiBacklogOperations
 import akka.runtime.sdk.spi.SpiTask
 import akka.runtime.sdk.spi.SpiTaskOperations
+import akka.stream.Materializer
+import akka.stream.SystemMaterializer
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.opentelemetry.api.trace.Tracer
@@ -72,6 +75,8 @@ private[impl] final class AutonomousAgentImpl(
     componentClient: Option[OtelContext] => ComponentClient,
     dependencyProvider: Option[DependencyProvider],
     config: Config,
+    eventLogClient: EventLogClient,
+    agentRegistry: AgentRegistry,
     _system: ActorSystem[_],
     agentDefinition: AgentDefinitionImpl,
     override val instructions: String,
@@ -85,6 +90,7 @@ private[impl] final class AutonomousAgentImpl(
   import AgentImpl._
 
   implicit val system: ActorSystem[_] = _system
+  private val materializer: Materializer = SystemMaterializer(system).materializer
 
   private val log = LoggerFactory.getLogger(classOf[AutonomousAgentImpl])
 
@@ -93,7 +99,13 @@ private[impl] final class AutonomousAgentImpl(
     val memoryConfig = ConfigFactory
       .parseString("enabled=true")
       .withFallback(config.getConfig("akka.javasdk.agent.memory"))
-    new SessionMemoryClient(componentClient(telemetryContext), memoryConfig)
+    new SessionMemoryClient(
+      componentClient(telemetryContext),
+      eventLogClient,
+      serializer,
+      agentRegistry,
+      materializer,
+      memoryConfig)
   }
 
   private lazy val toolExecutor: ToolExecutor = {

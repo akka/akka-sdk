@@ -60,6 +60,7 @@ import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.runtime.sdk.spi.BytesPayload
+import akka.runtime.sdk.spi.EventLogClient
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAgent.ContentLoadingFailure
@@ -78,6 +79,8 @@ import akka.runtime.sdk.spi.SpiAgent.ToolCallLimitReachedFailure
 import akka.runtime.sdk.spi.SpiAgent.UnsupportedFeatureFailure
 import akka.runtime.sdk.spi.SpiAgent.{ AgentException => SpiAgentException }
 import akka.runtime.sdk.spi.SpiMetadata
+import akka.stream.Materializer
+import akka.stream.SystemMaterializer
 import akka.util.ByteString
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigException
@@ -532,11 +535,14 @@ private[impl] final class AgentImpl(
     dependencyProvider: Option[DependencyProvider],
     guardrails: AgentGuardrails,
     config: Config,
+    eventLogClient: EventLogClient,
+    agentRegistry: AgentRegistry,
     _system: ActorSystem[_])
     extends SpiAgent {
   import AgentImpl._
 
   implicit val system: ActorSystem[_] = _system
+  private val materializer: Materializer = SystemMaterializer(system).materializer
 
   // Router only for request-based agents (not autonomous)
   private lazy val router: ReflectiveAgentRouter[Agent] = {
@@ -602,7 +608,7 @@ private[impl] final class AgentImpl(
             val modelProvider = overrideModelProvider.getModelProviderForAgent(componentId).getOrElse(req.modelProvider)
             val spiModelProvider = toSpiModelProvider(modelProvider)
             val metadata = MetadataImpl.toSpi(req.replyMetadata)
-            val sessionMemoryClient = deriveMemoryClient(req.memoryProvider, telemetryContext)
+            val sessionMemoryClient = deriveSessionMemoryClient(req.memoryProvider, telemetryContext)
             val additionalContext = toSpiContextMessages(sessionMemoryClient.getHistory(sessionId))
             val mcpToolEndpoints = toSpiMcpEndpoints(req.mcpTools)
 
@@ -698,19 +704,31 @@ private[impl] final class AgentImpl(
   private def toSpiMcpEndpoints(remoteMcpTools: Seq[RemoteMcpTools]): Seq[SpiAgent.McpToolEndpointDescriptor] =
     AgentImpl.toSpiMcpEndpoints(remoteMcpTools, guardrails, sdkExecutionContext)
 
-  private def deriveMemoryClient(
+  private def deriveSessionMemoryClient(
       memoryProvider: MemoryProvider,
       telemetryContext: Option[OtelContext]): SessionMemory = {
     memoryProvider match {
       case _: MemoryProvider.Disabled =>
-        new SessionMemoryClient(componentClient(telemetryContext), MemorySettings.disabled())
+        new SessionMemoryClient(
+          componentClient(telemetryContext),
+          eventLogClient,
+          serializer,
+          agentRegistry,
+          materializer,
+          MemorySettings.disabled())
 
       case p: MemoryProvider.LimitedWindowMemoryProvider =>
         new SessionMemoryClient(
           componentClient(telemetryContext),
+          eventLogClient,
+          serializer,
+          agentRegistry,
+          materializer,
           new MemorySettings(p.read(), p.write(), p.readLastN(), p.filters()))
 
       case p: MemoryProvider.CustomMemoryProvider =>
+        // Custom providers own their own filtering/limit/storage semantics; the journal-fallback
+        // path that lives in SessionMemoryClient does not apply here.
         p.sessionMemory()
 
       case p: MemoryProvider.FromConfig =>
@@ -719,10 +737,16 @@ private[impl] final class AgentImpl(
             "akka.javasdk.agent.memory"
           else
             p.configPath()
-        new SessionMemoryClient(componentClient(telemetryContext), config.getConfig(actualPath))
+        new SessionMemoryClient(
+          componentClient(telemetryContext),
+          eventLogClient,
+          serializer,
+          agentRegistry,
+          materializer,
+          config.getConfig(actualPath))
 
       case p: MemoryProvider.InterceptedMemoryProvider =>
-        val inner = deriveMemoryClient(p.delegate, telemetryContext)
+        val inner = deriveSessionMemoryClient(p.delegate, telemetryContext)
         new InterceptingSessionMemory(inner, p.interceptor)
     }
   }
