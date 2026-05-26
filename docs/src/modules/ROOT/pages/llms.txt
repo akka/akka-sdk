@@ -164,7 +164,6 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Organizations](https://doc.akka.io/operations/organizations/index.html.md): Working with organizations in the Akka Platform
 - [Managing organization users](https://doc.akka.io/operations/organizations/manage-users.html.md): Adding, removing, and managing user access within your organization
 - [Regions](https://doc.akka.io/operations/organizations/regions.html.md): Understanding geographical regions for Akka Platform deployments
-- [Billing](https://doc.akka.io/operations/organizations/billing.html.md): Managing billing and subscription information for Akka Platform
 - [Operating - Akka Automated Operations (AAO)](https://doc.akka.io/operations/akka-platform.html.md): Automatically manages, monitors, and gathers insights from your deployed services and managed infrastructure.
 - [Operating - Self-managed nodes](https://doc.akka.io/operations/index.html.md): Guide to running Akka on self-managed infrastructure
 - [Why Akka](https://doc.akka.io/why-akka.html.md): Three barriers, three dimensions
