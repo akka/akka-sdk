@@ -12,7 +12,13 @@ package akka.javasdk.agent;
  * specific guardrail.
  *
  * <p>Guardrails are enabled for agents with configuration, see agent documentation.
+ *
+ * @deprecated Implement {@link ToolGuardrail} or {@link ModelGuardrail} instead. The new interfaces
+ *     return a {@link Decision} ({@code Allow} / {@code Deny} / {@code Fail}) and receive a
+ *     per-call context.
  */
+@Deprecated(since = "3.6.0", forRemoval = true)
+@SuppressWarnings("removal")
 public non-sealed interface TextGuardrail extends Guardrail {
 
   /** Evaluates if the text passes the guardrail or not. */

@@ -982,7 +982,8 @@ private final class Sdk(
             case any           => any.getClass
           }.toSeq
           val spiToolDescriptors =
-            FunctionTools.descriptorsFor(autonomousAgentClass) ++ toolClasses.flatMap(FunctionTools.descriptorsFor)
+            agentGuardrails.withToolGuardrails(
+              FunctionTools.descriptorsFor(autonomousAgentClass) ++ toolClasses.flatMap(FunctionTools.descriptorsFor))
           val spiMcpDescriptors =
             AgentImpl.toSpiMcpEndpoints(agentDefinition.mcpTools.asScala.toSeq, agentGuardrails, sdkExecutionContext)
 
