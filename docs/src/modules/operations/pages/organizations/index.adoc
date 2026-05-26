@@ -1,5 +1,4 @@
 = Organizations
-:page-aliases: operations:organizations/billing.adoc
 include::ROOT:partial$include.adoc[]
 
 An _Organization_ in Akka is the root of the management hierarchy and serves as a container for all _Projects_ where _Services_ are deployed. It provides the context in which users operate, both in the _Akka Console_ and _Akka CLI_.
