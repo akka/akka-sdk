@@ -8,6 +8,7 @@ package akka.javasdk.agent;
  * The SimilarityGuard evaluates the text by making a similarity search in a dataset of "bad
  * examples". If the similarity exceeds a threshold, the result is flagged as blocked.
  */
+@SuppressWarnings("removal")
 public final class SimilarityGuard implements TextGuardrail {
   private final String badExamplesResourceDir;
   private final double threshold;
