@@ -7,7 +7,6 @@
 **** xref:operations:organizations/index.adoc[]
 ***** xref:operations:organizations/manage-users.adoc[Manage users]
 ***** xref:operations:organizations/regions.adoc[]
-***** xref:operations:organizations/billing.adoc[]
 
 **** xref:operations:projects/index.adoc[]
 ***** xref:operations:projects/create-project.adoc[Create]
