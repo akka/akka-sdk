@@ -77,6 +77,12 @@ object GuardrailProviderSpec {
     override def evaluate(ctx: ModelGuardrailContext): Decision = Decision.allow()
   }
 
+  class FailingModelGuard extends ModelGuardrail {
+    val cause = new IllegalStateException("upstream classifier unreachable")
+    override def evaluate(ctx: ModelGuardrailContext): Decision =
+      Decision.error("evaluation failed", cause)
+  }
+
   class WrongGuard
 }
 
@@ -241,6 +247,32 @@ class GuardrailProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         Await.result(spiGuardrail.evaluate(new SpiAgent.Guardrail.TextContent("anything")), 3.seconds)
       result.passed shouldBe false
       result.explanation shouldBe "my model guard says no"
+    }
+
+    "translate a Decision.Error into a failed Future preserving reason and cause" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "failing model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$FailingModelGuard"
+              agents = ["failing-agent"]
+              category = MODEL_POLICY
+              use-for = ["model-response"]
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg)
+      val g = provider.agentGuardrails("failing-agent", role = None)
+      val spiGuardrail = g.modelResponseGuardrails.head
+
+      val failure = intercept[RuntimeException] {
+        Await.result(spiGuardrail.evaluate(new SpiAgent.Guardrail.TextContent("anything")), 3.seconds)
+      }
+      failure.getMessage shouldBe "evaluation failed"
+      failure.getCause shouldBe a[IllegalStateException]
+      failure.getCause.getMessage shouldBe "upstream classifier unreachable"
     }
 
     "throw from validate when a class implements both ToolGuardrail and ModelGuardrail" in {
