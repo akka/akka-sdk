@@ -41,10 +41,7 @@ public sealed interface Decision {
     return new Error(reason, cause);
   }
 
-  /**
-   * The guardrail saw nothing wrong with the call. Use the singleton {@link Decision#pass()}; new
-   * instances are not expected.
-   */
+  /** The guardrail saw nothing wrong with the call. Use the singleton {@link Decision#pass()}. */
   record Pass() implements Decision {
     static final Pass INSTANCE = new Pass();
   }
